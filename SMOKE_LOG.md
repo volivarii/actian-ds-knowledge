@@ -46,6 +46,34 @@ If Pass #2 also passes, Phase 1.1 is complete. Phase 1.5 (`/sync-design-system` 
 
 ---
 
+## Foundations Pass #1 — 2026-05-09 (Phase 1.2 lift)
+
+- **Plugin's foundations-derive output**: pre-existing content in [`Actian-DS-Claude-plugin/plugins/actian-design-system/docs/generated/foundations/`](https://github.com/volivarii/Actian-DS-Claude-plugin/tree/main/plugins/actian-design-system/docs/generated/foundations) at HEAD. 8 JSON files derived from `docs/foundations.md`.
+- **Knowledge repo derive (local pre-commit run)**: ran `node scripts/foundations/derive-foundations.js --md foundations/foundations.md --map scripts/foundations/foundations.parser.json --out /tmp/foundations-knowledge-test`. Produced 8 JSONs.
+
+### Diff results (`generated_at`-stripped)
+
+| File | Verdict |
+|---|---|
+| `foundations/borders.json` vs plugin's | ✅ byte-identical |
+| `foundations/breakpoint-grid-structure.json` | ✅ byte-identical |
+| `foundations/color.json` | ✅ byte-identical |
+| `foundations/elevation.json` | ✅ byte-identical |
+| `foundations/icons.json` | ✅ byte-identical |
+| `foundations/interaction-motion.json` | ✅ byte-identical |
+| `foundations/spacing.json` | ✅ byte-identical |
+| `foundations/typography.json` | ✅ byte-identical |
+
+### Conclusion
+
+Foundations Pass #1: PASSED. The lifted `derive-foundations.js` + `foundations-parser/` produces byte-identical outputs to the plugin's existing `docs/generated/foundations/` artifacts. Same `[derive-foundations] Numbered heading 'X' has no parser map entry; skipping.` warnings as plugin (existing parser-map gaps for sections 5.4 / 6 / 6.1 / 6.2 — not regressions).
+
+### Foundations Pass #2 — TBD (1-2 weeks after Pass #1)
+
+Same discipline as the registries pass. Expected: still byte-identical.
+
+---
+
 ## Cross-refs
 
 - Phase 1 design spec: `Actian-DS-Claude-plugin/plugins/actian-design-system/docs/superpowers/specs/2026-05-09-federation-phase-1-design.md` (untracked working artifact)

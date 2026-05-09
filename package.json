@@ -4,7 +4,11 @@
   "private": true,
   "description": "Actian Design System knowledge layer — tokens, components, guidelines, foundations, content. Consumed by the Actian DS Claude plugin.",
   "scripts": {
-    "sync": "node scripts/sync-from-figma.js"
+    "sync": "node scripts/sync/sync-from-figma.js",
+    "derive:foundations": "node scripts/foundations/derive-foundations.js --md foundations/foundations.md --map scripts/foundations/foundations.parser.json --out foundations"
+  },
+  "devDependencies": {
+    "marked": "^14.1.3"
   },
   "engines": {
     "node": ">=20"
