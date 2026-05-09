@@ -38,6 +38,9 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
       - name: Derive foundations JSONs
         run: |
           node scripts/foundations/derive-foundations.js \
