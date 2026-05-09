@@ -98,7 +98,6 @@ jobs:
           delete-branch: true
           add-paths: |
             components/**
-            release-notes/**
             package.json
 
       - name: Enable auto-merge for additive PRs
