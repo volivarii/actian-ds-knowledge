@@ -23,3 +23,7 @@ Thumbs.db
 # Federation: working artifacts (plans, specs, audits) — never tracked
 **/docs/superpowers/
 **/.superpowers/
+
+# Figma file keys (sensitive — create from .figma-keys.json.example)
+.figma-keys.json
+release-notes/sync-*.md
