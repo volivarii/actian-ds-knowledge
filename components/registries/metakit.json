@@ -667,5 +667,42 @@
       "nestedComponents": [],
       "guidelinesFile": null
     }
+  },
+  "templates": {
+    "section-header": {
+      "key": "f4fd576001f4f1f4606a4efb051d1e4492e378c4",
+      "nodeId": "76:12",
+      "textSlots": [
+        "title",
+        "subtitle"
+      ],
+      "visibility": "template-only",
+      "category": "layout"
+    },
+    "swatch-row": {
+      "key": "96647364b6cb5c55b7ced72106708daaa33afb7f",
+      "nodeId": "77:12",
+      "textSlots": [
+        "name",
+        "value",
+        "hex"
+      ],
+      "visibility": "template-only",
+      "category": "tokens"
+    },
+    "a11y-spec-row": {
+      "key": "92ed7bc88cf229782c4b42238aacba1d15f8fd06",
+      "nodeId": "96:12",
+      "textSlots": [
+        "element",
+        "role",
+        "label",
+        "focus-order",
+        "keyboard",
+        "announcement"
+      ],
+      "visibility": "template-only",
+      "category": "a11y"
+    }
   }
 }
