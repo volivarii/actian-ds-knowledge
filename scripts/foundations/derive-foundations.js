@@ -316,7 +316,7 @@ function deriveFromMarkdown(mdSource, parserMap, opts) {
 function addMetaHeader(payload) {
   var meta = {
     auto_generated: true,
-    source: "docs/foundations.md",
+    source: "foundations/foundations.md",
     do_not_edit: "Edit the source MD; CI regenerates this file.",
   };
   // Place _meta first by constructing a new object key-by-key.
