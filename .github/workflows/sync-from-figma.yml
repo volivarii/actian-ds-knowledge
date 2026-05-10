@@ -73,6 +73,12 @@ jobs:
             --keys-file .figma-keys.json \
             --plugin-json-path package.json
 
+      - name: Render token-reference.md
+        run: node scripts/render-token-reference.js
+
+      - name: Render styles MDs (text-styles.md, effect-styles.md)
+        run: node scripts/styles-to-md.js
+
       - name: Read verdict
         id: verdict
         run: |
@@ -98,6 +104,8 @@ jobs:
           delete-branch: true
           add-paths: |
             components/**
+            tokens/**
+            presentation/**
             package.json
 
       - name: Enable auto-merge for additive PRs
