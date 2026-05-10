@@ -2,8 +2,8 @@
 
 // Auto-generates JSON guideline stubs for set-importable DS Kit components
 // that don't yet have a hand-curated guideline. Pure derive — reads
-// docs/generated/dskit.json + docs/component-guidelines/, writes one stub
-// per missing slug. Idempotent (skip-if-exists). Updates _index.json.
+// components/registries/dskit.json + components/guidelines/, writes one
+// stub per missing slug. Idempotent (skip-if-exists). Updates _index.json.
 //
 // Hooked into the Sync from Figma workflow so net-new components from
 // REST sync get stubs immediately, keeping coverage at 100% structural.

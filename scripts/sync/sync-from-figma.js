@@ -7,11 +7,11 @@
 //   node scripts/sync-from-figma.js --phase all
 //
 // Wave 1 scope: Phase 1 (registries: dsKit/fmKit/metaKit) + Phase 3 (text +
-// effect styles, written to docs/generated/meta-kit/styles.json).
+// effect styles, written to components/registries/meta-kit/styles.json).
 //
-// Phases 5 + 6 (component guidelines + foundations) stay manual via the
-// /sync-design-system skill — they're hand-curated content, not pure data.
-// See SKILL.md for the architectural rationale.
+// Phases 5 + 6 (component guidelines + foundations) stay manual — they're
+// hand-curated content, not pure data. Component guidelines live in
+// components/guidelines/, foundations in foundations/foundations.md.
 //
 // Exit codes:
 //   0 — verdict additive or unchanged
@@ -250,7 +250,8 @@ async function run(opts) {
   opts = opts || {};
   var pluginDir = opts.pluginDir || path.resolve(__dirname, "../..");
   var rest = opts.rest || defaultRest;
-  var outputDir = opts.outputDir || path.join(pluginDir, "docs", "generated");
+  var outputDir =
+    opts.outputDir || path.join(pluginDir, "components", "registries");
   var releaseNotesDir =
     opts.releaseNotesDir || path.join(pluginDir, "release-notes");
   var keysFile = opts.keysFile || path.join(pluginDir, ".figma-keys.json");
@@ -359,12 +360,12 @@ async function run(opts) {
   // components that landed in this sync. No-op on unchanged. Idempotent —
   // existing guideline files are never overwritten (skip-if-exists in
   // generateStubs). Stubs land in the same PR as the registry diff via
-  // peter-evans add-paths (already includes docs/**).
+  // peter-evans add-paths (already includes components/**).
   //
   // Only fires when opts.guidelinesDir is set explicitly (CLI passes it;
   // tests omit it). Mirrors the auto-bump opt-in pattern above — keeps
-  // test fixtures from polluting the real plugin's docs/component-guidelines/
-  // directory when their mock REST data produces additive/breaking diffs.
+  // test fixtures from polluting the real components/guidelines/ directory
+  // when their mock REST data produces additive/breaking diffs.
   var stubsGenerated = [];
   var guidelinesDir = opts.guidelinesDir || null;
   if (
@@ -444,15 +445,15 @@ if (require.main === module) {
     );
   }
   // Same pattern as pluginJsonPath above: CLI mode defaults guidelinesDir to
-  // <pluginDir>/docs/component-guidelines so auto-stub fires without explicit
+  // <pluginDir>/components/guidelines so auto-stub fires without explicit
   // wiring. Programmatic callers (tests, scripts) must opt in by passing
   // guidelinesDir explicitly — keeps test fixtures from polluting the real
-  // docs/component-guidelines/ directory on additive/breaking verdicts.
+  // components/guidelines/ directory on additive/breaking verdicts.
   if (!cliOpts.guidelinesDir) {
     cliOpts.guidelinesDir = path.join(
       resolvedPluginDir,
-      "docs",
-      "component-guidelines",
+      "components",
+      "guidelines",
     );
   }
   run(cliOpts).then(
