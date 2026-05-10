@@ -355,16 +355,17 @@ function parseArgs(argv) {
 }
 
 function defaultPaths() {
-  var pluginRoot = path.resolve(__dirname, "..", "..");
+  // Resolves to the knowledge-repo root from scripts/foundations/.
+  var repoRoot = path.resolve(__dirname, "..", "..");
   return {
-    md: path.join(pluginRoot, "docs", "foundations.md"),
+    md: path.join(repoRoot, "foundations", "foundations.md"),
     map: path.join(
-      pluginRoot,
+      repoRoot,
       "scripts",
       "foundations",
       "foundations.parser.json",
     ),
-    out: path.join(pluginRoot, "docs", "generated", "foundations"),
+    out: path.join(repoRoot, "foundations"),
   };
 }
 

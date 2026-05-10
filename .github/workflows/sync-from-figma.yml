@@ -105,7 +105,6 @@ jobs:
           add-paths: |
             components/**
             tokens/**
-            presentation/**
             package.json
 
       - name: Enable auto-merge for additive PRs
