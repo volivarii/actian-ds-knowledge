@@ -220,9 +220,15 @@ if (require.main === module) {
   var dryRun = argv.indexOf("--dry-run") !== -1;
   var report = argv.indexOf("--report") !== -1;
 
-  var pluginRoot = path.resolve(__dirname, "..", "..");
-  var registryPath = path.join(pluginRoot, "docs", "generated", "dskit.json");
-  var guidelinesDir = path.join(pluginRoot, "docs", "component-guidelines");
+  // Resolves to the knowledge-repo root from scripts/foundations/.
+  var repoRoot = path.resolve(__dirname, "..", "..");
+  var registryPath = path.join(
+    repoRoot,
+    "components",
+    "registries",
+    "dskit.json",
+  );
+  var guidelinesDir = path.join(repoRoot, "components", "guidelines");
   var indexPath = path.join(guidelinesDir, "_index.json");
 
   var result = generateStubs({
