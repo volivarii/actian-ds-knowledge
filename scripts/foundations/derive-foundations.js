@@ -316,7 +316,7 @@ function deriveFromMarkdown(mdSource, parserMap, opts) {
 function addMetaHeader(payload) {
   var meta = {
     auto_generated: true,
-    source: "foundations/foundations.md",
+    source: "foundations/src/foundations.md",
     do_not_edit: "Edit the source MD; CI regenerates this file.",
   };
   // Place _meta first by constructing a new object key-by-key.
@@ -350,6 +350,9 @@ function parseArgs(argv) {
     else if (a === "--md") args.md = argv[++i];
     else if (a === "--map") args.map = argv[++i];
     else if (a === "--out") args.out = argv[++i];
+    // Phase B dual-publish: also write outputs to the given legacy
+    // directory. Removed in Phase D.
+    else if (a === "--legacy-out") args.legacyOut = argv[++i];
   }
   return args;
 }
@@ -358,14 +361,15 @@ function defaultPaths() {
   // Resolves to the knowledge-repo root from scripts/foundations/.
   var repoRoot = path.resolve(__dirname, "..", "..");
   return {
-    md: path.join(repoRoot, "foundations", "foundations.md"),
+    md: path.join(repoRoot, "foundations", "src", "foundations.md"),
     map: path.join(
       repoRoot,
       "scripts",
       "foundations",
       "foundations.parser.json",
     ),
-    out: path.join(repoRoot, "foundations"),
+    out: path.join(repoRoot, "foundations", "dist"),
+    legacyOut: path.join(repoRoot, "foundations"),
   };
 }
 
@@ -386,6 +390,11 @@ function runCli(argv) {
   var mdPath = args.md || defaults.md;
   var mapPath = args.map || defaults.map;
   var outDir = args.out || defaults.out;
+  // Phase B: bare invocation (no --legacy-out flag) still dual-publishes
+  // because defaults.legacyOut points at the legacy <repoRoot>/foundations
+  // path. Workflows pass --legacy-out explicitly, which overrides the default.
+  var legacyOutDir =
+    args.legacyOut !== undefined ? args.legacyOut : defaults.legacyOut;
 
   var md = fs.readFileSync(mdPath, "utf-8");
   var parserMap = loadParserMap(mapPath);
@@ -424,6 +433,21 @@ function runCli(argv) {
   console.log(
     "[derive-foundations] wrote " + written.length + " files to " + outDir,
   );
+
+  // Phase B dual-publish (transient through Phase D): also write outputs
+  // to legacyOutDir. Workflow + npm script pass --legacy-out explicitly;
+  // bare invocation falls through to defaults.legacyOut. Setting the flag
+  // to an empty string ("--legacy-out ''") opts out.
+  if (legacyOutDir) {
+    var legacyWritten = writeOutputs(output, legacyOutDir);
+    console.log(
+      "[derive-foundations] dual-publish: wrote " +
+        legacyWritten.length +
+        " files to " +
+        legacyOutDir,
+    );
+  }
+
   return 0;
 }
 

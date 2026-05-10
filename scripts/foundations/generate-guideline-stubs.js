@@ -174,15 +174,31 @@ function generateStubs(opts) {
     index = JSON.parse(fs.readFileSync(indexPath, "utf8"));
   }
 
+  // Phase B dual-publish: optional legacy guidelines dir gets the same
+  // stubs + index updates as the canonical guidelines dir. Removed in
+  // Phase D when legacy paths are dropped.
+  var legacyGuidelinesDir = opts.legacyGuidelinesDir || null;
+  var legacyIndexPath = legacyGuidelinesDir
+    ? path.join(legacyGuidelinesDir, "_index.json")
+    : null;
+
   // Write stub files
   generated.forEach(function (slug) {
     var entry = registry.components[slug];
     var stub = buildStub(slug, entry, nowIso);
+    var serialized = JSON.stringify(stub, null, 2) + "\n";
     fs.writeFileSync(
       path.join(guidelinesDir, slug + ".json"),
-      JSON.stringify(stub, null, 2) + "\n",
+      serialized,
       "utf8",
     );
+    if (legacyGuidelinesDir) {
+      fs.writeFileSync(
+        path.join(legacyGuidelinesDir, slug + ".json"),
+        serialized,
+        "utf8",
+      );
+    }
   });
 
   // Update _index.json (append stub entries)
@@ -200,7 +216,13 @@ function generateStubs(opts) {
     });
     index.total_components = index.components.length;
     index.extracted_at = nowIso;
-    fs.writeFileSync(indexPath, JSON.stringify(index, null, 2) + "\n", "utf8");
+    var indexSerialized = JSON.stringify(index, null, 2) + "\n";
+    fs.writeFileSync(indexPath, indexSerialized, "utf8");
+    if (legacyIndexPath && fs.existsSync(legacyIndexPath)) {
+      // Mirror only when a legacy index already exists — avoids creating
+      // an orphan file in legacy if it was already deleted by Phase D.
+      fs.writeFileSync(legacyIndexPath, indexSerialized, "utf8");
+    }
     indexUpdated = true;
   }
 
@@ -222,19 +244,26 @@ if (require.main === module) {
 
   // Resolves to the knowledge-repo root from scripts/foundations/.
   var repoRoot = path.resolve(__dirname, "..", "..");
+  // Phase B canonical paths (registry under components/dist/registries/,
+  // stubs under components/src/guidelines/).
   var registryPath = path.join(
     repoRoot,
     "components",
+    "dist",
     "registries",
     "dskit.json",
   );
-  var guidelinesDir = path.join(repoRoot, "components", "guidelines");
+  var guidelinesDir = path.join(repoRoot, "components", "src", "guidelines");
   var indexPath = path.join(guidelinesDir, "_index.json");
+  // Phase B dual-publish: also write stubs to the legacy location. Drop
+  // legacyGuidelinesDir from this default block in Phase D.
+  var legacyGuidelinesDir = path.join(repoRoot, "components", "guidelines");
 
   var result = generateStubs({
     registryPath: registryPath,
     guidelinesDir: guidelinesDir,
     indexPath: indexPath,
+    legacyGuidelinesDir: legacyGuidelinesDir,
     dryRun: dryRun,
   });
 

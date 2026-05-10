@@ -13,7 +13,7 @@ name: Derive foundations JSON from foundations.md
 on:
   pull_request:
     paths:
-      - 'foundations/foundations.md'
+      - 'foundations/src/foundations.md'
       - 'scripts/foundations/derive-foundations.js'
       - 'scripts/foundations/foundations-parser/**'
       - 'scripts/foundations/foundations.parser.json'
@@ -42,11 +42,16 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Derive foundations JSONs
+        # Phase B dual-publish: derived JSONs land in BOTH foundations/dist/
+        # (canonical) and foundations/ (legacy) so plugin consumers reading
+        # vendor/foundations/*.json keep working until Phase C migrates them.
+        # Drop --legacy-out in Phase D when legacy paths retire.
         run: |
           node scripts/foundations/derive-foundations.js \
-            --md foundations/foundations.md \
+            --md foundations/src/foundations.md \
             --map scripts/foundations/foundations.parser.json \
-            --out foundations
+            --out foundations/dist \
+            --legacy-out foundations
 
       - name: Detect changes
         id: diff

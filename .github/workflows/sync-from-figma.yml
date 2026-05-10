@@ -62,13 +62,18 @@ jobs:
         continue-on-error: true
         env:
           FIGMA_PAT: ${{ secrets.FIGMA_PAT }}
+        # Phase B dual-publish: registries land in components/dist/registries/
+        # (canonical) AND components/registries/ (legacy, dropped in Phase D);
+        # stubs land in components/src/guidelines/ AND components/guidelines/.
         run: |
           PHASE="${{ github.event.inputs.phase || 'all' }}"
           node scripts/sync/sync-from-figma.js \
             --phase "$PHASE" \
             --plugin-dir . \
-            --output-dir components/registries \
-            --guidelines-dir components/guidelines \
+            --output-dir components/dist/registries \
+            --legacy-output-dir components/registries \
+            --guidelines-dir components/src/guidelines \
+            --legacy-guidelines-dir components/guidelines \
             --release-notes-dir release-notes \
             --keys-file .figma-keys.json \
             --plugin-json-path package.json

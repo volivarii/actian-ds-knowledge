@@ -12,25 +12,66 @@ var fs = require("fs");
 var path = require("path");
 
 var REPO_ROOT = path.resolve(__dirname, "..");
+// Phase B: read styles from the new components/dist/registries/ path; the
+// dual-publish window keeps the legacy path mirrored, so either would work,
+// but the new path is canonical going forward.
 var STYLES_PATH = path.join(
   REPO_ROOT,
   "components",
+  "dist",
   "registries",
   "meta-kit",
   "styles.json",
 );
-var TEXT_OUT_PATH = path.join(REPO_ROOT, "components", "text-styles.md");
-var EFFECT_OUT_PATH = path.join(REPO_ROOT, "components", "effect-styles.md");
+var TEXT_OUT_PATH = path.join(
+  REPO_ROOT,
+  "components",
+  "dist",
+  "text-styles.md",
+);
+var EFFECT_OUT_PATH = path.join(
+  REPO_ROOT,
+  "components",
+  "dist",
+  "effect-styles.md",
+);
+// Phase B dual-publish (transient through Phase D).
+var LEGACY_TEXT_OUT_PATH = path.join(REPO_ROOT, "components", "text-styles.md");
+var LEGACY_EFFECT_OUT_PATH = path.join(
+  REPO_ROOT,
+  "components",
+  "effect-styles.md",
+);
 
 function loadStyles() {
-  if (!fs.existsSync(STYLES_PATH)) {
-    throw new Error(
-      "styles.json not found at " +
-        STYLES_PATH +
-        " — run sync-from-figma.js first",
-    );
+  // Phase B: prefer the new dist/ path; fall back to the legacy path for
+  // fresh clones that haven't run a sync yet. Drop the fallback in Phase D
+  // when legacy paths are removed.
+  var LEGACY_STYLES_PATH = path.join(
+    REPO_ROOT,
+    "components",
+    "registries",
+    "meta-kit",
+    "styles.json",
+  );
+  if (fs.existsSync(STYLES_PATH)) {
+    return JSON.parse(fs.readFileSync(STYLES_PATH, "utf8"));
   }
-  return JSON.parse(fs.readFileSync(STYLES_PATH, "utf8"));
+  if (fs.existsSync(LEGACY_STYLES_PATH)) {
+    console.warn(
+      "[styles-to-md] reading from legacy path " +
+        LEGACY_STYLES_PATH +
+        " (dual-publish fallback)",
+    );
+    return JSON.parse(fs.readFileSync(LEGACY_STYLES_PATH, "utf8"));
+  }
+  throw new Error(
+    "styles.json not found at " +
+      STYLES_PATH +
+      " or " +
+      LEGACY_STYLES_PATH +
+      " — run sync-from-figma.js first",
+  );
 }
 
 function renderTextStyles(styles) {
@@ -121,14 +162,20 @@ function main() {
   var styles = loadStyles();
   var textStyles = styles.textStyles || [];
   var effectStyles = styles.effectStyles || [];
-  fs.writeFileSync(TEXT_OUT_PATH, renderTextStyles(textStyles));
-  fs.writeFileSync(EFFECT_OUT_PATH, renderEffectStyles(effectStyles));
+  var textMd = renderTextStyles(textStyles);
+  var effectMd = renderEffectStyles(effectStyles);
+  fs.mkdirSync(path.dirname(TEXT_OUT_PATH), { recursive: true });
+  fs.writeFileSync(TEXT_OUT_PATH, textMd);
+  fs.writeFileSync(EFFECT_OUT_PATH, effectMd);
+  // Phase B dual-publish — write to legacy paths too. Removed in Phase D.
+  fs.writeFileSync(LEGACY_TEXT_OUT_PATH, textMd);
+  fs.writeFileSync(LEGACY_EFFECT_OUT_PATH, effectMd);
   console.log(
     "[styles-to-md] wrote " +
       textStyles.length +
       " text styles + " +
       effectStyles.length +
-      " effect styles",
+      " effect styles (dual-published to dist/ + legacy)",
   );
 }
 

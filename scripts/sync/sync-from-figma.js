@@ -95,6 +95,10 @@ async function syncRegistry(opts, kitId) {
       "Missing file key for kit '" + kitId + "' in figma keys file",
     );
   var outputPath = path.join(opts.outputDir, meta.outputFile);
+  // Phase B dual-publish (transient through Phase D).
+  var legacyOutputPath = opts.legacyOutputDir
+    ? path.join(opts.legacyOutputDir, meta.outputFile)
+    : null;
 
   var beforeFile = readJsonOrNull(outputPath);
   var before = beforeFile || {
@@ -136,6 +140,12 @@ async function syncRegistry(opts, kitId) {
   if (kitId === "metaKit" && beforeFile && beforeFile.templates) {
     after.templates = beforeFile.templates;
   }
+  // Phase B: preserve `_meta` block on metakit.json across resync. The block
+  // documents the `templates` hybrid hand-curation surface so consumers can
+  // detect it programmatically (`_meta.hybrid: true`, `_meta.hybrid_field`).
+  if (kitId === "metaKit" && beforeFile && beforeFile._meta) {
+    after._meta = beforeFile._meta;
+  }
 
   var verdict = classify({
     fileKind: "registry",
@@ -149,6 +159,12 @@ async function syncRegistry(opts, kitId) {
   if (verdict.category !== "unchanged" || !fs.existsSync(outputPath)) {
     writeJson(outputPath, after);
     wrote = true;
+    // Phase B dual-publish: also write to legacy path. The "before" diff
+    // read from the new `outputPath` is authoritative; legacy is mirrored
+    // unconditionally on every write so the two paths stay byte-identical.
+    if (legacyOutputPath) {
+      writeJson(legacyOutputPath, after);
+    }
   }
   return {
     kitId: kitId,
@@ -165,6 +181,10 @@ async function syncStyles(opts, kitId) {
       "Missing file key for kit '" + kitId + "' in figma keys file",
     );
   var outputPath = path.join(opts.outputDir, "meta-kit", "styles.json");
+  // Phase B dual-publish (transient through Phase D).
+  var legacyOutputPath = opts.legacyOutputDir
+    ? path.join(opts.legacyOutputDir, "meta-kit", "styles.json")
+    : null;
 
   var before = readJsonOrNull(outputPath) || {
     textStyles: [],
@@ -185,6 +205,9 @@ async function syncStyles(opts, kitId) {
   if (verdict.category !== "unchanged" || !fs.existsSync(outputPath)) {
     writeJson(outputPath, after);
     wrote = true;
+    if (legacyOutputPath) {
+      writeJson(legacyOutputPath, after);
+    }
   }
   return {
     kitId: kitId,
@@ -250,8 +273,14 @@ async function run(opts) {
   opts = opts || {};
   var pluginDir = opts.pluginDir || path.resolve(__dirname, "../..");
   var rest = opts.rest || defaultRest;
+  // Phase B: registries land in components/dist/registries/ (the new
+  // canonical location). legacyOutputDir is the pre-restructure location
+  // — written too during dual-publish, removed in Phase D.
   var outputDir =
-    opts.outputDir || path.join(pluginDir, "components", "registries");
+    opts.outputDir || path.join(pluginDir, "components", "dist", "registries");
+  var legacyOutputDir =
+    opts.legacyOutputDir ||
+    (opts.outputDir ? null : path.join(pluginDir, "components", "registries"));
   var releaseNotesDir =
     opts.releaseNotesDir || path.join(pluginDir, "release-notes");
   var keysFile = opts.keysFile || path.join(pluginDir, ".figma-keys.json");
@@ -261,7 +290,12 @@ async function run(opts) {
   var keys = opts.keys || readJsonOrNull(keysFile);
   if (!keys) throw new Error("Cannot read figma keys from " + keysFile);
 
-  var orchOpts = { rest: rest, outputDir: outputDir, keys: keys };
+  var orchOpts = {
+    rest: rest,
+    outputDir: outputDir,
+    legacyOutputDir: legacyOutputDir,
+    keys: keys,
+  };
   var results = [];
   var errors = [];
 
@@ -368,6 +402,7 @@ async function run(opts) {
   // when their mock REST data produces additive/breaking diffs.
   var stubsGenerated = [];
   var guidelinesDir = opts.guidelinesDir || null;
+  var legacyGuidelinesDir = opts.legacyGuidelinesDir || null;
   if (
     guidelinesDir &&
     (category === "additive" || category === "breaking") &&
@@ -382,6 +417,9 @@ async function run(opts) {
         registryPath: registryFile,
         guidelinesDir: guidelinesDir,
         indexPath: indexFile,
+        // Phase B dual-publish: stubs land in BOTH the new src/guidelines
+        // and the legacy components/guidelines paths.
+        legacyGuidelinesDir: legacyGuidelinesDir,
       });
       stubsGenerated = stubResult.generated;
     } else {
@@ -419,12 +457,15 @@ function parseArgs(argv) {
     };
     if (a === "--phase") out.phase = next();
     else if (a === "--output-dir") out.outputDir = next();
+    // Phase B dual-publish flags (transient through Phase D).
+    else if (a === "--legacy-output-dir") out.legacyOutputDir = next();
     else if (a === "--release-notes-dir") out.releaseNotesDir = next();
     else if (a === "--keys-file") out.keysFile = next();
     else if (a === "--artifacts-dir") out.artifactsDir = next();
     else if (a === "--plugin-dir") out.pluginDir = next();
     else if (a === "--plugin-json-path") out.pluginJsonPath = next();
     else if (a === "--guidelines-dir") out.guidelinesDir = next();
+    else if (a === "--legacy-guidelines-dir") out.legacyGuidelinesDir = next();
   }
   return out;
 }
@@ -445,12 +486,22 @@ if (require.main === module) {
     );
   }
   // Same pattern as pluginJsonPath above: CLI mode defaults guidelinesDir to
-  // <pluginDir>/components/guidelines so auto-stub fires without explicit
+  // <pluginDir>/components/src/guidelines so auto-stub fires without explicit
   // wiring. Programmatic callers (tests, scripts) must opt in by passing
   // guidelinesDir explicitly — keeps test fixtures from polluting the real
-  // components/guidelines/ directory on additive/breaking verdicts.
+  // guidelines directory on additive/breaking verdicts.
   if (!cliOpts.guidelinesDir) {
     cliOpts.guidelinesDir = path.join(
+      resolvedPluginDir,
+      "components",
+      "src",
+      "guidelines",
+    );
+  }
+  // Phase B dual-publish: if no explicit override, default legacy guidelines
+  // dir to the pre-restructure location. Removed in Phase D.
+  if (!cliOpts.legacyGuidelinesDir) {
+    cliOpts.legacyGuidelinesDir = path.join(
       resolvedPluginDir,
       "components",
       "guidelines",
