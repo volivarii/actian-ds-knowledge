@@ -1,0 +1,36 @@
+name: Regenerate llms.txt
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'foundations/**'
+      - 'content/**'
+      - 'accessibility/**'
+      - 'components/dist/**'
+      - 'paths-manifest.json'
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - run: node scripts/llms-txt-generate.js
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- llms.txt llms-full.txt; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add llms.txt llms-full.txt
+          git commit -m "chore: regenerate llms.txt from latest content"
+          git push
