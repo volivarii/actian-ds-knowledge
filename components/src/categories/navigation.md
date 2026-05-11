@@ -33,7 +33,7 @@ Components in this category move the user between locations or steps: account-dr
 ## Motion
 
 - **State Transitions** — hover, focus, and active item changes use the shared interaction-motion timing; transitions affect indicator position, background, and color, not layout
-- **The Anchor Motion** — applies when navigation surfaces use anchored dropdowns (account, app-switcher, notification, whats-new); the panel anchors to the trigger and animates from it
+- **The "Anchor" Motion — Dropdowns, Popovers, and Tooltips** — applies when navigation surfaces use anchored dropdowns (account, app-switcher, notification, whats-new); the panel anchors to the trigger and animates from it
 
 ## Accessibility
 

@@ -85,11 +85,11 @@
         "note": "modals enter with a scrim fade plus container scale-up from center; exit reverses; timing from motion foundations"
       },
       {
-        "pattern": "Drawer",
+        "pattern": "Drawer (open/close)",
         "note": "drawers slide in from the anchored edge with easing; the scrim fades in parallel"
       },
       {
-        "pattern": "The Anchor Motion",
+        "pattern": "The \"Anchor\" Motion — Dropdowns, Popovers, and Tooltips",
         "note": "popovers and tooltips animate from their trigger anchor; the arrow stays attached to the anchor through entry and exit"
       }
     ]
@@ -141,5 +141,5 @@
     ]
   },
   "_sourceFile": "components/src/categories/overlays.md",
-  "_generatedAt": "2026-05-11T18:21:39.286Z"
+  "_generatedAt": "2026-05-11T18:24:33.027Z"
 }

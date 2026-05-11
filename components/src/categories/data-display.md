@@ -31,8 +31,8 @@ This is the broadest category in the DS (31 components, e.g., avatar, badge, bar
 ## Motion
 
 - **State Transitions** — hover, selected, and expanded state changes use the shared interaction-motion timing; transitions affect background, border, and indicator position, not layout
-- **Accordion** — expand/collapse uses height transition with easing from motion foundations; content fades in after the container reaches target height
-- **Staggered Entrance** — long lists and grids reveal items with a short stagger to convey order; total duration capped to avoid perceived lag
+- **Accordion (expand/collapse)** — expand/collapse uses height transition with easing from motion foundations; content fades in after the container reaches target height
+- **Staggered Entrance — Lists, Table Rows, Search Cards** — long lists and grids reveal items with a short stagger to convey order; total duration capped to avoid perceived lag
 
 ## Accessibility
 

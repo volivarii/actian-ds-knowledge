@@ -33,8 +33,8 @@ Components in this category render above the page on a transient layer: chat-wit
 ## Motion
 
 - **Layered Overlays — Modals** — modals enter with a scrim fade plus container scale-up from center; exit reverses; timing from motion foundations
-- **Drawer** — drawers slide in from the anchored edge with easing; the scrim fades in parallel
-- **The Anchor Motion** — popovers and tooltips animate from their trigger anchor; the arrow stays attached to the anchor through entry and exit
+- **Drawer (open/close)** — drawers slide in from the anchored edge with easing; the scrim fades in parallel
+- **The "Anchor" Motion — Dropdowns, Popovers, and Tooltips** — popovers and tooltips animate from their trigger anchor; the arrow stays attached to the anchor through entry and exit
 
 ## Accessibility
 

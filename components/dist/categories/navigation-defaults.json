@@ -81,7 +81,7 @@
         "note": "hover, focus, and active item changes use the shared interaction-motion timing; transitions affect indicator position, background, and color, not layout"
       },
       {
-        "pattern": "The Anchor Motion",
+        "pattern": "The \"Anchor\" Motion — Dropdowns, Popovers, and Tooltips",
         "note": "applies when navigation surfaces use anchored dropdowns (account, app-switcher, notification, whats-new); the panel anchors to the trigger and animates from it"
       }
     ]
@@ -133,5 +133,5 @@
     ]
   },
   "_sourceFile": "components/src/categories/navigation.md",
-  "_generatedAt": "2026-05-11T18:20:13.347Z"
+  "_generatedAt": "2026-05-11T18:24:33.018Z"
 }

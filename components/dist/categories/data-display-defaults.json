@@ -74,11 +74,11 @@
         "note": "hover, selected, and expanded state changes use the shared interaction-motion timing; transitions affect background, border, and indicator position, not layout"
       },
       {
-        "pattern": "Accordion",
+        "pattern": "Accordion (expand/collapse)",
         "note": "expand/collapse uses height transition with easing from motion foundations; content fades in after the container reaches target height"
       },
       {
-        "pattern": "Staggered Entrance",
+        "pattern": "Staggered Entrance — Lists, Table Rows, Search Cards",
         "note": "long lists and grids reveal items with a short stagger to convey order; total duration capped to avoid perceived lag"
       }
     ]
@@ -130,5 +130,5 @@
     ]
   },
   "_sourceFile": "components/src/categories/data-display.md",
-  "_generatedAt": "2026-05-11T18:20:42.985Z"
+  "_generatedAt": "2026-05-11T18:24:33.005Z"
 }
