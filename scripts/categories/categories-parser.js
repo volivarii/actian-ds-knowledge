@@ -83,7 +83,9 @@ function extractSections(body) {
   return sections;
 }
 
-function parseBulletList(text) {
+// parseLabelDescriptionList: extracts `- **Name** — description` bullets.
+// Returns: [{ name: string, description: string }, ...]
+function parseLabelDescriptionList(text) {
   // Matches: `- **Name** — description` or `- **Name** - description`
   var re = /^-\s+\*\*([^*]+)\*\*\s+[—-]\s+(.+)$/gm;
   var items = [];
@@ -137,7 +139,7 @@ function parseAccessibilityRequirements(text) {
 module.exports = {
   extractFrontmatter: extractFrontmatter,
   extractSections: extractSections,
-  parseBulletList: parseBulletList,
+  parseLabelDescriptionList: parseLabelDescriptionList,
   parseVariantAxes: parseVariantAxes,
   parseMotionPatterns: parseMotionPatterns,
   parseAccessibilityRequirements: parseAccessibilityRequirements,

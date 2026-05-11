@@ -71,7 +71,7 @@ test("extractSections — splits H2-headed sections", function () {
   assert.ok(sections.Accessibility, "Accessibility section present");
 });
 
-test("parseBulletList — extracts name+description pairs", function () {
+test("parseLabelDescriptionList — extracts name+description pairs", function () {
   var sectionBody = [
     "Some intro prose to skip.",
     "",
@@ -82,7 +82,7 @@ test("parseBulletList — extracts name+description pairs", function () {
     "Trailing prose to skip.",
   ].join("\n");
 
-  var items = parser.parseBulletList(sectionBody);
+  var items = parser.parseLabelDescriptionList(sectionBody);
   assert.equal(items.length, 3);
   assert.equal(items[0].name, "Container");
   assert.equal(
@@ -93,8 +93,8 @@ test("parseBulletList — extracts name+description pairs", function () {
   assert.equal(items[2].name, "Icon (optional)");
 });
 
-test("parseBulletList — handles em-dash and hyphen separators", function () {
-  var items = parser.parseBulletList(
+test("parseLabelDescriptionList — handles em-dash and hyphen separators", function () {
+  var items = parser.parseLabelDescriptionList(
     "- **Foo** — em dash separator\n- **Bar** - hyphen separator",
   );
   assert.equal(items.length, 2);

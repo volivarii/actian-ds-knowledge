@@ -36,7 +36,7 @@ function deriveCategoryFile(md) {
     }
   });
 
-  var anatomy = p.parseBulletList(sections.Anatomy);
+  var anatomy = p.parseLabelDescriptionList(sections.Anatomy);
   var axes = p.parseVariantAxes(sections.Variants);
   var motion = p.parseMotionPatterns(sections.Motion);
   var a11y = p.parseAccessibilityRequirements(sections.Accessibility);
