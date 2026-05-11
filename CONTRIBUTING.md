@@ -1,5 +1,9 @@
 # Contributing to actian-ds-knowledge
 
+> **First read:** [AUTHORING.md](./AUTHORING.md) — one-page entry doc.
+
+This file covers contribution workflow (PRs, branches, releases). For authoring details, start with AUTHORING.md.
+
 This is the federated knowledge layer for the Actian Design System 2026. It feeds the [Actian DS Claude plugin](https://github.com/volivarii/Actian-DS-Claude-plugin) (vendored snapshot, refreshed nightly) and a future docs site, Storybook, and API clients.
 
 The repo is organized so **a human contributor can tell at a glance what's editable and what's CI-generated** — without reading any file's frontmatter or `_meta` block. The signal is the folder name.
