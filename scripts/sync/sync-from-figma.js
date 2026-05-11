@@ -180,10 +180,12 @@ async function syncRegistry(opts, kitId) {
   if (kitId === "dsKit" && documentChildren) {
     var categoriesTransformer = require("../transformers/transform-categories.js");
     var artifact = categoriesTransformer.buildCategoriesArtifact(after);
-    var categoriesPath = path.join(
-      path.dirname(opts.outputDir),
-      "categories.json",
-    );
+    // Prefer explicit --categories-path; fall back to legacy
+    // path.dirname(outputDir) for backwards compat with any callers that
+    // omit the flag.
+    var categoriesPath =
+      opts.categoriesPath ||
+      path.join(path.dirname(opts.outputDir), "categories.json");
     writeJson(categoriesPath, artifact);
   }
 
@@ -335,7 +337,12 @@ async function run(opts) {
   var keys = opts.keys || readJsonOrNull(keysFile);
   if (!keys) throw new Error("Cannot read figma keys from " + keysFile);
 
-  var orchOpts = { rest: rest, outputDir: outputDir, keys: keys };
+  var orchOpts = {
+    rest: rest,
+    outputDir: outputDir,
+    keys: keys,
+    categoriesPath: opts.categoriesPath || null,
+  };
   var results = [];
   var errors = [];
 
@@ -430,6 +437,21 @@ async function run(opts) {
     );
   }
 
+  // Also bump paths-manifest.json#knowledge_version if a manifest path is
+  // supplied. Mirrors the package.json bump above. Introduced 2026-05-11
+  // (knowledge v0.3.7) — pre-existing manifest assertion requires
+  // knowledge_version === package.json#version on every sync.
+  var manifestPath = opts.manifestPath || null;
+  if (manifestPath && bumpedTo && fs.existsSync(manifestPath)) {
+    var manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    manifest.knowledge_version = bumpedTo;
+    fs.writeFileSync(
+      manifestPath,
+      JSON.stringify(manifest, null, 2) + "\n",
+      "utf8",
+    );
+  }
+
   // Auto-stub: generate guideline stubs for any new set-importable
   // components that landed in this sync. No-op on unchanged. Idempotent —
   // existing guideline files are never overwritten (skip-if-exists in
@@ -499,6 +521,8 @@ function parseArgs(argv) {
     else if (a === "--plugin-dir") out.pluginDir = next();
     else if (a === "--plugin-json-path") out.pluginJsonPath = next();
     else if (a === "--guidelines-dir") out.guidelinesDir = next();
+    else if (a === "--manifest-path") out.manifestPath = next();
+    else if (a === "--categories-path") out.categoriesPath = next();
   }
   return out;
 }

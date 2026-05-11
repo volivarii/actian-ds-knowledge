@@ -26,7 +26,10 @@ jobs:
       - name: Checkout main
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0  # need full history to enumerate existing tags
+          fetch-depth: 1
+
+      - name: Fetch tags
+        run: git fetch --tags --depth=1
 
       - name: Read version
         id: ver
