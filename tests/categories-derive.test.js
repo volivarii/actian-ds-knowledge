@@ -103,3 +103,18 @@ test("parseBulletList — handles em-dash and hyphen separators", function () {
   assert.equal(items[1].name, "Bar");
   assert.equal(items[1].description, "hyphen separator");
 });
+
+test("parseVariantAxes — extracts axis+values from bullet format", function () {
+  var sectionBody = [
+    "- **State** (axis): `default | focus | error | disabled`",
+    "- **Size** (axis): `small | medium | large`",
+    "- **Label position** (axis): `top | inline`",
+  ].join("\n");
+
+  var axes = parser.parseVariantAxes(sectionBody);
+  assert.equal(axes.length, 3);
+  assert.equal(axes[0].axis, "State");
+  assert.deepEqual(axes[0].values, ["default", "focus", "error", "disabled"]);
+  assert.equal(axes[1].axis, "Size");
+  assert.deepEqual(axes[1].values, ["small", "medium", "large"]);
+});

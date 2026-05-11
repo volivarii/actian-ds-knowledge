@@ -94,8 +94,22 @@ function parseBulletList(text) {
   return items;
 }
 
+function parseVariantAxes(text) {
+  var re = /^-\s+\*\*([^*]+)\*\*\s+\(axis\):\s+`([^`]+)`\s*$/gm;
+  var axes = [];
+  var m;
+  while ((m = re.exec(text)) !== null) {
+    var values = m[2].split("|").map(function (v) {
+      return v.trim();
+    });
+    axes.push({ axis: m[1].trim(), values: values });
+  }
+  return axes;
+}
+
 module.exports = {
   extractFrontmatter: extractFrontmatter,
   extractSections: extractSections,
   parseBulletList: parseBulletList,
+  parseVariantAxes: parseVariantAxes,
 };
