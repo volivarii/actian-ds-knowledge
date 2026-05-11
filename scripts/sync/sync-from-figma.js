@@ -123,6 +123,19 @@ async function syncRegistry(opts, kitId) {
     fetchNodesMap(opts.rest, fileKey, standaloneIds),
   ]);
 
+  // For dsKit only, also fetch the document tree to capture page-section
+  // category grouping. The team encodes categories via a page-naming
+  // convention (see components/AUTHORING.md). FM Kit (single page) and
+  // Meta Kit (already tool-grouped) don't have a category structure.
+  var documentChildren = null;
+  if (kitId === "dsKit") {
+    var fileResp = await opts.rest.getFile(fileKey, { depth: 1 });
+    documentChildren =
+      (fileResp && fileResp.document && fileResp.document.children) || [];
+  }
+
+  var categoryWarnings = [];
+
   var after = transformRegistry({
     library: meta.library,
     fileKey: fileKey,
@@ -130,6 +143,10 @@ async function syncRegistry(opts, kitId) {
     componentSetNodes: componentSetNodes,
     standalones: standalones,
     standaloneNodes: standaloneNodes,
+    documentChildren: documentChildren,
+    onWarnings: function (ws) {
+      categoryWarnings = ws || [];
+    },
   });
 
   // Meta Kit: preserve hand-curated `templates` section across resync (Task 2.3).
@@ -156,11 +173,26 @@ async function syncRegistry(opts, kitId) {
     writeJson(outputPath, after);
     wrote = true;
   }
+
+  // Emit components/dist/categories.json alongside the registry for dsKit
+  // only. Always rewrite — small file; downstream consumers should never
+  // read a stale snapshot when registry data shifted.
+  if (kitId === "dsKit" && documentChildren) {
+    var categoriesTransformer = require("../transformers/transform-categories.js");
+    var artifact = categoriesTransformer.buildCategoriesArtifact(after);
+    var categoriesPath = path.join(
+      path.dirname(opts.outputDir),
+      "categories.json",
+    );
+    writeJson(categoriesPath, artifact);
+  }
+
   return {
     kitId: kitId,
     fileLabel: meta.outputFile,
     verdict: verdict,
     wrote: wrote,
+    categoryWarnings: categoryWarnings,
   };
 }
 
@@ -238,6 +270,25 @@ function buildChangelog(date, category, results, errors) {
     lines.push("");
     lines.push(r.verdict.changelog || "_(empty)_");
     lines.push("");
+    if (r.categoryWarnings && r.categoryWarnings.length > 0) {
+      lines.push("### Component category drift (warn-only)");
+      r.categoryWarnings.forEach(function (w) {
+        if (w.code === "UNKNOWN_CATEGORY") {
+          lines.push(
+            "- ⚠️ Unknown category `" +
+              w.category +
+              "` (members: " +
+              (w.members || []).join(", ") +
+              ")",
+          );
+        } else if (w.code === "MISSING_KNOWN_CATEGORY") {
+          lines.push("- ⚠️ Missing expected category `" + w.category + "`");
+        } else if (w.code === "MEMBER_WITHOUT_CATEGORY") {
+          lines.push("- ⚠️ Member page `" + w.page + "` has no category");
+        }
+      });
+      lines.push("");
+    }
   });
   if (errors.length > 0) {
     lines.push("## Errors (" + errors.length + ")");
