@@ -1,6 +1,6 @@
 {
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.3.3",
+  "knowledge_version": "0.3.4",
   "paths": {
     "foundations.md": {
       "path": "foundations/src/foundations.md",
