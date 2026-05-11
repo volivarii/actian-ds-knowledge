@@ -1,0 +1,94 @@
+name: Derive content/dist/content.md from content/src/*.md
+
+# Federation Phase 2 — consolidated content guidelines auto-generated
+# from per-component source files in content/src/. Runs on PR events
+# that touch the sources or the generator; regenerates content.md and
+# commits it back to the PR branch.
+#
+# Required repo setting (already enabled for foundations-derive):
+#   Settings → Actions → General → Workflow permissions → Allow GH Actions
+#     to create and approve pull requests
+
+on:
+  pull_request:
+    paths:
+      - 'content/src/**/*.md'
+      - 'scripts/content/derive-content.js'
+
+jobs:
+  derive:
+    name: Derive content/dist/content.md
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Derive content.md
+        run: |
+          node scripts/content/derive-content.js \
+            --src content/src \
+            --index content/src/content-index.md \
+            --out content/dist/content.md
+
+      - name: Run tests against regenerated output
+        run: npm test
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet -- content/dist/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No content.md changes after regeneration."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Content changes detected:"
+            git diff --stat -- content/dist/
+          fi
+
+      - name: Auto-bump package.json patch
+        if: steps.diff.outputs.changed == 'true'
+        run: node scripts/lib/bump-version.js package.json patch
+
+      - name: Commit derived content back to PR
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add content/dist/ package.json
+          git commit -m "chore(content): regenerate content.md from content/src/ + bump patch"
+          git push
+
+      - name: Tag release
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          VERSION=$(jq -r .version package.json)
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists locally, skipping"
+          else
+            git tag "v$VERSION"
+            git push origin "v$VERSION" || echo "Tag push failed (likely already exists on remote)"
+          fi
+
+      - name: Summarize
+        if: always()
+        run: |
+          if [ "${{ steps.diff.outputs.changed }}" = "true" ]; then
+            echo "### Content derive: regenerated" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Content derive: no changes" >> "$GITHUB_STEP_SUMMARY"
+          fi

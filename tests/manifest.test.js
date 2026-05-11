@@ -22,6 +22,22 @@ test("paths-manifest.json — schema correctness", async (t) => {
     assert.ok(manifest.aliases !== undefined, "aliases field present");
   });
 
+  await t.test("knowledge_version matches package.json#version", () => {
+    // knowledge_version is the data-content version (vs manifest_schema_version
+    // which is the schema-format version). Plugin's vendor-snapshot writes the
+    // resolved tag into vendored.json#resolved_version; the vendored manifest's
+    // knowledge_version must match that for snapshot integrity. Both fields
+    // must equal package.json#version — this test catches drift before publish.
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
+    );
+    assert.equal(
+      manifest.knowledge_version,
+      pkg.version,
+      "manifest.knowledge_version drifted from package.json — bump both together",
+    );
+  });
+
   await t.test("every path entry has required fields", () => {
     for (const [name, entry] of Object.entries(manifest.paths)) {
       assert.ok(entry.path, `${name}: missing path`);
@@ -37,10 +53,7 @@ test("paths-manifest.json — schema correctness", async (t) => {
         `${name}: invalid origin "${entry.origin}"`,
       );
       if (entry.origin === "ci") {
-        assert.ok(
-          entry.generator,
-          `${name}: ci entry missing generator field`,
-        );
+        assert.ok(entry.generator, `${name}: ci entry missing generator field`);
       }
     }
   });
