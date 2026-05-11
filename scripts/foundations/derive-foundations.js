@@ -96,6 +96,32 @@ function slugifyPatternName(name) {
   return s;
 }
 
+// Canonical pattern slugs per Q1 2026 ecosystem plan PR α. These are
+// stable cross-reference identifiers consumed by category defaults
+// (Phase 2 v2) and the future MCP server. Independent of the short
+// object-key slug (legacy) used as the patterns map key.
+var CANONICAL_PATTERN_SLUGS = {
+  "Drawer (open/close)": "drawer-open-close",
+  "Accordion (expand/collapse)": "accordion-expand-collapse",
+  "Success Toast": "success-toast",
+  'The "Anchor" Motion — Dropdowns, Popovers, and Tooltips': "anchor-motion",
+  "Layered Overlays — Modals": "layered-overlays-modals",
+  "Skeleton Loading": "skeleton-loading",
+  "Staggered Entrance — Lists, Table Rows, Search Cards": "staggered-entrance",
+  "State Transitions": "state-transitions",
+};
+
+function canonicalSlugForPattern(name) {
+  if (CANONICAL_PATTERN_SLUGS[name]) return CANONICAL_PATTERN_SLUGS[name];
+  // Fallback: derive a fuller slug from the name without dropping parens/em-dash content.
+  var decoded = decodeHtmlEntities(name)
+    .replace(/^The\s+/i, "")
+    .replace(/["“”]/g, "")
+    .trim()
+    .toLowerCase();
+  return decoded.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 // Bold-paragraph labels that look like patterns but are actually sub-sections
 // of the *previous* pattern. Currently only "Logic & Accessibility" qualifies
 // (it's nested under the Anchor Motion pattern in foundations.md). Add new
@@ -188,7 +214,11 @@ function buildMotionPayload(contentTokens, logger) {
             currentPatternSlug = null;
             continue;
           }
-          payload.patterns[slug] = { name: name, phases: [] };
+          payload.patterns[slug] = {
+            slug: canonicalSlugForPattern(name),
+            name: name,
+            phases: [],
+          };
           currentPatternSlug = slug;
           continue;
         }
@@ -319,8 +349,8 @@ function addMetaHeader(payload) {
     source: "foundations/src/foundations.md",
     do_not_edit: "Edit the source MD; CI regenerates this file.",
   };
-  // Place _meta first by constructing a new object key-by-key.
-  var out = { _meta: meta };
+  // Place _schema_version first, then _meta, then payload keys.
+  var out = { _schema_version: 1, _meta: meta };
   var keys = Object.keys(payload);
   for (var i = 0; i < keys.length; i++) {
     out[keys[i]] = payload[keys[i]];
