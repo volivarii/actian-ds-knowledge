@@ -157,6 +157,13 @@
       "origin": "human",
       "description": "WCAG 2.2 AA guidance for the Actian DS"
     },
+    "accessibility.index": {
+      "path": "accessibility/dist/a11y-index.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/accessibility/derive-a11y-index.js",
+      "description": "Slug → WCAG mapping for accessibility sections; consumed by Phase 2 category defaults + future MCP server."
+    },
     "presentation": {
       "path": "presentation/presentation-guide.md",
       "type": "markdown",
