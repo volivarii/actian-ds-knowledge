@@ -20,6 +20,9 @@
 
 var DESCRIPTION_MAX = 200; // matches project_sync_skill_enhancements.md item #2
 
+var inferCategoryMap = require("./transform-categories.js").inferCategoryMap;
+var statusParser = require("./component-status-emoji.js");
+
 function slugify(name) {
   // Lowercase + hyphenated. "Button" → "button"; "Tab Bar" → "tab-bar".
   return String(name)
@@ -75,9 +78,11 @@ function splitVariantAndProperties(definitions) {
   return { variants: variants, properties: properties };
 }
 
-function buildEntry(meta, node, importMethod, lastSyncedIso) {
+function buildEntry(meta, node, importMethod, lastSyncedIso, categoryEntry) {
   var doc = (node && node.document) || {};
   var split = splitVariantAndProperties(doc.componentPropertyDefinitions);
+
+  var pageName = pageNameFromContainingFrame(meta.containing_frame);
 
   var entry = {
     name: meta.name,
@@ -86,11 +91,23 @@ function buildEntry(meta, node, importMethod, lastSyncedIso) {
     importMethod: importMethod,
     description: trimDescription(meta.description),
     lastSynced: lastSyncedIso,
-    page: pageNameFromContainingFrame(meta.containing_frame),
+    page: pageName,
     properties: split.properties,
     nestedComponents: [],
     guidelinesFile: null,
   };
+
+  // Apply category + status only when an inferred entry was supplied
+  // (i.e., for dsKit syncs that pass documentChildren). Lookup is keyed
+  // by the component cleanName, which transform-categories strips from
+  // the page-name's status-emoji prefix.
+  if (categoryEntry) {
+    entry.category = categoryEntry.category;
+    if (categoryEntry.status != null) {
+      entry.status = categoryEntry.status;
+    }
+  }
+
   if (importMethod === "set") {
     entry.variants = split.variants || {};
   }
@@ -104,6 +121,7 @@ function transformRegistry(input) {
   var componentSetNodes = input.componentSetNodes || {};
   var standalones = input.standalones || [];
   var standaloneNodes = input.standaloneNodes || {};
+  var documentChildren = input.documentChildren || null;
   var lastSyncedIso = new Date().toISOString();
 
   var registry = {
@@ -114,11 +132,44 @@ function transformRegistry(input) {
     components: {},
   };
 
+  // Build category lookup once. The map is keyed by the component
+  // cleanName (e.g., "Button"), so we look up by meta.name rather than
+  // the page-name string. Warnings are surfaced via input.onWarnings if
+  // the caller wants them.
+  var categoryMap = null;
+  if (documentChildren) {
+    var inference = inferCategoryMap(documentChildren);
+    categoryMap = inference.map;
+    if (typeof input.onWarnings === "function") {
+      input.onWarnings(inference.warnings);
+    }
+  }
+
+  // The categoryMap is keyed by page clean-name (e.g., "Tag (Identification key)"),
+  // not by component name. A single page can host multiple components (tag-*,
+  // loading variants, data-viz variants); they all share the page's category.
+  // Look up by the component's containing_frame.pageName with the status
+  // emoji stripped.
+  function lookupCategoryEntry(meta) {
+    if (!categoryMap) return null;
+    var pageName =
+      (meta && meta.containing_frame && meta.containing_frame.pageName) || "";
+    var cleanPage = statusParser.extractStatus(pageName).cleanName;
+    if (!cleanPage) return null;
+    return categoryMap[cleanPage] || null;
+  }
+
   // Component sets
   componentSets.forEach(function (meta) {
     if (isInternalName(meta.name)) return;
     var node = componentSetNodes[meta.node_id];
-    var entry = buildEntry(meta, node, "set", lastSyncedIso);
+    var entry = buildEntry(
+      meta,
+      node,
+      "set",
+      lastSyncedIso,
+      lookupCategoryEntry(meta),
+    );
     var slug = slugify(meta.name);
     registry.components[slug] = entry;
   });
@@ -127,7 +178,13 @@ function transformRegistry(input) {
   standalones.forEach(function (meta) {
     if (isInternalName(meta.name)) return;
     var node = standaloneNodes[meta.node_id];
-    var entry = buildEntry(meta, node, "single", lastSyncedIso);
+    var entry = buildEntry(
+      meta,
+      node,
+      "single",
+      lastSyncedIso,
+      lookupCategoryEntry(meta),
+    );
     var slug = slugify(meta.name);
     // Don't clobber a set entry on a name collision (sets win).
     if (slug in registry.components) return;
