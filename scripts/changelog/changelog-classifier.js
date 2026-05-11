@@ -191,17 +191,25 @@ function entryBreakingReasons(b, a) {
           (a.name || b.name),
       );
     }
-    if (bP[key].default !== aP[key].default && bP[key].type === aP[key].type) {
-      reasons.push(
-        "property default change '" +
-          key +
-          "' " +
-          JSON.stringify(bP[key].default) +
-          " → " +
-          JSON.stringify(aP[key].default) +
-          " on " +
-          (a.name || b.name),
-      );
+    if (bP[key].type === aP[key].type) {
+      // Compare defaults via JSON.stringify: reference equality (!==) gives
+      // false positives on object defaults (Figma INSTANCE_SWAP stores
+      // {guid: {…}}). Stringified comparison correctly treats two
+      // structurally-equal objects as equal.
+      var bDefault = JSON.stringify(bP[key].default);
+      var aDefault = JSON.stringify(aP[key].default);
+      if (bDefault !== aDefault) {
+        reasons.push(
+          "property default change '" +
+            key +
+            "' " +
+            bDefault +
+            " → " +
+            aDefault +
+            " on " +
+            (a.name || b.name),
+        );
+      }
     }
   });
 
