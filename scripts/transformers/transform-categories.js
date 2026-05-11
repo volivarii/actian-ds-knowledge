@@ -130,6 +130,10 @@ function inferCategoryMap(documentChildren) {
       warnings[unknownCategoryIndex[currentCategory]].members.push(memberKey);
     }
 
+    // status: null in the map means the caller should OMIT the field
+    // entirely (mirrors foundations precedent for ✅). transform-registry's
+    // buildEntry guards with `if (categoryEntry.status != null)` before
+    // assigning.
     map[memberKey] = { category: currentCategory, status: parsed.status };
   }
 

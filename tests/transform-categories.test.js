@@ -360,3 +360,164 @@ test("_isSeparator — only dashes returns true", function () {
   assert.equal(mod._isSeparator("Action"), false);
   assert.equal(mod._isSeparator(""), false);
 });
+
+var transformRegistry = require(
+  path.join(
+    __dirname,
+    "..",
+    "scripts",
+    "transformers",
+    "transform-registry.js",
+  ),
+);
+
+test("transform-registry — applies category + status from documentChildren", function () {
+  var componentSets = [
+    {
+      name: "Button",
+      key: "k-button",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✍️ Button" },
+    },
+    {
+      name: "Calendar",
+      key: "k-calendar",
+      node_id: "1:2",
+      description: "",
+      containing_frame: { pageName: "✅ Calendar" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+    "1:2": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "     ✍️ Button" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "     ✅ Calendar" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test-key",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+  });
+
+  assert.equal(registry.components["button"].category, "Action");
+  assert.equal(registry.components["button"].status, "in-progress");
+  assert.equal(
+    registry.components["calendar"].category,
+    "Form (input & selection)",
+  );
+  // ✅ → status field absent
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(
+      registry.components["calendar"],
+      "status",
+    ),
+    false,
+    "✅ pages have no status field",
+  );
+});
+
+test("transform-registry — without documentChildren, no category/status fields added", function () {
+  var componentSets = [
+    {
+      name: "Button",
+      key: "k-button",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✍️ Button" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test-key",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    // documentChildren omitted
+  });
+
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(
+      registry.components["button"],
+      "category",
+    ),
+    false,
+  );
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(
+      registry.components["button"],
+      "status",
+    ),
+    false,
+  );
+});
+
+test("transform-registry — component not in map gets no category/status (miss path)", function () {
+  // documentChildren supplied, but "Icon" is not a member page in it.
+  // Lookup returns null; buildEntry skips category + status entirely.
+  var componentSets = [
+    {
+      name: "Icon",
+      key: "k-icon",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "Icon" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "     ✅ Button" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test-key",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+  });
+
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(
+      registry.components["icon"],
+      "category",
+    ),
+    false,
+    "component absent from map gets no category",
+  );
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(registry.components["icon"], "status"),
+    false,
+    "component absent from map gets no status",
+  );
+});

@@ -29,7 +29,15 @@ function isRegistryUnchanged(beforeReg, afterReg) {
 
 function shallowEqualEntry(b, a) {
   if (!b || !a) return b === a;
-  // Skip lastSynced; everything else must match
+  // Skip lastSynced; everything else must match.
+  //
+  // Note on `category` + `status`: the first sync after these fields
+  // were introduced (Task 4 of the component-category-sync work) will
+  // surface every DS Kit component as "modified" in the changelog
+  // because before-entries lack the fields entirely while after-entries
+  // gain them. The verdict will still classify as "additive" since
+  // entryBreakingReasons() doesn't flag these fields. One-time noise;
+  // subsequent syncs only diff real changes.
   var keys = [
     "name",
     "key",
@@ -37,6 +45,8 @@ function shallowEqualEntry(b, a) {
     "importMethod",
     "description",
     "page",
+    "category",
+    "status",
     "guidelinesFile",
   ];
   for (var i = 0; i < keys.length; i++) {
