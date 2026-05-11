@@ -1,0 +1,138 @@
+{
+  "_meta": {
+    "auto_generated": true,
+    "source": "components/src/categories/action.md",
+    "do_not_edit": "Edit the source MD file; CI regenerates this dist file."
+  },
+  "slug": "action",
+  "label": "Action",
+  "authoring_status": "engineer-seed",
+  "confidence": {
+    "anatomy": "medium",
+    "variants": "medium",
+    "motion": "high",
+    "a11y": "high"
+  },
+  "last_reviewed": "2026-05-11",
+  "card_anatomy": {
+    "parts": [
+      {
+        "name": "Container",
+        "description": "interactive surface that carries intent styling, padding, and the focus ring"
+      },
+      {
+        "name": "Label",
+        "description": "caller-supplied text describing the action; the accessible name"
+      },
+      {
+        "name": "Leading icon (optional)",
+        "description": "decorative or semantic hint anchored before the label"
+      },
+      {
+        "name": "Trailing icon (optional)",
+        "description": "affordance hint after the label (caret, external-link, arrow)"
+      },
+      {
+        "name": "Loading spinner (optional)",
+        "description": "replaces or augments the label during async work; pairs with disabled-like styling"
+      }
+    ]
+  },
+  "card_component": {
+    "variantAxes": [
+      {
+        "axis": "Intent",
+        "values": [
+          "primary",
+          "secondary",
+          "tertiary",
+          "destructive"
+        ]
+      },
+      {
+        "axis": "Size",
+        "values": [
+          "small",
+          "medium",
+          "large"
+        ]
+      },
+      {
+        "axis": "State",
+        "values": [
+          "default",
+          "hover",
+          "active",
+          "focus",
+          "disabled",
+          "loading"
+        ]
+      },
+      {
+        "axis": "Icon position",
+        "values": [
+          "none",
+          "leading",
+          "trailing",
+          "icon-only"
+        ]
+      }
+    ]
+  },
+  "card_motion": {
+    "patterns": [
+      {
+        "pattern": "State Transitions",
+        "note": "hover, focus, and active feedback use the shared interaction-motion timing (see `foundations/dist/interaction-motion.json`); transitions affect background, border, and elevation, not layout"
+      }
+    ]
+  },
+  "card_accessibility": {
+    "requirements": [
+      {
+        "title": "Keyboard operability",
+        "wcag": [
+          "2.1.1"
+        ],
+        "body": "every action is reachable and activatable from keyboard; buttons fire on Enter and Space, links on Enter"
+      },
+      {
+        "title": "Focus visible",
+        "wcag": [
+          "2.4.7"
+        ],
+        "body": "focus ring meets 3:1 contrast against the surrounding surface; never remove the outline without an equivalent indicator"
+      },
+      {
+        "title": "Accessible name",
+        "wcag": [
+          "4.1.2"
+        ],
+        "body": "icon-only actions require `aria-label` or visually hidden text; the name describes the action, not the icon"
+      },
+      {
+        "title": "Color independence",
+        "wcag": [
+          "1.4.1"
+        ],
+        "body": "destructive, disabled, and active states are not signaled by color alone; pair with icon, text, or border treatment"
+      },
+      {
+        "title": "Loading-state announcement",
+        "wcag": [
+          "4.1.3"
+        ],
+        "body": "async actions expose progress via `aria-busy` or a live-region status; the visible spinner alone is not sufficient for assistive tech"
+      },
+      {
+        "title": "Link-vs-button semantics",
+        "wcag": [
+          "4.1.2"
+        ],
+        "body": "use `<button>` for actions and `<a href>` for navigation; do not style one as the other without correcting the underlying role"
+      }
+    ]
+  },
+  "_sourceFile": "components/src/categories/action.md",
+  "_generatedAt": "2026-05-11T18:19:48.421Z"
+}
