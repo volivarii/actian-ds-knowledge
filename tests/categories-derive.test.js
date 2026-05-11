@@ -153,3 +153,107 @@ test("parseAccessibilityRequirements — extracts title + wcag + body", function
   assert.deepEqual(reqs[0].wcag, ["1.3.1", "3.3.2"]);
   assert.ok(reqs[0].body.indexOf("visible label") > -1);
 });
+
+var derive = require("../scripts/categories/derive-categories.js");
+var fs = require("node:fs");
+var path = require("node:path");
+var os = require("node:os");
+
+test("deriveCategoryFile — produces full per-card shape", function () {
+  var md = [
+    "---",
+    "slug: form-input-selection",
+    "label: Form (input & selection)",
+    "authoring_status: engineer-seed",
+    "confidence:",
+    "  anatomy: medium",
+    "  variants: medium",
+    "  motion: high",
+    "  a11y: high",
+    "last_reviewed: 2026-05-11",
+    "---",
+    "",
+    "# Form — defaults",
+    "",
+    "## Anatomy",
+    "",
+    "- **Label** — caller-supplied text",
+    "- **Control** — input/select/checkbox",
+    "",
+    "## Variants",
+    "",
+    "- **State** (axis): `default | focus | error | disabled`",
+    "- **Size** (axis): `small | medium | large`",
+    "",
+    "## Motion",
+    "",
+    "- **State Transitions** — focus, hover, active",
+    "",
+    "## Accessibility",
+    "",
+    "- **Label association** (WCAG 1.3.1, 3.3.2) — every control has a visible label",
+    "- **Error announcement** (WCAG 3.3.1) — validation uses aria-live",
+    "- **Required indication** (WCAG 3.3.2) — not color-only",
+    "- **Keyboard operability** (WCAG 2.1.1) — operable from keyboard",
+    "- **Focus visible** (WCAG 2.4.7) — visible focus ring",
+    "- **Color independence** (WCAG 1.4.1) — state not signaled by color alone",
+  ].join("\n");
+
+  var result = derive.deriveCategoryFile(md);
+
+  assert.equal(result.slug, "form-input-selection");
+  assert.equal(result.label, "Form (input & selection)");
+  assert.equal(result.authoring_status, "engineer-seed");
+  assert.equal(result.confidence.motion, "high");
+
+  // Card sections
+  assert.equal(result.card_anatomy.parts.length, 2);
+  assert.equal(result.card_anatomy.parts[0].name, "Label");
+  assert.equal(result.card_component.variantAxes.length, 2);
+  assert.equal(result.card_motion.patterns.length, 1);
+  assert.equal(result.card_accessibility.requirements.length, 6);
+
+  // Required fields present
+  assert.ok(result._generatedAt);
+  assert.ok(typeof result._generatedAt === "string");
+});
+
+test("deriveCategoryFile — rejects missing required frontmatter field", function () {
+  var md = ["---", "label: No slug here", "---", "", "# body"].join("\n");
+
+  assert.throws(function () {
+    derive.deriveCategoryFile(md);
+  }, /missing required frontmatter field: slug/i);
+});
+
+test("deriveCategoryFile — rejects fewer than 6 accessibility requirements", function () {
+  var md = [
+    "---",
+    "slug: action",
+    "label: Action",
+    "authoring_status: engineer-seed",
+    "confidence:",
+    "  anatomy: medium",
+    "  variants: medium",
+    "  motion: high",
+    "  a11y: high",
+    "last_reviewed: 2026-05-11",
+    "---",
+    "",
+    "## Anatomy",
+    "- **Container** — wrapper",
+    "",
+    "## Variants",
+    "- **Intent** (axis): `primary | secondary`",
+    "",
+    "## Motion",
+    "- **State Transitions** — hover/active",
+    "",
+    "## Accessibility",
+    "- **Just one** (WCAG 2.1.1) — only one requirement here",
+  ].join("\n");
+
+  assert.throws(function () {
+    derive.deriveCategoryFile(md);
+  }, /accessibility requirements: expected 6, got 1/i);
+});
