@@ -1,0 +1,137 @@
+{
+  "_meta": {
+    "auto_generated": true,
+    "source": "components/src/categories/navigation.md",
+    "do_not_edit": "Edit the source MD file; CI regenerates this dist file."
+  },
+  "slug": "navigation",
+  "label": "Navigation",
+  "authoring_status": "engineer-seed",
+  "confidence": {
+    "anatomy": "medium",
+    "variants": "medium",
+    "motion": "high",
+    "a11y": "high"
+  },
+  "last_reviewed": "2026-05-11",
+  "card_anatomy": {
+    "parts": [
+      {
+        "name": "Container",
+        "description": "landmark surface (header, nav, aside) that scopes the navigation region"
+      },
+      {
+        "name": "Items list",
+        "description": "ordered set of links, tabs, or steps; each item is the primary interactive target"
+      },
+      {
+        "name": "Current-item indicator",
+        "description": "visual treatment that marks the active location or step"
+      },
+      {
+        "name": "Item icon (optional)",
+        "description": "leading glyph paired with the item label"
+      },
+      {
+        "name": "Badge or count (optional)",
+        "description": "numeric or dot indicator attached to an item"
+      },
+      {
+        "name": "Separator (optional)",
+        "description": "divides groups or path segments (e.g., breadcrumb chevrons)"
+      }
+    ]
+  },
+  "card_component": {
+    "variantAxes": [
+      {
+        "axis": "Orientation",
+        "values": [
+          "horizontal",
+          "vertical"
+        ]
+      },
+      {
+        "axis": "Density",
+        "values": [
+          "compact",
+          "comfortable"
+        ]
+      },
+      {
+        "axis": "Current-state",
+        "values": [
+          "active",
+          "inactive"
+        ]
+      },
+      {
+        "axis": "Icon usage",
+        "values": [
+          "with-icons",
+          "without-icons"
+        ]
+      }
+    ]
+  },
+  "card_motion": {
+    "patterns": [
+      {
+        "pattern": "State Transitions",
+        "note": "hover, focus, and active item changes use the shared interaction-motion timing; transitions affect indicator position, background, and color, not layout"
+      },
+      {
+        "pattern": "The Anchor Motion",
+        "note": "applies when navigation surfaces use anchored dropdowns (account, app-switcher, notification, whats-new); the panel anchors to the trigger and animates from it"
+      }
+    ]
+  },
+  "card_accessibility": {
+    "requirements": [
+      {
+        "title": "Landmark roles",
+        "wcag": [
+          "1.3.1"
+        ],
+        "body": "primary navigation uses `<nav>` or `role=\"navigation\"`; multiple navs on a page each carry a distinct `aria-label`"
+      },
+      {
+        "title": "Current-page indication",
+        "wcag": [
+          "4.1.2"
+        ],
+        "body": "the active item is exposed via `aria-current=\"page\"`, `aria-current=\"step\"`, or `aria-selected` (tabs); visual treatment alone is not sufficient"
+      },
+      {
+        "title": "Keyboard navigation",
+        "wcag": [
+          "2.1.1"
+        ],
+        "body": "items reachable in DOM order; tabs follow the WAI-ARIA tabs pattern (arrow keys move focus, Tab leaves the list); dropdowns expose Enter/Space to open and Escape to close"
+      },
+      {
+        "title": "Skip links",
+        "wcag": [
+          "2.4.1"
+        ],
+        "body": "long primary navigation precedes a \"skip to main content\" link so assistive-tech users can bypass it"
+      },
+      {
+        "title": "Focus order",
+        "wcag": [
+          "2.4.3"
+        ],
+        "body": "focus order matches visual order; orientation changes (vertical vs horizontal) preserve a single logical sequence"
+      },
+      {
+        "title": "Accessible label clarity",
+        "wcag": [
+          "2.4.6"
+        ],
+        "body": "item labels describe the destination, not the visual treatment; icon-only items carry `aria-label`"
+      }
+    ]
+  },
+  "_sourceFile": "components/src/categories/navigation.md",
+  "_generatedAt": "2026-05-11T18:20:13.347Z"
+}
