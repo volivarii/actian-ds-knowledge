@@ -142,7 +142,7 @@
       "path": "content/content.md",
       "type": "markdown",
       "origin": "human",
-      "description": "UI copy guidelines — sentence case, action verbs, error messages, empty states (Jeff)"
+      "description": "UI copy guidelines — consolidated summary index (parallel-change with content/src/*.md per-component files; will be auto-generated and retired in Phase 2)"
     },
     "accessibility": {
       "path": "accessibility/accessibility.md",
@@ -176,6 +176,13 @@
       "type": "json",
       "origin": "hybrid",
       "description": "Per-component guideline JSON (44 hand-curated + 41 auto-stubs as of 2026-05-10). _index.json sibling tracks coverage."
+    },
+    "content.section": {
+      "dir": "content/src",
+      "pattern": "{slug}.md",
+      "type": "markdown",
+      "origin": "human",
+      "description": "Per-component content guidelines (Jeff, folded in 2026-05-11). 37 component files + global-guidelines.md (voice + words-to-avoid) + content-index.md (AI query guide) + format-spec.md (markdown structure + Figma/Word output mapping). Each component file follows When-to-use → Style → Behavior → Do/Don't."
     }
   },
   "aliases": {}
