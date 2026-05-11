@@ -221,14 +221,17 @@ if (require.main === module) {
   var report = argv.indexOf("--report") !== -1;
 
   // Resolves to the knowledge-repo root from scripts/foundations/.
+  // Post-Phase-B (manifest): registry under components/dist/registries/,
+  // stubs under components/src/guidelines/.
   var repoRoot = path.resolve(__dirname, "..", "..");
   var registryPath = path.join(
     repoRoot,
     "components",
+    "dist",
     "registries",
     "dskit.json",
   );
-  var guidelinesDir = path.join(repoRoot, "components", "guidelines");
+  var guidelinesDir = path.join(repoRoot, "components", "src", "guidelines");
   var indexPath = path.join(guidelinesDir, "_index.json");
 
   var result = generateStubs({

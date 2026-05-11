@@ -136,6 +136,12 @@ async function syncRegistry(opts, kitId) {
   if (kitId === "metaKit" && beforeFile && beforeFile.templates) {
     after.templates = beforeFile.templates;
   }
+  // Phase B: preserve `_meta` block on metakit.json across resync. The block
+  // documents the `templates` hybrid hand-curation surface so consumers can
+  // detect it programmatically (`_meta.hybrid: true`, `_meta.hybrid_field`).
+  if (kitId === "metaKit" && beforeFile && beforeFile._meta) {
+    after._meta = beforeFile._meta;
+  }
 
   var verdict = classify({
     fileKind: "registry",
@@ -251,7 +257,7 @@ async function run(opts) {
   var pluginDir = opts.pluginDir || path.resolve(__dirname, "../..");
   var rest = opts.rest || defaultRest;
   var outputDir =
-    opts.outputDir || path.join(pluginDir, "components", "registries");
+    opts.outputDir || path.join(pluginDir, "components", "dist", "registries");
   var releaseNotesDir =
     opts.releaseNotesDir || path.join(pluginDir, "release-notes");
   var keysFile = opts.keysFile || path.join(pluginDir, ".figma-keys.json");
@@ -445,14 +451,15 @@ if (require.main === module) {
     );
   }
   // Same pattern as pluginJsonPath above: CLI mode defaults guidelinesDir to
-  // <pluginDir>/components/guidelines so auto-stub fires without explicit
+  // <pluginDir>/components/src/guidelines so auto-stub fires without explicit
   // wiring. Programmatic callers (tests, scripts) must opt in by passing
   // guidelinesDir explicitly — keeps test fixtures from polluting the real
-  // components/guidelines/ directory on additive/breaking verdicts.
+  // guidelines directory on additive/breaking verdicts.
   if (!cliOpts.guidelinesDir) {
     cliOpts.guidelinesDir = path.join(
       resolvedPluginDir,
       "components",
+      "src",
       "guidelines",
     );
   }

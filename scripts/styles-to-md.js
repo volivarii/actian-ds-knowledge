@@ -15,12 +15,23 @@ var REPO_ROOT = path.resolve(__dirname, "..");
 var STYLES_PATH = path.join(
   REPO_ROOT,
   "components",
+  "dist",
   "registries",
   "meta-kit",
   "styles.json",
 );
-var TEXT_OUT_PATH = path.join(REPO_ROOT, "components", "text-styles.md");
-var EFFECT_OUT_PATH = path.join(REPO_ROOT, "components", "effect-styles.md");
+var TEXT_OUT_PATH = path.join(
+  REPO_ROOT,
+  "components",
+  "dist",
+  "text-styles.md",
+);
+var EFFECT_OUT_PATH = path.join(
+  REPO_ROOT,
+  "components",
+  "dist",
+  "effect-styles.md",
+);
 
 function loadStyles() {
   if (!fs.existsSync(STYLES_PATH)) {
