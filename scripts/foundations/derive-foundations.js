@@ -349,8 +349,8 @@ function addMetaHeader(payload) {
     source: "foundations/src/foundations.md",
     do_not_edit: "Edit the source MD; CI regenerates this file.",
   };
-  // Place _meta first by constructing a new object key-by-key.
-  var out = { _meta: meta };
+  // Place _schema_version first, then _meta, then payload keys.
+  var out = { _schema_version: 1, _meta: meta };
   var keys = Object.keys(payload);
   for (var i = 0; i < keys.length; i++) {
     out[keys[i]] = payload[keys[i]];
