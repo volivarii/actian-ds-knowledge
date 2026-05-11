@@ -19,7 +19,7 @@ test("extractFrontmatter — happy path", function () {
     "---",
     "",
     "# Form — category defaults",
-    ""
+    "",
   ].join("\n");
 
   var fm = parser.extractFrontmatter(input);
@@ -36,4 +36,37 @@ test("extractFrontmatter — missing fence throws", function () {
   assert.throws(function () {
     parser.extractFrontmatter("# Just a body\n\nNo frontmatter.");
   }, /missing frontmatter/i);
+});
+
+test("extractSections — splits H2-headed sections", function () {
+  var body = [
+    "# Header (ignored at top)",
+    "",
+    "Intro prose (ignored).",
+    "",
+    "## Anatomy",
+    "",
+    "- **Container** — outer wrapper",
+    "- **Label** — caller-supplied",
+    "",
+    "## Variants",
+    "",
+    "- **State** (axis): `default | focus | error`",
+    "",
+    "## Motion",
+    "",
+    '- pattern: "State Transitions"',
+    "",
+    "## Accessibility",
+    "",
+    "- **Label association** (WCAG 1.3.1)",
+    "",
+  ].join("\n");
+
+  var sections = parser.extractSections(body);
+  assert.ok(sections.Anatomy, "Anatomy section present");
+  assert.ok(sections.Anatomy.indexOf("Container") > -1);
+  assert.ok(sections.Variants, "Variants section present");
+  assert.ok(sections.Motion, "Motion section present");
+  assert.ok(sections.Accessibility, "Accessibility section present");
 });

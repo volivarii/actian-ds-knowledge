@@ -57,4 +57,33 @@ function parseYamlSubset(src) {
   return out;
 }
 
-module.exports = { extractFrontmatter: extractFrontmatter };
+function extractSections(body) {
+  var lines = body.split("\n");
+  var sections = {};
+  var current = null;
+  var buf = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var m = line.match(/^##\s+(.+?)\s*$/);
+    if (m) {
+      if (current) {
+        sections[current] = buf.join("\n").trim();
+      }
+      current = m[1];
+      buf = [];
+      continue;
+    }
+    if (current) {
+      buf.push(line);
+    }
+  }
+  if (current) {
+    sections[current] = buf.join("\n").trim();
+  }
+  return sections;
+}
+
+module.exports = {
+  extractFrontmatter: extractFrontmatter,
+  extractSections: extractSections,
+};
