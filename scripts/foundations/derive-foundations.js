@@ -316,7 +316,7 @@ function deriveFromMarkdown(mdSource, parserMap, opts) {
 function addMetaHeader(payload) {
   var meta = {
     auto_generated: true,
-    source: "foundations/foundations.md",
+    source: "foundations/src/foundations.md",
     do_not_edit: "Edit the source MD; CI regenerates this file.",
   };
   // Place _meta first by constructing a new object key-by-key.
@@ -356,16 +356,18 @@ function parseArgs(argv) {
 
 function defaultPaths() {
   // Resolves to the knowledge-repo root from scripts/foundations/.
+  // Post-Phase-B (manifest design): source MD lives in foundations/src/,
+  // derived JSONs land in foundations/dist/.
   var repoRoot = path.resolve(__dirname, "..", "..");
   return {
-    md: path.join(repoRoot, "foundations", "foundations.md"),
+    md: path.join(repoRoot, "foundations", "src", "foundations.md"),
     map: path.join(
       repoRoot,
       "scripts",
       "foundations",
       "foundations.parser.json",
     ),
-    out: path.join(repoRoot, "foundations"),
+    out: path.join(repoRoot, "foundations", "dist"),
   };
 }
 

@@ -67,8 +67,8 @@ jobs:
           node scripts/sync/sync-from-figma.js \
             --phase "$PHASE" \
             --plugin-dir . \
-            --output-dir components/registries \
-            --guidelines-dir components/guidelines \
+            --output-dir components/dist/registries \
+            --guidelines-dir components/src/guidelines \
             --release-notes-dir release-notes \
             --keys-file .figma-keys.json \
             --plugin-json-path package.json
