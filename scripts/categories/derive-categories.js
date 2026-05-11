@@ -71,6 +71,19 @@ function deriveCategoryFile(md) {
   };
 }
 
+function attachMeta(result) {
+  return Object.assign(
+    {
+      _meta: {
+        auto_generated: true,
+        source: result._sourceFile,
+        do_not_edit: "Edit the source MD file; CI regenerates this dist file.",
+      },
+    },
+    result,
+  );
+}
+
 function deriveFromDir(srcDir, distDir) {
   var files = fs.readdirSync(srcDir).filter(function (f) {
     return f.endsWith(".md") && f !== "AUTHORING.md";
@@ -84,7 +97,10 @@ function deriveFromDir(srcDir, distDir) {
     var outName = result.slug + "-defaults.json";
     var outPath = path.join(distDir, outName);
     fs.mkdirSync(distDir, { recursive: true });
-    fs.writeFileSync(outPath, JSON.stringify(result, null, 2) + "\n");
+    fs.writeFileSync(
+      outPath,
+      JSON.stringify(attachMeta(result), null, 2) + "\n",
+    );
     out.push({ src: srcPath, dist: outPath });
   });
   return out;
