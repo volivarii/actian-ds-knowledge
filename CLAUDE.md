@@ -20,7 +20,7 @@ This is the federated knowledge layer for the Actian Design System 2026. If you'
 
 Consumers reference logical names from `paths-manifest.json` at the repo root, not physical file paths. The manifest maps each logical name to its file location. When you move files or add new content, update the manifest in the same commit. `validate-manifest.yml` is a required CI gate that catches drift.
 
-Spec: `docs/superpowers/specs/2026-05-10-manifest-and-tag-pin-design.md` in the plugin repo (gitignored — ask Vincent if you need to read it).
+Spec: `docs/superpowers/specs/2026-05-10-manifest-and-tag-pin-design.md` in the plugin repo (gitignored — ask the plugin lead if you need to read it).
 
 ## How CI runs
 
@@ -39,8 +39,8 @@ Plugin (`volivarii/Actian-DS-Claude-plugin`) vendors a pinned snapshot of this r
 - Don't rename a top-level domain without checking `MIGRATIONS.md` Rule 1 (parallel change) — there are downstream consumers (plugin's hardcoded vendor paths, future docs site URLs).
 - Don't commit specs / audits / planning docs from `docs/superpowers/` (gitignored, working artifacts only) per `feedback_no_commit_specs`.
 
-## Repo collaborators
+## Roles
 
-- Vincent Olivari (`volivarii`) — lead
-- Jeff (`levita99zeenea`) — content guidelines
-- Kristina — foundations
+- Plugin lead — orchestration, plugin maintenance, knowledge-repo CI
+- Content lead — content guidelines
+- Design system lead — foundations

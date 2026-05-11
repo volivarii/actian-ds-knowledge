@@ -15,10 +15,10 @@ Actian Design System knowledge layer. Consumed by the [Actian DS Claude plugin](
 
 | Layer | Editable source | Generated artifacts |
 |---|---|---|
-| **Foundations** (mixed) | `foundations/src/foundations.md` (Kristina, MD-as-SoT) + `foundations/src/AUTHORING.md` | `foundations/dist/*.json` (8 derived; CI from MD) |
+| **Foundations** (mixed) | `foundations/src/foundations.md` (Design system lead, MD-as-SoT) + `foundations/src/AUTHORING.md` | `foundations/dist/*.json` (8 derived; CI from MD) |
 | **Tokens** (interim-flat — see [`tokens/README.md`](tokens/README.md)) | `tokens/tokens.json`, `tokens/tokens.css` (human-frozen until successor generator returns) | `tokens/token-reference.md` (CI from `tokens.json`) |
 | **Components** (mixed) | `components/src/guidelines/*.json` (85 files: 44 curated + 41 stubs) + `components/src/guidelines/AUTHORING.md` | `components/dist/registries/{fmkit,dskit,metakit}.json` + `components/dist/registries/meta-kit/styles.json` + `components/dist/{text,effect}-styles.md` (CI from Figma) |
-| **Content guidelines** (mixed) | `content/src/*.md` (Jeff — 36 per-topic files + `global-guidelines.md` + `content-index.md` + `format-spec.md` + `AUTHORING.md`) | `content/dist/content.md` (CI-consolidated reference from `scripts/content/derive-content.js`) |
+| **Content guidelines** (mixed) | `content/src/*.md` (Content lead — 36 per-topic files + `global-guidelines.md` + `content-index.md` + `format-spec.md` + `AUTHORING.md`) | `content/dist/content.md` (CI-consolidated reference from `scripts/content/derive-content.js`) |
 | **Accessibility** (single-origin) | `accessibility/accessibility.md` | — |
 | **Presentation** (single-origin) | `presentation/presentation-guide.md` | — |
 | **App context** (single-origin) | `app-context/app-context.json` | — |
@@ -47,11 +47,11 @@ Downstream consumers (e.g., the plugin) pin a semver range in their `vendored.js
 - **Actian DS Claude plugin** — vendors a pinned snapshot nightly (`vendor-snapshot.yml` 09:00 UTC, 2h offset from upstream Figma sync). Resolves tag via semver range. No runtime network dependency.
 - **(Future) docs site, Storybook, API clients.** Per the federation thesis — the knowledge layer is shared substrate.
 
-## Collaborators
+## Roles
 
-- Vincent Olivari (`volivarii`) — lead
-- Jeff (`levita99zeenea`) — content guidelines
-- Kristina — foundations
+- Plugin lead — orchestration, plugin maintenance, knowledge-repo CI
+- Content lead — content guidelines
+- Design system lead — foundations
 
 ## License
 

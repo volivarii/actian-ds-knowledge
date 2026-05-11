@@ -10,7 +10,7 @@ Mixed-origin domains (where humans author content AND CI generates derived artif
 
 ```
 foundations/
-├── src/         ← edit here (Kristina's MD-as-SoT + AUTHORING guide)
+├── src/         ← edit here (Design system lead's MD-as-SoT + AUTHORING guide)
 └── dist/        ← CI-generated, do not edit (8 derived JSONs)
 
 components/
@@ -21,7 +21,7 @@ components/
 Single-origin domains stay flat (no `src/`+`dist/` nesting) — adding it would be noise:
 
 ```
-content/         ← purely human (Jeff's content guidelines)
+content/         ← purely human (Content lead's content guidelines)
 accessibility/   ← purely human
 presentation/    ← purely human
 app-context/     ← purely human (curated patterns)
@@ -52,7 +52,7 @@ When CI regenerates `dist/` content, it stamps each generated file with `_meta.a
 
 ## Per-domain authoring guides
 
-- [`foundations/src/AUTHORING.md`](foundations/src/AUTHORING.md) — how Kristina (and the UX team) edits foundations
+- [`foundations/src/AUTHORING.md`](foundations/src/AUTHORING.md) — how the Design system lead (and the UX team) edits foundations
 - [`components/src/guidelines/AUTHORING.md`](components/src/guidelines/AUTHORING.md) — the stub-flip ritual
 
 ## Consumer indirection
@@ -61,11 +61,11 @@ Downstream consumers (the plugin, future docs site, Storybook) reference logical
 
 Plugin's CI pulls knowledge tags via semver range (`vendored.json.knowledge_repo_version_range`), so structural changes upstream don't auto-propagate — the plugin team bumps the range explicitly when ready to consume new versions.
 
-## Repo collaborators
+## Roles
 
-- Vincent Olivari (`volivarii`) — lead
-- Jeff (`levita99zeenea`) — content guidelines
-- Kristina — foundations
+- Plugin lead — orchestration, plugin maintenance, knowledge-repo CI
+- Content lead — content guidelines
+- Design system lead — foundations
 
 ## License
 
