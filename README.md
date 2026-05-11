@@ -18,6 +18,7 @@ Actian Design System knowledge layer. Consumed by the [Actian DS Claude plugin](
 | **Foundations** (mixed) | `foundations/src/foundations.md` (Design system lead, MD-as-SoT) + `foundations/src/AUTHORING.md` | `foundations/dist/*.json` (8 derived; CI from MD) |
 | **Tokens** (interim-flat — see [`tokens/README.md`](tokens/README.md)) | `tokens/tokens.json`, `tokens/tokens.css` (human-frozen until successor generator returns) | `tokens/token-reference.md` (CI from `tokens.json`) |
 | **Components** (mixed) | `components/src/guidelines/*.json` (85 files: 44 curated + 41 stubs) + `components/src/guidelines/AUTHORING.md` | `components/dist/registries/{fmkit,dskit,metakit}.json` + `components/dist/registries/meta-kit/styles.json` + `components/dist/{text,effect}-styles.md` (CI from Figma) |
+| **Category defaults** (mixed) | `components/src/categories/<slug>.md` (Design system lead + Content lead; 6 files) + `components/src/categories/AUTHORING.md` | `components/dist/categories/<slug>-defaults.json` (6 derived; CI from MD) |
 | **Content guidelines** (mixed) | `content/src/*.md` (Content lead — 36 per-topic files + `global-guidelines.md` + `content-index.md` + `format-spec.md` + `AUTHORING.md`) | `content/dist/content.md` (CI-consolidated reference from `scripts/content/derive-content.js`) |
 | **Accessibility** (single-origin) | `accessibility/accessibility.md` | — |
 | **Presentation** (single-origin) | `presentation/presentation-guide.md` | — |
