@@ -1,7 +1,6 @@
 {
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.2.0",
-  "generated_at": "2026-05-11T00:00:00Z",
+  "knowledge_version": "0.3.1",
   "paths": {
     "foundations.md": {
       "path": "foundations/src/foundations.md",
@@ -139,10 +138,11 @@
       "description": "Component coverage index (84 entries; CI appends, humans flip _stub on curate)"
     },
     "content": {
-      "path": "content/content.md",
+      "path": "content/dist/content.md",
       "type": "markdown",
-      "origin": "human",
-      "description": "UI copy guidelines — consolidated summary index (parallel-change with content/src/*.md per-component files; will be auto-generated and retired in Phase 2)"
+      "origin": "ci",
+      "generator": "scripts/content/derive-content.js",
+      "description": "UI copy guidelines — consolidated reference auto-generated from content/src/*.md (Phase 2). Section order tracks content/src/content-index.md."
     },
     "accessibility": {
       "path": "accessibility/accessibility.md",
