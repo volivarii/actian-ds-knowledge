@@ -47,7 +47,18 @@ function readJsonOrNull(p) {
 
 function writeJson(p, obj) {
   fs.mkdirSync(path.dirname(p), { recursive: true });
-  fs.writeFileSync(p, JSON.stringify(obj, null, 2) + "\n", "utf8");
+  // Inject _schema_version: 1 as first key if not already present (Q1 2026
+  // ecosystem plan PR α: every dist artifact carries a schema version).
+  var withVersion = obj;
+  if (
+    obj &&
+    typeof obj === "object" &&
+    !Array.isArray(obj) &&
+    obj._schema_version === undefined
+  ) {
+    withVersion = Object.assign({ _schema_version: 1 }, obj);
+  }
+  fs.writeFileSync(p, JSON.stringify(withVersion, null, 2) + "\n", "utf8");
 }
 
 function todayIso() {
