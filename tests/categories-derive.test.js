@@ -70,3 +70,36 @@ test("extractSections — splits H2-headed sections", function () {
   assert.ok(sections.Motion, "Motion section present");
   assert.ok(sections.Accessibility, "Accessibility section present");
 });
+
+test("parseBulletList — extracts name+description pairs", function () {
+  var sectionBody = [
+    "Some intro prose to skip.",
+    "",
+    "- **Container** — outer wrapper, applies elevation and radius",
+    "- **Label** — caller-supplied; bound via for/aria-labelledby",
+    "- **Icon (optional)** — leading or trailing decorative element",
+    "",
+    "Trailing prose to skip.",
+  ].join("\n");
+
+  var items = parser.parseBulletList(sectionBody);
+  assert.equal(items.length, 3);
+  assert.equal(items[0].name, "Container");
+  assert.equal(
+    items[0].description,
+    "outer wrapper, applies elevation and radius",
+  );
+  assert.equal(items[1].name, "Label");
+  assert.equal(items[2].name, "Icon (optional)");
+});
+
+test("parseBulletList — handles em-dash and hyphen separators", function () {
+  var items = parser.parseBulletList(
+    "- **Foo** — em dash separator\n- **Bar** - hyphen separator",
+  );
+  assert.equal(items.length, 2);
+  assert.equal(items[0].name, "Foo");
+  assert.equal(items[0].description, "em dash separator");
+  assert.equal(items[1].name, "Bar");
+  assert.equal(items[1].description, "hyphen separator");
+});

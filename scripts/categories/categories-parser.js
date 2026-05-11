@@ -83,7 +83,19 @@ function extractSections(body) {
   return sections;
 }
 
+function parseBulletList(text) {
+  // Matches: `- **Name** — description` or `- **Name** - description`
+  var re = /^-\s+\*\*([^*]+)\*\*\s+[—-]\s+(.+)$/gm;
+  var items = [];
+  var m;
+  while ((m = re.exec(text)) !== null) {
+    items.push({ name: m[1].trim(), description: m[2].trim() });
+  }
+  return items;
+}
+
 module.exports = {
   extractFrontmatter: extractFrontmatter,
   extractSections: extractSections,
+  parseBulletList: parseBulletList,
 };
