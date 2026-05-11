@@ -107,9 +107,38 @@ function parseVariantAxes(text) {
   return axes;
 }
 
+function parseMotionPatterns(text) {
+  var re = /^-\s+\*\*([^*]+)\*\*\s+[—-]\s+(.+)$/gm;
+  var patterns = [];
+  var m;
+  while ((m = re.exec(text)) !== null) {
+    patterns.push({
+      pattern: m[1].trim().replace(/^"|"$/g, ""),
+      note: m[2].trim(),
+    });
+  }
+  return patterns;
+}
+
+function parseAccessibilityRequirements(text) {
+  // Matches: `- **Title** (WCAG x.x.x, y.y.y) — body text`
+  var re = /^-\s+\*\*([^*]+)\*\*\s+\(WCAG\s+([^)]+)\)\s+[—-]\s+(.+)$/gm;
+  var reqs = [];
+  var m;
+  while ((m = re.exec(text)) !== null) {
+    var wcag = m[2].split(",").map(function (s) {
+      return s.trim();
+    });
+    reqs.push({ title: m[1].trim(), wcag: wcag, body: m[3].trim() });
+  }
+  return reqs;
+}
+
 module.exports = {
   extractFrontmatter: extractFrontmatter,
   extractSections: extractSections,
   parseBulletList: parseBulletList,
   parseVariantAxes: parseVariantAxes,
+  parseMotionPatterns: parseMotionPatterns,
+  parseAccessibilityRequirements: parseAccessibilityRequirements,
 };

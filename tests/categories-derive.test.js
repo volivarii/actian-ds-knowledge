@@ -118,3 +118,38 @@ test("parseVariantAxes — extracts axis+values from bullet format", function ()
   assert.equal(axes[1].axis, "Size");
   assert.deepEqual(axes[1].values, ["small", "medium", "large"]);
 });
+
+test("parseMotionPatterns — extracts pattern name + optional note", function () {
+  var sectionBody = [
+    "Reference patterns from interaction-motion.json:",
+    "",
+    "- **State Transitions** — focus, hover, active transitions on the control itself",
+    '- **The "Anchor" Motion** — only when component anchors a dropdown/popover',
+    "",
+  ].join("\n");
+
+  var patterns = parser.parseMotionPatterns(sectionBody);
+  assert.equal(patterns.length, 2);
+  assert.equal(patterns[0].pattern, "State Transitions");
+  assert.equal(
+    patterns[0].note,
+    "focus, hover, active transitions on the control itself",
+  );
+});
+
+test("parseAccessibilityRequirements — extracts title + wcag + body", function () {
+  var sectionBody = [
+    "- **Label association** (WCAG 1.3.1, 3.3.2) — every control has a visible label, programmatically bound",
+    "- **Error announcement** (WCAG 3.3.1, 3.3.3, 4.1.3) — validation messages use aria-live or are referenced by aria-describedby",
+    "- **Required indication** (WCAG 3.3.2) — not color-only; uses aria-required",
+    "- **Keyboard operability** (WCAG 2.1.1) — all controls operable from keyboard",
+    "- **Focus visible** (WCAG 2.4.7) — visible focus ring with 3:1 contrast",
+    "- **Color independence** (WCAG 1.4.1) — state not signaled by color alone",
+  ].join("\n");
+
+  var reqs = parser.parseAccessibilityRequirements(sectionBody);
+  assert.equal(reqs.length, 6);
+  assert.equal(reqs[0].title, "Label association");
+  assert.deepEqual(reqs[0].wcag, ["1.3.1", "3.3.2"]);
+  assert.ok(reqs[0].body.indexOf("visible label") > -1);
+});
