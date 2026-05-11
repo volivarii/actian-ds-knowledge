@@ -17,10 +17,12 @@ This index follows the [llmstxt.org spec](https://llmstxt.org). For agents readi
 
 ## Components
 
+- [components/AUTHORING.md](https://raw.githubusercontent.com/volivarii/actian-ds-knowledge/main/components/AUTHORING.md): How the DS Kit Pages panel naming convention maps to the `category` + `status` fields sync emits
 - [components/src/guidelines/AUTHORING.md](https://raw.githubusercontent.com/volivarii/actian-ds-knowledge/main/components/src/guidelines/AUTHORING.md): Stub-flip ritual for curating component guidelines
 - [components/dist/README.md](https://raw.githubusercontent.com/volivarii/actian-ds-knowledge/main/components/dist/README.md): Index of CI-generated registries + style MDs
 - [components/dist/text-styles.md](https://raw.githubusercontent.com/volivarii/actian-ds-knowledge/main/components/dist/text-styles.md): DS Kit text style catalog
 - [components/dist/effect-styles.md](https://raw.githubusercontent.com/volivarii/actian-ds-knowledge/main/components/dist/effect-styles.md): DS Kit effect (shadow, blur) style catalog
+- [components/dist/categories.json](https://raw.githubusercontent.com/volivarii/actian-ds-knowledge/main/components/dist/categories.json): DS Kit categories (Action, Form (input & selection), Navigation, Data Display, Feedback, Overlays) with member slugs and counts, derived from the Figma Pages panel grouping
 
 ## Content guidelines
 
