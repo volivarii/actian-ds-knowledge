@@ -20,15 +20,19 @@ var FILES_REQUIRING_SCHEMA_VERSION = [
   "components/dist/categories.json",
   "tokens/tokens.json",
   "app-context/app-context.json",
-  "fm-to-ds-map/fm-to-ds-map.json"
+  "fm-to-ds-map/fm-to-ds-map.json",
+  "accessibility/dist/a11y-index.json",
 ];
 
 FILES_REQUIRING_SCHEMA_VERSION.forEach(function (relPath) {
   test("schema_version present in " + relPath, function () {
-    var data = JSON.parse(fs.readFileSync(
-      path.resolve(__dirname, "..", relPath),
-      "utf8"
-    ));
-    assert.equal(data._schema_version, 1, relPath + " missing _schema_version: 1");
+    var data = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, "..", relPath), "utf8"),
+    );
+    assert.equal(
+      data._schema_version,
+      1,
+      relPath + " missing _schema_version: 1",
+    );
   });
 });

@@ -16,16 +16,35 @@ function deriveA11yIndex(md) {
         slug: m[2],
         title: m[1].trim(),
         wcag: [],
-        body_excerpt: ""
+        body_excerpt: "",
       };
       continue;
     }
-    if (current && /WCAG\s+(\d+\.\d+\.\d+)/.test(line)) {
+    // Match both "WCAG X.X.X" inline and "WCAG criteria:" header
+    if (
+      current &&
+      (/WCAG\s+\d+\.\d+\.\d+/.test(line) || /WCAG criteria:/i.test(line))
+    ) {
       var wcagMatches = line.match(/\d+\.\d+\.\d+/g) || [];
       current.wcag = current.wcag.concat(wcagMatches);
     }
-    if (current && line.trim() && !line.match(/^#+\s/) && current.body_excerpt.length < 200) {
-      current.body_excerpt += (current.body_excerpt ? " " : "") + line.trim();
+    if (
+      current &&
+      line.trim() &&
+      !line.match(/^#+\s/) &&
+      current.body_excerpt.length < 200
+    ) {
+      var cleanLine = line
+        .trim()
+        .replace(/[|*_`~#\[\]]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (cleanLine) {
+        current.body_excerpt += (current.body_excerpt ? " " : "") + cleanLine;
+        if (current.body_excerpt.length > 200) {
+          current.body_excerpt = current.body_excerpt.slice(0, 200).trimEnd();
+        }
+      }
     }
   }
   if (current) sections.push(current);
@@ -38,15 +57,28 @@ function deriveA11yIndex(md) {
     _meta: {
       auto_generated: true,
       source: "accessibility/accessibility.md",
-      do_not_edit: "Edit the source MD; CI regenerates this file."
+      do_not_edit: "Edit the source MD; CI regenerates this file.",
     },
-    sections: sections
+    sections: sections,
   };
 }
 
 if (require.main === module) {
-  var srcPath = path.resolve(__dirname, "..", "..", "accessibility", "accessibility.md");
-  var distPath = path.resolve(__dirname, "..", "..", "accessibility", "dist", "a11y-index.json");
+  var srcPath = path.resolve(
+    __dirname,
+    "..",
+    "..",
+    "accessibility",
+    "accessibility.md",
+  );
+  var distPath = path.resolve(
+    __dirname,
+    "..",
+    "..",
+    "accessibility",
+    "dist",
+    "a11y-index.json",
+  );
   var md = fs.readFileSync(srcPath, "utf8");
   var idx = deriveA11yIndex(md);
   fs.mkdirSync(path.dirname(distPath), { recursive: true });
