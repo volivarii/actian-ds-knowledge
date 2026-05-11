@@ -255,6 +255,12 @@ function exitCodeFor(category) {
 
 // ---- Changelog assembly ----
 
+function escapeBackticks(s) {
+  // Escape embedded backticks so inline code spans don't corrupt markdown
+  // when category names or page names contain them.
+  return String(s).replace(/`/g, "'");
+}
+
 function buildChangelog(date, category, results, errors) {
   var lines = [];
   lines.push("# Sync " + date + " — " + category);
@@ -274,17 +280,28 @@ function buildChangelog(date, category, results, errors) {
       lines.push("### Component category drift (warn-only)");
       r.categoryWarnings.forEach(function (w) {
         if (w.code === "UNKNOWN_CATEGORY") {
+          var members = (w.members || []).map(function (m) {
+            return "`" + escapeBackticks(m) + "`";
+          });
           lines.push(
             "- ⚠️ Unknown category `" +
-              w.category +
+              escapeBackticks(w.category) +
               "` (members: " +
-              (w.members || []).join(", ") +
+              members.join(", ") +
               ")",
           );
         } else if (w.code === "MISSING_KNOWN_CATEGORY") {
-          lines.push("- ⚠️ Missing expected category `" + w.category + "`");
+          lines.push(
+            "- ⚠️ Missing expected category `" +
+              escapeBackticks(w.category) +
+              "`",
+          );
         } else if (w.code === "MEMBER_WITHOUT_CATEGORY") {
-          lines.push("- ⚠️ Member page `" + w.page + "` has no category");
+          lines.push(
+            "- ⚠️ Member page `" +
+              escapeBackticks(w.page) +
+              "` has no category",
+          );
         }
       });
       lines.push("");
