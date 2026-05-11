@@ -38,7 +38,7 @@ tokens/          ← interim: human-frozen (see tokens/README.md)
 | Component registry data (key, variants, properties) | **Don't.** Edit upstream in Figma. | `sync-from-figma.yml` (nightly 07:00 UTC) writes `components/dist/registries/*.json` |
 | Meta Kit `templates` block | `components/dist/registries/metakit.json` (ONLY this block — hand-curated; CI preserves across syncs) | Same workflow preserves the block |
 | Token value | `tokens/tokens.json` + matching CSS variable in `tokens/tokens.css` | `render-token-reference.js` regenerates `tokens/token-reference.md` |
-| Content guidelines (UI copy rules) | `content/content.md` | None |
+| Content guidelines (UI copy rules) | `content/src/<topic>.md` (per-topic, e.g. `buttons.md`, `modal.md`) — see `content/src/AUTHORING.md` and `content/src/content-index.md` | `content-derive.yml` regenerates `content/dist/content.md` on PR |
 | Accessibility guidance | `accessibility/accessibility.md` | None |
 | Presentation templates / chart patterns | `presentation/presentation-guide.md` | None |
 | App context / persona / terminology | `app-context/app-context.json` | None |

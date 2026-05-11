@@ -24,7 +24,10 @@ This index follows the [llmstxt.org spec](https://llmstxt.org). For agents readi
 
 ## Content guidelines
 
-- [content/content.md](https://raw.githubusercontent.com/volivarii/actian-ds-knowledge/main/content/content.md): UI copy rules — sentence case, action verbs, error messages, empty states (Jeff)
+- [content/src/content-index.md](https://raw.githubusercontent.com/volivarii/actian-ds-knowledge/main/content/src/content-index.md): Index + AI query atlas for the 36 per-topic UI-copy files (Jeff)
+- [content/src/global-guidelines.md](https://raw.githubusercontent.com/volivarii/actian-ds-knowledge/main/content/src/global-guidelines.md): Voice, tone, words to avoid — cross-cutting rules
+- [content/src/](https://github.com/volivarii/actian-ds-knowledge/tree/main/content/src): 36 per-component / per-topic files (e.g. `buttons.md`, `modal.md`, `empty-and-system-states.md`)
+- [content/dist/content.md](https://raw.githubusercontent.com/volivarii/actian-ds-knowledge/main/content/dist/content.md): CI-generated consolidated reference (auto-built from `content/src/`)
 
 ## Accessibility
 
