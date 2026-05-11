@@ -21,6 +21,7 @@
 var DESCRIPTION_MAX = 200; // matches project_sync_skill_enhancements.md item #2
 
 var inferCategoryMap = require("./transform-categories.js").inferCategoryMap;
+var statusParser = require("./component-status-emoji.js");
 
 function slugify(name) {
   // Lowercase + hyphenated. "Button" → "button"; "Tab Bar" → "tab-bar".
@@ -144,9 +145,18 @@ function transformRegistry(input) {
     }
   }
 
-  function lookupCategoryEntry(name) {
+  // The categoryMap is keyed by page clean-name (e.g., "Tag (Identification key)"),
+  // not by component name. A single page can host multiple components (tag-*,
+  // loading variants, data-viz variants); they all share the page's category.
+  // Look up by the component's containing_frame.pageName with the status
+  // emoji stripped.
+  function lookupCategoryEntry(meta) {
     if (!categoryMap) return null;
-    return categoryMap[String(name).trim()] || null;
+    var pageName =
+      (meta && meta.containing_frame && meta.containing_frame.pageName) || "";
+    var cleanPage = statusParser.extractStatus(pageName).cleanName;
+    if (!cleanPage) return null;
+    return categoryMap[cleanPage] || null;
   }
 
   // Component sets
@@ -158,7 +168,7 @@ function transformRegistry(input) {
       node,
       "set",
       lastSyncedIso,
-      lookupCategoryEntry(meta.name),
+      lookupCategoryEntry(meta),
     );
     var slug = slugify(meta.name);
     registry.components[slug] = entry;
@@ -173,7 +183,7 @@ function transformRegistry(input) {
       node,
       "single",
       lastSyncedIso,
-      lookupCategoryEntry(meta.name),
+      lookupCategoryEntry(meta),
     );
     var slug = slugify(meta.name);
     // Don't clobber a set entry on a name collision (sets win).

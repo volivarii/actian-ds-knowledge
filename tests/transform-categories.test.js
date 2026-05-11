@@ -521,3 +521,62 @@ test("transform-registry — component not in map gets no category/status (miss 
     "component absent from map gets no status",
   );
 });
+
+test("transform-registry — multiple components on the same page share the page's category", function () {
+  // Simulate a page like "✍️ Tag (Identification key)" with 3 components on it
+  var componentSets = [
+    {
+      name: "Tag default",
+      key: "k-tag-d",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✍️ Tag (Identification key)" },
+    },
+    {
+      name: "Tag interactive",
+      key: "k-tag-i",
+      node_id: "1:2",
+      description: "",
+      containing_frame: { pageName: "✍️ Tag (Identification key)" },
+    },
+    {
+      name: "Tag status",
+      key: "k-tag-s",
+      node_id: "1:3",
+      description: "",
+      containing_frame: { pageName: "✍️ Tag (Identification key)" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+    "1:2": { document: { componentPropertyDefinitions: {} } },
+    "1:3": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "     ✍️ Tag (Identification key)" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test-key",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+  });
+
+  assert.equal(registry.components["tag-default"].category, "Data Display");
+  assert.equal(registry.components["tag-default"].status, "in-progress");
+  assert.equal(registry.components["tag-interactive"].category, "Data Display");
+  assert.equal(registry.components["tag-interactive"].status, "in-progress");
+  assert.equal(registry.components["tag-status"].category, "Data Display");
+  assert.equal(registry.components["tag-status"].status, "in-progress");
+});
