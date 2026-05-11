@@ -84,6 +84,7 @@
   },
   "patterns": {
     "drawer": {
+      "slug": "drawer-open-close",
       "name": "Drawer (open/close)",
       "phases": [
         {
@@ -101,6 +102,7 @@
       ]
     },
     "accordion": {
+      "slug": "accordion-expand-collapse",
       "name": "Accordion (expand/collapse)",
       "phases": [
         {
@@ -118,6 +120,7 @@
       ]
     },
     "success-toast": {
+      "slug": "success-toast",
       "name": "Success Toast",
       "phases": [
         {
@@ -141,6 +144,7 @@
       ]
     },
     "anchor-motion": {
+      "slug": "anchor-motion",
       "name": "The \"Anchor\" Motion — Dropdowns, Popovers, and Tooltips",
       "phases": [
         {
@@ -163,6 +167,7 @@
       ]
     },
     "layered-overlays": {
+      "slug": "layered-overlays-modals",
       "name": "Layered Overlays — Modals",
       "phases": [
         {
@@ -180,6 +185,7 @@
       ]
     },
     "skeleton-loading": {
+      "slug": "skeleton-loading",
       "name": "Skeleton Loading",
       "phases": [
         {
@@ -190,6 +196,7 @@
       ]
     },
     "staggered-entrance": {
+      "slug": "staggered-entrance",
       "name": "Staggered Entrance — Lists, Table Rows, Search Cards",
       "phases": [
         {
@@ -203,6 +210,7 @@
       ]
     },
     "state-transitions": {
+      "slug": "state-transitions",
       "name": "State Transitions",
       "phases": [
         {
