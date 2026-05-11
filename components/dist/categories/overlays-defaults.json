@@ -1,0 +1,145 @@
+{
+  "_meta": {
+    "auto_generated": true,
+    "source": "components/src/categories/overlays.md",
+    "do_not_edit": "Edit the source MD file; CI regenerates this dist file."
+  },
+  "slug": "overlays",
+  "label": "Overlays",
+  "authoring_status": "engineer-seed",
+  "confidence": {
+    "anatomy": "medium",
+    "variants": "medium",
+    "motion": "high",
+    "a11y": "high"
+  },
+  "last_reviewed": "2026-05-11",
+  "card_anatomy": {
+    "parts": [
+      {
+        "name": "Backdrop or scrim",
+        "description": "modal-only dim layer that blocks the page beneath; drawers may use a partial scrim"
+      },
+      {
+        "name": "Container",
+        "description": "the overlay surface itself; carries elevation, radius, and motion origin"
+      },
+      {
+        "name": "Header",
+        "description": "title plus close affordance; required for modals and drawers, optional for popovers"
+      },
+      {
+        "name": "Body content",
+        "description": "the overlay payload; rich content for modals/drawers, short content for popovers/tooltips"
+      },
+      {
+        "name": "Footer (optional)",
+        "description": "primary and secondary actions for modals and drawers"
+      },
+      {
+        "name": "Arrow or pointer (popover/tooltip only)",
+        "description": "connects the overlay to its anchor"
+      }
+    ]
+  },
+  "card_component": {
+    "variantAxes": [
+      {
+        "axis": "Size",
+        "values": [
+          "small",
+          "medium",
+          "large",
+          "full"
+        ]
+      },
+      {
+        "axis": "Position",
+        "values": [
+          "center",
+          "edge",
+          "anchored"
+        ]
+      },
+      {
+        "axis": "Backdrop",
+        "values": [
+          "visible",
+          "transparent",
+          "none"
+        ]
+      },
+      {
+        "axis": "Dismissibility",
+        "values": [
+          "dismissible",
+          "required-action"
+        ]
+      }
+    ]
+  },
+  "card_motion": {
+    "patterns": [
+      {
+        "pattern": "Layered Overlays — Modals",
+        "note": "modals enter with a scrim fade plus container scale-up from center; exit reverses; timing from motion foundations"
+      },
+      {
+        "pattern": "Drawer",
+        "note": "drawers slide in from the anchored edge with easing; the scrim fades in parallel"
+      },
+      {
+        "pattern": "The Anchor Motion",
+        "note": "popovers and tooltips animate from their trigger anchor; the arrow stays attached to the anchor through entry and exit"
+      }
+    ]
+  },
+  "card_accessibility": {
+    "requirements": [
+      {
+        "title": "Focus trap",
+        "wcag": [
+          "2.4.3"
+        ],
+        "body": "modals and drawers trap focus inside the container while open; Tab and Shift+Tab cycle within the overlay"
+      },
+      {
+        "title": "Focus restore on close",
+        "wcag": [
+          "2.4.3"
+        ],
+        "body": "on dismiss, focus returns to the trigger that opened the overlay; if the trigger is gone, focus moves to a sensible fallback"
+      },
+      {
+        "title": "Escape to dismiss",
+        "wcag": [
+          "2.1.1"
+        ],
+        "body": "Escape closes dismissible overlays; required-action modals (e.g., confirm destructive) opt out and announce why"
+      },
+      {
+        "title": "Accessible name",
+        "wcag": [
+          "4.1.2"
+        ],
+        "body": "the overlay container references its title via `aria-labelledby`; descriptive body content uses `aria-describedby` when needed"
+      },
+      {
+        "title": "Backdrop click behavior consistency",
+        "wcag": [
+          "3.2.4"
+        ],
+        "body": "backdrop-click dismissal is consistent across overlays of the same dismissibility variant; never dismiss required-action overlays via backdrop click"
+      },
+      {
+        "title": "Role assignment",
+        "wcag": [
+          "4.1.2"
+        ],
+        "body": "modals and drawers use `role=\"dialog\"` with `aria-modal=\"true\"`; tooltips use `role=\"tooltip\"`; popovers use the appropriate ARIA pattern for their content"
+      }
+    ]
+  },
+  "_sourceFile": "components/src/categories/overlays.md",
+  "_generatedAt": "2026-05-11T18:21:39.286Z"
+}
