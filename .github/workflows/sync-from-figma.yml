@@ -71,7 +71,9 @@ jobs:
             --guidelines-dir components/src/guidelines \
             --release-notes-dir release-notes \
             --keys-file .figma-keys.json \
-            --plugin-json-path package.json
+            --plugin-json-path package.json \
+            --manifest-path paths-manifest.json \
+            --categories-path components/dist/categories.json
 
       - name: Render token-reference.md
         run: node scripts/render-token-reference.js
@@ -106,6 +108,7 @@ jobs:
             components/**
             tokens/**
             package.json
+            paths-manifest.json
 
       - name: Enable auto-merge for additive PRs
         if: steps.verdict.outputs.category == 'additive' && steps.cpr.outputs.pull-request-number
