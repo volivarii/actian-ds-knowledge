@@ -1,6 +1,6 @@
 {
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.3.8",
+  "knowledge_version": "0.4.0",
   "paths": {
     "foundations.md": {
       "path": "foundations/src/foundations.md",
@@ -190,6 +190,21 @@
       "type": "markdown",
       "origin": "human",
       "description": "Per-component content guidelines (Content lead, folded in 2026-05-11). 37 component files + global-guidelines.md (voice + words-to-avoid) + content-index.md (AI query guide) + format-spec.md (markdown structure + Figma/Word output mapping). Each component file follows When-to-use → Style → Behavior → Do/Don't."
+    },
+    "components.categoryDefaults": {
+      "dir": "components/dist/categories",
+      "pattern": "{slug}-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category default templates for component briefs — anatomy parts, variant axes, motion pattern references, accessibility requirements. Derived from components/src/categories/<slug>.md per the federated MD-as-SoT pattern."
+    },
+    "components.categoriesSrc": {
+      "dir": "components/src/categories",
+      "pattern": "{slug}.md",
+      "type": "markdown",
+      "origin": "human",
+      "description": "Per-category source content authored by the Design system lead + Content lead. Engineer-seeded; refined via authoring_status frontmatter flips. See components/src/categories/AUTHORING.md."
     }
   },
   "aliases": {}
