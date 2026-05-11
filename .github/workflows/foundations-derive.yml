@@ -48,6 +48,9 @@ jobs:
             --map scripts/foundations/foundations.parser.json \
             --out foundations/dist
 
+      - name: Run tests against regenerated output
+        run: npm test
+
       - name: Detect changes
         id: diff
         run: |

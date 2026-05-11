@@ -1,0 +1,68 @@
+name: Auto-tag on merge to main
+
+# Emits a git tag matching package.json#version after every merge to main,
+# IF the tag doesn't already exist. Closes a gap in the existing derive
+# workflows: their tag-emission steps only fire when CI regenerates data
+# (data-change PRs), not when manual feature PRs (e.g., new files, rename,
+# doc-only changes) bump the version.
+#
+# Scoped by paths to package.json so this only fires when the version may
+# have changed. Idempotent via tag-exists check — safe to re-run.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+
+jobs:
+  tag:
+    name: Emit version tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # need full history to enumerate existing tags
+
+      - name: Read version
+        id: ver
+        run: |
+          VERSION=$(jq -r .version package.json)
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "::error::package.json#version is missing or null"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved package.json#version → $VERSION"
+
+      - name: Check if tag exists
+        id: check
+        run: |
+          if git rev-parse "v${{ steps.ver.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag v${{ steps.ver.outputs.version }} already exists — skipping"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Tag v${{ steps.ver.outputs.version }} does NOT exist — will create"
+          fi
+
+      - name: Create + push tag
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ steps.ver.outputs.version }}"
+          git push origin "v${{ steps.ver.outputs.version }}"
+
+      - name: Summarize
+        if: always()
+        run: |
+          if [ "${{ steps.check.outputs.exists }}" = "false" ]; then
+            echo "### Tagged v${{ steps.ver.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### No tag emitted (v${{ steps.ver.outputs.version }} already exists)" >> "$GITHUB_STEP_SUMMARY"
+          fi

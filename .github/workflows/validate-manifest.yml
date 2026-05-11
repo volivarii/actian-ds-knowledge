@@ -1,25 +1,16 @@
 name: Validate manifest
 
-# Required PR gate. Runs scripts/validate-manifest.js, which checks that
-# (1) paths-manifest.json schema is valid, (2) every entry's path/dir
-# resolves to a real file, and (3) no orphan files exist under content
-# directories without being covered by the manifest.
+# Required PR gate. Two-part check:
+#   (1) scripts/validate-manifest.js — schema + path resolution + no orphans
+#   (2) npm test — manifest test suite + content-derive test suite
 #
-# Fires on any change to the manifest itself or content directories.
+# Runs on EVERY PR (no paths: filter). Avoids the path-filtered-required-check
+# dead-PR gotcha: required status checks that have paths: filters create a
+# permanent "pending" state for unrelated PRs that don't trigger the workflow.
+# Total runtime ~10s, negligible CI cost.
 
 on:
   pull_request:
-    paths:
-      - 'paths-manifest.json'
-      - 'scripts/validate-manifest.js'
-      - 'foundations/**'
-      - 'components/**'
-      - 'tokens/**'
-      - 'content/**'
-      - 'accessibility/**'
-      - 'presentation/**'
-      - 'app-context/**'
-      - 'fm-to-ds-map/**'
 
 jobs:
   validate:
@@ -34,5 +25,11 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Validate
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Validate manifest
         run: node scripts/validate-manifest.js
+
+      - name: Run test suite
+        run: npm test
