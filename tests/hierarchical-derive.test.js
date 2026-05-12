@@ -51,51 +51,70 @@ function collectWarnings(md, opts) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Test 1 — hierarchical structure mirrors MD on live foundations.md
+// Test 1 — dist filesystem mirrors the section tree of live foundations.md
 // ───────────────────────────────────────────────────────────────────────────
+//
+// Content-agnostic round-trip property test: for whatever foundations.md is
+// currently in this repo, the derive pipeline produces a filesystem layout
+// (under foundations/dist/) that matches the section tree of the source MD.
+//
+// Each in-memory emission is checked against the on-disk dist tree. Authors
+// can rename / renumber / remove sections in foundations.md and this test
+// will still pass as long as derive has been re-run.
 
-test("derive produces a hierarchical tree from live foundations.md", () => {
+test("dist filesystem mirrors the section tree of foundations.md", () => {
   const md = fs.readFileSync(
     path.join(REPO_ROOT, "foundations", "src", "foundations.md"),
     "utf8",
   );
   const { result, warnings } = collectWarnings(md);
 
-  // Expected top-level H2 directories (in MD order).
-  const topSlugs = result.tree.map((n) => n.slug);
-  assert.deepEqual(topSlugs, [
-    "color-primitives-themes",
-    "tokens",
-    "foundations",
-    "component-specs",
-  ]);
+  // Invariant A: every emitted in-memory path exists on disk under dist/.
+  const expected = Object.keys(result.files);
+  assert.ok(expected.length > 0, "derive must emit at least one file");
+  expected.forEach((rel) => {
+    const abs = path.join(DIST, rel);
+    assert.ok(fs.existsSync(abs), "expected dist file missing on disk: " + rel);
+  });
 
-  // tokens/ should contain motion.json (motion special case — single leaf)
-  // and border-tokens/, typography/, color-global-tokens/, size-tokens/
-  // sub-dirs (branches with H4 children).
-  const filePaths = Object.keys(result.files);
-  assert.ok(
-    filePaths.includes("tokens/motion.json"),
-    "tokens/motion.json present (motion special case)",
-  );
-  assert.ok(
-    filePaths.includes("tokens/_index.json"),
-    "tokens/_index.json present (branch)",
-  );
-  assert.ok(
-    filePaths.includes("tokens/typography/_index.json"),
-    "tokens/typography/_index.json present (H3 branch with H4 children)",
-  );
-  assert.ok(
-    filePaths.includes("tokens/typography/font-family.json"),
-    "tokens/typography/font-family.json present (H4 leaf)",
-  );
-  assert.ok(
-    filePaths.includes("color-primitives-themes/primitives/green.json"),
-    "deep H4 leaf present under 2-level branch",
-  );
+  // Invariant B: top-level dist directories + top-level _index siblings on
+  // disk equal the slugs of the section tree's H2 nodes (minus
+  // SKIP_H2_SLUGS, already filtered by buildSectionTree).
+  const treeTopSlugs = result.tree.map((n) => n.slug).sort();
+  assert.ok(treeTopSlugs.length > 0, "tree must have at least one H2 section");
+  // For each H2 slug we should see either <slug>/_index.json or <slug>.json
+  // on disk (branch vs leaf).
+  treeTopSlugs.forEach((slug) => {
+    const branchIndex = path.join(DIST, slug, "_index.json");
+    const leafFile = path.join(DIST, slug + ".json");
+    assert.ok(
+      fs.existsSync(branchIndex) || fs.existsSync(leafFile),
+      "H2 slug '" + slug + "' has no corresponding dist file",
+    );
+  });
 
-  // No unrecognized-status warnings on live MD.
+  // Invariant C: every directory under dist/ has an _index.json (branch
+  // invariant). Pure-leaf siblings live as <slug>.json files.
+  function walkDirs(dir, baseDir, acc) {
+    acc = acc || [];
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    entries.forEach((e) => {
+      if (!e.isDirectory()) return;
+      const full = path.join(dir, e.name);
+      acc.push(full);
+      walkDirs(full, baseDir, acc);
+    });
+    return acc;
+  }
+  const allDirs = walkDirs(DIST, DIST);
+  allDirs.forEach((d) => {
+    assert.ok(
+      fs.existsSync(path.join(d, "_index.json")),
+      "branch directory missing _index.json: " + path.relative(DIST, d),
+    );
+  });
+
+  // Invariant D: no unrecognized-status warnings on live MD.
   const unknownEmojiWarns = warnings.filter(function (w) {
     return /unrecognized status cell/.test(w);
   });
@@ -123,7 +142,11 @@ test("derive tolerates renumber + rename + section reorder", () => {
     "tokens/motion.json present after renumber",
   );
   const motionLeaf = result.files["tokens/motion.json"];
-  assert.equal(motionLeaf.kind, "motion", "motion preserved as structured leaf");
+  assert.equal(
+    motionLeaf.kind,
+    "motion",
+    "motion preserved as structured leaf",
+  );
   assert.ok(motionLeaf.tokens, "motion has tokens object");
   assert.ok(motionLeaf.patterns, "motion has patterns object");
 
@@ -262,10 +285,14 @@ test("bundle's nested tree equals the per-file tree", () => {
     let cursor = bundle;
     for (let i = 0; i < segs.length - 1; i++) {
       cursor = cursor[segs[i]];
-      assert.ok(cursor, "bundle missing segment '" + segs[i] + "' for " + relPath);
+      assert.ok(
+        cursor,
+        "bundle missing segment '" + segs[i] + "' for " + relPath,
+      );
     }
     const last = segs[segs.length - 1];
-    const lookupKey = last === "_index.json" ? "_index" : last.replace(/\.json$/, "");
+    const lookupKey =
+      last === "_index.json" ? "_index" : last.replace(/\.json$/, "");
     const inBundle = cursor[lookupKey];
     assert.deepEqual(
       inBundle,
@@ -314,17 +341,27 @@ test("paths-manifest foundations.* entries reflect hierarchical layout", () => {
     "foundations/dist/foundations.md",
   );
 
-  // Per top-level H2 entry.
-  ["color-primitives-themes", "tokens", "foundations", "component-specs"].forEach(
-    (slug) => {
-      const key = "foundations." + slug;
-      assert.ok(manifest.paths[key], "manifest has " + key);
-      assert.ok(
-        fs.existsSync(path.join(REPO_ROOT, manifest.paths[key].path)),
-        "manifest path resolves: " + manifest.paths[key].path,
-      );
-    },
+  // Per top-level H2 entry — derive the expected slugs from the source MD
+  // at test time so this stays content-agnostic. Authors can rename / reorder
+  // H2 sections and this test will still pass against a fresh derive.
+  const md = fs.readFileSync(
+    path.join(REPO_ROOT, "foundations", "src", "foundations.md"),
+    "utf8",
   );
+  const { result } = collectWarnings(md);
+  const expectedTopSlugs = result.tree.map((n) => n.slug);
+  assert.ok(
+    expectedTopSlugs.length > 0,
+    "section tree must have at least one H2 section",
+  );
+  expectedTopSlugs.forEach((slug) => {
+    const key = "foundations." + slug;
+    assert.ok(manifest.paths[key], "manifest has " + key);
+    assert.ok(
+      fs.existsSync(path.join(REPO_ROOT, manifest.paths[key].path)),
+      "manifest path resolves: " + manifest.paths[key].path,
+    );
+  });
 
   // Marker note preserved.
   assert.ok(
@@ -333,7 +370,10 @@ test("paths-manifest foundations.* entries reflect hierarchical layout", () => {
   );
 
   // Preserved keys (human-maintained) still present.
-  assert.ok(manifest.paths["foundations.md"], "foundations.md (src pointer) preserved");
+  assert.ok(
+    manifest.paths["foundations.md"],
+    "foundations.md (src pointer) preserved",
+  );
   assert.ok(
     manifest.paths["foundations.authoring"],
     "foundations.authoring preserved",
@@ -372,10 +412,15 @@ test("every emitted JSON has required schema fields", () => {
       relPath + " parent must be string-or-null",
     );
     // anchors map present
-    assert.ok(obj.anchors && typeof obj.anchors === "object", relPath + " missing anchors");
+    assert.ok(
+      obj.anchors && typeof obj.anchors === "object",
+      relPath + " missing anchors",
+    );
   }
 
-  Object.entries(result.files).forEach(([relPath, json]) => validate(json, relPath));
+  Object.entries(result.files).forEach(([relPath, json]) =>
+    validate(json, relPath),
+  );
   validate(result.rootIndex, "_index.json (root)");
 });
 

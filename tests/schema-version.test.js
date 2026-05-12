@@ -6,20 +6,11 @@ var fs = require("node:fs");
 var path = require("node:path");
 
 // PR α.5 v2 (v0.4.1+): foundations/dist/ is a hierarchical tree (Pattern H).
-// Schema-version coverage = pinned anchors at every level (root index,
-// representative branch _index, representative leaf, motion leaf, bundle)
-// plus all sibling collections.
+// Foundations dist files are covered by the content-agnostic walk test below
+// (it asserts _schema_version: 1 on every JSON under foundations/dist/), so
+// this pinned list only carries the stable non-foundations entries. Authors
+// can restructure foundations.md without breaking these tests.
 var FILES_REQUIRING_SCHEMA_VERSION = [
-  "foundations/dist/_index.json",
-  "foundations/dist/foundations.bundle.json",
-  "foundations/dist/tokens/_index.json",
-  "foundations/dist/tokens/motion.json",
-  "foundations/dist/tokens/border-tokens/_index.json",
-  "foundations/dist/tokens/border-tokens/radius.json",
-  "foundations/dist/color-primitives-themes/_index.json",
-  "foundations/dist/color-primitives-themes/primitives/green.json",
-  "foundations/dist/foundations/_index.json",
-  "foundations/dist/component-specs/_index.json",
   "components/dist/registries/dskit.json",
   "components/dist/registries/fmkit.json",
   "components/dist/registries/metakit.json",
@@ -58,13 +49,12 @@ test("all foundations/dist JSONs carry _schema_version: 1", function () {
     return acc;
   }
   var jsons = walk(distDir, []);
-  assert.ok(jsons.length >= 50, "expected ≥50 dist JSON files, got " + jsons.length);
+  assert.ok(
+    jsons.length >= 50,
+    "expected ≥50 dist JSON files, got " + jsons.length,
+  );
   jsons.forEach(function (p) {
     var data = JSON.parse(fs.readFileSync(p, "utf8"));
-    assert.equal(
-      data._schema_version,
-      1,
-      p + " missing _schema_version: 1",
-    );
+    assert.equal(data._schema_version, 1, p + " missing _schema_version: 1");
   });
 });
