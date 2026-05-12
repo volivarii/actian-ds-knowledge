@@ -55,7 +55,7 @@ A "derive-diff bot comment" (showing which dist files your PR will change in pla
 - `guideline.json` — `components/src/guidelines/*.json`
 - `foundations-section.json` — `foundations/dist/**/*.json` (post-derive)
 - `manifest.json` — `paths-manifest.json` structural shape
-- `category-defaults.json` — Phase 2 v2 category frontmatter (active CI gate ships with the Phase 2 PR; schema staged here for IDE preview + AI-agent consumption)
+- `category-defaults.json` — Phase 2 v2 category frontmatter for `components/src/categories/*.md`
 
 Don't worry about the technical bits — focus on the content; CI will surface anything structural.
 
