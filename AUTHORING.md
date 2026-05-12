@@ -43,9 +43,22 @@ Typical lag end-to-end: <24 hours via nightly cron; ~10 min if you trigger vendo
 
 ## Validation
 
-Live in VSCode: open any `components/src/categories/*.md` file — autocomplete + inline errors appear via YAML extension + JSON Schema at `schemas/category-defaults.json`.
+You don't need a local toolchain. Edit via the GitHub web UI; CI does the rest.
 
-CI: `validate-schemas.yml` blocks merge if schemas violated. Tests in `tests/` cover schema correctness.
+**On every PR**, two automated checks run:
+
+1. **Schema validation** (`validate-schemas.yml`) — Ajv validates every relevant JSON against `schemas/*.json`. Any violation appears as an **inline annotation on the PR Files-Changed view** (red gutter, hover to see the message). No need to scroll through Action logs.
+2. **Derive-diff bot comment** (`derive-diff-comment.yml`) — when you edit a source MD or JSON that drives auto-generated dist files, a bot comment summarizes which dist files will change in plain language (added / modified / removed). The comment updates in place on subsequent pushes; no comment spam.
+
+**Schema files** live at `schemas/`:
+- `guideline.json` — `components/src/guidelines/*.json`
+- `foundations-section.json` — `foundations/dist/**/*.json` (post-derive)
+- `manifest.json` — `paths-manifest.json` structural shape
+- `category-defaults.json` — Phase 2 v2 category frontmatter (active CI gate ships with the Phase 2 PR; schema staged here for IDE preview + AI-agent consumption)
+
+Don't worry about the technical bits — focus on the content; CI will surface anything structural.
+
+If you DO use an IDE: every schema property carries `description` + `examples`, so tooling that consumes JSON Schema (VSCode `json.schemas` settings, YAML language server) can power autocomplete + hover docs. This is opt-in.
 
 ## Reserved field conventions
 
