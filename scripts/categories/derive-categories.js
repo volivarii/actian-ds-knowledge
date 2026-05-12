@@ -55,8 +55,12 @@ function metaBlock(sourceRel) {
   };
 }
 
-function projectToDist(frontmatter, sourceRel, generatedAt) {
+function projectToDist(frontmatter, sourceRel) {
   // Pass-through top-level identity fields, then projected card_* keys.
+  // Note: _generatedAt intentionally omitted — emitting a fresh timestamp
+  // every run breaks idempotency (every CI run produces new dist files
+  // → workflow auto-commits → triggers next CI → loop). Mirrors foundations-derive,
+  // which also omits timestamp fields from per-leaf JSONs.
   return {
     _meta: metaBlock(sourceRel),
     _schema_version: frontmatter._schema_version,
@@ -70,7 +74,6 @@ function projectToDist(frontmatter, sourceRel, generatedAt) {
     card_motion: { patternRefs: frontmatter.motion_refs },
     card_accessibility: { requirementRefs: frontmatter.accessibility },
     _sourceFile: sourceRel,
-    _generatedAt: generatedAt,
   };
 }
 
@@ -80,7 +83,6 @@ function projectToDist(frontmatter, sourceRel, generatedAt) {
 
 function deriveCategoryFile(mdSource, sourceRel, opts) {
   opts = opts || {};
-  const generatedAt = opts.generatedAt || new Date().toISOString();
   const validator = opts.validator;
 
   const parsed = parser.parse(mdSource);
@@ -101,7 +103,7 @@ function deriveCategoryFile(mdSource, sourceRel, opts) {
     }
   }
 
-  const dist = projectToDist(fm, sourceRel, generatedAt);
+  const dist = projectToDist(fm, sourceRel);
   return { frontmatter: fm, body: parsed.body, dist };
 }
 
@@ -143,7 +145,9 @@ function cleanupStaleDistFiles(distDir, expectedFiles) {
 // Bundle
 // ───────────────────────────────────────────────────────────────────────────
 
-function buildBundle(perCategory, generatedAt) {
+function buildBundle(perCategory) {
+  // Note: _generatedAt intentionally omitted — see projectToDist comment.
+  // Idempotency requires stable byte-identical output across runs.
   const bundle = {
     _schema_version: SCHEMA_VERSION,
     _meta: {
@@ -151,7 +155,6 @@ function buildBundle(perCategory, generatedAt) {
       source: "components/src/categories/*.md",
       do_not_edit: "Edit the MD sources; CI regenerates this bundle.",
     },
-    _generatedAt: generatedAt,
     categories: {},
   };
   // perCategory is a map of slug → dist JSON
@@ -248,7 +251,6 @@ function updatePathsManifest(manifestPath, slugs, opts) {
 
 function derivePipeline(srcDir, distDir, repoRoot, opts) {
   opts = opts || {};
-  const generatedAt = opts.generatedAt || new Date().toISOString();
   const validator = opts.validator || makeValidator(repoRoot);
 
   if (!fs.existsSync(srcDir)) {
@@ -279,7 +281,6 @@ function derivePipeline(srcDir, distDir, repoRoot, opts) {
     let derived;
     try {
       derived = deriveCategoryFile(mdSource, sourceRel, {
-        generatedAt,
         validator,
       });
     } catch (err) {
@@ -315,7 +316,7 @@ function derivePipeline(srcDir, distDir, repoRoot, opts) {
   });
 
   // Write bundle
-  const bundle = buildBundle(perCategory, generatedAt);
+  const bundle = buildBundle(perCategory);
   const bundlePath = path.join(distDir, "categories.bundle.json");
   writeAtomic(bundlePath, stableStringify(bundle));
   written.push(path.relative(repoRoot, bundlePath).split(path.sep).join("/"));

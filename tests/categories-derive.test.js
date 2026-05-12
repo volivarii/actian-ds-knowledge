@@ -166,7 +166,6 @@ test("derive: projects frontmatter to dist shape with card_* keys", () => {
     md,
     "tests/fixtures/categories/valid-minimal.md",
     {
-      generatedAt: "2026-05-12T00:00:00.000Z",
       validator,
     },
   );
@@ -180,7 +179,8 @@ test("derive: projects frontmatter to dist shape with card_* keys", () => {
   assert.equal(r.dist.card_component.variantAxes.length, 1);
   assert.equal(r.dist.card_motion.patternRefs[0].ref, "state-transitions");
   assert.equal(r.dist.card_accessibility.requirementRefs.length, 3);
-  assert.equal(r.dist._generatedAt, "2026-05-12T00:00:00.000Z");
+  // _generatedAt intentionally omitted from dist for idempotency
+  assert.ok(!("_generatedAt" in r.dist), "_generatedAt should not be in dist");
 });
 
 test("derive: schema validation rejects missing required key", () => {
@@ -316,7 +316,6 @@ test("e2e: idempotency — deriving twice produces byte-identical dist", () => {
     fs.rmSync(d, { recursive: true, force: true });
   }
   const opts = {
-    generatedAt: "2026-05-12T00:00:00.000Z",
     validator: derive.makeValidator(REPO_ROOT),
   };
   derive.derivePipeline(srcDir, tmpDistA, REPO_ROOT, opts);
