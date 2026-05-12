@@ -119,6 +119,26 @@ function writeAtomic(absPath, contents) {
   fs.writeFileSync(absPath, contents);
 }
 
+// Cleanup: remove dist files for slugs that no longer exist in srcDir.
+// Mirrors foundations-derive's prune step so a renamed/removed source MD
+// doesn't leave orphan <slug>-defaults.json + <slug>.md in dist.
+function cleanupStaleDistFiles(distDir, expectedFiles) {
+  if (!fs.existsSync(distDir)) return [];
+  const existing = fs.readdirSync(distDir);
+  const pruned = [];
+  existing.forEach(function (file) {
+    if (expectedFiles.indexOf(file) === -1) {
+      const filePath = path.join(distDir, file);
+      const stat = fs.statSync(filePath);
+      if (stat.isFile()) {
+        fs.unlinkSync(filePath);
+        pruned.push(file);
+      }
+    }
+  });
+  return pruned;
+}
+
 // ───────────────────────────────────────────────────────────────────────────
 // Bundle
 // ───────────────────────────────────────────────────────────────────────────
@@ -217,10 +237,7 @@ function updatePathsManifest(manifestPath, slugs, opts) {
   manifest._notes.categories_auto = MANIFEST_CATEGORIES_NOTE;
 
   if (!opts.dryRun) {
-    fs.writeFileSync(
-      manifestPath,
-      JSON.stringify(manifest, null, 2) + "\n",
-    );
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
   }
   return { added, dropped, manifest };
 }
@@ -257,10 +274,7 @@ function derivePipeline(srcDir, distDir, repoRoot, opts) {
   mdFiles.forEach((mdFile) => {
     const abs = path.join(srcDir, mdFile);
     const mdSource = fs.readFileSync(abs, "utf8");
-    const sourceRel = path
-      .relative(repoRoot, abs)
-      .split(path.sep)
-      .join("/");
+    const sourceRel = path.relative(repoRoot, abs).split(path.sep).join("/");
 
     let derived;
     try {
@@ -269,9 +283,7 @@ function derivePipeline(srcDir, distDir, repoRoot, opts) {
         validator,
       });
     } catch (err) {
-      throw new Error(
-        "Failed to derive " + sourceRel + ": " + err.message,
-      );
+      throw new Error("Failed to derive " + sourceRel + ": " + err.message);
     }
 
     const slug = derived.frontmatter.slug;
@@ -292,7 +304,9 @@ function derivePipeline(srcDir, distDir, repoRoot, opts) {
     // Write per-category dist JSON
     const distJsonPath = path.join(distDir, slug + "-defaults.json");
     writeAtomic(distJsonPath, stableStringify(derived.dist));
-    written.push(path.relative(repoRoot, distJsonPath).split(path.sep).join("/"));
+    written.push(
+      path.relative(repoRoot, distJsonPath).split(path.sep).join("/"),
+    );
 
     // Copy source MD verbatim (Stripe .md URL pattern)
     const distMdPath = path.join(distDir, slug + ".md");
@@ -306,7 +320,17 @@ function derivePipeline(srcDir, distDir, repoRoot, opts) {
   writeAtomic(bundlePath, stableStringify(bundle));
   written.push(path.relative(repoRoot, bundlePath).split(path.sep).join("/"));
 
-  return { perCategory, bundle, written, slugs };
+  // Cleanup: prune any dist files NOT in the expected output set.
+  // Expected = <slug>-defaults.json + <slug>.md per slug + categories.bundle.json.
+  // Without this, renamed/removed source MDs leave orphan dist files behind.
+  const expectedFiles = ["categories.bundle.json"];
+  slugs.forEach(function (slug) {
+    expectedFiles.push(slug + "-defaults.json");
+    expectedFiles.push(slug + ".md");
+  });
+  const pruned = cleanupStaleDistFiles(distDir, expectedFiles);
+
+  return { perCategory, bundle, written, slugs, pruned };
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -370,6 +394,14 @@ function runCli(argv) {
       " categories): " +
       result.slugs.join(", "),
   );
+  if (result.pruned && result.pruned.length > 0) {
+    console.log(
+      "[derive-categories] pruned " +
+        result.pruned.length +
+        " stale dist files: " +
+        result.pruned.join(", "),
+    );
+  }
   return 0;
 }
 

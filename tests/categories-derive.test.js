@@ -162,13 +162,20 @@ test("parser: indented top-level key throws", () => {
 test("derive: projects frontmatter to dist shape with card_* keys", () => {
   const md = readFixture("valid-minimal.md");
   const validator = derive.makeValidator(REPO_ROOT);
-  const r = derive.deriveCategoryFile(md, "tests/fixtures/categories/valid-minimal.md", {
-    generatedAt: "2026-05-12T00:00:00.000Z",
-    validator,
-  });
+  const r = derive.deriveCategoryFile(
+    md,
+    "tests/fixtures/categories/valid-minimal.md",
+    {
+      generatedAt: "2026-05-12T00:00:00.000Z",
+      validator,
+    },
+  );
   assert.equal(r.dist.slug, "test-cat");
   assert.equal(r.dist._meta.auto_generated, true);
-  assert.equal(r.dist._meta.source, "tests/fixtures/categories/valid-minimal.md");
+  assert.equal(
+    r.dist._meta.source,
+    "tests/fixtures/categories/valid-minimal.md",
+  );
   assert.equal(r.dist.card_anatomy.parts.length, 2);
   assert.equal(r.dist.card_component.variantAxes.length, 1);
   assert.equal(r.dist.card_motion.patternRefs[0].ref, "state-transitions");
@@ -260,7 +267,14 @@ test("e2e: motion + a11y slug refs all resolve against upstream sources", () => 
     "dist",
     "a11y-index.json",
   );
-  if (!fs.existsSync(motionPath) || !fs.existsSync(a11yPath)) return;
+  assert.ok(
+    fs.existsSync(motionPath),
+    "foundations/dist/tokens/motion.json must exist; run derive:foundations first",
+  );
+  assert.ok(
+    fs.existsSync(a11yPath),
+    "accessibility/dist/a11y-index.json must exist; run derive:a11y-index first",
+  );
 
   const motion = JSON.parse(fs.readFileSync(motionPath, "utf8"));
   const a11y = JSON.parse(fs.readFileSync(a11yPath, "utf8"));
@@ -296,16 +310,8 @@ test("e2e: motion + a11y slug refs all resolve against upstream sources", () => 
 test("e2e: idempotency — deriving twice produces byte-identical dist", () => {
   // Generate at a fixed timestamp to keep the byte comparison stable.
   const srcDir = path.join(REPO_ROOT, "components", "src", "categories");
-  const tmpDistA = path.join(
-    REPO_ROOT,
-    "tests",
-    "__tmp_categories_dist_a",
-  );
-  const tmpDistB = path.join(
-    REPO_ROOT,
-    "tests",
-    "__tmp_categories_dist_b",
-  );
+  const tmpDistA = path.join(REPO_ROOT, "tests", "__tmp_categories_dist_a");
+  const tmpDistB = path.join(REPO_ROOT, "tests", "__tmp_categories_dist_b");
   for (const d of [tmpDistA, tmpDistB]) {
     fs.rmSync(d, { recursive: true, force: true });
   }
@@ -336,11 +342,7 @@ test("e2e: paths-manifest updates include components.categoryDefaults entries", 
   const tmpManifest = path.join(REPO_ROOT, "tests", "__tmp_manifest.json");
   fs.writeFileSync(
     tmpManifest,
-    JSON.stringify(
-      { _schema_version: 1, paths: {}, collections: {} },
-      null,
-      2,
-    ),
+    JSON.stringify({ _schema_version: 1, paths: {}, collections: {} }, null, 2),
   );
   const slugs = [
     "action",
