@@ -384,13 +384,25 @@ function runCli(argv) {
 
   if (!args.noManifest) {
     const mr = updatePathsManifest(manifestPath, result.slugs);
-    console.log(
-      "[derive-categories] manifest: +" +
-        mr.added.length +
-        " entries, -" +
-        mr.dropped.length +
-        " entries",
-    );
+    const addedSet = new Set(mr.added);
+    const unchanged =
+      mr.added.length === mr.dropped.length &&
+      mr.dropped.every((k) => addedSet.has(k));
+    if (unchanged) {
+      console.log(
+        "[derive-categories] manifest: components.categoryDefaults section unchanged (" +
+          mr.added.length +
+          " entries)",
+      );
+    } else {
+      console.log(
+        "[derive-categories] manifest: components.categoryDefaults section +" +
+          mr.added.length +
+          " entries, -" +
+          mr.dropped.length +
+          " entries",
+      );
+    }
   }
 
   console.log(

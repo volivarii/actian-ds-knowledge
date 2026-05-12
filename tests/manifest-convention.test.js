@@ -34,7 +34,8 @@ function collectAllKeys(manifest) {
   }
   if (manifest.collections) {
     for (var c in manifest.collections) {
-      if (Object.prototype.hasOwnProperty.call(manifest.collections, c)) keys.push(c);
+      if (Object.prototype.hasOwnProperty.call(manifest.collections, c))
+        keys.push(c);
     }
   }
   return keys;
@@ -60,7 +61,10 @@ function findPrefixCollisions(keys) {
 test("manifest convention — every key is leaf XOR namespace (no prefix collisions)", function () {
   var keys = collectAllKeys(manifest);
   var collisions = findPrefixCollisions(keys);
-  // De-duplicate symmetric pairs
+  // Each (shorter-prefix, longer-key) pair is pushed exactly once by the
+  // loop above (the `b.length > a.length` guard rules out symmetric
+  // re-pushes). The Set wrapper is defensive — kept so a future loop
+  // restructure that drops the guard doesn't silently regress.
   var uniq = Array.from(new Set(collisions));
   assert.deepEqual(
     uniq,
