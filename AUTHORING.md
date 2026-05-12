@@ -45,10 +45,11 @@ Typical lag end-to-end: <24 hours via nightly cron; ~10 min if you trigger vendo
 
 You don't need a local toolchain. Edit via the GitHub web UI; CI does the rest.
 
-**On every PR**, two automated checks run:
+**On every PR**, automated schema validation runs:
 
 1. **Schema validation** (`validate-schemas.yml`) — Ajv validates every relevant JSON against `schemas/*.json`. Any violation appears as an **inline annotation on the PR Files-Changed view** (red gutter, hover to see the message). No need to scroll through Action logs.
-2. **Derive-diff bot comment** (`derive-diff-comment.yml`) — when you edit a source MD or JSON that drives auto-generated dist files, a bot comment summarizes which dist files will change in plain language (added / modified / removed). The comment updates in place on subsequent pushes; no comment spam.
+
+A "derive-diff bot comment" (showing which dist files your PR will change in plain language) is planned as a follow-up enhancement.
 
 **Schema files** live at `schemas/`:
 - `guideline.json` — `components/src/guidelines/*.json`
