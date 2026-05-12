@@ -1,0 +1,95 @@
+name: Derive category-defaults JSON from category MDs
+
+# PR δ (Phase 2 v2, v0.4.5+).
+# Mirrors foundations-derive.yml. Triggers on changes to category MD sources
+# or the derive script. Regenerates components/dist/categories/*-defaults.json
+# + categories.bundle.json + Stripe .md mirrors + paths-manifest.json entries,
+# then auto-commits the dist back to the PR branch.
+#
+# Required repo setting (already enabled for sync-from-figma workflow):
+#   Settings → Actions → General → Workflow permissions → Allow GH Actions
+#     to create and approve pull requests
+
+on:
+  pull_request:
+    paths:
+      - 'components/src/categories/**/*.md'
+      - 'scripts/categories/**'
+      - 'schemas/category-defaults.json'
+      - 'paths-manifest.json'
+
+jobs:
+  derive:
+    name: Derive category-defaults JSONs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Derive category-defaults JSONs
+        run: |
+          node scripts/categories/__cli.js
+
+      - name: Run tests against regenerated output
+        run: npm test
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet -- components/dist/categories/ paths-manifest.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No dist changes after regeneration."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Dist changes detected:"
+            git diff --stat -- components/dist/categories/ paths-manifest.json
+          fi
+
+      - name: Auto-bump package.json patch
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          node scripts/lib/bump-version.js package.json patch
+
+      - name: Commit derived JSONs back to PR
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/dist/categories/ paths-manifest.json package.json
+          git commit -m "chore(categories): regenerate dist from category MDs + bump patch"
+          git push
+
+      - name: Tag release
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          VERSION=$(jq -r .version package.json)
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists locally, skipping"
+          else
+            git tag "v$VERSION"
+            git push origin "v$VERSION" || echo "Tag push failed (likely already exists on remote)"
+          fi
+
+      - name: Summarize
+        if: always()
+        run: |
+          if [ "${{ steps.diff.outputs.changed }}" = "true" ]; then
+            echo "### Categories derive: regenerated" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Categories derive: no changes" >> "$GITHUB_STEP_SUMMARY"
+          fi

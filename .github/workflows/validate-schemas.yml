@@ -6,12 +6,10 @@ name: Validate schemas
 # UI) see them in the Files-Changed view.
 #
 # Validators:
-#   - validate-guidelines.js     → components/src/guidelines/*.json
-#   - validate-manifest-schema.js → paths-manifest.json structural shape
-#   - validate-foundations-dist.js → foundations/dist/**/*.json (post-derive)
-#
-# Category MD frontmatter validation (schemas/category-defaults.json) lands in
-# the Phase 2 PR; the schema is staged here ahead of time.
+#   - validate-guidelines.js          → components/src/guidelines/*.json
+#   - validate-manifest-schema.js     → paths-manifest.json structural shape
+#   - validate-foundations-dist.js    → foundations/dist/**/*.json (post-derive)
+#   - validate-category-defaults.js   → components/src/categories/*.md frontmatter (PR δ)
 
 on:
   pull_request:
@@ -70,8 +68,15 @@ jobs:
           node scripts/validate/validate-foundations-dist.js > foundations.rdjsonl
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Validate category MD frontmatter
+        id: categories
+        continue-on-error: true
+        run: |
+          node scripts/validate/validate-category-defaults.js > categories.rdjsonl
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
       - name: Combine rdjsonl outputs
-        run: cat guidelines.rdjsonl manifest.rdjsonl foundations.rdjsonl > combined.rdjsonl
+        run: cat guidelines.rdjsonl manifest.rdjsonl foundations.rdjsonl categories.rdjsonl > combined.rdjsonl
 
       - name: Report annotations via reviewdog
         env:
