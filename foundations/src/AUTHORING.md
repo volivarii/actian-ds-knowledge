@@ -18,76 +18,90 @@ You can also edit it in any Markdown editor (Typora, iA Writer, Obsidian, etc.) 
 
 When you open or update a PR that touches `foundations.md`:
 1. CI runs a parser script.
-2. It regenerates 8 JSON files in `foundations/dist/` automatically.
-3. It commits the JSON changes back to your branch with the message `chore(foundations): regenerate JSONs from foundations.md`.
-4. It posts a comment on the PR summarizing what changed in plain language (e.g., "3 token values changed in `color.json`: blue-500, blue-600, blue-700").
+2. It regenerates JSON files in `foundations/dist/` automatically — one per H3 heading.
+3. It also rewrites the `foundations.*` entries in `paths-manifest.json` to match.
+4. It commits the JSON changes back to your branch with the message `chore(foundations): regenerate JSONs + manifest from foundations.md`.
+5. It posts a comment on the PR summarizing what changed in plain language.
 
 You don't need to install Node, run any script, or touch the JSON files. The PR appears with both your MD changes and the auto-generated JSON changes side by side.
 
+## How the parser decides what to emit (v0.4.1+)
+
+**The MD structure decides the JSON structure.** No fixed mapping table.
+
+- Every `### H3` heading produces one JSON file, named after the slug of the heading text.
+  - `### 2.11 Motion` → `motion.json`
+  - `### 2.10 Background Tokens` → `background-tokens.json`
+  - `### Color Usage Rules` → `color-usage-rules.json`
+- Section numbers at the start (`2.1`, `2.11`, `3.6`) are stripped before slugging — they're for humans, not the parser.
+- Leading emoji (`🟡`, `🟢`, etc.) at the start of a heading are also stripped.
+- An H2 with no H3 children gets emitted at the H2 level instead.
+
+**You can freely:**
+- Renumber sections (`2.9 Motion` → `2.11 Motion`). The JSON file name stays `motion.json`.
+- Rename sections (`Background Tokens` → `Backgrounds`). The JSON file name changes (`background-tokens.json` → `backgrounds.json`); CI updates `paths-manifest.json` to match.
+- Remove sections. The JSON file is deleted from `foundations/dist/` and from the manifest.
+- Add new sections. A new JSON file is created automatically.
+
+The only constraint: don't put two sections with the SAME slug in the file. If you do, the parser appends `-1`, `-2`, etc. and emits a warning. (E.g., two `### Breakpoints` H3s → `breakpoints.json` + `breakpoints-1.json`.)
+
 ## Adding a token
 
-Find the right table in `foundations.md` (e.g., section `2.1 Color — Global Tokens`). Insert a new row. The columns vary per table — match what's already there.
+Find the right table in `foundations.md` (e.g., section `2.1 Global Color`). Insert a new row. The columns vary per table — match what's already there.
 
-Example, adding a new color token:
+Example:
 
 | Token | Value | Status |
 |-------|-------|--------|
-| `--zen-color-blue-500` | `#0078A8` | ✅ |
-| `--zen-color-blue-600` | `#005C82` | ✅ |
-| `--zen-color-blue-650` | `#004A6C` | ⚠️ |   <-- new row
+| `--zen-color-blue-500` | `#0078A8` | 🟢 Shipped |
+| `--zen-color-blue-600` | `#005C82` | 🟢 Shipped |
+| `--zen-color-blue-650` | `#004A6C` | 🔵 In Review |   <-- new row
 
 ## Marking token status
 
-Use these status emojis in the **Status** column:
+Use these status emojis in the **Status** column (preferred vocabulary):
 
 | Emoji | Meaning |
 |---|---|
-| ✅ | Current — in production. Default; nothing extra emitted in JSON. |
-| ⚠️ | Proposed — designed but not implemented yet. JSON gets `"status": "proposed"`. |
-| ❌ | Deprecated — should be retired. JSON gets `"status": "deprecated"`. |
-| 🚧 | In progress — being worked on. JSON gets `"status": "in-progress"`. |
+| 🟢 | Shipped — ready for use. JSON gets `"status": "shipped"`. |
+| 🔵 | In Review — proposed, reviewed by leads. JSON gets `"status": "in-review"`. |
+| 🟡 | Proposed — drafted, not yet reviewed. JSON gets `"status": "proposed"`. |
 
-If you write text after the emoji (e.g., `⚠️ pending review`), the parser keeps that text as `status_note` in the JSON.
+Legacy vocabulary still recognized (back-compat with component guidelines):
 
-If you add an emoji not in the list above, it'll be preserved as text but won't trigger a structured `status` field. Coordinate with engineering to add it to the parser's recognized list.
+| Emoji | Meaning |
+|---|---|
+| ✅ | Current — no flag emitted. |
+| ⚠️ | Proposed (synonym for 🟡). |
+| ❌ | Deprecated. |
+| 🚧 | In progress. |
 
-## Section numbering
+If you write text after the emoji (e.g., `🟢 Shipped Q1 2026`), the parser keeps that text as `status_note` in the JSON.
 
-The numbers at the start of each H2/H3 heading (`## 2.1`, `### 2.2`) are how the parser knows which JSON file each section feeds. **You can change the heading text after the number freely.** But if you renumber sections (e.g., move what was `2.1` to `2.7`), please coordinate with engineering — they'll need to update the parser map at `scripts/foundations/foundations.parser.json`.
+If you use an emoji not in the lists above, the parser emits a warning suggesting the right vocabulary.
 
-If you add a brand new section with a number not yet in the parser map, the parser will skip it with a warning. Engineering then adds the mapping, after which the section starts producing JSON.
+## The Motion section is special
 
-## What the 8 generated JSONs cover
+A section whose H4 sub-headings include `Duration`, `Easing`, and `Delay` is detected as the "motion-shape" and gets structured output (`{ tokens, patterns }`). You can move/rename this section freely; detection is by content, not section number.
 
-| Section in MD | Output JSON | Notes |
-|---|---|---|
-| 1. Color Primitives | `color.json:primitives` | All shade tables across palettes |
-| 2.1 — 2.2, 2.5, 2.10 | `color.json:global / text / focus / background` | Color token tables |
-| 2.3 | `borders.json` | Border tokens |
-| 2.4, 3.6 | `breakpoint-grid-structure.json` | Breakpoints + rules |
-| 2.6, 3.4 | `elevation.json` | Elevation tokens + rules |
-| 2.7, 2.11, 3.3 | `spacing.json` | Spacing + size + rules |
-| 2.8, 3.2, 4.3 | `typography.json` | Typography + rules + placeholder |
-| 2.9, 3.5 | `interaction-motion.json` | Motion + brightness filter |
-| 2.12 | `icons.json` | Icon color tokens |
-| 3.1, 4.1 | `color.json:rules / focus_ring_rules` | Color usage + focus ring rules |
-| 4.2 | `borders.json:rules` | Border usage rules |
+## Skipped sections
 
-Sections 5 (Handoff Protocol) and 6 (Related Guidelines) are intentionally not parsed — they're process docs / pointers, not foundation data.
+Two H2 sections are skipped by name: **Handoff Protocol** and **Related Guidelines**. They're process docs / pointers, not design-system data. To unskip, edit `SKIP_H2_SLUGS` in `scripts/foundations/derive-foundations.js`.
 
 ## When something goes wrong
 
-- **PR comment says JSON didn't change but you expected it to:** the parser may not be reading your section. Check the heading numbering. If it's a new section, ping engineering to add a parser map entry.
+- **PR comment says JSON didn't change but you expected it to:** check that your heading is at H3 depth (`###`) inside a non-skipped H2. Tables without a `|---|` separator row get parsed as plain text — the CI warning will tell you.
 - **Auto-commit didn't appear:** the workflow only runs when `foundations.md` (or the parser scripts) change in the PR. If you only changed something else, no regeneration is triggered.
-- **CI failed:** open the workflow run from the PR's checks tab. The parser logs warnings for unmapped sections — these are non-fatal. A real error stops the run.
+- **CI failed:** open the workflow run from the PR's checks tab. The parser logs warnings — these are non-fatal. A real error stops the run.
 
 ## What you don't need to do
 
-- Don't edit any JSON file in `foundations/dist/`. The `*.json` files are auto-generated from `foundations/src/foundations.md`. CI will revert your edits and push back the regenerated version.
-- Don't edit `scripts/foundations/foundations.parser.json` unless you understand the parser map.
+- Don't edit any JSON file in `foundations/dist/`. They're auto-generated. CI will revert your edits and push back the regenerated version.
+- Don't edit `paths-manifest.json` — the `foundations.*` entries are auto-regenerated by the derive script.
 - Don't install Node or run any script locally.
 
 ## More info
 
-- Engineering reference: [`scripts/foundations/foundations.parser.json`](../scripts/foundations/foundations.parser.json) — section number → JSON target mapping
-- Parser source: [`scripts/foundations/derive-foundations.js`](../scripts/foundations/derive-foundations.js)
+- Parser source: [`scripts/foundations/derive-foundations.js`](../../scripts/foundations/derive-foundations.js)
+- AST traversal: [`scripts/foundations/foundations-parser/ast-walk.js`](../../scripts/foundations/foundations-parser/ast-walk.js)
+- Status emoji vocabulary: [`scripts/foundations/foundations-parser/status-emoji.js`](../../scripts/foundations/foundations-parser/status-emoji.js)

@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.4.0",
+  "knowledge_version": "0.4.1",
   "paths": {
     "foundations.md": {
       "path": "foundations/src/foundations.md",
@@ -15,62 +15,6 @@
       "type": "markdown",
       "origin": "human",
       "description": "How to edit foundations.md (UX team guide)"
-    },
-    "foundations.color": {
-      "path": "foundations/dist/color.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Color tokens derived from foundations.md sections 1, 2.1, 2.2, 2.5, 2.10, 3.1, 4.1"
-    },
-    "foundations.borders": {
-      "path": "foundations/dist/borders.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Border tokens derived from foundations.md sections 2.3, 4.2"
-    },
-    "foundations.spacing": {
-      "path": "foundations/dist/spacing.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Spacing + size tokens derived from foundations.md sections 2.7, 2.11, 3.3"
-    },
-    "foundations.typography": {
-      "path": "foundations/dist/typography.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Typography tokens derived from foundations.md sections 2.8, 3.2, 4.3"
-    },
-    "foundations.elevation": {
-      "path": "foundations/dist/elevation.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Elevation tokens derived from foundations.md sections 2.6, 3.4"
-    },
-    "foundations.icons": {
-      "path": "foundations/dist/icons.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Icon color tokens derived from foundations.md section 2.12"
-    },
-    "foundations.motion": {
-      "path": "foundations/dist/interaction-motion.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Motion + brightness filter tokens derived from foundations.md sections 2.9, 3.5"
-    },
-    "foundations.breakpointGridStructure": {
-      "path": "foundations/dist/breakpoint-grid-structure.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Breakpoint + grid tokens derived from foundations.md sections 2.4, 3.6"
     },
     "tokens.json": {
       "path": "tokens/tokens.json",
@@ -183,6 +127,195 @@
       "type": "json",
       "origin": "human",
       "description": "FM Kit → DS Kit component mapping for hifi conversion"
+    },
+    "foundations.color-primitives-themes-overview": {
+      "path": "foundations/dist/color-primitives-themes-overview.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Color Primitives & Themes (overview)'"
+    },
+    "foundations.oklch-shade-formula": {
+      "path": "foundations/dist/oklch-shade-formula.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'OKLCH Shade Formula'"
+    },
+    "foundations.primitives": {
+      "path": "foundations/dist/primitives.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Primitives'"
+    },
+    "foundations.semantic-tokens": {
+      "path": "foundations/dist/semantic-tokens.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Semantic Tokens'"
+    },
+    "foundations.product-themes": {
+      "path": "foundations/dist/product-themes.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Product Themes'"
+    },
+    "foundations.tokens-overview": {
+      "path": "foundations/dist/tokens-overview.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Tokens (overview)'"
+    },
+    "foundations.color-global-tokens": {
+      "path": "foundations/dist/color-global-tokens.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Color — Global Tokens'"
+    },
+    "foundations.color-text-tokens": {
+      "path": "foundations/dist/color-text-tokens.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Color — Text Tokens'"
+    },
+    "foundations.border-tokens": {
+      "path": "foundations/dist/border-tokens.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Border Tokens'"
+    },
+    "foundations.breakpoints": {
+      "path": "foundations/dist/breakpoints.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Breakpoints'"
+    },
+    "foundations.focus-rings": {
+      "path": "foundations/dist/focus-rings.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Focus Rings'"
+    },
+    "foundations.elevation-shadows": {
+      "path": "foundations/dist/elevation-shadows.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Elevation (Shadows)'"
+    },
+    "foundations.spacing": {
+      "path": "foundations/dist/spacing.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Spacing'"
+    },
+    "foundations.typography": {
+      "path": "foundations/dist/typography.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Typography'"
+    },
+    "foundations.motion": {
+      "path": "foundations/dist/motion.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Motion' (structured motion payload: tokens + patterns)"
+    },
+    "foundations.background-tokens": {
+      "path": "foundations/dist/background-tokens.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Background Tokens'"
+    },
+    "foundations.size-tokens": {
+      "path": "foundations/dist/size-tokens.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Size Tokens'"
+    },
+    "foundations.icon-color-tokens": {
+      "path": "foundations/dist/icon-color-tokens.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Icon Color Tokens'"
+    },
+    "foundations.color-usage-rules": {
+      "path": "foundations/dist/color-usage-rules.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Color Usage Rules'"
+    },
+    "foundations.typography-rules": {
+      "path": "foundations/dist/typography-rules.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Typography Rules'"
+    },
+    "foundations.spacing-rules": {
+      "path": "foundations/dist/spacing-rules.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Spacing Rules'"
+    },
+    "foundations.elevation-rules": {
+      "path": "foundations/dist/elevation-rules.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Elevation Rules'"
+    },
+    "foundations.brightness-filter-convention-interactive-states": {
+      "path": "foundations/dist/brightness-filter-convention-interactive-states.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Brightness Filter Convention — Interactive States'"
+    },
+    "foundations.breakpoints-1": {
+      "path": "foundations/dist/breakpoints-1.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Breakpoints'"
+    },
+    "foundations.focus-ring-rules": {
+      "path": "foundations/dist/focus-ring-rules.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Focus Ring Rules'"
+    },
+    "foundations.border-usage": {
+      "path": "foundations/dist/border-usage.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Border Usage'"
+    },
+    "foundations.placeholder-text": {
+      "path": "foundations/dist/placeholder-text.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Auto-derived from foundations.md — section 'Placeholder Text'"
     }
   },
   "collections": {
@@ -201,5 +334,8 @@
       "description": "Per-component content guidelines (Content lead, folded in 2026-05-11). 37 component files + global-guidelines.md (voice + words-to-avoid) + content-index.md (AI query guide) + format-spec.md (markdown structure + Figma/Word output mapping). Each component file follows When-to-use → Style → Behavior → Do/Don't."
     }
   },
-  "aliases": {}
+  "aliases": {},
+  "_notes": {
+    "foundations_auto": "foundations.* entries are auto-regenerated by scripts/foundations/derive-foundations.js. Do not hand-edit."
+  }
 }

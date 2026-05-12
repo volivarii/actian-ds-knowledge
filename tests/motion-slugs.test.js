@@ -5,10 +5,15 @@ var assert = require("node:assert/strict");
 var fs = require("node:fs");
 var path = require("node:path");
 
-var motion = JSON.parse(fs.readFileSync(
-  path.resolve(__dirname, "..", "foundations", "dist", "interaction-motion.json"),
-  "utf8"
-));
+// Schema-less derive (v0.4.1+) emits the motion section to `motion.json`
+// based on the H3 heading "Motion" (slug = "motion"). The earlier hardcoded
+// name `interaction-motion.json` (from the deprecated parser map) is gone.
+var motion = JSON.parse(
+  fs.readFileSync(
+    path.resolve(__dirname, "..", "foundations", "dist", "motion.json"),
+    "utf8",
+  ),
+);
 
 // patterns is an object keyed by short-slug (legacy); each value contains
 // a canonical `slug` field per PR α (Q1 2026 ecosystem plan).
@@ -24,13 +29,18 @@ test("every motion pattern has a slug field", function () {
   assert.ok(list.length > 0, "patterns non-empty");
   list.forEach(function (p, i) {
     assert.ok(p.slug, "pattern[" + i + "] (" + p.name + ") missing slug");
-    assert.ok(/^[a-z][a-z0-9-]*$/.test(p.slug), "slug invalid format: " + p.slug);
+    assert.ok(
+      /^[a-z][a-z0-9-]*$/.test(p.slug),
+      "slug invalid format: " + p.slug,
+    );
   });
 });
 
 test("motion slugs are unique", function () {
   var list = patternsList(motion);
-  var slugs = list.map(function (p) { return p.slug; });
+  var slugs = list.map(function (p) {
+    return p.slug;
+  });
   var unique = Array.from(new Set(slugs));
   assert.equal(slugs.length, unique.length, "duplicate slugs detected");
 });
@@ -38,13 +48,24 @@ test("motion slugs are unique", function () {
 test("known canonical slug mapping is correct", function () {
   var list = patternsList(motion);
   var byName = {};
-  list.forEach(function (p) { byName[p.name] = p.slug; });
+  list.forEach(function (p) {
+    byName[p.name] = p.slug;
+  });
   assert.equal(byName["State Transitions"], "state-transitions");
   assert.equal(byName["Drawer (open/close)"], "drawer-open-close");
   assert.equal(byName["Skeleton Loading"], "skeleton-loading");
-  assert.equal(byName["Accordion (expand/collapse)"], "accordion-expand-collapse");
+  assert.equal(
+    byName["Accordion (expand/collapse)"],
+    "accordion-expand-collapse",
+  );
   assert.equal(byName["Success Toast"], "success-toast");
   assert.equal(byName["Layered Overlays — Modals"], "layered-overlays-modals");
-  assert.equal(byName["Staggered Entrance — Lists, Table Rows, Search Cards"], "staggered-entrance");
-  assert.equal(byName["The \"Anchor\" Motion — Dropdowns, Popovers, and Tooltips"], "anchor-motion");
+  assert.equal(
+    byName["Staggered Entrance — Lists, Table Rows, Search Cards"],
+    "staggered-entrance",
+  );
+  assert.equal(
+    byName['The "Anchor" Motion — Dropdowns, Popovers, and Tooltips'],
+    "anchor-motion",
+  );
 });

@@ -24,13 +24,11 @@ var PATHS = {
     src: path.join(REPO_ROOT, "foundations", "src"),
     md: path.join(REPO_ROOT, "foundations", "src", "foundations.md"),
     authoring: path.join(REPO_ROOT, "foundations", "src", "AUTHORING.md"),
-    parserMap: path.join(
-      REPO_ROOT,
-      "scripts",
-      "foundations",
-      "foundations.parser.json",
-    ),
     dist: path.join(REPO_ROOT, "foundations", "dist"),
+    // PR α.5 (v0.4.1) removed the parser map; derive is schema-less.
+    // `parserMap` is intentionally absent — callers that referenced it should
+    // be updated. If any external consumer reads `paths.foundations.parserMap`
+    // it will now be `undefined`, which is the desired loud failure.
   },
 
   tokens: {

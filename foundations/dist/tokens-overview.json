@@ -1,0 +1,26 @@
+{
+  "_schema_version": 1,
+  "_meta": {
+    "auto_generated": true,
+    "source": "foundations/src/foundations.md",
+    "do_not_edit": "Edit the source MD; CI regenerates this file."
+  },
+  "rows": [
+    {
+      "status_note": "Shipped",
+      "Meaning": "Live in engineering and Figma. Safe to use in production.",
+      "status": "shipped"
+    },
+    {
+      "status_note": "In Review",
+      "Meaning": "Discussed with eng; defined in Figma; pending implementation in code.",
+      "status": "in-review"
+    },
+    {
+      "status_note": "Proposed",
+      "Meaning": "Design has spec'd this; not yet discussed with eng.",
+      "status": "proposed"
+    }
+  ],
+  "description": "All tokens are implemented as CSS custom properties under the --zen- namespace and as Figma variables in the Zen Colors library.\n\nToken status key"
+}

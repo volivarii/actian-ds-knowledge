@@ -54,7 +54,7 @@ Fields prefixed with `_` are system-managed (`_schema_version`, `_meta`, `_sourc
 ## Cross-references
 
 Cross-domain references use **slugs**, not quoted names:
-- `motion_refs: [{ref: state-transitions}]` resolves to `foundations/dist/interaction-motion.json` pattern by slug
+- `motion_refs: [{ref: state-transitions}]` resolves to `foundations/dist/motion.json` pattern by slug
 - `accessibility: [{ref: label-association}]` resolves to `accessibility/dist/a11y-index.json` by slug
 
 The slug system protects against name drift; canonical names live in their authored source.

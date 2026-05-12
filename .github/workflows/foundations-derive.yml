@@ -16,7 +16,6 @@ on:
       - 'foundations/src/foundations.md'
       - 'scripts/foundations/derive-foundations.js'
       - 'scripts/foundations/foundations-parser/**'
-      - 'scripts/foundations/foundations.parser.json'
 
 jobs:
   derive:
@@ -41,11 +40,10 @@ jobs:
       - name: Install deps
         run: npm install --no-audit --no-fund
 
-      - name: Derive foundations JSONs
+      - name: Derive foundations JSONs (schema-less)
         run: |
           node scripts/foundations/derive-foundations.js \
             --md foundations/src/foundations.md \
-            --map scripts/foundations/foundations.parser.json \
             --out foundations/dist
 
       - name: Run tests against regenerated output
@@ -54,13 +52,14 @@ jobs:
       - name: Detect changes
         id: diff
         run: |
-          if git diff --quiet -- foundations/; then
+          # Derive also rewrites foundations.* entries in paths-manifest.json.
+          if git diff --quiet -- foundations/ paths-manifest.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No JSON changes after regeneration."
+            echo "No JSON / manifest changes after regeneration."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "JSON changes detected:"
-            git diff --stat -- foundations/
+            echo "Changes detected:"
+            git diff --stat -- foundations/ paths-manifest.json
           fi
 
       - name: Auto-bump package.json patch
@@ -73,8 +72,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add foundations/ package.json
-          git commit -m "chore(foundations): regenerate JSONs from foundations.md + bump patch"
+          git add foundations/ paths-manifest.json package.json
+          git commit -m "chore(foundations): regenerate JSONs + manifest from foundations.md + bump patch"
           git push
 
       - name: Tag release
