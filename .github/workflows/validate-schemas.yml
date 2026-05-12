@@ -1,0 +1,94 @@
+name: Validate schemas
+
+# Schema-validation CI gate. Runs Ajv against the live artifacts on every PR
+# that touches a relevant source/dist path. Violations are surfaced inline on
+# the PR diff via reviewdog so non-engineering authors (who use the GitHub web
+# UI) see them in the Files-Changed view.
+#
+# Validators:
+#   - validate-guidelines.js     → components/src/guidelines/*.json
+#   - validate-manifest-schema.js → paths-manifest.json structural shape
+#   - validate-foundations-dist.js → foundations/dist/**/*.json (post-derive)
+#
+# Category MD frontmatter validation (schemas/category-defaults.json) lands in
+# the Phase 2 PR; the schema is staged here ahead of time.
+
+on:
+  pull_request:
+    paths:
+      - 'components/src/categories/**/*.md'
+      - 'components/src/guidelines/**/*.json'
+      - 'paths-manifest.json'
+      - 'foundations/dist/**/*.json'
+      - 'schemas/**/*.json'
+      - 'scripts/validate/**'
+      - '.github/workflows/validate-schemas.yml'
+
+jobs:
+  validate:
+    name: Schema validation + reviewdog annotations
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Setup reviewdog
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
+
+      - name: Validate guideline JSONs
+        id: guidelines
+        continue-on-error: true
+        run: |
+          node scripts/validate/validate-guidelines.js > guidelines.rdjsonl
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Validate paths-manifest schema
+        id: manifest
+        continue-on-error: true
+        run: |
+          node scripts/validate/validate-manifest-schema.js > manifest.rdjsonl
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Validate foundations dist
+        id: foundations
+        continue-on-error: true
+        run: |
+          node scripts/validate/validate-foundations-dist.js > foundations.rdjsonl
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Combine rdjsonl outputs
+        run: cat guidelines.rdjsonl manifest.rdjsonl foundations.rdjsonl > combined.rdjsonl
+
+      - name: Report annotations via reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat combined.rdjsonl | reviewdog \
+            -f=rdjsonl \
+            -name="schema-validation" \
+            -reporter=github-pr-check \
+            -level=error \
+            -fail-on-error=false || true
+
+      - name: Fail job if any validator reported errors
+        run: |
+          if [ -s combined.rdjsonl ]; then
+            echo "Schema violations found — see PR Check annotations for details."
+            cat combined.rdjsonl
+            exit 1
+          fi
+          echo "All schemas valid."
