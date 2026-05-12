@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.4.7",
+  "knowledge_version": "0.4.8",
   "paths": {
     "foundations.md": {
       "path": "foundations/src/foundations.md",

@@ -5,7 +5,7 @@
     "source": "components/src/categories/*.md",
     "do_not_edit": "Edit the MD sources; CI regenerates this bundle."
   },
-  "_generatedAt": "2026-05-12T11:50:06.686Z",
+  "_generatedAt": "2026-05-12T11:55:29.264Z",
   "categories": {
     "action": {
       "_meta": {
@@ -111,7 +111,7 @@
         ]
       },
       "_sourceFile": "components/src/categories/action.md",
-      "_generatedAt": "2026-05-12T11:50:06.686Z"
+      "_generatedAt": "2026-05-12T11:55:29.264Z"
     },
     "data-display": {
       "_meta": {
@@ -229,7 +229,7 @@
         ]
       },
       "_sourceFile": "components/src/categories/data-display.md",
-      "_generatedAt": "2026-05-12T11:50:06.686Z"
+      "_generatedAt": "2026-05-12T11:55:29.264Z"
     },
     "feedback": {
       "_meta": {
@@ -345,7 +345,7 @@
         ]
       },
       "_sourceFile": "components/src/categories/feedback.md",
-      "_generatedAt": "2026-05-12T11:50:06.686Z"
+      "_generatedAt": "2026-05-12T11:55:29.264Z"
     },
     "form-input-selection": {
       "_meta": {
@@ -457,7 +457,7 @@
         ]
       },
       "_sourceFile": "components/src/categories/form-input-selection.md",
-      "_generatedAt": "2026-05-12T11:50:06.686Z"
+      "_generatedAt": "2026-05-12T11:55:29.264Z"
     },
     "navigation": {
       "_meta": {
@@ -566,7 +566,7 @@
         ]
       },
       "_sourceFile": "components/src/categories/navigation.md",
-      "_generatedAt": "2026-05-12T11:50:06.686Z"
+      "_generatedAt": "2026-05-12T11:55:29.264Z"
     },
     "overlays": {
       "_meta": {
@@ -688,7 +688,7 @@
         ]
       },
       "_sourceFile": "components/src/categories/overlays.md",
-      "_generatedAt": "2026-05-12T11:50:06.686Z"
+      "_generatedAt": "2026-05-12T11:55:29.264Z"
     }
   }
 }
