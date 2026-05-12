@@ -62,10 +62,20 @@ jobs:
             git diff --stat -- components/dist/categories/ paths-manifest.json
           fi
 
-      - name: Auto-bump package.json patch
+      - name: Auto-bump package.json patch + sync manifest knowledge_version
         if: steps.diff.outputs.changed == 'true'
         run: |
           node scripts/lib/bump-version.js package.json patch
+          # paths-manifest.knowledge_version must equal package.json#version
+          # (asserted by tests/manifest.test.js). bump-version.js doesn't know
+          # about paths-manifest yet — sync here until that lands. See PR #34.
+          NEW_VERSION=$(node -e "console.log(require('./package.json').version)")
+          node -e "
+            const fs = require('fs');
+            const m = JSON.parse(fs.readFileSync('paths-manifest.json', 'utf8'));
+            m.knowledge_version = '$NEW_VERSION';
+            fs.writeFileSync('paths-manifest.json', JSON.stringify(m, null, 2) + '\n');
+          "
 
       # Skip on fork PRs — GITHUB_TOKEN can't push to forks.
       # Authors from forks see CI complete without auto-commit; they push regen manually.
