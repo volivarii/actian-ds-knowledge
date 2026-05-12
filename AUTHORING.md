@@ -54,7 +54,7 @@ Fields prefixed with `_` are system-managed (`_schema_version`, `_meta`, `_sourc
 ## Cross-references
 
 Cross-domain references use **slugs**, not quoted names:
-- `motion_refs: [{ref: state-transitions}]` resolves to `foundations/dist/interaction-motion.json` pattern by slug
+- `motion_refs: [{ref: state-transitions}]` resolves to `foundations/dist/tokens/motion.json` pattern by slug
 - `accessibility: [{ref: label-association}]` resolves to `accessibility/dist/a11y-index.json` by slug
 
 The slug system protects against name drift; canonical names live in their authored source.
@@ -62,7 +62,7 @@ The slug system protects against name drift; canonical names live in their autho
 ## Adding new content
 
 - New component guideline: copy a curated one as template; flip `_stub` to false; PR with content
-- New foundation token: edit `foundations.md` source; CI regenerates 8 dist JSONs
+- New foundation token: edit `foundations/src/foundations.md`; CI regenerates the hierarchical `foundations/dist/` tree (Pattern H) on PR
 - New category default content: edit `components/src/categories/<slug>.md`; CI regenerates dist
 - New domain (rare): consult the plugin lead; new directory + paths-manifest entry + CI workflow
 

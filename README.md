@@ -15,7 +15,7 @@ Actian Design System knowledge layer. Consumed by the [Actian DS Claude plugin](
 
 | Layer | Editable source | Generated artifacts |
 |---|---|---|
-| **Foundations** (mixed) | `foundations/src/foundations.md` (Design system lead, MD-as-SoT) + `foundations/src/AUTHORING.md` | `foundations/dist/*.json` (8 derived; CI from MD) |
+| **Foundations** (mixed) | `foundations/src/foundations.md` (Design system lead, MD-as-SoT) + `foundations/src/AUTHORING.md` | Hierarchical `foundations/dist/` tree (Pattern H — per-leaf JSONs + `_index.json` per directory + `foundations.bundle.json` roll-up + `foundations.md` verbatim copy; CI from MD) |
 | **Tokens** (interim-flat — see [`tokens/README.md`](tokens/README.md)) | `tokens/tokens.json`, `tokens/tokens.css` (human-frozen until successor generator returns) | `tokens/token-reference.md` (CI from `tokens.json`) |
 | **Components** (mixed) | `components/src/guidelines/*.json` (85 files: 44 curated + 41 stubs) + `components/src/guidelines/AUTHORING.md` | `components/dist/registries/{fmkit,dskit,metakit}.json` + `components/dist/registries/meta-kit/styles.json` + `components/dist/{text,effect}-styles.md` (CI from Figma) |
 | **Content guidelines** (mixed) | `content/src/*.md` (Content lead — 36 per-topic files + `global-guidelines.md` + `content-index.md` + `format-spec.md` + `AUTHORING.md`) | `content/dist/content.md` (CI-consolidated reference from `scripts/content/derive-content.js`) |
@@ -31,7 +31,7 @@ Actian Design System knowledge layer. Consumed by the [Actian DS Claude plugin](
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `.github/workflows/sync-from-figma.yml` | Cron (07:00 UTC nightly) + manual | Figma REST → `components/dist/registries/*.json`. Auto-stubs missing component guidelines. Auto-bumps `package.json` patch on additive/breaking diff + emits matching `v$VERSION` git tag. Opens additive PRs auto-merged; flagged PRs (breaking) get `review-required` label. |
-| `.github/workflows/foundations-derive.yml` | PR event on `foundations/src/foundations.md` or parser scripts | Regenerates `foundations/dist/*.json`. Auto-bumps `package.json` patch + emits tag after the regen commit. Posts a semantic-diff comment summarizing what changed. |
+| `.github/workflows/foundations-derive.yml` | PR event on `foundations/src/foundations.md` or parser scripts | Regenerates the hierarchical `foundations/dist/` tree (Pattern H). Auto-bumps `package.json` patch + emits tag after the regen commit. Posts a semantic-diff comment summarizing what changed. |
 | `.github/workflows/validate-manifest.yml` | PR event on `paths-manifest.json` or any content directory | Runs `scripts/validate-manifest.js`. Verifies every manifest path resolves to a real file + no orphan content exists outside the manifest. Required check. |
 
 ## Versioning

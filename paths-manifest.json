@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.4.0",
+  "knowledge_version": "0.4.1",
   "paths": {
     "foundations.md": {
       "path": "foundations/src/foundations.md",
@@ -15,62 +15,6 @@
       "type": "markdown",
       "origin": "human",
       "description": "How to edit foundations.md (UX team guide)"
-    },
-    "foundations.color": {
-      "path": "foundations/dist/color.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Color tokens derived from foundations.md sections 1, 2.1, 2.2, 2.5, 2.10, 3.1, 4.1"
-    },
-    "foundations.borders": {
-      "path": "foundations/dist/borders.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Border tokens derived from foundations.md sections 2.3, 4.2"
-    },
-    "foundations.spacing": {
-      "path": "foundations/dist/spacing.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Spacing + size tokens derived from foundations.md sections 2.7, 2.11, 3.3"
-    },
-    "foundations.typography": {
-      "path": "foundations/dist/typography.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Typography tokens derived from foundations.md sections 2.8, 3.2, 4.3"
-    },
-    "foundations.elevation": {
-      "path": "foundations/dist/elevation.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Elevation tokens derived from foundations.md sections 2.6, 3.4"
-    },
-    "foundations.icons": {
-      "path": "foundations/dist/icons.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Icon color tokens derived from foundations.md section 2.12"
-    },
-    "foundations.motion": {
-      "path": "foundations/dist/interaction-motion.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Motion + brightness filter tokens derived from foundations.md sections 2.9, 3.5"
-    },
-    "foundations.breakpointGridStructure": {
-      "path": "foundations/dist/breakpoint-grid-structure.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/foundations/derive-foundations.js",
-      "description": "Breakpoint + grid tokens derived from foundations.md sections 2.4, 3.6"
     },
     "tokens.json": {
       "path": "tokens/tokens.json",
@@ -183,6 +127,55 @@
       "type": "json",
       "origin": "human",
       "description": "FM Kit → DS Kit component mapping for hifi conversion"
+    },
+    "foundations.bundle": {
+      "path": "foundations/dist/foundations.bundle.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Full nested foundations tree (hierarchical Pattern H roll-up). One-shot LLM consumption: every section/leaf reachable from this single file."
+    },
+    "foundations.index": {
+      "path": "foundations/dist/_index.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Root foundations metadata + top-level child list. Navigate from here to per-H2 directories."
+    },
+    "foundations.source": {
+      "path": "foundations/dist/foundations.md",
+      "type": "markdown",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Verbatim copy of foundations/src/foundations.md (Stripe .md URL pattern). Auto-synced; do not edit."
+    },
+    "foundations.color-primitives-themes": {
+      "path": "foundations/dist/color-primitives-themes/_index.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Hierarchical _index for foundations section 'Color Primitives & Themes'. Children listed inside; sibling files under foundations/dist/color-primitives-themes/."
+    },
+    "foundations.tokens": {
+      "path": "foundations/dist/tokens/_index.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Hierarchical _index for foundations section 'Tokens'. Children listed inside; sibling files under foundations/dist/tokens/."
+    },
+    "foundations.foundations": {
+      "path": "foundations/dist/foundations/_index.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Hierarchical _index for foundations section 'Foundations'. Children listed inside; sibling files under foundations/dist/foundations/."
+    },
+    "foundations.component-specs": {
+      "path": "foundations/dist/component-specs/_index.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "description": "Hierarchical _index for foundations section 'Component Specs'. Children listed inside; sibling files under foundations/dist/component-specs/."
     }
   },
   "collections": {
@@ -199,7 +192,18 @@
       "type": "markdown",
       "origin": "human",
       "description": "Per-component content guidelines (Content lead, folded in 2026-05-11). 37 component files + global-guidelines.md (voice + words-to-avoid) + content-index.md (AI query guide) + format-spec.md (markdown structure + Figma/Word output mapping). Each component file follows When-to-use → Style → Behavior → Do/Don't."
+    },
+    "foundations.leaf": {
+      "dir": "foundations/dist",
+      "pattern": "<topSlug>/.../<slug>.json",
+      "recursive": true,
+      "type": "json",
+      "origin": "ci",
+      "description": "Per-leaf foundations JSONs in hierarchical Pattern H layout. Each leaf mirrors its MD heading path. Branch nodes carry an `_index.json` instead. Single roll-up at foundations.bundle. Recursive: any file under foundations/dist/ is covered by this collection."
     }
   },
-  "aliases": {}
+  "aliases": {},
+  "_notes": {
+    "foundations_auto": "foundations.* entries are auto-regenerated by scripts/foundations/derive-foundations.js. Do not hand-edit. Hierarchical layout: bundle for one-shot, per-H2 _index entries for navigation; full per-leaf tree lives under foundations/dist/<slug>/."
+  }
 }
