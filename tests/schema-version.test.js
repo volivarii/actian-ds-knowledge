@@ -5,15 +5,21 @@ var assert = require("node:assert/strict");
 var fs = require("node:fs");
 var path = require("node:path");
 
+// PR α.5 v2 (v0.4.1+): foundations/dist/ is a hierarchical tree (Pattern H).
+// Schema-version coverage = pinned anchors at every level (root index,
+// representative branch _index, representative leaf, motion leaf, bundle)
+// plus all sibling collections.
 var FILES_REQUIRING_SCHEMA_VERSION = [
-  "foundations/dist/color.json",
-  "foundations/dist/borders.json",
-  "foundations/dist/spacing.json",
-  "foundations/dist/typography.json",
-  "foundations/dist/elevation.json",
-  "foundations/dist/icons.json",
-  "foundations/dist/interaction-motion.json",
-  "foundations/dist/breakpoint-grid-structure.json",
+  "foundations/dist/_index.json",
+  "foundations/dist/foundations.bundle.json",
+  "foundations/dist/tokens/_index.json",
+  "foundations/dist/tokens/motion.json",
+  "foundations/dist/tokens/border-tokens/_index.json",
+  "foundations/dist/tokens/border-tokens/radius.json",
+  "foundations/dist/color-primitives-themes/_index.json",
+  "foundations/dist/color-primitives-themes/primitives/green.json",
+  "foundations/dist/foundations/_index.json",
+  "foundations/dist/component-specs/_index.json",
   "components/dist/registries/dskit.json",
   "components/dist/registries/fmkit.json",
   "components/dist/registries/metakit.json",
@@ -33,6 +39,32 @@ FILES_REQUIRING_SCHEMA_VERSION.forEach(function (relPath) {
       data._schema_version,
       1,
       relPath + " missing _schema_version: 1",
+    );
+  });
+});
+
+// Coverage test: every per-leaf + every _index.json in foundations/dist/
+// carries _schema_version: 1. Catches regressions where a leaf shape is
+// emitted without the version field.
+test("all foundations/dist JSONs carry _schema_version: 1", function () {
+  var distDir = path.resolve(__dirname, "..", "foundations", "dist");
+  function walk(dir, acc) {
+    var entries = fs.readdirSync(dir, { withFileTypes: true });
+    entries.forEach(function (e) {
+      var full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full, acc);
+      else if (e.isFile() && /\.json$/.test(e.name)) acc.push(full);
+    });
+    return acc;
+  }
+  var jsons = walk(distDir, []);
+  assert.ok(jsons.length >= 50, "expected ≥50 dist JSON files, got " + jsons.length);
+  jsons.forEach(function (p) {
+    var data = JSON.parse(fs.readFileSync(p, "utf8"));
+    assert.equal(
+      data._schema_version,
+      1,
+      p + " missing _schema_version: 1",
     );
   });
 });

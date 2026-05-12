@@ -1,0 +1,67 @@
+{
+  "_schema_version": 1,
+  "id": "color-primitives-themes/semantic-tokens",
+  "title": "Semantic Tokens",
+  "path": [
+    "color-primitives-themes",
+    "semantic-tokens"
+  ],
+  "parent": "color-primitives-themes",
+  "anchors": {
+    "h2": "color-primitives-themes",
+    "h3": "semantic-tokens"
+  },
+  "source": {
+    "file": "foundations/src/foundations.md",
+    "startLine": 548,
+    "endLine": 565
+  },
+  "_meta": {
+    "auto_generated": true,
+    "source": "foundations/src/foundations.md",
+    "do_not_edit": "Edit the source MD; CI regenerates this file."
+  },
+  "body": "Semantic tokens map fixed roles to specific primitives. These do not change per theme. All components should reference these tokens rather than raw primitive tokens.\n\nAll shades (25–900) follow the same alias pattern, e.g. --zen-color-success-100 → --zen-color-green-100.",
+  "blocks": [
+    {
+      "type": "table",
+      "headers": [
+        "Role",
+        "Semantic Token",
+        "Primitive",
+        "Hex (500)",
+        "OKLCH (500)"
+      ],
+      "rows": [
+        {
+          "Role": "Success",
+          "Semantic Token": "--zen-color-success-500",
+          "Primitive": "--zen-color-green-500",
+          "Hex (500)": "#299315",
+          "OKLCH (500)": "oklch(0.5812 0.1816 141.19)"
+        },
+        {
+          "Role": "Warning",
+          "Semantic Token": "--zen-color-warning-500",
+          "Primitive": "--zen-color-orange-500",
+          "Hex (500)": "#FC9F1D",
+          "OKLCH (500)": "oklch(0.7775 0.166 66.57)"
+        },
+        {
+          "Role": "Error",
+          "Semantic Token": "--zen-color-error-500",
+          "Primitive": "--zen-color-red-500",
+          "Hex (500)": "#E6492D",
+          "OKLCH (500)": "oklch(0.6243 0.1982 32.45)"
+        },
+        {
+          "Role": "Neutral",
+          "Semantic Token": "--zen-color-neutral-500",
+          "Primitive": "--zen-color-grey-500",
+          "Hex (500)": "#999999",
+          "OKLCH (500)": "oklch(0.683 0 0)"
+        }
+      ]
+    }
+  ]
+}

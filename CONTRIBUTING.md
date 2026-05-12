@@ -37,7 +37,7 @@ tokens/          ← interim: human-frozen (see tokens/README.md)
 
 | If you want to change… | Edit here | What CI does on PR |
 |---|---|---|
-| A foundation token, rule, or scale | `foundations/src/foundations.md` | `foundations-derive.yml` regenerates 8 `foundations/dist/*.json` |
+| A foundation token, rule, or scale | `foundations/src/foundations.md` | `foundations-derive.yml` regenerates the hierarchical `foundations/dist/` tree (Pattern H — per-leaf JSONs + `_index.json` per directory + `foundations.bundle.json` roll-up + `.md` verbatim copy) |
 | Component guideline content (anatomy, examples, behavior) | `components/src/guidelines/<slug>.json` | None — content goes live on merge |
 | Component registry data (key, variants, properties) | **Don't.** Edit upstream in Figma. | `sync-from-figma.yml` (nightly 07:00 UTC) writes `components/dist/registries/*.json` |
 | Meta Kit `templates` block | `components/dist/registries/metakit.json` (ONLY this block — hand-curated; CI preserves across syncs) | Same workflow preserves the block |

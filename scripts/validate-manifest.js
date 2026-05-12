@@ -25,11 +25,7 @@ var CONTENT_DIRS = [
 ];
 
 // Files inside content dirs that don't need manifest entries.
-var EXCLUDED_FILES = new Set([
-  "README.md",
-  "AUTHORING.md",
-  ".DS_Store",
-]);
+var EXCLUDED_FILES = new Set(["README.md", "AUTHORING.md", ".DS_Store"]);
 
 function readManifest() {
   if (!fs.existsSync(MANIFEST_PATH)) {
@@ -107,9 +103,7 @@ function validatePathsExist(manifest) {
     var entry = manifest.paths[name];
     var full = path.join(REPO_ROOT, entry.path);
     if (!fs.existsSync(full)) {
-      errors.push(
-        "path '" + name + "' references missing file: " + entry.path,
-      );
+      errors.push("path '" + name + "' references missing file: " + entry.path);
     }
   }
   for (var collName in manifest.collections) {
@@ -135,12 +129,18 @@ function gatherCoveredFiles(manifest) {
   for (var collName in manifest.collections) {
     var coll = manifest.collections[collName];
     var dir = path.join(REPO_ROOT, coll.dir);
-    if (fs.existsSync(dir)) {
-      var entries = fs.readdirSync(dir);
-      for (var i = 0; i < entries.length; i++) {
-        if (!EXCLUDED_FILES.has(entries[i])) {
-          covered.add(path.join(coll.dir, entries[i]));
-        }
+    if (!fs.existsSync(dir)) continue;
+    // Recursive collections (Pattern H — hierarchical leaf trees) declare
+    // `recursive: true`. Default is flat (one level).
+    if (coll.recursive) {
+      var rels = walkDir(coll.dir);
+      for (var r = 0; r < rels.length; r++) covered.add(rels[r]);
+      continue;
+    }
+    var entries = fs.readdirSync(dir);
+    for (var i = 0; i < entries.length; i++) {
+      if (!EXCLUDED_FILES.has(entries[i])) {
+        covered.add(path.join(coll.dir, entries[i]));
       }
     }
   }
