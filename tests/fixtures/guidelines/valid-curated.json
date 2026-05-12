@@ -1,0 +1,15 @@
+{
+  "component": "Button",
+  "page_id": "9085:24375",
+  "extracted_at": "2026-03-25T12:00:00Z",
+  "frames_found": ["Content guidelines", "Components"],
+  "frames_missing": [],
+  "content_guidelines": {
+    "sections": [
+      {
+        "heading": "Terminology",
+        "content": [{"term": "Cancel", "rule": "Use Cancel..."}]
+      }
+    ]
+  }
+}
