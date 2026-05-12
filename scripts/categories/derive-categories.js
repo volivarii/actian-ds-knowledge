@@ -218,13 +218,19 @@ function updatePathsManifest(manifestPath, slugs, opts) {
   });
 
   // 4. Collections — categoryDefaults (dist) + categoriesSrc (src MDs)
-  manifest.collections["components.categoryDefaults"] = {
+  // Drop the legacy bare key if it survives from a pre-v0.5.1 manifest;
+  // the leaf-XOR-namespace convention requires the .byKey suffix here
+  // because per-slug leaves live under the same prefix.
+  if (manifest.collections["components.categoryDefaults"]) {
+    delete manifest.collections["components.categoryDefaults"];
+  }
+  manifest.collections["components.categoryDefaults.byKey"] = {
     dir: "components/dist/categories",
     pattern: "{slug}-defaults.json",
     type: "json",
     origin: "ci",
     description:
-      "Per-category defaults (Phase 2 v2). 6 categories: action, form-input-selection, navigation, data-display, feedback, overlays. See also bundle entry components.categoryDefaults.bundle for the roll-up.",
+      "Per-category defaults (Phase 2 v2). 6 categories: action, form-input-selection, navigation, data-display, feedback, overlays. See also bundle entry components.categoryDefaults.bundle for the roll-up. Renamed from components.categoryDefaults in v0.5.1 to honor leaf-XOR-namespace manifest convention.",
   };
   manifest.collections["components.categoriesSrc"] = {
     dir: "components/src/categories",
