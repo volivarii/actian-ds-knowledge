@@ -360,7 +360,7 @@ test("e2e: paths-manifest updates include components.categoryDefaults entries", 
       "missing entry for " + s,
     );
   }
-  assert.ok(m.collections["components.categoryDefaults"]);
+  assert.ok(m.collections["components.categoryDefaults.byKey"]);
   assert.ok(m.collections["components.categoriesSrc"]);
   fs.rmSync(tmpManifest, { force: true });
 });

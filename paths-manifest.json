@@ -1,8 +1,9 @@
 {
   "_schema_version": 1,
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
+  "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.5.0",
+  "knowledge_version": "0.5.1",
   "paths": {
     "foundations.md": {
       "path": "foundations/src/foundations.md",
@@ -97,7 +98,7 @@
       "generator": "scripts/content/derive-content.js",
       "description": "UI copy guidelines — consolidated reference auto-generated from content/src/*.md (Phase 2). Key renamed from 'content' to 'content.md' in v0.3.2 to resolve dot-notation collision with the 'content.section' collection; mirrors the existing 'foundations.md' precedent. Section order tracks content/src/content-index.md."
     },
-    "accessibility": {
+    "accessibility.guide": {
       "path": "accessibility/accessibility.md",
       "type": "markdown",
       "origin": "human",
@@ -243,12 +244,12 @@
       "origin": "ci",
       "description": "Per-leaf foundations JSONs in hierarchical Pattern H layout. Each leaf mirrors its MD heading path. Branch nodes carry an `_index.json` instead. Single roll-up at foundations.bundle. Recursive: any file under foundations/dist/ is covered by this collection."
     },
-    "components.categoryDefaults": {
+    "components.categoryDefaults.byKey": {
       "dir": "components/dist/categories",
       "pattern": "{slug}-defaults.json",
       "type": "json",
       "origin": "ci",
-      "description": "Per-category defaults (Phase 2 v2). 6 categories: action, form-input-selection, navigation, data-display, feedback, overlays. See also bundle entry components.categoryDefaults.bundle for the roll-up."
+      "description": "Per-category defaults (Phase 2 v2). 6 categories: action, form-input-selection, navigation, data-display, feedback, overlays. See also bundle entry components.categoryDefaults.bundle for the roll-up. Renamed from components.categoryDefaults in v0.5.1 to honor leaf-XOR-namespace manifest convention."
     },
     "components.categoriesSrc": {
       "dir": "components/src/categories",
