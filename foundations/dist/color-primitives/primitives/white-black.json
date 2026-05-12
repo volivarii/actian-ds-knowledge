@@ -1,22 +1,22 @@
 {
   "_schema_version": 1,
-  "id": "tokens/typography/font-family",
-  "title": "Font Family",
+  "id": "color-primitives/primitives/white-black",
+  "title": "White & Black",
   "path": [
-    "tokens",
-    "typography",
-    "font-family"
+    "color-primitives",
+    "primitives",
+    "white-black"
   ],
-  "parent": "tokens/typography",
+  "parent": "color-primitives/primitives",
   "anchors": {
-    "h2": "tokens",
-    "h3": "typography",
-    "h4": "font-family"
+    "h2": "color-primitives",
+    "h3": "primitives",
+    "h4": "white-black"
   },
   "source": {
     "file": "foundations/src/foundations.md",
-    "startLine": 588,
-    "endLine": 594
+    "startLine": 100,
+    "endLine": 106
   },
   "_meta": {
     "auto_generated": true,
@@ -29,21 +29,18 @@
       "headers": [
         "Token",
         "Value",
-        "Usage",
         "Status"
       ],
       "rows": [
         {
-          "Token": "--zen-font-family-text",
-          "Value": "Roboto",
-          "Usage": "Default — headings and body",
+          "Token": "--zen-color-white",
+          "Value": "`oklch(1 0 0)` / `#FFFFFF`",
           "status_note": "Shipped",
           "status": "shipped"
         },
         {
-          "Token": "--zen-font-family-mono",
-          "Value": "&quot;Roboto Mono&quot;",
-          "Usage": "Code and data",
+          "Token": "--zen-color-black",
+          "Value": "`oklch(0 0 0)` / `#000000`",
           "status_note": "Shipped",
           "status": "shipped"
         }

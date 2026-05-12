@@ -11,23 +11,23 @@
   },
   "source": {
     "file": "foundations/src/foundations.md",
-    "startLine": 586,
-    "endLine": 1015
+    "startLine": 543,
+    "endLine": 965
   },
   "children": [
     {
-      "id": "tokens/color-global-tokens",
-      "title": "Color — Global Tokens",
+      "id": "tokens/global-color",
+      "title": "Global Color",
       "order": 1
     },
     {
-      "id": "tokens/color-text-tokens",
-      "title": "Color — Text Tokens",
+      "id": "tokens/typography",
+      "title": "Typography",
       "order": 2
     },
     {
-      "id": "tokens/border-tokens",
-      "title": "Border Tokens",
+      "id": "tokens/borders",
+      "title": "Borders",
       "order": 3
     },
     {
@@ -41,8 +41,8 @@
       "order": 5
     },
     {
-      "id": "tokens/elevation-shadows",
-      "title": "Elevation (Shadows)",
+      "id": "tokens/elevation",
+      "title": "Elevation",
       "order": 6
     },
     {
@@ -51,29 +51,24 @@
       "order": 7
     },
     {
-      "id": "tokens/typography",
-      "title": "Typography",
+      "id": "tokens/backgrounds",
+      "title": "Backgrounds",
       "order": 8
+    },
+    {
+      "id": "tokens/heights-and-trigger-areas",
+      "title": "Heights and Trigger Areas",
+      "order": 9
+    },
+    {
+      "id": "tokens/icons",
+      "title": "Icons",
+      "order": 10
     },
     {
       "id": "tokens/motion",
       "title": "Motion",
-      "order": 9
-    },
-    {
-      "id": "tokens/background-tokens",
-      "title": "Background Tokens",
-      "order": 10
-    },
-    {
-      "id": "tokens/size-tokens",
-      "title": "Size Tokens",
       "order": 11
-    },
-    {
-      "id": "tokens/icon-color-tokens",
-      "title": "Icon Color Tokens",
-      "order": 12
     }
   ],
   "_meta": {

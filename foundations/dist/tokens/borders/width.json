@@ -1,22 +1,22 @@
 {
   "_schema_version": 1,
-  "id": "tokens/typography/font-family",
-  "title": "Font Family",
+  "id": "tokens/borders/width",
+  "title": "Width",
   "path": [
     "tokens",
-    "typography",
-    "font-family"
+    "borders",
+    "width"
   ],
-  "parent": "tokens/typography",
+  "parent": "tokens/borders",
   "anchors": {
     "h2": "tokens",
-    "h3": "typography",
-    "h4": "font-family"
+    "h3": "borders",
+    "h4": "width"
   },
   "source": {
     "file": "foundations/src/foundations.md",
-    "startLine": 588,
-    "endLine": 594
+    "startLine": 675,
+    "endLine": 681
   },
   "_meta": {
     "auto_generated": true,
@@ -34,16 +34,16 @@
       ],
       "rows": [
         {
-          "Token": "--zen-font-family-text",
-          "Value": "Roboto",
-          "Usage": "Default — headings and body",
+          "Token": "--zen-border-width-md",
+          "Value": "1px",
+          "Usage": "Default",
           "status_note": "Shipped",
           "status": "shipped"
         },
         {
-          "Token": "--zen-font-family-mono",
-          "Value": "&quot;Roboto Mono&quot;",
-          "Usage": "Code and data",
+          "Token": "--zen-border-width-lg",
+          "Value": "2px",
+          "Usage": "Focus rings, emphasis",
           "status_note": "Shipped",
           "status": "shipped"
         }
