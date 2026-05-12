@@ -13,8 +13,8 @@
   },
   "source": {
     "file": "foundations/src/foundations.md",
-    "startLine": 683,
-    "endLine": 693
+    "startLine": 707,
+    "endLine": 717
   },
   "_meta": {
     "auto_generated": true,
@@ -41,7 +41,7 @@
         },
         {
           "Token": "--zen-focus-ring-error",
-          "Value": "2px solid red-500",
+          "Value": "2px solid --zen-color-error-600",
           "Usage": "Destructive button links, error inputs",
           "status_note": "Shipped",
           "status": "shipped"

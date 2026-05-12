@@ -15,8 +15,8 @@
   },
   "source": {
     "file": "foundations/src/foundations.md",
-    "startLine": 739,
-    "endLine": 751
+    "startLine": 604,
+    "endLine": 616
   },
   "_meta": {
     "auto_generated": true,
@@ -35,7 +35,7 @@
       "rows": [
         {
           "Token": "--zen-font-size-xs",
-          "Value": "`11px` *(update from 10px)*",
+          "Value": "`0.6875rem` (11px) *(update from 10px)*",
           "Usage": "Hint",
           "status_note": "Proposed",
           "status": "proposed"

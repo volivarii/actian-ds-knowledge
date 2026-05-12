@@ -1,13 +1,13 @@
 {
   "_schema_version": 1,
   "id": "",
-  "title": "Actian Design System — Master Reference",
+  "title": "Actian Design Foundation",
   "path": [],
   "parent": null,
   "children": [
     {
-      "id": "color-primitives-themes",
-      "title": "Color Primitives & Themes",
+      "id": "color-primitives",
+      "title": "Color Primitives",
       "order": 1
     },
     {
@@ -16,14 +16,9 @@
       "order": 2
     },
     {
-      "id": "foundations",
-      "title": "Foundations",
+      "id": "design-guidelines",
+      "title": "Design Guidelines",
       "order": 3
-    },
-    {
-      "id": "component-specs",
-      "title": "Component Specs",
-      "order": 4
     }
   ],
   "anchors": {

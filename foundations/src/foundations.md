@@ -1,49 +1,39 @@
-# Actian Design System — Master Reference
+# Actian Design Foundation
 
 > **Built on Zen**
 > The Actian Design System is built on top of the **Zen Design System** — Zen provides the underlying token architecture, color primitives, spacing scale, typography, and component logic that Actian inherits and extends. Where Actian-specific decisions diverge from or expand on Zen, they are noted explicitly. When in doubt, Zen is the foundation.
 
 > **How to use this doc**
-> This is the authoritative reference for the Actian design system. It covers current primitives, existing tokens (in both Figma/hex and engineering/OKLCH formats), and foundational usage rules. Sections marked **⚠️ Proposed** are not yet in production — they are design-side proposals to be addressed with engineering before implementation.
->
-> **What's authoritative:** Tokens listed under "Current Tokens" reflect the live state in both Figma and code as of April 2026. Figma was recently updated to align with engineering.
->
-> **What to do when something's missing:** If you need a value not covered here, flag it in the Token Changelog section and loop in engineering before using a one-off value.
+> This is the authoritative reference for the Actian design system. It covers current primitives, existing tokens (in both Figma/hex and engineering/OKLCH formats), and foundational usage rules. Tokens are marked with a status (🟢 Shipped, 🔵 In Review, 🟡 Proposed) throughout Section 2.
 
 ---
 
-**Last updated:** April 22, 2026
-**Maintained by:** Design Systems team
-**Underlying system:** Zen Design System
-**Figma library:** Zen Colors (aligned with eng)
-**Engineering implementation:** CSS custom properties (`--zen-*`), OKLCH color space
+**Version:** 1.2.0
+**Last updated:** May 11, 2026
 
 ---
 
 ## Table of Contents
 
-1. [Color Primitives & Themes](#1-color-primitives--themes)
+1. [Color Primitives](#1-color-primitives)
    - OKLCH Shade Formula
    - Primitives (all palettes, 25–900)
-   - Semantic Tokens
-   - Product Themes
 
 2. [Tokens](#2-tokens)
    - Status Key
-   - 2.1 Color — Global Tokens
-   - 2.2 Color — Text Tokens
-   - 2.3 Border Tokens
+   - 2.1 Global Color
+   - 2.2 Typography
+   - 2.3 Borders
    - 2.4 Breakpoints
    - 2.5 Focus Rings
-   - 2.6 Elevation (Shadows)
+   - 2.6 Elevation
    - 2.7 Spacing
-   - 2.8 Typography
-   - 2.9 Motion
-   - 2.10 Background Tokens
-   - 2.11 Size Tokens (Component Heights, Trigger Area, Icon Sizes)
-   - 2.12 Icon Color Tokens
+   - 2.8 Backgrounds
+   - 2.9 Heights and Trigger Areas
+   - 2.10 Icons
+   - 2.11 Motion
 
-3. [Foundations](#3-foundations)
+3. [Design Guidelines](#3-design-guidelines)
    - 3.1 Color Usage Rules
    - 3.2 Typography Rules
    - 3.3 Spacing Rules
@@ -51,24 +41,21 @@
    - 3.5 Brightness Filter Convention — Interactive States
    - 3.6 Breakpoints
 
-4. [Component Specs](#4-component-specs)
-   - 4.1 Focus Ring Rules
-   - 4.2 Border Usage
-   - 4.3 Placeholder Text
 
-5. [Handoff Protocol](#5-handoff-protocol)
-   - 5.1 Before You Hand Off
-   - 5.2 Figma Handoff Checklist
-   - 5.3 What to Include in Every Handoff
-   - 5.4 When Something Is Missing from the Token System
 
-6. [Related Guidelines](#6-related-guidelines)
-   - 6.1 Accessibility Guidelines
-   - 6.2 Content Guidelines
+4. [Handoff Protocol](#4-handoff-protocol)
+   - 4.1 Before You Hand Off
+   - 4.2 Figma Handoff Checklist
+   - 4.3 What to Include in Every Handoff
+   - 4.4 When Something Is Missing
+
+5. [Related Guidelines](#5-related-guidelines)
+   - 5.1 Accessibility Guidelines
+   - 5.2 Content Guidelines
 
 ---
 
-## 1. Color Primitives & Themes
+## 1. Color Primitives
 
 All color palettes follow a shared OKLCH shade formula. Each palette has a named base (500), and all other shades are derived from it. Figma stores these as hex; engineering implements them as OKLCH with relative color syntax.
 
@@ -78,7 +65,7 @@ Engineering derives all shades from the 500 base using the following formula:
 
 | Shade | Lightness (L) | Chroma (C) |
 |-------|--------------|------------|
-| 25 | `0.99` | `calc(c * 0.2)` |
+| 25 | `0.97` 🟡 Proposed *(update from 0.99)* | `calc(c * 0.005)` 🟡 Proposed *(update from c * 0.2)* |
 | 50 | `calc(l + (0.99 - l) * 5/6)` | `calc(c * 0.3)` |
 | 100 | `calc(l + (0.99 - l) * 4/6)` | `calc(c * 0.4)` |
 | 200 | `calc(l + (0.99 - l) / 2)` | `calc(c * 0.6)` |
@@ -96,14 +83,21 @@ Engineering derives all shades from the 500 base using the following formula:
 
 ### Primitives
 
-All color primitives across the system. Every palette follows the same OKLCH shade formula (25–900). Semantic roles and theme assignments are defined in the sections below.
+All color primitives across the system. Every palette follows the same OKLCH shade formula (25–900). Semantic roles are defined in the Semantic Tokens section below.
+
+#### White & Black
+
+| Token | Value | Status |
+|-------|-------|--------|
+| `--zen-color-white` | `oklch(1 0 0)` / `#FFFFFF` | 🟢 Shipped |
+| `--zen-color-black` | `oklch(0 0 0)` / `#000000` | 🟢 Shipped |
 
 #### Green
 OKLCH 500 base: `oklch(0.5812 0.1816 141.19)` — *Success semantic role*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-green-25` | `#F0FFEC` | `oklch(0.99 0.0363 141.19)` |
+| 25 | `--zen-color-green-25` | `#F3F6F3` 🟡 | `oklch(0.97 0.005 141.19)` 🟡 |
 | 50 | `--zen-color-green-50` | `#D3EFCD` | `oklch(0.8677 0.0545 141.19)` |
 | 100 | `--zen-color-green-100` | `#B5DCAF` | `oklch(0.8211 0.0726 141.19)` |
 | 200 | `--zen-color-green-200` | `#92CC89` | `oklch(0.7812 0.1090 141.19)` |
@@ -120,7 +114,7 @@ OKLCH 500 base: `oklch(0.7775 0.166 66.57)` — *Warning semantic role*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-orange-25` | `#FFF9E5` | `oklch(0.99 0.0332 66.57)` |
+| 25 | `--zen-color-orange-25` | `#F7F4F2` 🟡 | `oklch(0.97 0.005 66.57)` 🟡 |
 | 50 | `--zen-color-orange-50` | `#FFEBCE` | `oklch(0.9479 0.0498 66.57)` |
 | 100 | `--zen-color-orange-100` | `#FFDDB6` | `oklch(0.9183 0.0664 66.57)` |
 | 200 | `--zen-color-orange-200` | `#FFCD92` | `oklch(0.8888 0.0996 66.57)` |
@@ -137,7 +131,7 @@ OKLCH 500 base: `oklch(0.6243 0.1982 32.45)` — *Error semantic role*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-red-25` | `#FFF4EC` | `oklch(0.99 0.0396 32.45)` |
+| 25 | `--zen-color-red-25` | `#F8F4F3` 🟡 | `oklch(0.97 0.005 32.45)` 🟡 |
 | 50 | `--zen-color-red-50` | `#FFDACF` | `oklch(0.9202 0.0595 32.45)` |
 | 100 | `--zen-color-red-100` | `#FFC1B3` | `oklch(0.8828 0.0793 32.45)` |
 | 200 | `--zen-color-red-200` | `#FFA38F` | `oklch(0.8121 0.1189 32.45)` |
@@ -154,7 +148,7 @@ OKLCH 500 base: `oklch(0.683 0 0)` — *Neutral semantic role*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-grey-25` | `#FCFCFC` | `oklch(0.99 0 0)` |
+| 25 | `--zen-color-grey-25` | `#F8F4F5` 🟡 | `oklch(0.97 0.005 0)` 🟡 |
 | 50 | `--zen-color-grey-50` | `#EBEBEB` | `oklch(0.9358 0 0)` |
 | 100 | `--zen-color-grey-100` | `#DADADA` | `oklch(0.8887 0 0)` |
 | 200 | `--zen-color-grey-200` | `#C9C9C9` | `oklch(0.8415 0 0)` |
@@ -167,28 +161,28 @@ OKLCH 500 base: `oklch(0.683 0 0)` — *Neutral semantic role*
 | 900 | `--zen-color-grey-900` | `#505050` | `oklch(0.4303 0 0)` |
 
 #### Royal Blue
-500 base: `#0550DC` — *(No OKLCH base defined)* 🔵 In Review — *Actian theme primary*
+OKLCH 500 base: `oklch(0.4916 0.2229 262.08)` — *Actian theme primary*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-royal-blue-25` | `#EDF6FF` | — |
-| 50 | `--zen-color-royal-blue-50` | `#E0F0FF` | — |
-| 100 | `--zen-color-royal-blue-100` | `#9DCDFF` | — |
-| 200 | `--zen-color-royal-blue-200` | `#6FAFFD` | — |
-| 300 | `--zen-color-royal-blue-300` | `#3C91FF` | — |
-| 400 | `--zen-color-royal-blue-400` | `#2679FF` | — |
-| **500** | **`--zen-color-royal-blue-500`** | **`#0550DC`** | — |
-| 600 | `--zen-color-royal-blue-600` | `#043ACE` | — |
-| 700 | `--zen-color-royal-blue-700` | `#0029A9` | — |
-| 800 | `--zen-color-royal-blue-800` | `#000078` | — |
-| 900 | `--zen-color-royal-blue-900` | `#090952` | — |
+| 25 | `--zen-color-royal-blue-25` | `#F3F5F9` 🟡 | `oklch(0.97 0.005 262.08)` 🟡 |
+| 50 | `--zen-color-royal-blue-50` | `#c8e1ff` | `oklch(0.9069 0.0669 262.08)` |
+| 100 | `--zen-color-royal-blue-100` | `#a6c6ff` | `oklch(0.8239 0.0892 262.08)` |
+| 200 | `--zen-color-royal-blue-200` | `#7caaff` | `oklch(0.7408 0.1337 262.08)` |
+| 300 | `--zen-color-royal-blue-300` | `#5b8ef0` | `oklch(0.6577 0.1560 262.08)` |
+| 400 | `--zen-color-royal-blue-400` | `#3571e6` | `oklch(0.5747 0.1895 262.08)` |
+| **500** | **`--zen-color-royal-blue-500`** | **`#0550dc`** | **`oklch(0.4916 0.2229 262.08)`** |
+| 600 | `--zen-color-royal-blue-600` | `#0043d8` | `oklch(0.4621 0.2340 262.08)` |
+| 700 | `--zen-color-royal-blue-700` | `#0039bd` | `oklch(0.4179 0.2118 262.08)` |
+| 800 | `--zen-color-royal-blue-800` | `#003092` | `oklch(0.3589 0.1672 262.08)` |
+| 900 | `--zen-color-royal-blue-900` | `#082a6d` | `oklch(0.3097 0.1226 262.08)` |
 
 #### Blue
 OKLCH 500 base: `oklch(0.58 0.130062 238.7173)` — *Studio & Admin theme primary*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-blue-25` | `#ECFFFF` | `oklch(0.99 0.026 238.72)` |
+| 25 | `--zen-color-blue-25` | `#F2F6F8` 🟡 | `oklch(0.97 0.005 238.72)` 🟡 |
 | 50 | `--zen-color-blue-50` | `#CFEAFD` | `oklch(0.9297 0.039 238.72)` |
 | 100 | `--zen-color-blue-100` | `#B1D5EE` | `oklch(0.8827 0.052 238.72)` |
 | 200 | `--zen-color-blue-200` | `#8BC0E6` | `oklch(0.79 0.078 238.72)` |
@@ -205,7 +199,7 @@ OKLCH 500 base: `oklch(0.6233 0.1066 192.34)` — *Explorer theme primary*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-turquoise-25` | `#ECFFFF` | `oklch(0.99 0.0213 192.34)` |
+| 25 | `--zen-color-turquoise-25` | `#F1F6F6` 🟡 | `oklch(0.97 0.005 192.34)` 🟡 |
 | 50 | `--zen-color-turquoise-50` | `#D0EFED` | `oklch(0.9189 0.032 192.34)` |
 | 100 | `--zen-color-turquoise-100` | `#B5DDDB` | `oklch(0.8755 0.0426 192.34)` |
 | 200 | `--zen-color-turquoise-200` | `#90CECB` | `oklch(0.812 0.064 192.34)` |
@@ -222,7 +216,7 @@ OKLCH 500 base: `oklch(0.6798 0.0933 313.67)` — *Former primary; available for
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-purple-25` | `#FFF9FF` | `oklch(0.99 0.0187 313.67)` |
+| 25 | `--zen-color-purple-25` | `#F6F4F7` 🟡 | `oklch(0.97 0.005 313.67)` 🟡 |
 | 50 | `--zen-color-purple-50` | `#F2E6F8` | `oklch(0.9415 0.028 313.67)` |
 | 100 | `--zen-color-purple-100` | `#E3D3EC` | `oklch(0.8932 0.0373 313.67)` |
 | 200 | `--zen-color-purple-200` | `#D7BFE4` | `oklch(0.8399 0.056 313.67)` |
@@ -239,7 +233,7 @@ OKLCH 500 base: `oklch(0.5724 0.0397 229.02)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-blue-grey-25` | `#F7FDFF` | `oklch(0.99 0.0079 229.02)` |
+| 25 | `--zen-color-blue-grey-25` | `#F2F6F8` 🟡 | `oklch(0.97 0.005 229.02)` 🟡 |
 | 50 | `--zen-color-blue-grey-50` | `#DDE6EC` | `oklch(0.9287 0.0119 229.02)` |
 | 100 | `--zen-color-blue-grey-100` | `#C4D0D7` | `oklch(0.8816 0.0159 229.02)` |
 | 200 | `--zen-color-blue-grey-200` | `#AABCC4` | `oklch(0.8062 0.0238 229.02)` |
@@ -256,7 +250,7 @@ OKLCH 500 base: `oklch(0.8699 0.1453 89.43)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-yellow-25` | `#FFFCE7` | `oklch(0.99 0.029 89.43)` |
+| 25 | `--zen-color-yellow-25` | `#F6F5F1` 🟡 | `oklch(0.97 0.005 89.43)` 🟡 |
 | 50 | `--zen-color-yellow-50` | `#FFF5D5` | `oklch(0.9499 0.0436 89.43)` |
 | 100 | `--zen-color-yellow-100` | `#FEEDC3` | `oklch(0.9166 0.0581 89.43)` |
 | 200 | `--zen-color-yellow-200` | `#FFE6A5` | `oklch(0.8849 0.0872 89.43)` |
@@ -273,7 +267,7 @@ OKLCH 500 base: `oklch(0.58 0.137262 119.6914)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-olive-green-25` | `#F9FFEA` | `oklch(0.99 0.0275 119.69)` |
+| 25 | `--zen-color-olive-green-25` | `#F4F6F2` 🟡 | `oklch(0.97 0.005 119.69)` 🟡 |
 | 50 | `--zen-color-olive-green-50` | `#E1EACB` | `oklch(0.9213 0.0412 119.69)` |
 | 100 | `--zen-color-olive-green-100` | `#CAD5AD` | `oklch(0.8627 0.055 119.69)` |
 | 200 | `--zen-color-olive-green-200` | `#B2C186` | `oklch(0.79 0.0824 119.69)` |
@@ -290,7 +284,7 @@ OKLCH 500 base: `oklch(0.3803 0.1386 258.03)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-pacific-blue-25` | `#F1FDFF` | `oklch(0.99 0.0277 258.03)` |
+| 25 | `--zen-color-pacific-blue-25` | `#F3F5F8` 🟡 | `oklch(0.97 0.005 258.03)` 🟡 |
 | 50 | `--zen-color-pacific-blue-50` | `#CADCF7` | `oklch(0.9134 0.0416 258.03)` |
 | 100 | `--zen-color-pacific-blue-100` | `#A5BCDE` | `oklch(0.8468 0.0554 258.03)` |
 | 200 | `--zen-color-pacific-blue-200` | `#7A9CCD` | `oklch(0.7469 0.0832 258.03)` |
@@ -307,7 +301,7 @@ OKLCH 500 base: `oklch(0.5253 0.155 17.61)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-pomegranate-red-25` | `#FFF5F6` | `oklch(0.99 0.031 17.61)` |
+| 25 | `--zen-color-pomegranate-red-25` | `#F8F4F4` 🟡 | `oklch(0.97 0.005 17.61)` 🟡 |
 | 50 | `--zen-color-pomegranate-red-50` | `#FFD6D8` | `oklch(0.9176 0.0465 17.61)` |
 | 100 | `--zen-color-pomegranate-red-100` | `#EEB9BC` | `oklch(0.862 0.062 17.61)` |
 | 200 | `--zen-color-pomegranate-red-200` | `#E4979E` | `oklch(0.7877 0.093 17.61)` |
@@ -324,7 +318,7 @@ OKLCH 500 base: `oklch(0.6113 0.1162 278.98)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-kickstart-purple-25` | `#F9FBFF` | `oklch(0.99 0.0232 278.98)` |
+| 25 | `--zen-color-kickstart-purple-25` | `#F4F5F8` 🟡 | `oklch(0.97 0.005 278.98)` 🟡 |
 | 50 | `--zen-color-kickstart-purple-50` | `#E1E5FF` | `oklch(0.9295 0.0349 278.98)` |
 | 100 | `--zen-color-kickstart-purple-100` | `#CBD0F2` | `oklch(0.8776 0.0465 278.98)` |
 | 200 | `--zen-color-kickstart-purple-200` | `#B4BAEB` | `oklch(0.7973 0.0697 278.98)` |
@@ -341,7 +335,7 @@ OKLCH 500 base: `oklch(0.9292 0.0635 130.94)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-glint-green-25` | `#F9FEF5` | `oklch(0.99 0.0127 130.94)` |
+| 25 | `--zen-color-glint-green-25` | `#F4F6F2` 🟡 | `oklch(0.97 0.005 130.94)` 🟡 |
 | 50 | `--zen-color-glint-green-50` | `#F4FBEE` | `oklch(0.9744 0.019 130.94)` |
 | 100 | `--zen-color-glint-green-100` | `#EFF9E8` | `oklch(0.9621 0.0254 130.94)` |
 | 200 | `--zen-color-glint-green-200` | `#E9F7DD` | `oklch(0.9496 0.0381 130.94)` |
@@ -358,7 +352,7 @@ OKLCH 500 base: `oklch(0.5474 0.0688 308.11)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-clematis-purple-25` | `#FFFAFF` | `oklch(0.99 0.0138 308.11)` |
+| 25 | `--zen-color-clematis-purple-25` | `#F6F4F8` 🟡 | `oklch(0.97 0.005 308.11)` 🟡 |
 | 50 | `--zen-color-clematis-purple-50` | `#E7E0EE` | `oklch(0.9229 0.0206 308.11)` |
 | 100 | `--zen-color-clematis-purple-100` | `#D1C7D9` | `oklch(0.8762 0.0275 308.11)` |
 | 200 | `--zen-color-clematis-purple-200` | `#BBAEC9` | `oklch(0.8037 0.0413 308.11)` |
@@ -375,7 +369,7 @@ OKLCH 500 base: `oklch(0.6062 0.2298 9.63)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-mellow-melon-pink-25` | `#FFF1F5` | `oklch(0.99 0.046 9.63)` |
+| 25 | `--zen-color-mellow-melon-pink-25` | `#F8F4F4` 🟡 | `oklch(0.97 0.005 9.63)` 🟡 |
 | 50 | `--zen-color-mellow-melon-pink-50` | `#FFD5DD` | `oklch(0.9219 0.069 9.63)` |
 | 100 | `--zen-color-mellow-melon-pink-100` | `#FFB9C4` | `oklch(0.8657 0.092 9.63)` |
 | 200 | `--zen-color-mellow-melon-pink-200` | `#FF96AA` | `oklch(0.7918 0.1379 9.63)` |
@@ -392,7 +386,7 @@ OKLCH 500 base: `oklch(0.7602 0.1358 220.59)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-zima-blue-25` | `#E9FFFF` | `oklch(0.99 0.0272 220.59)` |
+| 25 | `--zen-color-zima-blue-25` | `#F2F6F7` 🟡 | `oklch(0.97 0.005 220.59)` 🟡 |
 | 50 | `--zen-color-zima-blue-50` | `#D2F6FF` | `oklch(0.9481 0.0407 220.59)` |
 | 100 | `--zen-color-zima-blue-100` | `#BBEBFC` | `oklch(0.9095 0.0543 220.59)` |
 | 200 | `--zen-color-zima-blue-200` | `#99E3FC` | `oklch(0.8451 0.0815 220.59)` |
@@ -409,7 +403,7 @@ OKLCH 500 base: `oklch(0.5473 0.2685 302.74)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-singapore-orchid-purple-25` | `#FFF5FF` | `oklch(0.99 0.0537 302.74)` |
+| 25 | `--zen-color-singapore-orchid-purple-25` | `#F6F4F8` 🟡 | `oklch(0.97 0.005 302.74)` 🟡 |
 | 50 | `--zen-color-singapore-orchid-purple-50` | `#EED7FF` | `oklch(0.9206 0.0806 302.74)` |
 | 100 | `--zen-color-singapore-orchid-purple-100` | `#D9BBFF` | `oklch(0.8606 0.1074 302.74)` |
 | 200 | `--zen-color-singapore-orchid-purple-200` | `#C898FF` | `oklch(0.7739 0.1611 302.74)` |
@@ -426,7 +420,7 @@ OKLCH 500 base: `oklch(0.5292 0.1745 37.67)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-dropped-brick-red-25` | `#FFF6EC` | `oklch(0.99 0.0349 37.67)` |
+| 25 | `--zen-color-dropped-brick-red-25` | `#F8F4F3` 🟡 | `oklch(0.97 0.005 37.67)` 🟡 |
 | 50 | `--zen-color-dropped-brick-red-50` | `#FFD7CA` | `oklch(0.9178 0.0524 37.67)` |
 | 100 | `--zen-color-dropped-brick-red-100` | `#F3BBA9` | `oklch(0.8617 0.0698 37.67)` |
 | 200 | `--zen-color-dropped-brick-red-200` | `#EB9980` | `oklch(0.7877 0.1047 37.67)` |
@@ -443,7 +437,7 @@ OKLCH 500 base: `oklch(0.7828 0.0942 70.44)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-viva-gold-orange-25` | `#FFFBEF` | `oklch(0.99 0.0188 70.44)` |
+| 25 | `--zen-color-viva-gold-orange-25` | `#F7F5F1` 🟡 | `oklch(0.97 0.005 70.44)` 🟡 |
 | 50 | `--zen-color-viva-gold-orange-50` | `#FEEDDC` | `oklch(0.9456 0.0283 70.44)` |
 | 100 | `--zen-color-viva-gold-orange-100` | `#F5E1CA` | `oklch(0.9068 0.0377 70.44)` |
 | 200 | `--zen-color-viva-gold-orange-200` | `#F2D4B2` | `oklch(0.8564 0.0565 70.44)` |
@@ -460,7 +454,7 @@ OKLCH 500 base: `oklch(0.5349 0.0308 118.85)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-shutters-green-25` | `#FCFDF8` | `oklch(0.99 0.0062 118.85)` |
+| 25 | `--zen-color-shutters-green-25` | `#F5F6F2` 🟡 | `oklch(0.97 0.005 118.85)` 🟡 |
 | 50 | `--zen-color-shutters-green-50` | `#E2E4DD` | `oklch(0.9132 0.0092 118.85)` |
 | 100 | `--zen-color-shutters-green-100` | `#C9CBC2` | `oklch(0.8665 0.0123 118.85)` |
 | 200 | `--zen-color-shutters-green-200` | `#B0B4A7` | `oklch(0.7898 0.0185 118.85)` |
@@ -477,7 +471,7 @@ OKLCH 500 base: `oklch(0.5035 0.0743 171.63)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-frosted-glass-green-25` | `#F3FFFB` | `oklch(0.99 0.0149 171.63)` |
+| 25 | `--zen-color-frosted-glass-green-25` | `#F2F6F5` 🟡 | `oklch(0.97 0.005 171.63)` 🟡 |
 | 50 | `--zen-color-frosted-glass-green-50` | `#D3E7E0` | `oklch(0.9106 0.0223 171.63)` |
 | 100 | `--zen-color-frosted-glass-green-100` | `#B4CEC5` | `oklch(0.8558 0.0297 171.63)` |
 | 200 | `--zen-color-frosted-glass-green-200` | `#91B7A9` | `oklch(0.7768 0.0446 171.63)` |
@@ -490,52 +484,22 @@ OKLCH 500 base: `oklch(0.5035 0.0743 171.63)`
 | 900 | `--zen-color-frosted-glass-green-900` | `#1B3930` | `oklch(0.3172 0.0408 171.63)` |
 
 #### Cool Grey
-500 base: `#656574` — *(No OKLCH base defined)* 🔵 In Review
+OKLCH 500 base: `oklch(0.5121 0.0235 285.54)` — 🟢 Shipped
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-cool-grey-25` | `#FBFBFF` | — |
-| 50 | `--zen-color-cool-grey-50` | `#F5F5FA` | — |
-| 100 | `--zen-color-cool-grey-100` | `#E4E4F0` | — |
-| 200 | `--zen-color-cool-grey-200` | `#D3D3E5` | — |
-| 300 | `--zen-color-cool-grey-300` | `#B9B9CD` | — |
-| 400 | `--zen-color-cool-grey-400` | `#9898A7` | — |
-| **500** | **`--zen-color-cool-grey-500`** | **`#656574`** | — |
-| 600 | `--zen-color-cool-grey-600` | `#3F3F4A` | — |
-| 700 | `--zen-color-cool-grey-700` | `#33333D` | — |
-| 800 | `--zen-color-cool-grey-800` | `#2A2A30` | — |
-| 900 | `--zen-color-cool-grey-900` | `#12131F` | — |
+| 25 | `--zen-color-cool-grey-25` | `#F5F5F8` 🟡 | `oklch(0.97 0.005 285.54)` 🟡 |
+| 50 | `--zen-color-cool-grey-50` | `#e1e1e6` | `oklch(0.9103 0.0070 285.54)` |
+| 100 | `--zen-color-cool-grey-100` | `#c7c7ce` | `oklch(0.8307 0.0094 285.54)` |
+| 200 | `--zen-color-cool-grey-200` | `#adadb7` | `oklch(0.7510 0.0141 285.54)` |
+| 300 | `--zen-color-cool-grey-300` | `#9494a0` | `oklch(0.6714 0.0164 285.54)` |
+| 400 | `--zen-color-cool-grey-400` | `#7c7c8a` | `oklch(0.5917 0.0200 285.54)` |
+| **500** | **`--zen-color-cool-grey-500`** | **`#656574`** | **`oklch(0.5121 0.0235 285.54)`** |
+| 600 | `--zen-color-cool-grey-600` | `#5c5c6c` | `oklch(0.4814 0.0247 285.54)` |
+| 700 | `--zen-color-cool-grey-700` | `#50505d` | `oklch(0.4353 0.0223 285.54)` |
+| 800 | `--zen-color-cool-grey-800` | `#40404a` | `oklch(0.3738 0.0176 285.54)` |
+| 900 | `--zen-color-cool-grey-900` | `#33333a` | `oklch(0.3226 0.0129 285.54)` |
 
----
-
-### Semantic Tokens
-
-Semantic tokens map fixed roles to specific primitives. These do not change per theme. All components should reference these tokens rather than raw primitive tokens.
-
-| Role | Semantic Token | Primitive | Hex (500) | OKLCH (500) |
-|------|---------------|-----------|-----------|-------------|
-| Success | `--zen-color-success-500` | `--zen-color-green-500` | `#299315` | `oklch(0.5812 0.1816 141.19)` |
-| Warning | `--zen-color-warning-500` | `--zen-color-orange-500` | `#FC9F1D` | `oklch(0.7775 0.166 66.57)` |
-| Error | `--zen-color-error-500` | `--zen-color-red-500` | `#E6492D` | `oklch(0.6243 0.1982 32.45)` |
-| Neutral | `--zen-color-neutral-500` | `--zen-color-grey-500` | `#999999` | `oklch(0.683 0 0)` |
-
-All shades (25–900) follow the same alias pattern, e.g. `--zen-color-success-100` → `--zen-color-green-100`.
-
----
-
-### Product Themes
-
-The Actian Design System uses a **per-product theming model**. Each product has its own primary color. All components reference `--zen-color-primary-*` tokens — theming is applied by setting those tokens at the root level using a CSS theme class. No component-level overrides needed.
-
-| Theme class | Product | Primary color | Token alias | 500 Base (Hex) | OKLCH Base | Status |
-|-------------|---------|--------------|-------------|----------------|------------|--------|
-| `.theme-actian` | Actian (platform/default) | Royal Blue | `--zen-color-royal-blue-500` | `#0550DC` | *(No OKLCH base defined)* | 🔵 In Review |
-| `.theme-studio` | Studio, Admin | Blue | `--zen-color-blue-500` | `#0283BE` | `oklch(0.58 0.130062 238.7173)` | 🟢 Shipped |
-| `.theme-explorer` | Explorer | Turquoise | `--zen-color-turquoise-500` | `#049B98` | `oklch(0.6233 0.1066 192.34)` | 🟢 Shipped |
-
-> **Royal Blue OKLCH gap.** Royal Blue (`#0550DC`) is the primary color for the default Actian theme but has no OKLCH base value defined yet. Engineering must define and implement this OKLCH base as part of the `.theme-actian` In Review work.
-
-All other `--zen-color-primary-*` shades (25–900) are derived from the 500 base using the standard OKLCH shade formula, so the full scale updates automatically when the base is swapped.
 
 ---
 
@@ -553,46 +517,106 @@ All tokens are implemented as CSS custom properties under the `--zen-` namespace
 
 ---
 
-### 2.1 Color — Global Tokens
+### 2.1 Global Color
 
-#### White & Black
+| Token | Resolves To | Status |
+|-------|------------|--------|
+| `--zen-color-primary` | `--zen-color-royal-blue` | 🟡 Proposed |
+| `--zen-color-success` | `--zen-color-green` | 🟢 Shipped |
+| `--zen-color-warning` | `--zen-color-orange` | 🟢 Shipped |
+| `--zen-color-error` | `--zen-color-red` | 🟢 Shipped |
+| `--zen-color-neutral` | `--zen-color-cool-grey` | 🟡 Proposed |
 
-| Token | Value | Status |
-|-------|-------|--------|
-| `--zen-color-white` | `oklch(1 0 0)` / `#FFFFFF` | 🟢 Shipped |
-| `--zen-color-black` | `oklch(0 0 0)` / `#000000` | 🟢 Shipped |
+### 2.2 Typography
 
-#### Semantic Aliases
-
-The `--zen-color-primary-*` tokens resolve per product theme. All other semantic roles are fixed across themes.
-
-| Token | Default (Actian) | Studio | Explorer | Status |
-|-------|-----------------|--------|----------|--------|
-| `--zen-color-primary-500` | `--zen-color-royal-blue-500` | `--zen-color-blue-500` | `--zen-color-turquoise-500` | 🔵 In Review (Actian) / 🟢 Shipped (Studio, Explorer) |
-| `--zen-color-success-500` | `--zen-color-green-500` | ← same | ← same | 🟢 Shipped |
-| `--zen-color-warning-500` | `--zen-color-orange-500` | ← same | ← same | 🟢 Shipped |
-| `--zen-color-error-500` | `--zen-color-red-500` | ← same | ← same | 🟢 Shipped |
-| `--zen-color-neutral-500` | `--zen-color-grey-500` | ← same | ← same | 🟢 Shipped |
-
-### 2.2 Color — Text Tokens
+#### Text Color Tokens
 
 | Token | Resolves To | Usage | Status |
 |-------|------------|-------|--------|
-| `--zen-color-text-primary` | `--zen-color-black` | Titles, labels, body text | 🟢 Shipped |
-| `--zen-color-text-secondary` | `--zen-color-grey-800` | Hints, subtext | 🟢 Shipped |
-| `--zen-color-text-tertiary` | `--zen-color-grey-700` | Subtitles, alternate texts | 🟢 Shipped |
-| `--zen-color-text-placeholder` | `--zen-color-grey-600` | Input placeholders | 🟢 Shipped |
-| `--zen-color-text-placeholder-subtle` | `--zen-color-grey-400` | Secondary placeholders (e.g. search fields) | 🟢 Shipped |
-| `--zen-color-text-disabled` | `--zen-color-grey-500` | Disabled inputs, buttons, form elements | 🟢 Shipped |
+| `--zen-color-text-default` | `--zen-color-black` | Titles, labels, body text | 🟡 Proposed *(rename from `text-primary` — eng update required)* |
+| `--zen-color-text-secondary` | `--zen-color-neutral-800` | Hints, subtext | 🟢 Shipped |
+| `--zen-color-text-tertiary` | `--zen-color-neutral-700` | Subtitles, alternate texts | 🟢 Shipped |
+| `--zen-color-text-placeholder` | `--zen-color-neutral-600` | Input placeholders | 🟢 Shipped |
+| `--zen-color-text-placeholder-subtle` | `--zen-color-neutral-400` | Secondary placeholders (e.g. search fields) | 🟢 Shipped |
+| `--zen-color-text-disabled` | `--zen-color-neutral-500` | Disabled inputs, buttons, form elements | 🟢 Shipped |
+| `--zen-color-text-primary` | `--zen-color-primary-500` | Interactive text | 🟡 Proposed *(named `primary` to align with primary color convention)* |
 | `--zen-color-text-error` | `--zen-color-error-600` | Error messages | 🟢 Shipped |
 | `--zen-color-text-warning` | `--zen-color-warning-600` | Warning messages | 🟢 Shipped |
 | `--zen-color-text-success` | `--zen-color-success-600` | Success messages | 🟢 Shipped |
 | `--zen-color-text-reverse` | `--zen-color-white` | Text on dark or primary-colored backgrounds | 🟡 Proposed |
-| `--zen-color-text-link-default` | `--zen-color-primary-500` | Default link color | 🟡 Proposed |
-| `--zen-color-text-link-visited` | `--zen-color-primary-700` | Visited link color | 🟡 Proposed |
-| `--zen-color-text-link-reverse` | `--zen-color-white` | Links on dark or primary-colored backgrounds | 🟡 Proposed |
 
-### 2.3 Border Tokens
+#### Font Family
+
+| Token | Value | Usage | Status |
+|-------|-------|-------|--------|
+| `--zen-font-family-text` | `Roboto` | Default — headings and body | 🟢 Shipped |
+| `--zen-font-family-mono` | `"Roboto Mono"` | Code and data | 🟢 Shipped |
+
+#### Font Weight
+
+| Token | Value | Status |
+|-------|-------|--------|
+| `--zen-font-weight-regular` | `400` | 🟢 Shipped |
+| `--zen-font-weight-medium` | `500` | 🟢 Shipped |
+| `--zen-font-weight-semibold` | `600` | 🟢 Shipped |
+| `--zen-font-weight-bold` | `700` | 🟢 Shipped |
+
+#### Font Size
+
+| Token | Value | Usage | Status |
+|-------|-------|-------|--------|
+| `--zen-font-size-xs` | `0.6875rem` (11px) *(update from 10px)* | Hint | 🟡 Proposed |
+| `--zen-font-size-sm` | `0.75rem` (12px) | Body, section subtitle | 🟢 Shipped |
+| `--zen-font-size-md` | `0.875rem` (14px) | Page subtitle, card header (small) | 🟢 Shipped |
+| `--zen-font-size-lg` | `1rem` (16px) | Section title, card header (default) | 🟢 Shipped |
+| `--zen-font-size-xl` | `1.125rem` (18px) | — | 🟢 Shipped |
+| `--zen-font-size-2xl` | `1.25rem` (20px) | — | 🟢 Shipped |
+| `--zen-font-size-3xl` | `1.5rem` (24px) | Page title | 🟢 Shipped |
+| `--zen-font-size-4xl` | `1.875rem` (30px) | — | 🟢 Shipped |
+
+#### Letter Spacing
+
+> **⚠️ Token name correction:** Previously named `--zen-font-lettingspacing-*` (typo). Correct name is `--zen-font-letterspacing-*`. Engineering must update in codebase.
+
+| Token | Value | Usage | Status |
+|-------|-------|-------|--------|
+| `--zen-font-letterspacing-normal` | `0px` | Font sizes larger than 16px | 🔵 In Review |
+| `--zen-font-letterspacing-wide-1` | `0.1px` | Font size 16px | 🔵 In Review |
+| `--zen-font-letterspacing-wide-2` | `0.2px` | Font size 14px | 🔵 In Review |
+| `--zen-font-letterspacing-wide-3` | `0.3px` | Font size 12px | 🔵 In Review |
+| `--zen-font-letterspacing-wide-4` | `0.4px` | Font size 11px and smaller | 🔵 In Review |
+
+#### Line Height
+
+| Token | Value | Usage | Status |
+|-------|-------|-------|--------|
+| `--zen-font-lineheight-xs` | `14px / 0.875rem` | Font size 11px or smaller | 🔵 In Review |
+| `--zen-font-lineheight-sm` | `16px / 1rem` | Font size 12px | 🔵 In Review |
+| `--zen-font-lineheight-md` | `20px / 1.25rem` | Font size 14px | 🔵 In Review |
+| `--zen-font-lineheight-lg` | `24px / 1.5rem` | Font size 16px | 🔵 In Review |
+| `--zen-font-lineheight-xl` | `26px / 1.625rem` | Font size 18px | 🔵 In Review |
+| `--zen-font-lineheight-2xl` | `32px / 2rem` | Font size 24px | 🔵 In Review |
+
+#### Text Style Tokens (Composite)
+
+These are semantic aliases that combine weight + size + letter spacing + line height into a single named style.
+
+| Token | Weight | Size | Letter Spacing | Line Height | Usage | Status |
+|-------|--------|------|---------------|-------------|-------|--------|
+| `--zen-text-heading-display` | semibold | 3xl | letterspacing-normal | 2xl | Primary header, display font | 🔵 In Review |
+| `--zen-text-heading-prominent` | semibold | xl | letterspacing-normal | xl | Secondary header, default page header | 🔵 In Review |
+| `--zen-text-heading-standard` | semibold | lg | letterspacing-wide-1 | lg | Tertiary header, section header | 🔵 In Review |
+| `--zen-text-heading-subtle` | semibold | md | letterspacing-wide-2 | md | Subsection header | 🔵 In Review |
+| `--zen-text-heading-micro` | semibold | sm | letterspacing-wide-3 | sm | Low-emphasis header | 🔵 In Review |
+| `--zen-text-body-prominent` | regular | lg | letterspacing-wide-1 | lg | Intro, highlighted paragraph | 🔵 In Review |
+| `--zen-text-body-standard` | regular | md | letterspacing-wide-2 | md | Main content | 🔵 In Review |
+| `--zen-text-body-subtle` | regular | sm | letterspacing-wide-3 | sm | Secondary content | 🔵 In Review |
+| `--zen-text-body-micro` | regular | xs | letterspacing-wide-4 | xs | Footnotes, microcopy | 🔵 In Review |
+| `--zen-text-label-standard` | medium | md | letterspacing-wide-2 | md | Default button, form label | 🔵 In Review |
+| `--zen-text-label-subtle` | medium | sm | letterspacing-wide-3 | sm | Less prominent actions, secondary info label | 🔵 In Review |
+| `--zen-text-label-micro` | medium | xs | letterspacing-wide-4 | xs | Microcopy | 🔵 In Review |
+
+### 2.3 Borders
 
 #### Radius
 
@@ -604,7 +628,7 @@ The `--zen-color-primary-*` tokens resolve per product theme. All other semantic
 | `--zen-border-radius-md` | `8px` | | 🟢 Shipped |
 | `--zen-border-radius-lg` | `10px` | | 🟢 Shipped |
 | `--zen-border-radius-xl` | `12px` | | 🟢 Shipped |
-| `--zen-border-radius-full` | `9999px` | Pills, avatars, tags | 🟢 Shipped |
+| `--zen-border-radius-full` | `9999px` | Buttons, avatars | 🟢 Shipped |
 
 #### Width
 
@@ -617,11 +641,17 @@ The `--zen-color-primary-*` tokens resolve per product theme. All other semantic
 
 | Token | Value | Usage | Status |
 |-------|-------|-------|--------|
-| `--zen-border-default` | `1px solid grey-100` | Default border for containers | 🟢 Shipped |
-| `--zen-border-subtle` | `1px solid grey-50` | Separators | 🟢 Shipped |
-| `--zen-border-disabled` | `1px solid grey-100` | Disabled state of components | 🟢 Shipped |
+| `--zen-border-default` | `1px solid --zen-color-neutral-100` | Default border for containers | 🟢 Shipped |
+| `--zen-border-subtle` | `1px solid --zen-color-neutral-50` | Separators | 🟢 Shipped |
+| `--zen-border-disabled` | `1px solid --zen-color-neutral-100` | Disabled state of components | 🟢 Shipped |
+| `--zen-border-primary` | `1px solid --zen-color-primary-500` | Interactive elements | 🟡 Proposed |
 | `--zen-border-selected` | `2px solid --zen-color-primary-500` | Selected state of components | 🟡 Proposed |
-| `--zen-border-error` | `1px solid --zen-color-error-500` | Error state inputs | 🟢 Shipped |
+| `--zen-border-error` | `1px solid --zen-color-error-600` | Error state inputs | 🟡 Proposed |
+| `--zen-border-warning` | `1px solid --zen-color-warning-600` | Warning state | 🟡 Proposed |
+| `--zen-border-success` | `1px solid --zen-color-success-600` | Success state | 🟡 Proposed |
+| `--zen-border-info` | `1px solid --zen-color-primary-500` | Info state | 🟡 Proposed |
+| `--zen-border-strong` | `1px solid --zen-color-neutral-800` | High emphasis borders | 🟡 Proposed |
+| `--zen-border-reverse` | `1px solid --zen-color-white` | Borders on dark or primary-colored backgrounds | 🟡 Proposed |
 
 ### 2.4 Breakpoints
 
@@ -639,10 +669,10 @@ Outlined focus rings must be applied with an offset on interactive elements. For
 | Token | Value | Usage | Status |
 |-------|-------|-------|--------|
 | `--zen-focus-ring-primary` | `2px solid --zen-color-primary-500` | Buttons, toggles, checkboxes, radios, avatars, breadcrumbs, tags, tabs | 🟢 Shipped |
-| `--zen-focus-ring-error` | `2px solid red-500` | Destructive button links, error inputs | 🟢 Shipped |
+| `--zen-focus-ring-error` | `2px solid --zen-color-error-600` | Destructive button links, error inputs | 🟢 Shipped |
 | `--zen-focus-ring-offset` | `2px` | Used with outlined focus states | 🟢 Shipped |
 
-### 2.6 Elevation (Shadows)
+### 2.6 Elevation
 
 > Elevation must only be used to define layering between elements when required. Use drop shadows only — do not use bevels, borders, or opacity to depict layering.
 
@@ -668,80 +698,68 @@ Outlined focus rings must be applied with an offset on interactive elements. For
 | `--zen-spacing-2xl` | `3rem` (48px) | Major section breaks, page padding | 🟡 Proposed |
 | `--zen-spacing-3xl` | `4rem` (64px) | Hero sections, full-page layout | 🟡 Proposed |
 
-### 2.8 Typography
+### 2.8 Backgrounds
 
-#### Font Family
+| Token | Suggested Value | Usage | Status |
+|-------|----------------|-------|--------|
+| `--zen-color-bg-default` | `--zen-color-white` | Default page background | 🟡 Proposed |
+| `--zen-color-bg-subtle` | `--zen-color-neutral-25` | Subtle section backgrounds, sidebars | 🟡 Proposed |
+| `--zen-color-bg-muted` | `--zen-color-neutral-50` | Cards, input fills, table rows | 🟡 Proposed |
+| `--zen-color-bg-disabled` | `--zen-color-neutral-50` | Disabled state backgrounds | 🟡 Proposed |
+| `--zen-color-bg-selected` | `--zen-color-primary-25` | Selected row or item background | 🟡 Proposed |
+| `--zen-color-bg-overlay` | `--zen-color-black` at 40% opacity | Modal/dialog backdrop | 🟡 Proposed |
+| `--zen-color-bg-primary` | `--zen-color-primary-500` | CTA banners, primary filled areas | 🟡 Proposed |
+| `--zen-color-bg-success` | `--zen-color-success-25` | Success alert backgrounds | 🟡 Proposed |
+| `--zen-color-bg-warning` | `--zen-color-warning-25` | Warning alert backgrounds | 🟡 Proposed |
+| `--zen-color-bg-error` | `--zen-color-error-25` | Error alert backgrounds | 🟡 Proposed |
+| `--zen-color-bg-info` | `--zen-color-primary-25` | Info alert backgrounds | 🟡 Proposed |
+| `--zen-color-bg-reverse` | `--zen-color-black` | Dark/inverted surface backgrounds | 🟡 Proposed |
 
-| Token | Value | Usage | Status |
-|-------|-------|-------|--------|
-| `--zen-font-family-text` | `Roboto` | Default — headings and body | 🟢 Shipped |
-| `--zen-font-family-mono` | `"Roboto Mono"` | Code and data | 🟢 Shipped |
+### 2.9 Heights and Trigger Areas
 
-#### Font Weight
-
-| Token | Value | Status |
-|-------|-------|--------|
-| `--zen-font-weight-regular` | `400` | 🟢 Shipped |
-| `--zen-font-weight-medium` | `500` | 🟢 Shipped |
-| `--zen-font-weight-semibold` | `600` | 🟢 Shipped |
-| `--zen-font-weight-bold` | `700` | 🟢 Shipped |
-
-#### Font Size
-
-| Token | Value | Usage | Status |
-|-------|-------|-------|--------|
-| `--zen-font-size-xs` | `11px` *(update from 10px)* | Hint | 🟡 Proposed |
-| `--zen-font-size-sm` | `0.75rem` (12px) | Body, section subtitle | 🟢 Shipped |
-| `--zen-font-size-md` | `0.875rem` (14px) | Page subtitle, card header (small) | 🟢 Shipped |
-| `--zen-font-size-lg` | `1rem` (16px) | Section title, card header (default) | 🟢 Shipped |
-| `--zen-font-size-xl` | `1.125rem` (18px) | — | 🟢 Shipped |
-| `--zen-font-size-2xl` | `1.25rem` (20px) | — | 🟢 Shipped |
-| `--zen-font-size-3xl` | `1.5rem` (24px) | Page title | 🟢 Shipped |
-| `--zen-font-size-4xl` | `1.875rem` (30px) | — | 🟢 Shipped |
-
-#### Letter Spacing
-
-> **⚠️ Token name correction:** These tokens were previously named `--zen-font-lettingspacing-*` (typo). The correct name is `--zen-font-letterspacing-*`. Engineering must update the token names in the codebase as part of the In Review implementation.
+#### Component Heights
 
 | Token | Value | Usage | Status |
 |-------|-------|-------|--------|
-| `--zen-font-letterspacing-normal` | `0px` | Font sizes larger than 16px | 🔵 In Review |
-| `--zen-font-letterspacing-wide-1` | `0.1px` | Font size 16px | 🔵 In Review |
-| `--zen-font-letterspacing-wide-2` | `0.2px` | Font size 14px | 🔵 In Review |
-| `--zen-font-letterspacing-wide-3` | `0.3px` | Font size 12px | 🔵 In Review |
-| `--zen-font-letterspacing-wide-4` | `0.4px` | Font size 11px and smaller | 🔵 In Review |
+| `--zen-size-height-2xs` | `20px` | Extra compact components | 🟡 Proposed |
+| `--zen-size-height-xs` | `24px` | Compact chips, dense table rows | 🟡 Proposed |
+| `--zen-size-height-sm` | `32px` | Small buttons, secondary inputs | 🟡 Proposed |
+| `--zen-size-height-md` | `40px` | Default button, input, select | 🟡 Proposed |
+| `--zen-size-height-lg` | `48px` | Large buttons, prominent inputs | 🟡 Proposed |
+| `--zen-size-height-xl` | `56px` | Hero inputs, large touch surfaces | 🟡 Proposed |
 
-#### Line Height
+#### Trigger Area
 
 | Token | Value | Usage | Status |
 |-------|-------|-------|--------|
-| `--zen-font-lineheight-xs` | `14px / 0.875rem` | Font size 11px or smaller | 🔵 In Review |
-| `--zen-font-lineheight-sm` | `16px / 1rem` | Font size 12px | 🔵 In Review |
-| `--zen-font-lineheight-md` | `20px / 1.25rem` | Font size 14px | 🔵 In Review |
-| `--zen-font-lineheight-lg` | `24px / 1.5rem` | Font size 16px | 🔵 In Review |
-| `--zen-font-lineheight-xl` | `26px / 1.625rem` | Font size 18px | 🔵 In Review |
-| `--zen-font-lineheight-2xl` | `32px / 2rem` | Font size 24px | 🔵 In Review |
+| `--zen-size-trigger-min` | `24px` | Minimum interactive target area for desktop (WCAG 2.5.5 Level AA) | 🟡 Proposed |
+| `--zen-size-trigger-min-mobile` | `44px` | Minimum interactive target area for mobile (WCAG 2.5.5 Level AA) | 🟡 Proposed |
 
-#### Text Style Tokens (Composite)
+### 2.10 Icons
 
-These are semantic aliases that combine weight + size + letter spacing + line height into a single named style. Use these in components rather than assembling the primitives manually.
+#### Icon Sizes
 
-| Token | Weight | Size | Letter Spacing | Line Height | Usage | Status |
-|-------|--------|------|---------------|-------------|-------|--------|
-| `--zen-text-heading-display` | semibold | 3xl | letterspacing-normal | 2xl | Primary header, display font | 🔵 In Review |
-| `--zen-text-heading-prominent` | semibold | xl | letterspacing-normal | xl | Secondary header, default page header | 🔵 In Review |
-| `--zen-text-heading-standard` | semibold | lg | letterspacing-wide-1 | lg | Tertiary header, section header | 🔵 In Review |
-| `--zen-text-heading-subtle` | semibold | md | letterspacing-wide-2 | md | Subsection header | 🔵 In Review |
-| `--zen-text-heading-micro` | semibold | sm | letterspacing-wide-3 | sm | Low-emphasis header | 🔵 In Review |
-| `--zen-text-body-prominent` | regular | lg | letterspacing-wide-1 | lg | Intro, highlighted paragraph | 🔵 In Review |
-| `--zen-text-body-standard` | regular | md | letterspacing-wide-2 | md | Main content | 🔵 In Review |
-| `--zen-text-body-subtle` | regular | sm | letterspacing-wide-3 | sm | Secondary content | 🔵 In Review |
-| `--zen-text-body-micro` | regular | xs | letterspacing-wide-4 | xs | Footnotes, microcopy | 🔵 In Review |
-| `--zen-text-label-standard` | medium | md | letterspacing-wide-2 | md | Default button, form label | 🔵 In Review |
-| `--zen-text-label-subtle` | medium | sm | letterspacing-wide-3 | sm | Less prominent actions, secondary info label | 🔵 In Review |
-| `--zen-text-label-micro` | medium | xs | letterspacing-wide-4 | xs | Microcopy | 🔵 In Review |
+| Token | Value | Usage | Status |
+|-------|-------|-------|--------|
+| `--zen-size-icon-xs` | `12px` | Tight UI contexts, dense tables, badges | 🟡 Proposed |
+| `--zen-size-icon-sm` | `16px` | Inline icons, compact components | 🟡 Proposed |
+| `--zen-size-icon-md` | `20px` | Default icon size | 🟡 Proposed |
+| `--zen-size-icon-lg` | `24px` | Standalone icons, feature icons | 🟡 Proposed |
 
-### 2.9 Motion
+#### Icon Colors
+
+| Token | Suggested Value | Usage | Status |
+|-------|----------------|-------|--------|
+| `--zen-color-icon-default` | `--zen-color-black` | Default icon color | 🟡 Proposed |
+| `--zen-color-icon-subtle` | `--zen-color-neutral-600` | De-emphasized icons | 🟡 Proposed |
+| `--zen-color-icon-disabled` | `--zen-color-neutral-400` | Disabled icon state (no filter — uses explicit color) | 🟡 Proposed |
+| `--zen-color-icon-primary` | `--zen-color-primary-500` | Primary action icons | 🟡 Proposed |
+| `--zen-color-icon-error` | `--zen-color-error-600` | Error state icons | 🟡 Proposed |
+| `--zen-color-icon-success` | `--zen-color-success-600` | Success state icons | 🟡 Proposed |
+| `--zen-color-icon-warning` | `--zen-color-warning-600` | Warning state icons | 🟡 Proposed |
+| `--zen-color-icon-reverse` | `--zen-color-white` | Icons on dark or primary-colored backgrounds | 🟡 Proposed |
+
+### 2.11 Motion
 
 > **Status:** All motion tokens are 🟡 Proposed. They are defined in Figma and have not yet been implemented in engineering.
 
@@ -872,74 +890,15 @@ The cascading effect guides the eye naturally downward and prevents the screen f
 
 ---
 
-### 2.10 Background Tokens
-
-| Token | Suggested Value | Usage | Status |
-|-------|----------------|-------|--------|
-| `--zen-color-bg-default` | `--zen-color-white` | Default page background | 🟡 Proposed |
-| `--zen-color-bg-subtle` | `--zen-color-grey-25` | Subtle section backgrounds, sidebars | 🟡 Proposed |
-| `--zen-color-bg-muted` | `--zen-color-grey-50` | Cards, input fills, table rows | 🟡 Proposed |
-| `--zen-color-bg-disabled` | `--zen-color-grey-50` | Disabled state backgrounds | 🟡 Proposed |
-| `--zen-color-bg-selected` | `--zen-color-primary-50` | Selected row or item background | 🟡 Proposed |
-| `--zen-color-bg-overlay` | `--zen-color-black` at 40% opacity | Modal/dialog backdrop | 🟡 Proposed |
-| `--zen-color-bg-emphasis` | `--zen-color-primary-500` | CTA banners, primary filled areas | 🟡 Proposed |
-| `--zen-color-bg-success` | `--zen-color-success-25` | Success alert backgrounds | 🟡 Proposed |
-| `--zen-color-bg-warning` | `--zen-color-warning-25` | Warning alert backgrounds | 🟡 Proposed |
-| `--zen-color-bg-error` | `--zen-color-error-25` | Error alert backgrounds | 🟡 Proposed |
-| `--zen-color-bg-info` | `--zen-color-primary-25` | Info alert backgrounds | 🟡 Proposed |
-
-### 2.11 Size Tokens
-
-#### Component Heights
-
-| Token | Value | Usage | Status |
-|-------|-------|-------|--------|
-| `--zen-size-height-xs` | `24px` | Compact chips, dense table rows | 🟡 Proposed |
-| `--zen-size-height-sm` | `32px` | Small buttons, secondary inputs | 🟡 Proposed |
-| `--zen-size-height-md` | `40px` | Default button, input, select | 🟡 Proposed |
-| `--zen-size-height-lg` | `48px` | Large buttons, prominent inputs | 🟡 Proposed |
-| `--zen-size-height-xl` | `56px` | Hero inputs, large touch surfaces | 🟡 Proposed |
-
-#### Trigger Area
-
-| Token | Value | Usage | Status |
-|-------|-------|-------|--------|
-| `--zen-size-trigger-min` | `24px` | Minimum interactive target area for desktop (WCAG 2.5.5 Level AA) | 🟡 Proposed |
-| `--zen-size-trigger-min-mobile` | `44px` | Minimum interactive target area for mobile (WCAG 2.5.5 Level AA) | 🟡 Proposed |
-
-#### Icon Sizes
-
-| Token | Value | Usage | Status |
-|-------|-------|-------|--------|
-| `--zen-icon-size-xs` | `12px` | Tight UI contexts, dense tables, badges | 🟡 Proposed |
-| `--zen-icon-size-sm` | `16px` | Inline icons, compact components | 🟡 Proposed |
-| `--zen-icon-size-md` | `20px` | Default icon size | 🟡 Proposed |
-| `--zen-icon-size-lg` | `24px` | Standalone icons, feature icons | 🟡 Proposed |
-
-### 2.12 Icon Color Tokens
-
-| Token | Suggested Value | Usage | Status |
-|-------|----------------|-------|--------|
-| `--zen-color-icon-default` | `--zen-color-black` | Default icon color | 🟡 Proposed |
-| `--zen-color-icon-subtle` | `--zen-color-neutral-600` | De-emphasized icons | 🟡 Proposed |
-| `--zen-color-icon-disabled` | `--zen-color-neutral-400` | Disabled icon state (no filter — uses explicit color) | 🟡 Proposed |
-| `--zen-color-icon-primary` | `--zen-color-primary-600` | Primary action icons | 🟡 Proposed |
-| `--zen-color-icon-error` | `--zen-color-error-600` | Error state icons | 🟡 Proposed |
-| `--zen-color-icon-success` | `--zen-color-success-600` | Success state icons | 🟡 Proposed |
-| `--zen-color-icon-warning` | `--zen-color-warning-600` | Warning state icons | 🟡 Proposed |
-| `--zen-color-icon-reverse` | `--zen-color-white` | Icons on dark or primary-colored backgrounds | 🟡 Proposed |
-
----
-
-## 3. Foundations
+## 3. Design Guidelines
 
 ### 3.1 Color Usage Rules
 
-**Semantic over primitive.** Always use a semantic token (e.g. `--zen-color-text-primary`) rather than a raw palette token (e.g. `--zen-color-grey-900`) unless you're building a new token. This ensures theming works correctly.
+**Semantic over primitive.** Always use a semantic token (e.g. `--zen-color-text-default`) rather than a raw palette token (e.g. `--zen-color-grey-900`) unless you're building a new token. This ensures theming works correctly.
 
 **Contrast.** Text on backgrounds must meet WCAG AA minimum (4.5:1 for body text, 3:1 for large text). Use the following pairings as reference:
 
-- `text-primary` on `bg-default` ✅
+- `text-default` on `bg-default` ✅
 - `text-secondary` on `bg-subtle` ✅
 - `text-disabled` should never be used on interactive elements that require action
 
@@ -958,7 +917,7 @@ Use spacing tokens for all margin, padding, and gap values. The scale is:
 - **2xs–xs** for internal element spacing (icon-to-label, checkbox-to-text)
 - **sm–md** for internal component padding
 - **lg–xl** for spacing between sections and groups
-- **2xl–3xl** (proposed) for page-level layout breathing room
+- **2xl–3xl** for page-level layout breathing room
 
 Never use arbitrary pixel values for spacing. If a layout needs something outside the scale, it's a signal to propose a new token.
 
@@ -982,15 +941,13 @@ The only tokenized interactive state is **focus** — see `--zen-focus-ring-prim
 
 ### 3.6 Breakpoints
 
-Design mobile-first. Breakpoints define where layouts *expand*, not where they collapse. The four breakpoints cover phone landscape (sm), tablet (md), desktop (lg), and large screens (xl).
+The majority of Actian users are on desktop. Desktop (lg) is the primary design target. However, pages should be responsive and tested across the full breakpoint range — from xl (large screens) down to sm (phone landscape) — to ensure usability across contexts.
 
 ---
 
-## 4. Component Specs
 
-> This section will grow as components are documented. Each component entry should include: anatomy, states, behavior rules, and do/don't guidance.
 
-### 4.1 Focus Ring Rules
+### 3.7 Focus Ring Rules
 
 **Applies to:** Buttons, links, checkboxes, radios, avatars, breadcrumbs, tags, toggles, tabs
 
@@ -1006,19 +963,19 @@ Use `--zen-focus-ring-error` instead of primary.
 
 **Do not** use `box-shadow` to simulate focus rings — it won't work correctly in high-contrast mode.
 
-### 4.2 Border Usage
+### 3.8 Border Usage
 
 Use `--zen-border-default` for standard container borders (cards, panels, inputs at rest). Use `--zen-border-subtle` for dividers and separators between rows or sections. Use `--zen-border-disabled` for any input, button, or form element in a disabled state.
 
-### 4.3 Placeholder Text
+### 3.9 Placeholder Text
 
 Two tiers of placeholder exist for inputs: `--zen-color-text-placeholder` is the standard placeholder (grey-600). `--zen-color-text-placeholder-subtle` (grey-400) is used in search fields where less visual weight is appropriate.
 
 ---
 
-## 5. Handoff Protocol
+## 4. Handoff Protocol
 
-### 5.1 Before You Hand Off
+### 4.1 Before You Hand Off
 
 Before marking a design ready for engineering:
 
@@ -1028,7 +985,7 @@ Before marking a design ready for engineering:
 - Component states are fully specified: default, hover, focus, active, disabled, error
 - Responsive behavior is documented for each breakpoint
 
-### 5.2 Figma Handoff Checklist
+### 4.2 Figma Handoff Checklist
 
 - [ ] Frame is named clearly (component name + variant)
 - [ ] All layers are named (no "Rectangle 47")
@@ -1037,7 +994,7 @@ Before marking a design ready for engineering:
 - [ ] Prototype flows are linked where interaction context matters
 - [ ] Annotations added for non-obvious behavior (animations, edge cases, empty states)
 
-### 5.3 What to Include in Every Handoff
+### 4.3 What to Include in Every Handoff
 
 Provide engineering with:
 
@@ -1047,7 +1004,7 @@ Provide engineering with:
 4. **Edge cases** — what happens with long text, empty data, loading, error?
 5. **Accessibility notes** — color contrast, keyboard behavior, screen reader label if custom
 
-### 5.4 When Something Is Missing from the Token System
+### 4.4 When Something Is Missing
 
 If you need a value that doesn't exist as a token:
 
@@ -1057,22 +1014,14 @@ If you need a value that doesn't exist as a token:
 
 ---
 
-## 6. Related Guidelines
+## 5. Related Guidelines
 
 The following topics are intentionally maintained as separate documents. They are kept separate to allow independent versioning and to serve their respective audiences without adding scope to this token and handoff reference.
 
-### 6.1 Accessibility Guidelines
+### 5.1 Accessibility Guidelines
 
 Covers WCAG compliance, color contrast requirements, keyboard navigation, focus management, touch target sizing, screen reader behavior, ARIA usage, and reduced motion requirements.
 
-> **Document:** Actian Accessibility Guidelines *(to be created)*
-
-### 6.2 Content Guidelines
+### 5.2 Content Guidelines
 
 Covers voice and tone, capitalization rules, button and label copy, error message writing, empty state copy, and microcopy patterns.
-
-> **Document:** Actian Content Guidelines *(to be created)*
-
----
-
-*End of document. Questions or updates? Open a GitHub issue or bring them to the design systems sync.*

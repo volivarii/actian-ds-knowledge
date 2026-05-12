@@ -8,13 +8,13 @@
   "_index": {
     "_schema_version": 1,
     "id": "",
-    "title": "Actian Design System — Master Reference",
+    "title": "Actian Design Foundation",
     "path": [],
     "parent": null,
     "children": [
       {
-        "id": "color-primitives-themes",
-        "title": "Color Primitives & Themes",
+        "id": "color-primitives",
+        "title": "Color Primitives",
         "order": 1
       },
       {
@@ -23,14 +23,9 @@
         "order": 2
       },
       {
-        "id": "foundations",
-        "title": "Foundations",
+        "id": "design-guidelines",
+        "title": "Design Guidelines",
         "order": 3
-      },
-      {
-        "id": "component-specs",
-        "title": "Component Specs",
-        "order": 4
       }
     ],
     "anchors": {
@@ -45,43 +40,33 @@
       "do_not_edit": "Edit the source MD; CI regenerates this file."
     }
   },
-  "color-primitives-themes": {
+  "color-primitives": {
     "_index": {
       "_schema_version": 1,
-      "id": "color-primitives-themes",
-      "title": "Color Primitives & Themes",
+      "id": "color-primitives",
+      "title": "Color Primitives",
       "path": [
-        "color-primitives-themes"
+        "color-primitives"
       ],
       "parent": "",
       "anchors": {
-        "h2": "color-primitives-themes"
+        "h2": "color-primitives"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 78,
-        "endLine": 585
+        "startLine": 65,
+        "endLine": 542
       },
       "children": [
         {
-          "id": "color-primitives-themes/oklch-shade-formula",
+          "id": "color-primitives/oklch-shade-formula",
           "title": "OKLCH Shade Formula",
           "order": 1
         },
         {
-          "id": "color-primitives-themes/primitives",
+          "id": "color-primitives/primitives",
           "title": "Primitives",
           "order": 2
-        },
-        {
-          "id": "color-primitives-themes/semantic-tokens",
-          "title": "Semantic Tokens",
-          "order": 3
-        },
-        {
-          "id": "color-primitives-themes/product-themes",
-          "title": "Product Themes",
-          "order": 4
         }
       ],
       "_meta": {
@@ -93,21 +78,21 @@
     },
     "oklch-shade-formula": {
       "_schema_version": 1,
-      "id": "color-primitives-themes/oklch-shade-formula",
+      "id": "color-primitives/oklch-shade-formula",
       "title": "OKLCH Shade Formula",
       "path": [
-        "color-primitives-themes",
+        "color-primitives",
         "oklch-shade-formula"
       ],
-      "parent": "color-primitives-themes",
+      "parent": "color-primitives",
       "anchors": {
-        "h2": "color-primitives-themes",
+        "h2": "color-primitives",
         "h3": "oklch-shade-formula"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 83,
-        "endLine": 107
+        "startLine": 70,
+        "endLine": 94
       },
       "_meta": {
         "auto_generated": true,
@@ -126,8 +111,8 @@
           "rows": [
             {
               "Shade": "25",
-              "Lightness (L)": "0.99",
-              "Chroma (C)": "calc(c * 0.2)"
+              "Lightness (L)": "`0.97` 🟡 Proposed *(update from 0.99)*",
+              "Chroma (C)": "`calc(c * 0.005)` 🟡 Proposed *(update from c * 0.2)*"
             },
             {
               "Shade": "50",
@@ -186,142 +171,147 @@
     "primitives": {
       "_index": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives",
+        "id": "color-primitives/primitives",
         "title": "Primitives",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives"
         ],
-        "parent": "color-primitives-themes",
+        "parent": "color-primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 108,
-          "endLine": 547
+          "startLine": 95,
+          "endLine": 542
         },
         "children": [
           {
-            "id": "color-primitives-themes/primitives/green",
-            "title": "Green",
+            "id": "color-primitives/primitives/white-black",
+            "title": "White & Black",
             "order": 1
           },
           {
-            "id": "color-primitives-themes/primitives/orange",
-            "title": "Orange",
+            "id": "color-primitives/primitives/green",
+            "title": "Green",
             "order": 2
           },
           {
-            "id": "color-primitives-themes/primitives/red",
-            "title": "Red",
+            "id": "color-primitives/primitives/orange",
+            "title": "Orange",
             "order": 3
           },
           {
-            "id": "color-primitives-themes/primitives/grey",
-            "title": "Grey",
+            "id": "color-primitives/primitives/red",
+            "title": "Red",
             "order": 4
           },
           {
-            "id": "color-primitives-themes/primitives/royal-blue",
-            "title": "Royal Blue",
+            "id": "color-primitives/primitives/grey",
+            "title": "Grey",
             "order": 5
           },
           {
-            "id": "color-primitives-themes/primitives/blue",
-            "title": "Blue",
+            "id": "color-primitives/primitives/royal-blue",
+            "title": "Royal Blue",
             "order": 6
           },
           {
-            "id": "color-primitives-themes/primitives/turquoise",
-            "title": "Turquoise",
+            "id": "color-primitives/primitives/blue",
+            "title": "Blue",
             "order": 7
           },
           {
-            "id": "color-primitives-themes/primitives/purple",
-            "title": "Purple",
+            "id": "color-primitives/primitives/turquoise",
+            "title": "Turquoise",
             "order": 8
           },
           {
-            "id": "color-primitives-themes/primitives/blue-grey",
-            "title": "Blue Grey",
+            "id": "color-primitives/primitives/purple",
+            "title": "Purple",
             "order": 9
           },
           {
-            "id": "color-primitives-themes/primitives/yellow",
-            "title": "Yellow",
+            "id": "color-primitives/primitives/blue-grey",
+            "title": "Blue Grey",
             "order": 10
           },
           {
-            "id": "color-primitives-themes/primitives/olive-green",
-            "title": "Olive Green",
+            "id": "color-primitives/primitives/yellow",
+            "title": "Yellow",
             "order": 11
           },
           {
-            "id": "color-primitives-themes/primitives/pacific-blue",
-            "title": "Pacific Blue",
+            "id": "color-primitives/primitives/olive-green",
+            "title": "Olive Green",
             "order": 12
           },
           {
-            "id": "color-primitives-themes/primitives/pomegranate-red",
-            "title": "Pomegranate Red",
+            "id": "color-primitives/primitives/pacific-blue",
+            "title": "Pacific Blue",
             "order": 13
           },
           {
-            "id": "color-primitives-themes/primitives/kickstart-purple",
-            "title": "Kickstart Purple",
+            "id": "color-primitives/primitives/pomegranate-red",
+            "title": "Pomegranate Red",
             "order": 14
           },
           {
-            "id": "color-primitives-themes/primitives/glint-green",
-            "title": "Glint Green",
+            "id": "color-primitives/primitives/kickstart-purple",
+            "title": "Kickstart Purple",
             "order": 15
           },
           {
-            "id": "color-primitives-themes/primitives/clematis-purple",
-            "title": "Clematis Purple",
+            "id": "color-primitives/primitives/glint-green",
+            "title": "Glint Green",
             "order": 16
           },
           {
-            "id": "color-primitives-themes/primitives/mellow-melon-pink",
-            "title": "Mellow Melon Pink",
+            "id": "color-primitives/primitives/clematis-purple",
+            "title": "Clematis Purple",
             "order": 17
           },
           {
-            "id": "color-primitives-themes/primitives/zima-blue",
-            "title": "Zima Blue",
+            "id": "color-primitives/primitives/mellow-melon-pink",
+            "title": "Mellow Melon Pink",
             "order": 18
           },
           {
-            "id": "color-primitives-themes/primitives/singapore-orchid-purple",
-            "title": "Singapore Orchid Purple",
+            "id": "color-primitives/primitives/zima-blue",
+            "title": "Zima Blue",
             "order": 19
           },
           {
-            "id": "color-primitives-themes/primitives/dropped-brick-red",
-            "title": "Dropped Brick Red",
+            "id": "color-primitives/primitives/singapore-orchid-purple",
+            "title": "Singapore Orchid Purple",
             "order": 20
           },
           {
-            "id": "color-primitives-themes/primitives/viva-gold-orange",
-            "title": "Viva Gold Orange",
+            "id": "color-primitives/primitives/dropped-brick-red",
+            "title": "Dropped Brick Red",
             "order": 21
           },
           {
-            "id": "color-primitives-themes/primitives/shutters-green",
-            "title": "Shutters Green",
+            "id": "color-primitives/primitives/viva-gold-orange",
+            "title": "Viva Gold Orange",
             "order": 22
           },
           {
-            "id": "color-primitives-themes/primitives/frosted-glass-green",
-            "title": "Frosted Glass Green",
+            "id": "color-primitives/primitives/shutters-green",
+            "title": "Shutters Green",
             "order": 23
           },
           {
-            "id": "color-primitives-themes/primitives/cool-grey",
-            "title": "Cool Grey",
+            "id": "color-primitives/primitives/frosted-glass-green",
+            "title": "Frosted Glass Green",
             "order": 24
+          },
+          {
+            "id": "color-primitives/primitives/cool-grey",
+            "title": "Cool Grey",
+            "order": 25
           }
         ],
         "_meta": {
@@ -329,27 +319,77 @@
           "source": "foundations/src/foundations.md",
           "do_not_edit": "Edit the source MD; CI regenerates this file."
         },
-        "body": "All color primitives across the system. Every palette follows the same OKLCH shade formula (25–900). Semantic roles and theme assignments are defined in the sections below."
+        "body": "All color primitives across the system. Every palette follows the same OKLCH shade formula (25–900). Semantic roles are defined in the Semantic Tokens section below."
+      },
+      "white-black": {
+        "_schema_version": 1,
+        "id": "color-primitives/primitives/white-black",
+        "title": "White & Black",
+        "path": [
+          "color-primitives",
+          "primitives",
+          "white-black"
+        ],
+        "parent": "color-primitives/primitives",
+        "anchors": {
+          "h2": "color-primitives",
+          "h3": "primitives",
+          "h4": "white-black"
+        },
+        "source": {
+          "file": "foundations/src/foundations.md",
+          "startLine": 100,
+          "endLine": 106
+        },
+        "_meta": {
+          "auto_generated": true,
+          "source": "foundations/src/foundations.md",
+          "do_not_edit": "Edit the source MD; CI regenerates this file."
+        },
+        "blocks": [
+          {
+            "type": "table",
+            "headers": [
+              "Token",
+              "Value",
+              "Status"
+            ],
+            "rows": [
+              {
+                "Token": "--zen-color-white",
+                "Value": "`oklch(1 0 0)` / `#FFFFFF`",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-color-black",
+                "Value": "`oklch(0 0 0)` / `#000000`",
+                "status_note": "Shipped",
+                "status": "shipped"
+              }
+            ]
+          }
+        ]
       },
       "green": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/green",
+        "id": "color-primitives/primitives/green",
         "title": "Green",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "green"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "green"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 113,
-          "endLine": 130
+          "startLine": 107,
+          "endLine": 124
         },
         "_meta": {
           "auto_generated": true,
@@ -370,8 +410,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-green-25",
-                "Hex (Figma)": "#F0FFEC",
-                "OKLCH (Eng)": "oklch(0.99 0.0363 141.19)"
+                "Hex (Figma)": "`#F3F6F3` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 141.19)` 🟡"
               },
               {
                 "Shade": "50",
@@ -439,23 +479,23 @@
       },
       "orange": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/orange",
+        "id": "color-primitives/primitives/orange",
         "title": "Orange",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "orange"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "orange"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 131,
-          "endLine": 148
+          "startLine": 125,
+          "endLine": 142
         },
         "_meta": {
           "auto_generated": true,
@@ -476,8 +516,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-orange-25",
-                "Hex (Figma)": "#FFF9E5",
-                "OKLCH (Eng)": "oklch(0.99 0.0332 66.57)"
+                "Hex (Figma)": "`#F7F4F2` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 66.57)` 🟡"
               },
               {
                 "Shade": "50",
@@ -545,23 +585,23 @@
       },
       "red": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/red",
+        "id": "color-primitives/primitives/red",
         "title": "Red",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "red"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "red"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 149,
-          "endLine": 166
+          "startLine": 143,
+          "endLine": 160
         },
         "_meta": {
           "auto_generated": true,
@@ -582,8 +622,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-red-25",
-                "Hex (Figma)": "#FFF4EC",
-                "OKLCH (Eng)": "oklch(0.99 0.0396 32.45)"
+                "Hex (Figma)": "`#F8F4F3` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 32.45)` 🟡"
               },
               {
                 "Shade": "50",
@@ -651,23 +691,23 @@
       },
       "grey": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/grey",
+        "id": "color-primitives/primitives/grey",
         "title": "Grey",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "grey"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "grey"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 167,
-          "endLine": 184
+          "startLine": 161,
+          "endLine": 178
         },
         "_meta": {
           "auto_generated": true,
@@ -688,8 +728,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-grey-25",
-                "Hex (Figma)": "#FCFCFC",
-                "OKLCH (Eng)": "oklch(0.99 0 0)"
+                "Hex (Figma)": "`#F8F4F5` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 0)` 🟡"
               },
               {
                 "Shade": "50",
@@ -757,30 +797,30 @@
       },
       "royal-blue": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/royal-blue",
+        "id": "color-primitives/primitives/royal-blue",
         "title": "Royal Blue",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "royal-blue"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "royal-blue"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 185,
-          "endLine": 202
+          "startLine": 179,
+          "endLine": 196
         },
         "_meta": {
           "auto_generated": true,
           "source": "foundations/src/foundations.md",
           "do_not_edit": "Edit the source MD; CI regenerates this file."
         },
-        "body": "500 base: #0550DC — (No OKLCH base defined) 🔵 In Review — Actian theme primary",
+        "body": "OKLCH 500 base: oklch(0.4916 0.2229 262.08) — Actian theme primary",
         "blocks": [
           {
             "type": "table",
@@ -794,68 +834,68 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-royal-blue-25",
-                "Hex (Figma)": "#EDF6FF",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "`#F3F5F9` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 262.08)` 🟡"
               },
               {
                 "Shade": "50",
                 "Token": "--zen-color-royal-blue-50",
-                "Hex (Figma)": "#E0F0FF",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#c8e1ff",
+                "OKLCH (Eng)": "oklch(0.9069 0.0669 262.08)"
               },
               {
                 "Shade": "100",
                 "Token": "--zen-color-royal-blue-100",
-                "Hex (Figma)": "#9DCDFF",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#a6c6ff",
+                "OKLCH (Eng)": "oklch(0.8239 0.0892 262.08)"
               },
               {
                 "Shade": "200",
                 "Token": "--zen-color-royal-blue-200",
-                "Hex (Figma)": "#6FAFFD",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#7caaff",
+                "OKLCH (Eng)": "oklch(0.7408 0.1337 262.08)"
               },
               {
                 "Shade": "300",
                 "Token": "--zen-color-royal-blue-300",
-                "Hex (Figma)": "#3C91FF",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#5b8ef0",
+                "OKLCH (Eng)": "oklch(0.6577 0.1560 262.08)"
               },
               {
                 "Shade": "400",
                 "Token": "--zen-color-royal-blue-400",
-                "Hex (Figma)": "#2679FF",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#3571e6",
+                "OKLCH (Eng)": "oklch(0.5747 0.1895 262.08)"
               },
               {
                 "Shade": "**500**",
                 "Token": "**`--zen-color-royal-blue-500`**",
-                "Hex (Figma)": "**`#0550DC`**",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "**`#0550dc`**",
+                "OKLCH (Eng)": "**`oklch(0.4916 0.2229 262.08)`**"
               },
               {
                 "Shade": "600",
                 "Token": "--zen-color-royal-blue-600",
-                "Hex (Figma)": "#043ACE",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#0043d8",
+                "OKLCH (Eng)": "oklch(0.4621 0.2340 262.08)"
               },
               {
                 "Shade": "700",
                 "Token": "--zen-color-royal-blue-700",
-                "Hex (Figma)": "#0029A9",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#0039bd",
+                "OKLCH (Eng)": "oklch(0.4179 0.2118 262.08)"
               },
               {
                 "Shade": "800",
                 "Token": "--zen-color-royal-blue-800",
-                "Hex (Figma)": "#000078",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#003092",
+                "OKLCH (Eng)": "oklch(0.3589 0.1672 262.08)"
               },
               {
                 "Shade": "900",
                 "Token": "--zen-color-royal-blue-900",
-                "Hex (Figma)": "#090952",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#082a6d",
+                "OKLCH (Eng)": "oklch(0.3097 0.1226 262.08)"
               }
             ]
           }
@@ -863,23 +903,23 @@
       },
       "blue": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/blue",
+        "id": "color-primitives/primitives/blue",
         "title": "Blue",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "blue"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "blue"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 203,
-          "endLine": 220
+          "startLine": 197,
+          "endLine": 214
         },
         "_meta": {
           "auto_generated": true,
@@ -900,8 +940,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-blue-25",
-                "Hex (Figma)": "#ECFFFF",
-                "OKLCH (Eng)": "oklch(0.99 0.026 238.72)"
+                "Hex (Figma)": "`#F2F6F8` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 238.72)` 🟡"
               },
               {
                 "Shade": "50",
@@ -969,23 +1009,23 @@
       },
       "turquoise": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/turquoise",
+        "id": "color-primitives/primitives/turquoise",
         "title": "Turquoise",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "turquoise"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "turquoise"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 221,
-          "endLine": 238
+          "startLine": 215,
+          "endLine": 232
         },
         "_meta": {
           "auto_generated": true,
@@ -1006,8 +1046,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-turquoise-25",
-                "Hex (Figma)": "#ECFFFF",
-                "OKLCH (Eng)": "oklch(0.99 0.0213 192.34)"
+                "Hex (Figma)": "`#F1F6F6` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 192.34)` 🟡"
               },
               {
                 "Shade": "50",
@@ -1075,23 +1115,23 @@
       },
       "purple": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/purple",
+        "id": "color-primitives/primitives/purple",
         "title": "Purple",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "purple"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "purple"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 239,
-          "endLine": 256
+          "startLine": 233,
+          "endLine": 250
         },
         "_meta": {
           "auto_generated": true,
@@ -1112,8 +1152,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-purple-25",
-                "Hex (Figma)": "#FFF9FF",
-                "OKLCH (Eng)": "oklch(0.99 0.0187 313.67)"
+                "Hex (Figma)": "`#F6F4F7` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 313.67)` 🟡"
               },
               {
                 "Shade": "50",
@@ -1181,23 +1221,23 @@
       },
       "blue-grey": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/blue-grey",
+        "id": "color-primitives/primitives/blue-grey",
         "title": "Blue Grey",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "blue-grey"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "blue-grey"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 257,
-          "endLine": 274
+          "startLine": 251,
+          "endLine": 268
         },
         "_meta": {
           "auto_generated": true,
@@ -1218,8 +1258,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-blue-grey-25",
-                "Hex (Figma)": "#F7FDFF",
-                "OKLCH (Eng)": "oklch(0.99 0.0079 229.02)"
+                "Hex (Figma)": "`#F2F6F8` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 229.02)` 🟡"
               },
               {
                 "Shade": "50",
@@ -1287,23 +1327,23 @@
       },
       "yellow": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/yellow",
+        "id": "color-primitives/primitives/yellow",
         "title": "Yellow",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "yellow"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "yellow"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 275,
-          "endLine": 292
+          "startLine": 269,
+          "endLine": 286
         },
         "_meta": {
           "auto_generated": true,
@@ -1324,8 +1364,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-yellow-25",
-                "Hex (Figma)": "#FFFCE7",
-                "OKLCH (Eng)": "oklch(0.99 0.029 89.43)"
+                "Hex (Figma)": "`#F6F5F1` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 89.43)` 🟡"
               },
               {
                 "Shade": "50",
@@ -1393,23 +1433,23 @@
       },
       "olive-green": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/olive-green",
+        "id": "color-primitives/primitives/olive-green",
         "title": "Olive Green",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "olive-green"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "olive-green"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 293,
-          "endLine": 310
+          "startLine": 287,
+          "endLine": 304
         },
         "_meta": {
           "auto_generated": true,
@@ -1430,8 +1470,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-olive-green-25",
-                "Hex (Figma)": "#F9FFEA",
-                "OKLCH (Eng)": "oklch(0.99 0.0275 119.69)"
+                "Hex (Figma)": "`#F4F6F2` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 119.69)` 🟡"
               },
               {
                 "Shade": "50",
@@ -1499,23 +1539,23 @@
       },
       "pacific-blue": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/pacific-blue",
+        "id": "color-primitives/primitives/pacific-blue",
         "title": "Pacific Blue",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "pacific-blue"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "pacific-blue"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 311,
-          "endLine": 328
+          "startLine": 305,
+          "endLine": 322
         },
         "_meta": {
           "auto_generated": true,
@@ -1536,8 +1576,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-pacific-blue-25",
-                "Hex (Figma)": "#F1FDFF",
-                "OKLCH (Eng)": "oklch(0.99 0.0277 258.03)"
+                "Hex (Figma)": "`#F3F5F8` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 258.03)` 🟡"
               },
               {
                 "Shade": "50",
@@ -1605,23 +1645,23 @@
       },
       "pomegranate-red": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/pomegranate-red",
+        "id": "color-primitives/primitives/pomegranate-red",
         "title": "Pomegranate Red",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "pomegranate-red"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "pomegranate-red"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 329,
-          "endLine": 346
+          "startLine": 323,
+          "endLine": 340
         },
         "_meta": {
           "auto_generated": true,
@@ -1642,8 +1682,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-pomegranate-red-25",
-                "Hex (Figma)": "#FFF5F6",
-                "OKLCH (Eng)": "oklch(0.99 0.031 17.61)"
+                "Hex (Figma)": "`#F8F4F4` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 17.61)` 🟡"
               },
               {
                 "Shade": "50",
@@ -1711,23 +1751,23 @@
       },
       "kickstart-purple": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/kickstart-purple",
+        "id": "color-primitives/primitives/kickstart-purple",
         "title": "Kickstart Purple",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "kickstart-purple"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "kickstart-purple"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 347,
-          "endLine": 364
+          "startLine": 341,
+          "endLine": 358
         },
         "_meta": {
           "auto_generated": true,
@@ -1748,8 +1788,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-kickstart-purple-25",
-                "Hex (Figma)": "#F9FBFF",
-                "OKLCH (Eng)": "oklch(0.99 0.0232 278.98)"
+                "Hex (Figma)": "`#F4F5F8` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 278.98)` 🟡"
               },
               {
                 "Shade": "50",
@@ -1817,23 +1857,23 @@
       },
       "glint-green": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/glint-green",
+        "id": "color-primitives/primitives/glint-green",
         "title": "Glint Green",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "glint-green"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "glint-green"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 365,
-          "endLine": 382
+          "startLine": 359,
+          "endLine": 376
         },
         "_meta": {
           "auto_generated": true,
@@ -1854,8 +1894,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-glint-green-25",
-                "Hex (Figma)": "#F9FEF5",
-                "OKLCH (Eng)": "oklch(0.99 0.0127 130.94)"
+                "Hex (Figma)": "`#F4F6F2` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 130.94)` 🟡"
               },
               {
                 "Shade": "50",
@@ -1923,23 +1963,23 @@
       },
       "clematis-purple": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/clematis-purple",
+        "id": "color-primitives/primitives/clematis-purple",
         "title": "Clematis Purple",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "clematis-purple"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "clematis-purple"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 383,
-          "endLine": 400
+          "startLine": 377,
+          "endLine": 394
         },
         "_meta": {
           "auto_generated": true,
@@ -1960,8 +2000,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-clematis-purple-25",
-                "Hex (Figma)": "#FFFAFF",
-                "OKLCH (Eng)": "oklch(0.99 0.0138 308.11)"
+                "Hex (Figma)": "`#F6F4F8` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 308.11)` 🟡"
               },
               {
                 "Shade": "50",
@@ -2029,23 +2069,23 @@
       },
       "mellow-melon-pink": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/mellow-melon-pink",
+        "id": "color-primitives/primitives/mellow-melon-pink",
         "title": "Mellow Melon Pink",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "mellow-melon-pink"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "mellow-melon-pink"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 401,
-          "endLine": 418
+          "startLine": 395,
+          "endLine": 412
         },
         "_meta": {
           "auto_generated": true,
@@ -2066,8 +2106,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-mellow-melon-pink-25",
-                "Hex (Figma)": "#FFF1F5",
-                "OKLCH (Eng)": "oklch(0.99 0.046 9.63)"
+                "Hex (Figma)": "`#F8F4F4` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 9.63)` 🟡"
               },
               {
                 "Shade": "50",
@@ -2135,23 +2175,23 @@
       },
       "zima-blue": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/zima-blue",
+        "id": "color-primitives/primitives/zima-blue",
         "title": "Zima Blue",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "zima-blue"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "zima-blue"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 419,
-          "endLine": 436
+          "startLine": 413,
+          "endLine": 430
         },
         "_meta": {
           "auto_generated": true,
@@ -2172,8 +2212,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-zima-blue-25",
-                "Hex (Figma)": "#E9FFFF",
-                "OKLCH (Eng)": "oklch(0.99 0.0272 220.59)"
+                "Hex (Figma)": "`#F2F6F7` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 220.59)` 🟡"
               },
               {
                 "Shade": "50",
@@ -2241,23 +2281,23 @@
       },
       "singapore-orchid-purple": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/singapore-orchid-purple",
+        "id": "color-primitives/primitives/singapore-orchid-purple",
         "title": "Singapore Orchid Purple",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "singapore-orchid-purple"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "singapore-orchid-purple"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 437,
-          "endLine": 454
+          "startLine": 431,
+          "endLine": 448
         },
         "_meta": {
           "auto_generated": true,
@@ -2278,8 +2318,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-singapore-orchid-purple-25",
-                "Hex (Figma)": "#FFF5FF",
-                "OKLCH (Eng)": "oklch(0.99 0.0537 302.74)"
+                "Hex (Figma)": "`#F6F4F8` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 302.74)` 🟡"
               },
               {
                 "Shade": "50",
@@ -2347,23 +2387,23 @@
       },
       "dropped-brick-red": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/dropped-brick-red",
+        "id": "color-primitives/primitives/dropped-brick-red",
         "title": "Dropped Brick Red",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "dropped-brick-red"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "dropped-brick-red"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 455,
-          "endLine": 472
+          "startLine": 449,
+          "endLine": 466
         },
         "_meta": {
           "auto_generated": true,
@@ -2384,8 +2424,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-dropped-brick-red-25",
-                "Hex (Figma)": "#FFF6EC",
-                "OKLCH (Eng)": "oklch(0.99 0.0349 37.67)"
+                "Hex (Figma)": "`#F8F4F3` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 37.67)` 🟡"
               },
               {
                 "Shade": "50",
@@ -2453,23 +2493,23 @@
       },
       "viva-gold-orange": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/viva-gold-orange",
+        "id": "color-primitives/primitives/viva-gold-orange",
         "title": "Viva Gold Orange",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "viva-gold-orange"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "viva-gold-orange"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 473,
-          "endLine": 490
+          "startLine": 467,
+          "endLine": 484
         },
         "_meta": {
           "auto_generated": true,
@@ -2490,8 +2530,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-viva-gold-orange-25",
-                "Hex (Figma)": "#FFFBEF",
-                "OKLCH (Eng)": "oklch(0.99 0.0188 70.44)"
+                "Hex (Figma)": "`#F7F5F1` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 70.44)` 🟡"
               },
               {
                 "Shade": "50",
@@ -2559,23 +2599,23 @@
       },
       "shutters-green": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/shutters-green",
+        "id": "color-primitives/primitives/shutters-green",
         "title": "Shutters Green",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "shutters-green"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "shutters-green"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 491,
-          "endLine": 508
+          "startLine": 485,
+          "endLine": 502
         },
         "_meta": {
           "auto_generated": true,
@@ -2596,8 +2636,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-shutters-green-25",
-                "Hex (Figma)": "#FCFDF8",
-                "OKLCH (Eng)": "oklch(0.99 0.0062 118.85)"
+                "Hex (Figma)": "`#F5F6F2` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 118.85)` 🟡"
               },
               {
                 "Shade": "50",
@@ -2665,23 +2705,23 @@
       },
       "frosted-glass-green": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/frosted-glass-green",
+        "id": "color-primitives/primitives/frosted-glass-green",
         "title": "Frosted Glass Green",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "frosted-glass-green"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "frosted-glass-green"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 509,
-          "endLine": 526
+          "startLine": 503,
+          "endLine": 520
         },
         "_meta": {
           "auto_generated": true,
@@ -2702,8 +2742,8 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-frosted-glass-green-25",
-                "Hex (Figma)": "#F3FFFB",
-                "OKLCH (Eng)": "oklch(0.99 0.0149 171.63)"
+                "Hex (Figma)": "`#F2F6F5` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 171.63)` 🟡"
               },
               {
                 "Shade": "50",
@@ -2771,30 +2811,30 @@
       },
       "cool-grey": {
         "_schema_version": 1,
-        "id": "color-primitives-themes/primitives/cool-grey",
+        "id": "color-primitives/primitives/cool-grey",
         "title": "Cool Grey",
         "path": [
-          "color-primitives-themes",
+          "color-primitives",
           "primitives",
           "cool-grey"
         ],
-        "parent": "color-primitives-themes/primitives",
+        "parent": "color-primitives/primitives",
         "anchors": {
-          "h2": "color-primitives-themes",
+          "h2": "color-primitives",
           "h3": "primitives",
           "h4": "cool-grey"
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 527,
-          "endLine": 547
+          "startLine": 521,
+          "endLine": 542
         },
         "_meta": {
           "auto_generated": true,
           "source": "foundations/src/foundations.md",
           "do_not_edit": "Edit the source MD; CI regenerates this file."
         },
-        "body": "500 base: #656574 — (No OKLCH base defined) 🔵 In Review",
+        "body": "OKLCH 500 base: oklch(0.5121 0.0235 285.54) — 🟢 Shipped",
         "blocks": [
           {
             "type": "table",
@@ -2808,211 +2848,73 @@
               {
                 "Shade": "25",
                 "Token": "--zen-color-cool-grey-25",
-                "Hex (Figma)": "#FBFBFF",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "`#F5F5F8` 🟡",
+                "OKLCH (Eng)": "`oklch(0.97 0.005 285.54)` 🟡"
               },
               {
                 "Shade": "50",
                 "Token": "--zen-color-cool-grey-50",
-                "Hex (Figma)": "#F5F5FA",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#e1e1e6",
+                "OKLCH (Eng)": "oklch(0.9103 0.0070 285.54)"
               },
               {
                 "Shade": "100",
                 "Token": "--zen-color-cool-grey-100",
-                "Hex (Figma)": "#E4E4F0",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#c7c7ce",
+                "OKLCH (Eng)": "oklch(0.8307 0.0094 285.54)"
               },
               {
                 "Shade": "200",
                 "Token": "--zen-color-cool-grey-200",
-                "Hex (Figma)": "#D3D3E5",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#adadb7",
+                "OKLCH (Eng)": "oklch(0.7510 0.0141 285.54)"
               },
               {
                 "Shade": "300",
                 "Token": "--zen-color-cool-grey-300",
-                "Hex (Figma)": "#B9B9CD",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#9494a0",
+                "OKLCH (Eng)": "oklch(0.6714 0.0164 285.54)"
               },
               {
                 "Shade": "400",
                 "Token": "--zen-color-cool-grey-400",
-                "Hex (Figma)": "#9898A7",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#7c7c8a",
+                "OKLCH (Eng)": "oklch(0.5917 0.0200 285.54)"
               },
               {
                 "Shade": "**500**",
                 "Token": "**`--zen-color-cool-grey-500`**",
                 "Hex (Figma)": "**`#656574`**",
-                "OKLCH (Eng)": "—"
+                "OKLCH (Eng)": "**`oklch(0.5121 0.0235 285.54)`**"
               },
               {
                 "Shade": "600",
                 "Token": "--zen-color-cool-grey-600",
-                "Hex (Figma)": "#3F3F4A",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#5c5c6c",
+                "OKLCH (Eng)": "oklch(0.4814 0.0247 285.54)"
               },
               {
                 "Shade": "700",
                 "Token": "--zen-color-cool-grey-700",
-                "Hex (Figma)": "#33333D",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#50505d",
+                "OKLCH (Eng)": "oklch(0.4353 0.0223 285.54)"
               },
               {
                 "Shade": "800",
                 "Token": "--zen-color-cool-grey-800",
-                "Hex (Figma)": "#2A2A30",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#40404a",
+                "OKLCH (Eng)": "oklch(0.3738 0.0176 285.54)"
               },
               {
                 "Shade": "900",
                 "Token": "--zen-color-cool-grey-900",
-                "Hex (Figma)": "#12131F",
-                "OKLCH (Eng)": "—"
+                "Hex (Figma)": "#33333a",
+                "OKLCH (Eng)": "oklch(0.3226 0.0129 285.54)"
               }
             ]
           }
         ]
       }
-    },
-    "semantic-tokens": {
-      "_schema_version": 1,
-      "id": "color-primitives-themes/semantic-tokens",
-      "title": "Semantic Tokens",
-      "path": [
-        "color-primitives-themes",
-        "semantic-tokens"
-      ],
-      "parent": "color-primitives-themes",
-      "anchors": {
-        "h2": "color-primitives-themes",
-        "h3": "semantic-tokens"
-      },
-      "source": {
-        "file": "foundations/src/foundations.md",
-        "startLine": 548,
-        "endLine": 565
-      },
-      "_meta": {
-        "auto_generated": true,
-        "source": "foundations/src/foundations.md",
-        "do_not_edit": "Edit the source MD; CI regenerates this file."
-      },
-      "body": "Semantic tokens map fixed roles to specific primitives. These do not change per theme. All components should reference these tokens rather than raw primitive tokens.\n\nAll shades (25–900) follow the same alias pattern, e.g. --zen-color-success-100 → --zen-color-green-100.",
-      "blocks": [
-        {
-          "type": "table",
-          "headers": [
-            "Role",
-            "Semantic Token",
-            "Primitive",
-            "Hex (500)",
-            "OKLCH (500)"
-          ],
-          "rows": [
-            {
-              "Role": "Success",
-              "Semantic Token": "--zen-color-success-500",
-              "Primitive": "--zen-color-green-500",
-              "Hex (500)": "#299315",
-              "OKLCH (500)": "oklch(0.5812 0.1816 141.19)"
-            },
-            {
-              "Role": "Warning",
-              "Semantic Token": "--zen-color-warning-500",
-              "Primitive": "--zen-color-orange-500",
-              "Hex (500)": "#FC9F1D",
-              "OKLCH (500)": "oklch(0.7775 0.166 66.57)"
-            },
-            {
-              "Role": "Error",
-              "Semantic Token": "--zen-color-error-500",
-              "Primitive": "--zen-color-red-500",
-              "Hex (500)": "#E6492D",
-              "OKLCH (500)": "oklch(0.6243 0.1982 32.45)"
-            },
-            {
-              "Role": "Neutral",
-              "Semantic Token": "--zen-color-neutral-500",
-              "Primitive": "--zen-color-grey-500",
-              "Hex (500)": "#999999",
-              "OKLCH (500)": "oklch(0.683 0 0)"
-            }
-          ]
-        }
-      ]
-    },
-    "product-themes": {
-      "_schema_version": 1,
-      "id": "color-primitives-themes/product-themes",
-      "title": "Product Themes",
-      "path": [
-        "color-primitives-themes",
-        "product-themes"
-      ],
-      "parent": "color-primitives-themes",
-      "anchors": {
-        "h2": "color-primitives-themes",
-        "h3": "product-themes"
-      },
-      "source": {
-        "file": "foundations/src/foundations.md",
-        "startLine": 566,
-        "endLine": 585
-      },
-      "_meta": {
-        "auto_generated": true,
-        "source": "foundations/src/foundations.md",
-        "do_not_edit": "Edit the source MD; CI regenerates this file."
-      },
-      "body": "The Actian Design System uses a per-product theming model. Each product has its own primary color. All components reference --zen-color-primary-* tokens — theming is applied by setting those tokens at the root level using a CSS theme class. No component-level overrides needed.\n\n> Royal Blue OKLCH gap. Royal Blue (#0550DC) is the primary color for the default Actian theme but has no OKLCH base value defined yet. Engineering must define and implement this OKLCH base as part of the .theme-actian In Review work.\n\nAll other --zen-color-primary-* shades (25–900) are derived from the 500 base using the standard OKLCH shade formula, so the full scale updates automatically when the base is swapped.",
-      "blocks": [
-        {
-          "type": "table",
-          "headers": [
-            "Theme class",
-            "Product",
-            "Primary color",
-            "Token alias",
-            "500 Base (Hex)",
-            "OKLCH Base",
-            "Status"
-          ],
-          "rows": [
-            {
-              "Theme class": ".theme-actian",
-              "Product": "Actian (platform/default)",
-              "Primary color": "Royal Blue",
-              "Token alias": "--zen-color-royal-blue-500",
-              "500 Base (Hex)": "#0550DC",
-              "OKLCH Base": "*(No OKLCH base defined)*",
-              "status_note": "In Review",
-              "status": "in-review"
-            },
-            {
-              "Theme class": ".theme-studio",
-              "Product": "Studio, Admin",
-              "Primary color": "Blue",
-              "Token alias": "--zen-color-blue-500",
-              "500 Base (Hex)": "#0283BE",
-              "OKLCH Base": "oklch(0.58 0.130062 238.7173)",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Theme class": ".theme-explorer",
-              "Product": "Explorer",
-              "Primary color": "Turquoise",
-              "Token alias": "--zen-color-turquoise-500",
-              "500 Base (Hex)": "#049B98",
-              "OKLCH Base": "oklch(0.6233 0.1066 192.34)",
-              "status_note": "Shipped",
-              "status": "shipped"
-            }
-          ]
-        }
-      ]
     }
   },
   "tokens": {
@@ -3029,23 +2931,23 @@
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 586,
-        "endLine": 1015
+        "startLine": 543,
+        "endLine": 965
       },
       "children": [
         {
-          "id": "tokens/color-global-tokens",
-          "title": "Color — Global Tokens",
+          "id": "tokens/global-color",
+          "title": "Global Color",
           "order": 1
         },
         {
-          "id": "tokens/color-text-tokens",
-          "title": "Color — Text Tokens",
+          "id": "tokens/typography",
+          "title": "Typography",
           "order": 2
         },
         {
-          "id": "tokens/border-tokens",
-          "title": "Border Tokens",
+          "id": "tokens/borders",
+          "title": "Borders",
           "order": 3
         },
         {
@@ -3059,8 +2961,8 @@
           "order": 5
         },
         {
-          "id": "tokens/elevation-shadows",
-          "title": "Elevation (Shadows)",
+          "id": "tokens/elevation",
+          "title": "Elevation",
           "order": 6
         },
         {
@@ -3069,29 +2971,24 @@
           "order": 7
         },
         {
-          "id": "tokens/typography",
-          "title": "Typography",
+          "id": "tokens/backgrounds",
+          "title": "Backgrounds",
           "order": 8
+        },
+        {
+          "id": "tokens/heights-and-trigger-areas",
+          "title": "Heights and Trigger Areas",
+          "order": 9
+        },
+        {
+          "id": "tokens/icons",
+          "title": "Icons",
+          "order": 10
         },
         {
           "id": "tokens/motion",
           "title": "Motion",
-          "order": 9
-        },
-        {
-          "id": "tokens/background-tokens",
-          "title": "Background Tokens",
-          "order": 10
-        },
-        {
-          "id": "tokens/size-tokens",
-          "title": "Size Tokens",
           "order": 11
-        },
-        {
-          "id": "tokens/icon-color-tokens",
-          "title": "Icon Color Tokens",
-          "order": 12
         }
       ],
       "_meta": {
@@ -3127,192 +3024,23 @@
         }
       ]
     },
-    "color-global-tokens": {
-      "_index": {
-        "_schema_version": 1,
-        "id": "tokens/color-global-tokens",
-        "title": "Color — Global Tokens",
-        "path": [
-          "tokens",
-          "color-global-tokens"
-        ],
-        "parent": "tokens",
-        "anchors": {
-          "h2": "tokens",
-          "h3": "color-global-tokens"
-        },
-        "source": {
-          "file": "foundations/src/foundations.md",
-          "startLine": 603,
-          "endLine": 624
-        },
-        "children": [
-          {
-            "id": "tokens/color-global-tokens/white-black",
-            "title": "White & Black",
-            "order": 1
-          },
-          {
-            "id": "tokens/color-global-tokens/semantic-aliases",
-            "title": "Semantic Aliases",
-            "order": 2
-          }
-        ],
-        "_meta": {
-          "auto_generated": true,
-          "source": "foundations/src/foundations.md",
-          "do_not_edit": "Edit the source MD; CI regenerates this file."
-        }
-      },
-      "white-black": {
-        "_schema_version": 1,
-        "id": "tokens/color-global-tokens/white-black",
-        "title": "White & Black",
-        "path": [
-          "tokens",
-          "color-global-tokens",
-          "white-black"
-        ],
-        "parent": "tokens/color-global-tokens",
-        "anchors": {
-          "h2": "tokens",
-          "h3": "color-global-tokens",
-          "h4": "white-black"
-        },
-        "source": {
-          "file": "foundations/src/foundations.md",
-          "startLine": 605,
-          "endLine": 611
-        },
-        "_meta": {
-          "auto_generated": true,
-          "source": "foundations/src/foundations.md",
-          "do_not_edit": "Edit the source MD; CI regenerates this file."
-        },
-        "blocks": [
-          {
-            "type": "table",
-            "headers": [
-              "Token",
-              "Value",
-              "Status"
-            ],
-            "rows": [
-              {
-                "Token": "--zen-color-white",
-                "Value": "`oklch(1 0 0)` / `#FFFFFF`",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-color-black",
-                "Value": "`oklch(0 0 0)` / `#000000`",
-                "status_note": "Shipped",
-                "status": "shipped"
-              }
-            ]
-          }
-        ]
-      },
-      "semantic-aliases": {
-        "_schema_version": 1,
-        "id": "tokens/color-global-tokens/semantic-aliases",
-        "title": "Semantic Aliases",
-        "path": [
-          "tokens",
-          "color-global-tokens",
-          "semantic-aliases"
-        ],
-        "parent": "tokens/color-global-tokens",
-        "anchors": {
-          "h2": "tokens",
-          "h3": "color-global-tokens",
-          "h4": "semantic-aliases"
-        },
-        "source": {
-          "file": "foundations/src/foundations.md",
-          "startLine": 612,
-          "endLine": 624
-        },
-        "_meta": {
-          "auto_generated": true,
-          "source": "foundations/src/foundations.md",
-          "do_not_edit": "Edit the source MD; CI regenerates this file."
-        },
-        "body": "The --zen-color-primary-* tokens resolve per product theme. All other semantic roles are fixed across themes.",
-        "blocks": [
-          {
-            "type": "table",
-            "headers": [
-              "Token",
-              "Default (Actian)",
-              "Studio",
-              "Explorer",
-              "Status"
-            ],
-            "rows": [
-              {
-                "Token": "--zen-color-primary-500",
-                "Default (Actian)": "--zen-color-royal-blue-500",
-                "Studio": "--zen-color-blue-500",
-                "Explorer": "--zen-color-turquoise-500",
-                "status_note": "In Review (Actian) / 🟢 Shipped (Studio, Explorer)",
-                "status": "in-review"
-              },
-              {
-                "Token": "--zen-color-success-500",
-                "Default (Actian)": "--zen-color-green-500",
-                "Studio": "← same",
-                "Explorer": "← same",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-color-warning-500",
-                "Default (Actian)": "--zen-color-orange-500",
-                "Studio": "← same",
-                "Explorer": "← same",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-color-error-500",
-                "Default (Actian)": "--zen-color-red-500",
-                "Studio": "← same",
-                "Explorer": "← same",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-color-neutral-500",
-                "Default (Actian)": "--zen-color-grey-500",
-                "Studio": "← same",
-                "Explorer": "← same",
-                "status_note": "Shipped",
-                "status": "shipped"
-              }
-            ]
-          }
-        ]
-      }
-    },
-    "color-text-tokens": {
+    "global-color": {
       "_schema_version": 1,
-      "id": "tokens/color-text-tokens",
-      "title": "Color — Text Tokens",
+      "id": "tokens/global-color",
+      "title": "Global Color",
       "path": [
         "tokens",
-        "color-text-tokens"
+        "global-color"
       ],
       "parent": "tokens",
       "anchors": {
         "h2": "tokens",
-        "h3": "color-text-tokens"
+        "h3": "global-color"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 625,
-        "endLine": 642
+        "startLine": 560,
+        "endLine": 569
       },
       "_meta": {
         "auto_generated": true,
@@ -3325,653 +3053,36 @@
           "headers": [
             "Token",
             "Resolves To",
-            "Usage",
             "Status"
           ],
           "rows": [
             {
-              "Token": "--zen-color-text-primary",
-              "Resolves To": "--zen-color-black",
-              "Usage": "Titles, labels, body text",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-color-text-secondary",
-              "Resolves To": "--zen-color-grey-800",
-              "Usage": "Hints, subtext",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-color-text-tertiary",
-              "Resolves To": "--zen-color-grey-700",
-              "Usage": "Subtitles, alternate texts",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-color-text-placeholder",
-              "Resolves To": "--zen-color-grey-600",
-              "Usage": "Input placeholders",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-color-text-placeholder-subtle",
-              "Resolves To": "--zen-color-grey-400",
-              "Usage": "Secondary placeholders (e.g. search fields)",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-color-text-disabled",
-              "Resolves To": "--zen-color-grey-500",
-              "Usage": "Disabled inputs, buttons, form elements",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-color-text-error",
-              "Resolves To": "--zen-color-error-600",
-              "Usage": "Error messages",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-color-text-warning",
-              "Resolves To": "--zen-color-warning-600",
-              "Usage": "Warning messages",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-color-text-success",
-              "Resolves To": "--zen-color-success-600",
-              "Usage": "Success messages",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-color-text-reverse",
-              "Resolves To": "--zen-color-white",
-              "Usage": "Text on dark or primary-colored backgrounds",
+              "Token": "--zen-color-primary",
+              "Resolves To": "--zen-color-royal-blue",
               "status_note": "Proposed",
               "status": "proposed"
             },
             {
-              "Token": "--zen-color-text-link-default",
-              "Resolves To": "--zen-color-primary-500",
-              "Usage": "Default link color",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-text-link-visited",
-              "Resolves To": "--zen-color-primary-700",
-              "Usage": "Visited link color",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-text-link-reverse",
-              "Resolves To": "--zen-color-white",
-              "Usage": "Links on dark or primary-colored backgrounds",
-              "status_note": "Proposed",
-              "status": "proposed"
-            }
-          ]
-        }
-      ]
-    },
-    "border-tokens": {
-      "_index": {
-        "_schema_version": 1,
-        "id": "tokens/border-tokens",
-        "title": "Border Tokens",
-        "path": [
-          "tokens",
-          "border-tokens"
-        ],
-        "parent": "tokens",
-        "anchors": {
-          "h2": "tokens",
-          "h3": "border-tokens"
-        },
-        "source": {
-          "file": "foundations/src/foundations.md",
-          "startLine": 643,
-          "endLine": 673
-        },
-        "children": [
-          {
-            "id": "tokens/border-tokens/radius",
-            "title": "Radius",
-            "order": 1
-          },
-          {
-            "id": "tokens/border-tokens/width",
-            "title": "Width",
-            "order": 2
-          },
-          {
-            "id": "tokens/border-tokens/style-composite",
-            "title": "Style (Composite)",
-            "order": 3
-          }
-        ],
-        "_meta": {
-          "auto_generated": true,
-          "source": "foundations/src/foundations.md",
-          "do_not_edit": "Edit the source MD; CI regenerates this file."
-        }
-      },
-      "radius": {
-        "_schema_version": 1,
-        "id": "tokens/border-tokens/radius",
-        "title": "Radius",
-        "path": [
-          "tokens",
-          "border-tokens",
-          "radius"
-        ],
-        "parent": "tokens/border-tokens",
-        "anchors": {
-          "h2": "tokens",
-          "h3": "border-tokens",
-          "h4": "radius"
-        },
-        "source": {
-          "file": "foundations/src/foundations.md",
-          "startLine": 645,
-          "endLine": 656
-        },
-        "_meta": {
-          "auto_generated": true,
-          "source": "foundations/src/foundations.md",
-          "do_not_edit": "Edit the source MD; CI regenerates this file."
-        },
-        "blocks": [
-          {
-            "type": "table",
-            "headers": [
-              "Token",
-              "Value",
-              "Usage",
-              "Status"
-            ],
-            "rows": [
-              {
-                "Token": "--zen-border-radius-2xs",
-                "Value": "2px",
-                "Usage": "",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-border-radius-xs",
-                "Value": "4px",
-                "Usage": "",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-border-radius-sm",
-                "Value": "6px",
-                "Usage": "**Default**",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-border-radius-md",
-                "Value": "8px",
-                "Usage": "",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-border-radius-lg",
-                "Value": "10px",
-                "Usage": "",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-border-radius-xl",
-                "Value": "12px",
-                "Usage": "",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-border-radius-full",
-                "Value": "9999px",
-                "Usage": "Pills, avatars, tags",
-                "status_note": "Shipped",
-                "status": "shipped"
-              }
-            ]
-          }
-        ]
-      },
-      "width": {
-        "_schema_version": 1,
-        "id": "tokens/border-tokens/width",
-        "title": "Width",
-        "path": [
-          "tokens",
-          "border-tokens",
-          "width"
-        ],
-        "parent": "tokens/border-tokens",
-        "anchors": {
-          "h2": "tokens",
-          "h3": "border-tokens",
-          "h4": "width"
-        },
-        "source": {
-          "file": "foundations/src/foundations.md",
-          "startLine": 657,
-          "endLine": 663
-        },
-        "_meta": {
-          "auto_generated": true,
-          "source": "foundations/src/foundations.md",
-          "do_not_edit": "Edit the source MD; CI regenerates this file."
-        },
-        "blocks": [
-          {
-            "type": "table",
-            "headers": [
-              "Token",
-              "Value",
-              "Usage",
-              "Status"
-            ],
-            "rows": [
-              {
-                "Token": "--zen-border-width-md",
-                "Value": "1px",
-                "Usage": "Default",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-border-width-lg",
-                "Value": "2px",
-                "Usage": "Focus rings, emphasis",
-                "status_note": "Shipped",
-                "status": "shipped"
-              }
-            ]
-          }
-        ]
-      },
-      "style-composite": {
-        "_schema_version": 1,
-        "id": "tokens/border-tokens/style-composite",
-        "title": "Style (Composite)",
-        "path": [
-          "tokens",
-          "border-tokens",
-          "style-composite"
-        ],
-        "parent": "tokens/border-tokens",
-        "anchors": {
-          "h2": "tokens",
-          "h3": "border-tokens",
-          "h4": "style-composite"
-        },
-        "source": {
-          "file": "foundations/src/foundations.md",
-          "startLine": 664,
-          "endLine": 673
-        },
-        "_meta": {
-          "auto_generated": true,
-          "source": "foundations/src/foundations.md",
-          "do_not_edit": "Edit the source MD; CI regenerates this file."
-        },
-        "blocks": [
-          {
-            "type": "table",
-            "headers": [
-              "Token",
-              "Value",
-              "Usage",
-              "Status"
-            ],
-            "rows": [
-              {
-                "Token": "--zen-border-default",
-                "Value": "1px solid grey-100",
-                "Usage": "Default border for containers",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-border-subtle",
-                "Value": "1px solid grey-50",
-                "Usage": "Separators",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-border-disabled",
-                "Value": "1px solid grey-100",
-                "Usage": "Disabled state of components",
-                "status_note": "Shipped",
-                "status": "shipped"
-              },
-              {
-                "Token": "--zen-border-selected",
-                "Value": "2px solid --zen-color-primary-500",
-                "Usage": "Selected state of components",
-                "status_note": "Proposed",
-                "status": "proposed"
-              },
-              {
-                "Token": "--zen-border-error",
-                "Value": "1px solid --zen-color-error-500",
-                "Usage": "Error state inputs",
-                "status_note": "Shipped",
-                "status": "shipped"
-              }
-            ]
-          }
-        ]
-      }
-    },
-    "breakpoints": {
-      "_schema_version": 1,
-      "id": "tokens/breakpoints",
-      "title": "Breakpoints",
-      "path": [
-        "tokens",
-        "breakpoints"
-      ],
-      "parent": "tokens",
-      "anchors": {
-        "h2": "tokens",
-        "h3": "breakpoints"
-      },
-      "source": {
-        "file": "foundations/src/foundations.md",
-        "startLine": 674,
-        "endLine": 682
-      },
-      "_meta": {
-        "auto_generated": true,
-        "source": "foundations/src/foundations.md",
-        "do_not_edit": "Edit the source MD; CI regenerates this file."
-      },
-      "blocks": [
-        {
-          "type": "table",
-          "headers": [
-            "Token",
-            "Value",
-            "Usage",
-            "Status"
-          ],
-          "rows": [
-            {
-              "Token": "--zen-breakpoint-sm",
-              "Value": "600px",
-              "Usage": "Phone landscape",
+              "Token": "--zen-color-success",
+              "Resolves To": "--zen-color-green",
               "status_note": "Shipped",
               "status": "shipped"
             },
             {
-              "Token": "--zen-breakpoint-md",
-              "Value": "840px",
-              "Usage": "Tablet landscape",
+              "Token": "--zen-color-warning",
+              "Resolves To": "--zen-color-orange",
               "status_note": "Shipped",
               "status": "shipped"
             },
             {
-              "Token": "--zen-breakpoint-lg",
-              "Value": "1200px",
-              "Usage": "Desktop",
+              "Token": "--zen-color-error",
+              "Resolves To": "--zen-color-red",
               "status_note": "Shipped",
               "status": "shipped"
             },
             {
-              "Token": "--zen-breakpoint-xl",
-              "Value": "1920px",
-              "Usage": "Larger screens",
-              "status_note": "Shipped",
-              "status": "shipped"
-            }
-          ]
-        }
-      ]
-    },
-    "focus-rings": {
-      "_schema_version": 1,
-      "id": "tokens/focus-rings",
-      "title": "Focus Rings",
-      "path": [
-        "tokens",
-        "focus-rings"
-      ],
-      "parent": "tokens",
-      "anchors": {
-        "h2": "tokens",
-        "h3": "focus-rings"
-      },
-      "source": {
-        "file": "foundations/src/foundations.md",
-        "startLine": 683,
-        "endLine": 693
-      },
-      "_meta": {
-        "auto_generated": true,
-        "source": "foundations/src/foundations.md",
-        "do_not_edit": "Edit the source MD; CI regenerates this file."
-      },
-      "body": "Outlined focus rings must be applied with an offset on interactive elements. For inputs and textareas, use outline without offset.",
-      "blocks": [
-        {
-          "type": "table",
-          "headers": [
-            "Token",
-            "Value",
-            "Usage",
-            "Status"
-          ],
-          "rows": [
-            {
-              "Token": "--zen-focus-ring-primary",
-              "Value": "2px solid --zen-color-primary-500",
-              "Usage": "Buttons, toggles, checkboxes, radios, avatars, breadcrumbs, tags, tabs",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-focus-ring-error",
-              "Value": "2px solid red-500",
-              "Usage": "Destructive button links, error inputs",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-focus-ring-offset",
-              "Value": "2px",
-              "Usage": "Used with outlined focus states",
-              "status_note": "Shipped",
-              "status": "shipped"
-            }
-          ]
-        }
-      ]
-    },
-    "elevation-shadows": {
-      "_schema_version": 1,
-      "id": "tokens/elevation-shadows",
-      "title": "Elevation (Shadows)",
-      "path": [
-        "tokens",
-        "elevation-shadows"
-      ],
-      "parent": "tokens",
-      "anchors": {
-        "h2": "tokens",
-        "h3": "elevation-shadows"
-      },
-      "source": {
-        "file": "foundations/src/foundations.md",
-        "startLine": 694,
-        "endLine": 706
-      },
-      "_meta": {
-        "auto_generated": true,
-        "source": "foundations/src/foundations.md",
-        "do_not_edit": "Edit the source MD; CI regenerates this file."
-      },
-      "body": "> Elevation must only be used to define layering between elements when required. Use drop shadows only — do not use bevels, borders, or opacity to depict layering.",
-      "blocks": [
-        {
-          "type": "table",
-          "headers": [
-            "Token",
-            "Value",
-            "Usage",
-            "Status"
-          ],
-          "rows": [
-            {
-              "Token": "--zen-shadow-xs",
-              "Value": "0px 1px 3px 1px #0F, 0px 1px 5px 0px #12",
-              "Usage": "Dropdowns, elevated button (default), card hover",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-shadow-sm",
-              "Value": "0px 1px 7px 3px #14, 0px 1px 3px 1px #1F",
-              "Usage": "App header, navigation menu, elevated button hover",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-shadow-md",
-              "Value": "0px 1px 3px 0px #4D, 0px 4px 8px 3px #26",
-              "Usage": "Notification message, snackbar",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-shadow-lg",
-              "Value": "0px 2px 3px 0px #4D, 0px 6px 10px 4px #26",
-              "Usage": "—",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-shadow-xl",
-              "Value": "0px 4px 4px 0px #4D, 0px 8px 12px 6px #26",
-              "Usage": "Dialogs, toasts, overview panel",
-              "status_note": "Shipped",
-              "status": "shipped"
-            }
-          ]
-        }
-      ]
-    },
-    "spacing": {
-      "_schema_version": 1,
-      "id": "tokens/spacing",
-      "title": "Spacing",
-      "path": [
-        "tokens",
-        "spacing"
-      ],
-      "parent": "tokens",
-      "anchors": {
-        "h2": "tokens",
-        "h3": "spacing"
-      },
-      "source": {
-        "file": "foundations/src/foundations.md",
-        "startLine": 707,
-        "endLine": 720
-      },
-      "_meta": {
-        "auto_generated": true,
-        "source": "foundations/src/foundations.md",
-        "do_not_edit": "Edit the source MD; CI regenerates this file."
-      },
-      "blocks": [
-        {
-          "type": "table",
-          "headers": [
-            "Token",
-            "Value",
-            "Usage",
-            "Status"
-          ],
-          "rows": [
-            {
-              "Token": "--zen-spacing-3xs",
-              "Value": "`0.125rem` (2px)",
-              "Usage": "Tightest spacing, hairline gaps",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-spacing-2xs",
-              "Value": "`0.25rem` (4px)",
-              "Usage": "Between elements within a small component",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-spacing-xs",
-              "Value": "`0.5rem` (8px)",
-              "Usage": "Default spacing between components",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-spacing-sm",
-              "Value": "`0.75rem` (12px)",
-              "Usage": "Padding in a large component",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-spacing-md",
-              "Value": "`1rem` (16px)",
-              "Usage": "Padding in a large component; spacing between components",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-spacing-lg",
-              "Value": "`1.5rem` (24px)",
-              "Usage": "Spacing between sections",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-spacing-xl",
-              "Value": "`2rem` (32px)",
-              "Usage": "Use when a clear separation is needed",
-              "status_note": "Shipped",
-              "status": "shipped"
-            },
-            {
-              "Token": "--zen-spacing-2xl",
-              "Value": "`3rem` (48px)",
-              "Usage": "Major section breaks, page padding",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-spacing-3xl",
-              "Value": "`4rem` (64px)",
-              "Usage": "Hero sections, full-page layout",
+              "Token": "--zen-color-neutral",
+              "Resolves To": "--zen-color-cool-grey",
               "status_note": "Proposed",
               "status": "proposed"
             }
@@ -3995,39 +3106,44 @@
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 721,
-          "endLine": 795
+          "startLine": 570,
+          "endLine": 660
         },
         "children": [
           {
+            "id": "tokens/typography/text-color-tokens",
+            "title": "Text Color Tokens",
+            "order": 1
+          },
+          {
             "id": "tokens/typography/font-family",
             "title": "Font Family",
-            "order": 1
+            "order": 2
           },
           {
             "id": "tokens/typography/font-weight",
             "title": "Font Weight",
-            "order": 2
+            "order": 3
           },
           {
             "id": "tokens/typography/font-size",
             "title": "Font Size",
-            "order": 3
+            "order": 4
           },
           {
             "id": "tokens/typography/letter-spacing",
             "title": "Letter Spacing",
-            "order": 4
+            "order": 5
           },
           {
             "id": "tokens/typography/line-height",
             "title": "Line Height",
-            "order": 5
+            "order": 6
           },
           {
             "id": "tokens/typography/text-style-tokens-composite",
             "title": "Text Style Tokens (Composite)",
-            "order": 6
+            "order": 7
           }
         ],
         "_meta": {
@@ -4035,6 +3151,122 @@
           "source": "foundations/src/foundations.md",
           "do_not_edit": "Edit the source MD; CI regenerates this file."
         }
+      },
+      "text-color-tokens": {
+        "_schema_version": 1,
+        "id": "tokens/typography/text-color-tokens",
+        "title": "Text Color Tokens",
+        "path": [
+          "tokens",
+          "typography",
+          "text-color-tokens"
+        ],
+        "parent": "tokens/typography",
+        "anchors": {
+          "h2": "tokens",
+          "h3": "typography",
+          "h4": "text-color-tokens"
+        },
+        "source": {
+          "file": "foundations/src/foundations.md",
+          "startLine": 572,
+          "endLine": 587
+        },
+        "_meta": {
+          "auto_generated": true,
+          "source": "foundations/src/foundations.md",
+          "do_not_edit": "Edit the source MD; CI regenerates this file."
+        },
+        "blocks": [
+          {
+            "type": "table",
+            "headers": [
+              "Token",
+              "Resolves To",
+              "Usage",
+              "Status"
+            ],
+            "rows": [
+              {
+                "Token": "--zen-color-text-default",
+                "Resolves To": "--zen-color-black",
+                "Usage": "Titles, labels, body text",
+                "status_note": "Proposed *(rename from `text-primary` — eng update required)*",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-color-text-secondary",
+                "Resolves To": "--zen-color-neutral-800",
+                "Usage": "Hints, subtext",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-color-text-tertiary",
+                "Resolves To": "--zen-color-neutral-700",
+                "Usage": "Subtitles, alternate texts",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-color-text-placeholder",
+                "Resolves To": "--zen-color-neutral-600",
+                "Usage": "Input placeholders",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-color-text-placeholder-subtle",
+                "Resolves To": "--zen-color-neutral-400",
+                "Usage": "Secondary placeholders (e.g. search fields)",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-color-text-disabled",
+                "Resolves To": "--zen-color-neutral-500",
+                "Usage": "Disabled inputs, buttons, form elements",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-color-text-primary",
+                "Resolves To": "--zen-color-primary-500",
+                "Usage": "Interactive text",
+                "status_note": "Proposed *(named `primary` to align with primary color convention)*",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-color-text-error",
+                "Resolves To": "--zen-color-error-600",
+                "Usage": "Error messages",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-color-text-warning",
+                "Resolves To": "--zen-color-warning-600",
+                "Usage": "Warning messages",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-color-text-success",
+                "Resolves To": "--zen-color-success-600",
+                "Usage": "Success messages",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-color-text-reverse",
+                "Resolves To": "--zen-color-white",
+                "Usage": "Text on dark or primary-colored backgrounds",
+                "status_note": "Proposed",
+                "status": "proposed"
+              }
+            ]
+          }
+        ]
       },
       "font-family": {
         "_schema_version": 1,
@@ -4053,8 +3285,8 @@
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 723,
-          "endLine": 729
+          "startLine": 588,
+          "endLine": 594
         },
         "_meta": {
           "auto_generated": true,
@@ -4106,8 +3338,8 @@
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 730,
-          "endLine": 738
+          "startLine": 595,
+          "endLine": 603
         },
         "_meta": {
           "auto_generated": true,
@@ -4168,8 +3400,8 @@
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 739,
-          "endLine": 751
+          "startLine": 604,
+          "endLine": 616
         },
         "_meta": {
           "auto_generated": true,
@@ -4188,7 +3420,7 @@
             "rows": [
               {
                 "Token": "--zen-font-size-xs",
-                "Value": "`11px` *(update from 10px)*",
+                "Value": "`0.6875rem` (11px) *(update from 10px)*",
                 "Usage": "Hint",
                 "status_note": "Proposed",
                 "status": "proposed"
@@ -4263,15 +3495,15 @@
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 752,
-          "endLine": 764
+          "startLine": 617,
+          "endLine": 629
         },
         "_meta": {
           "auto_generated": true,
           "source": "foundations/src/foundations.md",
           "do_not_edit": "Edit the source MD; CI regenerates this file."
         },
-        "body": "> ⚠️ Token name correction: These tokens were previously named --zen-font-lettingspacing-* (typo). The correct name is --zen-font-letterspacing-*. Engineering must update the token names in the codebase as part of the In Review implementation.",
+        "body": "> ⚠️ Token name correction: Previously named --zen-font-lettingspacing-* (typo). Correct name is --zen-font-letterspacing-*. Engineering must update in codebase.",
         "blocks": [
           {
             "type": "table",
@@ -4338,8 +3570,8 @@
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 765,
-          "endLine": 775
+          "startLine": 630,
+          "endLine": 640
         },
         "_meta": {
           "auto_generated": true,
@@ -4419,15 +3651,15 @@
         },
         "source": {
           "file": "foundations/src/foundations.md",
-          "startLine": 776,
-          "endLine": 795
+          "startLine": 641,
+          "endLine": 660
         },
         "_meta": {
           "auto_generated": true,
           "source": "foundations/src/foundations.md",
           "do_not_edit": "Edit the source MD; CI regenerates this file."
         },
-        "body": "These are semantic aliases that combine weight + size + letter spacing + line height into a single named style. Use these in components rather than assembling the primitives manually.",
+        "body": "These are semantic aliases that combine weight + size + letter spacing + line height into a single named style.",
         "blocks": [
           {
             "type": "table",
@@ -4566,6 +3798,1096 @@
         ]
       }
     },
+    "borders": {
+      "_index": {
+        "_schema_version": 1,
+        "id": "tokens/borders",
+        "title": "Borders",
+        "path": [
+          "tokens",
+          "borders"
+        ],
+        "parent": "tokens",
+        "anchors": {
+          "h2": "tokens",
+          "h3": "borders"
+        },
+        "source": {
+          "file": "foundations/src/foundations.md",
+          "startLine": 661,
+          "endLine": 697
+        },
+        "children": [
+          {
+            "id": "tokens/borders/radius",
+            "title": "Radius",
+            "order": 1
+          },
+          {
+            "id": "tokens/borders/width",
+            "title": "Width",
+            "order": 2
+          },
+          {
+            "id": "tokens/borders/style-composite",
+            "title": "Style (Composite)",
+            "order": 3
+          }
+        ],
+        "_meta": {
+          "auto_generated": true,
+          "source": "foundations/src/foundations.md",
+          "do_not_edit": "Edit the source MD; CI regenerates this file."
+        }
+      },
+      "radius": {
+        "_schema_version": 1,
+        "id": "tokens/borders/radius",
+        "title": "Radius",
+        "path": [
+          "tokens",
+          "borders",
+          "radius"
+        ],
+        "parent": "tokens/borders",
+        "anchors": {
+          "h2": "tokens",
+          "h3": "borders",
+          "h4": "radius"
+        },
+        "source": {
+          "file": "foundations/src/foundations.md",
+          "startLine": 663,
+          "endLine": 674
+        },
+        "_meta": {
+          "auto_generated": true,
+          "source": "foundations/src/foundations.md",
+          "do_not_edit": "Edit the source MD; CI regenerates this file."
+        },
+        "blocks": [
+          {
+            "type": "table",
+            "headers": [
+              "Token",
+              "Value",
+              "Usage",
+              "Status"
+            ],
+            "rows": [
+              {
+                "Token": "--zen-border-radius-2xs",
+                "Value": "2px",
+                "Usage": "",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-border-radius-xs",
+                "Value": "4px",
+                "Usage": "",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-border-radius-sm",
+                "Value": "6px",
+                "Usage": "**Default**",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-border-radius-md",
+                "Value": "8px",
+                "Usage": "",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-border-radius-lg",
+                "Value": "10px",
+                "Usage": "",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-border-radius-xl",
+                "Value": "12px",
+                "Usage": "",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-border-radius-full",
+                "Value": "9999px",
+                "Usage": "Buttons, avatars",
+                "status_note": "Shipped",
+                "status": "shipped"
+              }
+            ]
+          }
+        ]
+      },
+      "width": {
+        "_schema_version": 1,
+        "id": "tokens/borders/width",
+        "title": "Width",
+        "path": [
+          "tokens",
+          "borders",
+          "width"
+        ],
+        "parent": "tokens/borders",
+        "anchors": {
+          "h2": "tokens",
+          "h3": "borders",
+          "h4": "width"
+        },
+        "source": {
+          "file": "foundations/src/foundations.md",
+          "startLine": 675,
+          "endLine": 681
+        },
+        "_meta": {
+          "auto_generated": true,
+          "source": "foundations/src/foundations.md",
+          "do_not_edit": "Edit the source MD; CI regenerates this file."
+        },
+        "blocks": [
+          {
+            "type": "table",
+            "headers": [
+              "Token",
+              "Value",
+              "Usage",
+              "Status"
+            ],
+            "rows": [
+              {
+                "Token": "--zen-border-width-md",
+                "Value": "1px",
+                "Usage": "Default",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-border-width-lg",
+                "Value": "2px",
+                "Usage": "Focus rings, emphasis",
+                "status_note": "Shipped",
+                "status": "shipped"
+              }
+            ]
+          }
+        ]
+      },
+      "style-composite": {
+        "_schema_version": 1,
+        "id": "tokens/borders/style-composite",
+        "title": "Style (Composite)",
+        "path": [
+          "tokens",
+          "borders",
+          "style-composite"
+        ],
+        "parent": "tokens/borders",
+        "anchors": {
+          "h2": "tokens",
+          "h3": "borders",
+          "h4": "style-composite"
+        },
+        "source": {
+          "file": "foundations/src/foundations.md",
+          "startLine": 682,
+          "endLine": 697
+        },
+        "_meta": {
+          "auto_generated": true,
+          "source": "foundations/src/foundations.md",
+          "do_not_edit": "Edit the source MD; CI regenerates this file."
+        },
+        "blocks": [
+          {
+            "type": "table",
+            "headers": [
+              "Token",
+              "Value",
+              "Usage",
+              "Status"
+            ],
+            "rows": [
+              {
+                "Token": "--zen-border-default",
+                "Value": "1px solid --zen-color-neutral-100",
+                "Usage": "Default border for containers",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-border-subtle",
+                "Value": "1px solid --zen-color-neutral-50",
+                "Usage": "Separators",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-border-disabled",
+                "Value": "1px solid --zen-color-neutral-100",
+                "Usage": "Disabled state of components",
+                "status_note": "Shipped",
+                "status": "shipped"
+              },
+              {
+                "Token": "--zen-border-primary",
+                "Value": "1px solid --zen-color-primary-500",
+                "Usage": "Interactive elements",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-border-selected",
+                "Value": "2px solid --zen-color-primary-500",
+                "Usage": "Selected state of components",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-border-error",
+                "Value": "1px solid --zen-color-error-600",
+                "Usage": "Error state inputs",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-border-warning",
+                "Value": "1px solid --zen-color-warning-600",
+                "Usage": "Warning state",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-border-success",
+                "Value": "1px solid --zen-color-success-600",
+                "Usage": "Success state",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-border-info",
+                "Value": "1px solid --zen-color-primary-500",
+                "Usage": "Info state",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-border-strong",
+                "Value": "1px solid --zen-color-neutral-800",
+                "Usage": "High emphasis borders",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-border-reverse",
+                "Value": "1px solid --zen-color-white",
+                "Usage": "Borders on dark or primary-colored backgrounds",
+                "status_note": "Proposed",
+                "status": "proposed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "breakpoints": {
+      "_schema_version": 1,
+      "id": "tokens/breakpoints",
+      "title": "Breakpoints",
+      "path": [
+        "tokens",
+        "breakpoints"
+      ],
+      "parent": "tokens",
+      "anchors": {
+        "h2": "tokens",
+        "h3": "breakpoints"
+      },
+      "source": {
+        "file": "foundations/src/foundations.md",
+        "startLine": 698,
+        "endLine": 706
+      },
+      "_meta": {
+        "auto_generated": true,
+        "source": "foundations/src/foundations.md",
+        "do_not_edit": "Edit the source MD; CI regenerates this file."
+      },
+      "blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "Token",
+            "Value",
+            "Usage",
+            "Status"
+          ],
+          "rows": [
+            {
+              "Token": "--zen-breakpoint-sm",
+              "Value": "600px",
+              "Usage": "Phone landscape",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-breakpoint-md",
+              "Value": "840px",
+              "Usage": "Tablet landscape",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-breakpoint-lg",
+              "Value": "1200px",
+              "Usage": "Desktop",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-breakpoint-xl",
+              "Value": "1920px",
+              "Usage": "Larger screens",
+              "status_note": "Shipped",
+              "status": "shipped"
+            }
+          ]
+        }
+      ]
+    },
+    "focus-rings": {
+      "_schema_version": 1,
+      "id": "tokens/focus-rings",
+      "title": "Focus Rings",
+      "path": [
+        "tokens",
+        "focus-rings"
+      ],
+      "parent": "tokens",
+      "anchors": {
+        "h2": "tokens",
+        "h3": "focus-rings"
+      },
+      "source": {
+        "file": "foundations/src/foundations.md",
+        "startLine": 707,
+        "endLine": 717
+      },
+      "_meta": {
+        "auto_generated": true,
+        "source": "foundations/src/foundations.md",
+        "do_not_edit": "Edit the source MD; CI regenerates this file."
+      },
+      "body": "Outlined focus rings must be applied with an offset on interactive elements. For inputs and textareas, use outline without offset.",
+      "blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "Token",
+            "Value",
+            "Usage",
+            "Status"
+          ],
+          "rows": [
+            {
+              "Token": "--zen-focus-ring-primary",
+              "Value": "2px solid --zen-color-primary-500",
+              "Usage": "Buttons, toggles, checkboxes, radios, avatars, breadcrumbs, tags, tabs",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-focus-ring-error",
+              "Value": "2px solid --zen-color-error-600",
+              "Usage": "Destructive button links, error inputs",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-focus-ring-offset",
+              "Value": "2px",
+              "Usage": "Used with outlined focus states",
+              "status_note": "Shipped",
+              "status": "shipped"
+            }
+          ]
+        }
+      ]
+    },
+    "elevation": {
+      "_schema_version": 1,
+      "id": "tokens/elevation",
+      "title": "Elevation",
+      "path": [
+        "tokens",
+        "elevation"
+      ],
+      "parent": "tokens",
+      "anchors": {
+        "h2": "tokens",
+        "h3": "elevation"
+      },
+      "source": {
+        "file": "foundations/src/foundations.md",
+        "startLine": 718,
+        "endLine": 730
+      },
+      "_meta": {
+        "auto_generated": true,
+        "source": "foundations/src/foundations.md",
+        "do_not_edit": "Edit the source MD; CI regenerates this file."
+      },
+      "body": "> Elevation must only be used to define layering between elements when required. Use drop shadows only — do not use bevels, borders, or opacity to depict layering.",
+      "blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "Token",
+            "Value",
+            "Usage",
+            "Status"
+          ],
+          "rows": [
+            {
+              "Token": "--zen-shadow-xs",
+              "Value": "0px 1px 3px 1px #0F, 0px 1px 5px 0px #12",
+              "Usage": "Dropdowns, elevated button (default), card hover",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-shadow-sm",
+              "Value": "0px 1px 7px 3px #14, 0px 1px 3px 1px #1F",
+              "Usage": "App header, navigation menu, elevated button hover",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-shadow-md",
+              "Value": "0px 1px 3px 0px #4D, 0px 4px 8px 3px #26",
+              "Usage": "Notification message, snackbar",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-shadow-lg",
+              "Value": "0px 2px 3px 0px #4D, 0px 6px 10px 4px #26",
+              "Usage": "—",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-shadow-xl",
+              "Value": "0px 4px 4px 0px #4D, 0px 8px 12px 6px #26",
+              "Usage": "Dialogs, toasts, overview panel",
+              "status_note": "Shipped",
+              "status": "shipped"
+            }
+          ]
+        }
+      ]
+    },
+    "spacing": {
+      "_schema_version": 1,
+      "id": "tokens/spacing",
+      "title": "Spacing",
+      "path": [
+        "tokens",
+        "spacing"
+      ],
+      "parent": "tokens",
+      "anchors": {
+        "h2": "tokens",
+        "h3": "spacing"
+      },
+      "source": {
+        "file": "foundations/src/foundations.md",
+        "startLine": 731,
+        "endLine": 744
+      },
+      "_meta": {
+        "auto_generated": true,
+        "source": "foundations/src/foundations.md",
+        "do_not_edit": "Edit the source MD; CI regenerates this file."
+      },
+      "blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "Token",
+            "Value",
+            "Usage",
+            "Status"
+          ],
+          "rows": [
+            {
+              "Token": "--zen-spacing-3xs",
+              "Value": "`0.125rem` (2px)",
+              "Usage": "Tightest spacing, hairline gaps",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-spacing-2xs",
+              "Value": "`0.25rem` (4px)",
+              "Usage": "Between elements within a small component",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-spacing-xs",
+              "Value": "`0.5rem` (8px)",
+              "Usage": "Default spacing between components",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-spacing-sm",
+              "Value": "`0.75rem` (12px)",
+              "Usage": "Padding in a large component",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-spacing-md",
+              "Value": "`1rem` (16px)",
+              "Usage": "Padding in a large component; spacing between components",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-spacing-lg",
+              "Value": "`1.5rem` (24px)",
+              "Usage": "Spacing between sections",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-spacing-xl",
+              "Value": "`2rem` (32px)",
+              "Usage": "Use when a clear separation is needed",
+              "status_note": "Shipped",
+              "status": "shipped"
+            },
+            {
+              "Token": "--zen-spacing-2xl",
+              "Value": "`3rem` (48px)",
+              "Usage": "Major section breaks, page padding",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-spacing-3xl",
+              "Value": "`4rem` (64px)",
+              "Usage": "Hero sections, full-page layout",
+              "status_note": "Proposed",
+              "status": "proposed"
+            }
+          ]
+        }
+      ]
+    },
+    "backgrounds": {
+      "_schema_version": 1,
+      "id": "tokens/backgrounds",
+      "title": "Backgrounds",
+      "path": [
+        "tokens",
+        "backgrounds"
+      ],
+      "parent": "tokens",
+      "anchors": {
+        "h2": "tokens",
+        "h3": "backgrounds"
+      },
+      "source": {
+        "file": "foundations/src/foundations.md",
+        "startLine": 745,
+        "endLine": 761
+      },
+      "_meta": {
+        "auto_generated": true,
+        "source": "foundations/src/foundations.md",
+        "do_not_edit": "Edit the source MD; CI regenerates this file."
+      },
+      "blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "Token",
+            "Suggested Value",
+            "Usage",
+            "Status"
+          ],
+          "rows": [
+            {
+              "Token": "--zen-color-bg-default",
+              "Suggested Value": "--zen-color-white",
+              "Usage": "Default page background",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-color-bg-subtle",
+              "Suggested Value": "--zen-color-neutral-25",
+              "Usage": "Subtle section backgrounds, sidebars",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-color-bg-muted",
+              "Suggested Value": "--zen-color-neutral-50",
+              "Usage": "Cards, input fills, table rows",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-color-bg-disabled",
+              "Suggested Value": "--zen-color-neutral-50",
+              "Usage": "Disabled state backgrounds",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-color-bg-selected",
+              "Suggested Value": "--zen-color-primary-25",
+              "Usage": "Selected row or item background",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-color-bg-overlay",
+              "Suggested Value": "`--zen-color-black` at 40% opacity",
+              "Usage": "Modal/dialog backdrop",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-color-bg-primary",
+              "Suggested Value": "--zen-color-primary-500",
+              "Usage": "CTA banners, primary filled areas",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-color-bg-success",
+              "Suggested Value": "--zen-color-success-25",
+              "Usage": "Success alert backgrounds",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-color-bg-warning",
+              "Suggested Value": "--zen-color-warning-25",
+              "Usage": "Warning alert backgrounds",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-color-bg-error",
+              "Suggested Value": "--zen-color-error-25",
+              "Usage": "Error alert backgrounds",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-color-bg-info",
+              "Suggested Value": "--zen-color-primary-25",
+              "Usage": "Info alert backgrounds",
+              "status_note": "Proposed",
+              "status": "proposed"
+            },
+            {
+              "Token": "--zen-color-bg-reverse",
+              "Suggested Value": "--zen-color-black",
+              "Usage": "Dark/inverted surface backgrounds",
+              "status_note": "Proposed",
+              "status": "proposed"
+            }
+          ]
+        }
+      ]
+    },
+    "heights-and-trigger-areas": {
+      "_index": {
+        "_schema_version": 1,
+        "id": "tokens/heights-and-trigger-areas",
+        "title": "Heights and Trigger Areas",
+        "path": [
+          "tokens",
+          "heights-and-trigger-areas"
+        ],
+        "parent": "tokens",
+        "anchors": {
+          "h2": "tokens",
+          "h3": "heights-and-trigger-areas"
+        },
+        "source": {
+          "file": "foundations/src/foundations.md",
+          "startLine": 762,
+          "endLine": 781
+        },
+        "children": [
+          {
+            "id": "tokens/heights-and-trigger-areas/component-heights",
+            "title": "Component Heights",
+            "order": 1
+          },
+          {
+            "id": "tokens/heights-and-trigger-areas/trigger-area",
+            "title": "Trigger Area",
+            "order": 2
+          }
+        ],
+        "_meta": {
+          "auto_generated": true,
+          "source": "foundations/src/foundations.md",
+          "do_not_edit": "Edit the source MD; CI regenerates this file."
+        }
+      },
+      "component-heights": {
+        "_schema_version": 1,
+        "id": "tokens/heights-and-trigger-areas/component-heights",
+        "title": "Component Heights",
+        "path": [
+          "tokens",
+          "heights-and-trigger-areas",
+          "component-heights"
+        ],
+        "parent": "tokens/heights-and-trigger-areas",
+        "anchors": {
+          "h2": "tokens",
+          "h3": "heights-and-trigger-areas",
+          "h4": "component-heights"
+        },
+        "source": {
+          "file": "foundations/src/foundations.md",
+          "startLine": 764,
+          "endLine": 774
+        },
+        "_meta": {
+          "auto_generated": true,
+          "source": "foundations/src/foundations.md",
+          "do_not_edit": "Edit the source MD; CI regenerates this file."
+        },
+        "blocks": [
+          {
+            "type": "table",
+            "headers": [
+              "Token",
+              "Value",
+              "Usage",
+              "Status"
+            ],
+            "rows": [
+              {
+                "Token": "--zen-size-height-2xs",
+                "Value": "20px",
+                "Usage": "Extra compact components",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-size-height-xs",
+                "Value": "24px",
+                "Usage": "Compact chips, dense table rows",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-size-height-sm",
+                "Value": "32px",
+                "Usage": "Small buttons, secondary inputs",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-size-height-md",
+                "Value": "40px",
+                "Usage": "Default button, input, select",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-size-height-lg",
+                "Value": "48px",
+                "Usage": "Large buttons, prominent inputs",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-size-height-xl",
+                "Value": "56px",
+                "Usage": "Hero inputs, large touch surfaces",
+                "status_note": "Proposed",
+                "status": "proposed"
+              }
+            ]
+          }
+        ]
+      },
+      "trigger-area": {
+        "_schema_version": 1,
+        "id": "tokens/heights-and-trigger-areas/trigger-area",
+        "title": "Trigger Area",
+        "path": [
+          "tokens",
+          "heights-and-trigger-areas",
+          "trigger-area"
+        ],
+        "parent": "tokens/heights-and-trigger-areas",
+        "anchors": {
+          "h2": "tokens",
+          "h3": "heights-and-trigger-areas",
+          "h4": "trigger-area"
+        },
+        "source": {
+          "file": "foundations/src/foundations.md",
+          "startLine": 775,
+          "endLine": 781
+        },
+        "_meta": {
+          "auto_generated": true,
+          "source": "foundations/src/foundations.md",
+          "do_not_edit": "Edit the source MD; CI regenerates this file."
+        },
+        "blocks": [
+          {
+            "type": "table",
+            "headers": [
+              "Token",
+              "Value",
+              "Usage",
+              "Status"
+            ],
+            "rows": [
+              {
+                "Token": "--zen-size-trigger-min",
+                "Value": "24px",
+                "Usage": "Minimum interactive target area for desktop (WCAG 2.5.5 Level AA)",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-size-trigger-min-mobile",
+                "Value": "44px",
+                "Usage": "Minimum interactive target area for mobile (WCAG 2.5.5 Level AA)",
+                "status_note": "Proposed",
+                "status": "proposed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "icons": {
+      "_index": {
+        "_schema_version": 1,
+        "id": "tokens/icons",
+        "title": "Icons",
+        "path": [
+          "tokens",
+          "icons"
+        ],
+        "parent": "tokens",
+        "anchors": {
+          "h2": "tokens",
+          "h3": "icons"
+        },
+        "source": {
+          "file": "foundations/src/foundations.md",
+          "startLine": 782,
+          "endLine": 805
+        },
+        "children": [
+          {
+            "id": "tokens/icons/icon-sizes",
+            "title": "Icon Sizes",
+            "order": 1
+          },
+          {
+            "id": "tokens/icons/icon-colors",
+            "title": "Icon Colors",
+            "order": 2
+          }
+        ],
+        "_meta": {
+          "auto_generated": true,
+          "source": "foundations/src/foundations.md",
+          "do_not_edit": "Edit the source MD; CI regenerates this file."
+        }
+      },
+      "icon-sizes": {
+        "_schema_version": 1,
+        "id": "tokens/icons/icon-sizes",
+        "title": "Icon Sizes",
+        "path": [
+          "tokens",
+          "icons",
+          "icon-sizes"
+        ],
+        "parent": "tokens/icons",
+        "anchors": {
+          "h2": "tokens",
+          "h3": "icons",
+          "h4": "icon-sizes"
+        },
+        "source": {
+          "file": "foundations/src/foundations.md",
+          "startLine": 784,
+          "endLine": 792
+        },
+        "_meta": {
+          "auto_generated": true,
+          "source": "foundations/src/foundations.md",
+          "do_not_edit": "Edit the source MD; CI regenerates this file."
+        },
+        "blocks": [
+          {
+            "type": "table",
+            "headers": [
+              "Token",
+              "Value",
+              "Usage",
+              "Status"
+            ],
+            "rows": [
+              {
+                "Token": "--zen-size-icon-xs",
+                "Value": "12px",
+                "Usage": "Tight UI contexts, dense tables, badges",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-size-icon-sm",
+                "Value": "16px",
+                "Usage": "Inline icons, compact components",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-size-icon-md",
+                "Value": "20px",
+                "Usage": "Default icon size",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-size-icon-lg",
+                "Value": "24px",
+                "Usage": "Standalone icons, feature icons",
+                "status_note": "Proposed",
+                "status": "proposed"
+              }
+            ]
+          }
+        ]
+      },
+      "icon-colors": {
+        "_schema_version": 1,
+        "id": "tokens/icons/icon-colors",
+        "title": "Icon Colors",
+        "path": [
+          "tokens",
+          "icons",
+          "icon-colors"
+        ],
+        "parent": "tokens/icons",
+        "anchors": {
+          "h2": "tokens",
+          "h3": "icons",
+          "h4": "icon-colors"
+        },
+        "source": {
+          "file": "foundations/src/foundations.md",
+          "startLine": 793,
+          "endLine": 805
+        },
+        "_meta": {
+          "auto_generated": true,
+          "source": "foundations/src/foundations.md",
+          "do_not_edit": "Edit the source MD; CI regenerates this file."
+        },
+        "blocks": [
+          {
+            "type": "table",
+            "headers": [
+              "Token",
+              "Suggested Value",
+              "Usage",
+              "Status"
+            ],
+            "rows": [
+              {
+                "Token": "--zen-color-icon-default",
+                "Suggested Value": "--zen-color-black",
+                "Usage": "Default icon color",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-color-icon-subtle",
+                "Suggested Value": "--zen-color-neutral-600",
+                "Usage": "De-emphasized icons",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-color-icon-disabled",
+                "Suggested Value": "--zen-color-neutral-400",
+                "Usage": "Disabled icon state (no filter — uses explicit color)",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-color-icon-primary",
+                "Suggested Value": "--zen-color-primary-500",
+                "Usage": "Primary action icons",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-color-icon-error",
+                "Suggested Value": "--zen-color-error-600",
+                "Usage": "Error state icons",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-color-icon-success",
+                "Suggested Value": "--zen-color-success-600",
+                "Usage": "Success state icons",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-color-icon-warning",
+                "Suggested Value": "--zen-color-warning-600",
+                "Usage": "Warning state icons",
+                "status_note": "Proposed",
+                "status": "proposed"
+              },
+              {
+                "Token": "--zen-color-icon-reverse",
+                "Suggested Value": "--zen-color-white",
+                "Usage": "Icons on dark or primary-colored backgrounds",
+                "status_note": "Proposed",
+                "status": "proposed"
+              }
+            ]
+          }
+        ]
+      }
+    },
     "motion": {
       "_schema_version": 1,
       "id": "tokens/motion",
@@ -4582,8 +4904,8 @@
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 796,
-        "endLine": 955
+        "startLine": 806,
+        "endLine": 965
       },
       "_meta": {
         "auto_generated": true,
@@ -4842,499 +5164,70 @@
           ]
         }
       }
-    },
-    "background-tokens": {
-      "_schema_version": 1,
-      "id": "tokens/background-tokens",
-      "title": "Background Tokens",
-      "path": [
-        "tokens",
-        "background-tokens"
-      ],
-      "parent": "tokens",
-      "anchors": {
-        "h2": "tokens",
-        "h3": "background-tokens"
-      },
-      "source": {
-        "file": "foundations/src/foundations.md",
-        "startLine": 956,
-        "endLine": 971
-      },
-      "_meta": {
-        "auto_generated": true,
-        "source": "foundations/src/foundations.md",
-        "do_not_edit": "Edit the source MD; CI regenerates this file."
-      },
-      "blocks": [
-        {
-          "type": "table",
-          "headers": [
-            "Token",
-            "Suggested Value",
-            "Usage",
-            "Status"
-          ],
-          "rows": [
-            {
-              "Token": "--zen-color-bg-default",
-              "Suggested Value": "--zen-color-white",
-              "Usage": "Default page background",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-bg-subtle",
-              "Suggested Value": "--zen-color-grey-25",
-              "Usage": "Subtle section backgrounds, sidebars",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-bg-muted",
-              "Suggested Value": "--zen-color-grey-50",
-              "Usage": "Cards, input fills, table rows",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-bg-disabled",
-              "Suggested Value": "--zen-color-grey-50",
-              "Usage": "Disabled state backgrounds",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-bg-selected",
-              "Suggested Value": "--zen-color-primary-50",
-              "Usage": "Selected row or item background",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-bg-overlay",
-              "Suggested Value": "`--zen-color-black` at 40% opacity",
-              "Usage": "Modal/dialog backdrop",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-bg-emphasis",
-              "Suggested Value": "--zen-color-primary-500",
-              "Usage": "CTA banners, primary filled areas",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-bg-success",
-              "Suggested Value": "--zen-color-success-25",
-              "Usage": "Success alert backgrounds",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-bg-warning",
-              "Suggested Value": "--zen-color-warning-25",
-              "Usage": "Warning alert backgrounds",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-bg-error",
-              "Suggested Value": "--zen-color-error-25",
-              "Usage": "Error alert backgrounds",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-bg-info",
-              "Suggested Value": "--zen-color-primary-25",
-              "Usage": "Info alert backgrounds",
-              "status_note": "Proposed",
-              "status": "proposed"
-            }
-          ]
-        }
-      ]
-    },
-    "size-tokens": {
-      "_index": {
-        "_schema_version": 1,
-        "id": "tokens/size-tokens",
-        "title": "Size Tokens",
-        "path": [
-          "tokens",
-          "size-tokens"
-        ],
-        "parent": "tokens",
-        "anchors": {
-          "h2": "tokens",
-          "h3": "size-tokens"
-        },
-        "source": {
-          "file": "foundations/src/foundations.md",
-          "startLine": 972,
-          "endLine": 999
-        },
-        "children": [
-          {
-            "id": "tokens/size-tokens/component-heights",
-            "title": "Component Heights",
-            "order": 1
-          },
-          {
-            "id": "tokens/size-tokens/trigger-area",
-            "title": "Trigger Area",
-            "order": 2
-          },
-          {
-            "id": "tokens/size-tokens/icon-sizes",
-            "title": "Icon Sizes",
-            "order": 3
-          }
-        ],
-        "_meta": {
-          "auto_generated": true,
-          "source": "foundations/src/foundations.md",
-          "do_not_edit": "Edit the source MD; CI regenerates this file."
-        }
-      },
-      "component-heights": {
-        "_schema_version": 1,
-        "id": "tokens/size-tokens/component-heights",
-        "title": "Component Heights",
-        "path": [
-          "tokens",
-          "size-tokens",
-          "component-heights"
-        ],
-        "parent": "tokens/size-tokens",
-        "anchors": {
-          "h2": "tokens",
-          "h3": "size-tokens",
-          "h4": "component-heights"
-        },
-        "source": {
-          "file": "foundations/src/foundations.md",
-          "startLine": 974,
-          "endLine": 983
-        },
-        "_meta": {
-          "auto_generated": true,
-          "source": "foundations/src/foundations.md",
-          "do_not_edit": "Edit the source MD; CI regenerates this file."
-        },
-        "blocks": [
-          {
-            "type": "table",
-            "headers": [
-              "Token",
-              "Value",
-              "Usage",
-              "Status"
-            ],
-            "rows": [
-              {
-                "Token": "--zen-size-height-xs",
-                "Value": "24px",
-                "Usage": "Compact chips, dense table rows",
-                "status_note": "Proposed",
-                "status": "proposed"
-              },
-              {
-                "Token": "--zen-size-height-sm",
-                "Value": "32px",
-                "Usage": "Small buttons, secondary inputs",
-                "status_note": "Proposed",
-                "status": "proposed"
-              },
-              {
-                "Token": "--zen-size-height-md",
-                "Value": "40px",
-                "Usage": "Default button, input, select",
-                "status_note": "Proposed",
-                "status": "proposed"
-              },
-              {
-                "Token": "--zen-size-height-lg",
-                "Value": "48px",
-                "Usage": "Large buttons, prominent inputs",
-                "status_note": "Proposed",
-                "status": "proposed"
-              },
-              {
-                "Token": "--zen-size-height-xl",
-                "Value": "56px",
-                "Usage": "Hero inputs, large touch surfaces",
-                "status_note": "Proposed",
-                "status": "proposed"
-              }
-            ]
-          }
-        ]
-      },
-      "trigger-area": {
-        "_schema_version": 1,
-        "id": "tokens/size-tokens/trigger-area",
-        "title": "Trigger Area",
-        "path": [
-          "tokens",
-          "size-tokens",
-          "trigger-area"
-        ],
-        "parent": "tokens/size-tokens",
-        "anchors": {
-          "h2": "tokens",
-          "h3": "size-tokens",
-          "h4": "trigger-area"
-        },
-        "source": {
-          "file": "foundations/src/foundations.md",
-          "startLine": 984,
-          "endLine": 990
-        },
-        "_meta": {
-          "auto_generated": true,
-          "source": "foundations/src/foundations.md",
-          "do_not_edit": "Edit the source MD; CI regenerates this file."
-        },
-        "blocks": [
-          {
-            "type": "table",
-            "headers": [
-              "Token",
-              "Value",
-              "Usage",
-              "Status"
-            ],
-            "rows": [
-              {
-                "Token": "--zen-size-trigger-min",
-                "Value": "24px",
-                "Usage": "Minimum interactive target area for desktop (WCAG 2.5.5 Level AA)",
-                "status_note": "Proposed",
-                "status": "proposed"
-              },
-              {
-                "Token": "--zen-size-trigger-min-mobile",
-                "Value": "44px",
-                "Usage": "Minimum interactive target area for mobile (WCAG 2.5.5 Level AA)",
-                "status_note": "Proposed",
-                "status": "proposed"
-              }
-            ]
-          }
-        ]
-      },
-      "icon-sizes": {
-        "_schema_version": 1,
-        "id": "tokens/size-tokens/icon-sizes",
-        "title": "Icon Sizes",
-        "path": [
-          "tokens",
-          "size-tokens",
-          "icon-sizes"
-        ],
-        "parent": "tokens/size-tokens",
-        "anchors": {
-          "h2": "tokens",
-          "h3": "size-tokens",
-          "h4": "icon-sizes"
-        },
-        "source": {
-          "file": "foundations/src/foundations.md",
-          "startLine": 991,
-          "endLine": 999
-        },
-        "_meta": {
-          "auto_generated": true,
-          "source": "foundations/src/foundations.md",
-          "do_not_edit": "Edit the source MD; CI regenerates this file."
-        },
-        "blocks": [
-          {
-            "type": "table",
-            "headers": [
-              "Token",
-              "Value",
-              "Usage",
-              "Status"
-            ],
-            "rows": [
-              {
-                "Token": "--zen-icon-size-xs",
-                "Value": "12px",
-                "Usage": "Tight UI contexts, dense tables, badges",
-                "status_note": "Proposed",
-                "status": "proposed"
-              },
-              {
-                "Token": "--zen-icon-size-sm",
-                "Value": "16px",
-                "Usage": "Inline icons, compact components",
-                "status_note": "Proposed",
-                "status": "proposed"
-              },
-              {
-                "Token": "--zen-icon-size-md",
-                "Value": "20px",
-                "Usage": "Default icon size",
-                "status_note": "Proposed",
-                "status": "proposed"
-              },
-              {
-                "Token": "--zen-icon-size-lg",
-                "Value": "24px",
-                "Usage": "Standalone icons, feature icons",
-                "status_note": "Proposed",
-                "status": "proposed"
-              }
-            ]
-          }
-        ]
-      }
-    },
-    "icon-color-tokens": {
-      "_schema_version": 1,
-      "id": "tokens/icon-color-tokens",
-      "title": "Icon Color Tokens",
-      "path": [
-        "tokens",
-        "icon-color-tokens"
-      ],
-      "parent": "tokens",
-      "anchors": {
-        "h2": "tokens",
-        "h3": "icon-color-tokens"
-      },
-      "source": {
-        "file": "foundations/src/foundations.md",
-        "startLine": 1000,
-        "endLine": 1015
-      },
-      "_meta": {
-        "auto_generated": true,
-        "source": "foundations/src/foundations.md",
-        "do_not_edit": "Edit the source MD; CI regenerates this file."
-      },
-      "blocks": [
-        {
-          "type": "table",
-          "headers": [
-            "Token",
-            "Suggested Value",
-            "Usage",
-            "Status"
-          ],
-          "rows": [
-            {
-              "Token": "--zen-color-icon-default",
-              "Suggested Value": "--zen-color-black",
-              "Usage": "Default icon color",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-icon-subtle",
-              "Suggested Value": "--zen-color-neutral-600",
-              "Usage": "De-emphasized icons",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-icon-disabled",
-              "Suggested Value": "--zen-color-neutral-400",
-              "Usage": "Disabled icon state (no filter — uses explicit color)",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-icon-primary",
-              "Suggested Value": "--zen-color-primary-600",
-              "Usage": "Primary action icons",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-icon-error",
-              "Suggested Value": "--zen-color-error-600",
-              "Usage": "Error state icons",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-icon-success",
-              "Suggested Value": "--zen-color-success-600",
-              "Usage": "Success state icons",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-icon-warning",
-              "Suggested Value": "--zen-color-warning-600",
-              "Usage": "Warning state icons",
-              "status_note": "Proposed",
-              "status": "proposed"
-            },
-            {
-              "Token": "--zen-color-icon-reverse",
-              "Suggested Value": "--zen-color-white",
-              "Usage": "Icons on dark or primary-colored backgrounds",
-              "status_note": "Proposed",
-              "status": "proposed"
-            }
-          ]
-        }
-      ]
     }
   },
-  "foundations": {
+  "design-guidelines": {
     "_index": {
       "_schema_version": 1,
-      "id": "foundations",
-      "title": "Foundations",
+      "id": "design-guidelines",
+      "title": "Design Guidelines",
       "path": [
-        "foundations"
+        "design-guidelines"
       ],
       "parent": "",
       "anchors": {
-        "h2": "foundations"
+        "h2": "design-guidelines"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 1016,
-        "endLine": 1085
+        "startLine": 966,
+        "endLine": 1073
       },
       "children": [
         {
-          "id": "foundations/color-usage-rules",
+          "id": "design-guidelines/color-usage-rules",
           "title": "Color Usage Rules",
           "order": 1
         },
         {
-          "id": "foundations/typography-rules",
+          "id": "design-guidelines/typography-rules",
           "title": "Typography Rules",
           "order": 2
         },
         {
-          "id": "foundations/spacing-rules",
+          "id": "design-guidelines/spacing-rules",
           "title": "Spacing Rules",
           "order": 3
         },
         {
-          "id": "foundations/elevation-rules",
+          "id": "design-guidelines/elevation-rules",
           "title": "Elevation Rules",
           "order": 4
         },
         {
-          "id": "foundations/brightness-filter-convention-interactive-states",
+          "id": "design-guidelines/brightness-filter-convention-interactive-states",
           "title": "Brightness Filter Convention — Interactive States",
           "order": 5
         },
         {
-          "id": "foundations/breakpoints",
+          "id": "design-guidelines/breakpoints",
           "title": "Breakpoints",
           "order": 6
+        },
+        {
+          "id": "design-guidelines/focus-ring-rules",
+          "title": "Focus Ring Rules",
+          "order": 7
+        },
+        {
+          "id": "design-guidelines/border-usage",
+          "title": "Border Usage",
+          "order": 8
+        },
+        {
+          "id": "design-guidelines/placeholder-text",
+          "title": "Placeholder Text",
+          "order": 9
         }
       ],
       "_meta": {
@@ -5345,34 +5238,34 @@
     },
     "color-usage-rules": {
       "_schema_version": 1,
-      "id": "foundations/color-usage-rules",
+      "id": "design-guidelines/color-usage-rules",
       "title": "Color Usage Rules",
       "path": [
-        "foundations",
+        "design-guidelines",
         "color-usage-rules"
       ],
-      "parent": "foundations",
+      "parent": "design-guidelines",
       "anchors": {
-        "h2": "foundations",
+        "h2": "design-guidelines",
         "h3": "color-usage-rules"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 1018,
-        "endLine": 1033
+        "startLine": 968,
+        "endLine": 983
       },
       "_meta": {
         "auto_generated": true,
         "source": "foundations/src/foundations.md",
         "do_not_edit": "Edit the source MD; CI regenerates this file."
       },
-      "body": "Semantic over primitive. Always use a semantic token (e.g. --zen-color-text-primary) rather than a raw palette token (e.g. --zen-color-grey-900) unless you&#39;re building a new token. This ensures theming works correctly.\n\nContrast. Text on backgrounds must meet WCAG AA minimum (4.5:1 for body text, 3:1 for large text). Use the following pairings as reference:\n\nSemantic color intent. Color conveys meaning — don&#39;t use success-* colors for non-success contexts, even if the green looks right.",
+      "body": "Semantic over primitive. Always use a semantic token (e.g. --zen-color-text-default) rather than a raw palette token (e.g. --zen-color-grey-900) unless you&#39;re building a new token. This ensures theming works correctly.\n\nContrast. Text on backgrounds must meet WCAG AA minimum (4.5:1 for body text, 3:1 for large text). Use the following pairings as reference:\n\nSemantic color intent. Color conveys meaning — don&#39;t use success-* colors for non-success contexts, even if the green looks right.",
       "blocks": [
         {
           "type": "list",
           "ordered": false,
           "items": [
-            "text-primary on bg-default ✅",
+            "text-default on bg-default ✅",
             "text-secondary on bg-subtle ✅",
             "text-disabled should never be used on interactive elements that require action"
           ]
@@ -5381,21 +5274,21 @@
     },
     "typography-rules": {
       "_schema_version": 1,
-      "id": "foundations/typography-rules",
+      "id": "design-guidelines/typography-rules",
       "title": "Typography Rules",
       "path": [
-        "foundations",
+        "design-guidelines",
         "typography-rules"
       ],
-      "parent": "foundations",
+      "parent": "design-guidelines",
       "anchors": {
-        "h2": "foundations",
+        "h2": "design-guidelines",
         "h3": "typography-rules"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 1034,
-        "endLine": 1041
+        "startLine": 984,
+        "endLine": 991
       },
       "_meta": {
         "auto_generated": true,
@@ -5406,21 +5299,21 @@
     },
     "spacing-rules": {
       "_schema_version": 1,
-      "id": "foundations/spacing-rules",
+      "id": "design-guidelines/spacing-rules",
       "title": "Spacing Rules",
       "path": [
-        "foundations",
+        "design-guidelines",
         "spacing-rules"
       ],
-      "parent": "foundations",
+      "parent": "design-guidelines",
       "anchors": {
-        "h2": "foundations",
+        "h2": "design-guidelines",
         "h3": "spacing-rules"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 1042,
-        "endLine": 1055
+        "startLine": 992,
+        "endLine": 1005
       },
       "_meta": {
         "auto_generated": true,
@@ -5436,28 +5329,28 @@
             "2xs–xs for internal element spacing (icon-to-label, checkbox-to-text)",
             "sm–md for internal component padding",
             "lg–xl for spacing between sections and groups",
-            "2xl–3xl (proposed) for page-level layout breathing room"
+            "2xl–3xl for page-level layout breathing room"
           ]
         }
       ]
     },
     "elevation-rules": {
       "_schema_version": 1,
-      "id": "foundations/elevation-rules",
+      "id": "design-guidelines/elevation-rules",
       "title": "Elevation Rules",
       "path": [
-        "foundations",
+        "design-guidelines",
         "elevation-rules"
       ],
-      "parent": "foundations",
+      "parent": "design-guidelines",
       "anchors": {
-        "h2": "foundations",
+        "h2": "design-guidelines",
         "h3": "elevation-rules"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 1056,
-        "endLine": 1063
+        "startLine": 1006,
+        "endLine": 1013
       },
       "_meta": {
         "auto_generated": true,
@@ -5468,21 +5361,21 @@
     },
     "brightness-filter-convention-interactive-states": {
       "_schema_version": 1,
-      "id": "foundations/brightness-filter-convention-interactive-states",
+      "id": "design-guidelines/brightness-filter-convention-interactive-states",
       "title": "Brightness Filter Convention — Interactive States",
       "path": [
-        "foundations",
+        "design-guidelines",
         "brightness-filter-convention-interactive-states"
       ],
-      "parent": "foundations",
+      "parent": "design-guidelines",
       "anchors": {
-        "h2": "foundations",
+        "h2": "design-guidelines",
         "h3": "brightness-filter-convention-interactive-states"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 1064,
-        "endLine": 1077
+        "startLine": 1014,
+        "endLine": 1027
       },
       "_meta": {
         "auto_generated": true,
@@ -5520,88 +5413,46 @@
     },
     "breakpoints": {
       "_schema_version": 1,
-      "id": "foundations/breakpoints",
+      "id": "design-guidelines/breakpoints",
       "title": "Breakpoints",
       "path": [
-        "foundations",
+        "design-guidelines",
         "breakpoints"
       ],
-      "parent": "foundations",
+      "parent": "design-guidelines",
       "anchors": {
-        "h2": "foundations",
+        "h2": "design-guidelines",
         "h3": "breakpoints"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 1078,
-        "endLine": 1085
+        "startLine": 1028,
+        "endLine": 1037
       },
       "_meta": {
         "auto_generated": true,
         "source": "foundations/src/foundations.md",
         "do_not_edit": "Edit the source MD; CI regenerates this file."
       },
-      "body": "Design mobile-first. Breakpoints define where layouts expand, not where they collapse. The four breakpoints cover phone landscape (sm), tablet (md), desktop (lg), and large screens (xl)."
-    }
-  },
-  "component-specs": {
-    "_index": {
-      "_schema_version": 1,
-      "id": "component-specs",
-      "title": "Component Specs",
-      "path": [
-        "component-specs"
-      ],
-      "parent": "",
-      "anchors": {
-        "h2": "component-specs"
-      },
-      "source": {
-        "file": "foundations/src/foundations.md",
-        "startLine": 1086,
-        "endLine": 1126
-      },
-      "children": [
-        {
-          "id": "component-specs/focus-ring-rules",
-          "title": "Focus Ring Rules",
-          "order": 1
-        },
-        {
-          "id": "component-specs/border-usage",
-          "title": "Border Usage",
-          "order": 2
-        },
-        {
-          "id": "component-specs/placeholder-text",
-          "title": "Placeholder Text",
-          "order": 3
-        }
-      ],
-      "_meta": {
-        "auto_generated": true,
-        "source": "foundations/src/foundations.md",
-        "do_not_edit": "Edit the source MD; CI regenerates this file."
-      },
-      "body": "> This section will grow as components are documented. Each component entry should include: anatomy, states, behavior rules, and do/don&#39;t guidance."
+      "body": "The majority of Actian users are on desktop. Desktop (lg) is the primary design target. However, pages should be responsive and tested across the full breakpoint range — from xl (large screens) down to sm (phone landscape) — to ensure usability across contexts."
     },
     "focus-ring-rules": {
       "_schema_version": 1,
-      "id": "component-specs/focus-ring-rules",
+      "id": "design-guidelines/focus-ring-rules",
       "title": "Focus Ring Rules",
       "path": [
-        "component-specs",
+        "design-guidelines",
         "focus-ring-rules"
       ],
-      "parent": "component-specs",
+      "parent": "design-guidelines",
       "anchors": {
-        "h2": "component-specs",
+        "h2": "design-guidelines",
         "h3": "focus-ring-rules"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 1091,
-        "endLine": 1113
+        "startLine": 1038,
+        "endLine": 1060
       },
       "_meta": {
         "auto_generated": true,
@@ -5612,21 +5463,21 @@
     },
     "border-usage": {
       "_schema_version": 1,
-      "id": "component-specs/border-usage",
+      "id": "design-guidelines/border-usage",
       "title": "Border Usage",
       "path": [
-        "component-specs",
+        "design-guidelines",
         "border-usage"
       ],
-      "parent": "component-specs",
+      "parent": "design-guidelines",
       "anchors": {
-        "h2": "component-specs",
+        "h2": "design-guidelines",
         "h3": "border-usage"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 1114,
-        "endLine": 1118
+        "startLine": 1061,
+        "endLine": 1065
       },
       "_meta": {
         "auto_generated": true,
@@ -5637,21 +5488,21 @@
     },
     "placeholder-text": {
       "_schema_version": 1,
-      "id": "component-specs/placeholder-text",
+      "id": "design-guidelines/placeholder-text",
       "title": "Placeholder Text",
       "path": [
-        "component-specs",
+        "design-guidelines",
         "placeholder-text"
       ],
-      "parent": "component-specs",
+      "parent": "design-guidelines",
       "anchors": {
-        "h2": "component-specs",
+        "h2": "design-guidelines",
         "h3": "placeholder-text"
       },
       "source": {
         "file": "foundations/src/foundations.md",
-        "startLine": 1119,
-        "endLine": 1126
+        "startLine": 1066,
+        "endLine": 1073
       },
       "_meta": {
         "auto_generated": true,

@@ -15,15 +15,15 @@
   },
   "source": {
     "file": "foundations/src/foundations.md",
-    "startLine": 752,
-    "endLine": 764
+    "startLine": 617,
+    "endLine": 629
   },
   "_meta": {
     "auto_generated": true,
     "source": "foundations/src/foundations.md",
     "do_not_edit": "Edit the source MD; CI regenerates this file."
   },
-  "body": "> ⚠️ Token name correction: These tokens were previously named --zen-font-lettingspacing-* (typo). The correct name is --zen-font-letterspacing-*. Engineering must update the token names in the codebase as part of the In Review implementation.",
+  "body": "> ⚠️ Token name correction: Previously named --zen-font-lettingspacing-* (typo). Correct name is --zen-font-letterspacing-*. Engineering must update in codebase.",
   "blocks": [
     {
       "type": "table",

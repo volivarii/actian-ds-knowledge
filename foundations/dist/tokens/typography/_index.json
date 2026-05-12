@@ -13,39 +13,44 @@
   },
   "source": {
     "file": "foundations/src/foundations.md",
-    "startLine": 721,
-    "endLine": 795
+    "startLine": 570,
+    "endLine": 660
   },
   "children": [
     {
+      "id": "tokens/typography/text-color-tokens",
+      "title": "Text Color Tokens",
+      "order": 1
+    },
+    {
       "id": "tokens/typography/font-family",
       "title": "Font Family",
-      "order": 1
+      "order": 2
     },
     {
       "id": "tokens/typography/font-weight",
       "title": "Font Weight",
-      "order": 2
+      "order": 3
     },
     {
       "id": "tokens/typography/font-size",
       "title": "Font Size",
-      "order": 3
+      "order": 4
     },
     {
       "id": "tokens/typography/letter-spacing",
       "title": "Letter Spacing",
-      "order": 4
+      "order": 5
     },
     {
       "id": "tokens/typography/line-height",
       "title": "Line Height",
-      "order": 5
+      "order": 6
     },
     {
       "id": "tokens/typography/text-style-tokens-composite",
       "title": "Text Style Tokens (Composite)",
-      "order": 6
+      "order": 7
     }
   ],
   "_meta": {
