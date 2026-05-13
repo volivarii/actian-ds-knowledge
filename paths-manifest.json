@@ -263,6 +263,13 @@
       "type": "markdown",
       "origin": "human",
       "description": "Authoring surface for category defaults. YAML frontmatter governed by schemas/category-defaults.json; freeform body for design rationale. See AUTHORING.md."
+    },
+    "content.global": {
+      "dir": "content/src/_global",
+      "pattern": "{slug}.md",
+      "type": "markdown",
+      "origin": "human",
+      "description": "Cross-cutting writing guidelines that apply globally (voice, style, capitalization, word choice, punctuation, formatting). Routed to the docs /content page by the Phase 1 derive split; consumed the same way as content.section until then."
     }
   },
   "aliases": {},
