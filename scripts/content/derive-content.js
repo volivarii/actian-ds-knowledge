@@ -112,9 +112,26 @@ function shiftHeadings(s) {
   return lines.join("\n");
 }
 
+// ζ.6 follow-up (2026-05-13): the content team is moving cross-cutting
+// MDs into a `_global/` subdirectory of content/src/ to enable docs
+// content-routing (global topics on the /content page, component-scoped
+// topics inline on component pages). Until the derive pipeline is split
+// into global.md + bundle.json (Phase 1), this resolver simply needs to
+// FIND files in either location. Lookup order: root first (where most
+// component-scoped MDs live), then `_global/` for cross-cutting topics.
+// Filename + slug remain identical regardless of location, so the
+// content-index.md hrefs don't change when files move.
+function resolveSectionFile(srcDir, slug) {
+  var rootCandidate = path.join(srcDir, slug + ".md");
+  if (fs.existsSync(rootCandidate)) return rootCandidate;
+  var globalCandidate = path.join(srcDir, "_global", slug + ".md");
+  if (fs.existsSync(globalCandidate)) return globalCandidate;
+  return null;
+}
+
 function readSection(srcDir, slug) {
-  var file = path.join(srcDir, slug + ".md");
-  if (!fs.existsSync(file)) return null;
+  var file = resolveSectionFile(srcDir, slug);
+  if (!file) return null;
   var s = fs.readFileSync(file, "utf8");
   s = s.replace(/\r\n/g, "\n");
   s = stripFrontmatter(s);
