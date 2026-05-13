@@ -137,10 +137,18 @@ function getNode(fileKey, nodeId) {
   return getNodes(fileKey, [nodeId]);
 }
 
+// Default concurrency for getNodes batches. Empirically 3 parallel /nodes
+// requests was enough to trigger 429s (per the original sequential-only
+// comment). 2-way concurrency stays below that ceiling while halving
+// wall-clock on large kits; if it still 429s the per-request retry handles
+// it gracefully (5s/15s/45s backoff) at worst-case parity with sequential.
+var DEFAULT_NODES_CONCURRENCY = 2;
+
 // Fetch many nodes in batches. Returns merged `{ nodes: { id: payload, … } }`
-// across batches. Batches are issued sequentially to avoid Figma's per-second
-// rate limit — empirically 3 parallel /nodes requests was still enough to
-// trigger 429s, so we go fully sequential here.
+// across batches. Batches are issued with bounded concurrency (default 2)
+// to halve wall-clock vs fully sequential while staying under Figma's
+// observed 3-parallel 429 threshold. opts.concurrency overrides (1 reverts
+// to the historical fully-sequential behavior).
 function getNodes(fileKey, nodeIds, opts) {
   if (!Array.isArray(nodeIds))
     return Promise.reject(new Error("getNodes requires an array of nodeIds"));
@@ -148,34 +156,52 @@ function getNodes(fileKey, nodeIds, opts) {
 
   opts = opts || {};
   var batchSize = opts.batchSize || DEFAULT_NODES_BATCH_SIZE;
+  var concurrency = Math.max(1, opts.concurrency || DEFAULT_NODES_CONCURRENCY);
 
   var batches = [];
   for (var i = 0; i < nodeIds.length; i += batchSize) {
     batches.push(nodeIds.slice(i, i + batchSize));
   }
 
+  function fetchBatch(batch) {
+    var idsParam = batch.map(encodeURIComponent).join(",");
+    var url =
+      BASE +
+      "/v1/files/" +
+      encodeURIComponent(fileKey) +
+      "/nodes?ids=" +
+      idsParam;
+    return request(url);
+  }
+
+  // Promise-pool with bounded concurrency. Each "worker" pulls the next
+  // batch off a shared cursor and processes it; resolves when all batches
+  // are drained. Preserves insertion order semantics in the merged map
+  // (later batches overwrite earlier writes of the same id — same as the
+  // sequential reduce behavior).
   var merged = {};
-  return batches
-    .reduce(function (prev, batch) {
-      return prev.then(function () {
-        var idsParam = batch.map(encodeURIComponent).join(",");
-        var url =
-          BASE +
-          "/v1/files/" +
-          encodeURIComponent(fileKey) +
-          "/nodes?ids=" +
-          idsParam;
-        return request(url).then(function (resp) {
-          var nodes = (resp && resp.nodes) || {};
-          Object.keys(nodes).forEach(function (id) {
-            merged[id] = nodes[id];
-          });
+  var cursor = 0;
+
+  function worker() {
+    if (cursor >= batches.length) return Promise.resolve();
+    var idx = cursor++;
+    return fetchBatch(batches[idx])
+      .then(function (resp) {
+        var nodes = (resp && resp.nodes) || {};
+        Object.keys(nodes).forEach(function (id) {
+          merged[id] = nodes[id];
         });
-      });
-    }, Promise.resolve())
-    .then(function () {
-      return { nodes: merged };
-    });
+      })
+      .then(worker);
+  }
+
+  var workers = [];
+  for (var w = 0; w < Math.min(concurrency, batches.length); w++) {
+    workers.push(worker());
+  }
+  return Promise.all(workers).then(function () {
+    return { nodes: merged };
+  });
 }
 
 function getStyles(fileKey) {

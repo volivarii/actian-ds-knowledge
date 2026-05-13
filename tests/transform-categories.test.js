@@ -580,3 +580,165 @@ test("transform-registry — multiple components on the same page share the page
   assert.equal(registry.components["tag-status"].category, "Data Display");
   assert.equal(registry.components["tag-status"].status, "in-progress");
 });
+
+// ---- ζ.1 (2026-05-13): registry hygiene ----
+
+test("transform-registry — entries omit per-component lastSynced field", function () {
+  // ζ.1 removed `lastSynced` from each component entry (ecosystem audit
+  // found zero consumers; classifier already ignored it). Registry-level
+  // `lastSynced` is kept.
+  var componentSets = [
+    {
+      name: "Button",
+      key: "k-button",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✅ Button" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test-key",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+  });
+
+  assert.ok(registry.lastSynced, "registry-level lastSynced still present");
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(
+      registry.components["button"],
+      "lastSynced",
+    ),
+    false,
+    "per-component lastSynced removed",
+  );
+});
+
+test("transform-registry — exposes documentationLinks from node document", function () {
+  var componentSets = [
+    {
+      name: "Card",
+      key: "k-card",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✅ Card" },
+    },
+    {
+      name: "Modal",
+      key: "k-modal",
+      node_id: "1:2",
+      description: "",
+      containing_frame: { pageName: "✅ Modal" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": {
+      document: {
+        componentPropertyDefinitions: {},
+        documentationLinks: [{ uri: "https://docs.actian.com/card" }],
+      },
+    },
+    "1:2": {
+      // No documentationLinks in node — should fall back to empty array.
+      document: { componentPropertyDefinitions: {} },
+    },
+  };
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test-key",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+  });
+
+  assert.deepEqual(registry.components["card"].documentationLinks, [
+    { uri: "https://docs.actian.com/card" },
+  ]);
+  assert.deepEqual(
+    registry.components["modal"].documentationLinks,
+    [],
+    "missing documentationLinks falls back to empty array",
+  );
+});
+
+test("transform-registry — guidelinesSlugSet wires guidelinesFile path", function () {
+  var componentSets = [
+    {
+      name: "Button",
+      key: "k-button",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✅ Button" },
+    },
+    {
+      name: "Avatar",
+      key: "k-avatar",
+      node_id: "1:2",
+      description: "",
+      containing_frame: { pageName: "✅ Avatar" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+    "1:2": { document: { componentPropertyDefinitions: {} } },
+  };
+
+  // button is in the index → wired; avatar is not → null.
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test-key",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    guidelinesSlugSet: new Set(["button"]),
+  });
+
+  assert.equal(
+    registry.components["button"].guidelinesFile,
+    "components/src/guidelines/button.json",
+  );
+  assert.equal(
+    registry.components["avatar"].guidelinesFile,
+    null,
+    "slug not in set keeps null",
+  );
+});
+
+test("transform-registry — guidelinesSlugSet accepts Array as well as Set", function () {
+  var componentSets = [
+    {
+      name: "Button",
+      key: "k-button",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✅ Button" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test-key",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    guidelinesSlugSet: ["button", "avatar"],
+  });
+
+  assert.equal(
+    registry.components["button"].guidelinesFile,
+    "components/src/guidelines/button.json",
+  );
+});
