@@ -18,8 +18,6 @@
 //
 // Output: registry JSON, same shape as components/registries/{dskit,fmkit,metakit}.json.
 
-var DESCRIPTION_MAX = 200; // matches project_sync_skill_enhancements.md item #2
-
 var inferCategoryMap = require("./transform-categories.js").inferCategoryMap;
 var statusParser = require("./component-status-emoji.js");
 
@@ -48,7 +46,7 @@ function trimDescription(s) {
   // Normalize whitespace-only strings to empty string so callers can do a
   // simple truthiness check: `entry.description || fallback`.
   if (s.trim() === "") return "";
-  return s.length > DESCRIPTION_MAX ? s.slice(0, DESCRIPTION_MAX) : s;
+  return s;
 }
 
 // Convert REST `componentPropertyDefinitions` into our two output shapes:
