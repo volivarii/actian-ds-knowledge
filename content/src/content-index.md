@@ -27,6 +27,7 @@ Use the sidebar to navigate, or jump directly to a section below.
   <a href="alert-banner">Alert / banner</a>
   <a href="button">Buttons</a>
   <a href="badge">Badges</a>
+  <a href="breadcrumbs">Breadcrumbs</a>
   <a href="card">Cards</a>
   <a href="checkbox">Checkboxes</a>
   <a href="combo-box">Combo box</a>
@@ -35,6 +36,7 @@ Use the sidebar to navigate, or jump directly to a section below.
   <a href="empty-and-system-states">Empty and system states</a>
   <a href="filters">Filters</a>
   <a href="forms">Forms</a>
+  <a href="global-header">Global header</a>
   <a href="grid-and-spacing">Grid and spacing</a>
   <a href="icons">Icons</a>
   <a href="inline-toast">Inline toast</a>
@@ -43,16 +45,17 @@ Use the sidebar to navigate, or jump directly to a section below.
   <a href="loading-and-progress">Loading and progress</a>
   <a href="modal">Modal</a>
   <a href="multi-select">Multi-select</a>
-  <a href="navigation">Navigation</a>
   <a href="notifications-and-messaging">Notifications and messaging</a>
   <a href="object-preview-panels">Object preview panels</a>
   <a href="onboarding">Onboarding</a>
   <a href="popover">Popover</a>
   <a href="related-content-panels">Related content panels</a>
   <a href="search">Search</a>
+  <a href="side-nav">Side nav</a>
   <a href="stepper">Stepper</a>
   <a href="sticky-footer">Sticky footer</a>
   <a href="table">Table</a>
+  <a href="tabs">Tabs</a>
   <a href="tag">Tags</a>
   <a href="text-input">Text input</a>
   <a href="toggle-control">Toggle control</a>

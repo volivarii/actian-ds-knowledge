@@ -44,3 +44,8 @@ The table component displays structured information in rows and columns. It is t
 
 - Label bulk action buttons with a verb that applies to all selected items. For example, **Delete selected** or **Export**.
 - Show the count of selected items near the action. For example, `3 items selected`.
+
+## Pagination
+
+- Label page controls plainly. Use **Previous** and **Next**.
+- Show total result count when relevant. For example, `Showing 1–25 of 340 results`.
