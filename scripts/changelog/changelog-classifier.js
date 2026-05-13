@@ -50,7 +50,9 @@ function shallowEqualEntry(b, a) {
     "importMethod",
     "description",
     "page",
+    "section",
     "category",
+    "group",
     "status",
     "guidelinesFile",
   ];

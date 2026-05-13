@@ -70,10 +70,15 @@ test("transform-categories — happy path: full fixture maps members correctly",
   assert.equal(result.map["Tooltip"].category, "Overlays");
   assert.equal(result.map["Tooltip"].status, "warn");
 
-  // Outside COMPONENTS: foundations pages stored with null category
-  // (key includes the emoji prefix since they aren't member pages)
-  assert.equal(result.map["✅ Borders"]?.category ?? null, null);
-  assert.equal(result.map["Marketing icons"]?.category ?? null, null);
+  // ζ.2 (2026-05-13): non-COMPONENTS pages now ALSO get a populated
+  // `category` (= page clean-name) + `section` (= top-level marker).
+  // Map keys are clean-names (emoji stripped) for consistency with member
+  // pages. Previously `category: null` for these — leaving 234 icons +
+  // brand items uncategorized in docs sidebar IA.
+  assert.equal(result.map["Borders"].category, "Borders");
+  assert.equal(result.map["Borders"].section, "Foundations");
+  assert.equal(result.map["Marketing icons"].category, "Marketing icons");
+  assert.equal(result.map["Marketing icons"].section, "Brand Assets");
 
   // No warnings on happy path (all 6 known categories present + recognized)
   assert.equal(result.warnings.length, 0);
@@ -165,7 +170,11 @@ test("transform-categories — member before any header → MEMBER_WITHOUT_CATEG
   assert.ok(w, "MEMBER_WITHOUT_CATEGORY emitted");
 });
 
-test("transform-categories — pages outside COMPONENTS get null category, no warning", function () {
+test("transform-categories — non-COMPONENTS pages get section + category (ζ.2)", function () {
+  // ζ.2 (2026-05-13): previously these pages got `category: null` and
+  // were essentially dropped from docs IA. Now they receive section
+  // (top-level marker) + category (= page clean-name) so consumers can
+  // render Foundations/Brand items alongside Components items.
   var children = [
     canvas("💎 FOUNDATIONS"),
     canvas("✅ Color"),
@@ -182,8 +191,21 @@ test("transform-categories — pages outside COMPONENTS get null category, no wa
   ];
   var result = inferCategoryMap(children);
 
-  assert.equal(result.map["✅ Color"]?.category ?? null, null);
-  assert.equal(result.map["Marketing icons"]?.category ?? null, null);
+  // Foundations page — clean-name key, section + category populated.
+  assert.equal(result.map["Color"].section, "Foundations");
+  assert.equal(result.map["Color"].category, "Color");
+  assert.equal(result.map["Color"].status, null);
+
+  // Brand page — no emoji to strip; section + category populated.
+  assert.equal(result.map["Marketing icons"].section, "Brand Assets");
+  assert.equal(result.map["Marketing icons"].category, "Marketing icons");
+
+  // Components items keep their existing semantic (additive change).
+  assert.equal(result.map["Button"].section, "Components");
+  assert.equal(result.map["Button"].category, "Action");
+
+  // No MEMBER_WITHOUT_CATEGORY for non-COMPONENTS items — they're not
+  // member pages in the first place.
   var memberWithoutCat = result.warnings.filter(function (w) {
     return w.code === "MEMBER_WITHOUT_CATEGORY";
   });
@@ -741,4 +763,198 @@ test("transform-registry — guidelinesSlugSet accepts Array as well as Set", fu
     registry.components["button"].guidelinesFile,
     "components/src/guidelines/button.json",
   );
+});
+
+// ---- ζ.2 (2026-05-13): three-axis grouping (section + group) ----
+
+test("transform-registry — components get section + group from page", function () {
+  // Tag-pattern: multiple component sets on one page should share a `group`
+  // = page clean-name. This is the field docs sidebar uses to collapse 9
+  // Tag variants into one navigation node.
+  var componentSets = [
+    {
+      name: "Tag, Default",
+      key: "k-tag-default",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✍️ Tag (Identification key)" },
+    },
+    {
+      name: "Tag, Catalog",
+      key: "k-tag-catalog",
+      node_id: "1:2",
+      description: "",
+      containing_frame: { pageName: "✍️ Tag (Identification key)" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+    "1:2": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "     ✍️ Tag (Identification key)" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+  });
+
+  // Both Tag variants share the same section, category, AND group.
+  assert.equal(registry.components["tag-default"].section, "Components");
+  assert.equal(registry.components["tag-default"].category, "Data Display");
+  assert.equal(
+    registry.components["tag-default"].group,
+    "Tag (Identification key)",
+  );
+
+  assert.equal(registry.components["tag-catalog"].section, "Components");
+  assert.equal(registry.components["tag-catalog"].category, "Data Display");
+  assert.equal(
+    registry.components["tag-catalog"].group,
+    "Tag (Identification key)",
+  );
+});
+
+test("transform-registry — icons get section + group from containing_frame.name", function () {
+  // Foundations icons live in one big "Icons" page with multiple frame
+  // containers (Navigation icons / Status icons / etc.). containing_frame.name
+  // identifies the frame, providing finer sidebar bucketing than page-name
+  // alone.
+  var componentSets = [
+    {
+      name: "icon-arrow-right",
+      key: "k-arrow",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "Icons", name: "Navigation icons" },
+    },
+    {
+      name: "icon-warning",
+      key: "k-warn",
+      node_id: "1:2",
+      description: "",
+      containing_frame: { pageName: "Icons", name: "Status icons" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+    "1:2": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "💎 FOUNDATIONS" },
+    { type: "CANVAS", name: "Icons" },
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+  });
+
+  // section = "Foundations" (top-level marker), category = "Icons" (page),
+  // group = containing_frame.name (frame within page).
+  assert.equal(registry.components["icon-arrow-right"].section, "Foundations");
+  assert.equal(registry.components["icon-arrow-right"].category, "Icons");
+  assert.equal(
+    registry.components["icon-arrow-right"].group,
+    "Navigation icons",
+  );
+
+  assert.equal(registry.components["icon-warning"].section, "Foundations");
+  assert.equal(registry.components["icon-warning"].category, "Icons");
+  assert.equal(registry.components["icon-warning"].group, "Status icons");
+});
+
+test("transform-registry — icons fall back to page-name when frame missing/redundant", function () {
+  // If containing_frame.name is absent OR equals the page clean-name,
+  // group falls back to page clean-name. Defensive — avoids `group: null`
+  // and avoids redundant "Icons" group inside the "Icons" category.
+  var componentSets = [
+    {
+      name: "icon-loose",
+      key: "k-loose",
+      node_id: "1:1",
+      description: "",
+      // No containing_frame.name
+      containing_frame: { pageName: "Icons" },
+    },
+    {
+      name: "icon-redundant",
+      key: "k-red",
+      node_id: "1:2",
+      description: "",
+      // containing_frame.name same as page name → fall back to page
+      containing_frame: { pageName: "Icons", name: "Icons" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+    "1:2": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "💎 FOUNDATIONS" },
+    { type: "CANVAS", name: "Icons" },
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+  });
+
+  assert.equal(registry.components["icon-loose"].group, "Icons");
+  assert.equal(registry.components["icon-redundant"].group, "Icons");
+});
+
+test("transform-categories — extractSectionName strips emoji + title-cases", function () {
+  var fn = require(
+    require("path").join(
+      __dirname,
+      "..",
+      "scripts",
+      "transformers",
+      "transform-categories.js",
+    ),
+  )._extractSectionName;
+  assert.equal(fn("🧱 COMPONENTS"), "Components");
+  assert.equal(fn("💎 FOUNDATIONS"), "Foundations");
+  assert.equal(fn("🎨 BRAND ASSETS"), "Brand Assets");
+  assert.equal(fn("🌐 WHITE-LABEL SERVICES"), "White-label Services");
+  // Single-emoji-only (no words) — no section name
+  assert.equal(fn("🧱"), null);
 });

@@ -69,11 +69,31 @@ function isCategoryHeader(rawName) {
   return true;
 }
 
+// ζ.2 (2026-05-13): convert a top-level marker raw name (e.g., "🧱 COMPONENTS",
+// "💎 FOUNDATIONS", "🎨 BRAND ASSETS") into a human-readable section label
+// ("Components", "Foundations", "Brand Assets"). Strips the leading emoji
+// + title-cases the remaining ALL-CAPS words. Used to populate each entry's
+// `section` field so consumers can render a top-level IA bucket.
+function extractSectionName(rawMarker) {
+  var trimmed = String(rawMarker).trim();
+  var parts = trimmed.split(/\s+/);
+  // First "part" is the emoji prefix (per isTopLevelMarker convention);
+  // remaining parts are the ALL-CAPS words. Title-case each.
+  var words = parts.slice(1);
+  if (words.length === 0) return null;
+  return words
+    .map(function (w) {
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
+
 function inferCategoryMap(documentChildren) {
   var map = {};
   var warnings = [];
   var seenCategories = {};
   var inComponentsSection = false;
+  var currentSection = null; // ζ.2: tracks top-level marker (Components/Foundations/Brand)
   var currentCategory = null;
   var unknownCategoryIndex = {};
 
@@ -87,12 +107,22 @@ function inferCategoryMap(documentChildren) {
 
     if (isTopLevelMarker(rawName)) {
       inComponentsSection = trimmed.indexOf("COMPONENTS") >= 0;
+      currentSection = extractSectionName(trimmed);
       currentCategory = null;
       continue;
     }
 
     if (!inComponentsSection) {
-      map[trimmed] = { category: null, status: null };
+      // ζ.2 (2026-05-13): non-COMPONENTS pages now also get a populated
+      // `category` (= page clean-name) and a `section` (= top-level marker).
+      // Previously category was always null for these — leaving 234 icons +
+      // brand items uncategorized and unable to render in docs sidebar IA.
+      var parsedNon = statusParser.extractStatus(rawName);
+      map[parsedNon.cleanName || trimmed] = {
+        section: currentSection,
+        category: parsedNon.cleanName || trimmed,
+        status: parsedNon.status,
+      };
       continue;
     }
 
@@ -134,7 +164,11 @@ function inferCategoryMap(documentChildren) {
     // entirely (mirrors foundations precedent for ✅). transform-registry's
     // buildEntry guards with `if (categoryEntry.status != null)` before
     // assigning.
-    map[memberKey] = { category: currentCategory, status: parsed.status };
+    map[memberKey] = {
+      section: currentSection,
+      category: currentCategory,
+      status: parsed.status,
+    };
   }
 
   for (var k = 0; k < KNOWN_CATEGORIES.length; k++) {
@@ -188,4 +222,5 @@ module.exports = {
   _isTopLevelMarker: isTopLevelMarker,
   _isCategoryHeader: isCategoryHeader,
   _isSeparator: isSeparator,
+  _extractSectionName: extractSectionName,
 };

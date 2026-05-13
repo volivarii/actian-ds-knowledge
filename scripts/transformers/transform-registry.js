@@ -78,6 +78,30 @@ function splitVariantAndProperties(definitions) {
   return { variants: variants, properties: properties };
 }
 
+// ζ.2 (2026-05-13): derive the third-axis `group` field from Figma's
+// containing_frame structure. Lets docs sidebar IA collapse multi-component
+// pages (Tag's 9 variants, Loading's 4, Empty state's 4, etc.) into one
+// sidebar node with N children.
+//
+// For COMPONENTS-section items: group = page clean-name (e.g.,
+//   "Tag (Identification key)" for all 9 Tag variants).
+// For FOUNDATIONS / BRAND items: prefer containing_frame.name when it
+//   differs from the page clean-name (icons typically live in named
+//   sub-frames like "Navigation icons"); fall back to page clean-name.
+function deriveGroup(meta, section, pageCleanName) {
+  var frameName = meta && meta.containing_frame && meta.containing_frame.name;
+  if (
+    section &&
+    section !== "Components" &&
+    frameName &&
+    String(frameName).trim() &&
+    String(frameName).trim() !== pageCleanName
+  ) {
+    return String(frameName).trim();
+  }
+  return pageCleanName;
+}
+
 function buildEntry(
   meta,
   node,
@@ -90,6 +114,8 @@ function buildEntry(
   var split = splitVariantAndProperties(doc.componentPropertyDefinitions);
 
   var pageName = pageNameFromContainingFrame(meta.containing_frame);
+  var pageCleanName =
+    statusParser.extractStatus(pageName).cleanName || pageName;
 
   // Figma REST exposes documentationLinks on COMPONENT_SET node documents.
   // Shape: [{ uri: string }]. Pass through verbatim (preserves Figma's
@@ -121,12 +147,18 @@ function buildEntry(
     guidelinesFile: guidelinesFile,
   };
 
-  // Apply category + status only when an inferred entry was supplied
-  // (i.e., for dsKit syncs that pass documentChildren). Lookup is keyed
-  // by the component cleanName, which transform-categories strips from
-  // the page-name's status-emoji prefix.
+  // ζ.2 (2026-05-13): three-axis grouping. `section` (top-level marker,
+  // e.g. "Components"/"Foundations"/"Brand") + `category` (existing
+  // semantic — now also populated for non-COMPONENTS items, was null)
+  // + `group` (third level, page clean-name for components / frame name
+  // for icons). All three are additive; consumers that read only
+  // `category` keep working.
   if (categoryEntry) {
+    if (categoryEntry.section != null) {
+      entry.section = categoryEntry.section;
+    }
     entry.category = categoryEntry.category;
+    entry.group = deriveGroup(meta, categoryEntry.section, pageCleanName);
     if (categoryEntry.status != null) {
       entry.status = categoryEntry.status;
     }
