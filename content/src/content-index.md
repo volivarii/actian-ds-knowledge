@@ -1,6 +1,6 @@
 ---
 title: "Index"
-nav_order: 43
+nav_order: 52
 ---
 # Content guidelines index
 
@@ -13,7 +13,16 @@ Use the sidebar to navigate, or jump directly to a section below.
 ## All sections
 
 <div class="actian-section-list">
-  <a href="global-guidelines">Global guidelines</a>
+  <a href="voice-and-tone">Voice and tone</a>
+  <a href="writing-style">Writing style</a>
+  <a href="capitalization">Capitalization</a>
+  <a href="words-to-avoid">Words to avoid</a>
+  <a href="punctuation">Punctuation</a>
+  <a href="numerical-formatting">Numerical formatting</a>
+  <a href="prepositions">Prepositions</a>
+  <a href="acronyms">Acronyms</a>
+  <a href="plurals">Plurals</a>
+  <a href="abbreviations-and-articles">Abbreviations and articles</a>
   <a href="alert-banner">Alert / banner</a>
   <a href="button">Buttons</a>
   <a href="badge">Badges</a>
