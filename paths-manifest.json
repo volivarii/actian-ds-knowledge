@@ -240,7 +240,7 @@
       "pattern": "{slug}.md",
       "type": "markdown",
       "origin": "human",
-      "description": "Per-component content guidelines (Content lead, folded in 2026-05-11). 37 component files + global-guidelines.md (voice + words-to-avoid) + content-index.md (AI query guide) + format-spec.md (markdown structure + Figma/Word output mapping). Each component file follows When-to-use → Style → Behavior → Do/Don't."
+      "description": "Per-component content guidelines (Content lead). Component-scoped files that route to individual component pages in the docs site. Each file follows When-to-use -> Style -> Behavior -> Do/Don't. Cross-cutting / UX-pattern files live in content.global instead."
     },
     "foundations.leaf": {
       "dir": "foundations/dist",
@@ -269,7 +269,7 @@
       "pattern": "{slug}.md",
       "type": "markdown",
       "origin": "human",
-      "description": "Cross-cutting writing guidelines that apply globally (voice, style, capitalization, word choice, punctuation, formatting). Routed to the docs /content page by the Phase 1 derive split; consumed the same way as content.section until then."
+      "description": "Cross-cutting writing guidelines and UX pattern topics that appear on the docs /content page only. Includes: global writing principles (voice, style, capitalization, etc.), empty/error/maintenance states, loading patterns, notifications/messaging, validation messages, onboarding, wizards, format-spec. Resolved by derive-content.js alongside content.section files."
     }
   },
   "aliases": {},

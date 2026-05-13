@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Format spec"
 nav_exclude: true
 search_exclude: true
