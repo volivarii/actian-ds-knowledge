@@ -13,6 +13,7 @@ Use the sidebar to navigate, or jump directly to a section below.
 ## All sections
 
 <div class="actian-section-list">
+  <a href="global-guidelines">Global guidelines</a>
   <a href="voice-and-tone">Voice and tone</a>
   <a href="writing-style">Writing style</a>
   <a href="capitalization">Capitalization</a>
