@@ -1,20 +1,22 @@
 {
   "_schema_version": 1,
-  "id": "design-guidelines/brightness-filter-convention-interactive-states",
-  "title": "Brightness Filter Convention — Interactive States",
+  "id": "design-guidelines/brightness-filter-convention-interactive-states/implementation",
+  "title": "Implementation",
   "path": [
     "design-guidelines",
-    "brightness-filter-convention-interactive-states"
+    "brightness-filter-convention-interactive-states",
+    "implementation"
   ],
-  "parent": "design-guidelines",
+  "parent": "design-guidelines/brightness-filter-convention-interactive-states",
   "anchors": {
     "h2": "design-guidelines",
-    "h3": "brightness-filter-convention-interactive-states"
+    "h3": "brightness-filter-convention-interactive-states",
+    "h4": "implementation"
   },
   "source": {
     "file": "foundations/src/foundations.md",
-    "startLine": 1014,
-    "endLine": 1027
+    "startLine": 1086,
+    "endLine": 1099
   },
   "_meta": {
     "auto_generated": true,

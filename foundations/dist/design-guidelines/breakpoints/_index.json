@@ -13,9 +13,21 @@
   },
   "source": {
     "file": "foundations/src/foundations.md",
-    "startLine": 1028,
-    "endLine": 1037
+    "startLine": 1100,
+    "endLine": 1132
   },
+  "children": [
+    {
+      "id": "design-guidelines/breakpoints/columns-gutters-and-margins",
+      "title": "Columns, Gutters, and Margins",
+      "order": 1
+    },
+    {
+      "id": "design-guidelines/breakpoints/grid-settings",
+      "title": "Grid Settings",
+      "order": 2
+    }
+  ],
   "_meta": {
     "auto_generated": true,
     "source": "foundations/src/foundations.md",
