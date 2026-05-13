@@ -32,7 +32,7 @@ const REGISTRIES = [
 
 function main() {
   const validate = createValidator("registry.json");
-  const violations = [];
+  let totalViolations = 0;
   let errorCount = 0;
 
   REGISTRIES.forEach(function (rel) {
@@ -50,12 +50,17 @@ function main() {
     try {
       data = JSON.parse(fs.readFileSync(abs, "utf8"));
     } catch (e) {
-      const record = {
+      // One record per line — lib-validator's emitRdjsonl expects a
+      // single record, not a batch. Matches validate-manifest-schema.js
+      // pattern; emits nothing when there are zero violations so the
+      // CI step's `-s combined.rdjsonl` byte-size check returns false
+      // on clean runs.
+      emitRdjsonl({
         message: "JSON parse failed: " + e.message,
         location: { path: rel, range: { start: { line: 1, column: 1 } } },
         severity: "ERROR",
-      };
-      violations.push(record);
+      });
+      totalViolations++;
       errorCount++;
       return;
     }
@@ -63,18 +68,18 @@ function main() {
     if (!ok) {
       (validate.errors || []).forEach(function (err) {
         const record = ajvErrorToRdjsonl(err, rel);
-        violations.push(record);
+        emitRdjsonl(record);
+        totalViolations++;
         if (record.severity === "ERROR") errorCount++;
       });
     }
   });
 
-  emitRdjsonl(violations);
   emitSummary(
     "[validate-registries] " +
       REGISTRIES.length +
       " registries checked, " +
-      violations.length +
+      totalViolations +
       " violations (" +
       errorCount +
       " errors)",
