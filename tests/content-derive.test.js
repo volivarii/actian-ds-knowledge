@@ -224,19 +224,34 @@ test("derive-content — every .md in content/src/ is referenced by the index (i
       return e.slug;
     }),
   );
-  var entries = fs
-    .readdirSync(DEFAULT_CONFIG.src)
-    .filter(function (f) {
-      return f.endsWith(".md") && !NON_SECTION_FILES.has(f);
-    })
-    .map(function (f) {
-      return f.replace(/\.md$/, "");
-    });
+
+  // ζ.6 follow-up (2026-05-13): walk BOTH content/src/*.md AND
+  // content/src/_global/*.md. The `_global/` subdirectory is the new
+  // home for cross-cutting topics (voice/tone, empty-state patterns,
+  // etc.) that will route to the docs /content page only when the
+  // derive pipeline gets its Phase 1 split. Until then, both locations
+  // contribute the same way to content.md; the inverse-coverage
+  // assertion just needs to see all files regardless of location.
+  function collectMdSlugs(dir) {
+    if (!fs.existsSync(dir)) return [];
+    return fs
+      .readdirSync(dir)
+      .filter(function (f) {
+        return f.endsWith(".md") && !NON_SECTION_FILES.has(f);
+      })
+      .map(function (f) {
+        return f.replace(/\.md$/, "");
+      });
+  }
+  var entries = collectMdSlugs(DEFAULT_CONFIG.src).concat(
+    collectMdSlugs(path.join(DEFAULT_CONFIG.src, "_global")),
+  );
+
   assert.ok(entries.length > 0, "no section files found in content/src/");
   for (var i = 0; i < entries.length; i++) {
     assert.ok(
       indexSlugs.has(entries[i]),
-      "content/src/" +
+      "content/src[/_global]/" +
         entries[i] +
         ".md is not referenced by content-index.md — add it to the 'All sections' list or move it to NON_SECTION_FILES",
     );
