@@ -1178,3 +1178,233 @@ test("transform-registry — nestedComponents skips unresolvable refs", function
 
   assert.deepEqual(registry.components["card"].nestedComponents, []);
 });
+
+// ---- ζ.5 (2026-05-13): icon-groups semantic mapping ----
+
+test("transform-registry — applies icon-groups for category=Icons (single group)", function () {
+  // Single-group icon: `group` set to the matched label; no
+  // `secondaryGroups` emitted.
+  var componentSets = [
+    {
+      name: "alert-circle",
+      key: "k-ac",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "Icons", name: "Actual icons" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "💎 FOUNDATIONS" },
+    { type: "CANVAS", name: "Icons" },
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    iconGroups: { Status: ["alert-circle"], Common: ["other"] },
+  });
+
+  assert.equal(registry.components["alert-circle"].category, "Icons");
+  assert.equal(registry.components["alert-circle"].group, "Status");
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(
+      registry.components["alert-circle"],
+      "secondaryGroups",
+    ),
+    false,
+    "single-group icons have no secondaryGroups field",
+  );
+});
+
+test("transform-registry — multi-group icon gets primary group + secondaryGroups (ζ.5)", function () {
+  // Iteration order in icon-groups determines primary: Navigation first
+  // → primary; Common appears second → secondaryGroups.
+  var componentSets = [
+    {
+      name: "download",
+      key: "k-dl",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "Icons", name: "Actual icons" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "💎 FOUNDATIONS" },
+    { type: "CANVAS", name: "Icons" },
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    iconGroups: {
+      Navigation: ["download"],
+      Common: ["download"],
+    },
+  });
+
+  assert.equal(registry.components["download"].group, "Navigation");
+  assert.deepEqual(registry.components["download"].secondaryGroups, ["Common"]);
+});
+
+test("transform-registry — unmapped icon falls back to group=Other", function () {
+  // Icon not in the mapping (e.g., recently added by designer, not yet
+  // classified) → group: "Other"; no secondaryGroups.
+  var componentSets = [
+    {
+      name: "icon-brand-new",
+      key: "k-new",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "Icons", name: "Actual icons" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "💎 FOUNDATIONS" },
+    { type: "CANVAS", name: "Icons" },
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    iconGroups: { Status: ["other-thing"] },
+  });
+
+  assert.equal(registry.components["icon-brand-new"].group, "Other");
+});
+
+test("transform-registry — icon-groups ignores _-prefixed metadata keys", function () {
+  // _naming_convention / _generated_from are documentation keys, not group
+  // labels. Verify they don't pollute the lookup.
+  var componentSets = [
+    {
+      name: "alert-circle",
+      key: "k-ac",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "Icons", name: "Actual icons" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "💎 FOUNDATIONS" },
+    { type: "CANVAS", name: "Icons" },
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    iconGroups: {
+      _naming_convention: "ignored",
+      _generated_from: "also ignored",
+      Status: ["alert-circle"],
+    },
+  });
+
+  assert.equal(registry.components["alert-circle"].group, "Status");
+});
+
+test("transform-registry — non-icon components unaffected by icon-groups (ζ.5)", function () {
+  // Button is in Components/Action. Its `group` should stay as page-name
+  // (Button) — icon-groups must NOT touch non-icons.
+  var componentSets = [
+    {
+      name: "Button",
+      key: "k-button",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✅ Button" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "     ✅ Button" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    iconGroups: { Status: ["button"] }, // even if mistakenly listed, ignored
+  });
+
+  assert.equal(registry.components["button"].group, "Button");
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(
+      registry.components["button"],
+      "secondaryGroups",
+    ),
+    false,
+  );
+});
