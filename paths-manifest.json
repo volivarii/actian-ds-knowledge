@@ -3,7 +3,7 @@
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.8.3",
+  "knowledge_version": "0.8.4",
   "paths": {
     "foundations.md": {
       "path": "foundations/src/foundations.md",
@@ -263,6 +263,13 @@
       "type": "markdown",
       "origin": "human",
       "description": "Authoring surface for category defaults. YAML frontmatter governed by schemas/category-defaults.json; freeform body for design rationale. See AUTHORING.md."
+    },
+    "content.global": {
+      "dir": "content/src/_global",
+      "pattern": "{slug}.md",
+      "type": "markdown",
+      "origin": "human",
+      "description": "Cross-cutting writing guidelines that apply globally (voice, style, capitalization, word choice, punctuation, formatting). Routed to the docs /content page by the Phase 1 derive split; consumed the same way as content.section until then."
     }
   },
   "aliases": {},
