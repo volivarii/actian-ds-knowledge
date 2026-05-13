@@ -114,6 +114,17 @@ function loadGuidelinesSlugSet(guidelinesDir) {
   return set;
 }
 
+// ζ.5: load the curated icon-groups.json mapping. Layered onto icon
+// registry entries (category === "Icons") to replace the uniform
+// "Actual icons" group with semantic labels. Returns the raw object
+// (group label → slug[]); transformer inverts it. Returns null when
+// the file is missing — sync continues with the legacy `group: "Actual
+// icons"` for icons, no regression.
+function loadIconGroups(iconGroupsPath) {
+  if (!iconGroupsPath) return null;
+  return readJsonOrNull(iconGroupsPath);
+}
+
 async function syncRegistry(opts, kitId) {
   var meta = KIT_MAP[kitId];
   var fileKey = opts.keys[kitId];
@@ -172,6 +183,7 @@ async function syncRegistry(opts, kitId) {
     standaloneNodes: standaloneNodes,
     documentChildren: documentChildren,
     guidelinesSlugSet: opts.guidelinesSlugSet || null,
+    iconGroups: opts.iconGroups || null,
     onWarnings: function (ws) {
       categoryWarnings = ws || [];
     },
@@ -376,12 +388,26 @@ async function run(opts) {
     guidelinesSlugSet = loadGuidelinesSlugSet(opts.guidelinesDir);
   }
 
+  // ζ.5: load icon-groups.json — same resolution pattern as guidelines.
+  var iconGroups = opts.iconGroups || null;
+  if (!iconGroups && opts.iconGroupsPath) {
+    iconGroups = loadIconGroups(opts.iconGroupsPath);
+  } else if (!iconGroups && opts.guidelinesDir) {
+    // Default: same components/src/ directory as guidelines.
+    var defaultPath = path.join(
+      path.dirname(opts.guidelinesDir),
+      "icon-groups.json",
+    );
+    iconGroups = loadIconGroups(defaultPath);
+  }
+
   var orchOpts = {
     rest: rest,
     outputDir: outputDir,
     keys: keys,
     categoriesPath: opts.categoriesPath || null,
     guidelinesSlugSet: guidelinesSlugSet,
+    iconGroups: iconGroups,
   };
   var results = [];
   var errors = [];

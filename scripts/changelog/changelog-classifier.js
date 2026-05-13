@@ -73,6 +73,12 @@ function shallowEqualEntry(b, a) {
     JSON.stringify(a.documentationLinks || [])
   )
     return false;
+  // ζ.5: secondaryGroups (only present on multi-group icons).
+  if (
+    JSON.stringify(b.secondaryGroups || []) !==
+    JSON.stringify(a.secondaryGroups || [])
+  )
+    return false;
   return true;
 }
 

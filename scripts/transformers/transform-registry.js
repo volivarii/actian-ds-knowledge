@@ -16,6 +16,7 @@
 //     standaloneNodes:    Object<nodeId, NodePayload>  // batched /nodes for standalones
 //     documentChildren:   Array<CanvasNode>            // OPTIONAL — file's pages tree for category inference (DS Kit only)
 //     guidelinesSlugSet:  Set<string>                  // OPTIONAL — slugs with guideline files at components/src/guidelines/<slug>.json
+//     iconGroups:         Object<label, slug[]>        // OPTIONAL — curated mapping from components/src/icon-groups.json. ζ.5: layered onto icon entries (category === "Icons") to replace the uniform "Actual icons" group with semantic labels (Connector / Status / Navigation / …). Multi-group icons get `secondaryGroups`.
 //   }
 //
 // Output: registry JSON, same shape as components/registries/{dskit,fmkit,metakit}.json.
@@ -102,6 +103,32 @@ function deriveGroup(meta, section, pageCleanName) {
   return pageCleanName;
 }
 
+// ζ.5 (2026-05-13): for icons specifically, the registry-time `group`
+// from containing_frame.name is uniformly "Actual icons" (every icon
+// COMPONENT_SET lives in that one frame). The semantic categorization
+// (Connector / Status / Navigation / etc.) lives one level deeper in
+// the Figma layout — captured by the curated mapping at
+// components/src/icon-groups.json. This helper applies that mapping:
+//   - sets `group` to the primary semantic label (first-listed in the
+//     mapping; specific-first ordering — Cursor over Common, etc.)
+//   - sets `secondaryGroups` to the additional labels when an icon
+//     belongs to multiple groups (8 icons today: add / download /
+//     directory / book-bookmark / minimize / export / process / dataset)
+//   - falls back to "Other" when an icon isn't in the mapping (e.g.,
+//     a designer just added one and hasn't classified it yet)
+function applyIconGroups(entry, slug, iconGroupsLookup) {
+  if (!iconGroupsLookup || entry.category !== "Icons") return;
+  var groups = iconGroupsLookup[slug];
+  if (!groups || groups.length === 0) {
+    entry.group = "Other";
+    return;
+  }
+  entry.group = groups[0];
+  if (groups.length > 1) {
+    entry.secondaryGroups = groups.slice(1);
+  }
+}
+
 function buildEntry(
   meta,
   node,
@@ -109,6 +136,7 @@ function buildEntry(
   categoryEntry,
   guidelinesSlugSet,
   slug,
+  iconGroupsLookup,
 ) {
   var doc = (node && node.document) || {};
   var split = splitVariantAndProperties(doc.componentPropertyDefinitions);
@@ -159,6 +187,10 @@ function buildEntry(
     }
     entry.category = categoryEntry.category;
     entry.group = deriveGroup(meta, categoryEntry.section, pageCleanName);
+    // ζ.5 (2026-05-13): for icons, overwrite `group` with the semantic
+    // label from icon-groups.json (and add `secondaryGroups` for icons
+    // that span multiple groups). For non-icons this is a no-op.
+    applyIconGroups(entry, slug, iconGroupsLookup);
     if (categoryEntry.status != null) {
       entry.status = categoryEntry.status;
     }
@@ -187,6 +219,25 @@ function transformRegistry(input) {
       input.guidelinesSlugSet instanceof Set
         ? input.guidelinesSlugSet
         : new Set(input.guidelinesSlugSet);
+  }
+  // ζ.5: invert the icon-groups.json shape (group→[slugs]) into a
+  // per-slug lookup (slug→[groups]) once, then pass to buildEntry. The
+  // first listed group is primary (specific-first priority encoded by
+  // the file's key order); subsequent groups become `secondaryGroups`.
+  var iconGroupsLookup = null;
+  if (input.iconGroups && typeof input.iconGroups === "object") {
+    iconGroupsLookup = {};
+    Object.keys(input.iconGroups).forEach(function (label) {
+      if (label.charAt(0) === "_") return; // skip _naming_convention etc.
+      var slugs = input.iconGroups[label];
+      if (!Array.isArray(slugs)) return;
+      slugs.forEach(function (slug) {
+        if (!iconGroupsLookup[slug]) iconGroupsLookup[slug] = [];
+        if (iconGroupsLookup[slug].indexOf(label) < 0) {
+          iconGroupsLookup[slug].push(label);
+        }
+      });
+    });
   }
   var lastSyncedIso = new Date().toISOString();
 
@@ -237,6 +288,7 @@ function transformRegistry(input) {
       lookupCategoryEntry(meta),
       guidelinesSlugSet,
       slug,
+      iconGroupsLookup,
     );
     registry.components[slug] = entry;
   });
@@ -255,6 +307,7 @@ function transformRegistry(input) {
       lookupCategoryEntry(meta),
       guidelinesSlugSet,
       slug,
+      iconGroupsLookup,
     );
     registry.components[slug] = entry;
   });
