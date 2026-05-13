@@ -7,10 +7,21 @@ name: Sync from Figma
 # changelog. Additive diffs auto-merge; breaking diffs labeled `review-required`.
 #
 # Required repo secrets:
-#   FIGMA_PAT        — Figma Personal Access Token (Pro tier sufficient)
-#   FIGMA_KEYS_JSON  — JSON string of file keys; mirrors the local
-#                      .figma-keys.json file (gitignored). CI materializes
-#                      the file from this secret on each run.
+#   FIGMA_PAT             — Figma Personal Access Token (Pro tier sufficient)
+#   FIGMA_KEYS_JSON       — JSON string of file keys; mirrors the local
+#                           .figma-keys.json file (gitignored). CI materializes
+#                           the file from this secret on each run.
+#   BOT_APP_PRIVATE_KEY   — PEM private key for the actian-ds-bot GitHub App.
+#                           Used to mint a token so the sync PR is authored by
+#                           the App (not github-actions[bot]). Default GITHUB_TOKEN
+#                           suppresses downstream pull_request workflows, which
+#                           leaves the PR BLOCKED when the ruleset requires named
+#                           status checks (validate-manifest, validate-schemas).
+#                           See plugin's vendor-snapshot.yml + memory
+#                           project_vendor_bot_app_identity.md for forensics.
+#
+# Required repo variables:
+#   BOT_APP_ID            — actian-ds-bot App ID (currently 3678502).
 #
 # Required repo settings:
 #   Settings → General → Pull Requests → Allow auto-merge → ENABLED
@@ -45,6 +56,19 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+
+      # Mint a token from the actian-ds-bot GitHub App so the sync PR is
+      # authored by the App, not github-actions[bot]. Required because the
+      # default GITHUB_TOKEN suppresses downstream pull_request workflow
+      # triggers — the PR ends up with no status checks, and the ruleset
+      # blocks merge waiting for them. App-authored PRs fire pull_request
+      # events normally so validate-manifest / validate-schemas / etc. run.
+      - name: Mint App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
 
       - name: Materialize .figma-keys.json from secret
         env:
@@ -98,6 +122,10 @@ jobs:
         if: steps.verdict.outputs.category == 'additive' || steps.verdict.outputs.category == 'breaking'
         uses: peter-evans/create-pull-request@v7
         with:
+          # App token (not default GITHUB_TOKEN) so the PR fires pull_request
+          # workflows against its head SHA. Required for the ruleset's named
+          # status checks (validate-manifest, validate-schemas, derive-*).
+          token: ${{ steps.app-token.outputs.token }}
           commit-message: "sync(figma): ${{ steps.verdict.outputs.category }} refresh ${{ steps.verdict.outputs.date }}"
           title: "sync(figma): ${{ steps.verdict.outputs.category }} — ${{ steps.verdict.outputs.date }}"
           body-path: /tmp/sync-changelog.md
@@ -113,7 +141,8 @@ jobs:
       - name: Enable auto-merge for additive PRs
         if: steps.verdict.outputs.category == 'additive' && steps.cpr.outputs.pull-request-number
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Same App token — gh CLI auto-merge call attributes to the App.
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --squash --repo "${{ github.repository }}"
 
