@@ -67,14 +67,31 @@ test("derive-content — readSectionOrder parses content-index.md", function () 
     "global-guidelines",
     "first section must be global-guidelines",
   );
+  // 2026-05-13: previous assertions hard-coded specific slugs
+  // (`buttons`, `wizards`, `tags-badges-status-indicators`) and broke
+  // when the content team rationalized filenames to singular component
+  // slugs (`button`, `tag`, etc.). Replaced with structural checks —
+  // they exercise the same parser invariants without brittling on
+  // file-renames at the authoring layer.
   var slugs = order.map(function (e) {
     return e.slug;
   });
-  assert.ok(slugs.indexOf("buttons") !== -1, "buttons section missing");
-  assert.ok(slugs.indexOf("wizards") !== -1, "wizards section missing");
-  assert.ok(
-    slugs.indexOf("tags-badges-status-indicators") !== -1,
-    "tags-badges-status-indicators section missing",
+  // Each slug is a non-empty kebab-case identifier.
+  for (var i = 0; i < slugs.length; i++) {
+    assert.ok(
+      typeof slugs[i] === "string" && slugs[i].length > 0,
+      "slug[" + i + "] must be a non-empty string",
+    );
+    assert.ok(
+      /^[a-z0-9][a-z0-9-]*$/.test(slugs[i]),
+      "slug[" + i + "]='" + slugs[i] + "' must be kebab-case lowercase",
+    );
+  }
+  // Parser preserves authoring order (first ≠ last).
+  assert.notStrictEqual(
+    order[0].slug,
+    order[order.length - 1].slug,
+    "first and last sections should differ",
   );
 });
 

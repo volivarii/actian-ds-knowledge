@@ -1,8 +1,8 @@
-﻿---
-title: "Loading and progress"
-nav_order: 19
 ---
-# Loading and progress
+title: "Loading"
+nav_order: 20
+---
+# Loading
 
 ---
 

@@ -1,6 +1,6 @@
-﻿---
+---
 title: "Links"
-nav_order: 18
+nav_order: 19
 ---
 # Links
 
@@ -12,7 +12,7 @@ A link visually represents clickable text or elements that navigate users to oth
 
 - For navigation to internal or external destinations. Use external link icon in the latter case.
 - For inline standalone contextual actions (for example, **Learn more**).
-- Avoid using links for actions; use [ghost buttons](buttons) instead.
+- Avoid using links for actions; use [ghost buttons](button) instead.
 
 ## Should I use a button or a link?
 
