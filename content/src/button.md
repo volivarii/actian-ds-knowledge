@@ -1,6 +1,6 @@
-﻿---
+---
 title: "Buttons"
-nav_order: 4
+nav_order: 5
 ---
 # Buttons
 
@@ -10,7 +10,7 @@ Buttons trigger actions. They are the primary mechanism for users to submit form
 
 ## When to use
 
-- Use buttons for actions, not navigation. For navigation, use [links](links).
+- Use buttons for actions, not navigation. For navigation, use [links](link).
 - Use a primary button for the main action on a page or modal.
 - Use secondary buttons for alternative or less critical actions.
 - Use ghost or tertiary buttons for low-priority or destructive actions that should not draw immediate attention.

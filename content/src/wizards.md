@@ -1,6 +1,6 @@
-﻿---
+---
 title: "Wizards"
-nav_order: 38
+nav_order: 42
 ---
 # Wizards
 
