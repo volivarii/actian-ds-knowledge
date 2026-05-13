@@ -260,7 +260,111 @@ function transformRegistry(input) {
   });
 
   registry.componentCount = Object.keys(registry.components).length;
+
+  // ζ.3 (2026-05-13): post-pass — populate nestedComponents.
+  //
+  // Two signal sources from Figma REST node payloads:
+  //   1. INSTANCE_SWAP property defaults (componentPropertyDefinitions):
+  //      defaultValue is the component key of the swappable slot's default.
+  //      Role = property name with hash-suffix stripped (Figma uses "Icon#15:0"
+  //      style identifiers internally).
+  //   2. Child INSTANCE nodes recursively walked from doc.children:
+  //      componentId is the source component's node id. Captures hardcoded
+  //      nesting (non-swappable instances baked into the component frame).
+  //
+  // Both signals get resolved against same-kit slugs only — cross-kit refs
+  // and external library refs return null and are dropped. Deduplication
+  // keeps the first occurrence (instance-swap entries listed first since
+  // they're authoritatively curated).
+  populateNestedComponents(registry, componentSetNodes, standaloneNodes);
+
   return registry;
+}
+
+// Strip Figma's "#NN:NN" hash suffix from property keys: "Icon#15927:0" → "Icon".
+function stripPropertyHash(name) {
+  var s = String(name || "");
+  var hashIdx = s.indexOf("#");
+  return hashIdx >= 0 ? s.slice(0, hashIdx) : s;
+}
+
+// Recursively walk a Figma node tree and yield every INSTANCE node's
+// `componentId`. INSTANCE nodes can nest inside frames, groups, vector
+// containers, etc. — descend through any container type.
+function collectInstanceComponentIds(node, out) {
+  if (!node || typeof node !== "object") return;
+  if (node.type === "INSTANCE" && typeof node.componentId === "string") {
+    out.push(node.componentId);
+  }
+  if (Array.isArray(node.children)) {
+    for (var i = 0; i < node.children.length; i++) {
+      collectInstanceComponentIds(node.children[i], out);
+    }
+  }
+}
+
+function populateNestedComponents(
+  registry,
+  componentSetNodes,
+  standaloneNodes,
+) {
+  // Build key → slug and nodeId → slug lookup maps.
+  var keyToSlug = {};
+  var nodeIdToSlug = {};
+  Object.keys(registry.components).forEach(function (slug) {
+    var e = registry.components[slug];
+    if (e.key) keyToSlug[e.key] = slug;
+    if (e.nodeId) nodeIdToSlug[e.nodeId] = slug;
+  });
+
+  Object.keys(registry.components).forEach(function (slug) {
+    var entry = registry.components[slug];
+    var node = componentSetNodes[entry.nodeId] || standaloneNodes[entry.nodeId];
+    if (!node || !node.document) return;
+    var doc = node.document;
+
+    var seen = {};
+    var nested = [];
+
+    // Source 1: INSTANCE_SWAP property defaults.
+    var defs = doc.componentPropertyDefinitions;
+    if (defs && typeof defs === "object") {
+      Object.keys(defs).forEach(function (propKey) {
+        var def = defs[propKey];
+        if (!def || def.type !== "INSTANCE_SWAP") return;
+        var targetKey = def.defaultValue;
+        if (!targetKey) return;
+        var targetSlug = keyToSlug[targetKey];
+        if (!targetSlug || targetSlug === slug) return;
+        if (seen[targetSlug]) return;
+        seen[targetSlug] = true;
+        nested.push({
+          slug: targetSlug,
+          role: stripPropertyHash(propKey),
+          source: "instance-swap",
+        });
+      });
+    }
+
+    // Source 2: hardcoded INSTANCE children in the node tree.
+    var componentIds = [];
+    collectInstanceComponentIds(doc, componentIds);
+    componentIds.forEach(function (cid) {
+      var targetSlug = nodeIdToSlug[cid];
+      if (!targetSlug || targetSlug === slug) return;
+      if (seen[targetSlug]) return;
+      seen[targetSlug] = true;
+      nested.push({
+        slug: targetSlug,
+        role: null,
+        source: "child-instance",
+      });
+    });
+
+    if (nested.length > 0) {
+      entry.nestedComponents = nested;
+    }
+  });
 }
 
 module.exports = transformRegistry;

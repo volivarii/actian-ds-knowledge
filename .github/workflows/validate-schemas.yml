@@ -16,6 +16,7 @@ on:
     paths:
       - 'components/src/categories/**/*.md'
       - 'components/src/guidelines/**/*.json'
+      - 'components/dist/registries/**/*.json'
       - 'paths-manifest.json'
       - 'foundations/dist/**/*.json'
       - 'schemas/**/*.json'
@@ -75,8 +76,15 @@ jobs:
           node scripts/validate/validate-category-defaults.js > categories.rdjsonl
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Validate component registries (ζ.3)
+        id: registries
+        continue-on-error: true
+        run: |
+          node scripts/validate/validate-registries.js > registries.rdjsonl
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
       - name: Combine rdjsonl outputs
-        run: cat guidelines.rdjsonl manifest.rdjsonl foundations.rdjsonl categories.rdjsonl > combined.rdjsonl
+        run: cat guidelines.rdjsonl manifest.rdjsonl foundations.rdjsonl categories.rdjsonl registries.rdjsonl > combined.rdjsonl
 
       - name: Report annotations via reviewdog
         env:

@@ -958,3 +958,223 @@ test("transform-categories — extractSectionName strips emoji + title-cases", f
   // Single-emoji-only (no words) — no section name
   assert.equal(fn("🧱"), null);
 });
+
+// ---- ζ.3 (2026-05-13): nestedComponents population ----
+
+test("transform-registry — nestedComponents from INSTANCE_SWAP property defaults", function () {
+  // Card has a "LeadingIcon" INSTANCE_SWAP property whose default points
+  // to the "icon-info" component. After ζ.3, card's nestedComponents
+  // should include { slug: "icon-info", role: "LeadingIcon", source: "instance-swap" }.
+  var componentSets = [
+    {
+      name: "icon-info",
+      key: "k-icon-info",
+      node_id: "2:1",
+      description: "",
+      containing_frame: { pageName: "✅ Icons" },
+    },
+    {
+      name: "Card",
+      key: "k-card",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✅ Card" },
+    },
+  ];
+  var componentSetNodes = {
+    "2:1": { document: { componentPropertyDefinitions: {} } },
+    "1:1": {
+      document: {
+        componentPropertyDefinitions: {
+          "LeadingIcon#15:0": {
+            type: "INSTANCE_SWAP",
+            defaultValue: "k-icon-info",
+          },
+        },
+      },
+    },
+  };
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+  });
+
+  assert.deepEqual(registry.components["card"].nestedComponents, [
+    { slug: "icon-info", role: "LeadingIcon", source: "instance-swap" },
+  ]);
+  // icon-info has no nested instances of its own.
+  assert.deepEqual(registry.components["icon-info"].nestedComponents, []);
+});
+
+test("transform-registry — nestedComponents from hardcoded child INSTANCE nodes", function () {
+  // Avatar contains a hardcoded "icon-user" INSTANCE child (not swappable).
+  // Tree walk should find it and emit role:null + source:"child-instance".
+  var componentSets = [
+    {
+      name: "icon-user",
+      key: "k-icon-user",
+      node_id: "2:1",
+      description: "",
+      containing_frame: { pageName: "✅ Icons" },
+    },
+    {
+      name: "Avatar",
+      key: "k-avatar",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✅ Avatar" },
+    },
+  ];
+  var componentSetNodes = {
+    "2:1": { document: { componentPropertyDefinitions: {} } },
+    "1:1": {
+      document: {
+        componentPropertyDefinitions: {},
+        // Recursive structure — wrapped in a frame for realism
+        children: [
+          {
+            type: "FRAME",
+            children: [{ type: "INSTANCE", componentId: "2:1" }],
+          },
+        ],
+      },
+    },
+  };
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+  });
+
+  assert.deepEqual(registry.components["avatar"].nestedComponents, [
+    { slug: "icon-user", role: null, source: "child-instance" },
+  ]);
+});
+
+test("transform-registry — nestedComponents dedupes same target across sources", function () {
+  // If a component appears as BOTH an INSTANCE_SWAP default AND a hardcoded
+  // child INSTANCE, we keep the instance-swap entry (curated, has role).
+  var componentSets = [
+    {
+      name: "icon-warning",
+      key: "k-warn",
+      node_id: "2:1",
+      description: "",
+      containing_frame: { pageName: "✅ Icons" },
+    },
+    {
+      name: "Alert",
+      key: "k-alert",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✅ Alert" },
+    },
+  ];
+  var componentSetNodes = {
+    "2:1": { document: { componentPropertyDefinitions: {} } },
+    "1:1": {
+      document: {
+        componentPropertyDefinitions: {
+          "Icon#1:0": { type: "INSTANCE_SWAP", defaultValue: "k-warn" },
+        },
+        children: [{ type: "INSTANCE", componentId: "2:1" }],
+      },
+    },
+  };
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+  });
+
+  assert.equal(registry.components["alert"].nestedComponents.length, 1);
+  assert.equal(registry.components["alert"].nestedComponents[0].source, "instance-swap");
+  assert.equal(registry.components["alert"].nestedComponents[0].role, "Icon");
+});
+
+test("transform-registry — nestedComponents skips self-references", function () {
+  // A component shouldn't list itself as a nested component, even if
+  // Figma data accidentally points back to itself.
+  var componentSets = [
+    {
+      name: "Recursive",
+      key: "k-rec",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✅ Recursive" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": {
+      document: {
+        componentPropertyDefinitions: {
+          "Self#1:0": { type: "INSTANCE_SWAP", defaultValue: "k-rec" },
+        },
+        children: [{ type: "INSTANCE", componentId: "1:1" }],
+      },
+    },
+  };
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+  });
+
+  assert.deepEqual(registry.components["recursive"].nestedComponents, []);
+});
+
+test("transform-registry — nestedComponents skips unresolvable refs", function () {
+  // INSTANCE_SWAP defaults / INSTANCE children pointing to keys/nodeIds
+  // outside the current registry (e.g., a library import from a different
+  // kit) get silently dropped — no false-positive entries.
+  var componentSets = [
+    {
+      name: "Card",
+      key: "k-card",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✅ Card" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": {
+      document: {
+        componentPropertyDefinitions: {
+          "Icon#1:0": {
+            type: "INSTANCE_SWAP",
+            defaultValue: "k-from-different-kit",
+          },
+        },
+        children: [{ type: "INSTANCE", componentId: "9:9" }],
+      },
+    },
+  };
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+  });
+
+  assert.deepEqual(registry.components["card"].nestedComponents, []);
+});
