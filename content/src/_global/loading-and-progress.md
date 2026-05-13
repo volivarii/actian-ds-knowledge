@@ -1,6 +1,6 @@
 ---
-title: "Loading"
-nav_order: 20
+title: "Loading and progress"
+nav_order: 30
 ---
 # Loading
 
