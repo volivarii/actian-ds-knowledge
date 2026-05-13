@@ -29,7 +29,11 @@ function isRegistryUnchanged(beforeReg, afterReg) {
 
 function shallowEqualEntry(b, a) {
   if (!b || !a) return b === a;
-  // Skip lastSynced; everything else must match.
+  // ζ.1 (2026-05-13): per-component `lastSynced` removed from the registry
+  // schema entirely (ecosystem audit found zero consumers). Older entries
+  // may still have the field on first read after a knowledge-repo upgrade;
+  // the field is simply ignored in this comparison — same as the legacy
+  // behavior — so the verdict is unaffected.
   //
   // Note on `category` + `status`: the first sync after these fields
   // were introduced (Task 4 of the component-category-sync work) will
@@ -37,7 +41,8 @@ function shallowEqualEntry(b, a) {
   // because before-entries lack the fields entirely while after-entries
   // gain them. The verdict will still classify as "additive" since
   // entryBreakingReasons() doesn't flag these fields. One-time noise;
-  // subsequent syncs only diff real changes.
+  // subsequent syncs only diff real changes. Same one-time-noise applies
+  // to `documentationLinks` added by ζ.1.
   var keys = [
     "name",
     "key",
@@ -59,6 +64,11 @@ function shallowEqualEntry(b, a) {
   if (
     JSON.stringify(b.nestedComponents || []) !==
     JSON.stringify(a.nestedComponents || [])
+  )
+    return false;
+  if (
+    JSON.stringify(b.documentationLinks || []) !==
+    JSON.stringify(a.documentationLinks || [])
   )
     return false;
   return true;

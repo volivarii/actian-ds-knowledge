@@ -46,7 +46,7 @@ test("classifier — identical object property-defaults do NOT trigger 'breaking
   assert.equal(
     result.category,
     "unchanged",
-    "verdict should be unchanged when registries are structurally identical (modulo lastSynced)",
+    "verdict should be unchanged when registries are structurally identical",
   );
   assert.equal(result.reasons.length, 0, "no breaking reasons");
 });

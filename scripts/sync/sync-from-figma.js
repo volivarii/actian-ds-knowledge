@@ -98,6 +98,22 @@ function fetchNodesMap(rest, fileKey, ids) {
 
 // ---- Per-phase syncs ----
 
+// Load the curated guidelines _index.json once per run. Returns a Set of
+// slugs that have hand-curated guideline files. Used to wire each registry
+// entry's `guidelinesFile` field at transform time (was always null before,
+// forcing every consumer to walk _index.json themselves).
+function loadGuidelinesSlugSet(guidelinesDir) {
+  if (!guidelinesDir) return null;
+  var indexPath = path.join(guidelinesDir, "_index.json");
+  var index = readJsonOrNull(indexPath);
+  if (!index || !Array.isArray(index.components)) return null;
+  var set = new Set();
+  index.components.forEach(function (c) {
+    if (c && typeof c.slug === "string") set.add(c.slug);
+  });
+  return set;
+}
+
 async function syncRegistry(opts, kitId) {
   var meta = KIT_MAP[kitId];
   var fileKey = opts.keys[kitId];
@@ -155,6 +171,7 @@ async function syncRegistry(opts, kitId) {
     standalones: standalones,
     standaloneNodes: standaloneNodes,
     documentChildren: documentChildren,
+    guidelinesSlugSet: opts.guidelinesSlugSet || null,
     onWarnings: function (ws) {
       categoryWarnings = ws || [];
     },
@@ -348,11 +365,23 @@ async function run(opts) {
   var keys = opts.keys || readJsonOrNull(keysFile);
   if (!keys) throw new Error("Cannot read figma keys from " + keysFile);
 
+  // Load guidelines _index.json once and pass the slug Set into every
+  // syncRegistry call. Lets the transformer wire `guidelinesFile` upstream
+  // instead of leaving every consumer to walk _index.json on each read.
+  // Resolution mirrors the pluginJsonPath / guidelinesDir defaults: CLI
+  // callers pass --guidelines-dir; programmatic callers can override via
+  // opts.guidelinesSlugSet (Set) or opts.guidelinesDir (path string).
+  var guidelinesSlugSet = opts.guidelinesSlugSet || null;
+  if (!guidelinesSlugSet && opts.guidelinesDir) {
+    guidelinesSlugSet = loadGuidelinesSlugSet(opts.guidelinesDir);
+  }
+
   var orchOpts = {
     rest: rest,
     outputDir: outputDir,
     keys: keys,
     categoriesPath: opts.categoriesPath || null,
+    guidelinesSlugSet: guidelinesSlugSet,
   };
   var results = [];
   var errors = [];

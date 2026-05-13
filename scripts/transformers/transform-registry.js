@@ -8,12 +8,14 @@
 //
 // Input shape:
 //   {
-//     library:           "ds" | "fm" | "meta-kit",
-//     fileKey:           string,
-//     componentSets:     Array<RestComponentSet>      // from /v1/files/:key/component_sets meta.component_sets
-//     componentSetNodes: Object<nodeId, NodePayload>  // batched /v1/files/:key/nodes?ids=…
-//     standalones:       Array<RestComponent>         // pre-filtered standalones (parent !== COMPONENT_SET, not internal)
-//     standaloneNodes:   Object<nodeId, NodePayload>  // batched /nodes for standalones
+//     library:            "ds" | "fm" | "meta-kit",
+//     fileKey:            string,
+//     componentSets:      Array<RestComponentSet>      // from /v1/files/:key/component_sets meta.component_sets
+//     componentSetNodes:  Object<nodeId, NodePayload>  // batched /v1/files/:key/nodes?ids=…
+//     standalones:        Array<RestComponent>         // pre-filtered standalones (parent !== COMPONENT_SET, not internal)
+//     standaloneNodes:    Object<nodeId, NodePayload>  // batched /nodes for standalones
+//     documentChildren:   Array<CanvasNode>            // OPTIONAL — file's pages tree for category inference (DS Kit only)
+//     guidelinesSlugSet:  Set<string>                  // OPTIONAL — slugs with guideline files at components/src/guidelines/<slug>.json
 //   }
 //
 // Output: registry JSON, same shape as components/registries/{dskit,fmkit,metakit}.json.
@@ -76,11 +78,35 @@ function splitVariantAndProperties(definitions) {
   return { variants: variants, properties: properties };
 }
 
-function buildEntry(meta, node, importMethod, lastSyncedIso, categoryEntry) {
+function buildEntry(
+  meta,
+  node,
+  importMethod,
+  categoryEntry,
+  guidelinesSlugSet,
+  slug,
+) {
   var doc = (node && node.document) || {};
   var split = splitVariantAndProperties(doc.componentPropertyDefinitions);
 
   var pageName = pageNameFromContainingFrame(meta.containing_frame);
+
+  // Figma REST exposes documentationLinks on COMPONENT_SET node documents.
+  // Shape: [{ uri: string }]. Pass through verbatim (preserves Figma's
+  // representation; consumers can extract `.uri` themselves).
+  var documentationLinks = Array.isArray(doc.documentationLinks)
+    ? doc.documentationLinks
+    : [];
+
+  // Resolve guidelinesFile by slug lookup against the curated index
+  // (components/src/guidelines/_index.json). Returns a repo-root-relative
+  // path when a guideline file exists; null otherwise. Plugin + docs site
+  // previously reconstructed this path on every read by walking _index.json
+  // — wiring it upstream eliminates the redundant indirection.
+  var guidelinesFile =
+    guidelinesSlugSet && guidelinesSlugSet.has(slug)
+      ? "components/src/guidelines/" + slug + ".json"
+      : null;
 
   var entry = {
     name: meta.name,
@@ -88,11 +114,11 @@ function buildEntry(meta, node, importMethod, lastSyncedIso, categoryEntry) {
     nodeId: meta.node_id,
     importMethod: importMethod,
     description: trimDescription(meta.description),
-    lastSynced: lastSyncedIso,
     page: pageName,
     properties: split.properties,
     nestedComponents: [],
-    guidelinesFile: null,
+    documentationLinks: documentationLinks,
+    guidelinesFile: guidelinesFile,
   };
 
   // Apply category + status only when an inferred entry was supplied
@@ -120,6 +146,16 @@ function transformRegistry(input) {
   var standalones = input.standalones || [];
   var standaloneNodes = input.standaloneNodes || {};
   var documentChildren = input.documentChildren || null;
+  // Guidelines index — accept either a Set or any iterable of slugs. The
+  // orchestrator passes a Set built from _index.json; tests can pass an
+  // Array which we promote to Set for membership checks.
+  var guidelinesSlugSet = null;
+  if (input.guidelinesSlugSet) {
+    guidelinesSlugSet =
+      input.guidelinesSlugSet instanceof Set
+        ? input.guidelinesSlugSet
+        : new Set(input.guidelinesSlugSet);
+  }
   var lastSyncedIso = new Date().toISOString();
 
   var registry = {
@@ -161,14 +197,15 @@ function transformRegistry(input) {
   componentSets.forEach(function (meta) {
     if (isInternalName(meta.name)) return;
     var node = componentSetNodes[meta.node_id];
+    var slug = slugify(meta.name);
     var entry = buildEntry(
       meta,
       node,
       "set",
-      lastSyncedIso,
       lookupCategoryEntry(meta),
+      guidelinesSlugSet,
+      slug,
     );
-    var slug = slugify(meta.name);
     registry.components[slug] = entry;
   });
 
@@ -176,16 +213,17 @@ function transformRegistry(input) {
   standalones.forEach(function (meta) {
     if (isInternalName(meta.name)) return;
     var node = standaloneNodes[meta.node_id];
+    var slug = slugify(meta.name);
+    // Don't clobber a set entry on a name collision (sets win).
+    if (slug in registry.components) return;
     var entry = buildEntry(
       meta,
       node,
       "single",
-      lastSyncedIso,
       lookupCategoryEntry(meta),
+      guidelinesSlugSet,
+      slug,
     );
-    var slug = slugify(meta.name);
-    // Don't clobber a set entry on a name collision (sets win).
-    if (slug in registry.components) return;
     registry.components[slug] = entry;
   });
 
