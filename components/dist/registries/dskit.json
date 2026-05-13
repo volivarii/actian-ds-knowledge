@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "library": "ds",
   "fileKey": "l8biHxfarNi1I2RMvVxVOK",
-  "lastSynced": "2026-05-13T12:55:12.732Z",
+  "lastSynced": "2026-05-13T13:45:34.648Z",
   "componentCount": 322,
   "components": {
     "xs-grid": {
@@ -87,7 +87,28 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "powerbi",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "chevron-up",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "text-type",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/lineage-individual-node.json",
       "section": "Components",
@@ -157,7 +178,18 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "dataset",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "help-circle",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/card.json",
       "section": "Components",
@@ -321,7 +353,13 @@
           "default": "7207:2839"
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/tag-interactive.json",
       "section": "Components",
@@ -347,7 +385,13 @@
       "description": "",
       "page": "✅ Global header",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "checkmark-outline",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/notification-dropdown.json",
       "section": "Components",
@@ -513,7 +557,18 @@
       "description": "",
       "page": "✅ Global header",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "chevron-left",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/whats-new-dropdown.json",
       "section": "Components",
@@ -557,7 +612,13 @@
           "default": "7207:2839"
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/tag-default.json",
       "section": "Components",
@@ -591,7 +652,13 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/metamodel-widget.json",
       "section": "Components",
@@ -615,7 +682,43 @@
       "description": "",
       "page": "✅ Data viz: glossary item hierarchy",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "list-bullets",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-to-fit",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-reset",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-in",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-out",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "more",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "export",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/glossary-item-hierarchy-diagram.json",
       "section": "Components",
@@ -635,7 +738,23 @@
       "description": "A specialized card variant optimized for scannability during a search. Highlights relevant metadata and matching keywords.",
       "page": "✅ Search result card",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "favorite",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "directory",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/search-result-card.json",
       "section": "Components",
@@ -663,7 +782,23 @@
       "description": "",
       "page": "✍️ Chat with AI Steward",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "expand",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "close",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "chevron-up",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/chat-with-ai-steward.json",
       "section": "Components",
@@ -771,7 +906,73 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "info",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "close",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "chevron-sort",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-out",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-in",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-to-fit",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "trash",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "dots",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "help-bubble",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "checkmark-outline",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "circle-dash",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "edit",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/popover.json",
       "section": "Components",
@@ -915,7 +1116,13 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "tableau",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/radio-button.json",
       "section": "Components",
@@ -947,7 +1154,13 @@
       "description": "Use for mutually exclusive options that impact the immediate view. Best for 2–4 options (e.g., \"Week / Month / Year\").",
       "page": "✅ Segmented control (Button group)",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "view-table",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/segmented-control.json",
       "section": "Components",
@@ -1047,7 +1260,13 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "home",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/tabs.json",
       "section": "Components",
@@ -1142,7 +1361,13 @@
       "description": "Use for catalog types. Can be interactive (removable) or static metadata.",
       "page": "✍️ Tag (Identification key)",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "directory",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/tag-catalog.json",
       "section": "Components",
@@ -1163,7 +1388,58 @@
       "description": "Use for status. Can be interactive (removable) or static metadata.",
       "page": "✍️ Tag (Identification key)",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "misuse-outline",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "warning-alt",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "checkmark-outline",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tools",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "calendar-2",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "icon-query-queue",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "stop-outline",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "asleep",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "circle-dash",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "pending",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/tag-status.json",
       "section": "Components",
@@ -1194,7 +1470,38 @@
       "description": "The persistent top-level container for branding, primary site-wide navigation, and user-specific actions (e.g., Profile, Logout).",
       "page": "✅ Global header",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "alert",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "applications",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "close",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "info",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "data-access-request",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/global-header.json",
       "section": "Components",
@@ -1248,7 +1555,53 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "chevron-left",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "view-details",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "close",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "home",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "info",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "favorite",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "stars",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "integer-type",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/drawer-side-panel.json",
       "section": "Components",
@@ -1286,7 +1639,13 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "error-filled",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/input-date.json",
       "section": "Components",
@@ -1321,7 +1680,23 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "close",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "stars",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/search.json",
       "section": "Components",
@@ -1351,7 +1726,93 @@
       "description": "Vertical navigation for primary application modules. Use when the app has many top-level sections or needs to show sub-navigation.",
       "page": "✍️  Side nav",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "dashboard",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "download",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "chevron-up",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "data-access-request",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "catalog-design",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "analytics",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "chevron-left",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "user-group",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "shield-lock",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "database",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "api-key",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "scanner",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "security-services",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "maintenance",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/side-nav.json",
       "section": "Components",
@@ -1377,7 +1838,13 @@
       "description": "",
       "page": "⛔️ Data viz: WIP all others",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "dots",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/bar-graph.json",
       "section": "Components",
@@ -1421,7 +1888,28 @@
       "description": "",
       "page": "✅ Calendar",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "chevron-left",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "chevron-up",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/calendar.json",
       "section": "Components",
@@ -1470,7 +1958,28 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "info",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "close",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "chevron-up",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/dropdown-select-default.json",
       "section": "Components",
@@ -1501,7 +2010,13 @@
       "description": "",
       "page": "✅ Search",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/search-dropdown-menu.json",
       "section": "Components",
@@ -1562,7 +2077,13 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/tag-stage.json",
       "section": "Components",
@@ -1779,7 +2300,53 @@
           }
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "close",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "info",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "task-list",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "text-file",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "link-type",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "paragraph-justify",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "list-numbers",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "task-list-multiple",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/modal.json",
       "section": "Components",
@@ -1813,7 +2380,13 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "tableau",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/lineage-connecting-line.json",
       "section": "Components",
@@ -1862,7 +2435,68 @@
       "description": "Use for large datasets requiring comparison, sorting, and filtering. Supports complex rows with multi-type data (text, badges, actions).\n\n\"If data is null, display the 'Empty State' illustration variant with a 'Create New' call to action.\"",
       "page": "✍️ Table",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "view-table",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "stars",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "filter",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "chevron-sort",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "checkmark-outline",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "edit",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "trash",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "dots",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "chevron-left",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/table.json",
       "section": "Components",
@@ -1884,7 +2518,28 @@
       "description": "A collection of inputs used to narrow down a dataset or search results. Should be placed above or to the left of the content it controls.",
       "page": "✅ Filters",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "info",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "close",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "stars",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/search-filters.json",
       "section": "Components",
@@ -1958,7 +2613,33 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "info",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "close",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "simple-check",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "error-filled",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/input.json",
       "section": "Components",
@@ -1990,7 +2671,43 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "export",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-to-fit",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-reset",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-in",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-out",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "map",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "filter",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/toolbar.json",
       "section": "Components",
@@ -2029,7 +2746,33 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "info-filled",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "close",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "success-filled",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "warning-filled",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "error-filled",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/alert-banner.json",
       "section": "Components",
@@ -2098,7 +2841,13 @@
       "description": "",
       "page": "⛔️ Data viz: WIP all others",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "dots",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/line-graph.json",
       "section": "Components",
@@ -2119,7 +2868,43 @@
       "description": "The title area of a specific page. Should include the Page Title, optional Breadcrumbs, and page-specific primary actions.",
       "page": "✅ Page header",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "open",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "suggestion",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "favorite",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "directory",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "powerbi",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "dots",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/page-header.json",
       "section": "Components",
@@ -2142,7 +2927,23 @@
       "description": "",
       "page": "✅ Data viz: lineage",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "chevron-up",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "powerbi",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/lineage-grouped-node.json",
       "section": "Components",
@@ -2299,7 +3100,13 @@
           }
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/collapse-accordion.json",
       "section": "Components",
@@ -2326,7 +3133,28 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "directory",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "favorite",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "stars",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": "components/src/guidelines/tile-item.json",
       "section": "Components",
@@ -3557,7 +4385,23 @@
       "description": "",
       "page": "✅ Global header",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "help-bubble",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "exit",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": null,
       "section": "Components",
@@ -4007,7 +4851,18 @@
       "description": "Menu: -4 Density \nMenus display a list of choices on a temporary surface. They appear when users interact with a button, action, or other control.\n\n🛠 Additional options \nMenu list item - can be edited by selecting individual list item and  selecting wether it is enabled, selected, and has a divider from the variant properties.",
       "page": "✅ Global header",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "settings",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "guidelinesFile": null,
       "section": "Components",
