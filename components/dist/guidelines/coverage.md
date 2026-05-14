@@ -41,3 +41,18 @@
 | behavior | 0 | 0 | 26 | 0 | 0 |
 | tokens | 0 | 0 | 0 | 26 | 0 |
 
+## Registry aliases
+
+> Interim bridge: a registry component key resolves to a guideline authored under a different slug. Each row is naming-divergence debt — converge the names (rename the `components/src/<slug>/` directory to match the registry key) and the alias self-deletes. See `components/src/AUTHORING.md` 'Slug naming'.
+
+| Registry key | Guideline slug |
+|---|---|
+| checkbox-with-label | checkbox |
+| dropdown-select-default | dropdown-select |
+| input | text-input |
+| notification | inline-toast |
+| search-filters | filters |
+| tag-default | tag |
+| toglge | toggle-control |
+| whats-new-dropdown | whats-new |
+

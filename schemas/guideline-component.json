@@ -4,13 +4,25 @@
   "title": "Per-component multi-domain guideline (derived)",
   "description": "Schema for the CI-derived merged per-component guideline object at components/dist/guidelines/<slug>.json. One object per component, holding any subset of five OPTIONAL domains (content, usage, design, behavior, tokens). Authored as file-per-domain markdown/YAML under components/src/<slug>/; merged by scripts/components/derive-guidelines.js. Strict (additionalProperties:false) — this is a CI-derived contract, not an author-facing shape.",
   "type": "object",
-  "required": ["_schema_version", "_meta", "slug", "component", "meta", "domains"],
+  "required": [
+    "_schema_version",
+    "_meta",
+    "slug",
+    "component",
+    "meta",
+    "domains"
+  ],
   "additionalProperties": false,
   "properties": {
     "_schema_version": {
       "const": 1,
       "description": "Schema version pin. Bumps require coordinated transformer + consumer updates.",
       "examples": [1]
+    },
+    "_alias_of": {
+      "type": "string",
+      "description": "Present only on registry-alias copies (components/dist/guidelines/<registryKey>.json). Value is the canonical guideline slug this file duplicates. The deriver emits one alias copy per paths-manifest.json#registryAliases entry so consumers can look a guideline up by registry key OR canonical slug with no per-consumer resolution logic. A real per-component object never carries this key.",
+      "examples": ["checkbox"]
     },
     "_meta": {
       "type": "object",
@@ -37,7 +49,9 @@
         "do_not_edit": {
           "type": "string",
           "description": "Edit-warning string.",
-          "examples": ["Edit the per-domain source files; CI regenerates this file."]
+          "examples": [
+            "Edit the per-domain source files; CI regenerates this file."
+          ]
         }
       }
     },
@@ -60,7 +74,11 @@
       "additionalProperties": false,
       "description": "Component classification + relationships, sourced from _meta.yml (category falls back to a registry lookup when omitted).",
       "examples": [
-        { "category": "action", "section": "COMPONENTS", "related": ["link", "icon"] }
+        {
+          "category": "action",
+          "section": "COMPONENTS",
+          "related": ["link", "icon"]
+        }
       ],
       "properties": {
         "category": {
@@ -88,7 +106,11 @@
       "description": "The five guideline domains. Every domain is OPTIONAL — absence means the component carries no declaration for it. Each present domain carries at minimum a `status`.",
       "examples": [
         {
-          "content": { "status": "approved", "markdown": "...", "sections": [] },
+          "content": {
+            "status": "approved",
+            "markdown": "...",
+            "sections": []
+          },
           "design": { "status": "inherited" }
         }
       ],
@@ -96,12 +118,24 @@
         "content": {
           "$ref": "#/$defs/proseDomain",
           "description": "Content guidelines domain — UX writing.",
-          "examples": [{ "status": "approved", "markdown": "## Style\n\n- ...", "sections": [] }]
+          "examples": [
+            {
+              "status": "approved",
+              "markdown": "## Style\n\n- ...",
+              "sections": []
+            }
+          ]
         },
         "usage": {
           "$ref": "#/$defs/proseDomain",
           "description": "Usage guidelines domain — when to use, variant selection.",
-          "examples": [{ "status": "draft", "markdown": "## When to use\n\n- ...", "sections": [] }]
+          "examples": [
+            {
+              "status": "draft",
+              "markdown": "## When to use\n\n- ...",
+              "sections": []
+            }
+          ]
         },
         "design": {
           "$ref": "#/$defs/proseDomain",
@@ -117,7 +151,12 @@
           "$ref": "#/$defs/tokensDomain",
           "description": "Component-specific tokens domain.",
           "examples": [
-            { "status": "approved", "bindings": [{ "token": "button-height-md", "context": "Minimum height" }] }
+            {
+              "status": "approved",
+              "bindings": [
+                { "token": "button-height-md", "context": "Minimum height" }
+              ]
+            }
           ]
         }
       }
@@ -149,24 +188,42 @@
         "markdown": {
           "type": "string",
           "description": "Verbatim domain markdown body (frontmatter stripped). The prose view for LLM consumers. Present only for draft|approved.",
-          "examples": ["## When to use\n\n- Use buttons for actions, not navigation."]
+          "examples": [
+            "## When to use\n\n- Use buttons for actions, not navigation."
+          ]
         },
         "sections": {
           "type": "array",
           "items": { "$ref": "#/$defs/section" },
           "description": "Structured projection of the markdown body. The queryable view for the docs renderer + plugin brief-sourcing. Present only for draft|approved.",
-          "examples": [[{ "heading": "When to use", "content": ["Use buttons for actions."] }]]
+          "examples": [
+            [
+              {
+                "heading": "When to use",
+                "content": ["Use buttons for actions."]
+              }
+            ]
+          ]
         }
       },
       "allOf": [
         {
-          "if": { "properties": { "status": { "enum": ["draft", "approved"] } } },
+          "if": {
+            "properties": { "status": { "enum": ["draft", "approved"] } }
+          },
           "then": { "required": ["status", "markdown", "sections"] }
         },
         {
-          "if": { "properties": { "status": { "enum": ["inherited", "not-started"] } } },
+          "if": {
+            "properties": { "status": { "enum": ["inherited", "not-started"] } }
+          },
           "then": {
-            "not": { "anyOf": [{ "required": ["markdown"] }, { "required": ["sections"] }] }
+            "not": {
+              "anyOf": [
+                { "required": ["markdown"] },
+                { "required": ["sections"] }
+              ]
+            }
           }
         }
       ]
@@ -196,7 +253,9 @@
         "bindings": {
           "type": "array",
           "description": "Component-specific token bindings. Each is a reference into the global token file plus a human-readable context label. Present only for draft|approved.",
-          "examples": [[{ "token": "button-height-md", "context": "Minimum height" }]],
+          "examples": [
+            [{ "token": "button-height-md", "context": "Minimum height" }]
+          ],
           "items": {
             "type": "object",
             "required": ["token", "context"],
@@ -220,11 +279,15 @@
       },
       "allOf": [
         {
-          "if": { "properties": { "status": { "enum": ["draft", "approved"] } } },
+          "if": {
+            "properties": { "status": { "enum": ["draft", "approved"] } }
+          },
           "then": { "required": ["status", "bindings"] }
         },
         {
-          "if": { "properties": { "status": { "enum": ["inherited", "not-started"] } } },
+          "if": {
+            "properties": { "status": { "enum": ["inherited", "not-started"] } }
+          },
           "then": { "not": { "required": ["bindings"] } }
         }
       ]
@@ -244,12 +307,24 @@
           "type": "array",
           "items": { "$ref": "#/$defs/contentItem" },
           "description": "Ordered content items for this section.",
-          "examples": [["Use buttons for actions.", { "do": "Create report", "dont": "Report" }]]
+          "examples": [
+            [
+              "Use buttons for actions.",
+              { "do": "Create report", "dont": "Report" }
+            ]
+          ]
         },
         "subsections": {
           "type": "array",
           "description": "Reserved one-level nesting for `### ` subheadings.",
-          "examples": [[{ "subheading": "Variant selection", "content": ["Primary first."] }]],
+          "examples": [
+            [
+              {
+                "subheading": "Variant selection",
+                "content": ["Primary first."]
+              }
+            ]
+          ],
           "items": {
             "type": "object",
             "required": ["subheading", "content"],
@@ -273,7 +348,10 @@
     },
     "contentItem": {
       "description": "A single content item. Either a plain string (a rule/bullet) or one of the structured shapes the consumers bucket. Adding a NEW shape is a coordinated schema + renderer change (see the architecture spec).",
-      "examples": ["Use buttons for actions.", { "do": "Create report", "dont": "Report" }],
+      "examples": [
+        "Use buttons for actions.",
+        { "do": "Create report", "dont": "Report" }
+      ],
       "oneOf": [
         {
           "type": "string",
@@ -326,7 +404,9 @@
               "required": ["headers", "rows"],
               "additionalProperties": false,
               "description": "A generic table that did not match a known shape.",
-              "examples": [{ "headers": ["Prop", "Value"], "rows": [["height", "32px"]] }],
+              "examples": [
+                { "headers": ["Prop", "Value"], "rows": [["height", "32px"]] }
+              ],
               "properties": {
                 "headers": {
                   "type": "array",

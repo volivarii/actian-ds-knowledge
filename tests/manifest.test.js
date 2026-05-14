@@ -20,6 +20,10 @@ test("paths-manifest.json — schema correctness", async (t) => {
     assert.ok(manifest.paths, "paths object exists");
     assert.ok(manifest.collections, "collections object exists");
     assert.ok(manifest.aliases !== undefined, "aliases field present");
+    assert.ok(
+      manifest.registryAliases !== undefined,
+      "registryAliases field present",
+    );
   });
 
   await t.test("knowledge_version matches package.json#version", () => {
@@ -94,6 +98,46 @@ test("paths-manifest.json — schema correctness", async (t) => {
       assert.ok(
         fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory(),
         `${name}: dir ${entry.dir} does not exist or is not a directory`,
+      );
+    }
+  });
+
+  await t.test("every registryAlias key and value resolves", () => {
+    // registryAliases bridges registry component keys -> guidelineDoc slugs.
+    // A key that isn't a real registry component, or a value with no guideline
+    // doc, is a dead alias — catch it here rather than letting the plugin's
+    // lookup silently return nothing. See _notes.registry_aliases_interim.
+    const dskit = JSON.parse(
+      fs.readFileSync(
+        path.join(REPO_ROOT, "components/dist/registries/dskit.json"),
+        "utf8",
+      ),
+    );
+    const registryKeys = new Set(Object.keys(dskit.components || {}));
+    for (const [from, to] of Object.entries(manifest.registryAliases)) {
+      assert.ok(
+        registryKeys.has(from),
+        `registryAliases: key "${from}" is not a dskit.json component key`,
+      );
+      const guidelinePath = path.join(
+        REPO_ROOT,
+        "components/dist/guidelines",
+        `${to}.json`,
+      );
+      assert.ok(
+        fs.existsSync(guidelinePath),
+        `registryAliases: "${from}" -> "${to}" but components/dist/guidelines/${to}.json does not exist`,
+      );
+      // The alias OUTPUT file must also exist — catches "added an alias entry
+      // but never re-ran the deriver" independently of the workflow trigger.
+      const aliasPath = path.join(
+        REPO_ROOT,
+        "components/dist/guidelines",
+        `${from}.json`,
+      );
+      assert.ok(
+        fs.existsSync(aliasPath),
+        `registryAliases: "${from}" has no alias file components/dist/guidelines/${from}.json — run npm run derive:guidelines`,
       );
     }
   });
