@@ -1,15 +1,25 @@
 "use strict";
 
-// Builds a consolidated content.md from per-component source files.
+// Builds the consolidated content guidelines from per-section source files.
 // Section order comes from the index file's "All sections" anchors
 // (<a href="slug">Title</a>). To reorder sections, edit the index —
 // the generator follows.
 //
+// Two outputs are written to the same dist directory:
+//   content.md  — full concat: global topics + component-scoped content
+//                 (transitional, for consumers not yet migrated; retired
+//                 in a later phase).
+//   global.md   — global / cross-cutting topics only (the docs /content
+//                 page + LLM-agent skills consume this).
+//
+// Sources resolve from two locations (Phase 2b):
+//   - component-scoped content → components/src/<slug>/content.md
+//   - global / cross-cutting   → content/src/<slug>.md
+//
 // Run:
 //   npm run derive:content
 //   node scripts/content/derive-content.js \
-//     --src content/src \
-//     --index content/src/content-index.md \
+//     --src content/src --index content/src/content-index.md \
 //     --out content/dist/content.md
 
 var fs = require("fs");
@@ -112,34 +122,31 @@ function shiftHeadings(s) {
   return lines.join("\n");
 }
 
-// Resolve the source file for a content-index slug. Component-scoped content
-// has moved into the per-component guideline layout
-// (`components/src/<slug>/content.md`, Phase 2a); global cross-cutting topics
-// still live under `content/src/` (root or `_global/`). This resolver finds
-// the slug in any of the three locations so `content/dist/content.md` stays
-// whole during the parallel-change window — consumers migrate off content.md
-// in a later phase, after which the component-scoped legs go away.
-// Lookup order: per-component guideline dir → content/src root → _global/.
+// Resolve the source file for a content-index slug, tagging its scope.
+// Component-scoped content lives in the per-component guideline layout
+// (`components/src/<slug>/content.md`, Phase 2a); global / cross-cutting
+// topics live flat under `content/src/` (Phase 2b — the former `_global/`
+// subdirectory was flattened away once components moved out).
+// Returns { file, scope } where scope is "component" | "global", or null.
 function resolveSectionFile(srcDir, slug) {
-  var repoRoot = path.resolve(srcDir, "..", "..");
   var componentCandidate = path.join(
-    repoRoot,
+    ROOT,
     "components",
     "src",
     slug,
     "content.md",
   );
-  if (fs.existsSync(componentCandidate)) return componentCandidate;
-  var rootCandidate = path.join(srcDir, slug + ".md");
-  if (fs.existsSync(rootCandidate)) return rootCandidate;
-  var globalCandidate = path.join(srcDir, "_global", slug + ".md");
-  if (fs.existsSync(globalCandidate)) return globalCandidate;
+  if (fs.existsSync(componentCandidate)) {
+    return { file: componentCandidate, scope: "component" };
+  }
+  var globalCandidate = path.join(srcDir, slug + ".md");
+  if (fs.existsSync(globalCandidate)) {
+    return { file: globalCandidate, scope: "global" };
+  }
   return null;
 }
 
-function readSection(srcDir, slug) {
-  var file = resolveSectionFile(srcDir, slug);
-  if (!file) return null;
+function cleanSectionFile(file) {
   var s = fs.readFileSync(file, "utf8");
   s = s.replace(/\r\n/g, "\n");
   s = stripFrontmatter(s);
@@ -150,52 +157,32 @@ function readSection(srcDir, slug) {
   return s;
 }
 
-function buildOutput(config) {
-  var order = readSectionOrder(config.index);
-  var lines = [];
-  lines.push("# Content guidelines — Actian Data Intelligence");
-  lines.push("");
-  lines.push(
-    "> **Auto-generated** by `scripts/content/derive-content.js`. Do not edit " +
-      "this file directly — edit the per-section source files.",
-  );
-  lines.push(">");
-  lines.push(
-    "> **Sources** (" +
-      order.length +
-      " sections): component-scoped content lives in " +
-      "`components/src/{slug}/content.md`; global / cross-cutting topics live " +
-      "in `" +
-      path.relative(ROOT, config.src) +
-      "/` (root or `_global/`).",
-  );
-  lines.push(
-    "> **Section order:** `" +
-      path.relative(ROOT, config.index) +
-      '` ("All sections" anchors)',
-  );
-  lines.push(
-    "> **Authoring guides:** `components/src/AUTHORING.md` (per-component) · `" +
-      path.relative(ROOT, config.src) +
-      "/AUTHORING.md` (global)",
-  );
-  lines.push("");
-  lines.push("---");
-  lines.push("");
+// Returns the cleaned section body string, or null if no source exists.
+function readSection(srcDir, slug) {
+  var resolved = resolveSectionFile(srcDir, slug);
+  if (!resolved) return null;
+  return cleanSectionFile(resolved.file);
+}
 
+// Resolve every ordered section to { slug, title, body, scope }. Throws if
+// any indexed slug has no source file.
+function resolveAllSections(config) {
+  var order = readSectionOrder(config.index);
+  var sections = [];
   var missing = [];
   for (var i = 0; i < order.length; i++) {
-    var body = readSection(config.src, order[i].slug);
-    if (!body) {
+    var resolved = resolveSectionFile(config.src, order[i].slug);
+    if (!resolved) {
       missing.push(order[i].slug);
       continue;
     }
-    lines.push(body);
-    lines.push("");
-    lines.push("---");
-    lines.push("");
+    sections.push({
+      slug: order[i].slug,
+      title: order[i].title,
+      body: cleanSectionFile(resolved.file),
+      scope: resolved.scope,
+    });
   }
-
   if (missing.length > 0) {
     throw new Error(
       "Missing source files for " +
@@ -206,7 +193,22 @@ function buildOutput(config) {
         missing.join(", "),
     );
   }
+  return sections;
+}
 
+// Assemble a doc from a header block + section bodies, `---`-separated,
+// with no trailing separator.
+function assembleDoc(headerLines, sections) {
+  var lines = headerLines.slice();
+  lines.push("");
+  lines.push("---");
+  lines.push("");
+  for (var i = 0; i < sections.length; i++) {
+    lines.push(sections[i].body);
+    lines.push("");
+    lines.push("---");
+    lines.push("");
+  }
   while (
     lines.length &&
     (lines[lines.length - 1] === "" || lines[lines.length - 1] === "---")
@@ -214,27 +216,87 @@ function buildOutput(config) {
     lines.pop();
   }
   lines.push("");
-
   return lines.join("\n");
+}
+
+// Full consolidated content.md — global topics + component-scoped content.
+function buildOutput(config) {
+  var sections = resolveAllSections(config);
+  var header = [
+    "# Content guidelines — Actian Data Intelligence",
+    "",
+    "> **Auto-generated** by `scripts/content/derive-content.js`. Do not edit " +
+      "this file directly — edit the per-section source files.",
+    ">",
+    "> **Sources** (" +
+      sections.length +
+      " sections): component-scoped content lives in " +
+      "`components/src/{slug}/content.md`; global / cross-cutting topics live " +
+      "in `" +
+      path.relative(ROOT, config.src) +
+      "/{slug}.md`.",
+    "> **Section order:** `" +
+      path.relative(ROOT, config.index) +
+      '` ("All sections" anchors)',
+    "> **Authoring guides:** `components/src/AUTHORING.md` (per-component) · `" +
+      path.relative(ROOT, config.src) +
+      "/AUTHORING.md` (global)",
+  ];
+  return assembleDoc(header, sections);
+}
+
+// Global / cross-cutting topics only — the docs /content page consumes this.
+function buildGlobalOutput(config) {
+  var sections = resolveAllSections(config).filter(function (s) {
+    return s.scope === "global";
+  });
+  var header = [
+    "# Content guidelines — global topics",
+    "",
+    "> **Auto-generated** by `scripts/content/derive-content.js`. Do not edit " +
+      "this file directly — edit the per-section source files.",
+    ">",
+    "> **Scope:** cross-cutting writing guidance (voice, tone, capitalization, " +
+      "words to avoid) and UX-pattern topics. Component-scoped content guidance " +
+      "lives per-component in `components/dist/guidelines/{slug}.json` instead.",
+    "> **Sources** (" +
+      sections.length +
+      " sections): `" +
+      path.relative(ROOT, config.src) +
+      "/{slug}.md`.",
+    "> **Authoring guide:** `" +
+      path.relative(ROOT, config.src) +
+      "/AUTHORING.md`",
+  ];
+  return assembleDoc(header, sections);
 }
 
 function main(argv) {
   var args = parseArgs(argv);
   var config = resolveConfig(args);
-  var output = buildOutput(config);
   var outDir = path.dirname(config.out);
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(config.out, output);
-  var stats = fs.statSync(config.out);
-  console.log(
-    "[derive-content] wrote " +
-      path.relative(ROOT, config.out) +
-      " (" +
-      stats.size +
-      " bytes, " +
-      output.split("\n").length +
-      " lines)",
-  );
+
+  var contentOut = buildOutput(config);
+  fs.writeFileSync(config.out, contentOut);
+
+  var globalPath = path.join(outDir, "global.md");
+  var globalOut = buildGlobalOutput(config);
+  fs.writeFileSync(globalPath, globalOut);
+
+  [config.out, globalPath].forEach(function (p) {
+    var stats = fs.statSync(p);
+    var lineCount = fs.readFileSync(p, "utf8").split("\n").length;
+    console.log(
+      "[derive-content] wrote " +
+        path.relative(ROOT, p) +
+        " (" +
+        stats.size +
+        " bytes, " +
+        lineCount +
+        " lines)",
+    );
+  });
 }
 
 if (require.main === module) {
@@ -255,6 +317,9 @@ module.exports = {
   stripJekyllAttrs: stripJekyllAttrs,
   collapseBlankLines: collapseBlankLines,
   shiftHeadings: shiftHeadings,
+  resolveSectionFile: resolveSectionFile,
   readSection: readSection,
+  resolveAllSections: resolveAllSections,
   buildOutput: buildOutput,
+  buildGlobalOutput: buildGlobalOutput,
 };

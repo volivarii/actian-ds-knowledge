@@ -44,7 +44,7 @@ tokens/          ← interim: human-frozen (see tokens/README.md)
 | Meta Kit `templates` block | `components/dist/registries/metakit.json` (ONLY this block — hand-curated; CI preserves across syncs) | Same workflow preserves the block |
 | Token value | `tokens/tokens.json` + matching CSS variable in `tokens/tokens.css` | `render-token-reference.js` regenerates `tokens/token-reference.md` |
 | Component content guidelines (UI copy rules) | `components/src/<slug>/content.md` — see `components/src/AUTHORING.md` | `guidelines-derive.yml` + `content-derive.yml` regenerate the per-component JSON and `content/dist/content.md` on PR |
-| Global / cross-cutting content guidelines (voice, tone, words to avoid, UX-pattern topics) | `content/src/` (root or `_global/`) — see `content/src/AUTHORING.md` and `content/src/content-index.md` | `content-derive.yml` regenerates `content/dist/content.md` on PR |
+| Global / cross-cutting content guidelines (voice, tone, words to avoid, UX-pattern topics) | `content/src/<slug>.md` — see `content/src/AUTHORING.md` and `content/src/content-index.md` | `content-derive.yml` regenerates `content/dist/content.md` + `content/dist/global.md` on PR |
 | Accessibility guidance | `accessibility/accessibility.md` | None |
 | Presentation templates / chart patterns | `presentation/presentation-guide.md` | None |
 | App context / persona / terminology | `app-context/app-context.json` | None |
