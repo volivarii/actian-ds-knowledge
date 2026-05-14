@@ -210,6 +210,39 @@ test("derive-content — committed dist/content.md matches buildOutput", functio
   );
 });
 
+test("derive-content — buildGlobalOutput emits global topics only, no component sections", function () {
+  var out = derive.buildGlobalOutput(DEFAULT_CONFIG);
+  assert.match(
+    out,
+    /^# Content guidelines — global topics/,
+    "expected global-topics H1 preamble",
+  );
+  assert.ok(
+    out.indexOf("## Global guidelines") !== -1,
+    "global topic 'Global guidelines' must be present",
+  );
+  // Component-scoped sections (resolved from components/src/<slug>/content.md)
+  // must NOT appear in the global-only output.
+  assert.ok(
+    out.indexOf("## Buttons") === -1,
+    "component section 'Buttons' must not appear in global.md",
+  );
+  var trimmed = out.replace(/\n+$/, "");
+  assert.ok(!/\n---$/.test(trimmed), "output must not end with a separator");
+});
+
+test("derive-content — committed dist/global.md matches buildGlobalOutput", function () {
+  var globalPath = path.join(path.dirname(DEFAULT_CONFIG.out), "global.md");
+  if (!fs.existsSync(globalPath)) return;
+  var onDisk = fs.readFileSync(globalPath, "utf8");
+  var generated = derive.buildGlobalOutput(DEFAULT_CONFIG);
+  assert.strictEqual(
+    onDisk,
+    generated,
+    "content/dist/global.md is stale — run `npm run derive:content` and commit",
+  );
+});
+
 // Files in content/src/ that aren't section bodies. Kept in sync with
 // the manifest validator's EXCLUDED_FILES + the index's expected omissions.
 var NON_SECTION_FILES = new Set([
@@ -225,12 +258,12 @@ test("derive-content — every section source file is referenced by the index (i
     }),
   );
 
-  // The deriver resolves each section from one of three locations
+  // The deriver resolves each section from one of two locations
   // (see resolveSectionFile): the per-component guideline layout
   // `components/src/<slug>/content.md` (Phase 2a — component-scoped
-  // content), `content/src/<slug>.md` (root), and
-  // `content/src/_global/<slug>.md` (cross-cutting topics). The
-  // inverse-coverage assertion must walk ALL THREE so a file moved or
+  // content), and `content/src/<slug>.md` (Phase 2b — global /
+  // cross-cutting topics, flattened from the former `_global/` subdir).
+  // The inverse-coverage assertion must walk BOTH so a file moved or
   // added without registering its slug in content-index.md is caught —
   // extend this whenever resolveSectionFile grows a new lookup leg.
   var REPO_ROOT = path.resolve(DEFAULT_CONFIG.src, "..", "..");
@@ -260,9 +293,9 @@ test("derive-content — every section source file is referenced by the index (i
     });
   }
 
-  var entries = collectMdSlugs(DEFAULT_CONFIG.src)
-    .concat(collectMdSlugs(path.join(DEFAULT_CONFIG.src, "_global")))
-    .concat(collectComponentSlugs());
+  var entries = collectMdSlugs(DEFAULT_CONFIG.src).concat(
+    collectComponentSlugs(),
+  );
 
   assert.ok(entries.length > 0, "no section source files found");
   for (var i = 0; i < entries.length; i++) {

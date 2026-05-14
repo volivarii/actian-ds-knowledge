@@ -1,9 +1,10 @@
-name: Derive content/dist/content.md from content/src/*.md
+name: Derive content guidelines (content.md + global.md)
 
-# Federation Phase 2 — consolidated content guidelines auto-generated
-# from per-component source files in content/src/. Runs on PR events
-# that touch the sources or the generator; regenerates content.md and
-# commits it back to the PR branch.
+# Consolidated content guidelines auto-generated from the per-section
+# source files. Runs on PR events that touch the sources or the
+# generator; regenerates content/dist/content.md (full transitional
+# concat) AND content/dist/global.md (global topics only, Phase 2b) and
+# commits both back to the PR branch.
 #
 # Required repo setting (already enabled for foundations-derive):
 #   Settings → Actions → General → Workflow permissions → Allow GH Actions
@@ -21,7 +22,7 @@ on:
 
 jobs:
   derive:
-    name: Derive content/dist/content.md
+    name: Derive content guidelines
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -42,7 +43,7 @@ jobs:
       - name: Install deps
         run: npm install --no-audit --no-fund
 
-      - name: Derive content.md
+      - name: Derive content.md + global.md
         run: |
           node scripts/content/derive-content.js \
             --src content/src \
@@ -57,7 +58,7 @@ jobs:
         run: |
           if git diff --quiet -- content/dist/; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No content.md changes after regeneration."
+            echo "No content/dist/ changes after regeneration."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Content changes detected:"
@@ -74,7 +75,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add content/dist/ package.json
-          git commit -m "chore(content): regenerate content.md from content/src/ + bump patch"
+          git commit -m "chore(content): regenerate content.md + global.md + bump patch"
           git push
 
       - name: Tag release
