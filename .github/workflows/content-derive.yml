@@ -13,6 +13,10 @@ on:
   pull_request:
     paths:
       - 'content/src/**/*.md'
+      # Phase 2a: component-scoped content moved into the per-component
+      # guideline layout; content.md still concatenates it (parallel-change
+      # window) so a component content edit must re-derive content.md too.
+      - 'components/src/*/content.md'
       - 'scripts/content/derive-content.js'
 
 jobs:
