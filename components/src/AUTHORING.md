@@ -57,12 +57,15 @@ Plain markdown. Frontmatter is optional. The deriver keeps the verbatim body
 projection (for the docs renderer + the plugin):
 
 - `## Heading` opens a section.
-- `### Subheading` opens one reserved level of nesting.
+- `### Subheading` opens one reserved level of nesting. Deeper headings
+  (`####` and below) are flattened into the nearest section's content as
+  `{ note }` items — there is only one reserved nesting level.
 - Bullet lists become string items.
 - A `| Do | Don't |` table becomes `{ do, dont }` items.
 - A terminology table (`| Term | Usage |`) becomes `{ term, rule }` items.
 - Any other table is preserved as a generic `{ table }` item.
 - Paragraphs and blockquotes become `{ note }` items.
+- Fenced code blocks become `{ example }` items.
 
 You do not need to think about the projection — write normal markdown. The
 verbatim body is always retained, so the structured view is a convenience,

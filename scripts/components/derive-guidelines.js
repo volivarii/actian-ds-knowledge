@@ -598,13 +598,29 @@ function runCli(argv) {
 
   if (!args.noManifest) {
     const mr = updatePathsManifest(manifestPath, result.slugs);
-    console.log(
-      "[derive-guidelines] manifest: +" +
-        mr.added.length +
-        " entries, -" +
-        mr.dropped.length +
-        " entries",
-    );
+    // Suppress the misleading "+N -N" log on idempotent re-runs — the
+    // CI derive workflow re-runs on every push, and a steady-state run
+    // rotates the same keys (added === dropped). Mirrors the ce7ca2d
+    // fix to derive-categories.js.
+    const addedSet = new Set(mr.added);
+    const unchanged =
+      mr.added.length === mr.dropped.length &&
+      mr.dropped.every((k) => addedSet.has(k));
+    if (unchanged) {
+      console.log(
+        "[derive-guidelines] manifest: components.guidelineDoc section unchanged (" +
+          mr.added.length +
+          " entries)",
+      );
+    } else {
+      console.log(
+        "[derive-guidelines] manifest: components.guidelineDoc section +" +
+          mr.added.length +
+          " entries, -" +
+          mr.dropped.length +
+          " entries",
+      );
+    }
   }
 
   console.log(

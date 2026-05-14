@@ -76,7 +76,9 @@ test("md parser: content before first H2 becomes an empty-heading lead section",
     "# Buttons\n\nButtons trigger actions.\n\n## Style\n\n- X.\n",
   );
   assert.equal(r.sections[0].heading, "");
-  assert.deepEqual(r.sections[0].content, [{ note: "Buttons trigger actions." }]);
+  assert.deepEqual(r.sections[0].content, [
+    { note: "Buttons trigger actions." },
+  ]);
 });
 
 test("md parser: Do / Don't table → {do,dont} items", () => {
@@ -95,6 +97,27 @@ test("md parser: terminology table → {term,rule} items", () => {
   );
   assert.deepEqual(r.sections[0].content, [
     { term: "Cancel vs Close", rule: "Use Cancel to back out." },
+  ]);
+});
+
+test("md parser: fenced code block → {example} item", () => {
+  const r = mdParser.parseGuidelineMarkdown(
+    '## Examples\n\n```\naria-label="Close dialog"\n```\n',
+  );
+  assert.deepEqual(r.sections[0].content, [
+    { example: 'aria-label="Close dialog"' },
+  ]);
+});
+
+test("md parser: H4+ headings flatten into the section as {note} items", () => {
+  const r = mdParser.parseGuidelineMarkdown(
+    "## Behavior\n\n- Top rule.\n\n#### Edge case\n\n- Nested rule.\n",
+  );
+  assert.equal(r.sections.length, 1);
+  assert.deepEqual(r.sections[0].content, [
+    "Top rule.",
+    { note: "Edge case" },
+    "Nested rule.",
   ]);
 });
 
@@ -174,7 +197,11 @@ test("derive: full fixture validates against guideline-component.json", () => {
     REPO_ROOT,
     validators,
   );
-  assert.equal(validators.component(doc), true, JSON.stringify(validators.component.errors));
+  assert.equal(
+    validators.component(doc),
+    true,
+    JSON.stringify(validators.component.errors),
+  );
 });
 
 test("derive: minimal fixture → single declared domain only", () => {
@@ -201,7 +228,8 @@ function tmpComponentDir(files) {
 
 test("derive: draft domain with missing source file throws", () => {
   const dir = tmpComponentDir({
-    "_meta.yml": "component: X\ncategory: action\ndomains:\n  content: { status: draft }\n",
+    "_meta.yml":
+      "component: X\ncategory: action\ndomains:\n  content: { status: draft }\n",
   });
   assert.throws(
     () => derive.deriveComponentDir(dir, "x", REPO_ROOT, validators),
@@ -256,7 +284,13 @@ test("derive: unset category resolved via categoryResolver fallback", () => {
   const dir = tmpComponentDir({
     "_meta.yml": "component: X\ndomains:\n  content: { status: inherited }\n",
   });
-  const doc = derive.deriveComponentDir(dir, "x", REPO_ROOT, validators, () => "action");
+  const doc = derive.deriveComponentDir(
+    dir,
+    "x",
+    REPO_ROOT,
+    validators,
+    () => "action",
+  );
   assert.equal(doc.meta.category, "action");
 });
 
@@ -266,7 +300,9 @@ test("derive: unset category resolved via categoryResolver fallback", () => {
 
 test("pipeline: derives fixtures → per-component JSON + bundle + coverage", () => {
   const distDir = fs.mkdtempSync(path.join(os.tmpdir(), "guideline-dist-"));
-  const result = derive.derivePipeline(FIXTURES, distDir, REPO_ROOT, { validators });
+  const result = derive.derivePipeline(FIXTURES, distDir, REPO_ROOT, {
+    validators,
+  });
 
   assert.deepEqual(result.slugs, ["valid-full", "valid-minimal"]);
 
@@ -280,9 +316,16 @@ test("pipeline: derives fixtures → per-component JSON + bundle + coverage", ()
   const bundle = JSON.parse(
     fs.readFileSync(path.join(distDir, "guidelines.bundle.json"), "utf8"),
   );
-  assert.deepEqual(Object.keys(bundle.components), ["valid-full", "valid-minimal"]);
+  assert.deepEqual(Object.keys(bundle.components), [
+    "valid-full",
+    "valid-minimal",
+  ]);
   Object.values(bundle.components).forEach((doc) => {
-    assert.equal(validators.component(doc), true, JSON.stringify(validators.component.errors));
+    assert.equal(
+      validators.component(doc),
+      true,
+      JSON.stringify(validators.component.errors),
+    );
   });
 
   // coverage report mentions every component + a summary
@@ -309,14 +352,20 @@ test("pipeline: idempotent — byte-identical output across two runs", () => {
 test("pipeline: prunes stale dist files", () => {
   const distDir = fs.mkdtempSync(path.join(os.tmpdir(), "guideline-prune-"));
   fs.writeFileSync(path.join(distDir, "orphan.json"), "{}\n");
-  const result = derive.derivePipeline(FIXTURES, distDir, REPO_ROOT, { validators });
+  const result = derive.derivePipeline(FIXTURES, distDir, REPO_ROOT, {
+    validators,
+  });
   assert.ok(result.pruned.includes("orphan.json"));
   assert.ok(!fs.existsSync(path.join(distDir, "orphan.json")));
 });
 
 test("pipeline: empty source tree allowed with --allow-empty semantics", () => {
-  const emptySrc = fs.mkdtempSync(path.join(os.tmpdir(), "guideline-emptysrc-"));
-  const distDir = fs.mkdtempSync(path.join(os.tmpdir(), "guideline-emptydist-"));
+  const emptySrc = fs.mkdtempSync(
+    path.join(os.tmpdir(), "guideline-emptysrc-"),
+  );
+  const distDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), "guideline-emptydist-"),
+  );
   const result = derive.derivePipeline(emptySrc, distDir, REPO_ROOT, {
     validators,
     allowEmpty: true,
