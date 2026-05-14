@@ -453,11 +453,13 @@ function updatePathsManifest(manifestPath, slugs, opts) {
   };
   manifest.collections["components.guidelineDocSrc"] = {
     dir: "components/src",
-    pattern: "{slug}/_meta.yml",
+    pattern:
+      "{slug}/{_meta.yml,content.md,usage.md,design.md,behavior.md,tokens.yml}",
     type: "yaml",
     origin: "human",
+    recursive: true,
     description:
-      "Authoring surface for per-component guidelines. Each {slug}/ directory holds _meta.yml + optional per-domain files (content.md, usage.md, design.md, behavior.md, tokens.yml). See components/src/AUTHORING.md.",
+      "Authoring surface for per-component guidelines. Each {slug}/ directory holds _meta.yml + optional per-domain files (content.md, usage.md, design.md, behavior.md, tokens.yml). Recursive: covers everything under components/src/ — the per-component {slug}/ trees plus the sibling categories/ and guidelines/ source dirs (which also carry their own collections). See components/src/AUTHORING.md.",
   };
 
   manifest._notes = manifest._notes || {};
