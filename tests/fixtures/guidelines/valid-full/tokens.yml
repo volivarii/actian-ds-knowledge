@@ -1,0 +1,4 @@
+# yaml-language-server: $schema=../../../../schemas/guideline-tokens.json
+bindings:
+  - { token: button-height-md, context: Minimum height }
+  - { token: corner-radius-full, context: Corner rounding }

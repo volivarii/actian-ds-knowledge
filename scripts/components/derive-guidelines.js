@@ -1,0 +1,649 @@
+"use strict";
+
+// Derive transformer for the per-component multi-domain guideline architecture.
+//
+// Phase 1 (additive). Source layout — one directory per component:
+//
+//   components/src/<slug>/
+//     _meta.yml      (required)  component metadata + per-domain status matrix
+//     content.md     (optional)  Content guidelines
+//     usage.md       (optional)  Usage guidelines
+//     design.md      (optional)  Design guidelines
+//     behavior.md    (optional)  Behavior / a11y / implementation
+//     tokens.yml     (optional)  Component-specific token bindings
+//
+// `_meta.yml.domains` is the source of truth for each domain's status:
+//   draft|approved  → the matching source file MUST exist; it is parsed.
+//   inherited       → no body; consumers resolve from category-defaults.
+//   not-started     → no body; an explicit "declared but empty" marker.
+// A domain omitted from `_meta.yml` is omitted from the output entirely.
+//
+// Outputs (components/dist/guidelines/):
+//   <slug>.json              merged per-component object
+//   guidelines.bundle.json   one-shot roll-up keyed by slug
+//   coverage.md              component × domain × status matrix
+//
+// Mirrors the categories pipeline (scripts/categories/derive-categories.js):
+// single-pass projection, Ajv validation, stable byte-identical output (no
+// timestamps), stale-dist prune, paths-manifest.json auto-regeneration.
+
+const fs = require("node:fs");
+const path = require("node:path");
+const Ajv2020 = require("ajv/dist/2020");
+const addFormats = require("ajv-formats");
+const yamlParser = require("../categories/categories-parser");
+const mdParser = require("./guideline-md-parser");
+
+const SCHEMA_VERSION = 1;
+const PROSE_DOMAINS = ["content", "usage", "design", "behavior"];
+const ALL_DOMAINS = PROSE_DOMAINS.concat(["tokens"]);
+const HAS_BODY = new Set(["draft", "approved"]);
+
+// ───────────────────────────────────────────────────────────────────────────
+// Schema + validators
+// ───────────────────────────────────────────────────────────────────────────
+
+function makeValidators(repoRoot) {
+  const ajv = new Ajv2020({ allErrors: true, strict: false });
+  addFormats(ajv);
+  const load = (name) =>
+    JSON.parse(fs.readFileSync(path.join(repoRoot, "schemas", name), "utf8"));
+  return {
+    component: ajv.compile(load("guideline-component.json")),
+    meta: ajv.compile(load("guideline-meta.json")),
+    tokens: ajv.compile(load("guideline-tokens.json")),
+  };
+}
+
+function assertValid(validator, data, label) {
+  if (validator(data)) return;
+  const errs = (validator.errors || [])
+    .map((e) => (e.instancePath || "(root)") + " " + e.message)
+    .join("; ");
+  throw new Error(label + " failed schema validation: " + errs);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// YAML helpers (reuse the categories YAML-subset parser)
+// ───────────────────────────────────────────────────────────────────────────
+
+// Parse a pure .yml file (no `---` fences) into an object.
+function parseYaml(text) {
+  return yamlParser.parseFrontmatter(text, 0);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Per-domain projection
+// ───────────────────────────────────────────────────────────────────────────
+
+function metaBlock(sourceRel) {
+  return {
+    auto_generated: true,
+    source: sourceRel,
+    do_not_edit: "Edit the per-domain source files; CI regenerates this file.",
+  };
+}
+
+// Base domain object: status first, then owner/updatedAt from the _meta.yml
+// entry (body fields, if any, are appended by the caller — keeps key order
+// readable: status → meta → body).
+function domainBase(entry) {
+  const base = { status: entry.status };
+  if (entry.owner != null) base.owner = entry.owner;
+  if (entry.updatedAt != null) base.updatedAt = entry.updatedAt;
+  return base;
+}
+
+// Build one prose-domain output object, reading the source file when the
+// status declares a body. `dirAbs` is the component source directory.
+function deriveProseDomain(domain, entry, dirAbs, slug) {
+  const fileAbs = path.join(dirAbs, domain + ".md");
+  const fileExists = fs.existsSync(fileAbs);
+  const status = entry.status;
+
+  if (HAS_BODY.has(status)) {
+    if (!fileExists) {
+      throw new Error(
+        slug +
+          "/_meta.yml declares domain '" +
+          domain +
+          "' as " +
+          status +
+          " but " +
+          domain +
+          ".md is missing.",
+      );
+    }
+    const parsed = mdParser.parseGuidelineMarkdown(
+      fs.readFileSync(fileAbs, "utf8"),
+    );
+    const out = domainBase(entry);
+    out.markdown = parsed.markdown;
+    out.sections = parsed.sections;
+    return out;
+  }
+
+  // inherited | not-started — must NOT carry a body file.
+  if (fileExists) {
+    throw new Error(
+      slug +
+        "/" +
+        domain +
+        ".md exists but _meta.yml declares domain '" +
+        domain +
+        "' as " +
+        status +
+        ". Remove the file or change the status to draft/approved.",
+    );
+  }
+  return domainBase(entry);
+}
+
+// Build the tokens-domain output object.
+function deriveTokensDomain(entry, dirAbs, slug, tokensValidator) {
+  const fileAbs = path.join(dirAbs, "tokens.yml");
+  const fileExists = fs.existsSync(fileAbs);
+  const status = entry.status;
+
+  if (HAS_BODY.has(status)) {
+    if (!fileExists) {
+      throw new Error(
+        slug +
+          "/_meta.yml declares domain 'tokens' as " +
+          status +
+          " but tokens.yml is missing.",
+      );
+    }
+    const data = parseYaml(fs.readFileSync(fileAbs, "utf8"));
+    assertValid(tokensValidator, data, slug + "/tokens.yml");
+    const out = domainBase(entry);
+    out.bindings = data.bindings;
+    return out;
+  }
+
+  if (fileExists) {
+    throw new Error(
+      slug +
+        "/tokens.yml exists but _meta.yml declares domain 'tokens' as " +
+        status +
+        ". Remove the file or change the status to draft/approved.",
+    );
+  }
+  return domainBase(entry);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Derive one component directory
+// ───────────────────────────────────────────────────────────────────────────
+
+// `categoryResolver` is an optional (slug) => categorySlug fallback used when
+// _meta.yml omits `category` (Phase 1 leaves it unset; the registry lookup
+// lands with the consumer migration).
+function deriveComponentDir(
+  dirAbs,
+  slug,
+  repoRoot,
+  validators,
+  categoryResolver,
+) {
+  const metaAbs = path.join(dirAbs, "_meta.yml");
+  if (!fs.existsSync(metaAbs)) {
+    throw new Error(slug + "/: missing required _meta.yml");
+  }
+  const meta = parseYaml(fs.readFileSync(metaAbs, "utf8"));
+  assertValid(validators.meta, meta, slug + "/_meta.yml");
+
+  const declared = meta.domains || {};
+
+  // Reject orphan domain files not declared in _meta.yml.
+  PROSE_DOMAINS.forEach((d) => {
+    if (fs.existsSync(path.join(dirAbs, d + ".md")) && !declared[d]) {
+      throw new Error(
+        slug + "/" + d + ".md exists but is not declared in _meta.yml domains.",
+      );
+    }
+  });
+  if (fs.existsSync(path.join(dirAbs, "tokens.yml")) && !declared.tokens) {
+    throw new Error(
+      slug + "/tokens.yml exists but is not declared in _meta.yml domains.",
+    );
+  }
+
+  const domains = {};
+  ALL_DOMAINS.forEach((domain) => {
+    const entry = declared[domain];
+    if (!entry) return; // omitted → omitted from output
+    if (domain === "tokens") {
+      domains.tokens = deriveTokensDomain(
+        entry,
+        dirAbs,
+        slug,
+        validators.tokens,
+      );
+    } else {
+      domains[domain] = deriveProseDomain(domain, entry, dirAbs, slug);
+    }
+  });
+
+  let category = meta.category;
+  if (!category && typeof categoryResolver === "function") {
+    category = categoryResolver(slug) || undefined;
+  }
+  if (!category) {
+    throw new Error(
+      slug +
+        "/_meta.yml: `category` is not set and no registry fallback resolved it.",
+    );
+  }
+
+  const out = {
+    _schema_version: SCHEMA_VERSION,
+    _meta: metaBlock("components/src/" + slug + "/"),
+    slug: slug,
+    component: meta.component,
+    meta: { category: category },
+    domains: domains,
+  };
+  if (meta.section != null) out.meta.section = meta.section;
+  if (meta.related != null) out.meta.related = meta.related;
+
+  assertValid(
+    validators.component,
+    out,
+    "components/dist/guidelines/" + slug + ".json",
+  );
+  return out;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Bundle + coverage
+// ───────────────────────────────────────────────────────────────────────────
+
+function buildBundle(perComponent) {
+  const bundle = {
+    _schema_version: SCHEMA_VERSION,
+    _meta: {
+      auto_generated: true,
+      source: "components/src/*/",
+      do_not_edit:
+        "Edit the per-domain source files; CI regenerates this bundle.",
+    },
+    components: {},
+  };
+  Object.keys(perComponent)
+    .sort()
+    .forEach((slug) => {
+      bundle.components[slug] = perComponent[slug];
+    });
+  return bundle;
+}
+
+const STATUS_GLYPH = {
+  approved: "approved",
+  draft: "draft",
+  inherited: "inherited",
+  "not-started": "—",
+};
+
+function buildCoverage(perComponent) {
+  const slugs = Object.keys(perComponent).sort();
+  const lines = [];
+  lines.push("# Component guideline coverage");
+  lines.push("");
+  lines.push(
+    "> Auto-generated by `scripts/components/derive-guidelines.js`. " +
+      "Do not edit. This is the documentation-debt backlog: each cell is the " +
+      "status of one domain for one component.",
+  );
+  lines.push("");
+  lines.push("| Component | Content | Usage | Design | Behavior | Tokens |");
+  lines.push("|---|---|---|---|---|---|");
+
+  const tally = {};
+  ALL_DOMAINS.forEach((d) => {
+    tally[d] = {
+      "not-started": 0,
+      draft: 0,
+      approved: 0,
+      inherited: 0,
+      absent: 0,
+    };
+  });
+
+  slugs.forEach((slug) => {
+    const doc = perComponent[slug];
+    const cells = ALL_DOMAINS.map((d) => {
+      const dom = doc.domains[d];
+      if (!dom) {
+        tally[d].absent++;
+        return "—";
+      }
+      tally[d][dom.status]++;
+      return STATUS_GLYPH[dom.status] || dom.status;
+    });
+    lines.push("| " + doc.component + " | " + cells.join(" | ") + " |");
+  });
+
+  lines.push("");
+  lines.push("## Summary");
+  lines.push("");
+  lines.push(
+    "| Domain | Approved | Draft | Inherited | Not started | Absent |",
+  );
+  lines.push("|---|---|---|---|---|---|");
+  ALL_DOMAINS.forEach((d) => {
+    const t = tally[d];
+    lines.push(
+      "| " +
+        d +
+        " | " +
+        t.approved +
+        " | " +
+        t.draft +
+        " | " +
+        t.inherited +
+        " | " +
+        t["not-started"] +
+        " | " +
+        t.absent +
+        " |",
+    );
+  });
+  lines.push("");
+  return lines.join("\n");
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Filesystem
+// ───────────────────────────────────────────────────────────────────────────
+
+function stableStringify(obj) {
+  return JSON.stringify(obj, null, 2) + "\n";
+}
+
+function writeAtomic(absPath, contents) {
+  const dir = path.dirname(absPath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(absPath, contents);
+}
+
+function cleanupStaleDistFiles(distDir, expectedFiles) {
+  if (!fs.existsSync(distDir)) return [];
+  const pruned = [];
+  fs.readdirSync(distDir).forEach((file) => {
+    if (expectedFiles.indexOf(file) === -1) {
+      const filePath = path.join(distDir, file);
+      if (fs.statSync(filePath).isFile()) {
+        fs.unlinkSync(filePath);
+        pruned.push(file);
+      }
+    }
+  });
+  return pruned;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// paths-manifest.json auto-regeneration
+// ───────────────────────────────────────────────────────────────────────────
+
+const MANIFEST_NOTE =
+  "components.guidelineDoc.* entries are auto-regenerated by scripts/components/derive-guidelines.js. Do not hand-edit. Per-component merged JSONs + a bundle + a coverage report + collection entries.";
+
+function updatePathsManifest(manifestPath, slugs, opts) {
+  opts = opts || {};
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  if (!manifest.paths) manifest.paths = {};
+  if (!manifest.collections) manifest.collections = {};
+
+  const dropped = [];
+  Object.keys(manifest.paths).forEach((k) => {
+    if (k.indexOf("components.guidelineDoc.") === 0) {
+      dropped.push(k);
+      delete manifest.paths[k];
+    }
+  });
+
+  const added = [];
+
+  manifest.paths["components.guidelineDoc.bundle"] = {
+    path: "components/dist/guidelines/guidelines.bundle.json",
+    type: "json",
+    origin: "ci",
+    generator: "scripts/components/derive-guidelines.js",
+    description:
+      "Roll-up of every per-component multi-domain guideline object keyed by slug. One-shot LLM consumption.",
+  };
+  added.push("components.guidelineDoc.bundle");
+
+  manifest.paths["components.guidelineDoc.coverage"] = {
+    path: "components/dist/guidelines/coverage.md",
+    type: "markdown",
+    origin: "ci",
+    generator: "scripts/components/derive-guidelines.js",
+    description:
+      "Component × domain × status coverage matrix — the documentation-debt backlog.",
+  };
+  added.push("components.guidelineDoc.coverage");
+
+  slugs
+    .slice()
+    .sort()
+    .forEach((slug) => {
+      const key = "components.guidelineDoc." + slug;
+      manifest.paths[key] = {
+        path: "components/dist/guidelines/" + slug + ".json",
+        type: "json",
+        origin: "ci",
+        generator: "scripts/components/derive-guidelines.js",
+        description:
+          "Merged multi-domain guideline object for the '" +
+          slug +
+          "' component (content, usage, design, behavior, tokens — each optional).",
+      };
+      added.push(key);
+    });
+
+  manifest.collections["components.guidelineDoc.byKey"] = {
+    dir: "components/dist/guidelines",
+    pattern: "{slug}.json",
+    type: "json",
+    origin: "ci",
+    description:
+      "Per-component merged guideline objects. See components.guidelineDoc.bundle for the roll-up.",
+  };
+  manifest.collections["components.guidelineDocSrc"] = {
+    dir: "components/src",
+    pattern: "{slug}/_meta.yml",
+    type: "yaml",
+    origin: "human",
+    description:
+      "Authoring surface for per-component guidelines. Each {slug}/ directory holds _meta.yml + optional per-domain files (content.md, usage.md, design.md, behavior.md, tokens.yml). See components/src/AUTHORING.md.",
+  };
+
+  manifest._notes = manifest._notes || {};
+  manifest._notes.guideline_doc_auto = MANIFEST_NOTE;
+
+  if (!opts.dryRun) {
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+  }
+  return { added, dropped, manifest };
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Pipeline
+// ───────────────────────────────────────────────────────────────────────────
+
+// A component source directory is any direct child of srcDir that contains
+// a _meta.yml. (Other entries — AUTHORING.md, the legacy guidelines/ and
+// categories/ trees — are skipped.)
+function listComponentDirs(srcDir) {
+  if (!fs.existsSync(srcDir)) return [];
+  return fs
+    .readdirSync(srcDir)
+    .filter((name) => {
+      const abs = path.join(srcDir, name);
+      return (
+        fs.statSync(abs).isDirectory() &&
+        fs.existsSync(path.join(abs, "_meta.yml"))
+      );
+    })
+    .sort();
+}
+
+function derivePipeline(srcDir, distDir, repoRoot, opts) {
+  opts = opts || {};
+  const validators = opts.validators || makeValidators(repoRoot);
+  const categoryResolver = opts.categoryResolver;
+
+  const slugs = listComponentDirs(srcDir);
+  if (slugs.length === 0) {
+    // Phase 1 ships additive: an empty source tree is not an error, it just
+    // produces an empty bundle + coverage so the manifest entries exist.
+    if (!opts.allowEmpty) {
+      throw new Error(
+        "No component directories (with _meta.yml) found in " + srcDir,
+      );
+    }
+  }
+
+  if (!fs.existsSync(distDir)) fs.mkdirSync(distDir, { recursive: true });
+
+  const perComponent = {};
+  const written = [];
+
+  slugs.forEach((slug) => {
+    const dirAbs = path.join(srcDir, slug);
+    let doc;
+    try {
+      doc = deriveComponentDir(
+        dirAbs,
+        slug,
+        repoRoot,
+        validators,
+        categoryResolver,
+      );
+    } catch (err) {
+      throw new Error(
+        "Failed to derive components/src/" + slug + "/: " + err.message,
+      );
+    }
+    perComponent[slug] = doc;
+    const distPath = path.join(distDir, slug + ".json");
+    writeAtomic(distPath, stableStringify(doc));
+    written.push("components/dist/guidelines/" + slug + ".json");
+  });
+
+  const bundle = buildBundle(perComponent);
+  writeAtomic(
+    path.join(distDir, "guidelines.bundle.json"),
+    stableStringify(bundle),
+  );
+  written.push("components/dist/guidelines/guidelines.bundle.json");
+
+  const coverage = buildCoverage(perComponent);
+  writeAtomic(path.join(distDir, "coverage.md"), coverage + "\n");
+  written.push("components/dist/guidelines/coverage.md");
+
+  const expectedFiles = ["guidelines.bundle.json", "coverage.md"].concat(
+    slugs.map((s) => s + ".json"),
+  );
+  const pruned = cleanupStaleDistFiles(distDir, expectedFiles);
+
+  return { perComponent, bundle, coverage, written, slugs, pruned };
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CLI
+// ───────────────────────────────────────────────────────────────────────────
+
+function parseArgs(argv) {
+  const args = {};
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--src") args.src = argv[++i];
+    else if (a === "--dist") args.dist = argv[++i];
+    else if (a === "--manifest") args.manifest = argv[++i];
+    else if (a === "--no-manifest") args.noManifest = true;
+    else if (a === "--allow-empty") args.allowEmpty = true;
+  }
+  return args;
+}
+
+function defaultPaths() {
+  const repoRoot = path.resolve(__dirname, "..", "..");
+  return {
+    repoRoot,
+    src: path.join(repoRoot, "components", "src"),
+    dist: path.join(repoRoot, "components", "dist", "guidelines"),
+    manifest: path.join(repoRoot, "paths-manifest.json"),
+  };
+}
+
+function runCli(argv) {
+  const args = parseArgs(argv);
+  const d = defaultPaths();
+  const srcDir = args.src || d.src;
+  const distDir = args.dist || d.dist;
+  const manifestPath = args.manifest || d.manifest;
+
+  let result;
+  try {
+    result = derivePipeline(srcDir, distDir, d.repoRoot, {
+      allowEmpty: args.allowEmpty,
+    });
+  } catch (err) {
+    console.error("[derive-guidelines] " + err.message);
+    return 2;
+  }
+
+  if (!args.noManifest) {
+    const mr = updatePathsManifest(manifestPath, result.slugs);
+    console.log(
+      "[derive-guidelines] manifest: +" +
+        mr.added.length +
+        " entries, -" +
+        mr.dropped.length +
+        " entries",
+    );
+  }
+
+  console.log(
+    "[derive-guidelines] wrote " +
+      result.written.length +
+      " files (" +
+      result.slugs.length +
+      " components): " +
+      (result.slugs.join(", ") || "(none)"),
+  );
+  if (result.pruned.length > 0) {
+    console.log(
+      "[derive-guidelines] pruned " +
+        result.pruned.length +
+        " stale dist files: " +
+        result.pruned.join(", "),
+    );
+  }
+  return 0;
+}
+
+if (require.main === module) {
+  process.exit(runCli(process.argv));
+}
+
+module.exports = {
+  SCHEMA_VERSION,
+  PROSE_DOMAINS,
+  ALL_DOMAINS,
+  makeValidators,
+  parseYaml,
+  deriveProseDomain,
+  deriveTokensDomain,
+  deriveComponentDir,
+  buildBundle,
+  buildCoverage,
+  listComponentDirs,
+  derivePipeline,
+  updatePathsManifest,
+  runCli,
+  parseArgs,
+};

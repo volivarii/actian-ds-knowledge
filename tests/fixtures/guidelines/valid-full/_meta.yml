@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../../../schemas/guideline-meta.json
+component: Button
+category: action
+section: COMPONENTS
+related: [link, icon]
+domains:
+  content:  { status: approved, owner: content-team, updatedAt: 2026-05-10 }
+  usage:    { status: draft, owner: design, updatedAt: 2026-05-12 }
+  design:   { status: inherited }
+  behavior: { status: inherited }
+  tokens:   { status: approved, owner: eng, updatedAt: 2026-05-09 }
