@@ -21,6 +21,9 @@
 //   node scripts/content/derive-content.js \
 //     --src content/src --index content/src/content-index.md \
 //     --out content/dist/content.md
+//
+// `--out` sets the content.md path; global.md is always written as its
+// sibling in the same directory. Both files are emitted every run.
 
 var fs = require("fs");
 var path = require("path");
