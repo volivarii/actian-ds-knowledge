@@ -47,6 +47,18 @@
           ]
         }
       ]
+    },
+    "usage": {
+      "status": "not-started"
+    },
+    "design": {
+      "status": "inherited"
+    },
+    "behavior": {
+      "status": "inherited"
+    },
+    "tokens": {
+      "status": "not-started"
     }
   }
 }

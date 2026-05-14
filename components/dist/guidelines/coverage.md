@@ -4,40 +4,40 @@
 
 | Component | Content | Usage | Design | Behavior | Tokens |
 |---|---|---|---|---|---|
-| Alert / banner | approved | — | — | — | — |
-| Badges | approved | — | — | — | — |
-| Breadcrumbs | approved | — | — | — | — |
-| Buttons | approved | — | — | — | — |
-| Cards | approved | — | — | — | — |
-| Checkboxes | approved | — | — | — | — |
-| Combo box | approved | — | — | — | — |
-| Confirmation | approved | — | — | — | — |
-| Dropdown / Select | approved | — | — | — | — |
-| Filters | approved | — | — | — | — |
-| Global header | approved | — | — | — | — |
-| Inline toast | approved | — | — | — | — |
-| Links | approved | — | — | — | — |
-| Modal | approved | — | — | — | — |
-| Multi-select | approved | — | — | — | — |
-| Popover | approved | — | — | — | — |
-| Search | approved | — | — | — | — |
-| Side nav | approved | — | — | — | — |
-| Stepper | approved | — | — | — | — |
-| Sticky footer | approved | — | — | — | — |
-| Table | approved | — | — | — | — |
-| Tabs | approved | — | — | — | — |
-| Tags | approved | — | — | — | — |
-| Text input | approved | — | — | — | — |
-| Toggle control | approved | — | — | — | — |
-| What's new | approved | — | — | — | — |
+| Alert / banner | approved | — | inherited | inherited | — |
+| Badges | approved | — | inherited | inherited | — |
+| Breadcrumbs | approved | — | inherited | inherited | — |
+| Buttons | approved | — | inherited | inherited | — |
+| Cards | approved | — | inherited | inherited | — |
+| Checkboxes | approved | — | inherited | inherited | — |
+| Combo box | approved | — | inherited | inherited | — |
+| Confirmation | approved | — | inherited | inherited | — |
+| Dropdown / Select | approved | — | inherited | inherited | — |
+| Filters | approved | — | inherited | inherited | — |
+| Global header | approved | — | inherited | inherited | — |
+| Inline toast | approved | — | inherited | inherited | — |
+| Links | approved | — | inherited | inherited | — |
+| Modal | approved | — | inherited | inherited | — |
+| Multi-select | approved | — | inherited | inherited | — |
+| Popover | approved | — | inherited | inherited | — |
+| Search | approved | — | inherited | inherited | — |
+| Side nav | approved | — | inherited | inherited | — |
+| Stepper | approved | — | inherited | inherited | — |
+| Sticky footer | approved | — | inherited | inherited | — |
+| Table | approved | — | inherited | inherited | — |
+| Tabs | approved | — | inherited | inherited | — |
+| Tags | approved | — | inherited | inherited | — |
+| Text input | approved | — | inherited | inherited | — |
+| Toggle control | approved | — | inherited | inherited | — |
+| What's new | approved | — | inherited | inherited | — |
 
 ## Summary
 
 | Domain | Approved | Draft | Inherited | Not started | Absent |
 |---|---|---|---|---|---|
 | content | 26 | 0 | 0 | 0 | 0 |
-| usage | 0 | 0 | 0 | 0 | 26 |
-| design | 0 | 0 | 0 | 0 | 26 |
-| behavior | 0 | 0 | 0 | 0 | 26 |
-| tokens | 0 | 0 | 0 | 0 | 26 |
+| usage | 0 | 0 | 0 | 26 | 0 |
+| design | 0 | 0 | 26 | 0 | 0 |
+| behavior | 0 | 0 | 26 | 0 | 0 |
+| tokens | 0 | 0 | 0 | 26 | 0 |
 
