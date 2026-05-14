@@ -338,9 +338,20 @@ test("pipeline: derives fixtures → per-component JSON + bundle + coverage", ()
 test("pipeline: idempotent — byte-identical output across two runs", () => {
   const distA = fs.mkdtempSync(path.join(os.tmpdir(), "guideline-distA-"));
   const distB = fs.mkdtempSync(path.join(os.tmpdir(), "guideline-distB-"));
-  derive.derivePipeline(FIXTURES, distA, REPO_ROOT, { validators });
-  derive.derivePipeline(FIXTURES, distB, REPO_ROOT, { validators });
-  ["valid-full.json", "guidelines.bundle.json", "coverage.md"].forEach((f) => {
+  // Run with a registryAlias so the alias file + alias-folded bundle are
+  // included in the byte-stability check, not just the canonical outputs.
+  const opts = {
+    validators,
+    registryAliases: { "registry-key": "valid-full" },
+  };
+  derive.derivePipeline(FIXTURES, distA, REPO_ROOT, opts);
+  derive.derivePipeline(FIXTURES, distB, REPO_ROOT, opts);
+  [
+    "valid-full.json",
+    "registry-key.json",
+    "guidelines.bundle.json",
+    "coverage.md",
+  ].forEach((f) => {
     assert.equal(
       fs.readFileSync(path.join(distA, f), "utf8"),
       fs.readFileSync(path.join(distB, f), "utf8"),
@@ -384,4 +395,128 @@ test("manifest: updatePathsManifest adds guidelineDoc entries (dry run)", () => 
   assert.ok(r.added.includes("components.guidelineDoc.button"));
   assert.ok(r.manifest.collections["components.guidelineDoc.byKey"]);
   assert.ok(r.manifest.collections["components.guidelineDocSrc"]);
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// Layer 4 — registry aliases
+// ───────────────────────────────────────────────────────────────────────────
+
+test("alias: buildAliasDoc copies the canonical object + adds _alias_of", () => {
+  const canonical = derive.deriveComponentDir(
+    path.join(FIXTURES, "valid-full"),
+    "valid-full",
+    REPO_ROOT,
+    validators,
+  );
+  const alias = derive.buildAliasDoc(canonical);
+  assert.equal(alias._alias_of, "valid-full");
+  assert.equal(alias.slug, "valid-full"); // slug stays canonical
+  assert.deepEqual(alias.domains, canonical.domains);
+  assert.deepEqual(alias.meta, canonical.meta);
+  // valid against the component schema (the _alias_of property is allowed)
+  assert.equal(
+    validators.component(alias),
+    true,
+    JSON.stringify(validators.component.errors),
+  );
+});
+
+test("alias: resolveRegistryAliases builds one aliasDoc per entry", () => {
+  const perComponent = {
+    "valid-full": derive.deriveComponentDir(
+      path.join(FIXTURES, "valid-full"),
+      "valid-full",
+      REPO_ROOT,
+      validators,
+    ),
+  };
+  const aliasDocs = derive.resolveRegistryAliases(
+    { "registry-key": "valid-full" },
+    perComponent,
+  );
+  assert.deepEqual(Object.keys(aliasDocs), ["registry-key"]);
+  assert.equal(aliasDocs["registry-key"]._alias_of, "valid-full");
+});
+
+test("alias guard: no-op alias (from === to) throws", () => {
+  assert.throws(
+    () =>
+      derive.resolveRegistryAliases(
+        { "valid-full": "valid-full" },
+        { "valid-full": { slug: "valid-full" } },
+      ),
+    /no-op alias/i,
+  );
+});
+
+test("alias guard: from collides with a real component slug throws", () => {
+  // 'valid-full' is a real derived slug — aliasing it means the naming
+  // converged and the entry must be deleted.
+  assert.throws(
+    () =>
+      derive.resolveRegistryAliases(
+        { "valid-full": "valid-minimal" },
+        {
+          "valid-full": { slug: "valid-full" },
+          "valid-minimal": { slug: "valid-minimal" },
+        },
+      ),
+    /both an alias key and a real component/i,
+  );
+});
+
+test("alias guard: dangling target (to not derived) throws", () => {
+  assert.throws(
+    () =>
+      derive.resolveRegistryAliases(
+        { "registry-key": "ghost" },
+        { "valid-full": { slug: "valid-full" } },
+      ),
+    /no guideline is derived for/i,
+  );
+});
+
+test("pipeline: emits alias files, folds them into bundle + coverage, no prune", () => {
+  const distDir = fs.mkdtempSync(path.join(os.tmpdir(), "guideline-alias-"));
+  const result = derive.derivePipeline(FIXTURES, distDir, REPO_ROOT, {
+    validators,
+    registryAliases: { "registry-key": "valid-full" },
+  });
+
+  // alias file written, byte-identical-shaped to a derived object + _alias_of
+  const aliasPath = path.join(distDir, "registry-key.json");
+  assert.ok(fs.existsSync(aliasPath), "alias file written");
+  const aliasDoc = JSON.parse(fs.readFileSync(aliasPath, "utf8"));
+  assert.equal(aliasDoc._alias_of, "valid-full");
+  assert.equal(aliasDoc.slug, "valid-full");
+
+  // folded into the bundle alongside canonical slugs
+  const bundle = JSON.parse(
+    fs.readFileSync(path.join(distDir, "guidelines.bundle.json"), "utf8"),
+  );
+  assert.ok(bundle.components["registry-key"], "alias key in bundle");
+  assert.equal(bundle.components["registry-key"]._alias_of, "valid-full");
+
+  // surfaced in coverage.md as a visible debt row
+  const coverage = fs.readFileSync(path.join(distDir, "coverage.md"), "utf8");
+  assert.match(coverage, /## Registry aliases/);
+  assert.match(coverage, /registry-key \| valid-full/);
+
+  // a second run must not prune the alias file (it is an expected output)
+  const rerun = derive.derivePipeline(FIXTURES, distDir, REPO_ROOT, {
+    validators,
+    registryAliases: { "registry-key": "valid-full" },
+  });
+  assert.ok(!rerun.pruned.includes("registry-key.json"));
+  assert.ok(fs.existsSync(aliasPath), "alias file survives re-run");
+});
+
+test("pipeline: no registryAliases → no alias files, no coverage section", () => {
+  const distDir = fs.mkdtempSync(path.join(os.tmpdir(), "guideline-noalias-"));
+  const result = derive.derivePipeline(FIXTURES, distDir, REPO_ROOT, {
+    validators,
+  });
+  assert.deepEqual(result.aliasDocs, {});
+  const coverage = fs.readFileSync(path.join(distDir, "coverage.md"), "utf8");
+  assert.ok(!coverage.includes("## Registry aliases"));
 });

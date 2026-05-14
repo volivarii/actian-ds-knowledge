@@ -20,8 +20,12 @@
 //
 // Outputs (components/dist/guidelines/):
 //   <slug>.json              merged per-component object
-//   guidelines.bundle.json   one-shot roll-up keyed by slug
-//   coverage.md              component × domain × status matrix
+//   <registryKey>.json       registry-alias copy (carries `_alias_of`); one
+//                            per paths-manifest.json#registryAliases entry, so
+//                            consumers resolve a guideline by registry key OR
+//                            canonical slug with no per-consumer logic
+//   guidelines.bundle.json   one-shot roll-up keyed by slug + registry key
+//   coverage.md              component × domain × status matrix + alias table
 //
 // Mirrors the categories pipeline (scripts/categories/derive-categories.js):
 // single-pass projection, Ajv validation, stable byte-identical output (no
@@ -259,7 +263,10 @@ function deriveComponentDir(
 // Bundle + coverage
 // ───────────────────────────────────────────────────────────────────────────
 
-function buildBundle(perComponent) {
+// `aliasDocs` (optional) is a { registryKey: aliasDoc } map — registry-alias
+// copies are folded into the bundle alongside the canonical slugs so one-shot
+// consumers resolve either key. Each alias entry carries `_alias_of`.
+function buildBundle(perComponent, aliasDocs) {
   const bundle = {
     _schema_version: SCHEMA_VERSION,
     _meta: {
@@ -270,10 +277,11 @@ function buildBundle(perComponent) {
     },
     components: {},
   };
-  Object.keys(perComponent)
+  const all = Object.assign({}, perComponent, aliasDocs || {});
+  Object.keys(all)
     .sort()
-    .forEach((slug) => {
-      bundle.components[slug] = perComponent[slug];
+    .forEach((key) => {
+      bundle.components[key] = all[key];
     });
   return bundle;
 }
@@ -288,7 +296,11 @@ const STATUS_GLYPH = {
   "not-started": "not started",
 };
 
-function buildCoverage(perComponent) {
+// `registryAliases` (optional) is the { registryKey: canonicalSlug } map from
+// paths-manifest.json — rendered as a visible "Registry aliases" table so the
+// interim naming-divergence debt surfaces in the backlog report, not just the
+// manifest. See components/src/AUTHORING.md 'Slug naming'.
+function buildCoverage(perComponent, registryAliases) {
   const slugs = Object.keys(perComponent).sort();
   const lines = [];
   lines.push("# Component guideline coverage");
@@ -352,8 +364,98 @@ function buildCoverage(perComponent) {
         " |",
     );
   });
+
+  const aliasKeys = Object.keys(registryAliases || {}).sort();
+  if (aliasKeys.length > 0) {
+    lines.push("");
+    lines.push("## Registry aliases");
+    lines.push("");
+    lines.push(
+      "> Interim bridge: a registry component key resolves to a guideline " +
+        "authored under a different slug. Each row is naming-divergence debt — " +
+        "converge the names (rename the `components/src/<slug>/` directory to " +
+        "match the registry key) and the alias self-deletes. See " +
+        "`components/src/AUTHORING.md` 'Slug naming'.",
+    );
+    lines.push("");
+    lines.push("| Registry key | Guideline slug |");
+    lines.push("|---|---|");
+    aliasKeys.forEach((from) => {
+      lines.push("| " + from + " | " + registryAliases[from] + " |");
+    });
+  }
+
   lines.push("");
   return lines.join("\n");
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Registry aliases
+// ───────────────────────────────────────────────────────────────────────────
+
+// A registry-alias copy: byte-identical to the canonical derived object plus a
+// top-level `_alias_of` marker. `slug` stays the canonical slug — only the
+// filename (and the bundle key) is the registry key. Key order keeps
+// `_alias_of` adjacent to `_schema_version` for readability.
+function buildAliasDoc(canonicalDoc) {
+  return {
+    _schema_version: canonicalDoc._schema_version,
+    _alias_of: canonicalDoc.slug,
+    _meta: canonicalDoc._meta,
+    slug: canonicalDoc.slug,
+    component: canonicalDoc.component,
+    meta: canonicalDoc.meta,
+    domains: canonicalDoc.domains,
+  };
+}
+
+// Resolve paths-manifest.json#registryAliases into { registryKey: aliasDoc }.
+// Three hygiene guards make the map self-pruning — every naming-convergence
+// action a team takes forces the matching alias entry to be removed, and CI
+// fails loudly until it is:
+//   (collision) `from` is also a real component source dir → the rename
+//               converged; the alias is now redundant and must be deleted.
+//   (no-op)     `from` === `to` → a half-finished convergence.
+//   (dangling)  `to` is not a derived guideline → the canonical guideline was
+//               renamed or removed without updating the alias.
+function resolveRegistryAliases(registryAliases, perComponent) {
+  const out = {};
+  const slugSet = new Set(Object.keys(perComponent));
+  Object.keys(registryAliases || {}).forEach((from) => {
+    const to = registryAliases[from];
+    if (from === to) {
+      throw new Error(
+        "registryAliases: no-op alias '" +
+          from +
+          "' -> '" +
+          to +
+          "'. Remove it from paths-manifest.json#registryAliases.",
+      );
+    }
+    if (slugSet.has(from)) {
+      throw new Error(
+        "registryAliases: '" +
+          from +
+          "' is both an alias key and a real component guideline slug. The " +
+          "naming has converged — delete the '" +
+          from +
+          "' entry from paths-manifest.json#registryAliases.",
+      );
+    }
+    if (!slugSet.has(to)) {
+      throw new Error(
+        "registryAliases: '" +
+          from +
+          "' -> '" +
+          to +
+          "' but no guideline is derived for '" +
+          to +
+          "'. Fix the target or remove the alias.",
+      );
+    }
+    out[from] = buildAliasDoc(perComponent[to]);
+  });
+  return out;
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -414,7 +516,7 @@ function updatePathsManifest(manifestPath, slugs, opts) {
     origin: "ci",
     generator: "scripts/components/derive-guidelines.js",
     description:
-      "Roll-up of every per-component multi-domain guideline object keyed by slug. One-shot LLM consumption.",
+      "Roll-up of every per-component multi-domain guideline object, keyed by canonical slug plus any registry-alias keys (alias entries carry _alias_of). One-shot LLM consumption.",
   };
   added.push("components.guidelineDoc.bundle");
 
@@ -499,6 +601,7 @@ function derivePipeline(srcDir, distDir, repoRoot, opts) {
   opts = opts || {};
   const validators = opts.validators || makeValidators(repoRoot);
   const categoryResolver = opts.categoryResolver;
+  const registryAliases = opts.registryAliases || {};
 
   const slugs = listComponentDirs(srcDir);
   if (slugs.length === 0) {
@@ -538,23 +641,42 @@ function derivePipeline(srcDir, distDir, repoRoot, opts) {
     written.push("components/dist/guidelines/" + slug + ".json");
   });
 
-  const bundle = buildBundle(perComponent);
+  // Registry-alias copies — emitted after the canonical objects so the guards
+  // in resolveRegistryAliases() see the full derived slug set.
+  const aliasDocs = resolveRegistryAliases(registryAliases, perComponent);
+  const aliasKeys = Object.keys(aliasDocs).sort();
+  aliasKeys.forEach((from) => {
+    const doc = aliasDocs[from];
+    assertValid(
+      validators.component,
+      doc,
+      "components/dist/guidelines/" +
+        from +
+        ".json (alias of " +
+        doc.slug +
+        ")",
+    );
+    writeAtomic(path.join(distDir, from + ".json"), stableStringify(doc));
+    written.push("components/dist/guidelines/" + from + ".json");
+  });
+
+  const bundle = buildBundle(perComponent, aliasDocs);
   writeAtomic(
     path.join(distDir, "guidelines.bundle.json"),
     stableStringify(bundle),
   );
   written.push("components/dist/guidelines/guidelines.bundle.json");
 
-  const coverage = buildCoverage(perComponent);
+  const coverage = buildCoverage(perComponent, registryAliases);
   writeAtomic(path.join(distDir, "coverage.md"), coverage + "\n");
   written.push("components/dist/guidelines/coverage.md");
 
-  const expectedFiles = ["guidelines.bundle.json", "coverage.md"].concat(
-    slugs.map((s) => s + ".json"),
-  );
+  const expectedFiles = ["guidelines.bundle.json", "coverage.md"]
+    .concat(slugs.map((s) => s + ".json"))
+    .concat(aliasKeys.map((k) => k + ".json"));
   const pruned = cleanupStaleDistFiles(distDir, expectedFiles);
 
-  return { perComponent, bundle, coverage, written, slugs, pruned };
+  return { perComponent, aliasDocs, bundle, coverage, written, slugs, pruned };
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -591,10 +713,30 @@ function runCli(argv) {
   const distDir = args.dist || d.dist;
   const manifestPath = args.manifest || d.manifest;
 
+  // registryAliases is an INPUT read from the manifest (distinct from the
+  // manifest entries the deriver WRITES). Read it even under --no-manifest;
+  // only writing is suppressed by that flag.
+  let registryAliases = {};
+  if (fs.existsSync(manifestPath)) {
+    try {
+      registryAliases =
+        JSON.parse(fs.readFileSync(manifestPath, "utf8")).registryAliases || {};
+    } catch (err) {
+      console.error(
+        "[derive-guidelines] could not read registryAliases from " +
+          manifestPath +
+          ": " +
+          err.message,
+      );
+      return 2;
+    }
+  }
+
   let result;
   try {
     result = derivePipeline(srcDir, distDir, d.repoRoot, {
       allowEmpty: args.allowEmpty,
+      registryAliases: registryAliases,
     });
   } catch (err) {
     console.error("[derive-guidelines] " + err.message);
@@ -628,12 +770,15 @@ function runCli(argv) {
     }
   }
 
+  const aliasCount = Object.keys(result.aliasDocs || {}).length;
   console.log(
     "[derive-guidelines] wrote " +
       result.written.length +
       " files (" +
       result.slugs.length +
-      " components): " +
+      " components" +
+      (aliasCount > 0 ? " + " + aliasCount + " registry aliases" : "") +
+      "): " +
       (result.slugs.join(", ") || "(none)"),
   );
   if (result.pruned.length > 0) {
@@ -662,6 +807,8 @@ module.exports = {
   deriveComponentDir,
   buildBundle,
   buildCoverage,
+  buildAliasDoc,
+  resolveRegistryAliases,
   listComponentDirs,
   derivePipeline,
   updatePathsManifest,
