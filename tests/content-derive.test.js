@@ -218,20 +218,23 @@ var NON_SECTION_FILES = new Set([
   "content-index.md",
 ]);
 
-test("derive-content — every .md in content/src/ is referenced by the index (inverse coverage)", function () {
+test("derive-content — every section source file is referenced by the index (inverse coverage)", function () {
   var indexSlugs = new Set(
     derive.readSectionOrder(DEFAULT_CONFIG.index).map(function (e) {
       return e.slug;
     }),
   );
 
-  // ζ.6 follow-up (2026-05-13): walk BOTH content/src/*.md AND
-  // content/src/_global/*.md. The `_global/` subdirectory is the new
-  // home for cross-cutting topics (voice/tone, empty-state patterns,
-  // etc.) that will route to the docs /content page only when the
-  // derive pipeline gets its Phase 1 split. Until then, both locations
-  // contribute the same way to content.md; the inverse-coverage
-  // assertion just needs to see all files regardless of location.
+  // The deriver resolves each section from one of three locations
+  // (see resolveSectionFile): the per-component guideline layout
+  // `components/src/<slug>/content.md` (Phase 2a — component-scoped
+  // content), `content/src/<slug>.md` (root), and
+  // `content/src/_global/<slug>.md` (cross-cutting topics). The
+  // inverse-coverage assertion must walk ALL THREE so a file moved or
+  // added without registering its slug in content-index.md is caught —
+  // extend this whenever resolveSectionFile grows a new lookup leg.
+  var REPO_ROOT = path.resolve(DEFAULT_CONFIG.src, "..", "..");
+
   function collectMdSlugs(dir) {
     if (!fs.existsSync(dir)) return [];
     return fs
@@ -243,17 +246,31 @@ test("derive-content — every .md in content/src/ is referenced by the index (i
         return f.replace(/\.md$/, "");
       });
   }
-  var entries = collectMdSlugs(DEFAULT_CONFIG.src).concat(
-    collectMdSlugs(path.join(DEFAULT_CONFIG.src, "_global")),
-  );
 
-  assert.ok(entries.length > 0, "no section files found in content/src/");
+  // Per-component leg: components/src/<slug>/content.md → slug = dir name.
+  function collectComponentSlugs() {
+    var componentsSrc = path.join(REPO_ROOT, "components", "src");
+    if (!fs.existsSync(componentsSrc)) return [];
+    return fs.readdirSync(componentsSrc).filter(function (name) {
+      var abs = path.join(componentsSrc, name);
+      return (
+        fs.statSync(abs).isDirectory() &&
+        fs.existsSync(path.join(abs, "content.md"))
+      );
+    });
+  }
+
+  var entries = collectMdSlugs(DEFAULT_CONFIG.src)
+    .concat(collectMdSlugs(path.join(DEFAULT_CONFIG.src, "_global")))
+    .concat(collectComponentSlugs());
+
+  assert.ok(entries.length > 0, "no section source files found");
   for (var i = 0; i < entries.length; i++) {
     assert.ok(
       indexSlugs.has(entries[i]),
-      "content/src[/_global]/" +
-        entries[i] +
-        ".md is not referenced by content-index.md — add it to the 'All sections' list or move it to NON_SECTION_FILES",
+      entries[i] +
+        " has a section source file but is not referenced by content-index.md" +
+        " — add it to the 'All sections' list or move it to NON_SECTION_FILES",
     );
   }
 });
