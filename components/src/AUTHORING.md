@@ -47,8 +47,11 @@ domains:
 | `not-started` | declared but empty — a visible documentation-debt marker       | must NOT exist |
 
 A domain omitted from `domains` is omitted from the derived object entirely.
-`inherited` is the right answer for most Behavior / Tokens domains — it means
-"the category default is correct here," not "this is missing."
+`inherited` is the right answer for most Behavior and Design domains — it means
+"the category default is correct here," not "this is missing." It is only valid
+where category-defaults actually carry the domain (Behavior → motion + a11y,
+Design → anatomy + variant axes); Usage and Tokens have no category-level
+default, so they use `not-started` until authored.
 
 ## Domain markdown files (`content.md`, `usage.md`, `design.md`, `behavior.md`)
 
