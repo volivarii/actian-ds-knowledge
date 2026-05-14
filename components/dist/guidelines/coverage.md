@@ -4,40 +4,40 @@
 
 | Component | Content | Usage | Design | Behavior | Tokens |
 |---|---|---|---|---|---|
-| Alert / banner | approved | — | — | — | — |
-| Badges | approved | — | — | — | — |
-| Breadcrumbs | approved | — | — | — | — |
-| Buttons | approved | — | — | — | — |
-| Cards | approved | — | — | — | — |
-| Checkboxes | approved | — | — | — | — |
-| Combo box | approved | — | — | — | — |
-| Confirmation | approved | — | — | — | — |
-| Dropdown / Select | approved | — | — | — | — |
-| Filters | approved | — | — | — | — |
-| Global header | approved | — | — | — | — |
-| Inline toast | approved | — | — | — | — |
-| Links | approved | — | — | — | — |
-| Modal | approved | — | — | — | — |
-| Multi-select | approved | — | — | — | — |
-| Popover | approved | — | — | — | — |
-| Search | approved | — | — | — | — |
-| Side nav | approved | — | — | — | — |
-| Stepper | approved | — | — | — | — |
-| Sticky footer | approved | — | — | — | — |
-| Table | approved | — | — | — | — |
-| Tabs | approved | — | — | — | — |
-| Tags | approved | — | — | — | — |
-| Text input | approved | — | — | — | — |
-| Toggle control | approved | — | — | — | — |
-| What's new | approved | — | — | — | — |
+| Alert / banner | approved | not started | inherited | inherited | not started |
+| Badges | approved | not started | inherited | inherited | not started |
+| Breadcrumbs | approved | not started | inherited | inherited | not started |
+| Buttons | approved | not started | inherited | inherited | not started |
+| Cards | approved | not started | inherited | inherited | not started |
+| Checkboxes | approved | not started | inherited | inherited | not started |
+| Combo box | approved | not started | inherited | inherited | not started |
+| Confirmation | approved | not started | inherited | inherited | not started |
+| Dropdown / Select | approved | not started | inherited | inherited | not started |
+| Filters | approved | not started | inherited | inherited | not started |
+| Global header | approved | not started | inherited | inherited | not started |
+| Inline toast | approved | not started | inherited | inherited | not started |
+| Links | approved | not started | inherited | inherited | not started |
+| Modal | approved | not started | inherited | inherited | not started |
+| Multi-select | approved | not started | inherited | inherited | not started |
+| Popover | approved | not started | inherited | inherited | not started |
+| Search | approved | not started | inherited | inherited | not started |
+| Side nav | approved | not started | inherited | inherited | not started |
+| Stepper | approved | not started | inherited | inherited | not started |
+| Sticky footer | approved | not started | inherited | inherited | not started |
+| Table | approved | not started | inherited | inherited | not started |
+| Tabs | approved | not started | inherited | inherited | not started |
+| Tags | approved | not started | inherited | inherited | not started |
+| Text input | approved | not started | inherited | inherited | not started |
+| Toggle control | approved | not started | inherited | inherited | not started |
+| What's new | approved | not started | inherited | inherited | not started |
 
 ## Summary
 
 | Domain | Approved | Draft | Inherited | Not started | Absent |
 |---|---|---|---|---|---|
 | content | 26 | 0 | 0 | 0 | 0 |
-| usage | 0 | 0 | 0 | 0 | 26 |
-| design | 0 | 0 | 0 | 0 | 26 |
-| behavior | 0 | 0 | 0 | 0 | 26 |
-| tokens | 0 | 0 | 0 | 0 | 26 |
+| usage | 0 | 0 | 0 | 26 | 0 |
+| design | 0 | 0 | 26 | 0 | 0 |
+| behavior | 0 | 0 | 26 | 0 | 0 |
+| tokens | 0 | 0 | 0 | 26 | 0 |
 

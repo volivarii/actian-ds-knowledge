@@ -278,11 +278,14 @@ function buildBundle(perComponent) {
   return bundle;
 }
 
+// Per-row coverage glyphs. `not-started` renders distinctly from an absent
+// domain (which renders "—") so the documentation-debt marker stays visible
+// in the per-component table, not just the summary.
 const STATUS_GLYPH = {
   approved: "approved",
   draft: "draft",
   inherited: "inherited",
-  "not-started": "—",
+  "not-started": "not started",
 };
 
 function buildCoverage(perComponent) {
