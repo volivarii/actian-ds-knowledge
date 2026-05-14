@@ -1,0 +1,30 @@
+# CODEOWNERS — per-component multi-domain guideline architecture.
+#
+# Each guideline domain is authored by a different team, so review routes
+# per-domain via path patterns. This is the load-bearing reason the source
+# is organized file-per-domain (components/src/<slug>/<domain>.md) rather
+# than one file per component — one-file-per-component cannot express
+# per-domain ownership.
+#
+# NOTE: team handles below are placeholders pending the Phase 2 onboarding
+# (see the federation onboarding notes). Until real @org/team handles land,
+# everything routes to the repo lead. Activate the per-domain lines by
+# replacing the handles and removing the lead-catch-all.
+
+# --- repo lead (catch-all until per-domain handles are confirmed) ---
+*                                   @volivarii
+
+# --- per-domain routing (activate when team handles are confirmed) ---
+# components/src/*/content.md        @actian/content-team
+# components/src/*/usage.md          @actian/design
+# components/src/*/design.md         @actian/design
+# components/src/*/behavior.md       @actian/eng @actian/accessibility
+# components/src/*/tokens.yml        @actian/eng
+# components/src/*/_meta.yml         @volivarii
+
+# --- derived artifacts + pipeline (lead-owned) ---
+components/dist/guidelines/          @volivarii
+scripts/components/                  @volivarii
+schemas/guideline-component.json     @volivarii
+schemas/guideline-meta.json          @volivarii
+schemas/guideline-tokens.json        @volivarii

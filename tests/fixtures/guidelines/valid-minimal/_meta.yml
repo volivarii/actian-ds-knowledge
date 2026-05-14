@@ -1,0 +1,4 @@
+component: Spinner
+category: feedback
+domains:
+  content: { status: approved }
