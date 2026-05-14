@@ -38,11 +38,13 @@ tokens/          ← interim: human-frozen (see tokens/README.md)
 | If you want to change… | Edit here | What CI does on PR |
 |---|---|---|
 | A foundation token, rule, or scale | `foundations/src/foundations.md` | `foundations-derive.yml` regenerates the hierarchical `foundations/dist/` tree (Pattern H — per-leaf JSONs + `_index.json` per directory + `foundations.bundle.json` roll-up + `.md` verbatim copy) |
-| Component guideline content (anatomy, examples, behavior) | `components/src/guidelines/<slug>.json` | None — content goes live on merge |
+| Per-component guidelines (content, usage, design, behavior, tokens) | `components/src/<slug>/` — `_meta.yml` + the per-domain files (`content.md`, …) — see `components/src/AUTHORING.md` | `guidelines-derive.yml` regenerates `components/dist/guidelines/<slug>.json` + `guidelines.bundle.json` + `coverage.md` on PR |
+| Component guideline content — legacy scraped layer (being retired) | `components/src/guidelines/<slug>.json` | None — content goes live on merge |
 | Component registry data (key, variants, properties) | **Don't.** Edit upstream in Figma. | `sync-from-figma.yml` (nightly 07:00 UTC) writes `components/dist/registries/*.json` |
 | Meta Kit `templates` block | `components/dist/registries/metakit.json` (ONLY this block — hand-curated; CI preserves across syncs) | Same workflow preserves the block |
 | Token value | `tokens/tokens.json` + matching CSS variable in `tokens/tokens.css` | `render-token-reference.js` regenerates `tokens/token-reference.md` |
-| Content guidelines (UI copy rules) | `content/src/<topic>.md` (per-topic, e.g. `buttons.md`, `modal.md`) — see `content/src/AUTHORING.md` and `content/src/content-index.md` | `content-derive.yml` regenerates `content/dist/content.md` on PR |
+| Component content guidelines (UI copy rules) | `components/src/<slug>/content.md` — see `components/src/AUTHORING.md` | `guidelines-derive.yml` + `content-derive.yml` regenerate the per-component JSON and `content/dist/content.md` on PR |
+| Global / cross-cutting content guidelines (voice, tone, words to avoid, UX-pattern topics) | `content/src/` (root or `_global/`) — see `content/src/AUTHORING.md` and `content/src/content-index.md` | `content-derive.yml` regenerates `content/dist/content.md` on PR |
 | Accessibility guidance | `accessibility/accessibility.md` | None |
 | Presentation templates / chart patterns | `presentation/presentation-guide.md` | None |
 | App context / persona / terminology | `app-context/app-context.json` | None |
@@ -57,7 +59,9 @@ When CI regenerates `dist/` content, it stamps each generated file with `_meta.a
 ## Per-domain authoring guides
 
 - [`foundations/src/AUTHORING.md`](foundations/src/AUTHORING.md) — how the Design system lead (and the UX team) edits foundations
-- [`components/src/guidelines/AUTHORING.md`](components/src/guidelines/AUTHORING.md) — the stub-flip ritual
+- [`components/src/AUTHORING.md`](components/src/AUTHORING.md) — per-component multi-domain guidelines (the `components/src/<slug>/` layout)
+- [`content/src/AUTHORING.md`](content/src/AUTHORING.md) — global / cross-cutting content guidelines
+- [`components/src/guidelines/AUTHORING.md`](components/src/guidelines/AUTHORING.md) — the stub-flip ritual (legacy scraped layer, being retired)
 
 ## Consumer indirection
 

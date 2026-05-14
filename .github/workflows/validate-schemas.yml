@@ -10,12 +10,17 @@ name: Validate schemas
 #   - validate-manifest-schema.js     → paths-manifest.json structural shape
 #   - validate-foundations-dist.js    → foundations/dist/**/*.json (post-derive)
 #   - validate-category-defaults.js   → components/src/categories/*.md frontmatter (PR δ)
+#   - validate-guidelines-doc.js      → components/src/<slug>/{_meta,tokens}.yml +
+#                                       components/dist/guidelines/*.json (Phase 2a)
 
 on:
   pull_request:
     paths:
       - 'components/src/categories/**/*.md'
       - 'components/src/guidelines/**/*.json'
+      - 'components/src/*/_meta.yml'
+      - 'components/src/*/tokens.yml'
+      - 'components/dist/guidelines/**/*.json'
       - 'components/dist/registries/**/*.json'
       - 'paths-manifest.json'
       - 'foundations/dist/**/*.json'
@@ -83,8 +88,15 @@ jobs:
           node scripts/validate/validate-registries.js > registries.rdjsonl
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Validate per-component guideline docs (Phase 2a)
+        id: guidelines_doc
+        continue-on-error: true
+        run: |
+          node scripts/validate/validate-guidelines-doc.js > guidelines-doc.rdjsonl
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
       - name: Combine rdjsonl outputs
-        run: cat guidelines.rdjsonl manifest.rdjsonl foundations.rdjsonl categories.rdjsonl registries.rdjsonl > combined.rdjsonl
+        run: cat guidelines.rdjsonl manifest.rdjsonl foundations.rdjsonl categories.rdjsonl registries.rdjsonl guidelines-doc.rdjsonl > combined.rdjsonl
 
       - name: Report annotations via reviewdog
         env:

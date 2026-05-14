@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../../schemas/guideline-meta.json
+component: "Badges"
+category: data-display
+domains:
+  content: { status: approved, owner: content-team }

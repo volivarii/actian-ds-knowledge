@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../../schemas/guideline-meta.json
+component: "Stepper"
+category: navigation
+domains:
+  content: { status: approved, owner: content-team }

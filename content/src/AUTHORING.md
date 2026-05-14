@@ -1,5 +1,13 @@
 # Content guidelines — authoring guide
 
+> **Phase 2a (2026-05):** component-scoped content has moved into the
+> per-component guideline layout — `components/src/<slug>/content.md`
+> alongside `_meta.yml`. See `components/src/AUTHORING.md` for that workflow.
+> This directory now holds **global / cross-cutting** content topics only
+> (`content/src/_global/`) plus a few app-pattern files pending
+> classification. The section-structure guidance below still applies to
+> every content file regardless of location.
+
 This directory holds the **source of truth** for Actian Data Intelligence UI copy. Designers and writers edit files here directly; plugin skills and AI agents read them at runtime.
 
 ## How to edit
