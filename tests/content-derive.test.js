@@ -10,18 +10,15 @@ var derive = require("../scripts/content/derive-content.js");
 var ROOT = path.resolve(__dirname, "..");
 var DEFAULT_CONFIG = derive.resolveConfig({});
 
-test("derive-content — parseArgs handles --src --index --out", function () {
+test("derive-content — parseArgs handles --src --index (Phase 5: --out retired)", function () {
   var args = derive.parseArgs([
     "--src",
     "content/src",
     "--index",
     "content/src/content-index.md",
-    "--out",
-    "content/dist/content.md",
   ]);
   assert.strictEqual(args.src, "content/src");
   assert.strictEqual(args.index, "content/src/content-index.md");
-  assert.strictEqual(args.out, "content/dist/content.md");
 });
 
 test("derive-content — parseArgs throws when flag has no value", function () {
@@ -29,7 +26,7 @@ test("derive-content — parseArgs throws when flag has no value", function () {
     derive.parseArgs(["--src"]);
   }, /requires a value/);
   assert.throws(function () {
-    derive.parseArgs(["--src", "--out", "x"]);
+    derive.parseArgs(["--src", "--index", "x"]);
   }, /requires a value/);
 });
 
@@ -40,23 +37,29 @@ test("derive-content — parseArgs rejects unknown flags", function () {
   assert.throws(function () {
     derive.parseArgs(["--src", "content/src", "--bogus", "x"]);
   }, /unknown flag --bogus/);
+  // --out was retired in Phase 5; should now be rejected.
+  assert.throws(function () {
+    derive.parseArgs(["--out", "content/dist/content.md"]);
+  }, /unknown flag --out/);
 });
 
 test("derive-content — resolveConfig falls back to repo defaults", function () {
   var config = derive.resolveConfig({});
   assert.ok(config.src.endsWith("content/src"));
   assert.ok(config.index.endsWith("content/src/content-index.md"));
-  assert.ok(config.out.endsWith("content/dist/content.md"));
+  assert.ok(config.globalOut.endsWith("content/dist/global.md"));
 });
 
 test("derive-content — resolveConfig honors explicit flags", function () {
   var config = derive.resolveConfig({
     src: "content/src",
     index: "content/src/content-index.md",
-    out: "content/dist/content.md",
   });
   assert.ok(path.isAbsolute(config.src), "src should be absolute path");
-  assert.ok(path.isAbsolute(config.out), "out should be absolute path");
+  assert.ok(
+    path.isAbsolute(config.globalOut),
+    "globalOut should be absolute path",
+  );
 });
 
 test("derive-content — readSectionOrder parses content-index.md", function () {
@@ -168,45 +171,23 @@ test("derive-content — collapseBlankLines normalizes 3+ newlines to 2", functi
   assert.strictEqual(derive.collapseBlankLines("a\nb"), "a\nb");
 });
 
-test("derive-content — buildOutput produces preamble + sections + no trailing separator", function () {
-  var out = derive.buildOutput(DEFAULT_CONFIG);
-  assert.match(
-    out,
-    /^# Content guidelines — Actian Data Intelligence/,
-    "expected H1 preamble",
+// Phase 5 (knowledge v0.11.0): the content.md full-concat was retired.
+// `buildOutput()` removed; tests above moved to `buildGlobalOutput()`
+// + a new assertion that content.md is gone from dist/.
+
+test("derive-content — content.md is no longer emitted (retired Phase 5)", function () {
+  var contentMdPath = path.join(
+    path.dirname(DEFAULT_CONFIG.globalOut),
+    "content.md",
   );
   assert.ok(
-    out.indexOf("Auto-generated") !== -1,
-    "preamble should flag auto-generation",
+    !fs.existsSync(contentMdPath),
+    "content/dist/content.md was retired; deriver no longer emits it",
   );
-  assert.ok(
-    out.indexOf("## Global guidelines") !== -1,
-    "missing Global section",
-  );
-  assert.ok(out.indexOf("## Buttons") !== -1, "missing Buttons section");
-  assert.ok(out.indexOf("## Wizards") !== -1, "missing Wizards section");
-  var trimmed = out.replace(/\n+$/, "");
-  assert.ok(!/\n---$/.test(trimmed), "output must not end with a separator");
-});
-
-test("derive-content — buildOutput is deterministic / idempotent", function () {
-  var first = derive.buildOutput(DEFAULT_CONFIG);
-  var second = derive.buildOutput(DEFAULT_CONFIG);
   assert.strictEqual(
-    first,
-    second,
-    "buildOutput must be byte-identical across runs",
-  );
-});
-
-test("derive-content — committed dist/content.md matches buildOutput", function () {
-  if (!fs.existsSync(DEFAULT_CONFIG.out)) return;
-  var onDisk = fs.readFileSync(DEFAULT_CONFIG.out, "utf8");
-  var generated = derive.buildOutput(DEFAULT_CONFIG);
-  assert.strictEqual(
-    onDisk,
-    generated,
-    "content/dist/content.md is stale — run `npm run derive:content` and commit",
+    typeof derive.buildOutput,
+    "undefined",
+    "buildOutput() should no longer be exported",
   );
 });
 
@@ -232,7 +213,7 @@ test("derive-content — buildGlobalOutput emits global topics only, no componen
 });
 
 test("derive-content — committed dist/global.md matches buildGlobalOutput", function () {
-  var globalPath = path.join(path.dirname(DEFAULT_CONFIG.out), "global.md");
+  var globalPath = DEFAULT_CONFIG.globalOut;
   if (!fs.existsSync(globalPath)) return;
   var onDisk = fs.readFileSync(globalPath, "utf8");
   var generated = derive.buildGlobalOutput(DEFAULT_CONFIG);

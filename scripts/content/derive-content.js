@@ -5,33 +5,34 @@
 // (<a href="slug">Title</a>). To reorder sections, edit the index —
 // the generator follows.
 //
-// Two outputs are written to the same dist directory:
-//   content.md  — full concat: global topics + component-scoped content
-//                 (transitional, for consumers not yet migrated; retired
-//                 in a later phase).
-//   global.md   — global / cross-cutting topics only (the docs /content
-//                 page + LLM-agent skills consume this).
+// Output:
+//   global.md — global / cross-cutting topics only (the docs /content
+//               page + LLM-agent skills consume this). Component-scoped
+//               content lives per-component in
+//               components/dist/guidelines/<slug>.json `domains.content`.
 //
-// Sources resolve from three locations (Phase 2c, knowledge v0.10.0):
+// Phase 5 (knowledge v0.11.0): the transitional `content.md` full-concat
+// was retired. Consumers migrated to `global.md` + per-component
+// guideline docs. See `.github/workflows/retired-layer-guard.yml`.
+//
+// Sources resolve from three locations (Phase 2c):
 //   - component-scoped content → components/src/<slug>/content.md
+//                                (NOT emitted into global.md; lives in
+//                                 dist/guidelines/<slug>.json instead)
 //   - global, in a sub-bucket  → content/src/{writing,patterns,product}/<slug>.md
 //   - root-level meta files    → content/src/<slug>.md (global-guidelines.md, etc.)
 //
 // Run:
 //   npm run derive:content
 //   node scripts/content/derive-content.js \
-//     --src content/src --index content/src/content-index.md \
-//     --out content/dist/content.md
-//
-// `--out` sets the content.md path; global.md is always written as its
-// sibling in the same directory. Both files are emitted every run.
+//     --src content/src --index content/src/content-index.md
 
 var fs = require("fs");
 var path = require("path");
 
 var ROOT = path.resolve(__dirname, "..", "..");
 
-var KNOWN_FLAGS = ["src", "index", "out"];
+var KNOWN_FLAGS = ["src", "index"];
 
 function parseArgs(argv) {
   var out = {};
@@ -61,10 +62,8 @@ function resolveConfig(args) {
   var indexArg = args.index
     ? path.resolve(ROOT, args.index)
     : path.join(src, "content-index.md");
-  var out = args.out
-    ? path.resolve(ROOT, args.out)
-    : path.join(ROOT, "content/dist/content.md");
-  return { src: src, index: indexArg, out: out };
+  var globalOut = path.join(ROOT, "content/dist/global.md");
+  return { src: src, index: indexArg, globalOut: globalOut };
 }
 
 function readSectionOrder(indexFile) {
@@ -244,35 +243,6 @@ function assembleDoc(headerLines, sections) {
   return lines.join("\n");
 }
 
-// Full consolidated content.md — global topics + component-scoped content.
-function buildOutput(config) {
-  var sections = resolveAllSections(config);
-  var header = [
-    "# Content guidelines — Actian Data Intelligence",
-    "",
-    "> **Auto-generated** by `scripts/content/derive-content.js`. Do not edit " +
-      "this file directly — edit the per-section source files.",
-    ">",
-    "> **Sources** (" +
-      sections.length +
-      " sections): component-scoped content lives in " +
-      "`components/src/{slug}/content.md`; global / cross-cutting topics live " +
-      "in `" +
-      path.relative(ROOT, config.src) +
-      "/{bucket}/{slug}.md` (buckets: writing, patterns, product) with a " +
-      "few meta files at the `" +
-      path.relative(ROOT, config.src) +
-      "/` root.",
-    "> **Section order:** `" +
-      path.relative(ROOT, config.index) +
-      '` ("All sections" anchors)',
-    "> **Authoring guides:** `components/src/AUTHORING.md` (per-component) · `" +
-      path.relative(ROOT, config.src) +
-      "/AUTHORING.md` (global)",
-  ];
-  return assembleDoc(header, sections);
-}
-
 // Global / cross-cutting topics only — the docs /content page consumes this.
 function buildGlobalOutput(config) {
   var sections = resolveAllSections(config).filter(function (s) {
@@ -303,29 +273,23 @@ function buildGlobalOutput(config) {
 function main(argv) {
   var args = parseArgs(argv);
   var config = resolveConfig(args);
-  var outDir = path.dirname(config.out);
+  var outDir = path.dirname(config.globalOut);
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
-  var contentOut = buildOutput(config);
-  fs.writeFileSync(config.out, contentOut);
-
-  var globalPath = path.join(outDir, "global.md");
   var globalOut = buildGlobalOutput(config);
-  fs.writeFileSync(globalPath, globalOut);
+  fs.writeFileSync(config.globalOut, globalOut);
 
-  [config.out, globalPath].forEach(function (p) {
-    var stats = fs.statSync(p);
-    var lineCount = fs.readFileSync(p, "utf8").split("\n").length;
-    console.log(
-      "[derive-content] wrote " +
-        path.relative(ROOT, p) +
-        " (" +
-        stats.size +
-        " bytes, " +
-        lineCount +
-        " lines)",
-    );
-  });
+  var stats = fs.statSync(config.globalOut);
+  var lineCount = fs.readFileSync(config.globalOut, "utf8").split("\n").length;
+  console.log(
+    "[derive-content] wrote " +
+      path.relative(ROOT, config.globalOut) +
+      " (" +
+      stats.size +
+      " bytes, " +
+      lineCount +
+      " lines)",
+  );
 }
 
 if (require.main === module) {
@@ -350,6 +314,5 @@ module.exports = {
   resolveSectionFile: resolveSectionFile,
   readSection: readSection,
   resolveAllSections: resolveAllSections,
-  buildOutput: buildOutput,
   buildGlobalOutput: buildGlobalOutput,
 };
