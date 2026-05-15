@@ -294,6 +294,48 @@ test("derive: unset category resolved via categoryResolver fallback", () => {
   assert.equal(doc.meta.category, "action");
 });
 
+test("derive: passes through related / examples / lastReviewed to meta.*", () => {
+  const dir = tmpComponentDir({
+    "_meta.yml":
+      "component: Button\n" +
+      "category: action\n" +
+      "related: [link, icon-button]\n" +
+      "examples:\n" +
+      '  - { label: "Primary", figmaNode: "302:5142" }\n' +
+      '  - { label: "Docs", url: "https://docs.example/button" }\n' +
+      "lastReviewed: 2026-05-15\n" +
+      "domains:\n" +
+      "  content: { status: inherited }\n",
+  });
+  const doc = derive.deriveComponentDir(dir, "button", REPO_ROOT, validators);
+  assert.deepEqual(doc.meta.related, ["link", "icon-button"]);
+  assert.equal(doc.meta.examples.length, 2);
+  assert.equal(doc.meta.examples[0].label, "Primary");
+  assert.equal(doc.meta.examples[0].figmaNode, "302:5142");
+  assert.equal(doc.meta.examples[1].label, "Docs");
+  assert.equal(doc.meta.examples[1].url, "https://docs.example/button");
+  assert.equal(doc.meta.lastReviewed, "2026-05-15");
+  // Round-trips through the derived-component schema.
+  assert.equal(
+    validators.component(doc),
+    true,
+    JSON.stringify(validators.component.errors),
+  );
+});
+
+test("derive: tolerates absence of related / examples / lastReviewed", () => {
+  const dir = tmpComponentDir({
+    "_meta.yml":
+      "component: X\ncategory: action\ndomains:\n  content: { status: inherited }\n",
+  });
+  const doc = derive.deriveComponentDir(dir, "x", REPO_ROOT, validators);
+  assert.ok(doc, "expected derived doc");
+  assert.equal(doc.meta.examples, undefined);
+  assert.equal(doc.meta.lastReviewed, undefined);
+  // related already absent — same pattern.
+  assert.equal(doc.meta.related, undefined);
+});
+
 // ───────────────────────────────────────────────────────────────────────────
 // Layer 3 — end-to-end pipeline
 // ───────────────────────────────────────────────────────────────────────────
