@@ -5,19 +5,21 @@ name: Validate schemas
 # the PR diff via reviewdog so non-engineering authors (who use the GitHub web
 # UI) see them in the Files-Changed view.
 #
-# Validators:
-#   - validate-guidelines.js          → components/src/guidelines/*.json
+# Validators (Phase 5, knowledge v0.11.0):
 #   - validate-manifest-schema.js     → paths-manifest.json structural shape
 #   - validate-foundations-dist.js    → foundations/dist/**/*.json (post-derive)
 #   - validate-category-defaults.js   → components/src/categories/*.md frontmatter (PR δ)
+#   - validate-registries.js          → components/dist/registries/*.json (ζ.3)
 #   - validate-guidelines-doc.js      → components/src/<slug>/{_meta,tokens}.yml +
 #                                       components/dist/guidelines/*.json (Phase 2a)
+#
+# Retired Phase 5: validate-guidelines.js (scraped components/src/guidelines/
+# layer is gone).
 
 on:
   pull_request:
     paths:
       - 'components/src/categories/**/*.md'
-      - 'components/src/guidelines/**/*.json'
       - 'components/src/*/_meta.yml'
       - 'components/src/*/tokens.yml'
       - 'components/dist/guidelines/**/*.json'
@@ -52,13 +54,6 @@ jobs:
         uses: reviewdog/action-setup@v1
         with:
           reviewdog_version: latest
-
-      - name: Validate guideline JSONs
-        id: guidelines
-        continue-on-error: true
-        run: |
-          node scripts/validate/validate-guidelines.js > guidelines.rdjsonl
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Validate paths-manifest schema
         id: manifest
@@ -96,7 +91,7 @@ jobs:
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Combine rdjsonl outputs
-        run: cat guidelines.rdjsonl manifest.rdjsonl foundations.rdjsonl categories.rdjsonl registries.rdjsonl guidelines-doc.rdjsonl > combined.rdjsonl
+        run: cat manifest.rdjsonl foundations.rdjsonl categories.rdjsonl registries.rdjsonl guidelines-doc.rdjsonl > combined.rdjsonl
 
       - name: Report annotations via reviewdog
         env:

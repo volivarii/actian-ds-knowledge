@@ -92,7 +92,6 @@ jobs:
             --phase "$PHASE" \
             --plugin-dir . \
             --output-dir components/dist/registries \
-            --guidelines-dir components/src/guidelines \
             --release-notes-dir release-notes \
             --keys-file .figma-keys.json \
             --plugin-json-path package.json \

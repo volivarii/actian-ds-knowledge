@@ -1,10 +1,13 @@
-name: Derive content guidelines (content.md + global.md)
+name: Derive content guidelines (global.md)
 
-# Consolidated content guidelines auto-generated from the per-section
-# source files. Runs on PR events that touch the sources or the
-# generator; regenerates content/dist/content.md (full transitional
-# concat) AND content/dist/global.md (global topics only, Phase 2b) and
-# commits both back to the PR branch.
+# Global / cross-cutting content guidelines auto-generated from the
+# per-section source files. Runs on PR events that touch the sources or
+# the generator; regenerates content/dist/global.md and commits it back
+# to the PR branch.
+#
+# Phase 5 (knowledge v0.11.0): the transitional content/dist/content.md
+# full-concat output was retired; component-scoped content lives in
+# components/dist/guidelines/<slug>.json `domains.content` instead.
 #
 # Required repo setting (already enabled for foundations-derive):
 #   Settings → Actions → General → Workflow permissions → Allow GH Actions
@@ -14,10 +17,6 @@ on:
   pull_request:
     paths:
       - 'content/src/**/*.md'
-      # Phase 2a: component-scoped content moved into the per-component
-      # guideline layout; content.md still concatenates it (parallel-change
-      # window) so a component content edit must re-derive content.md too.
-      - 'components/src/*/content.md'
       - 'scripts/content/derive-content.js'
 
 jobs:
@@ -43,12 +42,11 @@ jobs:
       - name: Install deps
         run: npm install --no-audit --no-fund
 
-      - name: Derive content.md + global.md
+      - name: Derive global.md
         run: |
           node scripts/content/derive-content.js \
             --src content/src \
-            --index content/src/content-index.md \
-            --out content/dist/content.md
+            --index content/src/content-index.md
 
       - name: Run tests against regenerated output
         run: npm test
@@ -75,7 +73,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add content/dist/ package.json
-          git commit -m "chore(content): regenerate content.md + global.md + bump patch"
+          git commit -m "chore(content): regenerate global.md + bump patch"
           git push
 
       - name: Tag release
