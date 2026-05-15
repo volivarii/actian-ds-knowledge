@@ -258,7 +258,10 @@ function buildOutput(config) {
       "`components/src/{slug}/content.md`; global / cross-cutting topics live " +
       "in `" +
       path.relative(ROOT, config.src) +
-      "/{slug}.md`.",
+      "/{bucket}/{slug}.md` (buckets: writing, patterns, product) with a " +
+      "few meta files at the `" +
+      path.relative(ROOT, config.src) +
+      "/` root.",
     "> **Section order:** `" +
       path.relative(ROOT, config.index) +
       '` ("All sections" anchors)',
@@ -287,7 +290,8 @@ function buildGlobalOutput(config) {
       sections.length +
       " sections): `" +
       path.relative(ROOT, config.src) +
-      "/{slug}.md`.",
+      "/{bucket}/{slug}.md` where bucket is one of writing, patterns, " +
+      "product (plus `global-guidelines.md` at the root).",
     "> **Authoring guide:** `" +
       path.relative(ROOT, config.src) +
       "/AUTHORING.md`",
@@ -334,6 +338,7 @@ if (require.main === module) {
 
 module.exports = {
   KNOWN_FLAGS: KNOWN_FLAGS,
+  CONTENT_SUB_BUCKETS: CONTENT_SUB_BUCKETS,
   parseArgs: parseArgs,
   resolveConfig: resolveConfig,
   readSectionOrder: readSectionOrder,

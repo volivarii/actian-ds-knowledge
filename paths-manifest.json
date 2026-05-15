@@ -3,7 +3,7 @@
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.9.5",
+  "knowledge_version": "0.10.0",
   "paths": {
     "foundations.md": {
       "path": "foundations/src/foundations.md",
@@ -141,55 +141,6 @@
       "type": "json",
       "origin": "human",
       "description": "FM Kit → DS Kit component mapping for hifi conversion"
-    },
-    "components.categoryDefaults.bundle": {
-      "path": "components/dist/categories/categories.bundle.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Roll-up of all 6 category-defaults JSONs keyed by slug. One-shot LLM consumption for category-aware brief enrichment."
-    },
-    "components.categoryDefaults.action": {
-      "path": "components/dist/categories/action-defaults.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'action' category. Consumed by the component-brief skill for stub components."
-    },
-    "components.categoryDefaults.data-display": {
-      "path": "components/dist/categories/data-display-defaults.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'data-display' category. Consumed by the component-brief skill for stub components."
-    },
-    "components.categoryDefaults.feedback": {
-      "path": "components/dist/categories/feedback-defaults.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'feedback' category. Consumed by the component-brief skill for stub components."
-    },
-    "components.categoryDefaults.form-input-selection": {
-      "path": "components/dist/categories/form-input-selection-defaults.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'form-input-selection' category. Consumed by the component-brief skill for stub components."
-    },
-    "components.categoryDefaults.navigation": {
-      "path": "components/dist/categories/navigation-defaults.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'navigation' category. Consumed by the component-brief skill for stub components."
-    },
-    "components.categoryDefaults.overlays": {
-      "path": "components/dist/categories/overlays-defaults.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'overlays' category. Consumed by the component-brief skill for stub components."
     },
     "foundations.bundle": {
       "path": "foundations/dist/foundations.bundle.json",
@@ -428,6 +379,55 @@
       "origin": "ci",
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'whats-new' component (content, usage, design, behavior, tokens — each optional)."
+    },
+    "components.categoryDefaults.bundle": {
+      "path": "components/dist/categories/categories.bundle.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Roll-up of all 6 category-defaults JSONs keyed by slug. One-shot LLM consumption for category-aware brief enrichment."
+    },
+    "components.categoryDefaults.action": {
+      "path": "components/dist/categories/action-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'action' category. Consumed by the component-brief skill for stub components."
+    },
+    "components.categoryDefaults.data-display": {
+      "path": "components/dist/categories/data-display-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'data-display' category. Consumed by the component-brief skill for stub components."
+    },
+    "components.categoryDefaults.feedback": {
+      "path": "components/dist/categories/feedback-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'feedback' category. Consumed by the component-brief skill for stub components."
+    },
+    "components.categoryDefaults.form-input-selection": {
+      "path": "components/dist/categories/form-input-selection-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'form-input-selection' category. Consumed by the component-brief skill for stub components."
+    },
+    "components.categoryDefaults.navigation": {
+      "path": "components/dist/categories/navigation-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'navigation' category. Consumed by the component-brief skill for stub components."
+    },
+    "components.categoryDefaults.overlays": {
+      "path": "components/dist/categories/overlays-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'overlays' category. Consumed by the component-brief skill for stub components."
     }
   },
   "collections": {
@@ -440,10 +440,11 @@
     },
     "content.section": {
       "dir": "content/src",
-      "pattern": "{slug}.md",
+      "pattern": "{bucket}/{slug}.md",
+      "recursive": true,
       "type": "markdown",
       "origin": "human",
-      "description": "Global / cross-cutting content guidelines (Content lead): writing principles (voice, tone, capitalization, words to avoid, etc.) plus UX-pattern topics (empty/system states, loading, notifications, validation messages, onboarding, wizards, uploads). Phase 2b flattened the former content/src/_global/ subdir up to here once component-scoped content moved to components/src/<slug>/content.md. Each file follows When-to-use -> Style -> Behavior -> Do/Don't."
+      "description": "Global / cross-cutting content guidelines (Content lead). Three sub-buckets: writing/ (strict grammar/voice/style rules), patterns/ (universal UX patterns), product/ (Actian product-surface copy rules). Meta files (global-guidelines.md, content-index.md, format-spec.md) sit at the content/src/ root. Each file follows When-to-use -> Style -> Behavior -> Do/Don't."
     },
     "foundations.leaf": {
       "dir": "foundations/dist",

@@ -258,15 +258,21 @@ test("derive-content — every section source file is referenced by the index (i
     }),
   );
 
-  // The deriver resolves each section from one of two locations
+  // The deriver resolves each section from one of three locations
   // (see resolveSectionFile): the per-component guideline layout
   // `components/src/<slug>/content.md` (Phase 2a — component-scoped
-  // content), and `content/src/<slug>.md` (Phase 2b — global /
-  // cross-cutting topics, flattened from the former `_global/` subdir).
-  // The inverse-coverage assertion must walk BOTH so a file moved or
-  // added without registering its slug in content-index.md is caught —
+  // content), `content/src/<slug>.md` for the small set of root-level
+  // meta sections, and `content/src/<bucket>/<slug>.md` (Phase 2c —
+  // sub-bucketed global content under writing/, patterns/, product/).
+  // The inverse-coverage assertion must walk ALL legs so a file moved
+  // or added without registering its slug in content-index.md is caught —
   // extend this whenever resolveSectionFile grows a new lookup leg.
   var REPO_ROOT = path.resolve(DEFAULT_CONFIG.src, "..", "..");
+  var SUB_BUCKETS = derive.CONTENT_SUB_BUCKETS || [
+    "writing",
+    "patterns",
+    "product",
+  ];
 
   function collectMdSlugs(dir) {
     if (!fs.existsSync(dir)) return [];
@@ -278,6 +284,17 @@ test("derive-content — every section source file is referenced by the index (i
       .map(function (f) {
         return f.replace(/\.md$/, "");
       });
+  }
+
+  // Global content leg: walk both the content/src/ root (meta-level
+  // entries like global-guidelines.md) and each sub-bucket directory.
+  function collectGlobalSlugs() {
+    var slugs = collectMdSlugs(DEFAULT_CONFIG.src);
+    for (var i = 0; i < SUB_BUCKETS.length; i++) {
+      var bucketDir = path.join(DEFAULT_CONFIG.src, SUB_BUCKETS[i]);
+      slugs = slugs.concat(collectMdSlugs(bucketDir));
+    }
+    return slugs;
   }
 
   // Per-component leg: components/src/<slug>/content.md → slug = dir name.
@@ -293,9 +310,7 @@ test("derive-content — every section source file is referenced by the index (i
     });
   }
 
-  var entries = collectMdSlugs(DEFAULT_CONFIG.src).concat(
-    collectComponentSlugs(),
-  );
+  var entries = collectGlobalSlugs().concat(collectComponentSlugs());
 
   assert.ok(entries.length > 0, "no section source files found");
   for (var i = 0; i < entries.length; i++) {
