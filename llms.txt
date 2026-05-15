@@ -8,7 +8,8 @@
 
 ## Content
 
-- [Content guidelines](content/dist/content.md): voice, terminology, UI copy patterns
+- [Content guidelines — global topics](content/dist/global.md): voice, tone, capitalization, words to avoid, UX-pattern topics
+- [Per-component content guidelines](components/dist/guidelines/): each `<slug>.json` carries `domains.content` for component-scoped copy rules
 
 ## Accessibility
 
