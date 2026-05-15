@@ -4,7 +4,9 @@ var fs = require("node:fs");
 var path = require("node:path");
 
 var ROOT = path.resolve(__dirname, "..");
-var manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "paths-manifest.json"), "utf8"));
+var manifest = JSON.parse(
+  fs.readFileSync(path.join(ROOT, "paths-manifest.json"), "utf8"),
+);
 
 function generateLlmsTxt() {
   var lines = [
@@ -18,7 +20,8 @@ function generateLlmsTxt() {
     "",
     "## Content",
     "",
-    "- [Content guidelines](content/dist/content.md): voice, terminology, UI copy patterns",
+    "- [Content guidelines — global topics](content/dist/global.md): voice, tone, capitalization, words to avoid, UX-pattern topics",
+    "- [Per-component content guidelines](components/dist/guidelines/): each `<slug>.json` carries `domains.content` for component-scoped copy rules",
     "",
     "## Accessibility",
     "",
@@ -31,7 +34,7 @@ function generateLlmsTxt() {
     "",
     "## Manifest",
     "",
-    "- [paths-manifest.json](paths-manifest.json): machine-readable contract for consumers"
+    "- [paths-manifest.json](paths-manifest.json): machine-readable contract for consumers",
   ];
   return lines.join("\n") + "\n";
 }
@@ -47,11 +50,11 @@ function generateLlmsFullTxt() {
     "",
     "## Content",
     "",
-    fs.readFileSync(path.join(ROOT, "content/dist/content.md"), "utf8"),
+    fs.readFileSync(path.join(ROOT, "content/dist/global.md"), "utf8"),
     "",
     "## Accessibility",
     "",
-    fs.readFileSync(path.join(ROOT, "accessibility/accessibility.md"), "utf8")
+    fs.readFileSync(path.join(ROOT, "accessibility/accessibility.md"), "utf8"),
   ];
   return sections.join("\n") + "\n";
 }
@@ -62,4 +65,7 @@ if (require.main === module) {
   console.log("Generated llms.txt + llms-full.txt");
 }
 
-module.exports = { generateLlmsTxt: generateLlmsTxt, generateLlmsFullTxt: generateLlmsFullTxt };
+module.exports = {
+  generateLlmsTxt: generateLlmsTxt,
+  generateLlmsFullTxt: generateLlmsFullTxt,
+};

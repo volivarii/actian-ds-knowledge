@@ -15,7 +15,6 @@
 //     standalones:        Array<RestComponent>         // pre-filtered standalones (parent !== COMPONENT_SET, not internal)
 //     standaloneNodes:    Object<nodeId, NodePayload>  // batched /nodes for standalones
 //     documentChildren:   Array<CanvasNode>            // OPTIONAL — file's pages tree for category inference (DS Kit only)
-//     guidelinesSlugSet:  Set<string>                  // OPTIONAL — slugs with guideline files at components/src/guidelines/<slug>.json
 //     iconGroups:         Object<label, slug[]>        // OPTIONAL — curated mapping from components/src/icon-groups.json. ζ.5: layered onto icon entries (category === "Icons") to replace the uniform "Actual icons" group with semantic labels (Connector / Status / Navigation / …). Multi-group icons get `secondaryGroups`.
 //   }
 //
@@ -134,7 +133,6 @@ function buildEntry(
   node,
   importMethod,
   categoryEntry,
-  guidelinesSlugSet,
   slug,
   iconGroupsLookup,
 ) {
@@ -152,15 +150,10 @@ function buildEntry(
     ? doc.documentationLinks
     : [];
 
-  // Resolve guidelinesFile by slug lookup against the curated index
-  // (components/src/guidelines/_index.json). Returns a repo-root-relative
-  // path when a guideline file exists; null otherwise. Plugin + docs site
-  // previously reconstructed this path on every read by walking _index.json
-  // — wiring it upstream eliminates the redundant indirection.
-  var guidelinesFile =
-    guidelinesSlugSet && guidelinesSlugSet.has(slug)
-      ? "components/src/guidelines/" + slug + ".json"
-      : null;
+  // Phase 5 (knowledge v0.11.0): `guidelinesFile` was retired with the
+  // scraped components/src/guidelines/ layer. Consumers now resolve per-
+  // component guideline docs by slug via PATHS.components.guidelineDoc.byKey
+  // (components/dist/guidelines/<slug>.json, domains.* shape).
 
   var entry = {
     name: meta.name,
@@ -172,7 +165,6 @@ function buildEntry(
     properties: split.properties,
     nestedComponents: [],
     documentationLinks: documentationLinks,
-    guidelinesFile: guidelinesFile,
   };
 
   // ζ.2 (2026-05-13): three-axis grouping. `section` (top-level marker,
@@ -210,16 +202,10 @@ function transformRegistry(input) {
   var standalones = input.standalones || [];
   var standaloneNodes = input.standaloneNodes || {};
   var documentChildren = input.documentChildren || null;
-  // Guidelines index — accept either a Set or any iterable of slugs. The
-  // orchestrator passes a Set built from _index.json; tests can pass an
-  // Array which we promote to Set for membership checks.
-  var guidelinesSlugSet = null;
-  if (input.guidelinesSlugSet) {
-    guidelinesSlugSet =
-      input.guidelinesSlugSet instanceof Set
-        ? input.guidelinesSlugSet
-        : new Set(input.guidelinesSlugSet);
-  }
+  // Phase 5 (knowledge v0.11.0): `input.guidelinesSlugSet` was retired
+  // along with the `guidelinesFile` registry field — consumers now resolve
+  // per-component guideline docs by slug via the components.guidelineDoc
+  // collection in paths-manifest.json instead.
   // ζ.5: invert the icon-groups.json shape (group→[slugs]) into a
   // per-slug lookup (slug→[groups]) once, then pass to buildEntry. The
   // first listed group is primary (specific-first priority encoded by
@@ -286,7 +272,6 @@ function transformRegistry(input) {
       node,
       "set",
       lookupCategoryEntry(meta),
-      guidelinesSlugSet,
       slug,
       iconGroupsLookup,
     );
@@ -305,7 +290,6 @@ function transformRegistry(input) {
       node,
       "single",
       lookupCategoryEntry(meta),
-      guidelinesSlugSet,
       slug,
       iconGroupsLookup,
     );

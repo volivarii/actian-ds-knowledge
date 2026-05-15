@@ -98,22 +98,6 @@ function fetchNodesMap(rest, fileKey, ids) {
 
 // ---- Per-phase syncs ----
 
-// Load the curated guidelines _index.json once per run. Returns a Set of
-// slugs that have hand-curated guideline files. Used to wire each registry
-// entry's `guidelinesFile` field at transform time (was always null before,
-// forcing every consumer to walk _index.json themselves).
-function loadGuidelinesSlugSet(guidelinesDir) {
-  if (!guidelinesDir) return null;
-  var indexPath = path.join(guidelinesDir, "_index.json");
-  var index = readJsonOrNull(indexPath);
-  if (!index || !Array.isArray(index.components)) return null;
-  var set = new Set();
-  index.components.forEach(function (c) {
-    if (c && typeof c.slug === "string") set.add(c.slug);
-  });
-  return set;
-}
-
 // ζ.5: load the curated icon-groups.json mapping. Layered onto icon
 // registry entries (category === "Icons") to replace the uniform
 // "Actual icons" group with semantic labels. Returns the raw object
@@ -182,7 +166,6 @@ async function syncRegistry(opts, kitId) {
     standalones: standalones,
     standaloneNodes: standaloneNodes,
     documentChildren: documentChildren,
-    guidelinesSlugSet: opts.guidelinesSlugSet || null,
     iconGroups: opts.iconGroups || null,
     onWarnings: function (ws) {
       categoryWarnings = ws || [];
@@ -377,28 +360,16 @@ async function run(opts) {
   var keys = opts.keys || readJsonOrNull(keysFile);
   if (!keys) throw new Error("Cannot read figma keys from " + keysFile);
 
-  // Load guidelines _index.json once and pass the slug Set into every
-  // syncRegistry call. Lets the transformer wire `guidelinesFile` upstream
-  // instead of leaving every consumer to walk _index.json on each read.
-  // Resolution mirrors the pluginJsonPath / guidelinesDir defaults: CLI
-  // callers pass --guidelines-dir; programmatic callers can override via
-  // opts.guidelinesSlugSet (Set) or opts.guidelinesDir (path string).
-  var guidelinesSlugSet = opts.guidelinesSlugSet || null;
-  if (!guidelinesSlugSet && opts.guidelinesDir) {
-    guidelinesSlugSet = loadGuidelinesSlugSet(opts.guidelinesDir);
-  }
+  // Phase 5 (knowledge v0.11.0): the guidelines slug-set wiring was
+  // retired with the components/src/guidelines/ layer. Consumers now
+  // resolve guideline docs by slug via the components.guidelineDoc
+  // collection in paths-manifest.json.
 
-  // ζ.5: load icon-groups.json — same resolution pattern as guidelines.
+  // ζ.5: load icon-groups.json — keep the same resolution shape, but
+  // its default lookup directory is now an explicit --icon-groups-path.
   var iconGroups = opts.iconGroups || null;
   if (!iconGroups && opts.iconGroupsPath) {
     iconGroups = loadIconGroups(opts.iconGroupsPath);
-  } else if (!iconGroups && opts.guidelinesDir) {
-    // Default: same components/src/ directory as guidelines.
-    var defaultPath = path.join(
-      path.dirname(opts.guidelinesDir),
-      "icon-groups.json",
-    );
-    iconGroups = loadIconGroups(defaultPath);
   }
 
   var orchOpts = {
@@ -406,7 +377,6 @@ async function run(opts) {
     outputDir: outputDir,
     keys: keys,
     categoriesPath: opts.categoriesPath || null,
-    guidelinesSlugSet: guidelinesSlugSet,
     iconGroups: iconGroups,
   };
   var results = [];
@@ -522,40 +492,11 @@ async function run(opts) {
   // components that landed in this sync. No-op on unchanged. Idempotent —
   // existing guideline files are never overwritten (skip-if-exists in
   // generateStubs). Stubs land in the same PR as the registry diff via
-  // peter-evans add-paths (already includes components/**).
-  //
-  // Only fires when opts.guidelinesDir is set explicitly (CLI passes it;
-  // tests omit it). Mirrors the auto-bump opt-in pattern above — keeps
-  // test fixtures from polluting the real components/guidelines/ directory
-  // when their mock REST data produces additive/breaking diffs.
-  var stubsGenerated = [];
-  var guidelinesDir = opts.guidelinesDir || null;
-  if (
-    guidelinesDir &&
-    (category === "additive" || category === "breaking") &&
-    fs.existsSync(guidelinesDir)
-  ) {
-    var registryFile = path.join(outputDir, "dskit.json");
-    var indexFile = path.join(guidelinesDir, "_index.json");
-    if (fs.existsSync(registryFile) && fs.existsSync(indexFile)) {
-      var generateStubs =
-        require("../foundations/generate-guideline-stubs.js").generateStubs;
-      var stubResult = generateStubs({
-        registryPath: registryFile,
-        guidelinesDir: guidelinesDir,
-        indexPath: indexFile,
-      });
-      stubsGenerated = stubResult.generated;
-    } else {
-      console.warn(
-        "[sync] auto-stub skipped: missing " +
-          (fs.existsSync(registryFile)
-            ? ""
-            : "registry (" + registryFile + ") ") +
-          (fs.existsSync(indexFile) ? "" : "index (" + indexFile + ")"),
-      );
-    }
-  }
+  // Phase 5 (knowledge v0.11.0): the auto-stub block that wrote
+  // components/src/guidelines/<slug>.json for additive/breaking syncs
+  // was retired. Per-component guideline docs are authored under
+  // components/src/<slug>/ (Phase 2a) and derived into
+  // components/dist/guidelines/<slug>.json by scripts/components/__cli.js.
 
   return {
     category: category,
@@ -566,7 +507,6 @@ async function run(opts) {
     changelog: changelog,
     bumpedFrom: bumpedFrom,
     bumpedTo: bumpedTo,
-    stubsGenerated: stubsGenerated,
   };
 }
 
@@ -586,7 +526,6 @@ function parseArgs(argv) {
     else if (a === "--artifacts-dir") out.artifactsDir = next();
     else if (a === "--plugin-dir") out.pluginDir = next();
     else if (a === "--plugin-json-path") out.pluginJsonPath = next();
-    else if (a === "--guidelines-dir") out.guidelinesDir = next();
     else if (a === "--manifest-path") out.manifestPath = next();
     else if (a === "--categories-path") out.categoriesPath = next();
   }
@@ -606,19 +545,6 @@ if (require.main === module) {
       resolvedPluginDir,
       ".claude-plugin",
       "plugin.json",
-    );
-  }
-  // Same pattern as pluginJsonPath above: CLI mode defaults guidelinesDir to
-  // <pluginDir>/components/src/guidelines so auto-stub fires without explicit
-  // wiring. Programmatic callers (tests, scripts) must opt in by passing
-  // guidelinesDir explicitly — keeps test fixtures from polluting the real
-  // guidelines directory on additive/breaking verdicts.
-  if (!cliOpts.guidelinesDir) {
-    cliOpts.guidelinesDir = path.join(
-      resolvedPluginDir,
-      "components",
-      "src",
-      "guidelines",
     );
   }
   run(cliOpts).then(

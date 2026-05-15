@@ -3,11 +3,14 @@
 // ζ.3 — JSON Schema gate for components/dist/registries/*.json.
 // Validates the registry contract introduced by ζ.0-ζ.3:
 //   - description: unbounded string
-//   - guidelinesFile: wired (string | null)
 //   - documentationLinks: required array
 //   - lastSynced removed from per-component entries
 //   - section + category + group: present on entries from kits that supply documentChildren
 //   - nestedComponents: populated array (slug + role + source per entry)
+// Phase 5 (knowledge v0.11.0): `guidelinesFile` field was retired with the
+// scraped components/src/guidelines/ layer; consumers now resolve per-
+// component guideline docs by slug via components.guidelineDoc in
+// paths-manifest.json.
 
 var test = require("node:test");
 var assert = require("node:assert/strict");
@@ -40,7 +43,6 @@ function minimalEntry(overrides) {
       properties: {},
       nestedComponents: [],
       documentationLinks: [],
-      guidelinesFile: null,
       variants: {},
     },
     overrides || {},
@@ -63,12 +65,15 @@ test("registry schema", async function (t) {
     assert.equal(validate(minimalRegistry()), true);
   });
 
-  await t.test("requires library / fileKey / lastSynced / components", function () {
-    var validate = makeValidator();
-    var bad = minimalRegistry();
-    delete bad.library;
-    assert.equal(validate(bad), false);
-  });
+  await t.test(
+    "requires library / fileKey / lastSynced / components",
+    function () {
+      var validate = makeValidator();
+      var bad = minimalRegistry();
+      delete bad.library;
+      assert.equal(validate(bad), false);
+    },
+  );
 
   await t.test("library must be enum", function () {
     var validate = makeValidator();
@@ -84,12 +89,15 @@ test("registry schema", async function (t) {
     assert.equal(validate(minimalRegistry({ button: entry })), false);
   });
 
-  await t.test("requires nestedComponents on entries (always emitted)", function () {
-    var validate = makeValidator();
-    var entry = minimalEntry();
-    delete entry.nestedComponents;
-    assert.equal(validate(minimalRegistry({ button: entry })), false);
-  });
+  await t.test(
+    "requires nestedComponents on entries (always emitted)",
+    function () {
+      var validate = makeValidator();
+      var entry = minimalEntry();
+      delete entry.nestedComponents;
+      assert.equal(validate(minimalRegistry({ button: entry })), false);
+    },
+  );
 
   await t.test("rejects per-component lastSynced (ζ.1 dropped)", function () {
     var validate = makeValidator();
@@ -102,15 +110,18 @@ test("registry schema", async function (t) {
     );
   });
 
-  await t.test("accepts section + category + group (ζ.2 three-axis)", function () {
-    var validate = makeValidator();
-    var entry = minimalEntry({
-      section: "Components",
-      category: "Action",
-      group: "Button",
-    });
-    assert.equal(validate(minimalRegistry({ button: entry })), true);
-  });
+  await t.test(
+    "accepts section + category + group (ζ.2 three-axis)",
+    function () {
+      var validate = makeValidator();
+      var entry = minimalEntry({
+        section: "Components",
+        category: "Action",
+        group: "Button",
+      });
+      assert.equal(validate(minimalRegistry({ button: entry })), true);
+    },
+  );
 
   await t.test(
     "nestedComponents items require slug + role + source (ζ.3)",
@@ -140,20 +151,29 @@ test("registry schema", async function (t) {
     assert.equal(validate(minimalRegistry({ button: entry })), false);
   });
 
-  await t.test("status optional but constrained to enum when present", function () {
-    var validate = makeValidator();
-    assert.equal(
-      validate(minimalRegistry({ button: minimalEntry({ status: "in-progress" }) })),
-      true,
-    );
-    assert.equal(
-      validate(minimalRegistry({ button: minimalEntry({ status: "stable" }) })),
-      false,
-    );
-  });
+  await t.test(
+    "status optional but constrained to enum when present",
+    function () {
+      var validate = makeValidator();
+      assert.equal(
+        validate(
+          minimalRegistry({ button: minimalEntry({ status: "in-progress" }) }),
+        ),
+        true,
+      );
+      assert.equal(
+        validate(
+          minimalRegistry({ button: minimalEntry({ status: "stable" }) }),
+        ),
+        false,
+      );
+    },
+  );
 
-  await t.test("guidelinesFile accepts string or null", function () {
+  await t.test("guidelinesFile is rejected (retired Phase 5)", function () {
     var validate = makeValidator();
+    // additionalProperties:false on componentEntry now rejects the
+    // field. Locks in the v0.11.0 contract change.
     assert.equal(
       validate(
         minimalRegistry({
@@ -162,14 +182,13 @@ test("registry schema", async function (t) {
           }),
         }),
       ),
-      true,
+      false,
+      "guidelinesFile was retired with the scraped layer; schema must reject it",
     );
     assert.equal(
-      validate(minimalRegistry({ button: minimalEntry({ guidelinesFile: null }) })),
-      true,
-    );
-    assert.equal(
-      validate(minimalRegistry({ button: minimalEntry({ guidelinesFile: 42 }) })),
+      validate(
+        minimalRegistry({ button: minimalEntry({ guidelinesFile: null }) }),
+      ),
       false,
     );
   });

@@ -1,0 +1,55 @@
+name: Retired Layer Guard
+
+# As of knowledge v0.11.0 (Phase 5, 2026-05-15) the following surfaces are
+# RETIRED. Recreation in a PR is a CI-blocking error.
+#
+# Plan: docs/superpowers/specs/2026-05-15-phase-5-retire-transitional-guideline-layer.md
+# Consumer migration: actian-design-system plugin PR #89 (v1.85.0).
+#
+# This guard exists to enforce the parallel-change boundary. Remove it only
+# after all known consumers (plugin + docs site) have rolled v0.11.0 forward
+# for a sustained window with no observed regressions — at which point the
+# retirement is complete and the guard is no longer load-bearing.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  no-retired-paths:
+    name: No retired transitional-layer paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Block recreation of the retired transitional layer
+        run: |
+          set -euo pipefail
+          fail=0
+
+          if [ -d components/src/guidelines ]; then
+            echo "::error::components/src/guidelines/ was RETIRED 2026-05-15 (Phase 5, knowledge v0.11.0). Consumers read components/dist/guidelines/{slug}.json — the per-domain merged doc — instead. Do not recreate this directory."
+            fail=1
+          fi
+
+          if [ -f content/dist/content.md ]; then
+            echo "::error::content/dist/content.md was RETIRED 2026-05-15 (Phase 5, knowledge v0.11.0). Consumers read content/dist/global.md + per-component guideline docs instead. Drop the emit from derive-content.js."
+            fail=1
+          fi
+
+          if grep -qE '"components\.guidelinesIndex"|"content\.md"\s*:|"components\.guideline"\s*:' paths-manifest.json; then
+            echo "::error::paths-manifest.json reintroduced a retired entry. See Phase 5 — the retired surfaces are components.guidelinesIndex, paths.content.md, and the components.guideline collection."
+            fail=1
+          fi
+
+          if [ -f scripts/foundations/generate-guideline-stubs.js ]; then
+            echo "::error::scripts/foundations/generate-guideline-stubs.js was RETIRED 2026-05-15 (Phase 5). Auto-stubs are no longer written into components/src/guidelines/."
+            fail=1
+          fi
+
+          if [ -f scripts/validate/validate-guidelines.js ]; then
+            echo "::error::scripts/validate/validate-guidelines.js was RETIRED 2026-05-15 (Phase 5). The new shape is validated by validate-guidelines-doc.js against schemas/guideline.json."
+            fail=1
+          fi
+
+          exit $fail
