@@ -247,6 +247,7 @@ test("derive-content — committed dist/global.md matches buildGlobalOutput", fu
 // the manifest validator's EXCLUDED_FILES + the index's expected omissions.
 var NON_SECTION_FILES = new Set([
   "AUTHORING.md",
+  "README.md",
   "format-spec.md",
   "content-index.md",
 ]);
