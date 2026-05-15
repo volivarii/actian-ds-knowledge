@@ -691,7 +691,13 @@ test("transform-registry — exposes documentationLinks from node document", fun
   );
 });
 
-test("transform-registry — guidelinesSlugSet wires guidelinesFile path", function () {
+test("transform-registry — guidelinesFile field is not emitted (retired Phase 5)", function () {
+  // Phase 5 (knowledge v0.11.0): guidelinesSlugSet input + guidelinesFile
+  // output were retired with the scraped components/src/guidelines/ layer.
+  // Consumers now resolve per-component guideline docs by slug via the
+  // components.guidelineDoc collection in paths-manifest.json. The
+  // transformer no longer accepts guidelinesSlugSet and never emits a
+  // guidelinesFile field on registry entries.
   var componentSets = [
     {
       name: "Button",
@@ -700,20 +706,12 @@ test("transform-registry — guidelinesSlugSet wires guidelinesFile path", funct
       description: "",
       containing_frame: { pageName: "✅ Button" },
     },
-    {
-      name: "Avatar",
-      key: "k-avatar",
-      node_id: "1:2",
-      description: "",
-      containing_frame: { pageName: "✅ Avatar" },
-    },
   ];
   var componentSetNodes = {
     "1:1": { document: { componentPropertyDefinitions: {} } },
-    "1:2": { document: { componentPropertyDefinitions: {} } },
   };
 
-  // button is in the index → wired; avatar is not → null.
+  // Pass guidelinesSlugSet anyway — transformer must IGNORE it.
   var registry = transformRegistry({
     library: "ds",
     fileKey: "test-key",
@@ -724,44 +722,9 @@ test("transform-registry — guidelinesSlugSet wires guidelinesFile path", funct
     guidelinesSlugSet: new Set(["button"]),
   });
 
-  assert.equal(
-    registry.components["button"].guidelinesFile,
-    "components/src/guidelines/button.json",
-  );
-  assert.equal(
-    registry.components["avatar"].guidelinesFile,
-    null,
-    "slug not in set keeps null",
-  );
-});
-
-test("transform-registry — guidelinesSlugSet accepts Array as well as Set", function () {
-  var componentSets = [
-    {
-      name: "Button",
-      key: "k-button",
-      node_id: "1:1",
-      description: "",
-      containing_frame: { pageName: "✅ Button" },
-    },
-  ];
-  var componentSetNodes = {
-    "1:1": { document: { componentPropertyDefinitions: {} } },
-  };
-
-  var registry = transformRegistry({
-    library: "ds",
-    fileKey: "test-key",
-    componentSets: componentSets,
-    componentSetNodes: componentSetNodes,
-    standalones: [],
-    standaloneNodes: {},
-    guidelinesSlugSet: ["button", "avatar"],
-  });
-
-  assert.equal(
-    registry.components["button"].guidelinesFile,
-    "components/src/guidelines/button.json",
+  assert.ok(
+    !("guidelinesFile" in registry.components["button"]),
+    "guidelinesFile must not be present on the entry",
   );
 });
 
@@ -1101,7 +1064,10 @@ test("transform-registry — nestedComponents dedupes same target across sources
   });
 
   assert.equal(registry.components["alert"].nestedComponents.length, 1);
-  assert.equal(registry.components["alert"].nestedComponents[0].source, "instance-swap");
+  assert.equal(
+    registry.components["alert"].nestedComponents[0].source,
+    "instance-swap",
+  );
   assert.equal(registry.components["alert"].nestedComponents[0].role, "Icon");
 });
 

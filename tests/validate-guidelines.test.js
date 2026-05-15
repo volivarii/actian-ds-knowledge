@@ -10,12 +10,7 @@ const path = require("node:path");
 const Ajv2020 = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
 
-const SCHEMA_PATH = path.resolve(
-  __dirname,
-  "..",
-  "schemas",
-  "guideline.json",
-);
+const SCHEMA_PATH = path.resolve(__dirname, "..", "schemas", "guideline.json");
 const FIXTURES_DIR = path.join(__dirname, "fixtures", "guidelines");
 
 function makeValidator() {
@@ -56,19 +51,9 @@ test("guideline schema rejects wrong type for component", () => {
   assert.match(msgs, /must be string/);
 });
 
-test("validate-guidelines CLI exits 0 on the live repo", () => {
-  // Smoke test: shell out to the validator against the real repo.
-  const { execFileSync } = require("node:child_process");
-  const scriptPath = path.resolve(
-    __dirname,
-    "..",
-    "scripts",
-    "validate",
-    "validate-guidelines.js",
-  );
-  // The execFileSync throws on non-zero exit. Stderr captures summary; stdout
-  // captures rdjsonl. We just assert no throw.
-  assert.doesNotThrow(() =>
-    execFileSync(process.execPath, [scriptPath], { stdio: "pipe" }),
-  );
-});
+// Phase 5 (knowledge v0.11.0): the validate-guidelines CLI smoke test was
+// retired with `scripts/validate/validate-guidelines.js`. The new shape is
+// validated by `scripts/validate/validate-guidelines-doc.js` against
+// `schemas/guideline.json` (the fixture-based tests above). No standalone
+// CLI exists for the new shape — CI workflows invoke the deriver, which
+// validates inline.
