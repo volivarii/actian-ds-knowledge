@@ -109,7 +109,7 @@
       "type": "markdown",
       "origin": "ci",
       "generator": "scripts/content/derive-content.js",
-      "description": "Global / cross-cutting content guidelines only (voice, tone, capitalization, words to avoid, UX-pattern topics) — auto-generated from content/src/*.md. The docs /content page and the markdown-consuming plugin skills read this; component-scoped content guidance lives per-component in components/dist/guidelines/{slug}.json instead."
+      "description": "Global / cross-cutting content guidelines only (voice, tone, capitalization, words to avoid, UX-pattern topics, Actian product-surface rules) — auto-generated from content/src/{writing,patterns,product}/*.md plus root-level meta files. The docs /content page and the markdown-consuming plugin skills read this; component-scoped content guidance lives per-component in components/dist/guidelines/{slug}.json instead."
     },
     "accessibility.guide": {
       "path": "accessibility/accessibility.md",

@@ -12,9 +12,10 @@
 //   global.md   — global / cross-cutting topics only (the docs /content
 //                 page + LLM-agent skills consume this).
 //
-// Sources resolve from two locations (Phase 2b):
+// Sources resolve from three locations (Phase 2c, knowledge v0.10.0):
 //   - component-scoped content → components/src/<slug>/content.md
-//   - global / cross-cutting   → content/src/<slug>.md
+//   - global, in a sub-bucket  → content/src/{writing,patterns,product}/<slug>.md
+//   - root-level meta files    → content/src/<slug>.md (global-guidelines.md, etc.)
 //
 // Run:
 //   npm run derive:content

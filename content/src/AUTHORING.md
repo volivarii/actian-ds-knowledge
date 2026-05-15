@@ -76,10 +76,12 @@ The `global-guidelines.md` and `content-index.md` files are exceptions — they 
 
 ## Adding a new file
 
-1. Drop a new `.md` file into `content/src/` following the naming + structure conventions above.
-2. The `content.section` collection in `paths-manifest.json` picks it up automatically — no manifest edit needed.
-3. The `validate-manifest.yml` CI workflow confirms it on PR.
-4. The plugin's nightly `vendor-snapshot` pulls it into the plugin's `vendor/` tree.
+1. Pick the right sub-bucket (`writing/`, `patterns/`, or `product/`) using the [decision tree at the top of this guide](#three-sub-buckets). Meta files (overview, format spec, index) stay at the `content/src/` root.
+2. Drop a new `.md` file into `content/src/<bucket>/` following the naming + structure conventions above.
+3. Add the slug to `content-index.md` so the deriver picks it up.
+4. The `content.section` collection in `paths-manifest.json` covers it automatically — no manifest edit needed.
+5. The `validate-manifest.yml` CI workflow confirms it on PR.
+6. The plugin's nightly `vendor-snapshot` pulls it into the plugin's `vendor/` tree.
 
 ## What lives elsewhere
 
