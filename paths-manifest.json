@@ -3,7 +3,7 @@
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.10.0",
+  "knowledge_version": "0.10.1",
   "paths": {
     "foundations.md": {
       "path": "foundations/src/foundations.md",
@@ -183,6 +183,55 @@
       "origin": "ci",
       "generator": "scripts/foundations/derive-foundations.js",
       "description": "Hierarchical _index for foundations section 'Design Guidelines'. Children listed inside; sibling files under foundations/dist/design-guidelines/."
+    },
+    "components.categoryDefaults.bundle": {
+      "path": "components/dist/categories/categories.bundle.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Roll-up of all 6 category-defaults JSONs keyed by slug. One-shot LLM consumption for category-aware brief enrichment."
+    },
+    "components.categoryDefaults.action": {
+      "path": "components/dist/categories/action-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'action' category. Consumed by the component-brief skill for stub components."
+    },
+    "components.categoryDefaults.data-display": {
+      "path": "components/dist/categories/data-display-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'data-display' category. Consumed by the component-brief skill for stub components."
+    },
+    "components.categoryDefaults.feedback": {
+      "path": "components/dist/categories/feedback-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'feedback' category. Consumed by the component-brief skill for stub components."
+    },
+    "components.categoryDefaults.form-input-selection": {
+      "path": "components/dist/categories/form-input-selection-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'form-input-selection' category. Consumed by the component-brief skill for stub components."
+    },
+    "components.categoryDefaults.navigation": {
+      "path": "components/dist/categories/navigation-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'navigation' category. Consumed by the component-brief skill for stub components."
+    },
+    "components.categoryDefaults.overlays": {
+      "path": "components/dist/categories/overlays-defaults.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/categories/derive-categories.js",
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'overlays' category. Consumed by the component-brief skill for stub components."
     },
     "components.guidelineDoc.bundle": {
       "path": "components/dist/guidelines/guidelines.bundle.json",
@@ -379,55 +428,6 @@
       "origin": "ci",
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'whats-new' component (content, usage, design, behavior, tokens — each optional)."
-    },
-    "components.categoryDefaults.bundle": {
-      "path": "components/dist/categories/categories.bundle.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Roll-up of all 6 category-defaults JSONs keyed by slug. One-shot LLM consumption for category-aware brief enrichment."
-    },
-    "components.categoryDefaults.action": {
-      "path": "components/dist/categories/action-defaults.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'action' category. Consumed by the component-brief skill for stub components."
-    },
-    "components.categoryDefaults.data-display": {
-      "path": "components/dist/categories/data-display-defaults.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'data-display' category. Consumed by the component-brief skill for stub components."
-    },
-    "components.categoryDefaults.feedback": {
-      "path": "components/dist/categories/feedback-defaults.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'feedback' category. Consumed by the component-brief skill for stub components."
-    },
-    "components.categoryDefaults.form-input-selection": {
-      "path": "components/dist/categories/form-input-selection-defaults.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'form-input-selection' category. Consumed by the component-brief skill for stub components."
-    },
-    "components.categoryDefaults.navigation": {
-      "path": "components/dist/categories/navigation-defaults.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'navigation' category. Consumed by the component-brief skill for stub components."
-    },
-    "components.categoryDefaults.overlays": {
-      "path": "components/dist/categories/overlays-defaults.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'overlays' category. Consumed by the component-brief skill for stub components."
     }
   },
   "collections": {
