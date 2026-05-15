@@ -446,6 +446,14 @@
       "origin": "human",
       "description": "Global / cross-cutting content guidelines (Content lead). Three sub-buckets: writing/ (strict grammar/voice/style rules), patterns/ (universal UX patterns), product/ (Actian product-surface copy rules). Meta files (global-guidelines.md, content-index.md, format-spec.md) sit at the content/src/ root. Each file follows When-to-use -> Style -> Behavior -> Do/Don't."
     },
+    "components.images": {
+      "dir": "components/src",
+      "pattern": "{slug}/images/{filename}",
+      "recursive": true,
+      "type": "binary",
+      "origin": "human",
+      "description": "Per-component static visual assets (anatomy callouts, hand-made diagrams). Optional per component — authors drop PNGs/SVGs into components/src/<slug>/images/ alongside their MD files. Consumed by docs site + plugin via manifest indirection."
+    },
     "foundations.leaf": {
       "dir": "foundations/dist",
       "pattern": "<topSlug>/.../<slug>.json",

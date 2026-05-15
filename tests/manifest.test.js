@@ -117,6 +117,23 @@ test("paths-manifest.json — schema correctness", async (t) => {
     },
   );
 
+  await t.test(
+    "components.images collection is declared (recursive, binary)",
+    () => {
+      // Phase 2c convention: authors may opt-in to per-component static
+      // visual assets at components/src/<slug>/images/. The collection is
+      // declared even when no component currently authors images — opt-in.
+      const coll = manifest.collections["components.images"];
+      assert.ok(coll, "components.images collection must exist");
+      assert.equal(coll.recursive, true);
+      assert.equal(coll.type, "binary");
+      assert.ok(
+        coll.pattern.includes("images"),
+        `pattern ${coll.pattern} should reference images dir`,
+      );
+    },
+  );
+
   await t.test("knowledge_version is at least 0.10.0", () => {
     // Phase 2c shipped the breaking content.section pattern change at
     // knowledge_version 0.10.0. Consumers pinning <0.10 will still read
