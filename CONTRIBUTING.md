@@ -69,6 +69,16 @@ Downstream consumers (the plugin, future docs site, Storybook) reference logical
 
 Plugin's CI pulls knowledge tags via semver range (`vendored.json.knowledge_repo_version_range`), so structural changes upstream don't auto-propagate — the plugin team bumps the range explicitly when ready to consume new versions.
 
+## CI
+
+Workflows live in `.github/workflows/`. The active ones:
+
+- `sync-from-figma.yml` — nightly Figma REST → `components/dist/registries/*.json`; auto-bumps patch + tags; opens PRs (additive auto-merged, breaking flagged `review-required`).
+- `foundations-derive.yml` / `categories-derive.yml` / `guidelines-derive.yml` — regenerate `dist/` artifacts on PR-event edits to the corresponding `src/` files; auto-bump + tag.
+- `validate-schemas.yml` / `validate-manifest.yml` — Ajv schema + manifest-path validation. Required checks.
+
+Source of truth is the workflow files themselves; this list is a quick orientation only.
+
 ## Roles
 
 - Plugin lead — orchestration, plugin maintenance, knowledge-repo CI

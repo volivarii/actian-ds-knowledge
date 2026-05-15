@@ -102,6 +102,49 @@ test("paths-manifest.json — schema correctness", async (t) => {
     }
   });
 
+  await t.test(
+    "content.section collection is recursive and bucket-patterned",
+    () => {
+      // Phase 2c (knowledge v0.10.0): content/src/ split into 3 sub-buckets
+      // (writing/, patterns/, product/) plus root-level meta files. The
+      // manifest collection must be recursive and use a bucket-aware pattern
+      // so consumers (plugin, docs site) discover all section files.
+      const coll = manifest.collections["content.section"];
+      assert.ok(coll, "content.section collection must exist");
+      assert.equal(coll.dir, "content/src");
+      assert.equal(coll.pattern, "{bucket}/{slug}.md");
+      assert.equal(coll.recursive, true);
+    },
+  );
+
+  await t.test(
+    "components.images collection is declared (recursive, binary)",
+    () => {
+      // Phase 2c convention: authors may opt-in to per-component static
+      // visual assets at components/src/<slug>/images/. The collection is
+      // declared even when no component currently authors images — opt-in.
+      const coll = manifest.collections["components.images"];
+      assert.ok(coll, "components.images collection must exist");
+      assert.equal(coll.recursive, true);
+      assert.equal(coll.type, "binary");
+      assert.ok(
+        coll.pattern.includes("images"),
+        `pattern ${coll.pattern} should reference images dir`,
+      );
+    },
+  );
+
+  await t.test("knowledge_version is at least 0.10.0", () => {
+    // Phase 2c shipped the breaking content.section pattern change at
+    // knowledge_version 0.10.0. Consumers pinning <0.10 will still read
+    // the old flat layout off prior tags.
+    const [maj, min] = manifest.knowledge_version.split(".").map(Number);
+    assert.ok(
+      maj > 0 || (maj === 0 && min >= 10),
+      `knowledge_version ${manifest.knowledge_version} is below 0.10.0 — Phase 2c sub-bucket migration requires the bump`,
+    );
+  });
+
   await t.test("every registryAlias key and value resolves", () => {
     // registryAliases bridges registry component keys -> guidelineDoc slugs.
     // A key that isn't a real registry component, or a value with no guideline

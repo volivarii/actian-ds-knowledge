@@ -41,9 +41,12 @@ function visitProperties(schema, visit) {
       for (const def of Object.values(node.$defs)) walk(def, contextPath);
     }
     if (node.items) walk(node.items, contextPath + "[]");
-    if (Array.isArray(node.anyOf)) node.anyOf.forEach((s) => walk(s, contextPath));
-    if (Array.isArray(node.oneOf)) node.oneOf.forEach((s) => walk(s, contextPath));
-    if (Array.isArray(node.allOf)) node.allOf.forEach((s) => walk(s, contextPath));
+    if (Array.isArray(node.anyOf))
+      node.anyOf.forEach((s) => walk(s, contextPath));
+    if (Array.isArray(node.oneOf))
+      node.oneOf.forEach((s) => walk(s, contextPath));
+    if (Array.isArray(node.allOf))
+      node.allOf.forEach((s) => walk(s, contextPath));
   }
   walk(schema, schema.title || "(root)");
 }
@@ -84,10 +87,19 @@ test("every property in every schema has description + examples", () => {
       // requirement on `const`-only nodes since the const itself documents the value.
       if (prop.const !== undefined) return;
       if (!prop.description) {
-        missing.push(path.basename(file) + " · " + ctx + "." + name + " missing description");
+        missing.push(
+          path.basename(file) +
+            " · " +
+            ctx +
+            "." +
+            name +
+            " missing description",
+        );
       }
       if (!Array.isArray(prop.examples)) {
-        missing.push(path.basename(file) + " · " + ctx + "." + name + " missing examples");
+        missing.push(
+          path.basename(file) + " · " + ctx + "." + name + " missing examples",
+        );
       }
     });
   }
@@ -103,10 +115,94 @@ test("at least one schema property uses pattern + examples (sanity)", () => {
   for (const file of listSchemaFiles()) {
     const schema = loadJson(file);
     visitProperties(schema, (_name, prop) => {
-      if (prop.pattern && Array.isArray(prop.examples) && prop.examples.length > 0) {
+      if (
+        prop.pattern &&
+        Array.isArray(prop.examples) &&
+        prop.examples.length > 0
+      ) {
         found = true;
       }
     });
   }
-  assert.ok(found, "expected at least one pattern+examples property across schemas");
+  assert.ok(
+    found,
+    "expected at least one pattern+examples property across schemas",
+  );
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// _meta.yml — accept/reject cases for the optional discovery fields
+// (related, examples, lastReviewed). The schema's structural validity is
+// covered by the loop above; these tests pin the data-shape contract.
+// ───────────────────────────────────────────────────────────────────────────
+
+function newMetaValidator() {
+  const ajv = new Ajv2020({ allErrors: true, strict: false });
+  addFormats(ajv);
+  const metaSchema = loadJson(path.join(SCHEMAS_DIR, "guideline-meta.json"));
+  return ajv.compile(metaSchema);
+}
+
+function validMetaBase() {
+  return {
+    component: "Button",
+    category: "action",
+    domains: {
+      content: { status: "approved" },
+      usage: { status: "not-started" },
+      design: { status: "inherited" },
+      behavior: { status: "inherited" },
+      tokens: { status: "not-started" },
+    },
+  };
+}
+
+test("_meta.yml accepts optional related: [slug, ...]", () => {
+  const validate = newMetaValidator();
+  const doc = Object.assign(validMetaBase(), {
+    related: ["link", "icon-button"],
+  });
+  const ok = validate(doc);
+  assert.ok(ok, JSON.stringify(validate.errors));
+});
+
+test("_meta.yml accepts optional examples: [{label, figmaNode|url}]", () => {
+  const validate = newMetaValidator();
+  const doc = Object.assign(validMetaBase(), {
+    examples: [
+      { label: "Primary button", figmaNode: "302:5142" },
+      { label: "Documentation page", url: "https://docs.example/button" },
+    ],
+  });
+  const ok = validate(doc);
+  assert.ok(ok, JSON.stringify(validate.errors));
+});
+
+test("_meta.yml accepts optional lastReviewed: YYYY-MM-DD", () => {
+  const validate = newMetaValidator();
+  const doc = Object.assign(validMetaBase(), { lastReviewed: "2026-05-15" });
+  const ok = validate(doc);
+  assert.ok(ok, JSON.stringify(validate.errors));
+});
+
+test("_meta.yml rejects malformed lastReviewed", () => {
+  const validate = newMetaValidator();
+  const doc = Object.assign(validMetaBase(), { lastReviewed: "May 15, 2026" });
+  const ok = validate(doc);
+  assert.equal(ok, false);
+});
+
+test("_meta.yml rejects examples entry missing label", () => {
+  const validate = newMetaValidator();
+  const doc = Object.assign(validMetaBase(), {
+    examples: [{ figmaNode: "302:5142" }],
+  });
+  const ok = validate(doc);
+  assert.equal(ok, false);
+});
+
+test("_meta.yml accepts a minimal doc with none of the three new optional fields", () => {
+  const validate = newMetaValidator();
+  const ok = validate(validMetaBase());
+  assert.ok(ok, JSON.stringify(validate.errors));
 });

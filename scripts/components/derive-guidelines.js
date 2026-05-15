@@ -250,6 +250,17 @@ function deriveComponentDir(
   };
   if (meta.section != null) out.meta.section = meta.section;
   if (meta.related != null) out.meta.related = meta.related;
+  if (Array.isArray(meta.examples)) {
+    out.meta.examples = meta.examples.map(function (e) {
+      const item = { label: e.label };
+      if (e.figmaNode != null) item.figmaNode = e.figmaNode;
+      if (e.url != null) item.url = e.url;
+      return item;
+    });
+  }
+  if (typeof meta.lastReviewed === "string") {
+    out.meta.lastReviewed = meta.lastReviewed;
+  }
 
   assertValid(
     validators.component,
