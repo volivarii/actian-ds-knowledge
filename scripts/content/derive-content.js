@@ -125,13 +125,22 @@ function shiftHeadings(s) {
   return lines.join("\n");
 }
 
+// Sub-buckets we walk inside content/src/. Order is not significant
+// (a given slug exists in at most one bucket). Adding a bucket means
+// editing this list. Files at content/src/ root (meta files like
+// global-guidelines.md) resolve with bucket: null.
+var CONTENT_SUB_BUCKETS = ["writing", "patterns", "product"];
+
 // Resolve the source file for a content-index slug, tagging its scope.
 // Component-scoped content lives in the per-component guideline layout
 // (`components/src/<slug>/content.md`, Phase 2a); global / cross-cutting
-// topics live flat under `content/src/` (Phase 2b — the former `_global/`
-// subdirectory was flattened away once components moved out).
-// Returns { file, scope } where scope is "component" | "global", or null.
+// topics live under `content/src/` either in a sub-bucket
+// (`writing/`, `patterns/`, `product/`) or flat at the root (meta files
+// like `global-guidelines.md`).
+// Returns { file, scope, bucket } where scope is "component" | "global"
+// and bucket is one of CONTENT_SUB_BUCKETS or null, or null overall.
 function resolveSectionFile(srcDir, slug) {
+  // Component-scoped content lives per-component (Phase 2a).
   var componentCandidate = path.join(
     ROOT,
     "components",
@@ -140,12 +149,24 @@ function resolveSectionFile(srcDir, slug) {
     "content.md",
   );
   if (fs.existsSync(componentCandidate)) {
-    return { file: componentCandidate, scope: "component" };
+    return { file: componentCandidate, scope: "component", bucket: null };
   }
-  var globalCandidate = path.join(srcDir, slug + ".md");
-  if (fs.existsSync(globalCandidate)) {
-    return { file: globalCandidate, scope: "global" };
+
+  // Sub-bucketed global content (writing/, patterns/, product/).
+  for (var i = 0; i < CONTENT_SUB_BUCKETS.length; i++) {
+    var bucket = CONTENT_SUB_BUCKETS[i];
+    var bucketCandidate = path.join(srcDir, bucket, slug + ".md");
+    if (fs.existsSync(bucketCandidate)) {
+      return { file: bucketCandidate, scope: "global", bucket: bucket };
+    }
   }
+
+  // Root-level meta files (global-guidelines.md, content-index.md, format-spec.md).
+  var rootCandidate = path.join(srcDir, slug + ".md");
+  if (fs.existsSync(rootCandidate)) {
+    return { file: rootCandidate, scope: "global", bucket: null };
+  }
+
   return null;
 }
 

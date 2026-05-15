@@ -307,3 +307,78 @@ test("derive-content — every section source file is referenced by the index (i
     );
   }
 });
+
+var os = require("os");
+
+test("resolveSectionFile finds files in content/src/writing/ sub-bucket", function () {
+  var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "derive-content-"));
+  var writingDir = path.join(tmp, "writing");
+  fs.mkdirSync(writingDir);
+  fs.writeFileSync(
+    path.join(writingDir, "voice-and-tone.md"),
+    "# Voice\n\nstub\n",
+  );
+
+  var resolved = derive.resolveSectionFile(tmp, "voice-and-tone");
+
+  assert.ok(resolved, "expected resolution");
+  assert.strictEqual(resolved.scope, "global");
+  assert.strictEqual(resolved.bucket, "writing");
+  assert.ok(resolved.file.endsWith("writing/voice-and-tone.md"));
+
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("resolveSectionFile finds files in content/src/patterns/ sub-bucket", function () {
+  var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "derive-content-"));
+  var patternsDir = path.join(tmp, "patterns");
+  fs.mkdirSync(patternsDir);
+  fs.writeFileSync(path.join(patternsDir, "forms.md"), "# Forms\n\nstub\n");
+
+  var resolved = derive.resolveSectionFile(tmp, "forms");
+
+  assert.ok(resolved);
+  assert.strictEqual(resolved.bucket, "patterns");
+
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("resolveSectionFile finds files in content/src/product/ sub-bucket", function () {
+  var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "derive-content-"));
+  var productDir = path.join(tmp, "product");
+  fs.mkdirSync(productDir);
+  fs.writeFileSync(
+    path.join(productDir, "lineage-specific-ui.md"),
+    "# Lineage\n\nstub\n",
+  );
+
+  var resolved = derive.resolveSectionFile(tmp, "lineage-specific-ui");
+
+  assert.ok(resolved);
+  assert.strictEqual(resolved.bucket, "product");
+
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("resolveSectionFile still finds root-level meta files with bucket=null", function () {
+  var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "derive-content-"));
+  fs.writeFileSync(
+    path.join(tmp, "global-guidelines.md"),
+    "# Global\n\nstub\n",
+  );
+
+  var resolved = derive.resolveSectionFile(tmp, "global-guidelines");
+
+  assert.ok(resolved);
+  assert.strictEqual(resolved.scope, "global");
+  assert.strictEqual(resolved.bucket, null);
+
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("resolveSectionFile returns null for missing slug", function () {
+  var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "derive-content-"));
+  var resolved = derive.resolveSectionFile(tmp, "does-not-exist");
+  assert.strictEqual(resolved, null);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
