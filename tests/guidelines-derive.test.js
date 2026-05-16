@@ -53,16 +53,27 @@ test("md parser: unclosed frontmatter fence throws", () => {
   );
 });
 
-test("md parser: H2 opens sections, bullets become string items", () => {
+test("md parser: H2 opens sections, lists become {bullets} items", () => {
   const r = mdParser.parseGuidelineMarkdown(
     "## When to use\n\n- One.\n- Two.\n\n## Style\n\n- Three.\n",
   );
   assert.equal(r.sections.length, 2);
   assert.deepEqual(r.sections[0], {
     heading: "When to use",
-    content: ["One.", "Two."],
+    content: [{ bullets: ["One.", "Two."] }],
   });
-  assert.deepEqual(r.sections[1].content, ["Three."]);
+  assert.deepEqual(r.sections[1].content, [{ bullets: ["Three."] }]);
+});
+
+test("md parser: two lists separated by prose stay distinguishable", () => {
+  const r = mdParser.parseGuidelineMarkdown(
+    "## Stepper\n\n- One.\n- Two.\n\nMiddle paragraph.\n\n- Three.\n",
+  );
+  assert.deepEqual(r.sections[0].content, [
+    { bullets: ["One.", "Two."] },
+    { prose: "Middle paragraph." },
+    { bullets: ["Three."] },
+  ]);
 });
 
 test("md parser: H1 is ignored as the document title", () => {
@@ -77,8 +88,35 @@ test("md parser: content before first H2 becomes an empty-heading lead section",
   );
   assert.equal(r.sections[0].heading, "");
   assert.deepEqual(r.sections[0].content, [
-    { note: "Buttons trigger actions." },
+    { prose: "Buttons trigger actions." },
   ]);
+});
+
+test("md parser: bare paragraph → {prose}, blockquote → {note}", () => {
+  // Author opts into a Callout via `>`. Bare paragraphs render as plain
+  // prose, not Callouts. Universal precedent (Primer/Polaris/Carbon/Markdoc).
+  const r = mdParser.parseGuidelineMarkdown(
+    "## Steppers\n\nWhen used in a stepper, match the visual treatment.\n\n" +
+      "> Do not mix sticky footer styles across steps.\n",
+  );
+  assert.deepEqual(r.sections[0].content, [
+    { prose: "When used in a stepper, match the visual treatment." },
+    { note: "Do not mix sticky footer styles across steps." },
+  ]);
+});
+
+test("md parser: Use | Avoid table classifies as do-dont", () => {
+  const r = mdParser.parseGuidelineMarkdown(
+    "## Recommendations\n\n| Use | Avoid |\n|---|---|\n| Save | Submit |\n",
+  );
+  assert.deepEqual(r.sections[0].content, [{ do: "Save", dont: "Submit" }]);
+});
+
+test("md parser: Recommended labels | Avoid table classifies as do-dont", () => {
+  const r = mdParser.parseGuidelineMarkdown(
+    "## Labels\n\n| Recommended labels | Avoid |\n|---|---|\n| Continue | Next |\n",
+  );
+  assert.deepEqual(r.sections[0].content, [{ do: "Continue", dont: "Next" }]);
 });
 
 test("md parser: Do / Don't table → {do,dont} items", () => {
@@ -115,9 +153,9 @@ test("md parser: H4+ headings flatten into the section as {note} items", () => {
   );
   assert.equal(r.sections.length, 1);
   assert.deepEqual(r.sections[0].content, [
-    "Top rule.",
+    { bullets: ["Top rule."] },
     { note: "Edge case" },
-    "Nested rule.",
+    { bullets: ["Nested rule."] },
   ]);
 });
 
@@ -135,11 +173,11 @@ test("md parser: H3 opens a reserved subsection within the section", () => {
     "## When to use\n\n- Top.\n\n### Variant selection\n\n- Primary first.\n",
   );
   assert.equal(r.sections.length, 1);
-  assert.deepEqual(r.sections[0].content, ["Top."]);
+  assert.deepEqual(r.sections[0].content, [{ bullets: ["Top."] }]);
   assert.equal(r.sections[0].subsections.length, 1);
   assert.deepEqual(r.sections[0].subsections[0], {
     subheading: "Variant selection",
-    content: ["Primary first."],
+    content: [{ bullets: ["Primary first."] }],
   });
 });
 
