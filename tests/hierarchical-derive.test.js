@@ -356,10 +356,17 @@ test("paths-manifest foundations.* entries reflect hierarchical layout", () => {
   );
   expectedTopSlugs.forEach((slug) => {
     const key = "foundations." + slug;
-    assert.ok(manifest.paths[key], "manifest has " + key);
+    // A slug may be promoted to a namespace (leaf-XOR-namespace convention), in
+    // which case its canonical index entry lives at <key>.index instead.
+    const resolvedKey = manifest.paths[key]
+      ? key
+      : manifest.paths[key + ".index"]
+        ? key + ".index"
+        : key;
+    assert.ok(manifest.paths[resolvedKey], "manifest has " + resolvedKey);
     assert.ok(
-      fs.existsSync(path.join(REPO_ROOT, manifest.paths[key].path)),
-      "manifest path resolves: " + manifest.paths[key].path,
+      fs.existsSync(path.join(REPO_ROOT, manifest.paths[resolvedKey].path)),
+      "manifest path resolves: " + manifest.paths[resolvedKey].path,
     );
   });
 
