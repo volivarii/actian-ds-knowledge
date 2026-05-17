@@ -96,7 +96,8 @@ jobs:
             --keys-file .figma-keys.json \
             --plugin-json-path package.json \
             --manifest-path paths-manifest.json \
-            --categories-path components/dist/categories.json
+            --categories-path components/dist/categories.json \
+            --icon-groups-path components/src/icon-groups.json
 
       - name: Render token-reference.md
         run: node scripts/render-token-reference.js
