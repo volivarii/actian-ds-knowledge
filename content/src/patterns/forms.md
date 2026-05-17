@@ -141,7 +141,7 @@ For any interaction involving date ranges, filtering, or scheduling.
 - It represents a system state (for example, ON/OFF, enabled/disabled).
 - It is a binary setting that persists (for example, dark mode, notifications).
 
-**Use a [checkbox](checkbox) when:**
+**Use a [checkbox](/components/form-input-selection/checkbox-with-label/) when:**
 - The user is selecting one or more items.
 - The action does not take effect immediately (typically part of a form or group submission).
 - It is a yes/no decision that is reviewed later. For example, **Agree to terms and conditions** or **Subscribe to newsletter**.
