@@ -528,6 +528,7 @@ function parseArgs(argv) {
     else if (a === "--plugin-json-path") out.pluginJsonPath = next();
     else if (a === "--manifest-path") out.manifestPath = next();
     else if (a === "--categories-path") out.categoriesPath = next();
+    else if (a === "--icon-groups-path") out.iconGroupsPath = next();
   }
   return out;
 }
