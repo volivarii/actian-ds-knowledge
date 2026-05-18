@@ -75,7 +75,10 @@ if (require.main === module) {
   // Sync paths-manifest.knowledge_version with package.json#version.
   // Lives in the same directory as the bumped JSON file. No-op if absent
   // (keeps the utility portable — tests + non-knowledge consumers unaffected).
-  var repoRoot = path.dirname(pluginJsonPath);
+  // path.resolve so a relative invocation (e.g. `node ... package.json minor`
+  // from repo root) produces an absolute repoRoot — required for require()
+  // resolution in the MAP.md regen below.
+  var repoRoot = path.resolve(path.dirname(pluginJsonPath));
   var manifestPath = path.join(repoRoot, "paths-manifest.json");
   var manifest = null;
   if (fs.existsSync(manifestPath)) {

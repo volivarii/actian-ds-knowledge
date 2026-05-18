@@ -191,6 +191,70 @@ test("CLI regenerates MAP.md when sibling scripts/generate-map.js + MAP.md exist
   }
 });
 
+test("CLI regenerates MAP.md when invoked with a RELATIVE path (regression for require() resolution)", function () {
+  // Regression: when CI workflows invoke `node scripts/lib/bump-version.js
+  // package.json minor` from the repo root, pluginJsonPath is the relative
+  // string "package.json". The MAP regen used path.join(path.dirname(arg))
+  // which produced "scripts/generate-map.js" — a string require() doesn't
+  // accept as a CommonJS module ID. Fix: path.resolve so repoRoot is always
+  // absolute. This test runs the CLI with cwd set to a tmp dir so the
+  // relative path resolves correctly there.
+  var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bump-version-test-"));
+  try {
+    var scriptsDir = path.join(tmpDir, "scripts");
+    fs.mkdirSync(scriptsDir);
+    fs.writeFileSync(
+      path.join(scriptsDir, "generate-map.js"),
+      [
+        '"use strict";',
+        "function generateMap(manifest) {",
+        '  return "# MAP\\nversion: " + manifest.knowledge_version + "\\n";',
+        "}",
+        "module.exports = { generateMap };",
+      ].join("\n"),
+      "utf8",
+    );
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ name: "test", version: "0.6.0" }, null, 2) + "\n",
+      "utf8",
+    );
+    fs.writeFileSync(
+      path.join(tmpDir, "paths-manifest.json"),
+      JSON.stringify(
+        {
+          manifest_schema_version: "v1",
+          knowledge_version: "0.6.0",
+          paths: {},
+        },
+        null,
+        2,
+      ) + "\n",
+      "utf8",
+    );
+    fs.writeFileSync(
+      path.join(tmpDir, "MAP.md"),
+      "# MAP\nversion: 0.6.0\n",
+      "utf8",
+    );
+
+    // Invoke with RELATIVE path + cwd set to tmpDir — mirrors how CI runs it.
+    var result = child_process.spawnSync(
+      process.execPath,
+      [BUMP_VERSION_CLI, "package.json", "patch"],
+      { encoding: "utf8", cwd: tmpDir },
+    );
+    assert.equal(result.status, 0, "CLI exit code: " + result.stderr);
+    assert.match(result.stdout, /regenerated MAP\.md/);
+    assert.equal(
+      fs.readFileSync(path.join(tmpDir, "MAP.md"), "utf8"),
+      "# MAP\nversion: 0.6.1\n",
+    );
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
 test("CLI is a no-op on MAP.md when scripts/generate-map.js is absent", function () {
   var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bump-version-test-"));
   try {

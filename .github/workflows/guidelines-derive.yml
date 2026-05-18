@@ -21,9 +21,25 @@ on:
       - 'components/src/*/behavior.md'
       - 'components/src/*/tokens.yml'
       - 'scripts/components/**'
+      - 'scripts/content/fanout-patterns.js'
       - 'schemas/guideline-component.json'
       - 'schemas/guideline-meta.json'
       - 'schemas/guideline-tokens.json'
+      # Pattern fan-out inputs: when a pattern .md gains/changes its
+      # `relatedComponents` / `relatedCategories` frontmatter, the per-component
+      # guideline JSONs must regenerate so the synthesized sections track.
+      # See scripts/content/fanout-patterns.js + content/src/AUTHORING.md.
+      - 'content/src/patterns/*.md'
+      - 'content/src/product/*.md'
+      - 'content/src/content-index.md'
+      # Category data: relatedCategories expansions read the kebab-slug map
+      # from components/dist/categories/<slug>-defaults.json and the member
+      # list from components/dist/categories.json — both must trigger.
+      - 'components/dist/categories.json'
+      - 'components/dist/categories/*-defaults.json'
+      # Registry: synthesized docs pull component name + category from
+      # components/dist/registries/dskit.json.
+      - 'components/dist/registries/dskit.json'
       # paths-manifest.json is BOTH an output of this workflow (the
       # components.guidelineDoc.* entries are auto-regenerated) AND an input
       # (derive-guidelines.js reads #registryAliases to emit alias copies), so
