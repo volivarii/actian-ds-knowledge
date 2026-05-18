@@ -37,6 +37,7 @@ const Ajv2020 = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
 const yamlParser = require("../categories/categories-parser");
 const mdParser = require("./guideline-md-parser");
+const fanoutPatterns = require("../content/fanout-patterns");
 
 const SCHEMA_VERSION = 1;
 const PROSE_DOMAINS = ["content", "usage", "design", "behavior"];
@@ -629,6 +630,7 @@ function derivePipeline(srcDir, distDir, repoRoot, opts) {
 
   const perComponent = {};
   const written = [];
+  const synthesizedSlugs = [];
 
   slugs.forEach((slug) => {
     const dirAbs = path.join(srcDir, slug);
@@ -647,6 +649,43 @@ function derivePipeline(srcDir, distDir, repoRoot, opts) {
       );
     }
     perComponent[slug] = doc;
+    // Write deferred until after pattern fan-out (below) so synthesized
+    // components + appended pattern sections land in the same write pass.
+  });
+
+  // Pattern fan-out — route content/src/{patterns,product}/*.md sections into
+  // related components (per `relatedComponents` + `relatedCategories` frontmatter).
+  // Mutates perComponent in place; may add new entries for components that have
+  // no components/src/<slug>/ directory (their guideline doc is synthesized
+  // entirely from pattern sources). See scripts/content/fanout-patterns.js.
+  if (opts.registry && opts.categoriesData && opts.categorySlugFor) {
+    const fanoutResult = fanoutPatterns.runFanout(
+      repoRoot,
+      perComponent,
+      opts.registry,
+      opts.categoriesData,
+      opts.categorySlugFor,
+    );
+    if (fanoutResult.errors.length > 0) {
+      throw new Error(
+        "Pattern fan-out failed:\n  " + fanoutResult.errors.join("\n  "),
+      );
+    }
+    fanoutResult.summary.synthesized.forEach((s) => synthesizedSlugs.push(s));
+  }
+
+  // Single write pass — every entry in perComponent (source-derived OR
+  // pattern-synthesized) gets validated + written here. Validation runs
+  // post-fanout so the schema sees the final shape (including any appended
+  // pattern sections + the new synthesized status).
+  const allSlugs = Object.keys(perComponent).sort();
+  allSlugs.forEach((slug) => {
+    const doc = perComponent[slug];
+    assertValid(
+      validators.component,
+      doc,
+      "components/dist/guidelines/" + slug + ".json",
+    );
     const distPath = path.join(distDir, slug + ".json");
     writeAtomic(distPath, stableStringify(doc));
     written.push("components/dist/guidelines/" + slug + ".json");
@@ -682,12 +721,24 @@ function derivePipeline(srcDir, distDir, repoRoot, opts) {
   writeAtomic(path.join(distDir, "coverage.md"), coverage + "\n");
   written.push("components/dist/guidelines/coverage.md");
 
+  // Expected dist files = source-derived slugs + synthesized (pattern-only)
+  // slugs + alias copies + bundle + coverage. Synthesized entries must be in
+  // this set or cleanupStaleDistFiles would prune them as orphans.
   const expectedFiles = ["guidelines.bundle.json", "coverage.md"]
-    .concat(slugs.map((s) => s + ".json"))
+    .concat(allSlugs.map((s) => s + ".json"))
     .concat(aliasKeys.map((k) => k + ".json"));
   const pruned = cleanupStaleDistFiles(distDir, expectedFiles);
 
-  return { perComponent, aliasDocs, bundle, coverage, written, slugs, pruned };
+  return {
+    perComponent,
+    aliasDocs,
+    bundle,
+    coverage,
+    written,
+    slugs: allSlugs,
+    synthesizedSlugs,
+    pruned,
+  };
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -743,15 +794,84 @@ function runCli(argv) {
     }
   }
 
+  // Inputs for pattern fan-out — registry (component slugs + names + Figma
+  // category names) + categories.json (members per category) + slugifier
+  // (Figma category name → kebab-case slug from components/src/categories/).
+  // No-op for the fan-out if any are missing; the pipeline still produces
+  // the source-derived JSONs.
+  const registryPath = path.join(
+    d.repoRoot,
+    "components",
+    "dist",
+    "registries",
+    "dskit.json",
+  );
+  const categoriesPath = path.join(
+    d.repoRoot,
+    "components",
+    "dist",
+    "categories.json",
+  );
+  const categoriesDistDir = path.join(
+    d.repoRoot,
+    "components",
+    "dist",
+    "categories",
+  );
+
+  let registry = null;
+  let categoriesData = null;
+  let categorySlugFor = null;
+  if (
+    fs.existsSync(registryPath) &&
+    fs.existsSync(categoriesPath) &&
+    fs.existsSync(categoriesDistDir)
+  ) {
+    try {
+      registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+      categoriesData = JSON.parse(fs.readFileSync(categoriesPath, "utf8"));
+      // Build label → slug map from components/dist/categories/<slug>-defaults.json
+      // files. Each carries `label` (Figma name) + `slug` (kebab-case).
+      const labelToSlug = new Map();
+      fs.readdirSync(categoriesDistDir)
+        .filter((f) => /^[a-z][a-z0-9-]*-defaults\.json$/.test(f))
+        .forEach((f) => {
+          const def = JSON.parse(
+            fs.readFileSync(path.join(categoriesDistDir, f), "utf8"),
+          );
+          if (def.label && def.slug) labelToSlug.set(def.label, def.slug);
+        });
+      categorySlugFor = (label) => labelToSlug.get(label) || "";
+    } catch (err) {
+      console.error(
+        "[derive-guidelines] could not load fan-out inputs (registry / categories): " +
+          err.message,
+      );
+      return 2;
+    }
+  }
+
   let result;
   try {
     result = derivePipeline(srcDir, distDir, d.repoRoot, {
       allowEmpty: args.allowEmpty,
       registryAliases: registryAliases,
+      registry: registry,
+      categoriesData: categoriesData,
+      categorySlugFor: categorySlugFor,
     });
   } catch (err) {
     console.error("[derive-guidelines] " + err.message);
     return 2;
+  }
+
+  if (result.synthesizedSlugs && result.synthesizedSlugs.length > 0) {
+    console.log(
+      "[derive-guidelines] pattern fan-out synthesized " +
+        result.synthesizedSlugs.length +
+        " component doc(s): " +
+        result.synthesizedSlugs.sort().join(", "),
+    );
   }
 
   if (!args.noManifest) {
