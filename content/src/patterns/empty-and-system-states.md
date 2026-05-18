@@ -1,6 +1,10 @@
 ---
 title: "Empty and system states"
 nav_order: 21
+# Pattern fan-out (see content/src/AUTHORING.md). Each listed slug receives
+# this pattern's sections on its component page + plugin /component-brief.
+# Jeff: review/edit/correct after CI lands the first fan-out run.
+relatedComponents: [empty-state, error-state, maintenance-state]
 ---
 # Empty and system states
 

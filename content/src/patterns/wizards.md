@@ -1,6 +1,9 @@
 ---
 title: "Wizards"
 nav_order: 49
+# Pattern fan-out — Navigation-category multi-step affordances.
+# Jeff: edit/correct/extend.
+relatedComponents: [stepper, stepper-buttons]
 ---
 # Wizards
 

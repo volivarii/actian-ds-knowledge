@@ -67,7 +67,7 @@ test("parsePatternFrontmatter returns empty object for null/empty input", functi
 
 test("parsePatternFrontmatter strips quotes from inline array items", function () {
   var fm = fanout.parsePatternFrontmatter(
-    'relatedComponents: ["text-input", \'checkbox\']',
+    "relatedComponents: [\"text-input\", 'checkbox']",
   );
   assert.deepEqual(fm.relatedComponents, ["text-input", "checkbox"]);
 });
@@ -84,13 +84,18 @@ function makeCategoriesData(mapping) {
   // mapping: { "Form (input & selection)": [<member slugs>], ... }
   var categories = {};
   Object.keys(mapping).forEach(function (label) {
-    categories[label] = { components: mapping[label], count: mapping[label].length };
+    categories[label] = {
+      components: mapping[label],
+      count: mapping[label].length,
+    };
   });
   return { categories: categories };
 }
 
 function makeCategorySlugFor(labelToSlug) {
-  return function (label) { return labelToSlug[label] || ""; };
+  return function (label) {
+    return labelToSlug[label] || "";
+  };
 }
 
 test("resolveFanoutSet unions explicit components + category-expanded set", function () {
@@ -106,11 +111,17 @@ test("resolveFanoutSet unions explicit components + category-expanded set", func
   var cats = makeCategoriesData({
     "Form (input & selection)": ["checkbox", "search"],
   });
-  var slugFor = makeCategorySlugFor({ "Form (input & selection)": "form-input-selection" });
+  var slugFor = makeCategorySlugFor({
+    "Form (input & selection)": "form-input-selection",
+  });
 
   var res = fanout.resolveFanoutSet(pattern, registry, cats, slugFor);
   assert.deepEqual(res.errors, []);
-  assert.deepEqual(Array.from(res.slugs).sort(), ["checkbox", "search", "text-input"]);
+  assert.deepEqual(Array.from(res.slugs).sort(), [
+    "checkbox",
+    "search",
+    "text-input",
+  ]);
 });
 
 test("resolveFanoutSet flags unknown component slug", function () {
@@ -136,12 +147,64 @@ test("resolveFanoutSet flags unknown category slug", function () {
     frontmatter: { relatedCategories: ["fake-category"] },
   };
   var registry = makeRegistry([]);
-  var cats = makeCategoriesData({ "Feedback": ["alert-banner"] });
-  var slugFor = makeCategorySlugFor({ "Feedback": "feedback" });
+  var cats = makeCategoriesData({ Feedback: ["alert-banner"] });
+  var slugFor = makeCategorySlugFor({ Feedback: "feedback" });
 
   var res = fanout.resolveFanoutSet(pattern, registry, cats, slugFor);
   assert.equal(res.errors.length, 1);
   assert.match(res.errors[0], /unknown category 'fake-category'/);
+});
+
+test("resolveFanoutSet resolves registry-alias keys to canonical guideline slugs", function () {
+  // Author wrote `relatedComponents: [input, checkbox-with-label]` — both are
+  // registry keys with aliases (input → text-input; checkbox-with-label →
+  // checkbox). The fan-out set must contain the CANONICALS, so synthesis
+  // doesn't collide with the alias-copy step in derivePipeline.
+  var pattern = {
+    slug: "forms",
+    bucket: "patterns",
+    frontmatter: {
+      relatedComponents: ["input", "checkbox-with-label", "radio-button"],
+    },
+  };
+  var registry = makeRegistry(["input", "checkbox-with-label", "radio-button"]);
+  var aliases = {
+    input: "text-input",
+    "checkbox-with-label": "checkbox",
+    // radio-button has no alias — passes through unchanged
+  };
+  var res = fanout.resolveFanoutSet(
+    pattern,
+    registry,
+    makeCategoriesData({}),
+    makeCategorySlugFor({}),
+    aliases,
+  );
+  assert.deepEqual(res.errors, []);
+  assert.deepEqual(
+    Array.from(res.slugs).sort(),
+    ["checkbox", "radio-button", "text-input"],
+    "registry-alias keys resolved to canonical slugs; non-aliased pass through",
+  );
+});
+
+test("resolveFanoutSet accepts canonical slugs that are alias targets (not registry keys)", function () {
+  // Author wrote `relatedComponents: [text-input]` — text-input is NOT a
+  // registry key but IS the canonical target of an alias. Should be accepted.
+  var pattern = {
+    slug: "x",
+    bucket: "patterns",
+    frontmatter: { relatedComponents: ["text-input"] },
+  };
+  var res = fanout.resolveFanoutSet(
+    pattern,
+    makeRegistry(["input"]),
+    makeCategoriesData({}),
+    makeCategorySlugFor({}),
+    { input: "text-input" },
+  );
+  assert.deepEqual(res.errors, []);
+  assert.deepEqual(Array.from(res.slugs), ["text-input"]);
 });
 
 test("resolveFanoutSet rejects non-slug input shapes", function () {
@@ -201,10 +264,19 @@ function makePattern(slug, fanoutSlugs, sections) {
 }
 
 test("applyPatternFanout appends pattern sections to authored components, preserves status", function () {
-  var perComponent = { "text-input": makeAuthoredDoc("text-input", "approved") };
+  var perComponent = {
+    "text-input": makeAuthoredDoc("text-input", "approved"),
+  };
   var patterns = [makePattern("forms", ["text-input"])];
 
-  fanout.applyPatternFanout(perComponent, patterns, { components: {} }, function () { return "feedback"; });
+  fanout.applyPatternFanout(
+    perComponent,
+    patterns,
+    { components: {} },
+    function () {
+      return "feedback";
+    },
+  );
 
   var d = perComponent["text-input"].domains.content;
   assert.equal(d.status, "approved", "authored status preserved");
@@ -219,11 +291,20 @@ test("applyPatternFanout synthesizes guideline doc for pattern-only components",
   var perComponent = {};
   var patterns = [makePattern("empty-and-system-states", ["empty-state"])];
   var registry = {
-    components: { "empty-state": { name: "Empty state", category: "Feedback" } },
+    components: {
+      "empty-state": { name: "Empty state", category: "Feedback" },
+    },
   };
-  var slugFor = function (label) { return label === "Feedback" ? "feedback" : ""; };
+  var slugFor = function (label) {
+    return label === "Feedback" ? "feedback" : "";
+  };
 
-  var summary = fanout.applyPatternFanout(perComponent, patterns, registry, slugFor);
+  var summary = fanout.applyPatternFanout(
+    perComponent,
+    patterns,
+    registry,
+    slugFor,
+  );
 
   assert.ok(perComponent["empty-state"], "doc synthesized");
   var doc = perComponent["empty-state"];
@@ -233,8 +314,15 @@ test("applyPatternFanout synthesizes guideline doc for pattern-only components",
   assert.equal(doc.meta.category, "feedback");
   assert.equal(doc.domains.content.status, "synthesized");
   assert.equal(doc.domains.content.sections.length, 1);
-  assert.equal(doc.domains.content.sections[0].source, "pattern:empty-and-system-states");
-  assert.equal(doc.domains.content.markdown, undefined, "synthesized must NOT carry markdown");
+  assert.equal(
+    doc.domains.content.sections[0].source,
+    "pattern:empty-and-system-states",
+  );
+  assert.equal(
+    doc.domains.content.markdown,
+    undefined,
+    "synthesized must NOT carry markdown",
+  );
   assert.deepEqual(summary.synthesized, ["empty-state"]);
 });
 
@@ -242,7 +330,11 @@ test("applyPatternFanout promotes not-started → synthesized when only pattern 
   var perComponent = {
     "empty-state": {
       _schema_version: 1,
-      _meta: { auto_generated: true, source: "components/src/empty-state/", do_not_edit: "..." },
+      _meta: {
+        auto_generated: true,
+        source: "components/src/empty-state/",
+        do_not_edit: "...",
+      },
       slug: "empty-state",
       component: "Empty state",
       meta: { category: "feedback" },
@@ -253,7 +345,9 @@ test("applyPatternFanout promotes not-started → synthesized when only pattern 
     perComponent,
     [makePattern("empty-and-system-states", ["empty-state"])],
     { components: {} },
-    function () { return "feedback"; },
+    function () {
+      return "feedback";
+    },
   );
   var d = perComponent["empty-state"].domains.content;
   assert.equal(d.status, "synthesized");
@@ -268,7 +362,11 @@ test("applyPatternFanout drops prior pattern sections (idempotency primitive)", 
   var perComponent = {
     "text-input": {
       _schema_version: 1,
-      _meta: { auto_generated: true, source: "components/src/text-input/", do_not_edit: "..." },
+      _meta: {
+        auto_generated: true,
+        source: "components/src/text-input/",
+        do_not_edit: "...",
+      },
       slug: "text-input",
       component: "Text input",
       meta: { category: "form-input-selection" },
@@ -284,7 +382,9 @@ test("applyPatternFanout drops prior pattern sections (idempotency primitive)", 
       },
     },
   };
-  fanout.applyPatternFanout(perComponent, [], { components: {} }, function () { return ""; });
+  fanout.applyPatternFanout(perComponent, [], { components: {} }, function () {
+    return "";
+  });
   // Stale pattern section gone; authored survives.
   var sections = perComponent["text-input"].domains.content.sections;
   assert.equal(sections.length, 1);
@@ -324,17 +424,21 @@ test("runFanout produces byte-identical perComponent on repeated runs", function
     // doesn't matter for a single pattern.
     fs.writeFileSync(
       path.join(contentSrc, "content-index.md"),
-      "## All sections\n\n<a href=\"empty-and-system-states\">Empty and system states</a>\n",
+      '## All sections\n\n<a href="empty-and-system-states">Empty and system states</a>\n',
       "utf8",
     );
 
     var registry = {
-      components: { "empty-state": { name: "Empty state", category: "Feedback" } },
+      components: {
+        "empty-state": { name: "Empty state", category: "Feedback" },
+      },
     };
     var categoriesData = {
-      categories: { "Feedback": { components: ["empty-state"] } },
+      categories: { Feedback: { components: ["empty-state"] } },
     };
-    var slugFor = function (label) { return label === "Feedback" ? "feedback" : ""; };
+    var slugFor = function (label) {
+      return label === "Feedback" ? "feedback" : "";
+    };
 
     var perComponentA = {};
     fanout.runFanout(tmpDir, perComponentA, registry, categoriesData, slugFor);
@@ -348,7 +452,10 @@ test("runFanout produces byte-identical perComponent on repeated runs", function
       "two runs produce identical perComponent state",
     );
     assert.ok(perComponentA["empty-state"], "synthesized doc present");
-    assert.equal(perComponentA["empty-state"].domains.content.status, "synthesized");
+    assert.equal(
+      perComponentA["empty-state"].domains.content.status,
+      "synthesized",
+    );
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
@@ -372,12 +479,22 @@ test("runFanout returns errors WITHOUT mutating perComponent when any pattern is
       "utf8",
     );
 
-    var registry = { components: { "foo": { name: "Foo", category: "Feedback" } } };
+    var registry = {
+      components: { foo: { name: "Foo", category: "Feedback" } },
+    };
     var categoriesData = { categories: {} };
-    var slugFor = function () { return ""; };
+    var slugFor = function () {
+      return "";
+    };
 
     var perComponent = {};
-    var res = fanout.runFanout(tmpDir, perComponent, registry, categoriesData, slugFor);
+    var res = fanout.runFanout(
+      tmpDir,
+      perComponent,
+      registry,
+      categoriesData,
+      slugFor,
+    );
 
     assert.equal(res.errors.length, 1);
     assert.match(res.errors[0], /unknown component slug 'does-not-exist'/);

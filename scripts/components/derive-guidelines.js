@@ -665,6 +665,7 @@ function derivePipeline(srcDir, distDir, repoRoot, opts) {
       opts.registry,
       opts.categoriesData,
       opts.categorySlugFor,
+      registryAliases,
     );
     if (fanoutResult.errors.length > 0) {
       throw new Error(

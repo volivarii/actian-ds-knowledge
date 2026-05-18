@@ -1,6 +1,11 @@
 ---
 title: "Forms"
 nav_order: 14
+# Pattern fan-out — initial set: registry slugs in the "Form (input & selection)"
+# category that benefit from form-level layout/labeling/copy guidance.
+# Skipped: search, search-dropdown-menu (search has its own pattern), and
+# calendar (date-picker is narrower). Jeff: edit/correct/extend.
+relatedComponents: [input, input-date, checkbox-with-label, radio-button, toglge, search-filters]
 ---
 # Forms
 

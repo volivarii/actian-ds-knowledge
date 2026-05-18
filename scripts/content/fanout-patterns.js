@@ -61,7 +61,9 @@ function parsePatternFrontmatter(frontmatterStr) {
       var key = inlineMatch[1];
       var items = inlineMatch[2]
         .split(",")
-        .map(function (s) { return s.trim().replace(/^["']|["']$/g, ""); })
+        .map(function (s) {
+          return s.trim().replace(/^["']|["']$/g, "");
+        })
         .filter(Boolean);
       if (key === "relatedComponents" || key === "relatedCategories") {
         out[key] = items;
@@ -72,7 +74,8 @@ function parsePatternFrontmatter(frontmatterStr) {
     var blockMatch = line.match(/^(\w[\w-]*)\s*:\s*$/);
     if (blockMatch) {
       var blockKey = blockMatch[1];
-      if (blockKey !== "relatedComponents" && blockKey !== "relatedCategories") continue;
+      if (blockKey !== "relatedComponents" && blockKey !== "relatedCategories")
+        continue;
       var collected = [];
       for (var j = i + 1; j < lines.length; j++) {
         var sub = lines[j];
@@ -148,7 +151,9 @@ function loadPatternFile(entry) {
 function sortByIndexOrder(patterns, contentIndexOrder) {
   if (!contentIndexOrder || contentIndexOrder.length === 0) return patterns;
   var rank = new Map();
-  contentIndexOrder.forEach(function (slug, i) { rank.set(slug, i); });
+  contentIndexOrder.forEach(function (slug, i) {
+    rank.set(slug, i);
+  });
   return patterns.slice().sort(function (a, b) {
     var ra = rank.has(a.slug) ? rank.get(a.slug) : Number.MAX_SAFE_INTEGER;
     var rb = rank.has(b.slug) ? rank.get(b.slug) : Number.MAX_SAFE_INTEGER;
@@ -179,40 +184,86 @@ function readContentIndexOrder(indexFile) {
 
 // Resolve a pattern's fan-out set to the union of explicit components +
 // category-expanded components. Validates every reference against the
-// registry / categories. Returns { slugs: Set, errors: [] }.
+// registry / categories. Resolves registry-alias keys (e.g. "input",
+// "checkbox-with-label") to their canonical guideline slug (e.g.
+// "text-input", "checkbox") so fan-out always lands on the canonical doc;
+// the deriver's alias-copy pass then copies that doc to the alias keys
+// automatically. Returns { slugs: Set, errors: [] } where slugs contains
+// only canonical guideline slugs.
 //
 //   pattern              : { slug, frontmatter, ... } from loadPatternFile
-//   registrySlugs        : Set<string> of valid component slugs
+//   registrySlugs        : Set<string> of valid registry component slugs
 //   categoriesData       : { categories: { <CategoryName>: { components: [slug, ...] } } }
 //   categorySlugFor      : function(categoryName) → kebab-case slug
-function resolveFanoutSet(pattern, registrySlugs, categoriesData, categorySlugFor) {
+//   registryAliases      : { <registryKey>: <canonicalGuidelineSlug> }
+function resolveFanoutSet(
+  pattern,
+  registrySlugs,
+  categoriesData,
+  categorySlugFor,
+  registryAliases,
+) {
+  registryAliases = registryAliases || {};
   var fm = pattern.frontmatter || {};
   var slugs = new Set();
   var errors = [];
 
-  (fm.relatedComponents || []).forEach(function (slug) {
+  function addResolved(slug, source) {
     if (!SLUG_RE.test(slug)) {
       errors.push(
-        "content/src/" + pattern.bucket + "/" + pattern.slug + ".md: " +
-        "relatedComponents entry '" + slug + "' is not a valid slug",
+        "content/src/" +
+          pattern.bucket +
+          "/" +
+          pattern.slug +
+          ".md: " +
+          source +
+          " entry '" +
+          slug +
+          "' is not a valid slug",
       );
       return;
     }
-    if (!registrySlugs.has(slug)) {
+    // Accept either a registry key OR a known alias target (canonical
+    // guideline slug). Reject anything else.
+    var isRegistryKey = registrySlugs.has(slug);
+    var aliasTargets = Object.values(registryAliases);
+    var isAliasTarget = aliasTargets.indexOf(slug) !== -1;
+    if (!isRegistryKey && !isAliasTarget) {
       errors.push(
-        "content/src/" + pattern.bucket + "/" + pattern.slug + ".md: " +
-        "relatedComponents references unknown component slug '" + slug + "'",
+        "content/src/" +
+          pattern.bucket +
+          "/" +
+          pattern.slug +
+          ".md: " +
+          source +
+          " references unknown component slug '" +
+          slug +
+          "'",
       );
       return;
     }
-    slugs.add(slug);
+    // Normalize to canonical: if slug is a registry-alias key, redirect to
+    // its target. Otherwise leave as-is (already canonical or stand-alone
+    // registry slug without an alias).
+    var canonical = registryAliases[slug] || slug;
+    slugs.add(canonical);
+  }
+
+  (fm.relatedComponents || []).forEach(function (slug) {
+    addResolved(slug, "relatedComponents");
   });
 
   (fm.relatedCategories || []).forEach(function (catSlug) {
     if (!SLUG_RE.test(catSlug)) {
       errors.push(
-        "content/src/" + pattern.bucket + "/" + pattern.slug + ".md: " +
-        "relatedCategories entry '" + catSlug + "' is not a valid slug",
+        "content/src/" +
+          pattern.bucket +
+          "/" +
+          pattern.slug +
+          ".md: " +
+          "relatedCategories entry '" +
+          catSlug +
+          "' is not a valid slug",
       );
       return;
     }
@@ -222,13 +273,22 @@ function resolveFanoutSet(pattern, registrySlugs, categoriesData, categorySlugFo
       if (categorySlugFor(catNames[i]) !== catSlug) continue;
       found = true;
       var members = categoriesData.categories[catNames[i]].components || [];
-      members.forEach(function (m) { slugs.add(m); });
+      // Category members are registry keys — resolve each through aliases.
+      members.forEach(function (m) {
+        slugs.add(registryAliases[m] || m);
+      });
       break;
     }
     if (!found) {
       errors.push(
-        "content/src/" + pattern.bucket + "/" + pattern.slug + ".md: " +
-        "relatedCategories references unknown category '" + catSlug + "'",
+        "content/src/" +
+          pattern.bucket +
+          "/" +
+          pattern.slug +
+          ".md: " +
+          "relatedCategories references unknown category '" +
+          catSlug +
+          "'",
       );
     }
   });
@@ -241,7 +301,9 @@ function resolveFanoutSet(pattern, registrySlugs, categoriesData, categorySlugFo
 // the filtered sections (does not mutate the input).
 function dropPatternSections(sections) {
   if (!Array.isArray(sections)) return [];
-  return sections.filter(function (s) { return !s.source; });
+  return sections.filter(function (s) {
+    return !s.source;
+  });
 }
 
 // Stamp section.source onto each section before splicing into a component.
@@ -336,8 +398,11 @@ function applyPatternFanout(perComponent, patterns, registry, categorySlugFor) {
       if (!regEntry) {
         // Should be unreachable — resolveFanoutSet's CI gate rejects unknown slugs.
         throw new Error(
-          "Pattern '" + pattern.slug + "' fans out to unknown component slug '" +
-          slug + "' that resolveFanoutSet did not catch",
+          "Pattern '" +
+            pattern.slug +
+            "' fans out to unknown component slug '" +
+            slug +
+            "' that resolveFanoutSet did not catch",
         );
       }
       perComponent[slug] = {
@@ -345,7 +410,8 @@ function applyPatternFanout(perComponent, patterns, registry, categorySlugFor) {
         _meta: {
           auto_generated: true,
           source: "(patterns)",
-          do_not_edit: "Edit the per-domain source files; CI regenerates this file.",
+          do_not_edit:
+            "Edit the per-domain source files; CI regenerates this file.",
         },
         slug: slug,
         component: regEntry.name || slug,
@@ -379,16 +445,30 @@ function applyPatternFanout(perComponent, patterns, registry, categorySlugFor) {
 // registry          : parsed components/dist/registries/dskit.json
 // categoriesData    : parsed components/dist/categories.json
 // categorySlugFor   : kebab-case slugifier matching components/src/categories
+// registryAliases   : { <registryKey>: <canonicalGuidelineSlug> } from
+//                     paths-manifest.json — normalizes alias keys (e.g. "input")
+//                     to canonicals (e.g. "text-input") so fan-out lands on the
+//                     canonical doc; the deriver's alias-copy pass propagates
+//                     the fanned content to the alias keys automatically
 //
 // Returns { errors: [string], summary: {...} }.
-function runFanout(repoRoot, perComponent, registry, categoriesData, categorySlugFor) {
+function runFanout(
+  repoRoot,
+  perComponent,
+  registry,
+  categoriesData,
+  categorySlugFor,
+  registryAliases,
+) {
   var contentSrcRoot = path.join(repoRoot, "content", "src");
   var entries = listPatternFiles(contentSrcRoot);
   if (entries.length === 0) {
     return { errors: [], summary: { stamped: [], synthesized: [] } };
   }
 
-  var registrySlugs = new Set(Object.keys((registry && registry.components) || {}));
+  var registrySlugs = new Set(
+    Object.keys((registry && registry.components) || {}),
+  );
 
   var patterns = entries.map(loadPatternFile);
   var allErrors = [];
@@ -396,7 +476,13 @@ function runFanout(repoRoot, perComponent, registry, categoriesData, categorySlu
   // Resolve each pattern's fan-out set up-front so errors aggregate before
   // any mutation occurs.
   patterns.forEach(function (p) {
-    var res = resolveFanoutSet(p, registrySlugs, categoriesData, categorySlugFor);
+    var res = resolveFanoutSet(
+      p,
+      registrySlugs,
+      categoriesData,
+      categorySlugFor,
+      registryAliases || {},
+    );
     p.fanoutSlugs = res.slugs;
     allErrors = allErrors.concat(res.errors);
   });
@@ -410,7 +496,12 @@ function runFanout(repoRoot, perComponent, registry, categoriesData, categorySlu
   );
   var ordered = sortByIndexOrder(patterns, indexOrder);
 
-  var summary = applyPatternFanout(perComponent, ordered, registry, categorySlugFor);
+  var summary = applyPatternFanout(
+    perComponent,
+    ordered,
+    registry,
+    categorySlugFor,
+  );
   return { errors: [], summary: summary };
 }
 
