@@ -138,6 +138,7 @@ jobs:
             tokens/**
             package.json
             paths-manifest.json
+            MAP.md
 
       - name: Enable auto-merge for additive PRs
         if: steps.verdict.outputs.category == 'additive' && steps.cpr.outputs.pull-request-number
