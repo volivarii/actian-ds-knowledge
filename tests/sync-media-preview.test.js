@@ -17,7 +17,7 @@ var registry = {
   fileKey: "FILEKEY",
   components: {
     button: { name: "Button", nodeId: "7206:2643", page: "Buttons" },
-    badge:  { name: "Badge",  nodeId: "8888:1111", page: "Badges" },
+    badge: { name: "Badge", nodeId: "8888:1111", page: "Badges" },
   },
 };
 
@@ -60,14 +60,23 @@ function defaultFileTree() {
               type: "FRAME",
               name: "Design guidelines",
               children: [
-                { id: "h:1", type: "INSTANCE", name: ".local - section header" },
+                {
+                  id: "h:1",
+                  type: "INSTANCE",
+                  name: ".local - section header",
+                },
                 {
                   id: "ss:preview",
                   type: "FRAME",
                   name: "Preview",
                   children: [
                     // Title TEXT layer (the renderer skips this).
-                    { id: "t:1", type: "TEXT", name: "Title", characters: "Overview" },
+                    {
+                      id: "t:1",
+                      type: "TEXT",
+                      name: "Title",
+                      characters: "Overview",
+                    },
                     // The actual visual FRAME — this is what gets captured.
                     { id: "visual:preview", type: "FRAME", name: "Overview" },
                   ],
@@ -85,9 +94,7 @@ function defaultFileTree() {
               id: "c:2",
               type: "FRAME",
               name: "Components",
-              children: [
-                { id: "8888:1111", type: "FRAME", name: "Badge" },
-              ],
+              children: [{ id: "8888:1111", type: "FRAME", name: "Badge" }],
             },
             // No Design guidelines wrapper on this page.
           ],
@@ -99,25 +106,38 @@ function defaultFileTree() {
 
 function mockRest(overrides) {
   var tree = defaultFileTree();
-  return Object.assign({
-    getFile: function () { return Promise.resolve(tree); },
-    getNodes: function (fileKey, ids) {
-      // Real Figma /v1/nodes returns { nodes: { [id]: { document: <subtree> } } }.
-      var pages = {};
-      tree.document.children.forEach(function (p) { pages[p.id] = { document: p }; });
-      var resp = { nodes: {} };
-      ids.forEach(function (id) { if (pages[id]) resp.nodes[id] = pages[id]; });
-      return Promise.resolve(resp);
+  return Object.assign(
+    {
+      getFile: function () {
+        return Promise.resolve(tree);
+      },
+      getNodes: function (fileKey, ids) {
+        // Real Figma /v1/nodes returns { nodes: { [id]: { document: <subtree> } } }.
+        var pages = {};
+        tree.document.children.forEach(function (p) {
+          pages[p.id] = { document: p };
+        });
+        var resp = { nodes: {} };
+        ids.forEach(function (id) {
+          if (pages[id]) resp.nodes[id] = pages[id];
+        });
+        return Promise.resolve(resp);
+      },
+      getImages: function (fileKey, ids) {
+        var images = {};
+        ids.forEach(function (id) {
+          images[id] = "https://signed/" + id + ".png";
+        });
+        return Promise.resolve({ images: images });
+      },
+      fetchBinary: function () {
+        return Promise.resolve(
+          Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+        );
+      },
     },
-    getImages: function (fileKey, ids) {
-      var images = {};
-      ids.forEach(function (id) { images[id] = "https://signed/" + id + ".png"; });
-      return Promise.resolve({ images: images });
-    },
-    fetchBinary: function () {
-      return Promise.resolve(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-    },
-  }, overrides);
+    overrides,
+  );
 }
 
 test("findFrameByNameRecursive walks nested frames", function () {
@@ -131,14 +151,20 @@ test("findFrameByNameRecursive walks nested frames", function () {
 test("findRoleSourceNode finds inner visual FRAME inside Preview sub-section", function () {
   var tree = defaultFileTree();
   var page1 = tree.document.children[0];
-  var srcId = syncMedia.findRoleSourceNode(page1, syncMedia.ROLE_FINDERS.preview);
+  var srcId = syncMedia.findRoleSourceNode(
+    page1,
+    syncMedia.ROLE_FINDERS.preview,
+  );
   assert.equal(srcId, "visual:preview");
 });
 
 test("findRoleSourceNode returns null when outer wrapper is absent", function () {
   var tree = defaultFileTree();
   var page2 = tree.document.children[1]; // Badges — no Design guidelines wrapper
-  assert.equal(syncMedia.findRoleSourceNode(page2, syncMedia.ROLE_FINDERS.preview), null);
+  assert.equal(
+    syncMedia.findRoleSourceNode(page2, syncMedia.ROLE_FINDERS.preview),
+    null,
+  );
 });
 
 test("findRoleSourceNode is case-insensitive on sub-section name", function () {
@@ -164,7 +190,10 @@ test("writes preview.png from inner visual FRAME for components with Preview sub
   var btnPath = path.join(dir, "button", "preview.png");
   var badgePath = path.join(dir, "badge", "preview.png");
   assert.ok(fs.existsSync(btnPath), "button preview.png must exist");
-  assert.ok(!fs.existsSync(badgePath), "badge preview.png must not be created (no wrapper)");
+  assert.ok(
+    !fs.existsSync(badgePath),
+    "badge preview.png must not be created (no wrapper)",
+  );
   assert.deepEqual(result.captured, ["button/preview"]);
   assert.deepEqual(result.missing, ["badge"]);
 });
@@ -173,10 +202,44 @@ test("idempotent: second run does not rewrite when bytes match", async function 
   var dir = tmpdir();
   await syncMedia.run({ registry: registry, outputDir: dir, rest: mockRest() });
   var stat1 = fs.statSync(path.join(dir, "button", "preview.png"));
-  await new Promise(function (r) { setTimeout(r, 10); });
+  await new Promise(function (r) {
+    setTimeout(r, 10);
+  });
   await syncMedia.run({ registry: registry, outputDir: dir, rest: mockRest() });
   var stat2 = fs.statSync(path.join(dir, "button", "preview.png"));
   assert.equal(stat1.mtimeMs, stat2.mtimeMs, "stable bytes → no rewrite");
+});
+
+test("page-name lookup tolerates leading/trailing whitespace on Figma side", async function () {
+  // Real-world quirk (2026-05-19): designers pad Figma page names with
+  // leading whitespace for visual sorting in the pages panel (e.g.
+  // "     ✍️ Button"). The registry transformer trims these, so the
+  // registry stores `page: "✍️ Button"` (clean) while Figma returns the
+  // padded form. An exact-match lookup misses every padded page — first
+  // real media-preview sync run captured 0/N components for this reason.
+  var dir = tmpdir();
+  // Custom mock that returns PADDED page names — registry stays trimmed.
+  var paddedMock = mockRest();
+  var origGetFile = paddedMock.getFile;
+  paddedMock.getFile = function () {
+    return origGetFile().then(function (resp) {
+      resp.document.children.forEach(function (p) {
+        p.name = "     " + p.name + "   "; // 5 leading + 3 trailing spaces
+      });
+      return resp;
+    });
+  };
+  var result = await syncMedia.run({
+    registry: registry,
+    outputDir: dir,
+    rest: paddedMock,
+  });
+  // Button still resolves despite whitespace mismatch — preview.png written.
+  assert.ok(
+    fs.existsSync(path.join(dir, "button", "preview.png")),
+    "trimmed-vs-padded mismatch must not break page resolution",
+  );
+  assert.deepEqual(result.captured, ["button/preview"]);
 });
 
 test("slug whose page field is unknown lands in missing", async function () {
@@ -201,11 +264,19 @@ test("multiple slugs on the same page share one capture", async function () {
   var sharedReg = {
     fileKey: "FILEKEY",
     components: {
-      button:       { name: "Button",       nodeId: "7206:2643", page: "Buttons" },
-      "button-cta": { name: "Button (CTA)", nodeId: "7206:2644", page: "Buttons" },
+      button: { name: "Button", nodeId: "7206:2643", page: "Buttons" },
+      "button-cta": {
+        name: "Button (CTA)",
+        nodeId: "7206:2644",
+        page: "Buttons",
+      },
     },
   };
-  var result = await syncMedia.run({ registry: sharedReg, outputDir: dir, rest: mockRest() });
+  var result = await syncMedia.run({
+    registry: sharedReg,
+    outputDir: dir,
+    rest: mockRest(),
+  });
   assert.deepEqual(result.captured, ["button-cta/preview", "button/preview"]);
   // Both files must exist and have the same bytes.
   var b1 = fs.readFileSync(path.join(dir, "button", "preview.png"));
@@ -215,7 +286,9 @@ test("multiple slugs on the same page share one capture", async function () {
 
 test("orchestrator runs media-preview phase end-to-end", async function () {
   var pluginDir = fs.mkdtempSync(path.join(os.tmpdir(), "kn-plugin-"));
-  fs.mkdirSync(path.join(pluginDir, "components", "dist", "registries"), { recursive: true });
+  fs.mkdirSync(path.join(pluginDir, "components", "dist", "registries"), {
+    recursive: true,
+  });
   fs.writeFileSync(
     path.join(pluginDir, "components", "dist", "registries", "dskit.json"),
     JSON.stringify(registry),
