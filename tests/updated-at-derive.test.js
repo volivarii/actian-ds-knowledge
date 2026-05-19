@@ -22,10 +22,12 @@ function makeRepo() {
 
 test("deriveGitMtime returns ISO of last commit touching components/src/<slug>/", function () {
   var root = makeRepo();
-  fs.mkdirSync(path.join(root, "components", "src", "button"), { recursive: true });
+  fs.mkdirSync(path.join(root, "components", "src", "button"), {
+    recursive: true,
+  });
   fs.writeFileSync(
     path.join(root, "components", "src", "button", "_meta.yml"),
-    "component: Button\ncategory: action\ndomains: {}\n"
+    "component: Button\ncategory: action\ndomains: {}\n",
   );
   runGit(root, ["add", "."]);
   runGit(root, ["commit", "-q", "-m", "init"]);
@@ -45,7 +47,9 @@ test("deriveGitMtime returns null when source dir does not exist (synthesized co
 test("deriveGitMtime returns null when git history is empty (no commits touching the dir)", function () {
   var root = makeRepo();
   // Create dir but don't commit it.
-  fs.mkdirSync(path.join(root, "components", "src", "lonely"), { recursive: true });
+  fs.mkdirSync(path.join(root, "components", "src", "lonely"), {
+    recursive: true,
+  });
   fs.writeFileSync(path.join(root, "components", "src", "lonely", "x.txt"), "");
   // Initial commit elsewhere so the repo has a HEAD but the dir is untracked.
   fs.writeFileSync(path.join(root, "README.md"), "x");
@@ -53,4 +57,36 @@ test("deriveGitMtime returns null when git history is empty (no commits touching
   runGit(root, ["commit", "-q", "-m", "init"]);
   // Untracked dir → no log entry → null.
   assert.equal(derive.deriveGitMtime(root, "lonely"), null);
+});
+
+test("deriveMediaMap returns { preview: <rel-path> } when preview.png is on disk", function () {
+  var root = makeRepo();
+  var mediaDir = path.join(root, "components", "dist", "media", "button");
+  fs.mkdirSync(mediaDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(mediaDir, "preview.png"),
+    Buffer.from([0x89, 0x50]),
+  );
+  var media = derive.deriveMediaMap(root, "button");
+  assert.deepEqual(media, {
+    preview: "components/dist/media/button/preview.png",
+  });
+});
+
+test("deriveMediaMap returns null when no media dir for slug", function () {
+  var root = makeRepo();
+  assert.equal(derive.deriveMediaMap(root, "button"), null);
+});
+
+test("deriveMediaMap returns null when dir exists but no role files present", function () {
+  var root = makeRepo();
+  fs.mkdirSync(path.join(root, "components", "dist", "media", "button"), {
+    recursive: true,
+  });
+  // Put an irrelevant file (not in the MEDIA_ROLES map).
+  fs.writeFileSync(
+    path.join(root, "components", "dist", "media", "button", "random.txt"),
+    "x",
+  );
+  assert.equal(derive.deriveMediaMap(root, "button"), null);
 });

@@ -202,6 +202,31 @@ function deriveTokensDomain(entry, dirAbs, slug, tokensValidator) {
   return domainBase(entry);
 }
 
+// Media role → filename basename. New roles ship with a new entry here.
+// The `preview` role is sourced from the Figma frame named "Overview"
+// (translation happens in scripts/sync/sync-media-preview.js); the data
+// side speaks `preview` exclusively, matching DS asset-naming convention.
+var MEDIA_ROLES = {
+  preview: "preview.png",
+  // anatomy: "anatomy.png",
+  // state_matrix: "state-matrix.png",
+};
+
+function deriveMediaMap(repoRoot, slug) {
+  var dir = path.join(repoRoot, "components", "dist", "media", slug);
+  if (!fs.existsSync(dir)) return null;
+  var map = {};
+  Object.keys(MEDIA_ROLES).forEach(function (role) {
+    var basename = MEDIA_ROLES[role];
+    var p = path.join(dir, basename);
+    if (fs.existsSync(p)) {
+      map[role] = "components/dist/media/" + slug + "/" + basename;
+    }
+  });
+  if (Object.keys(map).length === 0) return null;
+  return map;
+}
+
 // ───────────────────────────────────────────────────────────────────────────
 // Derive one component directory
 // ───────────────────────────────────────────────────────────────────────────
@@ -290,6 +315,9 @@ function deriveComponentDir(
 
   const mtime = deriveGitMtime(repoRoot, slug);
   if (mtime) out.updated_at = mtime;
+
+  var media = deriveMediaMap(repoRoot, slug);
+  if (media) out.media = media;
 
   assertValid(
     validators.component,
@@ -965,6 +993,7 @@ module.exports = {
   deriveProseDomain,
   deriveTokensDomain,
   deriveGitMtime,
+  deriveMediaMap: deriveMediaMap,
   deriveComponentDir,
   buildBundle,
   buildCoverage,
