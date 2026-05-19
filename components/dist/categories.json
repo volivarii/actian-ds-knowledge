@@ -1,7 +1,7 @@
 {
   "_schema_version": 1,
   "library": "ds",
-  "generatedAt": "2026-05-19T13:21:16.925Z",
+  "generatedAt": "2026-05-19T15:03:47.231Z",
   "categories": {
     "Breakpoint, grid & structure": {
       "components": [
@@ -17,15 +17,17 @@
       "components": [
         "calendar",
         "checkbox-with-label",
+        "dropdown-select-default",
         "input",
         "input-date",
         "radio-button",
+        "rich-text",
         "search",
         "search-dropdown-menu",
         "search-filters",
         "toglge"
       ],
-      "count": 9
+      "count": 11
     },
     "Navigation": {
       "components": [
@@ -36,23 +38,31 @@
         "notification-dropdown",
         "side-nav",
         "stepper",
-        "stepper-buttons",
         "tabs",
         "whats-new-dropdown"
       ],
-      "count": 10
+      "count": 9
     },
     "Data Display": {
       "components": [
         "avatar",
         "badge",
-        "card",
+        "bar-graph",
+        "card-for-grouped-content",
+        "card-for-items",
+        "card-for-perimeter",
         "collapse-accordion",
         "digram-item-types",
         "digram-topic",
+        "glossary-item-hierarchy-diagram",
         "identification-key",
+        "line-graph",
+        "lineage-connecting-line",
+        "lineage-grouped-node",
+        "lineage-individual-node",
+        "metamodel-widget",
         "page-header",
-        "perimeter-card",
+        "progress-bar-small",
         "scroll-bar",
         "search-result-card",
         "segmented-control",
@@ -62,12 +72,12 @@
         "tag-default",
         "tag-glossary-item-type",
         "tag-interactive",
+        "tag-shared",
         "tag-stage",
         "tag-status",
-        "tag-updated",
-        "tile-item"
+        "toolbar"
       ],
-      "count": 22
+      "count": 31
     },
     "White-label services": {
       "components": [
@@ -373,6 +383,6 @@
     }
   },
   "uncategorized": {
-    "count": 14
+    "count": 0
   }
 }
