@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "library": "ds",
   "fileKey": "l8biHxfarNi1I2RMvVxVOK",
-  "lastSynced": "2026-05-18T08:32:40.989Z",
+  "lastSynced": "2026-05-19T10:36:07.833Z",
   "componentCount": 322,
   "components": {
     "xs-grid": {
@@ -107,9 +107,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "group": "Data viz: lineage",
       "variants": {
         "Type": [
           "Main item",
@@ -243,9 +240,6 @@
       "properties": {},
       "nestedComponents": [],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Feedback",
-      "group": "Maintenance banner",
       "variants": {
         "Type": [
           "Default"
@@ -353,12 +347,12 @@
       "status": "in-progress",
       "variants": {
         "State": [
-          "Default",
           "Hovered",
           "Pressed",
           "Selected",
           "Disabled",
-          "Focused"
+          "Focused",
+          "Default"
         ]
       }
     },
@@ -636,9 +630,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "group": "Data viz: metamodel",
       "variants": {
         "Type": [
           "Dataset",
@@ -695,9 +686,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "group": "Data viz: glossary item hierarchy",
       "variants": {
         "Type": [
           "Default"
@@ -848,9 +836,6 @@
       "properties": {},
       "nestedComponents": [],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "group": "Data viz: progressive bar",
       "variants": {
         "Size": [
           "Default",
@@ -1051,9 +1036,6 @@
       "properties": {},
       "nestedComponents": [],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Navigation",
-      "group": "Traffic light",
       "variants": {
         "Type": [
           "Default",
@@ -1403,7 +1385,6 @@
         "Status": [
           "Fail",
           "Warning",
-          "Success",
           "Loading",
           "Maintenance",
           "Scheduled",
@@ -1411,7 +1392,8 @@
           "Stopped",
           "Sleeping",
           "Offline",
-          "Pending"
+          "Pending",
+          "Success"
         ]
       }
     },
@@ -1793,10 +1775,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "group": "Data viz: WIP all others",
-      "status": "deprecated",
       "variants": {
         "Property 1": [
           "Default"
@@ -2029,14 +2007,14 @@
       "status": "in-progress",
       "variants": {
         "Color": [
-          "Gray",
           "Orange",
           "Indigo",
           "Purple",
           "Lime",
           "Teal",
           "Yellow",
-          "Pink"
+          "Pink",
+          "Gray"
         ]
       }
     },
@@ -2055,7 +2033,7 @@
       "group": "Tag (Identification key)",
       "status": "in-progress",
       "variants": {
-        "Type": [
+        "Property 1": [
           "Default"
         ]
       }
@@ -2315,9 +2293,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "group": "Data viz: lineage",
       "variants": {
         "Direction": [
           "Down",
@@ -2631,9 +2606,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "group": "Data viz: toolbar",
       "variants": {
         "Type": [
           "Single",
@@ -2767,10 +2739,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "group": "Data viz: WIP all others",
-      "status": "deprecated",
       "variants": {
         "Property 1": [
           "Default"
@@ -2861,9 +2829,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "group": "Data viz: lineage",
       "variants": {
         "State": [
           "Default",
