@@ -325,7 +325,8 @@ function stampSource(sections, sourceMarker) {
 //   categorySlugFor : function(categoryName) → kebab-case slug
 //
 // Returns a summary { stamped: [{slug, patternSlug, sectionCount}],
-//                     synthesized: [slug] }.
+//                     synthesized: [slug],
+//                     skippedUncategorized: [{slug, patternSlug}] }.
 //
 // Behavior per related component:
 //   - If perComponent[slug] exists: append pattern sections to
@@ -334,7 +335,7 @@ function stampSource(sections, sourceMarker) {
 //     domains.content.status = "synthesized" + the pattern sections.
 //     meta.category is resolved from the registry entry.
 function applyPatternFanout(perComponent, patterns, registry, categorySlugFor) {
-  var summary = { stamped: [], synthesized: [] };
+  var summary = { stamped: [], synthesized: [], skippedUncategorized: [] };
   var registryEntries = (registry && registry.components) || {};
 
   // First pass: drop existing pattern-sourced sections so the run is idempotent.
@@ -405,6 +406,22 @@ function applyPatternFanout(perComponent, patterns, registry, categorySlugFor) {
             "' that resolveFanoutSet did not catch",
         );
       }
+      // Skip synthesis when the component is intentionally uncategorized in
+      // the registry (no `category` field — e.g., the Figma sync removed the
+      // page tag). The docs generator skips uncategorized components anyway
+      // (no MDX page emitted), so a synthesized guideline doc would be an
+      // unreachable artifact. Surface the skip in the summary so the daily
+      // sync changelog logs which components are intentionally excluded.
+      var resolvedCategory = regEntry.category
+        ? categorySlugFor(regEntry.category)
+        : "";
+      if (!resolvedCategory) {
+        summary.skippedUncategorized.push({
+          slug: slug,
+          patternSlug: pattern.slug,
+        });
+        return;
+      }
       perComponent[slug] = {
         _schema_version: 1,
         _meta: {
@@ -416,7 +433,7 @@ function applyPatternFanout(perComponent, patterns, registry, categorySlugFor) {
         slug: slug,
         component: regEntry.name || slug,
         meta: {
-          category: categorySlugFor(regEntry.category || ""),
+          category: resolvedCategory,
         },
         domains: {
           content: {
@@ -463,7 +480,10 @@ function runFanout(
   var contentSrcRoot = path.join(repoRoot, "content", "src");
   var entries = listPatternFiles(contentSrcRoot);
   if (entries.length === 0) {
-    return { errors: [], summary: { stamped: [], synthesized: [] } };
+    return {
+      errors: [],
+      summary: { stamped: [], synthesized: [], skippedUncategorized: [] },
+    };
   }
 
   var registrySlugs = new Set(
