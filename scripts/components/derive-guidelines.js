@@ -463,18 +463,13 @@ function buildCoverage(perComponent, registryAliases) {
 
 // A registry-alias copy: byte-identical to the canonical derived object plus a
 // top-level `_alias_of` marker. `slug` stays the canonical slug — only the
-// filename (and the bundle key) is the registry key. Key order keeps
-// `_alias_of` adjacent to `_schema_version` for readability.
+// filename (and the bundle key) is the registry key. Spread the canonical so
+// any field added to derived docs (updated_at, media, future ones) automatically
+// propagates to alias copies — override only the alias marker.
 function buildAliasDoc(canonicalDoc) {
-  return {
-    _schema_version: canonicalDoc._schema_version,
+  return Object.assign({}, canonicalDoc, {
     _alias_of: canonicalDoc.slug,
-    _meta: canonicalDoc._meta,
-    slug: canonicalDoc.slug,
-    component: canonicalDoc.component,
-    meta: canonicalDoc.meta,
-    domains: canonicalDoc.domains,
-  };
+  });
 }
 
 // Resolve paths-manifest.json#registryAliases into { registryKey: aliasDoc }.
