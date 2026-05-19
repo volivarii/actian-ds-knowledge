@@ -11,12 +11,16 @@
 // translation happens. Downstream (schema, render-mdx, MediaAsset) all
 // speak `preview`.
 //
-// Find strategy: fetch the registry component's parent-context node via
-// /nodes, walk its top-level children for a FRAME named "Overview"
-// (case-insensitive). The test mocks `getNodes` directly; real Figma
-// integration (Task 6 / runtime polish) will resolve component → parent
-// page id and pass that to getNodes. See open-question note in plan
-// §"Open questions (defer to implementation)".
+// Find strategy:
+//   1. getFile(fileKey, { depth: 2 }) — one call to get CANVAS → PAGE → top-level
+//      frames. Builds componentId → pageId map.
+//   2. getNodes(pageIds) — one batched call across all relevant pages.
+//   3. Walk each page's direct children for a FRAME named "Overview".
+//   4. getImages(uniqueOverviewIds, png, scale=2) — one batched call.
+//   5. fetchBinary(signedUrl) per unique overview, write preview.png per slug.
+//
+// Multiple components on the same page share one Overview frame and one PNG
+// download; the on-disk copy is duplicated per-slug for resolver simplicity.
 
 var fs = require("fs");
 var path = require("path");
@@ -55,45 +59,101 @@ async function run(opts) {
   var rest = opts.rest;
   var fileKey = opts.registry.fileKey;
   var components = opts.registry.components || {};
+  var slugs = Object.keys(components);
 
-  var ids = Object.keys(components).map(function (slug) { return components[slug].nodeId; })
-    .filter(function (x) { return !!x; });
-
-  if (ids.length === 0) {
-    return { captured: [], missing: [], skipped: Object.keys(components) };
+  if (slugs.length === 0) {
+    return { captured: [], missing: [], skipped: [] };
   }
 
-  var nodesResp = await rest.getNodes(fileKey, ids);
+  // Step 1: walk the file tree once at depth 2 (CANVAS → PAGE → top-level frames)
+  // to build a componentId → pageId map. Canvas children are pages; each page's
+  // children include the component frames AND the "Overview" sibling frames.
+  // depth=2 keeps the response small (no nested layers).
+  var fileResp = await rest.getFile(fileKey, { depth: 2 });
+  var document = fileResp && fileResp.document;
+  if (!document || !Array.isArray(document.children)) {
+    // Empty/malformed file: no captures possible.
+    return { captured: [], missing: slugs.sort(), skipped: [] };
+  }
+
+  // Build componentId → pageId map by scanning each page's direct children.
+  // A component can appear as a FRAME (standalone) or as a COMPONENT_SET
+  // (variants set), so accept either.
+  var componentToPage = {};
+  document.children.forEach(function (page) {
+    if (!page || !Array.isArray(page.children)) return;
+    page.children.forEach(function (child) {
+      if (!child || !child.id) return;
+      componentToPage[child.id] = page.id;
+    });
+  });
+
+  // Step 2: for each registered component, look up its parent page.
+  // Components without a resolved page → missing. Dedupe page ids.
+  var pendingPerPage = {}; // pageId → [slug, ...]
+  var missing = [];
+  slugs.forEach(function (slug) {
+    var c = components[slug];
+    if (!c || !c.nodeId) { missing.push(slug); return; }
+    var pageId = componentToPage[c.nodeId];
+    if (!pageId) { missing.push(slug); return; }
+    if (!pendingPerPage[pageId]) pendingPerPage[pageId] = [];
+    pendingPerPage[pageId].push(slug);
+  });
+
+  var pageIds = Object.keys(pendingPerPage);
+  if (pageIds.length === 0) {
+    return { captured: [], missing: missing.sort(), skipped: [] };
+  }
+
+  // Step 3: fetch each page's children via /v1/nodes. With depth not specified
+  // the API returns the full subtree, but for "Overview" frame discovery we
+  // only need direct children. Trust the existing getNodes batching.
+  var nodesResp = await rest.getNodes(fileKey, pageIds);
   var nodes = (nodesResp && nodesResp.nodes) || {};
 
-  // Slug → preview source node id (or null). The source id refers to the
-  // Figma "Overview" frame; on-disk filename will be preview.png.
+  // Step 4: for each page, locate the Overview frame; map back to each
+  // slug whose component lives on that page.
   var pending = []; // [{ slug, sourceNodeId }]
-  var missing = [];
-  Object.keys(components).forEach(function (slug) {
-    var c = components[slug];
-    if (!c.nodeId) { missing.push(slug); return; }
-    var page = nodes[c.nodeId];
-    var srcId = findPreviewSourceNode(page);
-    if (srcId) pending.push({ slug: slug, sourceNodeId: srcId });
-    else missing.push(slug);
+  pageIds.forEach(function (pageId) {
+    var pageNode = nodes[pageId];
+    var overviewId = findPreviewSourceNode(pageNode);
+    var slugsOnPage = pendingPerPage[pageId];
+    if (overviewId) {
+      slugsOnPage.forEach(function (slug) {
+        pending.push({ slug: slug, sourceNodeId: overviewId });
+      });
+    } else {
+      // No Overview on this page → all slugs here are missing.
+      slugsOnPage.forEach(function (slug) { missing.push(slug); });
+    }
   });
 
   if (pending.length === 0) {
     return { captured: [], missing: missing.sort(), skipped: [] };
   }
 
-  // Batch /v1/images call — Figma accepts comma-separated ids.
-  var sourceIds = pending.map(function (p) { return p.sourceNodeId; });
-  var imagesResp = await rest.getImages(fileKey, sourceIds, { format: "png", scale: 2 });
+  // Step 5: render the Overview frames as PNG. Dedupe overview ids so each
+  // page's Overview is only rendered once (multiple components on the same
+  // page → same overview image; the on-disk copy is per-slug).
+  var uniqueIds = Array.from(new Set(pending.map(function (p) { return p.sourceNodeId; })));
+  var imagesResp = await rest.getImages(fileKey, uniqueIds, { format: "png", scale: 2 });
   var urlMap = (imagesResp && imagesResp.images) || {};
 
+  // Step 6: download + write each slug's preview.png. Multiple slugs on the
+  // same page get the same bytes (we re-fetch per slug for code simplicity;
+  // a future optimization could cache the buffer keyed by sourceNodeId).
   var captured = [];
+  var bufferCache = {}; // sourceNodeId → Buffer
   for (var i = 0; i < pending.length; i++) {
     var p = pending[i];
     var signedUrl = urlMap[p.sourceNodeId];
     if (!signedUrl) { missing.push(p.slug); continue; }
-    var bytes = await rest.fetchBinary(signedUrl);
+    var bytes = bufferCache[p.sourceNodeId];
+    if (!bytes) {
+      bytes = await rest.fetchBinary(signedUrl);
+      bufferCache[p.sourceNodeId] = bytes;
+    }
     var outPath = path.join(opts.outputDir, p.slug, "preview.png");
     writeIfChanged(outPath, bytes);
     captured.push(p.slug);

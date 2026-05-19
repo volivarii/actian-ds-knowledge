@@ -21,28 +21,54 @@ var registry = {
 
 // Mock REST surface — only the methods the phase calls.
 function mockRest(overrides) {
+  // Real Figma file tree (depth=2):
+  //   document (DOCUMENT) → children: [PAGE, PAGE, ...]
+  //   each PAGE → children: [FRAME (component), FRAME (Overview), FRAME (Variants), ...]
+  var defaultFile = {
+    document: {
+      id: "0:0",
+      type: "DOCUMENT",
+      children: [
+        {
+          id: "p:1",
+          type: "CANVAS",
+          name: "Buttons",
+          children: [
+            { id: "1:1", type: "FRAME", name: "Button" },
+            { id: "100:0", type: "FRAME", name: "Overview" },
+            { id: "100:1", type: "FRAME", name: "Variants" },
+          ],
+        },
+        {
+          id: "p:2",
+          type: "CANVAS",
+          name: "Badges",
+          children: [
+            { id: "2:2", type: "FRAME", name: "Badge" },
+            { id: "200:1", type: "FRAME", name: "Anatomy" },
+          ],
+        },
+      ],
+    },
+  };
   return Object.assign(
     {
-      getNodes: function () {
-        // Page tree for both components. Buttons page has an "Overview" frame,
-        // Badges page does not.
-        return Promise.resolve({
-          nodes: {
-            "1:1": {
-              document: {
-                children: [
-                  { id: "100:0", name: "Overview", type: "FRAME" },
-                  { id: "100:1", name: "Variants", type: "FRAME" },
-                ],
-              },
-            },
-            "2:2": {
-              document: {
-                children: [{ id: "200:1", name: "Anatomy", type: "FRAME" }],
-              },
-            },
-          },
+      getFile: function () {
+        return Promise.resolve(defaultFile);
+      },
+      getNodes: function (fileKey, ids) {
+        // /v1/nodes returns the requested page subtrees; in the real API the
+        // response is `{ nodes: { [id]: { document: <subtree>, ... } } }`.
+        // We map back to our default file's pages by id.
+        var pageMap = {};
+        defaultFile.document.children.forEach(function (page) {
+          pageMap[page.id] = { document: page };
         });
+        var resp = { nodes: {} };
+        ids.forEach(function (id) {
+          if (pageMap[id]) resp.nodes[id] = pageMap[id];
+        });
+        return Promise.resolve(resp);
       },
       getImages: function (fileKey, ids) {
         var images = {};
@@ -150,4 +176,44 @@ test("orchestrator runs media-preview phase when invoked with --phase media-prev
 
   assert.equal(result.errors.length, 0, "no phase errors");
   assert.ok(fs2.existsSync(path2.join(mediaDir, "button", "preview.png")));
+});
+
+test("multiple components on the same page share one Overview frame", async function () {
+  var dir = tmpdir();
+  // Two components both on page "p:1" — both should capture from "100:0".
+  var sharedReg = {
+    fileKey: "FILEKEY",
+    components: {
+      button: { name: "Button", nodeId: "1:1", page: "Buttons" },
+      "button-cta": { name: "Button (CTA)", nodeId: "1:2", page: "Buttons" },
+    },
+  };
+  // Mock that adds button-cta as another child of page p:1.
+  var customMock = mockRest();
+  var origGetFile = customMock.getFile;
+  customMock.getFile = function () {
+    return origGetFile().then(function (resp) {
+      // Inject button-cta into page p:1's children.
+      resp.document.children[0].children.push({
+        id: "1:2",
+        type: "FRAME",
+        name: "Button (CTA)",
+      });
+      return resp;
+    });
+  };
+  var result = await syncMedia.run({
+    registry: sharedReg,
+    outputDir: dir,
+    rest: customMock,
+  });
+  assert.deepEqual(result.captured, ["button", "button-cta"]);
+  assert.equal(result.missing.length, 0);
+  // Both files should exist with identical bytes (same Overview source).
+  var btnBytes = fs.readFileSync(path.join(dir, "button", "preview.png"));
+  var ctaBytes = fs.readFileSync(path.join(dir, "button-cta", "preview.png"));
+  assert.ok(
+    btnBytes.equals(ctaBytes),
+    "shared overview → identical bytes per-slug",
+  );
 });
