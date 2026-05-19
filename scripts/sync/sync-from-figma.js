@@ -532,6 +532,7 @@ async function run(opts) {
   // (knowledge v0.3.7) — pre-existing manifest assertion requires
   // knowledge_version === package.json#version on every sync.
   var manifestPath = opts.manifestPath || null;
+  var manifestUpdated = false;
   if (manifestPath && bumpedTo && fs.existsSync(manifestPath)) {
     var manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     manifest.knowledge_version = bumpedTo;
@@ -540,6 +541,30 @@ async function run(opts) {
       JSON.stringify(manifest, null, 2) + "\n",
       "utf8",
     );
+    manifestUpdated = true;
+  }
+
+  // Regenerate MAP.md to match the bumped paths-manifest.json#knowledge_version.
+  // The third lockstep file alongside package.json + paths-manifest.json
+  // (asserted by .github/workflows/manifest-coverage.yml + tests/manifest.test.js).
+  // Pre-2026-05-19 the orchestrator wrote package.json + paths-manifest.json
+  // manually and skipped MAP.md — every breaking/additive sync drifted MAP and
+  // failed validate-manifest CI until a contributor hand-regenerated MAP and
+  // pushed. Run this only when the manifest was actually touched (preserves
+  // the existing opt-in contract via opts.manifestPath).
+  if (manifestUpdated) {
+    var repoRoot = path.resolve(path.dirname(pluginJsonPath));
+    var generateMapPath = path.join(repoRoot, "scripts", "generate-map.js");
+    var mapPath = path.join(repoRoot, "MAP.md");
+    if (fs.existsSync(generateMapPath) && fs.existsSync(mapPath)) {
+      var generateMap = require(generateMapPath).generateMap;
+      var manifestAfterBump = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+      var nextMap = generateMap(manifestAfterBump);
+      var currentMap = fs.readFileSync(mapPath, "utf8");
+      if (nextMap !== currentMap) {
+        fs.writeFileSync(mapPath, nextMap, "utf8");
+      }
+    }
   }
 
   // Auto-stub: generate guideline stubs for any new set-importable
