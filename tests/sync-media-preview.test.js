@@ -10,21 +10,21 @@ function tmpdir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "media-sync-"));
 }
 
-// Mock registry: 2 components, one has an Overview frame, one doesn't.
+// Two-component registry; one page has the nested Design-guidelines + Overview
+// structure (button), the other lacks it (badge — only has an unrelated
+// "Anatomy" frame, no Design-guidelines wrapper).
 var registry = {
   fileKey: "FILEKEY",
   components: {
     button: { name: "Button", nodeId: "1:1", page: "Buttons" },
-    badge: { name: "Badge", nodeId: "2:2", page: "Badges" },
+    badge:  { name: "Badge",  nodeId: "2:2", page: "Badges" },
   },
 };
 
-// Mock REST surface — only the methods the phase calls.
-function mockRest(overrides) {
-  // Real Figma file tree (depth=2):
-  //   document (DOCUMENT) → children: [PAGE, PAGE, ...]
-  //   each PAGE → children: [FRAME (component), FRAME (Overview), FRAME (Variants), ...]
-  var defaultFile = {
+// Mock Figma file: real-world structure with "Overview" nested inside a
+// "Design guidelines" wrapper frame on each component page.
+function defaultFileTree() {
+  return {
     document: {
       id: "0:0",
       type: "DOCUMENT",
@@ -35,8 +35,16 @@ function mockRest(overrides) {
           name: "Buttons",
           children: [
             { id: "1:1", type: "FRAME", name: "Button" },
-            { id: "100:0", type: "FRAME", name: "Overview" },
-            { id: "100:1", type: "FRAME", name: "Variants" },
+            {
+              id: "dg:1",
+              type: "FRAME",
+              name: "Design guidelines",
+              children: [
+                { id: "100:0", type: "FRAME", name: "Overview" },
+                { id: "100:1", type: "FRAME", name: "Parts" },
+                { id: "100:2", type: "FRAME", name: "Variations" },
+              ],
+            },
           ],
         },
         {
@@ -51,43 +59,57 @@ function mockRest(overrides) {
       ],
     },
   };
-  return Object.assign(
-    {
-      getFile: function () {
-        return Promise.resolve(defaultFile);
-      },
-      getNodes: function (fileKey, ids) {
-        // /v1/nodes returns the requested page subtrees; in the real API the
-        // response is `{ nodes: { [id]: { document: <subtree>, ... } } }`.
-        // We map back to our default file's pages by id.
-        var pageMap = {};
-        defaultFile.document.children.forEach(function (page) {
-          pageMap[page.id] = { document: page };
-        });
-        var resp = { nodes: {} };
-        ids.forEach(function (id) {
-          if (pageMap[id]) resp.nodes[id] = pageMap[id];
-        });
-        return Promise.resolve(resp);
-      },
-      getImages: function (fileKey, ids) {
-        var images = {};
-        ids.forEach(function (id) {
-          images[id] = "https://signed/" + id + ".png";
-        });
-        return Promise.resolve({ images: images });
-      },
-      fetchBinary: function (url) {
-        return Promise.resolve(
-          Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-        );
-      },
-    },
-    overrides,
-  );
 }
 
-test("writes preview.png for components with an Overview frame, skips others", async function () {
+function mockRest(overrides) {
+  return Object.assign({
+    getFile: function () { return Promise.resolve(defaultFileTree()); },
+    getImages: function (fileKey, ids) {
+      var images = {};
+      ids.forEach(function (id) { images[id] = "https://signed/" + id + ".png"; });
+      return Promise.resolve({ images: images });
+    },
+    fetchBinary: function () {
+      return Promise.resolve(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    },
+  }, overrides);
+}
+
+test("findFrameByNameRecursive walks nested frames", function () {
+  var tree = defaultFileTree();
+  var page1 = tree.document.children[0];
+  var found = syncMedia.findFrameByNameRecursive(page1, "Overview");
+  assert.ok(found, "should find Overview deep inside Design guidelines");
+  assert.equal(found.id, "100:0");
+});
+
+test("findFrameByNameRecursive is case-insensitive and returns null when absent", function () {
+  var tree = defaultFileTree();
+  var page1 = tree.document.children[0];
+  assert.equal(syncMedia.findFrameByNameRecursive(page1, "OVERVIEW").id, "100:0");
+  assert.equal(syncMedia.findFrameByNameRecursive(page1, "Spacing & size"), null);
+});
+
+test("findRoleSourceNode locates Overview inside Design guidelines wrapper", function () {
+  var tree = defaultFileTree();
+  var page1 = tree.document.children[0];
+  var srcId = syncMedia.findRoleSourceNode(page1, syncMedia.ROLE_FINDERS.preview);
+  assert.equal(srcId, "100:0");
+});
+
+test("findRoleSourceNode returns null when wrapper is absent", function () {
+  var tree = defaultFileTree();
+  var page2 = tree.document.children[1]; // Badges page — no Design guidelines wrapper
+  assert.equal(syncMedia.findRoleSourceNode(page2, syncMedia.ROLE_FINDERS.preview), null);
+});
+
+test("ROLE_FINDERS exports preview today; future roles slot in as config entries", function () {
+  assert.deepEqual(Object.keys(syncMedia.ROLE_FINDERS), ["preview"]);
+  assert.equal(syncMedia.ROLE_FINDERS.preview.parent, "Design guidelines");
+  assert.equal(syncMedia.ROLE_FINDERS.preview.child, "Overview");
+});
+
+test("writes preview.png for components with Design guidelines → Overview; skips others", async function () {
   var dir = tmpdir();
   var result = await syncMedia.run({
     registry: registry,
@@ -96,109 +118,39 @@ test("writes preview.png for components with an Overview frame, skips others", a
   });
   var btnPath = path.join(dir, "button", "preview.png");
   var badgePath = path.join(dir, "badge", "preview.png");
-  assert.ok(
-    fs.existsSync(btnPath),
-    "button preview.png must exist (sourced from Figma 'Overview' frame)",
-  );
-  assert.ok(
-    !fs.existsSync(badgePath),
-    "badge preview.png must not be created (no Overview frame)",
-  );
-  assert.deepEqual(result.captured, ["button"]);
+  assert.ok(fs.existsSync(btnPath), "button preview.png must exist (Overview found inside Design guidelines)");
+  assert.ok(!fs.existsSync(badgePath), "badge preview.png must not be created (no Design guidelines wrapper)");
+  assert.deepEqual(result.captured, ["button/preview"]);
   assert.deepEqual(result.missing, ["badge"]);
 });
 
-test("idempotent: second run does not re-fetch when bytes match", async function () {
+test("idempotent: second run does not re-write when bytes match", async function () {
   var dir = tmpdir();
   await syncMedia.run({ registry: registry, outputDir: dir, rest: mockRest() });
   var stat1 = fs.statSync(path.join(dir, "button", "preview.png"));
-  // Small sleep so mtime would change if rewritten.
-  await new Promise(function (r) {
-    setTimeout(r, 10);
-  });
+  await new Promise(function (r) { setTimeout(r, 10); });
   await syncMedia.run({ registry: registry, outputDir: dir, rest: mockRest() });
   var stat2 = fs.statSync(path.join(dir, "button", "preview.png"));
   assert.equal(stat1.mtimeMs, stat2.mtimeMs, "stable bytes → no rewrite");
 });
 
-test("findPreviewSourceNode is case-insensitive on the 'Overview' name", function () {
-  var node = {
-    document: { children: [{ id: "9:9", name: "OVERVIEW", type: "FRAME" }] },
-  };
-  assert.equal(syncMedia.findPreviewSourceNode(node), "9:9");
-});
-
-test("findPreviewSourceNode ignores non-FRAME types", function () {
-  var node = {
-    document: { children: [{ id: "9:9", name: "Overview", type: "GROUP" }] },
-  };
-  assert.equal(syncMedia.findPreviewSourceNode(node), null);
-});
-
-test("findPreviewSourceNode returns null on missing/empty children", function () {
-  assert.equal(syncMedia.findPreviewSourceNode(null), null);
-  assert.equal(syncMedia.findPreviewSourceNode({}), null);
-  assert.equal(syncMedia.findPreviewSourceNode({ document: {} }), null);
-  assert.equal(
-    syncMedia.findPreviewSourceNode({ document: { children: [] } }),
-    null,
-  );
-});
-
-test("orchestrator runs media-preview phase when invoked with --phase media-preview", async function () {
-  var fs2 = require("fs");
-  var path2 = require("path");
-  var os2 = require("os");
-  var pluginDir = fs2.mkdtempSync(path2.join(os2.tmpdir(), "kn-plugin-"));
-  fs2.mkdirSync(path2.join(pluginDir, "components", "dist", "registries"), {
-    recursive: true,
-  });
-  fs2.writeFileSync(
-    path2.join(pluginDir, "components", "dist", "registries", "dskit.json"),
-    JSON.stringify(registry),
-  );
-
-  var orch = require("../scripts/sync/sync-from-figma.js");
-  var releaseDir = fs2.mkdtempSync(path2.join(os2.tmpdir(), "kn-release-"));
-  var artifactsDir = fs2.mkdtempSync(path2.join(os2.tmpdir(), "kn-arts-"));
-  var mediaDir = path2.join(pluginDir, "components", "dist", "media");
-
-  var result = await orch.run({
-    phase: "media-preview",
-    pluginDir: pluginDir,
-    rest: mockRest(),
-    keys: { dsKit: "FILEKEY" },
-    outputDir: path2.join(pluginDir, "components", "dist", "registries"),
-    releaseNotesDir: releaseDir,
-    artifactsDir: artifactsDir,
-    mediaOutputDir: mediaDir,
-  });
-
-  assert.equal(result.errors.length, 0, "no phase errors");
-  assert.ok(fs2.existsSync(path2.join(mediaDir, "button", "preview.png")));
-});
-
 test("multiple components on the same page share one Overview frame", async function () {
   var dir = tmpdir();
-  // Two components both on page "p:1" — both should capture from "100:0".
   var sharedReg = {
     fileKey: "FILEKEY",
     components: {
-      button: { name: "Button", nodeId: "1:1", page: "Buttons" },
+      button:       { name: "Button",       nodeId: "1:1", page: "Buttons" },
       "button-cta": { name: "Button (CTA)", nodeId: "1:2", page: "Buttons" },
     },
   };
-  // Mock that adds button-cta as another child of page p:1.
+  // Mock that adds button-cta as another direct child of page p:1.
   var customMock = mockRest();
   var origGetFile = customMock.getFile;
   customMock.getFile = function () {
     return origGetFile().then(function (resp) {
-      // Inject button-cta into page p:1's children.
-      resp.document.children[0].children.push({
-        id: "1:2",
-        type: "FRAME",
-        name: "Button (CTA)",
-      });
+      resp.document.children[0].children.push(
+        { id: "1:2", type: "FRAME", name: "Button (CTA)" }
+      );
       return resp;
     });
   };
@@ -207,13 +159,37 @@ test("multiple components on the same page share one Overview frame", async func
     outputDir: dir,
     rest: customMock,
   });
-  assert.deepEqual(result.captured, ["button", "button-cta"]);
+  assert.deepEqual(result.captured, ["button-cta/preview", "button/preview"]);
   assert.equal(result.missing.length, 0);
-  // Both files should exist with identical bytes (same Overview source).
   var btnBytes = fs.readFileSync(path.join(dir, "button", "preview.png"));
   var ctaBytes = fs.readFileSync(path.join(dir, "button-cta", "preview.png"));
-  assert.ok(
-    btnBytes.equals(ctaBytes),
-    "shared overview → identical bytes per-slug",
+  assert.ok(btnBytes.equals(ctaBytes), "shared Overview frame → identical bytes per slug");
+});
+
+test("orchestrator runs media-preview phase end-to-end", async function () {
+  var pluginDir = fs.mkdtempSync(path.join(os.tmpdir(), "kn-plugin-"));
+  fs.mkdirSync(path.join(pluginDir, "components", "dist", "registries"), { recursive: true });
+  fs.writeFileSync(
+    path.join(pluginDir, "components", "dist", "registries", "dskit.json"),
+    JSON.stringify(registry),
   );
+
+  var orch = require("../scripts/sync/sync-from-figma.js");
+  var releaseDir = fs.mkdtempSync(path.join(os.tmpdir(), "kn-release-"));
+  var artifactsDir = fs.mkdtempSync(path.join(os.tmpdir(), "kn-arts-"));
+  var mediaDir = path.join(pluginDir, "components", "dist", "media");
+
+  var result = await orch.run({
+    phase: "media-preview",
+    pluginDir: pluginDir,
+    rest: mockRest(),
+    keys: { dsKit: "FILEKEY" },
+    outputDir: path.join(pluginDir, "components", "dist", "registries"),
+    releaseNotesDir: releaseDir,
+    artifactsDir: artifactsDir,
+    mediaOutputDir: mediaDir,
+  });
+
+  assert.equal(result.errors.length, 0, "no phase errors");
+  assert.ok(fs.existsSync(path.join(mediaDir, "button", "preview.png")));
 });
