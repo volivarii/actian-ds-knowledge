@@ -33,6 +33,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const cp = require("node:child_process");
 const Ajv2020 = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
 const yamlParser = require("../categories/categories-parser");
@@ -87,6 +88,30 @@ function metaBlock(sourceRel) {
     source: sourceRel,
     do_not_edit: "Edit the per-domain source files; CI regenerates this file.",
   };
+}
+
+function deriveGitMtime(repoRoot, slug) {
+  const srcDir = path.join(repoRoot, "components", "src", slug);
+  if (!fs.existsSync(srcDir)) return null;
+  try {
+    const out = cp
+      .execFileSync(
+        "git",
+        [
+          "log",
+          "-1",
+          "--format=%cI",
+          "--",
+          path.join("components", "src", slug),
+        ],
+        { cwd: repoRoot, stdio: ["ignore", "pipe", "ignore"] },
+      )
+      .toString()
+      .trim();
+    return out || null;
+  } catch (err) {
+    return null;
+  }
 }
 
 // Base domain object: status first, then owner/updatedAt from the _meta.yml
@@ -262,6 +287,9 @@ function deriveComponentDir(
   if (typeof meta.lastReviewed === "string") {
     out.meta.lastReviewed = meta.lastReviewed;
   }
+
+  const mtime = deriveGitMtime(repoRoot, slug);
+  if (mtime) out.updated_at = mtime;
 
   assertValid(
     validators.component,
@@ -936,6 +964,7 @@ module.exports = {
   parseYaml,
   deriveProseDomain,
   deriveTokensDomain,
+  deriveGitMtime,
   deriveComponentDir,
   buildBundle,
   buildCoverage,
