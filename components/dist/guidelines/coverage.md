@@ -33,7 +33,6 @@
 | Side nav | approved | not started | inherited | inherited | not started |
 | Spinner | synthesized | — | — | — | — |
 | Stepper | approved | not started | inherited | inherited | not started |
-| Stepper buttons | synthesized | — | — | — | — |
 | Sticky footer | approved | not started | inherited | inherited | not started |
 | Table | approved | not started | inherited | inherited | not started |
 | Tabs | approved | not started | inherited | inherited | not started |
@@ -47,10 +46,10 @@
 | Domain | Approved | Draft | Inherited | Not started | Absent |
 |---|---|---|---|---|---|
 | content | 26 | 0 | 0 | 0 | 0 |
-| usage | 0 | 0 | 0 | 26 | 11 |
-| design | 0 | 0 | 26 | 0 | 11 |
-| behavior | 0 | 0 | 26 | 0 | 11 |
-| tokens | 0 | 0 | 0 | 26 | 11 |
+| usage | 0 | 0 | 0 | 26 | 10 |
+| design | 0 | 0 | 26 | 0 | 10 |
+| behavior | 0 | 0 | 26 | 0 | 10 |
+| tokens | 0 | 0 | 0 | 26 | 10 |
 
 ## Registry aliases
 
