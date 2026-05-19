@@ -3,7 +3,7 @@
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.16.3",
+  "knowledge_version": "0.17.0",
   "paths": {
     "foundations.md": {
       "path": "foundations/src/foundations.md",
@@ -90,6 +90,13 @@
       "type": "json",
       "origin": "human",
       "description": "Icon → semantic group mapping (ζ.5). Curated from the Figma Actual-icons layout; consumed by sync orchestrator to populate registry entries' `group` + `secondaryGroups` fields for items in category === 'Icons'. Key order = priority for primary-group resolution (specific-first)."
+    },
+    "components.media.index": {
+      "path": "components/dist/media/_index.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-media-index.js",
+      "description": "Slug → role-keyed media map for every component with at least one CI-generated asset under components/dist/media/<slug>/. Decoupled from guideline coverage: components without authored or pattern-synthesized guidelines still surface their media here. Consumers (docs MediaAsset, plugin component-brief, future MCP) read this to enumerate media availability without filesystem scans."
     },
     "content.globalMd": {
       "path": "content/dist/global.md",
