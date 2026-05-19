@@ -33,6 +33,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const cp = require("node:child_process");
 const Ajv2020 = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
 const yamlParser = require("../categories/categories-parser");
@@ -87,6 +88,30 @@ function metaBlock(sourceRel) {
     source: sourceRel,
     do_not_edit: "Edit the per-domain source files; CI regenerates this file.",
   };
+}
+
+function deriveGitMtime(repoRoot, slug) {
+  const srcDir = path.join(repoRoot, "components", "src", slug);
+  if (!fs.existsSync(srcDir)) return null;
+  try {
+    const out = cp
+      .execFileSync(
+        "git",
+        [
+          "log",
+          "-1",
+          "--format=%cI",
+          "--",
+          path.join("components", "src", slug),
+        ],
+        { cwd: repoRoot, stdio: ["ignore", "pipe", "ignore"] },
+      )
+      .toString()
+      .trim();
+    return out || null;
+  } catch (err) {
+    return null;
+  }
 }
 
 // Base domain object: status first, then owner/updatedAt from the _meta.yml
@@ -177,6 +202,31 @@ function deriveTokensDomain(entry, dirAbs, slug, tokensValidator) {
   return domainBase(entry);
 }
 
+// Media role → filename basename. New roles ship with a new entry here.
+// The `preview` role is sourced from the Figma frame named "Overview"
+// (translation happens in scripts/sync/sync-media-preview.js); the data
+// side speaks `preview` exclusively, matching DS asset-naming convention.
+var MEDIA_ROLES = {
+  preview: "preview.png",
+  // anatomy: "anatomy.png",
+  // state_matrix: "state-matrix.png",
+};
+
+function deriveMediaMap(repoRoot, slug) {
+  var dir = path.join(repoRoot, "components", "dist", "media", slug);
+  if (!fs.existsSync(dir)) return null;
+  var map = {};
+  Object.keys(MEDIA_ROLES).forEach(function (role) {
+    var basename = MEDIA_ROLES[role];
+    var p = path.join(dir, basename);
+    if (fs.existsSync(p)) {
+      map[role] = "components/dist/media/" + slug + "/" + basename;
+    }
+  });
+  if (Object.keys(map).length === 0) return null;
+  return map;
+}
+
 // ───────────────────────────────────────────────────────────────────────────
 // Derive one component directory
 // ───────────────────────────────────────────────────────────────────────────
@@ -262,6 +312,12 @@ function deriveComponentDir(
   if (typeof meta.lastReviewed === "string") {
     out.meta.lastReviewed = meta.lastReviewed;
   }
+
+  const mtime = deriveGitMtime(repoRoot, slug);
+  if (mtime) out.updated_at = mtime;
+
+  var media = deriveMediaMap(repoRoot, slug);
+  if (media) out.media = media;
 
   assertValid(
     validators.component,
@@ -407,18 +463,13 @@ function buildCoverage(perComponent, registryAliases) {
 
 // A registry-alias copy: byte-identical to the canonical derived object plus a
 // top-level `_alias_of` marker. `slug` stays the canonical slug — only the
-// filename (and the bundle key) is the registry key. Key order keeps
-// `_alias_of` adjacent to `_schema_version` for readability.
+// filename (and the bundle key) is the registry key. Spread the canonical so
+// any field added to derived docs (updated_at, media, future ones) automatically
+// propagates to alias copies — override only the alias marker.
 function buildAliasDoc(canonicalDoc) {
-  return {
-    _schema_version: canonicalDoc._schema_version,
+  return Object.assign({}, canonicalDoc, {
     _alias_of: canonicalDoc.slug,
-    _meta: canonicalDoc._meta,
-    slug: canonicalDoc.slug,
-    component: canonicalDoc.component,
-    meta: canonicalDoc.meta,
-    domains: canonicalDoc.domains,
-  };
+  });
 }
 
 // Resolve paths-manifest.json#registryAliases into { registryKey: aliasDoc }.
@@ -936,6 +987,8 @@ module.exports = {
   parseYaml,
   deriveProseDomain,
   deriveTokensDomain,
+  deriveGitMtime,
+  deriveMediaMap: deriveMediaMap,
   deriveComponentDir,
   buildBundle,
   buildCoverage,

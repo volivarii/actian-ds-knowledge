@@ -12,7 +12,16 @@
 // to clear Figma's rate-limit window.
 // 4xx (other than 429) throw immediately.
 
-var BASE = "https://api.figma.com";
+var DEFAULT_BASE = "https://api.figma.com";
+var BASE = DEFAULT_BASE;
+// Test helpers — let tests point the wrapper at a local HTTP mock so the
+// /v1/images + signed-URL flow can be exercised without hitting Figma.
+function _setBaseUrl(url) {
+  BASE = url;
+}
+function _resetBaseUrl() {
+  BASE = DEFAULT_BASE;
+}
 var DEFAULT_BACKOFF_DELAYS_MS = [1000, 2000, 4000]; // 5xx retries
 var DEFAULT_RATE_LIMIT_BACKOFFS_MS = [5000, 15000, 45000]; // 429 retries
 var MAX_5XX_RETRIES = 3;
@@ -220,6 +229,47 @@ function getComponentSets(fileKey) {
   );
 }
 
+// Render Figma nodes as raster/vector images. Returns
+// `{ err, images: { nodeId: signedUrl } }` — the signedUrl points at an S3
+// blob that needs a separate plain-HTTPS fetch (see fetchBinary below).
+function getImages(fileKey, nodeIds, opts) {
+  if (!Array.isArray(nodeIds) || nodeIds.length === 0) {
+    return Promise.reject(
+      new Error("getImages requires a non-empty nodeId array"),
+    );
+  }
+  opts = opts || {};
+  var format = opts.format || "png";
+  var scale = opts.scale || 2;
+  var idsParam = nodeIds.map(encodeURIComponent).join(",");
+  var url =
+    BASE +
+    "/v1/images/" +
+    encodeURIComponent(fileKey) +
+    "?ids=" +
+    idsParam +
+    "&format=" +
+    encodeURIComponent(format) +
+    "&scale=" +
+    encodeURIComponent(String(scale));
+  return request(url);
+}
+
+// Plain HTTPS fetch — used after getImages() to download the signed S3 URL
+// the Figma response points at. Returns a Buffer. Surfaces non-2xx as Error.
+function fetchBinary(url) {
+  return globalThis.fetch(url).then(function (res) {
+    if (!res.ok) {
+      throw new Error(
+        "fetchBinary " + res.status + " " + res.statusText + " — " + url,
+      );
+    }
+    return res.arrayBuffer().then(function (ab) {
+      return Buffer.from(ab);
+    });
+  });
+}
+
 // Test helper — lets tests override backoff so the retry suite runs fast.
 // `rateLimitDelay` accepts either a single number (applied to every 429 retry)
 // or an array of per-attempt delays.
@@ -246,6 +296,10 @@ module.exports = {
   getStyles: getStyles,
   getComponents: getComponents,
   getComponentSets: getComponentSets,
+  getImages: getImages,
+  fetchBinary: fetchBinary,
   _setBackoffDelays: _setBackoffDelays,
   _resetBackoffDelays: _resetBackoffDelays,
+  _setBaseUrl: _setBaseUrl,
+  _resetBaseUrl: _resetBaseUrl,
 };
