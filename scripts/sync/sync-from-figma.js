@@ -25,6 +25,7 @@ var transformRegistry = require("../transformers/transform-registry.js");
 var transformStyles = require("../transformers/transform-styles.js");
 var classify = require("../changelog/changelog-classifier.js");
 var defaultRest = require("./figma-rest.js");
+var syncMediaPreview = require("./sync-media-preview.js");
 
 var KIT_MAP = {
   dsKit: { library: "ds", outputFile: "dskit.json" },
@@ -421,6 +422,59 @@ async function run(opts) {
         )(sKit),
       );
     }
+  }
+
+  if (phase === "media-preview" || phase === "all") {
+    await runWithGuard("media-preview", function () {
+      var mediaOutputDir =
+        opts.mediaOutputDir ||
+        path.join(pluginDir, "components", "dist", "media");
+      // Load the DS Kit registry — either just written by the registries
+      // phase (phase === "all") or already on disk (--phase media-preview
+      // run in isolation). The phase is a no-op without a registry on disk;
+      // not an error.
+      var dsKitPath = path.join(outputDir, "dskit.json");
+      if (!fs.existsSync(dsKitPath)) {
+        return {
+          kind: "media-preview",
+          category: "unchanged",
+          note: "no dskit.json on disk yet",
+          fileLabel: "media-preview",
+          verdict: {
+            category: "unchanged",
+            changelog: "_(no dskit.json on disk yet)_",
+          },
+        };
+      }
+      var dsKit = JSON.parse(fs.readFileSync(dsKitPath, "utf8"));
+      return syncMediaPreview
+        .run({
+          registry: dsKit,
+          outputDir: mediaOutputDir,
+          rest: rest,
+        })
+        .then(function (r) {
+          var cat = r.captured.length > 0 ? "additive" : "unchanged";
+          var lines = [];
+          if (r.captured.length > 0) {
+            lines.push("- Captured preview.png for: " + r.captured.join(", "));
+          }
+          if (r.missing.length > 0) {
+            lines.push("- Missing 'Overview' frame: " + r.missing.join(", "));
+          }
+          return {
+            kind: "media-preview",
+            category: cat,
+            captured: r.captured,
+            missing: r.missing,
+            fileLabel: "media-preview",
+            verdict: {
+              category: cat,
+              changelog: lines.length > 0 ? lines.join("\n") : "_(no changes)_",
+            },
+          };
+        });
+    });
   }
 
   var category = aggregateVerdict(results, errors);
