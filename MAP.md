@@ -162,6 +162,8 @@ This is the orientation map for the repo. For the human-readable summary + statu
   - Per-component merged guideline objects.
 - **`components.guidelineDocSrc`** _(collection)_ _[human]_ — `components/src`
   - Authoring surface for per-component guidelines.
+- **`components.media.ci`** _(collection)_ _[ci]_ — `components/dist/media`
+  - Per-component CI-generated visual assets (Figma frame captures, state matrices, motion clips).
 
 ### `content/`
 
