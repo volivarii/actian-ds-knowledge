@@ -24,9 +24,27 @@ Spec: `docs/superpowers/specs/2026-05-10-manifest-and-tag-pin-design.md` in the 
 
 ## How CI runs
 
-- **`sync-from-figma.yml`** (07:00 UTC nightly + manual): Figma REST → `components/dist/registries/*.json` → also runs `styles-to-md.js` and `render-token-reference.js` as workflow steps. Calls `generate-guideline-stubs.js` programmatically inside `sync-from-figma.js` on additive/breaking diffs. Auto-bumps `package.json` patch + emits `v$VERSION` git tag. Opens additive PRs auto-merged; flagged PRs (breaking) get `review-required` label.
-- **`foundations-derive.yml`** (PR event): on any PR touching `foundations/src/foundations.md` or parser scripts, regenerates `foundations/dist/*.json` and posts a semantic-diff comment. Auto-bumps + emits tag after the regen commit.
-- **`validate-manifest.yml`** (PR event): runs `scripts/validate-manifest.js` on every PR touching the manifest or content dirs. Fails if any manifest path doesn't resolve or any orphan content exists outside the manifest.
+Workflow files in `.github/workflows/` are the source of truth — list here is for orientation.
+
+**Sync (Figma → dist):**
+- **`sync-from-figma.yml`** (07:00 UTC nightly + `workflow_dispatch`): Figma REST → `components/dist/registries/*.json` + `components/dist/categories.json`. Also runs `styles-to-md.js`, `render-token-reference.js`, and the `media-preview` phase (renders each component's "Preview" frame to `components/dist/media/<slug>/preview.png`). Auto-bumps `package.json` patch via `bumpLockstep` (3-file lockstep: package + paths-manifest + MAP) on additive/breaking diffs. Opens additive PRs auto-merged; breaking PRs get `review-required` label.
+
+**Derive (PR event, regenerate `dist/` on `src/` edits):**
+- **`foundations-derive.yml`** — `foundations/src/foundations.md` → `foundations/dist/*` (Pattern H hierarchical tree + bundle + verbatim copy)
+- **`categories-derive.yml`** — `components/src/categories/*.md` → `components/dist/categories/*-defaults.json` + bundle
+- **`guidelines-derive.yml`** — `components/src/<slug>/{_meta.yml,*.md,tokens.yml}` → `components/dist/guidelines/<slug>.json` + `bundle.json` + `coverage.md`. Also re-derives the `components/dist/media/_index.json` sidecar (slug → role-keyed media map). Auto-bumps patch + auto-commits regenerated dist back to the PR branch.
+- **`content-derive.yml`** — `content/src/{writing,patterns,product}/*.md` → `content/dist/global.md`
+
+**Validate (PR event, required gates):**
+- **`validate-manifest.yml`** — `scripts/validate-manifest.js` checks manifest schema + every path resolves + no orphans. Also asserts `MAP.md` matches the regenerated output. Required check (named `Validate manifest schema + coverage`).
+- **`validate-schemas.yml`** — Ajv validates dist JSONs against `schemas/*.json`. Inline reviewdog annotations on the Files-Changed view.
+- **`retired-layer-guard.yml`** — Asserts retired layers (Phase 5: scraped `components/src/guidelines/`, transitional content concat) stay gone.
+
+**Release / housekeeping:**
+- **`tag-on-merge.yml`** — On push to `main`, reads `package.json#version`, creates a `v$VERSION` git tag if not already present. Downstream consumers' `vendor-snapshot.cjs --range` resolves against these tags.
+- **`llms-txt.yml`** — Regenerates the root `llms.txt` index when knowledge content changes.
+
+Recurring gotcha: `guidelines-derive`'s auto-commit uses `GITHUB_TOKEN`, which can't trigger further workflows. After it auto-bumps + commits, an empty commit (from a real user/App push) may be needed to re-run the required checks on the new HEAD. Long-term fix tracked separately (switch to App-token push).
 
 ## Federated consumers
 

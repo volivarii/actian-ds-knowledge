@@ -2,7 +2,7 @@
 
 Actian Design System knowledge layer — tokens, components, guidelines, foundations, content. Single source of truth, consumed by the [Actian DS Claude plugin](https://github.com/volivarii/Actian-DS-Claude-plugin) and (future) docs site.
 
-> **Federation status (2026-05-15):** Phase 1 complete. v0.10.0 ships sub-bucketed `content/src/`, extended `_meta.yml` schema, and a generated `MAP.md` orientation doc. Currently lives at `volivarii/actian-ds-knowledge`; transfers to Actian org at trigger conditions (formal team adoption / cross-team consumption / external publication).
+> **Federation status:** Active. Hosts foundations, per-component multi-domain guidelines, content, accessibility, tokens, and CI-derived media assets. Consumed by the [Actian DS Claude plugin](https://github.com/volivarii/Actian-DS-Claude-plugin) (vendor-pinned, nightly refresh) and (future) docs site. Currently at `volivarii/actian-ds-knowledge`; transfers to Actian org at trigger conditions (formal team adoption / cross-team consumption / external publication).
 
 ## I want to…
 
@@ -19,11 +19,13 @@ Actian Design System knowledge layer — tokens, components, guidelines, foundat
 
 ## Versioning
 
-Semver via `package.json#version`. Patch = Figma/foundation data; minor = structural change (breaking manifest contract). Current: **v0.10.0**.
+Semver via `package.json#version`. Three files move in lockstep (`package.json` + `paths-manifest.json#knowledge_version` + `MAP.md`) — enforced by `scripts/lib/bump-version.js` and CI gates.
 
-Downstream consumers pin a semver range in their `vendored.json`:
-- `~0.10.0` — auto-pull v0.10.x (patches; safe for nightly cron)
-- Major/minor jumps require human consent
+- **Patch:** Figma sync data + CI-derived artifacts (registries, guidelines, media)
+- **Minor:** additive contract change (new manifest entry, new sidecar, new sync phase)
+- **Major:** breaking manifest contract (path renames, schema-shape changes)
+
+Latest version lives in `package.json#version` and is reflected in `MAP.md`'s header. Downstream consumers pin a semver range in their `vendored.json` (e.g. `~0.17.0` for patch-auto-pull on a stable minor line); major/minor jumps require explicit consumer-side bumps.
 
 ## Consumers
 
