@@ -460,7 +460,7 @@ async function run(opts) {
             lines.push("- Captured preview.png for: " + r.captured.join(", "));
           }
           if (r.missing.length > 0) {
-            lines.push("- Missing 'Overview' frame: " + r.missing.join(", "));
+            lines.push("- Missing Preview frame: " + r.missing.join(", "));
           }
           return {
             kind: "media-preview",

@@ -66,8 +66,11 @@ var ROLE_FINDERS = {
 function findFrameByNameRecursive(node, name) {
   if (!node) return null;
   var lcName = name.toLowerCase();
-  if (node.type === "FRAME" && typeof node.name === "string"
-      && node.name.toLowerCase() === lcName) {
+  if (
+    node.type === "FRAME" &&
+    typeof node.name === "string" &&
+    node.name.toLowerCase() === lcName
+  ) {
     return node;
   }
   if (!Array.isArray(node.children)) return null;
@@ -110,7 +113,8 @@ function findRoleSourceNode(pageNode, findSpec) {
 function writeIfChanged(absPath, bytes) {
   if (fs.existsSync(absPath)) {
     var existing = fs.readFileSync(absPath);
-    if (existing.length === bytes.length && existing.equals(bytes)) return false;
+    if (existing.length === bytes.length && existing.equals(bytes))
+      return false;
   }
   fs.mkdirSync(path.dirname(absPath), { recursive: true });
   fs.writeFileSync(absPath, bytes);
@@ -118,8 +122,10 @@ function writeIfChanged(absPath, bytes) {
 }
 
 async function run(opts) {
-  if (!opts || !opts.registry) throw new Error("sync-media-preview: opts.registry required");
-  if (!opts.outputDir) throw new Error("sync-media-preview: opts.outputDir required");
+  if (!opts || !opts.registry)
+    throw new Error("sync-media-preview: opts.registry required");
+  if (!opts.outputDir)
+    throw new Error("sync-media-preview: opts.outputDir required");
   if (!opts.rest) throw new Error("sync-media-preview: opts.rest required");
 
   var rest = opts.rest;
@@ -137,11 +143,22 @@ async function run(opts) {
   var fileResp = await rest.getFile(fileKey, { depth: 2 });
   var fileDoc = fileResp && fileResp.document;
   if (!fileDoc || !Array.isArray(fileDoc.children)) {
-    return { captured: [], missing: aggregateMissing(allPairs(slugs, roleNames)).sort(), skipped: [] };
+    return {
+      captured: [],
+      missing: aggregateMissing(allPairs(slugs, roleNames)).sort(),
+      skipped: [],
+    };
   }
+  // Whitespace normalization: Figma page names sometimes carry leading or
+  // trailing whitespace (e.g. "     ✍️ Button" — designer padding for
+  // visual sorting in the pages panel). The registry transformer trims
+  // these before storing `page` on each component, so an exact-match
+  // lookup would miss every padded page. Normalize both sides so the
+  // comparison is whitespace-agnostic. Discovered when the first real
+  // media-preview sync run captured 0 of N components (2026-05-19).
   var pageNameToId = {};
   fileDoc.children.forEach(function (p) {
-    if (p && p.name && p.id) pageNameToId[p.name] = p.id;
+    if (p && p.name && p.id) pageNameToId[String(p.name).trim()] = p.id;
   });
 
   // Step 2: map slug → pageId via registry.page name.
@@ -149,8 +166,11 @@ async function run(opts) {
   var unresolvedSlugs = [];
   slugs.forEach(function (slug) {
     var c = components[slug];
-    if (!c || !c.page) { unresolvedSlugs.push(slug); return; }
-    var pid = pageNameToId[c.page];
+    if (!c || !c.page) {
+      unresolvedSlugs.push(slug);
+      return;
+    }
+    var pid = pageNameToId[String(c.page).trim()];
     if (pid) slugToPageId[slug] = pid;
     else unresolvedSlugs.push(slug);
   });
@@ -184,24 +204,40 @@ async function run(opts) {
 
   var pending = []; // [{ slug, role, sourceNodeId }]
   var missingPairs = unresolvedSlugs.flatMap(function (s) {
-    return roleNames.map(function (r) { return { slug: s, role: r }; });
+    return roleNames.map(function (r) {
+      return { slug: s, role: r };
+    });
   });
   Object.keys(slugToPageId).forEach(function (slug) {
     var pid = slugToPageId[slug];
     var sources = pageRoleSources[pid] || {};
     roleNames.forEach(function (role) {
-      if (sources[role]) pending.push({ slug: slug, role: role, sourceNodeId: sources[role] });
+      if (sources[role])
+        pending.push({ slug: slug, role: role, sourceNodeId: sources[role] });
       else missingPairs.push({ slug: slug, role: role });
     });
   });
 
   if (pending.length === 0) {
-    return { captured: [], missing: aggregateMissing(missingPairs).sort(), skipped: [] };
+    return {
+      captured: [],
+      missing: aggregateMissing(missingPairs).sort(),
+      skipped: [],
+    };
   }
 
   // Step 5: getImages over unique source ids.
-  var uniqueIds = Array.from(new Set(pending.map(function (p) { return p.sourceNodeId; })));
-  var imagesResp = await rest.getImages(fileKey, uniqueIds, { format: "png", scale: 2 });
+  var uniqueIds = Array.from(
+    new Set(
+      pending.map(function (p) {
+        return p.sourceNodeId;
+      }),
+    ),
+  );
+  var imagesResp = await rest.getImages(fileKey, uniqueIds, {
+    format: "png",
+    scale: 2,
+  });
   var urlMap = (imagesResp && imagesResp.images) || {};
 
   // Step 6: download + write. Buffer cache keyed by sourceNodeId.
@@ -234,7 +270,9 @@ async function run(opts) {
 function allPairs(slugList, roleList) {
   var out = [];
   slugList.forEach(function (s) {
-    roleList.forEach(function (r) { out.push({ slug: s, role: r }); });
+    roleList.forEach(function (r) {
+      out.push({ slug: s, role: r });
+    });
   });
   return out;
 }
@@ -254,7 +292,10 @@ function aggregateMissing(pairs) {
   Object.keys(byslug).forEach(function (slug) {
     var roles = byslug[slug];
     if (roles.length === totalRoles) result.push(slug);
-    else roles.forEach(function (r) { result.push(slug + ":" + r); });
+    else
+      roles.forEach(function (r) {
+        result.push(slug + ":" + r);
+      });
   });
   return result;
 }
