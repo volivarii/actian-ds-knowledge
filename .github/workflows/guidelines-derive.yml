@@ -40,6 +40,12 @@ on:
       # Registry: synthesized docs pull component name + category from
       # components/dist/registries/dskit.json.
       - 'components/dist/registries/dskit.json'
+      # Media assets: the per-component media map (guideline.media.<role>) is
+      # derived from PNGs under components/dist/media/<slug>/. New/removed
+      # assets must re-trigger derive so guideline JSONs stay in sync with
+      # what's on disk. Authored by the media-preview sync phase
+      # (scripts/sync/sync-media-preview.js).
+      - 'components/dist/media/**'
       # paths-manifest.json is BOTH an output of this workflow (the
       # components.guidelineDoc.* entries are auto-regenerated) AND an input
       # (derive-guidelines.js reads #registryAliases to emit alias copies), so
