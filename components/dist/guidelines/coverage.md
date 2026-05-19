@@ -24,7 +24,6 @@
 | Loader | synthesized | — | — | — | — |
 | Loader with logo | synthesized | — | — | — | — |
 | Loading skeleton | synthesized | — | — | — | — |
-| Maintenance banner | synthesized | — | — | — | — |
 | Maintenance state | synthesized | — | — | — | — |
 | Modal | approved | not started | inherited | inherited | not started |
 | Multi-select | approved | not started | inherited | inherited | not started |
@@ -48,10 +47,10 @@
 | Domain | Approved | Draft | Inherited | Not started | Absent |
 |---|---|---|---|---|---|
 | content | 26 | 0 | 0 | 0 | 0 |
-| usage | 0 | 0 | 0 | 26 | 12 |
-| design | 0 | 0 | 26 | 0 | 12 |
-| behavior | 0 | 0 | 26 | 0 | 12 |
-| tokens | 0 | 0 | 0 | 26 | 12 |
+| usage | 0 | 0 | 0 | 26 | 11 |
+| design | 0 | 0 | 26 | 0 | 11 |
+| behavior | 0 | 0 | 26 | 0 | 11 |
+| tokens | 0 | 0 | 0 | 26 | 11 |
 
 ## Registry aliases
 

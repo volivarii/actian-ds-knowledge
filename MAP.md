@@ -116,8 +116,6 @@ This is the orientation map for the repo. For the human-readable summary + statu
   - Merged multi-domain guideline object for the 'loader-with-logo' component (content, usage, design, behavior, tokens — each optional).
 - **`components.guidelineDoc.loading-skeleton`** _[ci]_ — `components/dist/guidelines/loading-skeleton.json`
   - Merged multi-domain guideline object for the 'loading-skeleton' component (content, usage, design, behavior, tokens — each optional).
-- **`components.guidelineDoc.maintenance-banner`** _[ci]_ — `components/dist/guidelines/maintenance-banner.json`
-  - Merged multi-domain guideline object for the 'maintenance-banner' component (content, usage, design, behavior, tokens — each optional).
 - **`components.guidelineDoc.maintenance-state`** _[ci]_ — `components/dist/guidelines/maintenance-state.json`
   - Merged multi-domain guideline object for the 'maintenance-state' component (content, usage, design, behavior, tokens — each optional).
 - **`components.guidelineDoc.modal`** _[ci]_ — `components/dist/guidelines/modal.json`

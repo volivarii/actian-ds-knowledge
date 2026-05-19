@@ -381,13 +381,6 @@
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'loading-skeleton' component (content, usage, design, behavior, tokens — each optional)."
     },
-    "components.guidelineDoc.maintenance-banner": {
-      "path": "components/dist/guidelines/maintenance-banner.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/components/derive-guidelines.js",
-      "description": "Merged multi-domain guideline object for the 'maintenance-banner' component (content, usage, design, behavior, tokens — each optional)."
-    },
     "components.guidelineDoc.maintenance-state": {
       "path": "components/dist/guidelines/maintenance-state.json",
       "type": "json",

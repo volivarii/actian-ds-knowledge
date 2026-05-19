@@ -324,6 +324,54 @@ test("applyPatternFanout synthesizes guideline doc for pattern-only components",
     "synthesized must NOT carry markdown",
   );
   assert.deepEqual(summary.synthesized, ["empty-state"]);
+  assert.deepEqual(
+    summary.skippedUncategorized,
+    [],
+    "categorized → not skipped",
+  );
+});
+
+test("applyPatternFanout skips synthesis when registry entry has no category", function () {
+  // Real-world case (2026-05-19): the Figma sync intentionally removes a
+  // component's page tag (e.g. maintenance-banner moved to uncategorized).
+  // The docs generator already skips uncategorized components, so a
+  // synthesized guideline doc would be an unreachable artifact AND a
+  // non-kebab category would fail schema validation (the pattern
+  // ^[a-z][a-z0-9-]*$ rejects empty strings). Fan-out must defensively
+  // skip such components and surface them in summary.skippedUncategorized.
+  var perComponent = {};
+  var patterns = [
+    makePattern("empty-and-system-states", ["maintenance-banner"]),
+  ];
+  var registry = {
+    components: {
+      // No category field — component is intentionally uncategorized.
+      "maintenance-banner": { name: "Maintenance banner" },
+    },
+  };
+  var slugFor = function (label) {
+    return label ? label.toLowerCase().replace(/\s+/g, "-") : "";
+  };
+
+  var summary = fanout.applyPatternFanout(
+    perComponent,
+    patterns,
+    registry,
+    slugFor,
+  );
+
+  assert.equal(
+    perComponent["maintenance-banner"],
+    undefined,
+    "uncategorized component must NOT have a synthesized doc",
+  );
+  assert.deepEqual(summary.synthesized, [], "no synthesis");
+  assert.deepEqual(summary.skippedUncategorized, [
+    { slug: "maintenance-banner", patternSlug: "empty-and-system-states" },
+  ]);
+  // Pattern still counts as resolved for ordering purposes — stamped is empty
+  // because nothing was stamped on this slug.
+  assert.deepEqual(summary.stamped, []);
 });
 
 test("applyPatternFanout promotes not-started → synthesized when only pattern content", function () {
