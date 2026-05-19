@@ -10,19 +10,22 @@ function tmpdir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "media-sync-"));
 }
 
-// Two-component registry; one page has the nested Design-guidelines + Overview
-// structure (button), the other lacks it (badge — only has an unrelated
-// "Anatomy" frame, no Design-guidelines wrapper).
+// Registry mirrors real Actian DS Kit: each component has a `page` field
+// (the Figma page name where the component lives) and a `nodeId` deep
+// inside the page tree.
 var registry = {
   fileKey: "FILEKEY",
   components: {
-    button: { name: "Button", nodeId: "1:1", page: "Buttons" },
-    badge:  { name: "Badge",  nodeId: "2:2", page: "Badges" },
+    button: { name: "Button", nodeId: "7206:2643", page: "Buttons" },
+    badge:  { name: "Badge",  nodeId: "8888:1111", page: "Badges" },
   },
 };
 
-// Mock Figma file: real-world structure with "Overview" nested inside a
-// "Design guidelines" wrapper frame on each component page.
+// Mock Figma file tree. Mirrors the post-rename state:
+//   page → "Design guidelines" outer wrapper → "Preview" sub-section → inner visual FRAME
+// Buttons page has the Preview sub-section properly set up; Badges page
+// lacks the Design guidelines wrapper entirely (simulating an
+// undocumented component).
 function defaultFileTree() {
   return {
     document: {
@@ -34,15 +37,41 @@ function defaultFileTree() {
           type: "CANVAS",
           name: "Buttons",
           children: [
-            { id: "1:1", type: "FRAME", name: "Button" },
+            // Components section (component frame nested deep).
             {
-              id: "dg:1",
+              id: "c:1",
+              type: "FRAME",
+              name: "Components",
+              children: [
+                {
+                  id: "c:1-body",
+                  type: "FRAME",
+                  name: "Body",
+                  children: [
+                    { id: "7206:2643", type: "COMPONENT_SET", name: "Button" },
+                  ],
+                },
+              ],
+            },
+            // Outer "Design guidelines" wrapper with the Preview sub-section
+            // (post-rename).
+            {
+              id: "dg:outer",
               type: "FRAME",
               name: "Design guidelines",
               children: [
-                { id: "100:0", type: "FRAME", name: "Overview" },
-                { id: "100:1", type: "FRAME", name: "Parts" },
-                { id: "100:2", type: "FRAME", name: "Variations" },
+                { id: "h:1", type: "INSTANCE", name: ".local - section header" },
+                {
+                  id: "ss:preview",
+                  type: "FRAME",
+                  name: "Preview",
+                  children: [
+                    // Title TEXT layer (the renderer skips this).
+                    { id: "t:1", type: "TEXT", name: "Title", characters: "Overview" },
+                    // The actual visual FRAME — this is what gets captured.
+                    { id: "visual:preview", type: "FRAME", name: "Overview" },
+                  ],
+                },
               ],
             },
           ],
@@ -52,8 +81,15 @@ function defaultFileTree() {
           type: "CANVAS",
           name: "Badges",
           children: [
-            { id: "2:2", type: "FRAME", name: "Badge" },
-            { id: "200:1", type: "FRAME", name: "Anatomy" },
+            {
+              id: "c:2",
+              type: "FRAME",
+              name: "Components",
+              children: [
+                { id: "8888:1111", type: "FRAME", name: "Badge" },
+              ],
+            },
+            // No Design guidelines wrapper on this page.
           ],
         },
       ],
@@ -62,8 +98,17 @@ function defaultFileTree() {
 }
 
 function mockRest(overrides) {
+  var tree = defaultFileTree();
   return Object.assign({
-    getFile: function () { return Promise.resolve(defaultFileTree()); },
+    getFile: function () { return Promise.resolve(tree); },
+    getNodes: function (fileKey, ids) {
+      // Real Figma /v1/nodes returns { nodes: { [id]: { document: <subtree> } } }.
+      var pages = {};
+      tree.document.children.forEach(function (p) { pages[p.id] = { document: p }; });
+      var resp = { nodes: {} };
+      ids.forEach(function (id) { if (pages[id]) resp.nodes[id] = pages[id]; });
+      return Promise.resolve(resp);
+    },
     getImages: function (fileKey, ids) {
       var images = {};
       ids.forEach(function (id) { images[id] = "https://signed/" + id + ".png"; });
@@ -78,38 +123,38 @@ function mockRest(overrides) {
 test("findFrameByNameRecursive walks nested frames", function () {
   var tree = defaultFileTree();
   var page1 = tree.document.children[0];
-  var found = syncMedia.findFrameByNameRecursive(page1, "Overview");
-  assert.ok(found, "should find Overview deep inside Design guidelines");
-  assert.equal(found.id, "100:0");
+  var wrapper = syncMedia.findFrameByNameRecursive(page1, "Design guidelines");
+  assert.ok(wrapper);
+  assert.equal(wrapper.id, "dg:outer");
 });
 
-test("findFrameByNameRecursive is case-insensitive and returns null when absent", function () {
-  var tree = defaultFileTree();
-  var page1 = tree.document.children[0];
-  assert.equal(syncMedia.findFrameByNameRecursive(page1, "OVERVIEW").id, "100:0");
-  assert.equal(syncMedia.findFrameByNameRecursive(page1, "Spacing & size"), null);
-});
-
-test("findRoleSourceNode locates Overview inside Design guidelines wrapper", function () {
+test("findRoleSourceNode finds inner visual FRAME inside Preview sub-section", function () {
   var tree = defaultFileTree();
   var page1 = tree.document.children[0];
   var srcId = syncMedia.findRoleSourceNode(page1, syncMedia.ROLE_FINDERS.preview);
-  assert.equal(srcId, "100:0");
+  assert.equal(srcId, "visual:preview");
 });
 
-test("findRoleSourceNode returns null when wrapper is absent", function () {
+test("findRoleSourceNode returns null when outer wrapper is absent", function () {
   var tree = defaultFileTree();
-  var page2 = tree.document.children[1]; // Badges page — no Design guidelines wrapper
+  var page2 = tree.document.children[1]; // Badges — no Design guidelines wrapper
   assert.equal(syncMedia.findRoleSourceNode(page2, syncMedia.ROLE_FINDERS.preview), null);
 });
 
-test("ROLE_FINDERS exports preview today; future roles slot in as config entries", function () {
-  assert.deepEqual(Object.keys(syncMedia.ROLE_FINDERS), ["preview"]);
-  assert.equal(syncMedia.ROLE_FINDERS.preview.parent, "Design guidelines");
-  assert.equal(syncMedia.ROLE_FINDERS.preview.child, "Overview");
+test("findRoleSourceNode is case-insensitive on sub-section name", function () {
+  var tree = defaultFileTree();
+  var page1 = tree.document.children[0];
+  // Match against lowercased sectionName works.
+  var srcId = syncMedia.findRoleSourceNode(page1, { sectionName: "PREVIEW" });
+  assert.equal(srcId, "visual:preview");
 });
 
-test("writes preview.png for components with Design guidelines → Overview; skips others", async function () {
+test("ROLE_FINDERS exports preview today; other roles deferred to multi-image phase", function () {
+  assert.deepEqual(Object.keys(syncMedia.ROLE_FINDERS), ["preview"]);
+  assert.equal(syncMedia.ROLE_FINDERS.preview.sectionName, "Preview");
+});
+
+test("writes preview.png from inner visual FRAME for components with Preview sub-section", async function () {
   var dir = tmpdir();
   var result = await syncMedia.run({
     registry: registry,
@@ -118,13 +163,13 @@ test("writes preview.png for components with Design guidelines → Overview; ski
   });
   var btnPath = path.join(dir, "button", "preview.png");
   var badgePath = path.join(dir, "badge", "preview.png");
-  assert.ok(fs.existsSync(btnPath), "button preview.png must exist (Overview found inside Design guidelines)");
-  assert.ok(!fs.existsSync(badgePath), "badge preview.png must not be created (no Design guidelines wrapper)");
+  assert.ok(fs.existsSync(btnPath), "button preview.png must exist");
+  assert.ok(!fs.existsSync(badgePath), "badge preview.png must not be created (no wrapper)");
   assert.deepEqual(result.captured, ["button/preview"]);
   assert.deepEqual(result.missing, ["badge"]);
 });
 
-test("idempotent: second run does not re-write when bytes match", async function () {
+test("idempotent: second run does not rewrite when bytes match", async function () {
   var dir = tmpdir();
   await syncMedia.run({ registry: registry, outputDir: dir, rest: mockRest() });
   var stat1 = fs.statSync(path.join(dir, "button", "preview.png"));
@@ -134,36 +179,38 @@ test("idempotent: second run does not re-write when bytes match", async function
   assert.equal(stat1.mtimeMs, stat2.mtimeMs, "stable bytes → no rewrite");
 });
 
-test("multiple components on the same page share one Overview frame", async function () {
+test("slug whose page field is unknown lands in missing", async function () {
+  var dir = tmpdir();
+  var oddReg = {
+    fileKey: "FILEKEY",
+    components: {
+      orphan: { name: "Orphan", nodeId: "9:9", page: "Nonexistent" },
+    },
+  };
+  var result = await syncMedia.run({
+    registry: oddReg,
+    outputDir: dir,
+    rest: mockRest(),
+  });
+  assert.deepEqual(result.captured, []);
+  assert.deepEqual(result.missing, ["orphan"]);
+});
+
+test("multiple slugs on the same page share one capture", async function () {
   var dir = tmpdir();
   var sharedReg = {
     fileKey: "FILEKEY",
     components: {
-      button:       { name: "Button",       nodeId: "1:1", page: "Buttons" },
-      "button-cta": { name: "Button (CTA)", nodeId: "1:2", page: "Buttons" },
+      button:       { name: "Button",       nodeId: "7206:2643", page: "Buttons" },
+      "button-cta": { name: "Button (CTA)", nodeId: "7206:2644", page: "Buttons" },
     },
   };
-  // Mock that adds button-cta as another direct child of page p:1.
-  var customMock = mockRest();
-  var origGetFile = customMock.getFile;
-  customMock.getFile = function () {
-    return origGetFile().then(function (resp) {
-      resp.document.children[0].children.push(
-        { id: "1:2", type: "FRAME", name: "Button (CTA)" }
-      );
-      return resp;
-    });
-  };
-  var result = await syncMedia.run({
-    registry: sharedReg,
-    outputDir: dir,
-    rest: customMock,
-  });
+  var result = await syncMedia.run({ registry: sharedReg, outputDir: dir, rest: mockRest() });
   assert.deepEqual(result.captured, ["button-cta/preview", "button/preview"]);
-  assert.equal(result.missing.length, 0);
-  var btnBytes = fs.readFileSync(path.join(dir, "button", "preview.png"));
-  var ctaBytes = fs.readFileSync(path.join(dir, "button-cta", "preview.png"));
-  assert.ok(btnBytes.equals(ctaBytes), "shared Overview frame → identical bytes per slug");
+  // Both files must exist and have the same bytes.
+  var b1 = fs.readFileSync(path.join(dir, "button", "preview.png"));
+  var b2 = fs.readFileSync(path.join(dir, "button-cta", "preview.png"));
+  assert.ok(b1.equals(b2), "shared sub-section → identical bytes per slug");
 });
 
 test("orchestrator runs media-preview phase end-to-end", async function () {

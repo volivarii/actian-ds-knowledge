@@ -1,54 +1,68 @@
 "use strict";
 
-// sync-media-preview — locate per-component capture frames in Figma,
-// render them as PNGs via REST /v1/images, save under
+// sync-media-preview — locate per-component capture frames in Figma, render
+// them as PNGs via REST /v1/images, save under
 // components/dist/media/<slug>/<role>.png.
 // First instance of the media convention (paths-manifest.json#components.media.ci).
 //
-// Naming note: SOURCE-side frame names live in Figma (designer-owned). DATA-side
-// role names follow DS asset convention (`preview`, `parts`, `variations`,
-// `spacing` — never `overview`, which is reserved for sections + tabs).
-// `ROLE_FINDERS` below is the single place where that translation happens.
+// Naming convention (data side):
+//   `preview`, `parts`, `variations`, `spacing` — DS asset naming. "Overview"
+//   is reserved for sections + tabs.
 //
-// Figma structure expectation: every component lives on a CANVAS (page); each
-// page also carries a "Design guidelines" wrapper frame; each capture role's
-// source frame lives DIRECTLY inside that wrapper. Adding a new role = one
-// entry in ROLE_FINDERS. Adding a new wrapper-structure pattern = the same
-// (just point `parent` at a different wrapper name).
+// Naming convention (Figma side, post-2026-05-19 rename):
+//   Each component page has an outer FRAME named "Design guidelines" that
+//   wraps 7 (today) sub-section FRAMES. Pre-rename: all 7 are also named
+//   "Design guidelines". Post-rename: "Preview", "Parts", "Variations",
+//   "Spacing", "Behavior", "Layout", "When to use". The data-side speaks
+//   the role keys; ROLE_FINDERS maps role → Figma sub-section name.
 //
-// Find pipeline:
-//   1. getFile(fileKey, { depth: 0 }) — one call, full tree. Build
-//      componentId → pageId map so we know which slugs to capture for which
-//      pages.
-//   2. For each registered slug × each role in ROLE_FINDERS:
-//      walk the slug's page subtree for a FRAME named ROLE_FINDERS[role].parent
-//      (case-insensitive, recursive), then look in its direct children for a
-//      FRAME named ROLE_FINDERS[role].child. Record (slug, role, sourceNodeId).
-//   3. getImages(fileKey, uniqueSourceIds, { format: "png", scale: 2 }) — one
-//      batched call across all roles + pages.
-//   4. fetchBinary(signedUrl) per unique source, writeIfChanged to
-//      <outputDir>/<slug>/<role>.png. Buffer cache keyed by sourceNodeId
-//      avoids re-downloading when multiple slugs share a source (same page).
+// Capture: inside each sub-section, take the FIRST FRAME child (skipping
+// TEXT/INSTANCE header layers). That's the visual.
+//
+// Page resolution: built from registry.components[slug].page (the page name
+// like "✍️ Button"), NOT by walking the file tree. Component frames live
+// 3+ levels deep on their pages — too deep to walk reliably; the registry
+// already knows where each component sits.
+//
+// Pipeline:
+//   1. getFile(fileKey, { depth: 2 }) — enumerate pages, build name→id map.
+//   2. Map each registered slug → page id via registry.page name.
+//   3. getNodes(uniquePageIds) — fetch full subtrees of relevant pages only.
+//   4. For each page, find the outer "Design guidelines" wrapper; for each
+//      role in ROLE_FINDERS, find the sub-section FRAME by name; take the
+//      first FRAME child inside that sub-section as the source node.
+//   5. getImages(uniqueSourceIds, png, scale=2) — one batched call.
+//   6. fetchBinary + writeIfChanged — buffer cache per sourceNodeId so
+//      multiple slugs on the same page share one download.
 
 var fs = require("fs");
 var path = require("path");
 
-// ROLE_FINDERS — per-role Figma source-frame addressing. Adding a role to this
-// map activates capture for that role on the next sync run; no other code
-// changes required. All matches are case-insensitive.
+// Outer wrapper frame name (stays "Design guidelines" — the section header
+// designers see). This is the layer that contains all sub-sections.
+var OUTER_WRAPPER_NAME = "Design guidelines";
+
+// ROLE_FINDERS — per-role configuration. `sectionName` is the FRAME name of
+// the sub-section inside the outer wrapper, post-rename. Adding a role:
+// add a config entry here AND ensure designers have renamed the matching
+// sub-section frame in Figma.
 //
-// Future roles planned by the design team (commented out until the source
-// frames exist in Figma):
-//   parts:      { parent: "Design guidelines", child: "Parts" },
-//   variations: { parent: "Design guidelines", child: "Variations" },
-//   spacing:    { parent: "Design guidelines", child: "Spacing & size" },
+// Multi-image roles (Parts has 6 inner visuals, Variations has 2) are
+// future work — when those roles land, this map gains a `capture: "all"`
+// field, the schema's `media.<role>` becomes `string[]`, and consumers
+// (docs MediaAsset) update. Today only `preview` is active.
 var ROLE_FINDERS = {
-  preview: { parent: "Design guidelines", child: "Overview" },
+  preview: { sectionName: "Preview" },
+  // Future:
+  // parts:      { sectionName: "Parts",      capture: "all" },
+  // variations: { sectionName: "Variations", capture: "all" },
+  // spacing:    { sectionName: "Spacing" },
 };
 
 // Recursive case-insensitive frame-by-name finder. Returns the matching FRAME
-// node or null. Walks the entire subtree under `node`, not just direct
-// children — handles arbitrary wrapper nesting on the page.
+// node or null. Walks the entire subtree under `node`. Used to locate the
+// outer "Design guidelines" wrapper anywhere on a page (it usually sits as
+// a direct child of the CANVAS but the finder is resilient to deeper nesting).
 function findFrameByNameRecursive(node, name) {
   if (!node) return null;
   var lcName = name.toLowerCase();
@@ -64,22 +78,31 @@ function findFrameByNameRecursive(node, name) {
   return null;
 }
 
-// findRoleSourceNode — given a page subtree (document of a CANVAS page) and a
-// role-finder spec ({ parent, child }), locate the wrapper frame (recursively)
-// then the named child frame inside its direct children. Returns the child
-// node id or null. Both matches are case-insensitive.
+// findRoleSourceNode — given a page subtree and a role-finder spec, locate
+// the outer "Design guidelines" wrapper, find the sub-section FRAME by name,
+// then return the id of the FIRST FRAME child of the sub-section (the visual).
+// All matches are case-insensitive.
 function findRoleSourceNode(pageNode, findSpec) {
   var doc = pageNode && pageNode.document ? pageNode.document : pageNode;
   if (!doc) return null;
-  var wrapper = findFrameByNameRecursive(doc, findSpec.parent);
+  var wrapper = findFrameByNameRecursive(doc, OUTER_WRAPPER_NAME);
   if (!wrapper || !Array.isArray(wrapper.children)) return null;
-  var lcChild = findSpec.child.toLowerCase();
+  var lcSection = findSpec.sectionName.toLowerCase();
   for (var i = 0; i < wrapper.children.length; i++) {
-    var c = wrapper.children[i];
-    if (c && c.type === "FRAME" && typeof c.name === "string"
-        && c.name.toLowerCase() === lcChild) {
-      return c.id;
+    var sub = wrapper.children[i];
+    if (!sub || sub.type !== "FRAME" || typeof sub.name !== "string") continue;
+    if (sub.name.toLowerCase() !== lcSection) continue;
+    // Found the sub-section. Capture the FIRST FRAME child (the visual);
+    // skip TEXT, INSTANCE, GROUP, etc. layers that may sit above the visual
+    // (typically a title TEXT element).
+    if (!Array.isArray(sub.children)) return null;
+    for (var j = 0; j < sub.children.length; j++) {
+      var inner = sub.children[j];
+      if (inner && inner.type === "FRAME") return inner.id;
     }
+    // Sub-section has no FRAME child — capture the sub-section itself as a
+    // last resort. Should be rare; flag in callsite logs if needed later.
+    return sub.id;
   }
   return null;
 }
@@ -109,74 +132,79 @@ async function run(opts) {
     return { captured: [], missing: [], skipped: [] };
   }
 
-  // Step 1: fetch the full file tree once. Reasoning: each role's source
-  // frame can be at arbitrary nesting depth under its page. Fetching the
-  // full tree avoids depth-tuning churn; one large response is cheaper
-  // than N depth-limited probes.
-  var fileResp = await rest.getFile(fileKey, { depth: 0 });
+  // Step 1: enumerate pages (depth=2 — just CANVAS list + their direct
+  // children for sanity; we only use the page-name map).
+  var fileResp = await rest.getFile(fileKey, { depth: 2 });
   var fileDoc = fileResp && fileResp.document;
   if (!fileDoc || !Array.isArray(fileDoc.children)) {
-    return { captured: [], missing: slugs.sort(), skipped: [] };
+    return { captured: [], missing: aggregateMissing(allPairs(slugs, roleNames)).sort(), skipped: [] };
   }
-
-  // Index pages by id for direct lookup later.
-  var pagesById = {};
-  fileDoc.children.forEach(function (page) {
-    if (page && page.id) pagesById[page.id] = page;
+  var pageNameToId = {};
+  fileDoc.children.forEach(function (p) {
+    if (p && p.name && p.id) pageNameToId[p.name] = p.id;
   });
 
-  // Build componentId → pageId map by scanning each page's direct children.
-  // Components are typically top-level page children (FRAME or COMPONENT_SET).
-  var componentToPage = {};
-  fileDoc.children.forEach(function (page) {
-    if (!page || !Array.isArray(page.children)) return;
-    page.children.forEach(function (child) {
-      if (child && child.id) componentToPage[child.id] = page.id;
+  // Step 2: map slug → pageId via registry.page name.
+  var slugToPageId = {};
+  var unresolvedSlugs = [];
+  slugs.forEach(function (slug) {
+    var c = components[slug];
+    if (!c || !c.page) { unresolvedSlugs.push(slug); return; }
+    var pid = pageNameToId[c.page];
+    if (pid) slugToPageId[slug] = pid;
+    else unresolvedSlugs.push(slug);
+  });
+
+  var uniquePageIds = Array.from(new Set(Object.values(slugToPageId)));
+  if (uniquePageIds.length === 0) {
+    return {
+      captured: [],
+      missing: aggregateMissing(allPairs(unresolvedSlugs, roleNames)).sort(),
+      skipped: [],
+    };
+  }
+
+  // Step 3: fetch full subtrees for relevant pages only.
+  var nodesResp = await rest.getNodes(fileKey, uniquePageIds);
+  var nodes = (nodesResp && nodesResp.nodes) || {};
+
+  // Step 4: for each page, find role-source frames once. Then assign each
+  // (slug, role) to its page's matching source.
+  // pageRoleSources[pageId][role] = sourceNodeId
+  var pageRoleSources = {};
+  uniquePageIds.forEach(function (pageId) {
+    var page = nodes[pageId];
+    pageRoleSources[pageId] = {};
+    if (!page) return;
+    roleNames.forEach(function (role) {
+      var srcId = findRoleSourceNode(page, ROLE_FINDERS[role]);
+      if (srcId) pageRoleSources[pageId][role] = srcId;
     });
   });
 
-  // Step 2: for each (slug, role), find the source frame id. Track results
-  // and dedupe by sourceNodeId so the same Overview frame on a page shared
-  // by N components gets fetched once.
-  // pending[i] = { slug, role, sourceNodeId }
-  // missing[i] = { slug, role }  — surfaced in summary; per-slug aggregation below
-  var pending = [];
-  var missingPairs = [];
-  slugs.forEach(function (slug) {
-    var c = components[slug];
-    if (!c || !c.nodeId) {
-      roleNames.forEach(function (r) { missingPairs.push({ slug: slug, role: r }); });
-      return;
-    }
-    var pageId = componentToPage[c.nodeId];
-    if (!pageId || !pagesById[pageId]) {
-      roleNames.forEach(function (r) { missingPairs.push({ slug: slug, role: r }); });
-      return;
-    }
-    var page = pagesById[pageId];
+  var pending = []; // [{ slug, role, sourceNodeId }]
+  var missingPairs = unresolvedSlugs.flatMap(function (s) {
+    return roleNames.map(function (r) { return { slug: s, role: r }; });
+  });
+  Object.keys(slugToPageId).forEach(function (slug) {
+    var pid = slugToPageId[slug];
+    var sources = pageRoleSources[pid] || {};
     roleNames.forEach(function (role) {
-      var srcId = findRoleSourceNode(page, ROLE_FINDERS[role]);
-      if (srcId) pending.push({ slug: slug, role: role, sourceNodeId: srcId });
+      if (sources[role]) pending.push({ slug: slug, role: role, sourceNodeId: sources[role] });
       else missingPairs.push({ slug: slug, role: role });
     });
   });
 
   if (pending.length === 0) {
-    // Aggregate missing by slug for the changelog (caller-friendly).
-    return {
-      captured: [],
-      missing: aggregateMissing(missingPairs).sort(),
-      skipped: [],
-    };
+    return { captured: [], missing: aggregateMissing(missingPairs).sort(), skipped: [] };
   }
 
-  // Step 3: batched getImages over unique source ids.
+  // Step 5: getImages over unique source ids.
   var uniqueIds = Array.from(new Set(pending.map(function (p) { return p.sourceNodeId; })));
   var imagesResp = await rest.getImages(fileKey, uniqueIds, { format: "png", scale: 2 });
   var urlMap = (imagesResp && imagesResp.images) || {};
 
-  // Step 4: download + write. Buffer cache keyed by sourceNodeId so multiple
-  // slugs/roles pointing at the same Figma frame only download once.
+  // Step 6: download + write. Buffer cache keyed by sourceNodeId.
   var captured = [];
   var bufferCache = {};
   for (var i = 0; i < pending.length; i++) {
@@ -203,9 +231,17 @@ async function run(opts) {
   };
 }
 
+function allPairs(slugList, roleList) {
+  var out = [];
+  slugList.forEach(function (s) {
+    roleList.forEach(function (r) { out.push({ slug: s, role: r }); });
+  });
+  return out;
+}
+
 // aggregateMissing — collapse (slug, role) pairs into slug-only entries when
-// ALL roles are missing for that slug; otherwise emit a "slug:role" entry per
-// missing role. Keeps the changelog readable for partial-capture cases.
+// ALL roles are missing for a slug; otherwise emit one "slug:role" entry per
+// missing role. Keeps the changelog readable for partial captures.
 function aggregateMissing(pairs) {
   if (pairs.length === 0) return [];
   var byslug = {};
@@ -216,14 +252,9 @@ function aggregateMissing(pairs) {
   var totalRoles = Object.keys(ROLE_FINDERS).length;
   var result = [];
   Object.keys(byslug).forEach(function (slug) {
-    var rolesForSlug = byslug[slug];
-    if (rolesForSlug.length === totalRoles) {
-      // All roles missing → slug-only entry.
-      result.push(slug);
-    } else {
-      // Partial → emit each missing role.
-      rolesForSlug.forEach(function (r) { result.push(slug + ":" + r); });
-    }
+    var roles = byslug[slug];
+    if (roles.length === totalRoles) result.push(slug);
+    else roles.forEach(function (r) { result.push(slug + ":" + r); });
   });
   return result;
 }
@@ -233,4 +264,5 @@ module.exports = {
   findRoleSourceNode: findRoleSourceNode,
   findFrameByNameRecursive: findFrameByNameRecursive,
   ROLE_FINDERS: ROLE_FINDERS,
+  OUTER_WRAPPER_NAME: OUTER_WRAPPER_NAME,
 };
