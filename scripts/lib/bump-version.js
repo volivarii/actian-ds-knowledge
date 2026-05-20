@@ -42,12 +42,11 @@ module.exports = bumpVersion;
 // CLI: node bump-version.js <plugin.json path> <level>
 // Reads, bumps, writes back. Used by GitHub workflows.
 //
-// Side effect: keeps the full version-derived set in lockstep when run
-// from the knowledge repo root. Three files move together:
-//   1. package.json#version           — primary source of truth
-//   2. paths-manifest.json#knowledge_version — asserted by tests/manifest.test.js
-//   3. MAP.md (regenerated)           — asserted by .github/workflows/manifest-coverage.yml
-// Each derived sync is no-op if the sibling artifact is absent, keeping
+// Side effect: keeps the version-derived set in lockstep when run from the
+// knowledge repo root. Two files move together:
+//   1. package.json#version                  — primary source of truth
+//   2. paths-manifest.json#knowledge_version  — asserted by tests/manifest.test.js
+// The manifest sync is a no-op if the sibling artifact is absent, keeping
 // the utility portable for non-knowledge consumers.
 if (require.main === module) {
   var fs = require("fs");
@@ -77,8 +76,7 @@ if (require.main === module) {
   // Lives in the same directory as the bumped JSON file. No-op if absent
   // (keeps the utility portable — tests + non-knowledge consumers unaffected).
   // path.resolve so a relative invocation (e.g. `node ... package.json minor`
-  // from repo root) produces an absolute repoRoot — required for require()
-  // resolution in the MAP.md regen below.
+  // from repo root) produces an absolute repoRoot.
   var repoRoot = path.resolve(path.dirname(pluginJsonPath));
   var manifestPath = path.join(repoRoot, "paths-manifest.json");
   var manifest = null;
@@ -92,21 +90,6 @@ if (require.main === module) {
           newVersion +
           "\n",
       );
-    }
-  }
-
-  // Regenerate MAP.md so the third lockstep file stays in step.
-  // No-op if either generate-map.js or MAP.md is missing — keeps the utility
-  // portable for non-knowledge consumers.
-  var generateMapPath = path.join(repoRoot, "scripts", "generate-map.js");
-  var mapPath = path.join(repoRoot, "MAP.md");
-  if (manifest && fs.existsSync(generateMapPath) && fs.existsSync(mapPath)) {
-    var generateMap = require(generateMapPath).generateMap;
-    var nextMap = generateMap(manifest);
-    var currentMap = fs.readFileSync(mapPath, "utf8");
-    if (nextMap !== currentMap) {
-      fs.writeFileSync(mapPath, nextMap, "utf8");
-      process.stdout.write("[bump-version] regenerated MAP.md\n");
     }
   }
 }
