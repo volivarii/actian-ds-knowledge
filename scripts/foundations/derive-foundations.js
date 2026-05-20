@@ -899,9 +899,23 @@ function updatePathsManifest(manifestPath, derived, sourceRel, opts) {
   var topLevels = derived.tree.map(function (n) {
     return n;
   });
+  // A motion-shape child (Duration/Easing/Delay — see isMotionShape) is
+  // emitted as its own structured leaf and is consumed DIRECTLY by motion-ref
+  // resolution in the plugin + docs category-defaults-loader
+  // (manifest.paths["foundations.<slug>.motion"]). When a section has one,
+  // surface it explicitly: the section's own key becomes
+  // `foundations.<slug>.index` so `.motion` can sit beside it without breaking
+  // the leaf-XOR-namespace rule (tests/manifest-convention).
   for (var i = 0; i < topLevels.length; i++) {
     var n = topLevels[i];
     var hasChildren = n.children.length > 0 && !isMotionShape(n);
+    var motionChild = null;
+    for (var c = 0; c < n.children.length; c++) {
+      if (isMotionShape(n.children[c])) {
+        motionChild = n.children[c];
+        break;
+      }
+    }
     var p = hasChildren
       ? "foundations/dist/" + n.slug + "/_index.json"
       : "foundations/dist/" + n.slug + ".json";
@@ -912,7 +926,9 @@ function updatePathsManifest(manifestPath, derived, sourceRel, opts) {
         n.slug +
         "/."
       : "Foundations section '" + n.title + "' (leaf-only — no sub-sections).";
-    var key = "foundations." + n.slug;
+    var key = motionChild
+      ? "foundations." + n.slug + ".index"
+      : "foundations." + n.slug;
     manifest.paths[key] = {
       path: p,
       type: "json",
@@ -921,6 +937,21 @@ function updatePathsManifest(manifestPath, derived, sourceRel, opts) {
       description: description,
     };
     added.push(key);
+    if (motionChild) {
+      var motionKey = "foundations." + n.slug + "." + motionChild.slug;
+      manifest.paths[motionKey] = {
+        path: "foundations/dist/" + n.slug + "/" + motionChild.slug + ".json",
+        type: "json",
+        origin: "ci",
+        generator: "scripts/foundations/derive-foundations.js",
+        description:
+          "Structured motion leaf (tokens + patterns) for foundations " +
+          "section '" +
+          n.title +
+          "'. Resolved directly by motion-ref lookup in the plugin + docs.",
+      };
+      added.push(motionKey);
+    }
   }
 
   // 6. Marker note.
