@@ -258,8 +258,5 @@
       "status": "not-started"
     }
   },
-  "updated_at": "2026-05-14T16:07:17+02:00",
-  "media": {
-    "preview": "components/dist/media/alert-banner/preview.png"
-  }
+  "updated_at": "2026-05-14T16:07:17+02:00"
 }
