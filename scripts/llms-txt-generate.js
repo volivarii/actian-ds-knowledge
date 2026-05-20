@@ -25,7 +25,7 @@ function generateLlmsTxt() {
     "",
     "## Accessibility",
     "",
-    "- [WCAG 2.2 AA guidance](accessibility/accessibility.md): applied rules + criteria",
+    "- [WCAG 2.1 AA guidance](accessibility/accessibility.md): applied rules + criteria",
     "",
     "## Components",
     "",
