@@ -52,6 +52,7 @@ module.exports = bumpVersion;
 if (require.main === module) {
   var fs = require("fs");
   var path = require("path");
+  var { writeManifest } = require("./manifest-io");
   var args = process.argv.slice(2);
   if (args.length !== 2) {
     process.stderr.write(
@@ -85,11 +86,7 @@ if (require.main === module) {
     manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     if (manifest.knowledge_version !== newVersion) {
       manifest.knowledge_version = newVersion;
-      fs.writeFileSync(
-        manifestPath,
-        JSON.stringify(manifest, null, 2) + "\n",
-        "utf8",
-      );
+      writeManifest(manifestPath, manifest);
       process.stdout.write(
         "[bump-version] synced paths-manifest.knowledge_version -> " +
           newVersion +

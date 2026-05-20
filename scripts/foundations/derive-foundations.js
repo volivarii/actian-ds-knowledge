@@ -34,6 +34,7 @@ var path = require("path");
 var astWalk = require("./foundations-parser/ast-walk.js");
 var extractors = require("./foundations-parser/extractors.js");
 var statusEmoji = require("./foundations-parser/status-emoji.js");
+var { writeManifest } = require("../lib/manifest-io");
 
 // ───────────────────────────────────────────────────────────────────────────
 // Status emoji application — common helper for token tables
@@ -939,7 +940,7 @@ function updatePathsManifest(manifestPath, derived, sourceRel, opts) {
   };
 
   if (!opts.dryRun) {
-    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+    writeManifest(manifestPath, manifest);
   }
   return { added: added, dropped: dropped, manifest: manifest };
 }
