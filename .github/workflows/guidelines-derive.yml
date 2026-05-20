@@ -131,13 +131,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # MAP.md must be staged alongside the other 3 files because
-          # scripts/lib/bump-version.js regenerates it in lockstep with the
-          # version bump above. Omitting MAP.md here was the recurring source
-          # of "MAP.md drifted from paths-manifest.json" failures on subsequent
-          # validate-manifest runs — the regen happened in-process but never
-          # made it into the commit (sibling of #88's sync-orchestrator fix).
-          git add components/dist/guidelines/ components/dist/media/_index.json paths-manifest.json package.json MAP.md
+          git add components/dist/guidelines/ components/dist/media/_index.json paths-manifest.json package.json
           git commit -m "chore(components): regenerate guideline JSONs + media index + bump patch"
           git push
 
