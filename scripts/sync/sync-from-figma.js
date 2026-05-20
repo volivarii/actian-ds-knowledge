@@ -26,6 +26,7 @@ var transformStyles = require("../transformers/transform-styles.js");
 var classify = require("../changelog/changelog-classifier.js");
 var defaultRest = require("./figma-rest.js");
 var syncMediaPreview = require("./sync-media-preview.js");
+var { writeManifest } = require("../lib/manifest-io.js");
 
 var KIT_MAP = {
   dsKit: { library: "ds", outputFile: "dskit.json" },
@@ -536,11 +537,7 @@ async function run(opts) {
   if (manifestPath && bumpedTo && fs.existsSync(manifestPath)) {
     var manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     manifest.knowledge_version = bumpedTo;
-    fs.writeFileSync(
-      manifestPath,
-      JSON.stringify(manifest, null, 2) + "\n",
-      "utf8",
-    );
+    writeManifest(manifestPath, manifest);
     manifestUpdated = true;
   }
 

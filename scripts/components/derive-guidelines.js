@@ -39,6 +39,7 @@ const addFormats = require("ajv-formats");
 const yamlParser = require("../categories/categories-parser");
 const mdParser = require("./guideline-md-parser");
 const fanoutPatterns = require("../content/fanout-patterns");
+const { writeManifest } = require("../lib/manifest-io");
 
 const SCHEMA_VERSION = 1;
 const PROSE_DOMAINS = ["content", "usage", "design", "behavior"];
@@ -606,7 +607,7 @@ function updatePathsManifest(manifestPath, slugs, opts) {
   manifest._notes.guideline_doc_auto = MANIFEST_NOTE;
 
   if (!opts.dryRun) {
-    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+    writeManifest(manifestPath, manifest);
   }
   return { added, dropped, manifest };
 }

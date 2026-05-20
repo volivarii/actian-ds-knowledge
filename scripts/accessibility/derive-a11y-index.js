@@ -3,21 +3,40 @@
 var fs = require("node:fs");
 var path = require("node:path");
 
+// Slugify a heading into a stable section id: drop a leading "N." numeral,
+// lowercase, and reduce every run of non-alphanumerics to a single hyphen.
+// Mirrors the auto-slug approach of derive-foundations.js so the source MD
+// stays plain, human-authored markdown — no hand-maintained {#anchor}s.
+function slugify(heading) {
+  return heading
+    .replace(/^\s*\d+\.\s*/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function deriveA11yIndex(md) {
   var lines = md.split("\n");
   var sections = [];
+  var seen = Object.create(null);
   var current = null;
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
-    var m = line.match(/^##\s+(.+?)\s*\{#([a-z][a-z0-9-]*)\}\s*$/);
+    // H2 sections and H3 sub-sections (per-component entries under
+    // "## Components", checklist groups under "## Designer Handoff
+    // Checklist") both become index sections, keyed by an auto-slug of
+    // their heading text. First occurrence of a slug wins — a later
+    // heading that slugifies identically (e.g. the checklist re-uses
+    // topic names) is skipped, never duplicated.
+    var m = line.match(/^(#{2,3})\s+(.+?)\s*$/);
     if (m) {
-      if (current) sections.push(current);
-      current = {
-        slug: m[2],
-        title: m[1].trim(),
-        wcag: [],
-        body_excerpt: "",
-      };
+      var title = m[2].trim();
+      var slug = slugify(title);
+      if (slug && !seen[slug]) {
+        if (current) sections.push(current);
+        seen[slug] = true;
+        current = { slug: slug, title: title, wcag: [], body_excerpt: "" };
+      }
       continue;
     }
     // Match both "WCAG X.X.X" inline and "WCAG criteria:" header
@@ -86,4 +105,4 @@ if (require.main === module) {
   console.log("Derived " + idx.sections.length + " sections → " + distPath);
 }
 
-module.exports = { deriveA11yIndex: deriveA11yIndex };
+module.exports = { deriveA11yIndex: deriveA11yIndex, slugify: slugify };
