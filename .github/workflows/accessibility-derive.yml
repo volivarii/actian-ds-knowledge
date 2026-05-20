@@ -86,9 +86,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # bump-version.js regenerates MAP.md and paths-manifest.json's
-          # knowledge_version in lockstep with the version bump — stage all four.
-          git add accessibility/dist/ package.json paths-manifest.json MAP.md
+          # bump-version.js syncs paths-manifest.json's knowledge_version in
+          # lockstep with the version bump — stage both alongside the dist JSON.
+          git add accessibility/dist/ package.json paths-manifest.json
           git commit -m "chore(accessibility): regenerate a11y-index.json + bump patch"
           git push
 

@@ -27,7 +27,7 @@ Spec: `docs/superpowers/specs/2026-05-10-manifest-and-tag-pin-design.md` in the 
 Workflow files in `.github/workflows/` are the source of truth — list here is for orientation.
 
 **Sync (Figma → dist):**
-- **`sync-from-figma.yml`** (07:00 UTC nightly + `workflow_dispatch`): Figma REST → `components/dist/registries/*.json` + `components/dist/categories.json`. Also runs `styles-to-md.js`, `render-token-reference.js`, and the `media-preview` phase (renders each component's "Preview" frame to `components/dist/media/<slug>/preview.png`). Auto-bumps `package.json` patch via `bumpLockstep` (3-file lockstep: package + paths-manifest + MAP) on additive/breaking diffs. Opens additive PRs auto-merged; breaking PRs get `review-required` label.
+- **`sync-from-figma.yml`** (07:00 UTC nightly + `workflow_dispatch`): Figma REST → `components/dist/registries/*.json` + `components/dist/categories.json`. Also runs `styles-to-md.js`, `render-token-reference.js`, and the `media-preview` phase (renders each component's "Preview" frame to `components/dist/media/<slug>/preview.png`). Auto-bumps `package.json` patch via `bumpLockstep` (2-file lockstep: `package.json` + `paths-manifest.json#knowledge_version`) on additive/breaking diffs. Opens additive PRs auto-merged; breaking PRs get `review-required` label.
 
 **Derive (PR event, regenerate `dist/` on `src/` edits):**
 - **`foundations-derive.yml`** — `foundations/src/foundations.md` → `foundations/dist/*` (Pattern H hierarchical tree + bundle + verbatim copy)
@@ -36,7 +36,7 @@ Workflow files in `.github/workflows/` are the source of truth — list here is 
 - **`content-derive.yml`** — `content/src/{writing,patterns,product}/*.md` → `content/dist/global.md`
 
 **Validate (PR event, required gates):**
-- **`validate-manifest.yml`** — `scripts/validate-manifest.js` checks manifest schema + every path resolves + no orphans. Also asserts `MAP.md` matches the regenerated output. Required check (named `Validate manifest schema + coverage`).
+- **`validate-manifest.yml`** — `scripts/validate-manifest.js` checks manifest schema + every path resolves + no orphans, then runs the test suite. Required check (named `Validate manifest schema + coverage`).
 - **`validate-schemas.yml`** — Ajv validates dist JSONs against `schemas/*.json`. Inline reviewdog annotations on the Files-Changed view.
 - **`retired-layer-guard.yml`** — Asserts retired layers (Phase 5: scraped `components/src/guidelines/`, transitional content concat) stay gone.
 
