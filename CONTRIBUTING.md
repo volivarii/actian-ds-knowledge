@@ -73,13 +73,13 @@ Plugin's CI pulls knowledge tags via semver range (`vendored.json.knowledge_repo
 Workflows live in `.github/workflows/`. Source of truth is the workflow files themselves; the list below is for orientation.
 
 **Sync (Figma → dist), nightly + manual:**
-- `sync-from-figma.yml` — Figma REST → registries + categories + text/effect styles + token reference. `media-preview` phase captures each component's "Preview" frame as PNG. Auto-bumps patch via the 3-file lockstep (package.json + paths-manifest + MAP), opens PR, auto-merges additive, labels breaking.
+- `sync-from-figma.yml` — Figma REST → registries + categories + text/effect styles + token reference. `media-preview` phase captures each component's "Preview" frame as PNG. Auto-bumps patch via the 2-file lockstep (`package.json` + `paths-manifest.json#knowledge_version`), opens PR, auto-merges additive, labels breaking.
 
 **Derive (PR-event, regenerate `dist/` on `src/` edits):**
 - `foundations-derive.yml` / `categories-derive.yml` / `guidelines-derive.yml` / `content-derive.yml` — each regenerates the corresponding `dist/` artifacts on PR-touch of its inputs. Auto-bump + auto-commit the regenerated dist back to the PR branch.
 
 **Validate (PR-event, required gates):**
-- `validate-manifest.yml` — manifest schema + every path resolves + MAP.md matches. **Required.**
+- `validate-manifest.yml` — manifest schema + every path resolves + test suite. **Required.**
 - `validate-schemas.yml` — Ajv validates dist JSONs against `schemas/*.json`. Inline reviewdog annotations on the Files-Changed view.
 - `retired-layer-guard.yml` — guards against revival of retired transitional layers.
 
