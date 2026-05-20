@@ -33,6 +33,15 @@
     "card": {
       "preview": "components/dist/media/card/preview.png"
     },
+    "card-for-grouped-content": {
+      "preview": "components/dist/media/card-for-grouped-content/preview.png"
+    },
+    "card-for-items": {
+      "preview": "components/dist/media/card-for-items/preview.png"
+    },
+    "card-for-perimeter": {
+      "preview": "components/dist/media/card-for-perimeter/preview.png"
+    },
     "checkbox-with-label": {
       "preview": "components/dist/media/checkbox-with-label/preview.png"
     },
@@ -51,6 +60,9 @@
     "drawer-side-panel": {
       "preview": "components/dist/media/drawer-side-panel/preview.png"
     },
+    "dropdown-select-default": {
+      "preview": "components/dist/media/dropdown-select-default/preview.png"
+    },
     "empty-state": {
       "preview": "components/dist/media/empty-state/preview.png"
     },
@@ -60,11 +72,23 @@
     "global-header": {
       "preview": "components/dist/media/global-header/preview.png"
     },
+    "glossary-item-hierarchy-diagram": {
+      "preview": "components/dist/media/glossary-item-hierarchy-diagram/preview.png"
+    },
     "input": {
       "preview": "components/dist/media/input/preview.png"
     },
     "input-date": {
       "preview": "components/dist/media/input-date/preview.png"
+    },
+    "lineage-connecting-line": {
+      "preview": "components/dist/media/lineage-connecting-line/preview.png"
+    },
+    "lineage-grouped-node": {
+      "preview": "components/dist/media/lineage-grouped-node/preview.png"
+    },
+    "lineage-individual-node": {
+      "preview": "components/dist/media/lineage-individual-node/preview.png"
     },
     "link": {
       "preview": "components/dist/media/link/preview.png"
@@ -80,6 +104,9 @@
     },
     "maintenance-state": {
       "preview": "components/dist/media/maintenance-state/preview.png"
+    },
+    "metamodel-widget": {
+      "preview": "components/dist/media/metamodel-widget/preview.png"
     },
     "modal": {
       "preview": "components/dist/media/modal/preview.png"
@@ -99,8 +126,14 @@
     "popover": {
       "preview": "components/dist/media/popover/preview.png"
     },
+    "progress-bar-small": {
+      "preview": "components/dist/media/progress-bar-small/preview.png"
+    },
     "radio-button": {
       "preview": "components/dist/media/radio-button/preview.png"
+    },
+    "rich-text": {
+      "preview": "components/dist/media/rich-text/preview.png"
     },
     "scroll-bar": {
       "preview": "components/dist/media/scroll-bar/preview.png"
@@ -140,6 +173,9 @@
     },
     "tile-item": {
       "preview": "components/dist/media/tile-item/preview.png"
+    },
+    "toolbar": {
+      "preview": "components/dist/media/toolbar/preview.png"
     },
     "whats-new-dropdown": {
       "preview": "components/dist/media/whats-new-dropdown/preview.png"

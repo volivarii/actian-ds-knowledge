@@ -4,8 +4,9 @@ name: Derive per-component guideline JSONs from components/src/<slug>/
 # categories-derive.yml. Triggers on changes to per-component source files
 # (_meta.yml + the per-domain markdown/YAML) or the derive scripts/schemas.
 # Regenerates components/dist/guidelines/<slug>.json + guidelines.bundle.json
-# + coverage.md + paths-manifest.json entries, then auto-commits the dist
-# back to the PR branch.
+# + coverage.md + the components/dist/media/_index.json sidecar +
+# paths-manifest.json entries, then auto-commits the dist back to the PR
+# branch.
 #
 # Required repo setting (already enabled for the other derive workflows):
 #   Settings → Actions → General → Workflow permissions → Allow GH Actions
@@ -44,11 +45,12 @@ on:
       # Registry: synthesized docs pull component name + category from
       # components/dist/registries/dskit.json.
       - 'components/dist/registries/dskit.json'
-      # Media assets: the per-component media map (guideline.media.<role>) is
-      # derived from PNGs under components/dist/media/<slug>/. New/removed
-      # assets must re-trigger derive so guideline JSONs stay in sync with
-      # what's on disk. Authored by the media-preview sync phase
-      # (scripts/sync/sync-media-preview.js).
+      # Media assets: __cli.js also regenerates the components/dist/media/
+      # _index.json sidecar (via derive-media-index) from the PNGs under
+      # components/dist/media/<slug>/. A media add/remove must re-trigger so
+      # the index — detected and auto-committed below alongside the guideline
+      # JSONs — stays in lockstep with what is on disk. PNGs are authored by
+      # the media-preview sync phase (scripts/sync/sync-media-preview.js).
       - 'components/dist/media/**'
       # paths-manifest.json is BOTH an output of this workflow (the
       # components.guidelineDoc.* entries are auto-regenerated) AND an input
@@ -110,13 +112,13 @@ jobs:
       - name: Detect changes
         id: diff
         run: |
-          if git diff --quiet -- components/dist/guidelines/ paths-manifest.json; then
+          if git diff --quiet -- components/dist/guidelines/ components/dist/media/_index.json paths-manifest.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No dist changes after regeneration."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Dist changes detected:"
-            git diff --stat -- components/dist/guidelines/ paths-manifest.json
+            git diff --stat -- components/dist/guidelines/ components/dist/media/_index.json paths-manifest.json
           fi
 
       - name: Auto-bump package.json patch
@@ -135,8 +137,8 @@ jobs:
           # of "MAP.md drifted from paths-manifest.json" failures on subsequent
           # validate-manifest runs — the regen happened in-process but never
           # made it into the commit (sibling of #88's sync-orchestrator fix).
-          git add components/dist/guidelines/ paths-manifest.json package.json MAP.md
-          git commit -m "chore(components): regenerate guideline JSONs from components/src/ + bump patch"
+          git add components/dist/guidelines/ components/dist/media/_index.json paths-manifest.json package.json MAP.md
+          git commit -m "chore(components): regenerate guideline JSONs + media index + bump patch"
           git push
 
       # Skip on fork PRs — GITHUB_TOKEN can't push tags to forks.

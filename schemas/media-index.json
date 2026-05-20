@@ -60,10 +60,8 @@
       "additionalProperties": {
         "type": "object",
         "minProperties": 1,
-        "description": "Role-keyed map of repo-relative paths for one component. Same shape as guideline.media for backwards-compatible consumer migration.",
-        "examples": [
-          { "preview": "components/dist/media/avatar/preview.png" }
-        ],
+        "description": "Role-keyed map of repo-relative paths for one component (role → path).",
+        "examples": [{ "preview": "components/dist/media/avatar/preview.png" }],
         "additionalProperties": {
           "type": "string",
           "minLength": 1,

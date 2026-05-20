@@ -58,35 +58,3 @@ test("deriveGitMtime returns null when git history is empty (no commits touching
   // Untracked dir → no log entry → null.
   assert.equal(derive.deriveGitMtime(root, "lonely"), null);
 });
-
-test("deriveMediaMap returns { preview: <rel-path> } when preview.png is on disk", function () {
-  var root = makeRepo();
-  var mediaDir = path.join(root, "components", "dist", "media", "button");
-  fs.mkdirSync(mediaDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(mediaDir, "preview.png"),
-    Buffer.from([0x89, 0x50]),
-  );
-  var media = derive.deriveMediaMap(root, "button");
-  assert.deepEqual(media, {
-    preview: "components/dist/media/button/preview.png",
-  });
-});
-
-test("deriveMediaMap returns null when no media dir for slug", function () {
-  var root = makeRepo();
-  assert.equal(derive.deriveMediaMap(root, "button"), null);
-});
-
-test("deriveMediaMap returns null when dir exists but no role files present", function () {
-  var root = makeRepo();
-  fs.mkdirSync(path.join(root, "components", "dist", "media", "button"), {
-    recursive: true,
-  });
-  // Put an irrelevant file (not in the MEDIA_ROLES map).
-  fs.writeFileSync(
-    path.join(root, "components", "dist", "media", "button", "random.txt"),
-    "x",
-  );
-  assert.equal(derive.deriveMediaMap(root, "button"), null);
-});
