@@ -175,9 +175,131 @@ test("findRoleSourceNode is case-insensitive on sub-section name", function () {
   assert.equal(srcId, "visual:preview");
 });
 
-test("ROLE_FINDERS exports preview today; other roles deferred to multi-image phase", function () {
-  assert.deepEqual(Object.keys(syncMedia.ROLE_FINDERS), ["preview"]);
+test("ROLE_FINDERS exports preview and all multi-image roles", function () {
+  var keys = Object.keys(syncMedia.ROLE_FINDERS);
+  assert.ok(keys.includes("preview"), "preview must be present");
+  assert.ok(keys.includes("parts"), "parts must be present");
+  assert.ok(keys.includes("variations"), "variations must be present");
+  assert.ok(keys.includes("spacing"), "spacing must be present");
+  assert.ok(keys.includes("behavior"), "behavior must be present");
+  assert.ok(keys.includes("layout"), "layout must be present");
   assert.equal(syncMedia.ROLE_FINDERS.preview.sectionName, "Preview");
+  assert.equal(syncMedia.ROLE_FINDERS.parts.capture, "all");
+});
+
+test("findRoleSourceNode returns all FRAME child ids for capture:all", function () {
+  var page = {
+    document: {
+      type: "CANVAS",
+      children: [
+        {
+          type: "FRAME",
+          name: "Design guidelines",
+          children: [
+            {
+              type: "FRAME",
+              name: "Parts",
+              children: [
+                { type: "TEXT", name: "title", id: "t1" },
+                { type: "FRAME", name: "Container", id: "f1" },
+                { type: "FRAME", name: "Icon", id: "f2" },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
+  var out = syncMedia.findRoleSourceNode(page, {
+    sectionName: "Parts",
+    capture: "all",
+  });
+  assert.deepEqual(out, ["f1", "f2"]);
+});
+
+test("findRoleSourceNode returns one id for capture:first", function () {
+  var page = {
+    document: {
+      type: "CANVAS",
+      children: [
+        {
+          type: "FRAME",
+          name: "Design guidelines",
+          children: [
+            {
+              type: "FRAME",
+              name: "Preview",
+              children: [{ type: "FRAME", name: "Hero", id: "h1" }],
+            },
+          ],
+        },
+      ],
+    },
+  };
+  var out = syncMedia.findRoleSourceNode(page, {
+    sectionName: "Preview",
+    capture: "first",
+  });
+  assert.equal(typeof out, "string");
+  assert.equal(out, "h1");
+});
+
+test("findRoleSourceNode capture:all returns [sub.id] when sub-section has no FRAME children", function () {
+  var page = {
+    document: {
+      type: "CANVAS",
+      children: [
+        {
+          type: "FRAME",
+          name: "Design guidelines",
+          children: [
+            {
+              type: "FRAME",
+              name: "Parts",
+              id: "ss:parts",
+              children: [
+                { type: "TEXT", name: "Title", id: "t1" },
+                { type: "INSTANCE", name: "Header", id: "h1" },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
+  var out = syncMedia.findRoleSourceNode(page, {
+    sectionName: "Parts",
+    capture: "all",
+  });
+  assert.deepEqual(out, ["ss:parts"]);
+});
+
+test("findRoleSourceNode capture:first returns sub.id when sub-section has no FRAME children", function () {
+  var page = {
+    document: {
+      type: "CANVAS",
+      children: [
+        {
+          type: "FRAME",
+          name: "Design guidelines",
+          children: [
+            {
+              type: "FRAME",
+              name: "Preview",
+              id: "ss:preview",
+              children: [{ type: "TEXT", name: "Title", id: "t1" }],
+            },
+          ],
+        },
+      ],
+    },
+  };
+  var out = syncMedia.findRoleSourceNode(page, {
+    sectionName: "Preview",
+    capture: "first",
+  });
+  assert.equal(typeof out, "string");
+  assert.equal(out, "ss:preview");
 });
 
 test("writes preview.png from inner visual FRAME for components with Preview sub-section", async function () {
@@ -195,7 +317,16 @@ test("writes preview.png from inner visual FRAME for components with Preview sub
     "badge preview.png must not be created (no wrapper)",
   );
   assert.deepEqual(result.captured, ["button/preview"]);
-  assert.deepEqual(result.missing, ["badge"]);
+  // badge has no Design guidelines wrapper — all 6 roles collapse to slug-only.
+  // button has Preview but not the other 5 roles (mock tree has only Preview).
+  assert.deepEqual(result.missing, [
+    "badge",
+    "button:behavior",
+    "button:layout",
+    "button:parts",
+    "button:spacing",
+    "button:variations",
+  ]);
 });
 
 test("idempotent: second run does not rewrite when bytes match", async function () {
@@ -282,6 +413,345 @@ test("multiple slugs on the same page share one capture", async function () {
   var b1 = fs.readFileSync(path.join(dir, "button", "preview.png"));
   var b2 = fs.readFileSync(path.join(dir, "button-cta", "preview.png"));
   assert.ok(b1.equals(b2), "shared sub-section → identical bytes per slug");
+});
+
+test("run() writes <role>-<index>.png for capture:all roles with multiple FRAME children", async function () {
+  var dir = tmpdir();
+  // Build a custom tree that has a "Parts" sub-section with two FRAME children.
+  var partsReg = {
+    fileKey: "FILEKEY",
+    components: {
+      widget: { name: "Widget", nodeId: "1:1", page: "Widgets" },
+    },
+  };
+  var partsTree = {
+    document: {
+      id: "0:0",
+      type: "DOCUMENT",
+      children: [
+        {
+          id: "p:w",
+          type: "CANVAS",
+          name: "Widgets",
+          children: [
+            {
+              id: "dg:w",
+              type: "FRAME",
+              name: "Design guidelines",
+              children: [
+                {
+                  id: "ss:parts",
+                  type: "FRAME",
+                  name: "Parts",
+                  children: [
+                    { id: "pt:title", type: "TEXT", name: "Title" },
+                    { id: "pt:0", type: "FRAME", name: "Container" },
+                    { id: "pt:1", type: "FRAME", name: "Icon" },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
+  var partsRest = {
+    getFile: function () {
+      return Promise.resolve(partsTree);
+    },
+    getNodes: function (fileKey, ids) {
+      var pages = {};
+      partsTree.document.children.forEach(function (p) {
+        pages[p.id] = { document: p };
+      });
+      var resp = { nodes: {} };
+      ids.forEach(function (id) {
+        if (pages[id]) resp.nodes[id] = pages[id];
+      });
+      return Promise.resolve(resp);
+    },
+    getImages: function (fileKey, ids) {
+      var images = {};
+      ids.forEach(function (id) {
+        images[id] = "https://signed/" + id + ".png";
+      });
+      return Promise.resolve({ images: images });
+    },
+    fetchBinary: function (url) {
+      // Return distinguishable bytes per URL so we can tell the two apart.
+      var seed = url.charCodeAt(url.length - 5);
+      return Promise.resolve(
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, seed, 0x0a, 0x1a, 0x0a]),
+      );
+    },
+  };
+  var result = await syncMedia.run({
+    registry: partsReg,
+    outputDir: dir,
+    rest: partsRest,
+  });
+  // Two files must exist: parts-0.png and parts-1.png.
+  var p0 = path.join(dir, "widget", "parts-0.png");
+  var p1 = path.join(dir, "widget", "parts-1.png");
+  assert.ok(fs.existsSync(p0), "parts-0.png must exist");
+  assert.ok(fs.existsSync(p1), "parts-1.png must exist");
+  // Captured entries reflect both indices.
+  assert.ok(
+    result.captured.includes("widget/parts-0"),
+    "captured must include widget/parts-0",
+  );
+  assert.ok(
+    result.captured.includes("widget/parts-1"),
+    "captured must include widget/parts-1",
+  );
+});
+
+test("run() routes Icons-category components to skipped, not missing", async function () {
+  var dir = tmpdir();
+  var iconsReg = {
+    fileKey: "FILEKEY",
+    components: {
+      button: { name: "Button", nodeId: "7206:2643", page: "Buttons" },
+      mongodb: {
+        name: "MongoDB",
+        nodeId: "9:1",
+        page: "Icons",
+        category: "Icons",
+      },
+    },
+  };
+  // rest stub mirrors existing tests: only "Buttons" page exists in the file tree.
+  var result = await syncMedia.run({
+    registry: iconsReg,
+    outputDir: dir,
+    rest: mockRest(),
+  });
+  assert.ok(
+    result.skipped.includes("mongodb"),
+    "Icons slug must appear in skipped",
+  );
+  assert.ok(
+    !result.missing.some(function (m) {
+      return /mongodb/.test(m);
+    }),
+    "Icons slug must not appear in missing",
+  );
+  assert.ok(
+    result.captured.some(function (c) {
+      return /^button/.test(c);
+    }),
+    "button must still be captured",
+  );
+});
+
+test("prune: stale multi-image files are removed when role shrinks", async function () {
+  var dir = tmpdir();
+  // Pre-populate a widget/parts slug dir with 5 stale files (parts-0 … parts-4).
+  var slugDir = path.join(dir, "widget");
+  fs.mkdirSync(slugDir, { recursive: true });
+  for (var i = 0; i < 5; i++) {
+    fs.writeFileSync(path.join(slugDir, "parts-" + i + ".png"), "stale");
+  }
+
+  // Build a registry + tree that now yields only 3 "Parts" FRAME children.
+  var partsReg = {
+    fileKey: "FILEKEY",
+    components: {
+      widget: { name: "Widget", nodeId: "1:1", page: "Widgets" },
+    },
+  };
+  var partsTree = {
+    document: {
+      id: "0:0",
+      type: "DOCUMENT",
+      children: [
+        {
+          id: "p:w",
+          type: "CANVAS",
+          name: "Widgets",
+          children: [
+            {
+              id: "dg:w",
+              type: "FRAME",
+              name: "Design guidelines",
+              children: [
+                {
+                  id: "ss:parts",
+                  type: "FRAME",
+                  name: "Parts",
+                  children: [
+                    { id: "pt:title", type: "TEXT", name: "Title" },
+                    { id: "pt:0", type: "FRAME", name: "Frame A" },
+                    { id: "pt:1", type: "FRAME", name: "Frame B" },
+                    { id: "pt:2", type: "FRAME", name: "Frame C" },
+                    // Only 3 FRAME children — was 5 before.
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
+  var partsRest = {
+    getFile: function () {
+      return Promise.resolve(partsTree);
+    },
+    getNodes: function (fileKey, ids) {
+      var pages = {};
+      partsTree.document.children.forEach(function (p) {
+        pages[p.id] = { document: p };
+      });
+      var resp = { nodes: {} };
+      ids.forEach(function (id) {
+        if (pages[id]) resp.nodes[id] = pages[id];
+      });
+      return Promise.resolve(resp);
+    },
+    getImages: function (fileKey, ids) {
+      var images = {};
+      ids.forEach(function (id) {
+        images[id] = "https://signed/" + id + ".png";
+      });
+      return Promise.resolve({ images: images });
+    },
+    fetchBinary: function () {
+      return Promise.resolve(
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x01, 0x0a, 0x1a, 0x0a]),
+      );
+    },
+  };
+
+  await syncMedia.run({ registry: partsReg, outputDir: dir, rest: partsRest });
+
+  // Surviving files: parts-0, parts-1, parts-2.
+  assert.ok(
+    fs.existsSync(path.join(slugDir, "parts-0.png")),
+    "parts-0.png must survive",
+  );
+  assert.ok(
+    fs.existsSync(path.join(slugDir, "parts-1.png")),
+    "parts-1.png must survive",
+  );
+  assert.ok(
+    fs.existsSync(path.join(slugDir, "parts-2.png")),
+    "parts-2.png must survive",
+  );
+  // Stale files: parts-3 and parts-4 must be gone.
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-3.png")),
+    "parts-3.png must be pruned",
+  );
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-4.png")),
+    "parts-4.png must be pruned",
+  );
+});
+
+test("prune: all role files removed when role yields 0 frames (fully removed)", async function () {
+  var dir = tmpdir();
+  // Pre-populate widget/parts-0.png … parts-2.png as stale.
+  var slugDir = path.join(dir, "widget");
+  fs.mkdirSync(slugDir, { recursive: true });
+  for (var i = 0; i < 3; i++) {
+    fs.writeFileSync(path.join(slugDir, "parts-" + i + ".png"), "stale");
+  }
+  // Also place a preview.png that must NOT be touched by the prune.
+  fs.writeFileSync(path.join(slugDir, "preview.png"), "keep");
+
+  // Build a registry + tree with NO Parts sub-section at all (0 frames).
+  var partsReg = {
+    fileKey: "FILEKEY",
+    components: {
+      widget: { name: "Widget", nodeId: "1:1", page: "Widgets" },
+    },
+  };
+  var noPartsTree = {
+    document: {
+      id: "0:0",
+      type: "DOCUMENT",
+      children: [
+        {
+          id: "p:w",
+          type: "CANVAS",
+          name: "Widgets",
+          children: [
+            {
+              id: "dg:w",
+              type: "FRAME",
+              name: "Design guidelines",
+              children: [
+                // No "Parts" sub-section — role is fully absent.
+                {
+                  id: "ss:preview",
+                  type: "FRAME",
+                  name: "Preview",
+                  children: [
+                    { id: "vis:preview", type: "FRAME", name: "Overview" },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
+  var noPartsRest = {
+    getFile: function () {
+      return Promise.resolve(noPartsTree);
+    },
+    getNodes: function (fileKey, ids) {
+      var pages = {};
+      noPartsTree.document.children.forEach(function (p) {
+        pages[p.id] = { document: p };
+      });
+      var resp = { nodes: {} };
+      ids.forEach(function (id) {
+        if (pages[id]) resp.nodes[id] = pages[id];
+      });
+      return Promise.resolve(resp);
+    },
+    getImages: function (fileKey, ids) {
+      var images = {};
+      ids.forEach(function (id) {
+        images[id] = "https://signed/" + id + ".png";
+      });
+      return Promise.resolve({ images: images });
+    },
+    fetchBinary: function () {
+      return Promise.resolve(
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x02, 0x0a, 0x1a, 0x0a]),
+      );
+    },
+  };
+
+  await syncMedia.run({
+    registry: partsReg,
+    outputDir: dir,
+    rest: noPartsRest,
+  });
+
+  // All stale parts-*.png must be deleted (role fully removed).
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-0.png")),
+    "parts-0.png must be pruned (role fully removed)",
+  );
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-1.png")),
+    "parts-1.png must be pruned (role fully removed)",
+  );
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-2.png")),
+    "parts-2.png must be pruned (role fully removed)",
+  );
+  // preview.png is capture:"first" — the prune must NOT touch it.
+  assert.ok(
+    fs.existsSync(path.join(slugDir, "preview.png")),
+    "preview.png must NOT be pruned (capture:first)",
+  );
 });
 
 test("orchestrator runs media-preview phase end-to-end", async function () {

@@ -39,12 +39,7 @@ function seedMedia(root, slug, files) {
 }
 
 function compiledSchema() {
-  var schemaPath = path.resolve(
-    __dirname,
-    "..",
-    "schemas",
-    "media-index.json",
-  );
+  var schemaPath = path.resolve(__dirname, "..", "schemas", "media-index.json");
   var schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
   var ajv = new Ajv({ allErrors: true, strict: false });
   addFormats(ajv);
@@ -92,6 +87,70 @@ test("buildMediaIndex emits a schema-valid object", function () {
   var index = deriver.buildMediaIndex(mediaRoot);
   var validate = compiledSchema();
   assert.equal(validate(index), true, JSON.stringify(validate.errors));
+});
+
+test("buildMediaIndex with multi-image role emits a schema-valid object", function () {
+  // Bucket C: multi-image roles produce string[] values; the schema must
+  // accept oneOf(string | string[]) for per-role values.
+  var root = tmpRepo();
+  seedMedia(root, "button", ["preview.png", "parts-0.png", "parts-1.png"]);
+  var mediaRoot = path.join(root, "components", "dist", "media");
+  var index = deriver.buildMediaIndex(mediaRoot);
+  // Verify the index itself has the array shape we're about to validate.
+  assert.ok(
+    Array.isArray(index.media.button.parts),
+    "parts must be an array before schema validation",
+  );
+  var validate = compiledSchema();
+  assert.equal(validate(index), true, JSON.stringify(validate.errors));
+});
+
+test("schema rejects invalid role values (empty string, empty array, number)", function () {
+  var validate = compiledSchema();
+  var base = {
+    _schema_version: 1,
+    _meta: {
+      auto_generated: true,
+      source: "components/dist/media/",
+      do_not_edit:
+        "Edit via scripts/sync/sync-media-* phases; CI regenerates this file.",
+    },
+    media: {},
+  };
+
+  // Empty string should fail.
+  var badEmptyStr = JSON.parse(JSON.stringify(base));
+  badEmptyStr.media.avatar = { preview: "" };
+  assert.equal(validate(badEmptyStr), false, "empty string must fail");
+
+  // Empty array should fail (minItems: 1).
+  var badEmptyArr = JSON.parse(JSON.stringify(base));
+  badEmptyArr.media.avatar = { parts: [] };
+  assert.equal(validate(badEmptyArr), false, "empty array must fail");
+
+  // Number should fail.
+  var badNumber = JSON.parse(JSON.stringify(base));
+  badNumber.media.avatar = { preview: 42 };
+  assert.equal(validate(badNumber), false, "number must fail");
+
+  // Duplicate path in a multi-image list should fail (uniqueItems).
+  var badDupArr = JSON.parse(JSON.stringify(base));
+  badDupArr.media.avatar = {
+    parts: [
+      "components/dist/media/button/parts-0.png",
+      "components/dist/media/button/parts-0.png",
+    ],
+  };
+  assert.equal(validate(badDupArr), false, "duplicate path must fail");
+
+  // Array with an empty-string item should fail (items.minLength).
+  var badEmptyItemArr = JSON.parse(JSON.stringify(base));
+  badEmptyItemArr.media.avatar = { parts: [""] };
+  assert.equal(
+    validate(badEmptyItemArr),
+    false,
+    "array with empty-string item must fail",
+  );
 });
 
 test("buildMediaIndex returns null when media root is absent", function () {
@@ -156,4 +215,33 @@ test("media-only components surface in the index (architectural promise)", funct
     parsed.media.avatar.preview,
     "components/dist/media/avatar/preview.png",
   );
+});
+
+test("deriveSlugMedia emits multi-image roles as ordered string arrays", function () {
+  // Bucket C: parts-0.png, parts-1.png → parts: [path0, path1]
+  // preview stays a bare string (backward compat with Bucket A).
+  var root = tmpRepo();
+  seedMedia(root, "button", ["preview.png", "parts-0.png", "parts-1.png"]);
+  var mediaRoot = path.join(root, "components", "dist", "media");
+  var map = deriver.deriveSlugMedia(mediaRoot, "button");
+  assert.deepEqual(map, {
+    preview: "components/dist/media/button/preview.png",
+    parts: [
+      "components/dist/media/button/parts-0.png",
+      "components/dist/media/button/parts-1.png",
+    ],
+  });
+});
+
+test("deriveSlugMedia stops the multi-image scan at the first index gap", function () {
+  // Contract: the scan increments from 0 and breaks on the first missing
+  // index. parts-0 + parts-2 (NO parts-1) must yield ONLY parts-0 — the
+  // gap halts enumeration, so parts-2 is never reached.
+  var root = tmpRepo();
+  seedMedia(root, "card", ["parts-0.png", "parts-2.png"]);
+  var mediaRoot = path.join(root, "components", "dist", "media");
+  var map = deriver.deriveSlugMedia(mediaRoot, "card");
+  assert.deepEqual(map, {
+    parts: ["components/dist/media/card/parts-0.png"],
+  });
 });

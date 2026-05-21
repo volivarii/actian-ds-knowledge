@@ -110,6 +110,7 @@ These are the contract — everything below is detail.
 | A reserved 2-column table (see below)               | `{ do, dont }` or `{ term, rule }` | `<DoDont>` or `<TermList>` |
 | Any other table                                     | `{ table: { headers, rows } }` | plain markdown table |
 | A fenced code block                                 | `{ example }`             | `**Example:**` + code |
+| `<Media role="parts" layout="grid" />`              | `{ media: { role, layout } }` | `<Media>` component — captured imagery |
 
 ### Reserved table vocabularies
 
@@ -177,6 +178,65 @@ Renders as (in order):
 - **One reserved nesting level only.** `####` and deeper headings flatten as
   `{ note }` into the current section — if you need real nested structure,
   break the parent into two `##` sections.
+
+### The `<Media>` directive
+
+`<Media />` places CI-captured component imagery at a specific point inside a
+domain markdown file. Drop it anywhere inside a section body; the docs renderer
+swaps it for the matching image set at build time.
+
+```markdown
+<Media role="parts" layout="grid" />
+```
+
+**`role` (required)** — identifies which sub-section of the Figma "Design
+guidelines" page the imagery comes from. Accepted values:
+
+| Role         | Figma sub-section it maps to                  |
+|--------------|-----------------------------------------------|
+| `parts`      | Anatomy / parts breakdown                     |
+| `variations` | Variant axes and states                       |
+| `spacing`    | Spacing and sizing rules                      |
+| `behavior`   | Interaction and motion                        |
+| `layout`     | Layout and composition                        |
+
+**`layout` (optional)** — controls how multiple images in the same role are
+arranged. Accepted values:
+
+| Value    | Arrangement                         |
+|----------|-------------------------------------|
+| `stack`  | Images stacked vertically           |
+| `grid`   | Images in an N-up grid              |
+| `inline` | Images placed in the text flow      |
+
+Roles that only ever produce a single image ignore `layout`. When omitted,
+the renderer defaults the arrangement to `stack`.
+
+**What to reference, and what not to.** Authors write a `role` — never a file
+path. CI owns the image files and keeps them current after every Figma sync;
+there are no paths to maintain.
+
+**Auto-append fallback.** If a domain file does not place a `<Media>` tag for
+a role that has captured imagery, the docs renderer appends that imagery at
+the end of the relevant section automatically. Imagery always surfaces — the
+`<Media>` directive is only needed when you want to control placement.
+
+**Captions.** Not currently rendered. Caption support is deferred.
+
+**Example** — positioning anatomy imagery inside `design.md`:
+
+```markdown
+## Anatomy
+
+A button is built from a container, an optional icon, and a label.
+
+<Media role="parts" layout="grid" />
+
+The container clips overflow and defines the minimum tap target.
+```
+
+The `<Media role="parts" layout="grid" />` line is replaced with the captured
+anatomy imagery; the following sentence renders immediately after it.
 
 ## `tokens.yml`
 

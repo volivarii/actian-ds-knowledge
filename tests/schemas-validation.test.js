@@ -86,6 +86,9 @@ test("every property in every schema has description + examples", () => {
       // Properties without nested schemas (e.g. boolean constants) — skip examples
       // requirement on `const`-only nodes since the const itself documents the value.
       if (prop.const !== undefined) return;
+      // Likewise, an `enum` enumerates every valid value inline, so it is
+      // self-documenting — no separate `examples` array needed.
+      if (Array.isArray(prop.enum)) return;
       if (!prop.description) {
         missing.push(
           path.basename(file) +
