@@ -39,12 +39,7 @@ function seedMedia(root, slug, files) {
 }
 
 function compiledSchema() {
-  var schemaPath = path.resolve(
-    __dirname,
-    "..",
-    "schemas",
-    "media-index.json",
-  );
+  var schemaPath = path.resolve(__dirname, "..", "schemas", "media-index.json");
   var schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
   var ajv = new Ajv({ allErrors: true, strict: false });
   addFormats(ajv);
@@ -156,4 +151,33 @@ test("media-only components surface in the index (architectural promise)", funct
     parsed.media.avatar.preview,
     "components/dist/media/avatar/preview.png",
   );
+});
+
+test("deriveSlugMedia emits multi-image roles as ordered string arrays", function () {
+  // Bucket C: parts-0.png, parts-1.png → parts: [path0, path1]
+  // preview stays a bare string (backward compat with Bucket A).
+  var root = tmpRepo();
+  seedMedia(root, "button", ["preview.png", "parts-0.png", "parts-1.png"]);
+  var mediaRoot = path.join(root, "components", "dist", "media");
+  var map = deriver.deriveSlugMedia(mediaRoot, "button");
+  assert.deepEqual(map, {
+    preview: "components/dist/media/button/preview.png",
+    parts: [
+      "components/dist/media/button/parts-0.png",
+      "components/dist/media/button/parts-1.png",
+    ],
+  });
+});
+
+test("deriveSlugMedia stops the multi-image scan at the first index gap", function () {
+  // Contract: the scan increments from 0 and breaks on the first missing
+  // index. parts-0 + parts-2 (NO parts-1) must yield ONLY parts-0 — the
+  // gap halts enumeration, so parts-2 is never reached.
+  var root = tmpRepo();
+  seedMedia(root, "card", ["parts-0.png", "parts-2.png"]);
+  var mediaRoot = path.join(root, "components", "dist", "media");
+  var map = deriver.deriveSlugMedia(mediaRoot, "card");
+  assert.deepEqual(map, {
+    parts: ["components/dist/media/card/parts-0.png"],
+  });
 });

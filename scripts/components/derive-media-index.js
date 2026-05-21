@@ -23,16 +23,19 @@
 var fs = require("node:fs");
 var path = require("node:path");
 
-// MEDIA_ROLES: role key → filename basename. Mirrors the source-of-truth
-// map in scripts/sync/sync-media-preview.js#ROLE_FINDERS. Adding a future
-// role means adding an entry in BOTH places (sync to capture, index to
-// enumerate). The duplication is intentional: each side describes a
+// MEDIA_ROLES: role key → { basename, multi }. preview is single (bare string);
+// the five Bucket-C roles are multi-image (parts-0.png, parts-1.png, …) and
+// emit ordered string[]. Mirrors ROLE_FINDERS in sync-media-preview.js.
+// Adding a role means adding an entry in BOTH places (sync to capture, index
+// to enumerate). The duplication is intentional: each side describes a
 // different half of the contract (Figma source name vs. on-disk basename).
 var MEDIA_ROLES = {
-  preview: "preview.png",
-  // parts: "parts.png",            // multi-image — future
-  // variations: "variations.png",  // multi-image — future
-  // spacing: "spacing.png",
+  preview: { basename: "preview", multi: false },
+  parts: { basename: "parts", multi: true },
+  variations: { basename: "variations", multi: true },
+  spacing: { basename: "spacing", multi: true },
+  behavior: { basename: "behavior", multi: true },
+  layout: { basename: "layout", multi: true },
 };
 
 // Per-slug derive: scan a slug's media dir for known role basenames; return
@@ -40,13 +43,24 @@ var MEDIA_ROLES = {
 function deriveSlugMedia(mediaRoot, slug) {
   var dir = path.join(mediaRoot, slug);
   if (!fs.existsSync(dir)) return null;
+  var rel = function (file) {
+    return "components/dist/media/" + slug + "/" + file;
+  };
   var map = {};
   Object.keys(MEDIA_ROLES).forEach(function (role) {
-    var basename = MEDIA_ROLES[role];
-    var p = path.join(dir, basename);
-    if (fs.existsSync(p)) {
-      map[role] = "components/dist/media/" + slug + "/" + basename;
+    var spec = MEDIA_ROLES[role];
+    if (!spec.multi) {
+      var single = spec.basename + ".png";
+      if (fs.existsSync(path.join(dir, single))) map[role] = rel(single);
+      return;
     }
+    var imgs = [];
+    for (var i = 0; ; i++) {
+      var file = spec.basename + "-" + i + ".png";
+      if (!fs.existsSync(path.join(dir, file))) break;
+      imgs.push(rel(file));
+    }
+    if (imgs.length > 0) map[role] = imgs;
   });
   return Object.keys(map).length > 0 ? map : null;
 }
@@ -66,9 +80,11 @@ function buildMediaIndex(mediaRoot) {
     if (slugMap) media[slug] = slugMap;
   });
   var sorted = {};
-  Object.keys(media).sort().forEach(function (k) {
-    sorted[k] = media[k];
-  });
+  Object.keys(media)
+    .sort()
+    .forEach(function (k) {
+      sorted[k] = media[k];
+    });
   return {
     _schema_version: 1,
     _meta: {
