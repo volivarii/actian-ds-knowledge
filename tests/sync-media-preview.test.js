@@ -507,6 +507,44 @@ test("run() writes <role>-<index>.png for capture:all roles with multiple FRAME 
   );
 });
 
+test("run() routes Icons-category components to skipped, not missing", async function () {
+  var dir = tmpdir();
+  var iconsReg = {
+    fileKey: "FILEKEY",
+    components: {
+      button: { name: "Button", nodeId: "7206:2643", page: "Buttons" },
+      mongodb: {
+        name: "MongoDB",
+        nodeId: "9:1",
+        page: "Icons",
+        category: "Icons",
+      },
+    },
+  };
+  // rest stub mirrors existing tests: only "Buttons" page exists in the file tree.
+  var result = await syncMedia.run({
+    registry: iconsReg,
+    outputDir: dir,
+    rest: mockRest(),
+  });
+  assert.ok(
+    result.skipped.includes("mongodb"),
+    "Icons slug must appear in skipped",
+  );
+  assert.ok(
+    !result.missing.some(function (m) {
+      return /mongodb/.test(m);
+    }),
+    "Icons slug must not appear in missing",
+  );
+  assert.ok(
+    result.captured.some(function (c) {
+      return /^button/.test(c);
+    }),
+    "button must still be captured",
+  );
+});
+
 test("orchestrator runs media-preview phase end-to-end", async function () {
   var pluginDir = fs.mkdtempSync(path.join(os.tmpdir(), "kn-plugin-"));
   fs.mkdirSync(path.join(pluginDir, "components", "dist", "registries"), {

@@ -42,6 +42,11 @@ var path = require("path");
 // designers see). This is the layer that contains all sub-sections.
 var OUTER_WRAPPER_NAME = "Design guidelines";
 
+// Collection categories have no per-component "Design guidelines" page in
+// Figma, so no capture frames exist. Excluding them keeps them out of
+// `missing` (234 Icons would otherwise swamp the changelog).
+var EXCLUDED_CATEGORIES = new Set(["Icons"]);
+
 // ROLE_FINDERS — per-role configuration. `sectionName` is the FRAME name of
 // the sub-section inside the outer wrapper, post-rename. Adding a role:
 // add a config entry here AND ensure designers have renamed the matching
@@ -149,8 +154,21 @@ async function run(opts) {
   var slugs = Object.keys(components);
   var roleNames = Object.keys(ROLE_FINDERS);
 
-  if (slugs.length === 0 || roleNames.length === 0) {
-    return { captured: [], missing: [], skipped: [] };
+  var skippedSlugs = [];
+  var captureSlugs = [];
+  slugs.forEach(function (slug) {
+    var c = components[slug];
+    // A component with no `category` field has `c.category === undefined`,
+    // which `EXCLUDED_CATEGORIES.has(undefined)` returns `false` for — so
+    // uncategorized components fall through to captureSlugs and ARE captured,
+    // not skipped. This is intentional; don't "fix" it.
+    if (c && EXCLUDED_CATEGORIES.has(c.category)) skippedSlugs.push(slug);
+    else captureSlugs.push(slug);
+  });
+  skippedSlugs.sort();
+
+  if (captureSlugs.length === 0 || roleNames.length === 0) {
+    return { captured: [], missing: [], skipped: skippedSlugs };
   }
 
   // Step 1: enumerate pages (depth=2 — just CANVAS list + their direct
@@ -160,8 +178,8 @@ async function run(opts) {
   if (!fileDoc || !Array.isArray(fileDoc.children)) {
     return {
       captured: [],
-      missing: aggregateMissing(allPairs(slugs, roleNames)).sort(),
-      skipped: [],
+      missing: aggregateMissing(allPairs(captureSlugs, roleNames)).sort(),
+      skipped: skippedSlugs,
     };
   }
   // Whitespace normalization: Figma page names sometimes carry leading or
@@ -179,7 +197,7 @@ async function run(opts) {
   // Step 2: map slug → pageId via registry.page name.
   var slugToPageId = {};
   var unresolvedSlugs = [];
-  slugs.forEach(function (slug) {
+  captureSlugs.forEach(function (slug) {
     var c = components[slug];
     if (!c || !c.page) {
       unresolvedSlugs.push(slug);
@@ -195,7 +213,7 @@ async function run(opts) {
     return {
       captured: [],
       missing: aggregateMissing(allPairs(unresolvedSlugs, roleNames)).sort(),
-      skipped: [],
+      skipped: skippedSlugs,
     };
   }
 
@@ -253,7 +271,7 @@ async function run(opts) {
     return {
       captured: [],
       missing: aggregateMissing(missingPairs).sort(),
-      skipped: [],
+      skipped: skippedSlugs,
     };
   }
 
@@ -308,7 +326,7 @@ async function run(opts) {
   return {
     captured: captured.sort(),
     missing: aggregateMissing(missingPairs).sort(),
-    skipped: [],
+    skipped: skippedSlugs,
   };
 }
 

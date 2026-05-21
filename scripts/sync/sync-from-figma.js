@@ -463,11 +463,19 @@ async function run(opts) {
           if (r.missing.length > 0) {
             lines.push("- Missing Preview frame: " + r.missing.join(", "));
           }
+          if (r.skipped.length > 0) {
+            lines.push(
+              "- Skipped (Icons category — no capture frames): " +
+                r.skipped.length +
+                " components",
+            );
+          }
           return {
             kind: "media-preview",
             category: cat,
             captured: r.captured,
             missing: r.missing,
+            skipped: r.skipped,
             fileLabel: "media-preview",
             verdict: {
               category: cat,
