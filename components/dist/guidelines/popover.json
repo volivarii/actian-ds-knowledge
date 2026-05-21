@@ -20,34 +20,103 @@
           "heading": "",
           "content": [
             {
-              "note": "Popovers display richer contextual content than a tooltip. They appear on click and can contain formatted text, links, and actions. Use them when the information is too long or interactive for a tooltip."
+              "prose": "Popovers display richer contextual content than a tooltip. They appear on click and can contain formatted text, links, and actions. Use them when the information is too long or interactive for a tooltip."
             }
           ]
         },
         {
           "heading": "When to use",
           "content": [
-            "To explain a concept or term inline, without leaving the current page.",
-            "To show a small set of related actions in a compact overlay (also called an action popover).",
-            "To provide definitions or help text for complex fields.",
-            "Do not use popovers for critical error messages - use inline alerts or validation messages."
+            {
+              "bullets": [
+                "To explain a concept or term inline, without leaving the current page.",
+                "To show a small set of related actions in a compact overlay (also called an action popover).",
+                "To provide definitions or help text for complex fields.",
+                "Do not use popovers for critical error messages - use inline alerts or validation messages."
+              ]
+            }
           ]
         },
         {
           "heading": "Style",
           "content": [
-            "Popover title: short noun phrase in sentence case. Optional but recommended for longer content.",
-            "Body: plain prose, two to four sentences maximum.",
-            "Avoid bullet lists inside popovers - keep content scannable through short sentences.",
-            "Link text within a popover follows the same descriptive link text guidelines as inline links."
+            {
+              "bullets": [
+                "Popover title: short noun phrase in sentence case. Optional but recommended for longer content.",
+                "Body: plain prose, two to four sentences maximum.",
+                "Avoid bullet lists inside popovers - keep content scannable through short sentences.",
+                "Link text within a popover follows the same descriptive link text guidelines as inline links."
+              ]
+            }
           ]
         },
         {
           "heading": "Behavior",
           "content": [
-            "Opens on click, closes on click outside or Escape.",
-            "Do not open popovers on hover - use tooltips for hover-triggered content.",
-            "Trap focus inside the popover while it is open for accessibility."
+            {
+              "bullets": [
+                "Opens on click, closes on click outside or Escape.",
+                "Do not open popovers on hover - use tooltips for hover-triggered content.",
+                "Trap focus inside the popover while it is open for accessibility."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "",
+          "source": "pattern:object-preview-panels",
+          "content": [
+            {
+              "prose": "Object preview panels display a summary of an asset's key attributes without requiring full navigation to the detail page. They appear as side panels or overlays and are used to support quick inspection workflows."
+            }
+          ]
+        },
+        {
+          "heading": "When to use",
+          "source": "pattern:object-preview-panels",
+          "content": [
+            {
+              "bullets": [
+                "When a user hovers over or clicks an item in a list or search result and wants a quick view of its properties.",
+                "To reduce context switching during browsing or review tasks."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Style",
+          "source": "pattern:object-preview-panels",
+          "content": [
+            {
+              "bullets": [
+                "Panel title is the asset name. Use the exact name - do not rephrase.",
+                "Use short attribute labels (one to two words) followed by their values.",
+                "Group related attributes under a subheading where the panel is long.",
+                "Include a **View full details** link at the bottom to navigate to the full detail page."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Attribute label examples",
+          "source": "pattern:object-preview-panels",
+          "content": [
+            {
+              "do": "Owner",
+              "dont": "Assigned owner"
+            },
+            {
+              "do": "Last modified",
+              "dont": "Date of last modification"
+            },
+            {
+              "do": "Type",
+              "dont": "Object type"
+            },
+            {
+              "do": "Description",
+              "dont": "Asset description"
+            }
           ]
         }
       ]
@@ -64,5 +133,6 @@
     "tokens": {
       "status": "not-started"
     }
-  }
+  },
+  "updated_at": "2026-05-14T16:07:17+02:00"
 }

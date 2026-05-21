@@ -3,13 +3,13 @@
 // Regression tests for scripts/lib/bump-version.js.
 //
 // Pure function: bumpVersion(version, level) -> newVersion.
-// CLI side effect: bumps package.json#version AND syncs sibling
-// paths-manifest.json#knowledge_version when one exists.
+// CLI side effect: bumps package.json#version AND keeps
+// paths-manifest.json#knowledge_version in lockstep when the sibling
+// manifest exists (asserted by tests/manifest.test.js).
 //
 // The CLI sync exists because every workflow that auto-bumps package.json
 // (foundations-derive, sync-from-figma, categories-derive, content-derive)
-// would otherwise leave paths-manifest.json stale and break the next PR
-// via tests/manifest.test.js's drift assertion.
+// would otherwise leave the derived artifacts stale and break the next PR.
 
 var test = require("node:test");
 var assert = require("node:assert/strict");
@@ -140,7 +140,11 @@ test("CLI does not rewrite paths-manifest.json if knowledge_version already matc
     fs.writeFileSync(
       manifestPath,
       JSON.stringify(
-        { manifest_schema_version: "v1", knowledge_version: "2.0.1", paths: {} },
+        {
+          manifest_schema_version: "v1",
+          knowledge_version: "2.0.1",
+          paths: {},
+        },
         null,
         2,
       ) + "\n",

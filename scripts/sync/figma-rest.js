@@ -12,7 +12,16 @@
 // to clear Figma's rate-limit window.
 // 4xx (other than 429) throw immediately.
 
-var BASE = "https://api.figma.com";
+var DEFAULT_BASE = "https://api.figma.com";
+var BASE = DEFAULT_BASE;
+// Test helpers — let tests point the wrapper at a local HTTP mock so the
+// /v1/images + signed-URL flow can be exercised without hitting Figma.
+function _setBaseUrl(url) {
+  BASE = url;
+}
+function _resetBaseUrl() {
+  BASE = DEFAULT_BASE;
+}
 var DEFAULT_BACKOFF_DELAYS_MS = [1000, 2000, 4000]; // 5xx retries
 var DEFAULT_RATE_LIMIT_BACKOFFS_MS = [5000, 15000, 45000]; // 429 retries
 var MAX_5XX_RETRIES = 3;
@@ -220,6 +229,105 @@ function getComponentSets(fileKey) {
   );
 }
 
+// Default batch size for getImages. Figma's /v1/images render service times
+// out with HTTP 400 ("Render timeout, try requesting fewer or smaller images")
+// when given too many heavy frames in one call. Empirically 10 per batch
+// completes reliably for Actian DS Kit component-Preview frames (PNG @
+// scale=2). Lowering further hurts wall-clock; raising risks timeouts on
+// complex frames.
+var DEFAULT_IMAGES_BATCH_SIZE = 10;
+
+// Default concurrency for getImages batches. Conservative 2-way concurrency
+// mirrors getNodes' default — keeps per-second pressure on /v1/images below
+// observed 429 thresholds while halving wall-clock vs fully sequential.
+var DEFAULT_IMAGES_CONCURRENCY = 2;
+
+// Render Figma nodes as raster/vector images. Returns merged
+// `{ err, images: { nodeId: signedUrl } }` — each signedUrl points at an S3
+// blob that needs a separate plain-HTTPS fetch (see fetchBinary below).
+//
+// Internal batching: large id arrays are split into chunks and dispatched
+// with bounded concurrency. Caller-friendly: the merged response shape is
+// indistinguishable from a single-batch call. opts.batchSize / opts.concurrency
+// override the defaults (mostly for tests that want batchSize=1 to force the
+// pagination path).
+function getImages(fileKey, nodeIds, opts) {
+  if (!Array.isArray(nodeIds) || nodeIds.length === 0) {
+    return Promise.reject(
+      new Error("getImages requires a non-empty nodeId array"),
+    );
+  }
+  opts = opts || {};
+  var format = opts.format || "png";
+  var scale = opts.scale || 2;
+  var batchSize = opts.batchSize || DEFAULT_IMAGES_BATCH_SIZE;
+  var concurrency = Math.max(1, opts.concurrency || DEFAULT_IMAGES_CONCURRENCY);
+
+  var batches = [];
+  for (var i = 0; i < nodeIds.length; i += batchSize) {
+    batches.push(nodeIds.slice(i, i + batchSize));
+  }
+
+  function fetchBatch(batch) {
+    var idsParam = batch.map(encodeURIComponent).join(",");
+    var url =
+      BASE +
+      "/v1/images/" +
+      encodeURIComponent(fileKey) +
+      "?ids=" +
+      idsParam +
+      "&format=" +
+      encodeURIComponent(format) +
+      "&scale=" +
+      encodeURIComponent(String(scale));
+    return request(url);
+  }
+
+  // Promise-pool with bounded concurrency. Each "worker" pulls the next
+  // batch off a shared cursor; resolves when all batches drain. Merge
+  // semantics: later batches overwrite earlier writes of the same id
+  // (deterministic in practice — Figma returns the same signedUrl shape
+  // per id; the merge just covers theoretical retries).
+  var merged = {};
+  var cursor = 0;
+
+  function worker() {
+    if (cursor >= batches.length) return Promise.resolve();
+    var idx = cursor++;
+    return fetchBatch(batches[idx])
+      .then(function (resp) {
+        var images = (resp && resp.images) || {};
+        Object.keys(images).forEach(function (id) {
+          merged[id] = images[id];
+        });
+      })
+      .then(worker);
+  }
+
+  var workers = [];
+  for (var w = 0; w < Math.min(concurrency, batches.length); w++) {
+    workers.push(worker());
+  }
+  return Promise.all(workers).then(function () {
+    return { images: merged };
+  });
+}
+
+// Plain HTTPS fetch — used after getImages() to download the signed S3 URL
+// the Figma response points at. Returns a Buffer. Surfaces non-2xx as Error.
+function fetchBinary(url) {
+  return globalThis.fetch(url).then(function (res) {
+    if (!res.ok) {
+      throw new Error(
+        "fetchBinary " + res.status + " " + res.statusText + " — " + url,
+      );
+    }
+    return res.arrayBuffer().then(function (ab) {
+      return Buffer.from(ab);
+    });
+  });
+}
+
 // Test helper — lets tests override backoff so the retry suite runs fast.
 // `rateLimitDelay` accepts either a single number (applied to every 429 retry)
 // or an array of per-attempt delays.
@@ -246,6 +354,10 @@ module.exports = {
   getStyles: getStyles,
   getComponents: getComponents,
   getComponentSets: getComponentSets,
+  getImages: getImages,
+  fetchBinary: fetchBinary,
   _setBackoffDelays: _setBackoffDelays,
   _resetBackoffDelays: _resetBackoffDelays,
+  _setBaseUrl: _setBaseUrl,
+  _resetBaseUrl: _resetBaseUrl,
 };

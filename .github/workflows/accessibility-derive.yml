@@ -1,0 +1,114 @@
+name: Derive a11y-index from accessibility.md
+
+# Regenerates accessibility/dist/a11y-index.json from accessibility.md
+# (the auto-slugged section index) and auto-commits it back to the PR
+# branch. Mirrors foundations-derive.yml / guidelines-derive.yml — the
+# accessibility author edits the markdown, CI handles the derived JSON;
+# no local toolchain required.
+#
+# Required repo setting (already enabled for the other derive workflows):
+#   Settings → Actions → General → Workflow permissions → Allow GH Actions
+#     to create and approve pull requests
+#
+# Required for the auto-commit re-trigger: vars.BOT_APP_ID +
+# secrets.BOT_APP_PRIVATE_KEY — the actian-ds-bot GitHub App, shared with
+# sync-from-figma.yml and guidelines-derive.yml.
+
+on:
+  pull_request:
+    paths:
+      - 'accessibility/accessibility.md'
+      - 'scripts/accessibility/derive-a11y-index.js'
+
+jobs:
+  derive:
+    name: Derive a11y-index JSON
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # App token for the auto-commit push below. A commit pushed with the
+      # default GITHUB_TOKEN cannot trigger further workflow runs, which
+      # would leave the required checks with no status on the auto-commit's
+      # SHA and block merge. Skipped on fork PRs — BOT_APP_PRIVATE_KEY is
+      # not exposed to them; checkout then falls back to github.token, which
+      # is read-only but sufficient since the commit/tag steps skip on forks.
+      - name: Generate App token
+        id: app-token
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Derive a11y-index JSON
+        run: node scripts/accessibility/derive-a11y-index.js
+
+      - name: Run tests against regenerated output
+        run: npm test
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet -- accessibility/dist/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No a11y-index changes after regeneration."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "a11y-index changes detected:"
+            git diff --stat -- accessibility/dist/
+          fi
+
+      - name: Auto-bump package.json patch
+        if: steps.diff.outputs.changed == 'true'
+        run: node scripts/lib/bump-version.js package.json patch
+
+      # Skip on fork PRs — GITHUB_TOKEN can't push to forks.
+      - name: Commit derived JSON back to PR
+        if: steps.diff.outputs.changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # bump-version.js syncs paths-manifest.json's knowledge_version in
+          # lockstep with the version bump — stage both alongside the dist JSON.
+          git add accessibility/dist/ package.json paths-manifest.json
+          git commit -m "chore(accessibility): regenerate a11y-index.json + bump patch"
+          git push
+
+      # Skip on fork PRs — GITHUB_TOKEN can't push tags to forks.
+      - name: Tag release
+        if: steps.diff.outputs.changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          VERSION=$(jq -r .version package.json)
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists locally, skipping"
+          else
+            git tag "v$VERSION"
+            git push origin "v$VERSION" || echo "Tag push failed (likely already exists on remote)"
+          fi
+
+      - name: Summarize
+        if: always()
+        run: |
+          if [ "${{ steps.diff.outputs.changed }}" = "true" ]; then
+            echo "### a11y-index derive: regenerated" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### a11y-index derive: no changes" >> "$GITHUB_STEP_SUMMARY"
+          fi

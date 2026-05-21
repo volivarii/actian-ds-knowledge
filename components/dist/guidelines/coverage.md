@@ -12,16 +12,26 @@
 | Checkboxes | approved | not started | inherited | inherited | not started |
 | Combo box | approved | not started | inherited | inherited | not started |
 | Confirmation | approved | not started | inherited | inherited | not started |
+| Drawer, side panel | synthesized | — | — | — | — |
 | Dropdown / Select | approved | not started | inherited | inherited | not started |
+| Empty state | synthesized | — | — | — | — |
+| Error state | synthesized | — | — | — | — |
 | Filters | approved | not started | inherited | inherited | not started |
 | Global header | approved | not started | inherited | inherited | not started |
 | Inline toast | approved | not started | inherited | inherited | not started |
+| Input, date | synthesized | — | — | — | — |
 | Links | approved | not started | inherited | inherited | not started |
+| Loader | synthesized | — | — | — | — |
+| Loader with logo | synthesized | — | — | — | — |
+| Loading skeleton | synthesized | — | — | — | — |
+| Maintenance state | synthesized | — | — | — | — |
 | Modal | approved | not started | inherited | inherited | not started |
 | Multi-select | approved | not started | inherited | inherited | not started |
 | Popover | approved | not started | inherited | inherited | not started |
+| Radio button | synthesized | — | — | — | — |
 | Search | approved | not started | inherited | inherited | not started |
 | Side nav | approved | not started | inherited | inherited | not started |
+| Spinner | synthesized | — | — | — | — |
 | Stepper | approved | not started | inherited | inherited | not started |
 | Sticky footer | approved | not started | inherited | inherited | not started |
 | Table | approved | not started | inherited | inherited | not started |
@@ -36,10 +46,10 @@
 | Domain | Approved | Draft | Inherited | Not started | Absent |
 |---|---|---|---|---|---|
 | content | 26 | 0 | 0 | 0 | 0 |
-| usage | 0 | 0 | 0 | 26 | 0 |
-| design | 0 | 0 | 26 | 0 | 0 |
-| behavior | 0 | 0 | 26 | 0 | 0 |
-| tokens | 0 | 0 | 0 | 26 | 0 |
+| usage | 0 | 0 | 0 | 26 | 10 |
+| design | 0 | 0 | 26 | 0 | 10 |
+| behavior | 0 | 0 | 26 | 0 | 10 |
+| tokens | 0 | 0 | 0 | 26 | 10 |
 
 ## Registry aliases
 

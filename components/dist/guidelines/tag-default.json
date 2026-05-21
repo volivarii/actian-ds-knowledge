@@ -1,6 +1,5 @@
 {
   "_schema_version": 1,
-  "_alias_of": "tag",
   "_meta": {
     "auto_generated": true,
     "source": "components/src/tag/",
@@ -21,23 +20,31 @@
           "heading": "",
           "content": [
             {
-              "note": "Tags categorize or label items with metadata values such as topics, types, or user-defined attributes. The tag component has several variants: default, status, stage, catalog, interactive, and updated."
+              "prose": "Tags categorize or label items with metadata values such as topics, types, or user-defined attributes. The tag component has several variants: default, status, stage, catalog, interactive, and updated."
             }
           ]
         },
         {
           "heading": "When to use",
           "content": [
-            "To categorize or label items with metadata values such as topics, types, or user-defined attributes.",
-            "Do not use tags as action triggers — they are labels, not buttons. Use an [interactive tag](tag) for clickable tag behavior."
+            {
+              "bullets": [
+                "To categorize or label items with metadata values such as topics, types, or user-defined attributes.",
+                "Do not use tags as action triggers — they are labels, not buttons. Use an [interactive tag](tag) for clickable tag behavior."
+              ]
+            }
           ]
         },
         {
           "heading": "Style",
           "content": [
-            "Use sentence case.",
-            "Keep tag text to one to three words.",
-            "Status tags use standard vocabulary: Active, Inactive, Draft, Published, Deprecated, Error."
+            {
+              "bullets": [
+                "Use sentence case.",
+                "Keep tag text to one to three words.",
+                "Status tags use standard vocabulary: Active, Inactive, Draft, Published, Deprecated, Error."
+              ]
+            }
           ]
         }
       ]
@@ -54,5 +61,7 @@
     "tokens": {
       "status": "not-started"
     }
-  }
+  },
+  "updated_at": "2026-05-14T16:07:17+02:00",
+  "_alias_of": "tag"
 }

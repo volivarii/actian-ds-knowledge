@@ -1,7 +1,7 @@
 {
   "_schema_version": 1,
   "library": "ds",
-  "generatedAt": "2026-05-15T09:45:39.985Z",
+  "generatedAt": "2026-05-20T14:28:44.672Z",
   "categories": {
     "Breakpoint, grid & structure": {
       "components": [
@@ -38,19 +38,19 @@
         "notification-dropdown",
         "side-nav",
         "stepper",
-        "stepper-buttons",
         "tabs",
-        "traffic-light",
         "whats-new-dropdown"
       ],
-      "count": 11
+      "count": 9
     },
     "Data Display": {
       "components": [
         "avatar",
         "badge",
         "bar-graph",
-        "card",
+        "card-for-grouped-content",
+        "card-for-items",
+        "card-for-perimeter",
         "collapse-accordion",
         "digram-item-types",
         "digram-topic",
@@ -62,7 +62,6 @@
         "lineage-individual-node",
         "metamodel-widget",
         "page-header",
-        "perimeter-card",
         "progress-bar-small",
         "scroll-bar",
         "search-result-card",
@@ -73,10 +72,9 @@
         "tag-default",
         "tag-glossary-item-type",
         "tag-interactive",
+        "tag-shared",
         "tag-stage",
         "tag-status",
-        "tag-updated",
-        "tile-item",
         "toolbar"
       ],
       "count": 31
@@ -86,22 +84,6 @@
         "white-label-merck-favicon"
       ],
       "count": 1
-    },
-    "Feedback": {
-      "components": [
-        "alert-banner",
-        "confirmation",
-        "empty-state",
-        "error-state",
-        "loader",
-        "loader-with-logo",
-        "loading-skeleton",
-        "maintenance-banner",
-        "maintenance-state",
-        "notification",
-        "spinner"
-      ],
-      "count": 11
     },
     "Product logos": {
       "components": [
@@ -130,6 +112,21 @@
         "tooltip"
       ],
       "count": 5
+    },
+    "Feedback": {
+      "components": [
+        "alert-banner",
+        "confirmation",
+        "empty-state",
+        "error-state",
+        "loader",
+        "loader-with-logo",
+        "loading-skeleton",
+        "maintenance-state",
+        "notification",
+        "spinner"
+      ],
+      "count": 10
     },
     "Action": {
       "components": [
@@ -386,6 +383,6 @@
     }
   },
   "uncategorized": {
-    "count": 1
+    "count": 0
   }
 }

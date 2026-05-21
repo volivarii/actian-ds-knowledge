@@ -73,7 +73,11 @@ test("sync auto-bump — writes both package.json AND paths-manifest.json when a
     fs.writeFileSync(
       manifestPath,
       JSON.stringify(
-        { manifest_schema_version: "v1", knowledge_version: "1.0.0", paths: {} },
+        {
+          manifest_schema_version: "v1",
+          knowledge_version: "1.0.0",
+          paths: {},
+        },
         null,
         2,
       ) + "\n",
@@ -133,7 +137,11 @@ test("sync auto-bump — no manifestPath means no manifest write (backwards comp
     fs.writeFileSync(
       manifestPath,
       JSON.stringify(
-        { manifest_schema_version: "v1", knowledge_version: "1.0.0", paths: {} },
+        {
+          manifest_schema_version: "v1",
+          knowledge_version: "1.0.0",
+          paths: {},
+        },
         null,
         2,
       ) + "\n",

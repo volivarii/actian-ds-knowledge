@@ -20,36 +20,48 @@
           "heading": "",
           "content": [
             {
-              "note": "Alerts communicate important information that requires the user's attention. They can be informational, confirmatory, cautionary, or indicate an error. Unlike toasts, alerts are persistent and remain visible until dismissed or resolved."
+              "prose": "Alerts communicate important information that requires the user's attention. They can be informational, confirmatory, cautionary, or indicate an error. Unlike toasts, alerts are persistent and remain visible until dismissed or resolved."
             }
           ]
         },
         {
           "heading": "When to use",
           "content": [
-            "To warn the user of a condition that may affect their work or data - before an action is taken.",
-            "To confirm that a significant action was completed and the user should be aware of the result.",
-            "To surface a system-level error that requires action to resolve.",
-            "Do not use alerts for routine confirmations - use [toast notifications](notification-toast) instead.",
-            "Do not stack multiple alerts. Consolidate if possible."
+            {
+              "bullets": [
+                "To warn the user of a condition that may affect their work or data - before an action is taken.",
+                "To confirm that a significant action was completed and the user should be aware of the result.",
+                "To surface a system-level error that requires action to resolve.",
+                "Do not use alerts for routine confirmations - use [toast notifications](notification-toast) instead.",
+                "Do not stack multiple alerts. Consolidate if possible."
+              ]
+            }
           ]
         },
         {
           "heading": "Style",
           "content": [
-            "Keep alert text to one to two sentences.",
-            "Lead with the most important information.",
-            "Use the appropriate severity: informational, success, warning, or error.",
-            "Include a clear action link or button when the user needs to do something.",
-            "Do not use `Alert:` or `Warning:` as a prefix in the message body - the icon and color convey severity."
+            {
+              "bullets": [
+                "Keep alert text to one to two sentences.",
+                "Lead with the most important information.",
+                "Use the appropriate severity: informational, success, warning, or error.",
+                "Include a clear action link or button when the user needs to do something.",
+                "Do not use `Alert:` or `Warning:` as a prefix in the message body - the icon and color convey severity."
+              ]
+            }
           ]
         },
         {
           "heading": "Behavior",
           "content": [
-            "Informational and success alerts can be dismissible.",
-            "Warning and error alerts should persist until the underlying issue is resolved or the user explicitly dismisses them.",
-            "Alerts should appear at the top of the affected area, not in the center of the page."
+            {
+              "bullets": [
+                "Informational and success alerts can be dismissible.",
+                "Warning and error alerts should persist until the underlying issue is resolved or the user explicitly dismisses them.",
+                "Alerts should appear at the top of the affected area, not in the center of the page."
+              ]
+            }
           ]
         },
         {
@@ -73,21 +85,160 @@
           "heading": "Inline banner",
           "content": [
             {
-              "note": "An inline banner displays a persistent warning, error, or informational message within a page or [form](forms). Unlike a global alert, it is scoped to the immediate context."
+              "prose": "An inline banner displays a persistent warning, error, or informational message within a page or [form](forms). Unlike a global alert, it is scoped to the immediate context."
             }
           ],
           "subsections": [
             {
               "subheading": "When to use",
               "content": [
-                "To display persistent warnings, errors, or informational messages within a page or form."
+                {
+                  "bullets": [
+                    "To display persistent warnings, errors, or informational messages within a page or form."
+                  ]
+                }
               ]
             },
             {
               "subheading": "Style",
               "content": [
-                "State the issue and what the user should do. Keep to one to two sentences.",
-                "Include a link or action if applicable."
+                {
+                  "bullets": [
+                    "State the issue and what the user should do. Keep to one to two sentences.",
+                    "Include a link or action if applicable."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Notification",
+          "source": "pattern:notifications-and-messaging",
+          "content": [
+            {
+              "prose": "Notifications inform users of updates, background task completions, or events that require their attention. They appear in the notification panel or dropdown."
+            }
+          ],
+          "subsections": [
+            {
+              "subheading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "To inform users of updates, background task completions, or events that require their attention."
+                  ]
+                }
+              ]
+            },
+            {
+              "subheading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Use direct, concise language. One to two sentences.",
+                    "Include a timestamp.",
+                    "Include a link or action if the user must do something in response.",
+                    "Do not use generic text like `You have a new notification`."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Notification toast",
+          "source": "pattern:notifications-and-messaging",
+          "content": [
+            {
+              "prose": "Toasts confirm that a background action completed, or surface non-critical errors and warnings that do not block the user."
+            }
+          ],
+          "subsections": [
+            {
+              "subheading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "To confirm that a background action completed.",
+                    "To surface non-critical errors or warnings that do not block the user.",
+                    "Do not use toasts for actions that require user input.",
+                    "For routine confirmations that need persistence, use an [alert / banner](/components/feedback/alert-banner/) instead."
+                  ]
+                }
+              ]
+            },
+            {
+              "subheading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Keep to one short sentence.",
+                    "Include an undo action where relevant."
+                  ]
+                }
+              ]
+            },
+            {
+              "subheading": "Examples",
+              "content": [
+                {
+                  "table": {
+                    "headers": [
+                      "Scenario",
+                      "Toast text"
+                    ],
+                    "rows": [
+                      [
+                        "Dataset deleted",
+                        "Dataset deleted. Undo"
+                      ],
+                      [
+                        "Export complete",
+                        "Export ready. Download"
+                      ],
+                      [
+                        "Connection failed",
+                        "Connection failed. Try again"
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Tooltip",
+          "source": "pattern:notifications-and-messaging",
+          "content": [
+            {
+              "prose": "Tooltips provide short contextual help on hover or focus. They are best for icon-only controls that need a label, or for brief supplementary information that does not need to be persistently visible."
+            }
+          ],
+          "subsections": [
+            {
+              "subheading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "To provide short contextual help on hover or focus.",
+                    "For icon-only controls that require a label.",
+                    "Do not use tooltips for critical information — users should not be required to hover to understand the UI."
+                  ]
+                }
+              ]
+            },
+            {
+              "subheading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Limit to a few words or one concise sentence.",
+                    "Do not repeat the label of the element being described.",
+                    "For multi-sentence explanations, use a [popover](/components/overlays/popover/) or inline help text instead."
+                  ]
+                }
               ]
             }
           ]
@@ -106,5 +257,6 @@
     "tokens": {
       "status": "not-started"
     }
-  }
+  },
+  "updated_at": "2026-05-14T16:07:17+02:00"
 }

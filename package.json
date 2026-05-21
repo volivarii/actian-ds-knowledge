@@ -1,6 +1,6 @@
 {
   "name": "actian-ds-knowledge",
-  "version": "0.11.0",
+  "version": "0.19.6",
   "private": true,
   "description": "Actian Design System knowledge layer — tokens, components, guidelines, foundations, content. Consumed by the Actian DS Claude plugin.",
   "scripts": {
@@ -10,7 +10,6 @@
     "derive:categories": "node scripts/categories/__cli.js",
     "derive:guidelines": "node scripts/components/__cli.js",
     "validate:manifest": "node scripts/validate-manifest.js",
-    "generate:map": "node scripts/generate-map.js",
     "test": "node --test tests/*.test.js"
   },
   "devDependencies": {

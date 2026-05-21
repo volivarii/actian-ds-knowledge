@@ -42,15 +42,16 @@ module.exports = bumpVersion;
 // CLI: node bump-version.js <plugin.json path> <level>
 // Reads, bumps, writes back. Used by GitHub workflows.
 //
-// Side effect: also keeps paths-manifest.json#knowledge_version in lockstep
-// with package.json#version when a sibling paths-manifest.json exists next
-// to the bumped JSON file. tests/manifest.test.js asserts the two stay
-// equal, so every CI auto-bump (foundations-derive, sync-from-figma,
-// categories-derive, content-derive) would otherwise create drift and
-// break the next PR. Centralized here so every caller inherits the sync.
+// Side effect: keeps the version-derived set in lockstep when run from the
+// knowledge repo root. Two files move together:
+//   1. package.json#version                  — primary source of truth
+//   2. paths-manifest.json#knowledge_version  — asserted by tests/manifest.test.js
+// The manifest sync is a no-op if the sibling artifact is absent, keeping
+// the utility portable for non-knowledge consumers.
 if (require.main === module) {
   var fs = require("fs");
   var path = require("path");
+  var { writeManifest } = require("./manifest-io");
   var args = process.argv.slice(2);
   if (args.length !== 2) {
     process.stderr.write(
@@ -74,19 +75,16 @@ if (require.main === module) {
   // Sync paths-manifest.knowledge_version with package.json#version.
   // Lives in the same directory as the bumped JSON file. No-op if absent
   // (keeps the utility portable — tests + non-knowledge consumers unaffected).
-  var manifestPath = path.join(
-    path.dirname(pluginJsonPath),
-    "paths-manifest.json",
-  );
+  // path.resolve so a relative invocation (e.g. `node ... package.json minor`
+  // from repo root) produces an absolute repoRoot.
+  var repoRoot = path.resolve(path.dirname(pluginJsonPath));
+  var manifestPath = path.join(repoRoot, "paths-manifest.json");
+  var manifest = null;
   if (fs.existsSync(manifestPath)) {
-    var manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     if (manifest.knowledge_version !== newVersion) {
       manifest.knowledge_version = newVersion;
-      fs.writeFileSync(
-        manifestPath,
-        JSON.stringify(manifest, null, 2) + "\n",
-        "utf8",
-      );
+      writeManifest(manifestPath, manifest);
       process.stdout.write(
         "[bump-version] synced paths-manifest.knowledge_version -> " +
           newVersion +

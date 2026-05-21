@@ -8,15 +8,32 @@
 // Each domain file is plain markdown with an OPTIONAL YAML frontmatter block.
 // The body is parsed into a flat `sections[]` list keyed by `## ` headings,
 // with one reserved level of `### ` nesting (`subsections[]`). Within a
-// section, content items are projected into the small set of shapes the
-// downstream consumers already bucket (plugin brief-sourcing.js + docs
-// generate-component-pages.cjs renderContentSection):
+// section, content items appear in AUTHORED SOURCE ORDER and are projected
+// into the small set of shapes the downstream consumers handle (plugin
+// brief-sourcing.js + docs generate-component-pages.cjs renderContentItems):
 //
-//   - plain string                      ← bullet-list items
-//   - { do, dont }                      ← "Do / Don't" tables
+//   - { prose }                         ← standalone paragraphs (plain prose)
+//   - { bullets: [...] }                ← one markdown list (preserved as a
+//                                         unit so adjacent lists separated
+//                                         by prose stay distinguishable)
+//   - { do, dont }                      ← "Do / Don't" tables (vocab also
+//                                         covers Use|Avoid, Recommended|Avoid)
 //   - { term, rule }                    ← terminology tables (Term | Usage)
-//   - { note }                          ← blockquotes + standalone paragraphs
+//   - { note }                          ← blockquotes ONLY (opt-in callouts)
+//   - { example }                       ← fenced code blocks
 //   - { table: { headers, rows } }      ← any other table
+//
+// Key design choices:
+//   • Bare paragraphs become {prose}, NOT {note}. A {note} (Callout in the
+//     docs site) is only emitted from a markdown blockquote — the author opts
+//     in explicitly via `>`. Universal precedent across Primer, Polaris,
+//     Carbon, Starlight, Markdoc.
+//   • Lists are preserved as {bullets:[...]} units, not splayed into the
+//     bucket as strings. This preserves the source-order distinction between
+//     "one list" and "list, prose, another list."
+//   • A bare string in content[] is the LEGACY shape (pre-prose/bullets JSON)
+//     and is still accepted by the schema for backwards compatibility; the
+//     parser no longer emits it.
 //
 // The verbatim markdown body is retained separately by the deriver, so this
 // structured projection does NOT need to be loss-free — it is the queryable
@@ -76,17 +93,41 @@ function cleanCell(s) {
 }
 
 function normHeader(s) {
-  return cleanCell(s).toLowerCase().replace(/[^a-z]/g, "");
+  return cleanCell(s)
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
 }
 
 // ───────────────────────────────────────────────────────────────────────────
 // Table shape detection
 // ───────────────────────────────────────────────────────────────────────────
 
-const DO_HEADERS = new Set(["do", "dos"]);
-const DONT_HEADERS = new Set(["dont", "donts", "donot"]);
+// DO/DONT vocab covers the synonyms authors actually use in content.md across
+// the kit: plain "Do | Don't" (~17 files), "Use | Avoid" (table), and
+// "Recommended labels | Avoid" (sticky-footer). normHeader strips to lowercase
+// letters only, so multi-word headers collapse (e.g. "Recommended labels" →
+// "recommendedlabels"). "use" is intentionally a DO synonym — it shadows the
+// older RULE_HEADERS slot, which is fine because the do-dont check runs first
+// in classifyTable() and a "Use | Avoid" table is always do-dont, never
+// terminology.
+const DO_HEADERS = new Set([
+  "do",
+  "dos",
+  "use",
+  "recommended",
+  "recommendedlabels",
+  "good",
+]);
+const DONT_HEADERS = new Set([
+  "dont",
+  "donts",
+  "donot",
+  "avoid",
+  "notrecommended",
+  "bad",
+]);
 const TERM_HEADERS = new Set(["term", "termortermpair", "termpair", "terms"]);
-const RULE_HEADERS = new Set(["usage", "rule", "definition", "guidance", "use"]);
+const RULE_HEADERS = new Set(["usage", "rule", "definition", "guidance"]);
 
 function tableHeaders(token) {
   // marked v14: token.header is an array of { text } cells.
@@ -120,7 +161,10 @@ function projectTable(token) {
   if (kind === "terminology") {
     return rows
       .filter((r) => r[0])
-      .map((r) => ({ term: r[0], rule: r.slice(1).filter(Boolean).join(" — ") }));
+      .map((r) => ({
+        term: r[0],
+        rule: r.slice(1).filter(Boolean).join(" — "),
+      }));
   }
   return [
     {
@@ -137,13 +181,19 @@ function projectTable(token) {
 // ───────────────────────────────────────────────────────────────────────────
 
 // Push the content items produced by a single block token into `bucket`.
+// Items are appended in authored source order; the downstream renderers
+// preserve that order and only merge CONSECUTIVE same-type runs (e.g. several
+// do/dont pairs from one table) into compound components.
 function projectToken(token, bucket) {
   switch (token.type) {
     case "list": {
-      (token.items || []).forEach((item) => {
-        const text = cleanCell(item.text);
-        if (text) bucket.push(text);
-      });
+      // Preserve the list as a single unit so two `<ul>`s separated by prose
+      // remain distinguishable downstream. Splaying items into the bucket as
+      // bare strings (the legacy behavior) loses that boundary.
+      const items = (token.items || [])
+        .map((item) => cleanCell(item.text))
+        .filter(Boolean);
+      if (items.length) bucket.push({ bullets: items });
       return;
     }
     case "table": {
@@ -151,13 +201,15 @@ function projectToken(token, bucket) {
       return;
     }
     case "blockquote": {
+      // Blockquotes are the author's opt-in for a Callout. Only they become
+      // {note} — bare paragraphs become {prose}.
       const note = cleanCell(token.text);
       if (note) bucket.push({ note });
       return;
     }
     case "paragraph": {
-      const note = cleanCell(token.text);
-      if (note) bucket.push({ note });
+      const text = cleanCell(token.text);
+      if (text) bucket.push({ prose: text });
       return;
     }
     case "code": {

@@ -24,6 +24,7 @@ const path = require("node:path");
 const Ajv2020 = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
 const parser = require("./categories-parser");
+const { writeManifest } = require("../lib/manifest-io");
 
 const SCHEMA_VERSION = 1;
 const SCHEMA_NAME = "category-defaults.json";
@@ -246,7 +247,7 @@ function updatePathsManifest(manifestPath, slugs, opts) {
   manifest._notes.categories_auto = MANIFEST_CATEGORIES_NOTE;
 
   if (!opts.dryRun) {
-    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+    writeManifest(manifestPath, manifest);
   }
   return { added, dropped, manifest };
 }

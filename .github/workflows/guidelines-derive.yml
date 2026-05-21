@@ -4,12 +4,17 @@ name: Derive per-component guideline JSONs from components/src/<slug>/
 # categories-derive.yml. Triggers on changes to per-component source files
 # (_meta.yml + the per-domain markdown/YAML) or the derive scripts/schemas.
 # Regenerates components/dist/guidelines/<slug>.json + guidelines.bundle.json
-# + coverage.md + paths-manifest.json entries, then auto-commits the dist
-# back to the PR branch.
+# + coverage.md + the components/dist/media/_index.json sidecar +
+# paths-manifest.json entries, then auto-commits the dist back to the PR
+# branch.
 #
 # Required repo setting (already enabled for the other derive workflows):
 #   Settings → Actions → General → Workflow permissions → Allow GH Actions
 #     to create and approve pull requests
+#
+# Required for the auto-commit re-trigger (see the paths-manifest.json note
+# below): vars.BOT_APP_ID + secrets.BOT_APP_PRIVATE_KEY — the actian-ds-bot
+# GitHub App, shared with sync-from-figma.yml.
 
 on:
   pull_request:
@@ -21,15 +26,42 @@ on:
       - 'components/src/*/behavior.md'
       - 'components/src/*/tokens.yml'
       - 'scripts/components/**'
+      - 'scripts/content/fanout-patterns.js'
       - 'schemas/guideline-component.json'
       - 'schemas/guideline-meta.json'
       - 'schemas/guideline-tokens.json'
+      # Pattern fan-out inputs: when a pattern .md gains/changes its
+      # `relatedComponents` / `relatedCategories` frontmatter, the per-component
+      # guideline JSONs must regenerate so the synthesized sections track.
+      # See scripts/content/fanout-patterns.js + content/src/AUTHORING.md.
+      - 'content/src/patterns/*.md'
+      - 'content/src/product/*.md'
+      - 'content/src/content-index.md'
+      # Category data: relatedCategories expansions read the kebab-slug map
+      # from components/dist/categories/<slug>-defaults.json and the member
+      # list from components/dist/categories.json — both must trigger.
+      - 'components/dist/categories.json'
+      - 'components/dist/categories/*-defaults.json'
+      # Registry: synthesized docs pull component name + category from
+      # components/dist/registries/dskit.json.
+      - 'components/dist/registries/dskit.json'
+      # Media assets: __cli.js also regenerates the components/dist/media/
+      # _index.json sidecar (via derive-media-index) from the PNGs under
+      # components/dist/media/<slug>/. A media add/remove must re-trigger so
+      # the index — detected and auto-committed below alongside the guideline
+      # JSONs — stays in lockstep with what is on disk. PNGs are authored by
+      # the media-preview sync phase (scripts/sync/sync-media-preview.js).
+      - 'components/dist/media/**'
       # paths-manifest.json is BOTH an output of this workflow (the
       # components.guidelineDoc.* entries are auto-regenerated) AND an input
       # (derive-guidelines.js reads #registryAliases to emit alias copies), so
       # it must trigger: a new registryAliases entry has to re-run the derive.
-      # Loop-safe — the auto-commit below pushes with the default GITHUB_TOKEN,
-      # which GitHub does not let trigger further workflow runs.
+      # The auto-commit below pushes with a GitHub App token, so it DOES
+      # re-trigger this workflow (and the other required checks) on the new
+      # HEAD SHA. That re-trigger is intentional: it gives the required checks
+      # a status on the auto-commit's SHA so the PR can merge. Bounded to one
+      # extra run — the re-run re-derives, finds no diff (the derive is
+      # idempotent), commits nothing, and stops.
       - 'paths-manifest.json'
 
 jobs:
@@ -40,12 +72,28 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      # App token for the auto-commit push below. A commit pushed with the
+      # default GITHUB_TOKEN cannot trigger further workflow runs, which left
+      # the required checks with no status on the auto-commit's SHA and
+      # blocked merges. The App token re-triggers them (see paths-manifest.json
+      # note above). Skipped on fork PRs — BOT_APP_PRIVATE_KEY is not exposed
+      # to them; checkout then falls back to github.token, which is read-only
+      # but sufficient since the commit/tag steps already skip on forks.
+      - name: Generate App token
+        id: app-token
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
       - name: Checkout PR branch
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token || github.token }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -64,13 +112,13 @@ jobs:
       - name: Detect changes
         id: diff
         run: |
-          if git diff --quiet -- components/dist/guidelines/ paths-manifest.json; then
+          if git diff --quiet -- components/dist/guidelines/ components/dist/media/_index.json paths-manifest.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No dist changes after regeneration."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Dist changes detected:"
-            git diff --stat -- components/dist/guidelines/ paths-manifest.json
+            git diff --stat -- components/dist/guidelines/ components/dist/media/_index.json paths-manifest.json
           fi
 
       - name: Auto-bump package.json patch
@@ -83,8 +131,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add components/dist/guidelines/ paths-manifest.json package.json
-          git commit -m "chore(components): regenerate guideline JSONs from components/src/ + bump patch"
+          git add components/dist/guidelines/ components/dist/media/_index.json paths-manifest.json package.json
+          git commit -m "chore(components): regenerate guideline JSONs + media index + bump patch"
           git push
 
       # Skip on fork PRs — GITHUB_TOKEN can't push tags to forks.
