@@ -64,7 +64,7 @@ The table component displays structured information in rows and columns. It is t
 
 ### Empty states
 
-- No rows (no data yet): follow the [empty state](empty-and-system-states) pattern - headline, one-sentence explanation, and a primary CTA. For example: "No connections found / Add your first connection to get started. / Add connection"
+- No rows (no data yet): follow the [empty state](empty-state) pattern - headline, one-sentence explanation, and a primary CTA. For example: "No connections found / Add your first connection to get started. / Add connection"
 - No results after filtering or search: "No results for '[term]'" or "No items match your filters" + a "Clear filters" link. Never leave a blank table with no explanation.
 
 ### Row actions
