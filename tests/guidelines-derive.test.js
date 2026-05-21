@@ -189,6 +189,30 @@ test("md parser: Jekyll {: .class} attrs are stripped", () => {
   assert.ok(!JSON.stringify(r.sections).includes("do-dont-table"));
 });
 
+test("md parser: a standalone <Media> line parses to a media item", () => {
+  const md = '## Anatomy\n\n<Media role="parts" layout="grid" />\n';
+  const items = mdParser.parseGuidelineMarkdown(md).sections[0].content;
+  assert.deepEqual(items[0], { media: { role: "parts", layout: "grid" } });
+});
+
+test("md parser: <Media> without layout defaults layout to null", () => {
+  const md = '## Spacing\n\n<Media role="spacing" />\n';
+  const items = mdParser.parseGuidelineMarkdown(md).sections[0].content;
+  assert.deepEqual(items[0], { media: { role: "spacing", layout: null } });
+});
+
+test("md parser: <Media> with reversed attribute order parses to a media item", () => {
+  const md = '## Anatomy\n\n<Media layout="grid" role="parts" />\n';
+  const items = mdParser.parseGuidelineMarkdown(md).sections[0].content;
+  assert.deepEqual(items[0], { media: { role: "parts", layout: "grid" } });
+});
+
+test("md parser: <Media> without role emits no media item", () => {
+  const md = '## Anatomy\n\n<Media layout="grid" />\n';
+  const items = mdParser.parseGuidelineMarkdown(md).sections[0].content;
+  assert.equal(items.length, 0);
+});
+
 // ───────────────────────────────────────────────────────────────────────────
 // Layer 2 — derive transformer
 // ───────────────────────────────────────────────────────────────────────────

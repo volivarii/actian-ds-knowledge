@@ -177,6 +177,28 @@ function projectTable(token) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
+// <Media> directive recogniser
+// ───────────────────────────────────────────────────────────────────────────
+
+// Matches a standalone `<Media role="..." layout="..." />` line (block HTML
+// token). Both self-closing and open forms are accepted; layout is optional
+// and defaults to null. A line without a `role` attribute falls through.
+const MEDIA_LINE = /^<Media\s+([^>]*?)\/?>\s*$/;
+
+// NOTE: two consecutive `<Media>` tags must be separated by a blank line —
+// `marked` merges adjacent no-blank-line html lines into one multi-line token
+// whose `.text` won't match the single-line MEDIA_LINE pattern.
+function parseMediaLine(line) {
+  const m = line.trim().match(MEDIA_LINE);
+  if (!m) return null;
+  const attrs = m[1];
+  const role = (attrs.match(/role="([^"]*)"/) || [])[1];
+  const layout = (attrs.match(/layout="([^"]*)"/) || [])[1] || null;
+  if (!role) return null;
+  return { media: { role, layout } };
+}
+
+// ───────────────────────────────────────────────────────────────────────────
 // Token → content-item projection
 // ───────────────────────────────────────────────────────────────────────────
 
@@ -218,7 +240,13 @@ function projectToken(token, bucket) {
       }
       return;
     }
-    // space / hr / html → ignored
+    case "html": {
+      // Only <Media> directives are promoted; all other raw HTML is ignored.
+      const mediaItem = parseMediaLine(token.text);
+      if (mediaItem) bucket.push(mediaItem);
+      return;
+    }
+    // space / hr → ignored
     default:
       return;
   }
