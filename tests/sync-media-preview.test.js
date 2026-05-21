@@ -545,6 +545,215 @@ test("run() routes Icons-category components to skipped, not missing", async fun
   );
 });
 
+test("prune: stale multi-image files are removed when role shrinks", async function () {
+  var dir = tmpdir();
+  // Pre-populate a widget/parts slug dir with 5 stale files (parts-0 … parts-4).
+  var slugDir = path.join(dir, "widget");
+  fs.mkdirSync(slugDir, { recursive: true });
+  for (var i = 0; i < 5; i++) {
+    fs.writeFileSync(path.join(slugDir, "parts-" + i + ".png"), "stale");
+  }
+
+  // Build a registry + tree that now yields only 3 "Parts" FRAME children.
+  var partsReg = {
+    fileKey: "FILEKEY",
+    components: {
+      widget: { name: "Widget", nodeId: "1:1", page: "Widgets" },
+    },
+  };
+  var partsTree = {
+    document: {
+      id: "0:0",
+      type: "DOCUMENT",
+      children: [
+        {
+          id: "p:w",
+          type: "CANVAS",
+          name: "Widgets",
+          children: [
+            {
+              id: "dg:w",
+              type: "FRAME",
+              name: "Design guidelines",
+              children: [
+                {
+                  id: "ss:parts",
+                  type: "FRAME",
+                  name: "Parts",
+                  children: [
+                    { id: "pt:title", type: "TEXT", name: "Title" },
+                    { id: "pt:0", type: "FRAME", name: "Frame A" },
+                    { id: "pt:1", type: "FRAME", name: "Frame B" },
+                    { id: "pt:2", type: "FRAME", name: "Frame C" },
+                    // Only 3 FRAME children — was 5 before.
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
+  var partsRest = {
+    getFile: function () {
+      return Promise.resolve(partsTree);
+    },
+    getNodes: function (fileKey, ids) {
+      var pages = {};
+      partsTree.document.children.forEach(function (p) {
+        pages[p.id] = { document: p };
+      });
+      var resp = { nodes: {} };
+      ids.forEach(function (id) {
+        if (pages[id]) resp.nodes[id] = pages[id];
+      });
+      return Promise.resolve(resp);
+    },
+    getImages: function (fileKey, ids) {
+      var images = {};
+      ids.forEach(function (id) {
+        images[id] = "https://signed/" + id + ".png";
+      });
+      return Promise.resolve({ images: images });
+    },
+    fetchBinary: function () {
+      return Promise.resolve(
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x01, 0x0a, 0x1a, 0x0a]),
+      );
+    },
+  };
+
+  await syncMedia.run({ registry: partsReg, outputDir: dir, rest: partsRest });
+
+  // Surviving files: parts-0, parts-1, parts-2.
+  assert.ok(
+    fs.existsSync(path.join(slugDir, "parts-0.png")),
+    "parts-0.png must survive",
+  );
+  assert.ok(
+    fs.existsSync(path.join(slugDir, "parts-1.png")),
+    "parts-1.png must survive",
+  );
+  assert.ok(
+    fs.existsSync(path.join(slugDir, "parts-2.png")),
+    "parts-2.png must survive",
+  );
+  // Stale files: parts-3 and parts-4 must be gone.
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-3.png")),
+    "parts-3.png must be pruned",
+  );
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-4.png")),
+    "parts-4.png must be pruned",
+  );
+});
+
+test("prune: all role files removed when role yields 0 frames (fully removed)", async function () {
+  var dir = tmpdir();
+  // Pre-populate widget/parts-0.png … parts-2.png as stale.
+  var slugDir = path.join(dir, "widget");
+  fs.mkdirSync(slugDir, { recursive: true });
+  for (var i = 0; i < 3; i++) {
+    fs.writeFileSync(path.join(slugDir, "parts-" + i + ".png"), "stale");
+  }
+  // Also place a preview.png that must NOT be touched by the prune.
+  fs.writeFileSync(path.join(slugDir, "preview.png"), "keep");
+
+  // Build a registry + tree with NO Parts sub-section at all (0 frames).
+  var partsReg = {
+    fileKey: "FILEKEY",
+    components: {
+      widget: { name: "Widget", nodeId: "1:1", page: "Widgets" },
+    },
+  };
+  var noPartsTree = {
+    document: {
+      id: "0:0",
+      type: "DOCUMENT",
+      children: [
+        {
+          id: "p:w",
+          type: "CANVAS",
+          name: "Widgets",
+          children: [
+            {
+              id: "dg:w",
+              type: "FRAME",
+              name: "Design guidelines",
+              children: [
+                // No "Parts" sub-section — role is fully absent.
+                {
+                  id: "ss:preview",
+                  type: "FRAME",
+                  name: "Preview",
+                  children: [
+                    { id: "vis:preview", type: "FRAME", name: "Overview" },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
+  var noPartsRest = {
+    getFile: function () {
+      return Promise.resolve(noPartsTree);
+    },
+    getNodes: function (fileKey, ids) {
+      var pages = {};
+      noPartsTree.document.children.forEach(function (p) {
+        pages[p.id] = { document: p };
+      });
+      var resp = { nodes: {} };
+      ids.forEach(function (id) {
+        if (pages[id]) resp.nodes[id] = pages[id];
+      });
+      return Promise.resolve(resp);
+    },
+    getImages: function (fileKey, ids) {
+      var images = {};
+      ids.forEach(function (id) {
+        images[id] = "https://signed/" + id + ".png";
+      });
+      return Promise.resolve({ images: images });
+    },
+    fetchBinary: function () {
+      return Promise.resolve(
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x02, 0x0a, 0x1a, 0x0a]),
+      );
+    },
+  };
+
+  await syncMedia.run({
+    registry: partsReg,
+    outputDir: dir,
+    rest: noPartsRest,
+  });
+
+  // All stale parts-*.png must be deleted (role fully removed).
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-0.png")),
+    "parts-0.png must be pruned (role fully removed)",
+  );
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-1.png")),
+    "parts-1.png must be pruned (role fully removed)",
+  );
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-2.png")),
+    "parts-2.png must be pruned (role fully removed)",
+  );
+  // preview.png is capture:"first" — the prune must NOT touch it.
+  assert.ok(
+    fs.existsSync(path.join(slugDir, "preview.png")),
+    "preview.png must NOT be pruned (capture:first)",
+  );
+});
+
 test("orchestrator runs media-preview phase end-to-end", async function () {
   var pluginDir = fs.mkdtempSync(path.join(os.tmpdir(), "kn-plugin-"));
   fs.mkdirSync(path.join(pluginDir, "components", "dist", "registries"), {

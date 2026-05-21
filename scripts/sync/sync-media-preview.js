@@ -267,7 +267,25 @@ async function run(opts) {
     });
   });
 
+  // Build a count map: (slug, role) → N images captured this run.
+  // Slugs that ARE in slugToPageId are "processed" even when a role resolves
+  // to 0 frames (those produce no pending entries, so countMap[slug][role] = 0
+  // after initialization). This drives the "fully-removed role" prune case.
+  var countMap = {};
+  Object.keys(slugToPageId).forEach(function (slug) {
+    countMap[slug] = {};
+    roleNames.forEach(function (role) {
+      countMap[slug][role] = 0;
+    });
+  });
+  pending.forEach(function (p) {
+    if (countMap[p.slug])
+      countMap[p.slug][p.role] = (countMap[p.slug][p.role] || 0) + 1;
+  });
+
   if (pending.length === 0) {
+    // Still need to prune stale files even when there is nothing new to write.
+    pruneStaleCaptures(opts.outputDir, countMap);
     return {
       captured: [],
       missing: aggregateMissing(missingPairs).sort(),
@@ -323,11 +341,55 @@ async function run(opts) {
     captured.push(capturedKey);
   }
 
+  // Step 7: prune stale multi-image files from processed slug dirs.
+  // Must run after writes so surviving files are already in place.
+  pruneStaleCaptures(opts.outputDir, countMap);
+
   return {
     captured: captured.sort(),
     missing: aggregateMissing(missingPairs).sort(),
     skipped: skippedSlugs,
   };
+}
+
+// pruneStaleCaptures — for every processed slug and every capture:"all" role,
+// delete any <role>-<n>.png where n >= N (the count of frames captured this
+// run). N = 0 means the role was fully absent — all its files are removed.
+// capture:"first" roles (like "preview") are single-file and not pruned.
+function pruneStaleCaptures(outputDir, countMap) {
+  var multiRoles = Object.keys(ROLE_FINDERS).filter(function (role) {
+    return ROLE_FINDERS[role].capture === "all";
+  });
+  if (multiRoles.length === 0) return;
+
+  Object.keys(countMap).forEach(function (slug) {
+    var slugDir = path.join(outputDir, slug);
+    if (!fs.existsSync(slugDir)) return;
+    var roleCounts = countMap[slug];
+    multiRoles.forEach(function (role) {
+      var n = roleCounts[role] || 0;
+      var entries;
+      try {
+        entries = fs.readdirSync(slugDir);
+      } catch (_) {
+        return;
+      }
+      var prefix = role + "-";
+      entries.forEach(function (file) {
+        if (!file.startsWith(prefix) || !file.endsWith(".png")) return;
+        var idxStr = file.slice(prefix.length, -4); // strip "<role>-" prefix and ".png"
+        var idx = parseInt(idxStr, 10);
+        if (isNaN(idx) || idx < 0) return;
+        if (idx >= n) {
+          try {
+            fs.unlinkSync(path.join(slugDir, file));
+          } catch (_) {
+            // Best-effort; ignore if already gone.
+          }
+        }
+      });
+    });
+  });
 }
 
 function allPairs(slugList, roleList) {

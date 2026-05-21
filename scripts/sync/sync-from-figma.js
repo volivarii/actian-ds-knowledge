@@ -465,7 +465,7 @@ async function run(opts) {
           }
           if (r.skipped.length > 0) {
             lines.push(
-              "- Skipped (Icons category — no capture frames): " +
+              "- Skipped (excluded category — no capture frames): " +
                 r.skipped.length +
                 " components",
             );

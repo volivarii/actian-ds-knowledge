@@ -547,11 +547,11 @@
     },
     "components.media.ci": {
       "dir": "components/dist/media",
-      "pattern": "{slug}/{role}.{ext}",
+      "pattern": "{slug}/{role}[-{index}].{ext}",
       "recursive": true,
       "type": "binary",
       "origin": "ci",
-      "description": "Per-component CI-generated visual assets (Figma frame captures, state matrices, motion clips). Authored by the media-preview sync phase (and future media-* phases). Role-based filenames so assets resolve by purpose, not by capture order. The `preview` role is the Figma frame named 'Overview' rendered as PNG; data-side role name follows DS convention. Vendor pull copies the tree; consumers read paths from the media index (components/dist/media/_index.json)."
+      "description": "Per-component CI-generated visual assets (Figma frame captures, state matrices, motion clips). Authored by the media-preview sync phase (and future media-* phases). Single-capture roles (capture:\"first\", e.g. `preview`) produce `<role>.png`; multi-capture roles (capture:\"all\", e.g. `parts`, `variations`, `spacing`, `behavior`, `layout`) produce `<role>-0.png`, `<role>-1.png`, … ordered by Figma frame index. The `preview` role is the Figma frame named 'Overview' rendered as PNG; data-side role name follows DS convention. Vendor pull copies the tree; consumers read paths from the media index (components/dist/media/_index.json)."
     },
     "content.section": {
       "dir": "content/src",
