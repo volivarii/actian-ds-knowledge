@@ -47,16 +47,15 @@ var OUTER_WRAPPER_NAME = "Design guidelines";
 // add a config entry here AND ensure designers have renamed the matching
 // sub-section frame in Figma.
 //
-// Multi-image roles (Parts has 6 inner visuals, Variations has 2) are
-// future work — when those roles land, this map gains a `capture: "all"`
-// field, the schema's `media.<role>` becomes `string[]`, and consumers
-// (docs MediaAsset) update. Today only `preview` is active.
+// `capture: "first"` (default) — one image per role, written as <role>.png.
+// `capture: "all"` — one image per FRAME child, written as <role>-<index>.png.
 var ROLE_FINDERS = {
-  preview: { sectionName: "Preview" },
-  // Future:
-  // parts:      { sectionName: "Parts",      capture: "all" },
-  // variations: { sectionName: "Variations", capture: "all" },
-  // spacing:    { sectionName: "Spacing" },
+  preview: { sectionName: "Preview", capture: "first" },
+  parts: { sectionName: "Parts", capture: "all" },
+  variations: { sectionName: "Variations", capture: "all" },
+  spacing: { sectionName: "Spacing", capture: "all" },
+  behavior: { sectionName: "Behavior", capture: "all" },
+  layout: { sectionName: "Layout", capture: "all" },
 };
 
 // Recursive case-insensitive frame-by-name finder. Returns the matching FRAME
@@ -83,31 +82,47 @@ function findFrameByNameRecursive(node, name) {
 
 // findRoleSourceNode — given a page subtree and a role-finder spec, locate
 // the outer "Design guidelines" wrapper, find the sub-section FRAME by name,
-// then return the id of the FIRST FRAME child of the sub-section (the visual).
-// All matches are case-insensitive.
+// then return:
+//   capture:"first" (default) — the id of the FIRST FRAME child (a string).
+//   capture:"all"             — an array of ids of ALL FRAME children, in
+//                               Figma child order (skipping non-FRAME layers).
+// All name matches are case-insensitive.
 function findRoleSourceNode(pageNode, findSpec) {
   var doc = pageNode && pageNode.document ? pageNode.document : pageNode;
   if (!doc) return null;
   var wrapper = findFrameByNameRecursive(doc, OUTER_WRAPPER_NAME);
   if (!wrapper || !Array.isArray(wrapper.children)) return null;
   var lcSection = findSpec.sectionName.toLowerCase();
+  var mode = findSpec.capture || "first";
   for (var i = 0; i < wrapper.children.length; i++) {
     var sub = wrapper.children[i];
     if (!sub || sub.type !== "FRAME" || typeof sub.name !== "string") continue;
     if (sub.name.toLowerCase() !== lcSection) continue;
-    // Found the sub-section. Capture the FIRST FRAME child (the visual);
-    // skip TEXT, INSTANCE, GROUP, etc. layers that may sit above the visual
-    // (typically a title TEXT element).
     if (!Array.isArray(sub.children)) return null;
-    for (var j = 0; j < sub.children.length; j++) {
-      var inner = sub.children[j];
-      if (inner && inner.type === "FRAME") return inner.id;
+    var frameIds = sub.children
+      .filter(function (c) {
+        return c && c.type === "FRAME";
+      })
+      .map(function (c) {
+        return c.id;
+      });
+    if (frameIds.length === 0) {
+      // No FRAME child — fall back to the sub-section itself.
+      return mode === "all" ? [sub.id] : sub.id;
     }
-    // Sub-section has no FRAME child — capture the sub-section itself as a
-    // last resort. Should be rare; flag in callsite logs if needed later.
-    return sub.id;
+    return mode === "all" ? frameIds : frameIds[0];
   }
   return null;
+}
+
+// mediaFilename — compute the output filename for a captured image.
+// capture:"first" roles (e.g. preview) → preview.png
+// capture:"all" roles  (e.g. parts)    → parts-0.png, parts-1.png, …
+function mediaFilename(role, index) {
+  var cfg = ROLE_FINDERS[role];
+  return cfg && cfg.capture === "all"
+    ? role + "-" + index + ".png"
+    : role + ".png";
 }
 
 function writeIfChanged(absPath, bytes) {
@@ -188,21 +203,25 @@ async function run(opts) {
   var nodesResp = await rest.getNodes(fileKey, uniquePageIds);
   var nodes = (nodesResp && nodesResp.nodes) || {};
 
-  // Step 4: for each page, find role-source frames once. Then assign each
-  // (slug, role) to its page's matching source.
-  // pageRoleSources[pageId][role] = sourceNodeId
+  // Step 4: for each page, find role-source frames once. Then expand each
+  // (slug, role) result into one pending entry per image:
+  //   capture:"first" → one entry, index 0.
+  //   capture:"all"   → one entry per FRAME child id, index 0…N-1.
+  // pageRoleSources[pageId][role] = string | string[]
   var pageRoleSources = {};
   uniquePageIds.forEach(function (pageId) {
     var page = nodes[pageId];
     pageRoleSources[pageId] = {};
     if (!page) return;
     roleNames.forEach(function (role) {
-      var srcId = findRoleSourceNode(page, ROLE_FINDERS[role]);
-      if (srcId) pageRoleSources[pageId][role] = srcId;
+      var src = findRoleSourceNode(page, ROLE_FINDERS[role]);
+      if (src) pageRoleSources[pageId][role] = src;
     });
   });
 
-  var pending = []; // [{ slug, role, sourceNodeId }]
+  // pending entries: [{ slug, role, index, sourceNodeId }]
+  // index is position within the role (always 0 for capture:"first").
+  var pending = [];
   var missingPairs = unresolvedSlugs.flatMap(function (s) {
     return roleNames.map(function (r) {
       return { slug: s, role: r };
@@ -212,9 +231,21 @@ async function run(opts) {
     var pid = slugToPageId[slug];
     var sources = pageRoleSources[pid] || {};
     roleNames.forEach(function (role) {
-      if (sources[role])
-        pending.push({ slug: slug, role: role, sourceNodeId: sources[role] });
-      else missingPairs.push({ slug: slug, role: role });
+      var src = sources[role];
+      if (!src) {
+        missingPairs.push({ slug: slug, role: role });
+        return;
+      }
+      // Normalise to array so the loop below is uniform.
+      var ids = Array.isArray(src) ? src : [src];
+      ids.forEach(function (nodeId, idx) {
+        pending.push({
+          slug: slug,
+          role: role,
+          index: idx,
+          sourceNodeId: nodeId,
+        });
+      });
     });
   });
 
@@ -240,14 +271,23 @@ async function run(opts) {
   });
   var urlMap = (imagesResp && imagesResp.images) || {};
 
-  // Step 6: download + write. Buffer cache keyed by sourceNodeId.
+  // Step 6: download + write. Buffer cache keyed by sourceNodeId so multiple
+  // slugs sharing a page source pay only one fetchBinary call.
   var captured = [];
   var bufferCache = {};
+  // alreadyMissing — guard so each (slug, role) pair is recorded in
+  // missingPairs at most once even when a capture:"all" role expands into
+  // N pending entries that all share an unresolved source id.
+  var alreadyMissing = {};
   for (var i = 0; i < pending.length; i++) {
     var p = pending[i];
     var signedUrl = urlMap[p.sourceNodeId];
     if (!signedUrl) {
-      missingPairs.push({ slug: p.slug, role: p.role });
+      var missKey = p.slug + ":" + p.role;
+      if (!alreadyMissing[missKey]) {
+        alreadyMissing[missKey] = true;
+        missingPairs.push({ slug: p.slug, role: p.role });
+      }
       continue;
     }
     var bytes = bufferCache[p.sourceNodeId];
@@ -255,9 +295,14 @@ async function run(opts) {
       bytes = await rest.fetchBinary(signedUrl);
       bufferCache[p.sourceNodeId] = bytes;
     }
-    var outPath = path.join(opts.outputDir, p.slug, p.role + ".png");
+    var filename = mediaFilename(p.role, p.index);
+    var outPath = path.join(opts.outputDir, p.slug, filename);
     writeIfChanged(outPath, bytes);
-    captured.push(p.slug + "/" + p.role);
+    // Captured key: slug/role for first, slug/role-N for multi. Derived
+    // from mediaFilename so the filename contract is defined in one place.
+    var basename = filename.replace(/\.png$/, "");
+    var capturedKey = p.slug + "/" + basename;
+    captured.push(capturedKey);
   }
 
   return {
