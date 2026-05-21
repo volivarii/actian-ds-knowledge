@@ -458,10 +458,10 @@ async function run(opts) {
           var cat = r.captured.length > 0 ? "additive" : "unchanged";
           var lines = [];
           if (r.captured.length > 0) {
-            lines.push("- Captured preview.png for: " + r.captured.join(", "));
+            lines.push("- Captured media for: " + r.captured.join(", "));
           }
           if (r.missing.length > 0) {
-            lines.push("- Missing Preview frame: " + r.missing.join(", "));
+            lines.push("- Missing sub-section frame: " + r.missing.join(", "));
           }
           if (r.skipped.length > 0) {
             lines.push(
