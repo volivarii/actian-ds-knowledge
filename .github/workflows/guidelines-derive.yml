@@ -131,7 +131,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add components/dist/guidelines/ components/dist/media/_index.json paths-manifest.json package.json
+          git add components/dist/guidelines/ paths-manifest.json package.json
+          # The media/_index.json sidecar only exists once a branch has merged
+          # in #92 (the commit that added it). A stale PR branch branched before
+          # then has no such file, and `git add` of a literal pathspec aborts
+          # the whole step (exit 128). Stage it only when present — the derive
+          # regenerates it in lockstep when it does exist.
+          if [ -f components/dist/media/_index.json ]; then
+            git add components/dist/media/_index.json
+          fi
           git commit -m "chore(components): regenerate guideline JSONs + media index + bump patch"
           git push
 
