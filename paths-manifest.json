@@ -577,7 +577,7 @@
     "search-filters": "filters",
     "tag-default": "tag",
     "input": "text-input",
-    "toglge": "toggle-control",
+    "toggle": "toggle-control",
     "whats-new-dropdown": "whats-new",
     "notification": "inline-toast"
   },
