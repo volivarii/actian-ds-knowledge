@@ -24,7 +24,7 @@ var fs = require("node:fs");
 var path = require("node:path");
 
 // MEDIA_ROLES: role key → { basename, multi }. preview is single (bare string);
-// the five Bucket-C roles are multi-image (parts-0.png, parts-1.png, …) and
+// the five Bucket-C roles are multi-image (parts-0.webp, parts-1.webp, …) and
 // emit ordered string[]. Mirrors ROLE_FINDERS in sync-media-preview.js.
 // Adding a role means adding an entry in BOTH places (sync to capture, index
 // to enumerate). The duplication is intentional: each side describes a
@@ -50,13 +50,13 @@ function deriveSlugMedia(mediaRoot, slug) {
   Object.keys(MEDIA_ROLES).forEach(function (role) {
     var spec = MEDIA_ROLES[role];
     if (!spec.multi) {
-      var single = spec.basename + ".png";
+      var single = spec.basename + ".webp";
       if (fs.existsSync(path.join(dir, single))) map[role] = rel(single);
       return;
     }
     var imgs = [];
     for (var i = 0; ; i++) {
-      var file = spec.basename + "-" + i + ".png";
+      var file = spec.basename + "-" + i + ".webp";
       if (!fs.existsSync(path.join(dir, file))) break;
       imgs.push(rel(file));
     }
