@@ -46,13 +46,13 @@ function compiledSchema() {
   return ajv.compile(schema);
 }
 
-test("deriveSlugMedia returns role map when preview.png present", function () {
+test("deriveSlugMedia returns role map when preview.webp present", function () {
   var root = tmpRepo();
-  seedMedia(root, "avatar", ["preview.png"]);
+  seedMedia(root, "avatar", ["preview.webp"]);
   var mediaRoot = path.join(root, "components", "dist", "media");
   var map = deriver.deriveSlugMedia(mediaRoot, "avatar");
   assert.deepEqual(map, {
-    preview: "components/dist/media/avatar/preview.png",
+    preview: "components/dist/media/avatar/preview.webp",
   });
 });
 
@@ -71,9 +71,9 @@ test("deriveSlugMedia returns null when slug dir has no known roles", function (
 
 test("buildMediaIndex sorts slugs ASCII for byte-stable output", function () {
   var root = tmpRepo();
-  seedMedia(root, "zebra", ["preview.png"]);
-  seedMedia(root, "avatar", ["preview.png"]);
-  seedMedia(root, "mango", ["preview.png"]);
+  seedMedia(root, "zebra", ["preview.webp"]);
+  seedMedia(root, "avatar", ["preview.webp"]);
+  seedMedia(root, "mango", ["preview.webp"]);
   var mediaRoot = path.join(root, "components", "dist", "media");
   var index = deriver.buildMediaIndex(mediaRoot);
   assert.deepEqual(Object.keys(index.media), ["avatar", "mango", "zebra"]);
@@ -81,8 +81,8 @@ test("buildMediaIndex sorts slugs ASCII for byte-stable output", function () {
 
 test("buildMediaIndex emits a schema-valid object", function () {
   var root = tmpRepo();
-  seedMedia(root, "avatar", ["preview.png"]);
-  seedMedia(root, "button", ["preview.png"]);
+  seedMedia(root, "avatar", ["preview.webp"]);
+  seedMedia(root, "button", ["preview.webp"]);
   var mediaRoot = path.join(root, "components", "dist", "media");
   var index = deriver.buildMediaIndex(mediaRoot);
   var validate = compiledSchema();
@@ -93,7 +93,7 @@ test("buildMediaIndex with multi-image role emits a schema-valid object", functi
   // Bucket C: multi-image roles produce string[] values; the schema must
   // accept oneOf(string | string[]) for per-role values.
   var root = tmpRepo();
-  seedMedia(root, "button", ["preview.png", "parts-0.png", "parts-1.png"]);
+  seedMedia(root, "button", ["preview.webp", "parts-0.webp", "parts-1.webp"]);
   var mediaRoot = path.join(root, "components", "dist", "media");
   var index = deriver.buildMediaIndex(mediaRoot);
   // Verify the index itself has the array shape we're about to validate.
@@ -137,8 +137,8 @@ test("schema rejects invalid role values (empty string, empty array, number)", f
   var badDupArr = JSON.parse(JSON.stringify(base));
   badDupArr.media.avatar = {
     parts: [
-      "components/dist/media/button/parts-0.png",
-      "components/dist/media/button/parts-0.png",
+      "components/dist/media/button/parts-0.webp",
+      "components/dist/media/button/parts-0.webp",
     ],
   };
   assert.equal(validate(badDupArr), false, "duplicate path must fail");
@@ -162,8 +162,8 @@ test("buildMediaIndex returns null when media root is absent", function () {
 
 test("writeMediaIndex creates _index.json and reports slug count", function () {
   var root = tmpRepo();
-  seedMedia(root, "avatar", ["preview.png"]);
-  seedMedia(root, "button", ["preview.png"]);
+  seedMedia(root, "avatar", ["preview.webp"]);
+  seedMedia(root, "button", ["preview.webp"]);
   var r = deriver.writeMediaIndex(root);
   assert.equal(r.wrote, true);
   assert.equal(r.slugCount, 2);
@@ -175,7 +175,7 @@ test("writeMediaIndex creates _index.json and reports slug count", function () {
 
 test("writeMediaIndex is idempotent (no rewrite when content unchanged)", function () {
   var root = tmpRepo();
-  seedMedia(root, "avatar", ["preview.png"]);
+  seedMedia(root, "avatar", ["preview.webp"]);
   var r1 = deriver.writeMediaIndex(root);
   assert.equal(r1.wrote, true);
   var stat1 = fs.statSync(r1.path);
@@ -203,7 +203,7 @@ test("media-only components surface in the index (architectural promise)", funct
   // on disk but no guideline doc at components/dist/guidelines/avatar.json.
   // The index MUST include them regardless of guideline coverage.
   var root = tmpRepo();
-  seedMedia(root, "avatar", ["preview.png"]);
+  seedMedia(root, "avatar", ["preview.webp"]);
   // Critically: do NOT create components/src/avatar/ or any guideline file.
   var r = deriver.writeMediaIndex(root);
   var parsed = JSON.parse(fs.readFileSync(r.path, "utf8"));
@@ -213,22 +213,22 @@ test("media-only components surface in the index (architectural promise)", funct
   );
   assert.equal(
     parsed.media.avatar.preview,
-    "components/dist/media/avatar/preview.png",
+    "components/dist/media/avatar/preview.webp",
   );
 });
 
 test("deriveSlugMedia emits multi-image roles as ordered string arrays", function () {
-  // Bucket C: parts-0.png, parts-1.png → parts: [path0, path1]
+  // Bucket C: parts-0.webp, parts-1.webp → parts: [path0, path1]
   // preview stays a bare string (backward compat with Bucket A).
   var root = tmpRepo();
-  seedMedia(root, "button", ["preview.png", "parts-0.png", "parts-1.png"]);
+  seedMedia(root, "button", ["preview.webp", "parts-0.webp", "parts-1.webp"]);
   var mediaRoot = path.join(root, "components", "dist", "media");
   var map = deriver.deriveSlugMedia(mediaRoot, "button");
   assert.deepEqual(map, {
-    preview: "components/dist/media/button/preview.png",
+    preview: "components/dist/media/button/preview.webp",
     parts: [
-      "components/dist/media/button/parts-0.png",
-      "components/dist/media/button/parts-1.png",
+      "components/dist/media/button/parts-0.webp",
+      "components/dist/media/button/parts-1.webp",
     ],
   });
 });
@@ -238,10 +238,10 @@ test("deriveSlugMedia stops the multi-image scan at the first index gap", functi
   // index. parts-0 + parts-2 (NO parts-1) must yield ONLY parts-0 — the
   // gap halts enumeration, so parts-2 is never reached.
   var root = tmpRepo();
-  seedMedia(root, "card", ["parts-0.png", "parts-2.png"]);
+  seedMedia(root, "card", ["parts-0.webp", "parts-2.webp"]);
   var mediaRoot = path.join(root, "components", "dist", "media");
   var map = deriver.deriveSlugMedia(mediaRoot, "card");
   assert.deepEqual(map, {
-    parts: ["components/dist/media/card/parts-0.png"],
+    parts: ["components/dist/media/card/parts-0.webp"],
   });
 });

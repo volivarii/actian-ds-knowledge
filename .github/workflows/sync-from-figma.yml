@@ -58,6 +58,11 @@ jobs:
         with:
           node-version: '22'
 
+      # The media-preview phase transcodes Figma PNG captures to WebP via
+      # sharp — a real dependency, so install before running the sync.
+      - name: Install dependencies
+        run: npm ci
+
       # Mint a token from the actian-ds-bot GitHub App so the sync PR is
       # authored by the App, not github-actions[bot]. Required because the
       # default GITHUB_TOKEN suppresses downstream pull_request workflow

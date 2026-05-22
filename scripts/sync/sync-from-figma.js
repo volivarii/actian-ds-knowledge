@@ -453,6 +453,9 @@ async function run(opts) {
           registry: dsKit,
           outputDir: mediaOutputDir,
           rest: rest,
+          // opts.encodeWebp is test-only DI; production leaves it undefined
+          // so syncMediaPreview falls back to its sharp-based encoder.
+          encodeWebp: opts.encodeWebp,
         })
         .then(function (r) {
           var cat = r.captured.length > 0 ? "additive" : "unchanged";
