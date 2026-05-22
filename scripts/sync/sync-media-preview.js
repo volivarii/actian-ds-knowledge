@@ -1,8 +1,10 @@
 "use strict";
 
 // sync-media-preview — locate per-component capture frames in Figma, render
-// them as PNGs via REST /v1/images, save under
-// components/dist/media/<slug>/<role>.png.
+// them as PNGs via REST /v1/images, convert to WebP, and save under
+// components/dist/media/<slug>/<role>.webp. (Figma's REST API has no WebP
+// format, so we fetch PNG and transcode locally — WebP is ~60-80% smaller
+// for these downscaled UI screenshots.)
 // First instance of the media convention (paths-manifest.json#components.media.ci).
 //
 // Naming convention (data side):
@@ -37,6 +39,18 @@
 
 var fs = require("fs");
 var path = require("path");
+var sharp = require("sharp");
+
+// On-disk extension for captured media. The pre-WebP era used ".png" — see
+// pruneLegacyPng for the one-time cleanup of those.
+var MEDIA_EXT = ".webp";
+
+// encodeWebp — transcode a PNG buffer (as returned by the Figma /v1/images
+// endpoint) to a WebP buffer. q80 lossy is visually lossless for these
+// scale=2 screenshots, which render downscaled in the docs.
+function encodeWebp(pngBuf) {
+  return sharp(pngBuf).webp({ quality: 80 }).toBuffer();
+}
 
 // Outer wrapper frame name (stays "Design guidelines" — the section header
 // designers see). This is the layer that contains all sub-sections.
@@ -121,13 +135,13 @@ function findRoleSourceNode(pageNode, findSpec) {
 }
 
 // mediaFilename — compute the output filename for a captured image.
-// capture:"first" roles (e.g. preview) → preview.png
-// capture:"all" roles  (e.g. parts)    → parts-0.png, parts-1.png, …
+// capture:"first" roles (e.g. preview) → preview.webp
+// capture:"all" roles  (e.g. parts)    → parts-0.webp, parts-1.webp, …
 function mediaFilename(role, index) {
   var cfg = ROLE_FINDERS[role];
   return cfg && cfg.capture === "all"
-    ? role + "-" + index + ".png"
-    : role + ".png";
+    ? role + "-" + index + MEDIA_EXT
+    : role + MEDIA_EXT;
 }
 
 function writeIfChanged(absPath, bytes) {
@@ -286,6 +300,7 @@ async function run(opts) {
   if (pending.length === 0) {
     // Still need to prune stale files even when there is nothing new to write.
     pruneStaleCaptures(opts.outputDir, countMap);
+    pruneLegacyPng(opts.outputDir);
     return {
       captured: [],
       missing: aggregateMissing(missingPairs).sort(),
@@ -326,9 +341,12 @@ async function run(opts) {
       }
       continue;
     }
+    // bufferCache stores the converted WebP buffer keyed by sourceNodeId, so
+    // a source node shared across slugs is fetched AND transcoded only once.
     var bytes = bufferCache[p.sourceNodeId];
     if (!bytes) {
-      bytes = await rest.fetchBinary(signedUrl);
+      var png = await rest.fetchBinary(signedUrl);
+      bytes = await encodeWebp(png);
       bufferCache[p.sourceNodeId] = bytes;
     }
     var filename = mediaFilename(p.role, p.index);
@@ -336,7 +354,7 @@ async function run(opts) {
     writeIfChanged(outPath, bytes);
     // Captured key: slug/role for first, slug/role-N for multi. Derived
     // from mediaFilename so the filename contract is defined in one place.
-    var basename = filename.replace(/\.png$/, "");
+    var basename = filename.slice(0, -MEDIA_EXT.length);
     var capturedKey = p.slug + "/" + basename;
     captured.push(capturedKey);
   }
@@ -344,6 +362,7 @@ async function run(opts) {
   // Step 7: prune stale multi-image files from processed slug dirs.
   // Must run after writes so surviving files are already in place.
   pruneStaleCaptures(opts.outputDir, countMap);
+  pruneLegacyPng(opts.outputDir);
 
   return {
     captured: captured.sort(),
@@ -353,7 +372,7 @@ async function run(opts) {
 }
 
 // pruneStaleCaptures — for every processed slug and every capture:"all" role,
-// delete any <role>-<n>.png where n >= N (the count of frames captured this
+// delete any <role>-<n>.webp where n >= N (the count of frames captured this
 // run). N = 0 means the role was fully absent — all its files are removed.
 // capture:"first" roles (like "preview") are single-file and not pruned.
 function pruneStaleCaptures(outputDir, countMap) {
@@ -376,8 +395,9 @@ function pruneStaleCaptures(outputDir, countMap) {
       }
       var prefix = role + "-";
       entries.forEach(function (file) {
-        if (!file.startsWith(prefix) || !file.endsWith(".png")) return;
-        var idxStr = file.slice(prefix.length, -4); // strip "<role>-" prefix and ".png"
+        if (!file.startsWith(prefix) || !file.endsWith(MEDIA_EXT)) return;
+        // strip the "<role>-" prefix and the extension to get the index
+        var idxStr = file.slice(prefix.length, -MEDIA_EXT.length);
         var idx = parseInt(idxStr, 10);
         if (isNaN(idx) || idx < 0) return;
         if (idx >= n) {
@@ -388,6 +408,37 @@ function pruneStaleCaptures(outputDir, countMap) {
           }
         }
       });
+    });
+  });
+}
+
+// pruneLegacyPng — one-time migration cleanup: delete any *.png left under
+// the media tree from the pre-WebP era. capture:"first" files like
+// preview.png are not covered by pruneStaleCaptures, so this sweeps every
+// slug dir. Idempotent — a no-op once the tree is fully WebP.
+function pruneLegacyPng(outputDir) {
+  var slugs;
+  try {
+    slugs = fs.readdirSync(outputDir, { withFileTypes: true });
+  } catch (_) {
+    return;
+  }
+  slugs.forEach(function (slugEnt) {
+    if (!slugEnt.isDirectory()) return;
+    var slugDir = path.join(outputDir, slugEnt.name);
+    var files;
+    try {
+      files = fs.readdirSync(slugDir);
+    } catch (_) {
+      return;
+    }
+    files.forEach(function (file) {
+      if (!file.endsWith(".png")) return;
+      try {
+        fs.unlinkSync(path.join(slugDir, file));
+      } catch (_) {
+        // Best-effort; ignore if already gone.
+      }
     });
   });
 }
@@ -429,6 +480,7 @@ module.exports = {
   run: run,
   findRoleSourceNode: findRoleSourceNode,
   findFrameByNameRecursive: findFrameByNameRecursive,
+  encodeWebp: encodeWebp,
   ROLE_FINDERS: ROLE_FINDERS,
   OUTER_WRAPPER_NAME: OUTER_WRAPPER_NAME,
 };
