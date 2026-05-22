@@ -10,6 +10,15 @@ function tmpdir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "media-sync-"));
 }
 
+// A real 1×1 PNG. The sync now transcodes Figma PNG captures to WebP via
+// sharp, so fetchBinary mocks must return a decodable image rather than a
+// fake magic-byte stub. sharp's WebP encode is deterministic, so the
+// idempotency and shared-bytes assertions below still hold.
+var REAL_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=",
+  "base64",
+);
+
 // Registry mirrors real Actian DS Kit: each component has a `page` field
 // (the Figma page name where the component lives) and a `nodeId` deep
 // inside the page tree.
@@ -131,9 +140,7 @@ function mockRest(overrides) {
         return Promise.resolve({ images: images });
       },
       fetchBinary: function () {
-        return Promise.resolve(
-          Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-        );
+        return Promise.resolve(REAL_PNG);
       },
     },
     overrides,
@@ -302,19 +309,19 @@ test("findRoleSourceNode capture:first returns sub.id when sub-section has no FR
   assert.equal(out, "ss:preview");
 });
 
-test("writes preview.png from inner visual FRAME for components with Preview sub-section", async function () {
+test("writes preview.webp from inner visual FRAME for components with Preview sub-section", async function () {
   var dir = tmpdir();
   var result = await syncMedia.run({
     registry: registry,
     outputDir: dir,
     rest: mockRest(),
   });
-  var btnPath = path.join(dir, "button", "preview.png");
-  var badgePath = path.join(dir, "badge", "preview.png");
-  assert.ok(fs.existsSync(btnPath), "button preview.png must exist");
+  var btnPath = path.join(dir, "button", "preview.webp");
+  var badgePath = path.join(dir, "badge", "preview.webp");
+  assert.ok(fs.existsSync(btnPath), "button preview.webp must exist");
   assert.ok(
     !fs.existsSync(badgePath),
-    "badge preview.png must not be created (no wrapper)",
+    "badge preview.webp must not be created (no wrapper)",
   );
   assert.deepEqual(result.captured, ["button/preview"]);
   // badge has no Design guidelines wrapper — all 6 roles collapse to slug-only.
@@ -332,12 +339,12 @@ test("writes preview.png from inner visual FRAME for components with Preview sub
 test("idempotent: second run does not rewrite when bytes match", async function () {
   var dir = tmpdir();
   await syncMedia.run({ registry: registry, outputDir: dir, rest: mockRest() });
-  var stat1 = fs.statSync(path.join(dir, "button", "preview.png"));
+  var stat1 = fs.statSync(path.join(dir, "button", "preview.webp"));
   await new Promise(function (r) {
     setTimeout(r, 10);
   });
   await syncMedia.run({ registry: registry, outputDir: dir, rest: mockRest() });
-  var stat2 = fs.statSync(path.join(dir, "button", "preview.png"));
+  var stat2 = fs.statSync(path.join(dir, "button", "preview.webp"));
   assert.equal(stat1.mtimeMs, stat2.mtimeMs, "stable bytes → no rewrite");
 });
 
@@ -365,9 +372,9 @@ test("page-name lookup tolerates leading/trailing whitespace on Figma side", asy
     outputDir: dir,
     rest: paddedMock,
   });
-  // Button still resolves despite whitespace mismatch — preview.png written.
+  // Button still resolves despite whitespace mismatch — preview.webp written.
   assert.ok(
-    fs.existsSync(path.join(dir, "button", "preview.png")),
+    fs.existsSync(path.join(dir, "button", "preview.webp")),
     "trimmed-vs-padded mismatch must not break page resolution",
   );
   assert.deepEqual(result.captured, ["button/preview"]);
@@ -410,12 +417,12 @@ test("multiple slugs on the same page share one capture", async function () {
   });
   assert.deepEqual(result.captured, ["button-cta/preview", "button/preview"]);
   // Both files must exist and have the same bytes.
-  var b1 = fs.readFileSync(path.join(dir, "button", "preview.png"));
-  var b2 = fs.readFileSync(path.join(dir, "button-cta", "preview.png"));
+  var b1 = fs.readFileSync(path.join(dir, "button", "preview.webp"));
+  var b2 = fs.readFileSync(path.join(dir, "button-cta", "preview.webp"));
   assert.ok(b1.equals(b2), "shared sub-section → identical bytes per slug");
 });
 
-test("run() writes <role>-<index>.png for capture:all roles with multiple FRAME children", async function () {
+test("run() writes <role>-<index>.webp for capture:all roles with multiple FRAME children", async function () {
   var dir = tmpdir();
   // Build a custom tree that has a "Parts" sub-section with two FRAME children.
   var partsReg = {
@@ -478,12 +485,8 @@ test("run() writes <role>-<index>.png for capture:all roles with multiple FRAME 
       });
       return Promise.resolve({ images: images });
     },
-    fetchBinary: function (url) {
-      // Return distinguishable bytes per URL so we can tell the two apart.
-      var seed = url.charCodeAt(url.length - 5);
-      return Promise.resolve(
-        Buffer.from([0x89, 0x50, 0x4e, 0x47, seed, 0x0a, 0x1a, 0x0a]),
-      );
+    fetchBinary: function () {
+      return Promise.resolve(REAL_PNG);
     },
   };
   var result = await syncMedia.run({
@@ -491,11 +494,11 @@ test("run() writes <role>-<index>.png for capture:all roles with multiple FRAME 
     outputDir: dir,
     rest: partsRest,
   });
-  // Two files must exist: parts-0.png and parts-1.png.
-  var p0 = path.join(dir, "widget", "parts-0.png");
-  var p1 = path.join(dir, "widget", "parts-1.png");
-  assert.ok(fs.existsSync(p0), "parts-0.png must exist");
-  assert.ok(fs.existsSync(p1), "parts-1.png must exist");
+  // Two files must exist: parts-0.webp and parts-1.webp.
+  var p0 = path.join(dir, "widget", "parts-0.webp");
+  var p1 = path.join(dir, "widget", "parts-1.webp");
+  assert.ok(fs.existsSync(p0), "parts-0.webp must exist");
+  assert.ok(fs.existsSync(p1), "parts-1.webp must exist");
   // Captured entries reflect both indices.
   assert.ok(
     result.captured.includes("widget/parts-0"),
@@ -551,7 +554,7 @@ test("prune: stale multi-image files are removed when role shrinks", async funct
   var slugDir = path.join(dir, "widget");
   fs.mkdirSync(slugDir, { recursive: true });
   for (var i = 0; i < 5; i++) {
-    fs.writeFileSync(path.join(slugDir, "parts-" + i + ".png"), "stale");
+    fs.writeFileSync(path.join(slugDir, "parts-" + i + ".webp"), "stale");
   }
 
   // Build a registry + tree that now yields only 3 "Parts" FRAME children.
@@ -618,9 +621,7 @@ test("prune: stale multi-image files are removed when role shrinks", async funct
       return Promise.resolve({ images: images });
     },
     fetchBinary: function () {
-      return Promise.resolve(
-        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x01, 0x0a, 0x1a, 0x0a]),
-      );
+      return Promise.resolve(REAL_PNG);
     },
   };
 
@@ -628,38 +629,38 @@ test("prune: stale multi-image files are removed when role shrinks", async funct
 
   // Surviving files: parts-0, parts-1, parts-2.
   assert.ok(
-    fs.existsSync(path.join(slugDir, "parts-0.png")),
-    "parts-0.png must survive",
+    fs.existsSync(path.join(slugDir, "parts-0.webp")),
+    "parts-0.webp must survive",
   );
   assert.ok(
-    fs.existsSync(path.join(slugDir, "parts-1.png")),
-    "parts-1.png must survive",
+    fs.existsSync(path.join(slugDir, "parts-1.webp")),
+    "parts-1.webp must survive",
   );
   assert.ok(
-    fs.existsSync(path.join(slugDir, "parts-2.png")),
-    "parts-2.png must survive",
+    fs.existsSync(path.join(slugDir, "parts-2.webp")),
+    "parts-2.webp must survive",
   );
   // Stale files: parts-3 and parts-4 must be gone.
   assert.ok(
-    !fs.existsSync(path.join(slugDir, "parts-3.png")),
-    "parts-3.png must be pruned",
+    !fs.existsSync(path.join(slugDir, "parts-3.webp")),
+    "parts-3.webp must be pruned",
   );
   assert.ok(
-    !fs.existsSync(path.join(slugDir, "parts-4.png")),
-    "parts-4.png must be pruned",
+    !fs.existsSync(path.join(slugDir, "parts-4.webp")),
+    "parts-4.webp must be pruned",
   );
 });
 
 test("prune: all role files removed when role yields 0 frames (fully removed)", async function () {
   var dir = tmpdir();
-  // Pre-populate widget/parts-0.png … parts-2.png as stale.
+  // Pre-populate widget/parts-0.webp … parts-2.webp as stale.
   var slugDir = path.join(dir, "widget");
   fs.mkdirSync(slugDir, { recursive: true });
   for (var i = 0; i < 3; i++) {
-    fs.writeFileSync(path.join(slugDir, "parts-" + i + ".png"), "stale");
+    fs.writeFileSync(path.join(slugDir, "parts-" + i + ".webp"), "stale");
   }
-  // Also place a preview.png that must NOT be touched by the prune.
-  fs.writeFileSync(path.join(slugDir, "preview.png"), "keep");
+  // Also place a preview.webp that must NOT be touched by the prune.
+  fs.writeFileSync(path.join(slugDir, "preview.webp"), "keep");
 
   // Build a registry + tree with NO Parts sub-section at all (0 frames).
   var partsReg = {
@@ -722,9 +723,7 @@ test("prune: all role files removed when role yields 0 frames (fully removed)", 
       return Promise.resolve({ images: images });
     },
     fetchBinary: function () {
-      return Promise.resolve(
-        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x02, 0x0a, 0x1a, 0x0a]),
-      );
+      return Promise.resolve(REAL_PNG);
     },
   };
 
@@ -734,24 +733,58 @@ test("prune: all role files removed when role yields 0 frames (fully removed)", 
     rest: noPartsRest,
   });
 
-  // All stale parts-*.png must be deleted (role fully removed).
+  // All stale parts-*.webp must be deleted (role fully removed).
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-0.webp")),
+    "parts-0.webp must be pruned (role fully removed)",
+  );
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-1.webp")),
+    "parts-1.webp must be pruned (role fully removed)",
+  );
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "parts-2.webp")),
+    "parts-2.webp must be pruned (role fully removed)",
+  );
+  // preview.webp is capture:"first" — the prune must NOT touch it.
+  assert.ok(
+    fs.existsSync(path.join(slugDir, "preview.webp")),
+    "preview.webp must NOT be pruned (capture:first)",
+  );
+});
+
+test("pruneLegacyPng: pre-WebP .png files are removed on sync", async function () {
+  var dir = tmpdir();
+  // Simulate a pre-migration media tree: legacy .png files on disk.
+  var slugDir = path.join(dir, "button");
+  fs.mkdirSync(slugDir, { recursive: true });
+  fs.writeFileSync(path.join(slugDir, "preview.png"), "legacy");
+  fs.writeFileSync(path.join(slugDir, "parts-0.png"), "legacy");
+
+  await syncMedia.run({ registry: registry, outputDir: dir, rest: mockRest() });
+
+  // Both legacy PNGs must be swept, regardless of capture mode.
+  assert.ok(
+    !fs.existsSync(path.join(slugDir, "preview.png")),
+    "legacy preview.png must be removed",
+  );
   assert.ok(
     !fs.existsSync(path.join(slugDir, "parts-0.png")),
-    "parts-0.png must be pruned (role fully removed)",
+    "legacy parts-0.png must be removed",
   );
+  // The fresh WebP capture must be in place.
   assert.ok(
-    !fs.existsSync(path.join(slugDir, "parts-1.png")),
-    "parts-1.png must be pruned (role fully removed)",
+    fs.existsSync(path.join(slugDir, "preview.webp")),
+    "preview.webp must be written",
   );
-  assert.ok(
-    !fs.existsSync(path.join(slugDir, "parts-2.png")),
-    "parts-2.png must be pruned (role fully removed)",
-  );
-  // preview.png is capture:"first" — the prune must NOT touch it.
-  assert.ok(
-    fs.existsSync(path.join(slugDir, "preview.png")),
-    "preview.png must NOT be pruned (capture:first)",
-  );
+});
+
+test("encodeWebp transcodes a PNG buffer to valid WebP", async function () {
+  var webp = await syncMedia.encodeWebp(REAL_PNG);
+  assert.ok(Buffer.isBuffer(webp), "encoder must return a Buffer");
+  // WebP container: "RIFF" at offset 0, "WEBP" at offset 8.
+  assert.equal(webp.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(webp.subarray(8, 12).toString("ascii"), "WEBP");
 });
 
 test("orchestrator runs media-preview phase end-to-end", async function () {
@@ -781,5 +814,5 @@ test("orchestrator runs media-preview phase end-to-end", async function () {
   });
 
   assert.equal(result.errors.length, 0, "no phase errors");
-  assert.ok(fs.existsSync(path.join(mediaDir, "button", "preview.png")));
+  assert.ok(fs.existsSync(path.join(mediaDir, "button", "preview.webp")));
 });
