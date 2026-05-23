@@ -13,7 +13,21 @@ const domainSubform: UiSchema = {
 };
 
 export const guidelineMetaUiSchema: UiSchema = {
-  "ui:order": ["component", "category", "domains", "related", "examples", "lastReviewed"],
+  // RJSF requires `ui:order` to either enumerate every schema property or
+  // end with the `"*"` wildcard. The wildcard guarantees we don't break the
+  // form when a future schema field is added without a matching uiSchema
+  // update. Concrete prefix names the fields whose order is load-bearing
+  // (component first, then category/section, then the meaty domains block).
+  "ui:order": [
+    "component",
+    "category",
+    "section",
+    "domains",
+    "related",
+    "examples",
+    "lastReviewed",
+    "*",
+  ],
   component: {
     "ui:title": "Component name",
     "ui:placeholder": "e.g. Button",
