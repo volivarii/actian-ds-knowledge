@@ -4,6 +4,7 @@ var test = require("node:test");
 var assert = require("node:assert/strict");
 var fs = require("node:fs");
 var path = require("node:path");
+var derive = require("../scripts/foundations/derive-foundations.js");
 
 // PR α.5 v2: motion moved from foundations/dist/interaction-motion.json to
 // foundations/dist/tokens/motion.json (Pattern H hierarchical layout).
@@ -19,6 +20,11 @@ var motion = JSON.parse(
     ),
     "utf8",
   ),
+);
+
+var foundationsSrc = fs.readFileSync(
+  path.resolve(__dirname, "..", "foundations", "src", "foundations.md"),
+  "utf8",
 );
 
 // patterns is an object keyed by short-slug (legacy); each value contains
@@ -51,7 +57,11 @@ test("motion slugs are unique", function () {
   assert.equal(slugs.length, unique.length, "duplicate slugs detected");
 });
 
-test("known canonical slug mapping is correct", function () {
+test("known canonical slug mapping is correct (now author-declared, D2)", function () {
+  // Canonical slugs are now sourced from `{#anchor}` markers in
+  // foundations/src/foundations.md (D2 — Substrate Doctrine P6). This test
+  // remains the load-bearing contract for consumers; the values must not
+  // drift even though the derivation mechanism changed.
   var list = patternsList(motion);
   var byName = {};
   list.forEach(function (p) {
@@ -74,4 +84,64 @@ test("known canonical slug mapping is correct", function () {
     byName['The "Anchor" Motion — Dropdowns, Popovers, and Tooltips'],
     "anchor-motion",
   );
+});
+
+test("every motion pattern carries an explicit {#anchor} in source (D2)", function () {
+  // Each of the 8 pattern names produced by deriveFoundations must have an
+  // explicit `{#slug}` marker on its bold-paragraph in source. This is the
+  // cross-consumer contract; pattern NAMES may be re-worded freely, but
+  // the slug is the addressing key (Substrate Doctrine P6).
+  var list = patternsList(motion);
+  list.forEach(function (p) {
+    var anchor = "{#" + p.slug + "}";
+    assert.ok(
+      foundationsSrc.indexOf(anchor) !== -1,
+      "Pattern '" + p.name + "' is missing its source anchor: " + anchor,
+    );
+  });
+});
+
+test("extractExplicitPatternAnchor reads {#slug} when present (D2)", function () {
+  // Simulate the marked-style token shape that the derive parser sees.
+  var withAnchor = {
+    type: "paragraph",
+    tokens: [
+      { type: "strong", text: "Drawer (open/close)" },
+      { type: "text", text: " {#drawer-open-close}" },
+    ],
+  };
+  assert.equal(
+    derive.extractExplicitPatternAnchor(withAnchor),
+    "drawer-open-close",
+  );
+});
+
+test("extractExplicitPatternAnchor returns null on bare bold paragraph (D2)", function () {
+  var bare = {
+    type: "paragraph",
+    tokens: [{ type: "strong", text: "Drawer (open/close)" }],
+  };
+  assert.equal(derive.extractExplicitPatternAnchor(bare), null);
+});
+
+test("isBoldOnlyParagraph accepts strong + {#anchor} (D2)", function () {
+  var withAnchor = {
+    type: "paragraph",
+    tokens: [
+      { type: "strong", text: "Pattern" },
+      { type: "text", text: " {#pattern}" },
+    ],
+  };
+  assert.equal(derive.isBoldOnlyParagraph(withAnchor), true);
+});
+
+test("isBoldOnlyParagraph rejects strong + non-anchor text (D2)", function () {
+  var notAnchor = {
+    type: "paragraph",
+    tokens: [
+      { type: "strong", text: "Pattern" },
+      { type: "text", text: " followed by extra prose" },
+    ],
+  };
+  assert.equal(derive.isBoldOnlyParagraph(notAnchor), false);
 });

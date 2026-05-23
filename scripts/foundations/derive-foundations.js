@@ -90,6 +90,17 @@ function applyStatusToRows(rows, sectionLabel, logger) {
 // Motion payload (special-cased structured emit)
 // ───────────────────────────────────────────────────────────────────────────
 
+var PATTERN_ANCHOR_RE = /^\s*\{#([a-z0-9-]+)\}\s*$/;
+// Trailing-anchor form for stripping the marker from concatenated prose
+// (e.g. extractProse() returns "Pattern Name {#slug}" — strip the tail).
+var PATTERN_ANCHOR_STRIP_RE = /\s*\{#[a-z0-9-]+\}\s*$/;
+
+// A pattern-bold paragraph is either:
+//   **Pattern Name**                                      (legacy)
+//   **Pattern Name** {#canonical-slug}                    (D2: explicit slug)
+// Permitting an optional trailing `{#slug}` text token is how authors declare
+// the canonical pattern slug in source instead of relying on a script-side
+// map (Substrate Doctrine P6; R6 pre-build D2).
 function isBoldOnlyParagraph(token) {
   if (!token || token.type !== "paragraph" || !Array.isArray(token.tokens))
     return false;
@@ -97,7 +108,31 @@ function isBoldOnlyParagraph(token) {
     if (t.type === "text") return String(t.text || "").trim().length > 0;
     return true;
   });
-  return significant.length === 1 && significant[0].type === "strong";
+  if (significant.length === 1) {
+    return significant[0].type === "strong";
+  }
+  if (significant.length === 2) {
+    return (
+      significant[0].type === "strong" &&
+      significant[1].type === "text" &&
+      PATTERN_ANCHOR_RE.test(String(significant[1].text || ""))
+    );
+  }
+  return false;
+}
+
+// Extract the explicit `{#anchor}` slug from a pattern-bold paragraph, or
+// null if absent. Author-declared anchor is authoritative; consumers depend
+// on this slug in `foundations/dist/tokens/motion.json#patterns[*].slug`.
+function extractExplicitPatternAnchor(token) {
+  if (!token || !Array.isArray(token.tokens)) return null;
+  for (var i = 0; i < token.tokens.length; i++) {
+    var t = token.tokens[i];
+    if (t.type !== "text") continue;
+    var m = String(t.text || "").match(PATTERN_ANCHOR_RE);
+    if (m) return m[1];
+  }
+  return null;
 }
 
 function decodeHtmlEntities(s) {
@@ -121,19 +156,14 @@ function slugifyPatternName(name) {
   return s;
 }
 
-var CANONICAL_PATTERN_SLUGS = {
-  "Drawer (open/close)": "drawer-open-close",
-  "Accordion (expand/collapse)": "accordion-expand-collapse",
-  "Success Toast": "success-toast",
-  'The "Anchor" Motion — Dropdowns, Popovers, and Tooltips': "anchor-motion",
-  "Layered Overlays — Modals": "layered-overlays-modals",
-  "Skeleton Loading": "skeleton-loading",
-  "Staggered Entrance — Lists, Table Rows, Search Cards": "staggered-entrance",
-  "State Transitions": "state-transitions",
-};
+// D2 (R6 pre-build): the legacy `CANONICAL_PATTERN_SLUGS` name→slug map has
+// been retired. Canonical pattern slugs are now author-declared in source
+// via `**Pattern Name** {#canonical-slug}` (see PATTERN_ANCHOR_RE above).
+// When a pattern paragraph has no explicit anchor, the short slug from
+// `slugifyPatternName` is used directly — there is no longer a separate
+// "canonical" slug derivation outside the source.
 
 function canonicalSlugForPattern(name) {
-  if (CANONICAL_PATTERN_SLUGS[name]) return CANONICAL_PATTERN_SLUGS[name];
   var decoded = decodeHtmlEntities(name)
     .replace(/^The\s+/i, "")
     .replace(/["“”]/g, "")
@@ -242,7 +272,11 @@ function buildMotionPayload(contentTokens, sectionLabel, logger) {
     if (mode === "guide") {
       if (tok.type === "paragraph") {
         if (isBoldOnlyParagraph(tok)) {
-          var rawName = extractors.extractProse(tok).trim();
+          var explicitAnchor = extractExplicitPatternAnchor(tok);
+          var rawName = extractors
+            .extractProse(tok)
+            .replace(PATTERN_ANCHOR_STRIP_RE, "")
+            .trim();
           var name = decodeHtmlEntities(rawName);
           if (isPatternSubsectionLabel(name) && currentPatternSlug) {
             payload.patterns[currentPatternSlug]._pendingSubsection =
@@ -273,7 +307,7 @@ function buildMotionPayload(contentTokens, sectionLabel, logger) {
             continue;
           }
           payload.patterns[slug] = {
-            slug: canonicalSlugForPattern(name),
+            slug: explicitAnchor || canonicalSlugForPattern(name),
             name: name,
             phases: [],
           };
@@ -1130,6 +1164,8 @@ module.exports = {
   buildMotionPayload,
   isMotionShape,
   slugifyPatternName,
+  extractExplicitPatternAnchor,
+  isBoldOnlyParagraph,
   applyStatusToRows,
   extractBodyAndBlocks,
   writeOutputs,
