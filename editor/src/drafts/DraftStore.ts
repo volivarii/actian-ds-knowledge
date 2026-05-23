@@ -15,10 +15,31 @@ export interface Draft {
   ts: number;
 }
 
+export type DraftStoreEvent =
+  | { kind: "saved"; path: string }
+  | { kind: "cleared"; path: string }
+  | { kind: "pending"; path: string }
+  | { kind: "writing"; path: string };
+
+export type DraftStoreListener = (event: DraftStoreEvent) => void;
+
 const PREFIX = "editor:draft:";
 
 export class DraftStore {
+  private readonly listeners = new Set<DraftStoreListener>();
+
   constructor(private readonly storage: Storage) {}
+
+  subscribe(listener: DraftStoreListener): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private emit(event: DraftStoreEvent): void {
+    for (const l of this.listeners) l(event);
+  }
 
   load(path: string): Draft | null {
     const raw = this.storage.getItem(PREFIX + path);
@@ -38,9 +59,15 @@ export class DraftStore {
     }
   }
 
+  markPending(path: string): void {
+    this.emit({ kind: "pending", path });
+  }
+
   save(path: string, draft: Draft): boolean {
+    this.emit({ kind: "writing", path });
     try {
       this.storage.setItem(PREFIX + path, JSON.stringify(draft));
+      this.emit({ kind: "saved", path });
       return true;
     } catch {
       return false;
@@ -49,6 +76,7 @@ export class DraftStore {
 
   clear(path: string): void {
     this.storage.removeItem(PREFIX + path);
+    this.emit({ kind: "cleared", path });
   }
 
   has(path: string): boolean {

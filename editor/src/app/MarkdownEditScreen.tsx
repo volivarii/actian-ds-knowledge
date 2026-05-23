@@ -26,7 +26,7 @@ import { ReadonlyPathError, SchemaValidationError } from "../core/types";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
-import { DraftStore } from "../drafts/DraftStore";
+import { draftStoreSingleton } from "../drafts/store-instance";
 import { useDraft } from "../drafts/useDraft";
 
 interface MarkdownEditScreenProps {
@@ -40,12 +40,6 @@ type LoadState =
   | { kind: "loading" }
   | { kind: "ready"; remoteText: string; remoteSha: string }
   | { kind: "error"; message: string };
-
-const draftStoreSingleton = new DraftStore(
-  typeof window !== "undefined"
-    ? window.localStorage
-    : (null as unknown as Storage),
-);
 
 export function MarkdownEditScreen({
   path,

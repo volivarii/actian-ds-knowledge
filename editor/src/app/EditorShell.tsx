@@ -6,11 +6,13 @@ import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { RefusalBanner } from "./RefusalBanner";
-import { DraftStore } from "../drafts/DraftStore";
+import { draftStoreSingleton } from "../drafts/store-instance";
 
 interface EditorShellProps {
   onOpenSettings?: () => void;
   octokit?: Octokit;
+  activePath: string | null;
+  setActivePath: (path: string | null) => void;
 }
 
 function isPlainMarkdown(path: string): boolean {
@@ -25,13 +27,12 @@ function isMetaYaml(path: string): boolean {
   return /^components\/src\/[^/]+\/_meta\.yml$/.test(path);
 }
 
-const draftStoreSingleton = new DraftStore(
-  typeof window !== "undefined"
-    ? window.localStorage
-    : (null as unknown as Storage),
-);
-
-export function EditorShell({ onOpenSettings, octokit }: EditorShellProps) {
+export function EditorShell({
+  onOpenSettings,
+  octokit,
+  activePath,
+  setActivePath,
+}: EditorShellProps) {
   const [ghError, setGhError] = useState<string | null>(null);
   const gh = useMemo<Octokit | null>(() => {
     if (octokit) return octokit;
@@ -45,7 +46,6 @@ export function EditorShell({ onOpenSettings, octokit }: EditorShellProps) {
     }
   }, [octokit]);
 
-  const [activePath, setActivePath] = useState<string | null>(null);
   const [pendingPaths, setPendingPaths] = useState<Set<string>>(() =>
     draftStoreSingleton.allPaths(),
   );

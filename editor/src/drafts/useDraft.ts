@@ -49,9 +49,10 @@ export function useDraft(
     (text: string) => {
       latestTextRef.current = text;
       if (timerRef.current) clearTimeout(timerRef.current);
+      store.markPending(path);
       timerRef.current = setTimeout(flush, DEBOUNCE_MS);
     },
-    [flush],
+    [flush, path, store],
   );
 
   const clearDraft = useCallback(() => {
