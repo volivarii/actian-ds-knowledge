@@ -26,8 +26,15 @@ import { ReadonlyPathError, SchemaValidationError } from "../core/types";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
-import { draftStoreSingleton } from "../drafts/store-instance";
+import { Outline } from "./Outline";
+import {
+  draftStoreSingleton,
+  submissionCartSingleton,
+} from "../drafts/store-instance";
 import { useDraft } from "../drafts/useDraft";
+import { useCart } from "../drafts/useCart";
+import { buildMarkdownStub } from "../lib/markdownStubs";
+import { Badge } from "@radix-ui/themes";
 
 interface MarkdownEditScreenProps {
   path: string;
@@ -35,10 +42,17 @@ interface MarkdownEditScreenProps {
   onOpenSettings?: () => void;
 }
 
+type LoadSource = "remote" | "cart" | "stub";
+
 type LoadState =
   | { kind: "idle" }
   | { kind: "loading" }
-  | { kind: "ready"; remoteText: string; remoteSha: string }
+  | {
+      kind: "ready";
+      remoteText: string;
+      remoteSha: string;
+      source: LoadSource;
+    }
   | { kind: "error"; message: string };
 
 export function MarkdownEditScreen({
@@ -70,39 +84,89 @@ export function MarkdownEditScreen({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [prUrl, setPrUrl] = useState<string | null>(null);
+  const cartEntries = useCart(submissionCartSingleton);
+  const inCart = useMemo(
+    () => cartEntries.find((e) => e.path === path) ?? null,
+    [cartEntries, path],
+  );
+  // "Workspace context" = this path lives under components/src/<slug>/
+  // AND other files for the same slug are staged in the cart. In that
+  // case single-file submit is almost always wrong (orphans the staged
+  // siblings); reorder the actions so "Add to batch" is primary.
+  const componentSlug = useMemo(() => {
+    const m = path.match(/^components\/src\/([^/]+)\//);
+    return m && m[1] && m[1] !== "categories" ? m[1] : null;
+  }, [path]);
+  const siblingStaged = useMemo(() => {
+    if (!componentSlug) return 0;
+    const prefix = `components/src/${componentSlug}/`;
+    return cartEntries.filter(
+      (e) => e.path.startsWith(prefix) && e.path !== path,
+    ).length;
+  }, [cartEntries, componentSlug, path]);
+  const inWorkspaceContext = siblingStaged > 0;
+  const [confirmOrphanSubmit, setConfirmOrphanSubmit] = useState(false);
 
   useEffect(() => {
     if (!gh) return;
     setLoad({ kind: "loading" });
     (async () => {
       try {
-        const res = await gh.repos.getContent({
-          owner: "volivarii",
-          repo: "actian-ds-knowledge",
-          path,
-          ref: "main",
-        });
-        if (
-          Array.isArray(res.data) ||
-          !("content" in res.data) ||
-          res.data.encoding !== "base64"
-        ) {
-          throw new Error(`unexpected response for ${path}`);
+        // Cart-wins: a staged version of this path represents in-progress
+        // work, including "Start authoring" stubs for newly-created files.
+        const cartHit = submissionCartSingleton
+          .list()
+          .find((e) => e.path === path);
+        if (cartHit) {
+          setLoad({
+            kind: "ready",
+            remoteText: cartHit.content,
+            remoteSha: cartHit.basedOnSha,
+            source: "cart",
+          });
+          setText(cartHit.content);
+          return;
         }
-        const remoteText = decodeBase64Utf8(res.data.content);
-        const remoteSha = res.data.sha;
-        setLoad({ kind: "ready", remoteText, remoteSha });
+
+        let remoteText: string;
+        let remoteSha: string;
+        let source: LoadSource;
+        try {
+          const res = await gh.repos.getContent({
+            owner: "volivarii",
+            repo: "actian-ds-knowledge",
+            path,
+            ref: "main",
+          });
+          if (
+            Array.isArray(res.data) ||
+            !("content" in res.data) ||
+            res.data.encoding !== "base64"
+          ) {
+            throw new Error(`unexpected response for ${path}`);
+          }
+          remoteText = decodeBase64Utf8(res.data.content);
+          remoteSha = res.data.sha;
+          source = "remote";
+        } catch (err) {
+          const status = (err as { status?: number }).status;
+          if (status !== 404) throw err;
+          // New file — pre-fill a stub so the canvas isn't blank.
+          remoteText = buildMarkdownStub(path);
+          remoteSha = "";
+          source = "stub";
+        }
+
+        setLoad({ kind: "ready", remoteText, remoteSha, source });
         const draft = draftStoreSingleton.load(path);
-        if (draft) {
+        if (draft && source === "remote") {
           if (draft.basedOnSha === remoteSha) {
             setRestorePromptOpen(true);
           } else {
             setConflictPromptOpen(true);
           }
-          setText(remoteText);
-        } else {
-          setText(remoteText);
         }
+        setText(remoteText);
       } catch (err) {
         setLoad({ kind: "error", message: (err as Error).message });
       }
@@ -217,11 +281,39 @@ export function MarkdownEditScreen({
     );
   }
 
+  const isNewFile = load.source !== "remote";
   return (
     <Flex direction="column" height="100%" gap="2">
-      <Heading size="3">{path}</Heading>
+      <Flex align="center" justify="between" gap="2" wrap="wrap">
+        <Heading size="3">{path}</Heading>
+        <Flex gap="2" align="center">
+          {isNewFile && (
+            <Badge color="amber" variant="soft">
+              New file — not yet on remote
+            </Badge>
+          )}
+          {inCart && (
+            <Badge color="indigo" variant="soft">
+              In batch
+            </Badge>
+          )}
+        </Flex>
+      </Flex>
       <Box>{view && <Toolbar view={view} />}</Box>
       <Flex flexGrow="1" minHeight="0" gap="2">
+        <Box
+          className="editor-outline-pane"
+          style={{
+            width: 200,
+            minWidth: 200,
+            flexShrink: 0,
+            border: "1px solid var(--gray-5)",
+            borderRadius: 6,
+            overflow: "hidden",
+          }}
+        >
+          <Outline text={text} view={view} />
+        </Box>
         <Box
           flexGrow="1"
           flexShrink="1"
@@ -258,7 +350,7 @@ export function MarkdownEditScreen({
           <Preview text={text} />
         </Box>
       </Flex>
-      <Flex gap="2" justify="end" align="center">
+      <Flex gap="2" justify="end" align="center" wrap="wrap">
         {prUrl && (
           <Text>
             PR opened:{" "}
@@ -268,10 +360,92 @@ export function MarkdownEditScreen({
           </Text>
         )}
         {submitError && <Text color="red">{submitError}</Text>}
-        <Button onClick={() => void doSubmit(false)} loading={submitting}>
-          Submit
-        </Button>
+        {inWorkspaceContext ? (
+          <>
+            <Button
+              variant="ghost"
+              color="gray"
+              size="2"
+              disabled={load.kind !== "ready" || submitting}
+              onClick={() => setConfirmOrphanSubmit(true)}
+              title={`Open a PR for ONLY this file — your ${siblingStaged} other staged file${siblingStaged === 1 ? "" : "s"} for this component stay in the batch`}
+            >
+              Submit only this file…
+            </Button>
+            <Button
+              disabled={load.kind !== "ready"}
+              onClick={() => {
+                if (load.kind !== "ready") return;
+                submissionCartSingleton.add({
+                  path,
+                  content: text,
+                  basedOnSha: load.remoteSha,
+                  addedAt: Date.now(),
+                });
+              }}
+              title={`Stage this file alongside ${siblingStaged} other${siblingStaged === 1 ? "" : "s"} for this component. Submit them all together from the header batch button.`}
+            >
+              {inCart ? "Update in batch" : "Add to batch"}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="soft"
+              disabled={load.kind !== "ready"}
+              onClick={() => {
+                if (load.kind !== "ready") return;
+                submissionCartSingleton.add({
+                  path,
+                  content: text,
+                  basedOnSha: load.remoteSha,
+                  addedAt: Date.now(),
+                });
+              }}
+              title="Stage this file to submit alongside others in one PR"
+            >
+              {inCart ? "Update in batch" : "Add to batch"}
+            </Button>
+            <Button onClick={() => void doSubmit(false)} loading={submitting}>
+              Submit as PR
+            </Button>
+          </>
+        )}
       </Flex>
+
+      <AlertDialog.Root
+        open={confirmOrphanSubmit}
+        onOpenChange={setConfirmOrphanSubmit}
+      >
+        <AlertDialog.Content>
+          <AlertDialog.Title>Submit only this file?</AlertDialog.Title>
+          <AlertDialog.Description>
+            You have <strong>{siblingStaged}</strong> file
+            {siblingStaged === 1 ? "" : "s"} staged for{" "}
+            <code>{componentSlug}</code> in your batch. Submitting just this
+            file opens a PR for it alone — the staged sibling
+            {siblingStaged === 1 ? "" : "s"} stay in the batch and may end up
+            inconsistent (e.g. metadata declaring a domain whose file is on a
+            separate PR).
+          </AlertDialog.Description>
+          <Flex gap="2" justify="end" mt="3">
+            <AlertDialog.Cancel>
+              <Button variant="soft">Keep editing</Button>
+            </AlertDialog.Cancel>
+            <AlertDialog.Action>
+              <Button
+                color="red"
+                onClick={() => {
+                  setConfirmOrphanSubmit(false);
+                  void doSubmit(false);
+                }}
+              >
+                Yes, submit only this file
+              </Button>
+            </AlertDialog.Action>
+          </Flex>
+        </AlertDialog.Content>
+      </AlertDialog.Root>
 
       <AlertDialog.Root
         open={restorePromptOpen}
