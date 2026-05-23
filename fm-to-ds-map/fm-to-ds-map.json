@@ -1,5 +1,9 @@
 {
   "_schema_version": 1,
+  "_regen": {
+    "source": "manual",
+    "instructions": "Mixed source: per-mapping `dsKey` is Figma-canonical and read-only in the editor — synced by scripts/sync/sync-from-figma.js. `dsSlug`, `defaultVariant`, `variantMap`, `intentVariants`, `propertyMap`, and the `unmappable` entries are hand-maintained alignment metadata. Update slug fields by hand when registry naming converges or new FM/DS components are added."
+  },
   "_meta": {
     "description": "FM Kit to DS Kit component mapping for hifi conversion",
     "fmRegistry": "components/registries/fmkit.json",
