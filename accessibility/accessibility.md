@@ -35,7 +35,7 @@ The four WCAG principles â€” **Perceivable, Operable, Understandable, Robust** â
 
 ---
 
-## 2. Color & Contrast {#color-contrast}
+
 
 | Content type | Min ratio |
 |-------------|-----------|
