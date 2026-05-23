@@ -1,33 +1,31 @@
-// Phase 1a vertical slice: list component dirs from
-// components/src/, load one _meta.yml, render the schema-driven form,
-// submit the change as a real PR. Proves the whole pipeline end-to-end.
+// Schema-driven editor for a component's _meta.yml file.
 //
-// Coverage of every authored content type, all three tiers, and the rich
-// markdown editor + live preview lands in Phase 1b (Tasks 6-14).
+// Phase 1a shipped this as a self-contained screen with an internal
+// component-list dropdown. PR 2a (Phase 1b) moves enumeration to the
+// Sidebar; this component now accepts a `path` prop and renders the
+// form for that single file.
 
 import { useEffect, useMemo, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import type { RJSFSchema } from "@rjsf/utils";
 import {
-  Box,
   Button,
   Callout,
   Card,
   Flex,
   Heading,
   Link,
-  Select,
   Spinner,
-  Text,
 } from "@radix-ui/themes";
 import { createOctokit, MissingPATError } from "../core/octokit";
 import { submitDraft } from "../core/submitDraft";
-import { getTextFile, listDirectories } from "./githubApi";
+import { getTextFile } from "./githubApi";
 import { RJSFForm } from "../form-engine/RJSFForm";
 import { guidelineMetaUiSchema } from "../uiSchemas/guidelineMeta";
 import { parseYaml, stringifyYaml } from "../form-engine/yamlSerializer";
 
 interface MetaEditScreenProps {
+  path: string | null;
   octokit?: Octokit;
   onOpenSettings?: () => void;
 }
@@ -38,16 +36,13 @@ type LoadState<T> =
   | { kind: "ready"; value: T }
   | { kind: "error"; message: string };
 
-// listDirectories filters to entry.type === "dir", so AUTHORING.md and
-// EDITING-GUIDE.md never reach this set. The two entries here are real
-// subdirectories under components/src/ that aren't editable components:
-// `categories/` holds category-defaults frontmatter (editable in its own
-// screen in Phase 1b) and `guidelines/` is the legacy scraped layer (read-
-// only via validatePaths through the */dist/ pattern, but kept off this
-// picker for clarity).
-const SKIP_DIRS = new Set(["categories", "guidelines"]);
+function slugFromPath(path: string): string | null {
+  const m = path.match(/^components\/src\/([^/]+)\/_meta\.yml$/);
+  return m && m[1] ? m[1] : null;
+}
 
 export function MetaEditScreen({
+  path,
   octokit,
   onOpenSettings,
 }: MetaEditScreenProps) {
@@ -66,87 +61,73 @@ export function MetaEditScreen({
     }
   }, [octokit]);
 
-  const [components, setComponents] = useState<LoadState<string[]>>({
-    kind: "idle",
-  });
-  const [schema, setSchema] = useState<LoadState<RJSFSchema>>({
-    kind: "idle",
-  });
-  const [selected, setSelected] = useState<string | null>(null);
-  // Track originalText alongside the parsed value so stringifyYaml can
-  // preserve leading comments (yaml-language-server header) on submit.
+  const slug = path ? slugFromPath(path) : null;
+  const [schema, setSchema] = useState<LoadState<RJSFSchema>>({ kind: "idle" });
   const [meta, setMeta] = useState<
     LoadState<{ value: unknown; originalText: string }>
   >({ kind: "idle" });
-  const [submitState, setSubmitState] = useState<LoadState<{ prUrl: string }>>({
-    kind: "idle",
-  });
+  // Tracks in-progress edits; kept in sync with meta on load and reset
+  // whenever the path changes.
+  const [formData, setFormData] = useState<unknown>(undefined);
+  const [submitting, setSubmitting] = useState(false);
+  const [prUrl, setPrUrl] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!gh) return;
-    setComponents({ kind: "loading" });
-    listDirectories(gh, "components/src")
-      .then((names) =>
-        setComponents({
-          kind: "ready",
-          value: names.filter((n) => !SKIP_DIRS.has(n)),
-        }),
-      )
-      .catch((err: Error) =>
-        setComponents({ kind: "error", message: err.message }),
-      );
-  }, [gh]);
-
-  useEffect(() => {
-    if (!gh) return;
+    if (!gh || !slug) return;
     setSchema({ kind: "loading" });
-    getTextFile(gh, "schemas/guideline-meta.json")
-      .then((text) =>
-        setSchema({ kind: "ready", value: JSON.parse(text) as RJSFSchema }),
-      )
-      .catch((err: Error) =>
-        setSchema({ kind: "error", message: err.message }),
-      );
-  }, [gh]);
-
-  useEffect(() => {
-    if (!gh || !selected) return;
     setMeta({ kind: "loading" });
-    setSubmitState({ kind: "idle" });
-    getTextFile(gh, `components/src/${selected}/_meta.yml`)
-      .then((text) =>
+    setFormData(undefined);
+    setPrUrl(null);
+    setSubmitError(null);
+    (async () => {
+      try {
+        const [schemaText, metaText] = await Promise.all([
+          getTextFile(gh, "schemas/guideline-meta.json"),
+          getTextFile(gh, `components/src/${slug}/_meta.yml`),
+        ]);
+        const parsed = parseYaml(metaText);
+        setSchema({
+          kind: "ready",
+          value: JSON.parse(schemaText) as RJSFSchema,
+        });
         setMeta({
           kind: "ready",
-          value: { value: parseYaml(text), originalText: text },
-        }),
-      )
-      .catch((err: Error) => setMeta({ kind: "error", message: err.message }));
-  }, [gh, selected]);
+          value: { value: parsed, originalText: metaText },
+        });
+        setFormData(parsed);
+      } catch (err) {
+        const msg = (err as Error).message;
+        setSchema({ kind: "error", message: msg });
+        setMeta({ kind: "error", message: msg });
+      }
+    })();
+  }, [gh, slug]);
 
-  async function handleSubmit(next: unknown) {
-    if (!gh || !selected || schema.kind !== "ready" || meta.kind !== "ready")
-      return;
-    setSubmitState({ kind: "loading" });
+  const handleSubmit = async (submitted: unknown) => {
+    if (!gh || meta.kind !== "ready" || schema.kind !== "ready") return;
+    setSubmitting(true);
+    setSubmitError(null);
     try {
       // _meta.yml's `domains.<name>` maps must be flow-style — the
       // knowledge repo's restricted YAML parser rejects block-nested
       // values under domains. flowAtDepth: 2 means: every YAMLMap at
       // depth 2 (i.e. each domain) becomes `{ status: …, owner: … }`.
-      const yaml = stringifyYaml(next, {
+      const yaml = stringifyYaml(submitted, {
         originalText: meta.value.originalText,
         flowAtDepth: 2,
       });
       const result = await submitDraft(
         {
-          id: `${selected}-${Date.now()}`,
-          message: `chore(${selected}): update _meta.yml via editor\n\nEdited through the Knowledge Editor (Phase 1a vertical slice).`,
+          id: `meta-${slug}-${Date.now()}`,
+          message: `chore(${slug}): update _meta.yml via editor\n\nEdited through the Knowledge Editor (Phase 1b).`,
           files: [
             {
-              path: `components/src/${selected}/_meta.yml`,
+              path: `components/src/${slug}/_meta.yml`,
               content: yaml,
             },
           ],
-          sourceMetadata: { kind: "human", via: "editor/form" },
+          sourceMetadata: { kind: "human", via: "MetaEditScreen" },
         },
         {
           owner: "volivarii",
@@ -158,137 +139,106 @@ export function MetaEditScreen({
           octokit: gh,
         },
       );
-      setSubmitState({ kind: "ready", value: { prUrl: result.prUrl } });
+      setPrUrl(result.prUrl);
     } catch (err) {
-      setSubmitState({
-        kind: "error",
-        message: (err as Error).message,
-      });
+      setSubmitError((err as Error).message);
+    } finally {
+      setSubmitting(false);
     }
-  }
+  };
 
   if (ghError) {
     return (
       <Callout.Root color="amber" role="alert">
         <Callout.Text>
           {ghError}{" "}
-          <Link
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              onOpenSettings?.();
-            }}
-          >
-            Open Settings →
-          </Link>
+          {onOpenSettings && (
+            <Link
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                onOpenSettings();
+              }}
+            >
+              Open Settings →
+            </Link>
+          )}
         </Callout.Text>
       </Callout.Root>
     );
   }
 
+  if (!path) {
+    return (
+      <Callout.Root>
+        <Callout.Text>Choose a component in the sidebar to begin.</Callout.Text>
+      </Callout.Root>
+    );
+  }
+
+  if (!slug) {
+    return (
+      <Callout.Root color="red" role="alert">
+        <Callout.Text>Path {path} is not a component _meta.yml.</Callout.Text>
+      </Callout.Root>
+    );
+  }
+
+  if (schema.kind === "error") {
+    return (
+      <Callout.Root color="ruby" role="alert">
+        <Callout.Text>{schema.message}</Callout.Text>
+      </Callout.Root>
+    );
+  }
+
+  if (meta.kind === "error") {
+    return (
+      <Callout.Root color="ruby" role="alert">
+        <Callout.Text>{meta.message}</Callout.Text>
+      </Callout.Root>
+    );
+  }
+
+  if (schema.kind !== "ready" || meta.kind !== "ready") {
+    return <Spinner />;
+  }
+
+  const schemaValue = schema.value;
+
   return (
-    <Flex direction="column" gap="4">
-      <Box>
-        <Text
-          as="div"
-          size="2"
-          weight="bold"
-          mb="1"
-          id="component-picker-label"
+    <Card>
+      <Flex direction="column" gap="3" p="3">
+        <Heading size="3">{path}</Heading>
+        <RJSFForm
+          schema={schemaValue}
+          uiSchema={guidelineMetaUiSchema}
+          formData={formData}
+          onChange={(next) => setFormData(next)}
+          onSubmit={(v) => handleSubmit(v)}
         >
-          Component
-        </Text>
-        {components.kind === "loading" && <Spinner />}
-        {components.kind === "error" && (
-          <Callout.Root color="ruby" role="alert">
-            <Callout.Text>{components.message}</Callout.Text>
+          <Flex gap="2" mt="3">
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Opening PR…" : "Submit as PR"}
+            </Button>
+          </Flex>
+        </RJSFForm>
+        {prUrl && (
+          <Callout.Root color="grass" role="status">
+            <Callout.Text>
+              PR opened —{" "}
+              <Link href={prUrl} target="_blank" rel="noreferrer">
+                {prUrl}
+              </Link>
+            </Callout.Text>
           </Callout.Root>
         )}
-        {components.kind === "ready" && (
-          <Select.Root
-            value={selected ?? undefined}
-            onValueChange={(v) => setSelected(v)}
-          >
-            <Select.Trigger
-              aria-labelledby="component-picker-label"
-              placeholder={`Pick one of ${components.value.length}…`}
-            />
-            <Select.Content>
-              {components.value.map((slug) => (
-                <Select.Item key={slug} value={slug}>
-                  {slug}
-                </Select.Item>
-              ))}
-            </Select.Content>
-          </Select.Root>
+        {submitError && (
+          <Callout.Root color="ruby" role="alert">
+            <Callout.Text>Submit failed: {submitError}</Callout.Text>
+          </Callout.Root>
         )}
-      </Box>
-
-      {selected && (
-        <Card>
-          <Flex direction="column" gap="3" p="3">
-            <Heading size="3">{selected}/_meta.yml</Heading>
-            {meta.kind === "loading" && <Spinner />}
-            {meta.kind === "error" && (
-              <Callout.Root color="ruby" role="alert">
-                <Callout.Text>{meta.message}</Callout.Text>
-              </Callout.Root>
-            )}
-            {schema.kind === "loading" && <Text size="2">Loading schema…</Text>}
-            {schema.kind === "error" && (
-              <Callout.Root color="ruby" role="alert">
-                <Callout.Text>Schema: {schema.message}</Callout.Text>
-              </Callout.Root>
-            )}
-            {meta.kind === "ready" && schema.kind === "ready" && (
-              <RJSFForm
-                schema={schema.value}
-                uiSchema={guidelineMetaUiSchema}
-                formData={meta.value.value}
-                onChange={(v) =>
-                  setMeta({
-                    kind: "ready",
-                    value: { ...meta.value, value: v },
-                  })
-                }
-                onSubmit={(v) => handleSubmit(v)}
-              >
-                <Flex gap="2" mt="3">
-                  <Button
-                    type="submit"
-                    disabled={submitState.kind === "loading"}
-                  >
-                    {submitState.kind === "loading"
-                      ? "Opening PR…"
-                      : "Submit as PR"}
-                  </Button>
-                </Flex>
-              </RJSFForm>
-            )}
-            {submitState.kind === "ready" && (
-              <Callout.Root color="grass" role="status">
-                <Callout.Text>
-                  PR opened —{" "}
-                  <Link
-                    href={submitState.value.prUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {submitState.value.prUrl}
-                  </Link>
-                </Callout.Text>
-              </Callout.Root>
-            )}
-            {submitState.kind === "error" && (
-              <Callout.Root color="ruby" role="alert">
-                <Callout.Text>
-                  Submit failed: {submitState.message}
-                </Callout.Text>
-              </Callout.Root>
-            )}
-          </Flex>
-        </Card>
-      )}
-    </Flex>
+      </Flex>
+    </Card>
   );
 }

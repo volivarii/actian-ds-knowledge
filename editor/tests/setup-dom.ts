@@ -22,6 +22,10 @@ const COPY_KEYS = [
   "MutationObserver",
   "Event",
   "CustomEvent",
+  "Window",
+  "HTMLDivElement",
+  "DOMException",
+  "localStorage",
 ] as const;
 
 for (const key of COPY_KEYS) {

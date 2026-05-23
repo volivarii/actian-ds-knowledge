@@ -1,10 +1,9 @@
 import { useState } from "react";
 import {
-  Container,
+  Box,
   Flex,
   Heading,
   IconButton,
-  Text,
   Theme,
   Tooltip,
 } from "@radix-ui/themes";
@@ -12,7 +11,7 @@ import "@radix-ui/themes/styles.css";
 import "./styles/tokens.css";
 import "./styles/base.css";
 import { SettingsPanel } from "./settings/SettingsPanel";
-import { MetaEditScreen } from "./app/MetaEditScreen";
+import { EditorShell } from "./app/EditorShell";
 
 function GearIcon() {
   return (
@@ -35,12 +34,17 @@ function GearIcon() {
 
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
-
   return (
     <Theme accentColor="indigo" radius="medium">
-      <Container size="3" style={{ padding: "var(--space-6, 24px)" }}>
-        <Flex justify="between" align="center" mb="4">
-          <Heading>Knowledge Editor</Heading>
+      <Flex direction="column" style={{ height: "100vh", width: "100vw" }}>
+        <Flex
+          justify="between"
+          align="center"
+          px="4"
+          py="2"
+          style={{ borderBottom: "1px solid var(--gray-5)", flexShrink: 0 }}
+        >
+          <Heading size="4">Knowledge Editor</Heading>
           <Tooltip content="Settings">
             <IconButton
               variant="ghost"
@@ -51,13 +55,11 @@ export default function App() {
             </IconButton>
           </Tooltip>
         </Flex>
-        <Text as="p" color="gray" mb="5">
-          Phase 1a vertical slice — pick a component, edit its{" "}
-          <code>_meta.yml</code>, open a PR.
-        </Text>
-        <MetaEditScreen onOpenSettings={() => setSettingsOpen(true)} />
+        <Box flexGrow="1" style={{ minHeight: 0 }}>
+          <EditorShell onOpenSettings={() => setSettingsOpen(true)} />
+        </Box>
         <SettingsPanel open={settingsOpen} onOpenChange={setSettingsOpen} />
-      </Container>
+      </Flex>
     </Theme>
   );
 }
