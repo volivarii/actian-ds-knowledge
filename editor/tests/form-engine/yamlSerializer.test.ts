@@ -83,3 +83,40 @@ test("yamlSerializer — stringifyYaml without originalText emits no header", ()
   const out = stringifyYaml({ component: "Button" });
   assert.equal(out.startsWith("#"), false);
 });
+
+test("yamlSerializer — flowAtDepth:2 emits domains.<name> as inline flow maps", () => {
+  // The knowledge repo's restricted YAML parser
+  // (scripts/categories/categories-parser.js) rejects block-nested values
+  // under domains.* with "nested values must be scalars in this subset".
+  // The editor MUST emit flow-style for each domain entry. This test pins
+  // that contract — a regression here breaks every _meta.yml the editor
+  // submits, as caught by PR #128's CI on first dogfood.
+  const sample = {
+    component: "Buttons",
+    category: "action",
+    domains: {
+      content: { status: "approved", owner: "content-team" },
+      usage: { status: "not-started" },
+    },
+  };
+  const out = stringifyYaml(sample, { flowAtDepth: 2 });
+  assert.match(out, /content: \{ status: approved, owner: content-team \}/);
+  assert.match(out, /usage: \{ status: not-started \}/);
+  // The wrapping `domains:` key MUST stay block — flowAtDepth applies only
+  // to the targeted depth, not above.
+  assert.match(out, /^domains:\n/m);
+});
+
+test("yamlSerializer — flowAtDepth + originalText work together", () => {
+  const src = `# yaml-language-server: $schema=foo.json
+component: Button
+domains:
+  content: { status: approved }
+`;
+  const out = stringifyYaml(
+    { component: "Button", domains: { content: { status: "draft" } } },
+    { originalText: src, flowAtDepth: 2 },
+  );
+  assert.match(out, /^# yaml-language-server:/);
+  assert.match(out, /content: \{ status: draft \}/);
+});

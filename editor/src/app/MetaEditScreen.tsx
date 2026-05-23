@@ -128,7 +128,14 @@ export function MetaEditScreen({
       return;
     setSubmitState({ kind: "loading" });
     try {
-      const yaml = stringifyYaml(next, meta.value.originalText);
+      // _meta.yml's `domains.<name>` maps must be flow-style — the
+      // knowledge repo's restricted YAML parser rejects block-nested
+      // values under domains. flowAtDepth: 2 means: every YAMLMap at
+      // depth 2 (i.e. each domain) becomes `{ status: …, owner: … }`.
+      const yaml = stringifyYaml(next, {
+        originalText: meta.value.originalText,
+        flowAtDepth: 2,
+      });
       const result = await submitDraft(
         {
           id: `${selected}-${Date.now()}`,
