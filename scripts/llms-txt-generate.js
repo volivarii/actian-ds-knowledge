@@ -8,6 +8,24 @@ var manifest = JSON.parse(
   fs.readFileSync(path.join(ROOT, "paths-manifest.json"), "utf8"),
 );
 
+// Strip explicit `{#kebab-slug}` markers from concatenated MD source.
+//
+// accessibility.md and foundations.md carry author-declared anchors as the
+// stable consumer-facing slug contract (Substrate Doctrine P6; R6 pre-build
+// D1+D2). The anchors are correct in source — they are the consumer
+// addressing key. But the public `llms-full.txt` is a clean-prose knowledge
+// dump for LLM consumers that don't care about anchor identity; the literal
+// `{#...}` markers add noise without value.
+//
+// We strip them only at the end of a heading line (`## Heading {#slug}`)
+// or at the end of a bold-paragraph line (`**Pattern** {#slug}`) — the two
+// shapes this repo emits. Anchor markers anywhere else in prose stay put.
+function stripAnchorMarkers(md) {
+  return md
+    .replace(/^(\s*#{1,6}\s+[^\n]*?)\s+\{#[a-z0-9-]+\}(\s*)$/gm, "$1$2")
+    .replace(/^(\s*\*\*[^*\n]+\*\*)\s+\{#[a-z0-9-]+\}(\s*)$/gm, "$1$2");
+}
+
 function generateLlmsTxt() {
   var lines = [
     "# Actian Design System knowledge layer",
@@ -40,13 +58,22 @@ function generateLlmsTxt() {
 }
 
 function generateLlmsFullTxt() {
-  // Append authored MD content + key JSONs
+  // Append authored MD content + key JSONs.
+  //
+  // Anchor markers (`{#slug}` on headings and bold-pattern lines) are
+  // stripped from the LLM-facing dump — they're the consumer addressing
+  // contract in source (P6), but unnecessary noise in a clean-prose digest.
   var sections = [
     "# Actian Design System — Full Knowledge Dump",
     "",
     "## Foundations",
     "",
-    fs.readFileSync(path.join(ROOT, "foundations/src/foundations.md"), "utf8"),
+    stripAnchorMarkers(
+      fs.readFileSync(
+        path.join(ROOT, "foundations/src/foundations.md"),
+        "utf8",
+      ),
+    ),
     "",
     "## Content",
     "",
@@ -54,7 +81,12 @@ function generateLlmsFullTxt() {
     "",
     "## Accessibility",
     "",
-    fs.readFileSync(path.join(ROOT, "accessibility/accessibility.md"), "utf8"),
+    stripAnchorMarkers(
+      fs.readFileSync(
+        path.join(ROOT, "accessibility/accessibility.md"),
+        "utf8",
+      ),
+    ),
   ];
   return sections.join("\n") + "\n";
 }
@@ -68,4 +100,5 @@ if (require.main === module) {
 module.exports = {
   generateLlmsTxt: generateLlmsTxt,
   generateLlmsFullTxt: generateLlmsFullTxt,
+  stripAnchorMarkers: stripAnchorMarkers,
 };
