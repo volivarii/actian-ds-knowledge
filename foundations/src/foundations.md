@@ -4,7 +4,7 @@
 > The Actian Design System is built on top of the **Zen Design System** — Zen provides the underlying token architecture, color primitives, spacing scale, typography, and component logic that Actian inherits and extends. Where Actian-specific decisions diverge from or expand on Zen, they are noted explicitly. When in doubt, Zen is the foundation.
 
 > **How to use this doc**
-> This is the authoritative reference for the Actian design system. It covers current primitives, existing tokens (in both Figma/hex and engineering/OKLCH formats), and foundational usage rules. Tokens are marked with a status (🟢 Shipped, 🔵 In Review, 🟡 Proposed) throughout Section 2.
+> This is the *authoritative* reference for the Actian design system. It covers current primitives, existing tokens (in both Figma/hex and engineering/OKLCH formats), and foundational usage rules. Tokens are marked with a status (🟢 Shipped, 🔵 In Review, 🟡 Proposed) throughout Section 2.
 
 ---
 
@@ -12,10 +12,10 @@
 **Last updated:** May 11, 2026
 
 ---
-
+## New section   {#new-section}
 ## Table of Contents
 
-1. [Color Primitives](#1-color-primitives)
+
    - OKLCH Shade Formula
    - Primitives (all palettes, 25–900)
 
@@ -55,7 +55,7 @@
 
 ---
 
-## 1. Color Primitives
+
 
 All color palettes follow a shared OKLCH shade formula. Each palette has a named base (500), and all other shades are derived from it. Figma stores these as hex; engineering implements them as OKLCH with relative color syntax.
 
