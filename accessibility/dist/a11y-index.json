@@ -9,16 +9,10 @@
     {
       "slug": "principles",
       "title": "1. Principles",
-      "wcag": [],
-      "body_excerpt": "The four WCAG principles — Perceivable, Operable, Understandable, Robust — define what accessible products do. Designers own perceivable and understandable: contrast, hierarchy, labels, states, and in"
-    },
-    {
-      "slug": "color-contrast",
-      "title": "2. Color & Contrast",
       "wcag": [
         "1.4.1"
       ],
-      "body_excerpt": "Content type Min ratio ------------------------ Normal text (< 18px regular or < 14px bold) 4.5:1 Large text (≥ 18px regular or ≥ 14px bold) 3:1 UI components and icons 3:1 Disabled states No requirem"
+      "body_excerpt": "The four WCAG principles — Perceivable, Operable, Understandable, Robust — define what accessible products do. Designers own perceivable and understandable: contrast, hierarchy, labels, states, and in"
     },
     {
       "slug": "typography",
@@ -294,7 +288,13 @@
       "slug": "designer-handoff-checklist",
       "title": "12. Designer Handoff Checklist",
       "wcag": [],
-      "body_excerpt": "Use before every handoff or design review. - All text meets contrast minimum (4.5:1 normal · 3:1 large) - UI component boundaries meet 3:1 against background - No information conveyed by color alone -"
+      "body_excerpt": "Use before every handoff or design review."
+    },
+    {
+      "slug": "color-contrast",
+      "title": "Color & Contrast",
+      "wcag": [],
+      "body_excerpt": "- All text meets contrast minimum (4.5:1 normal · 3:1 large) - UI component boundaries meet 3:1 against background - No information conveyed by color alone - Contrast verified in reverse/dark contexts"
     },
     {
       "slug": "typography-content",
