@@ -12,6 +12,9 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { EditorShell } from "./app/EditorShell";
+import { SaveStateIndicator } from "./app/SaveStateIndicator";
+import { useSaveState } from "./drafts/useSaveState";
+import { draftStoreSingleton } from "./drafts/store-instance";
 
 function GearIcon() {
   return (
@@ -34,6 +37,8 @@ function GearIcon() {
 
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [activePath, setActivePath] = useState<string | null>(null);
+  const saveState = useSaveState(activePath, draftStoreSingleton);
   return (
     <Theme accentColor="indigo" radius="medium">
       <Flex direction="column" style={{ height: "100vh", width: "100vw" }}>
@@ -45,18 +50,25 @@ export default function App() {
           style={{ borderBottom: "1px solid var(--gray-5)", flexShrink: 0 }}
         >
           <Heading size="4">Knowledge Editor</Heading>
-          <Tooltip content="Settings">
-            <IconButton
-              variant="ghost"
-              onClick={() => setSettingsOpen(true)}
-              aria-label="Open settings"
-            >
-              <GearIcon />
-            </IconButton>
-          </Tooltip>
+          <Flex align="center" gap="3">
+            <SaveStateIndicator state={saveState} />
+            <Tooltip content="Settings">
+              <IconButton
+                variant="ghost"
+                onClick={() => setSettingsOpen(true)}
+                aria-label="Open settings"
+              >
+                <GearIcon />
+              </IconButton>
+            </Tooltip>
+          </Flex>
         </Flex>
         <Box flexGrow="1" style={{ minHeight: 0 }}>
-          <EditorShell onOpenSettings={() => setSettingsOpen(true)} />
+          <EditorShell
+            onOpenSettings={() => setSettingsOpen(true)}
+            activePath={activePath}
+            setActivePath={setActivePath}
+          />
         </Box>
         <SettingsPanel open={settingsOpen} onOpenChange={setSettingsOpen} />
       </Flex>
