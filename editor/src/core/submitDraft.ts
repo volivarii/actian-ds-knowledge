@@ -3,6 +3,16 @@
 // future AI producer (claude-skill, MCP server, automation bot) call this
 // single entry point with a `Draft`. The shared API is the AI seam — see
 // spec §4.2.
+//
+// TODO(PR-2): cleanup on partial failure. The current pipeline is best-effort
+// — if createBlob/createTree/createCommit/updateRef throws after the branch
+// is created (line 70 onward), the branch is left on the remote. The right
+// fix is a try/catch around the blob/tree/commit phase that deletes the
+// orphan via `gh.git.deleteRef({ owner, repo, ref: `heads/${branch}` })`
+// before re-throwing. Also: if `createRef` throws 422 (branch already
+// exists), surface a friendly error instead of the raw Octokit message.
+// Deferred for Phase 1a so the slice ships; tracked as a known-issue and
+// the draft-inbox unit (PR 2) is the natural place for retry/cleanup logic.
 
 import type { Octokit } from "@octokit/rest";
 import { type CommitResult, type Draft, ReadonlyPathError } from "./types";

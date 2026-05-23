@@ -73,7 +73,11 @@ export function MetaEditScreen({
     kind: "idle",
   });
   const [selected, setSelected] = useState<string | null>(null);
-  const [meta, setMeta] = useState<LoadState<unknown>>({ kind: "idle" });
+  // Track originalText alongside the parsed value so stringifyYaml can
+  // preserve leading comments (yaml-language-server header) on submit.
+  const [meta, setMeta] = useState<
+    LoadState<{ value: unknown; originalText: string }>
+  >({ kind: "idle" });
   const [submitState, setSubmitState] = useState<LoadState<{ prUrl: string }>>({
     kind: "idle",
   });
@@ -110,15 +114,21 @@ export function MetaEditScreen({
     setMeta({ kind: "loading" });
     setSubmitState({ kind: "idle" });
     getTextFile(gh, `components/src/${selected}/_meta.yml`)
-      .then((text) => setMeta({ kind: "ready", value: parseYaml(text) }))
+      .then((text) =>
+        setMeta({
+          kind: "ready",
+          value: { value: parseYaml(text), originalText: text },
+        }),
+      )
       .catch((err: Error) => setMeta({ kind: "error", message: err.message }));
   }, [gh, selected]);
 
   async function handleSubmit(next: unknown) {
-    if (!gh || !selected || schema.kind !== "ready") return;
+    if (!gh || !selected || schema.kind !== "ready" || meta.kind !== "ready")
+      return;
     setSubmitState({ kind: "loading" });
     try {
-      const yaml = stringifyYaml(next);
+      const yaml = stringifyYaml(next, meta.value.originalText);
       const result = await submitDraft(
         {
           id: `${selected}-${Date.now()}`,
@@ -152,7 +162,7 @@ export function MetaEditScreen({
 
   if (ghError) {
     return (
-      <Callout.Root color="amber">
+      <Callout.Root color="amber" role="alert">
         <Callout.Text>
           {ghError}{" "}
           <Link
@@ -172,12 +182,18 @@ export function MetaEditScreen({
   return (
     <Flex direction="column" gap="4">
       <Box>
-        <Text as="div" size="2" weight="bold" mb="1">
+        <Text
+          as="div"
+          size="2"
+          weight="bold"
+          mb="1"
+          id="component-picker-label"
+        >
           Component
         </Text>
         {components.kind === "loading" && <Spinner />}
         {components.kind === "error" && (
-          <Callout.Root color="ruby">
+          <Callout.Root color="ruby" role="alert">
             <Callout.Text>{components.message}</Callout.Text>
           </Callout.Root>
         )}
@@ -187,6 +203,7 @@ export function MetaEditScreen({
             onValueChange={(v) => setSelected(v)}
           >
             <Select.Trigger
+              aria-labelledby="component-picker-label"
               placeholder={`Pick one of ${components.value.length}…`}
             />
             <Select.Content>
@@ -206,13 +223,13 @@ export function MetaEditScreen({
             <Heading size="3">{selected}/_meta.yml</Heading>
             {meta.kind === "loading" && <Spinner />}
             {meta.kind === "error" && (
-              <Callout.Root color="ruby">
+              <Callout.Root color="ruby" role="alert">
                 <Callout.Text>{meta.message}</Callout.Text>
               </Callout.Root>
             )}
             {schema.kind === "loading" && <Text size="2">Loading schema…</Text>}
             {schema.kind === "error" && (
-              <Callout.Root color="ruby">
+              <Callout.Root color="ruby" role="alert">
                 <Callout.Text>Schema: {schema.message}</Callout.Text>
               </Callout.Root>
             )}
@@ -220,8 +237,13 @@ export function MetaEditScreen({
               <RJSFForm
                 schema={schema.value}
                 uiSchema={guidelineMetaUiSchema}
-                formData={meta.value}
-                onChange={(v) => setMeta({ kind: "ready", value: v })}
+                formData={meta.value.value}
+                onChange={(v) =>
+                  setMeta({
+                    kind: "ready",
+                    value: { ...meta.value, value: v },
+                  })
+                }
                 onSubmit={(v) => handleSubmit(v)}
               >
                 <Flex gap="2" mt="3">
@@ -237,7 +259,7 @@ export function MetaEditScreen({
               </RJSFForm>
             )}
             {submitState.kind === "ready" && (
-              <Callout.Root color="grass">
+              <Callout.Root color="grass" role="status">
                 <Callout.Text>
                   PR opened —{" "}
                   <Link
@@ -251,7 +273,7 @@ export function MetaEditScreen({
               </Callout.Root>
             )}
             {submitState.kind === "error" && (
-              <Callout.Root color="ruby">
+              <Callout.Root color="ruby" role="alert">
                 <Callout.Text>
                   Submit failed: {submitState.message}
                 </Callout.Text>

@@ -14,7 +14,6 @@
     "test": "node --test --import tsx tests/**/*.test.ts tests/**/*.test.tsx"
   },
   "dependencies": {
-    "@markdoc/markdoc": "^0.5.2",
     "@octokit/rest": "^22.0.0",
     "@radix-ui/themes": "^3.2.1",
     "@rjsf/core": "^5.24.13",

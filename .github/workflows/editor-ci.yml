@@ -1,0 +1,47 @@
+name: Editor CI
+
+# CI lane for the actian-ds-knowledge/editor/ subtree (Knowledge Editor —
+# Phase 1+). Runs the editor's own test suite, typecheck, and production
+# build on every PR that touches editor/**. Without this lane the editor's
+# tests + build are CI-invisible — regressions only surface locally.
+#
+# Lane is path-filtered (editor/** only) and not a required status check on
+# the repo, so it does not block PRs that don't touch editor/. The required
+# substrate gates (validate-manifest, schema-validation, etc.) remain
+# untouched.
+
+on:
+  pull_request:
+    paths:
+      - 'editor/**'
+      - '.github/workflows/editor-ci.yml'
+
+jobs:
+  build-and-test:
+    name: Editor build + test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: editor
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: editor/package-lock.json
+
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build

@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  Button,
-  Dialog,
-  Flex,
-  Link,
-  Text,
-  TextField,
-} from "@radix-ui/themes";
+import { Button, Dialog, Flex, Link, Text, TextField } from "@radix-ui/themes";
 import { PATVault } from "./PATVault";
 
 export interface SettingsPanelProps {
@@ -15,8 +8,7 @@ export interface SettingsPanelProps {
   vault?: PATVault;
 }
 
-const PAT_HELP_URL =
-  "https://github.com/settings/personal-access-tokens/new";
+const PAT_HELP_URL = "https://github.com/settings/personal-access-tokens/new";
 
 export function SettingsPanel({
   open,
@@ -51,7 +43,7 @@ export function SettingsPanel({
         </Dialog.Description>
 
         <Flex direction="column" gap="3">
-          <Text as="div" size="2" weight="bold">
+          <Text as="label" size="2" weight="bold" htmlFor="pat-input">
             GitHub Personal Access Token
           </Text>
 
@@ -67,6 +59,7 @@ export function SettingsPanel({
           )}
 
           <TextField.Root
+            id="pat-input"
             type="password"
             placeholder="ghp_…"
             value={draft}
@@ -76,10 +69,12 @@ export function SettingsPanel({
 
           <Text as="div" size="1" color="gray">
             <Link href={PAT_HELP_URL} target="_blank" rel="noreferrer">
-              Generate a token →
+              Generate a fine-grained token →
             </Link>{" "}
-            Required scopes: <code>repo</code> (contents + pull-requests) on{" "}
-            <code>volivarii/actian-ds-knowledge</code>.
+            Required permissions on <code>volivarii/actian-ds-knowledge</code>:{" "}
+            <strong>Contents — Read and write</strong> +{" "}
+            <strong>Pull requests — Read and write</strong>. Classic tokens may
+            use the broader <code>repo</code> scope instead.
           </Text>
 
           <Flex gap="2" justify="end" mt="2">
