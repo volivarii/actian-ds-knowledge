@@ -9,22 +9,43 @@ import type { ComponentProps } from "react";
 import Form from "@rjsf/core";
 // The default @rjsf/validator-ajv8 export targets draft-07; the knowledge
 // repo's schemas are draft-2020-12. customizeValidator + Ajv2020 swaps the
-// validator at build time without leaking through to consumers.
+// validator at build time.
 //
-// Import shape note: @rjsf/validator-ajv8 ships CJS via `main` with no
-// `exports` field, so Node's ESM bridge surfaces only `default`. Destructure
-// `customizeValidator` off the default rather than as a named import — both
-// Vite (browser) and tsx (tests) resolve this consistently.
-import rjsfValidatorAjv8 from "@rjsf/validator-ajv8";
+// Import shape — `@rjsf/validator-ajv8` ships dual CJS/ESM with no `exports`
+// field, and the two surfaces are NOT symmetric:
+//   - tsx/Node CJS bridge: `default` is the whole module.exports object, so
+//     `default.customizeValidator` is the factory function.
+//   - Vite/real ESM: `default` is `customizeValidator()` (a pre-built
+//     validator instance — NOT a function), and `customizeValidator` is a
+//     separate named export.
+// Importing `*` and resolving the function from either spot covers both.
+import * as rjsfValidatorAjv8Mod from "@rjsf/validator-ajv8";
 import Ajv2020 from "ajv/dist/2020";
 import type { RJSFSchema, UiSchema } from "@rjsf/utils";
 
-const { customizeValidator } = rjsfValidatorAjv8 as unknown as {
-  customizeValidator: (opts: {
-    AjvClass?: unknown;
-    ajvOptionsOverrides?: Record<string, unknown>;
-  }) => unknown;
+type CustomizeValidatorFn = (opts: {
+  AjvClass?: unknown;
+  ajvOptionsOverrides?: Record<string, unknown>;
+}) => unknown;
+
+const mod = rjsfValidatorAjv8Mod as unknown as {
+  customizeValidator?: CustomizeValidatorFn;
+  default?: { customizeValidator?: CustomizeValidatorFn } | unknown;
 };
+
+const customizeValidator: CustomizeValidatorFn = (() => {
+  if (typeof mod.customizeValidator === "function") {
+    return mod.customizeValidator;
+  }
+  const onDefault = (
+    mod.default as { customizeValidator?: CustomizeValidatorFn } | undefined
+  )?.customizeValidator;
+  if (typeof onDefault === "function") return onDefault;
+  throw new Error(
+    "RJSFForm: @rjsf/validator-ajv8 did not expose customizeValidator on the named export or the default export. " +
+      "Has the package's export shape changed?",
+  );
+})();
 
 const validator = customizeValidator({
   AjvClass: Ajv2020,
