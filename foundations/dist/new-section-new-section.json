@@ -1,0 +1,22 @@
+{
+  "_schema_version": 1,
+  "id": "new-section-new-section",
+  "title": "New section   {#new-section}",
+  "path": [
+    "new-section-new-section"
+  ],
+  "parent": "",
+  "anchors": {
+    "h2": "new-section-new-section"
+  },
+  "source": {
+    "file": "foundations/src/foundations.md",
+    "startLine": 19,
+    "endLine": 19
+  },
+  "_meta": {
+    "auto_generated": true,
+    "source": "foundations/src/foundations.md",
+    "do_not_edit": "Edit the source MD; CI regenerates this file."
+  }
+}

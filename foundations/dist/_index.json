@@ -6,19 +6,24 @@
   "parent": null,
   "children": [
     {
+      "id": "new-section-new-section",
+      "title": "New section   {#new-section}",
+      "order": 1
+    },
+    {
       "id": "color-primitives",
       "title": "Color Primitives",
-      "order": 1
+      "order": 2
     },
     {
       "id": "tokens",
       "title": "Tokens",
-      "order": 2
+      "order": 3
     },
     {
       "id": "design-guidelines",
       "title": "Design Guidelines",
-      "order": 3
+      "order": 4
     }
   ],
   "anchors": {
