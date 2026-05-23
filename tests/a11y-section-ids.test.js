@@ -43,14 +43,54 @@ test("a11y-index.json is in sync with accessibility.md", function () {
   assert.deepEqual(idx, derive.deriveA11yIndex(md));
 });
 
-test("slugs are auto-derived from heading text (no manual anchors)", function () {
-  // accessibility.md headings must carry NO {#anchor}s — section ids come
-  // from derive-a11y-index.js slugify(), matching the foundations MD-as-SoT
-  // model. (Anchors elsewhere, e.g. in prose, are not headings and are fine.)
-  var anchoredHeadings = md.split("\n").filter(function (l) {
-    return /^#{2,3}\s/.test(l) && /\{#/.test(l);
+test("every H2/H3 heading carries an explicit {#anchor} marker (D1)", function () {
+  // accessibility.md headings MUST carry an explicit {#slug} anchor — the
+  // anchor is the consumer-visible contract (P6 of the Agnostic Substrate
+  // Doctrine; D1 of R6 pre-build). Heading text can change freely; the
+  // anchor must remain stable. The anchor regex matches the one in
+  // derive-a11y-index.js (extractSlugFromHeading).
+  var bareHeadings = md.split("\n").filter(function (l) {
+    return /^#{2,3}\s/.test(l) && !/\{#[a-z0-9-]+\}\s*$/.test(l);
   });
-  assert.deepEqual(anchoredHeadings, [], "headings must not carry {#anchor}s");
+  assert.deepEqual(
+    bareHeadings,
+    [],
+    "every H2/H3 in accessibility.md must end with {#slug}; missing on:\n" +
+      bareHeadings.join("\n"),
+  );
+});
+
+test("extractSlugFromHeading uses explicit {#anchor} when present (D1)", function () {
+  assert.equal(
+    derive.extractSlugFromHeading("## Color contrast {#color-contrast}"),
+    "color-contrast",
+  );
+});
+
+test("extractSlugFromHeading falls back to slugification when no anchor (D1)", function () {
+  assert.equal(
+    derive.extractSlugFromHeading("## Color contrast"),
+    "color-contrast",
+  );
+});
+
+test("extractSlugFromHeading: explicit anchor wins when it differs from slugification (D1)", function () {
+  assert.equal(
+    derive.extractSlugFromHeading(
+      "## Color Contrast (AA & AAA) {#color-contrast}",
+    ),
+    "color-contrast",
+  );
+});
+
+test("extractHeadingText strips the {#anchor} marker (D1)", function () {
+  assert.equal(
+    derive.extractHeadingText("## Color contrast {#color-contrast}"),
+    "Color contrast",
+  );
+});
+
+test("slugify fallback still works for non-anchored prose (D1)", function () {
   assert.equal(derive.slugify("5. Focus & Keyboard"), "focus-keyboard");
   assert.equal(derive.slugify("Data Tables"), "data-tables");
 });

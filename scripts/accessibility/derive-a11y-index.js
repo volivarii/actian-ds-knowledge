@@ -5,14 +5,37 @@ var path = require("node:path");
 
 // Slugify a heading into a stable section id: drop a leading "N." numeral,
 // lowercase, and reduce every run of non-alphanumerics to a single hyphen.
-// Mirrors the auto-slug approach of derive-foundations.js so the source MD
-// stays plain, human-authored markdown — no hand-maintained {#anchor}s.
+// Mirrors the auto-slug approach of derive-foundations.js. Used as the
+// fallback when a heading carries no explicit `{#anchor}` marker.
 function slugify(heading) {
   return heading
     .replace(/^\s*\d+\.\s*/, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+var ANCHOR_RE = /\s*\{#([a-z0-9-]+)\}\s*$/;
+
+// Extract the section slug from a heading line. An explicit `{#anchor}`
+// marker is the authoritative source — it lets authors change heading TEXT
+// without breaking the consumer-visible slug. When absent, falls back to
+// slugify() for backwards compatibility.
+function extractSlugFromHeading(headingLine) {
+  var text = headingLine.replace(/^#+\s*/, "");
+  var m = text.match(ANCHOR_RE);
+  if (m) return m[1];
+  return slugify(text.trim());
+}
+
+// Strip the `{#anchor}` marker from a heading line and return the displayed
+// heading text. The marker is an addressing concern; consumers reading the
+// section title never see it.
+function extractHeadingText(headingLine) {
+  return headingLine
+    .replace(/^#+\s*/, "")
+    .replace(ANCHOR_RE, "")
+    .trim();
 }
 
 function deriveA11yIndex(md) {
@@ -24,14 +47,15 @@ function deriveA11yIndex(md) {
     var line = lines[i];
     // H2 sections and H3 sub-sections (per-component entries under
     // "## Components", checklist groups under "## Designer Handoff
-    // Checklist") both become index sections, keyed by an auto-slug of
-    // their heading text. First occurrence of a slug wins — a later
-    // heading that slugifies identically (e.g. the checklist re-uses
-    // topic names) is skipped, never duplicated.
+    // Checklist") both become index sections. Slug comes from the
+    // heading's explicit `{#anchor}` marker (preferred) or slugify
+    // fallback. First occurrence of a slug wins — a later heading that
+    // resolves to the same slug (e.g. the checklist re-uses topic names)
+    // is skipped, never duplicated.
     var m = line.match(/^(#{2,3})\s+(.+?)\s*$/);
     if (m) {
-      var title = m[2].trim();
-      var slug = slugify(title);
+      var title = extractHeadingText(line);
+      var slug = extractSlugFromHeading(line);
       if (slug && !seen[slug]) {
         if (current) sections.push(current);
         seen[slug] = true;
@@ -105,4 +129,9 @@ if (require.main === module) {
   console.log("Derived " + idx.sections.length + " sections → " + distPath);
 }
 
-module.exports = { deriveA11yIndex: deriveA11yIndex, slugify: slugify };
+module.exports = {
+  deriveA11yIndex: deriveA11yIndex,
+  slugify: slugify,
+  extractSlugFromHeading: extractSlugFromHeading,
+  extractHeadingText: extractHeadingText,
+};
