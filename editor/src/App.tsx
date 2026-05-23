@@ -12,6 +12,7 @@ import "@radix-ui/themes/styles.css";
 import "./styles/tokens.css";
 import "./styles/base.css";
 import { SettingsPanel } from "./settings/SettingsPanel";
+import { MetaEditScreen } from "./app/MetaEditScreen";
 
 function GearIcon() {
   return (
@@ -50,9 +51,11 @@ export default function App() {
             </IconButton>
           </Tooltip>
         </Flex>
-        <Text as="p" color="gray">
-          Phase 1 scaffold — coming online.
+        <Text as="p" color="gray" mb="5">
+          Phase 1a vertical slice — pick a component, edit its{" "}
+          <code>_meta.yml</code>, open a PR.
         </Text>
+        <MetaEditScreen onOpenSettings={() => setSettingsOpen(true)} />
         <SettingsPanel open={settingsOpen} onOpenChange={setSettingsOpen} />
       </Container>
     </Theme>
