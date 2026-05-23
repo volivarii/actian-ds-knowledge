@@ -64,3 +64,51 @@ test("D3 — schemas/icon-groups.json validates components/src/icon-groups.json"
     true,
   );
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// Negative boundary tests — pin the load-bearing constraints the Knowledge
+// Editor's secondary tier will rely on. If any of these flip, the editor
+// could silently accept malformed authoring.
+// ───────────────────────────────────────────────────────────────────────────
+
+test("D3 — fm-to-ds-map rejects a mapping missing the required dsKey", () => {
+  const { validate } = compileSchema("schemas/fm-to-ds-map.json");
+  const bad = {
+    _schema_version: 1,
+    mappings: { fmButton: { dsSlug: "button" } },
+  };
+  assert.equal(validate(bad), false, "missing dsKey should reject");
+});
+
+test("D3 — icon-groups rejects an uppercase icon slug inside a group", () => {
+  const { validate } = compileSchema("schemas/icon-groups.json");
+  const bad = {
+    _schema_version: 1,
+    Status: ["valid-slug", "Invalid_Slug"],
+  };
+  assert.equal(validate(bad), false, "uppercase/underscore slug should reject");
+});
+
+test("D3 — app-context rejects an entity missing the required relationships field", () => {
+  const { validate } = compileSchema("schemas/app-context.json");
+  const bad = {
+    _schema_version: 1,
+    apps: {},
+    entities: {
+      "data-product": {
+        label: "Data Product",
+        description: "Curated asset",
+        properties: ["name"],
+        apps: ["studio"],
+        // relationships intentionally missing
+      },
+    },
+    terminology: {},
+    patterns: {},
+  };
+  assert.equal(
+    validate(bad),
+    false,
+    "entity missing relationships should reject",
+  );
+});
