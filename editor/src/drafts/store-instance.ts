@@ -1,10 +1,13 @@
-// Shared DraftStore singleton — App, EditorShell, and MarkdownEditScreen
-// must all reference the SAME instance so subscribe/emit events propagate.
+// Shared singletons — App, EditorShell, and MarkdownEditScreen
+// must all reference the SAME instances so subscribe/emit events propagate.
 
 import { DraftStore } from "./DraftStore";
+import { SubmissionCart } from "./SubmissionCart";
 
-export const draftStoreSingleton = new DraftStore(
+const storage =
   typeof window !== "undefined"
     ? window.localStorage
-    : (null as unknown as Storage),
-);
+    : (null as unknown as Storage);
+
+export const draftStoreSingleton = new DraftStore(storage);
+export const submissionCartSingleton = new SubmissionCart(storage);

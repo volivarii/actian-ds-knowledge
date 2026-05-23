@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Octokit } from "@octokit/rest";
-import { Box, Callout, Flex } from "@radix-ui/themes";
+import { Box, Button, Callout, Flex } from "@radix-ui/themes";
 import { createOctokit, MissingPATError } from "../core/octokit";
 import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { RefusalBanner } from "./RefusalBanner";
+import { CoverageDashboard } from "./CoverageDashboard";
+import { AuthoringWorkspace } from "./AuthoringWorkspace";
 import { draftStoreSingleton } from "../drafts/store-instance";
 
 interface EditorShellProps {
@@ -18,13 +20,33 @@ interface EditorShellProps {
 function isPlainMarkdown(path: string): boolean {
   return (
     (/^foundations\/src\/[^/]+\.md$/.test(path) ||
-      /^accessibility\/[^/]+\.md$/.test(path)) &&
+      /^accessibility\/[^/]+\.md$/.test(path) ||
+      /^components\/src\/(?!categories\/AUTHORING\.md|AUTHORING\.md|EDITING-GUIDE\.md)[^/]+\/[^/]+\.md$/.test(
+        path,
+      ) ||
+      /^components\/src\/categories\/[^/]+\.md$/.test(path)) &&
     !/AUTHORING\.md$/.test(path)
   );
 }
 
 function isMetaYaml(path: string): boolean {
   return /^components\/src\/[^/]+\/_meta\.yml$/.test(path);
+}
+
+const WORKSPACE_RE = /^workspace\/([a-z0-9][a-z0-9-]*)$/;
+function workspaceSlug(path: string): string | null {
+  const m = WORKSPACE_RE.exec(path);
+  return m && m[1] ? m[1] : null;
+}
+
+// Component-scoped child files (per-component metadata, domain MDs)
+// surface a breadcrumb back to the slug's Authoring Workspace.
+const COMPONENT_CHILD_RE = /^components\/src\/([^/]+)\/[^/]+\.(?:yml|md)$/;
+function parentWorkspaceOf(path: string): string | null {
+  const m = COMPONENT_CHILD_RE.exec(path);
+  if (!m || !m[1] || m[1] === "categories" || m[1] === "guidelines")
+    return null;
+  return `workspace/${m[1]}`;
 }
 
 export function EditorShell({
@@ -66,11 +88,26 @@ export function EditorShell({
   if (!gh) return null;
 
   let pane: React.ReactNode;
+  const wsSlug = activePath ? workspaceSlug(activePath) : null;
+  const parentWs = activePath ? parentWorkspaceOf(activePath) : null;
+  const breadcrumb = parentWs ? (
+    <Box mb="2">
+      <Button variant="ghost" size="1" onClick={() => setActivePath(parentWs)}>
+        ← Back to workspace
+      </Button>
+    </Box>
+  ) : null;
+
   if (activePath == null) {
+    pane = <CoverageDashboard octokit={gh} onOpenFile={setActivePath} />;
+  } else if (wsSlug) {
     pane = (
-      <Callout.Root>
-        <Callout.Text>Choose a file in the sidebar to begin.</Callout.Text>
-      </Callout.Root>
+      <AuthoringWorkspace
+        slug={wsSlug}
+        octokit={gh}
+        onNavigate={setActivePath}
+        onBack={() => setActivePath(null)}
+      />
     );
   } else if (isMetaYaml(activePath)) {
     pane = (
@@ -78,6 +115,7 @@ export function EditorShell({
         path={activePath}
         octokit={gh}
         onOpenSettings={onOpenSettings}
+        onNavigate={setActivePath}
       />
     );
   } else if (isPlainMarkdown(activePath)) {
@@ -107,6 +145,7 @@ export function EditorShell({
         p="3"
         style={{ overflow: "auto", minWidth: 0, minHeight: 0 }}
       >
+        {breadcrumb}
         {pane}
       </Box>
     </Flex>

@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
+  Badge,
   Box,
+  Button,
   Flex,
   Heading,
   IconButton,
@@ -13,8 +15,20 @@ import "./styles/base.css";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { EditorShell } from "./app/EditorShell";
 import { SaveStateIndicator } from "./app/SaveStateIndicator";
+import { SubmissionStaging } from "./app/SubmissionStaging";
+import {
+  RecentSubmissions,
+  anyOpenFailing,
+  type SubmissionRow,
+} from "./app/RecentSubmissions";
+import { CommandPalette, type CommandItem } from "./app/CommandPalette";
 import { useSaveState } from "./drafts/useSaveState";
-import { draftStoreSingleton } from "./drafts/store-instance";
+import { useCart } from "./drafts/useCart";
+import {
+  draftStoreSingleton,
+  submissionCartSingleton,
+} from "./drafts/store-instance";
+import { createOctokit } from "./core/octokit";
 
 function GearIcon() {
   return (
@@ -38,7 +52,51 @@ function GearIcon() {
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activePath, setActivePath] = useState<string | null>(null);
+  const [stagingOpen, setStagingOpen] = useState(false);
+  const [submissionsOpen, setSubmissionsOpen] = useState(false);
+  const [submissionRows, setSubmissionRows] = useState<SubmissionRow[]>([]);
   const saveState = useSaveState(activePath, draftStoreSingleton);
+  const cartEntries = useCart(submissionCartSingleton);
+  const commands: CommandItem[] = useMemo(
+    () => [
+      {
+        id: "open-coverage",
+        label: "Open coverage dashboard",
+        group: "Navigate",
+        run: () => setActivePath(null),
+      },
+      {
+        id: "open-batch",
+        label: "Open submission batch",
+        hint: cartEntries.length > 0 ? `${cartEntries.length} staged` : "empty",
+        group: "Actions",
+        run: () => setStagingOpen(true),
+      },
+      {
+        id: "open-submissions",
+        label: "Open recent submissions",
+        group: "Actions",
+        run: () => setSubmissionsOpen(true),
+      },
+      {
+        id: "open-settings",
+        label: "Open settings",
+        group: "Actions",
+        run: () => setSettingsOpen(true),
+      },
+    ],
+    [cartEntries.length],
+  );
+  // The header's Submit-batch button + the staging dialog need an Octokit
+  // instance. createOctokit throws if the PAT is missing; we render the
+  // button anyway and let SubmissionStaging surface the failure on click.
+  const headerOctokit = useMemo(() => {
+    try {
+      return createOctokit();
+    } catch {
+      return null;
+    }
+  }, []);
   return (
     <Theme accentColor="indigo" radius="medium">
       <Flex direction="column" style={{ height: "100vh", width: "100vw" }}>
@@ -52,6 +110,36 @@ export default function App() {
           <Heading size="4">Knowledge Editor</Heading>
           <Flex align="center" gap="3">
             <SaveStateIndicator state={saveState} />
+            {headerOctokit && (
+              <Button
+                size="1"
+                variant="soft"
+                color={anyOpenFailing(submissionRows) ? "amber" : "gray"}
+                onClick={() => setSubmissionsOpen(true)}
+                title="My recent submissions + CI status"
+              >
+                Submissions
+                {anyOpenFailing(submissionRows) && (
+                  <Badge color="amber" radius="full" size="1">
+                    !
+                  </Badge>
+                )}
+              </Button>
+            )}
+            {cartEntries.length > 0 && (
+              <Button
+                size="1"
+                variant="soft"
+                color="indigo"
+                onClick={() => setStagingOpen(true)}
+              >
+                <span aria-hidden="true">📋</span>
+                Batch
+                <Badge color="indigo" radius="full" size="1">
+                  {cartEntries.length}
+                </Badge>
+              </Button>
+            )}
             <Tooltip content="Settings">
               <IconButton
                 variant="ghost"
@@ -71,6 +159,24 @@ export default function App() {
           />
         </Box>
         <SettingsPanel open={settingsOpen} onOpenChange={setSettingsOpen} />
+        {headerOctokit && (
+          <SubmissionStaging
+            cart={submissionCartSingleton}
+            entries={cartEntries}
+            octokit={headerOctokit}
+            open={stagingOpen}
+            onOpenChange={setStagingOpen}
+          />
+        )}
+        {headerOctokit && (
+          <RecentSubmissions
+            octokit={headerOctokit}
+            open={submissionsOpen}
+            onOpenChange={setSubmissionsOpen}
+            onLoaded={setSubmissionRows}
+          />
+        )}
+        <CommandPalette commands={commands} />
       </Flex>
     </Theme>
   );

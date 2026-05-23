@@ -7,7 +7,8 @@ interface SidebarProps {
   octokit: Octokit;
   pendingPaths: Set<string>;
   activePath: string | null;
-  onSelect: (path: string) => void;
+  // `null` selects the Coverage dashboard (the landing surface).
+  onSelect: (path: string | null) => void;
 }
 
 // Same set as the original MetaEditScreen — components/src dirs that aren't
@@ -99,6 +100,7 @@ export function Sidebar({
     ? entries.components
     : entries.components.slice(0, COMPONENT_VISIBLE_CAP);
 
+  const coverageActive = activePath == null;
   return (
     <Flex
       direction="column"
@@ -112,6 +114,25 @@ export function Sidebar({
         overflow: "auto",
       }}
     >
+      <Flex
+        align="center"
+        gap="2"
+        px="3"
+        py="2"
+        style={{
+          cursor: "pointer",
+          background: coverageActive ? "var(--accent-3)" : "transparent",
+          borderBottom: "1px solid var(--gray-4)",
+        }}
+        onClick={() => onSelect(null)}
+        aria-current={coverageActive ? "page" : undefined}
+      >
+        <span aria-hidden="true">📊</span>
+        <Text size="2" weight={coverageActive ? "bold" : "medium"}>
+          Coverage
+        </Text>
+      </Flex>
+
       <Box p="3">
         <Heading size="2">Foundations</Heading>
       </Box>
