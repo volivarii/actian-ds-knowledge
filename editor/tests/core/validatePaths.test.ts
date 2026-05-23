@@ -11,17 +11,11 @@ test("validatePaths — refuses tokens.css derived output", () => {
 });
 
 test("validatePaths — refuses dskit registry (Figma-synced)", () => {
-  assert.equal(
-    isReadOnlyPath("components/dist/registries/dskit.json"),
-    true,
-  );
+  assert.equal(isReadOnlyPath("components/dist/registries/dskit.json"), true);
 });
 
 test("validatePaths — refuses any */dist/ path (CI-derived)", () => {
-  assert.equal(
-    isReadOnlyPath("components/dist/guidelines/button.json"),
-    true,
-  );
+  assert.equal(isReadOnlyPath("components/dist/guidelines/button.json"), true);
   assert.equal(isReadOnlyPath("foundations/dist/tokens/motion.json"), true);
   assert.equal(isReadOnlyPath("accessibility/dist/a11y-index.json"), true);
 });
@@ -32,10 +26,7 @@ test("validatePaths — refuses llms-full.txt and llms.txt (CI-generated)", () =
 });
 
 test("validatePaths — allows components/src content", () => {
-  assert.equal(
-    isReadOnlyPath("components/src/button/content.md"),
-    false,
-  );
+  assert.equal(isReadOnlyPath("components/src/button/content.md"), false);
   assert.equal(isReadOnlyPath("components/src/button/_meta.yml"), false);
 });
 
@@ -55,4 +46,12 @@ test("validatePaths — allows foundations/src/foundations.md (authored)", () =>
 
 test("validatePaths — allows content/src/global.md (authored prose)", () => {
   assert.equal(isReadOnlyPath("content/src/global.md"), false);
+});
+
+test("validatePaths — allows components/src/categories/*.md (authored frontmatter)", () => {
+  assert.equal(isReadOnlyPath("components/src/categories/action.md"), false);
+});
+
+test("validatePaths — refuses paths-manifest.json (lockstep with package.json)", () => {
+  assert.equal(isReadOnlyPath("paths-manifest.json"), true);
 });

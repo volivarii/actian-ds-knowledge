@@ -5,16 +5,9 @@
 // spec §4.2.
 
 import type { Octokit } from "@octokit/rest";
-import {
-  type CommitResult,
-  type Draft,
-  ReadonlyPathError,
-} from "./types";
+import { type CommitResult, type Draft, ReadonlyPathError } from "./types";
 import { isReadOnlyPath } from "./validatePaths";
-import {
-  type SchemaMap,
-  validateAgainstSchema,
-} from "./validateAgainstSchema";
+import { type SchemaMap, validateAgainstSchema } from "./validateAgainstSchema";
 import { createOctokit } from "./octokit";
 
 export interface SubmitDraftConfig {
@@ -24,12 +17,6 @@ export interface SubmitDraftConfig {
   schemas: SchemaMap;
   octokit?: Octokit;
 }
-
-const DEFAULT_CONFIG: Omit<SubmitDraftConfig, "schemas" | "octokit"> = {
-  owner: "volivarii",
-  repo: "actian-ds-knowledge",
-  base: "main",
-};
 
 function buildBranchName(draft: Draft): string {
   if (draft.branch) return draft.branch;
@@ -64,9 +51,7 @@ export async function submitDraft(
     });
   }
 
-  const owner = config.owner ?? DEFAULT_CONFIG.owner;
-  const repo = config.repo ?? DEFAULT_CONFIG.repo;
-  const base = config.base ?? DEFAULT_CONFIG.base;
+  const { owner, repo, base } = config;
   const gh = config.octokit ?? createOctokit();
 
   const baseRef = await gh.git.getRef({

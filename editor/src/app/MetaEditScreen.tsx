@@ -25,10 +25,7 @@ import { submitDraft } from "../core/submitDraft";
 import { getTextFile, listDirectories } from "./githubApi";
 import { RJSFForm } from "../form-engine/RJSFForm";
 import { guidelineMetaUiSchema } from "../uiSchemas/guidelineMeta";
-import {
-  parseYaml,
-  stringifyYaml,
-} from "../form-engine/yamlSerializer";
+import { parseYaml, stringifyYaml } from "../form-engine/yamlSerializer";
 
 interface MetaEditScreenProps {
   octokit?: Octokit;
@@ -41,12 +38,14 @@ type LoadState<T> =
   | { kind: "ready"; value: T }
   | { kind: "error"; message: string };
 
-const SKIP_DIRS = new Set([
-  "categories",
-  "guidelines",
-  "AUTHORING.md",
-  "EDITING-GUIDE.md",
-]);
+// listDirectories filters to entry.type === "dir", so AUTHORING.md and
+// EDITING-GUIDE.md never reach this set. The two entries here are real
+// subdirectories under components/src/ that aren't editable components:
+// `categories/` holds category-defaults frontmatter (editable in its own
+// screen in Phase 1b) and `guidelines/` is the legacy scraped layer (read-
+// only via validatePaths through the */dist/ pattern, but kept off this
+// picker for clarity).
+const SKIP_DIRS = new Set(["categories", "guidelines"]);
 
 export function MetaEditScreen({
   octokit,
@@ -75,9 +74,9 @@ export function MetaEditScreen({
   });
   const [selected, setSelected] = useState<string | null>(null);
   const [meta, setMeta] = useState<LoadState<unknown>>({ kind: "idle" });
-  const [submitState, setSubmitState] = useState<
-    LoadState<{ prUrl: string }>
-  >({ kind: "idle" });
+  const [submitState, setSubmitState] = useState<LoadState<{ prUrl: string }>>({
+    kind: "idle",
+  });
 
   useEffect(() => {
     if (!gh) return;
@@ -112,9 +111,7 @@ export function MetaEditScreen({
     setSubmitState({ kind: "idle" });
     getTextFile(gh, `components/src/${selected}/_meta.yml`)
       .then((text) => setMeta({ kind: "ready", value: parseYaml(text) }))
-      .catch((err: Error) =>
-        setMeta({ kind: "error", message: err.message }),
-      );
+      .catch((err: Error) => setMeta({ kind: "error", message: err.message }));
   }, [gh, selected]);
 
   async function handleSubmit(next: unknown) {
@@ -138,7 +135,9 @@ export function MetaEditScreen({
           owner: "volivarii",
           repo: "actian-ds-knowledge",
           base: "main",
-          schemas: { "guideline-meta": schema.value as Record<string, unknown> },
+          schemas: {
+            "guideline-meta": schema.value as Record<string, unknown>,
+          },
           octokit: gh,
         },
       );
@@ -253,7 +252,9 @@ export function MetaEditScreen({
             )}
             {submitState.kind === "error" && (
               <Callout.Root color="ruby">
-                <Callout.Text>Submit failed: {submitState.message}</Callout.Text>
+                <Callout.Text>
+                  Submit failed: {submitState.message}
+                </Callout.Text>
               </Callout.Root>
             )}
           </Flex>
