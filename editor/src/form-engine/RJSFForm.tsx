@@ -7,8 +7,29 @@
 
 import type { ComponentProps } from "react";
 import Form from "@rjsf/core";
-import validator from "@rjsf/validator-ajv8";
+// The default @rjsf/validator-ajv8 export targets draft-07; the knowledge
+// repo's schemas are draft-2020-12. customizeValidator + Ajv2020 swaps the
+// validator at build time without leaking through to consumers.
+//
+// Import shape note: @rjsf/validator-ajv8 ships CJS via `main` with no
+// `exports` field, so Node's ESM bridge surfaces only `default`. Destructure
+// `customizeValidator` off the default rather than as a named import — both
+// Vite (browser) and tsx (tests) resolve this consistently.
+import rjsfValidatorAjv8 from "@rjsf/validator-ajv8";
+import Ajv2020 from "ajv/dist/2020";
 import type { RJSFSchema, UiSchema } from "@rjsf/utils";
+
+const { customizeValidator } = rjsfValidatorAjv8 as unknown as {
+  customizeValidator: (opts: {
+    AjvClass?: unknown;
+    ajvOptionsOverrides?: Record<string, unknown>;
+  }) => unknown;
+};
+
+const validator = customizeValidator({
+  AjvClass: Ajv2020,
+  ajvOptionsOverrides: { strict: false, allowUnionTypes: true },
+}) as ComponentProps<typeof Form>["validator"];
 
 export interface RJSFFormProps {
   schema: RJSFSchema;
