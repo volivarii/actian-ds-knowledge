@@ -29,5 +29,5 @@ The three Class C schemas above cover hand-edited JSONs (sometimes AI-assisted) 
 
 - Every property has `description` + `examples` (with rare exceptions for trivially-obvious ones).
 - Required fields are the truly load-bearing ones; everything else stays optional.
-- `additionalProperties` defaults to `true` for author-facing shapes (don't surprise authors); strict for CI-derived shapes.
+- `additionalProperties` defaults to `true` for author-facing shapes (don't surprise authors); strict for CI-derived shapes. **Exception: Class C schemas (`app-context`, `fm-to-ds-map`, `icon-groups`) use `additionalProperties: false` at root** — the Knowledge Editor's secondary tier renders a schema-driven form, so the contract must enumerate every accepted root key. Add a new property to the schema before adding it to the data file.
 - All schemas use `"$schema": "https://json-schema.org/draft/2020-12/schema"`.
