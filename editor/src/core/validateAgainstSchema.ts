@@ -9,13 +9,23 @@
 // validator accepts a pre-loaded schema map so unit tests can inject fixtures
 // and Phase 1a's UI loads the meta schema via fetch at boot.
 
-import Ajv, { type ValidateFunction } from "ajv";
+// Use Ajv's draft-2020-12 build — the knowledge-repo schemas all declare
+// `$schema: https://json-schema.org/draft/2020-12/schema`. The default `Ajv`
+// import compiles against draft-07 and would throw "no schema with key or
+// ref 'https://json-schema.org/draft/2020-12/schema'" at compile time.
+import Ajv2020, { type ValidateFunction } from "ajv/dist/2020";
+import addFormats from "ajv-formats";
 import { parseYaml } from "../form-engine/yamlSerializer";
 import { SchemaValidationError } from "./types";
 
 export type SchemaMap = Record<string, Record<string, unknown>>;
 
-const ajv = new Ajv({ allErrors: true, strict: false, allowUnionTypes: true });
+const ajv = new Ajv2020({
+  allErrors: true,
+  strict: false,
+  allowUnionTypes: true,
+});
+addFormats(ajv);
 const compiledCache = new WeakMap<object, ValidateFunction>();
 
 function compile(schema: Record<string, unknown>): ValidateFunction {
@@ -34,11 +44,9 @@ function pickSchemaKey(path: string): string | null {
   return null;
 }
 
-function parseContent(
-  path: string,
-  content: string,
-): unknown {
-  if (path.endsWith(".yml") || path.endsWith(".yaml")) return parseYaml(content);
+function parseContent(path: string, content: string): unknown {
+  if (path.endsWith(".yml") || path.endsWith(".yaml"))
+    return parseYaml(content);
   if (path.endsWith(".json")) return JSON.parse(content);
   return content;
 }
