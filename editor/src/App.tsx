@@ -100,15 +100,17 @@ export default function App() {
   const saveState = useSaveState(activePath, draftStoreSingleton);
   const cartEntries = useCart(submissionCartSingleton);
   // The header's Submit-batch button + the staging dialog need an Octokit
-  // instance. createOctokit throws if the PAT is missing; we render the
-  // button anyway and let SubmissionStaging surface the failure on click.
+  // instance. createOctokit throws when no session; recompute when the
+  // session changes so that signing in re-activates the dependent UI
+  // without requiring a page reload.
   const headerOctokit = useMemo(() => {
+    if (!session) return null;
     try {
       return createOctokit();
     } catch {
       return null;
     }
-  }, []);
+  }, [session]);
   // Lazy-load the known component slug set so Cmd-K can offer
   // "Go to <slug>" without the user knowing exact spellings.
   const [knownSlugs, setKnownSlugs] = useState<string[]>([]);
@@ -222,7 +224,16 @@ export default function App() {
           py="2"
           style={{ borderBottom: "1px solid var(--gray-5)", flexShrink: 0 }}
         >
-          <Heading size="4">Knowledge Editor</Heading>
+          <Flex align="center" gap="2">
+            <img
+              src="/actian-ds-knowledge/editor/favicon.svg"
+              width="20"
+              height="20"
+              alt=""
+              style={{ display: "block" }}
+            />
+            <Heading size="4">Actian DS Knowledge Editor</Heading>
+          </Flex>
           <Flex align="center" gap="3">
             <SaveStateIndicator state={saveState} />
             {headerOctokit && (

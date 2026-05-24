@@ -19,7 +19,11 @@ concurrency:
 
 jobs:
   build:
+    # Build job runs untrusted npm code; deny pages:write/id-token:write here.
+    # The deploy job inherits the workflow-level grants.
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: editor
