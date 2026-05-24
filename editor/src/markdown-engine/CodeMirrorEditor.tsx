@@ -25,6 +25,7 @@ export interface CodeMirrorEditorProps {
   initialText: string;
   onChange: (text: string) => void;
   onReady?: (view: EditorView) => void;
+  onAnchorClick?: (slug: string, target: HTMLElement) => void;
 }
 
 const proseHighlight = HighlightStyle.define([
@@ -81,6 +82,7 @@ export function CodeMirrorEditor({
   initialText,
   onChange,
   onReady,
+  onAnchorClick,
 }: CodeMirrorEditorProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -96,6 +98,19 @@ export function CodeMirrorEditor({
         syntaxHighlighting(proseHighlight),
         anchorMutePlugin,
         anchorCompletionExtension(),
+        EditorView.domEventHandlers({
+          click(event) {
+            const el = event.target as HTMLElement;
+            if (!el || !el.classList?.contains("cm-anchor-marker"))
+              return false;
+            const m = /\{#([a-z][a-z0-9-]*)\}/.exec(el.textContent ?? "");
+            if (m && onAnchorClick) {
+              onAnchorClick(m[1]!, el);
+              return true;
+            }
+            return false;
+          },
+        }),
         EditorView.lineWrapping,
         EditorView.updateListener.of((u) => {
           if (u.docChanged) onChange(u.state.doc.toString());

@@ -137,6 +137,7 @@ export function EditorShell({
         path={activePath}
         octokit={gh}
         onOpenSettings={onOpenSettings}
+        onNavigate={setActivePath}
       />
     );
   } else {

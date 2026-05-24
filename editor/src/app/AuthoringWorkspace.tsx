@@ -211,6 +211,7 @@ export function AuthoringWorkspace({
               onToggleInherited={(inherited) =>
                 onToggleInherited(d.domain, inherited)
               }
+              onNavigate={onNavigate}
             />
           ))}
         </Flex>
@@ -252,6 +253,7 @@ interface DomainCardProps {
   octokit: Octokit;
   onOpen: () => void;
   onToggleInherited: (inherited: boolean) => void | Promise<void>;
+  onNavigate?: (path: string) => void;
 }
 
 function DomainCard({
@@ -263,6 +265,7 @@ function DomainCard({
   octokit,
   onOpen,
   onToggleInherited,
+  onNavigate,
 }: DomainCardProps) {
   const label = DOMAIN_LABEL[domain];
   const hint = DOMAIN_HINT[domain];
@@ -371,6 +374,7 @@ function DomainCard({
                 slug={slug}
                 domain={domain}
                 octokit={octokit}
+                onNavigate={onNavigate}
               />
             </Box>
           )}

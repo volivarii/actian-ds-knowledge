@@ -24,6 +24,7 @@ import {
 } from "@radix-ui/themes";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { Preview } from "../markdown-engine/Preview";
+import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
 import { decodeBase64Utf8 } from "./githubApi";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
@@ -39,6 +40,7 @@ export interface WorkspaceDomainEditorProps {
   slug: string;
   domain: Domain;
   octokit: Octokit;
+  onNavigate?: (path: string) => void;
 }
 
 type LoadState =
@@ -62,6 +64,7 @@ export function WorkspaceDomainEditor({
   slug,
   domain,
   octokit,
+  onNavigate,
 }: WorkspaceDomainEditorProps) {
   const path = useMemo(() => domainPathFor(slug, domain), [slug, domain]);
 
@@ -69,6 +72,9 @@ export function WorkspaceDomainEditor({
   const [text, setText] = useState<string>("");
   const [showPreview, setShowPreview] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [anchorPopover, setAnchorPopover] = useState<{
+    slug: string;
+  } | null>(null);
   const cartEntries = useCart(submissionCartSingleton);
   const inCart = useMemo(
     () => cartEntries.some((e) => e.path === path),
@@ -265,7 +271,22 @@ export function WorkspaceDomainEditor({
           overflow: "hidden",
         }}
       >
-        <CodeMirrorEditor initialText={text} onChange={onChange} />
+        <CodeMirrorEditor
+          initialText={text}
+          onChange={onChange}
+          onAnchorClick={(slug) => setAnchorPopover({ slug })}
+        />
+        {anchorPopover && (
+          <AnchorReferencesPopover
+            slug={anchorPopover.slug}
+            open
+            onOpenChange={(o) => !o && setAnchorPopover(null)}
+            onNavigate={(p) => {
+              setAnchorPopover(null);
+              onNavigate?.(p);
+            }}
+          />
+        )}
       </Box>
       {showPreview && (
         <Box

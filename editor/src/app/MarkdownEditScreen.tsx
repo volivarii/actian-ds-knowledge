@@ -27,6 +27,7 @@ import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
 import { Outline } from "./Outline";
+import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
 import {
   draftStoreSingleton,
   submissionCartSingleton,
@@ -42,6 +43,7 @@ interface MarkdownEditScreenProps {
   path: string;
   octokit?: Octokit;
   onOpenSettings?: () => void;
+  onNavigate?: (path: string) => void;
 }
 
 type LoadSource = "remote" | "cart" | "stub";
@@ -61,8 +63,12 @@ export function MarkdownEditScreen({
   path,
   octokit,
   onOpenSettings,
+  onNavigate,
 }: MarkdownEditScreenProps) {
   const [ghError, setGhError] = useState<string | null>(null);
+  const [anchorPopover, setAnchorPopover] = useState<{
+    slug: string;
+  } | null>(null);
   const gh = useMemo<Octokit | null>(() => {
     if (octokit) return octokit;
     try {
@@ -336,7 +342,19 @@ export function MarkdownEditScreen({
             initialText={text}
             onChange={handleChange}
             onReady={setView}
+            onAnchorClick={(slug) => setAnchorPopover({ slug })}
           />
+          {anchorPopover && (
+            <AnchorReferencesPopover
+              slug={anchorPopover.slug}
+              open
+              onOpenChange={(o) => !o && setAnchorPopover(null)}
+              onNavigate={(p) => {
+                setAnchorPopover(null);
+                onNavigate?.(p);
+              }}
+            />
+          )}
         </Box>
         <Box
           flexGrow="1"
