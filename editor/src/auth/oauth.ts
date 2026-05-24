@@ -64,8 +64,9 @@ export async function signInWithOAuth(): Promise<AuthSession> {
       const match = event.data.match(
         /^authorization:github:(success|error):(.+)$/,
       );
-      if (!match) return;
-      const [, status, payloadStr] = match;
+      if (!match || !match[2]) return;
+      const status = match[1];
+      const payloadStr = match[2];
       settled = true;
       cleanup();
 
