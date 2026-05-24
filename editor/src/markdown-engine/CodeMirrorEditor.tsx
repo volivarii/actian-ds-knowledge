@@ -100,9 +100,13 @@ export function CodeMirrorEditor({
         anchorCompletionExtension(),
         EditorView.domEventHandlers({
           click(event) {
-            const el = event.target as HTMLElement;
-            if (!el || !el.classList?.contains("cm-anchor-marker"))
-              return false;
+            // CM6's markdown syntax highlighter splits the muted anchor
+            // span into inner highlight tokens, so event.target is often a
+            // deeper element. Walk up to the .cm-anchor-marker wrapper.
+            const target = event.target;
+            if (!(target instanceof Element)) return false;
+            const el = target.closest(".cm-anchor-marker");
+            if (!(el instanceof HTMLElement)) return false;
             const m = /\{#([a-z][a-z0-9-]*)\}/.exec(el.textContent ?? "");
             if (m && onAnchorClick) {
               onAnchorClick(m[1]!, el);
