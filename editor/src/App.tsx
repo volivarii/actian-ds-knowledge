@@ -14,6 +14,7 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { EditorShell } from "./app/EditorShell";
+import { SignInScreen } from "./app/SignInScreen";
 import { SaveStateIndicator } from "./app/SaveStateIndicator";
 import { SubmissionStaging } from "./app/SubmissionStaging";
 import {
@@ -31,6 +32,13 @@ import {
 import { createOctokit } from "./core/octokit";
 import { loadComponentSlugs } from "./lib/componentSlugs";
 import { loadAnchorIndex } from "./lib/anchorIndex";
+import {
+  bootstrap as bootstrapAuth,
+  getSession,
+  signInWithOAuth,
+  signInWithPAT,
+  subscribe,
+} from "./auth";
 
 const DOMAINS = ["content", "usage", "design", "behavior", "tokens"] as const;
 type Domain = (typeof DOMAINS)[number];
@@ -80,6 +88,15 @@ export default function App() {
   const [stagingOpen, setStagingOpen] = useState(false);
   const [submissionsOpen, setSubmissionsOpen] = useState(false);
   const [submissionRows, setSubmissionRows] = useState<SubmissionRow[]>([]);
+  const [session, setSession] = useState(() => getSession());
+
+  useEffect(() => {
+    bootstrapAuth();
+    setSession(getSession());
+    const unsub = subscribe(setSession);
+    return unsub;
+  }, []);
+
   const saveState = useSaveState(activePath, draftStoreSingleton);
   const cartEntries = useCart(submissionCartSingleton);
   // The header's Submit-batch button + the staging dialog need an Octokit
@@ -250,12 +267,23 @@ export default function App() {
           </Flex>
         </Flex>
         <Box flexGrow="1" style={{ minHeight: 0 }}>
-          <EditorShell
-            onOpenSettings={() => setSettingsOpen(true)}
-            activePath={activePath}
-            setActivePath={setActivePath}
-            onOpenStaging={() => setStagingOpen(true)}
-          />
+          {session == null ? (
+            <SignInScreen
+              onOAuthSignIn={async () => {
+                await signInWithOAuth();
+              }}
+              onPATSignIn={(pat) => {
+                signInWithPAT(pat);
+              }}
+            />
+          ) : (
+            <EditorShell
+              onOpenSettings={() => setSettingsOpen(true)}
+              activePath={activePath}
+              setActivePath={setActivePath}
+              onOpenStaging={() => setStagingOpen(true)}
+            />
+          )}
         </Box>
         <SettingsPanel open={settingsOpen} onOpenChange={setSettingsOpen} />
         {headerOctokit && (
