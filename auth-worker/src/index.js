@@ -4,9 +4,16 @@
  *
  * Upstream pinned SHA: 1aedd7358471848243b61b23a4e8e2dad2543c31
  *
- * Local modifications: none on initial vendor. Future changes should be
- * documented here with rationale, since we re-pull upstream occasionally
- * to take security fixes.
+ * Local modifications (search for "LOCAL MOD:" inline):
+ *   - 2026-05-24: escape </script> inside the postMessage JSON payload to
+ *     prevent script-tag-close XSS if a token or error string ever contains
+ *     that sequence.
+ *   - 2026-05-24: guard against success-shaped responses with no token AND
+ *     no error — fail loudly with MISSING_TOKEN instead of silently passing
+ *     an empty token to the SPA.
+ *
+ * Future changes should be documented here with rationale, since we
+ * re-pull upstream occasionally to take security fixes.
  *
  * Env vars (see auth-worker/wrangler.toml + `wrangler secret put`):
  *   ALLOWED_DOMAINS      — comma-separated allowlist of `site_id` callers
@@ -46,6 +53,13 @@ const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const outputHTML = ({ provider = "unknown", token, error, errorCode }) => {
   const state = error ? "error" : "success";
   const content = error ? { provider, error, errorCode } : { provider, token };
+  // LOCAL MOD: escape </script> inside the JSON payload. JSON.stringify does
+  // not escape it natively, so a malicious or unusual error/token string
+  // could close the <script> tag early and inject HTML.
+  const safeContent = JSON.stringify(content).replace(
+    /<\/script>/gi,
+    "<\\/script>",
+  );
 
   return new Response(
     `
@@ -54,7 +68,7 @@ const outputHTML = ({ provider = "unknown", token, error, errorCode }) => {
           window.addEventListener('message', ({ data, origin }) => {
             if (data === 'authorizing:${provider}') {
               window.opener?.postMessage(
-                'authorization:${provider}:${state}:${JSON.stringify(content)}',
+                'authorization:${provider}:${state}:${safeContent}',
                 origin
               );
             }
@@ -295,6 +309,17 @@ const handleCallback = async (request, env) => {
       provider,
       error: "Server responded with malformed data. Please try again later.",
       errorCode: "MALFORMED_RESPONSE",
+    });
+  }
+
+  // LOCAL MOD: guard against a success-shaped response with no token AND no
+  // error. Without this, the SPA receives an empty-string token as success
+  // and silently fails on the first API call.
+  if (!token && !error) {
+    return outputHTML({
+      provider,
+      error: "Server responded without an access token.",
+      errorCode: "MISSING_TOKEN",
     });
   }
 
