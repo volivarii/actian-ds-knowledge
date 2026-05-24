@@ -156,6 +156,7 @@ export default function App() {
             onOpenSettings={() => setSettingsOpen(true)}
             activePath={activePath}
             setActivePath={setActivePath}
+            onOpenStaging={() => setStagingOpen(true)}
           />
         </Box>
         <SettingsPanel open={settingsOpen} onOpenChange={setSettingsOpen} />
