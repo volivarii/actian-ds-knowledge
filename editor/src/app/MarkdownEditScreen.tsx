@@ -36,6 +36,7 @@ import { useDraft } from "../drafts/useDraft";
 import { useCart } from "../drafts/useCart";
 import { buildMarkdownStub } from "../lib/markdownStubs";
 import { loadAnchorIndex } from "../lib/anchorIndex";
+import { computeRenameWarnings } from "../markdown-engine/anchorLinter";
 import { Badge } from "@radix-ui/themes";
 import { TierBanner } from "./TierBanner";
 
@@ -114,6 +115,10 @@ export function MarkdownEditScreen({
   }, [cartEntries, componentSlug, path]);
   const inWorkspaceContext = siblingStaged > 0;
   const [confirmOrphanSubmit, setConfirmOrphanSubmit] = useState(false);
+  const renameWarnings = useMemo(
+    () => computeRenameWarnings(path, text),
+    [path, text],
+  );
 
   useEffect(() => {
     if (!gh) return;
@@ -311,6 +316,18 @@ export function MarkdownEditScreen({
           )}
         </Flex>
       </Flex>
+      {renameWarnings.length > 0 && (
+        <Callout.Root color="amber" size="1">
+          <Callout.Text>
+            {renameWarnings
+              .map(
+                (w) =>
+                  `#${w.removedSlug} disappeared — referenced by ${w.refCount} file${w.refCount === 1 ? "" : "s"}`,
+              )
+              .join(" · ")}
+          </Callout.Text>
+        </Callout.Root>
+      )}
       <Box>{view && <Toolbar view={view} />}</Box>
       <Flex flexGrow="1" minHeight="0" gap="2">
         <Box

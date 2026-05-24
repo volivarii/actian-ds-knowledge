@@ -30,6 +30,7 @@ import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 import { buildMarkdownStub } from "../lib/markdownStubs";
 import { loadAnchorIndex } from "../lib/anchorIndex";
+import { computeRenameWarnings } from "../markdown-engine/anchorLinter";
 import {
   domainPathFor,
   promoteDomainToDraft,
@@ -79,6 +80,10 @@ export function WorkspaceDomainEditor({
   const inCart = useMemo(
     () => cartEntries.some((e) => e.path === path),
     [cartEntries, path],
+  );
+  const renameWarnings = useMemo(
+    () => computeRenameWarnings(path, text),
+    [path, text],
   );
 
   // Refs for flush-on-unmount + sync access to latest text in the
@@ -262,6 +267,18 @@ export function WorkspaceDomainEditor({
           {showPreview ? "Hide preview" : "Show preview"}
         </Button>
       </Flex>
+      {renameWarnings.length > 0 && (
+        <Callout.Root color="amber" size="1" mb="2">
+          <Callout.Text>
+            {renameWarnings
+              .map(
+                (w) =>
+                  `#${w.removedSlug} disappeared — referenced by ${w.refCount} file${w.refCount === 1 ? "" : "s"}`,
+              )
+              .join(" · ")}
+          </Callout.Text>
+        </Callout.Root>
+      )}
       <Box
         style={{
           border: "1px solid var(--gray-5)",
