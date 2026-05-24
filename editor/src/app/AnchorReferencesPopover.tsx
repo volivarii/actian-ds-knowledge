@@ -7,8 +7,10 @@ export interface AnchorReferencesPopoverProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onNavigate: (path: string) => void;
-  /** Element the popover anchors to. */
-  trigger?: React.ReactNode;
+  /** DOM element the popover anchors to. CM6 owns the marker node, so we
+   *  position an invisible <Popover.Anchor> at its bounding rect to give
+   *  Radix's floating layout something concrete to attach to. */
+  triggerEl?: HTMLElement | null;
 }
 
 export function AnchorReferencesPopover({
@@ -16,13 +18,26 @@ export function AnchorReferencesPopover({
   open,
   onOpenChange,
   onNavigate,
-  trigger,
+  triggerEl,
 }: AnchorReferencesPopoverProps) {
   const refs = findReferences(slug);
   const defs = findDefinitions(slug);
+  const rect = triggerEl?.getBoundingClientRect();
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
-      {trigger && <Popover.Trigger>{trigger}</Popover.Trigger>}
+      <Popover.Anchor>
+        <span
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            left: rect?.left ?? 0,
+            top: rect?.top ?? 0,
+            width: rect?.width ?? 0,
+            height: rect?.height ?? 0,
+            pointerEvents: "none",
+          }}
+        />
+      </Popover.Anchor>
       <Popover.Content size="2">
         <Flex direction="column" gap="2">
           <Heading size="2">{`#${slug}`}</Heading>

@@ -75,6 +75,7 @@ export function WorkspaceDomainEditor({
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [anchorPopover, setAnchorPopover] = useState<{
     slug: string;
+    triggerEl: HTMLElement;
   } | null>(null);
   const cartEntries = useCart(submissionCartSingleton);
   const inCart = useMemo(
@@ -291,11 +292,14 @@ export function WorkspaceDomainEditor({
         <CodeMirrorEditor
           initialText={text}
           onChange={onChange}
-          onAnchorClick={(slug) => setAnchorPopover({ slug })}
+          onAnchorClick={(slug, el) =>
+            setAnchorPopover({ slug, triggerEl: el })
+          }
         />
         {anchorPopover && (
           <AnchorReferencesPopover
             slug={anchorPopover.slug}
+            triggerEl={anchorPopover.triggerEl}
             open
             onOpenChange={(o) => !o && setAnchorPopover(null)}
             onNavigate={(p) => {

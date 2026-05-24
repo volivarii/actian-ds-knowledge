@@ -69,6 +69,7 @@ export function MarkdownEditScreen({
   const [ghError, setGhError] = useState<string | null>(null);
   const [anchorPopover, setAnchorPopover] = useState<{
     slug: string;
+    triggerEl: HTMLElement;
   } | null>(null);
   const gh = useMemo<Octokit | null>(() => {
     if (octokit) return octokit;
@@ -360,11 +361,14 @@ export function MarkdownEditScreen({
             initialText={text}
             onChange={handleChange}
             onReady={setView}
-            onAnchorClick={(slug) => setAnchorPopover({ slug })}
+            onAnchorClick={(slug, el) =>
+              setAnchorPopover({ slug, triggerEl: el })
+            }
           />
           {anchorPopover && (
             <AnchorReferencesPopover
               slug={anchorPopover.slug}
+              triggerEl={anchorPopover.triggerEl}
               open
               onOpenChange={(o) => !o && setAnchorPopover(null)}
               onNavigate={(p) => {

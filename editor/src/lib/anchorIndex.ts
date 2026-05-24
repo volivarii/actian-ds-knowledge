@@ -53,6 +53,9 @@ export function scanFileForAnchors(text: string): {
 
 // Module-level cache; reset by loadAnchorIndex with options.force.
 let cached: AnchorIndex | null = null;
+// In-flight build promise. Dedups concurrent loaders so the second caller
+// awaits the first's fetch instead of starting a duplicate fan-out.
+let inflight: Promise<AnchorIndex> | null = null;
 
 export function getCachedIndex(): AnchorIndex | null {
   return cached;
@@ -60,6 +63,7 @@ export function getCachedIndex(): AnchorIndex | null {
 
 export function setCachedIndexForTesting(index: AnchorIndex | null): void {
   cached = index;
+  inflight = null;
 }
 
 export function findDefinitions(slug: string): string[] {
@@ -77,45 +81,59 @@ export function listSlugs(): string[] {
   return Array.from(cached.entries.keys()).sort();
 }
 
-/** Build (or rebuild) the index by fetching all eligible markdown files. */
+/** Build (or rebuild) the index by fetching all eligible markdown files.
+ *  Dedups concurrent non-forced calls via the in-flight promise. */
 export async function loadAnchorIndex(
   octokit: Octokit,
   options: { force?: boolean; cartOverrides?: Map<string, string> } = {},
 ): Promise<AnchorIndex> {
   if (cached && !options.force) return cached;
-  const paths = await collectMarkdownPaths(octokit);
-  const cartOverrides = options.cartOverrides ?? new Map();
-  const entries = new Map<string, AnchorEntry>();
+  if (inflight && !options.force) return inflight;
 
-  await Promise.all(
-    paths.map(async (path) => {
-      try {
-        const text =
-          cartOverrides.get(path) ?? (await getTextFile(octokit, path));
-        const { defines, references } = scanFileForAnchors(text);
-        for (const slug of defines) {
-          const entry = ensureEntry(entries, slug);
-          if (!entry.definedIn.includes(path)) entry.definedIn.push(path);
-        }
-        for (const slug of references) {
-          const entry = ensureEntry(entries, slug);
-          if (!entry.referencedBy.includes(path)) entry.referencedBy.push(path);
-        }
-      } catch (err) {
-        console.warn(
-          `[anchorIndex] skipping ${path}:`,
-          err instanceof Error ? err.message : err,
-        );
-      }
-    }),
-  );
+  const build = (async () => {
+    const paths = await collectMarkdownPaths(octokit);
+    const cartOverrides = options.cartOverrides ?? new Map();
+    const entries = new Map<string, AnchorEntry>();
 
-  cached = {
-    entries,
-    scannedAt: Date.now(),
-    scannedPaths: paths,
-  };
-  return cached;
+    await Promise.all(
+      paths.map(async (path) => {
+        try {
+          const text =
+            cartOverrides.get(path) ?? (await getTextFile(octokit, path));
+          const { defines, references } = scanFileForAnchors(text);
+          for (const slug of defines) {
+            const entry = ensureEntry(entries, slug);
+            if (!entry.definedIn.includes(path)) entry.definedIn.push(path);
+          }
+          for (const slug of references) {
+            const entry = ensureEntry(entries, slug);
+            if (!entry.referencedBy.includes(path))
+              entry.referencedBy.push(path);
+          }
+        } catch (err) {
+          console.warn(
+            `[anchorIndex] skipping ${path}:`,
+            err instanceof Error ? err.message : err,
+          );
+        }
+      }),
+    );
+
+    const result: AnchorIndex = {
+      entries,
+      scannedAt: Date.now(),
+      scannedPaths: paths,
+    };
+    cached = result;
+    return result;
+  })();
+
+  inflight = build;
+  try {
+    return await build;
+  } finally {
+    if (inflight === build) inflight = null;
+  }
 }
 
 function ensureEntry(map: Map<string, AnchorEntry>, slug: string): AnchorEntry {
