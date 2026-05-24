@@ -35,6 +35,7 @@ import { useDraft } from "../drafts/useDraft";
 import { useCart } from "../drafts/useCart";
 import { buildMarkdownStub } from "../lib/markdownStubs";
 import { Badge } from "@radix-ui/themes";
+import { TierBanner } from "./TierBanner";
 
 interface MarkdownEditScreenProps {
   path: string;
@@ -284,6 +285,7 @@ export function MarkdownEditScreen({
   const isNewFile = load.source !== "remote";
   return (
     <Flex direction="column" height="100%" gap="2">
+      <TierBanner path={path} />
       <Flex align="center" justify="between" gap="2" wrap="wrap">
         <Heading size="3">{path}</Heading>
         <Flex gap="2" align="center">
