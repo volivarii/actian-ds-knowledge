@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Octokit } from "@octokit/rest";
-import { Box, Button, Callout, Flex } from "@radix-ui/themes";
+import { Box, Button, Callout, Flex, Text } from "@radix-ui/themes";
 import { createOctokit, MissingPATError } from "../core/octokit";
 import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
@@ -147,21 +147,47 @@ export function EditorShell({
   }
 
   return (
-    <Flex style={{ height: "100%", minHeight: 0 }}>
-      <Sidebar
-        octokit={gh}
-        pendingPaths={pendingPaths}
-        activePath={activePath}
-        onSelect={setActivePath}
-      />
-      <Box
-        flexGrow="1"
-        p="3"
-        style={{ overflow: "auto", minWidth: 0, minHeight: 0 }}
+    <Flex direction="column" style={{ height: "100%", minHeight: 0 }}>
+      <Flex
+        align="center"
+        justify="between"
+        px="3"
+        py="2"
+        style={{
+          borderBottom: "1px solid var(--gray-5)",
+          background: "var(--gray-1)",
+          flexShrink: 0,
+        }}
       >
-        {breadcrumb}
-        {pane}
-      </Box>
+        <Flex align="center" gap="2">
+          <img
+            src="/actian-ds-knowledge/editor/favicon.svg"
+            width="20"
+            height="20"
+            alt=""
+            style={{ display: "block" }}
+          />
+          <Text size="2" weight="bold">
+            Actian DS Knowledge Editor
+          </Text>
+        </Flex>
+      </Flex>
+      <Flex style={{ flex: 1, minHeight: 0 }}>
+        <Sidebar
+          octokit={gh}
+          pendingPaths={pendingPaths}
+          activePath={activePath}
+          onSelect={setActivePath}
+        />
+        <Box
+          flexGrow="1"
+          p="3"
+          style={{ overflow: "auto", minWidth: 0, minHeight: 0 }}
+        >
+          {breadcrumb}
+          {pane}
+        </Box>
+      </Flex>
     </Flex>
   );
 }
