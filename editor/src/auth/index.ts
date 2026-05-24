@@ -42,4 +42,16 @@ export function __resetForTesting(): void {
   listeners.clear();
 }
 
-// signInWithOAuth + signInWithPAT are wired in Tasks B2 + B3.
+import { loadPATSession } from "./pat";
+// OAuth load goes here too in Task B3.
+
+/** Bootstrap the in-memory session from persisted storage. Called once
+ *  from App.tsx at mount. */
+export function bootstrap(): void {
+  const oauth = null; // wired in Task B3
+  const pat = loadPATSession();
+  session = oauth ?? pat ?? null;
+  notify();
+}
+
+export { signInWithPAT } from "./pat";
