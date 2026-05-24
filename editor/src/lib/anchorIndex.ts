@@ -2,6 +2,13 @@
 // {#kebab-slug} reference contracts. See spec
 // 2026-05-24-anchor-autocomplete-design.md for the rationale + lifecycle.
 
+import type { Octokit } from "@octokit/rest";
+import {
+  listFilesByGlob,
+  listDirectories,
+  getTextFile,
+} from "../app/githubApi";
+
 const HEADING_ANCHOR_RE = /^#{1,6}\s+.+?\s+\{#([a-z][a-z0-9-]*)\}\s*$/gm;
 const BOLD_PARA_ANCHOR_RE = /^\*\*[^*]+\*\*\s+\{#([a-z][a-z0-9-]*)\}\s*$/gm;
 const YAML_REF_RE = /\{\s*ref\s*:\s*([a-z][a-z0-9-]*)/g;
@@ -42,4 +49,130 @@ export function scanFileForAnchors(text: string): {
     while ((m = re.exec(stripped)) !== null) references.push(m[1]!);
   }
   return { defines, references };
+}
+
+// Module-level cache; reset by loadAnchorIndex with options.force.
+let cached: AnchorIndex | null = null;
+
+export function getCachedIndex(): AnchorIndex | null {
+  return cached;
+}
+
+export function setCachedIndexForTesting(index: AnchorIndex | null): void {
+  cached = index;
+}
+
+export function findDefinitions(slug: string): string[] {
+  if (!cached) return [];
+  return cached.entries.get(slug)?.definedIn ?? [];
+}
+
+export function findReferences(slug: string): string[] {
+  if (!cached) return [];
+  return cached.entries.get(slug)?.referencedBy ?? [];
+}
+
+export function listSlugs(): string[] {
+  if (!cached) return [];
+  return Array.from(cached.entries.keys()).sort();
+}
+
+/** Build (or rebuild) the index by fetching all eligible markdown files. */
+export async function loadAnchorIndex(
+  octokit: Octokit,
+  options: { force?: boolean; cartOverrides?: Map<string, string> } = {},
+): Promise<AnchorIndex> {
+  if (cached && !options.force) return cached;
+  const paths = await collectMarkdownPaths(octokit);
+  const cartOverrides = options.cartOverrides ?? new Map();
+  const entries = new Map<string, AnchorEntry>();
+
+  await Promise.all(
+    paths.map(async (path) => {
+      try {
+        const text =
+          cartOverrides.get(path) ?? (await getTextFile(octokit, path));
+        const { defines, references } = scanFileForAnchors(text);
+        for (const slug of defines) {
+          const entry = ensureEntry(entries, slug);
+          if (!entry.definedIn.includes(path)) entry.definedIn.push(path);
+        }
+        for (const slug of references) {
+          const entry = ensureEntry(entries, slug);
+          if (!entry.referencedBy.includes(path)) entry.referencedBy.push(path);
+        }
+      } catch (err) {
+        console.warn(
+          `[anchorIndex] skipping ${path}:`,
+          err instanceof Error ? err.message : err,
+        );
+      }
+    }),
+  );
+
+  cached = {
+    entries,
+    scannedAt: Date.now(),
+    scannedPaths: paths,
+  };
+  return cached;
+}
+
+function ensureEntry(map: Map<string, AnchorEntry>, slug: string): AnchorEntry {
+  let entry = map.get(slug);
+  if (!entry) {
+    entry = { slug, definedIn: [], referencedBy: [] };
+    map.set(slug, entry);
+  }
+  return entry;
+}
+
+async function collectMarkdownPaths(gh: Octokit): Promise<string[]> {
+  const [foundations, accessibility, patterns, product, writing, comps] =
+    await Promise.all([
+      listFilesByGlob(gh, "foundations/src", {
+        extension: ".md",
+        exclude: ["AUTHORING.md"],
+      }).catch(() => []),
+      listFilesByGlob(gh, "accessibility", {
+        extension: ".md",
+        exclude: ["AUTHORING.md"],
+      }).catch(() => []),
+      listFilesByGlob(gh, "content/src/patterns", {
+        extension: ".md",
+        exclude: ["AUTHORING.md"],
+      }).catch(() => []),
+      listFilesByGlob(gh, "content/src/product", {
+        extension: ".md",
+        exclude: ["AUTHORING.md"],
+      }).catch(() => []),
+      listFilesByGlob(gh, "content/src/writing", {
+        extension: ".md",
+        exclude: ["AUTHORING.md"],
+      }).catch(() => []),
+      listDirectories(gh, "components/src").catch(() => []),
+    ]);
+
+  const paths: string[] = [];
+  for (const name of foundations) paths.push(`foundations/src/${name}`);
+  for (const name of accessibility) paths.push(`accessibility/${name}`);
+  for (const name of patterns) paths.push(`content/src/patterns/${name}`);
+  for (const name of product) paths.push(`content/src/product/${name}`);
+  for (const name of writing) paths.push(`content/src/writing/${name}`);
+
+  // Components: enumerate per-slug domain mds + category mds.
+  for (const slug of comps) {
+    if (slug === "categories" || slug === "guidelines") continue;
+    for (const d of ["content", "usage", "design", "behavior", "tokens"]) {
+      paths.push(`components/src/${slug}/${d}.md`);
+    }
+  }
+  const categories = await listFilesByGlob(gh, "components/src/categories", {
+    extension: ".md",
+    exclude: ["AUTHORING.md"],
+  }).catch(() => []);
+  for (const name of categories)
+    paths.push(`components/src/categories/${name}`);
+
+  return paths;
 }
