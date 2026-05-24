@@ -247,6 +247,7 @@ export function MarkdownEditScreen({
           },
         );
         setPrUrl(result.prUrl);
+        void loadAnchorIndex(gh, { force: true }).catch(() => {});
         clearDraft();
       } catch (err) {
         if (err instanceof AnchorPreservationError) {
