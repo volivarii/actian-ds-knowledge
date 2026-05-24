@@ -44,8 +44,9 @@ export const guidelineMetaUiSchema: UiSchema = {
   },
   category: {
     "ui:title": "Category",
-    "ui:widget": "select",
-    "ui:help": "Picks the section the component lives under in the docs.",
+    "ui:widget": "CategorySelect",
+    "ui:help":
+      "Pick from the canonical category set in components/src/categories/.",
   },
   domains: {
     "ui:title": "Domain status matrix",
@@ -59,7 +60,9 @@ export const guidelineMetaUiSchema: UiSchema = {
   },
   related: {
     "ui:title": "Related components",
-    "ui:options": { addable: true, orderable: true, removable: true },
+    "ui:widget": "RelatedMultiSelect",
+    "ui:help":
+      "Search the DS Kit registry + authored components to cross-reference.",
   },
   examples: {
     "ui:title": "Examples",

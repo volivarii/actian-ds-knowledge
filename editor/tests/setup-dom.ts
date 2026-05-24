@@ -27,6 +27,7 @@ const COPY_KEYS = [
   "HTMLDivElement",
   "DOMException",
   "localStorage",
+  "sessionStorage",
 ] as const;
 
 for (const key of COPY_KEYS) {

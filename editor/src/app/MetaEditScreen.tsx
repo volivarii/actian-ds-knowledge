@@ -26,6 +26,15 @@ import { getTextFile } from "./githubApi";
 import { RJSFForm } from "../form-engine/RJSFForm";
 import { guidelineMetaUiSchema } from "../uiSchemas/guidelineMeta";
 import { parseYaml, stringifyYaml } from "../form-engine/yamlSerializer";
+import { CategorySelectWidget } from "../form-engine/widgets/CategorySelectWidget";
+import { RelatedMultiSelectWidget } from "../form-engine/widgets/RelatedMultiSelectWidget";
+
+// Custom RJSF widgets keyed by uiSchema `ui:widget` name. Octokit is
+// threaded via formContext so widgets can lazy-fetch option sets.
+const META_WIDGETS = {
+  CategorySelect: CategorySelectWidget,
+  RelatedMultiSelect: RelatedMultiSelectWidget,
+};
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 
@@ -320,6 +329,8 @@ export function MetaEditScreen({
           formData={formData}
           onChange={(next) => setFormData(next)}
           onSubmit={(v) => handleSubmit(v)}
+          widgets={META_WIDGETS}
+          formContext={{ octokit: gh }}
         >
           <Flex gap="2" mt="3" align="center" wrap="wrap">
             {inWorkspaceContext ? (
