@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Box,
@@ -29,6 +29,30 @@ import {
   submissionCartSingleton,
 } from "./drafts/store-instance";
 import { createOctokit } from "./core/octokit";
+import { loadComponentSlugs } from "./lib/componentSlugs";
+
+const DOMAINS = ["content", "usage", "design", "behavior", "tokens"] as const;
+type Domain = (typeof DOMAINS)[number];
+
+const DOMAIN_LABEL: Record<Domain, string> = {
+  content: "Content",
+  usage: "Usage",
+  design: "Design",
+  behavior: "Behavior",
+  tokens: "Tokens",
+};
+
+/** Pull `<slug>` from `workspace/<slug>` or `components/src/<slug>/<anything>`. */
+function activeComponentSlug(path: string | null): string | null {
+  if (!path) return null;
+  const ws = /^workspace\/([a-z0-9][a-z0-9-]*)$/.exec(path);
+  if (ws && ws[1]) return ws[1];
+  const file = /^components\/src\/([^/]+)\//.exec(path);
+  if (file && file[1] && file[1] !== "categories" && file[1] !== "guidelines") {
+    return file[1];
+  }
+  return null;
+}
 
 function GearIcon() {
   return (
@@ -57,8 +81,34 @@ export default function App() {
   const [submissionRows, setSubmissionRows] = useState<SubmissionRow[]>([]);
   const saveState = useSaveState(activePath, draftStoreSingleton);
   const cartEntries = useCart(submissionCartSingleton);
-  const commands: CommandItem[] = useMemo(
-    () => [
+  // The header's Submit-batch button + the staging dialog need an Octokit
+  // instance. createOctokit throws if the PAT is missing; we render the
+  // button anyway and let SubmissionStaging surface the failure on click.
+  const headerOctokit = useMemo(() => {
+    try {
+      return createOctokit();
+    } catch {
+      return null;
+    }
+  }, []);
+  // Lazy-load the known component slug set so Cmd-K can offer
+  // "Go to <slug>" without the user knowing exact spellings.
+  const [knownSlugs, setKnownSlugs] = useState<string[]>([]);
+  useEffect(() => {
+    if (!headerOctokit) return;
+    let cancelled = false;
+    (async () => {
+      const slugs = await loadComponentSlugs(headerOctokit);
+      if (!cancelled) setKnownSlugs(slugs);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [headerOctokit]);
+
+  const commands: CommandItem[] = useMemo(() => {
+    const activeSlug = activeComponentSlug(activePath);
+    const base: CommandItem[] = [
       {
         id: "open-coverage",
         label: "Open coverage dashboard",
@@ -66,8 +116,15 @@ export default function App() {
         run: () => setActivePath(null),
       },
       {
+        id: "open-inbox",
+        label: "Open draft inbox",
+        hint: cartEntries.length > 0 ? `${cartEntries.length} staged` : "empty",
+        group: "Navigate",
+        run: () => setActivePath("inbox"),
+      },
+      {
         id: "open-batch",
-        label: "Open submission batch",
+        label: "Open submission batch dialog",
         hint: cartEntries.length > 0 ? `${cartEntries.length} staged` : "empty",
         group: "Actions",
         run: () => setStagingOpen(true),
@@ -84,19 +141,46 @@ export default function App() {
         group: "Actions",
         run: () => setSettingsOpen(true),
       },
-    ],
-    [cartEntries.length],
-  );
-  // The header's Submit-batch button + the staging dialog need an Octokit
-  // instance. createOctokit throws if the PAT is missing; we render the
-  // button anyway and let SubmissionStaging surface the failure on click.
-  const headerOctokit = useMemo(() => {
-    try {
-      return createOctokit();
-    } catch {
-      return null;
+    ];
+    // Component-context commands — surfaced only when an active
+    // component is in scope (workspace OR a component-scoped file).
+    if (activeSlug) {
+      base.push({
+        id: `ctx-workspace-${activeSlug}`,
+        label: `Open workspace overview (${activeSlug})`,
+        group: "Current component",
+        run: () => setActivePath(`workspace/${activeSlug}`),
+      });
+      for (const d of DOMAINS) {
+        base.push({
+          id: `ctx-domain-${d}`,
+          label: `Switch to ${DOMAIN_LABEL[d]}`,
+          hint: `${activeSlug}/${d}.md`,
+          group: "Current component",
+          run: () => setActivePath(`components/src/${activeSlug}/${d}.md`),
+        });
+      }
+      base.push({
+        id: "ctx-meta",
+        label: "Edit advanced metadata",
+        hint: `${activeSlug}/_meta.yml`,
+        group: "Current component",
+        run: () => setActivePath(`components/src/${activeSlug}/_meta.yml`),
+      });
     }
-  }, []);
+    // Goto-by-slug — every known component as a navigable target. Many
+    // entries; cmdk's typeahead handles the filtering.
+    for (const slug of knownSlugs) {
+      base.push({
+        id: `goto-${slug}`,
+        label: `Go to ${slug}`,
+        hint: `workspace/${slug}`,
+        group: "Components",
+        run: () => setActivePath(`workspace/${slug}`),
+      });
+    }
+    return base;
+  }, [activePath, cartEntries.length, knownSlugs]);
   return (
     <Theme accentColor="indigo" radius="medium">
       <Flex direction="column" style={{ height: "100vh", width: "100vw" }}>
