@@ -24,12 +24,13 @@ import {
   Spinner,
   Text,
 } from "@radix-ui/themes";
+import * as Accordion from "@radix-ui/react-accordion";
+import { WorkspaceDomainEditor } from "./WorkspaceDomainEditor";
 import {
   DOMAIN_HINT,
   DOMAIN_LABEL,
   domainPathFor,
   loadWorkspaceState,
-  promoteDomainToDraft,
   setDomainInherited,
   stageMetadataForEdit,
   type Domain,
@@ -89,14 +90,6 @@ export function AuthoringWorkspace({
     void refresh();
   }, [refresh, cartEntries]);
 
-  const onWriteDomain = useCallback(
-    async (domain: Domain) => {
-      await promoteDomainToDraft(octokit, slug, domain);
-      onNavigate(domainPathFor(slug, domain));
-    },
-    [octokit, slug, onNavigate],
-  );
-
   const onEditMetadata = useCallback(async () => {
     await stageMetadataForEdit(octokit, slug);
     onNavigate(`components/src/${slug}/_meta.yml`);
@@ -109,6 +102,9 @@ export function AuthoringWorkspace({
     },
     [octokit, slug, refresh],
   );
+
+  // Accordion: single-open, collapsible. "" = all collapsed.
+  const [openDomain, setOpenDomain] = useState<Domain | "">("");
 
   if (state.kind === "loading") {
     return (
@@ -189,27 +185,34 @@ export function AuthoringWorkspace({
         Authoring tasks
       </Heading>
       <Text size="1" color="gray" as="p" mb="3">
-        Each domain below is one guidance file in this component's folder. Click{" "}
-        <em>Write</em> to draft it — the metadata stages itself automatically
-        the first time.
+        Each domain below is one guidance file in this component's folder. Click
+        a card to expand the inline editor — the metadata stages itself
+        automatically the first time you type.
       </Text>
 
-      <Flex direction="column" gap="2">
-        {ws.domains.map((d) => (
-          <DomainCard
-            key={d.domain}
-            domain={d.domain}
-            status={d.status}
-            hasCartMd={d.hasCartMd}
-            slug={slug}
-            onWrite={() => onWriteDomain(d.domain)}
-            onOpen={() => onNavigate(domainPathFor(slug, d.domain))}
-            onToggleInherited={(inherited) =>
-              onToggleInherited(d.domain, inherited)
-            }
-          />
-        ))}
-      </Flex>
+      <Accordion.Root
+        type="single"
+        collapsible
+        value={openDomain}
+        onValueChange={(v) => setOpenDomain(v as Domain | "")}
+      >
+        <Flex direction="column" gap="2">
+          {ws.domains.map((d) => (
+            <DomainCard
+              key={d.domain}
+              domain={d.domain}
+              status={d.status}
+              hasCartMd={d.hasCartMd}
+              slug={slug}
+              octokit={octokit}
+              onOpen={() => onNavigate(domainPathFor(slug, d.domain))}
+              onToggleInherited={(inherited) =>
+                onToggleInherited(d.domain, inherited)
+              }
+            />
+          ))}
+        </Flex>
+      </Accordion.Root>
 
       <Heading size="3" mt="5" mb="2">
         Metadata
@@ -243,7 +246,7 @@ interface DomainCardProps {
   status: WorkspaceDomainStatus;
   hasCartMd: boolean;
   slug: string;
-  onWrite: () => void | Promise<void>;
+  octokit: Octokit;
   onOpen: () => void;
   onToggleInherited: (inherited: boolean) => void | Promise<void>;
 }
@@ -252,7 +255,8 @@ function DomainCard({
   domain,
   status,
   hasCartMd,
-  onWrite,
+  slug,
+  octokit,
   onOpen,
   onToggleInherited,
 }: DomainCardProps) {
@@ -266,62 +270,95 @@ function DomainCard({
   const inheritedDisabled = isAuthored || hasCartMd;
 
   return (
-    <Card variant="surface">
-      <Flex align="center" justify="between" p="3" gap="3">
-        <Box style={{ minWidth: 0, flex: 1 }}>
-          <Flex align="center" gap="2" mb="1">
-            <Text size="3" weight="medium">
-              {label}
-            </Text>
-            <Badge color={STATUS_COLOR[status]} variant="soft" size="1">
-              {STATUS_LABEL[status]}
-            </Badge>
-            {hasCartMd && (
-              <Badge color="indigo" variant="soft" size="1">
-                In batch
-              </Badge>
-            )}
-          </Flex>
-          <Text size="1" color="gray" as="div" mb="2">
-            {hint}
-          </Text>
-          <Text
-            size="1"
-            color={inheritedDisabled ? "gray" : undefined}
-            as="label"
+    <Accordion.Item value={domain} asChild>
+      <Card variant="surface">
+        <Accordion.Trigger asChild>
+          <Flex
+            align="center"
+            justify="between"
+            p="3"
+            gap="3"
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              cursor: inheritedDisabled ? "not-allowed" : "pointer",
+              cursor: isInherited ? "default" : "pointer",
+              userSelect: "none",
+            }}
+            onClick={(e) => {
+              // Trigger expands the accordion item via Radix. We
+              // shortcut: when status === inherited, no editor needed,
+              // so don't trigger expand. Prevent the default to avoid
+              // accordion toggle in that case.
+              if (isInherited) e.preventDefault();
             }}
           >
-            <Checkbox
-              checked={isInherited}
-              disabled={inheritedDisabled}
-              onCheckedChange={(checked) =>
-                void onToggleInherited(checked === true)
-              }
-            />
-            Use category default — don't author this domain
-          </Text>
-        </Box>
-        <Flex gap="2" align="center">
-          {isAuthored ? (
-            <Button variant="outline" size="2" onClick={onOpen}>
-              Edit {label} →
-            </Button>
-          ) : status === "inherited" ? (
-            <Text size="1" color="gray">
-              No file needed
-            </Text>
-          ) : (
-            <Button size="2" onClick={() => void onWrite()}>
-              Write {label} →
-            </Button>
+            <Box style={{ minWidth: 0, flex: 1 }}>
+              <Flex align="center" gap="2" mb="1">
+                <Text size="3" weight="medium">
+                  {label}
+                </Text>
+                <Badge color={STATUS_COLOR[status]} variant="soft" size="1">
+                  {STATUS_LABEL[status]}
+                </Badge>
+                {hasCartMd && (
+                  <Badge color="indigo" variant="soft" size="1">
+                    In batch
+                  </Badge>
+                )}
+              </Flex>
+              <Text size="1" color="gray" as="div" mb="2">
+                {hint}
+              </Text>
+              <Text
+                size="1"
+                color={inheritedDisabled ? "gray" : undefined}
+                as="label"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  cursor: inheritedDisabled ? "not-allowed" : "pointer",
+                }}
+              >
+                <Checkbox
+                  checked={isInherited}
+                  disabled={inheritedDisabled}
+                  onCheckedChange={(checked) =>
+                    void onToggleInherited(checked === true)
+                  }
+                />
+                Use category default — don't author this domain
+              </Text>
+            </Box>
+            <Flex gap="2" align="center" onClick={(e) => e.stopPropagation()}>
+              {isAuthored ? (
+                <Button variant="outline" size="1" onClick={onOpen}>
+                  Open in full editor →
+                </Button>
+              ) : status === "inherited" ? (
+                <Text size="1" color="gray">
+                  No file needed
+                </Text>
+              ) : null}
+            </Flex>
+          </Flex>
+        </Accordion.Trigger>
+        <Accordion.Content>
+          {!isInherited && (
+            <Box
+              style={{
+                borderTop: "1px solid var(--gray-5)",
+                background: "var(--gray-1)",
+              }}
+            >
+              <WorkspaceDomainEditor
+                slug={slug}
+                domain={domain}
+                octokit={octokit}
+              />
+            </Box>
           )}
-        </Flex>
-      </Flex>
-    </Card>
+        </Accordion.Content>
+      </Card>
+    </Accordion.Item>
   );
 }
