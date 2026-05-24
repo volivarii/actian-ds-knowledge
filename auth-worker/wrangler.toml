@@ -1,5 +1,5 @@
 name = "actian-ds-knowledge-auth"
-main = "src/index.ts"
+main = "src/index.js"
 compatibility_date = "2025-12-01"
 
 [vars]
