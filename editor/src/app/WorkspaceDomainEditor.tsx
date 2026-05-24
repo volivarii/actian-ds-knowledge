@@ -24,10 +24,13 @@ import {
 } from "@radix-ui/themes";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { Preview } from "../markdown-engine/Preview";
+import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
 import { decodeBase64Utf8 } from "./githubApi";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 import { buildMarkdownStub } from "../lib/markdownStubs";
+import { loadAnchorIndex } from "../lib/anchorIndex";
+import { computeRenameWarnings } from "../markdown-engine/anchorLinter";
 import {
   domainPathFor,
   promoteDomainToDraft,
@@ -38,6 +41,7 @@ export interface WorkspaceDomainEditorProps {
   slug: string;
   domain: Domain;
   octokit: Octokit;
+  onNavigate?: (path: string) => void;
 }
 
 type LoadState =
@@ -61,6 +65,7 @@ export function WorkspaceDomainEditor({
   slug,
   domain,
   octokit,
+  onNavigate,
 }: WorkspaceDomainEditorProps) {
   const path = useMemo(() => domainPathFor(slug, domain), [slug, domain]);
 
@@ -68,10 +73,18 @@ export function WorkspaceDomainEditor({
   const [text, setText] = useState<string>("");
   const [showPreview, setShowPreview] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [anchorPopover, setAnchorPopover] = useState<{
+    slug: string;
+    triggerEl: HTMLElement;
+  } | null>(null);
   const cartEntries = useCart(submissionCartSingleton);
   const inCart = useMemo(
     () => cartEntries.some((e) => e.path === path),
     [cartEntries, path],
+  );
+  const renameWarnings = useMemo(
+    () => computeRenameWarnings(path, text),
+    [path, text],
   );
 
   // Refs for flush-on-unmount + sync access to latest text in the
@@ -112,6 +125,9 @@ export function WorkspaceDomainEditor({
     let cancelled = false;
     setLoad({ kind: "loading" });
     setSaveState("idle");
+    void loadAnchorIndex(octokit).catch(() => {
+      /* swallow — autocomplete just won't fire */
+    });
     (async () => {
       try {
         const cartHit = submissionCartSingleton
@@ -252,6 +268,18 @@ export function WorkspaceDomainEditor({
           {showPreview ? "Hide preview" : "Show preview"}
         </Button>
       </Flex>
+      {renameWarnings.length > 0 && (
+        <Callout.Root color="amber" size="1" mb="2">
+          <Callout.Text>
+            {renameWarnings
+              .map(
+                (w) =>
+                  `#${w.removedSlug} disappeared — referenced by ${w.refCount} file${w.refCount === 1 ? "" : "s"}`,
+              )
+              .join(" · ")}
+          </Callout.Text>
+        </Callout.Root>
+      )}
       <Box
         style={{
           border: "1px solid var(--gray-5)",
@@ -261,7 +289,25 @@ export function WorkspaceDomainEditor({
           overflow: "hidden",
         }}
       >
-        <CodeMirrorEditor initialText={text} onChange={onChange} />
+        <CodeMirrorEditor
+          initialText={text}
+          onChange={onChange}
+          onAnchorClick={(slug, el) =>
+            setAnchorPopover({ slug, triggerEl: el })
+          }
+        />
+        {anchorPopover && (
+          <AnchorReferencesPopover
+            slug={anchorPopover.slug}
+            triggerEl={anchorPopover.triggerEl}
+            open
+            onOpenChange={(o) => !o && setAnchorPopover(null)}
+            onNavigate={(p) => {
+              setAnchorPopover(null);
+              onNavigate?.(p);
+            }}
+          />
+        )}
       </Box>
       {showPreview && (
         <Box

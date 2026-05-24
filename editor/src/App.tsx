@@ -30,6 +30,7 @@ import {
 } from "./drafts/store-instance";
 import { createOctokit } from "./core/octokit";
 import { loadComponentSlugs } from "./lib/componentSlugs";
+import { loadAnchorIndex } from "./lib/anchorIndex";
 
 const DOMAINS = ["content", "usage", "design", "behavior", "tokens"] as const;
 type Domain = (typeof DOMAINS)[number];
@@ -140,6 +141,19 @@ export default function App() {
         label: "Open settings",
         group: "Actions",
         run: () => setSettingsOpen(true),
+      },
+      {
+        id: "refresh-anchor-index",
+        label: "Refresh anchor index",
+        hint: "Re-scan all markdown for {#slug} markers",
+        group: "Actions",
+        run: () => {
+          if (headerOctokit) {
+            void loadAnchorIndex(headerOctokit, { force: true }).catch(
+              () => {},
+            );
+          }
+        },
       },
     ];
     // Component-context commands — surfaced only when an active

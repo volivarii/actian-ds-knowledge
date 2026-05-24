@@ -27,6 +27,7 @@ import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
 import { Outline } from "./Outline";
+import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
 import {
   draftStoreSingleton,
   submissionCartSingleton,
@@ -34,6 +35,8 @@ import {
 import { useDraft } from "../drafts/useDraft";
 import { useCart } from "../drafts/useCart";
 import { buildMarkdownStub } from "../lib/markdownStubs";
+import { loadAnchorIndex } from "../lib/anchorIndex";
+import { computeRenameWarnings } from "../markdown-engine/anchorLinter";
 import { Badge } from "@radix-ui/themes";
 import { TierBanner } from "./TierBanner";
 
@@ -41,6 +44,7 @@ interface MarkdownEditScreenProps {
   path: string;
   octokit?: Octokit;
   onOpenSettings?: () => void;
+  onNavigate?: (path: string) => void;
 }
 
 type LoadSource = "remote" | "cart" | "stub";
@@ -60,8 +64,13 @@ export function MarkdownEditScreen({
   path,
   octokit,
   onOpenSettings,
+  onNavigate,
 }: MarkdownEditScreenProps) {
   const [ghError, setGhError] = useState<string | null>(null);
+  const [anchorPopover, setAnchorPopover] = useState<{
+    slug: string;
+    triggerEl: HTMLElement;
+  } | null>(null);
   const gh = useMemo<Octokit | null>(() => {
     if (octokit) return octokit;
     try {
@@ -107,9 +116,16 @@ export function MarkdownEditScreen({
   }, [cartEntries, componentSlug, path]);
   const inWorkspaceContext = siblingStaged > 0;
   const [confirmOrphanSubmit, setConfirmOrphanSubmit] = useState(false);
+  const renameWarnings = useMemo(
+    () => computeRenameWarnings(path, text),
+    [path, text],
+  );
 
   useEffect(() => {
     if (!gh) return;
+    void loadAnchorIndex(gh).catch(() => {
+      /* swallow — autocomplete just won't fire */
+    });
     setLoad({ kind: "loading" });
     (async () => {
       try {
@@ -232,6 +248,7 @@ export function MarkdownEditScreen({
           },
         );
         setPrUrl(result.prUrl);
+        void loadAnchorIndex(gh, { force: true }).catch(() => {});
         clearDraft();
       } catch (err) {
         if (err instanceof AnchorPreservationError) {
@@ -301,6 +318,18 @@ export function MarkdownEditScreen({
           )}
         </Flex>
       </Flex>
+      {renameWarnings.length > 0 && (
+        <Callout.Root color="amber" size="1">
+          <Callout.Text>
+            {renameWarnings
+              .map(
+                (w) =>
+                  `#${w.removedSlug} disappeared — referenced by ${w.refCount} file${w.refCount === 1 ? "" : "s"}`,
+              )
+              .join(" · ")}
+          </Callout.Text>
+        </Callout.Root>
+      )}
       <Box>{view && <Toolbar view={view} />}</Box>
       <Flex flexGrow="1" minHeight="0" gap="2">
         <Box
@@ -332,7 +361,22 @@ export function MarkdownEditScreen({
             initialText={text}
             onChange={handleChange}
             onReady={setView}
+            onAnchorClick={(slug, el) =>
+              setAnchorPopover({ slug, triggerEl: el })
+            }
           />
+          {anchorPopover && (
+            <AnchorReferencesPopover
+              slug={anchorPopover.slug}
+              triggerEl={anchorPopover.triggerEl}
+              open
+              onOpenChange={(o) => !o && setAnchorPopover(null)}
+              onNavigate={(p) => {
+                setAnchorPopover(null);
+                onNavigate?.(p);
+              }}
+            />
+          )}
         </Box>
         <Box
           flexGrow="1"
