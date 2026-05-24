@@ -1,7 +1,8 @@
-import type {
-  CompletionContext,
-  CompletionResult,
-  Completion,
+import {
+  autocompletion,
+  type CompletionContext,
+  type CompletionResult,
+  type Completion,
 } from "@codemirror/autocomplete";
 import { listSlugs, findReferences } from "../lib/anchorIndex";
 
@@ -50,9 +51,6 @@ function buildResult(from: number, partial: string): CompletionResult | null {
 
 /** CM6 extension factory — register this in the editor's extension array. */
 export function anchorCompletionExtension() {
-  // Imported lazily so tests can use anchorCompletionSource directly.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { autocompletion } = require("@codemirror/autocomplete");
   return autocompletion({
     override: [anchorCompletionSource],
     activateOnTyping: true,

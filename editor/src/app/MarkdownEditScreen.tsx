@@ -34,6 +34,7 @@ import {
 import { useDraft } from "../drafts/useDraft";
 import { useCart } from "../drafts/useCart";
 import { buildMarkdownStub } from "../lib/markdownStubs";
+import { loadAnchorIndex } from "../lib/anchorIndex";
 import { Badge } from "@radix-ui/themes";
 import { TierBanner } from "./TierBanner";
 
@@ -110,6 +111,9 @@ export function MarkdownEditScreen({
 
   useEffect(() => {
     if (!gh) return;
+    void loadAnchorIndex(gh).catch(() => {
+      /* swallow — autocomplete just won't fire */
+    });
     setLoad({ kind: "loading" });
     (async () => {
       try {

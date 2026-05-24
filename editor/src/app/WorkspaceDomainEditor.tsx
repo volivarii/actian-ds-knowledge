@@ -28,6 +28,7 @@ import { decodeBase64Utf8 } from "./githubApi";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 import { buildMarkdownStub } from "../lib/markdownStubs";
+import { loadAnchorIndex } from "../lib/anchorIndex";
 import {
   domainPathFor,
   promoteDomainToDraft,
@@ -112,6 +113,9 @@ export function WorkspaceDomainEditor({
     let cancelled = false;
     setLoad({ kind: "loading" });
     setSaveState("idle");
+    void loadAnchorIndex(octokit).catch(() => {
+      /* swallow — autocomplete just won't fire */
+    });
     (async () => {
       try {
         const cartHit = submissionCartSingleton

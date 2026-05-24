@@ -17,11 +17,9 @@ import {
 } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
-import {
-  HighlightStyle,
-  syntaxHighlighting,
-} from "@codemirror/language";
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
+import { anchorCompletionExtension } from "./anchorCompletion";
 
 export interface CodeMirrorEditorProps {
   initialText: string;
@@ -97,6 +95,7 @@ export function CodeMirrorEditor({
         markdown(),
         syntaxHighlighting(proseHighlight),
         anchorMutePlugin,
+        anchorCompletionExtension(),
         EditorView.lineWrapping,
         EditorView.updateListener.of((u) => {
           if (u.docChanged) onChange(u.state.doc.toString());
