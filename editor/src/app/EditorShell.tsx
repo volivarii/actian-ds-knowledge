@@ -28,7 +28,8 @@ function isPlainMarkdown(path: string): boolean {
       /^components\/src\/(?!categories\/AUTHORING\.md|AUTHORING\.md|EDITING-GUIDE\.md)[^/]+\/[^/]+\.md$/.test(
         path,
       ) ||
-      /^components\/src\/categories\/[^/]+\.md$/.test(path)) &&
+      /^components\/src\/categories\/[^/]+\.md$/.test(path) ||
+      /^content\/src\/(patterns|product|writing)\/[^/]+\.md$/.test(path)) &&
     !/AUTHORING\.md$/.test(path)
   );
 }

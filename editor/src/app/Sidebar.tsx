@@ -21,7 +21,60 @@ const COMPONENT_VISIBLE_CAP = 20;
 interface GroupedEntries {
   foundations: string[];
   accessibility: string[];
+  patterns: string[];
+  product: string[];
+  writing: string[];
   components: string[];
+}
+
+type SectionKey =
+  | "foundations"
+  | "accessibility"
+  | "patterns"
+  | "product"
+  | "writing"
+  | "components";
+
+const SECTION_KEYS: ReadonlyArray<SectionKey> = [
+  "foundations",
+  "accessibility",
+  "patterns",
+  "product",
+  "writing",
+  "components",
+];
+
+const SECTION_STORAGE_KEY = "sidebar.section.collapsed.v1";
+
+function defaultCollapsed(): Record<SectionKey, boolean> {
+  // All sections start collapsed — keeps the sidebar tight on first open;
+  // the user expands only what they want to work in. Per-section state
+  // persists across reloads via sessionStorage.
+  return {
+    foundations: true,
+    accessibility: true,
+    patterns: true,
+    product: true,
+    writing: true,
+    components: true,
+  };
+}
+
+function loadCollapsedSections(): Record<SectionKey, boolean> {
+  try {
+    const raw = sessionStorage.getItem(SECTION_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<Record<SectionKey, boolean>>;
+      const result = defaultCollapsed();
+      for (const k of SECTION_KEYS) {
+        if (typeof parsed[k] === "boolean") result[k] = parsed[k]!;
+      }
+      return result;
+    }
+  } catch {
+    /* ignore parse / storage errors */
+  }
+  return defaultCollapsed();
 }
 
 export function Sidebar({
@@ -32,25 +85,58 @@ export function Sidebar({
 }: SidebarProps) {
   const [entries, setEntries] = useState<GroupedEntries | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [sectionCollapsed, setSectionCollapsed] = useState<
+    Record<SectionKey, boolean>
+  >(() => loadCollapsedSections());
   const cartEntries = useCart(submissionCartSingleton);
   const inboxActive = activePath === "inbox";
 
+  function toggleSection(group: SectionKey) {
+    setSectionCollapsed((prev) => {
+      const next = { ...prev, [group]: !prev[group] };
+      try {
+        sessionStorage.setItem(SECTION_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
+
   useEffect(() => {
     (async () => {
-      const [foundations, accessibility, comps] = await Promise.all([
-        listFilesByGlob(octokit, "foundations/src", {
-          extension: ".md",
-          exclude: ["AUTHORING.md"],
-        }).catch(() => [] as string[]),
-        listFilesByGlob(octokit, "accessibility", {
-          extension: ".md",
-          exclude: ["AUTHORING.md"],
-        }).catch(() => [] as string[]),
-        listDirectories(octokit, "components/src").catch(() => [] as string[]),
-      ]);
+      const [foundations, accessibility, patterns, product, writing, comps] =
+        await Promise.all([
+          listFilesByGlob(octokit, "foundations/src", {
+            extension: ".md",
+            exclude: ["AUTHORING.md"],
+          }).catch(() => [] as string[]),
+          listFilesByGlob(octokit, "accessibility", {
+            extension: ".md",
+            exclude: ["AUTHORING.md"],
+          }).catch(() => [] as string[]),
+          listFilesByGlob(octokit, "content/src/patterns", {
+            extension: ".md",
+            exclude: ["AUTHORING.md"],
+          }).catch(() => [] as string[]),
+          listFilesByGlob(octokit, "content/src/product", {
+            extension: ".md",
+            exclude: ["AUTHORING.md"],
+          }).catch(() => [] as string[]),
+          listFilesByGlob(octokit, "content/src/writing", {
+            extension: ".md",
+            exclude: ["AUTHORING.md"],
+          }).catch(() => [] as string[]),
+          listDirectories(octokit, "components/src").catch(
+            () => [] as string[],
+          ),
+        ]);
       setEntries({
         foundations,
         accessibility,
+        patterns,
+        product,
+        writing,
         components: comps.filter((c) => !SKIP_COMPONENT_DIRS.has(c)),
       });
     })();
@@ -63,6 +149,63 @@ export function Sidebar({
           Loading…
         </Text>
       </Box>
+    );
+  }
+
+  function sectionHeader(
+    key: SectionKey,
+    label: string,
+    count: number,
+    listId: string,
+  ) {
+    const collapsed = sectionCollapsed[key];
+    const headerId = `sidebar-section-${key}-header`;
+    return (
+      <Flex
+        id={headerId}
+        align="center"
+        justify="between"
+        gap="2"
+        px="3"
+        py="2"
+        role="button"
+        tabIndex={0}
+        aria-expanded={!collapsed}
+        aria-controls={listId}
+        style={{ cursor: "pointer", userSelect: "none" }}
+        onClick={() => toggleSection(key)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleSection(key);
+          }
+        }}
+      >
+        <Flex align="center" gap="2">
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 16,
+              height: 16,
+              fontSize: 14,
+              lineHeight: 1,
+              fontWeight: 700,
+              color: "var(--gray-12)",
+              transition: "transform 120ms",
+              transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)",
+            }}
+          >
+            ▼
+          </span>
+          <Heading size="2">{label}</Heading>
+        </Flex>
+        <Text size="1" color="gray">
+          {count}
+        </Text>
+      </Flex>
     );
   }
 
@@ -162,29 +305,104 @@ export function Sidebar({
         )}
       </Flex>
 
-      <Box p="3">
-        <Heading size="2">Foundations</Heading>
-      </Box>
-      {entries.foundations.map((name) => row(`foundations/src/${name}`, name))}
+      {entries.foundations.length > 0 && (
+        <Box>
+          {sectionHeader(
+            "foundations",
+            "Foundations",
+            entries.foundations.length,
+            "sidebar-section-foundations-list",
+          )}
+          {!sectionCollapsed.foundations && (
+            <Box
+              id="sidebar-section-foundations-list"
+              role="group"
+              aria-labelledby="sidebar-section-foundations-header"
+            >
+              {entries.foundations.map((name) =>
+                row(`foundations/src/${name}`, name),
+              )}
+            </Box>
+          )}
+        </Box>
+      )}
 
-      <Box p="3">
-        <Heading size="2">Accessibility</Heading>
-      </Box>
-      {entries.accessibility.map((name) => row(`accessibility/${name}`, name))}
+      {entries.accessibility.length > 0 && (
+        <Box>
+          {sectionHeader(
+            "accessibility",
+            "Accessibility",
+            entries.accessibility.length,
+            "sidebar-section-accessibility-list",
+          )}
+          {!sectionCollapsed.accessibility && (
+            <Box
+              id="sidebar-section-accessibility-list"
+              role="group"
+              aria-labelledby="sidebar-section-accessibility-header"
+            >
+              {entries.accessibility.map((name) =>
+                row(`accessibility/${name}`, name),
+              )}
+            </Box>
+          )}
+        </Box>
+      )}
 
-      <Box p="3">
-        <Heading size="2">Components ({entries.components.length})</Heading>
-      </Box>
-      {componentsVisible.map((slug) => row(`workspace/${slug}`, slug))}
-      {!expanded && entries.components.length > COMPONENT_VISIBLE_CAP && (
-        <Box px="3" py="1">
-          <Text
-            size="1"
-            style={{ cursor: "pointer", textDecoration: "underline" }}
-            onClick={() => setExpanded(true)}
-          >
-            Show all ({entries.components.length})
-          </Text>
+      {(["patterns", "product", "writing"] as const).map((group) => {
+        const items = entries[group];
+        if (items.length === 0) return null;
+        const label = `Content — ${group[0]!.toUpperCase()}${group.slice(1)}`;
+        const collapsed = sectionCollapsed[group];
+        const listId = `sidebar-section-${group}-list`;
+        return (
+          <Box key={group}>
+            {sectionHeader(group, label, items.length, listId)}
+            {!collapsed && (
+              <Box
+                id={listId}
+                role="group"
+                aria-labelledby={`sidebar-section-${group}-header`}
+              >
+                {items.map((name) => row(`content/src/${group}/${name}`, name))}
+              </Box>
+            )}
+          </Box>
+        );
+      })}
+
+      {entries.components.length > 0 && (
+        <Box>
+          {sectionHeader(
+            "components",
+            "Components",
+            entries.components.length,
+            "sidebar-section-components-list",
+          )}
+          {!sectionCollapsed.components && (
+            <Box
+              id="sidebar-section-components-list"
+              role="group"
+              aria-labelledby="sidebar-section-components-header"
+            >
+              {componentsVisible.map((slug) => row(`workspace/${slug}`, slug))}
+              {!expanded &&
+                entries.components.length > COMPONENT_VISIBLE_CAP && (
+                  <Box px="3" py="1">
+                    <Text
+                      size="1"
+                      style={{
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                      }}
+                      onClick={() => setExpanded(true)}
+                    >
+                      Show all ({entries.components.length})
+                    </Text>
+                  </Box>
+                )}
+            </Box>
+          )}
         </Box>
       )}
     </Flex>
