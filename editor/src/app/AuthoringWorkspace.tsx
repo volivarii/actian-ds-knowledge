@@ -37,6 +37,7 @@ import {
   type WorkspaceDomainStatus,
   type WorkspaceState,
 } from "../lib/workspaceState";
+import { formatRelativeTime, type CommitInfo } from "../lib/derivedFields";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 
@@ -203,6 +204,7 @@ export function AuthoringWorkspace({
               domain={d.domain}
               status={d.status}
               hasCartMd={d.hasCartMd}
+              lastCommit={d.lastCommit ?? null}
               slug={slug}
               octokit={octokit}
               onOpen={() => onNavigate(domainPathFor(slug, d.domain))}
@@ -245,6 +247,7 @@ interface DomainCardProps {
   domain: Domain;
   status: WorkspaceDomainStatus;
   hasCartMd: boolean;
+  lastCommit: CommitInfo | null;
   slug: string;
   octokit: Octokit;
   onOpen: () => void;
@@ -255,6 +258,7 @@ function DomainCard({
   domain,
   status,
   hasCartMd,
+  lastCommit,
   slug,
   octokit,
   onOpen,
@@ -291,7 +295,7 @@ function DomainCard({
             }}
           >
             <Box style={{ minWidth: 0, flex: 1 }}>
-              <Flex align="center" gap="2" mb="1">
+              <Flex align="center" gap="2" mb="1" wrap="wrap">
                 <Text size="3" weight="medium">
                   {label}
                 </Text>
@@ -302,6 +306,19 @@ function DomainCard({
                   <Badge color="indigo" variant="soft" size="1">
                     In batch
                   </Badge>
+                )}
+                {lastCommit && (
+                  <Text size="1" color="gray" as="span">
+                    updated {formatRelativeTime(lastCommit.date)}
+                    {lastCommit.author && (
+                      <>
+                        {" · "}
+                        <Text size="1" color="gray" as="span">
+                          @{lastCommit.author}
+                        </Text>
+                      </>
+                    )}
+                  </Text>
                 )}
               </Flex>
               <Text size="1" color="gray" as="div" mb="2">

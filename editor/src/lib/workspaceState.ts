@@ -17,6 +17,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { getTextFile } from "../app/githubApi";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import type { SubmissionCart } from "../drafts/SubmissionCart";
+import { fetchLatestCommit, type CommitInfo } from "./derivedFields";
 
 export const DOMAINS = [
   "content",
@@ -92,6 +93,10 @@ export interface WorkspaceDomain {
   hasCartMd: boolean;
   /** True iff the <domain>.md file exists on the remote (main). */
   hasRemoteMd: boolean;
+  /** Latest commit touching the <domain>.md on main, when the file is on
+   *  remote. null when no commit history (new file, cart-only, or fetch
+   *  failed). T1.8 Phase 3a — replaces manual `updatedAt` + `owner`. */
+  lastCommit?: CommitInfo | null;
 }
 
 export interface WorkspaceState {
@@ -179,12 +184,22 @@ export async function loadWorkspaceState(
   // check the cart. Status is derived from those + the _meta.yml's
   // explicit declaration (which only carries "inherited" / "approved"
   // signal that isn't deducible from file presence alone).
+  //
+  // For domains with a remote file, ALSO fetch the latest commit — used
+  // by the workspace to display derived "updated X ago · @author"
+  // metadata (T1.8 Phase 3a). Fetches are cached per-session 5min.
   const domainResults = await Promise.all(
     DOMAINS.map(async (d) => {
       const path = domainPathFor(slug, d);
       const cartHit = allCart.some((e) => e.path === path);
       const remoteHit = cartHit ? false : (await tryGetText(gh, path)) !== null;
-      return { domain: d, hasCartMd: cartHit, hasRemoteMd: remoteHit };
+      const lastCommit = remoteHit ? await fetchLatestCommit(gh, path) : null;
+      return {
+        domain: d,
+        hasCartMd: cartHit,
+        hasRemoteMd: remoteHit,
+        lastCommit,
+      };
     }),
   );
 
