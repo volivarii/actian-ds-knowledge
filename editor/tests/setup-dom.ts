@@ -23,6 +23,7 @@ const COPY_KEYS = [
   "MutationObserver",
   "Event",
   "CustomEvent",
+  "MessageEvent",
   "Window",
   "HTMLDivElement",
   "DOMException",

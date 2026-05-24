@@ -43,15 +43,16 @@ export function __resetForTesting(): void {
 }
 
 import { loadPATSession } from "./pat";
-// OAuth load goes here too in Task B3.
+import { loadOAuthSession } from "./oauth";
 
 /** Bootstrap the in-memory session from persisted storage. Called once
  *  from App.tsx at mount. */
 export function bootstrap(): void {
-  const oauth = null; // wired in Task B3
+  const oauth = loadOAuthSession();
   const pat = loadPATSession();
   session = oauth ?? pat ?? null;
   notify();
 }
 
 export { signInWithPAT } from "./pat";
+export { signInWithOAuth } from "./oauth";
