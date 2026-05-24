@@ -28,6 +28,7 @@ import { guidelineMetaUiSchema } from "../uiSchemas/guidelineMeta";
 import { parseYaml, stringifyYaml } from "../form-engine/yamlSerializer";
 import { CategorySelectWidget } from "../form-engine/widgets/CategorySelectWidget";
 import { RelatedMultiSelectWidget } from "../form-engine/widgets/RelatedMultiSelectWidget";
+import { TierBanner } from "./TierBanner";
 
 // Custom RJSF widgets keyed by uiSchema `ui:widget` name. Octokit is
 // threaded via formContext so widgets can lazy-fetch option sets.
@@ -299,6 +300,7 @@ export function MetaEditScreen({
   return (
     <Card>
       <Flex direction="column" gap="3" p="3">
+        {path && <TierBanner path={path} />}
         <Flex align="center" justify="between" gap="2" wrap="wrap">
           <Heading size="3">{path}</Heading>
           <Flex gap="2" align="center">
