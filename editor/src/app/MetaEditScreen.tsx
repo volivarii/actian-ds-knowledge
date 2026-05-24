@@ -38,23 +38,6 @@ interface MetaEditScreenProps {
   onNavigate?: (path: string) => void;
 }
 
-const DOMAIN_FILE_NAMES = [
-  "content",
-  "usage",
-  "design",
-  "behavior",
-  "tokens",
-] as const;
-type DomainName = (typeof DOMAIN_FILE_NAMES)[number];
-
-const DOMAIN_LABEL: Record<DomainName, string> = {
-  content: "Content",
-  usage: "Usage",
-  design: "Design",
-  behavior: "Behavior",
-  tokens: "Tokens",
-};
-
 type LoadState<T> =
   | { kind: "idle" }
   | { kind: "loading" }

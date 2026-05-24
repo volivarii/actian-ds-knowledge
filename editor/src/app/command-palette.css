@@ -1,3 +1,0 @@
-/* Moved into editor/src/styles/base.css to avoid tsx loader breakage in
- * the node:test runtime. This file is intentionally empty and no longer
- * imported. Safe to delete in a follow-up. */

@@ -146,9 +146,7 @@ export function Sidebar({
       <Box p="3">
         <Heading size="2">Components ({entries.components.length})</Heading>
       </Box>
-      {componentsVisible.map((slug) =>
-        row(`components/src/${slug}/_meta.yml`, slug),
-      )}
+      {componentsVisible.map((slug) => row(`workspace/${slug}`, slug))}
       {!expanded && entries.components.length > COMPONENT_VISIBLE_CAP && (
         <Box px="3" py="1">
           <Text
