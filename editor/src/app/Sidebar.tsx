@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import type { Octokit } from "@octokit/rest";
-import { Box, Flex, Heading, Text } from "@radix-ui/themes";
+import { Badge, Box, Flex, Heading, Text } from "@radix-ui/themes";
 import { listDirectories, listFilesByGlob } from "./githubApi";
+import { submissionCartSingleton } from "../drafts/store-instance";
+import { useCart } from "../drafts/useCart";
 
 interface SidebarProps {
   octokit: Octokit;
@@ -30,6 +32,8 @@ export function Sidebar({
 }: SidebarProps) {
   const [entries, setEntries] = useState<GroupedEntries | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const cartEntries = useCart(submissionCartSingleton);
+  const inboxActive = activePath === "inbox";
 
   useEffect(() => {
     (async () => {
@@ -122,7 +126,6 @@ export function Sidebar({
         style={{
           cursor: "pointer",
           background: coverageActive ? "var(--accent-3)" : "transparent",
-          borderBottom: "1px solid var(--gray-4)",
         }}
         onClick={() => onSelect(null)}
         aria-current={coverageActive ? "page" : undefined}
@@ -131,6 +134,32 @@ export function Sidebar({
         <Text size="2" weight={coverageActive ? "bold" : "medium"}>
           Coverage
         </Text>
+      </Flex>
+      <Flex
+        align="center"
+        justify="between"
+        gap="2"
+        px="3"
+        py="2"
+        style={{
+          cursor: "pointer",
+          background: inboxActive ? "var(--accent-3)" : "transparent",
+          borderBottom: "1px solid var(--gray-4)",
+        }}
+        onClick={() => onSelect("inbox")}
+        aria-current={inboxActive ? "page" : undefined}
+      >
+        <Flex align="center" gap="2">
+          <span aria-hidden="true">📥</span>
+          <Text size="2" weight={inboxActive ? "bold" : "medium"}>
+            Drafts
+          </Text>
+        </Flex>
+        {cartEntries.length > 0 && (
+          <Badge color="indigo" variant="soft" size="1">
+            {cartEntries.length}
+          </Badge>
+        )}
       </Flex>
 
       <Box p="3">

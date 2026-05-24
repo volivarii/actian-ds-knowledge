@@ -8,6 +8,7 @@ import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { RefusalBanner } from "./RefusalBanner";
 import { CoverageDashboard } from "./CoverageDashboard";
 import { AuthoringWorkspace } from "./AuthoringWorkspace";
+import { DraftInbox } from "./DraftInbox";
 import { draftStoreSingleton } from "../drafts/store-instance";
 
 interface EditorShellProps {
@@ -15,6 +16,9 @@ interface EditorShellProps {
   octokit?: Octokit;
   activePath: string | null;
   setActivePath: (path: string | null) => void;
+  /** Opens the SubmissionStaging dialog (owned by App). Used by the
+   *  DraftInbox surface to offer a one-click escalation to submit. */
+  onOpenStaging?: () => void;
 }
 
 function isPlainMarkdown(path: string): boolean {
@@ -54,6 +58,7 @@ export function EditorShell({
   octokit,
   activePath,
   setActivePath,
+  onOpenStaging,
 }: EditorShellProps) {
   const [ghError, setGhError] = useState<string | null>(null);
   const gh = useMemo<Octokit | null>(() => {
@@ -100,6 +105,13 @@ export function EditorShell({
 
   if (activePath == null) {
     pane = <CoverageDashboard octokit={gh} onOpenFile={setActivePath} />;
+  } else if (activePath === "inbox") {
+    pane = (
+      <DraftInbox
+        onOpenFile={setActivePath}
+        onOpenStaging={() => onOpenStaging?.()}
+      />
+    );
   } else if (wsSlug) {
     pane = (
       <AuthoringWorkspace
