@@ -40,8 +40,8 @@ function chunkFor(id: string): string | undefined {
 }
 
 export default defineConfig({
+  base: "/actian-ds-knowledge/editor/",
   plugins: [react()],
-  base: process.env.EDITOR_BASE_PATH ?? "/",
   build: {
     outDir: "dist",
     sourcemap: true,

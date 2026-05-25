@@ -14,6 +14,7 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { EditorShell } from "./app/EditorShell";
+import { SignInScreen } from "./app/SignInScreen";
 import { SaveStateIndicator } from "./app/SaveStateIndicator";
 import { SubmissionStaging } from "./app/SubmissionStaging";
 import {
@@ -31,6 +32,13 @@ import {
 import { createOctokit } from "./core/octokit";
 import { loadComponentSlugs } from "./lib/componentSlugs";
 import { loadAnchorIndex } from "./lib/anchorIndex";
+import {
+  bootstrap as bootstrapAuth,
+  getSession,
+  signInWithOAuth,
+  signInWithPAT,
+  subscribe,
+} from "./auth";
 
 const DOMAINS = ["content", "usage", "design", "behavior", "tokens"] as const;
 type Domain = (typeof DOMAINS)[number];
@@ -80,18 +88,29 @@ export default function App() {
   const [stagingOpen, setStagingOpen] = useState(false);
   const [submissionsOpen, setSubmissionsOpen] = useState(false);
   const [submissionRows, setSubmissionRows] = useState<SubmissionRow[]>([]);
+  const [session, setSession] = useState(() => getSession());
+
+  useEffect(() => {
+    bootstrapAuth();
+    setSession(getSession());
+    const unsub = subscribe(setSession);
+    return unsub;
+  }, []);
+
   const saveState = useSaveState(activePath, draftStoreSingleton);
   const cartEntries = useCart(submissionCartSingleton);
   // The header's Submit-batch button + the staging dialog need an Octokit
-  // instance. createOctokit throws if the PAT is missing; we render the
-  // button anyway and let SubmissionStaging surface the failure on click.
+  // instance. createOctokit throws when no session; recompute when the
+  // session changes so that signing in re-activates the dependent UI
+  // without requiring a page reload.
   const headerOctokit = useMemo(() => {
+    if (!session) return null;
     try {
       return createOctokit();
     } catch {
       return null;
     }
-  }, []);
+  }, [session]);
   // Lazy-load the known component slug set so Cmd-K can offer
   // "Go to <slug>" without the user knowing exact spellings.
   const [knownSlugs, setKnownSlugs] = useState<string[]>([]);
@@ -205,7 +224,16 @@ export default function App() {
           py="2"
           style={{ borderBottom: "1px solid var(--gray-5)", flexShrink: 0 }}
         >
-          <Heading size="4">Knowledge Editor</Heading>
+          <Flex align="center" gap="2">
+            <img
+              src="/actian-ds-knowledge/editor/favicon.svg"
+              width="20"
+              height="20"
+              alt=""
+              style={{ display: "block" }}
+            />
+            <Heading size="4">Actian DS Knowledge Editor</Heading>
+          </Flex>
           <Flex align="center" gap="3">
             <SaveStateIndicator state={saveState} />
             {headerOctokit && (
@@ -250,12 +278,23 @@ export default function App() {
           </Flex>
         </Flex>
         <Box flexGrow="1" style={{ minHeight: 0 }}>
-          <EditorShell
-            onOpenSettings={() => setSettingsOpen(true)}
-            activePath={activePath}
-            setActivePath={setActivePath}
-            onOpenStaging={() => setStagingOpen(true)}
-          />
+          {session == null ? (
+            <SignInScreen
+              onOAuthSignIn={async () => {
+                await signInWithOAuth();
+              }}
+              onPATSignIn={(pat) => {
+                signInWithPAT(pat);
+              }}
+            />
+          ) : (
+            <EditorShell
+              onOpenSettings={() => setSettingsOpen(true)}
+              activePath={activePath}
+              setActivePath={setActivePath}
+              onOpenStaging={() => setStagingOpen(true)}
+            />
+          )}
         </Box>
         <SettingsPanel open={settingsOpen} onOpenChange={setSettingsOpen} />
         {headerOctokit && (
