@@ -3,7 +3,9 @@ import type { AuthSession } from "./types";
 let session: AuthSession | null = null;
 const listeners = new Set<(s: AuthSession | null) => void>();
 
-function notify(): void {
+// Internal listener-fire surface. Exported as `_notify` so tests can fire
+// listeners without mutating session state.
+export function _notify(): void {
   for (const l of listeners) l(session);
 }
 
@@ -19,7 +21,7 @@ export function signOut(): void {
   } catch {
     /* localStorage may not be available */
   }
-  notify();
+  _notify();
 }
 
 export function subscribe(
@@ -31,12 +33,15 @@ export function subscribe(
   };
 }
 
-// Test-only escape hatches. Production code never imports these.
-export function __setSessionForTesting(s: AuthSession | null): void {
+// Internal write surface. Production sign-in flows in `oauth.ts` and
+// `pat.ts` call `_setSession`; tests use `__resetForTesting` for cleanup
+// and `_setSession` to seed a session before assertions.
+export function _setSession(s: AuthSession | null): void {
   session = s;
-  notify();
+  _notify();
 }
 
+// Test-only: clear all state. Production code never imports this.
 export function __resetForTesting(): void {
   session = null;
   listeners.clear();
@@ -51,7 +56,7 @@ export function bootstrap(): void {
   const oauth = loadOAuthSession();
   const pat = loadPATSession();
   session = oauth ?? pat ?? null;
-  notify();
+  _notify();
 }
 
 export { signInWithPAT } from "./pat";
