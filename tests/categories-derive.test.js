@@ -159,7 +159,7 @@ test("parser: indented top-level key throws", () => {
 // Derive transformer tests
 // ───────────────────────────────────────────────────────────────────────────
 
-test("derive: projects frontmatter to dist shape with card_* keys", () => {
+test("derive: projects frontmatter to dist shape with domain-anchored keys", () => {
   const md = readFixture("valid-minimal.md");
   const validator = derive.makeValidator(REPO_ROOT);
   const r = derive.deriveCategoryFile(
@@ -175,10 +175,10 @@ test("derive: projects frontmatter to dist shape with card_* keys", () => {
     r.dist._meta.source,
     "tests/fixtures/categories/valid-minimal.md",
   );
-  assert.equal(r.dist.card_anatomy.parts.length, 2);
-  assert.equal(r.dist.card_component.variantAxes.length, 1);
-  assert.equal(r.dist.card_motion.patternRefs[0].ref, "state-transitions");
-  assert.equal(r.dist.card_accessibility.requirementRefs.length, 3);
+  assert.equal(r.dist.anatomy.parts.length, 2);
+  assert.equal(r.dist.variants.variantAxes.length, 1);
+  assert.equal(r.dist.motion.patternRefs[0].ref, "state-transitions");
+  assert.equal(r.dist.accessibility.requirementRefs.length, 3);
   // _generatedAt intentionally omitted from dist for idempotency
   assert.ok(!("_generatedAt" in r.dist), "_generatedAt should not be in dist");
 });
