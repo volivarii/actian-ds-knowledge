@@ -8,7 +8,7 @@
 //
 //   1. Parse YAML frontmatter (categories-parser.js)
 //   2. Validate frontmatter against schemas/category-defaults.json (Ajv)
-//   3. Project frontmatter shape to dist JSON shape (card_* keys)
+//   3. Project frontmatter shape to dist JSON shape (domain-anchored keys)
 //   4. Emit components/dist/categories/<slug>-defaults.json (per-category)
 //   5. Emit components/dist/categories/categories.bundle.json (roll-up)
 //   6. Copy MD source to components/dist/categories/<slug>.md (Stripe pattern)
@@ -57,7 +57,11 @@ function metaBlock(sourceRel) {
 }
 
 function projectToDist(frontmatter, sourceRel) {
-  // Pass-through top-level identity fields, then projected card_* keys.
+  // Pass-through top-level identity fields, then projected domain-anchored keys.
+  // Keys use domain names (anatomy/variants/motion/accessibility) per
+  // GOVERNANCE.md P1 — substrate stays renderer-agnostic. The plugin
+  // (Anti-Corruption Layer per P2) is responsible for mapping these to its
+  // own internal naming if it differs.
   // Note: _generatedAt intentionally omitted — emitting a fresh timestamp
   // every run breaks idempotency (every CI run produces new dist files
   // → workflow auto-commits → triggers next CI → loop). Mirrors foundations-derive,
@@ -70,10 +74,10 @@ function projectToDist(frontmatter, sourceRel) {
     authoring_status: frontmatter.authoring_status,
     confidence: frontmatter.confidence,
     last_reviewed: frontmatter.last_reviewed,
-    card_anatomy: { parts: frontmatter.anatomy },
-    card_component: { variantAxes: frontmatter.variants },
-    card_motion: { patternRefs: frontmatter.motion_refs },
-    card_accessibility: { requirementRefs: frontmatter.accessibility },
+    anatomy: { parts: frontmatter.anatomy },
+    variants: { variantAxes: frontmatter.variants },
+    motion: { patternRefs: frontmatter.motion_refs },
+    accessibility: { requirementRefs: frontmatter.accessibility },
     _sourceFile: sourceRel,
   };
 }
