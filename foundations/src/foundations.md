@@ -65,7 +65,7 @@ Engineering derives all shades from the 500 base using the following formula:
 
 | Shade | Lightness (L) | Chroma (C) |
 |-------|--------------|------------|
-| 25 | `0.97` 🟡 Proposed *(update from 0.99)* | `calc(c * 0.005)` 🟡 Proposed *(update from c * 0.2)* |
+| 25 | `0.99` | `calc(c * 0.2)` |
 | 50 | `calc(l + (0.99 - l) * 5/6)` | `calc(c * 0.3)` |
 | 100 | `calc(l + (0.99 - l) * 4/6)` | `calc(c * 0.4)` |
 | 200 | `calc(l + (0.99 - l) / 2)` | `calc(c * 0.6)` |
@@ -89,15 +89,16 @@ All color primitives across the system. Every palette follows the same OKLCH sha
 
 | Token | Value | Status |
 |-------|-------|--------|
-| `--zen-color-white` | `oklch(1 0 0)` / `#FFFFFF` | 🟢 Shipped |
-| `--zen-color-black` | `oklch(0 0 0)` / `#000000` | 🟢 Shipped |
+| `--zen-color-white` | `oklch(1 0 0)` / `#FFFFFF` | 
+| `--zen-color-black` | `oklch(0 0 0)` / `#000000` | 
+
 
 #### Green
 OKLCH 500 base: `oklch(0.5812 0.1816 141.19)` — *Success semantic role*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-green-25` | `#F3F6F3` 🟡 | `oklch(0.97 0.005 141.19)` 🟡 |
+| 25 | `--zen-color-green-25` | `#F0FFEC` | `oklch(0.99 0.0363 141.19)` |
 | 50 | `--zen-color-green-50` | `#D3EFCD` | `oklch(0.8677 0.0545 141.19)` |
 | 100 | `--zen-color-green-100` | `#B5DCAF` | `oklch(0.8211 0.0726 141.19)` |
 | 200 | `--zen-color-green-200` | `#92CC89` | `oklch(0.7812 0.1090 141.19)` |
@@ -114,7 +115,7 @@ OKLCH 500 base: `oklch(0.7775 0.166 66.57)` — *Warning semantic role*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-orange-25` | `#F7F4F2` 🟡 | `oklch(0.97 0.005 66.57)` 🟡 |
+| 25 | `--zen-color-orange-25` | `#FFF9E5` | `oklch(0.99 0.0332 66.57)` |
 | 50 | `--zen-color-orange-50` | `#FFEBCE` | `oklch(0.9479 0.0498 66.57)` |
 | 100 | `--zen-color-orange-100` | `#FFDDB6` | `oklch(0.9183 0.0664 66.57)` |
 | 200 | `--zen-color-orange-200` | `#FFCD92` | `oklch(0.8888 0.0996 66.57)` |
@@ -131,7 +132,7 @@ OKLCH 500 base: `oklch(0.6243 0.1982 32.45)` — *Error semantic role*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-red-25` | `#F8F4F3` 🟡 | `oklch(0.97 0.005 32.45)` 🟡 |
+| 25 | `--zen-color-red-25` | `#FFF4EC` | `oklch(0.99 0.0396 32.45)` |
 | 50 | `--zen-color-red-50` | `#FFDACF` | `oklch(0.9202 0.0595 32.45)` |
 | 100 | `--zen-color-red-100` | `#FFC1B3` | `oklch(0.8828 0.0793 32.45)` |
 | 200 | `--zen-color-red-200` | `#FFA38F` | `oklch(0.8121 0.1189 32.45)` |
@@ -148,7 +149,7 @@ OKLCH 500 base: `oklch(0.683 0 0)` — *Neutral semantic role*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-grey-25` | `#F8F4F5` 🟡 | `oklch(0.97 0.005 0)` 🟡 |
+| 25 | `--zen-color-grey-25` | `#FCFCFC` | `oklch(0.99 0 0)` |
 | 50 | `--zen-color-grey-50` | `#EBEBEB` | `oklch(0.9358 0 0)` |
 | 100 | `--zen-color-grey-100` | `#DADADA` | `oklch(0.8887 0 0)` |
 | 200 | `--zen-color-grey-200` | `#C9C9C9` | `oklch(0.8415 0 0)` |
@@ -165,7 +166,7 @@ OKLCH 500 base: `oklch(0.5216 0.2044 260.3)` — *Actian theme primary*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-royal-blue-25` | `#F3F5F9` 🟡 | `oklch(0.97 0.005 260.3)` 🟡 |
+| 25 | `--zen-color-royal-blue-25` | `#ecfdff` | `oklch(0.9900 0.0446 260.3)` |
 | 50 | `--zen-color-royal-blue-50` | `#CBE3FF` | `oklch(0.9119 0.0613 260.3)` |
 | 100 | `--zen-color-royal-blue-100` | `#AACAFE` | `oklch(0.8339 0.0818 260.3)` |
 | 200 | `--zen-color-royal-blue-200` | `#82B0FD` | `oklch(0.7558 0.1226 260.3)` |
@@ -182,7 +183,7 @@ OKLCH 500 base: `oklch(0.58 0.130062 238.7173)` — *Studio & Admin theme primar
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-blue-25` | `#F2F6F8` 🟡 | `oklch(0.97 0.005 238.72)` 🟡 |
+| 25 | `--zen-color-blue-25` | `#ECFFFF` | `oklch(0.99 0.026 238.72)` |
 | 50 | `--zen-color-blue-50` | `#CFEAFD` | `oklch(0.9297 0.039 238.72)` |
 | 100 | `--zen-color-blue-100` | `#B1D5EE` | `oklch(0.8827 0.052 238.72)` |
 | 200 | `--zen-color-blue-200` | `#8BC0E6` | `oklch(0.79 0.078 238.72)` |
@@ -199,7 +200,7 @@ OKLCH 500 base: `oklch(0.6233 0.1066 192.34)` — *Explorer theme primary*
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-turquoise-25` | `#F1F6F6` 🟡 | `oklch(0.97 0.005 192.34)` 🟡 |
+| 25 | `--zen-color-turquoise-25` | `#ECFFFF` | `oklch(0.99 0.0213 192.34)` |
 | 50 | `--zen-color-turquoise-50` | `#D0EFED` | `oklch(0.9189 0.032 192.34)` |
 | 100 | `--zen-color-turquoise-100` | `#B5DDDB` | `oklch(0.8755 0.0426 192.34)` |
 | 200 | `--zen-color-turquoise-200` | `#90CECB` | `oklch(0.812 0.064 192.34)` |
@@ -216,7 +217,7 @@ OKLCH 500 base: `oklch(0.6798 0.0933 313.67)` — *Former primary; available for
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-purple-25` | `#F6F4F7` 🟡 | `oklch(0.97 0.005 313.67)` 🟡 |
+| 25 | `--zen-color-purple-25` | `#FFF9FF` | `oklch(0.99 0.0187 313.67)` |
 | 50 | `--zen-color-purple-50` | `#F2E6F8` | `oklch(0.9415 0.028 313.67)` |
 | 100 | `--zen-color-purple-100` | `#E3D3EC` | `oklch(0.8932 0.0373 313.67)` |
 | 200 | `--zen-color-purple-200` | `#D7BFE4` | `oklch(0.8399 0.056 313.67)` |
@@ -233,7 +234,7 @@ OKLCH 500 base: `oklch(0.5724 0.0397 229.02)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-blue-grey-25` | `#F2F6F8` 🟡 | `oklch(0.97 0.005 229.02)` 🟡 |
+| 25 | `--zen-color-blue-grey-25` | `#F7FDFF` | `oklch(0.99 0.0079 229.02)` |
 | 50 | `--zen-color-blue-grey-50` | `#DDE6EC` | `oklch(0.9287 0.0119 229.02)` |
 | 100 | `--zen-color-blue-grey-100` | `#C4D0D7` | `oklch(0.8816 0.0159 229.02)` |
 | 200 | `--zen-color-blue-grey-200` | `#AABCC4` | `oklch(0.8062 0.0238 229.02)` |
@@ -250,7 +251,7 @@ OKLCH 500 base: `oklch(0.8699 0.1453 89.43)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-yellow-25` | `#F6F5F1` 🟡 | `oklch(0.97 0.005 89.43)` 🟡 |
+| 25 | `--zen-color-yellow-25` | `#FFFCE7` | `oklch(0.99 0.029 89.43)` |
 | 50 | `--zen-color-yellow-50` | `#FFF5D5` | `oklch(0.9499 0.0436 89.43)` |
 | 100 | `--zen-color-yellow-100` | `#FEEDC3` | `oklch(0.9166 0.0581 89.43)` |
 | 200 | `--zen-color-yellow-200` | `#FFE6A5` | `oklch(0.8849 0.0872 89.43)` |
@@ -267,7 +268,7 @@ OKLCH 500 base: `oklch(0.58 0.137262 119.6914)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-olive-green-25` | `#F4F6F2` 🟡 | `oklch(0.97 0.005 119.69)` 🟡 |
+| 25 | `--zen-color-olive-green-25` | `#F9FFEA` | `oklch(0.99 0.0275 119.69)` |
 | 50 | `--zen-color-olive-green-50` | `#E1EACB` | `oklch(0.9213 0.0412 119.69)` |
 | 100 | `--zen-color-olive-green-100` | `#CAD5AD` | `oklch(0.8627 0.055 119.69)` |
 | 200 | `--zen-color-olive-green-200` | `#B2C186` | `oklch(0.79 0.0824 119.69)` |
@@ -284,7 +285,7 @@ OKLCH 500 base: `oklch(0.3803 0.1386 258.03)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-pacific-blue-25` | `#F3F5F8` 🟡 | `oklch(0.97 0.005 258.03)` 🟡 |
+| 25 | `--zen-color-pacific-blue-25` | `#F1FDFF` | `oklch(0.99 0.0277 258.03)` |
 | 50 | `--zen-color-pacific-blue-50` | `#CADCF7` | `oklch(0.9134 0.0416 258.03)` |
 | 100 | `--zen-color-pacific-blue-100` | `#A5BCDE` | `oklch(0.8468 0.0554 258.03)` |
 | 200 | `--zen-color-pacific-blue-200` | `#7A9CCD` | `oklch(0.7469 0.0832 258.03)` |
@@ -301,7 +302,7 @@ OKLCH 500 base: `oklch(0.5253 0.155 17.61)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-pomegranate-red-25` | `#F8F4F4` 🟡 | `oklch(0.97 0.005 17.61)` 🟡 |
+| 25 | `--zen-color-pomegranate-red-25` | `#FFF5F6` | `oklch(0.99 0.031 17.61)` |
 | 50 | `--zen-color-pomegranate-red-50` | `#FFD6D8` | `oklch(0.9176 0.0465 17.61)` |
 | 100 | `--zen-color-pomegranate-red-100` | `#EEB9BC` | `oklch(0.862 0.062 17.61)` |
 | 200 | `--zen-color-pomegranate-red-200` | `#E4979E` | `oklch(0.7877 0.093 17.61)` |
@@ -318,7 +319,7 @@ OKLCH 500 base: `oklch(0.6113 0.1162 278.98)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-kickstart-purple-25` | `#F4F5F8` 🟡 | `oklch(0.97 0.005 278.98)` 🟡 |
+| 25 | `--zen-color-kickstart-purple-25` | `#F9FBFF` | `oklch(0.99 0.0232 278.98)` |
 | 50 | `--zen-color-kickstart-purple-50` | `#E1E5FF` | `oklch(0.9295 0.0349 278.98)` |
 | 100 | `--zen-color-kickstart-purple-100` | `#CBD0F2` | `oklch(0.8776 0.0465 278.98)` |
 | 200 | `--zen-color-kickstart-purple-200` | `#B4BAEB` | `oklch(0.7973 0.0697 278.98)` |
@@ -335,7 +336,7 @@ OKLCH 500 base: `oklch(0.9292 0.0635 130.94)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-glint-green-25` | `#F4F6F2` 🟡 | `oklch(0.97 0.005 130.94)` 🟡 |
+| 25 | `--zen-color-glint-green-25` | `#F9FEF5` | `oklch(0.99 0.0127 130.94)` |
 | 50 | `--zen-color-glint-green-50` | `#F4FBEE` | `oklch(0.9744 0.019 130.94)` |
 | 100 | `--zen-color-glint-green-100` | `#EFF9E8` | `oklch(0.9621 0.0254 130.94)` |
 | 200 | `--zen-color-glint-green-200` | `#E9F7DD` | `oklch(0.9496 0.0381 130.94)` |
@@ -352,7 +353,7 @@ OKLCH 500 base: `oklch(0.5474 0.0688 308.11)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-clematis-purple-25` | `#F6F4F8` 🟡 | `oklch(0.97 0.005 308.11)` 🟡 |
+| 25 | `--zen-color-clematis-purple-25` | `#FFFAFF` | `oklch(0.99 0.0138 308.11)` |
 | 50 | `--zen-color-clematis-purple-50` | `#E7E0EE` | `oklch(0.9229 0.0206 308.11)` |
 | 100 | `--zen-color-clematis-purple-100` | `#D1C7D9` | `oklch(0.8762 0.0275 308.11)` |
 | 200 | `--zen-color-clematis-purple-200` | `#BBAEC9` | `oklch(0.8037 0.0413 308.11)` |
@@ -369,7 +370,7 @@ OKLCH 500 base: `oklch(0.6062 0.2298 9.63)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-mellow-melon-pink-25` | `#F8F4F4` 🟡 | `oklch(0.97 0.005 9.63)` 🟡 |
+| 25 | `--zen-color-mellow-melon-pink-25` | `#FFF1F5` | `oklch(0.99 0.046 9.63)` |
 | 50 | `--zen-color-mellow-melon-pink-50` | `#FFD5DD` | `oklch(0.9219 0.069 9.63)` |
 | 100 | `--zen-color-mellow-melon-pink-100` | `#FFB9C4` | `oklch(0.8657 0.092 9.63)` |
 | 200 | `--zen-color-mellow-melon-pink-200` | `#FF96AA` | `oklch(0.7918 0.1379 9.63)` |
@@ -386,7 +387,7 @@ OKLCH 500 base: `oklch(0.7602 0.1358 220.59)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-zima-blue-25` | `#F2F6F7` 🟡 | `oklch(0.97 0.005 220.59)` 🟡 |
+| 25 | `--zen-color-zima-blue-25` | `#E9FFFF` | `oklch(0.99 0.0272 220.59)` |
 | 50 | `--zen-color-zima-blue-50` | `#D2F6FF` | `oklch(0.9481 0.0407 220.59)` |
 | 100 | `--zen-color-zima-blue-100` | `#BBEBFC` | `oklch(0.9095 0.0543 220.59)` |
 | 200 | `--zen-color-zima-blue-200` | `#99E3FC` | `oklch(0.8451 0.0815 220.59)` |
@@ -403,7 +404,7 @@ OKLCH 500 base: `oklch(0.5473 0.2685 302.74)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-singapore-orchid-purple-25` | `#F6F4F8` 🟡 | `oklch(0.97 0.005 302.74)` 🟡 |
+| 25 | `--zen-color-singapore-orchid-purple-25` | `#FFF5FF` | `oklch(0.99 0.0537 302.74)` |
 | 50 | `--zen-color-singapore-orchid-purple-50` | `#EED7FF` | `oklch(0.9206 0.0806 302.74)` |
 | 100 | `--zen-color-singapore-orchid-purple-100` | `#D9BBFF` | `oklch(0.8606 0.1074 302.74)` |
 | 200 | `--zen-color-singapore-orchid-purple-200` | `#C898FF` | `oklch(0.7739 0.1611 302.74)` |
@@ -420,7 +421,7 @@ OKLCH 500 base: `oklch(0.5292 0.1745 37.67)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-dropped-brick-red-25` | `#F8F4F3` 🟡 | `oklch(0.97 0.005 37.67)` 🟡 |
+| 25 | `--zen-color-dropped-brick-red-25` | `#FFF6EC` | `oklch(0.99 0.0349 37.67)` |
 | 50 | `--zen-color-dropped-brick-red-50` | `#FFD7CA` | `oklch(0.9178 0.0524 37.67)` |
 | 100 | `--zen-color-dropped-brick-red-100` | `#F3BBA9` | `oklch(0.8617 0.0698 37.67)` |
 | 200 | `--zen-color-dropped-brick-red-200` | `#EB9980` | `oklch(0.7877 0.1047 37.67)` |
@@ -437,7 +438,7 @@ OKLCH 500 base: `oklch(0.7828 0.0942 70.44)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-viva-gold-orange-25` | `#F7F5F1` 🟡 | `oklch(0.97 0.005 70.44)` 🟡 |
+| 25 | `--zen-color-viva-gold-orange-25` | `#FFFBEF` | `oklch(0.99 0.0188 70.44)` |
 | 50 | `--zen-color-viva-gold-orange-50` | `#FEEDDC` | `oklch(0.9456 0.0283 70.44)` |
 | 100 | `--zen-color-viva-gold-orange-100` | `#F5E1CA` | `oklch(0.9068 0.0377 70.44)` |
 | 200 | `--zen-color-viva-gold-orange-200` | `#F2D4B2` | `oklch(0.8564 0.0565 70.44)` |
@@ -454,7 +455,7 @@ OKLCH 500 base: `oklch(0.5349 0.0308 118.85)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-shutters-green-25` | `#F5F6F2` 🟡 | `oklch(0.97 0.005 118.85)` 🟡 |
+| 25 | `--zen-color-shutters-green-25` | `#FCFDF8` | `oklch(0.99 0.0062 118.85)` |
 | 50 | `--zen-color-shutters-green-50` | `#E2E4DD` | `oklch(0.9132 0.0092 118.85)` |
 | 100 | `--zen-color-shutters-green-100` | `#C9CBC2` | `oklch(0.8665 0.0123 118.85)` |
 | 200 | `--zen-color-shutters-green-200` | `#B0B4A7` | `oklch(0.7898 0.0185 118.85)` |
@@ -471,7 +472,7 @@ OKLCH 500 base: `oklch(0.5035 0.0743 171.63)`
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-frosted-glass-green-25` | `#F2F6F5` 🟡 | `oklch(0.97 0.005 171.63)` 🟡 |
+| 25 | `--zen-color-frosted-glass-green-25` | `#F3FFFB` | `oklch(0.99 0.0149 171.63)` |
 | 50 | `--zen-color-frosted-glass-green-50` | `#D3E7E0` | `oklch(0.9106 0.0223 171.63)` |
 | 100 | `--zen-color-frosted-glass-green-100` | `#B4CEC5` | `oklch(0.8558 0.0297 171.63)` |
 | 200 | `--zen-color-frosted-glass-green-200` | `#91B7A9` | `oklch(0.7768 0.0446 171.63)` |
@@ -484,11 +485,11 @@ OKLCH 500 base: `oklch(0.5035 0.0743 171.63)`
 | 900 | `--zen-color-frosted-glass-green-900` | `#1B3930` | `oklch(0.3172 0.0408 171.63)` |
 
 #### Cool Grey
-OKLCH 500 base: `oklch(0.5121 0.0235 285.54)` — 🟢 Shipped
+OKLCH 500 base: `oklch(0.5121 0.0235 285.54)` 
 
 | Shade | Token | Hex (Figma) | OKLCH (Eng) |
 |-------|-------|------------|-------------|
-| 25 | `--zen-color-cool-grey-25` | `#F5F5F8` 🟡 | `oklch(0.97 0.005 285.54)` 🟡 |
+| 25 | `--zen-color-cool-grey-25` | `#fbfbff` | `oklch(0.9900 0.0047 285.54)` |
 | 50 | `--zen-color-cool-grey-50` | `#e1e1e6` | `oklch(0.9103 0.0070 285.54)` |
 | 100 | `--zen-color-cool-grey-100` | `#c7c7ce` | `oklch(0.8307 0.0094 285.54)` |
 | 200 | `--zen-color-cool-grey-200` | `#adadb7` | `oklch(0.7510 0.0141 285.54)` |
@@ -644,14 +645,19 @@ These are semantic aliases that combine weight + size + letter spacing + line he
 | `--zen-border-default` | `1px solid --zen-color-neutral-100` | Default border for containers | 🟢 Shipped |
 | `--zen-border-subtle` | `1px solid --zen-color-neutral-50` | Separators | 🟢 Shipped |
 | `--zen-border-disabled` | `1px solid --zen-color-neutral-100` | Disabled state of components | 🟢 Shipped |
-| `--zen-border-primary` | `1px solid --zen-color-primary-500` | Interactive elements | 🟡 Proposed |
 | `--zen-border-selected` | `2px solid --zen-color-primary-500` | Selected state of components | 🟡 Proposed |
-| `--zen-border-error` | `1px solid --zen-color-error-600` | Error state inputs | 🟡 Proposed |
-| `--zen-border-warning` | `1px solid --zen-color-warning-600` | Warning state | 🟡 Proposed |
-| `--zen-border-success` | `1px solid --zen-color-success-600` | Success state | 🟡 Proposed |
-| `--zen-border-info` | `1px solid --zen-color-primary-500` | Info state | 🟡 Proposed |
-| `--zen-border-strong` | `1px solid --zen-color-neutral-800` | High emphasis borders | 🟡 Proposed |
-| `--zen-border-reverse` | `1px solid --zen-color-white` | Borders on dark or primary-colored backgrounds | 🟡 Proposed |
+
+#### Color
+
+| Token | Value | Usage | Status |
+|-------|-------|-------|--------|
+| `--zen-color-border-primary` | `--zen-color-primary-500` | Interactive elements | 🟡 Proposed |
+| `--zen-color-border-error` | `--zen-color-error-600` | Error state inputs | 🟡 Proposed |
+| `--zen-color-border-warning` | `--zen-color-warning-600` | Warning state | 🟡 Proposed |
+| `--zen-color-border-success` | `--zen-color-success-600` | Success state | 🟡 Proposed |
+| `--zen-color-border-info` | `--zen-color-primary-500` | Info state | 🟡 Proposed |
+| `--zen-color-border-strong` | `--zen-color-neutral-800` | High emphasis borders | 🟡 Proposed |
+| `--zen-color-border-reverse` | `--zen-color-white` | Borders on dark or primary-colored backgrounds | 🟡 Proposed |
 
 ### 2.4 Breakpoints
 
@@ -703,8 +709,8 @@ Outlined focus rings must be applied with an offset on interactive elements. For
 | Token | Suggested Value | Usage | Status |
 |-------|----------------|-------|--------|
 | `--zen-color-bg-default` | `--zen-color-white` | Default page background | 🟡 Proposed |
-| `--zen-color-bg-subtle` | `--zen-color-neutral-25` | Subtle section backgrounds, sidebars | 🟡 Proposed |
-| `--zen-color-bg-muted` | `--zen-color-neutral-50` | Cards, input fills, table rows | 🟡 Proposed |
+| `--zen-color-bg-surface` | `--zen-color-neutral-25` | Subtle section backgrounds, sidebars | 🟡 Proposed |
+| `--zen-color-bg-sunken` | `--zen-color-neutral-50` | Cards, input fills, table rows | 🟡 Proposed |
 | `--zen-color-bg-disabled` | `--zen-color-neutral-50` | Disabled state backgrounds | 🟡 Proposed |
 | `--zen-color-bg-selected` | `--zen-color-primary-25` | Selected row or item background | 🟡 Proposed |
 | `--zen-color-bg-overlay` | `--zen-color-black` at 40% opacity | Modal/dialog backdrop | 🟡 Proposed |
