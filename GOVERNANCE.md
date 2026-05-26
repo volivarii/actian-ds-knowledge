@@ -157,6 +157,37 @@ requirement: every consumer **must be a Tolerant Reader** (R5 P8) —
 A producer that honours P5 and a consumer that is a Tolerant Reader together
 make a substrate that evolves in both directions without breakage.
 
+## Presentation divergence is allowed
+
+A consumer that is opinionated about *how* it presents the substrate — page
+order, section names, embedded widgets, prose flavor — is doing its job.
+The substrate stays domain-anchored (P1) and renderer-agnostic; a consumer
+(docs site, plugin, MCP surface, …) is free to rename, reorder, omit, augment,
+combine, or hide whatever the substrate emits. This is not drift — it is
+the very split P2 is meant to enable.
+
+What this implies in practice:
+
+- **The substrate is not the rendered website.** `foundations/src/foundations.md`
+  authors token shapes + design rules; the docs site (`actian-ds-docs`) is a
+  hand-authored, opinionated view of those shapes. The two layers may diverge
+  in section names, ordering, and structural granularity. That divergence is
+  legitimate.
+- **Make the divergence observable.** Every consumer that presents substrate
+  data should make its source pointer visible to readers (e.g., a derivation
+  banner on each docs page, or a comment at the top of a derived file). The
+  doctrine forbids silent drift; it does not forbid loud divergence.
+- **Where opinion lives.** Section labels, page order, embedded widgets, and
+  prose flavor are consumer concerns. Token shapes, slugs, anchor ids, and
+  schema contracts are substrate concerns. If a question is "should we rename
+  X for clarity in our renderer?" — that is consumer-side. If a question is
+  "should we change the dist shape?" — that is substrate-side and runs through
+  P1+P5.
+- **Drift guards.** A consumer that diverges materially should ship a check
+  (a CI test, a coverage report, a presence assertion) that surfaces sections
+  it expects to find in the substrate but doesn't, and vice versa. The aim
+  is **intentional divergence**, observable to maintainers.
+
 ---
 
 ## The pass/fail checklist
