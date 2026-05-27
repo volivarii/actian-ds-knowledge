@@ -6,6 +6,17 @@
 export { loadTaxonomy, TaxonomyLoadError } from "./taxonomy";
 export type { Taxonomy, Domain, SearchResult, LoadOpts } from "./taxonomy";
 export { buildRefGraph, parseFrontmatter } from "./refGraph";
-export type { RefGraph, Consumer, OutgoingConnection, BrokenRef, RefType } from "./refGraph";
+export type {
+  RefGraph,
+  Consumer,
+  OutgoingConnection,
+  BrokenRef,
+  RefType,
+} from "./refGraph";
 export { suggestRefs } from "./ai";
 export type { RefSuggestion, SuggestResult, SuggestOpts } from "./ai";
+export {
+  addRefToFrontmatter,
+  removeRefFromFrontmatter,
+} from "./frontmatterRewriter";
+export type { RefPick } from "./frontmatterRewriter";
