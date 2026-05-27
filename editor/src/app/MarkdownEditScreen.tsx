@@ -829,17 +829,17 @@ function ConnectionsPopover({
       </Popover.Anchor>
       <Popover.Content
         size="2"
-        // Anchor preference: right of the pill (the Outline sits in the
-        // left column, so "right" opens toward the body editor where the
-        // author was looking). Radix auto-flips to "left"/"top"/"bottom"
-        // when there's no room (avoidCollisions defaults to true) — this
-        // matters for pills near the bottom/right edges of the viewport.
-        side="right"
-        align="center"
-        sideOffset={8}
-        collisionPadding={16}
+        // Use the same side="bottom" anchor the legacy AnchorReferencesPopover
+        // uses — it positions reliably across viewport sizes with the
+        // fixed-position invisible-anchor pattern. side="right" was unstable
+        // on narrow viewports (popover rendered off-screen at bottom-left).
+        // Radix's auto-flip handles tall popovers near the bottom edge.
+        side="bottom"
+        align="start"
+        sideOffset={6}
+        collisionPadding={12}
         data-testid="connections-popover"
-        style={{ width: 320, maxHeight: "70vh", overflow: "auto" }}
+        style={{ width: 300, maxHeight: "70vh", overflow: "auto" }}
       >
         <SectionInspector
           sectionTitle={sectionTitle}
