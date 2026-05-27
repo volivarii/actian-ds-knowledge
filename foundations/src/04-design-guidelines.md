@@ -1,3 +1,15 @@
+---
+# P8 transversal refs — file-scoped (Option A). Union across §3.1 Color Usage,
+# §3.2 Typography, §3.3 Spacing, §3.5 Brightness Filter Convention.
+a11y_refs:
+  - { ref: color-contrast, note: §3.1 semantic-over-primitive rule preserves contrast under theming }
+  - { ref: typography, note: §3.2 typography rules }
+  - { ref: touch-pointer, note: §3.3 spacing scale underpins hit-target sizing }
+  - { ref: focus-keyboard, note: §3.5 brightness filter is the only token-bound interactive state }
+motion_refs:
+  - { ref: state-transitions, note: §3.5 hover/focus/active brightness transitions stay within the 100-200ms band }
+---
+
 ## 3. Design Guidelines
 
 ### 3.1 Color Usage Rules

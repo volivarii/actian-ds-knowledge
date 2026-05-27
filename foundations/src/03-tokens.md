@@ -1,3 +1,25 @@
+---
+# P8 transversal refs — file-scoped (Option A). Authoritative subsection
+# inventory lives in [[project_p8_closure_pickup]]; this file's refs are the
+# union across §2.2 Typography, §2.5 Focus Rings, §2.9 Heights & Trigger Areas,
+# §2.10 Icons, §2.11 Motion.
+a11y_refs:
+  - { ref: typography, note: covers text token rules (§2.2 Typography) }
+  - { ref: focus-keyboard, note: focus-ring tokens (§2.5) + min-height/trigger-area tokens (§2.9) }
+  - { ref: touch-pointer, note: min-height + trigger-area tokens (§2.9) }
+  - { ref: icons, note: icon-size tokens (§2.10) }
+  - { ref: motion, note: motion tokens (§2.11) honor prefers-reduced-motion }
+motion_refs:
+  - { ref: drawer-open-close }
+  - { ref: accordion-expand-collapse }
+  - { ref: success-toast }
+  - { ref: anchor-motion }
+  - { ref: layered-overlays-modals }
+  - { ref: skeleton-loading }
+  - { ref: staggered-entrance }
+  - { ref: state-transitions, note: §2.11 token bands govern all 8 component motion patterns }
+---
+
 ## 2. Tokens
 
 All tokens are implemented as CSS custom properties under the `--zen-` namespace and as Figma variables in the Zen Colors library.

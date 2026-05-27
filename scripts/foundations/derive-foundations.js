@@ -36,6 +36,7 @@ var path = require("path");
 var astWalk = require("./foundations-parser/ast-walk.js");
 var extractors = require("./foundations-parser/extractors.js");
 var statusEmoji = require("./foundations-parser/status-emoji.js");
+var categoriesParser = require("../categories/categories-parser.js");
 var { writeManifest } = require("../lib/manifest-io");
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -655,6 +656,52 @@ function buildEmissionPlan(rootNodes, sourceRel, logger) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
+// Frontmatter ref attachment — P8 transversal taxonomy closure
+// ───────────────────────────────────────────────────────────────────────────
+//
+// Foundations src files may carry optional YAML frontmatter with
+// `a11y_refs` + `motion_refs` ref arrays (same shape as
+// components/src/categories/<slug>.md). When present, the refs attach to the
+// file's top-level H2 node in the emitted dist — branch sections land on
+// `<topSlug>/_index.json`, leaf sections on `<topSlug>.json`. Bundle reflects
+// the attachment automatically (shared object reference with files map).
+//
+// Refs are FILE-SCOPED (Option A — coarser than per-section but zero
+// authoring overhead): all refs in a file apply to the file's H2 as a whole.
+// Subsection precision (per H3/H4 attachment) is intentionally deferred to a
+// future Option B pass.
+
+var REF_KEYS = ["a11y_refs", "motion_refs"];
+
+function attachFrontmatterRefs(files, frontmattersByTopSlug, logger) {
+  // `files` and `bundleTree` share object references (see buildEmissionPlan —
+  // each top-level slug's _index.json or leaf .json IS the same object the
+  // bundle holds); mutating the entry here is reflected in the bundle output
+  // without an explicit second pass.
+  Object.keys(frontmattersByTopSlug).forEach(function (slug) {
+    var fm = frontmattersByTopSlug[slug];
+    var target = null;
+    // Branch: <slug>/_index.json. Leaf: <slug>.json.
+    if (files[slug + "/_index.json"]) target = files[slug + "/_index.json"];
+    else if (files[slug + ".json"]) target = files[slug + ".json"];
+    if (!target) {
+      logger.warn(
+        "Frontmatter targeting H2 '" +
+          slug +
+          "' has no matching emit (neither <slug>/_index.json nor <slug>.json). " +
+          "Refs dropped.",
+      );
+      return;
+    }
+    REF_KEYS.forEach(function (key) {
+      var arr = fm[key];
+      if (!Array.isArray(arr) || arr.length === 0) return;
+      target[key] = arr;
+    });
+  });
+}
+
+// ───────────────────────────────────────────────────────────────────────────
 // Root _index.json — top-level foundations metadata
 // ───────────────────────────────────────────────────────────────────────────
 
@@ -712,6 +759,9 @@ function deriveFromMarkdown(mdSource, opts) {
   }
 
   var plan = buildEmissionPlan(tree, sourceRel, logger);
+  if (opts.frontmattersByTopSlug) {
+    attachFrontmatterRefs(plan.files, opts.frontmattersByTopSlug, logger);
+  }
   var rootIndex = buildRootIndex(tree, sourceRel, h1Title);
   var bundle = buildBundle(plan.bundleTree, rootIndex, sourceRel);
 
@@ -1068,7 +1118,57 @@ function defaultPaths() {
 var NN_PREFIX_RE = /^\d{2}-[a-z0-9-]+\.md$/;
 var FENCE_RE = /^(```|~~~)/;
 
-function concatFoundationsSources(srcDir) {
+// Strip optional YAML frontmatter from a single src file. Per-file frontmatter
+// is OPTIONAL (most files don't carry it). When present, it follows the same
+// strict YAML subset as components/src/categories/<slug>.md and is parsed by
+// the shared categories-parser. The frontmatter is stripped BEFORE concat so
+// the markdown AST never sees stray `---` fences. Returns { frontmatter, body }
+// where frontmatter is `null` if absent.
+//
+// Used to attach optional per-file metadata (e.g. `a11y_refs` +
+// `motion_refs` ref arrays — P8 transversal taxonomy closure for foundations)
+// to the file's top-level H2 in the emitted JSON.
+function extractOptionalFrontmatter(name, raw) {
+  if (!/^---\s*(\r?\n|$)/.test(raw)) {
+    return { frontmatter: null, body: raw };
+  }
+  try {
+    var split = categoriesParser.splitFrontmatter(raw);
+    var data = categoriesParser.parseFrontmatter(
+      split.frontmatter,
+      split.frontmatterLineOffset,
+    );
+    return { frontmatter: data, body: split.body };
+  } catch (err) {
+    throw new Error(name + " frontmatter: " + err.message);
+  }
+}
+
+// Find the slug of the first H2 in a body. Mirrors how the AST walker slugs
+// section headings: strip leading numeric prefix + emoji, then slugify. Returns
+// null when the body has no H2 heading.
+function firstH2Slug(body) {
+  var lines = body.split(/\r?\n/);
+  for (var i = 0; i < lines.length; i++) {
+    var m = /^##\s+(.+?)\s*$/.exec(lines[i]);
+    if (m) return astWalk.slugify(astWalk.cleanHeading(m[1]));
+  }
+  return null;
+}
+
+// Walk srcDir, read every .md file (excluding AUTHORING.md), strip optional
+// frontmatter, and return:
+//   {
+//     md: <concatenated body, joined with "\n\n---\n\n">,
+//     frontmattersByTopSlug: { <topH2Slug>: <frontmatterObject>, ... },
+//   }
+//
+// Files without frontmatter contribute nothing to `frontmattersByTopSlug`.
+// Files whose top H2 falls under `SKIP_H2_SLUGS` are tolerated (frontmatter
+// is parsed but won't attach to any emitted node — the section is dropped
+// before emission). A warning is emitted in that case so authors know their
+// refs are silently no-op.
+function readFoundationsSources(srcDir, logger) {
   var entries = fs
     .readdirSync(srcDir)
     .filter(function (n) {
@@ -1095,12 +1195,101 @@ function concatFoundationsSources(srcDir) {
         ")",
     );
   }
+  var bodies = [];
+  var frontmattersByTopSlug = {};
+  for (var i = 0; i < entries.length; i++) {
+    var name = entries[i];
+    var abs = path.join(srcDir, name);
+    var raw = fs.readFileSync(abs, "utf-8");
+    var extracted = extractOptionalFrontmatter(name, raw);
+    assertBalancedFences(name, extracted.body);
+    var trimmedBody = extracted.body.replace(/\s+$/, "");
+    bodies.push(trimmedBody);
+    if (extracted.frontmatter) {
+      var slug = firstH2Slug(trimmedBody);
+      if (!slug) {
+        throw new Error(
+          name +
+            " has frontmatter but no H2 heading to attach it to. " +
+            "Either add a top-level `## …` heading or remove the frontmatter.",
+        );
+      }
+      if (SKIP_H2_SLUGS[slug] && logger) {
+        logger.warn(
+          name +
+            " frontmatter attaches to H2 '" +
+            slug +
+            "' which is in SKIP_H2_SLUGS — refs will not appear in dist. " +
+            "Remove the frontmatter or take this section out of SKIP_H2_SLUGS.",
+        );
+      }
+      if (frontmattersByTopSlug[slug]) {
+        throw new Error(
+          name +
+            " top H2 slug '" +
+            slug +
+            "' duplicates another src file's. Frontmatter attachment is ambiguous; " +
+            "rename one of the headings.",
+        );
+      }
+      frontmattersByTopSlug[slug] = extracted.frontmatter;
+    }
+  }
+  return {
+    md: bodies.join("\n\n---\n\n"),
+    frontmattersByTopSlug: frontmattersByTopSlug,
+  };
+}
+
+// Back-compat: callers that only want the concatenated MD (tests, llms-txt)
+// get the same string they got before. Frontmatter is stripped from each file
+// but NOT parsed — these callers have no use for the YAML payload and shouldn't
+// pay the parse cost or fail on YAML typos that only matter to the derive
+// pipeline proper (which surfaces those errors via readFoundationsSources).
+function concatFoundationsSources(srcDir) {
+  var entries = fs
+    .readdirSync(srcDir)
+    .filter(function (n) {
+      return n.endsWith(".md") && n !== "AUTHORING.md";
+    })
+    .sort();
+  if (entries.length === 0) {
+    throw new Error(
+      "no .md files found under " + srcDir + " (excluding AUTHORING.md)",
+    );
+  }
+  var bad = entries.filter(function (n) {
+    return !NN_PREFIX_RE.test(n);
+  });
+  if (bad.length > 0) {
+    throw new Error(
+      "filenames under " +
+        srcDir +
+        " must match `NN-<kebab>.md` (got: " +
+        bad.join(", ") +
+        ")",
+    );
+  }
   return entries
     .map(function (name) {
       var abs = path.join(srcDir, name);
       var raw = fs.readFileSync(abs, "utf-8");
-      assertBalancedFences(name, raw);
-      return raw.replace(/\s+$/, "");
+      // Strip frontmatter envelope without parsing the YAML body.
+      var body = raw;
+      if (/^---\s*(\r?\n|$)/.test(raw)) {
+        var lines = raw.split(/\r?\n/);
+        for (var i = 1; i < lines.length; i++) {
+          if (/^---\s*$/.test(lines[i])) {
+            body = lines
+              .slice(i + 1)
+              .join("\n")
+              .replace(/^\n+/, "");
+            break;
+          }
+        }
+      }
+      assertBalancedFences(name, body);
+      return body.replace(/\s+$/, "");
     })
     .join("\n\n---\n\n");
 }
@@ -1154,18 +1343,20 @@ function runCli(argv) {
     return 2;
   }
 
-  var md;
-  try {
-    md = concatFoundationsSources(srcDir);
-  } catch (err) {
-    console.error("[derive-foundations] " + err.message);
-    return 2;
-  }
   var logger = {
     warn: function (m) {
       console.warn("[derive-foundations] " + m);
     },
   };
+
+  var srcRead;
+  try {
+    srcRead = readFoundationsSources(srcDir, logger);
+  } catch (err) {
+    console.error("[derive-foundations] " + err.message);
+    return 2;
+  }
+  var md = srcRead.md;
 
   var sourceRel =
     path
@@ -1175,7 +1366,11 @@ function runCli(argv) {
 
   var derived;
   try {
-    derived = deriveFromMarkdown(md, { logger: logger, sourceRel: sourceRel });
+    derived = deriveFromMarkdown(md, {
+      logger: logger,
+      sourceRel: sourceRel,
+      frontmattersByTopSlug: srcRead.frontmattersByTopSlug,
+    });
   } catch (err) {
     console.error("[derive-foundations] failed to parse MD: " + err.message);
     console.error(
@@ -1256,6 +1451,8 @@ if (require.main === module) {
 module.exports = {
   deriveFromMarkdown,
   concatFoundationsSources,
+  readFoundationsSources,
+  attachFrontmatterRefs,
   buildLeafJson,
   buildIndexJson,
   buildRootIndex,

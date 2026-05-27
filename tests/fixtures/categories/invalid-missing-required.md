@@ -1,5 +1,5 @@
 ---
-_schema_version: 1
+_schema_version: 2
 slug: test-cat
 label: Test category
 authoring_status: engineer-seed

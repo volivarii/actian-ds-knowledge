@@ -1,5 +1,5 @@
 ---
-_schema_version: 1
+_schema_version: 2
 slug: test-cat
 label: Test category
 authoring_status: engineer-seed
@@ -20,7 +20,7 @@ variants:
 motion_refs:
   - { ref: state-transitions, note: subtle }
 
-accessibility:
+a11y_refs:
   - { ref: keyboard-focus }
   - { ref: color-contrast }
   - { ref: aria-guidance }

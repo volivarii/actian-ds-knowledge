@@ -57,8 +57,10 @@ function metaBlock(sourceRel) {
 }
 
 function projectToDist(frontmatter, sourceRel) {
-  // Pass-through top-level identity fields, then projected domain-anchored keys.
-  // Keys use domain names (anatomy/variants/motion/accessibility) per
+  // Pass-through top-level identity fields, then projected wrapped-ref keys.
+  // The two transversal-ref keys (motion_refs, a11y_refs) match their
+  // frontmatter spelling per P8 (transversal taxonomies stay symmetric across
+  // substrate domains). Other keys (anatomy, variants) stay domain-named per
   // GOVERNANCE.md P1 — substrate stays renderer-agnostic. The plugin
   // (Anti-Corruption Layer per P2) is responsible for mapping these to its
   // own internal naming if it differs.
@@ -76,8 +78,8 @@ function projectToDist(frontmatter, sourceRel) {
     last_reviewed: frontmatter.last_reviewed,
     anatomy: { parts: frontmatter.anatomy },
     variants: { variantAxes: frontmatter.variants },
-    motion: { patternRefs: frontmatter.motion_refs },
-    accessibility: { requirementRefs: frontmatter.accessibility },
+    motion_refs: { patternRefs: frontmatter.motion_refs },
+    a11y_refs: { requirementRefs: frontmatter.a11y_refs },
     _sourceFile: sourceRel,
   };
 }
