@@ -12,8 +12,9 @@
 //   - Root `_index.json` carries top-level metadata.
 //   - `foundations.bundle.json` is a single nested roll-up (full tree) for
 //     one-shot LLM consumption.
-//   - `foundations.md` is copied verbatim from src/ for Stripe-style
-//     `.md` URL access.
+//   - `foundations.md` is the synthesized concatenation of src/*.md
+//     (with `\n\n---\n\n` joiners) for Stripe-style `.md` URL access.
+//     NOT byte-identical to any single source file.
 //
 // Authors (UX team) can renumber/rename/remove/restructure sections freely
 // — the parser tracks MD structure, not section numbers.
@@ -510,8 +511,6 @@ function buildLeafJson(node, pathSegments, parentId, sourceRel, logger) {
       anchors: anchorsFromPath(pathSegments),
       source: {
         file: sourceRel,
-        startLine: node.startLine,
-        endLine: node.endLine,
       },
       _meta: metaBlock(sourceRel),
     };
@@ -535,8 +534,6 @@ function buildLeafJson(node, pathSegments, parentId, sourceRel, logger) {
     anchors: anchorsFromPath(pathSegments),
     source: {
       file: sourceRel,
-      startLine: node.startLine,
-      endLine: node.endLine,
     },
     _meta: metaBlock(sourceRel),
   };
@@ -563,8 +560,6 @@ function buildIndexJson(node, pathSegments, parentId, sourceRel, logger) {
     anchors: anchorsFromPath(pathSegments),
     source: {
       file: sourceRel,
-      startLine: node.startLine,
-      endLine: node.endLine,
     },
     children: children,
     _meta: metaBlock(sourceRel),
@@ -814,18 +809,30 @@ function writeOutputs(
   );
   written.push("foundations.bundle.json");
 
-  // Stripe .md URL pattern — emit a verbatim prose copy at dist. The content
-  // is the concatenated per-section MD already passed in (matches what the
-  // deriver saw). Per-section authoring is the SoT under foundations/src/.
-  if (typeof mdContent === "string" && mdContent.length > 0) {
-    writeAtomic(path.join(distDir, "foundations.md"), mdContent);
-    written.push("foundations.md");
+  // Stripe .md URL pattern — emit a SYNTHESIZED prose copy at dist. The
+  // content is the concatenated per-section MD already passed in (matches
+  // what the deriver saw, complete with `\n\n---\n\n` joiners). NOT byte-
+  // identical to any single source file; per-section authoring is the SoT
+  // under foundations/src/. Empty content is a programmer error — throw
+  // rather than silently leaving a stale dist/foundations.md from a
+  // previous run.
+  if (typeof mdContent !== "string") {
+    throw new Error(
+      "writeOutputs: mdContent must be a string (got " + typeof mdContent + ")",
+    );
   }
+  if (mdContent.length === 0) {
+    throw new Error(
+      "writeOutputs: mdContent is empty — refusing to emit an empty dist/foundations.md",
+    );
+  }
+  writeAtomic(path.join(distDir, "foundations.md"), mdContent);
+  written.push("foundations.md");
 
   // 3. Prune stale auto-generated JSON files (idempotency).
   // Owned files: _meta.auto_generated === true. Don't touch foundations.md
-  // (it's a verbatim copy — always regenerated). Don't touch README.md or
-  // anything else hand-maintained.
+  // (it's the synthesized verbatim copy — always regenerated). Don't touch
+  // README.md or anything else hand-maintained.
   var removed = [];
   if (!opts.skipPrune) {
     var owned = {};
@@ -932,7 +939,7 @@ function updatePathsManifest(manifestPath, derived, sourceRel, opts) {
     origin: "ci",
     generator: "scripts/foundations/derive-foundations.js",
     description:
-      "Verbatim copy of the concatenated foundations/src/ per-section files (Stripe .md URL pattern). Auto-synced; do not edit.",
+      "Synthesized concatenation of foundations/src/ per-section files joined with `\\n\\n---\\n\\n` (Stripe .md URL pattern). Auto-synced; do not edit. The substrate-side SoT is the per-section files; this dist artifact bakes section separators that don't exist in any single source file.",
   };
   added.push("foundations.source");
 
@@ -1053,9 +1060,14 @@ function defaultPaths() {
 // Read all per-section MD files under srcDir (sorted alphabetically, AUTHORING.md
 // excluded), trim trailing whitespace from each, and concatenate with
 // `\n\n---\n\n` separators between consecutive files. The result is the input
-// fed to the MD parser AND emitted verbatim to dist/foundations.md for the
-// Stripe .md URL pattern. Sort order = canonical section order (numeric
-// `NN-` prefix encodes the H2 sequence).
+// fed to the MD parser AND emitted to dist/foundations.md for the Stripe .md
+// URL pattern (synthesized, not byte-verbatim — see writeOutputs comment).
+// Sort order = canonical section order: numeric `NN-` prefix encodes the H2
+// sequence and is enforced (alphabetical sort matches numeric sort iff every
+// filename uses 2 digits, so we hard-error on violations).
+var NN_PREFIX_RE = /^\d{2}-[a-z0-9-]+\.md$/;
+var FENCE_RE = /^(```|~~~)/;
+
 function concatFoundationsSources(srcDir) {
   var entries = fs
     .readdirSync(srcDir)
@@ -1068,13 +1080,46 @@ function concatFoundationsSources(srcDir) {
       "no .md files found under " + srcDir + " (excluding AUTHORING.md)",
     );
   }
+  // Enforce the NN-<kebab>.md naming convention so alphabetical sort always
+  // matches numeric order. Without this, an author dropping `10-foo.md`
+  // would silently sort before `02-color-primitives.md`, scrambling sections.
+  var bad = entries.filter(function (n) {
+    return !NN_PREFIX_RE.test(n);
+  });
+  if (bad.length > 0) {
+    throw new Error(
+      "filenames under " +
+        srcDir +
+        " must match `NN-<kebab>.md` (got: " +
+        bad.join(", ") +
+        ")",
+    );
+  }
   return entries
     .map(function (name) {
-      return fs
-        .readFileSync(path.join(srcDir, name), "utf-8")
-        .replace(/\s+$/, "");
+      var abs = path.join(srcDir, name);
+      var raw = fs.readFileSync(abs, "utf-8");
+      assertBalancedFences(name, raw);
+      return raw.replace(/\s+$/, "");
     })
     .join("\n\n---\n\n");
+}
+
+// Verify code fences (``` and ~~~) are balanced in a single src file. An
+// unbalanced fence at the end of one file would consume the inter-file
+// `---` separator + content from the next file when the concat is parsed.
+function assertBalancedFences(name, src) {
+  var open = 0;
+  var lines = src.split("\n");
+  for (var i = 0; i < lines.length; i++) {
+    if (FENCE_RE.test(lines[i])) open = open === 0 ? 1 : 0;
+  }
+  if (open !== 0) {
+    throw new Error(
+      name +
+        " has an unbalanced code fence (\\`\\`\\` or ~~~). Fix the unterminated fence; an open fence at end-of-file would swallow inter-section separators when files are concatenated.",
+    );
+  }
 }
 
 function runCli(argv) {
@@ -1092,11 +1137,12 @@ function runCli(argv) {
     );
   }
   if (args.md) {
-    console.warn(
-      "[derive-foundations] --md is deprecated (per-section split moved authoring to a directory of files); ignoring '" +
+    console.error(
+      "[derive-foundations] --md was retired in the per-section split. Authoring lives under a directory of files now. Pass --src-dir <dir> instead (got --md '" +
         args.md +
-        "'. Use --src-dir instead.",
+        "').",
     );
+    return 2;
   }
 
   if (!fs.existsSync(srcDir)) {

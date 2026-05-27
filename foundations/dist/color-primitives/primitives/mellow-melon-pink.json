@@ -14,9 +14,7 @@
     "h4": "mellow-melon-pink"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 416,
-    "endLine": 433
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

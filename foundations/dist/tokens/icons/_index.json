@@ -12,9 +12,7 @@
     "h3": "icons"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 802,
-    "endLine": 825
+    "file": "foundations/src/"
   },
   "children": [
     {

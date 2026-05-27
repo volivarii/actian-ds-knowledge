@@ -14,9 +14,7 @@
     "h4": "cool-grey"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 542,
-    "endLine": 562
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

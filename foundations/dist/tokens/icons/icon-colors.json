@@ -14,9 +14,7 @@
     "h4": "icon-colors"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 813,
-    "endLine": 825
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

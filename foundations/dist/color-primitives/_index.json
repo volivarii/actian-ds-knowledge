@@ -10,9 +10,7 @@
     "h2": "color-primitives"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 86,
-    "endLine": 562
+    "file": "foundations/src/"
   },
   "children": [
     {

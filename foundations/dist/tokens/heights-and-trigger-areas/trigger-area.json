@@ -14,9 +14,7 @@
     "h4": "trigger-area"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 795,
-    "endLine": 801
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

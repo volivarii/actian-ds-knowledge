@@ -12,9 +12,7 @@
     "h3": "focus-rings"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 727,
-    "endLine": 737
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

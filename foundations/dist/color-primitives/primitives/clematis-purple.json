@@ -14,9 +14,7 @@
     "h4": "clematis-purple"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 398,
-    "endLine": 415
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

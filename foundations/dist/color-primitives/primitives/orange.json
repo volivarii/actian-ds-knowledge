@@ -14,9 +14,7 @@
     "h4": "orange"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 146,
-    "endLine": 163
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

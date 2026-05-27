@@ -12,9 +12,7 @@
     "h3": "color-usage-rules"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 985,
-    "endLine": 1000
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

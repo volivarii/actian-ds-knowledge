@@ -14,9 +14,7 @@
     "h4": "accessibility"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1030,
-    "endLine": 1046
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

@@ -14,9 +14,7 @@
     "h4": "royal-blue"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 200,
-    "endLine": 217
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

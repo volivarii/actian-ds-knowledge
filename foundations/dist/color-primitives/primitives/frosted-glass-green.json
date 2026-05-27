@@ -14,9 +14,7 @@
     "h4": "frosted-glass-green"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 524,
-    "endLine": 541
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

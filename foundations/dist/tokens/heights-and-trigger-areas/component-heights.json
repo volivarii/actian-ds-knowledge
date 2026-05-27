@@ -14,9 +14,7 @@
     "h4": "component-heights"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 784,
-    "endLine": 794
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

@@ -14,9 +14,7 @@
     "h4": "font-size"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 624,
-    "endLine": 636
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

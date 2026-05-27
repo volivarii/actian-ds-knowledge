@@ -53,9 +53,7 @@
         "h2": "color-primitives"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 86,
-        "endLine": 562
+        "file": "foundations/src/"
       },
       "children": [
         {
@@ -90,9 +88,7 @@
         "h3": "oklch-shade-formula"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 91,
-        "endLine": 115
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -183,9 +179,7 @@
           "h3": "primitives"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 116,
-          "endLine": 562
+          "file": "foundations/src/"
         },
         "children": [
           {
@@ -337,9 +331,7 @@
           "h4": "white-black"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 121,
-          "endLine": 127
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -387,9 +379,7 @@
           "h4": "green"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 128,
-          "endLine": 145
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -493,9 +483,7 @@
           "h4": "orange"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 146,
-          "endLine": 163
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -599,9 +587,7 @@
           "h4": "red"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 164,
-          "endLine": 181
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -705,9 +691,7 @@
           "h4": "grey"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 182,
-          "endLine": 199
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -811,9 +795,7 @@
           "h4": "royal-blue"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 200,
-          "endLine": 217
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -917,9 +899,7 @@
           "h4": "blue"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 218,
-          "endLine": 235
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -1023,9 +1003,7 @@
           "h4": "turquoise"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 236,
-          "endLine": 253
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -1129,9 +1107,7 @@
           "h4": "purple"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 254,
-          "endLine": 271
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -1235,9 +1211,7 @@
           "h4": "blue-grey"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 272,
-          "endLine": 289
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -1341,9 +1315,7 @@
           "h4": "yellow"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 290,
-          "endLine": 307
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -1447,9 +1419,7 @@
           "h4": "olive-green"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 308,
-          "endLine": 325
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -1553,9 +1523,7 @@
           "h4": "pacific-blue"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 326,
-          "endLine": 343
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -1659,9 +1627,7 @@
           "h4": "pomegranate-red"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 344,
-          "endLine": 361
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -1765,9 +1731,7 @@
           "h4": "kickstart-purple"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 362,
-          "endLine": 379
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -1871,9 +1835,7 @@
           "h4": "glint-green"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 380,
-          "endLine": 397
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -1977,9 +1939,7 @@
           "h4": "clematis-purple"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 398,
-          "endLine": 415
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -2083,9 +2043,7 @@
           "h4": "mellow-melon-pink"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 416,
-          "endLine": 433
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -2189,9 +2147,7 @@
           "h4": "zima-blue"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 434,
-          "endLine": 451
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -2295,9 +2251,7 @@
           "h4": "singapore-orchid-purple"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 452,
-          "endLine": 469
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -2401,9 +2355,7 @@
           "h4": "dropped-brick-red"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 470,
-          "endLine": 487
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -2507,9 +2459,7 @@
           "h4": "viva-gold-orange"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 488,
-          "endLine": 505
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -2613,9 +2563,7 @@
           "h4": "shutters-green"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 506,
-          "endLine": 523
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -2719,9 +2667,7 @@
           "h4": "frosted-glass-green"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 524,
-          "endLine": 541
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -2825,9 +2771,7 @@
           "h4": "cool-grey"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 542,
-          "endLine": 562
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -2930,9 +2874,7 @@
         "h2": "tokens"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 563,
-        "endLine": 982
+        "file": "foundations/src/"
       },
       "children": [
         {
@@ -3038,9 +2980,7 @@
         "h3": "global-color"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 580,
-        "endLine": 589
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -3105,9 +3045,7 @@
           "h3": "typography"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 590,
-          "endLine": 680
+          "file": "foundations/src/"
         },
         "children": [
           {
@@ -3168,9 +3106,7 @@
           "h4": "text-color-tokens"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 592,
-          "endLine": 607
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -3284,9 +3220,7 @@
           "h4": "font-family"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 608,
-          "endLine": 614
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -3337,9 +3271,7 @@
           "h4": "font-weight"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 615,
-          "endLine": 623
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -3399,9 +3331,7 @@
           "h4": "font-size"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 624,
-          "endLine": 636
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -3494,9 +3424,7 @@
           "h4": "letter-spacing"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 637,
-          "endLine": 649
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -3569,9 +3497,7 @@
           "h4": "line-height"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 650,
-          "endLine": 660
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -3650,9 +3576,7 @@
           "h4": "text-style-tokens-composite"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 661,
-          "endLine": 680
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -3813,9 +3737,7 @@
           "h3": "borders"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 681,
-          "endLine": 717
+          "file": "foundations/src/"
         },
         "children": [
           {
@@ -3856,9 +3778,7 @@
           "h4": "radius"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 683,
-          "endLine": 694
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -3944,9 +3864,7 @@
           "h4": "width"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 695,
-          "endLine": 701
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -3997,9 +3915,7 @@
           "h4": "style-composite"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 702,
-          "endLine": 717
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -4112,9 +4028,7 @@
         "h3": "breakpoints"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 718,
-        "endLine": 726
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -4177,9 +4091,7 @@
         "h3": "focus-rings"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 727,
-        "endLine": 737
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -4236,9 +4148,7 @@
         "h3": "elevation"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 738,
-        "endLine": 750
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -4309,9 +4219,7 @@
         "h3": "spacing"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 751,
-        "endLine": 764
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -4409,9 +4317,7 @@
         "h3": "backgrounds"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 765,
-        "endLine": 781
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -4531,9 +4437,7 @@
           "h3": "heights-and-trigger-areas"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 782,
-          "endLine": 801
+          "file": "foundations/src/"
         },
         "children": [
           {
@@ -4569,9 +4473,7 @@
           "h4": "component-heights"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 784,
-          "endLine": 794
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -4650,9 +4552,7 @@
           "h4": "trigger-area"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 795,
-          "endLine": 801
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -4703,9 +4603,7 @@
           "h3": "icons"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 802,
-          "endLine": 825
+          "file": "foundations/src/"
         },
         "children": [
           {
@@ -4741,9 +4639,7 @@
           "h4": "icon-sizes"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 804,
-          "endLine": 812
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -4808,9 +4704,7 @@
           "h4": "icon-colors"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 813,
-          "endLine": 825
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -4903,9 +4797,7 @@
         "h3": "motion"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 826,
-        "endLine": 982
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -5179,9 +5071,7 @@
         "h2": "design-guidelines"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 983,
-        "endLine": 1184
+        "file": "foundations/src/"
       },
       "children": [
         {
@@ -5250,9 +5140,7 @@
         "h3": "color-usage-rules"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 985,
-        "endLine": 1000
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -5287,9 +5175,7 @@
           "h3": "typography-rules"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1001,
-          "endLine": 1046
+          "file": "foundations/src/"
         },
         "children": [
           {
@@ -5345,9 +5231,7 @@
           "h4": "typeface"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1003,
-          "endLine": 1007
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -5372,9 +5256,7 @@
           "h4": "language-support"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1008,
-          "endLine": 1012
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -5399,9 +5281,7 @@
           "h4": "minimum-size"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1013,
-          "endLine": 1017
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -5426,9 +5306,7 @@
           "h4": "line-length"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1018,
-          "endLine": 1024
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -5463,9 +5341,7 @@
           "h4": "paragraph-spacing"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1025,
-          "endLine": 1029
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -5490,9 +5366,7 @@
           "h4": "accessibility"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1030,
-          "endLine": 1046
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -5534,9 +5408,7 @@
         "h3": "spacing-rules"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 1047,
-        "endLine": 1060
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -5571,9 +5443,7 @@
         "h3": "elevation-rules"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 1061,
-        "endLine": 1068
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -5597,9 +5467,7 @@
           "h3": "brightness-filter-convention-interactive-states"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1069,
-          "endLine": 1115
+          "file": "foundations/src/"
         },
         "children": [
           {
@@ -5635,9 +5503,7 @@
           "h4": "types-of-states"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1071,
-          "endLine": 1101
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -5689,9 +5555,7 @@
           "h4": "implementation"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1102,
-          "endLine": 1115
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -5743,9 +5607,7 @@
           "h3": "breakpoints"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1116,
-          "endLine": 1148
+          "file": "foundations/src/"
         },
         "children": [
           {
@@ -5782,9 +5644,7 @@
           "h4": "columns-gutters-and-margins"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1121,
-          "endLine": 1130
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -5820,9 +5680,7 @@
           "h4": "grid-settings"
         },
         "source": {
-          "file": "foundations/src/",
-          "startLine": 1131,
-          "endLine": 1148
+          "file": "foundations/src/"
         },
         "_meta": {
           "auto_generated": true,
@@ -5913,9 +5771,7 @@
         "h3": "focus-ring-rules"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 1149,
-        "endLine": 1171
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -5938,9 +5794,7 @@
         "h3": "border-usage"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 1172,
-        "endLine": 1176
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,
@@ -5963,9 +5817,7 @@
         "h3": "placeholder-text"
       },
       "source": {
-        "file": "foundations/src/",
-        "startLine": 1177,
-        "endLine": 1184
+        "file": "foundations/src/"
       },
       "_meta": {
         "auto_generated": true,

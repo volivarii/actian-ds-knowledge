@@ -14,9 +14,7 @@
     "h4": "pacific-blue"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 326,
-    "endLine": 343
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

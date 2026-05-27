@@ -8,30 +8,20 @@ var manifest = JSON.parse(
   fs.readFileSync(path.join(ROOT, "paths-manifest.json"), "utf8"),
 );
 
-// Read a per-section src/ tree (NN-slug.md sorted, excluding AUTHORING.md)
-// and concatenate as flat prose for the llms-full dump. Joined with plain
-// "\n\n" (no inter-section "---") since the dump is flat-prose for LLM
-// consumers, not source for any deriver.
-function readPerSectionProse(srcSubdir) {
-  var srcDir = path.join(ROOT, srcSubdir);
-  return fs
-    .readdirSync(srcDir)
-    .filter(function (n) {
-      return n.endsWith(".md") && n !== "AUTHORING.md";
-    })
-    .sort()
-    .map(function (n) {
-      return fs.readFileSync(path.join(srcDir, n), "utf8").replace(/\s+$/, "");
-    })
-    .join("\n\n");
-}
+// Defer to the derive scripts' canonical concat helpers so the llms-full dump
+// always matches the dist verbatim copy byte-for-byte (modulo the anchor-strip
+// pass). Avoids two independent join strategies for the same src/ trees.
+var deriveFoundations = require("./foundations/derive-foundations.js");
+var deriveA11y = require("./accessibility/derive-a11y-index.js");
 
 function readAccessibilityProse() {
-  return readPerSectionProse(path.join("accessibility", "src"));
+  return deriveA11y.concatA11ySources(path.join(ROOT, "accessibility", "src"));
 }
 
 function readFoundationsProse() {
-  return readPerSectionProse(path.join("foundations", "src"));
+  return deriveFoundations.concatFoundationsSources(
+    path.join(ROOT, "foundations", "src"),
+  );
 }
 
 // Strip explicit `{#kebab-slug}` markers from concatenated MD source.

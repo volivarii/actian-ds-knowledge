@@ -14,9 +14,7 @@
     "h4": "style-composite"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 702,
-    "endLine": 717
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

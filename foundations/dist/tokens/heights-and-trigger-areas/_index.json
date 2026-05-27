@@ -12,9 +12,7 @@
     "h3": "heights-and-trigger-areas"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 782,
-    "endLine": 801
+    "file": "foundations/src/"
   },
   "children": [
     {

@@ -14,9 +14,7 @@
     "h4": "shutters-green"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 506,
-    "endLine": 523
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

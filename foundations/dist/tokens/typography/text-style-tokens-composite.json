@@ -14,9 +14,7 @@
     "h4": "text-style-tokens-composite"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 661,
-    "endLine": 680
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

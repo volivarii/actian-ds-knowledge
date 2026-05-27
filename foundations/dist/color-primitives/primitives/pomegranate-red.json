@@ -14,9 +14,7 @@
     "h4": "pomegranate-red"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 344,
-    "endLine": 361
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

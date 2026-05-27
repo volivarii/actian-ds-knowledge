@@ -14,9 +14,7 @@
     "h4": "icon-sizes"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 804,
-    "endLine": 812
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

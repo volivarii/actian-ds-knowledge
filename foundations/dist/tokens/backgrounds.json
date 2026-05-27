@@ -12,9 +12,7 @@
     "h3": "backgrounds"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 765,
-    "endLine": 781
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

@@ -12,9 +12,7 @@
     "h3": "elevation-rules"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1061,
-    "endLine": 1068
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

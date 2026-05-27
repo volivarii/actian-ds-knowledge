@@ -12,9 +12,7 @@
     "h3": "breakpoints"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1116,
-    "endLine": 1148
+    "file": "foundations/src/"
   },
   "children": [
     {

@@ -14,9 +14,7 @@
     "h4": "font-family"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 608,
-    "endLine": 614
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

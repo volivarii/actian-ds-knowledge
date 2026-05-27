@@ -14,9 +14,7 @@
     "h4": "minimum-size"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1013,
-    "endLine": 1017
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

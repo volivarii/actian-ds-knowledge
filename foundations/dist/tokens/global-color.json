@@ -12,9 +12,7 @@
     "h3": "global-color"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 580,
-    "endLine": 589
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

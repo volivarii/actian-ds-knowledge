@@ -14,9 +14,7 @@
     "h4": "language-support"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1008,
-    "endLine": 1012
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

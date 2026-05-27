@@ -13,9 +13,7 @@
     "h3": "motion"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 826,
-    "endLine": 982
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

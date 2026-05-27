@@ -14,9 +14,7 @@
     "h4": "types-of-states"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1071,
-    "endLine": 1101
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

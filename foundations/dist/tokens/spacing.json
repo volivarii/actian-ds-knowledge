@@ -12,9 +12,7 @@
     "h3": "spacing"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 751,
-    "endLine": 764
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

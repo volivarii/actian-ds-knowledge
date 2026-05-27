@@ -14,9 +14,7 @@
     "h4": "implementation"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1102,
-    "endLine": 1115
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

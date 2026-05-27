@@ -10,9 +10,7 @@
     "h2": "design-guidelines"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 983,
-    "endLine": 1184
+    "file": "foundations/src/"
   },
   "children": [
     {

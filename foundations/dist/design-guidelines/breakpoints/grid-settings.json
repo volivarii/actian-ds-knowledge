@@ -14,9 +14,7 @@
     "h4": "grid-settings"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1131,
-    "endLine": 1148
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

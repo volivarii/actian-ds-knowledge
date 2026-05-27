@@ -14,9 +14,7 @@
     "h4": "viva-gold-orange"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 488,
-    "endLine": 505
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

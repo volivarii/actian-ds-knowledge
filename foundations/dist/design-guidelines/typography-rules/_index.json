@@ -12,9 +12,7 @@
     "h3": "typography-rules"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1001,
-    "endLine": 1046
+    "file": "foundations/src/"
   },
   "children": [
     {

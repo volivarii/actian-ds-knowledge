@@ -10,9 +10,7 @@
     "h2": "tokens"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 563,
-    "endLine": 982
+    "file": "foundations/src/"
   },
   "children": [
     {

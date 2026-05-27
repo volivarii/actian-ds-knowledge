@@ -12,9 +12,7 @@
     "h3": "border-usage"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1172,
-    "endLine": 1176
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

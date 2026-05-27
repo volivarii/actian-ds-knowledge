@@ -32,7 +32,7 @@ You can also edit any file in any Markdown editor (Typora, iA Writer, Obsidian, 
 When you open or update a PR that touches `foundations/src/**`:
 1. CI runs the schema-less hierarchical parser against the concatenated per-section content.
 2. It regenerates the `foundations/dist/` tree automatically (Pattern H — one JSON per leaf section, `_index.json` per directory, a `foundations.bundle.json` roll-up, plus a verbatim `.md` copy at `foundations/dist/foundations.md`).
-3. It commits the regenerated tree back to your branch with the message `chore(foundations): regenerate JSONs from foundations/src/`.
+3. It commits the regenerated tree back to your branch with the message `chore(foundations): regenerate JSONs from foundations/src/`. Note: `foundations/dist/foundations.md` is a SYNTHESIZED concatenation of the per-section files (joined with `\n\n---\n\n`) — convenient for Stripe-style `.md` URL access, but not byte-identical to any single src file.
 4. It posts a comment on the PR summarizing what changed in plain language (e.g., "3 token values changed in `tokens/color-global-tokens/semantic-aliases.json`").
 
 You don't need to install Node, run any script, or touch the JSON files. The PR appears with both your MD changes and the auto-generated JSON changes side by side.
@@ -123,7 +123,7 @@ Sections 5 (Handoff Protocol) and 6 (Related Guidelines) are intentionally not p
 ## What you don't need to do
 
 - Don't edit any JSON file in `foundations/dist/` (including `_index.json` files). They're auto-generated from `foundations/src/**`. CI will revert your edits and push back the regenerated version.
-- Don't edit `foundations/dist/foundations.md` — it's a verbatim concatenation of the per-section src/ files.
+- Don't edit `foundations/dist/foundations.md` — it's a CI-synthesized concatenation of the per-section src/ files (with `\n\n---\n\n` joiners).
 - Don't install Node or run any script locally.
 
 ## More info

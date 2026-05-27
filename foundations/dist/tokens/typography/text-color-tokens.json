@@ -14,9 +14,7 @@
     "h4": "text-color-tokens"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 592,
-    "endLine": 607
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

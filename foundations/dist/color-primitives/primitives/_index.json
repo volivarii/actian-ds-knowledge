@@ -12,9 +12,7 @@
     "h3": "primitives"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 116,
-    "endLine": 562
+    "file": "foundations/src/"
   },
   "children": [
     {

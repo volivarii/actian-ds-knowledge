@@ -14,9 +14,7 @@
     "h4": "radius"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 683,
-    "endLine": 694
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

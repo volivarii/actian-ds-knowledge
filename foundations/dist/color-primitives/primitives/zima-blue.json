@@ -14,9 +14,7 @@
     "h4": "zima-blue"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 434,
-    "endLine": 451
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

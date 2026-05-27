@@ -12,9 +12,7 @@
     "h3": "brightness-filter-convention-interactive-states"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1069,
-    "endLine": 1115
+    "file": "foundations/src/"
   },
   "children": [
     {

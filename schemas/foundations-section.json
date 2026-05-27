@@ -60,26 +60,14 @@
       "description": "Provenance — points back to the authored source MD + (for leaves) the line range.",
       "examples": [
         {
-          "file": "foundations/src/",
-          "startLine": 731,
-          "endLine": 744
+          "file": "foundations/src/"
         }
       ],
       "properties": {
         "file": {
           "type": "string",
-          "description": "Path to the source MD (repo-relative). Post-split this is the src/ directory; line numbers are offsets within the concatenated stream.",
+          "description": "Path to the source MD (repo-relative). Per-section split: this is the src/ directory; authoring lives in the per-section files inside.",
           "examples": ["foundations/src/"]
-        },
-        "startLine": {
-          "type": "number",
-          "description": "Line number where this section's heading appears in the source MD. Omitted on the root _index.",
-          "examples": [731]
-        },
-        "endLine": {
-          "type": "number",
-          "description": "Line number where this section ends (before the next sibling/parent heading). Omitted on the root _index.",
-          "examples": [744]
         }
       },
       "additionalProperties": true

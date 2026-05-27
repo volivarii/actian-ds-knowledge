@@ -14,9 +14,7 @@
     "h4": "dropped-brick-red"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 470,
-    "endLine": 487
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

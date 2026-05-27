@@ -14,9 +14,7 @@
     "h4": "columns-gutters-and-margins"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1121,
-    "endLine": 1130
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

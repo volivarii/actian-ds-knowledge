@@ -12,9 +12,7 @@
     "h3": "oklch-shade-formula"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 91,
-    "endLine": 115
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

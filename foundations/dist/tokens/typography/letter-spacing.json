@@ -14,9 +14,7 @@
     "h4": "letter-spacing"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 637,
-    "endLine": 649
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,

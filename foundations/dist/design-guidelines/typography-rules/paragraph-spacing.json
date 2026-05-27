@@ -14,9 +14,7 @@
     "h4": "paragraph-spacing"
   },
   "source": {
-    "file": "foundations/src/",
-    "startLine": 1025,
-    "endLine": 1029
+    "file": "foundations/src/"
   },
   "_meta": {
     "auto_generated": true,
