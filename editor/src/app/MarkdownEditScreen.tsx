@@ -538,6 +538,10 @@ export function MarkdownEditScreen({
       {connectionsPopover && (
         <ConnectionsPopover
           section={connectionsPopover.section}
+          sectionHeading={extractHeadingText(
+            text,
+            connectionsPopover.section.line,
+          )}
           anchorEl={connectionsPopover.anchorEl}
           outgoing={outgoing}
           taxonomy={taxonomy}
@@ -710,6 +714,21 @@ export function MarkdownEditScreen({
   );
 }
 
+// Pull the human-readable heading text from a markdown source line. Strips
+// the leading hashes, optional number prefix ("2.11 Motion"), and trailing
+// {#anchor} marker. Returns "" when the line doesn't look like a heading
+// (defensive — Outline pill clicks always pass a real heading line).
+function extractHeadingText(source: string, line: number): string {
+  const raw = source.split("\n")[line];
+  if (raw === undefined) return "";
+  const m = raw.match(/^#{2,3}\s+(.+?)\s*$/);
+  if (!m) return "";
+  return (m[1] ?? "")
+    .replace(/\s*\{#[a-z][a-z0-9-]*\}\s*$/, "")
+    .replace(/^\s*\d+(?:\.\d+)*\.?\s+/, "")
+    .trim();
+}
+
 // Popover wrapper for the Section Inspector. Anchored to the Outline
 // pill the author clicked. Uses the same invisible-fixed-anchor pattern
 // as AnchorReferencesPopover so Radix's floating layout has something
@@ -723,19 +742,25 @@ export function MarkdownEditScreen({
 // committing to the rewriter wiring just yet.
 function ConnectionsPopover({
   section,
+  sectionHeading,
   anchorEl,
   outgoing,
   taxonomy,
   onClose,
 }: {
   section: FocusedSectionContext;
+  sectionHeading: string;
   anchorEl: HTMLElement;
   outgoing: import("../substrate/refGraph").OutgoingConnection[];
   taxonomy: import("../substrate/taxonomy").Taxonomy;
   onClose: () => void;
 }) {
   const rect = anchorEl.getBoundingClientRect();
-  const sectionTitle = `§${section.anchor}`;
+  // Doctrine: show the human heading the author wrote, never the derived
+  // slug. Falls back to the anchor only when the heading line can't be
+  // resolved (defensive — should never happen for sections opened via the
+  // Outline pill since both originate from the same headingScan output).
+  const sectionTitle = sectionHeading || section.anchor;
   return (
     <Popover.Root
       open
