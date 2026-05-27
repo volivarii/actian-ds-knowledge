@@ -45,7 +45,7 @@ tokens/          ← interim: human-frozen (see tokens/README.md)
 | Token value | `tokens/tokens.json` + matching CSS variable in `tokens/tokens.css` | `render-token-reference.js` regenerates `tokens/token-reference.md` |
 | Component content guidelines (UI copy rules) | `components/src/<slug>/content.md` — see `components/src/AUTHORING.md` | `guidelines-derive.yml` regenerates `components/dist/guidelines/<slug>.json` on PR |
 | Global / cross-cutting content guidelines (voice, tone, words to avoid, UX-pattern topics) | `content/src/{writing,patterns,product}/<slug>.md` — see `content/src/AUTHORING.md` and `content/src/content-index.md` | `content-derive.yml` regenerates `content/dist/global.md` on PR |
-| Accessibility guidance | `accessibility/accessibility.md` | None |
+| Accessibility guidance | `accessibility/src/NN-<slug>.md` (per-section) | `accessibility-derive.yml` regenerates `accessibility/dist/a11y-index.json` on PR |
 | Presentation templates / chart patterns | `presentation/presentation-guide.md` | None |
 | App context / persona / terminology | `app-context/app-context.json` | None |
 | FM↔DS component mapping | `fm-to-ds-map/fm-to-ds-map.json` | None — `dsSlug` is hand-maintained alongside `dsKey` |
