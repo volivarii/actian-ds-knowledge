@@ -29,6 +29,8 @@ import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
 import { Outline } from "./Outline";
 import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
+import { computeFocusedSection } from "./SectionFocusTracker";
+import type { FocusedSectionContext } from "./EditorShell";
 import {
   draftStoreSingleton,
   submissionCartSingleton,
@@ -46,6 +48,10 @@ interface MarkdownEditScreenProps {
   octokit?: Octokit;
   onOpenSettings?: () => void;
   onNavigate?: (path: string) => void;
+  /** Reports the section currently under the caret to the shell so the
+   *  right-pane Section Inspector tracks cursor movement. Fires with
+   *  null when no H2/H3 precedes the cursor. */
+  onFocusedSectionChange?: (section: FocusedSectionContext | null) => void;
 }
 
 type LoadSource = "remote" | "cart" | "stub";
@@ -66,6 +72,7 @@ export function MarkdownEditScreen({
   octokit,
   onOpenSettings,
   onNavigate,
+  onFocusedSectionChange,
 }: MarkdownEditScreenProps) {
   const [ghError, setGhError] = useState<string | null>(null);
   const [anchorPopover, setAnchorPopover] = useState<{
@@ -218,6 +225,28 @@ export function MarkdownEditScreen({
     },
     [sha, saveText],
   );
+
+  // Plumb cursor → focused section. CodeMirror fires onCursorLineChange
+  // from its updateListener (outside React's render cycle), so we read
+  // `text` via a ref to avoid stale closures + unnecessary subscriptions.
+  const textRef = useRef(text);
+  useEffect(() => {
+    textRef.current = text;
+  }, [text]);
+  const handleCursorLineChange = useCallback(
+    (line: number) => {
+      if (!onFocusedSectionChange) return;
+      const section = computeFocusedSection(textRef.current, line);
+      onFocusedSectionChange(section ? { file: path, ...section } : null);
+    },
+    [onFocusedSectionChange, path],
+  );
+
+  // Reset focus when the active file changes — the previous file's
+  // cursor-derived section no longer applies.
+  useEffect(() => {
+    onFocusedSectionChange?.(null);
+  }, [path, onFocusedSectionChange]);
 
   const onRestore = () => {
     const draft = draftStoreSingleton.load(path);
@@ -390,6 +419,7 @@ export function MarkdownEditScreen({
             onAnchorClick={(slug, el) =>
               setAnchorPopover({ slug, triggerEl: el })
             }
+            onCursorLineChange={handleCursorLineChange}
           />
           {anchorPopover && (
             <AnchorReferencesPopover
