@@ -32,6 +32,7 @@ import { Outline } from "./Outline";
 import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
 import { computeFocusedSection } from "./SectionFocusTracker";
 import { SectionInspector } from "./SectionInspector";
+import { TopicPicker } from "./TopicPicker";
 import type { FocusedSectionContext } from "./EditorShell";
 // NOTE: deep-imported (not via the substrate barrel) to keep the Node-only
 // loader (taxonomy.ts uses node:fs/promises, refGraph.ts uses node:path) out
@@ -807,6 +808,14 @@ function ConnectionsPopover({
   // resolved (defensive — should never happen for sections opened via the
   // Outline pill since both originate from the same headingScan output).
   const sectionTitle = sectionHeading || section.anchor;
+
+  // Two views inside the popover: the Inspector (default) + the Topic
+  // Picker (when the author clicked "+ Connect to another topic"). The
+  // picker is a v1.1 read-only preview — pick fires a notice; the
+  // actual write-back to file frontmatter is v1.2.
+  const [mode, setMode] = useState<"inspector" | "picker">("inspector");
+  const [pickNotice, setPickNotice] = useState<string | null>(null);
+
   return (
     <Popover.Root
       open
@@ -829,11 +838,6 @@ function ConnectionsPopover({
       </Popover.Anchor>
       <Popover.Content
         size="2"
-        // Use the same side="bottom" anchor the legacy AnchorReferencesPopover
-        // uses — it positions reliably across viewport sizes with the
-        // fixed-position invisible-anchor pattern. side="right" was unstable
-        // on narrow viewports (popover rendered off-screen at bottom-left).
-        // Radix's auto-flip handles tall popovers near the bottom edge.
         side="bottom"
         align="start"
         sideOffset={6}
@@ -841,34 +845,67 @@ function ConnectionsPopover({
         data-testid="connections-popover"
         style={{ width: 300, maxHeight: "70vh", overflow: "auto" }}
       >
-        <SectionInspector
-          sectionTitle={sectionTitle}
-          outgoing={outgoing}
-          incoming={incoming}
-          taxonomy={taxonomy}
-          onAddConnection={() => {
-            // v1.2: open TopicPicker inside the popover + apply rewriter
-            // (addRefToFrontmatter) to the file source.
-            // eslint-disable-next-line no-console
-            console.info(
-              "[connections] add — coming soon: write back to file source",
-            );
-          }}
-          onRemoveConnection={(slug) => {
-            // eslint-disable-next-line no-console
-            console.info(
-              "[connections] remove — coming soon: write back to file source",
-              slug,
-            );
-          }}
-          onRepointConnection={(slug) => {
-            // eslint-disable-next-line no-console
-            console.info(
-              "[connections] repoint — coming soon: write back to file source",
-              slug,
-            );
-          }}
-        />
+        {mode === "inspector" ? (
+          <SectionInspector
+            sectionTitle={sectionTitle}
+            outgoing={outgoing}
+            incoming={incoming}
+            taxonomy={taxonomy}
+            onAddConnection={() => {
+              setPickNotice(null);
+              setMode("picker");
+            }}
+            onRemoveConnection={(slug) => {
+              // eslint-disable-next-line no-console
+              console.info(
+                "[connections] remove — coming soon: write back to file source",
+                slug,
+              );
+            }}
+            onRepointConnection={(slug) => {
+              setPickNotice(null);
+              setMode("picker");
+              // eslint-disable-next-line no-console
+              console.info(
+                "[connections] repoint — coming soon: write back to file source",
+                slug,
+              );
+            }}
+          />
+        ) : (
+          <Box>
+            <Flex align="center" justify="between" mb="2">
+              <Text size="1" color="gray" weight="medium">
+                Connect "{sectionTitle}" to a topic
+              </Text>
+              <Button
+                size="1"
+                variant="ghost"
+                onClick={() => setMode("inspector")}
+              >
+                ← back
+              </Button>
+            </Flex>
+            {pickNotice ? (
+              <Callout.Root color="amber" size="1" mb="2">
+                <Callout.Text>{pickNotice}</Callout.Text>
+              </Callout.Root>
+            ) : null}
+            <TopicPicker
+              taxonomy={taxonomy}
+              onPick={(topic) => {
+                // v1.2: addRefToFrontmatter(text, refTypeFor(topic.domain), {
+                //   slug: topic.slug, note: topic.note,
+                // }) + setText() through the existing draft state.
+                setPickNotice(
+                  `Picked "${topic.title}" — write-back to file frontmatter is coming next iteration.`,
+                );
+                setMode("inspector");
+              }}
+              onCancel={() => setMode("inspector")}
+            />
+          </Box>
+        )}
       </Popover.Content>
     </Popover.Root>
   );
