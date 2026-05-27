@@ -92,7 +92,10 @@ var PATHS = {
   },
 
   content: path.join(REPO_ROOT, "content", "content.md"),
-  accessibility: path.join(REPO_ROOT, "accessibility", "accessibility.md"),
+  accessibility: {
+    src: path.join(REPO_ROOT, "accessibility", "src"),
+    index: path.join(REPO_ROOT, "accessibility", "dist", "a11y-index.json"),
+  },
   presentation: path.join(REPO_ROOT, "presentation", "presentation-guide.md"),
   appContext: path.join(REPO_ROOT, "app-context", "app-context.json"),
   fmToDsMap: path.join(REPO_ROOT, "fm-to-ds-map", "fm-to-ds-map.json"),

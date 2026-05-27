@@ -13,7 +13,7 @@
 
 ## Accessibility
 
-- [WCAG 2.1 AA guidance](accessibility/accessibility.md): applied rules + criteria
+- [WCAG 2.1 AA guidance](accessibility/src/): applied rules + criteria, per-section files
 
 ## Components
 

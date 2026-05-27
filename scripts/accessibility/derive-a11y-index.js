@@ -38,6 +38,28 @@ function extractHeadingText(headingLine) {
     .trim();
 }
 
+// Read the per-section src/ files (NN-slug.md) in sorted order, exclude
+// AUTHORING.md, and concatenate with `\n\n---\n\n` separators. The separator
+// matches the original inter-section layout of the pre-split accessibility.md
+// (blank-line, ---, blank-line), so the concatenated stream is byte-identical
+// to running deriveA11yIndex on the legacy single-file source. Per-section
+// authoring is the SoT; this concat is a derive-time view, not stored on disk.
+function concatA11ySources(srcDir) {
+  var entries = fs
+    .readdirSync(srcDir)
+    .filter(function (n) {
+      return n.endsWith(".md") && n !== "AUTHORING.md";
+    })
+    .sort();
+  return entries
+    .map(function (name) {
+      return fs
+        .readFileSync(path.join(srcDir, name), "utf8")
+        .replace(/\s+$/, "");
+    })
+    .join("\n\n---\n\n");
+}
+
 function deriveA11yIndex(md) {
   var lines = md.split("\n");
   var sections = [];
@@ -99,21 +121,15 @@ function deriveA11yIndex(md) {
     _schema_version: 1,
     _meta: {
       auto_generated: true,
-      source: "accessibility/accessibility.md",
-      do_not_edit: "Edit the source MD; CI regenerates this file.",
+      source: "accessibility/src/",
+      do_not_edit: "Edit the per-section src/ files; CI regenerates this file.",
     },
     sections: sections,
   };
 }
 
 if (require.main === module) {
-  var srcPath = path.resolve(
-    __dirname,
-    "..",
-    "..",
-    "accessibility",
-    "accessibility.md",
-  );
+  var srcDir = path.resolve(__dirname, "..", "..", "accessibility", "src");
   var distPath = path.resolve(
     __dirname,
     "..",
@@ -122,7 +138,7 @@ if (require.main === module) {
     "dist",
     "a11y-index.json",
   );
-  var md = fs.readFileSync(srcPath, "utf8");
+  var md = concatA11ySources(srcDir);
   var idx = deriveA11yIndex(md);
   fs.mkdirSync(path.dirname(distPath), { recursive: true });
   fs.writeFileSync(distPath, JSON.stringify(idx, null, 2) + "\n");
@@ -131,6 +147,7 @@ if (require.main === module) {
 
 module.exports = {
   deriveA11yIndex: deriveA11yIndex,
+  concatA11ySources: concatA11ySources,
   slugify: slugify,
   extractSlugFromHeading: extractSlugFromHeading,
   extractHeadingText: extractHeadingText,

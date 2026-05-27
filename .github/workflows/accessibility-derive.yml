@@ -1,10 +1,10 @@
-name: Derive a11y-index from accessibility.md
+name: Derive a11y-index from accessibility/src/
 
-# Regenerates accessibility/dist/a11y-index.json from accessibility.md
-# (the auto-slugged section index) and auto-commits it back to the PR
+# Regenerates accessibility/dist/a11y-index.json from the per-section src/
+# files (the auto-slugged section index) and auto-commits it back to the PR
 # branch. Mirrors foundations-derive.yml / guidelines-derive.yml — the
-# accessibility author edits the markdown, CI handles the derived JSON;
-# no local toolchain required.
+# accessibility author edits per-section markdown, CI handles the derived
+# JSON; no local toolchain required.
 #
 # Required repo setting (already enabled for the other derive workflows):
 #   Settings → Actions → General → Workflow permissions → Allow GH Actions
@@ -17,7 +17,7 @@ name: Derive a11y-index from accessibility.md
 on:
   pull_request:
     paths:
-      - 'accessibility/accessibility.md'
+      - 'accessibility/src/**'
       - 'scripts/accessibility/derive-a11y-index.js'
 
 jobs:
