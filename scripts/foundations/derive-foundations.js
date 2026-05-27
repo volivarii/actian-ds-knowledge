@@ -2,7 +2,8 @@
 
 // Hierarchical foundations derive (PR α.5 v2, v0.4.1+).
 //
-// Walks the AST of foundations/src/foundations.md and emits a *folder
+// Walks the AST of the concatenated foundations/src/ per-section files and
+// emits a *folder
 // hierarchy* mirroring the MD structure. Per Pattern H (Hybrid):
 //
 //   - Each leaf section (no child headings) → `<slug>.json`
@@ -481,11 +482,15 @@ var SKIP_H2_SLUGS = {
 
 var SCHEMA_VERSION = 1;
 
+function metaBlockDoNotEditText() {
+  return "Edit the per-section src/ files; CI regenerates this file.";
+}
+
 function metaBlock(sourceRel) {
   return {
     auto_generated: true,
-    source: sourceRel || "foundations/src/foundations.md",
-    do_not_edit: "Edit the source MD; CI regenerates this file.",
+    source: sourceRel || "foundations/src/",
+    do_not_edit: metaBlockDoNotEditText(),
   };
 }
 
@@ -696,7 +701,7 @@ function buildBundle(bundleTree, rootIndex, sourceRel) {
 function deriveFromMarkdown(mdSource, opts) {
   opts = opts || {};
   var logger = opts.logger || { warn: function () {} };
-  var sourceRel = opts.sourceRel || "foundations/src/foundations.md";
+  var sourceRel = opts.sourceRel || "foundations/src/";
   var skipMap = opts.skipH2Slugs || SKIP_H2_SLUGS;
 
   var tokens = astWalk.parseMarkdown(mdSource);
@@ -784,7 +789,7 @@ function writeOutputs(
   files,
   bundle,
   rootIndex,
-  mdSourceAbs,
+  mdContent,
   sourceRel,
   opts,
 ) {
@@ -809,10 +814,10 @@ function writeOutputs(
   );
   written.push("foundations.bundle.json");
 
-  // Copy source MD verbatim (Stripe .md URL pattern). Read fresh so any
-  // post-derive edits to the MD on disk are reflected.
-  if (mdSourceAbs && fs.existsSync(mdSourceAbs)) {
-    var mdContent = fs.readFileSync(mdSourceAbs, "utf-8");
+  // Stripe .md URL pattern — emit a verbatim prose copy at dist. The content
+  // is the concatenated per-section MD already passed in (matches what the
+  // deriver saw). Per-section authoring is the SoT under foundations/src/.
+  if (typeof mdContent === "string" && mdContent.length > 0) {
     writeAtomic(path.join(distDir, "foundations.md"), mdContent);
     written.push("foundations.md");
   }
@@ -881,8 +886,11 @@ function updatePathsManifest(manifestPath, derived, sourceRel, opts) {
 
   // 1. Drop existing auto-generated foundations.* entries (preserve human-
   //    maintained pointers).
+  //
+  // foundations.md (legacy single-file pointer) was retired when the SoT
+  // moved to per-section files under foundations/src/. The new authoring
+  // surface lives in collections (foundations.guide), not paths.
   var preservedKeys = {
-    "foundations.md": true,
     "foundations.authoring": true,
   };
   var dropped = [];
@@ -924,7 +932,7 @@ function updatePathsManifest(manifestPath, derived, sourceRel, opts) {
     origin: "ci",
     generator: "scripts/foundations/derive-foundations.js",
     description:
-      "Verbatim copy of foundations/src/foundations.md (Stripe .md URL pattern). Auto-synced; do not edit.",
+      "Verbatim copy of the concatenated foundations/src/ per-section files (Stripe .md URL pattern). Auto-synced; do not edit.",
   };
   added.push("foundations.source");
 
@@ -1020,6 +1028,7 @@ function parseArgs(argv) {
     var a = argv[i];
     if (a === "--check") args.check = true;
     else if (a === "--md") args.md = argv[++i];
+    else if (a === "--src-dir") args.srcDir = argv[++i];
     else if (a === "--out") args.out = argv[++i];
     else if (a === "--manifest") args.manifest = argv[++i];
     else if (a === "--no-manifest") args.noManifest = true;
@@ -1034,17 +1043,44 @@ function parseArgs(argv) {
 function defaultPaths() {
   var repoRoot = path.resolve(__dirname, "..", "..");
   return {
-    md: path.join(repoRoot, "foundations", "src", "foundations.md"),
+    srcDir: path.join(repoRoot, "foundations", "src"),
     out: path.join(repoRoot, "foundations", "dist"),
     manifest: path.join(repoRoot, "paths-manifest.json"),
     repoRoot: repoRoot,
   };
 }
 
+// Read all per-section MD files under srcDir (sorted alphabetically, AUTHORING.md
+// excluded), trim trailing whitespace from each, and concatenate with
+// `\n\n---\n\n` separators between consecutive files. The result is the input
+// fed to the MD parser AND emitted verbatim to dist/foundations.md for the
+// Stripe .md URL pattern. Sort order = canonical section order (numeric
+// `NN-` prefix encodes the H2 sequence).
+function concatFoundationsSources(srcDir) {
+  var entries = fs
+    .readdirSync(srcDir)
+    .filter(function (n) {
+      return n.endsWith(".md") && n !== "AUTHORING.md";
+    })
+    .sort();
+  if (entries.length === 0) {
+    throw new Error(
+      "no .md files found under " + srcDir + " (excluding AUTHORING.md)",
+    );
+  }
+  return entries
+    .map(function (name) {
+      return fs
+        .readFileSync(path.join(srcDir, name), "utf-8")
+        .replace(/\s+$/, "");
+    })
+    .join("\n\n---\n\n");
+}
+
 function runCli(argv) {
   var args = parseArgs(argv);
   var defaults = defaultPaths();
-  var mdPath = args.md || defaults.md;
+  var srcDir = args.srcDir || defaults.srcDir;
   var outDir = args.out || defaults.out;
   var manifestPath = args.manifest || defaults.manifest;
 
@@ -1055,24 +1091,41 @@ function runCli(argv) {
         "'.",
     );
   }
+  if (args.md) {
+    console.warn(
+      "[derive-foundations] --md is deprecated (per-section split moved authoring to a directory of files); ignoring '" +
+        args.md +
+        "'. Use --src-dir instead.",
+    );
+  }
 
-  if (!fs.existsSync(mdPath)) {
+  if (!fs.existsSync(srcDir)) {
     console.error(
-      "[derive-foundations] source MD not found: " +
-        mdPath +
-        "\nCheck the path — is it really at foundations/src/foundations.md?",
+      "[derive-foundations] source directory not found: " +
+        srcDir +
+        "\nCheck the path — is it really foundations/src/?",
     );
     return 2;
   }
 
-  var md = fs.readFileSync(mdPath, "utf-8");
+  var md;
+  try {
+    md = concatFoundationsSources(srcDir);
+  } catch (err) {
+    console.error("[derive-foundations] " + err.message);
+    return 2;
+  }
   var logger = {
     warn: function (m) {
       console.warn("[derive-foundations] " + m);
     },
   };
 
-  var sourceRel = path.relative(defaults.repoRoot, mdPath).replace(/\\/g, "/");
+  var sourceRel =
+    path
+      .relative(defaults.repoRoot, srcDir)
+      .replace(/\\/g, "/")
+      .replace(/\/$/, "") + "/";
 
   var derived;
   try {
@@ -1121,7 +1174,7 @@ function runCli(argv) {
     derived.files,
     derived.bundle,
     derived.rootIndex,
-    mdPath,
+    md,
     sourceRel,
     { skipPrune: args.noPrune },
   );
@@ -1156,6 +1209,7 @@ if (require.main === module) {
 
 module.exports = {
   deriveFromMarkdown,
+  concatFoundationsSources,
   buildLeafJson,
   buildIndexJson,
   buildRootIndex,

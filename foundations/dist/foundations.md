@@ -30,8 +30,6 @@
 > **How to use this doc**
 > This is the authoritative reference for the Actian design system. It covers current primitives, existing tokens (in both Figma/hex and engineering/OKLCH formats), and foundational usage rules. Tokens are marked with a status (🟢 Shipped, 🔵 In Review, 🟡 Proposed) throughout Section 2.
 
----
-
 **Version:** 1.2.0
 **Last updated:** May 11, 2026
 
@@ -524,7 +522,6 @@ OKLCH 500 base: `oklch(0.5121 0.0235 285.54)` — 🟢 Shipped
 | 800 | `--zen-color-cool-grey-800` | `#40404a` | `oklch(0.3738 0.0176 285.54)` |
 | 900 | `--zen-color-cool-grey-900` | `#33333a` | `oklch(0.3226 0.0129 285.54)` |
 
-
 ---
 
 ## 2. Tokens
@@ -912,9 +909,6 @@ The cascading effect guides the eye naturally downward and prevents the screen f
 
 ---
 
----
-
-
 ## 3. Design Guidelines
 
 ### 3.1 Color Usage Rules
@@ -1075,7 +1069,6 @@ Use `--zen-border-default` for standard container borders (cards, panels, inputs
 ### 3.9 Placeholder Text
 
 Two tiers of placeholder exist for inputs: `--zen-color-text-placeholder` is the standard placeholder (grey-600). `--zen-color-text-placeholder-subtle` (grey-400) is used in search fields where less visual weight is appropriate.
-
 
 ---
 

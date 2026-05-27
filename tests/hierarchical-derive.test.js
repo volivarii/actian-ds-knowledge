@@ -18,10 +18,18 @@ const path = require("node:path");
 const REPO_ROOT = path.resolve(__dirname, "..");
 const FIXTURES = path.join(__dirname, "fixtures", "foundations");
 const DIST = path.join(REPO_ROOT, "foundations", "dist");
+const SRC_DIR = path.join(REPO_ROOT, "foundations", "src");
 
 const derive = require(
   path.join(REPO_ROOT, "scripts", "foundations", "derive-foundations.js"),
 );
+
+// Read the live foundations source by concatenating the per-section src/
+// files (matches what the derive does). Replaces direct reads of the
+// legacy single foundations.md file (retired in the per-section split).
+function readLiveFoundationsMd() {
+  return derive.concatFoundationsSources(SRC_DIR);
+}
 const astWalk = require(
   path.join(
     REPO_ROOT,
@@ -63,10 +71,7 @@ function collectWarnings(md, opts) {
 // will still pass as long as derive has been re-run.
 
 test("dist filesystem mirrors the section tree of foundations.md", () => {
-  const md = fs.readFileSync(
-    path.join(REPO_ROOT, "foundations", "src", "foundations.md"),
-    "utf8",
-  );
+  const md = readLiveFoundationsMd();
   const { result, warnings } = collectWarnings(md);
 
   // Invariant A: every emitted in-memory path exists on disk under dist/.
@@ -268,10 +273,7 @@ test("all three status emojis (🟢/🔵/🟡) are recognized", () => {
 // ───────────────────────────────────────────────────────────────────────────
 
 test("bundle's nested tree equals the per-file tree", () => {
-  const md = fs.readFileSync(
-    path.join(REPO_ROOT, "foundations", "src", "foundations.md"),
-    "utf8",
-  );
+  const md = readLiveFoundationsMd();
   const { result } = collectWarnings(md);
   const bundle = result.bundle;
 
@@ -344,10 +346,7 @@ test("paths-manifest foundations.* entries reflect hierarchical layout", () => {
   // Per top-level H2 entry — derive the expected slugs from the source MD
   // at test time so this stays content-agnostic. Authors can rename / reorder
   // H2 sections and this test will still pass against a fresh derive.
-  const md = fs.readFileSync(
-    path.join(REPO_ROOT, "foundations", "src", "foundations.md"),
-    "utf8",
-  );
+  const md = readLiveFoundationsMd();
   const { result } = collectWarnings(md);
   const expectedTopSlugs = result.tree.map((n) => n.slug);
   assert.ok(
@@ -378,8 +377,8 @@ test("paths-manifest foundations.* entries reflect hierarchical layout", () => {
 
   // Preserved keys (human-maintained) still present.
   assert.ok(
-    manifest.paths["foundations.md"],
-    "foundations.md (src pointer) preserved",
+    manifest.collections["foundations.guide"],
+    "foundations.guide (src dir collection) present",
   );
   assert.ok(
     manifest.paths["foundations.authoring"],
@@ -398,10 +397,7 @@ test("paths-manifest foundations.* entries reflect hierarchical layout", () => {
 // ───────────────────────────────────────────────────────────────────────────
 
 test("every emitted JSON has required schema fields", () => {
-  const md = fs.readFileSync(
-    path.join(REPO_ROOT, "foundations", "src", "foundations.md"),
-    "utf8",
-  );
+  const md = readLiveFoundationsMd();
   const { result } = collectWarnings(md);
 
   function validate(obj, relPath) {
@@ -436,10 +432,7 @@ test("every emitted JSON has required schema fields", () => {
 // ───────────────────────────────────────────────────────────────────────────
 
 test("motion patterns survive hierarchical restructure", () => {
-  const md = fs.readFileSync(
-    path.join(REPO_ROOT, "foundations", "src", "foundations.md"),
-    "utf8",
-  );
+  const md = readLiveFoundationsMd();
   const { result } = collectWarnings(md);
   const motion = result.files["tokens/motion.json"];
   assert.ok(motion, "tokens/motion.json emitted");
@@ -464,13 +457,10 @@ test("motion patterns survive hierarchical restructure", () => {
 // Test 11 — foundations.md verbatim copy at dist
 // ───────────────────────────────────────────────────────────────────────────
 
-test("foundations.md copied verbatim to dist (Stripe .md URL pattern)", () => {
-  const src = fs.readFileSync(
-    path.join(REPO_ROOT, "foundations", "src", "foundations.md"),
-    "utf8",
-  );
+test("foundations.md at dist == concat of per-section src/ (Stripe .md URL pattern)", () => {
+  const src = readLiveFoundationsMd();
   const distMd = fs.readFileSync(path.join(DIST, "foundations.md"), "utf8");
-  assert.equal(distMd, src, "dist .md must equal src .md byte-for-byte");
+  assert.equal(distMd, src, "dist .md must equal concat(src/) byte-for-byte");
 });
 
 // ───────────────────────────────────────────────────────────────────────────

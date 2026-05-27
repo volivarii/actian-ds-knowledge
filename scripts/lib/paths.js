@@ -22,7 +22,6 @@ var PATHS = {
 
   foundations: {
     src: path.join(REPO_ROOT, "foundations", "src"),
-    md: path.join(REPO_ROOT, "foundations", "src", "foundations.md"),
     authoring: path.join(REPO_ROOT, "foundations", "src", "AUTHORING.md"),
     parserMap: path.join(
       REPO_ROOT,

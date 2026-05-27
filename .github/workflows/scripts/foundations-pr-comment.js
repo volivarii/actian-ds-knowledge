@@ -89,7 +89,7 @@ function summarizeFile(file) {
 function renderComment(summaries) {
   var lines = ["## Foundations regenerated", ""];
   lines.push(
-    "CI re-derived the foundation JSONs from `foundations/foundations.md`. Summary of semantic changes:",
+    "CI re-derived the foundation JSONs from `foundations/src/`. Summary of semantic changes:",
   );
   lines.push("");
   summaries.forEach(function (s) {
@@ -124,7 +124,7 @@ function renderComment(summaries) {
   });
   lines.push("");
   lines.push(
-    "_If anything looks wrong, edit `foundations/foundations.md` and CI will regenerate._",
+    "_If anything looks wrong, edit `foundations/src/` and CI will regenerate._",
   );
   return lines.join("\n");
 }

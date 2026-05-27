@@ -8,13 +8,12 @@ var manifest = JSON.parse(
   fs.readFileSync(path.join(ROOT, "paths-manifest.json"), "utf8"),
 );
 
-// Read the per-section accessibility src files (NN-slug.md sorted) and
-// concatenate them into a single prose block for the llms-full dump.
-// Mirrors scripts/accessibility/derive-a11y-index.js#concatA11ySources, but
-// joined with plain "\n\n" (no inter-section "---") since the dump is
-// flat-prose for LLM consumers, not source for the deriver.
-function readAccessibilityProse() {
-  var srcDir = path.join(ROOT, "accessibility", "src");
+// Read a per-section src/ tree (NN-slug.md sorted, excluding AUTHORING.md)
+// and concatenate as flat prose for the llms-full dump. Joined with plain
+// "\n\n" (no inter-section "---") since the dump is flat-prose for LLM
+// consumers, not source for any deriver.
+function readPerSectionProse(srcSubdir) {
+  var srcDir = path.join(ROOT, srcSubdir);
   return fs
     .readdirSync(srcDir)
     .filter(function (n) {
@@ -25,6 +24,14 @@ function readAccessibilityProse() {
       return fs.readFileSync(path.join(srcDir, n), "utf8").replace(/\s+$/, "");
     })
     .join("\n\n");
+}
+
+function readAccessibilityProse() {
+  return readPerSectionProse(path.join("accessibility", "src"));
+}
+
+function readFoundationsProse() {
+  return readPerSectionProse(path.join("foundations", "src"));
 }
 
 // Strip explicit `{#kebab-slug}` markers from concatenated MD source.
@@ -53,7 +60,7 @@ function generateLlmsTxt() {
     "",
     "## Foundations",
     "",
-    "- [Foundations spec](foundations/src/foundations.md): primitives, scales, tokens reference",
+    "- [Foundations spec](foundations/src/): primitives, scales, tokens reference, per-section files",
     "",
     "## Content",
     "",
@@ -87,12 +94,7 @@ function generateLlmsFullTxt() {
     "",
     "## Foundations",
     "",
-    stripAnchorMarkers(
-      fs.readFileSync(
-        path.join(ROOT, "foundations/src/foundations.md"),
-        "utf8",
-      ),
-    ),
+    stripAnchorMarkers(readFoundationsProse()),
     "",
     "## Content",
     "",

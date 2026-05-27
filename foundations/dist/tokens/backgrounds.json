@@ -12,14 +12,14 @@
     "h3": "backgrounds"
   },
   "source": {
-    "file": "foundations/src/foundations.md",
-    "startLine": 769,
-    "endLine": 785
+    "file": "foundations/src/",
+    "startLine": 765,
+    "endLine": 781
   },
   "_meta": {
     "auto_generated": true,
-    "source": "foundations/src/foundations.md",
-    "do_not_edit": "Edit the source MD; CI regenerates this file."
+    "source": "foundations/src/",
+    "do_not_edit": "Edit the per-section src/ files; CI regenerates this file."
   },
   "blocks": [
     {

@@ -4,7 +4,7 @@
 
 ## Foundations
 
-- [Foundations spec](foundations/src/foundations.md): primitives, scales, tokens reference
+- [Foundations spec](foundations/src/): primitives, scales, tokens reference, per-section files
 
 ## Content
 
