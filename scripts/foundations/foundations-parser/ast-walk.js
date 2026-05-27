@@ -1,6 +1,7 @@
 "use strict";
 
-// AST traversal helpers for foundations.md.
+// AST traversal helpers for the foundations source (per-section files under
+// foundations/src/, concatenated at derive time).
 //
 // Two modes coexist here:
 //

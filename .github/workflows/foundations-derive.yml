@@ -1,4 +1,4 @@
-name: Derive foundations JSON from foundations.md
+name: Derive foundations JSON from foundations/src/
 
 # Federation Phase 1.2 — knowledge-repo CI lifted from
 # Actian-DS-Claude-plugin/.github/workflows/foundations-derive.yml.
@@ -17,7 +17,7 @@ name: Derive foundations JSON from foundations.md
 on:
   pull_request:
     paths:
-      - 'foundations/src/foundations.md'
+      - 'foundations/src/**'
       - 'scripts/foundations/derive-foundations.js'
       - 'scripts/foundations/foundations-parser/**'
       - 'paths-manifest.json'
@@ -62,7 +62,7 @@ jobs:
       - name: Derive foundations JSONs (Pattern H — hierarchical)
         run: |
           node scripts/foundations/derive-foundations.js \
-            --md foundations/src/foundations.md \
+            --src-dir foundations/src \
             --out foundations/dist
 
       - name: Run tests against regenerated output
@@ -91,7 +91,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add foundations/ package.json paths-manifest.json
-          git commit -m "chore(foundations): regenerate JSONs from foundations.md + bump patch"
+          git commit -m "chore(foundations): regenerate JSONs from foundations/src/ + bump patch"
           git push
 
       - name: Tag release

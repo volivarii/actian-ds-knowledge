@@ -8,23 +8,20 @@ var manifest = JSON.parse(
   fs.readFileSync(path.join(ROOT, "paths-manifest.json"), "utf8"),
 );
 
-// Read the per-section accessibility src files (NN-slug.md sorted) and
-// concatenate them into a single prose block for the llms-full dump.
-// Mirrors scripts/accessibility/derive-a11y-index.js#concatA11ySources, but
-// joined with plain "\n\n" (no inter-section "---") since the dump is
-// flat-prose for LLM consumers, not source for the deriver.
+// Defer to the derive scripts' canonical concat helpers so the llms-full dump
+// always matches the dist verbatim copy byte-for-byte (modulo the anchor-strip
+// pass). Avoids two independent join strategies for the same src/ trees.
+var deriveFoundations = require("./foundations/derive-foundations.js");
+var deriveA11y = require("./accessibility/derive-a11y-index.js");
+
 function readAccessibilityProse() {
-  var srcDir = path.join(ROOT, "accessibility", "src");
-  return fs
-    .readdirSync(srcDir)
-    .filter(function (n) {
-      return n.endsWith(".md") && n !== "AUTHORING.md";
-    })
-    .sort()
-    .map(function (n) {
-      return fs.readFileSync(path.join(srcDir, n), "utf8").replace(/\s+$/, "");
-    })
-    .join("\n\n");
+  return deriveA11y.concatA11ySources(path.join(ROOT, "accessibility", "src"));
+}
+
+function readFoundationsProse() {
+  return deriveFoundations.concatFoundationsSources(
+    path.join(ROOT, "foundations", "src"),
+  );
 }
 
 // Strip explicit `{#kebab-slug}` markers from concatenated MD source.
@@ -53,7 +50,7 @@ function generateLlmsTxt() {
     "",
     "## Foundations",
     "",
-    "- [Foundations spec](foundations/src/foundations.md): primitives, scales, tokens reference",
+    "- [Foundations spec](foundations/src/): primitives, scales, tokens reference, per-section files",
     "",
     "## Content",
     "",
@@ -87,12 +84,7 @@ function generateLlmsFullTxt() {
     "",
     "## Foundations",
     "",
-    stripAnchorMarkers(
-      fs.readFileSync(
-        path.join(ROOT, "foundations/src/foundations.md"),
-        "utf8",
-      ),
-    ),
+    stripAnchorMarkers(readFoundationsProse()),
     "",
     "## Content",
     "",

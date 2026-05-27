@@ -22,8 +22,11 @@ var motion = JSON.parse(
   ),
 );
 
+// Read motion-pattern source from 03-tokens.md (where the Motion section lives
+// post-split). The motion patterns block + their `{#slug}` anchors are
+// constrained to that one file.
 var foundationsSrc = fs.readFileSync(
-  path.resolve(__dirname, "..", "foundations", "src", "foundations.md"),
+  path.resolve(__dirname, "..", "foundations", "src", "03-tokens.md"),
   "utf8",
 );
 
@@ -59,7 +62,7 @@ test("motion slugs are unique", function () {
 
 test("known canonical slug mapping is correct (now author-declared, D2)", function () {
   // Canonical slugs are now sourced from `{#anchor}` markers in
-  // foundations/src/foundations.md (D2 — Substrate Doctrine P6). This test
+  // foundations/src/03-tokens.md (D2 — Substrate Doctrine P6). This test
   // remains the load-bearing contract for consumers; the values must not
   // drift even though the derivation mechanism changed.
   var list = patternsList(motion);

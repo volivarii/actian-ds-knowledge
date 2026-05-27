@@ -2,7 +2,7 @@
 
 // Safety net for the upcoming per-section split of foundations.md.
 //
-// Today, `foundations/src/foundations.md` carries explicit `{#slug}` anchors
+// `foundations/src/*.md` per-section files carry explicit `{#slug}` anchors
 // only on motion-pattern bold paragraphs (8 anchors). Heading-level slugs are
 // AST-derived through per-scope sluggers and so are structurally unique by
 // construction.
@@ -34,12 +34,17 @@ function collectAnchorsInFile(absPath) {
 }
 
 function listFoundationsSources() {
-  // Pre-split: single file. Post-split: this should walk
-  // `foundations/src/**/*.md` (excluding AUTHORING.md). Written as a list so
-  // the post-split refactor only adds entries; pre-split test still locks the
-  // contract.
+  // Per-section split: walks foundations/src/*.md sorted, excludes AUTHORING.md.
   var root = path.resolve(__dirname, "..", "foundations", "src");
-  return [path.join(root, "foundations.md")];
+  return fs
+    .readdirSync(root)
+    .filter(function (n) {
+      return n.endsWith(".md") && n !== "AUTHORING.md";
+    })
+    .sort()
+    .map(function (n) {
+      return path.join(root, n);
+    });
 }
 
 test("every explicit {#slug} anchor in foundations sources is globally unique", function () {
@@ -55,7 +60,9 @@ test("every explicit {#slug} anchor in foundations sources is globally unique", 
   var dups = [];
   all.forEach(function (entry) {
     if (seen[entry.slug]) {
-      dups.push(entry.slug + " (in " + seen[entry.slug] + " and " + entry.file + ")");
+      dups.push(
+        entry.slug + " (in " + seen[entry.slug] + " and " + entry.file + ")",
+      );
     } else {
       seen[entry.slug] = entry.file;
     }
@@ -96,7 +103,9 @@ test("the 8 motion pattern anchors are present (regression guard for D2 contract
   expected.forEach(function (slug) {
     assert.ok(
       anchors.has(slug),
-      "Motion pattern anchor '{#" + slug + "}' missing from foundations sources",
+      "Motion pattern anchor '{#" +
+        slug +
+        "}' missing from foundations sources",
     );
   });
 });

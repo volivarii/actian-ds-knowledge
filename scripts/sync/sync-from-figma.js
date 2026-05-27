@@ -11,7 +11,7 @@
 //
 // Phases 5 + 6 (component guidelines + foundations) stay manual — they're
 // hand-curated content, not pure data. Component guidelines live in
-// components/guidelines/, foundations in foundations/foundations.md.
+// components/guidelines/, foundations under foundations/src/ per-section files.
 //
 // Exit codes:
 //   0 — verdict additive or unchanged

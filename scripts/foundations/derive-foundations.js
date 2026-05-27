@@ -2,7 +2,8 @@
 
 // Hierarchical foundations derive (PR α.5 v2, v0.4.1+).
 //
-// Walks the AST of foundations/src/foundations.md and emits a *folder
+// Walks the AST of the concatenated foundations/src/ per-section files and
+// emits a *folder
 // hierarchy* mirroring the MD structure. Per Pattern H (Hybrid):
 //
 //   - Each leaf section (no child headings) → `<slug>.json`
@@ -11,8 +12,9 @@
 //   - Root `_index.json` carries top-level metadata.
 //   - `foundations.bundle.json` is a single nested roll-up (full tree) for
 //     one-shot LLM consumption.
-//   - `foundations.md` is copied verbatim from src/ for Stripe-style
-//     `.md` URL access.
+//   - `foundations.md` is the synthesized concatenation of src/*.md
+//     (with `\n\n---\n\n` joiners) for Stripe-style `.md` URL access.
+//     NOT byte-identical to any single source file.
 //
 // Authors (UX team) can renumber/rename/remove/restructure sections freely
 // — the parser tracks MD structure, not section numbers.
@@ -481,11 +483,15 @@ var SKIP_H2_SLUGS = {
 
 var SCHEMA_VERSION = 1;
 
+function metaBlockDoNotEditText() {
+  return "Edit the per-section src/ files; CI regenerates this file.";
+}
+
 function metaBlock(sourceRel) {
   return {
     auto_generated: true,
-    source: sourceRel || "foundations/src/foundations.md",
-    do_not_edit: "Edit the source MD; CI regenerates this file.",
+    source: sourceRel || "foundations/src/",
+    do_not_edit: metaBlockDoNotEditText(),
   };
 }
 
@@ -505,8 +511,6 @@ function buildLeafJson(node, pathSegments, parentId, sourceRel, logger) {
       anchors: anchorsFromPath(pathSegments),
       source: {
         file: sourceRel,
-        startLine: node.startLine,
-        endLine: node.endLine,
       },
       _meta: metaBlock(sourceRel),
     };
@@ -530,8 +534,6 @@ function buildLeafJson(node, pathSegments, parentId, sourceRel, logger) {
     anchors: anchorsFromPath(pathSegments),
     source: {
       file: sourceRel,
-      startLine: node.startLine,
-      endLine: node.endLine,
     },
     _meta: metaBlock(sourceRel),
   };
@@ -558,8 +560,6 @@ function buildIndexJson(node, pathSegments, parentId, sourceRel, logger) {
     anchors: anchorsFromPath(pathSegments),
     source: {
       file: sourceRel,
-      startLine: node.startLine,
-      endLine: node.endLine,
     },
     children: children,
     _meta: metaBlock(sourceRel),
@@ -696,7 +696,7 @@ function buildBundle(bundleTree, rootIndex, sourceRel) {
 function deriveFromMarkdown(mdSource, opts) {
   opts = opts || {};
   var logger = opts.logger || { warn: function () {} };
-  var sourceRel = opts.sourceRel || "foundations/src/foundations.md";
+  var sourceRel = opts.sourceRel || "foundations/src/";
   var skipMap = opts.skipH2Slugs || SKIP_H2_SLUGS;
 
   var tokens = astWalk.parseMarkdown(mdSource);
@@ -784,7 +784,7 @@ function writeOutputs(
   files,
   bundle,
   rootIndex,
-  mdSourceAbs,
+  mdContent,
   sourceRel,
   opts,
 ) {
@@ -809,18 +809,30 @@ function writeOutputs(
   );
   written.push("foundations.bundle.json");
 
-  // Copy source MD verbatim (Stripe .md URL pattern). Read fresh so any
-  // post-derive edits to the MD on disk are reflected.
-  if (mdSourceAbs && fs.existsSync(mdSourceAbs)) {
-    var mdContent = fs.readFileSync(mdSourceAbs, "utf-8");
-    writeAtomic(path.join(distDir, "foundations.md"), mdContent);
-    written.push("foundations.md");
+  // Stripe .md URL pattern — emit a SYNTHESIZED prose copy at dist. The
+  // content is the concatenated per-section MD already passed in (matches
+  // what the deriver saw, complete with `\n\n---\n\n` joiners). NOT byte-
+  // identical to any single source file; per-section authoring is the SoT
+  // under foundations/src/. Empty content is a programmer error — throw
+  // rather than silently leaving a stale dist/foundations.md from a
+  // previous run.
+  if (typeof mdContent !== "string") {
+    throw new Error(
+      "writeOutputs: mdContent must be a string (got " + typeof mdContent + ")",
+    );
   }
+  if (mdContent.length === 0) {
+    throw new Error(
+      "writeOutputs: mdContent is empty — refusing to emit an empty dist/foundations.md",
+    );
+  }
+  writeAtomic(path.join(distDir, "foundations.md"), mdContent);
+  written.push("foundations.md");
 
   // 3. Prune stale auto-generated JSON files (idempotency).
   // Owned files: _meta.auto_generated === true. Don't touch foundations.md
-  // (it's a verbatim copy — always regenerated). Don't touch README.md or
-  // anything else hand-maintained.
+  // (it's the synthesized verbatim copy — always regenerated). Don't touch
+  // README.md or anything else hand-maintained.
   var removed = [];
   if (!opts.skipPrune) {
     var owned = {};
@@ -881,8 +893,11 @@ function updatePathsManifest(manifestPath, derived, sourceRel, opts) {
 
   // 1. Drop existing auto-generated foundations.* entries (preserve human-
   //    maintained pointers).
+  //
+  // foundations.md (legacy single-file pointer) was retired when the SoT
+  // moved to per-section files under foundations/src/. The new authoring
+  // surface lives in collections (foundations.guide), not paths.
   var preservedKeys = {
-    "foundations.md": true,
     "foundations.authoring": true,
   };
   var dropped = [];
@@ -924,7 +939,7 @@ function updatePathsManifest(manifestPath, derived, sourceRel, opts) {
     origin: "ci",
     generator: "scripts/foundations/derive-foundations.js",
     description:
-      "Verbatim copy of foundations/src/foundations.md (Stripe .md URL pattern). Auto-synced; do not edit.",
+      "Synthesized concatenation of foundations/src/ per-section files joined with `\\n\\n---\\n\\n` (Stripe .md URL pattern). Auto-synced; do not edit. The substrate-side SoT is the per-section files; this dist artifact bakes section separators that don't exist in any single source file.",
   };
   added.push("foundations.source");
 
@@ -1020,6 +1035,7 @@ function parseArgs(argv) {
     var a = argv[i];
     if (a === "--check") args.check = true;
     else if (a === "--md") args.md = argv[++i];
+    else if (a === "--src-dir") args.srcDir = argv[++i];
     else if (a === "--out") args.out = argv[++i];
     else if (a === "--manifest") args.manifest = argv[++i];
     else if (a === "--no-manifest") args.noManifest = true;
@@ -1034,17 +1050,82 @@ function parseArgs(argv) {
 function defaultPaths() {
   var repoRoot = path.resolve(__dirname, "..", "..");
   return {
-    md: path.join(repoRoot, "foundations", "src", "foundations.md"),
+    srcDir: path.join(repoRoot, "foundations", "src"),
     out: path.join(repoRoot, "foundations", "dist"),
     manifest: path.join(repoRoot, "paths-manifest.json"),
     repoRoot: repoRoot,
   };
 }
 
+// Read all per-section MD files under srcDir (sorted alphabetically, AUTHORING.md
+// excluded), trim trailing whitespace from each, and concatenate with
+// `\n\n---\n\n` separators between consecutive files. The result is the input
+// fed to the MD parser AND emitted to dist/foundations.md for the Stripe .md
+// URL pattern (synthesized, not byte-verbatim — see writeOutputs comment).
+// Sort order = canonical section order: numeric `NN-` prefix encodes the H2
+// sequence and is enforced (alphabetical sort matches numeric sort iff every
+// filename uses 2 digits, so we hard-error on violations).
+var NN_PREFIX_RE = /^\d{2}-[a-z0-9-]+\.md$/;
+var FENCE_RE = /^(```|~~~)/;
+
+function concatFoundationsSources(srcDir) {
+  var entries = fs
+    .readdirSync(srcDir)
+    .filter(function (n) {
+      return n.endsWith(".md") && n !== "AUTHORING.md";
+    })
+    .sort();
+  if (entries.length === 0) {
+    throw new Error(
+      "no .md files found under " + srcDir + " (excluding AUTHORING.md)",
+    );
+  }
+  // Enforce the NN-<kebab>.md naming convention so alphabetical sort always
+  // matches numeric order. Without this, an author dropping `10-foo.md`
+  // would silently sort before `02-color-primitives.md`, scrambling sections.
+  var bad = entries.filter(function (n) {
+    return !NN_PREFIX_RE.test(n);
+  });
+  if (bad.length > 0) {
+    throw new Error(
+      "filenames under " +
+        srcDir +
+        " must match `NN-<kebab>.md` (got: " +
+        bad.join(", ") +
+        ")",
+    );
+  }
+  return entries
+    .map(function (name) {
+      var abs = path.join(srcDir, name);
+      var raw = fs.readFileSync(abs, "utf-8");
+      assertBalancedFences(name, raw);
+      return raw.replace(/\s+$/, "");
+    })
+    .join("\n\n---\n\n");
+}
+
+// Verify code fences (``` and ~~~) are balanced in a single src file. An
+// unbalanced fence at the end of one file would consume the inter-file
+// `---` separator + content from the next file when the concat is parsed.
+function assertBalancedFences(name, src) {
+  var open = 0;
+  var lines = src.split("\n");
+  for (var i = 0; i < lines.length; i++) {
+    if (FENCE_RE.test(lines[i])) open = open === 0 ? 1 : 0;
+  }
+  if (open !== 0) {
+    throw new Error(
+      name +
+        " has an unbalanced code fence (\\`\\`\\` or ~~~). Fix the unterminated fence; an open fence at end-of-file would swallow inter-section separators when files are concatenated.",
+    );
+  }
+}
+
 function runCli(argv) {
   var args = parseArgs(argv);
   var defaults = defaultPaths();
-  var mdPath = args.md || defaults.md;
+  var srcDir = args.srcDir || defaults.srcDir;
   var outDir = args.out || defaults.out;
   var manifestPath = args.manifest || defaults.manifest;
 
@@ -1055,24 +1136,42 @@ function runCli(argv) {
         "'.",
     );
   }
-
-  if (!fs.existsSync(mdPath)) {
+  if (args.md) {
     console.error(
-      "[derive-foundations] source MD not found: " +
-        mdPath +
-        "\nCheck the path — is it really at foundations/src/foundations.md?",
+      "[derive-foundations] --md was retired in the per-section split. Authoring lives under a directory of files now. Pass --src-dir <dir> instead (got --md '" +
+        args.md +
+        "').",
     );
     return 2;
   }
 
-  var md = fs.readFileSync(mdPath, "utf-8");
+  if (!fs.existsSync(srcDir)) {
+    console.error(
+      "[derive-foundations] source directory not found: " +
+        srcDir +
+        "\nCheck the path — is it really foundations/src/?",
+    );
+    return 2;
+  }
+
+  var md;
+  try {
+    md = concatFoundationsSources(srcDir);
+  } catch (err) {
+    console.error("[derive-foundations] " + err.message);
+    return 2;
+  }
   var logger = {
     warn: function (m) {
       console.warn("[derive-foundations] " + m);
     },
   };
 
-  var sourceRel = path.relative(defaults.repoRoot, mdPath).replace(/\\/g, "/");
+  var sourceRel =
+    path
+      .relative(defaults.repoRoot, srcDir)
+      .replace(/\\/g, "/")
+      .replace(/\/$/, "") + "/";
 
   var derived;
   try {
@@ -1121,7 +1220,7 @@ function runCli(argv) {
     derived.files,
     derived.bundle,
     derived.rootIndex,
-    mdPath,
+    md,
     sourceRel,
     { skipPrune: args.noPrune },
   );
@@ -1156,6 +1255,7 @@ if (require.main === module) {
 
 module.exports = {
   deriveFromMarkdown,
+  concatFoundationsSources,
   buildLeafJson,
   buildIndexJson,
   buildRootIndex,
