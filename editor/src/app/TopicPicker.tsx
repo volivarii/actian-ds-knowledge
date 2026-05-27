@@ -48,13 +48,14 @@ export function TopicPicker(props: TopicPickerProps) {
 
       <Flex
         direction="column"
-        gap="1"
-        mt="2"
-        style={{ maxHeight: 240, overflow: "auto" }}
+        gap="2"
+        mt="3"
+        style={{ maxHeight: 280, overflow: "auto" }}
       >
         {results.map((r) => (
           <Card
             key={`${r.domain}:${r.slug}`}
+            size="1"
             onClick={() => setSelected(r)}
             style={{
               cursor: "pointer",
@@ -64,19 +65,26 @@ export function TopicPicker(props: TopicPickerProps) {
                   : "3px solid transparent",
             }}
           >
-            <Flex justify="between" align="center">
+            <Flex justify="between" align="start" gap="2">
               <Text weight="medium" size="2">
                 {r.title}
               </Text>
               <Badge
                 color={r.domain === "accessibility" ? "blue" : "amber"}
                 size="1"
+                style={{ flexShrink: 0 }}
               >
                 {r.domain}
               </Badge>
             </Flex>
             {r.body ? (
-              <Text size="1" color="gray" as="p" mt="1">
+              <Text
+                size="1"
+                color="gray"
+                as="p"
+                mt="2"
+                style={{ lineHeight: 1.4 }}
+              >
                 {r.body.slice(0, 120)}
                 {r.body.length > 120 ? "…" : ""}
               </Text>
