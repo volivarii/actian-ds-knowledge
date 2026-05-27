@@ -16,7 +16,7 @@ stably structured* substrate — one that serves an unbounded set of consumers
 (plugin, docs, Storybook, MCP, LLM surfaces, editing tools, …) without bending
 to any one of them.
 
-It has two parts: **seven principles** (the reasoning) and a **pass/fail
+It has two parts: **eight principles** (the reasoning) and a **pass/fail
 checklist** (the test). When a change is proposed — a new field, a renamed
 file, a schema edit, a new consumer's request — run it through the checklist.
 A change that fails a checklist item is not forbidden, but it must be
@@ -33,7 +33,7 @@ not a compromise; it is the natural consequence of domain-anchored design.
 
 ---
 
-## The Seven Principles
+## The Eight Principles
 
 ### P1 — Domain-anchored structure
 
@@ -139,6 +139,68 @@ disk is implementation detail.
 - **Forecloses:** consumers hardcoding raw file paths; treating the directory
   tree as the API.
 
+### P8 — Transversal reference taxonomies use stable slug refs, never duplication
+
+Some substrate domains serve as **reference taxonomies** that other domains
+point into via stable slug refs, never duplicating the referenced content.
+The reference shape is `{ref: <slug>, note?: <string>}`: the slug addresses
+content in the target's dist; the optional `note` carries application-specific
+context without duplicating canonical content.
+
+Today the substrate has two transversal reference taxonomies in active use:
+
+- **Accessibility** — WCAG 2.1 AA criteria anchored in
+  `accessibility/dist/a11y-index.json`; components reference them via
+  `accessibility: [{ref: focus-keyboard, note: "..."}, ...]` in
+  category-defaults frontmatter.
+- **Motion patterns** — 8 anchored patterns in
+  `foundations/dist/tokens/motion.json#patterns`; components reference them via
+  `motion_refs: [{ref: state-transitions, note: "..."}, ...]` in
+  category-defaults frontmatter.
+
+The pattern is generalisable. Future transversal domains (candidates: content
+rules, interaction state machines, anatomy primitives, brand colors) adopt the
+same shape so they're recognisable as transversal-shaped rather than each
+inventing their own reference convention.
+
+- **Rationale:** transversal concerns cut across multiple substrate domains.
+  Duplicating them into each referring domain produces drift; centralising in
+  a reference taxonomy with stable slug addressing keeps a single source of
+  truth that resolves at consumer read-time. Stable slugs (P6) make name
+  drift invisible to consumers.
+- **Concrete shape:** the reference array is named after the target domain
+  (e.g. `motion_refs`, `accessibility`); items are `{ref: <slug>}` plus
+  optional `note`. Slugs must exist in the target's dist; derive-time check
+  fails fast on missing slugs. (See §4.1 of the foundations split spec for
+  the anchor-uniqueness check; the cross-domain version applies the same
+  fail-fast philosophy.)
+- **Evidence (existing usage):** `schemas/category-defaults.json` requires
+  both `motion_refs` and `accessibility` arrays — see
+  `components/src/categories/action.md` for concrete example.
+- **Provenance:** motivated by 2026-05-27 strategic synthesis recognising the
+  transversal pattern already operating in components→a11y and
+  components→motion. Vincent (2026-05-27) flagged that accessibility
+  specifically should be transversal across tokens / motion / content /
+  design / components. Schema verification revealed motion already
+  participates in the same pattern — so this principle generalises the
+  convention rather than naming a single domain.
+- **Asymmetric gap (today):** components reference both transversal
+  taxonomies; foundations + content do NOT yet (e.g., foundations color
+  section discusses contrast without referencing `color-contrast`; design
+  guidelines for focus rings don't reference `focus-keyboard`). The
+  post-foundations-split follow-up adds `a11y_refs` and where appropriate
+  `motion_refs` to foundations + content per-section files, completing the
+  symmetry.
+- **Naming note:** the substrate currently uses `motion_refs` (suffix
+  `_refs`) and `accessibility` (bare). Future doctrine pass should
+  standardise — either `<domain>_refs` everywhere, or bare everywhere — once
+  more transversal taxonomies emerge. Not worth a breaking change in
+  isolation; worth catching before more taxonomies arrive.
+- **Forecloses:** duplicated transversal-domain content (WCAG text in
+  tokens; motion-pattern descriptions in components); string-based cross-refs
+  that drift on rename; novel ref shapes that diverge from
+  `{ref: <slug>, note?: <string>}`.
+
 ---
 
 ## Consumer-side obligation: the Tolerant Reader
@@ -227,6 +289,16 @@ Run a proposed change through these. Each is phrased so **"yes" = pass**.
 10. If the change reorganises files/directories: is it absorbed behind the
     stable manifest/path-resolution interface, leaving the consumer-facing
     contract unchanged? *(P7)*
+
+**Cross-domain references**
+11. If the change introduces a cross-reference between domains, does it use
+    the `{ref: <slug>, note?: <string>}` shape, with the target slug existing
+    in a reference taxonomy's dist (with a derive-time fail-fast check on
+    missing slugs)? *(P8)*
+12. If the change introduces a new transversal reference taxonomy: is it
+    addressable by stable slugs in dist, and does it follow the same shape
+    as accessibility + motion (so consumers can write polymorphic adapters)?
+    *(P8)*
 
 A change that answers "yes" to all applicable items is doctrine-compliant. A
 "no" is not a veto — it is a flag that the change is either coupling debt
