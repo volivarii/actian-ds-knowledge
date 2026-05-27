@@ -15,6 +15,7 @@ import {
   Flex,
   Heading,
   Link,
+  Popover,
   Spinner,
   Text,
 } from "@radix-ui/themes";
@@ -32,7 +33,13 @@ import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
 import { computeFocusedSection } from "./SectionFocusTracker";
 import { SectionInspector } from "./SectionInspector";
 import type { FocusedSectionContext } from "./EditorShell";
-import type { Taxonomy } from "../substrate";
+// NOTE: deep-imported (not via the substrate barrel) to keep the Node-only
+// loader (taxonomy.ts uses node:fs/promises, refGraph.ts uses node:path) out
+// of the browser bundle. Vite's tree-shaker can't see through the barrel's
+// re-exports of node:* modules and surfaces a "readFile is not exported"
+// error at build time if we go through ../substrate.
+import { buildTaxonomyFromAssets } from "../substrate/buildTaxonomyFromAssets";
+import { parseLocalFrontmatter } from "../substrate/parseLocalFrontmatter";
 import {
   draftStoreSingleton,
   submissionCartSingleton,
@@ -50,25 +57,12 @@ interface MarkdownEditScreenProps {
   octokit?: Octokit;
   onOpenSettings?: () => void;
   onNavigate?: (path: string) => void;
-  /** Optional outward callback (e.g. for tests or future analytics) —
-   *  fired whenever the caret's resolved section changes. Internal
-   *  rendering of the Section Inspector is owned by this screen and
-   *  driven by its own state. */
+  /** Optional outward callback (purely for tests / future analytics) —
+   *  fired whenever the caret's resolved section changes. The cursor
+   *  NO LONGER drives any UI panel — activation is now explicit via the
+   *  Outline pill (the v1.1 fix-up after the persistent-panel bug). */
   onFocusedSectionChange?: (section: FocusedSectionContext | null) => void;
 }
-
-/** Minimal Taxonomy stub for the v1 SectionInspector mount. Real
- *  Substrate Service hookup (loadTaxonomy + buildRefGraph wired to the
- *  active file's frontmatter) is a follow-up; this stub keeps the
- *  inspector mountable without crashing while connections/incoming are
- *  still empty. */
-const passthroughStubTaxonomy: Taxonomy = {
-  getSlugs: () => [],
-  getTitle: () => null,
-  getBody: () => null,
-  domainOfSlug: () => null,
-  searchSections: () => [],
-};
 
 type LoadSource = "remote" | "cart" | "stub";
 
@@ -242,35 +236,92 @@ export function MarkdownEditScreen({
     [sha, saveText],
   );
 
-  // Plumb cursor → focused section. CodeMirror fires onCursorLineChange
-  // from its updateListener (outside React's render cycle), so we read
-  // `text` via a ref to avoid stale closures + unnecessary subscriptions.
-  // The focused section drives an in-pane SectionInspector (right rail
-  // alongside the body editor); it never replaces the body view.
-  const [focusedSection, setFocusedSection] =
-    useState<FocusedSectionContext | null>(null);
+  // Cursor tracking is preserved for analytics / future use ONLY — it no
+  // longer drives any visible UI. The v1 right-rail panel was driven by
+  // this signal and felt always-on (cursor lives inside a section almost
+  // continuously when authors are editing). Activation moved to an
+  // explicit Outline pill (see connectionsPopover below).
   const textRef = useRef(text);
   useEffect(() => {
     textRef.current = text;
   }, [text]);
   const handleCursorLineChange = useCallback(
     (line: number) => {
+      if (!onFocusedSectionChange) return;
       const section = computeFocusedSection(textRef.current, line);
       const resolved: FocusedSectionContext | null = section
         ? { file: path, ...section }
         : null;
-      setFocusedSection(resolved);
-      onFocusedSectionChange?.(resolved);
+      onFocusedSectionChange(resolved);
     },
     [onFocusedSectionChange, path],
   );
 
-  // Reset focus when the active file changes — the previous file's
-  // cursor-derived section no longer applies.
+  // Reset analytics callback when the active file changes — the previous
+  // file's cursor-derived section no longer applies.
   useEffect(() => {
-    setFocusedSection(null);
     onFocusedSectionChange?.(null);
   }, [path, onFocusedSectionChange]);
+
+  // Build the in-memory taxonomy once per mount. The static JSON imports
+  // are baked at build time (see substrate/taxonomyAssets.ts) so this is
+  // cheap and synchronous — no fetch, no async boundary.
+  const taxonomy = useMemo(() => buildTaxonomyFromAssets(), []);
+
+  // Outgoing connections derived from THIS file's frontmatter. Recomputes
+  // on edit so adding/removing a connection inline reflects immediately.
+  const outgoing = useMemo(
+    () => parseLocalFrontmatter(text, taxonomy),
+    [text, taxonomy],
+  );
+
+  // P8 Option A: all outgoing connections in a file's frontmatter attach
+  // to the file's top H2 section. Build a count map keyed by that
+  // section's anchor so the Outline pill renders the right number. When
+  // we move to section-level attachment (Option B) this map will be
+  // built from a per-section walk instead — the Outline API doesn't
+  // change.
+  const connectionCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    const topH2 = computeFocusedSection(text, 0);
+    // computeFocusedSection(text, 0) returns null if no H2 exists at/before
+    // line 0; walk forward to find the first H2 anchor instead.
+    let anchor = topH2?.anchor ?? null;
+    if (anchor === null) {
+      const lines = text.split("\n");
+      for (let i = 0; i < lines.length; i++) {
+        const s = computeFocusedSection(text, i);
+        if (s && s.level === 2) {
+          anchor = s.anchor;
+          break;
+        }
+      }
+    }
+    if (anchor && outgoing.length > 0) {
+      counts.set(anchor, outgoing.length);
+    }
+    return counts;
+  }, [text, outgoing]);
+
+  // Popover state — explicit, opens only on Outline pill click. The
+  // anchorEl is the pill DOM node; Radix Popover.Anchor positions to it.
+  const [connectionsPopover, setConnectionsPopover] = useState<{
+    section: FocusedSectionContext;
+    anchorEl: HTMLElement;
+  } | null>(null);
+
+  const openConnectionsForSection = useCallback(
+    (section: FocusedSectionContext, anchorEl: HTMLElement) => {
+      setConnectionsPopover({ section, anchorEl });
+    },
+    [],
+  );
+
+  // Close the popover when the active file changes — the prior file's
+  // section context no longer applies.
+  useEffect(() => {
+    setConnectionsPopover(null);
+  }, [path]);
 
   const onRestore = () => {
     const draft = draftStoreSingleton.load(path);
@@ -422,7 +473,13 @@ export function MarkdownEditScreen({
             overflow: "hidden",
           }}
         >
-          <Outline text={text} view={view} />
+          <Outline
+            text={text}
+            view={view}
+            file={path}
+            connectionCounts={connectionCounts}
+            onOpenConnectionsForSection={openConnectionsForSection}
+          />
         </Box>
         <Box
           flexGrow="1"
@@ -477,30 +534,16 @@ export function MarkdownEditScreen({
             <Preview text={text} />
           </Box>
         )}
-        {focusedSection && (
-          <Box
-            data-testid="section-inspector-panel"
-            style={{
-              width: 320,
-              minWidth: 320,
-              flexShrink: 0,
-              border: "1px solid var(--gray-5)",
-              borderRadius: 6,
-              overflow: "auto",
-            }}
-          >
-            <SectionInspector
-              sectionTitle={`§${focusedSection.anchor}`}
-              outgoing={[]}
-              incoming={[]}
-              taxonomy={passthroughStubTaxonomy}
-              onAddConnection={() => {}}
-              onRemoveConnection={() => {}}
-              onRepointConnection={() => {}}
-            />
-          </Box>
-        )}
       </Flex>
+      {connectionsPopover && (
+        <ConnectionsPopover
+          section={connectionsPopover.section}
+          anchorEl={connectionsPopover.anchorEl}
+          outgoing={outgoing}
+          taxonomy={taxonomy}
+          onClose={() => setConnectionsPopover(null)}
+        />
+      )}
       <Flex gap="2" justify="end" align="center" wrap="wrap">
         {prUrl && (
           <Text>
@@ -664,5 +707,91 @@ export function MarkdownEditScreen({
         </AlertDialog.Content>
       </AlertDialog.Root>
     </Flex>
+  );
+}
+
+// Popover wrapper for the Section Inspector. Anchored to the Outline
+// pill the author clicked. Uses the same invisible-fixed-anchor pattern
+// as AnchorReferencesPopover so Radix's floating layout has something
+// concrete to attach to even when the trigger lives in a different
+// React subtree (the Outline column).
+//
+// Write-back to the file (add/remove/repoint connection) is the v1.2
+// step; for v1.1 the picker shows real options + the connect button
+// logs a "coming soon" message. The goal of this fix-up is to let the
+// author SEE THE FULL PICTURE — connections + taxonomy — without
+// committing to the rewriter wiring just yet.
+function ConnectionsPopover({
+  section,
+  anchorEl,
+  outgoing,
+  taxonomy,
+  onClose,
+}: {
+  section: FocusedSectionContext;
+  anchorEl: HTMLElement;
+  outgoing: import("../substrate/refGraph").OutgoingConnection[];
+  taxonomy: import("../substrate/taxonomy").Taxonomy;
+  onClose: () => void;
+}) {
+  const rect = anchorEl.getBoundingClientRect();
+  const sectionTitle = `§${section.anchor}`;
+  return (
+    <Popover.Root
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
+      <Popover.Anchor>
+        <span
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+            pointerEvents: "none",
+          }}
+        />
+      </Popover.Anchor>
+      <Popover.Content
+        size="2"
+        side="right"
+        align="start"
+        data-testid="connections-popover"
+        style={{ width: 360, maxHeight: "80vh", overflow: "auto" }}
+      >
+        <SectionInspector
+          sectionTitle={sectionTitle}
+          outgoing={outgoing}
+          incoming={[]}
+          taxonomy={taxonomy}
+          onAddConnection={() => {
+            // v1.2: open TopicPicker inside the popover + apply rewriter
+            // (addRefToFrontmatter) to the file source.
+            // eslint-disable-next-line no-console
+            console.info(
+              "[connections] add — coming soon: write back to file source",
+            );
+          }}
+          onRemoveConnection={(slug) => {
+            // eslint-disable-next-line no-console
+            console.info(
+              "[connections] remove — coming soon: write back to file source",
+              slug,
+            );
+          }}
+          onRepointConnection={(slug) => {
+            // eslint-disable-next-line no-console
+            console.info(
+              "[connections] repoint — coming soon: write back to file source",
+              slug,
+            );
+          }}
+        />
+      </Popover.Content>
+    </Popover.Root>
   );
 }

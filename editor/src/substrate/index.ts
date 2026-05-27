@@ -5,7 +5,9 @@
 
 export { loadTaxonomy, TaxonomyLoadError } from "./taxonomy";
 export type { Taxonomy, Domain, SearchResult, LoadOpts } from "./taxonomy";
+export { buildTaxonomyFromAssets } from "./buildTaxonomyFromAssets";
 export { buildRefGraph, parseFrontmatter } from "./refGraph";
+export { parseLocalFrontmatter } from "./parseLocalFrontmatter";
 export type {
   RefGraph,
   Consumer,

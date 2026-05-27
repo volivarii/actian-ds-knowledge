@@ -9,6 +9,16 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import type { Domain, Taxonomy } from "./taxonomy";
+import {
+  parseFrontmatter as parseFrontmatterImpl,
+  type ParsedFrontmatter,
+} from "./parseFrontmatter";
+
+// Re-export the browser-safe parser so legacy callers keep working.
+// Live in parseFrontmatter.ts because this module pulls node:fs/path and
+// is unusable in the browser bundle (Vite externalises node:* modules
+// and tree-shaking can't strip the value imports through a barrel).
+export const parseFrontmatter = parseFrontmatterImpl;
 
 export type RefType = "a11y_refs" | "motion_refs";
 
@@ -48,23 +58,8 @@ export interface BuildOpts {
   taxonomy: Taxonomy;
 }
 
-// Match a YAML frontmatter envelope at the very top of a markdown file.
-const FRONTMATTER_RE = /^---\s*\n([\s\S]*?)\n---\s*\n/;
-
-// Match `a11y_refs:` / `motion_refs:` blocks with `- { ref: <slug> [, note: ...] }` entries.
-// We don't run a full YAML parser here; the format is a strict subset documented in
-// components/src/categories/AUTHORING.md and the P8 closure.
-const REF_BLOCK_RE =
-  /^(a11y_refs|motion_refs):\s*\n((?:\s*-\s+\{[^}]*\}\s*\n?)+)/gm;
-const REF_ENTRY_RE =
-  /\{\s*ref\s*:\s*([a-z][a-z0-9-]*)(?:\s*,\s*note\s*:\s*(?:"([^"]*)"|'([^']*)'|([^},]*)))?\s*\}/g;
 const TOP_H2_RE =
   /^##\s+(?:\d+(?:\.\d+)*\.?\s+)?(.+?)(?:\s+\{#([a-z][a-z0-9-]*)\})?\s*$/m;
-
-interface ParsedFrontmatter {
-  a11y_refs: Array<{ ref: string; note: string | null }>;
-  motion_refs: Array<{ ref: string; note: string | null }>;
-}
 
 interface FileEntry {
   file: string;
@@ -77,36 +72,6 @@ function deriveSlug(rawTitle: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-}
-
-export function parseFrontmatter(raw: string): {
-  frontmatter: ParsedFrontmatter;
-  body: string;
-} {
-  const match = raw.match(FRONTMATTER_RE);
-  const frontmatter: ParsedFrontmatter = { a11y_refs: [], motion_refs: [] };
-  if (!match || match[1] === undefined) {
-    return { frontmatter, body: raw };
-  }
-  const block = match[1];
-  REF_BLOCK_RE.lastIndex = 0;
-  let blockMatch;
-  while ((blockMatch = REF_BLOCK_RE.exec(block)) !== null) {
-    const refType = blockMatch[1] as RefType;
-    const entries = blockMatch[2] ?? "";
-    REF_ENTRY_RE.lastIndex = 0;
-    let entryMatch;
-    while ((entryMatch = REF_ENTRY_RE.exec(entries)) !== null) {
-      const ref = entryMatch[1] ?? "";
-      const note =
-        entryMatch[2] ?? entryMatch[3] ?? entryMatch[4]?.trim() ?? null;
-      frontmatter[refType].push({
-        ref,
-        note: note && note.length > 0 ? note : null,
-      });
-    }
-  }
-  return { frontmatter, body: raw.slice(match[0].length) };
 }
 
 function findTopH2Slug(body: string): string | null {
