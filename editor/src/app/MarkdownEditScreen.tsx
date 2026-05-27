@@ -30,7 +30,9 @@ import { Preview } from "../markdown-engine/Preview";
 import { Outline } from "./Outline";
 import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
 import { computeFocusedSection } from "./SectionFocusTracker";
+import { SectionInspector } from "./SectionInspector";
 import type { FocusedSectionContext } from "./EditorShell";
+import type { Taxonomy } from "../substrate";
 import {
   draftStoreSingleton,
   submissionCartSingleton,
@@ -48,11 +50,25 @@ interface MarkdownEditScreenProps {
   octokit?: Octokit;
   onOpenSettings?: () => void;
   onNavigate?: (path: string) => void;
-  /** Reports the section currently under the caret to the shell so the
-   *  right-pane Section Inspector tracks cursor movement. Fires with
-   *  null when no H2/H3 precedes the cursor. */
+  /** Optional outward callback (e.g. for tests or future analytics) —
+   *  fired whenever the caret's resolved section changes. Internal
+   *  rendering of the Section Inspector is owned by this screen and
+   *  driven by its own state. */
   onFocusedSectionChange?: (section: FocusedSectionContext | null) => void;
 }
+
+/** Minimal Taxonomy stub for the v1 SectionInspector mount. Real
+ *  Substrate Service hookup (loadTaxonomy + buildRefGraph wired to the
+ *  active file's frontmatter) is a follow-up; this stub keeps the
+ *  inspector mountable without crashing while connections/incoming are
+ *  still empty. */
+const passthroughStubTaxonomy: Taxonomy = {
+  getSlugs: () => [],
+  getTitle: () => null,
+  getBody: () => null,
+  domainOfSlug: () => null,
+  searchSections: () => [],
+};
 
 type LoadSource = "remote" | "cart" | "stub";
 
@@ -229,15 +245,22 @@ export function MarkdownEditScreen({
   // Plumb cursor → focused section. CodeMirror fires onCursorLineChange
   // from its updateListener (outside React's render cycle), so we read
   // `text` via a ref to avoid stale closures + unnecessary subscriptions.
+  // The focused section drives an in-pane SectionInspector (right rail
+  // alongside the body editor); it never replaces the body view.
+  const [focusedSection, setFocusedSection] =
+    useState<FocusedSectionContext | null>(null);
   const textRef = useRef(text);
   useEffect(() => {
     textRef.current = text;
   }, [text]);
   const handleCursorLineChange = useCallback(
     (line: number) => {
-      if (!onFocusedSectionChange) return;
       const section = computeFocusedSection(textRef.current, line);
-      onFocusedSectionChange(section ? { file: path, ...section } : null);
+      const resolved: FocusedSectionContext | null = section
+        ? { file: path, ...section }
+        : null;
+      setFocusedSection(resolved);
+      onFocusedSectionChange?.(resolved);
     },
     [onFocusedSectionChange, path],
   );
@@ -245,6 +268,7 @@ export function MarkdownEditScreen({
   // Reset focus when the active file changes — the previous file's
   // cursor-derived section no longer applies.
   useEffect(() => {
+    setFocusedSection(null);
     onFocusedSectionChange?.(null);
   }, [path, onFocusedSectionChange]);
 
@@ -451,6 +475,29 @@ export function MarkdownEditScreen({
               Preview is informational, not the production renderer.
             </Text>
             <Preview text={text} />
+          </Box>
+        )}
+        {focusedSection && (
+          <Box
+            data-testid="section-inspector-panel"
+            style={{
+              width: 320,
+              minWidth: 320,
+              flexShrink: 0,
+              border: "1px solid var(--gray-5)",
+              borderRadius: 6,
+              overflow: "auto",
+            }}
+          >
+            <SectionInspector
+              sectionTitle={`§${focusedSection.anchor}`}
+              outgoing={[]}
+              incoming={[]}
+              taxonomy={passthroughStubTaxonomy}
+              onAddConnection={() => {}}
+              onRemoveConnection={() => {}}
+              onRepointConnection={() => {}}
+            />
           </Box>
         )}
       </Flex>
