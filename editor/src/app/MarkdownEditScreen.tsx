@@ -47,7 +47,7 @@ import {
 import { useDraft } from "../drafts/useDraft";
 import { useCart } from "../drafts/useCart";
 import { buildMarkdownStub } from "../lib/markdownStubs";
-import { loadAnchorIndex } from "../lib/anchorIndex";
+import { loadAnchorIndex, findReferences } from "../lib/anchorIndex";
 import { computeRenameWarnings } from "../markdown-engine/anchorLinter";
 import { Badge } from "@radix-ui/themes";
 import { TierBanner } from "./TierBanner";
@@ -157,11 +157,16 @@ export function MarkdownEditScreen({
     [path, text],
   );
 
+  // Tick whenever anchorIndex finishes loading; drives recomputation of
+  // the incoming-refs counts that feed the Outline pills + popover.
+  const [anchorIndexTick, setAnchorIndexTick] = useState(0);
   useEffect(() => {
     if (!gh) return;
-    void loadAnchorIndex(gh).catch(() => {
-      /* swallow — autocomplete just won't fire */
-    });
+    void loadAnchorIndex(gh)
+      .then(() => setAnchorIndexTick((t) => t + 1))
+      .catch(() => {
+        /* swallow — autocomplete + pill incoming counts just won't fire */
+      });
     setLoad({ kind: "loading" });
     (async () => {
       try {
@@ -275,33 +280,43 @@ export function MarkdownEditScreen({
     [text, taxonomy],
   );
 
-  // P8 Option A: all outgoing connections in a file's frontmatter attach
-  // to the file's top H2 section. Build a count map keyed by that
-  // section's anchor so the Outline pill renders the right number. When
-  // we move to section-level attachment (Option B) this map will be
-  // built from a per-section walk instead — the Outline API doesn't
-  // change.
+  // Per-section connection counts feed the Outline pills. Each H2/H3 in
+  // the current file contributes:
+  //   - OUTGOING (this section's own a11y_refs/motion_refs in frontmatter)
+  //     attached to the file's top H2 per P8 Option A v1.
+  //   - INCOMING (other files that reference this section's anchor) via
+  //     anchorIndex.findReferences — re-runs when the index finishes
+  //     loading (anchorIndexTick).
+  // Pill displays the SUM so definition-only files (no frontmatter
+  // outgoing, just incoming refs from consumers) still surface a count.
   const connectionCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    const topH2 = computeFocusedSection(text, 0);
-    // computeFocusedSection(text, 0) returns null if no H2 exists at/before
-    // line 0; walk forward to find the first H2 anchor instead.
-    let anchor = topH2?.anchor ?? null;
-    if (anchor === null) {
-      const lines = text.split("\n");
-      for (let i = 0; i < lines.length; i++) {
-        const s = computeFocusedSection(text, i);
-        if (s && s.level === 2) {
-          anchor = s.anchor;
-          break;
-        }
-      }
+    const lines = text.split("\n");
+
+    // Walk every line; for each H2/H3 found, set its incoming count from
+    // anchorIndex. Use a Set so the same anchor isn't recounted when the
+    // walker returns it across multiple lines inside the same section.
+    const seenAnchors = new Set<string>();
+    let firstH2Anchor: string | null = null;
+    for (let i = 0; i < lines.length; i++) {
+      const s = computeFocusedSection(text, i);
+      if (!s || seenAnchors.has(s.anchor)) continue;
+      seenAnchors.add(s.anchor);
+      if (s.level === 2 && firstH2Anchor === null) firstH2Anchor = s.anchor;
+      // anchorIndexTick is only here to keep this memo dependent on the
+      // index becoming available — findReferences reads the module cache.
+      const incoming = findReferences(s.anchor).length;
+      if (incoming > 0) counts.set(s.anchor, incoming);
     }
-    if (anchor && outgoing.length > 0) {
-      counts.set(anchor, outgoing.length);
+
+    // P8 Option A: outgoing refs attach to the file's top H2.
+    if (firstH2Anchor && outgoing.length > 0) {
+      const existing = counts.get(firstH2Anchor) ?? 0;
+      counts.set(firstH2Anchor, existing + outgoing.length);
     }
     return counts;
-  }, [text, outgoing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, outgoing, anchorIndexTick]);
 
   // Popover state — explicit, opens only on Outline pill click. The
   // anchorEl is the pill DOM node; Radix Popover.Anchor positions to it.
@@ -543,7 +558,24 @@ export function MarkdownEditScreen({
             connectionsPopover.section.line,
           )}
           anchorEl={connectionsPopover.anchorEl}
-          outgoing={outgoing}
+          // P8 Option A: file-level outgoing only attaches to the top H2.
+          // For other (non-top) sections clicked from the Outline, outgoing
+          // is empty until section-scoped attachment (Option B) lands.
+          outgoing={
+            connectionsPopover.section.anchor === firstH2Anchor(text)
+              ? outgoing
+              : []
+          }
+          incoming={findReferences(connectionsPopover.section.anchor).map(
+            (file) => ({
+              file,
+              // Incoming references come from anchorIndex which doesn't
+              // distinguish a11y_refs vs motion_refs vs heading-link refs.
+              // The UI treats all incoming uniformly — refType is plumbing.
+              refType: "a11y_refs" as const,
+              note: null,
+            }),
+          )}
           taxonomy={taxonomy}
           onClose={() => setConnectionsPopover(null)}
         />
@@ -714,6 +746,18 @@ export function MarkdownEditScreen({
   );
 }
 
+// Resolve the file's top H2 anchor. Used to decide whether the section
+// the author opened is the bucket that owns the file-level outgoing refs
+// (P8 Option A) — only the top H2 displays them today.
+function firstH2Anchor(source: string): string | null {
+  const lines = source.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const s = computeFocusedSection(source, i);
+    if (s && s.level === 2) return s.anchor;
+  }
+  return null;
+}
+
 // Pull the human-readable heading text from a markdown source line. Strips
 // the leading hashes, optional number prefix ("2.11 Motion"), and trailing
 // {#anchor} marker. Returns "" when the line doesn't look like a heading
@@ -745,6 +789,7 @@ function ConnectionsPopover({
   sectionHeading,
   anchorEl,
   outgoing,
+  incoming,
   taxonomy,
   onClose,
 }: {
@@ -752,6 +797,7 @@ function ConnectionsPopover({
   sectionHeading: string;
   anchorEl: HTMLElement;
   outgoing: import("../substrate/refGraph").OutgoingConnection[];
+  incoming: import("../substrate/refGraph").Consumer[];
   taxonomy: import("../substrate/taxonomy").Taxonomy;
   onClose: () => void;
 }) {
@@ -791,7 +837,7 @@ function ConnectionsPopover({
         <SectionInspector
           sectionTitle={sectionTitle}
           outgoing={outgoing}
-          incoming={[]}
+          incoming={incoming}
           taxonomy={taxonomy}
           onAddConnection={() => {
             // v1.2: open TopicPicker inside the popover + apply rewriter
