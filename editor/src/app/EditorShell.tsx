@@ -24,7 +24,7 @@ interface EditorShellProps {
 function isPlainMarkdown(path: string): boolean {
   return (
     (/^foundations\/src\/[^/]+\.md$/.test(path) ||
-      /^accessibility\/[^/]+\.md$/.test(path) ||
+      /^accessibility\/src\/[^/]+\.md$/.test(path) ||
       /^components\/src\/(?!categories\/AUTHORING\.md|AUTHORING\.md|EDITING-GUIDE\.md)[^/]+\/[^/]+\.md$/.test(
         path,
       ) ||
