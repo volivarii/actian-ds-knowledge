@@ -35,14 +35,14 @@ test("parser: happy path produces frontmatter object + body", () => {
   const { data, body } = parser.parse(readFixture("valid-minimal.md"));
   assert.equal(data.slug, "test-cat");
   assert.equal(data.label, "Test category");
-  assert.equal(data._schema_version, 1);
+  assert.equal(data._schema_version, 2);
   assert.equal(data.confidence.anatomy, "medium");
   assert.equal(data.confidence.a11y, "high");
   assert.equal(data.anatomy.length, 2);
   assert.equal(data.anatomy[0].name, "Label");
   assert.deepEqual(data.variants[0].values, ["default", "focus", "error"]);
   assert.equal(data.motion_refs[0].ref, "state-transitions");
-  assert.equal(data.accessibility.length, 3);
+  assert.equal(data.a11y_refs.length, 3);
   assert.match(body, /^# Test body/);
 });
 
@@ -177,8 +177,8 @@ test("derive: projects frontmatter to dist shape with domain-anchored keys", () 
   );
   assert.equal(r.dist.anatomy.parts.length, 2);
   assert.equal(r.dist.variants.variantAxes.length, 1);
-  assert.equal(r.dist.motion.patternRefs[0].ref, "state-transitions");
-  assert.equal(r.dist.accessibility.requirementRefs.length, 3);
+  assert.equal(r.dist.motion_refs.patternRefs[0].ref, "state-transitions");
+  assert.equal(r.dist.a11y_refs.requirementRefs.length, 3);
   // _generatedAt intentionally omitted from dist for idempotency
   assert.ok(!("_generatedAt" in r.dist), "_generatedAt should not be in dist");
 });
@@ -298,7 +298,7 @@ test("e2e: motion + a11y slug refs all resolve against upstream sources", () => 
         f + " references unknown motion slug: " + m.ref,
       );
     }
-    for (const a of r.frontmatter.accessibility) {
+    for (const a of r.frontmatter.a11y_refs) {
       assert.ok(
         a11ySlugs.has(a.ref),
         f + " references unknown a11y slug: " + a.ref,

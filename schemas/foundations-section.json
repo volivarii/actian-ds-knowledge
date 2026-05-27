@@ -136,6 +136,62 @@
         }
       ],
       "additionalProperties": true
+    },
+    "a11y_refs": {
+      "type": "array",
+      "minItems": 1,
+      "description": "P8 transversal reference taxonomy: WCAG criterion slugs from accessibility/dist/a11y-index.json that this foundations section reinforces or is governed by. Authored as optional YAML frontmatter on the per-section src file; the derive attaches refs to the file's top-level H2 node (file-scoped, Option A — sub-section precision is deferred). Reuses the components/categories ref shape so AI/plugin consumers can resolve uniformly across substrate domains. Symmetric with `motion_refs`.",
+      "examples": [
+        [
+          { "ref": "color-contrast" },
+          {
+            "ref": "focus-keyboard",
+            "note": "applies to all interactive surfaces"
+          }
+        ]
+      ],
+      "items": {
+        "type": "object",
+        "required": ["ref"],
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "Accessibility requirement slug. Must exist in accessibility/dist/a11y-index.json.",
+            "examples": ["color-contrast", "focus-keyboard", "touch-pointer"]
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional foundations-specific note layered on top of the generic a11y guidance.",
+            "examples": ["applies to all hit targets in this section"]
+          }
+        }
+      }
+    },
+    "motion_refs": {
+      "type": "array",
+      "minItems": 1,
+      "description": "P8 transversal reference taxonomy: motion pattern slugs from foundations/dist/tokens/motion.json#patterns that this foundations section reinforces or is governed by. Same authoring + attachment model as `a11y_refs` above. Reuses the components/categories ref shape.",
+      "examples": [[{ "ref": "state-transitions" }]],
+      "items": {
+        "type": "object",
+        "required": ["ref"],
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "Motion pattern slug. Must exist in foundations/dist/tokens/motion.json#patterns[*].slug.",
+            "examples": ["state-transitions", "drawer-open-close"]
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional foundations-specific note layered on top of the generic motion guidance.",
+            "examples": ["section uses only the linear easing band"]
+          }
+        }
+      }
     }
   }
 }

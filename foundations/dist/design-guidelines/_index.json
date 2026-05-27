@@ -63,5 +63,29 @@
     "auto_generated": true,
     "source": "foundations/src/",
     "do_not_edit": "Edit the per-section src/ files; CI regenerates this file."
-  }
+  },
+  "a11y_refs": [
+    {
+      "ref": "color-contrast",
+      "note": "§3.1 semantic-over-primitive rule preserves contrast under theming"
+    },
+    {
+      "ref": "typography",
+      "note": "§3.2 typography rules"
+    },
+    {
+      "ref": "touch-pointer",
+      "note": "§3.3 spacing scale underpins hit-target sizing"
+    },
+    {
+      "ref": "focus-keyboard",
+      "note": "§3.5 brightness filter is the only token-bound interactive state"
+    }
+  ],
+  "motion_refs": [
+    {
+      "ref": "state-transitions",
+      "note": "§3.5 hover/focus/active brightness transitions stay within the 100-200ms band"
+    }
+  ]
 }

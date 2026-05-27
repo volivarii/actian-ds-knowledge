@@ -25,7 +25,7 @@ Every MD must start with YAML frontmatter. The contract is `schemas/category-def
 
 ```yaml
 ---
-_schema_version: 1
+_schema_version: 2
 slug: <kebab-case, must match filename>
 label: <Figma category label, human-readable>
 authoring_status: engineer-seed | team-reviewed | team-authored
@@ -48,7 +48,7 @@ motion_refs:
   - { ref: <slug from foundations/dist/tokens/motion.json patterns>, note: <optional override> }
   - ... (minimum 1)
 
-accessibility:
+a11y_refs:
   - { ref: <slug from accessibility/dist/a11y-index.json sections>, note: <optional override> }
   - ... (3 to 8 entries)
 ---
