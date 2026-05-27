@@ -6,9 +6,8 @@ var fs = require("node:fs");
 var path = require("node:path");
 var derive = require("../scripts/accessibility/derive-a11y-index.js");
 
-var md = fs.readFileSync(
-  path.resolve(__dirname, "..", "accessibility", "accessibility.md"),
-  "utf8",
+var md = derive.concatA11ySources(
+  path.resolve(__dirname, "..", "accessibility", "src"),
 );
 
 var idx = JSON.parse(
@@ -44,10 +43,10 @@ test("a11y-index.json is in sync with accessibility.md", function () {
 });
 
 test("every H2/H3 heading carries an explicit {#anchor} marker (D1)", function () {
-  // accessibility.md headings MUST carry an explicit {#slug} anchor — the
-  // anchor is the consumer-visible contract (P6 of the Agnostic Substrate
-  // Doctrine; D1 of R6 pre-build). Heading text can change freely; the
-  // anchor must remain stable. The anchor regex matches the one in
+  // Every H2/H3 across accessibility/src/* MUST carry an explicit {#slug}
+  // anchor — the anchor is the consumer-visible contract (P6 of the Agnostic
+  // Substrate Doctrine; D1 of R6 pre-build). Heading text can change freely;
+  // the anchor must remain stable. The anchor regex matches the one in
   // derive-a11y-index.js (extractSlugFromHeading).
   var bareHeadings = md.split("\n").filter(function (l) {
     return /^#{2,3}\s/.test(l) && !/\{#[a-z0-9-]+\}\s*$/.test(l);
@@ -55,7 +54,7 @@ test("every H2/H3 heading carries an explicit {#anchor} marker (D1)", function (
   assert.deepEqual(
     bareHeadings,
     [],
-    "every H2/H3 in accessibility.md must end with {#slug}; missing on:\n" +
+    "every H2/H3 in accessibility/src/*.md must end with {#slug}; missing on:\n" +
       bareHeadings.join("\n"),
   );
 });

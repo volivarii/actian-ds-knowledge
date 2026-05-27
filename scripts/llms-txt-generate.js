@@ -8,6 +8,25 @@ var manifest = JSON.parse(
   fs.readFileSync(path.join(ROOT, "paths-manifest.json"), "utf8"),
 );
 
+// Read the per-section accessibility src files (NN-slug.md sorted) and
+// concatenate them into a single prose block for the llms-full dump.
+// Mirrors scripts/accessibility/derive-a11y-index.js#concatA11ySources, but
+// joined with plain "\n\n" (no inter-section "---") since the dump is
+// flat-prose for LLM consumers, not source for the deriver.
+function readAccessibilityProse() {
+  var srcDir = path.join(ROOT, "accessibility", "src");
+  return fs
+    .readdirSync(srcDir)
+    .filter(function (n) {
+      return n.endsWith(".md") && n !== "AUTHORING.md";
+    })
+    .sort()
+    .map(function (n) {
+      return fs.readFileSync(path.join(srcDir, n), "utf8").replace(/\s+$/, "");
+    })
+    .join("\n\n");
+}
+
 // Strip explicit `{#kebab-slug}` markers from concatenated MD source.
 //
 // accessibility.md and foundations.md carry author-declared anchors as the
@@ -43,7 +62,7 @@ function generateLlmsTxt() {
     "",
     "## Accessibility",
     "",
-    "- [WCAG 2.1 AA guidance](accessibility/accessibility.md): applied rules + criteria",
+    "- [WCAG 2.1 AA guidance](accessibility/src/): applied rules + criteria, per-section files",
     "",
     "## Components",
     "",
@@ -81,12 +100,7 @@ function generateLlmsFullTxt() {
     "",
     "## Accessibility",
     "",
-    stripAnchorMarkers(
-      fs.readFileSync(
-        path.join(ROOT, "accessibility/accessibility.md"),
-        "utf8",
-      ),
-    ),
+    stripAnchorMarkers(readAccessibilityProse()),
   ];
   return sections.join("\n") + "\n";
 }
