@@ -50,47 +50,50 @@ export function TopicPicker(props: TopicPickerProps) {
         direction="column"
         gap="2"
         mt="3"
-        style={{ maxHeight: 280, overflow: "auto" }}
+        style={{ maxHeight: 320, overflow: "auto" }}
       >
-        {results.map((r) => (
-          <Card
-            key={`${r.domain}:${r.slug}`}
-            size="1"
-            onClick={() => setSelected(r)}
-            style={{
-              cursor: "pointer",
-              borderLeft:
-                selected?.slug === r.slug
+        {results.map((r) => {
+          const isSelected = selected?.slug === r.slug;
+          return (
+            <Box
+              key={`${r.domain}:${r.slug}`}
+              onClick={() => setSelected(r)}
+              style={{
+                cursor: "pointer",
+                padding: "10px 12px",
+                background: isSelected ? "var(--accent-3)" : "var(--gray-2)",
+                borderLeft: isSelected
                   ? "3px solid var(--accent-9)"
                   : "3px solid transparent",
-            }}
-          >
-            <Flex justify="between" align="start" gap="2">
-              <Text weight="medium" size="2">
-                {r.title}
-              </Text>
-              <Badge
-                color={r.domain === "accessibility" ? "blue" : "amber"}
-                size="1"
-                style={{ flexShrink: 0 }}
-              >
-                {r.domain}
-              </Badge>
-            </Flex>
-            {r.body ? (
-              <Text
-                size="1"
-                color="gray"
-                as="p"
-                mt="2"
-                style={{ lineHeight: 1.4 }}
-              >
-                {r.body.slice(0, 120)}
-                {r.body.length > 120 ? "…" : ""}
-              </Text>
-            ) : null}
-          </Card>
-        ))}
+                borderRadius: 4,
+              }}
+            >
+              <Flex justify="between" align="center" gap="2" mb="1">
+                <Text weight="medium" size="2">
+                  {r.title}
+                </Text>
+                <Badge
+                  color={r.domain === "accessibility" ? "blue" : "amber"}
+                  size="1"
+                  style={{ flexShrink: 0 }}
+                >
+                  {r.domain}
+                </Badge>
+              </Flex>
+              {r.body ? (
+                <Text
+                  size="2"
+                  color="gray"
+                  as="p"
+                  style={{ lineHeight: 1.45, marginTop: 4 }}
+                >
+                  {r.body.slice(0, 110)}
+                  {r.body.length > 110 ? "…" : ""}
+                </Text>
+              ) : null}
+            </Box>
+          );
+        })}
         {query.length > 0 && results.length === 0 ? (
           <Text size="2" color="gray">
             No topics match "{query}".
