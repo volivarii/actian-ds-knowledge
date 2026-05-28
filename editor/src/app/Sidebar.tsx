@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import { Badge, Box, Flex, Heading, Text } from "@radix-ui/themes";
 import { listDirectories, listFilesByGlob } from "./githubApi";
+import { loadOrderManifest } from "../lib/orderManifestLoader";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 
@@ -77,6 +78,30 @@ function loadCollapsedSections(): Record<SectionKey, boolean> {
   return defaultCollapsed();
 }
 
+// Apply a canonical `_order.json` sequence to a directory listing.
+// Slugs in the order array land first in declared order; unlisted files
+// fall to the end alphabetically (defensive — derive script would error
+// on this drift, but UI shouldn't crash if a manifest entry temporarily
+// lags a new file).
+function applyOrder(files: string[], order?: string[]): string[] {
+  if (!order) return files;
+  const fileBySlug = new Map(files.map((f) => [slugFromPath(f), f]));
+  const ordered: string[] = [];
+  for (const slug of order) {
+    const f = fileBySlug.get(slug);
+    if (f) {
+      ordered.push(f);
+      fileBySlug.delete(slug);
+    }
+  }
+  const leftover = [...fileBySlug.values()].sort();
+  return [...ordered, ...leftover];
+}
+
+function slugFromPath(p: string): string {
+  return p.split("/").pop()!.replace(/\.md$/, "");
+}
+
 export function Sidebar({
   octokit,
   pendingPaths,
@@ -90,6 +115,10 @@ export function Sidebar({
   >(() => loadCollapsedSections());
   const cartEntries = useCart(submissionCartSingleton);
   const inboxActive = activePath === "inbox";
+  const [orderShas, setOrderShas] = useState<{
+    foundations: string | null;
+    accessibility: string | null;
+  }>({ foundations: null, accessibility: null });
 
   function toggleSection(group: SectionKey) {
     setSectionCollapsed((prev) => {
@@ -105,39 +134,51 @@ export function Sidebar({
 
   useEffect(() => {
     (async () => {
-      const [foundations, accessibility, patterns, product, writing, comps] =
-        await Promise.all([
-          listFilesByGlob(octokit, "foundations/src", {
-            extension: ".md",
-            exclude: ["AUTHORING.md"],
-          }).catch(() => [] as string[]),
-          listFilesByGlob(octokit, "accessibility/src", {
-            extension: ".md",
-            exclude: ["AUTHORING.md"],
-          }).catch(() => [] as string[]),
-          listFilesByGlob(octokit, "content/src/patterns", {
-            extension: ".md",
-            exclude: ["AUTHORING.md"],
-          }).catch(() => [] as string[]),
-          listFilesByGlob(octokit, "content/src/product", {
-            extension: ".md",
-            exclude: ["AUTHORING.md"],
-          }).catch(() => [] as string[]),
-          listFilesByGlob(octokit, "content/src/writing", {
-            extension: ".md",
-            exclude: ["AUTHORING.md"],
-          }).catch(() => [] as string[]),
-          listDirectories(octokit, "components/src").catch(
-            () => [] as string[],
-          ),
-        ]);
-      setEntries({
+      const [
         foundations,
         accessibility,
         patterns,
         product,
         writing,
+        comps,
+        foundationsOrder,
+        accessibilityOrder,
+      ] = await Promise.all([
+        listFilesByGlob(octokit, "foundations/src", {
+          extension: ".md",
+          exclude: ["AUTHORING.md"],
+        }).catch(() => [] as string[]),
+        listFilesByGlob(octokit, "accessibility/src", {
+          extension: ".md",
+          exclude: ["AUTHORING.md"],
+        }).catch(() => [] as string[]),
+        listFilesByGlob(octokit, "content/src/patterns", {
+          extension: ".md",
+          exclude: ["AUTHORING.md"],
+        }).catch(() => [] as string[]),
+        listFilesByGlob(octokit, "content/src/product", {
+          extension: ".md",
+          exclude: ["AUTHORING.md"],
+        }).catch(() => [] as string[]),
+        listFilesByGlob(octokit, "content/src/writing", {
+          extension: ".md",
+          exclude: ["AUTHORING.md"],
+        }).catch(() => [] as string[]),
+        listDirectories(octokit, "components/src").catch(() => [] as string[]),
+        loadOrderManifest(octokit, "foundations/src").catch(() => null),
+        loadOrderManifest(octokit, "accessibility/src").catch(() => null),
+      ]);
+      setEntries({
+        foundations: applyOrder(foundations, foundationsOrder?.order),
+        accessibility: applyOrder(accessibility, accessibilityOrder?.order),
+        patterns,
+        product,
+        writing,
         components: comps.filter((c) => !SKIP_COMPONENT_DIRS.has(c)),
+      });
+      setOrderShas({
+        foundations: foundationsOrder?.sha ?? null,
+        accessibility: accessibilityOrder?.sha ?? null,
       });
     })();
   }, [octokit]);
