@@ -11,6 +11,8 @@ import {
 import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { Sidebar } from "../../src/app/Sidebar";
+import { submissionCartSingleton } from "../../src/drafts/store-instance";
+import { setCachedIndexForTesting } from "../../src/lib/anchorIndex";
 
 afterEach(() => {
   cleanup();
@@ -19,6 +21,13 @@ afterEach(() => {
   } catch {
     /* sessionStorage may not be present in all jsdom builds */
   }
+  try {
+    localStorage.clear();
+  } catch {
+    /* ignore */
+  }
+  // Reset the anchor index module-level cache between tests.
+  setCachedIndexForTesting(null);
 });
 
 function fakeGh(
@@ -599,5 +608,148 @@ test("Sidebar — foundations rows follow _order.json sequence, not directory or
   assert.ok(
     introIdx < tokensIdx,
     `expected Intro (idx ${introIdx}) before Tokens (idx ${tokensIdx})`,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Issue #1: Chained ordered-domain Add ops compose _order.json correctly
+// ---------------------------------------------------------------------------
+
+/**
+ * Helper: open the add-section dialog for `domain`, fill the title, and click
+ * "Add". Waits for the dialog to disappear (dialog closes on confirm).
+ */
+async function addSectionViaDialog(title: string) {
+  // Click first "+ Add section" button we can find for the target section.
+  // The caller is responsible for expanding the section first if needed.
+  const addBtns = screen.queryAllByRole("button", { name: /add .* section/i });
+  assert.ok(addBtns.length > 0, "expected at least one +Add section button");
+  fireEvent.click(addBtns[0]!);
+
+  // Dialog appears in the Radix portal (document.body).
+  // Wait for the Title input (autoFocus = reliable sentinel).
+  const titleInput = await waitFor(() => {
+    const inp = document.body.querySelector(
+      '[aria-label="Title"]',
+    ) as HTMLInputElement | null;
+    assert.ok(inp, "Title input should appear after clicking +Add");
+    return inp!;
+  });
+
+  fireEvent.change(titleInput, { target: { value: title } });
+
+  // Click the "Add" button inside the dialog.
+  const addBtn = document.body.querySelector(
+    "button:not([aria-label])",
+  ) as HTMLButtonElement | null;
+  // Use getByRole scoped to document.body — simpler than querying the portal.
+  const submitBtn = Array.from(document.body.querySelectorAll("button")).find(
+    (b) => b.textContent?.trim().toLowerCase() === "add" && !b.disabled,
+  );
+  assert.ok(submitBtn, "enabled Add button must be present after title entry");
+  fireEvent.click(submitBtn!);
+
+  // Wait for the dialog to close (Title input disappears).
+  await waitFor(() => {
+    assert.equal(
+      document.body.querySelector('[aria-label="Title"]'),
+      null,
+      "dialog should close after confirming Add",
+    );
+  });
+}
+
+test("Sidebar — chained Add A then Add B composes _order.json with both slugs (Issue #1)", async () => {
+  // Start with a foundations domain that has one existing file and a manifest.
+  const listings = {
+    ...LISTINGS,
+    "foundations/src": [{ name: "existing.md", type: "file" as const }],
+  };
+
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGhWithOrders(listings, {
+          "foundations/src": ["existing"],
+        })}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+
+  await waitFor(() => screen.getByText("Foundations"));
+
+  // --- First Add ---
+  await addSectionViaDialog("Alpha Section");
+
+  // Inspect cart after first add.
+  const cartAfterFirst = submissionCartSingleton.list();
+  const orderEntryAfterFirst = cartAfterFirst.find(
+    (e) => e.path === "foundations/src/_order.json",
+  );
+  assert.ok(
+    orderEntryAfterFirst,
+    "_order.json must be in cart after first add",
+  );
+  const orderAfterFirst = JSON.parse(orderEntryAfterFirst!.content) as string[];
+  assert.ok(
+    orderAfterFirst.includes("existing"),
+    `first cart entry must include "existing"; got ${JSON.stringify(orderAfterFirst)}`,
+  );
+  assert.ok(
+    orderAfterFirst.includes("alpha-section"),
+    `first cart entry must include "alpha-section"; got ${JSON.stringify(orderAfterFirst)}`,
+  );
+
+  // --- Second Add (chained) ---
+  await addSectionViaDialog("Beta Section");
+
+  // Inspect cart after second add. There must still be exactly ONE _order.json
+  // entry (the cart replaces by path) and it must contain ALL THREE slugs.
+  const cartAfterSecond = submissionCartSingleton.list();
+  const orderEntries = cartAfterSecond.filter(
+    (e) => e.path === "foundations/src/_order.json",
+  );
+  assert.equal(
+    orderEntries.length,
+    1,
+    "cart must contain exactly one _order.json entry (replace-by-path semantics)",
+  );
+  const finalOrder = JSON.parse(orderEntries[0]!.content) as string[];
+  assert.ok(
+    finalOrder.includes("existing"),
+    `final order must include "existing"; got ${JSON.stringify(finalOrder)}`,
+  );
+  assert.ok(
+    finalOrder.includes("alpha-section"),
+    `final order must include "alpha-section" (added first); got ${JSON.stringify(finalOrder)}`,
+  );
+  assert.ok(
+    finalOrder.includes("beta-section"),
+    `final order must include "beta-section" (added second); got ${JSON.stringify(finalOrder)}`,
+  );
+  assert.equal(
+    finalOrder.length,
+    3,
+    `final order must have 3 entries; got ${JSON.stringify(finalOrder)}`,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Issue #2: anchor index preload — findReferences returns [] when cache is null
+// ---------------------------------------------------------------------------
+
+test("anchorIndex — findReferences returns empty array when cache is null (Issue #2 precondition)", async () => {
+  // This confirms the base behaviour that makes the gate unreliable without
+  // the preload: when cached is null, findReferences is silent.
+  const { findReferences: fr } = await import("../../src/lib/anchorIndex");
+  setCachedIndexForTesting(null);
+  const refs = fr("some-slug");
+  assert.deepEqual(
+    refs,
+    [],
+    "findReferences must return [] when cache is null (the silent-bypass risk that preload fixes)",
   );
 });

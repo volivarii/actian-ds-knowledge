@@ -24,7 +24,7 @@ import { appendSlug, moveSlug, removeSlug } from "../lib/orderManifest";
 import { buildMarkdownStub } from "../lib/markdownStubs";
 import { ReorderHandle } from "./ReorderHandle";
 import { DeleteSectionDialog } from "./DeleteSectionDialog";
-import { findReferences } from "../lib/anchorIndex";
+import { findReferences, loadAnchorIndex } from "../lib/anchorIndex";
 
 interface SidebarProps {
   octokit: Octokit;
@@ -179,6 +179,32 @@ export function Sidebar({
     });
   }
 
+  /**
+   * Returns the effective order + sha for a domain's _order.json, preferring
+   * an already-staged cart entry so that chained ops (Add A → Add B,
+   * Delete → Add, etc.) compose correctly instead of overwriting each other.
+   * Falls through to remote only when the cart has no pending entry.
+   */
+  async function readOrderState(
+    domain: "foundations" | "accessibility",
+  ): Promise<{ order: string[]; sha: string } | null> {
+    const path = `${domain}/src/_order.json`;
+    const existing = submissionCartSingleton
+      .list()
+      .find((e) => e.path === path);
+    if (existing && !existing.deleted) {
+      try {
+        const order = JSON.parse(existing.content) as unknown;
+        if (Array.isArray(order) && order.every((s) => typeof s === "string")) {
+          return { order: order as string[], sha: existing.basedOnSha };
+        }
+      } catch {
+        // Malformed cart entry — fall through to remote
+      }
+    }
+    return loadOrderManifest(octokit, `${domain}/src`);
+  }
+
   async function handleAddSection(
     ctx: { domain: string; subDir?: string },
     slug: string,
@@ -191,14 +217,18 @@ export function Sidebar({
     const isOrdered =
       ctx.domain === "foundations" || ctx.domain === "accessibility";
 
+    let nextOrder: string[] | null = null;
+
     if (isOrdered) {
-      const current = await loadOrderManifest(octokit, `${ctx.domain}/src`);
+      const current = await readOrderState(
+        ctx.domain as "foundations" | "accessibility",
+      );
       if (!current) {
         throw new Error(
           `handleAddSection: ${ctx.domain}/src/_order.json missing`,
         );
       }
-      const nextOrder = appendSlug(current.order, slug);
+      nextOrder = appendSlug(current.order, slug);
       submissionCartSingleton.add({
         path: `${ctx.domain}/src/_order.json`,
         content: JSON.stringify(nextOrder, null, 2) + "\n",
@@ -213,6 +243,31 @@ export function Sidebar({
       basedOnSha: "",
       addedAt: Date.now(),
     });
+
+    // Optimistically insert the new row into entries so the sidebar reflects
+    // the add immediately without a full page reload.
+    // NOTE: entries store filenames (e.g. "color-primitives.md"), not full
+    // paths — mirror the shape returned by listFilesByGlob so the render
+    // loop's `foundations/src/${name}` concatenation stays correct.
+    setEntries((prev) => {
+      if (!prev) return prev;
+      const domainKey = (ctx.subDir ?? ctx.domain) as SectionKey;
+      const list = prev[domainKey];
+      const fileName = `${slug}.md`;
+      if (list.includes(fileName)) return prev; // defensive
+      if (isOrdered && nextOrder) {
+        // For ordered domains, rebuild from the just-staged order array so
+        // the new file lands in the declared position. Use filenames.
+        return {
+          ...prev,
+          [domainKey]: nextOrder.map((s) => `${s}.md`),
+        };
+      }
+      // Unordered (content sub-domains): append and sort.
+      const nextList = [...list, fileName].sort();
+      return { ...prev, [domainKey]: nextList };
+    });
+
     onSelect(filePath);
   }
 
@@ -220,30 +275,44 @@ export function Sidebar({
     domain: "foundations" | "accessibility",
     event: DragEndEvent,
   ) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const sha = orderShas[domain];
-    if (!sha) return;
-    const currentList = entries![domain].map(slugFromPath);
-    const newIndex = currentList.indexOf(over.id as string);
-    if (newIndex < 0) return;
-    const nextOrder = moveSlug(currentList, active.id as string, newIndex);
-    submissionCartSingleton.add({
-      path: `${domain}/src/_order.json`,
-      content: JSON.stringify(nextOrder, null, 2) + "\n",
-      basedOnSha: sha,
-      addedAt: Date.now(),
-    });
-    // Keep entries as filenames (e.g. "color-primitives.md") consistent
-    // with the initial load from listFilesByGlob.
-    setEntries((prev) =>
-      prev
-        ? {
-            ...prev,
-            [domain]: nextOrder.map((slug) => `${slug}.md`),
-          }
-        : prev,
-    );
+    try {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      // Prefer the cart's _order.json sha (written by a prior Add/Delete) so
+      // chained ops compose on the correct basedOnSha. Fall back to the
+      // initial remote sha stored in orderShas.
+      const orderPath = `${domain}/src/_order.json`;
+      const cartEntry = submissionCartSingleton
+        .list()
+        .find((e) => e.path === orderPath);
+      const sha = cartEntry ? cartEntry.basedOnSha : orderShas[domain];
+      if (!sha) return;
+      const currentList = entries![domain].map(slugFromPath);
+      const newIndex = currentList.indexOf(over.id as string);
+      if (newIndex < 0) return;
+      const nextOrder = moveSlug(currentList, active.id as string, newIndex);
+      submissionCartSingleton.add({
+        path: `${domain}/src/_order.json`,
+        content: JSON.stringify(nextOrder, null, 2) + "\n",
+        basedOnSha: sha,
+        addedAt: Date.now(),
+      });
+      // Keep entries as filenames (e.g. "color-primitives.md") consistent
+      // with the initial load from listFilesByGlob.
+      setEntries((prev) =>
+        prev
+          ? {
+              ...prev,
+              [domain]: nextOrder.map((slug) => `${slug}.md`),
+            }
+          : prev,
+      );
+    } catch (err) {
+      console.error("Reorder failed:", err);
+      window.alert(
+        `Couldn't reorder: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
   }
 
   function openDeleteDialog(domain: SectionKey, slug: string) {
@@ -268,7 +337,7 @@ export function Sidebar({
 
     try {
       if (isOrdered) {
-        const current = await loadOrderManifest(octokit, `${domain}/src`);
+        const current = await readOrderState(domain);
         if (current) {
           const nextOrder = removeSlug(current.order, slug);
           submissionCartSingleton.add({
@@ -356,6 +425,15 @@ export function Sidebar({
         accessibility: accessibilityOrder?.sha ?? null,
       });
     })();
+  }, [octokit]);
+
+  // Preload the anchor index so the delete dialog's reference count is
+  // accurate from the very first click. Silent failure is fine — the dialog
+  // still works, it just shows refCount=0 (same as before the preload).
+  useEffect(() => {
+    loadAnchorIndex(octokit).catch((err) => {
+      console.warn("Anchor index preload failed:", err);
+    });
   }, [octokit]);
 
   if (!entries) {
