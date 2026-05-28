@@ -8,7 +8,13 @@
 
 import React from "react";
 import { Box, Button, Flex, Heading, Text } from "@radix-ui/themes";
-import type { OutgoingConnection, BrokenRef, Consumer, Taxonomy } from "../substrate";
+import type {
+  BrokenRef,
+  Consumer,
+  OutgoingConnection,
+  RefType,
+  Taxonomy,
+} from "../substrate";
 
 export interface SectionInspectorProps {
   sectionTitle: string;
@@ -17,8 +23,8 @@ export interface SectionInspectorProps {
   broken?: BrokenRef[];
   taxonomy: Taxonomy;
   onAddConnection: () => void;
-  onRemoveConnection: (slug: string) => void;
-  onRepointConnection: (slug: string) => void;
+  onRemoveConnection: (refType: RefType, slug: string) => void;
+  onRepointConnection: (refType: RefType, slug: string) => void;
 }
 
 export function SectionInspector(props: SectionInspectorProps) {
@@ -26,7 +32,11 @@ export function SectionInspector(props: SectionInspectorProps) {
 
   return (
     <Box p="3">
-      <Text size="1" color="gray" style={{ textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <Text
+        size="1"
+        color="gray"
+        style={{ textTransform: "uppercase", letterSpacing: 0.5 }}
+      >
         Currently editing
       </Text>
       <Heading size="3" mt="1">
@@ -34,29 +44,44 @@ export function SectionInspector(props: SectionInspectorProps) {
       </Heading>
 
       <Box mt="4">
-        <Text size="1" color="gray" weight="medium" style={{ textTransform: "uppercase", letterSpacing: 0.5 }}>
+        <Text
+          size="1"
+          color="gray"
+          weight="medium"
+          style={{ textTransform: "uppercase", letterSpacing: 0.5 }}
+        >
           Connected topics ({outgoing.length})
+        </Text>
+        <Text size="1" color="gray" as="p" mt="1">
+          These connections apply to the whole file.
         </Text>
         {outgoing.length === 0 && broken.length === 0 ? (
           <Text size="2" color="gray" mt="2" as="p">
-            This section has no connections yet.
+            This file has no connections yet.
           </Text>
         ) : (
           <Flex direction="column" gap="2" mt="2">
             {outgoing.map((conn) => (
               <ConnectionRow
                 key={`${conn.refType}:${conn.slug}`}
-                title={taxonomy.getTitle(conn.domain ?? "accessibility", conn.slug) ?? conn.slug}
+                title={
+                  taxonomy.getTitle(
+                    conn.domain ?? "accessibility",
+                    conn.slug,
+                  ) ?? conn.slug
+                }
                 note={conn.note}
-                onRemove={() => props.onRemoveConnection(conn.slug)}
+                onRemove={() =>
+                  props.onRemoveConnection(conn.refType, conn.slug)
+                }
               />
             ))}
             {broken.map((b) => (
               <BrokenRow
                 key={`broken:${b.slug}`}
                 identifierForDebug={b.slug}
-                onRemove={() => props.onRemoveConnection(b.slug)}
-                onRepoint={() => props.onRepointConnection(b.slug)}
+                onRemove={() => props.onRemoveConnection(b.refType, b.slug)}
+                onRepoint={() => props.onRepointConnection(b.refType, b.slug)}
               />
             ))}
           </Flex>
@@ -73,14 +98,24 @@ export function SectionInspector(props: SectionInspectorProps) {
 
       {incoming.length > 0 && (
         <Box mt="4">
-          <Text size="1" color="gray" weight="medium" style={{ textTransform: "uppercase", letterSpacing: 0.5 }}>
+          <Text
+            size="1"
+            color="gray"
+            weight="medium"
+            style={{ textTransform: "uppercase", letterSpacing: 0.5 }}
+          >
             Referenced by ({incoming.length})
           </Text>
           <Flex direction="column" gap="1" mt="2">
             {incoming.map((c) => (
               <Text key={c.file} size="2">
                 {c.file}
-                {c.note ? <Text color="gray" size="1"> — {c.note}</Text> : null}
+                {c.note ? (
+                  <Text color="gray" size="1">
+                    {" "}
+                    — {c.note}
+                  </Text>
+                ) : null}
               </Text>
             ))}
           </Flex>
@@ -90,7 +125,11 @@ export function SectionInspector(props: SectionInspectorProps) {
   );
 }
 
-function ConnectionRow(props: { title: string; note: string | null; onRemove: () => void }) {
+function ConnectionRow(props: {
+  title: string;
+  note: string | null;
+  onRemove: () => void;
+}) {
   return (
     <Box
       p="2"
@@ -104,7 +143,13 @@ function ConnectionRow(props: { title: string; note: string | null; onRemove: ()
         {props.title}
       </Text>
       {props.note ? (
-        <Text size="1" color="gray" as="p" mt="1" style={{ fontStyle: "italic" }}>
+        <Text
+          size="1"
+          color="gray"
+          as="p"
+          mt="1"
+          style={{ fontStyle: "italic" }}
+        >
           "{props.note}"
         </Text>
       ) : null}
@@ -117,7 +162,11 @@ function ConnectionRow(props: { title: string; note: string | null; onRemove: ()
   );
 }
 
-function BrokenRow(props: { identifierForDebug: string; onRemove: () => void; onRepoint: () => void }) {
+function BrokenRow(props: {
+  identifierForDebug: string;
+  onRemove: () => void;
+  onRepoint: () => void;
+}) {
   // identifierForDebug is intentionally NOT rendered in this v1 — the
   // doctrine guard test forbids exposing internal slug strings to authors.
   // The warning text + actions are enough; if support asks "which one?"

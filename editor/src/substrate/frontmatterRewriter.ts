@@ -2,7 +2,12 @@
 // frontmatter. String-level operations (no full YAML parse) — the
 // substrate's authoring subset is fixed and documented.
 
+import type { Domain } from "./taxonomy";
 import type { RefType } from "./refGraph";
+
+export function refTypeFor(domain: Domain): RefType {
+  return domain === "accessibility" ? "a11y_refs" : "motion_refs";
+}
 
 const FRONTMATTER_RE = /^---\s*\n([\s\S]*?)\n---\s*\n/;
 const REF_BLOCK_BY_TYPE_RE = (type: RefType) =>
@@ -23,7 +28,11 @@ export interface RefPick {
   note: string | null;
 }
 
-export function addRefToFrontmatter(source: string, refType: RefType, pick: RefPick): string {
+export function addRefToFrontmatter(
+  source: string,
+  refType: RefType,
+  pick: RefPick,
+): string {
   const fm = source.match(FRONTMATTER_RE);
   const newEntry = formatEntry(pick.slug, pick.note);
 
@@ -37,7 +46,10 @@ export function addRefToFrontmatter(source: string, refType: RefType, pick: RefP
 
   let newFmBlock: string;
   if (blockMatch) {
-    newFmBlock = fmBlock.replace(blockRe, (matched) => `${matched.trimEnd()}\n${newEntry}\n`);
+    newFmBlock = fmBlock.replace(
+      blockRe,
+      (matched) => `${matched.trimEnd()}\n${newEntry}\n`,
+    );
   } else {
     const trimmed = fmBlock.trimEnd();
     newFmBlock = `${trimmed}\n${refType}:\n${newEntry}\n`;
@@ -48,7 +60,11 @@ export function addRefToFrontmatter(source: string, refType: RefType, pick: RefP
   return `${before}---\n${newFmBlock}---\n${after}`;
 }
 
-export function removeRefFromFrontmatter(source: string, refType: RefType, slug: string): string {
+export function removeRefFromFrontmatter(
+  source: string,
+  refType: RefType,
+  slug: string,
+): string {
   const fm = source.match(FRONTMATTER_RE);
   if (!fm) return source;
 

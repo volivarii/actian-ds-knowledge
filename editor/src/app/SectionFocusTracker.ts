@@ -12,6 +12,7 @@ const HEADING_RE = /^(#{2,3})\s+(.+?)\s*$/;
 const TRAILING_ANCHOR_RE = /\s*\{#([a-z][a-z0-9-]*)\}\s*$/;
 const NUM_PREFIX_RE = /^\s*\d+(?:\.\d+)*\.?\s+/;
 const FENCE_RE = /^```/;
+const FRONTMATTER_FENCE_RE = /^---\s*$/;
 
 export interface FocusedSection {
   anchor: string;
@@ -44,7 +45,16 @@ function scanHeadings(text: string): HeadingEntry[] {
   const lines = text.split("\n");
   const out: HeadingEntry[] = [];
   let inFence = false;
-  for (let i = 0; i < lines.length; i++) {
+  // Skip the YAML frontmatter envelope (line 0 `---` opens it). Mirrors
+  // headingScan.ts so both outline + focus tracker agree on where the
+  // authored content starts.
+  let i = 0;
+  if (lines.length > 0 && FRONTMATTER_FENCE_RE.test(lines[0]!)) {
+    let j = 1;
+    while (j < lines.length && !FRONTMATTER_FENCE_RE.test(lines[j]!)) j++;
+    if (j < lines.length) i = j + 1;
+  }
+  for (; i < lines.length; i++) {
     const line = lines[i] ?? "";
     if (FENCE_RE.test(line)) {
       inFence = !inFence;
@@ -64,7 +74,10 @@ function scanHeadings(text: string): HeadingEntry[] {
   return out;
 }
 
-export function computeFocusedSection(text: string, cursorLine: number): FocusedSection | null {
+export function computeFocusedSection(
+  text: string,
+  cursorLine: number,
+): FocusedSection | null {
   const headings = scanHeadings(text);
   let current: HeadingEntry | null = null;
   for (const h of headings) {
