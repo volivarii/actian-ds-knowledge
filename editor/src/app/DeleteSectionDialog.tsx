@@ -15,6 +15,7 @@ export interface DeleteSectionDialogProps {
   domain: string;
   refCount: number;
   sampleRefs: string[];
+  loading?: boolean;
   onConfirm: (slug: string) => void;
   onCancel: () => void;
 }
@@ -26,6 +27,7 @@ export function DeleteSectionDialog({
   domain,
   refCount,
   sampleRefs,
+  loading = false,
   onConfirm,
   onCancel,
 }: DeleteSectionDialogProps) {
@@ -36,7 +38,7 @@ export function DeleteSectionDialog({
   }, [open]);
 
   const needsAck = refCount > 0;
-  const canDelete = !needsAck || ack;
+  const canDelete = !loading && (!needsAck || ack);
   const extras = Math.max(0, refCount - sampleRefs.length);
 
   return (
@@ -49,7 +51,13 @@ export function DeleteSectionDialog({
           it from the section order.
         </Dialog.Description>
 
-        {needsAck && (
+        {loading && (
+          <Text size="2" color="gray" mb="3" as="p">
+            Checking references…
+          </Text>
+        )}
+
+        {!loading && needsAck && (
           <Callout.Root color="orange" mt="2" mb="3">
             <Callout.Text>
               <Text weight="bold" as="div" mb="1">
@@ -71,7 +79,7 @@ export function DeleteSectionDialog({
           </Callout.Root>
         )}
 
-        {needsAck && (
+        {!loading && needsAck && (
           <Text
             as="label"
             size="2"

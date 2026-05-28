@@ -158,6 +158,7 @@ export function Sidebar({
     title: string;
     refCount: number;
     sampleRefs: string[];
+    loading: boolean;
   } | null>(null);
 
   const sensors = useSensors(
@@ -320,7 +321,22 @@ export function Sidebar({
     }
   }
 
-  function openDeleteDialog(domain: SectionKey, slug: string) {
+  async function openDeleteDialog(domain: SectionKey, slug: string) {
+    // Open immediately in loading state so the click feels responsive.
+    setDeleteDialog({
+      domain,
+      slug,
+      title: humanizeSlug(slug),
+      refCount: 0,
+      sampleRefs: [],
+      loading: true,
+    });
+    try {
+      await loadAnchorIndex(octokit);
+    } catch {
+      // Index load failed (network, auth). Treat as unknown — proceed with
+      // refCount=0 but the dialog is already open so the user can still cancel.
+    }
     const refs = findReferences(slug);
     setDeleteDialog({
       domain,
@@ -328,6 +344,7 @@ export function Sidebar({
       title: humanizeSlug(slug),
       refCount: refs.length,
       sampleRefs: refs.slice(0, 3),
+      loading: false,
     });
   }
 
@@ -917,6 +934,7 @@ export function Sidebar({
           domain={deleteDialog.domain}
           refCount={deleteDialog.refCount}
           sampleRefs={deleteDialog.sampleRefs}
+          loading={deleteDialog.loading}
           onCancel={() => setDeleteDialog(null)}
           onConfirm={handleDeleteConfirm}
         />

@@ -98,6 +98,14 @@ test("DeleteSectionDialog — path body has data-detail='path' marker", () => {
   assert.match(pathEl?.textContent ?? "", /foundations\/src\/tokens\.md/);
 });
 
+test("DeleteSectionDialog — loading=true: shows placeholder and Delete is disabled", () => {
+  renderDialog({ loading: true, refCount: 0, sampleRefs: [] });
+  const text = document.body.textContent ?? "";
+  assert.match(text, /checking references/i);
+  const btn = deleteButton();
+  assert.equal(btn.disabled, true);
+});
+
 test("DeleteSectionDialog — ack checkbox state resets on close", () => {
   const { rerender } = render(
     <Theme>
