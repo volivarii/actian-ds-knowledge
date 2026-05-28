@@ -6,18 +6,35 @@ import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { SectionInspector } from "../../src/app/SectionInspector";
 import { TopicPicker } from "../../src/app/TopicPicker";
-import type { OutgoingConnection, Taxonomy, SearchResult } from "../../src/substrate";
+import type {
+  OutgoingConnection,
+  Taxonomy,
+  SearchResult,
+} from "../../src/substrate";
 
 afterEach(cleanup);
 
-const FORBIDDEN_TOKENS = ["slug", "ref:", "a11y_refs", "motion_refs", "frontmatter"];
+const FORBIDDEN_TOKENS = [
+  "slug",
+  "ref:",
+  "a11y_refs",
+  "motion_refs",
+  "frontmatter",
+];
 
 const fakeTaxonomy: Taxonomy = {
   getSlugs: () => [],
   getTitle: (_d, s) => ({ "color-contrast": "Color contrast" })[s] ?? null,
   getBody: () => null,
   domainOfSlug: () => "accessibility",
-  searchSections: () => [{ slug: "color-contrast", domain: "accessibility", title: "Color contrast", body: "WCAG 1.4.3" } as SearchResult],
+  searchSections: () => [
+    {
+      slug: "color-contrast",
+      domain: "accessibility",
+      title: "Color contrast",
+      body: "WCAG 1.4.3",
+    } as SearchResult,
+  ],
 };
 
 function gatherText(container: HTMLElement): string {
@@ -26,7 +43,12 @@ function gatherText(container: HTMLElement): string {
 
 test("doctrine: SectionInspector renders no forbidden vocabulary", () => {
   const outgoing: OutgoingConnection[] = [
-    { slug: "color-contrast", refType: "a11y_refs", note: null, domain: "accessibility" },
+    {
+      slug: "color-contrast",
+      refType: "a11y_refs",
+      note: null,
+      domain: "accessibility",
+    },
   ];
   const { container } = render(
     <Theme>
@@ -35,6 +57,7 @@ test("doctrine: SectionInspector renders no forbidden vocabulary", () => {
         outgoing={outgoing}
         incoming={[]}
         taxonomy={fakeTaxonomy}
+        scope="file"
         onAddConnection={() => {}}
         onRemoveConnection={() => {}}
         onRepointConnection={() => {}}
@@ -54,7 +77,11 @@ test("doctrine: SectionInspector renders no forbidden vocabulary", () => {
 test("doctrine: TopicPicker renders no forbidden vocabulary", () => {
   const { container } = render(
     <Theme>
-      <TopicPicker taxonomy={fakeTaxonomy} onPick={() => {}} onCancel={() => {}} />
+      <TopicPicker
+        taxonomy={fakeTaxonomy}
+        onPick={() => {}}
+        onCancel={() => {}}
+      />
     </Theme>,
   );
   const text = gatherText(container).toLowerCase();
@@ -69,7 +96,12 @@ test("doctrine: TopicPicker renders no forbidden vocabulary", () => {
 
 test("doctrine: SectionInspector does not leak frontmatter into body container (no shared classnames)", () => {
   const outgoing: OutgoingConnection[] = [
-    { slug: "color-contrast", refType: "a11y_refs", note: "guarded test", domain: "accessibility" },
+    {
+      slug: "color-contrast",
+      refType: "a11y_refs",
+      note: "guarded test",
+      domain: "accessibility",
+    },
   ];
   const { container } = render(
     <Theme>
@@ -78,6 +110,7 @@ test("doctrine: SectionInspector does not leak frontmatter into body container (
         outgoing={outgoing}
         incoming={[]}
         taxonomy={fakeTaxonomy}
+        scope="file"
         onAddConnection={() => {}}
         onRemoveConnection={() => {}}
         onRepointConnection={() => {}}
@@ -85,5 +118,9 @@ test("doctrine: SectionInspector does not leak frontmatter into body container (
     </Theme>,
   );
   const leaks = container.querySelectorAll("[data-connection], [data-ref]");
-  assert.equal(leaks.length, 0, "Section Inspector must not stamp inline connection metadata onto rendered DOM");
+  assert.equal(
+    leaks.length,
+    0,
+    "Section Inspector must not stamp inline connection metadata onto rendered DOM",
+  );
 });

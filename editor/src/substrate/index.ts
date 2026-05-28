@@ -19,6 +19,7 @@ export { suggestRefs } from "./ai";
 export type { RefSuggestion, SuggestResult, SuggestOpts } from "./ai";
 export {
   addRefToFrontmatter,
+  refTypeFor,
   removeRefFromFrontmatter,
 } from "./frontmatterRewriter";
 export type { RefPick } from "./frontmatterRewriter";

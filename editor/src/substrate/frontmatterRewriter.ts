@@ -2,9 +2,18 @@
 // frontmatter. String-level operations (no full YAML parse) — the
 // substrate's authoring subset is fixed and documented.
 
+import type { Domain } from "./taxonomy";
 import type { RefType } from "./refGraph";
 
-const FRONTMATTER_RE = /^---\s*\n([\s\S]*?)\n---\s*\n/;
+export function refTypeFor(domain: Domain): RefType {
+  return domain === "accessibility" ? "a11y_refs" : "motion_refs";
+}
+
+// Use `[ \t]*` around the `---` fences instead of `\s*` — `\s` matches
+// newlines, so `\s*\n` is greedy and can swallow a blank line that
+// separates the frontmatter from the body. The blank line is part of the
+// body, not the frontmatter envelope.
+const FRONTMATTER_RE = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*\n/;
 const REF_BLOCK_BY_TYPE_RE = (type: RefType) =>
   new RegExp(`^${type}:\\s*\\n((?:\\s*-\\s+\\{[^}]*\\}\\s*\\n?)+)`, "m");
 const REF_ENTRY_BY_SLUG_RE = (slug: string) =>
@@ -18,12 +27,32 @@ function formatEntry(slug: string, note: string | null): string {
   return `  - { ref: ${slug}, note: "${escaped}" }`;
 }
 
+// Reconstruct a frontmatter-bearing source from a rewritten fmBlock. The
+// FRONTMATTER_RE capture group excludes the trailing `\n` before the
+// closing `---` (it's consumed by the end pattern), so if the rewritten
+// fmBlock doesn't end in `\n` the closing `---` would glue onto the last
+// content line and break YAML. Normalise here.
+function reassemble(
+  source: string,
+  fmMatch: RegExpMatchArray,
+  fmBlock: string,
+): string {
+  const safeBlock = fmBlock.endsWith("\n") ? fmBlock : `${fmBlock}\n`;
+  const before = source.slice(0, fmMatch.index ?? 0);
+  const after = source.slice((fmMatch.index ?? 0) + (fmMatch[0]?.length ?? 0));
+  return `${before}---\n${safeBlock}---\n${after}`;
+}
+
 export interface RefPick {
   slug: string;
   note: string | null;
 }
 
-export function addRefToFrontmatter(source: string, refType: RefType, pick: RefPick): string {
+export function addRefToFrontmatter(
+  source: string,
+  refType: RefType,
+  pick: RefPick,
+): string {
   const fm = source.match(FRONTMATTER_RE);
   const newEntry = formatEntry(pick.slug, pick.note);
 
@@ -37,18 +66,23 @@ export function addRefToFrontmatter(source: string, refType: RefType, pick: RefP
 
   let newFmBlock: string;
   if (blockMatch) {
-    newFmBlock = fmBlock.replace(blockRe, (matched) => `${matched.trimEnd()}\n${newEntry}\n`);
+    newFmBlock = fmBlock.replace(
+      blockRe,
+      (matched) => `${matched.trimEnd()}\n${newEntry}\n`,
+    );
   } else {
     const trimmed = fmBlock.trimEnd();
     newFmBlock = `${trimmed}\n${refType}:\n${newEntry}\n`;
   }
 
-  const before = source.slice(0, fm.index ?? 0);
-  const after = source.slice((fm.index ?? 0) + (fm[0]?.length ?? 0));
-  return `${before}---\n${newFmBlock}---\n${after}`;
+  return reassemble(source, fm, newFmBlock);
 }
 
-export function removeRefFromFrontmatter(source: string, refType: RefType, slug: string): string {
+export function removeRefFromFrontmatter(
+  source: string,
+  refType: RefType,
+  slug: string,
+): string {
   const fm = source.match(FRONTMATTER_RE);
   if (!fm) return source;
 
@@ -67,7 +101,5 @@ export function removeRefFromFrontmatter(source: string, refType: RefType, slug:
     fmBlock = fmBlock.replace(blockRe, `${refType}:\n${newEntries}`);
   }
 
-  const before = source.slice(0, fm.index ?? 0);
-  const after = source.slice((fm.index ?? 0) + (fm[0]?.length ?? 0));
-  return `${before}---\n${fmBlock}---\n${after}`;
+  return reassemble(source, fm, fmBlock);
 }

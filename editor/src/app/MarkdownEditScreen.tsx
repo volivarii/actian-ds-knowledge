@@ -15,7 +15,6 @@ import {
   Flex,
   Heading,
   Link,
-  Popover,
   Spinner,
   Text,
 } from "@radix-ui/themes";
@@ -31,8 +30,7 @@ import { Preview } from "../markdown-engine/Preview";
 import { Outline } from "./Outline";
 import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
 import { computeFocusedSection } from "./SectionFocusTracker";
-import { SectionInspector } from "./SectionInspector";
-import { TopicPicker } from "./TopicPicker";
+import { ConnectionsPopover } from "./ConnectionsPopover";
 import type { FocusedSectionContext } from "./EditorShell";
 // NOTE: deep-imported (not via the substrate barrel) to keep the Node-only
 // loader (taxonomy.ts uses node:fs/promises, refGraph.ts uses node:path) out
@@ -553,20 +551,25 @@ export function MarkdownEditScreen({
       </Flex>
       {connectionsPopover && (
         <ConnectionsPopover
-          section={connectionsPopover.section}
-          sectionHeading={extractHeadingText(
-            text,
-            connectionsPopover.section.line,
-          )}
-          anchorEl={connectionsPopover.anchorEl}
-          // P8 Option A: file-level outgoing only attaches to the top H2.
-          // For other (non-top) sections clicked from the Outline, outgoing
-          // is empty until section-scoped attachment (Option B) lands.
-          outgoing={
-            connectionsPopover.section.anchor === firstH2Anchor(text)
-              ? outgoing
-              : []
+          sectionTitle={
+            extractHeadingText(text, connectionsPopover.section.line) ||
+            connectionsPopover.section.anchor
           }
+          text={text}
+          anchorEl={connectionsPopover.anchorEl}
+          // P8 Option A v1: only the file's top H2 owns the file-level
+          // outgoing refs. Sub-section inspectors are read-only incoming
+          // views; the picker + remove affordances surface only on the
+          // top H2. The outgoing prop is still the file-level set (the
+          // SectionInspector hides it when scope === "section"); passing
+          // it unconditionally means the file-scope inspector always sees
+          // the freshly-mutated state without us recomputing per pill.
+          scope={
+            connectionsPopover.section.anchor === firstH2Anchor(text)
+              ? "file"
+              : "section"
+          }
+          outgoing={outgoing}
           incoming={findReferences(connectionsPopover.section.anchor).map(
             (file) => ({
               file,
@@ -578,6 +581,12 @@ export function MarkdownEditScreen({
             }),
           )}
           taxonomy={taxonomy}
+          onTextChange={(next) => {
+            if (!view) return;
+            view.dispatch({
+              changes: { from: 0, to: view.state.doc.length, insert: next },
+            });
+          }}
           onClose={() => setConnectionsPopover(null)}
         />
       )}
@@ -749,7 +758,7 @@ export function MarkdownEditScreen({
 
 // Resolve the file's top H2 anchor. Used to decide whether the section
 // the author opened is the bucket that owns the file-level outgoing refs
-// (P8 Option A) — only the top H2 displays them today.
+// (P8 Option A) — sub-sections render as read-only incoming views.
 function firstH2Anchor(source: string): string | null {
   const lines = source.split("\n");
   for (let i = 0; i < lines.length; i++) {
@@ -772,141 +781,4 @@ function extractHeadingText(source: string, line: number): string {
     .replace(/\s*\{#[a-z][a-z0-9-]*\}\s*$/, "")
     .replace(/^\s*\d+(?:\.\d+)*\.?\s+/, "")
     .trim();
-}
-
-// Popover wrapper for the Section Inspector. Anchored to the Outline
-// pill the author clicked. Uses the same invisible-fixed-anchor pattern
-// as AnchorReferencesPopover so Radix's floating layout has something
-// concrete to attach to even when the trigger lives in a different
-// React subtree (the Outline column).
-//
-// Write-back to the file (add/remove/repoint connection) is the v1.2
-// step; for v1.1 the picker shows real options + the connect button
-// logs a "coming soon" message. The goal of this fix-up is to let the
-// author SEE THE FULL PICTURE — connections + taxonomy — without
-// committing to the rewriter wiring just yet.
-function ConnectionsPopover({
-  section,
-  sectionHeading,
-  anchorEl,
-  outgoing,
-  incoming,
-  taxonomy,
-  onClose,
-}: {
-  section: FocusedSectionContext;
-  sectionHeading: string;
-  anchorEl: HTMLElement;
-  outgoing: import("../substrate/refGraph").OutgoingConnection[];
-  incoming: import("../substrate/refGraph").Consumer[];
-  taxonomy: import("../substrate/taxonomy").Taxonomy;
-  onClose: () => void;
-}) {
-  const rect = anchorEl.getBoundingClientRect();
-  // Doctrine: show the human heading the author wrote, never the derived
-  // slug. Falls back to the anchor only when the heading line can't be
-  // resolved (defensive — should never happen for sections opened via the
-  // Outline pill since both originate from the same headingScan output).
-  const sectionTitle = sectionHeading || section.anchor;
-
-  // Two views inside the popover: the Inspector (default) + the Topic
-  // Picker (when the author clicked "+ Connect to another topic"). The
-  // picker is a v1.1 read-only preview — pick fires a notice; the
-  // actual write-back to file frontmatter is v1.2.
-  const [mode, setMode] = useState<"inspector" | "picker">("inspector");
-  const [pickNotice, setPickNotice] = useState<string | null>(null);
-
-  return (
-    <Popover.Root
-      open
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-    >
-      <Popover.Anchor>
-        <span
-          aria-hidden="true"
-          style={{
-            position: "fixed",
-            left: rect.left,
-            top: rect.top,
-            width: rect.width,
-            height: rect.height,
-            pointerEvents: "none",
-          }}
-        />
-      </Popover.Anchor>
-      <Popover.Content
-        size="2"
-        side="bottom"
-        align="start"
-        sideOffset={6}
-        collisionPadding={12}
-        data-testid="connections-popover"
-        style={{ width: 300, maxHeight: "70vh", overflow: "auto" }}
-      >
-        {mode === "inspector" ? (
-          <SectionInspector
-            sectionTitle={sectionTitle}
-            outgoing={outgoing}
-            incoming={incoming}
-            taxonomy={taxonomy}
-            onAddConnection={() => {
-              setPickNotice(null);
-              setMode("picker");
-            }}
-            onRemoveConnection={(slug) => {
-              // eslint-disable-next-line no-console
-              console.info(
-                "[connections] remove — coming soon: write back to file source",
-                slug,
-              );
-            }}
-            onRepointConnection={(slug) => {
-              setPickNotice(null);
-              setMode("picker");
-              // eslint-disable-next-line no-console
-              console.info(
-                "[connections] repoint — coming soon: write back to file source",
-                slug,
-              );
-            }}
-          />
-        ) : (
-          <Box>
-            <Flex align="center" justify="between" mb="2">
-              <Text size="1" color="gray" weight="medium">
-                Connect "{sectionTitle}" to a topic
-              </Text>
-              <Button
-                size="1"
-                variant="ghost"
-                onClick={() => setMode("inspector")}
-              >
-                ← back
-              </Button>
-            </Flex>
-            {pickNotice ? (
-              <Callout.Root color="amber" size="1" mb="2">
-                <Callout.Text>{pickNotice}</Callout.Text>
-              </Callout.Root>
-            ) : null}
-            <TopicPicker
-              taxonomy={taxonomy}
-              onPick={(topic) => {
-                // v1.2: addRefToFrontmatter(text, refTypeFor(topic.domain), {
-                //   slug: topic.slug, note: topic.note,
-                // }) + setText() through the existing draft state.
-                setPickNotice(
-                  `Picked "${topic.title}" — write-back to file frontmatter is coming next iteration.`,
-                );
-                setMode("inspector");
-              }}
-              onCancel={() => setMode("inspector")}
-            />
-          </Box>
-        )}
-      </Popover.Content>
-    </Popover.Root>
-  );
 }
