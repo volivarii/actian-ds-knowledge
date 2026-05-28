@@ -33,9 +33,7 @@ function fakeTaxonomy(results: SearchResult[]): Taxonomy {
     domainOfSlug: () => null,
     searchSections: (q) =>
       q.length
-        ? results.filter((r) =>
-            r.title.toLowerCase().includes(q.toLowerCase()),
-          )
+        ? results.filter((r) => r.title.toLowerCase().includes(q.toLowerCase()))
         : results,
   };
 }
@@ -95,6 +93,7 @@ function renderPopover(args: {
         onTextChange={onTextChange}
         onClose={() => {}}
         anchorEl={null}
+        scope="file"
       />
     </Theme>,
   );
@@ -208,6 +207,7 @@ test("ConnectionsPopover: repoint performs atomic swap on pick", () => {
         onTextChange={(next) => calls.push(next)}
         onClose={() => {}}
         anchorEl={null}
+        scope="file"
       />
     </Theme>,
   );
@@ -219,7 +219,11 @@ test("ConnectionsPopover: repoint performs atomic swap on pick", () => {
   fireEvent.click(screen.getByText("Typography"));
   fireEvent.click(screen.getByRole("button", { name: /^connect/i }));
 
-  assert.equal(calls.length, 1, "repoint should fire onTextChange exactly once");
+  assert.equal(
+    calls.length,
+    1,
+    "repoint should fire onTextChange exactly once",
+  );
   assert.doesNotMatch(calls[0]!, /ref: color-contrast/);
   assert.match(calls[0]!, /ref: typography/);
 });
@@ -245,6 +249,7 @@ test("ConnectionsPopover: cancelling repoint leaves source untouched", () => {
         onTextChange={(next) => calls.push(next)}
         onClose={() => {}}
         anchorEl={null}
+        scope="file"
       />
     </Theme>,
   );

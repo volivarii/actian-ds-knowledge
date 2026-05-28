@@ -37,6 +37,7 @@ const sampleOutgoing: OutgoingConnection[] = [
 function renderInspector(props: {
   outgoing: OutgoingConnection[];
   incoming?: never[];
+  scope?: "file" | "section";
 }) {
   return render(
     <Theme>
@@ -45,6 +46,7 @@ function renderInspector(props: {
         outgoing={props.outgoing}
         incoming={[]}
         taxonomy={fakeTaxonomy}
+        scope={props.scope ?? "file"}
         onAddConnection={() => {}}
         onRemoveConnection={() => {}}
         onRepointConnection={() => {}}
@@ -84,7 +86,23 @@ test("SectionInspector: shows file-level scope caption", () => {
   assert.ok(screen.getByText(/these connections apply to the whole file/i));
 });
 
-test("SectionInspector: 'Connect to another topic' button present", () => {
+test("SectionInspector: 'Connect to another topic' button present in file scope", () => {
   renderInspector({ outgoing: sampleOutgoing });
   assert.ok(screen.getByRole("button", { name: /connect to another topic/i }));
+});
+
+test("SectionInspector: section scope hides outgoing + Connect button", () => {
+  renderInspector({ outgoing: sampleOutgoing, scope: "section" });
+  // Outgoing connections shouldn't render in section scope.
+  assert.equal(screen.queryByText("Color contrast"), null);
+  assert.equal(screen.queryByText("Typography"), null);
+  // The "Connected topics (N)" header is suppressed too.
+  assert.equal(screen.queryByText(/Connected topics/), null);
+  // No + Connect affordance.
+  assert.equal(
+    screen.queryByRole("button", { name: /connect to another topic/i }),
+    null,
+  );
+  // A guidance message explains where to add a connection.
+  assert.ok(screen.getByText(/connections live at the file level/i));
 });

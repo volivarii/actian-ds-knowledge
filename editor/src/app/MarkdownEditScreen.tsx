@@ -557,13 +557,18 @@ export function MarkdownEditScreen({
           }
           text={text}
           anchorEl={connectionsPopover.anchorEl}
-          // P8 Option A is file-scoped: file-level a11y_refs / motion_refs
-          // apply to every section in the file, so every section's Inspector
-          // surfaces the same outgoing set. Pre-v1.2 we hid them on non-top
-          // sections to avoid the misleading "this section's connections"
-          // framing, but with write-back wired that hid the author's own
-          // pick — they'd add a connection and see nothing change. Option B
-          // (section-scoped attachment) is the v2 axis where this differs.
+          // P8 Option A v1: only the file's top H2 owns the file-level
+          // outgoing refs. Sub-section inspectors are read-only incoming
+          // views; the picker + remove affordances surface only on the
+          // top H2. The outgoing prop is still the file-level set (the
+          // SectionInspector hides it when scope === "section"); passing
+          // it unconditionally means the file-scope inspector always sees
+          // the freshly-mutated state without us recomputing per pill.
+          scope={
+            connectionsPopover.section.anchor === firstH2Anchor(text)
+              ? "file"
+              : "section"
+          }
           outgoing={outgoing}
           incoming={findReferences(connectionsPopover.section.anchor).map(
             (file) => ({
@@ -749,6 +754,18 @@ export function MarkdownEditScreen({
       </AlertDialog.Root>
     </Flex>
   );
+}
+
+// Resolve the file's top H2 anchor. Used to decide whether the section
+// the author opened is the bucket that owns the file-level outgoing refs
+// (P8 Option A) — sub-sections render as read-only incoming views.
+function firstH2Anchor(source: string): string | null {
+  const lines = source.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const s = computeFocusedSection(source, i);
+    if (s && s.level === 2) return s.anchor;
+  }
+  return null;
 }
 
 // Pull the human-readable heading text from a markdown source line. Strips

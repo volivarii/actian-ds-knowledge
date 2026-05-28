@@ -32,6 +32,10 @@ export interface ConnectionsPopoverProps {
   incoming: Consumer[];
   broken?: BrokenRef[];
   taxonomy: Taxonomy;
+  /** P8 Option A: file-level outgoing attaches to the file's top H2.
+   *  When `"file"` the inspector shows + manages outgoing; when
+   *  `"section"` it's a read-only incoming view. */
+  scope: "file" | "section";
   onTextChange: (next: string) => void;
   onClose: () => void;
   /** DOM element the popover anchors to. The Outline pill the author
@@ -49,6 +53,7 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
     incoming,
     broken = [],
     taxonomy,
+    scope,
     onTextChange,
     onClose,
     anchorEl,
@@ -71,7 +76,11 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
     const newRefType = refTypeFor(pick.domain);
     let next = text;
     if (repointing) {
-      next = removeRefFromFrontmatter(next, repointing.refType, repointing.slug);
+      next = removeRefFromFrontmatter(
+        next,
+        repointing.refType,
+        repointing.slug,
+      );
     }
     next = addRefToFrontmatter(next, newRefType, {
       slug: pick.slug,
@@ -123,6 +132,7 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
             incoming={incoming}
             broken={broken}
             taxonomy={taxonomy}
+            scope={scope}
             onAddConnection={() => {
               setRepointing(null);
               setMode("picker");

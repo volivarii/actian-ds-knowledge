@@ -22,13 +22,26 @@ export interface SectionInspectorProps {
   incoming: Consumer[];
   broken?: BrokenRef[];
   taxonomy: Taxonomy;
+  /** P8 Option A file-scoped attachment: only the file's top H2 owns
+   *  outgoing connections; sub-sections are read-only incoming views.
+   *  When `"section"`, the outgoing list + "+ Connect" affordance are
+   *  hidden and the empty-state copy is the incoming-reference framing. */
+  scope: "file" | "section";
   onAddConnection: () => void;
   onRemoveConnection: (refType: RefType, slug: string) => void;
   onRepointConnection: (refType: RefType, slug: string) => void;
 }
 
 export function SectionInspector(props: SectionInspectorProps) {
-  const { sectionTitle, outgoing, incoming, broken = [], taxonomy } = props;
+  const {
+    sectionTitle,
+    outgoing,
+    incoming,
+    broken = [],
+    taxonomy,
+    scope,
+  } = props;
+  const isFileScope = scope === "file";
 
   return (
     <Box p="3">
@@ -43,58 +56,69 @@ export function SectionInspector(props: SectionInspectorProps) {
         {sectionTitle}
       </Heading>
 
-      <Box mt="4">
-        <Text
-          size="1"
-          color="gray"
-          weight="medium"
-          style={{ textTransform: "uppercase", letterSpacing: 0.5 }}
-        >
-          Connected topics ({outgoing.length})
-        </Text>
-        <Text size="1" color="gray" as="p" mt="1">
-          These connections apply to the whole file.
-        </Text>
-        {outgoing.length === 0 && broken.length === 0 ? (
-          <Text size="2" color="gray" mt="2" as="p">
-            This file has no connections yet.
+      {isFileScope && (
+        <Box mt="4">
+          <Text
+            size="1"
+            color="gray"
+            weight="medium"
+            style={{ textTransform: "uppercase", letterSpacing: 0.5 }}
+          >
+            Connected topics ({outgoing.length})
           </Text>
-        ) : (
-          <Flex direction="column" gap="2" mt="2">
-            {outgoing.map((conn) => (
-              <ConnectionRow
-                key={`${conn.refType}:${conn.slug}`}
-                title={
-                  taxonomy.getTitle(
-                    conn.domain ?? "accessibility",
-                    conn.slug,
-                  ) ?? conn.slug
-                }
-                note={conn.note}
-                onRemove={() =>
-                  props.onRemoveConnection(conn.refType, conn.slug)
-                }
-              />
-            ))}
-            {broken.map((b) => (
-              <BrokenRow
-                key={`broken:${b.slug}`}
-                identifierForDebug={b.slug}
-                onRemove={() => props.onRemoveConnection(b.refType, b.slug)}
-                onRepoint={() => props.onRepointConnection(b.refType, b.slug)}
-              />
-            ))}
-          </Flex>
-        )}
-        <Button
-          variant="outline"
-          mt="3"
-          style={{ width: "100%" }}
-          onClick={props.onAddConnection}
-        >
-          + Connect to another topic
-        </Button>
-      </Box>
+          <Text size="1" color="gray" as="p" mt="1">
+            These connections apply to the whole file.
+          </Text>
+          {outgoing.length === 0 && broken.length === 0 ? (
+            <Text size="2" color="gray" mt="2" as="p">
+              This file has no connections yet.
+            </Text>
+          ) : (
+            <Flex direction="column" gap="2" mt="2">
+              {outgoing.map((conn) => (
+                <ConnectionRow
+                  key={`${conn.refType}:${conn.slug}`}
+                  title={
+                    taxonomy.getTitle(
+                      conn.domain ?? "accessibility",
+                      conn.slug,
+                    ) ?? conn.slug
+                  }
+                  note={conn.note}
+                  onRemove={() =>
+                    props.onRemoveConnection(conn.refType, conn.slug)
+                  }
+                />
+              ))}
+              {broken.map((b) => (
+                <BrokenRow
+                  key={`broken:${b.slug}`}
+                  identifierForDebug={b.slug}
+                  onRemove={() => props.onRemoveConnection(b.refType, b.slug)}
+                  onRepoint={() => props.onRepointConnection(b.refType, b.slug)}
+                />
+              ))}
+            </Flex>
+          )}
+          <Button
+            variant="outline"
+            mt="3"
+            style={{ width: "100%" }}
+            onClick={props.onAddConnection}
+          >
+            + Connect to another topic
+          </Button>
+        </Box>
+      )}
+
+      {!isFileScope && (
+        <Box mt="4">
+          <Text size="2" color="gray" as="p">
+            Connections live at the file level. To add or remove one, open the
+            file's first section.
+          </Text>
+        </Box>
+      )}
 
       {incoming.length > 0 && (
         <Box mt="4">
