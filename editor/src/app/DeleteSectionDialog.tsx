@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Box,
   Dialog,
   Flex,
   Text,
@@ -60,10 +61,12 @@ export function DeleteSectionDialog({
         {!loading && needsAck && (
           <Callout.Root color="orange" mt="2" mb="3">
             <Callout.Text>
-              <Text weight="bold" as="div" mb="1">
+              <Text weight="bold">
                 Referenced by {refCount} file{refCount === 1 ? "" : "s"}
               </Text>
-              <ul style={{ margin: "4px 0 0 16px", padding: 0 }}>
+            </Callout.Text>
+            <Box mt="2">
+              <ul style={{ margin: 0, paddingLeft: 16 }}>
                 {sampleRefs.map((r) => (
                   <li key={r} data-detail="path">
                     <Text size="1">{r}</Text>
@@ -75,7 +78,7 @@ export function DeleteSectionDialog({
                   +{extras} more
                 </Text>
               )}
-            </Callout.Text>
+            </Box>
           </Callout.Root>
         )}
 
