@@ -68,7 +68,7 @@ function projectToDist(frontmatter, sourceRel) {
   // every run breaks idempotency (every CI run produces new dist files
   // → workflow auto-commits → triggers next CI → loop). Mirrors foundations-derive,
   // which also omits timestamp fields from per-leaf JSONs.
-  return {
+  const dist = {
     _meta: metaBlock(sourceRel),
     _schema_version: frontmatter._schema_version,
     slug: frontmatter.slug,
@@ -82,6 +82,13 @@ function projectToDist(frontmatter, sourceRel) {
     a11y_refs: { requirementRefs: frontmatter.a11y_refs },
     _sourceFile: sourceRel,
   };
+  // foundations_refs is optional (P8 symmetric transversal ref key). Only emit
+  // the wrapper when the frontmatter actually carries the array — categories
+  // without it stay byte-identical until backfilled.
+  if (Array.isArray(frontmatter.foundations_refs)) {
+    dist.foundations_refs = { sectionRefs: frontmatter.foundations_refs };
+  }
+  return dist;
 }
 
 // ───────────────────────────────────────────────────────────────────────────
