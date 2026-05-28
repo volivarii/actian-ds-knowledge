@@ -20,7 +20,13 @@ const {
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const DIST_DIR = path.join(REPO_ROOT, "foundations", "dist");
-const SKIP = new Set(["foundations.bundle.json"]);
+const SKIP = new Set([
+  "foundations.bundle.json",
+  // Flat index with its own shape ({_schema_version, _meta, sections:[{slug,title}]}),
+  // not the per-section shape — validated by its consumer test
+  // (tests/foundations-index.test.js).
+  "foundations-index.json",
+]);
 
 function walk(dir, out) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

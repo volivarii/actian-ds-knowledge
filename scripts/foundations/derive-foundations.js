@@ -897,6 +897,10 @@ function writeOutputs(
     });
     owned["_index.json"] = true;
     owned["foundations.bundle.json"] = true;
+    // foundations-index.json is written by runCli after writeOutputs (it's
+    // derived from the _order manifest, not the section tree). Mark it owned
+    // so prune doesn't delete-then-log it as stale every run.
+    owned["foundations-index.json"] = true;
     var existing = walkDir(distDir, distDir, function (rp) {
       return /\.json$/.test(rp);
     });
@@ -1337,7 +1341,7 @@ function buildFoundationsIndex(srcDir) {
   }
   return {
     _schema_version: 1,
-    _meta: { auto_generated: true, source: "foundations/src/" },
+    _meta: metaBlock("foundations/src/"),
     sections: sections,
   };
 }
@@ -1430,6 +1434,13 @@ function runCli(argv) {
       ? fs.readFileSync(bundleDest, "utf-8")
       : "";
     if (bundleActual !== bundleExpected) drifts.push("foundations.bundle.json");
+    var indexExpected =
+      JSON.stringify(buildFoundationsIndex(srcDir), null, 2) + "\n";
+    var indexDest = path.join(outDir, "foundations-index.json");
+    var indexActual = fs.existsSync(indexDest)
+      ? fs.readFileSync(indexDest, "utf-8")
+      : "";
+    if (indexActual !== indexExpected) drifts.push("foundations-index.json");
     if (drifts.length === 0) {
       console.log("[derive-foundations] no drift");
       return 0;
