@@ -392,3 +392,212 @@ test("Sidebar: shows draft-dot for paths in pendingPaths (when expanded)", async
   const dots = container.querySelectorAll(".draft-dot");
   assert.equal(dots.length, 1);
 });
+
+// ---------------------------------------------------------------------------
+// New affordances: +Add section, drag grips, hover trash, ordered display
+// ---------------------------------------------------------------------------
+
+/**
+ * Extended fake that handles both directory listings and _order.json file
+ * entries. Pass `orderManifests` as a map of domainPath → slug array, e.g.
+ * { "foundations/src": ["intro", "tokens"] }. Any path ending in
+ * `_order.json` whose parent dir key exists in `orderManifests` will return
+ * a synthetic base64-encoded file response with a fixed SHA.
+ */
+function fakeGhWithOrders(
+  listings: Record<string, Array<{ name: string; type: "file" | "dir" }>>,
+  orderManifests: Record<string, string[]> = {},
+) {
+  return {
+    repos: {
+      getContent: async ({ path }: { path: string }) => {
+        // Handle _order.json paths
+        if (path.endsWith("/_order.json")) {
+          const dir = path.replace("/_order.json", "");
+          if (dir in orderManifests) {
+            const json = JSON.stringify(orderManifests[dir]);
+            // btoa is available in jsdom (wired via setup-dom)
+            const encoded = btoa(json);
+            return {
+              data: {
+                content: encoded,
+                encoding: "base64",
+                sha: "fake-sha-order",
+              },
+            };
+          }
+          const err = new Error("not found") as Error & { status: number };
+          err.status = 404;
+          throw err;
+        }
+        // Fall back to directory listings
+        if (!(path in listings)) {
+          const err = new Error("not found") as Error & { status: number };
+          err.status = 404;
+          throw err;
+        }
+        return { data: listings[path] };
+      },
+    },
+  } as any;
+}
+
+test("Sidebar — renders + Add section button on each curatable group header", async () => {
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGhWithOrders(LISTINGS)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Foundations"));
+
+  // Foundations, Accessibility, Content — Patterns, Content — Product,
+  // Content — Writing all have an "Add * section" button.
+  const addButtons = screen.queryAllByRole("button", {
+    name: /add .* section/i,
+  });
+  assert.ok(
+    addButtons.length >= 5,
+    `expected ≥5 +Add buttons, got ${addButtons.length}`,
+  );
+
+  // Components group does NOT get one (null onAdd)
+  const componentsAdd = screen.queryByRole("button", {
+    name: /add components section/i,
+  });
+  assert.equal(componentsAdd, null);
+});
+
+test("Sidebar — renders a reorder grip on each foundations row", async () => {
+  const { container } = render(
+    wrap(
+      <Sidebar
+        octokit={fakeGhWithOrders(LISTINGS, {
+          "foundations/src": ["color-primitives"],
+        })}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Foundations"));
+  // Expand the Foundations section so rows are mounted
+  toggleSection("Foundations");
+  await waitFor(() => screen.getByText("Color Primitives"));
+
+  const grips = container.querySelectorAll("[data-reorder-grip]");
+  assert.ok(
+    grips.length >= 1,
+    `expected at least one drag grip, got ${grips.length}`,
+  );
+  // Each grip is a span role="button" with aria-label="Reorder <slug>"
+  const grip = grips[0]!;
+  assert.equal(grip.getAttribute("role"), "button");
+  assert.ok(
+    grip.getAttribute("aria-label")?.startsWith("Reorder "),
+    `expected aria-label starting with "Reorder ", got "${grip.getAttribute("aria-label")}"`,
+  );
+});
+
+test("Sidebar — renders a trash button on a foundations row but not on a components row", async () => {
+  const { container } = render(
+    wrap(
+      <Sidebar
+        octokit={fakeGhWithOrders(LISTINGS, {
+          "foundations/src": ["color-primitives"],
+        })}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Foundations"));
+  // Expand Foundations to get its rows
+  toggleSection("Foundations");
+  await waitFor(() => screen.getByText("Color Primitives"));
+
+  const trashButtons = screen.queryAllByRole("button", { name: /^delete /i });
+  assert.ok(
+    trashButtons.length >= 1,
+    `expected ≥1 trash button in foundations rows, got ${trashButtons.length}`,
+  );
+
+  // Expand Components — its rows must NOT have trash buttons
+  toggleSection("Components");
+  await waitFor(() => screen.getByText("Button"));
+
+  // Count all trash buttons again; should still be the same count as before
+  // (components don't add any)
+  const trashAfterComponents = screen.queryAllByRole("button", {
+    name: /^delete /i,
+  });
+  const componentTrash = container.querySelector(
+    "#list-components [aria-label^='Delete']",
+  );
+  assert.equal(
+    componentTrash,
+    null,
+    "components rows must not have a trash button",
+  );
+  assert.equal(
+    trashAfterComponents.length,
+    trashButtons.length,
+    "expanding Components must not add new trash buttons",
+  );
+});
+
+test("Sidebar — foundations rows follow _order.json sequence, not directory order", async () => {
+  // Directory listing returns files in reverse alphabetical order (tokens first,
+  // then intro). _order.json declares ["intro", "tokens"], so rendered order
+  // must be Intro → Tokens regardless of the listing order.
+  const reversedListings = {
+    ...LISTINGS,
+    "foundations/src": [
+      { name: "tokens.md", type: "file" as const },
+      { name: "intro.md", type: "file" as const },
+    ],
+  };
+
+  const { container } = render(
+    wrap(
+      <Sidebar
+        octokit={fakeGhWithOrders(reversedListings, {
+          "foundations/src": ["intro", "tokens"],
+        })}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+
+  await waitFor(() => screen.getByText("Foundations"));
+  toggleSection("Foundations");
+  await waitFor(() => screen.getByText("Intro"));
+
+  // Collect all <li> elements inside the foundations list
+  const items = container.querySelectorAll("#list-foundations li");
+  const labels = Array.from(items).map((li) => li.textContent?.trim() ?? "");
+
+  const introIdx = labels.findIndex((l) => l.includes("Intro"));
+  const tokensIdx = labels.findIndex((l) => l.includes("Tokens"));
+
+  assert.ok(
+    introIdx >= 0,
+    `"Intro" row not found; labels=${JSON.stringify(labels)}`,
+  );
+  assert.ok(
+    tokensIdx >= 0,
+    `"Tokens" row not found; labels=${JSON.stringify(labels)}`,
+  );
+  assert.ok(
+    introIdx < tokensIdx,
+    `expected Intro (idx ${introIdx}) before Tokens (idx ${tokensIdx})`,
+  );
+});
