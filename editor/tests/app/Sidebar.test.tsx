@@ -89,8 +89,8 @@ test("Sidebar: renders Foundations + Accessibility entries (after expand)", asyn
   await waitFor(() => screen.getByText("Foundations"));
   toggleSection("Foundations");
   toggleSection("Accessibility");
-  assert.ok(screen.getByText("color-primitives.md"));
-  assert.ok(screen.getByText("principles.md"));
+  assert.ok(screen.getByText("Color Primitives"));
+  assert.ok(screen.getByText("Principles"));
 });
 
 test("Sidebar: excludes AUTHORING.md", async () => {
@@ -106,8 +106,8 @@ test("Sidebar: excludes AUTHORING.md", async () => {
   );
   await waitFor(() => screen.getByText("Foundations"));
   toggleSection("Foundations");
-  assert.ok(screen.getByText("color-primitives.md"));
-  assert.equal(screen.queryByText("AUTHORING.md"), null);
+  assert.ok(screen.getByText("Color Primitives"));
+  assert.equal(screen.queryByText("Authoring"), null);
 });
 
 test("Sidebar: excludes categories (skip-dir)", async () => {
@@ -123,8 +123,8 @@ test("Sidebar: excludes categories (skip-dir)", async () => {
   );
   await waitFor(() => screen.getByText("Components"));
   toggleSection("Components");
-  assert.ok(screen.getByText("button"));
-  assert.equal(screen.queryByText("categories"), null);
+  assert.ok(screen.getByText("Button"));
+  assert.equal(screen.queryByText("Categories"), null);
 });
 
 test("Sidebar: click dispatches onSelect with full path", async () => {
@@ -141,7 +141,7 @@ test("Sidebar: click dispatches onSelect with full path", async () => {
   );
   await waitFor(() => screen.getByText("Foundations"));
   toggleSection("Foundations");
-  fireEvent.click(screen.getByText("color-primitives.md"));
+  fireEvent.click(screen.getByText("Color Primitives"));
   assert.deepEqual(calls, ["foundations/src/color-primitives.md"]);
 });
 
@@ -195,11 +195,11 @@ test("Sidebar: renders Content — Patterns/Product/Writing entries (after expan
   toggleSection("Content — Patterns");
   toggleSection("Content — Product");
   toggleSection("Content — Writing");
-  assert.ok(screen.getByText("forms.md"));
-  assert.ok(screen.getByText("onboarding.md"));
-  assert.ok(screen.getByText("lineage-specific-ui.md"));
-  assert.ok(screen.getByText("voice-and-tone.md"));
-  assert.ok(screen.getByText("words-to-avoid.md"));
+  assert.ok(screen.getByText("Forms"));
+  assert.ok(screen.getByText("Onboarding"));
+  assert.ok(screen.getByText("Lineage Specific Ui"));
+  assert.ok(screen.getByText("Voice And Tone"));
+  assert.ok(screen.getByText("Words To Avoid"));
 });
 
 test("Sidebar: clicking content/src entry dispatches full path", async () => {
@@ -216,7 +216,7 @@ test("Sidebar: clicking content/src entry dispatches full path", async () => {
   );
   await waitFor(() => screen.getByText("Content — Patterns"));
   toggleSection("Content — Patterns");
-  fireEvent.click(screen.getByText("forms.md"));
+  fireEvent.click(screen.getByText("Forms"));
   assert.deepEqual(calls, ["content/src/patterns/forms.md"]);
 });
 
@@ -233,10 +233,10 @@ test("Sidebar: all sections collapsed by default", async () => {
   );
   await waitFor(() => screen.getByText("Foundations"));
   // No section items rendered initially
-  assert.equal(screen.queryByText("color-primitives.md"), null);
-  assert.equal(screen.queryByText("principles.md"), null);
-  assert.equal(screen.queryByText("forms.md"), null);
-  assert.equal(screen.queryByText("button"), null);
+  assert.equal(screen.queryByText("Color Primitives"), null);
+  assert.equal(screen.queryByText("Principles"), null);
+  assert.equal(screen.queryByText("Forms"), null);
+  assert.equal(screen.queryByText("Button"), null);
   // All section headers report aria-expanded=false
   for (const label of [
     "Foundations",
@@ -271,10 +271,10 @@ test("Sidebar: Foundations section toggles", async () => {
   assert.equal(header.getAttribute("aria-expanded"), "false");
   fireEvent.click(header);
   assert.equal(header.getAttribute("aria-expanded"), "true");
-  assert.ok(screen.getByText("color-primitives.md"));
+  assert.ok(screen.getByText("Color Primitives"));
   fireEvent.click(header);
   assert.equal(header.getAttribute("aria-expanded"), "false");
-  assert.equal(screen.queryByText("color-primitives.md"), null);
+  assert.equal(screen.queryByText("Color Primitives"), null);
 });
 
 test("Sidebar: Components section toggles and preserves Show all", async () => {
@@ -298,25 +298,25 @@ test("Sidebar: Components section toggles and preserves Show all", async () => {
   const header = screen.getByText("Components").closest('[role="button"]')!;
   // Default collapsed: no items, no Show all
   assert.equal(header.getAttribute("aria-expanded"), "false");
-  assert.equal(screen.queryByText("comp-00"), null);
+  assert.equal(screen.queryByText("Comp 00"), null);
   assert.equal(screen.queryByText("Show all (25)"), null);
 
   // Expand: cap engages (20 of 25 visible + Show all link)
   fireEvent.click(header);
-  await waitFor(() => screen.getByText("comp-00"));
+  await waitFor(() => screen.getByText("Comp 00"));
   assert.equal(header.getAttribute("aria-expanded"), "true");
-  assert.ok(screen.getByText("comp-19"));
-  assert.equal(screen.queryByText("comp-20"), null);
+  assert.ok(screen.getByText("Comp 19"));
+  assert.equal(screen.queryByText("Comp 20"), null);
   assert.ok(screen.getByText("Show all (25)"));
 
   // Click "Show all" — un-caps within the expanded section
   fireEvent.click(screen.getByText("Show all (25)"));
-  assert.ok(screen.getByText("comp-24"));
+  assert.ok(screen.getByText("Comp 24"));
 
   // Collapse — hides everything including the now-uncapped list
   fireEvent.click(header);
   assert.equal(header.getAttribute("aria-expanded"), "false");
-  assert.equal(screen.queryByText("comp-00"), null);
+  assert.equal(screen.queryByText("Comp 00"), null);
 });
 
 test("Sidebar: section collapse state persists via sessionStorage", async () => {
@@ -348,7 +348,7 @@ test("Sidebar: section collapse state persists via sessionStorage", async () => 
   await waitFor(() => screen.getByText("Foundations"));
   const header = screen.getByText("Foundations").closest('[role="button"]')!;
   assert.equal(header.getAttribute("aria-expanded"), "true");
-  assert.ok(screen.getByText("color-primitives.md"));
+  assert.ok(screen.getByText("Color Primitives"));
 });
 
 test("Sidebar: hides empty content/src groups (e.g. 404 dirs)", async () => {

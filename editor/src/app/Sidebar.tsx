@@ -1,13 +1,30 @@
 import { useEffect, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import { Badge, Box, Flex, Heading, Text } from "@radix-ui/themes";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { listDirectories, listFilesByGlob } from "./githubApi";
 import { loadOrderManifest } from "../lib/orderManifestLoader";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 import { AddSectionDialog } from "./AddSectionDialog";
-import { appendSlug } from "../lib/orderManifest";
+import { appendSlug, moveSlug, removeSlug } from "../lib/orderManifest";
 import { buildMarkdownStub } from "../lib/markdownStubs";
+import { ReorderHandle } from "./ReorderHandle";
+import { DeleteSectionDialog } from "./DeleteSectionDialog";
+import { findReferences } from "../lib/anchorIndex";
 
 interface SidebarProps {
   octokit: Octokit;
@@ -105,6 +122,14 @@ function slugFromPath(p: string): string {
   return p.split("/").pop()!.replace(/\.md$/, "");
 }
 
+function humanizeSlug(slug: string): string {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join(" ");
+}
+
 export function Sidebar({
   octokit,
   pendingPaths,
@@ -127,6 +152,20 @@ export function Sidebar({
     subDir?: string;
     existingSlugs: string[];
   } | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    domain: SectionKey;
+    slug: string;
+    title: string;
+    refCount: number;
+    sampleRefs: string[];
+  } | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   function toggleSection(group: SectionKey) {
     setSectionCollapsed((prev) => {
@@ -175,6 +214,97 @@ export function Sidebar({
       addedAt: Date.now(),
     });
     onSelect(filePath);
+  }
+
+  function handleReorderDrop(
+    domain: "foundations" | "accessibility",
+    event: DragEndEvent,
+  ) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const sha = orderShas[domain];
+    if (!sha) return;
+    const currentList = entries![domain].map(slugFromPath);
+    const newIndex = currentList.indexOf(over.id as string);
+    if (newIndex < 0) return;
+    const nextOrder = moveSlug(currentList, active.id as string, newIndex);
+    submissionCartSingleton.add({
+      path: `${domain}/src/_order.json`,
+      content: JSON.stringify(nextOrder, null, 2) + "\n",
+      basedOnSha: sha,
+      addedAt: Date.now(),
+    });
+    // Keep entries as filenames (e.g. "color-primitives.md") consistent
+    // with the initial load from listFilesByGlob.
+    setEntries((prev) =>
+      prev
+        ? {
+            ...prev,
+            [domain]: nextOrder.map((slug) => `${slug}.md`),
+          }
+        : prev,
+    );
+  }
+
+  function openDeleteDialog(domain: SectionKey, slug: string) {
+    const refs = findReferences(slug);
+    setDeleteDialog({
+      domain,
+      slug,
+      title: humanizeSlug(slug),
+      refCount: refs.length,
+      sampleRefs: refs.slice(0, 3),
+    });
+  }
+
+  async function handleDeleteConfirm(slug: string) {
+    if (!deleteDialog) return;
+    const { domain } = deleteDialog;
+    const isOrdered = domain === "foundations" || domain === "accessibility";
+    // Content sub-domain (patterns/product/writing) paths land under content/src/<sub>/
+    const filePath = isOrdered
+      ? `${domain}/src/${slug}.md`
+      : `content/src/${domain}/${slug}.md`;
+
+    try {
+      if (isOrdered) {
+        const current = await loadOrderManifest(octokit, `${domain}/src`);
+        if (current) {
+          const nextOrder = removeSlug(current.order, slug);
+          submissionCartSingleton.add({
+            path: `${domain}/src/_order.json`,
+            content: JSON.stringify(nextOrder, null, 2) + "\n",
+            basedOnSha: current.sha,
+            addedAt: Date.now(),
+          });
+        }
+      }
+      submissionCartSingleton.add({
+        path: filePath,
+        content: "",
+        basedOnSha: "",
+        addedAt: Date.now(),
+        deleted: true,
+      });
+      // Optimistically remove the row so the sidebar reflects the pending delete
+      setEntries((prev) =>
+        prev
+          ? {
+              ...prev,
+              [domain]: prev[domain].filter((p) => p !== filePath),
+            }
+          : prev,
+      );
+      setDeleteDialog(null);
+      // If the deleted file is currently active, navigate to the dashboard
+      if (activePath === filePath) onSelect(null);
+    } catch (err) {
+      console.error("Delete section failed:", err);
+      window.alert(
+        `Couldn't delete section: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      setDeleteDialog(null);
+    }
   }
 
   useEffect(() => {
@@ -320,23 +450,42 @@ export function Sidebar({
     );
   }
 
-  function row(path: string, label: string) {
+  // Unified row renderer for all groups.
+  // Preserves: active-row highlight, draft-pending dot, onClick navigation.
+  // leftHandle: drag grip element for ordered groups; null for unordered groups.
+  // trashable: all groups except components (registry-driven, not author-curated).
+  function renderRow({
+    path,
+    domain,
+    leftHandle,
+  }: {
+    path: string;
+    domain: SectionKey;
+    leftHandle: React.ReactNode | null;
+  }) {
+    const slug = slugFromPath(path);
     const isActive = activePath === path;
     const isDraft = pendingPaths.has(path);
+    const trashable = domain !== "components";
     return (
       <Flex
-        key={path}
-        justify="between"
         align="center"
+        gap="2"
         px="3"
         py="1"
         style={{
           cursor: "pointer",
           background: isActive ? "var(--accent-3)" : "transparent",
+          borderRadius: 4,
         }}
         onClick={() => onSelect(path)}
+        title={path}
+        data-detail="path"
       >
-        <Text size="2">{label}</Text>
+        {leftHandle}
+        <Text size="2" style={{ flex: 1 }}>
+          {humanizeSlug(slug)}
+        </Text>
         {isDraft && (
           <span
             className="draft-dot"
@@ -347,8 +496,30 @@ export function Sidebar({
               borderRadius: "50%",
               background: "var(--accent-9)",
               display: "inline-block",
+              flexShrink: 0,
             }}
           />
+        )}
+        {trashable && (
+          <button
+            type="button"
+            aria-label={`Delete ${slug}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              openDeleteDialog(domain, slug);
+            }}
+            className="sidebar-row-trash"
+            style={{
+              background: "transparent",
+              border: 0,
+              cursor: "pointer",
+              flexShrink: 0,
+              padding: "0 2px",
+              lineHeight: 1,
+            }}
+          >
+            🗑
+          </button>
         )}
       </Flex>
     );
@@ -372,6 +543,11 @@ export function Sidebar({
         overflow: "auto",
       }}
     >
+      <style>{`
+        .sidebar-row-trash { opacity: 0; transition: opacity 80ms; }
+        li:hover .sidebar-row-trash { opacity: 0.7; }
+        li .sidebar-row-trash:hover { opacity: 1; }
+      `}</style>
       <Flex
         align="center"
         gap="2"
@@ -422,7 +598,7 @@ export function Sidebar({
             "foundations",
             "Foundations",
             entries.foundations.length,
-            "sidebar-section-foundations-list",
+            "list-foundations",
             () => {
               const existingSlugs = entries.foundations.map(slugFromPath);
               setAddDialog({ domain: "foundations", existingSlugs });
@@ -430,13 +606,43 @@ export function Sidebar({
           )}
           {!sectionCollapsed.foundations && (
             <Box
-              id="sidebar-section-foundations-list"
+              id="list-foundations"
               role="group"
               aria-labelledby="sidebar-section-foundations-header"
             >
-              {entries.foundations.map((name) =>
-                row(`foundations/src/${name}`, name),
-              )}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(event) => handleReorderDrop("foundations", event)}
+              >
+                <SortableContext
+                  items={entries.foundations.map(slugFromPath)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <ul
+                    role="list"
+                    style={{ listStyle: "none", padding: 0, margin: 0 }}
+                  >
+                    {entries.foundations.map((name) => {
+                      const slug = slugFromPath(name);
+                      const fullPath = `foundations/src/${name}`;
+                      return (
+                        <ReorderHandle key={slug} id={slug}>
+                          {({ setNodeRef, style, handle }) => (
+                            <li ref={setNodeRef} style={style}>
+                              {renderRow({
+                                path: fullPath,
+                                domain: "foundations",
+                                leftHandle: handle,
+                              })}
+                            </li>
+                          )}
+                        </ReorderHandle>
+                      );
+                    })}
+                  </ul>
+                </SortableContext>
+              </DndContext>
             </Box>
           )}
         </Box>
@@ -448,7 +654,7 @@ export function Sidebar({
             "accessibility",
             "Accessibility",
             entries.accessibility.length,
-            "sidebar-section-accessibility-list",
+            "list-accessibility",
             () => {
               const existingSlugs = entries.accessibility.map(slugFromPath);
               setAddDialog({ domain: "accessibility", existingSlugs });
@@ -456,13 +662,43 @@ export function Sidebar({
           )}
           {!sectionCollapsed.accessibility && (
             <Box
-              id="sidebar-section-accessibility-list"
+              id="list-accessibility"
               role="group"
               aria-labelledby="sidebar-section-accessibility-header"
             >
-              {entries.accessibility.map((name) =>
-                row(`accessibility/src/${name}`, name),
-              )}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(event) => handleReorderDrop("accessibility", event)}
+              >
+                <SortableContext
+                  items={entries.accessibility.map(slugFromPath)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <ul
+                    role="list"
+                    style={{ listStyle: "none", padding: 0, margin: 0 }}
+                  >
+                    {entries.accessibility.map((name) => {
+                      const slug = slugFromPath(name);
+                      const fullPath = `accessibility/src/${name}`;
+                      return (
+                        <ReorderHandle key={slug} id={slug}>
+                          {({ setNodeRef, style, handle }) => (
+                            <li ref={setNodeRef} style={style}>
+                              {renderRow({
+                                path: fullPath,
+                                domain: "accessibility",
+                                leftHandle: handle,
+                              })}
+                            </li>
+                          )}
+                        </ReorderHandle>
+                      );
+                    })}
+                  </ul>
+                </SortableContext>
+              </DndContext>
             </Box>
           )}
         </Box>
@@ -473,7 +709,7 @@ export function Sidebar({
         if (items.length === 0) return null;
         const label = `Content — ${group[0]!.toUpperCase()}${group.slice(1)}`;
         const collapsed = sectionCollapsed[group];
-        const listId = `sidebar-section-${group}-list`;
+        const listId = `list-${group}`;
         return (
           <Box key={group}>
             {sectionHeader(group, label, items.length, listId, () => {
@@ -486,7 +722,20 @@ export function Sidebar({
                 role="group"
                 aria-labelledby={`sidebar-section-${group}-header`}
               >
-                {items.map((name) => row(`content/src/${group}/${name}`, name))}
+                <ul
+                  role="list"
+                  style={{ listStyle: "none", padding: 0, margin: 0 }}
+                >
+                  {items.map((path) => (
+                    <li key={path}>
+                      {renderRow({
+                        path: `content/src/${group}/${path}`,
+                        domain: group,
+                        leftHandle: null,
+                      })}
+                    </li>
+                  ))}
+                </ul>
               </Box>
             )}
           </Box>
@@ -499,16 +748,29 @@ export function Sidebar({
             "components",
             "Components",
             entries.components.length,
-            "sidebar-section-components-list",
+            "list-components",
             null,
           )}
           {!sectionCollapsed.components && (
             <Box
-              id="sidebar-section-components-list"
+              id="list-components"
               role="group"
               aria-labelledby="sidebar-section-components-header"
             >
-              {componentsVisible.map((slug) => row(`workspace/${slug}`, slug))}
+              <ul
+                role="list"
+                style={{ listStyle: "none", padding: 0, margin: 0 }}
+              >
+                {componentsVisible.map((slug) => (
+                  <li key={slug}>
+                    {renderRow({
+                      path: `workspace/${slug}`,
+                      domain: "components",
+                      leftHandle: null,
+                    })}
+                  </li>
+                ))}
+              </ul>
               {!expanded &&
                 entries.components.length > COMPONENT_VISIBLE_CAP && (
                   <Box px="3" py="1">
@@ -550,6 +812,18 @@ export function Sidebar({
               );
             }
           }}
+        />
+      )}
+      {deleteDialog && (
+        <DeleteSectionDialog
+          open
+          slug={deleteDialog.slug}
+          title={deleteDialog.title}
+          domain={deleteDialog.domain}
+          refCount={deleteDialog.refCount}
+          sampleRefs={deleteDialog.sampleRefs}
+          onCancel={() => setDeleteDialog(null)}
+          onConfirm={handleDeleteConfirm}
         />
       )}
     </Flex>
