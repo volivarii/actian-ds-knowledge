@@ -9,7 +9,11 @@ export function refTypeFor(domain: Domain): RefType {
   return domain === "accessibility" ? "a11y_refs" : "motion_refs";
 }
 
-const FRONTMATTER_RE = /^---\s*\n([\s\S]*?)\n---\s*\n/;
+// Use `[ \t]*` around the `---` fences instead of `\s*` — `\s` matches
+// newlines, so `\s*\n` is greedy and can swallow a blank line that
+// separates the frontmatter from the body. The blank line is part of the
+// body, not the frontmatter envelope.
+const FRONTMATTER_RE = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*\n/;
 const REF_BLOCK_BY_TYPE_RE = (type: RefType) =>
   new RegExp(`^${type}:\\s*\\n((?:\\s*-\\s+\\{[^}]*\\}\\s*\\n?)+)`, "m");
 const REF_ENTRY_BY_SLUG_RE = (slug: string) =>
@@ -21,6 +25,22 @@ function formatEntry(slug: string, note: string | null): string {
   }
   const escaped = note.replace(/"/g, '\\"');
   return `  - { ref: ${slug}, note: "${escaped}" }`;
+}
+
+// Reconstruct a frontmatter-bearing source from a rewritten fmBlock. The
+// FRONTMATTER_RE capture group excludes the trailing `\n` before the
+// closing `---` (it's consumed by the end pattern), so if the rewritten
+// fmBlock doesn't end in `\n` the closing `---` would glue onto the last
+// content line and break YAML. Normalise here.
+function reassemble(
+  source: string,
+  fmMatch: RegExpMatchArray,
+  fmBlock: string,
+): string {
+  const safeBlock = fmBlock.endsWith("\n") ? fmBlock : `${fmBlock}\n`;
+  const before = source.slice(0, fmMatch.index ?? 0);
+  const after = source.slice((fmMatch.index ?? 0) + (fmMatch[0]?.length ?? 0));
+  return `${before}---\n${safeBlock}---\n${after}`;
 }
 
 export interface RefPick {
@@ -55,9 +75,7 @@ export function addRefToFrontmatter(
     newFmBlock = `${trimmed}\n${refType}:\n${newEntry}\n`;
   }
 
-  const before = source.slice(0, fm.index ?? 0);
-  const after = source.slice((fm.index ?? 0) + (fm[0]?.length ?? 0));
-  return `${before}---\n${newFmBlock}---\n${after}`;
+  return reassemble(source, fm, newFmBlock);
 }
 
 export function removeRefFromFrontmatter(
@@ -83,7 +101,5 @@ export function removeRefFromFrontmatter(
     fmBlock = fmBlock.replace(blockRe, `${refType}:\n${newEntries}`);
   }
 
-  const before = source.slice(0, fm.index ?? 0);
-  const after = source.slice((fm.index ?? 0) + (fm[0]?.length ?? 0));
-  return `${before}---\n${fmBlock}---\n${after}`;
+  return reassemble(source, fm, fmBlock);
 }
