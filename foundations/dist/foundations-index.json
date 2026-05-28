@@ -1,0 +1,29 @@
+{
+  "_schema_version": 1,
+  "_meta": {
+    "auto_generated": true,
+    "source": "foundations/src/"
+  },
+  "sections": [
+    {
+      "slug": "color-primitives",
+      "title": "Color Primitives"
+    },
+    {
+      "slug": "tokens",
+      "title": "Tokens"
+    },
+    {
+      "slug": "design-guidelines",
+      "title": "Design Guidelines"
+    },
+    {
+      "slug": "handoff-protocol",
+      "title": "Handoff Protocol"
+    },
+    {
+      "slug": "related-guidelines",
+      "title": "Related Guidelines"
+    }
+  ]
+}

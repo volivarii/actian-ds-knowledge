@@ -1295,6 +1295,53 @@ function assertBalancedFences(name, src) {
   }
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Flat foundations-index.json — transversal ref-resolution target
+// ───────────────────────────────────────────────────────────────────────────
+
+// Structural files that are NOT referenceable design sections — excluded from
+// the flat foundations-index. intro = document root (H1); table-of-contents =
+// generated nav. See foundations-refs design 2026-05-29.
+var INDEX_EXCLUDE_SLUGS = { intro: true, "table-of-contents": true };
+
+// Build the flat { _schema_version, _meta, sections:[{slug,title}] } index from
+// the _order.json manifest + each file's first H2. Slug is derived the same way
+// the hierarchical tree derives it (cleanHeading is anchor-safe), so index
+// slugs == tree slugs == the {#anchor} literal.
+function buildFoundationsIndex(srcDir) {
+  var order = readOrderManifest(srcDir);
+  var sections = [];
+  for (var i = 0; i < order.length; i++) {
+    var slug = order[i];
+    if (INDEX_EXCLUDE_SLUGS[slug]) continue;
+    var abs = path.join(srcDir, slug + ".md");
+    var raw = fs.readFileSync(abs, "utf-8");
+    var body = stripFrontmatterEnvelope(raw);
+    var lines = body.split("\n");
+    var title = null;
+    var derivedSlug = null;
+    for (var j = 0; j < lines.length; j++) {
+      var m = /^##\s+(.+?)\s*$/.exec(lines[j]);
+      if (m) {
+        title = astWalk.cleanHeading(m[1]);
+        derivedSlug = astWalk.slugify(title);
+        break;
+      }
+    }
+    if (!derivedSlug) {
+      throw new Error(
+        "foundations-index: " + slug + ".md has no top-level H2 to index.",
+      );
+    }
+    sections.push({ slug: derivedSlug, title: title });
+  }
+  return {
+    _schema_version: 1,
+    _meta: { auto_generated: true, source: "foundations/src/" },
+    sections: sections,
+  };
+}
+
 function runCli(argv) {
   var args = parseArgs(argv);
   var defaults = defaultPaths();
@@ -1404,6 +1451,12 @@ function runCli(argv) {
     { skipPrune: args.noPrune },
   );
 
+  var fIndex = buildFoundationsIndex(srcDir);
+  writeAtomic(
+    path.join(outDir, "foundations-index.json"),
+    JSON.stringify(fIndex, null, 2) + "\n",
+  );
+
   if (!args.noManifest) {
     var manifestResult = updatePathsManifest(manifestPath, derived, sourceRel);
     console.log(
@@ -1442,6 +1495,7 @@ module.exports = {
   buildRootIndex,
   buildBundle,
   buildEmissionPlan,
+  buildFoundationsIndex,
   buildMotionPayload,
   isMotionShape,
   slugifyPatternName,
