@@ -87,3 +87,35 @@ test("foundations: empty _order.json + files on disk → drift error per file", 
   });
   assert.throws(() => foundationsDerive.concatFoundationsSources(dir), /intro/);
 });
+
+const a11yDerive = require(
+  path.join(REPO_ROOT, "scripts", "accessibility", "derive-a11y-index.js"),
+);
+
+test("accessibility: concatA11ySources reads from _order.json", () => {
+  const dir = makeTmpSrcDir({
+    "_order.json": JSON.stringify(["intro", "color-contrast"]),
+    "intro.md": "# Intro\n\nFirst.\n",
+    "color-contrast.md": "# Color contrast\n\nSecond.\n",
+    "AUTHORING.md": "ignored",
+  });
+  const out = a11yDerive.concatA11ySources(dir);
+  assert.match(out, /First\.\s*\n\s*\n\s*---\s*\n\s*\n\s*# Color contrast/);
+});
+
+test("accessibility: drift — slug in _order.json without matching file errors", () => {
+  const dir = makeTmpSrcDir({
+    "_order.json": JSON.stringify(["intro", "missing"]),
+    "intro.md": "# Intro\n",
+  });
+  assert.throws(() => a11yDerive.concatA11ySources(dir), /missing/);
+});
+
+test("accessibility: drift — file on disk not in _order.json errors", () => {
+  const dir = makeTmpSrcDir({
+    "_order.json": JSON.stringify(["intro"]),
+    "intro.md": "# Intro\n",
+    "stray.md": "# Stray\n",
+  });
+  assert.throws(() => a11yDerive.concatA11ySources(dir), /stray/);
+});
