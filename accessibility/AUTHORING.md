@@ -39,7 +39,7 @@ You can also edit any file in any Markdown editor (Typora, iA Writer, Obsidian, 
 ## What happens after you commit
 
 When you open or update a PR that touches `accessibility/src/**`:
-1. The **Derive a11y-index** workflow concatenates the per-section files (sorted by name) and regenerates `accessibility/dist/a11y-index.json` — a slug-keyed index of every section, used by the plugin to attach the right accessibility guidance to each component.
+1. The **Derive a11y-index** workflow reads `accessibility/src/_order.json`, concatenates the per-section files in that declared order, and regenerates `accessibility/dist/a11y-index.json` — a slug-keyed index of every section, used by the plugin to attach the right accessibility guidance to each component.
 2. It commits the regenerated index back to your branch (`chore(accessibility): regenerate a11y-index.json + bump patch`) and bumps the patch version.
 
 You don't need to install Node, run any script, or touch the JSON. The PR shows your MD changes and the auto-generated index side by side.

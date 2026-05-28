@@ -1149,6 +1149,7 @@ function readOrderManifest(srcDir) {
   } catch (err) {
     throw new Error(
       "foundations/src/_order.json is not valid JSON: " + err.message,
+      { cause: err },
     );
   }
   if (
@@ -1179,6 +1180,20 @@ function readSlugFiles(srcDir) {
 
 function assertOrderConsistency(srcDir, order, onDisk) {
   var errors = [];
+  // Duplicate-slug check: an entry appearing twice would cause the same
+  // file to be concatenated twice into the dist output.
+  var seen = new Set();
+  order.forEach(function (slug, idx) {
+    if (seen.has(slug)) {
+      errors.push(
+        '  - _order.json contains duplicate slug "' +
+          slug +
+          '" at index ' +
+          idx,
+      );
+    }
+    seen.add(slug);
+  });
   for (var i = 0; i < order.length; i++) {
     if (!onDisk.has(order[i])) {
       errors.push(

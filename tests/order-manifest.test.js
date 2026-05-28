@@ -88,6 +88,18 @@ test("foundations: empty _order.json + files on disk → drift error per file", 
   assert.throws(() => foundationsDerive.concatFoundationsSources(dir), /intro/);
 });
 
+test("foundations: _order.json with duplicate slug throws drift error", () => {
+  const dir = makeTmpSrcDir({
+    "_order.json": JSON.stringify(["intro", "tokens", "intro"]),
+    "intro.md": "# Intro\n",
+    "tokens.md": "# Tokens\n",
+  });
+  assert.throws(
+    () => foundationsDerive.concatFoundationsSources(dir),
+    /duplicate slug "intro"/,
+  );
+});
+
 const a11yDerive = require(
   path.join(REPO_ROOT, "scripts", "accessibility", "derive-a11y-index.js"),
 );
@@ -118,4 +130,16 @@ test("accessibility: drift — file on disk not in _order.json errors", () => {
     "stray.md": "# Stray\n",
   });
   assert.throws(() => a11yDerive.concatA11ySources(dir), /stray/);
+});
+
+test("accessibility: _order.json with duplicate slug throws drift error", () => {
+  const dir = makeTmpSrcDir({
+    "_order.json": JSON.stringify(["intro", "principles", "intro"]),
+    "intro.md": "# Intro\n",
+    "principles.md": "# Principles\n",
+  });
+  assert.throws(
+    () => a11yDerive.concatA11ySources(dir),
+    /duplicate slug "intro"/,
+  );
 });
