@@ -1107,16 +1107,92 @@ function defaultPaths() {
   };
 }
 
-// Read all per-section MD files under srcDir (sorted alphabetically, AUTHORING.md
-// excluded), trim trailing whitespace from each, and concatenate with
-// `\n\n---\n\n` separators between consecutive files. The result is the input
-// fed to the MD parser AND emitted to dist/foundations.md for the Stripe .md
-// URL pattern (synthesized, not byte-verbatim — see writeOutputs comment).
-// Sort order = canonical section order: numeric `NN-` prefix encodes the H2
-// sequence and is enforced (alphabetical sort matches numeric sort iff every
-// filename uses 2 digits, so we hard-error on violations).
-var NN_PREFIX_RE = /^\d{2}-[a-z0-9-]+\.md$/;
+// Read all per-section MD files under srcDir (ordered by _order.json,
+// AUTHORING.md and other meta files excluded), trim trailing whitespace from
+// each, and concatenate with `\n\n---\n\n` separators between consecutive
+// files. The result is the input fed to the MD parser AND emitted to
+// dist/foundations.md for the Stripe .md URL pattern (synthesized, not
+// byte-verbatim — see writeOutputs comment).
+// Sort order = canonical section order: the per-directory `_order.json`
+// manifest enumerates section slugs in canonical order. This replaces the
+// legacy `NN-<kebab>.md` filename prefix convention so identity (slug) is
+// decoupled from ordering (manifest).
 var FENCE_RE = /^(```|~~~)/;
+
+// _order.json is the per-directory ordering manifest. It MUST list every
+// non-meta `.md` file in the directory by its slug (filename without the
+// .md extension). The derive script reads this manifest to determine
+// concatenation order, replacing the legacy NN-<slug>.md prefix convention.
+// See foundations/src/AUTHORING.md for the authoring story.
+var ORDER_MANIFEST_NAME = "_order.json";
+var META_FILES = new Set(["AUTHORING.md", "README.md", ORDER_MANIFEST_NAME]);
+
+function readOrderManifest(srcDir) {
+  var manifestPath = path.join(srcDir, ORDER_MANIFEST_NAME);
+  var raw;
+  try {
+    raw = fs.readFileSync(manifestPath, "utf8");
+  } catch (err) {
+    throw new Error(
+      "foundations/src/_order.json is missing — required after the NN-prefix migration. See foundations/src/AUTHORING.md.",
+    );
+  }
+  var parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(
+      "foundations/src/_order.json is not valid JSON: " + err.message,
+    );
+  }
+  if (
+    !Array.isArray(parsed) ||
+    !parsed.every(function (x) {
+      return typeof x === "string";
+    })
+  ) {
+    throw new Error(
+      "foundations/src/_order.json must be an array of slug strings",
+    );
+  }
+  return parsed;
+}
+
+function readSlugFiles(srcDir) {
+  return new Set(
+    fs
+      .readdirSync(srcDir)
+      .filter(function (n) {
+        return n.endsWith(".md") && !META_FILES.has(n);
+      })
+      .map(function (n) {
+        return n.replace(/\.md$/, "");
+      }),
+  );
+}
+
+function assertOrderConsistency(srcDir, order, onDisk) {
+  for (var i = 0; i < order.length; i++) {
+    if (!onDisk.has(order[i])) {
+      throw new Error(
+        '_order.json references "' +
+          order[i] +
+          '" but ' +
+          path.join(srcDir, order[i] + ".md") +
+          " does not exist",
+      );
+    }
+  }
+  var orderSet = new Set(order);
+  Array.from(onDisk).forEach(function (slug) {
+    if (!orderSet.has(slug)) {
+      throw new Error(
+        path.join(srcDir, slug + ".md") +
+          " exists but is not listed in _order.json",
+      );
+    }
+  });
+}
 
 // Strip optional YAML frontmatter from a single src file. Per-file frontmatter
 // is OPTIONAL (most files don't carry it). When present, it follows the same
@@ -1169,32 +1245,17 @@ function firstH2Slug(body) {
 // before emission). A warning is emitted in that case so authors know their
 // refs are silently no-op.
 function readFoundationsSources(srcDir, logger) {
-  var entries = fs
-    .readdirSync(srcDir)
-    .filter(function (n) {
-      return n.endsWith(".md") && n !== "AUTHORING.md";
-    })
-    .sort();
-  if (entries.length === 0) {
+  var order = readOrderManifest(srcDir);
+  var onDisk = readSlugFiles(srcDir);
+  if (onDisk.size === 0) {
     throw new Error(
-      "no .md files found under " + srcDir + " (excluding AUTHORING.md)",
+      "no .md files found under " + srcDir + " (excluding meta files)",
     );
   }
-  // Enforce the NN-<kebab>.md naming convention so alphabetical sort always
-  // matches numeric order. Without this, an author dropping `10-foo.md`
-  // would silently sort before `02-color-primitives.md`, scrambling sections.
-  var bad = entries.filter(function (n) {
-    return !NN_PREFIX_RE.test(n);
+  assertOrderConsistency(srcDir, order, onDisk);
+  var entries = order.map(function (slug) {
+    return slug + ".md";
   });
-  if (bad.length > 0) {
-    throw new Error(
-      "filenames under " +
-        srcDir +
-        " must match `NN-<kebab>.md` (got: " +
-        bad.join(", ") +
-        ")",
-    );
-  }
   var bodies = [];
   var frontmattersByTopSlug = {};
   for (var i = 0; i < entries.length; i++) {
@@ -1247,31 +1308,12 @@ function readFoundationsSources(srcDir, logger) {
 // pay the parse cost or fail on YAML typos that only matter to the derive
 // pipeline proper (which surfaces those errors via readFoundationsSources).
 function concatFoundationsSources(srcDir) {
-  var entries = fs
-    .readdirSync(srcDir)
-    .filter(function (n) {
-      return n.endsWith(".md") && n !== "AUTHORING.md";
-    })
-    .sort();
-  if (entries.length === 0) {
-    throw new Error(
-      "no .md files found under " + srcDir + " (excluding AUTHORING.md)",
-    );
-  }
-  var bad = entries.filter(function (n) {
-    return !NN_PREFIX_RE.test(n);
-  });
-  if (bad.length > 0) {
-    throw new Error(
-      "filenames under " +
-        srcDir +
-        " must match `NN-<kebab>.md` (got: " +
-        bad.join(", ") +
-        ")",
-    );
-  }
-  return entries
-    .map(function (name) {
+  var order = readOrderManifest(srcDir);
+  var onDisk = readSlugFiles(srcDir);
+  assertOrderConsistency(srcDir, order, onDisk);
+  return order
+    .map(function (slug) {
+      var name = slug + ".md";
       var abs = path.join(srcDir, name);
       var raw = fs.readFileSync(abs, "utf-8");
       // Strip frontmatter envelope without parsing the YAML body.
