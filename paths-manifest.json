@@ -498,10 +498,10 @@
   "collections": {
     "accessibility.guide": {
       "dir": "accessibility/src",
-      "pattern": "{order}-{slug}.md",
+      "pattern": "{slug}.md",
       "type": "markdown",
       "origin": "human",
-      "description": "WCAG 2.1 AA guidance, authored as per-section files. Numeric `NN-` prefix encodes canonical order (00-intro, 01-principles, … 12-designer-handoff-checklist). Consumers read all *.md (excluding AUTHORING.md) sorted alphabetically and concatenate."
+      "description": "WCAG 2.1 AA guidance, authored as per-section files (intro, principles, … designer-handoff-checklist). Canonical order is declared in `_order.json` (sibling manifest); consumers either follow that order or fall back to alphabetical. AUTHORING.md is excluded."
     },
     "components.categoriesSrc": {
       "dir": "components/src/categories",
@@ -558,10 +558,10 @@
     },
     "foundations.guide": {
       "dir": "foundations/src",
-      "pattern": "{order}-{slug}.md",
+      "pattern": "{slug}.md",
       "type": "markdown",
       "origin": "human",
-      "description": "Master reference for Actian DS — primitives, tokens, scales, design rules. Authored as per-section files. Numeric `NN-` prefix encodes canonical order (00-intro, 01-table-of-contents, 02-color-primitives, 03-tokens, 04-design-guidelines, 05-handoff-protocol, 06-related-guidelines). Consumers read all *.md (excluding AUTHORING.md) sorted alphabetically and concatenate."
+      "description": "Master reference for Actian DS — primitives, tokens, scales, design rules. Authored as per-section files (intro, table-of-contents, color-primitives, tokens, design-guidelines, handoff-protocol, related-guidelines). Canonical order is declared in `_order.json` (sibling manifest); consumers either follow that order or fall back to alphabetical. AUTHORING.md is excluded."
     },
     "foundations.leaf": {
       "dir": "foundations/dist",

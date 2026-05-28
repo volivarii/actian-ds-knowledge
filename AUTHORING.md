@@ -81,7 +81,7 @@ The slug system protects against name drift; canonical names live in their autho
 ## Adding new content
 
 - New component guideline: create `components/src/<slug>/_meta.yml` + the per-domain files you want to author (`content.md`, `usage.md`, `design.md`, `behavior.md`, `tokens.yml`). See `components/src/AUTHORING.md`.
-- New foundation token: edit the relevant file under `foundations/src/` (typically `03-tokens.md`); CI regenerates the hierarchical `foundations/dist/` tree (Pattern H) on PR
+- New foundation token: edit the relevant file under `foundations/src/` (typically `tokens.md`); CI regenerates the hierarchical `foundations/dist/` tree (Pattern H) on PR
 - New category default content: edit `components/src/categories/<slug>.md`; CI regenerates dist
 - New domain (rare): consult the plugin lead; new directory + paths-manifest entry + CI workflow
 

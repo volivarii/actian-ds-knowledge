@@ -62,7 +62,7 @@ test("motion slugs are unique", function () {
 
 test("known canonical slug mapping is correct (now author-declared, D2)", function () {
   // Canonical slugs are now sourced from `{#anchor}` markers in
-  // foundations/src/03-tokens.md (D2 — Substrate Doctrine P6). This test
+  // foundations/src/tokens.md (D2 — Substrate Doctrine P6). This test
   // remains the load-bearing contract for consumers; the values must not
   // drift even though the derivation mechanism changed.
   var list = patternsList(motion);
