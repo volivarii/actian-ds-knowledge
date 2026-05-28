@@ -34,7 +34,7 @@ test("foundations: concatFoundationsSources reads from _order.json", () => {
   assert.match(out, /First\.\s*\n\s*\n\s*---\s*\n\s*\n\s*# Tokens/);
 });
 
-test("foundations: _order.json determines order even when filenames are not alphabetical", () => {
+test("foundations: _order.json wins against alphabetical filename order", () => {
   const dir = makeTmpSrcDir({
     "_order.json": JSON.stringify(["zeta", "alpha"]),
     "alpha.md": "# Alpha\n",
@@ -61,10 +61,7 @@ test("foundations: drift — file on disk not in _order.json errors", () => {
     "intro.md": "# Intro\n",
     "stray.md": "# Stray\n",
   });
-  assert.throws(
-    () => foundationsDerive.concatFoundationsSources(dir),
-    /stray/,
-  );
+  assert.throws(() => foundationsDerive.concatFoundationsSources(dir), /stray/);
 });
 
 test("foundations: AUTHORING.md is always excluded (never in _order.json, never an error)", () => {
@@ -74,4 +71,19 @@ test("foundations: AUTHORING.md is always excluded (never in _order.json, never 
     "AUTHORING.md": "# Authoring guide\n",
   });
   assert.doesNotThrow(() => foundationsDerive.concatFoundationsSources(dir));
+});
+
+test("foundations: empty _order.json + empty dir → empty string, no error", () => {
+  const dir = makeTmpSrcDir({
+    "_order.json": JSON.stringify([]),
+  });
+  assert.equal(foundationsDerive.concatFoundationsSources(dir), "");
+});
+
+test("foundations: empty _order.json + files on disk → drift error per file", () => {
+  const dir = makeTmpSrcDir({
+    "_order.json": JSON.stringify([]),
+    "intro.md": "# Intro\n",
+  });
+  assert.throws(() => foundationsDerive.concatFoundationsSources(dir), /intro/);
 });

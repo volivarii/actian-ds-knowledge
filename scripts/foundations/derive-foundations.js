@@ -1114,16 +1114,16 @@ function defaultPaths() {
 // dist/foundations.md for the Stripe .md URL pattern (synthesized, not
 // byte-verbatim — see writeOutputs comment).
 // Sort order = canonical section order: the per-directory `_order.json`
-// manifest enumerates section slugs in canonical order. This replaces the
-// legacy `NN-<kebab>.md` filename prefix convention so identity (slug) is
-// decoupled from ordering (manifest).
+// manifest enumerates section slugs in canonical order (see
+// ORDER_MANIFEST_NAME below).
 var FENCE_RE = /^(```|~~~)/;
 
 // _order.json is the per-directory ordering manifest. It MUST list every
 // non-meta `.md` file in the directory by its slug (filename without the
-// .md extension). The derive script reads this manifest to determine
-// concatenation order, replacing the legacy NN-<slug>.md prefix convention.
-// See foundations/src/AUTHORING.md for the authoring story.
+// .md extension), in canonical concatenation order. Slug identity is
+// decoupled from filesystem ordering; the manifest is the single source
+// of truth for section order. See foundations/src/AUTHORING.md for the
+// authoring story.
 var ORDER_MANIFEST_NAME = "_order.json";
 var META_FILES = new Set(["AUTHORING.md", "README.md", ORDER_MANIFEST_NAME]);
 
@@ -1133,8 +1133,14 @@ function readOrderManifest(srcDir) {
   try {
     raw = fs.readFileSync(manifestPath, "utf8");
   } catch (err) {
+    if (err.code === "ENOENT") {
+      throw new Error(
+        "foundations/src/_order.json is missing — every substrate directory must declare its section order via this manifest. See foundations/src/AUTHORING.md.",
+      );
+    }
     throw new Error(
-      "foundations/src/_order.json is missing — required after the NN-prefix migration. See foundations/src/AUTHORING.md.",
+      "foundations/src/_order.json could not be read: " + err.message,
+      { cause: err },
     );
   }
   var parsed;
@@ -1172,10 +1178,11 @@ function readSlugFiles(srcDir) {
 }
 
 function assertOrderConsistency(srcDir, order, onDisk) {
+  var errors = [];
   for (var i = 0; i < order.length; i++) {
     if (!onDisk.has(order[i])) {
-      throw new Error(
-        '_order.json references "' +
+      errors.push(
+        '  - _order.json references "' +
           order[i] +
           '" but ' +
           path.join(srcDir, order[i] + ".md") +
@@ -1186,12 +1193,37 @@ function assertOrderConsistency(srcDir, order, onDisk) {
   var orderSet = new Set(order);
   Array.from(onDisk).forEach(function (slug) {
     if (!orderSet.has(slug)) {
-      throw new Error(
-        path.join(srcDir, slug + ".md") +
+      errors.push(
+        "  - " +
+          path.join(srcDir, slug + ".md") +
           " exists but is not listed in _order.json",
       );
     }
   });
+  if (errors.length > 0) {
+    throw new Error(
+      "_order.json drift in " + srcDir + ":\n" + errors.join("\n"),
+    );
+  }
+}
+
+// Strip the leading `---\n…\n---\n` YAML frontmatter envelope from a raw src
+// file and return the body. If no envelope is present, returns `raw` unchanged.
+// Pure string operation: does NOT parse the YAML payload and does NOT throw.
+// Used by both extractOptionalFrontmatter (which then YAML-parses the captured
+// envelope) and concatFoundationsSources (which discards the envelope).
+function stripFrontmatterEnvelope(raw) {
+  if (!/^---\s*(\r?\n|$)/.test(raw)) return raw;
+  var lines = raw.split(/\r?\n/);
+  for (var i = 1; i < lines.length; i++) {
+    if (/^---\s*$/.test(lines[i])) {
+      return lines
+        .slice(i + 1)
+        .join("\n")
+        .replace(/^\n+/, "");
+    }
+  }
+  return raw;
 }
 
 // Strip optional YAML frontmatter from a single src file. Per-file frontmatter
@@ -1214,7 +1246,7 @@ function extractOptionalFrontmatter(name, raw) {
       split.frontmatter,
       split.frontmatterLineOffset,
     );
-    return { frontmatter: data, body: split.body };
+    return { frontmatter: data, body: stripFrontmatterEnvelope(raw) };
   } catch (err) {
     throw new Error(name + " frontmatter: " + err.message);
   }
@@ -1232,8 +1264,10 @@ function firstH2Slug(body) {
   return null;
 }
 
-// Walk srcDir, read every .md file (excluding AUTHORING.md), strip optional
-// frontmatter, and return:
+// Read every .md file listed in `_order.json` for `srcDir` (meta files like
+// AUTHORING.md, README.md, and `_order.json` itself are excluded by the
+// manifest contract; drift between disk and manifest is detected before the
+// read), strip optional frontmatter, and return:
 //   {
 //     md: <concatenated body, joined with "\n\n---\n\n">,
 //     frontmattersByTopSlug: { <topH2Slug>: <frontmatterObject>, ... },
@@ -1317,19 +1351,7 @@ function concatFoundationsSources(srcDir) {
       var abs = path.join(srcDir, name);
       var raw = fs.readFileSync(abs, "utf-8");
       // Strip frontmatter envelope without parsing the YAML body.
-      var body = raw;
-      if (/^---\s*(\r?\n|$)/.test(raw)) {
-        var lines = raw.split(/\r?\n/);
-        for (var i = 1; i < lines.length; i++) {
-          if (/^---\s*$/.test(lines[i])) {
-            body = lines
-              .slice(i + 1)
-              .join("\n")
-              .replace(/^\n+/, "");
-            break;
-          }
-        }
-      }
+      var body = stripFrontmatterEnvelope(raw);
       assertBalancedFences(name, body);
       return body.replace(/\s+$/, "");
     })
