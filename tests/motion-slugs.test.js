@@ -22,11 +22,11 @@ var motion = JSON.parse(
   ),
 );
 
-// Read motion-pattern source from 03-tokens.md (where the Motion section lives
+// Read motion-pattern source from tokens.md (where the Motion section lives
 // post-split). The motion patterns block + their `{#slug}` anchors are
 // constrained to that one file.
 var foundationsSrc = fs.readFileSync(
-  path.resolve(__dirname, "..", "foundations", "src", "03-tokens.md"),
+  path.resolve(__dirname, "..", "foundations", "src", "tokens.md"),
   "utf8",
 );
 
