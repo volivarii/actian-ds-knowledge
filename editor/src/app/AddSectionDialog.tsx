@@ -11,17 +11,20 @@ function deriveSlug(title: string): string {
     .replace(/-{2,}/g, "-");
 }
 
+// Humanizes a domain string that may contain a "/" separator.
+// e.g. "content/patterns" → "Content / Patterns", "foundations" → "Foundations"
 function humanize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-function pathFor(domain: string, slug: string): string {
-  return `${domain}/src/${slug || "<slug>"}.md`;
+  return s
+    .split("/")
+    .map((seg) => seg.charAt(0).toUpperCase() + seg.slice(1))
+    .join(" / ");
 }
 
 export interface AddSectionDialogProps {
   open: boolean;
   domain: string;
+  /** Pre-computed path prefix, e.g. "foundations/src" or "content/src/patterns". */
+  pathPrefix: string;
   existingSlugs: string[];
   onConfirm: (value: { title: string; slug: string }) => void;
   onCancel: () => void;
@@ -30,6 +33,7 @@ export interface AddSectionDialogProps {
 export function AddSectionDialog({
   open,
   domain,
+  pathPrefix,
   existingSlugs,
   onConfirm,
   onCancel,
@@ -90,11 +94,13 @@ export function AddSectionDialog({
               }}
             />
             <Text size="1" color="gray" mt="1" data-detail="path">
-              {pathFor(domain, slug)}
+              {`${pathPrefix}/${slug || "<slug>"}.md`}
             </Text>
-            {slug.length > 0 && !validShape && (
+            {title.trim().length > 0 && !validShape && (
               <Text size="1" color="red" mt="1">
-                Lowercase letters, digits, and hyphens only.
+                {slug.length === 0
+                  ? "Filename must start with a lowercase letter."
+                  : "Lowercase letters, digits, and hyphens only."}
               </Text>
             )}
             {collides && (

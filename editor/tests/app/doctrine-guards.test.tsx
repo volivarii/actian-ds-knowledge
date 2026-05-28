@@ -160,6 +160,7 @@ test("doctrine: AddSectionDialog renders no forbidden vocabulary outside data-de
       <AddSectionDialog
         open
         domain="foundations"
+        pathPrefix="foundations/src"
         existingSlugs={[]}
         onConfirm={() => {}}
         onCancel={() => {}}

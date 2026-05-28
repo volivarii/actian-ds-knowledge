@@ -286,7 +286,12 @@ export function Sidebar({
         .list()
         .find((e) => e.path === orderPath);
       const sha = cartEntry ? cartEntry.basedOnSha : orderShas[domain];
-      if (!sha) return;
+      if (!sha) {
+        window.alert(
+          `Couldn't reorder: missing _order.json for ${domain}. Try refreshing.`,
+        );
+        return;
+      }
       const currentList = entries![domain].map(slugFromPath);
       const newIndex = currentList.indexOf(over.id as string);
       if (newIndex < 0) return;
@@ -334,19 +339,24 @@ export function Sidebar({
     const filePath = isOrdered
       ? `${domain}/src/${slug}.md`
       : `content/src/${domain}/${slug}.md`;
+    // Capture at handler entry — don't read activePath after the await (Fix #6).
+    const wasActive = activePath === filePath;
 
     try {
       if (isOrdered) {
         const current = await readOrderState(domain);
-        if (current) {
-          const nextOrder = removeSlug(current.order, slug);
-          submissionCartSingleton.add({
-            path: `${domain}/src/_order.json`,
-            content: JSON.stringify(nextOrder, null, 2) + "\n",
-            basedOnSha: current.sha,
-            addedAt: Date.now(),
-          });
+        if (!current) {
+          throw new Error(
+            `Cannot delete from ${domain}: _order.json is missing. Refresh and try again.`,
+          );
         }
+        const nextOrder = removeSlug(current.order, slug);
+        submissionCartSingleton.add({
+          path: `${domain}/src/_order.json`,
+          content: JSON.stringify(nextOrder, null, 2) + "\n",
+          basedOnSha: current.sha,
+          addedAt: Date.now(),
+        });
       }
       submissionCartSingleton.add({
         path: filePath,
@@ -355,18 +365,20 @@ export function Sidebar({
         addedAt: Date.now(),
         deleted: true,
       });
-      // Optimistically remove the row so the sidebar reflects the pending delete
+      // Optimistically remove the row so the sidebar reflects the pending delete.
+      // Fix #1: filter using slugFromPath so it matches against bare filenames
+      // (e.g. "color.md") rather than full paths (e.g. "foundations/src/color.md").
       setEntries((prev) =>
         prev
           ? {
               ...prev,
-              [domain]: prev[domain].filter((p) => p !== filePath),
+              [domain]: prev[domain].filter((p) => slugFromPath(p) !== slug),
             }
           : prev,
       );
       setDeleteDialog(null);
-      // If the deleted file is currently active, navigate to the dashboard
-      if (activePath === filePath) onSelect(null);
+      // If the deleted file was active when the user confirmed, navigate to the dashboard.
+      if (wasActive) onSelect(null);
     } catch (err) {
       console.error("Delete section failed:", err);
       window.alert(
@@ -875,6 +887,11 @@ export function Sidebar({
             addDialog.subDir
               ? `${addDialog.domain}/${addDialog.subDir}`
               : addDialog.domain
+          }
+          pathPrefix={
+            addDialog.subDir
+              ? `${addDialog.domain}/src/${addDialog.subDir}`
+              : `${addDialog.domain}/src`
           }
           existingSlugs={addDialog.existingSlugs}
           onCancel={() => setAddDialog(null)}

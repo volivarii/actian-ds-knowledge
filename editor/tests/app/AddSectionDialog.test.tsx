@@ -14,6 +14,7 @@ function renderDialog(
   const defaults: Parameters<typeof AddSectionDialog>[0] = {
     open: true,
     domain: "foundations",
+    pathPrefix: "foundations/src",
     existingSlugs: [],
     onConfirm: () => {},
     onCancel: () => {},
