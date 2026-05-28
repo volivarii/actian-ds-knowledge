@@ -1303,10 +1303,15 @@ function assertBalancedFences(name, src) {
 // Flat foundations-index.json — transversal ref-resolution target
 // ───────────────────────────────────────────────────────────────────────────
 
-// Structural files that are NOT referenceable design sections — excluded from
-// the flat foundations-index. intro = document root (H1); table-of-contents =
-// generated nav. See foundations-refs design 2026-05-29.
-var INDEX_EXCLUDE_SLUGS = { intro: true, "table-of-contents": true };
+// Sections excluded from the flat referenceable index:
+//  - intro (H1 document root) + table-of-contents (generated nav): structural, not design sections.
+//  - everything in SKIP_H2_SLUGS: those sections are intentionally NOT emitted to dist, so
+//    they have no resolvable content and must not be advertised as referenceable.
+// Deriving from SKIP_H2_SLUGS keeps the referenceable set aligned with what actually has dist backing.
+var INDEX_EXCLUDE_SLUGS = Object.assign(
+  { intro: true, "table-of-contents": true },
+  SKIP_H2_SLUGS,
+);
 
 // Build the flat { _schema_version, _meta, sections:[{slug,title}] } index from
 // the _order.json manifest + each file's first H2. Slug is derived the same way
