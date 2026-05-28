@@ -5,6 +5,9 @@ import { listDirectories, listFilesByGlob } from "./githubApi";
 import { loadOrderManifest } from "../lib/orderManifestLoader";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
+import { AddSectionDialog } from "./AddSectionDialog";
+import { appendSlug } from "../lib/orderManifest";
+import { buildMarkdownStub } from "../lib/markdownStubs";
 
 interface SidebarProps {
   octokit: Octokit;
@@ -119,6 +122,11 @@ export function Sidebar({
     foundations: string | null;
     accessibility: string | null;
   }>({ foundations: null, accessibility: null });
+  const [addDialog, setAddDialog] = useState<{
+    domain: string;
+    subDir?: string;
+    existingSlugs: string[];
+  } | null>(null);
 
   function toggleSection(group: SectionKey) {
     setSectionCollapsed((prev) => {
@@ -130,6 +138,43 @@ export function Sidebar({
       }
       return next;
     });
+  }
+
+  async function handleAddSection(
+    ctx: { domain: string; subDir?: string },
+    slug: string,
+    title: string,
+  ) {
+    const dir = ctx.subDir
+      ? `${ctx.domain}/src/${ctx.subDir}`
+      : `${ctx.domain}/src`;
+    const filePath = `${dir}/${slug}.md`;
+    const isOrdered =
+      ctx.domain === "foundations" || ctx.domain === "accessibility";
+
+    if (isOrdered) {
+      const current = await loadOrderManifest(octokit, `${ctx.domain}/src`);
+      if (!current) {
+        throw new Error(
+          `handleAddSection: ${ctx.domain}/src/_order.json missing`,
+        );
+      }
+      const nextOrder = appendSlug(current.order, slug);
+      submissionCartSingleton.add({
+        path: `${ctx.domain}/src/_order.json`,
+        content: JSON.stringify(nextOrder, null, 2) + "\n",
+        basedOnSha: current.sha,
+        addedAt: Date.now(),
+      });
+    }
+
+    submissionCartSingleton.add({
+      path: filePath,
+      content: buildMarkdownStub(filePath, { title }),
+      basedOnSha: "",
+      addedAt: Date.now(),
+    });
+    onSelect(filePath);
   }
 
   useEffect(() => {
@@ -198,6 +243,7 @@ export function Sidebar({
     label: string,
     count: number,
     listId: string,
+    onAdd: (() => void) | null,
   ) {
     const collapsed = sectionCollapsed[key];
     const headerId = `sidebar-section-${key}-header`;
@@ -243,9 +289,33 @@ export function Sidebar({
           </span>
           <Heading size="2">{label}</Heading>
         </Flex>
-        <Text size="1" color="gray">
-          {count}
-        </Text>
+        <Flex align="center" gap="2">
+          {onAdd != null && (
+            <button
+              type="button"
+              aria-label={`Add ${label} section`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAdd();
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                padding: "0 2px",
+                cursor: "pointer",
+                color: "var(--accent-11)",
+                fontSize: "var(--font-size-1)",
+                lineHeight: 1,
+                fontFamily: "inherit",
+              }}
+            >
+              + Add section
+            </button>
+          )}
+          <Text size="1" color="gray">
+            {count}
+          </Text>
+        </Flex>
       </Flex>
     );
   }
@@ -353,6 +423,10 @@ export function Sidebar({
             "Foundations",
             entries.foundations.length,
             "sidebar-section-foundations-list",
+            () => {
+              const existingSlugs = entries.foundations.map(slugFromPath);
+              setAddDialog({ domain: "foundations", existingSlugs });
+            },
           )}
           {!sectionCollapsed.foundations && (
             <Box
@@ -375,6 +449,10 @@ export function Sidebar({
             "Accessibility",
             entries.accessibility.length,
             "sidebar-section-accessibility-list",
+            () => {
+              const existingSlugs = entries.accessibility.map(slugFromPath);
+              setAddDialog({ domain: "accessibility", existingSlugs });
+            },
           )}
           {!sectionCollapsed.accessibility && (
             <Box
@@ -398,7 +476,10 @@ export function Sidebar({
         const listId = `sidebar-section-${group}-list`;
         return (
           <Box key={group}>
-            {sectionHeader(group, label, items.length, listId)}
+            {sectionHeader(group, label, items.length, listId, () => {
+              const existingSlugs = items.map(slugFromPath);
+              setAddDialog({ domain: "content", subDir: group, existingSlugs });
+            })}
             {!collapsed && (
               <Box
                 id={listId}
@@ -419,6 +500,7 @@ export function Sidebar({
             "Components",
             entries.components.length,
             "sidebar-section-components-list",
+            null,
           )}
           {!sectionCollapsed.components && (
             <Box
@@ -445,6 +527,30 @@ export function Sidebar({
             </Box>
           )}
         </Box>
+      )}
+      {addDialog && (
+        <AddSectionDialog
+          open
+          domain={
+            addDialog.subDir
+              ? `${addDialog.domain}/${addDialog.subDir}`
+              : addDialog.domain
+          }
+          existingSlugs={addDialog.existingSlugs}
+          onCancel={() => setAddDialog(null)}
+          onConfirm={async ({ title, slug }) => {
+            const ctx = addDialog;
+            setAddDialog(null);
+            try {
+              await handleAddSection(ctx, slug, title);
+            } catch (err) {
+              console.error("Add section failed:", err);
+              window.alert(
+                `Couldn't add section: ${err instanceof Error ? err.message : String(err)}`,
+              );
+            }
+          }}
+        />
       )}
     </Flex>
   );
