@@ -137,6 +137,22 @@ function deriveA11yIndex(md) {
   };
 }
 
+// Harvest WCAG criteria keyed by section slug, reusing the SAME index builder
+// so there is ONE harvest shared by the flat index derive and the per-section
+// derive (zero drift). Returns `{ [slug]: string[] }`. The per-section derive
+// attaches each leaf/branch its slug's wcag array via this map; because the
+// index dedups cross-file slug collisions (first occurrence wins), a slug that
+// appears both top-level and nested resolves to the same single wcag list —
+// consistent with what consumers see in a11y-index.json.
+function wcagBySlug(md) {
+  var idx = deriveA11yIndex(md);
+  var map = Object.create(null);
+  idx.sections.forEach(function (s) {
+    map[s.slug] = s.wcag || [];
+  });
+  return map;
+}
+
 if (require.main === module) {
   var srcDir = path.resolve(__dirname, "..", "..", "accessibility", "src");
   var distPath = path.resolve(
@@ -157,6 +173,7 @@ if (require.main === module) {
 module.exports = {
   deriveA11yIndex: deriveA11yIndex,
   concatA11ySources: concatA11ySources,
+  wcagBySlug: wcagBySlug,
   slugify: slugify,
   extractSlugFromHeading: extractSlugFromHeading,
   extractHeadingText: extractHeadingText,

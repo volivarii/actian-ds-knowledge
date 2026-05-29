@@ -4,7 +4,7 @@ var test = require("node:test");
 var assert = require("node:assert/strict");
 var fs = require("node:fs");
 var path = require("node:path");
-var astWalk = require("../scripts/foundations/foundations-parser/ast-walk.js");
+var astWalk = require("../scripts/lib/section-dist/ast-walk.js");
 var deriveFoundations = require("../scripts/foundations/derive-foundations.js");
 
 var REPO_ROOT = path.resolve(__dirname, "..");

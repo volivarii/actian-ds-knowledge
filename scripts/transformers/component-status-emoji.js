@@ -2,7 +2,7 @@
 
 // DS Kit component page-name status emoji parser.
 //
-// Mirrors the pattern of scripts/foundations/foundations-parser/status-emoji.js
+// Mirrors the pattern of scripts/lib/section-dist/status-emoji.js
 // but with the component-side emoji vocabulary. The foundations parser uses
 // `🚧 / ❌ / ⚠️` for in-progress / deprecated / proposed. DS Kit component
 // pages use `✍️ / ⛔️ / ⚠️` for in-progress / deprecated / warn. The two

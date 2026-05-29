@@ -9,6 +9,7 @@
     "derive:content": "node scripts/content/derive-content.js --src content/src --index content/src/content-index.md",
     "derive:categories": "node scripts/categories/__cli.js",
     "derive:guidelines": "node scripts/components/__cli.js",
+    "derive:accessibility": "node scripts/accessibility/derive-a11y-index.js && node scripts/accessibility/derive-a11y-sections.js",
     "validate:manifest": "node scripts/validate-manifest.js",
     "test": "node --test tests/*.test.js"
   },

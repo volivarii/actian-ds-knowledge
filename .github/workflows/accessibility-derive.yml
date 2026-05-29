@@ -1,10 +1,13 @@
 name: Derive a11y-index from accessibility/src/
 
-# Regenerates accessibility/dist/a11y-index.json from the per-section src/
-# files (the auto-slugged section index) and auto-commits it back to the PR
-# branch. Mirrors foundations-derive.yml / guidelines-derive.yml — the
-# accessibility author edits per-section markdown, CI handles the derived
-# JSON; no local toolchain required.
+# Regenerates the accessibility dist from the per-section src/ files and
+# auto-commits it back to the PR branch:
+#   - accessibility/dist/a11y-index.json — flat auto-slugged section index
+#   - accessibility/dist/{_index.json, <slug>.json, <branch>/, *.bundle.json}
+#     — additive per-section block-JSON tree (Pattern H, shared engine)
+# Mirrors foundations-derive.yml / guidelines-derive.yml — the accessibility
+# author edits per-section markdown, CI handles the derived JSON; no local
+# toolchain required.
 #
 # Required repo setting (already enabled for the other derive workflows):
 #   Settings → Actions → General → Workflow permissions → Allow GH Actions
@@ -19,6 +22,8 @@ on:
     paths:
       - 'accessibility/src/**'
       - 'scripts/accessibility/derive-a11y-index.js'
+      - 'scripts/accessibility/derive-a11y-sections.js'
+      - 'scripts/lib/section-dist/**'
 
 jobs:
   derive:
@@ -58,8 +63,15 @@ jobs:
       - name: Install deps
         run: npm install --no-audit --no-fund
 
-      - name: Derive a11y-index JSON
-        run: node scripts/accessibility/derive-a11y-index.js
+      # Single consolidated derive: index THEN per-section (the npm script
+      # enforces that order). Additive per-section block-JSON dist (Pattern H
+      # tree) is emitted BESIDE the flat index via the shared section-dist
+      # engine. Kept in lockstep so an src edit regenerates both artifacts; the
+      # dist-shape snapshot test covers the per-section files too. Calling the
+      # npm script keeps CI and local derives identical — single source of
+      # truth, no drift.
+      - name: Derive a11y dist (index + per-section)
+        run: npm run derive:accessibility
 
       - name: Run tests against regenerated output
         run: npm test
