@@ -50,9 +50,10 @@ test("accessibility/dist/ matches the committed snapshot (byte-identical)", func
     if (diff.changed.length)
       msg += "  changed: " + diff.changed.join(", ") + "\n";
     msg +=
-      "\nIf this drift is intentional (e.g. source edit), regenerate with:\n" +
-      "  npm run derive:a11y && UPDATE_DIST_SNAPSHOTS=1 node --test tests/a11y-dist-shape.test.js\n" +
-      "(derive:a11y script: node scripts/accessibility/derive-a11y-index.js)";
+      "\nIf this drift is intentional (e.g. source edit), regenerate BOTH the\n" +
+      "flat index and the per-section tree, then refresh the snapshot:\n" +
+      "  node scripts/accessibility/derive-a11y-index.js && node scripts/accessibility/derive-a11y-sections.js\n" +
+      "  UPDATE_DIST_SNAPSHOTS=1 node --test tests/a11y-dist-shape.test.js";
     assert.fail(msg);
   }
 });

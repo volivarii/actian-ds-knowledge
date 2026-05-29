@@ -684,7 +684,14 @@ function attachFrontmatterRefs(files, frontmattersByTopSlug, logger) {
 // Root _index.json — top-level metadata
 // ───────────────────────────────────────────────────────────────────────────
 
-function buildRootIndex(rootNodes, sourceRel, h1Title) {
+// `rootAnchor` is the doc-root H1 anchor slug. It is domain-specific (the
+// foundations doc anchors its H1 as "foundations" regardless of the H1 title
+// text "Actian Design Foundation"), so the emitter passes it explicitly. When
+// absent it defaults to "foundations" — preserving the historical foundations
+// output byte-identically without requiring the foundations caller to change.
+// Non-foundations consumers (e.g. accessibility) MUST pass their own
+// `rootAnchor` (e.g. "accessibility") so the root index isn't mislabeled.
+function buildRootIndex(rootNodes, sourceRel, h1Title, rootAnchor) {
   var children = rootNodes.map(function (n, i) {
     return { id: n.slug, title: n.title, order: i + 1 };
   });
@@ -695,7 +702,7 @@ function buildRootIndex(rootNodes, sourceRel, h1Title) {
     path: [],
     parent: null,
     children: children,
-    anchors: { h1: "foundations" },
+    anchors: { h1: rootAnchor || "foundations" },
     source: { file: sourceRel },
     _meta: metaBlock(sourceRel),
   };
@@ -721,9 +728,11 @@ function buildBundle(bundleTree, rootIndex, sourceRel) {
 //
 // `deriveFromMarkdown(mdSource, opts)` → { files, leafs, indexes, rootIndex,
 // bundle, tree }. opts: { sourceRel, skipH2Slugs, frontmattersByTopSlug,
-// logger }. `skipH2Slugs` defaults to `{}` (no skipping) — the engine is
-// agnostic; the foundations consumer injects its own SKIP_H2_SLUGS default
-// (see scripts/foundations/derive-foundations.js).
+// rootAnchor, logger }. `skipH2Slugs` defaults to `{}` (no skipping) — the
+// engine is agnostic; the foundations consumer injects its own SKIP_H2_SLUGS
+// default (see scripts/foundations/derive-foundations.js). `rootAnchor` is the
+// doc-root H1 anchor slug (defaults to "foundations" for byte-identical
+// back-compat; non-foundations consumers pass their domain slug).
 
 function deriveFromMarkdown(mdSource, opts) {
   opts = opts || {};
@@ -747,7 +756,7 @@ function deriveFromMarkdown(mdSource, opts) {
   if (opts.frontmattersByTopSlug) {
     attachFrontmatterRefs(plan.files, opts.frontmattersByTopSlug, logger);
   }
-  var rootIndex = buildRootIndex(tree, sourceRel, h1Title);
+  var rootIndex = buildRootIndex(tree, sourceRel, h1Title, opts.rootAnchor);
   var bundle = buildBundle(plan.bundleTree, rootIndex, sourceRel);
 
   return {

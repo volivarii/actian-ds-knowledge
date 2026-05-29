@@ -67,7 +67,7 @@
         "file": {
           "type": "string",
           "description": "Path to the source MD (repo-relative). Per-section split: this is the src/ directory; authoring lives in the per-section files inside.",
-          "examples": ["foundations/src/"]
+          "examples": ["foundations/src/", "accessibility/src/"]
         }
       },
       "additionalProperties": true
