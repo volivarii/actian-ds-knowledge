@@ -31,13 +31,7 @@ function readLiveFoundationsMd() {
   return derive.concatFoundationsSources(SRC_DIR);
 }
 const astWalk = require(
-  path.join(
-    REPO_ROOT,
-    "scripts",
-    "foundations",
-    "foundations-parser",
-    "ast-walk.js",
-  ),
+  path.join(REPO_ROOT, "scripts", "lib", "section-dist", "ast-walk.js"),
 );
 
 function readFixture(name) {
