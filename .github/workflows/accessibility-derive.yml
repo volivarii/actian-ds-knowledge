@@ -63,15 +63,15 @@ jobs:
       - name: Install deps
         run: npm install --no-audit --no-fund
 
-      - name: Derive a11y-index JSON
-        run: node scripts/accessibility/derive-a11y-index.js
-
-      # Additive per-section block-JSON dist (Pattern H tree) emitted BESIDE
-      # the flat index via the shared section-dist engine. Kept in lockstep so
-      # an src edit regenerates both artifacts; the dist-shape snapshot test
-      # covers the per-section files too.
-      - name: Derive a11y per-section JSON
-        run: node scripts/accessibility/derive-a11y-sections.js
+      # Single consolidated derive: index THEN per-section (the npm script
+      # enforces that order). Additive per-section block-JSON dist (Pattern H
+      # tree) is emitted BESIDE the flat index via the shared section-dist
+      # engine. Kept in lockstep so an src edit regenerates both artifacts; the
+      # dist-shape snapshot test covers the per-section files too. Calling the
+      # npm script keeps CI and local derives identical — single source of
+      # truth, no drift.
+      - name: Derive a11y dist (index + per-section)
+        run: npm run derive:accessibility
 
       - name: Run tests against regenerated output
         run: npm test
