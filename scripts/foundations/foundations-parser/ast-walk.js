@@ -62,6 +62,21 @@ function sliceSectionContent(tokens, heading) {
   return out;
 }
 
+// Capture an explicit `{#anchor}` marker at the end of a heading. Mirrors the
+// convention already used by scripts/accessibility/derive-a11y-index.js so the
+// two pipelines extract anchors identically.
+var ANCHOR_RE = /\s*\{#([a-z0-9-]+)\}\s*$/;
+
+// Extract an explicit `{#anchor}` slug from a raw heading, or null when absent.
+// The anchor is the authoritative, stable section id — it lets authors change
+// heading TEXT without breaking the consumer-visible slug. When absent, callers
+// fall back to slugify(cleanHeading(text)). See foundations-refs design
+// 2026-05-29.
+function extractAnchorSlug(text) {
+  var m = String(text || "").match(ANCHOR_RE);
+  return m ? m[1] : null;
+}
+
 // Strip trailing {#anchor} + section-number + leading emoji + collapse whitespace.
 function cleanHeading(text) {
   var s = String(text || "");
@@ -92,7 +107,11 @@ function slugify(text) {
 function createSlugger() {
   var seen = Object.create(null);
   function slugFn(text) {
-    var base = slugify(cleanHeading(text));
+    // Anchor-preferred: an explicit `{#anchor}` wins over the slugified text.
+    // Today anchors == slugify(cleanHeading(text)) everywhere, so this is a
+    // no-op on current output (byte-identical); it future-proofs slug stability
+    // (P6) when a heading's visible text drifts from its stable anchor.
+    var base = extractAnchorSlug(text) || slugify(cleanHeading(text));
     if (!base) base = "section";
     if (!seen[base]) {
       seen[base] = 1;
@@ -217,6 +236,11 @@ function findEmitSections(tokens, opts) {
     if (t.type !== "heading" || t.depth !== 2) continue;
 
     var h2Text = cleanHeading(t.text);
+    // Intentionally slug-from-text (NOT anchor-preferred): this base feeds the
+    // table-of-contents/skipH2Slugs lookups and the "-overview" slug, which are
+    // not anchor-stable yet. Today anchors == slugify(cleanHeading) so it is
+    // byte-identical; wiring full anchor-preference here is deferred until a
+    // heading's visible text actually diverges from its stable anchor.
     var h2BaseSlug = slugify(h2Text);
 
     // "Table of Contents" is structural noise — always skip
@@ -443,6 +467,7 @@ module.exports.findNumberedHeadings = findNumberedHeadings;
 module.exports.sliceSectionContent = sliceSectionContent;
 module.exports.findEmitSections = findEmitSections;
 module.exports.cleanHeading = cleanHeading;
+module.exports.extractAnchorSlug = extractAnchorSlug;
 module.exports.slugify = slugify;
 module.exports.createSlugger = createSlugger;
 module.exports.findChildHeadingsAt = findChildHeadingsAt;
