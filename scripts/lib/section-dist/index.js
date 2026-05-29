@@ -206,7 +206,13 @@ function flattenSectionContent(sectionNode) {
   return out;
 }
 
-function buildMotionPayload(contentTokens, sectionLabel, logger) {
+function buildMotionPayload(contentTokens, sectionLabel, logger, sectionLevel) {
+  // Motion sub-headings (Duration/Easing/Delay/Component Motion Guide) live two
+  // heading levels below the emitted top-level section. Default sectionLevel 2
+  // → motion section is an H3 leaf, its sub-headings H4 (2 + 2). With
+  // sectionLevel:1 they would be H3 (1 + 2). Default 2 keeps depth === 4.
+  sectionLevel = sectionLevel || 2;
+  var motionSubDepth = sectionLevel + 2;
   var payload = { description: null, tokens: {}, patterns: {} };
   var introLines = [];
   var mode = "intro";
@@ -220,7 +226,7 @@ function buildMotionPayload(contentTokens, sectionLabel, logger) {
   for (var i = 0; i < contentTokens.length; i++) {
     var tok = contentTokens[i];
 
-    if (tok.type === "heading" && tok.depth === 4) {
+    if (tok.type === "heading" && tok.depth === motionSubDepth) {
       var h = String(tok.text || "")
         .toLowerCase()
         .trim();
@@ -476,11 +482,24 @@ function metaBlock(sourceRel) {
 }
 
 // Build a fully-rendered per-leaf JSON object.
-function buildLeafJson(node, pathSegments, parentId, sourceRel, logger) {
+function buildLeafJson(
+  node,
+  pathSegments,
+  parentId,
+  sourceRel,
+  logger,
+  sectionLevel,
+) {
+  sectionLevel = sectionLevel || 2;
   // Motion exception: structured payload at H3 level.
   if (isMotionShape(node)) {
     var motionTokens = flattenSectionContent(node);
-    var motionPayload = buildMotionPayload(motionTokens, node.title, logger);
+    var motionPayload = buildMotionPayload(
+      motionTokens,
+      node.title,
+      logger,
+      sectionLevel,
+    );
     var motionLeaf = {
       _schema_version: SCHEMA_VERSION,
       id: pathSegments.join("/"),
@@ -488,7 +507,7 @@ function buildLeafJson(node, pathSegments, parentId, sourceRel, logger) {
       path: pathSegments,
       parent: parentId,
       kind: "motion",
-      anchors: anchorsFromPath(pathSegments),
+      anchors: anchorsFromPath(pathSegments, sectionLevel),
       source: {
         file: sourceRel,
       },
@@ -511,7 +530,7 @@ function buildLeafJson(node, pathSegments, parentId, sourceRel, logger) {
     title: node.title,
     path: pathSegments,
     parent: parentId,
-    anchors: anchorsFromPath(pathSegments),
+    anchors: anchorsFromPath(pathSegments, sectionLevel),
     source: {
       file: sourceRel,
     },
@@ -522,7 +541,15 @@ function buildLeafJson(node, pathSegments, parentId, sourceRel, logger) {
   return leaf;
 }
 
-function buildIndexJson(node, pathSegments, parentId, sourceRel, logger) {
+function buildIndexJson(
+  node,
+  pathSegments,
+  parentId,
+  sourceRel,
+  logger,
+  sectionLevel,
+) {
+  sectionLevel = sectionLevel || 2;
   var bb = extractBodyAndBlocks(node.directContent, node.title, logger);
   var children = node.children.map(function (c, i) {
     return {
@@ -537,7 +564,7 @@ function buildIndexJson(node, pathSegments, parentId, sourceRel, logger) {
     title: node.title,
     path: pathSegments,
     parent: parentId,
-    anchors: anchorsFromPath(pathSegments),
+    anchors: anchorsFromPath(pathSegments, sectionLevel),
     source: {
       file: sourceRel,
     },
@@ -549,14 +576,16 @@ function buildIndexJson(node, pathSegments, parentId, sourceRel, logger) {
   return idx;
 }
 
-function anchorsFromPath(pathSegments) {
+function anchorsFromPath(pathSegments, sectionLevel) {
   // Anchors keyed by depth level. The h1 anchor is the doc's H1 slug; we
   // capture it from a known constant — the doc-root id is set by the emitter.
   // For schema simplicity we just return a path-segment-keyed map: each
-  // segment becomes its own anchor at depth N.
+  // segment becomes its own anchor at depth N. The top-level segment (index 0)
+  // is keyed "h{sectionLevel}" — default sectionLevel 2 → "h2", unchanged.
+  var lvl = sectionLevel || 2;
   var out = {};
   for (var i = 0; i < pathSegments.length; i++) {
-    out["h" + (i + 2)] = pathSegments[i]; // H2 is segment 0 → "h2"
+    out["h" + (i + lvl)] = pathSegments[i]; // segment 0 → "h{sectionLevel}"
   }
   return out;
 }
@@ -565,7 +594,8 @@ function anchorsFromPath(pathSegments) {
 //   { files: { "<rel>": <json> }, leafs: [<leafMeta>...], indexes: [<idxMeta>...], bundleTree: <nested object> }
 //
 // `files` is a flat map keyed by repo-root-relative path.
-function buildEmissionPlan(rootNodes, sourceRel, logger) {
+function buildEmissionPlan(rootNodes, sourceRel, logger, sectionLevel) {
+  sectionLevel = sectionLevel || 2;
   var files = {};
   var leafs = [];
   var indexes = [];
@@ -587,6 +617,7 @@ function buildEmissionPlan(rootNodes, sourceRel, logger) {
         parentId,
         sourceRel,
         logger,
+        sectionLevel,
       );
       files[leafFilePath] = leafJson;
       leafs.push({ id: id, file: leafFilePath, title: node.title });
@@ -603,6 +634,7 @@ function buildEmissionPlan(rootNodes, sourceRel, logger) {
       parentId,
       sourceRel,
       logger,
+      sectionLevel,
     );
     files[indexPath] = idxJson;
     indexes.push({ id: id, file: indexPath, title: node.title });
@@ -739,9 +771,16 @@ function deriveFromMarkdown(mdSource, opts) {
   var logger = opts.logger || { warn: function () {} };
   var sourceRel = opts.sourceRel || "foundations/src/";
   var skipMap = opts.skipH2Slugs || {};
+  // Emit top-level sections at this heading depth (default 2 → H2s are the
+  // emitted top-level sections; H1 is the document root — byte-identical for
+  // every current caller, which never passes sectionLevel). See buildSectionTree.
+  var sectionLevel = opts.sectionLevel || 2;
 
   var tokens = astWalk.parseMarkdown(mdSource);
-  var tree = astWalk.buildSectionTree(tokens, { skipH2Slugs: skipMap });
+  var tree = astWalk.buildSectionTree(tokens, {
+    skipH2Slugs: skipMap,
+    sectionLevel: sectionLevel,
+  });
 
   // Find H1 title for root metadata.
   var h1Title = "Foundations";
@@ -752,7 +791,7 @@ function deriveFromMarkdown(mdSource, opts) {
     }
   }
 
-  var plan = buildEmissionPlan(tree, sourceRel, logger);
+  var plan = buildEmissionPlan(tree, sourceRel, logger, sectionLevel);
   if (opts.frontmattersByTopSlug) {
     attachFrontmatterRefs(plan.files, opts.frontmattersByTopSlug, logger);
   }
