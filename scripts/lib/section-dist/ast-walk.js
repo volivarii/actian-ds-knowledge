@@ -378,6 +378,11 @@ function annotateLines(tokens) {
 function buildSectionTree(tokens, opts) {
   opts = opts || {};
   var skipH2Slugs = opts.skipH2Slugs || {};
+  // Emit top-level sections at this heading depth. Default 2 (today's behavior:
+  // H1 is the document root, H2s are the emitted top-level sections). With
+  // sectionLevel:1 the H1s become the emitted top-level sections under a
+  // virtual depth-0 root. `buildLevel` closes over this local.
+  var sectionLevel = (opts && opts.sectionLevel) || 2;
 
   function buildLevel(parentDepth, fromIdx, toIdx) {
     // Slugger is per-parent (sibling-scoped).
@@ -399,8 +404,8 @@ function buildSectionTree(tokens, opts) {
       var hTok = tokens[hi];
       var cleaned = cleanHeading(hTok.text);
 
-      // Skip TOC + opt-in skip slugs at H2 level only
-      if (parentDepth === 1) {
+      // Skip TOC + opt-in skip slugs at the top emit tier only
+      if (parentDepth === sectionLevel - 1) {
         var baseSlug = slugify(cleaned);
         if (baseSlug === "table-of-contents") continue;
         if (skipH2Slugs[baseSlug]) continue;
@@ -457,9 +462,11 @@ function buildSectionTree(tokens, opts) {
 
   annotateLines(tokens);
 
-  // Start from H1 (depth 1) — its children are H2 sections.
-  // If no H1, treat depth 1 as virtual root.
-  return buildLevel(1, 0, tokens.length);
+  // Top-tier parentDepth = sectionLevel - 1. Default sectionLevel 2 → start
+  // from depth 1 (H1 is the document root; its H2 children are the emitted
+  // top-level sections), unchanged. With sectionLevel:1 → start from depth 0
+  // (a virtual root whose H1 children are the emitted top-level sections).
+  return buildLevel(sectionLevel - 1, 0, tokens.length);
 }
 
 module.exports.parseMarkdown = parseMarkdown;
