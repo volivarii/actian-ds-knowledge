@@ -2,9 +2,11 @@
 "use strict";
 
 // Validates every *.json file under foundations/dist/ against
-// schemas/foundations-section.json. Skips foundations.bundle.json (the
-// hierarchical roll-up has a slightly different shape — it embeds the full
-// tree rather than the per-section shape).
+// schemas/section.json (the generalized per-section schema, renamed from the
+// former foundations-section.json — one canonical schema now; the old file no
+// longer exists). Skips foundations.bundle.json (the hierarchical roll-up has
+// a slightly different shape — it embeds the full tree rather than the
+// per-section shape).
 //
 // Output: rdjsonl on stdout (one record per violation), summary on stderr.
 // Exit code: 0 if all valid, 1 if any violation.
@@ -46,7 +48,7 @@ function main() {
     );
     process.exit(0);
   }
-  const validate = createValidator("foundations-section.json");
+  const validate = createValidator("section.json");
   const files = [];
   walk(DIST_DIR, files);
   files.sort();
