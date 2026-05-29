@@ -897,6 +897,10 @@ function writeOutputs(
     });
     owned["_index.json"] = true;
     owned["foundations.bundle.json"] = true;
+    // foundations-index.json is written by runCli after writeOutputs (it's
+    // derived from the _order manifest, not the section tree). Mark it owned
+    // so prune doesn't delete-then-log it as stale every run.
+    owned["foundations-index.json"] = true;
     var existing = walkDir(distDir, distDir, function (rp) {
       return /\.json$/.test(rp);
     });
@@ -1295,6 +1299,58 @@ function assertBalancedFences(name, src) {
   }
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Flat foundations-index.json — transversal ref-resolution target
+// ───────────────────────────────────────────────────────────────────────────
+
+// Sections excluded from the flat referenceable index:
+//  - intro (H1 document root) + table-of-contents (generated nav): structural, not design sections.
+//  - everything in SKIP_H2_SLUGS: those sections are intentionally NOT emitted to dist, so
+//    they have no resolvable content and must not be advertised as referenceable.
+// Deriving from SKIP_H2_SLUGS keeps the referenceable set aligned with what actually has dist backing.
+var INDEX_EXCLUDE_SLUGS = Object.assign(
+  { intro: true, "table-of-contents": true },
+  SKIP_H2_SLUGS,
+);
+
+// Build the flat { _schema_version, _meta, sections:[{slug,title}] } index from
+// the _order.json manifest + each file's first H2. Slug is derived the same way
+// the hierarchical tree derives it (cleanHeading is anchor-safe), so index
+// slugs == tree slugs == the {#anchor} literal.
+function buildFoundationsIndex(srcDir) {
+  var order = readOrderManifest(srcDir);
+  var sections = [];
+  for (var i = 0; i < order.length; i++) {
+    var slug = order[i];
+    if (INDEX_EXCLUDE_SLUGS[slug]) continue;
+    var abs = path.join(srcDir, slug + ".md");
+    var raw = fs.readFileSync(abs, "utf-8");
+    var body = stripFrontmatterEnvelope(raw);
+    var lines = body.split("\n");
+    var title = null;
+    var derivedSlug = null;
+    for (var j = 0; j < lines.length; j++) {
+      var m = /^##\s+(.+?)\s*$/.exec(lines[j]);
+      if (m) {
+        title = astWalk.cleanHeading(m[1]);
+        derivedSlug = astWalk.slugify(title);
+        break;
+      }
+    }
+    if (!derivedSlug) {
+      throw new Error(
+        "foundations-index: " + slug + ".md has no top-level H2 to index.",
+      );
+    }
+    sections.push({ slug: derivedSlug, title: title });
+  }
+  return {
+    _schema_version: 1,
+    _meta: metaBlock("foundations/src/"),
+    sections: sections,
+  };
+}
+
 function runCli(argv) {
   var args = parseArgs(argv);
   var defaults = defaultPaths();
@@ -1383,6 +1439,13 @@ function runCli(argv) {
       ? fs.readFileSync(bundleDest, "utf-8")
       : "";
     if (bundleActual !== bundleExpected) drifts.push("foundations.bundle.json");
+    var indexExpected =
+      JSON.stringify(buildFoundationsIndex(srcDir), null, 2) + "\n";
+    var indexDest = path.join(outDir, "foundations-index.json");
+    var indexActual = fs.existsSync(indexDest)
+      ? fs.readFileSync(indexDest, "utf-8")
+      : "";
+    if (indexActual !== indexExpected) drifts.push("foundations-index.json");
     if (drifts.length === 0) {
       console.log("[derive-foundations] no drift");
       return 0;
@@ -1402,6 +1465,12 @@ function runCli(argv) {
     md,
     sourceRel,
     { skipPrune: args.noPrune },
+  );
+
+  var fIndex = buildFoundationsIndex(srcDir);
+  writeAtomic(
+    path.join(outDir, "foundations-index.json"),
+    JSON.stringify(fIndex, null, 2) + "\n",
   );
 
   if (!args.noManifest) {
@@ -1442,6 +1511,7 @@ module.exports = {
   buildRootIndex,
   buildBundle,
   buildEmissionPlan,
+  buildFoundationsIndex,
   buildMotionPayload,
   isMotionShape,
   slugifyPatternName,

@@ -62,9 +62,13 @@ function sliceSectionContent(tokens, heading) {
   return out;
 }
 
-// Strip section-number + leading emoji + collapse whitespace.
+// Strip trailing {#anchor} + section-number + leading emoji + collapse whitespace.
 function cleanHeading(text) {
   var s = String(text || "");
+  // Strip an explicit {#slug} anchor before any other normalization so the
+  // derived slug matches the un-anchored heading (anchors are stable IDs, not
+  // part of the visible title). See foundations-refs design 2026-05-29.
+  s = s.replace(/\s*\{#[a-z0-9-]+\}\s*$/, "");
   // Strip in either order — author may have put emoji before number or after.
   s = s.replace(LEADING_EMOJI_STRIP_RE, "");
   s = s.replace(NUM_PREFIX_RE, "");
