@@ -95,3 +95,22 @@ test("slugify collapses all-punctuation/empty input to empty string", function (
   assert.equal(M.slugify(""), "");
   assert.equal(M.slugify("  & ()  "), "");
 });
+
+test("GraphBuilder dedups identical edges (type+source+target), first-wins", function () {
+  var g = new M.GraphBuilder();
+  g.addEdge({
+    source: "category:x",
+    target: "a11y:y",
+    type: "a11y_ref",
+    note: "first",
+  });
+  g.addEdge({
+    source: "category:x",
+    target: "a11y:y",
+    type: "a11y_ref",
+    note: "second",
+  });
+  var out = g.build();
+  assert.equal(out.edges.length, 1);
+  assert.equal(out.edges[0].note, "first");
+});

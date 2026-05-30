@@ -38,7 +38,7 @@ function stableStringify(obj) {
 
 function GraphBuilder() {
   this._nodes = new Map(); // id → node (first wins)
-  this._edges = [];
+  this._edges = new Map(); // "type|source|target" → edge (first wins)
 }
 GraphBuilder.prototype.addNode = function (node) {
   if (!node || !node.id) throw new Error("graph: node missing id");
@@ -46,14 +46,15 @@ GraphBuilder.prototype.addNode = function (node) {
   return this;
 };
 GraphBuilder.prototype.addEdge = function (edge) {
-  this._edges.push(edge);
+  var key = edge.type + "|" + edge.source + "|" + edge.target;
+  if (!this._edges.has(key)) this._edges.set(key, edge);
   return this;
 };
 GraphBuilder.prototype.build = function () {
   var nodes = Array.from(this._nodes.values()).sort(function (a, b) {
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });
-  var edges = this._edges.slice().sort(function (a, b) {
+  var edges = Array.from(this._edges.values()).sort(function (a, b) {
     // Ordinal (not localeCompare) for cross-locale determinism, matching the node sort.
     // Sort key is unambiguous: type is a fixed enum (no spaces); ids are namespace:slug
     // (slugify output never contains spaces).
