@@ -3854,7 +3854,7 @@
       "title": "Text Style Tokens (Composite)"
     },
     {
-      "id": "motion:accordion",
+      "id": "motion:accordion-expand-collapse",
       "type": "motion_pattern",
       "title": "Accordion (expand/collapse)"
     },
@@ -3864,12 +3864,12 @@
       "title": "The \"Anchor\" Motion — Dropdowns, Popovers, and Tooltips"
     },
     {
-      "id": "motion:drawer",
+      "id": "motion:drawer-open-close",
       "type": "motion_pattern",
       "title": "Drawer (open/close)"
     },
     {
-      "id": "motion:layered-overlays",
+      "id": "motion:layered-overlays-modals",
       "type": "motion_pattern",
       "title": "Layered Overlays — Modals"
     },

@@ -73,8 +73,9 @@ function collectFoundationSections(g, root) {
 
 function collectMotionPatterns(g, motion) {
   var pats = (motion && motion.patterns) || {};
-  Object.keys(pats).forEach(function (slug) {
-    var p = pats[slug] || {};
+  Object.keys(pats).forEach(function (key) {
+    var p = pats[key] || {};
+    var slug = p.slug || key; // motion_ref edges target the pattern's .slug; fall back to the object key
     g.addNode({
       id: M.nodeId("motion_pattern", slug),
       type: "motion_pattern",

@@ -165,6 +165,20 @@ test("collectFoundationChildEdges: parent→child from the tree", function () {
   );
 });
 
+test("collectMotionPatterns: node id uses the pattern .slug, not the object key", function () {
+  var g = new (require("../scripts/lib/graph/model.js").GraphBuilder)();
+  D.collectMotionPatterns(g, {
+    patterns: {
+      accordion: { slug: "accordion-expand-collapse", name: "Accordion" },
+    },
+  });
+  var ids = g.build().nodes.map(function (n) {
+    return n.id;
+  });
+  assert.ok(ids.includes("motion:accordion-expand-collapse"), "uses .slug");
+  assert.ok(!ids.includes("motion:accordion"), "not the object key");
+});
+
 test("bundleToTree: reconstructs tree from bundle format; scoped sibling lookup + leaf fallback", function () {
   var bundle = {
     _index: {
