@@ -90,3 +90,64 @@ test("collectMotionPatterns: nodes from motion.patterns keys", function () {
   });
   assert.equal(n.type, "motion_pattern");
 });
+
+test("bundleToTree: reconstructs tree from bundle format; scoped sibling lookup + leaf fallback", function () {
+  var bundle = {
+    _index: {
+      id: "",
+      title: "Root",
+      children: [
+        { id: "tokens", title: "Tokens" },
+        { id: "design-guidelines", title: "Guidelines" },
+      ],
+    },
+    tokens: {
+      _index: {
+        id: "tokens",
+        title: "Tokens",
+        children: [{ id: "tokens/breakpoints", title: "Breakpoints" }],
+      },
+      breakpoints: {
+        id: "tokens/breakpoints",
+        title: "Breakpoints",
+        blocks: [],
+      },
+    },
+    "design-guidelines": {
+      _index: {
+        id: "design-guidelines",
+        title: "Guidelines",
+        children: [
+          { id: "design-guidelines/breakpoints", title: "Breakpoints" },
+        ],
+      },
+      breakpoints: {
+        _index: {
+          id: "design-guidelines/breakpoints",
+          title: "Breakpoints",
+          children: [
+            { id: "design-guidelines/breakpoints/grid", title: "Grid" },
+          ],
+        },
+        grid: {
+          id: "design-guidelines/breakpoints/grid",
+          title: "Grid",
+          blocks: [],
+        },
+      },
+    },
+  };
+  var tree = D.bundleToTree(bundle);
+  var tokensNode = tree.children.find(function (c) {
+    return c.id === "tokens";
+  });
+  assert.equal(tokensNode.children[0].id, "tokens/breakpoints"); // scoped: not the design-guidelines one
+  assert.equal(tokensNode.children[0].children, undefined); // leaf: no _index → no children
+  var dgNode = tree.children.find(function (c) {
+    return c.id === "design-guidelines";
+  });
+  assert.equal(
+    dgNode.children[0].children[0].id,
+    "design-guidelines/breakpoints/grid",
+  ); // recurses
+});

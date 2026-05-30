@@ -82,9 +82,10 @@ function collectMotionPatterns(g, motion) {
   });
 }
 
-// Converts the foundations.bundle.json format to the recursive {id, title, children} tree
-// shape that collectFoundationSections expects. The bundle stores each section's metadata
-// in a nested _index key; children are referenced by the last path segment as object key.
+// Reconstruct the recursive {id, children} tree from foundations.bundle.json.
+// Children are referenced by their last path segment as the key in the LOCAL parent
+// bundle object (scoped — no cross-branch collision). Intermediate nodes have a nested
+// _index; leaf nodes do not — for those, the childRef {id, title} is used directly.
 function bundleToTree(bundle) {
   var rootIdx = bundle._index;
   if (!rootIdx) return { id: "", title: "", children: [] };
@@ -151,6 +152,7 @@ if (require.main === module) {
 
 module.exports = {
   derive: derive,
+  bundleToTree: bundleToTree,
   collectComponentsAndCategories: collectComponentsAndCategories,
   collectA11yCriteria: collectA11yCriteria,
   collectFoundationSections: collectFoundationSections,
