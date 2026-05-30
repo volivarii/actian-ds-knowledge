@@ -152,19 +152,6 @@ jobs:
         run: |
           gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --squash --repo "${{ github.repository }}"
 
-      - name: Tag release
-        if: steps.verdict.outputs.category == 'additive' || steps.verdict.outputs.category == 'breaking'
-        run: |
-          VERSION=$(jq -r .version package.json)
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-            echo "Tag v$VERSION already exists locally, skipping"
-          else
-            git tag "v$VERSION"
-            git push origin "v$VERSION" || echo "Tag push failed (likely already exists on remote)"
-          fi
-
       - name: Summarize
         if: always()
         run: |

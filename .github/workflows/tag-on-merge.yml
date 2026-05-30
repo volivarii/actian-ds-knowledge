@@ -1,10 +1,14 @@
 name: Auto-tag on merge to main
 
 # Emits a git tag matching package.json#version after every merge to main,
-# IF the tag doesn't already exist. Closes a gap in the existing derive
-# workflows: their tag-emission steps only fire when CI regenerates data
-# (data-change PRs), not when manual feature PRs (e.g., new files, rename,
-# doc-only changes) bump the version.
+# IF the tag doesn't already exist.
+#
+# This is the SINGLE SOURCE of release tags. Tags are emitted ONLY here, on
+# main, so every tag points at a real main commit whose version is consistent
+# (package.json == knowledge_version, both derived per #182). Do NOT re-add
+# `git tag` to the derive workflows: they run on PR branches, so a branch tag
+# is orphaned the moment the PR squash-merges to a different main commit — the
+# off-main-orphan bug that broke consumer vendor-integrity (e.g. v0.25.5/v0.25.6).
 #
 # Scoped by paths to package.json so this only fires when the version may
 # have changed. Idempotent via tag-exists check — safe to re-run.
