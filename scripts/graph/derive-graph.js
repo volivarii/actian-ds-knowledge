@@ -3,6 +3,7 @@
 var fs = require("node:fs");
 var path = require("node:path");
 var M = require("../lib/graph/model.js");
+var categoriesParser = require("../categories/categories-parser.js");
 
 var ROOT = path.resolve(__dirname, "..", "..");
 function readJSON(rel) {
@@ -82,6 +83,107 @@ function collectMotionPatterns(g, motion) {
   });
 }
 
+var REF_KINDS = [
+  {
+    field: "a11y_refs",
+    list: "requirementRefs",
+    edge: "a11y_ref",
+    targetType: "a11y_criterion",
+  },
+  {
+    field: "motion_refs",
+    list: "patternRefs",
+    edge: "motion_ref",
+    targetType: "motion_pattern",
+  },
+  {
+    field: "foundations_refs",
+    list: "sectionRefs",
+    edge: "foundations_ref",
+    targetType: "foundation_section",
+  },
+];
+function collectTransversalRefs(g, catSlug, defaults) {
+  REF_KINDS.forEach(function (k) {
+    var refs = (defaults[k.field] && defaults[k.field][k.list]) || [];
+    refs.forEach(function (r) {
+      var edge = {
+        source: M.nodeId("category", catSlug),
+        target: M.nodeId(k.targetType, r.ref),
+        type: k.edge,
+      };
+      if (r.note) edge.note = r.note;
+      g.addEdge(edge);
+    });
+  });
+}
+function collectRelated(g, contentEntries) {
+  contentEntries.forEach(function (entry) {
+    if (
+      !Array.isArray(entry.relatedComponents) ||
+      entry.relatedComponents.length === 0
+    )
+      return;
+    g.addNode({
+      id: M.nodeId("content_topic", entry.slug),
+      type: "content_topic",
+      title: entry.title || entry.slug,
+    });
+    entry.relatedComponents.forEach(function (compSlug) {
+      g.addEdge({
+        source: M.nodeId("content_topic", entry.slug),
+        target: M.nodeId("component", compSlug),
+        type: "related",
+      });
+    });
+  });
+}
+function collectFoundationChildEdges(g, root) {
+  (function walk(node) {
+    if (node && Array.isArray(node.children)) {
+      node.children.forEach(function (child) {
+        if (node.id !== undefined && node.id !== "" && child.id) {
+          g.addEdge({
+            source: M.nodeId("foundation_section", node.id),
+            target: M.nodeId("foundation_section", child.id),
+            type: "child",
+          });
+        }
+        walk(child);
+      });
+    }
+  })(root);
+}
+function readContentEntries() {
+  var dir = path.join(ROOT, "content", "src");
+  if (!fs.existsSync(dir)) return [];
+  var out = [];
+  (function walk(d) {
+    fs.readdirSync(d, { withFileTypes: true }).forEach(function (ent) {
+      var p = path.join(d, ent.name);
+      if (ent.isDirectory()) return walk(p);
+      if (!ent.name.endsWith(".md") || ent.name === "AUTHORING.md") return;
+      var src = fs.readFileSync(p, "utf8");
+      // Skip files without a frontmatter fence
+      if (!src.startsWith("---")) return;
+      var fm;
+      try {
+        fm = categoriesParser.parse(src).data;
+      } catch (_) {
+        return;
+      }
+      if (Array.isArray(fm.relatedComponents)) {
+        out.push({
+          slug: path.basename(ent.name, ".md"),
+          title: fm.title || path.basename(ent.name, ".md"),
+          relatedComponents: fm.relatedComponents,
+        });
+      }
+    });
+  })(dir);
+  return out;
+}
+
 // Reconstruct the recursive {id, children} tree from foundations.bundle.json.
 // Children are referenced by their last path segment as the key in the LOCAL parent
 // bundle object (scoped — no cross-branch collision). Intermediate nodes have a nested
@@ -126,7 +228,30 @@ function derive() {
   if (fs.existsSync(path.join(ROOT, "foundations/dist/tokens/motion.json"))) {
     collectMotionPatterns(g, readJSON("foundations/dist/tokens/motion.json"));
   }
-  // (later tasks add transversal/related/child edges here)
+  var catDir = path.join(ROOT, "components/dist/categories");
+  if (fs.existsSync(catDir)) {
+    fs.readdirSync(catDir)
+      .filter(function (f) {
+        return f.endsWith("-defaults.json");
+      })
+      .forEach(function (f) {
+        var catSlug = f.replace(/-defaults\.json$/, "");
+        collectTransversalRefs(
+          g,
+          catSlug,
+          readJSON("components/dist/categories/" + f),
+        );
+      });
+  }
+  collectRelated(g, readContentEntries());
+  if (
+    fs.existsSync(path.join(ROOT, "foundations/dist/foundations.bundle.json"))
+  ) {
+    collectFoundationChildEdges(
+      g,
+      bundleToTree(readJSON("foundations/dist/foundations.bundle.json")),
+    );
+  }
   var out = g.build();
   var outPath = path.join(ROOT, "graph", "dist", "graph.json");
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
@@ -157,6 +282,9 @@ module.exports = {
   collectA11yCriteria: collectA11yCriteria,
   collectFoundationSections: collectFoundationSections,
   collectMotionPatterns: collectMotionPatterns,
+  collectTransversalRefs: collectTransversalRefs,
+  collectRelated: collectRelated,
+  collectFoundationChildEdges: collectFoundationChildEdges,
   readJSON: readJSON,
   ROOT: ROOT,
 };

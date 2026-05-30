@@ -91,6 +91,80 @@ test("collectMotionPatterns: nodes from motion.patterns keys", function () {
   assert.equal(n.type, "motion_pattern");
 });
 
+test("collectTransversalRefs: category→target edges with note, per ref kind", function () {
+  var g = new (require("../scripts/lib/graph/model.js").GraphBuilder)();
+  D.collectTransversalRefs(g, "data-display", {
+    a11y_refs: {
+      requirementRefs: [{ ref: "color-contrast", note: "non-color cue" }],
+    },
+    motion_refs: { patternRefs: [{ ref: "skeleton-loading" }] },
+    foundations_refs: { sectionRefs: [{ ref: "tokens" }] },
+  });
+  var e = g.build().edges;
+  assert.ok(
+    e.some(function (x) {
+      return (
+        x.type === "a11y_ref" &&
+        x.source === "category:data-display" &&
+        x.target === "a11y:color-contrast" &&
+        x.note === "non-color cue"
+      );
+    }),
+  );
+  assert.ok(
+    e.some(function (x) {
+      return x.type === "motion_ref" && x.target === "motion:skeleton-loading";
+    }),
+  );
+  assert.ok(
+    e.some(function (x) {
+      return x.type === "foundations_ref" && x.target === "foundation:tokens";
+    }),
+  );
+});
+test("collectRelated: content_topic node + related edges to components", function () {
+  var g = new (require("../scripts/lib/graph/model.js").GraphBuilder)();
+  D.collectRelated(g, [
+    {
+      slug: "forms",
+      title: "Forms",
+      relatedComponents: ["text-input", "checkbox"],
+    },
+  ]);
+  var out = g.build();
+  assert.ok(
+    out.nodes.some(function (n) {
+      return n.id === "content:forms" && n.type === "content_topic";
+    }),
+  );
+  assert.ok(
+    out.edges.some(function (e) {
+      return (
+        e.type === "related" &&
+        e.source === "content:forms" &&
+        e.target === "component:text-input"
+      );
+    }),
+  );
+});
+test("collectFoundationChildEdges: parent→child from the tree", function () {
+  var g = new (require("../scripts/lib/graph/model.js").GraphBuilder)();
+  D.collectFoundationChildEdges(g, {
+    id: "",
+    children: [{ id: "tokens", children: [{ id: "tokens/spacing" }] }],
+  });
+  var e = g.build().edges;
+  assert.ok(
+    e.some(function (x) {
+      return (
+        x.type === "child" &&
+        x.source === "foundation:tokens" &&
+        x.target === "foundation:tokens/spacing"
+      );
+    }),
+  );
+});
+
 test("bundleToTree: reconstructs tree from bundle format; scoped sibling lookup + leaf fallback", function () {
   var bundle = {
     _index: {
