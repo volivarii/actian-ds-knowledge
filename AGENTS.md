@@ -12,6 +12,7 @@ Cross-harness AI guide. If your harness reads `AGENTS.md` (Cursor, Copilot CLI, 
 - `tokens/` is interim-flat — human-frozen snapshots until a successor generator lands.
 - One hand-edit exception in `dist/`: `metakit.json.templates` block.
 - Consumers reference logical names from `paths-manifest.json` (not physical paths). Generators write only to canonical paths under `dist/`.
+- `paths-manifest.json#knowledge_version` is **derived** from `package.json#version` — stamped by CI (and `npm run sync:version`). Never edit it by hand.
 
 ## Read order
 

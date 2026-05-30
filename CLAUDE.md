@@ -20,6 +20,8 @@ This is the federated knowledge layer for the Actian Design System 2026. If you'
 
 Consumers reference logical names from `paths-manifest.json` at the repo root, not physical file paths. The manifest maps each logical name to its file location. When you move files or add new content, update the manifest in the same commit. `validate-manifest.yml` is a required CI gate that catches drift.
 
+`paths-manifest.json#knowledge_version` is **derived** from `package.json#version` — stamped by CI (and `npm run sync:version`). Never edit it by hand; bump `package.json#version` and the field follows.
+
 Spec: `docs/superpowers/specs/2026-05-10-manifest-and-tag-pin-design.md` in the plugin repo (gitignored — ask the plugin lead if you need to read it).
 
 ## How CI runs

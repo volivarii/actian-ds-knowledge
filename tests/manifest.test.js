@@ -38,7 +38,7 @@ test("paths-manifest.json — schema correctness", async (t) => {
     assert.equal(
       manifest.knowledge_version,
       pkg.version,
-      "manifest.knowledge_version drifted from package.json — bump both together",
+      "manifest.knowledge_version drifted from package.json — it is derived, not hand-edited. Run `npm run sync:version` to stamp it.",
     );
   });
 
