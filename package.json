@@ -12,6 +12,7 @@
     "derive:accessibility": "node scripts/accessibility/derive-a11y-index.js && node scripts/accessibility/derive-a11y-sections.js",
     "validate:manifest": "node scripts/validate-manifest.js",
     "sync:version": "node scripts/lib/sync-knowledge-version.js",
+    "derive:graph": "node scripts/graph/derive-graph.js",
     "test": "node --test tests/*.test.js"
   },
   "devDependencies": {
