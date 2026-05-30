@@ -88,11 +88,8 @@
           },
           "provenance": {
             "type": "string",
-            "description": "Source file or path within the substrate that this node was derived from.",
-            "examples": [
-              "components/dist/registries/button.json",
-              "accessibility/dist/a11y-index.json"
-            ]
+            "description": "Provenance marker for derived/structural nodes — e.g. 'figma-dskit' on category nodes (Figma-derived grouping, not team-canonical).",
+            "examples": ["figma-dskit"]
           }
         }
       }

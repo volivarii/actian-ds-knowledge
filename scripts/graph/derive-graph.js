@@ -18,6 +18,7 @@ var REGISTRY_FILES = [
 
 // Component nodes + category nodes (all distinct labels, slugified, figma-dskit) + in_category edges.
 function collectComponentsAndCategories(g, registries) {
+  // Components are deduped by slug across registries (GraphBuilder first-wins); REGISTRY_FILES lists dskit first, so dskit's title wins on cross-kit slug collisions.
   registries.forEach(function (reg) {
     var comps = (reg && reg.components) || {};
     Object.keys(comps).forEach(function (slug) {

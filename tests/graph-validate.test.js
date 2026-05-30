@@ -68,3 +68,21 @@ test("analyze: reports a category with no a11y_ref (advisory, not dangling)", fu
   assert.ok(r.coverage.categoriesWithoutA11y.includes("category:icons"));
   assert.equal(r.dangling.length, 0);
 });
+test("schemaErrors: valid graph yields no errors; malformed node type is caught", function () {
+  assert.deepEqual(
+    V.schemaErrors({
+      _schema_version: 1,
+      _meta: { auto_generated: true, generator: "x", do_not_edit: "y" },
+      nodes: [{ id: "a11y:x", type: "a11y_criterion", title: "X" }],
+      edges: [],
+    }),
+    [],
+  );
+  var errs = V.schemaErrors({
+    _schema_version: 1,
+    _meta: { auto_generated: true, generator: "x", do_not_edit: "y" },
+    nodes: [{ id: "a11y:x", type: "BOGUS", title: "X" }],
+    edges: [],
+  });
+  assert.ok(errs.length > 0);
+});

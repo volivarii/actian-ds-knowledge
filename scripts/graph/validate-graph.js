@@ -2,6 +2,7 @@
 
 var fs = require("node:fs");
 var path = require("node:path");
+var Ajv = require("ajv/dist/2020");
 
 var ROOT = path.resolve(__dirname, "..", "..");
 
@@ -78,10 +79,23 @@ function analyze(graph) {
   };
 }
 
+// Returns an array of human-readable schema-violation strings ([] if valid).
+function schemaErrors(graph) {
+  var schema = JSON.parse(
+    fs.readFileSync(path.join(ROOT, "schemas", "graph.json"), "utf8"),
+  );
+  var validate = new Ajv({ allErrors: true }).compile(schema);
+  if (validate(graph)) return [];
+  return (validate.errors || []).map(function (e) {
+    return "schema: " + (e.instancePath || "(root)") + " " + e.message;
+  });
+}
+
 function main() {
   var graph = JSON.parse(
     fs.readFileSync(path.join(ROOT, "graph", "dist", "graph.json"), "utf8"),
   );
+  var schemaErrs = schemaErrors(graph);
   var r = analyze(graph);
 
   var report = [
@@ -102,16 +116,33 @@ function main() {
     }
   } else console.log(report);
 
-  if (r.dangling.length > 0) {
-    var failLine =
-      "\n**FAILED — " +
-      r.dangling.length +
-      " dangling ref(s):**\n" +
-      r.dangling
-        .map(function (d) {
-          return "- " + d;
-        })
-        .join("\n");
+  if (schemaErrs.length || r.dangling.length) {
+    var failParts = [];
+    if (schemaErrs.length) {
+      failParts.push(
+        "\n**FAILED — " +
+          schemaErrs.length +
+          " schema violation(s):**\n" +
+          schemaErrs
+            .map(function (e) {
+              return "- " + e;
+            })
+            .join("\n"),
+      );
+    }
+    if (r.dangling.length) {
+      failParts.push(
+        "\n**FAILED — " +
+          r.dangling.length +
+          " dangling ref(s):**\n" +
+          r.dangling
+            .map(function (d) {
+              return "- " + d;
+            })
+            .join("\n"),
+      );
+    }
+    var failLine = failParts.join("\n");
     if (summary) {
       try {
         fs.appendFileSync(summary, failLine + "\n");
@@ -119,10 +150,18 @@ function main() {
         /* logged below */
       }
     }
-    console.error("validate-graph FAILED — dangling refs:");
-    r.dangling.forEach(function (d) {
-      console.error("  - " + d);
-    });
+    if (schemaErrs.length) {
+      console.error("validate-graph FAILED — schema violations:");
+      schemaErrs.forEach(function (e) {
+        console.error("  - " + e);
+      });
+    }
+    if (r.dangling.length) {
+      console.error("validate-graph FAILED — dangling refs:");
+      r.dangling.forEach(function (d) {
+        console.error("  - " + d);
+      });
+    }
     process.exit(1);
   }
   console.log("validate-graph: OK (no dangling refs)");
@@ -130,4 +169,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { analyze: analyze };
+module.exports = { analyze: analyze, schemaErrors: schemaErrors };
