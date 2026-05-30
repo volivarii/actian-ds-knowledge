@@ -94,17 +94,6 @@ jobs:
           git commit -m "chore(foundations): regenerate JSONs from foundations/src/ + bump patch"
           git push
 
-      - name: Tag release
-        if: steps.diff.outputs.changed == 'true'
-        run: |
-          VERSION=$(jq -r .version package.json)
-          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-            echo "Tag v$VERSION already exists locally, skipping"
-          else
-            git tag "v$VERSION"
-            git push origin "v$VERSION" || echo "Tag push failed (likely already exists on remote)"
-          fi
-
       - name: Post semantic-diff comment
         if: steps.diff.outputs.changed == 'true'
         env:

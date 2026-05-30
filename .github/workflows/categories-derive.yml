@@ -97,19 +97,6 @@ jobs:
           git commit -m "chore(categories): regenerate dist from category MDs + bump patch"
           git push
 
-      # Skip on fork PRs — GITHUB_TOKEN can't push tags to forks.
-      # Authors from forks see CI complete without tag emission; tag lands on merge.
-      - name: Tag release
-        if: steps.diff.outputs.changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
-        run: |
-          VERSION=$(jq -r .version package.json)
-          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-            echo "Tag v$VERSION already exists locally, skipping"
-          else
-            git tag "v$VERSION"
-            git push origin "v$VERSION" || echo "Tag push failed (likely already exists on remote)"
-          fi
-
       - name: Summarize
         if: always()
         run: |
