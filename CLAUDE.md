@@ -2,6 +2,12 @@
 
 This is the federated knowledge layer for the Actian Design System 2026. If you're an AI agent (Claude or otherwise) reading or modifying content here, follow these rules.
 
+## Contributing a change? Read this first
+
+**Edit only files inside a `src/` folder.** Do **not** edit anything in a `dist/` folder, and do **not** change version numbers (`package.json` `version` or `paths-manifest.json` `knowledge_version`).
+
+CI does the rest automatically: on your PR it regenerates the `dist/` files, bumps the version (both fields together), and commits them back to your branch. So just: **edit source → commit → open a PR.** If a check fails complaining about the version, you almost certainly edited it by hand — revert that change and let CI bump it.
+
 ## Read first
 
 - [llms.txt](llms.txt) — content index

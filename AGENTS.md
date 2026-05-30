@@ -4,6 +4,12 @@ Cross-harness AI guide. If your harness reads `AGENTS.md` (Cursor, Copilot CLI, 
 
 > **For full guidance, read [CLAUDE.md](CLAUDE.md).** This file is intentionally a thin pointer to keep the two in sync.
 
+## Contributing a change? Read this first
+
+**Edit only files inside a `src/` folder.** Do **not** edit anything in a `dist/` folder, and do **not** change version numbers (`package.json` `version` or `paths-manifest.json` `knowledge_version`).
+
+CI does the rest automatically: on your PR it regenerates the `dist/` files, bumps the version (both fields together), and commits them back to your branch. So just: **edit source → commit → open a PR.** If a check fails complaining about the version, you almost certainly edited it by hand — revert that change and let CI bump it.
+
 ## TL;DR
 
 - This repo is the federated knowledge layer for the Actian Design System 2026.
