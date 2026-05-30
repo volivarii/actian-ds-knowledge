@@ -51,7 +51,7 @@ module.exports = bumpVersion;
 if (require.main === module) {
   var fs = require("fs");
   var path = require("path");
-  var { writeManifest } = require("./manifest-io");
+  var { syncKnowledgeVersion } = require("./sync-knowledge-version.js");
   var args = process.argv.slice(2);
   if (args.length !== 2) {
     process.stderr.write(
@@ -72,24 +72,18 @@ if (require.main === module) {
   );
   process.stdout.write(oldVersion + " -> " + newVersion + "\n");
 
-  // Sync paths-manifest.knowledge_version with package.json#version.
-  // Lives in the same directory as the bumped JSON file. No-op if absent
-  // (keeps the utility portable — tests + non-knowledge consumers unaffected).
-  // path.resolve so a relative invocation (e.g. `node ... package.json minor`
-  // from repo root) produces an absolute repoRoot.
+  // Sync paths-manifest.knowledge_version with package.json#version via the
+  // single-writer helper. It re-reads `<repoRoot>/package.json` (which is the
+  // file just bumped above in the lockstep invocation `bump-version package.json
+  // <level>`) and stamps the sibling manifest. No-ops if either file is absent
+  // (keeps the utility portable for tests + non-knowledge consumers).
+  // path.resolve so a relative invocation from repo root yields an absolute root.
   var repoRoot = path.resolve(path.dirname(pluginJsonPath));
-  var manifestPath = path.join(repoRoot, "paths-manifest.json");
-  var manifest = null;
-  if (fs.existsSync(manifestPath)) {
-    manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-    if (manifest.knowledge_version !== newVersion) {
-      manifest.knowledge_version = newVersion;
-      writeManifest(manifestPath, manifest);
-      process.stdout.write(
-        "[bump-version] synced paths-manifest.knowledge_version -> " +
-          newVersion +
-          "\n",
-      );
-    }
+  if (syncKnowledgeVersion(repoRoot)) {
+    process.stdout.write(
+      "[bump-version] synced paths-manifest.knowledge_version -> " +
+        newVersion +
+        "\n",
+    );
   }
 }
