@@ -1,6 +1,9 @@
 name: Validate manifest
 
-# Required PR gate. Two-part check:
+# Required PR gate. Three-part:
+#   (0) npm run sync:version — stamp paths-manifest.json#knowledge_version from
+#       package.json#version (it is DERIVED, never hand-edited), and auto-commit
+#       any drift back to the PR branch BEFORE the validate/test step runs.
 #   (1) scripts/validate-manifest.js — schema + path resolution + no orphans
 #   (2) npm test — manifest test suite + content-derive test suite
 #
@@ -16,9 +19,33 @@ jobs:
   validate:
     name: Validate manifest schema + coverage
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
+      # App token for the stamp auto-commit push below. Mirrors
+      # guidelines-derive.yml: a commit pushed with the default GITHUB_TOKEN
+      # cannot trigger further workflow runs, which would leave the required
+      # checks with no status on the auto-commit's SHA and block merges. The
+      # actian-ds-bot App token re-triggers them on the new HEAD SHA. Skipped on
+      # fork PRs — BOT_APP_PRIVATE_KEY is not exposed to them; checkout then
+      # falls back to github.token (read-only, but the commit step also skips on
+      # forks, so the validate/test steps still run on the unstamped tree).
+      - name: Generate App token
+        id: app-token
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
       - name: Checkout PR branch
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token || github.token }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -27,6 +54,41 @@ jobs:
 
       - name: Install deps
         run: npm install --no-audit --no-fund
+
+      # knowledge_version is DERIVED from package.json#version, never hand-edited.
+      # Stamp it here so a PR that bumped package.json (or hand-edited the field)
+      # can never land with the two out of sync. Runs BEFORE validate/test so the
+      # gate sees the corrected tree. No-op when already synced (byte-identical
+      # rewrite is suppressed by the helper).
+      - name: Stamp knowledge_version from package.json
+        run: npm run sync:version
+
+      - name: Detect manifest drift
+        id: diff
+        run: |
+          if git diff --quiet -- paths-manifest.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "knowledge_version already in sync."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "knowledge_version drifted — stamped from package.json:"
+            git diff -- paths-manifest.json
+          fi
+
+      # Skip on fork PRs — GITHUB_TOKEN can't push to forks. On same-repo PRs the
+      # push uses the App token so the required checks re-run on the new HEAD SHA;
+      # a GITHUB_TOKEN push could NOT re-trigger them (the recurring gotcha
+      # documented in CLAUDE.md / guidelines-derive.yml), leaving the stamped SHA
+      # without a status and blocking merge — an empty-commit nudge would then be
+      # needed. The App token avoids that.
+      - name: Commit stamped manifest back to PR
+        if: steps.diff.outputs.changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add paths-manifest.json
+          git commit -m "chore(version): stamp knowledge_version from package.json"
+          git push
 
       - name: Validate manifest
         run: node scripts/validate-manifest.js
