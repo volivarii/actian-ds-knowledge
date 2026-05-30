@@ -7,6 +7,316 @@
   },
   "nodes": [
     {
+      "id": "a11y:ai-output-suggestions",
+      "type": "a11y_criterion",
+      "title": "AI Output & Suggestions",
+      "wcag": [
+        "1.3.1",
+        "1.4.1",
+        "2.1.1",
+        "2.2.2",
+        "4.1.2",
+        "4.1.3"
+      ]
+    },
+    {
+      "id": "a11y:alerts-toasts-banners",
+      "type": "a11y_criterion",
+      "title": "Alerts, Toasts & Banners",
+      "wcag": [
+        "1.3.1",
+        "1.4.1",
+        "2.2.1",
+        "3.3.1",
+        "4.1.2",
+        "4.1.3"
+      ]
+    },
+    {
+      "id": "a11y:aria-labels",
+      "type": "a11y_criterion",
+      "title": "6. ARIA & Labels"
+    },
+    {
+      "id": "a11y:buttons",
+      "type": "a11y_criterion",
+      "title": "Buttons",
+      "wcag": [
+        "2.1.1",
+        "2.4.3",
+        "2.4.7",
+        "3.3.2",
+        "4.1.2",
+        "1.4.1",
+        "2.5.5"
+      ]
+    },
+    {
+      "id": "a11y:color-contrast",
+      "type": "a11y_criterion",
+      "title": "2. Color & Contrast",
+      "wcag": [
+        "1.4.1"
+      ]
+    },
+    {
+      "id": "a11y:components",
+      "type": "a11y_criterion",
+      "title": "11. Components"
+    },
+    {
+      "id": "a11y:data-tables",
+      "type": "a11y_criterion",
+      "title": "Data Tables",
+      "wcag": [
+        "2.4.11",
+        "1.3.1",
+        "1.3.2",
+        "2.1.1",
+        "2.4.3",
+        "4.1.2"
+      ]
+    },
+    {
+      "id": "a11y:designer-handoff-checklist",
+      "type": "a11y_criterion",
+      "title": "12. Designer Handoff Checklist"
+    },
+    {
+      "id": "a11y:drag-drop",
+      "type": "a11y_criterion",
+      "title": "Drag & Drop",
+      "wcag": [
+        "1.3.1",
+        "2.1.1",
+        "2.1.3",
+        "2.5.2",
+        "2.5.7",
+        "4.1.2",
+        "4.1.3"
+      ]
+    },
+    {
+      "id": "a11y:dropdowns-menus-popovers",
+      "type": "a11y_criterion",
+      "title": "Dropdowns, Menus & Popovers",
+      "wcag": [
+        "1.3.1",
+        "1.4.13",
+        "2.1.1",
+        "2.4.3",
+        "3.2.1",
+        "4.1.2"
+      ]
+    },
+    {
+      "id": "a11y:empty-states",
+      "type": "a11y_criterion",
+      "title": "Empty States",
+      "wcag": [
+        "1.1.1",
+        "1.3.1",
+        "2.4.3",
+        "2.4.6",
+        "4.1.3"
+      ]
+    },
+    {
+      "id": "a11y:error-prevention",
+      "type": "a11y_criterion",
+      "title": "9. Error Prevention",
+      "wcag": [
+        "3.3.4"
+      ]
+    },
+    {
+      "id": "a11y:focus-interaction",
+      "type": "a11y_criterion",
+      "title": "Focus & Interaction"
+    },
+    {
+      "id": "a11y:focus-keyboard",
+      "type": "a11y_criterion",
+      "title": "5. Focus & Keyboard",
+      "wcag": [
+        "2.4.11"
+      ]
+    },
+    {
+      "id": "a11y:forms",
+      "type": "a11y_criterion",
+      "title": "Forms",
+      "wcag": [
+        "1.3.1",
+        "1.3.5",
+        "2.1.1",
+        "2.4.3",
+        "3.3.1",
+        "3.3.2",
+        "3.3.3",
+        "4.1.2"
+      ]
+    },
+    {
+      "id": "a11y:icons",
+      "type": "a11y_criterion",
+      "title": "Icons",
+      "wcag": [
+        "1.4.11",
+        "1.1.1",
+        "1.4.1",
+        "2.1.1",
+        "4.1.2"
+      ]
+    },
+    {
+      "id": "a11y:labels-annotations",
+      "type": "a11y_criterion",
+      "title": "Labels & Annotations"
+    },
+    {
+      "id": "a11y:loading-patterns",
+      "type": "a11y_criterion",
+      "title": "Loading Patterns",
+      "wcag": [
+        "1.3.1",
+        "2.1.1",
+        "2.2.1",
+        "2.2.2",
+        "2.3.1",
+        "2.4.3",
+        "3.2.3",
+        "4.1.2",
+        "4.1.3"
+      ]
+    },
+    {
+      "id": "a11y:modals",
+      "type": "a11y_criterion",
+      "title": "Modals",
+      "wcag": [
+        "1.3.1",
+        "1.3.5",
+        "2.1.1",
+        "2.4.3",
+        "2.5.8",
+        "3.3.1",
+        "3.3.2",
+        "3.3.3",
+        "4.1.2"
+      ]
+    },
+    {
+      "id": "a11y:motion",
+      "type": "a11y_criterion",
+      "title": "4. Motion",
+      "wcag": [
+        "2.3.1"
+      ]
+    },
+    {
+      "id": "a11y:navigation",
+      "type": "a11y_criterion",
+      "title": "Navigation",
+      "wcag": [
+        "1.3.1",
+        "2.1.1",
+        "2.4.1",
+        "2.4.3",
+        "2.4.4",
+        "3.2.3",
+        "4.1.2"
+      ]
+    },
+    {
+      "id": "a11y:principles",
+      "type": "a11y_criterion",
+      "title": "1. Principles"
+    },
+    {
+      "id": "a11y:reading-order-landmarks",
+      "type": "a11y_criterion",
+      "title": "7. Reading Order & Landmarks"
+    },
+    {
+      "id": "a11y:reading-order-touch",
+      "type": "a11y_criterion",
+      "title": "Reading Order & Touch"
+    },
+    {
+      "id": "a11y:session-timeout-warnings",
+      "type": "a11y_criterion",
+      "title": "10. Session & Timeout Warnings",
+      "wcag": [
+        "2.2.1"
+      ]
+    },
+    {
+      "id": "a11y:states",
+      "type": "a11y_criterion",
+      "title": "States"
+    },
+    {
+      "id": "a11y:tabs",
+      "type": "a11y_criterion",
+      "title": "Tabs",
+      "wcag": [
+        "1.3.1",
+        "2.1.1",
+        "2.4.3",
+        "2.4.7",
+        "4.1.2"
+      ]
+    },
+    {
+      "id": "a11y:tooltips",
+      "type": "a11y_criterion",
+      "title": "Tooltips",
+      "wcag": [
+        "1.3.1",
+        "1.4.4",
+        "1.4.10",
+        "1.4.13",
+        "2.1.1",
+        "4.1.2"
+      ]
+    },
+    {
+      "id": "a11y:touch-pointer",
+      "type": "a11y_criterion",
+      "title": "8. Touch & Pointer",
+      "wcag": [
+        "2.5.1"
+      ]
+    },
+    {
+      "id": "a11y:truncation-overflow",
+      "type": "a11y_criterion",
+      "title": "Truncation & Overflow",
+      "wcag": [
+        "1.3.1",
+        "1.4.4",
+        "1.4.10",
+        "1.4.13",
+        "2.1.1",
+        "4.1.2"
+      ]
+    },
+    {
+      "id": "a11y:typography",
+      "type": "a11y_criterion",
+      "title": "3. Typography",
+      "wcag": [
+        "1.4.5",
+        "1.4.4"
+      ]
+    },
+    {
+      "id": "a11y:typography-content",
+      "type": "a11y_criterion",
+      "title": "Typography & Content"
+    },
+    {
       "id": "category:action",
       "type": "category",
       "title": "Action",
@@ -3132,6 +3442,416 @@
       "id": "component:zoom-to-fit",
       "type": "component",
       "title": "zoom-to-fit"
+    },
+    {
+      "id": "foundation:color-primitives",
+      "type": "foundation_section",
+      "title": "Color Primitives"
+    },
+    {
+      "id": "foundation:color-primitives/oklch-shade-formula",
+      "type": "foundation_section",
+      "title": "OKLCH Shade Formula"
+    },
+    {
+      "id": "foundation:color-primitives/primitives",
+      "type": "foundation_section",
+      "title": "Primitives"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/blue",
+      "type": "foundation_section",
+      "title": "Blue"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/blue-grey",
+      "type": "foundation_section",
+      "title": "Blue Grey"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/clematis-purple",
+      "type": "foundation_section",
+      "title": "Clematis Purple"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/cool-grey",
+      "type": "foundation_section",
+      "title": "Cool Grey"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/dropped-brick-red",
+      "type": "foundation_section",
+      "title": "Dropped Brick Red"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/frosted-glass-green",
+      "type": "foundation_section",
+      "title": "Frosted Glass Green"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/glint-green",
+      "type": "foundation_section",
+      "title": "Glint Green"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/green",
+      "type": "foundation_section",
+      "title": "Green"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/grey",
+      "type": "foundation_section",
+      "title": "Grey"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/kickstart-purple",
+      "type": "foundation_section",
+      "title": "Kickstart Purple"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/mellow-melon-pink",
+      "type": "foundation_section",
+      "title": "Mellow Melon Pink"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/olive-green",
+      "type": "foundation_section",
+      "title": "Olive Green"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/orange",
+      "type": "foundation_section",
+      "title": "Orange"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/pacific-blue",
+      "type": "foundation_section",
+      "title": "Pacific Blue"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/pomegranate-red",
+      "type": "foundation_section",
+      "title": "Pomegranate Red"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/purple",
+      "type": "foundation_section",
+      "title": "Purple"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/red",
+      "type": "foundation_section",
+      "title": "Red"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/royal-blue",
+      "type": "foundation_section",
+      "title": "Royal Blue"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/shutters-green",
+      "type": "foundation_section",
+      "title": "Shutters Green"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/singapore-orchid-purple",
+      "type": "foundation_section",
+      "title": "Singapore Orchid Purple"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/turquoise",
+      "type": "foundation_section",
+      "title": "Turquoise"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/viva-gold-orange",
+      "type": "foundation_section",
+      "title": "Viva Gold Orange"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/white-black",
+      "type": "foundation_section",
+      "title": "White & Black"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/yellow",
+      "type": "foundation_section",
+      "title": "Yellow"
+    },
+    {
+      "id": "foundation:color-primitives/primitives/zima-blue",
+      "type": "foundation_section",
+      "title": "Zima Blue"
+    },
+    {
+      "id": "foundation:design-guidelines",
+      "type": "foundation_section",
+      "title": "Design Guidelines"
+    },
+    {
+      "id": "foundation:design-guidelines/border-usage",
+      "type": "foundation_section",
+      "title": "Border Usage"
+    },
+    {
+      "id": "foundation:design-guidelines/breakpoints",
+      "type": "foundation_section",
+      "title": "Breakpoints"
+    },
+    {
+      "id": "foundation:design-guidelines/breakpoints/columns-gutters-and-margins",
+      "type": "foundation_section",
+      "title": "Columns, Gutters, and Margins"
+    },
+    {
+      "id": "foundation:design-guidelines/breakpoints/grid-settings",
+      "type": "foundation_section",
+      "title": "Grid Settings"
+    },
+    {
+      "id": "foundation:design-guidelines/brightness-filter-convention-interactive-states",
+      "type": "foundation_section",
+      "title": "Brightness Filter Convention — Interactive States"
+    },
+    {
+      "id": "foundation:design-guidelines/brightness-filter-convention-interactive-states/implementation",
+      "type": "foundation_section",
+      "title": "Implementation"
+    },
+    {
+      "id": "foundation:design-guidelines/brightness-filter-convention-interactive-states/types-of-states",
+      "type": "foundation_section",
+      "title": "Types of States"
+    },
+    {
+      "id": "foundation:design-guidelines/color-usage-rules",
+      "type": "foundation_section",
+      "title": "Color Usage Rules"
+    },
+    {
+      "id": "foundation:design-guidelines/elevation-rules",
+      "type": "foundation_section",
+      "title": "Elevation Rules"
+    },
+    {
+      "id": "foundation:design-guidelines/focus-ring-rules",
+      "type": "foundation_section",
+      "title": "Focus Ring Rules"
+    },
+    {
+      "id": "foundation:design-guidelines/placeholder-text",
+      "type": "foundation_section",
+      "title": "Placeholder Text"
+    },
+    {
+      "id": "foundation:design-guidelines/spacing-rules",
+      "type": "foundation_section",
+      "title": "Spacing Rules"
+    },
+    {
+      "id": "foundation:design-guidelines/typography-rules",
+      "type": "foundation_section",
+      "title": "Typography Rules"
+    },
+    {
+      "id": "foundation:design-guidelines/typography-rules/accessibility",
+      "type": "foundation_section",
+      "title": "Accessibility"
+    },
+    {
+      "id": "foundation:design-guidelines/typography-rules/language-support",
+      "type": "foundation_section",
+      "title": "Language Support"
+    },
+    {
+      "id": "foundation:design-guidelines/typography-rules/line-length",
+      "type": "foundation_section",
+      "title": "Line Length"
+    },
+    {
+      "id": "foundation:design-guidelines/typography-rules/minimum-size",
+      "type": "foundation_section",
+      "title": "Minimum Size"
+    },
+    {
+      "id": "foundation:design-guidelines/typography-rules/paragraph-spacing",
+      "type": "foundation_section",
+      "title": "Paragraph Spacing"
+    },
+    {
+      "id": "foundation:design-guidelines/typography-rules/typeface",
+      "type": "foundation_section",
+      "title": "Typeface"
+    },
+    {
+      "id": "foundation:tokens",
+      "type": "foundation_section",
+      "title": "Tokens"
+    },
+    {
+      "id": "foundation:tokens/backgrounds",
+      "type": "foundation_section",
+      "title": "Backgrounds"
+    },
+    {
+      "id": "foundation:tokens/borders",
+      "type": "foundation_section",
+      "title": "Borders"
+    },
+    {
+      "id": "foundation:tokens/borders/radius",
+      "type": "foundation_section",
+      "title": "Radius"
+    },
+    {
+      "id": "foundation:tokens/borders/style-composite",
+      "type": "foundation_section",
+      "title": "Style (Composite)"
+    },
+    {
+      "id": "foundation:tokens/borders/width",
+      "type": "foundation_section",
+      "title": "Width"
+    },
+    {
+      "id": "foundation:tokens/breakpoints",
+      "type": "foundation_section",
+      "title": "Breakpoints"
+    },
+    {
+      "id": "foundation:tokens/elevation",
+      "type": "foundation_section",
+      "title": "Elevation"
+    },
+    {
+      "id": "foundation:tokens/focus-rings",
+      "type": "foundation_section",
+      "title": "Focus Rings"
+    },
+    {
+      "id": "foundation:tokens/global-color",
+      "type": "foundation_section",
+      "title": "Global Color"
+    },
+    {
+      "id": "foundation:tokens/heights-and-trigger-areas",
+      "type": "foundation_section",
+      "title": "Heights and Trigger Areas"
+    },
+    {
+      "id": "foundation:tokens/heights-and-trigger-areas/component-heights",
+      "type": "foundation_section",
+      "title": "Component Heights"
+    },
+    {
+      "id": "foundation:tokens/heights-and-trigger-areas/trigger-area",
+      "type": "foundation_section",
+      "title": "Trigger Area"
+    },
+    {
+      "id": "foundation:tokens/icons",
+      "type": "foundation_section",
+      "title": "Icons"
+    },
+    {
+      "id": "foundation:tokens/icons/icon-colors",
+      "type": "foundation_section",
+      "title": "Icon Colors"
+    },
+    {
+      "id": "foundation:tokens/icons/icon-sizes",
+      "type": "foundation_section",
+      "title": "Icon Sizes"
+    },
+    {
+      "id": "foundation:tokens/motion",
+      "type": "foundation_section",
+      "title": "Motion"
+    },
+    {
+      "id": "foundation:tokens/spacing",
+      "type": "foundation_section",
+      "title": "Spacing"
+    },
+    {
+      "id": "foundation:tokens/typography",
+      "type": "foundation_section",
+      "title": "Typography"
+    },
+    {
+      "id": "foundation:tokens/typography/font-family",
+      "type": "foundation_section",
+      "title": "Font Family"
+    },
+    {
+      "id": "foundation:tokens/typography/font-size",
+      "type": "foundation_section",
+      "title": "Font Size"
+    },
+    {
+      "id": "foundation:tokens/typography/font-weight",
+      "type": "foundation_section",
+      "title": "Font Weight"
+    },
+    {
+      "id": "foundation:tokens/typography/letter-spacing",
+      "type": "foundation_section",
+      "title": "Letter Spacing"
+    },
+    {
+      "id": "foundation:tokens/typography/line-height",
+      "type": "foundation_section",
+      "title": "Line Height"
+    },
+    {
+      "id": "foundation:tokens/typography/text-color-tokens",
+      "type": "foundation_section",
+      "title": "Text Color Tokens"
+    },
+    {
+      "id": "foundation:tokens/typography/text-style-tokens-composite",
+      "type": "foundation_section",
+      "title": "Text Style Tokens (Composite)"
+    },
+    {
+      "id": "motion:accordion",
+      "type": "motion_pattern",
+      "title": "Accordion (expand/collapse)"
+    },
+    {
+      "id": "motion:anchor-motion",
+      "type": "motion_pattern",
+      "title": "The \"Anchor\" Motion — Dropdowns, Popovers, and Tooltips"
+    },
+    {
+      "id": "motion:drawer",
+      "type": "motion_pattern",
+      "title": "Drawer (open/close)"
+    },
+    {
+      "id": "motion:layered-overlays",
+      "type": "motion_pattern",
+      "title": "Layered Overlays — Modals"
+    },
+    {
+      "id": "motion:skeleton-loading",
+      "type": "motion_pattern",
+      "title": "Skeleton Loading"
+    },
+    {
+      "id": "motion:staggered-entrance",
+      "type": "motion_pattern",
+      "title": "Staggered Entrance — Lists, Table Rows, Search Cards"
+    },
+    {
+      "id": "motion:state-transitions",
+      "type": "motion_pattern",
+      "title": "State Transitions"
+    },
+    {
+      "id": "motion:success-toast",
+      "type": "motion_pattern",
+      "title": "Success Toast"
     }
   ],
   "edges": [

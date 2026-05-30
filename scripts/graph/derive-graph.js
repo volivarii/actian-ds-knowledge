@@ -45,13 +45,87 @@ function collectComponentsAndCategories(g, registries) {
   });
 }
 
+function collectA11yCriteria(g, a11yIndex) {
+  (a11yIndex.sections || []).forEach(function (s) {
+    var node = {
+      id: M.nodeId("a11y_criterion", s.slug),
+      type: "a11y_criterion",
+      title: s.title || s.slug,
+    };
+    if (Array.isArray(s.wcag) && s.wcag.length) node.wcag = s.wcag;
+    g.addNode(node);
+  });
+}
+
+function collectFoundationSections(g, root) {
+  (function walk(node) {
+    if (node && typeof node.id === "string" && node.id !== "") {
+      g.addNode({
+        id: M.nodeId("foundation_section", node.id),
+        type: "foundation_section",
+        title: node.title || node.id,
+      });
+    }
+    if (node && Array.isArray(node.children)) node.children.forEach(walk);
+  })(root);
+}
+
+function collectMotionPatterns(g, motion) {
+  var pats = (motion && motion.patterns) || {};
+  Object.keys(pats).forEach(function (slug) {
+    var p = pats[slug] || {};
+    g.addNode({
+      id: M.nodeId("motion_pattern", slug),
+      type: "motion_pattern",
+      title: p.title || p.name || slug,
+    });
+  });
+}
+
+// Converts the foundations.bundle.json format to the recursive {id, title, children} tree
+// shape that collectFoundationSections expects. The bundle stores each section's metadata
+// in a nested _index key; children are referenced by the last path segment as object key.
+function bundleToTree(bundle) {
+  var rootIdx = bundle._index;
+  if (!rootIdx) return { id: "", title: "", children: [] };
+  function buildNode(idx, parentBundle) {
+    var node = { id: idx.id || "", title: idx.title || "" };
+    var children = (idx.children || []).map(function (childRef) {
+      // Look up by last path segment (the key used in the bundle object)
+      var childSeg = childRef.id.split("/").pop();
+      var subObj = parentBundle[childSeg];
+      if (subObj && subObj._index) {
+        return buildNode(subObj._index, subObj);
+      }
+      return { id: childRef.id, title: childRef.title || childRef.id };
+    });
+    if (children.length) node.children = children;
+    return node;
+  }
+  return buildNode(rootIdx, bundle);
+}
+
 function derive() {
   var g = new M.GraphBuilder();
   var registries = REGISTRY_FILES.filter(function (rel) {
     return fs.existsSync(path.join(ROOT, rel));
   }).map(readJSON);
   collectComponentsAndCategories(g, registries);
-  // (later tasks add target nodes + transversal/related/child edges here)
+  if (fs.existsSync(path.join(ROOT, "accessibility/dist/a11y-index.json"))) {
+    collectA11yCriteria(g, readJSON("accessibility/dist/a11y-index.json"));
+  }
+  if (
+    fs.existsSync(path.join(ROOT, "foundations/dist/foundations.bundle.json"))
+  ) {
+    collectFoundationSections(
+      g,
+      bundleToTree(readJSON("foundations/dist/foundations.bundle.json")),
+    );
+  }
+  if (fs.existsSync(path.join(ROOT, "foundations/dist/tokens/motion.json"))) {
+    collectMotionPatterns(g, readJSON("foundations/dist/tokens/motion.json"));
+  }
+  // (later tasks add transversal/related/child edges here)
   var out = g.build();
   var outPath = path.join(ROOT, "graph", "dist", "graph.json");
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
@@ -78,6 +152,9 @@ if (require.main === module) {
 module.exports = {
   derive: derive,
   collectComponentsAndCategories: collectComponentsAndCategories,
+  collectA11yCriteria: collectA11yCriteria,
+  collectFoundationSections: collectFoundationSections,
+  collectMotionPatterns: collectMotionPatterns,
   readJSON: readJSON,
   ROOT: ROOT,
 };
