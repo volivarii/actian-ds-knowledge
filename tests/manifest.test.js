@@ -38,7 +38,7 @@ test("paths-manifest.json — schema correctness", async (t) => {
     assert.equal(
       manifest.knowledge_version,
       pkg.version,
-      "manifest.knowledge_version drifted from package.json — it is derived, not hand-edited. Run `npm run sync:version` to stamp it.",
+      `Version mismatch: knowledge_version (${manifest.knowledge_version}) != package.json version (${pkg.version}). knowledge_version is DERIVED from package.json#version — never hand-edit it. If you changed it, revert and run \`npm run sync:version\` (CI also stamps it). See the "Contributing a change?" section in CLAUDE.md.`,
     );
   });
 
