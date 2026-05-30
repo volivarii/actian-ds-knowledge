@@ -428,6 +428,13 @@
       "origin": "human",
       "description": "FM Kit → DS Kit component mapping for hifi conversion"
     },
+    "graph.bundle": {
+      "path": "graph/dist/graph.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/graph/derive-graph.js",
+      "description": "Derived knowledge graph: typed nodes (component/category/a11y_criterion/foundation_section/motion_pattern/content_topic) + typed edges (in_category, a11y_ref, motion_ref, foundations_ref, related, child). Transversal refs are category-mediated. Consumed by future graph viz + AI agents."
+    },
     "foundations.authoring": {
       "path": "foundations/src/AUTHORING.md",
       "type": "markdown",
