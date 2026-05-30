@@ -38,7 +38,7 @@ test("paths-manifest.json — schema correctness", async (t) => {
     assert.equal(
       manifest.knowledge_version,
       pkg.version,
-      "manifest.knowledge_version drifted from package.json — bump both together",
+      `Version mismatch: knowledge_version (${manifest.knowledge_version}) != package.json version (${pkg.version}). If you hand-edited the version, REVERT it — both fields should match main. CI bumps them together automatically; contributors should not change versions. See the "Contributing a change?" section in CLAUDE.md.`,
     );
   });
 
