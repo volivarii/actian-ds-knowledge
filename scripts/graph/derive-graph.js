@@ -143,7 +143,12 @@ function collectFoundationChildEdges(g, root) {
   (function walk(node) {
     if (node && Array.isArray(node.children)) {
       node.children.forEach(function (child) {
-        if (node.id !== undefined && node.id !== "" && child.id) {
+        if (
+          node.id !== undefined &&
+          node.id !== "" &&
+          child.id !== undefined &&
+          child.id !== ""
+        ) {
           g.addEdge({
             source: M.nodeId("foundation_section", node.id),
             target: M.nodeId("foundation_section", child.id),
@@ -170,7 +175,14 @@ function readContentEntries() {
       var fm;
       try {
         fm = categoriesParser.parse(src).data;
-      } catch (_) {
+      } catch (err) {
+        console.warn(
+          "derive-graph: skipping " +
+            p +
+            " (frontmatter parse error: " +
+            err.message +
+            ")",
+        );
         return;
       }
       if (Array.isArray(fm.relatedComponents)) {
