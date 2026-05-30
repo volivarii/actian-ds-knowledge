@@ -26,7 +26,7 @@ var transformStyles = require("../transformers/transform-styles.js");
 var classify = require("../changelog/changelog-classifier.js");
 var defaultRest = require("./figma-rest.js");
 var syncMediaPreview = require("./sync-media-preview.js");
-var { writeManifest } = require("../lib/manifest-io.js");
+var { syncKnowledgeVersion } = require("../lib/sync-knowledge-version.js");
 
 var KIT_MAP = {
   dsKit: { library: "ds", outputFile: "dskit.json" },
@@ -540,11 +540,16 @@ async function run(opts) {
   // supplied. Mirrors the package.json bump above. Introduced 2026-05-11
   // (knowledge v0.3.7) — pre-existing manifest assertion requires
   // knowledge_version === package.json#version on every sync.
+  //
+  // Routed through the single-writer helper, which derives knowledge_version
+  // from the just-bumped package.json (the manifest is a sibling of
+  // pluginJsonPath — both at the repo root in the workflow, both in the
+  // tmpdir in tests). Still gated on `bumpedTo` so an unchanged verdict
+  // leaves the manifest alone, and on `manifestPath` so a programmatic caller
+  // that omits it never touches the manifest (backwards compat).
   var manifestPath = opts.manifestPath || null;
   if (manifestPath && bumpedTo && fs.existsSync(manifestPath)) {
-    var manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-    manifest.knowledge_version = bumpedTo;
-    writeManifest(manifestPath, manifest);
+    syncKnowledgeVersion(path.dirname(manifestPath));
   }
 
   // Auto-stub: generate guideline stubs for any new set-importable
