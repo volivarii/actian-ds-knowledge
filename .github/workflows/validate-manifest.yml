@@ -109,3 +109,12 @@ jobs:
 
       - name: Run test suite
         run: npm test
+
+      - name: Token reference in sync with tokens.json
+        run: |
+          npm run render:tokens
+          if ! git diff --quiet -- tokens/token-reference.md; then
+            echo "::error::tokens/token-reference.md is stale — run 'npm run render:tokens' and commit."
+            git --no-pager diff -- tokens/token-reference.md
+            exit 1
+          fi
