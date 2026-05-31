@@ -517,7 +517,14 @@ function buildLeafJson(
     if (motionPayload.description)
       motionLeaf.description = motionPayload.description;
     if (motionPayload.tokens) motionLeaf.tokens = motionPayload.tokens;
-    if (motionPayload.patterns) motionLeaf.patterns = motionPayload.patterns;
+    if (motionPayload.patterns) {
+      motionLeaf.patterns = motionPayload.patterns;
+      motionLeaf.bySlug = {};
+      Object.keys(motionPayload.patterns).forEach(function (k) {
+        var p = motionPayload.patterns[k];
+        if (p.slug) motionLeaf.bySlug[p.slug] = p;
+      });
+    }
     return motionLeaf;
   }
 

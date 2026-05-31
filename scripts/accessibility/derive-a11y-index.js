@@ -134,6 +134,10 @@ function deriveA11yIndex(md) {
       do_not_edit: "Edit the per-section src/ files; CI regenerates this file.",
     },
     sections: sections,
+    bySlug: sections.reduce(function (m, s) {
+      m[s.slug] = s;
+      return m;
+    }, {}),
   };
 }
 
