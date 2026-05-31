@@ -522,7 +522,7 @@ function buildLeafJson(
       motionLeaf.bySlug = {};
       Object.keys(motionPayload.patterns).forEach(function (k) {
         var p = motionPayload.patterns[k];
-        motionLeaf.bySlug[p.slug] = p;
+        if (p.slug) motionLeaf.bySlug[p.slug] = p;
       });
     }
     return motionLeaf;
