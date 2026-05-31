@@ -28,7 +28,12 @@ const royalBlue = JSON.parse(
 // Build { shade -> canonical hex } from the primitive table, skipping 🟡-Proposed rows.
 function canonicalRoyalBlue() {
   const map = {};
-  for (const row of royalBlue.blocks[0].rows) {
+  const block = royalBlue.blocks[0];
+  assert.ok(
+    block && block.type === "table" && Array.isArray(block.rows),
+    "royal-blue.json blocks[0] must be the color table — dist structure changed?",
+  );
+  for (const row of block.rows) {
     const rawHex = row["Hex (Figma)"];
     if (rawHex.includes("🟡")) continue; // Proposed / unshipped — not guarded yet
     const shade = row.Shade.replace(/\*/g, "").trim(); // "**500**" -> "500"
@@ -41,7 +46,10 @@ function canonicalRoyalBlue() {
 test("actian color.primary ramp == canonical royal-blue (shipped shades)", () => {
   const canonical = canonicalRoyalBlue();
   const shades = Object.keys(canonical);
-  assert.ok(shades.length >= 9, `expected >=9 shipped shades, got ${shades.length}`);
+  assert.ok(
+    shades.length >= 9,
+    `expected >=9 shipped shades, got ${shades.length}`,
+  );
   for (const [shade, expected] of Object.entries(canonical)) {
     const entry = tokens.color.primary[shade];
     assert.ok(entry, `tokens.json color.primary.${shade} is missing`);
@@ -56,6 +64,8 @@ test("actian color.primary ramp == canonical royal-blue (shipped shades)", () =>
   }
 });
 
+// Tokens resolving to non-500 shades (text.link.visited -> 700, bg.selected -> 50)
+// are covered by the ramp test above; this test guards only the -500-resolving tokens.
 test("semantic tokens resolving to primary == canonical royal-blue-500", () => {
   const expected = canonicalRoyalBlue()["500"]; // #0F5FDC
   const checks = [
