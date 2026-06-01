@@ -97,7 +97,7 @@
         "3.3.2",
         "4.1.2",
         "1.4.1",
-        "2.5.5"
+        "2.5.8"
       ],
       "body_excerpt": "- Use a native button element or proper button role; the name clearly describes the action (verb-based). - Visible text label required. Icon-only buttons need a tooltip or aria-label, and the purpose"
     },
@@ -419,7 +419,7 @@
         "3.3.2",
         "4.1.2",
         "1.4.1",
-        "2.5.5"
+        "2.5.8"
       ],
       "body_excerpt": "- Use a native button element or proper button role; the name clearly describes the action (verb-based). - Visible text label required. Icon-only buttons need a tooltip or aria-label, and the purpose"
     },
