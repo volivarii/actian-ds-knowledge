@@ -141,6 +141,7 @@ test("cellTarget: approved/draft → per-component domain file", () => {
       behavior: { status: "not-started" },
       tokens: { status: "not-started" },
     },
+    a11yRefs: [],
     origin: "authored",
   };
   assert.equal(cellTarget(row, "content"), "components/src/button/content.md");
@@ -159,6 +160,7 @@ test("cellTarget: inherited → category-level file", () => {
       behavior: { status: "not-started" },
       tokens: { status: "not-started" },
     },
+    a11yRefs: [],
     origin: "authored",
   };
   assert.equal(
@@ -178,6 +180,7 @@ test("cellTarget: not-started → _meta.yml (so author can change status)", () =
       behavior: { status: "not-started" },
       tokens: { status: "not-started" },
     },
+    a11yRefs: [],
     origin: "authored",
   };
   assert.equal(cellTarget(row, "content"), "components/src/button/_meta.yml");
@@ -194,6 +197,7 @@ test("cellTarget: inherited but missing category falls back to _meta.yml", () =>
       behavior: { status: "not-started" },
       tokens: { status: "not-started" },
     },
+    a11yRefs: [],
     origin: "authored",
   };
   assert.equal(cellTarget(row, "content"), "components/src/orphan/_meta.yml");
@@ -281,6 +285,7 @@ test("buildStubMeta: produces schema-aligned YAML with all 5 domains not-started
       behavior: { status: "not-started" },
       tokens: { status: "not-started" },
     },
+    a11yRefs: [],
     origin: "unstarted",
     registryKey: "data-grid",
   };
@@ -307,6 +312,7 @@ test("buildStubMeta: omits category when not present", () => {
       behavior: { status: "not-started" },
       tokens: { status: "not-started" },
     },
+    a11yRefs: [],
     origin: "unstarted",
     registryKey: "x",
   };

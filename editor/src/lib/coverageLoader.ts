@@ -52,6 +52,7 @@ export interface CoverageRow {
   component: string;
   category?: string;
   domains: Record<Domain, DomainEntry>;
+  a11yRefs: string[];
   /** authored = has _meta.yml; unstarted = in DS Kit registry but no _meta.yml */
   origin: RowOrigin;
   /** registry key (when origin === "unstarted") — used for stub generation */
@@ -95,6 +96,7 @@ export async function loadCoverage(gh: Octokit): Promise<CoverageRow[]> {
       component: entry.name,
       category: deriveCategorySlug(entry.category),
       domains: blankDomains(),
+      a11yRefs: [],
       origin: "unstarted" as const,
       registryKey: slug,
     }));
@@ -146,6 +148,7 @@ async function loadOne(gh: Octokit, slug: string): Promise<CoverageRow> {
       slug,
       component: slug,
       domains: blankDomains(),
+      a11yRefs: [],
       origin: "authored",
     };
   }
@@ -164,8 +167,21 @@ function parseRow(slug: string, raw: Record<string, unknown>): CoverageRow {
       behavior: normalize(domains.behavior),
       tokens: normalize(domains.tokens),
     },
+    a11yRefs: parseA11yRefs(raw),
     origin: "authored",
   };
+}
+
+export function parseA11yRefs(
+  raw: Record<string, unknown> | unknown,
+): string[] {
+  const arr = (raw as { a11y_refs?: unknown })?.a11y_refs;
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .map((e) =>
+      e && typeof e === "object" ? (e as { ref?: unknown }).ref : undefined,
+    )
+    .filter((r): r is string => typeof r === "string");
 }
 
 function normalize(entry: unknown): DomainEntry {
