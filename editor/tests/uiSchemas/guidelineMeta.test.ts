@@ -65,3 +65,30 @@ test("guidelineMetaUiSchema — explicit prefix entries all exist in the schema"
     `ui:order references properties not in the schema: ${ghost.join(", ")}`,
   );
 });
+
+test("guidelineMetaUiSchema — verbose help trimmed; section retitled; a11y_refs help is a tooltip", () => {
+  const ui = guidelineMetaUiSchema as Record<string, any>;
+  assert.equal(
+    ui.category?.["ui:help"],
+    undefined,
+    "category help removed (label self-explains)",
+  );
+  assert.equal(ui.related?.["ui:help"], undefined, "related help removed");
+  assert.equal(ui.section?.["ui:title"], "Figma section", "section retitled");
+  assert.equal(
+    ui.a11y_refs?.["ui:options"]?.helpAsTooltip,
+    true,
+    "a11y_refs help routed to tooltip",
+  );
+  assert.ok(
+    typeof ui.a11y_refs?.["ui:help"] === "string" &&
+      ui.a11y_refs["ui:help"].length > 0,
+    "a11y_refs keeps a (short) help string for the tooltip",
+  );
+  assert.equal(
+    ui.domains?.["ui:title"],
+    undefined,
+    "domains title removed (not rendered)",
+  );
+  assert.equal(ui.domains?.["ui:help"], undefined, "domains help removed");
+});
