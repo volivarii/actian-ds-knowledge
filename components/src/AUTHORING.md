@@ -75,6 +75,24 @@ All three pass through verbatim to the derived
 `components/dist/guidelines/<slug>.json` under `meta.*` — no consumer-side
 resolution is required.
 
+### `a11y_refs` (optional)
+
+Per-component accessibility references — the **component tier** of the two-tier a11y model:
+
+- **Foundation / cross-cutting** WCAG topics (`color-contrast`, `focus-keyboard`, `aria-labels`, …) are referenced once on the component's **category** (`components/src/categories/<category>.md`). Do not repeat them here.
+- **Component-pattern** topics (`buttons`, `modals`, `tabs`, `data-tables`, `dropdowns-menus-popovers`, `tooltips`, `truncation-overflow`, `icons`, `forms`, `navigation`, `alerts-toasts-banners`) attach **here**, on the component.
+
+Note: a category may also carry component-pattern refs as broad defaults; the component-level ref is the precise per-component hook for consumers reading a single component document.
+
+Each entry is `{ ref: <slug>, note?: <string> }`; `ref` must be a slug in `accessibility/dist/a11y-index.json`. The target standard is **WCAG 2.2 AA**. Example:
+
+```yaml
+a11y_refs:
+  - { ref: modals, note: focus returns to trigger on close }
+```
+
+`tests/a11y-refs-coverage.test.js` enforces that committed component-pattern slugs are referenced and that no `ref` dangles.
+
 ## Domain markdown files (`content.md`, `usage.md`, `design.md`, `behavior.md`)
 
 Plain markdown. Frontmatter is optional. The deriver keeps the verbatim body

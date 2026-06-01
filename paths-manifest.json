@@ -529,7 +529,7 @@
       "pattern": "{slug}.md",
       "type": "markdown",
       "origin": "human",
-      "description": "WCAG 2.1 AA guidance, authored as per-section files (intro, principles, … designer-handoff-checklist). Canonical order is declared in `_order.json` (sibling manifest); consumers either follow that order or fall back to alphabetical. AUTHORING.md is excluded."
+      "description": "WCAG 2.2 AA guidance, authored as per-section files (intro, principles, … designer-handoff-checklist). Canonical order is declared in `_order.json` (sibling manifest); consumers either follow that order or fall back to alphabetical. AUTHORING.md is excluded."
     },
     "accessibility.leaf": {
       "dir": "accessibility/dist",

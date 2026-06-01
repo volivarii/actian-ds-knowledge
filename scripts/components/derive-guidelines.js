@@ -277,6 +277,13 @@ function deriveComponentDir(
   };
   if (meta.section != null) out.meta.section = meta.section;
   if (meta.related != null) out.meta.related = meta.related;
+  if (Array.isArray(meta.a11y_refs)) {
+    out.meta.a11y_refs = meta.a11y_refs.map(function (r) {
+      const item = { ref: r.ref };
+      if (r.note != null) item.note = r.note;
+      return item;
+    });
+  }
   if (Array.isArray(meta.examples)) {
     out.meta.examples = meta.examples.map(function (e) {
       const item = { label: e.label };

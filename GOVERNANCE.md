@@ -149,7 +149,7 @@ context without duplicating canonical content.
 
 Today the substrate has three transversal reference taxonomies in active use:
 
-- **Accessibility** — WCAG 2.1 AA criteria anchored in
+- **Accessibility** — WCAG 2.2 AA criteria anchored in
   `accessibility/dist/a11y-index.json`; components reference them via
   `a11y_refs: [{ref: focus-keyboard, note: "..."}, ...]` in
   category-defaults frontmatter.
