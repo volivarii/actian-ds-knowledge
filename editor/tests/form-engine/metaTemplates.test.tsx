@@ -49,7 +49,7 @@ test("RJSFForm forwards a custom ObjectFieldTemplate to RJSF", () => {
 });
 
 function fieldProps(over: Record<string, unknown> = {}) {
-  return {
+  const merged = {
     id: "root_demo",
     label: "Demo field",
     children: <input id="root_demo" />,
@@ -61,7 +61,12 @@ function fieldProps(over: Record<string, unknown> = {}) {
     rawDescription: "VERBOSE SCHEMA DESCRIPTION THAT MUST NOT RENDER",
     uiSchema: {},
     ...over,
-  } as any;
+  } as Record<string, any>;
+  // RJSF resolves ui:help → rawHelp; mirror that for the fake props.
+  if (merged.rawHelp === undefined && merged.uiSchema?.["ui:help"]) {
+    merged.rawHelp = merged.uiSchema["ui:help"];
+  }
+  return merged as any;
 }
 
 test("MetaFieldTemplate never renders the schema description", () => {
@@ -106,6 +111,11 @@ test("MetaFieldTemplate renders ui:help inline by default, tooltip when flagged"
   assert.ok(
     tip.container.querySelector('[aria-label="tooltip help"]'),
     "tooltip trigger carries the help as aria-label",
+  );
+  assert.equal(
+    tip.queryByText("tooltip help"),
+    null,
+    "tooltip help text not rendered inline when helpAsTooltip is true",
   );
   cleanup();
 });

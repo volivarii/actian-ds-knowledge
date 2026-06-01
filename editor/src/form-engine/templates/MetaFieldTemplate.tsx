@@ -7,14 +7,24 @@ import type { FieldTemplateProps } from "@rjsf/utils";
 import { Flex, Text, Tooltip } from "@radix-ui/themes";
 
 export function MetaFieldTemplate(props: FieldTemplateProps) {
-  const { id, label, children, errors, hidden, required, displayLabel, uiSchema } =
-    props;
+  const {
+    id,
+    label,
+    children,
+    errors,
+    hidden,
+    required,
+    displayLabel,
+    uiSchema,
+    rawHelp,
+  } = props;
   if (hidden) return <div style={{ display: "none" }}>{children}</div>;
 
-  const help = (uiSchema?.["ui:help"] as string | undefined) ?? undefined;
-  const helpAsTooltip =
-    ((uiSchema?.["ui:options"] as Record<string, unknown> | undefined)
-      ?.helpAsTooltip ?? false) === true;
+  const help = rawHelp;
+  // Equivalent to getUiOptions(uiSchema) — reads ui:options from the uiSchema.
+  const uiOptions =
+    (uiSchema?.["ui:options"] as Record<string, unknown> | undefined) ?? {};
+  const helpAsTooltip = uiOptions.helpAsTooltip === true;
 
   return (
     <div style={{ marginBottom: "var(--space-4, 16px)" }}>
@@ -26,14 +36,21 @@ export function MetaFieldTemplate(props: FieldTemplateProps) {
           </Text>
           {helpAsTooltip && help ? (
             <Tooltip content={help}>
-              <Text
-                size="1"
-                color="gray"
+              <button
+                type="button"
                 aria-label={help}
-                style={{ cursor: "help" }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "help",
+                  lineHeight: 1,
+                  fontSize: "var(--font-size-1)",
+                  color: "var(--gray-9)",
+                }}
               >
                 ⓘ
-              </Text>
+              </button>
             </Tooltip>
           ) : null}
         </Flex>
