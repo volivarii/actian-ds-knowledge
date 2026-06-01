@@ -63,7 +63,13 @@ function resolveConfig(args) {
     ? path.resolve(ROOT, args.index)
     : path.join(src, "content-index.md");
   var globalOut = path.join(ROOT, "content/dist/global.md");
-  return { src: src, index: indexArg, globalOut: globalOut };
+  var wordsToAvoidOut = path.join(ROOT, "content/dist/words-to-avoid.json");
+  return {
+    src: src,
+    index: indexArg,
+    globalOut: globalOut,
+    wordsToAvoidOut: wordsToAvoidOut,
+  };
 }
 
 function readSectionOrder(indexFile) {
@@ -123,6 +129,67 @@ function shiftHeadings(s) {
     lines[i] = "#" + hashes + " " + match[2];
   }
   return lines.join("\n");
+}
+
+// Parse a markdown "Words to avoid" Do/Don't table into structured rules.
+// The table is `| <rule note> | <Do example> | <Don't example> |`. The
+// literal avoid tokens are the double-quoted terms inside the note column;
+// rows with no quoted term are advisory (avoid: []). Throws if no data
+// rows are found. Straight (") and smart (" ") quotes both supported.
+// Note: trailing .,;!? is stripped from each token, so dotted abbreviations (e.g. "e.g.") would lose the final dot — fine for the current brand-voice word list.
+function parseWordsToAvoid(md) {
+  var src = String(md).replace(/\r\n/g, "\n");
+  var lines = src.split("\n");
+  var dataRows = [];
+  var sawHeader = false;
+  var inTable = false;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    var isRow = line.charAt(0) === "|" && line.charAt(line.length - 1) === "|";
+    if (!isRow) {
+      if (inTable) break; // table ended
+      continue;
+    }
+    inTable = true;
+    var cells = line
+      .slice(1, -1)
+      .split("|")
+      .map(function (c) {
+        return c.trim();
+      });
+    if (!sawHeader) {
+      sawHeader = true; // first table row is the header — skip it
+      continue;
+    }
+    var isSeparator = cells.every(function (c) {
+      return /^:?-+:?$/.test(c);
+    });
+    if (isSeparator) continue;
+    if (cells.length < 3) continue;
+    dataRows.push(cells);
+  }
+  if (dataRows.length === 0) {
+    throw new Error("words-to-avoid: no table rows found in source");
+  }
+  var quoteRe = /["“”]([^"“”]+)["“”]/g;
+  return dataRows.map(function (cells) {
+    var note = cells[0];
+    var avoid = [];
+    quoteRe.lastIndex = 0;
+    var m;
+    while ((m = quoteRe.exec(note)) !== null) {
+      var term = m[1]
+        .trim()
+        .toLowerCase()
+        .replace(/[.,;!?]+$/, "");
+      if (term) avoid.push(term);
+    }
+    return {
+      avoid: avoid,
+      reason: note,
+      example: { do: cells[1], dont: cells[2] },
+    };
+  });
 }
 
 // Sub-buckets we walk inside content/src/. Order is not significant
@@ -270,6 +337,26 @@ function buildGlobalOutput(config) {
   return assembleDoc(header, sections);
 }
 
+// Build content's structured words-to-avoid artifact from the prose source.
+// Additive: does not touch global.md. Single source of truth = the prose
+// table in content/src/writing/words-to-avoid.md.
+function buildWordsToAvoid(config) {
+  var srcFile = path.join(config.src, "writing", "words-to-avoid.md");
+  if (!fs.existsSync(srcFile)) {
+    throw new Error(
+      "words-to-avoid source not found: " + path.relative(ROOT, srcFile),
+    );
+  }
+  var raw = fs.readFileSync(srcFile, "utf8");
+  var rules = parseWordsToAvoid(raw);
+  return {
+    _schema_version: 1,
+    // Canonical substrate-relative path (not config.src, which may be a test override).
+    _source: "content/src/writing/words-to-avoid.md",
+    rules: rules,
+  };
+}
+
 function main(argv) {
   var args = parseArgs(argv);
   var config = resolveConfig(args);
@@ -289,6 +376,16 @@ function main(argv) {
       " bytes, " +
       lineCount +
       " lines)",
+  );
+
+  var wta = buildWordsToAvoid(config);
+  fs.writeFileSync(config.wordsToAvoidOut, JSON.stringify(wta, null, 2) + "\n");
+  console.log(
+    "[derive-content] wrote " +
+      path.relative(ROOT, config.wordsToAvoidOut) +
+      " (" +
+      wta.rules.length +
+      " rules)",
   );
 }
 
@@ -311,6 +408,8 @@ module.exports = {
   stripJekyllAttrs: stripJekyllAttrs,
   collapseBlankLines: collapseBlankLines,
   shiftHeadings: shiftHeadings,
+  parseWordsToAvoid: parseWordsToAvoid,
+  buildWordsToAvoid: buildWordsToAvoid,
   resolveSectionFile: resolveSectionFile,
   readSection: readSection,
   resolveAllSections: resolveAllSections,
