@@ -41,53 +41,24 @@ test("a11y intro states WCAG 2.2 AA as the target", () => {
 
 // ── Coverage guard ──────────────────────────────────────────────────────────
 
-const FOUNDATION = new Set([
-  "principles",
-  "components", // section-header slug, not a referenceable criterion
-  "color-contrast",
-  "typography",
-  "motion",
-  "focus-keyboard",
-  "aria-labels",
-  "reading-order-landmarks",
-  "touch-pointer",
-  "error-prevention",
-  "session-timeout-warnings",
-]);
-
-const REQUIRED_COMPONENT_PATTERNS = new Set([
-  "buttons",
-  "navigation",
-  "forms",
-  "modals",
-  "alerts-toasts-banners",
-  "dropdowns-menus-popovers",
-  "data-tables",
-  "tabs",
-  "tooltips", // single host: popover (no standalone tooltip component)
-  "truncation-overflow",
-  "icons", // single host: badge (primary icon-bearing display component)
-]);
-
+// Coverage POLICY (not derivable from tier): component-pattern slugs that
+// have no documented component host yet. Allowlisted — neither required to be
+// referenced nor treated as a failure. Shrinks as these components are
+// authored. (designer-handoff-checklist is header-tier, handled by tier.)
 const KNOWN_GAP = new Set([
   "loading-patterns",
   "empty-states",
   "drag-drop",
   "ai-output-suggestions",
-  "designer-handoff-checklist",
 ]);
 
-// Sub-items of the designer-handoff-checklist section. They appear in
-// bySlug because the derive does not filter section sub-items, but they are
-// not meaningful as component-level refs — allowlisted (neither required nor
-// treated as orphans).
-const RECONCILE = new Set([
-  "states",
-  "typography-content",
-  "focus-interaction",
-  "labels-annotations",
-  "reading-order-touch",
-]);
+function indexBySlug() {
+  return readJson("accessibility/dist/a11y-index.json").bySlug || {};
+}
+function slugsOfTier(tier) {
+  const by = indexBySlug();
+  return Object.keys(by).filter((s) => by[s].tier === tier);
+}
 
 function allIndexSlugs() {
   const index = readJson("accessibility/dist/a11y-index.json");
@@ -117,20 +88,19 @@ function allReferencedSlugs() {
   return refs;
 }
 
-test("every a11y-index slug is classified (no unhandled slug)", () => {
-  const slugs = allIndexSlugs();
-  const unhandled = [...slugs].filter(
-    (s) =>
-      !FOUNDATION.has(s) &&
-      !REQUIRED_COMPONENT_PATTERNS.has(s) &&
-      !KNOWN_GAP.has(s) &&
-      !RECONCILE.has(s),
-  );
+test("every a11y-index slug has a valid tier", () => {
+  const by = indexBySlug();
+  const VALID = new Set([
+    "foundation",
+    "component-pattern",
+    "checklist",
+    "header",
+  ]);
+  const bad = Object.keys(by).filter((s) => !VALID.has(by[s].tier));
   assert.deepEqual(
-    unhandled,
+    bad,
     [],
-    "a11y-index has slug(s) not classified by this guard — reconcile the sets: " +
-      unhandled.join(", "),
+    "slug(s) with missing/invalid tier: " + bad.join(", "),
   );
 });
 
@@ -146,9 +116,10 @@ test("no a11y ref dangles (every ref resolves to an index slug)", () => {
 
 test("every required component-pattern slug is referenced", () => {
   const referenced = allReferencedSlugs();
-  const missing = [...REQUIRED_COMPONENT_PATTERNS].filter(
-    (s) => !referenced.has(s),
+  const required = slugsOfTier("component-pattern").filter(
+    (s) => !KNOWN_GAP.has(s),
   );
+  const missing = required.filter((s) => !referenced.has(s));
   assert.deepEqual(
     missing,
     [],
