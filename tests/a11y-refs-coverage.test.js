@@ -33,5 +33,134 @@ test("a11y intro states WCAG 2.2 AA as the target", () => {
     "utf8",
   );
   assert.ok(/WCAG 2\.2 AA/.test(intro), "intro must state WCAG 2.2 AA");
-  assert.ok(!/WCAG 2\.1 AA/.test(intro), "intro must not still say WCAG 2.1 AA");
+  assert.ok(
+    !/WCAG 2\.1 AA/.test(intro),
+    "intro must not still say WCAG 2.1 AA",
+  );
+});
+
+// ── Coverage guard ──────────────────────────────────────────────────────────
+
+const FOUNDATION = new Set([
+  "principles",
+  "components", // section-header slug, not a referenceable criterion
+  "color-contrast",
+  "typography",
+  "motion",
+  "focus-keyboard",
+  "aria-labels",
+  "reading-order-landmarks",
+  "touch-pointer",
+  "error-prevention",
+  "session-timeout-warnings",
+]);
+
+const REQUIRED_COMPONENT_PATTERNS = new Set([
+  "buttons",
+  "navigation",
+  "forms",
+  "modals",
+  "alerts-toasts-banners",
+  "dropdowns-menus-popovers",
+  "data-tables",
+  "tabs",
+  "tooltips",
+  "truncation-overflow",
+  "icons",
+]);
+
+const KNOWN_GAP = new Set([
+  "loading-patterns",
+  "empty-states",
+  "drag-drop",
+  "ai-output-suggestions",
+  "designer-handoff-checklist",
+]);
+
+const RECONCILE = new Set([
+  "states",
+  "typography-content",
+  "focus-interaction",
+  "labels-annotations",
+  "reading-order-touch",
+]);
+
+function allIndexSlugs() {
+  const index = readJson("accessibility/dist/a11y-index.json");
+  return new Set(Object.keys(index.bySlug || {}));
+}
+
+function allReferencedSlugs() {
+  const refs = new Set();
+  const catDir = path.join(REPO_ROOT, "components/dist/categories");
+  fs.readdirSync(catDir)
+    .filter((f) => /^[a-z][a-z0-9-]*-defaults\.json$/.test(f))
+    .forEach((f) => {
+      const def = readJson("components/dist/categories/" + f);
+      // Category defaults use a11y_refs.requirementRefs (nested object shape).
+      const catRefs = (def.a11y_refs && def.a11y_refs.requirementRefs) || [];
+      catRefs.forEach((r) => refs.add(r.ref));
+    });
+  const gDir = path.join(REPO_ROOT, "components/dist/guidelines");
+  fs.readdirSync(gDir)
+    .filter((f) => f.endsWith(".json") && f !== "guidelines.bundle.json")
+    .forEach((f) => {
+      const doc = readJson("components/dist/guidelines/" + f);
+      if (doc._alias_of) return;
+      // Component guidelines use a flat array at meta.a11y_refs.
+      ((doc.meta && doc.meta.a11y_refs) || []).forEach((r) => refs.add(r.ref));
+    });
+  return refs;
+}
+
+test("every a11y-index slug is classified (no unhandled slug)", () => {
+  const slugs = allIndexSlugs();
+  const unhandled = [...slugs].filter(
+    (s) =>
+      !FOUNDATION.has(s) &&
+      !REQUIRED_COMPONENT_PATTERNS.has(s) &&
+      !KNOWN_GAP.has(s) &&
+      !RECONCILE.has(s),
+  );
+  assert.deepEqual(
+    unhandled,
+    [],
+    "a11y-index has slug(s) not classified by this guard — reconcile the sets: " +
+      unhandled.join(", "),
+  );
+});
+
+test("no a11y ref dangles (every ref resolves to an index slug)", () => {
+  const slugs = allIndexSlugs();
+  const dangling = [...allReferencedSlugs()].filter((r) => !slugs.has(r));
+  assert.deepEqual(
+    dangling,
+    [],
+    "dangling a11y ref(s) not in a11y-index: " + dangling.join(", "),
+  );
+});
+
+test("every required component-pattern slug is referenced", () => {
+  const referenced = allReferencedSlugs();
+  const missing = [...REQUIRED_COMPONENT_PATTERNS].filter(
+    (s) => !referenced.has(s),
+  );
+  assert.deepEqual(
+    missing,
+    [],
+    "component-pattern slug(s) not referenced by any component/category: " +
+      missing.join(", "),
+  );
+});
+
+test("thinness report: known-gap slugs are logged, not failed", () => {
+  const referenced = allReferencedSlugs();
+  const stillGap = [...KNOWN_GAP].filter((s) => !referenced.has(s));
+  if (stillGap.length > 0) {
+    console.log(
+      "[a11y-coverage] known-gap slugs with no component/category host (informational): " +
+        stillGap.join(", "),
+    );
+  }
+  assert.ok(true);
 });
