@@ -3,10 +3,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
+import { fireEvent } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 import type { RJSFSchema, ObjectFieldTemplateProps } from "@rjsf/utils";
 import { RJSFForm } from "../../src/form-engine/RJSFForm";
 import { MetaFieldTemplate } from "../../src/form-engine/templates/MetaFieldTemplate";
+import { metaFormTemplates } from "../../src/form-engine/templates";
 
 function wrap(node: React.ReactNode) {
   return <Theme>{node}</Theme>;
@@ -116,6 +118,90 @@ test("MetaFieldTemplate renders ui:help inline by default, tooltip when flagged"
     tip.queryByText("tooltip help"),
     null,
     "tooltip help text not rendered inline when helpAsTooltip is true",
+  );
+  cleanup();
+});
+
+const groupSchema: RJSFSchema = {
+  type: "object",
+  properties: {
+    component: { type: "string" },
+    category: { type: "string" },
+    section: { type: "string" },
+    related: { type: "array", items: { type: "string" } },
+    lastReviewed: { type: "string" },
+    domains: { type: "object" },
+  },
+};
+
+const groupUiOrder = {
+  "ui:order": [
+    "component",
+    "category",
+    "section",
+    "related",
+    "lastReviewed",
+    "domains",
+    "*",
+  ],
+};
+
+test("root form groups into Identity/Relationships and omits domains", () => {
+  cleanup();
+  const { getByText, queryByText } = render(
+    wrap(
+      <RJSFForm
+        schema={groupSchema}
+        uiSchema={groupUiOrder}
+        templates={metaFormTemplates}
+        formData={{
+          component: "Buttons",
+          domains: { content: { status: "x" } },
+        }}
+        onChange={() => {}}
+      />,
+    ),
+  );
+  assert.ok(getByText("Identity"), "Identity section header");
+  assert.ok(getByText("Relationships"), "Relationships section header");
+  assert.equal(
+    queryByText(/domains/i),
+    null,
+    "no domains group label rendered",
+  );
+  cleanup();
+});
+
+test("domains omitted from render still round-trips through submit", () => {
+  cleanup();
+  const formData = {
+    component: "Buttons",
+    domains: { content: { status: "inherited" } },
+  };
+  let submitted: any = null;
+  render(
+    wrap(
+      <RJSFForm
+        schema={groupSchema}
+        uiSchema={groupUiOrder}
+        templates={metaFormTemplates}
+        formData={formData}
+        onChange={() => {}}
+        onSubmit={(v) => {
+          submitted = v;
+        }}
+      >
+        <button type="submit">go</button>
+      </RJSFForm>,
+    ),
+  );
+  const form = document.querySelector("form");
+  assert.ok(form, "form rendered");
+  fireEvent.submit(form!);
+  assert.deepEqual(
+    submitted?.domains,
+    { content: { status: "inherited" } },
+    "domains preserved in submitted formData even though never rendered",
   );
   cleanup();
 });
