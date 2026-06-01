@@ -624,3 +624,57 @@ test("pipeline: no registryAliases → no alias files, no coverage section", () 
   const coverage = fs.readFileSync(path.join(distDir, "coverage.md"), "utf8");
   assert.ok(!coverage.includes("## Registry aliases"));
 });
+
+test("deriveComponentDir passes a11y_refs from _meta.yml through to meta.a11y_refs", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "a11yrefs-"));
+  const slug = "widget";
+  const dir = path.join(tmp, slug);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, "_meta.yml"),
+    [
+      'component: "Widget"',
+      "category: action",
+      "a11y_refs:",
+      "  - { ref: buttons, note: operable with Enter and Space }",
+      "  - { ref: tabs }",
+      "domains:",
+      "  content: { status: inherited }",
+      "",
+    ].join("\n"),
+  );
+
+  const validators = derive.makeValidators(REPO_ROOT);
+  const out = derive.deriveComponentDir(dir, slug, REPO_ROOT, validators, null);
+
+  assert.deepEqual(out.meta.a11y_refs, [
+    { ref: "buttons", note: "operable with Enter and Space" },
+    { ref: "tabs" },
+  ]);
+
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("deriveComponentDir omits meta.a11y_refs when _meta.yml has none", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "a11yrefs-none-"));
+  const slug = "plain";
+  const dir = path.join(tmp, slug);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, "_meta.yml"),
+    [
+      'component: "Plain"',
+      "category: action",
+      "domains:",
+      "  content: { status: inherited }",
+      "",
+    ].join("\n"),
+  );
+
+  const validators = derive.makeValidators(REPO_ROOT);
+  const out = derive.deriveComponentDir(dir, slug, REPO_ROOT, validators, null);
+
+  assert.ok(!("a11y_refs" in out.meta), "meta.a11y_refs must be absent");
+
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
