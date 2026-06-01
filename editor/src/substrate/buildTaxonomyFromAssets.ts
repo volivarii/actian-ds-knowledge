@@ -7,29 +7,40 @@
 // freshness is gated on the editor build cadence (see taxonomyAssets.ts
 // for the rationale).
 
-import type { Domain, SearchResult, Taxonomy } from "./taxonomy";
+import type { Domain, SearchResult, Taxonomy, Tier } from "./taxonomy";
 import { a11yIndex, motionPatterns } from "./taxonomyAssets";
 
 export function buildTaxonomyFromAssets(): Taxonomy {
-  const a11yBySlug = new Map<string, { title: string; body: string | null }>();
+  const a11yBySlug = new Map<
+    string,
+    { title: string; body: string | null; tier: Tier | null }
+  >();
   for (const section of a11yIndex.sections ?? []) {
     // Real dist/a11y-index.json carries body_excerpt; test fixtures use
     // body. Coalesce so the picker can surface a snippet from either.
     const body = section.body ?? section.body_excerpt ?? null;
-    a11yBySlug.set(section.slug, { title: section.title, body });
+    a11yBySlug.set(section.slug, {
+      title: section.title,
+      body,
+      tier: section.tier ?? null,
+    });
   }
 
-  const motionBySlug = new Map<string, { title: string; body: string | null }>();
+  const motionBySlug = new Map<
+    string,
+    { title: string; body: string | null; tier: Tier | null }
+  >();
   for (const pattern of Object.values(motionPatterns.patterns ?? {})) {
     motionBySlug.set(pattern.slug, {
       title: pattern.name,
       body: pattern.description ?? null,
+      tier: null,
     });
   }
 
   function getMap(
     domain: Domain,
-  ): Map<string, { title: string; body: string | null }> {
+  ): Map<string, { title: string; body: string | null; tier: Tier | null }> {
     return domain === "accessibility" ? a11yBySlug : motionBySlug;
   }
 
@@ -42,6 +53,9 @@ export function buildTaxonomyFromAssets(): Taxonomy {
     },
     getBody(domain, slug) {
       return getMap(domain).get(slug)?.body ?? null;
+    },
+    getTier(domain, slug) {
+      return getMap(domain).get(slug)?.tier ?? null;
     },
     domainOfSlug(slug) {
       if (a11yBySlug.has(slug)) return "accessibility";
@@ -60,7 +74,13 @@ export function buildTaxonomyFromAssets(): Taxonomy {
         for (const [slug, entry] of getMap(domain)) {
           const haystack = `${entry.title} ${entry.body ?? ""}`.toLowerCase();
           if (haystack.includes(q)) {
-            out.push({ slug, domain, title: entry.title, body: entry.body });
+            out.push({
+              slug,
+              domain,
+              title: entry.title,
+              body: entry.body,
+              tier: entry.tier ?? null,
+            });
             if (out.length >= limit) return out;
           }
         }

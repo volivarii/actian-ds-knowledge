@@ -24,6 +24,8 @@ export interface A11ySectionRaw {
   /** Real dist/a11y-index.json uses body_excerpt; test fixtures use body. */
   body?: string;
   body_excerpt?: string;
+  /** foundation | component-pattern | checklist | header (from derive-a11y-index). */
+  tier?: "foundation" | "component-pattern" | "checklist" | "header";
 }
 
 export interface MotionPatternRaw {

@@ -8,23 +8,33 @@ import { readFile } from "node:fs/promises";
 
 export type Domain = "accessibility" | "motion";
 
+export type Tier = "foundation" | "component-pattern" | "checklist" | "header";
+
 export interface SearchResult {
   slug: string;
   domain: Domain;
   title: string;
   body: string | null;
+  tier: Tier | null;
 }
 
 export interface Taxonomy {
   getSlugs(domain: Domain): string[];
   getTitle(domain: Domain, slug: string): string | null;
   getBody(domain: Domain, slug: string): string | null;
+  getTier(domain: Domain, slug: string): Tier | null;
   domainOfSlug(slug: string): Domain | null;
-  searchSections(query: string, opts?: { domain?: Domain; limit?: number }): SearchResult[];
+  searchSections(
+    query: string,
+    opts?: { domain?: Domain; limit?: number },
+  ): SearchResult[];
 }
 
 export class TaxonomyLoadError extends Error {
-  constructor(message: string, readonly cause?: unknown) {
+  constructor(
+    message: string,
+    readonly cause?: unknown,
+  ) {
     super(message);
     this.name = "TaxonomyLoadError";
   }
@@ -34,6 +44,7 @@ interface A11ySectionRaw {
   slug: string;
   title: string;
   body?: string;
+  tier?: Tier;
 }
 
 interface MotionPatternRaw {
@@ -59,27 +70,51 @@ export async function loadTaxonomy(opts: LoadOpts): Promise<Taxonomy> {
   let a11y: A11yIndexFile;
   let motion: MotionFile;
   try {
-    a11y = JSON.parse(await readFile(opts.a11yIndexPath, "utf8")) as A11yIndexFile;
+    a11y = JSON.parse(
+      await readFile(opts.a11yIndexPath, "utf8"),
+    ) as A11yIndexFile;
   } catch (err) {
-    throw new TaxonomyLoadError(`Failed to load a11y index from ${opts.a11yIndexPath}`, err);
+    throw new TaxonomyLoadError(
+      `Failed to load a11y index from ${opts.a11yIndexPath}`,
+      err,
+    );
   }
   try {
     motion = JSON.parse(await readFile(opts.motionPath, "utf8")) as MotionFile;
   } catch (err) {
-    throw new TaxonomyLoadError(`Failed to load motion file from ${opts.motionPath}`, err);
+    throw new TaxonomyLoadError(
+      `Failed to load motion file from ${opts.motionPath}`,
+      err,
+    );
   }
 
-  const a11yBySlug = new Map<string, { title: string; body: string | null }>();
+  const a11yBySlug = new Map<
+    string,
+    { title: string; body: string | null; tier: Tier | null }
+  >();
   for (const section of a11y.sections ?? []) {
-    a11yBySlug.set(section.slug, { title: section.title, body: section.body ?? null });
+    a11yBySlug.set(section.slug, {
+      title: section.title,
+      body: section.body ?? null,
+      tier: section.tier ?? null,
+    });
   }
 
-  const motionBySlug = new Map<string, { title: string; body: string | null }>();
+  const motionBySlug = new Map<
+    string,
+    { title: string; body: string | null; tier: Tier | null }
+  >();
   for (const pattern of Object.values(motion.patterns ?? {})) {
-    motionBySlug.set(pattern.slug, { title: pattern.name, body: pattern.description ?? null });
+    motionBySlug.set(pattern.slug, {
+      title: pattern.name,
+      body: pattern.description ?? null,
+      tier: null,
+    });
   }
 
-  function getMap(domain: Domain): Map<string, { title: string; body: string | null }> {
+  function getMap(
+    domain: Domain,
+  ): Map<string, { title: string; body: string | null; tier: Tier | null }> {
     return domain === "accessibility" ? a11yBySlug : motionBySlug;
   }
 
@@ -93,6 +128,9 @@ export async function loadTaxonomy(opts: LoadOpts): Promise<Taxonomy> {
     getBody(domain, slug) {
       return getMap(domain).get(slug)?.body ?? null;
     },
+    getTier(domain, slug) {
+      return getMap(domain).get(slug)?.tier ?? null;
+    },
     domainOfSlug(slug) {
       if (a11yBySlug.has(slug)) return "accessibility";
       if (motionBySlug.has(slug)) return "motion";
@@ -103,12 +141,20 @@ export async function loadTaxonomy(opts: LoadOpts): Promise<Taxonomy> {
       if (q === "") return [];
       const limit = opts?.limit ?? 20;
       const out: SearchResult[] = [];
-      const scopes: Domain[] = opts?.domain ? [opts.domain] : ["accessibility", "motion"];
+      const scopes: Domain[] = opts?.domain
+        ? [opts.domain]
+        : ["accessibility", "motion"];
       for (const domain of scopes) {
         for (const [slug, entry] of getMap(domain)) {
           const haystack = `${entry.title} ${entry.body ?? ""}`.toLowerCase();
           if (haystack.includes(q)) {
-            out.push({ slug, domain, title: entry.title, body: entry.body });
+            out.push({
+              slug,
+              domain,
+              title: entry.title,
+              body: entry.body,
+              tier: entry.tier ?? null,
+            });
             if (out.length >= limit) return out;
           }
         }
