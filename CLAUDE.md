@@ -16,7 +16,7 @@ CI does the rest automatically: on your PR it regenerates the `dist/` files, bum
 ## Editing rules
 
 1. **Never edit `dist/` content.** Folder name is the signal: `dist/` = CI-generated, edits revert. Mixed-origin domains (`foundations/`, `components/`) use `src/` for editable sources.
-2. **Single-origin domains stay flat.** `content/`, `accessibility/`, `presentation/`, `app-context/`, `fm-to-ds-map/` have no `src/`+`dist/` split because there's no boundary to draw — everything in them is human-authored.
+2. **Flat domains (no `src/`+`dist/`).** `presentation/`, `app-context/`, `fm-to-ds-map/` — everything human-authored, no derive. (`content/` and `accessibility/` are human-authored at the source too but DO have a `src/` → CI-generated `dist/` derive — never edit their `dist/`.)
 3. **Tokens are interim-flat.** `tokens/{tokens.json,tokens.css}` are human-frozen snapshots until a successor generator returns. `tokens/token-reference.md` is CI-generated. See `tokens/README.md`.
 4. **One hand-edit exception in `dist/`:** the `templates` block of `components/dist/registries/metakit.json` is hand-curated and preserved across syncs (`_meta.hybrid: true`). Editing this block is allowed; everything else in the file is regenerated from Figma.
 5. **`dsSlug` in `fm-to-ds-map.json` is hand-maintained.** Despite the historical `_authoringNote` claim, no auto-regeneration code exists. Keep `dsSlug` in sync with `dsKey` manually when adding/renaming entries.
@@ -41,7 +41,7 @@ Workflow files in `.github/workflows/` are the source of truth — list here is 
 - **`foundations-derive.yml`** — `foundations/src/foundations.md` → `foundations/dist/*` (Pattern H hierarchical tree + bundle + verbatim copy)
 - **`categories-derive.yml`** — `components/src/categories/*.md` → `components/dist/categories/*-defaults.json` + bundle
 - **`guidelines-derive.yml`** — `components/src/<slug>/{_meta.yml,*.md,tokens.yml}` → `components/dist/guidelines/<slug>.json` + `bundle.json` + `coverage.md`. Also re-derives the `components/dist/media/_index.json` sidecar (slug → role-keyed media map). Auto-bumps patch + auto-commits regenerated dist back to the PR branch.
-- **`content-derive.yml`** — `content/src/{writing,patterns,product}/*.md` → `content/dist/global.md`
+- **`content-derive.yml`** — `content/src/{writing,patterns,product}/*.md` → `content/dist/global.md` + `content/dist/words-to-avoid.json`
 
 **Validate (PR event, required gates):**
 - **`validate-manifest.yml`** — `scripts/validate-manifest.js` checks manifest schema + every path resolves + no orphans, then runs the test suite. Required check (named `Validate manifest schema + coverage`).
