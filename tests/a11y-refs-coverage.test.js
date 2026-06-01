@@ -64,9 +64,9 @@ const REQUIRED_COMPONENT_PATTERNS = new Set([
   "dropdowns-menus-popovers",
   "data-tables",
   "tabs",
-  "tooltips",
+  "tooltips", // single host: popover (no standalone tooltip component)
   "truncation-overflow",
-  "icons",
+  "icons", // single host: badge (primary icon-bearing display component)
 ]);
 
 const KNOWN_GAP = new Set([
@@ -77,6 +77,10 @@ const KNOWN_GAP = new Set([
   "designer-handoff-checklist",
 ]);
 
+// Sub-items of the designer-handoff-checklist section. They appear in
+// bySlug because the derive does not filter section sub-items, but they are
+// not meaningful as component-level refs — allowlisted (neither required nor
+// treated as orphans).
 const RECONCILE = new Set([
   "states",
   "typography-content",
