@@ -3,6 +3,9 @@
 var test = require("node:test");
 var assert = require("node:assert/strict");
 var path = require("node:path");
+var fs = require("node:fs");
+
+var ROOT = path.resolve(__dirname, "..");
 
 var derive = require(
   path.join(__dirname, "..", "scripts", "content", "derive-content.js"),
@@ -51,4 +54,62 @@ test("parseWordsToAvoid — no table → throws", function () {
   assert.throws(function () {
     derive.parseWordsToAvoid("# Words to avoid\n\nNo table here.\n");
   }, /no table rows/i);
+});
+
+test("buildWordsToAvoid — reads the real source + shapes the artifact", function () {
+  var config = derive.resolveConfig({});
+  var artifact = derive.buildWordsToAvoid(config);
+  assert.equal(artifact._schema_version, 1);
+  assert.equal(artifact._source, "content/src/writing/words-to-avoid.md");
+  assert.ok(Array.isArray(artifact.rules) && artifact.rules.length >= 10);
+});
+
+test("buildWordsToAvoid — coverage: canonical avoid tokens are all present", function () {
+  var config = derive.resolveConfig({});
+  var artifact = derive.buildWordsToAvoid(config);
+  var all = artifact.rules.reduce(function (acc, r) {
+    return acc.concat(r.avoid);
+  }, []);
+  [
+    "execute",
+    "abort",
+    "master",
+    "slave",
+    "blacklist",
+    "whitelist",
+    "ensure",
+    "agnostic",
+    "signin",
+    "please",
+    "sorry",
+    "disabled",
+  ].forEach(function (tok) {
+    assert.ok(all.indexOf(tok) !== -1, "missing canonical token: " + tok);
+  });
+});
+
+test("derive leaves content/dist/global.md byte-identical", function () {
+  var config = derive.resolveConfig({});
+  var generated = derive.buildGlobalOutput(config);
+  var committed = fs.readFileSync(
+    path.join(ROOT, "content/dist/global.md"),
+    "utf8",
+  );
+  assert.equal(
+    generated,
+    committed,
+    "global.md changed — the words-to-avoid emit must be purely additive",
+  );
+});
+
+test("committed content/dist/words-to-avoid.json matches buildWordsToAvoid (not stale)", function () {
+  var config = derive.resolveConfig({});
+  var onDisk = fs.readFileSync(config.wordsToAvoidOut, "utf8");
+  var generated =
+    JSON.stringify(derive.buildWordsToAvoid(config), null, 2) + "\n";
+  assert.equal(
+    onDisk,
+    generated,
+    "words-to-avoid.json is stale — run the content derive and commit the result",
+  );
 });

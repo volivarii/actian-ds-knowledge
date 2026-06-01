@@ -63,7 +63,13 @@ function resolveConfig(args) {
     ? path.resolve(ROOT, args.index)
     : path.join(src, "content-index.md");
   var globalOut = path.join(ROOT, "content/dist/global.md");
-  return { src: src, index: indexArg, globalOut: globalOut };
+  var wordsToAvoidOut = path.join(ROOT, "content/dist/words-to-avoid.json");
+  return {
+    src: src,
+    index: indexArg,
+    globalOut: globalOut,
+    wordsToAvoidOut: wordsToAvoidOut,
+  };
 }
 
 function readSectionOrder(indexFile) {
@@ -331,6 +337,26 @@ function buildGlobalOutput(config) {
   return assembleDoc(header, sections);
 }
 
+// Build content's structured words-to-avoid artifact from the prose source.
+// Additive: does not touch global.md. Single source of truth = the prose
+// table in content/src/writing/words-to-avoid.md.
+function buildWordsToAvoid(config) {
+  var srcFile = path.join(config.src, "writing", "words-to-avoid.md");
+  if (!fs.existsSync(srcFile)) {
+    throw new Error(
+      "words-to-avoid source not found: " + path.relative(ROOT, srcFile),
+    );
+  }
+  var raw = fs.readFileSync(srcFile, "utf8");
+  var rules = parseWordsToAvoid(raw);
+  return {
+    _schema_version: 1,
+    // Canonical substrate-relative path (not config.src, which may be a test override).
+    _source: "content/src/writing/words-to-avoid.md",
+    rules: rules,
+  };
+}
+
 function main(argv) {
   var args = parseArgs(argv);
   var config = resolveConfig(args);
@@ -350,6 +376,16 @@ function main(argv) {
       " bytes, " +
       lineCount +
       " lines)",
+  );
+
+  var wta = buildWordsToAvoid(config);
+  fs.writeFileSync(config.wordsToAvoidOut, JSON.stringify(wta, null, 2) + "\n");
+  console.log(
+    "[derive-content] wrote " +
+      path.relative(ROOT, config.wordsToAvoidOut) +
+      " (" +
+      wta.rules.length +
+      " rules)",
   );
 }
 
@@ -373,6 +409,7 @@ module.exports = {
   collapseBlankLines: collapseBlankLines,
   shiftHeadings: shiftHeadings,
   parseWordsToAvoid: parseWordsToAvoid,
+  buildWordsToAvoid: buildWordsToAvoid,
   resolveSectionFile: resolveSectionFile,
   readSection: readSection,
   resolveAllSections: resolveAllSections,
