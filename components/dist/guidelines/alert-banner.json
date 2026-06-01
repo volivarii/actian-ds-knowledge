@@ -8,7 +8,12 @@
   "slug": "alert-banner",
   "component": "Alert / banner",
   "meta": {
-    "category": "feedback"
+    "category": "feedback",
+    "a11y_refs": [
+      {
+        "ref": "alerts-toasts-banners"
+      }
+    ]
   },
   "domains": {
     "content": {

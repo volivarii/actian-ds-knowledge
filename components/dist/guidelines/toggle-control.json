@@ -8,7 +8,12 @@
   "slug": "toggle-control",
   "component": "Toggle control",
   "meta": {
-    "category": "form-input-selection"
+    "category": "form-input-selection",
+    "a11y_refs": [
+      {
+        "ref": "forms"
+      }
+    ]
   },
   "domains": {
     "content": {

@@ -8,7 +8,12 @@
   "slug": "breadcrumbs",
   "component": "Breadcrumbs",
   "meta": {
-    "category": "navigation"
+    "category": "navigation",
+    "a11y_refs": [
+      {
+        "ref": "navigation"
+      }
+    ]
   },
   "domains": {
     "content": {

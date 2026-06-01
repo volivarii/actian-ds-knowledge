@@ -8,7 +8,12 @@
   "slug": "tag",
   "component": "Tags",
   "meta": {
-    "category": "data-display"
+    "category": "data-display",
+    "a11y_refs": [
+      {
+        "ref": "truncation-overflow"
+      }
+    ]
   },
   "domains": {
     "content": {

@@ -8,7 +8,15 @@
   "slug": "combo-box",
   "component": "Combo box",
   "meta": {
-    "category": "form-input-selection"
+    "category": "form-input-selection",
+    "a11y_refs": [
+      {
+        "ref": "forms"
+      },
+      {
+        "ref": "dropdowns-menus-popovers"
+      }
+    ]
   },
   "domains": {
     "content": {

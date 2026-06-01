@@ -8,7 +8,12 @@
   "slug": "button",
   "component": "Buttons",
   "meta": {
-    "category": "action"
+    "category": "action",
+    "a11y_refs": [
+      {
+        "ref": "buttons"
+      }
+    ]
   },
   "domains": {
     "content": {

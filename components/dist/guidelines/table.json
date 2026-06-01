@@ -8,7 +8,15 @@
   "slug": "table",
   "component": "Table",
   "meta": {
-    "category": "data-display"
+    "category": "data-display",
+    "a11y_refs": [
+      {
+        "ref": "data-tables"
+      },
+      {
+        "ref": "truncation-overflow"
+      }
+    ]
   },
   "domains": {
     "content": {

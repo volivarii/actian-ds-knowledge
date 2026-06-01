@@ -8,7 +8,12 @@
   "slug": "inline-toast",
   "component": "Inline toast",
   "meta": {
-    "category": "feedback"
+    "category": "feedback",
+    "a11y_refs": [
+      {
+        "ref": "alerts-toasts-banners"
+      }
+    ]
   },
   "domains": {
     "content": {
