@@ -59,7 +59,7 @@ function generateLlmsTxt() {
     "",
     "## Accessibility",
     "",
-    "- [WCAG 2.1 AA guidance](accessibility/src/): applied rules + criteria, per-section files",
+    "- [WCAG 2.2 AA guidance](accessibility/src/): applied rules + criteria, per-section files",
     "",
     "## Components",
     "",
