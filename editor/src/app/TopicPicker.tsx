@@ -4,16 +4,9 @@
 // + body excerpt. Guarded by tests/app/doctrine-guards.test.tsx (T10).
 
 import React, { useMemo, useState } from "react";
-import {
-  Box,
-  Badge,
-  Button,
-  Card,
-  Flex,
-  Text,
-  TextField,
-} from "@radix-ui/themes";
+import { Box, Button, Card, Flex, Text, TextField } from "@radix-ui/themes";
 import type { SearchResult, Taxonomy } from "../substrate";
+import { TopicResultRow } from "./TopicResultRow";
 
 export interface PickedTopic {
   slug: string;
@@ -52,48 +45,14 @@ export function TopicPicker(props: TopicPickerProps) {
         mt="3"
         style={{ maxHeight: 320, overflow: "auto" }}
       >
-        {results.map((r) => {
-          const isSelected = selected?.slug === r.slug;
-          return (
-            <Box
-              key={`${r.domain}:${r.slug}`}
-              onClick={() => setSelected(r)}
-              style={{
-                cursor: "pointer",
-                padding: "10px 12px",
-                background: isSelected ? "var(--accent-3)" : "var(--gray-2)",
-                borderLeft: isSelected
-                  ? "3px solid var(--accent-9)"
-                  : "3px solid transparent",
-                borderRadius: 4,
-              }}
-            >
-              <Flex justify="between" align="center" gap="2" mb="1">
-                <Text weight="medium" size="2">
-                  {r.title}
-                </Text>
-                <Badge
-                  color={r.domain === "accessibility" ? "blue" : "amber"}
-                  size="1"
-                  style={{ flexShrink: 0 }}
-                >
-                  {r.domain}
-                </Badge>
-              </Flex>
-              {r.body ? (
-                <Text
-                  size="2"
-                  color="gray"
-                  as="p"
-                  style={{ lineHeight: 1.45, marginTop: 4 }}
-                >
-                  {r.body.slice(0, 110)}
-                  {r.body.length > 110 ? "…" : ""}
-                </Text>
-              ) : null}
-            </Box>
-          );
-        })}
+        {results.map((r) => (
+          <TopicResultRow
+            key={`${r.domain}:${r.slug}`}
+            result={r}
+            selected={selected?.slug === r.slug}
+            onClick={() => setSelected(r)}
+          />
+        ))}
         {query.length > 0 && results.length === 0 ? (
           <Text size="2" color="gray">
             No topics match "{query}".
