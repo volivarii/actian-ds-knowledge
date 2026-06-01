@@ -82,6 +82,8 @@ Per-component accessibility references — the **component tier** of the two-tie
 - **Foundation / cross-cutting** WCAG topics (`color-contrast`, `focus-keyboard`, `aria-labels`, …) are referenced once on the component's **category** (`components/src/categories/<category>.md`). Do not repeat them here.
 - **Component-pattern** topics (`buttons`, `modals`, `tabs`, `data-tables`, `dropdowns-menus-popovers`, `tooltips`, `truncation-overflow`, `icons`, `forms`, `navigation`, `alerts-toasts-banners`) attach **here**, on the component.
 
+Note: a category may also carry component-pattern refs as broad defaults; the component-level ref is the precise per-component hook for consumers reading a single component document.
+
 Each entry is `{ ref: <slug>, note?: <string> }`; `ref` must be a slug in `accessibility/dist/a11y-index.json`. The target standard is **WCAG 2.2 AA**. Example:
 
 ```yaml
