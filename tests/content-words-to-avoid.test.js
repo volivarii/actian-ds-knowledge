@@ -113,3 +113,23 @@ test("committed content/dist/words-to-avoid.json matches buildWordsToAvoid (not 
     "words-to-avoid.json is stale — run the content derive and commit the result",
   );
 });
+
+test("words-to-avoid.json conforms to its schema (structural)", function () {
+  var artifact = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, "content/dist/words-to-avoid.json"),
+      "utf8",
+    ),
+  );
+  assert.equal(artifact._schema_version, 1);
+  assert.ok(artifact.rules.length >= 1, "schema declares minItems: 1");
+  artifact.rules.forEach(function (r) {
+    assert.ok(Array.isArray(r.avoid));
+    assert.equal(typeof r.reason, "string");
+    assert.equal(typeof r.example.do, "string");
+    assert.equal(typeof r.example.dont, "string");
+    r.avoid.forEach(function (t) {
+      assert.equal(typeof t, "string");
+    });
+  });
+});
