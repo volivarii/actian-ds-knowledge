@@ -14,8 +14,8 @@ function wrap(node: React.ReactNode) {
   return <Theme>{node}</Theme>;
 }
 
-// Inline sentinel template proves the `templates` prop reaches RJSF —
-// no dependency on the real templates yet (those arrive in Tasks 2–3).
+// Inline sentinel template — proves the `templates` prop reaches RJSF
+// independently of the real MetaFieldTemplate/MetaObjectFieldTemplate.
 function SentinelObjectTemplate(props: ObjectFieldTemplateProps) {
   return (
     <div data-testid="sentinel-template">
