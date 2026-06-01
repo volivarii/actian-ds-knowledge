@@ -125,6 +125,67 @@ function shiftHeadings(s) {
   return lines.join("\n");
 }
 
+// Parse a markdown "Words to avoid" Do/Don't table into structured rules.
+// The table is `| <rule note> | <Do example> | <Don't example> |`. The
+// literal avoid tokens are the double-quoted terms inside the note column;
+// rows with no quoted term are advisory (avoid: []). Throws if no data
+// rows are found. Straight (") and smart (" ") quotes both supported.
+// Note: trailing .,;!? is stripped from each token, so dotted abbreviations (e.g. "e.g.") would lose the final dot — fine for the current brand-voice word list.
+function parseWordsToAvoid(md) {
+  var src = String(md).replace(/\r\n/g, "\n");
+  var lines = src.split("\n");
+  var dataRows = [];
+  var sawHeader = false;
+  var inTable = false;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    var isRow = line.charAt(0) === "|" && line.charAt(line.length - 1) === "|";
+    if (!isRow) {
+      if (inTable) break; // table ended
+      continue;
+    }
+    inTable = true;
+    var cells = line
+      .slice(1, -1)
+      .split("|")
+      .map(function (c) {
+        return c.trim();
+      });
+    if (!sawHeader) {
+      sawHeader = true; // first table row is the header — skip it
+      continue;
+    }
+    var isSeparator = cells.every(function (c) {
+      return /^:?-+:?$/.test(c);
+    });
+    if (isSeparator) continue;
+    if (cells.length < 3) continue;
+    dataRows.push(cells);
+  }
+  if (dataRows.length === 0) {
+    throw new Error("words-to-avoid: no table rows found in source");
+  }
+  var quoteRe = /["“”]([^"“”]+)["“”]/g;
+  return dataRows.map(function (cells) {
+    var note = cells[0];
+    var avoid = [];
+    quoteRe.lastIndex = 0;
+    var m;
+    while ((m = quoteRe.exec(note)) !== null) {
+      var term = m[1]
+        .trim()
+        .toLowerCase()
+        .replace(/[.,;!?]+$/, "");
+      if (term) avoid.push(term);
+    }
+    return {
+      avoid: avoid,
+      reason: note,
+      example: { do: cells[1], dont: cells[2] },
+    };
+  });
+}
+
 // Sub-buckets we walk inside content/src/. Order is not significant
 // (a given slug exists in at most one bucket). Adding a bucket means
 // editing this list. Files at content/src/ root (meta files like
@@ -311,6 +372,7 @@ module.exports = {
   stripJekyllAttrs: stripJekyllAttrs,
   collapseBlankLines: collapseBlankLines,
   shiftHeadings: shiftHeadings,
+  parseWordsToAvoid: parseWordsToAvoid,
   resolveSectionFile: resolveSectionFile,
   readSection: readSection,
   resolveAllSections: resolveAllSections,
