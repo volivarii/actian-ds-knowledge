@@ -34,6 +34,7 @@ export const guidelineMetaUiSchema: UiSchema = {
     "section",
     "domains",
     "related",
+    "a11y_refs",
     "examples",
     "lastReviewed",
     "*",
@@ -63,6 +64,12 @@ export const guidelineMetaUiSchema: UiSchema = {
     "ui:widget": "RelatedMultiSelect",
     "ui:help":
       "Search the DS Kit registry + authored components to cross-reference.",
+  },
+  a11y_refs: {
+    "ui:title": "Accessibility topics",
+    "ui:widget": "A11yRefsPicker",
+    "ui:help":
+      "Component-specific accessibility topics. Foundation topics like Color contrast are set on the category, not here.",
   },
   examples: {
     "ui:title": "Examples",

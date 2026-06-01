@@ -14,6 +14,7 @@ function fakeTaxonomy(results: SearchResult[]): Taxonomy {
     getSlugs: () => [],
     getTitle: () => null,
     getBody: () => null,
+    getTier: () => null,
     domainOfSlug: () => null,
     searchSections: (q) =>
       q.length
@@ -28,12 +29,14 @@ const SAMPLE_RESULTS: SearchResult[] = [
     domain: "accessibility",
     title: "Color contrast",
     body: "WCAG 1.4.3 — 4.5:1 body / 3:1 large.",
+    tier: null,
   },
   {
     slug: "state-transitions",
     domain: "motion",
     title: "State transitions",
     body: "100-200ms band.",
+    tier: null,
   },
 ];
 
@@ -130,6 +133,7 @@ test("TopicPicker: shows file context for each result", () => {
       domain: "accessibility",
       title: "Color contrast",
       body: "WCAG 1.4.3 etc.",
+      tier: null,
     },
   ];
   render(

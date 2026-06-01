@@ -23,6 +23,19 @@ function slugify(heading) {
 
 var ANCHOR_RE = /\s*\{#([a-z0-9-]+)\}\s*$/;
 
+// The three H2 group-header sections — they introduce a group (or are the
+// Principles overview), and are not themselves referenceable topics. Every
+// other H2 is a foundation leaf topic; H3s inherit tier from their parent
+// group. This classifier sets each section's `tier` field — the single source
+// of truth for a11y tier, read downstream by the editor picker and by
+// tests/a11y-refs-coverage.test.js (which reads the emitted `tier`, not this
+// constant).
+var GROUP_HEADER_SLUGS = {
+  principles: true,
+  components: true,
+  "designer-handoff-checklist": true,
+};
+
 // Extract the section slug from a heading line. An explicit `{#anchor}`
 // marker is the authoritative source — it lets authors change heading TEXT
 // without breaking the consumer-visible slug. When absent, falls back to
@@ -74,6 +87,7 @@ function deriveA11yIndex(md) {
   var sections = [];
   var seen = Object.create(null);
   var current = null;
+  var currentGroup = null;
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
     // H2 sections and H3 sub-sections (per-component entries under
@@ -85,12 +99,31 @@ function deriveA11yIndex(md) {
     // is skipped, never duplicated.
     var m = line.match(/^(#{2,3})\s+(.+?)\s*$/);
     if (m) {
+      var level = m[1].length; // 2 = H2, 3 = H3
       var title = extractHeadingText(line);
       var slug = extractSlugFromHeading(line);
+      if (level === 2) currentGroup = slug; // track parent group for H3s
       if (slug && !seen[slug]) {
         if (current) sections.push(current);
         seen[slug] = true;
-        current = { slug: slug, title: title, wcag: [], body_excerpt: "" };
+        var tier;
+        if (level === 2) {
+          tier = GROUP_HEADER_SLUGS[slug] ? "header" : "foundation";
+        } else {
+          tier =
+            currentGroup === "components"
+              ? "component-pattern"
+              : currentGroup === "designer-handoff-checklist"
+                ? "checklist"
+                : "foundation";
+        }
+        current = {
+          slug: slug,
+          title: title,
+          tier: tier,
+          wcag: [],
+          body_excerpt: "",
+        };
       }
       continue;
     }

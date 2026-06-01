@@ -29,6 +29,7 @@ import { guidelineMetaUiSchema } from "../uiSchemas/guidelineMeta";
 import { parseYaml, stringifyYaml } from "../form-engine/yamlSerializer";
 import { CategorySelectWidget } from "../form-engine/widgets/CategorySelectWidget";
 import { RelatedMultiSelectWidget } from "../form-engine/widgets/RelatedMultiSelectWidget";
+import { A11yRefsWidget } from "../form-engine/widgets/A11yRefsWidget";
 import { TierBanner } from "./TierBanner";
 
 // Custom RJSF widgets keyed by uiSchema `ui:widget` name. Octokit is
@@ -36,6 +37,7 @@ import { TierBanner } from "./TierBanner";
 const META_WIDGETS = {
   CategorySelect: CategorySelectWidget,
   RelatedMultiSelect: RelatedMultiSelectWidget,
+  A11yRefsPicker: A11yRefsWidget,
 };
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
@@ -332,7 +334,11 @@ export function MetaEditScreen({
           onChange={(next) => setFormData(next)}
           onSubmit={(v) => handleSubmit(v)}
           widgets={META_WIDGETS}
-          formContext={{ octokit: gh }}
+          formContext={{
+            octokit: gh,
+            category:
+              (formData as { category?: string } | undefined)?.category ?? null,
+          }}
         >
           <Flex gap="2" mt="3" align="center" wrap="wrap">
             {inWorkspaceContext ? (

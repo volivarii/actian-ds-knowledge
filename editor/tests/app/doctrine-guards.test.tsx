@@ -1,13 +1,14 @@
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import "../setup-dom";
-import { render, cleanup } from "@testing-library/react";
+import { render, screen, cleanup } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { SectionInspector } from "../../src/app/SectionInspector";
 import { TopicPicker } from "../../src/app/TopicPicker";
 import { AddSectionDialog } from "../../src/app/AddSectionDialog";
 import { DeleteSectionDialog } from "../../src/app/DeleteSectionDialog";
+import { A11yRefsWidget } from "../../src/form-engine/widgets/A11yRefsWidget";
 import type {
   OutgoingConnection,
   Taxonomy,
@@ -28,6 +29,7 @@ const fakeTaxonomy: Taxonomy = {
   getSlugs: () => [],
   getTitle: (_d, s) => ({ "color-contrast": "Color contrast" })[s] ?? null,
   getBody: () => null,
+  getTier: () => null,
   domainOfSlug: () => "accessibility",
   searchSections: () => [
     {
@@ -35,6 +37,7 @@ const fakeTaxonomy: Taxonomy = {
       domain: "accessibility",
       title: "Color contrast",
       body: "WCAG 1.4.3",
+      tier: null,
     } as SearchResult,
   ],
 };
@@ -225,4 +228,49 @@ test("doctrine: DeleteSectionDialog (refCount>=1) renders no forbidden vocabular
       `DeleteSectionDialog (with refs) UI must not include "${token}" outside data-detail elements`,
     );
   }
+});
+
+test("doctrine: A11yRefsWidget shows titles not slugs, and exposes no forbidden vocabulary", () => {
+  const widgetProps = {
+    value: [{ ref: "buttons" }],
+    onChange: () => {},
+    disabled: false,
+    readonly: false,
+    id: "a11y_refs",
+    formContext: {},
+  } as any;
+  render(
+    <Theme>
+      <A11yRefsWidget {...widgetProps} />
+    </Theme>,
+  );
+  // Title must be present
+  assert.ok(
+    screen.queryByText("Buttons"),
+    'A11yRefsWidget must show the human title "Buttons" for slug "buttons"',
+  );
+  // Raw slug must not be present as visible text
+  assert.equal(
+    screen.queryByText("buttons"),
+    null,
+    'A11yRefsWidget must not expose the raw slug "buttons" as visible text',
+  );
+  // Vocabulary words "slug" and "ref" must not appear in rendered output
+  const { container } = render(
+    <Theme>
+      <A11yRefsWidget {...widgetProps} />
+    </Theme>,
+  );
+  const text = (container.textContent ?? "").toLowerCase();
+  assert.equal(
+    text.includes("slug"),
+    false,
+    'A11yRefsWidget must not expose the vocabulary word "slug" as visible text',
+  );
+  assert.equal(
+    text.includes("ref"),
+    false,
+    'A11yRefsWidget must not expose the vocabulary word "ref" as visible text',
+  );
+  cleanup();
 });

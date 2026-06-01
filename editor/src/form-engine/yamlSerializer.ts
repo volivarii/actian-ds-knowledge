@@ -8,12 +8,15 @@
 //     `# yaml-language-server: $schema=…` directive — stripping it would
 //     break every author's IDE schema-hinting on the next checkout.
 //   - `flowAtDepth`: switches every YAMLMap at that depth (1-based, root
-//     map = depth 0) to flow style. Required for `_meta.yml` files: the
-//     knowledge repo's restricted YAML parser at scripts/categories/
+//     map = depth 0) to flow style; also recurses into YAMLSeq items at
+//     that depth, so array-of-object fields like `examples` emit their
+//     items as inline `- { … }` flow maps. Required for `_meta.yml` files:
+//     the knowledge repo's restricted YAML parser at scripts/categories/
 //     categories-parser.js rejects block-nested values under `domains.*`
 //     with "nested values must be scalars in this subset (no deeper
-//     nesting)". The `domains.<name>` maps live at depth 2, so the editor
-//     calls stringifyYaml with flowAtDepth: 2.
+//     nesting)". The `domains.<name>` maps live at depth 2 (as do
+//     `examples` / `a11y_refs` items), so the editor calls stringifyYaml
+//     with flowAtDepth: 2.
 //
 // In-body / trailing comments are NOT preserved in Phase 1a. The `yaml`
 // package's CST API supports it, but the document-mutate-via-JSON path is
@@ -59,17 +62,26 @@ function markFlowAtDepth(
   targetDepth: number,
 ): void {
   if (!node || typeof node !== "object") return;
-  const map = node as {
+  const typed = node as {
     constructor?: { name?: string };
-    items?: Array<{ value?: unknown }>;
+    items?: Array<unknown>;
     flow?: boolean;
   };
-  if (map.constructor?.name !== "YAMLMap") return;
-  if (currentDepth === targetDepth) {
-    map.flow = true;
+  if (typed.constructor?.name === "YAMLSeq") {
+    // Recurse into sequence items at depth+1: the array itself is the
+    // value at currentDepth, so items inside it are one level deeper.
+    for (const item of typed.items ?? []) {
+      markFlowAtDepth(item, currentDepth + 1, targetDepth);
+    }
     return;
   }
-  for (const item of map.items ?? []) {
+  if (typed.constructor?.name !== "YAMLMap") return;
+  if (currentDepth === targetDepth) {
+    typed.flow = true;
+    return;
+  }
+  const mapItems = typed.items as Array<{ value?: unknown }>;
+  for (const item of mapItems ?? []) {
     markFlowAtDepth(item.value, currentDepth + 1, targetDepth);
   }
 }

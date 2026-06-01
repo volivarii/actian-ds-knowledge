@@ -107,6 +107,28 @@ test("yamlSerializer — flowAtDepth:2 emits domains.<name> as inline flow maps"
   assert.match(out, /^domains:\n/m);
 });
 
+test("yamlSerializer — flowAtDepth:2 emits examples items as inline flow maps", () => {
+  // The knowledge repo's restricted YAML parser only accepts flow-style maps
+  // for array-of-object fields like `examples`. Block-style items would break
+  // the derive pipeline. This test pins that contract — markFlowAtDepth must
+  // recurse into YAMLSeq items so examples entries render as `- { … }`.
+  const sample = {
+    component: "Button",
+    examples: [
+      { label: "Primary", figmaNode: "302:5142" },
+      { label: "Docs", url: "https://docs.example" },
+    ],
+    domains: { content: { status: "approved" } },
+  };
+  const out = stringifyYaml(sample, { flowAtDepth: 2 });
+  assert.match(
+    out,
+    /examples:\n\s+- \{ label: Primary, figmaNode: 302:5142 \}/,
+  );
+  assert.match(out, /- \{ label: Docs, url: https:\/\/docs\.example \}/);
+  assert.match(out, /^examples:\n/m);
+});
+
 test("yamlSerializer — flowAtDepth + originalText work together", () => {
   const src = `# yaml-language-server: $schema=foo.json
 component: Button
