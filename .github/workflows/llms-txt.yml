@@ -37,6 +37,13 @@ jobs:
         with:
           node-version: '22'
 
+      # llms-txt-generate.js requires `marked` transitively (via
+      # derive-foundations → scripts/lib/section-dist), which is a
+      # devDependency — so deps MUST be installed before regenerating.
+      # Matches the install step used by the derive workflows.
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
       # Mint App token so the regen PR is authored by actian-ds-bot —
       # required for branch-protected main (direct push fails) and for
       # downstream pull_request workflows to fire on the PR.
