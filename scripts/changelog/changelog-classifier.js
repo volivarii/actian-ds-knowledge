@@ -35,14 +35,16 @@ function shallowEqualEntry(b, a) {
   // the field is simply ignored in this comparison — same as the legacy
   // behavior — so the verdict is unaffected.
   //
-  // Note on `category` + `status`: the first sync after these fields
-  // were introduced (Task 4 of the component-category-sync work) will
-  // surface every DS Kit component as "modified" in the changelog
-  // because before-entries lack the fields entirely while after-entries
-  // gain them. The verdict will still classify as "additive" since
-  // entryBreakingReasons() doesn't flag these fields. One-time noise;
-  // subsequent syncs only diff real changes. Same one-time-noise applies
-  // to `documentationLinks` added by ζ.1.
+  // Note on `category` + `status` + `categorySlug`: the first sync after
+  // each of these fields was introduced will surface every DS Kit
+  // component as "modified" in the changelog because before-entries lack
+  // the field entirely while after-entries gain it. The verdict will
+  // still classify as "additive" since entryBreakingReasons() doesn't
+  // flag these fields. One-time noise; subsequent syncs only diff real
+  // changes. Same one-time-noise applies to `documentationLinks` added by
+  // ζ.1. (`categorySlug` added 2026-06-01 — it MUST appear in `keys`
+  // below, else the sync's write-gate never detects it and the field
+  // never reaches disk; that gap stranded categorySlug out of v0.25.7.)
   var keys = [
     "name",
     "key",
@@ -52,6 +54,7 @@ function shallowEqualEntry(b, a) {
     "page",
     "section",
     "category",
+    "categorySlug",
     "group",
     "status",
     "guidelinesFile",
