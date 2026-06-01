@@ -15,6 +15,7 @@ const fakeTaxonomy = {
     ({ "color-contrast": "Color contrast", typography: "Typography" })[slug] ??
     null,
   getBody: () => null,
+  getTier: () => null,
   domainOfSlug: () => "accessibility" as const,
   searchSections: () => [],
 };

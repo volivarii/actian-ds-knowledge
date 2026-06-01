@@ -14,6 +14,7 @@ const tax: Taxonomy = {
   getSlugs: () => [],
   getTitle: () => null,
   getBody: () => null,
+  getTier: () => null,
   domainOfSlug: (slug) => {
     if (slug === "color-contrast") return "accessibility";
     if (slug === "state-transitions") return "motion";
@@ -76,13 +77,9 @@ test("parseLocalFrontmatter: mixes both ref types in source order", () => {
 });
 
 test("parseLocalFrontmatter: unknown slug surfaces as domain: null", () => {
-  const src = [
-    "---",
-    "a11y_refs:",
-    "  - { ref: ghost-topic }",
-    "---",
-    "",
-  ].join("\n");
+  const src = ["---", "a11y_refs:", "  - { ref: ghost-topic }", "---", ""].join(
+    "\n",
+  );
   const out = parseLocalFrontmatter(src, tax);
   assert.equal(out.length, 1);
   assert.equal(out[0]!.slug, "ghost-topic");

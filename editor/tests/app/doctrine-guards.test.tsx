@@ -28,6 +28,7 @@ const fakeTaxonomy: Taxonomy = {
   getSlugs: () => [],
   getTitle: (_d, s) => ({ "color-contrast": "Color contrast" })[s] ?? null,
   getBody: () => null,
+  getTier: () => null,
   domainOfSlug: () => "accessibility",
   searchSections: () => [
     {
@@ -35,6 +36,7 @@ const fakeTaxonomy: Taxonomy = {
       domain: "accessibility",
       title: "Color contrast",
       body: "WCAG 1.4.3",
+      tier: null,
     } as SearchResult,
   ],
 };

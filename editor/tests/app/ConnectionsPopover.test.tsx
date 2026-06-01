@@ -30,6 +30,7 @@ function fakeTaxonomy(results: SearchResult[]): Taxonomy {
       return hit ? hit.title : null;
     },
     getBody: () => null,
+    getTier: () => null,
     domainOfSlug: () => null,
     searchSections: (q) =>
       q.length
@@ -43,6 +44,7 @@ const TYPOGRAPHY: SearchResult = {
   domain: "accessibility",
   title: "Typography",
   body: "WCAG 1.4.12 — text spacing.",
+  tier: null,
 };
 
 const COLOR_CONTRAST: SearchResult = {
@@ -50,6 +52,7 @@ const COLOR_CONTRAST: SearchResult = {
   domain: "accessibility",
   title: "Color contrast",
   body: "WCAG 1.4.3 — 4.5:1 body / 3:1 large.",
+  tier: null,
 };
 
 const STATE_TRANSITIONS: SearchResult = {
@@ -57,6 +60,7 @@ const STATE_TRANSITIONS: SearchResult = {
   domain: "motion",
   title: "State transitions",
   body: "100-200ms band.",
+  tier: null,
 };
 
 const SOURCE_WITH_OUTGOING = `---
