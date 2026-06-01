@@ -139,3 +139,54 @@ test("classifier — genuinely different object property-defaults DO trigger 'br
     "should include a property-default-change reason",
   );
 });
+
+test("classifier — adding categorySlug to an entry is detected as additive (not silently unchanged)", function () {
+  // Regression for the Move-3 rollout gap (2026-06-01): transform-registry
+  // buildEntry emits `categorySlug`, but the sync only writes the registry
+  // when the verdict != "unchanged". If shallowEqualEntry ignores
+  // categorySlug, the field never reaches disk on a metadata-only sync —
+  // exactly what happened to v0.25.7. categorySlug MUST be in the compared
+  // keys so its first appearance flips the verdict to additive (one-time
+  // noise, same as category/status when they were introduced).
+  var before = {
+    library: "ds",
+    fileKey: "test",
+    components: {
+      card: {
+        name: "Card",
+        key: "k-card",
+        nodeId: "1:1",
+        importMethod: "set",
+        description: "",
+        page: "✅ Card",
+        category: "Layout",
+        properties: {},
+        nestedComponents: [],
+        variants: {},
+      },
+    },
+  };
+  var after = JSON.parse(JSON.stringify(before));
+  after.components.card.categorySlug = "layout";
+
+  var result = classifier({
+    before: before,
+    after: after,
+    fileKind: "registry",
+  });
+  assert.notEqual(
+    result.category,
+    "unchanged",
+    "adding categorySlug must be detected — otherwise the sync never writes it",
+  );
+  assert.equal(
+    result.category,
+    "additive",
+    "categorySlug addition is additive, not breaking",
+  );
+  assert.equal(
+    result.reasons.length,
+    0,
+    "no breaking reasons for an additive field",
+  );
+});
