@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Octokit } from "@octokit/rest";
-import { Box, Button, Callout, Flex } from "@radix-ui/themes";
+import { Box, Button, Callout, Flex, Tabs } from "@radix-ui/themes";
 import { createOctokit, MissingPATError } from "../core/octokit";
 import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { RefusalBanner } from "./RefusalBanner";
 import { CoverageDashboard } from "./CoverageDashboard";
+import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
 import { AuthoringWorkspace } from "./AuthoringWorkspace";
 import { DraftInbox } from "./DraftInbox";
 import { draftStoreSingleton } from "../drafts/store-instance";
@@ -85,6 +86,10 @@ export function EditorShell({
     }
   }, [octokit]);
 
+  const [landingTab, setLandingTab] = useState<"domains" | "accessibility">(
+    "domains",
+  );
+
   const [pendingPaths, setPendingPaths] = useState<Set<string>>(() =>
     draftStoreSingleton.allPaths(),
   );
@@ -131,7 +136,23 @@ export function EditorShell({
   } else if (!gh) {
     pane = null;
   } else if (activePath == null) {
-    pane = <CoverageDashboard octokit={gh} onOpenFile={setActivePathSafe} />;
+    pane = (
+      <Tabs.Root
+        value={landingTab}
+        onValueChange={(v) => setLandingTab(v as "domains" | "accessibility")}
+      >
+        <Tabs.List>
+          <Tabs.Trigger value="domains">Domains</Tabs.Trigger>
+          <Tabs.Trigger value="accessibility">Accessibility</Tabs.Trigger>
+        </Tabs.List>
+        <Tabs.Content value="domains">
+          <CoverageDashboard octokit={gh} onOpenFile={setActivePathSafe} />
+        </Tabs.Content>
+        <Tabs.Content value="accessibility">
+          <A11yCoverageDashboard octokit={gh} onOpenFile={setActivePathSafe} />
+        </Tabs.Content>
+      </Tabs.Root>
+    );
   } else if (activePath === "inbox") {
     pane = (
       <DraftInbox
