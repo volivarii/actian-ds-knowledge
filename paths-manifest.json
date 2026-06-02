@@ -4,6 +4,13 @@
   "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
   "knowledge_version": "0.25.10",
+  "_zones": {
+    "_comment": "Legibility classification of manifest artifacts by role (see ARCHITECTURE.md). Keyed by top-level manifest-key prefix (the part before the first '.'). A consumer wanting only design-system content reads the 'knowledge' list. '_pendingEviction' lists consumer-specific artifacts (P1/P2) slated to move to the plugin (structure-audit Track E) — they are NOT substrate zones; they are flagged here and removed when evicted.",
+    "knowledge": ["accessibility", "components", "content", "foundations"],
+    "contract": ["graph"],
+    "metadata": ["appContext", "tokens"],
+    "_pendingEviction": ["fmToDsMap", "presentation"]
+  },
   "paths": {
     "accessibility.authoring": {
       "path": "accessibility/AUTHORING.md",
