@@ -21,6 +21,7 @@ var ROOT = path.resolve(__dirname, "..");
 var FIXED_CONTRACT = [
   "paths-manifest.json",
   "schemas",
+  "clients",
   "llms.txt",
   "llms-full.txt",
   "CONSUMING.md",
