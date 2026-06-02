@@ -1,5 +1,7 @@
 # Auth Worker — GitHub OAuth Broker
 
+> **Zone: Tooling.** This is build machinery (the Editor's OAuth broker), not consumed substrate. Consumers never read this folder. See [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
+
 A tiny Cloudflare Worker that brokers the GitHub OAuth authorization-code exchange for the Knowledge Editor. The editor SPA cannot perform the exchange itself (GitHub's token endpoint requires `client_secret` and lacks CORS even after the July 2025 PKCE update). The Worker holds the secret server-side, completes the exchange, and posts the token back to the SPA via origin-locked `postMessage`.
 
 Vendored from [sveltia/sveltia-cms-auth](https://github.com/sveltia/sveltia-cms-auth) (MIT). See `src/index.js` for the pinned upstream SHA and any local modifications.

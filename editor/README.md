@@ -1,5 +1,7 @@
 # Knowledge Editor
 
+> **Zone: Tooling.** This is build machinery (the knowledge Editor app), not consumed substrate. Consumers never read this folder. See [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
+
 Schema-driven editor for the `actian-ds-knowledge` substrate. Authors edit the canonical files (tokens, foundations, components, accessibility, app-context, fm-to-ds-map, icon-groups) through forms + rich-text + live preview, and the editor packages each change as a Pull Request against `main`.
 
 Built as a static SPA, deployed from this repo's own GitHub Pages. Zero recurring cost, no third-party hosting.
