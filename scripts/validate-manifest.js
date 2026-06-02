@@ -181,12 +181,38 @@ function validateNoOrphans(manifest) {
   return errors;
 }
 
+function validateZones(manifest) {
+  var errors = [];
+  var z = manifest._zones;
+  if (!z || typeof z !== "object") {
+    errors.push("manifest missing '_zones' block");
+    return errors;
+  }
+  var declared = {};
+  Object.keys(z).forEach(function (key) {
+    if (!Array.isArray(z[key])) return; // skip _comment and other scalars
+    z[key].forEach(function (prefix) {
+      declared[prefix] = key;
+    });
+  });
+  var prefixes = {};
+  for (var name in manifest.paths) prefixes[name.split(".")[0]] = true;
+  for (var coll in manifest.collections) prefixes[coll.split(".")[0]] = true;
+  for (var p in prefixes) {
+    if (!(p in declared)) {
+      errors.push("zone: prefix '" + p + "' not classified in _zones");
+    }
+  }
+  return errors;
+}
+
 function main() {
   var manifest = readManifest();
   var errors = []
     .concat(validateSchema(manifest))
     .concat(validatePathsExist(manifest))
-    .concat(validateNoOrphans(manifest));
+    .concat(validateNoOrphans(manifest))
+    .concat(validateZones(manifest));
 
   if (errors.length === 0) {
     console.log(
@@ -216,4 +242,5 @@ module.exports = {
   validateSchema: validateSchema,
   validatePathsExist: validatePathsExist,
   validateNoOrphans: validateNoOrphans,
+  validateZones: validateZones,
 };
