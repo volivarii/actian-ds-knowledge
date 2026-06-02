@@ -57,3 +57,22 @@ test("matchesRange + resolveTargetTag pick the highest in-range tag", function (
 test("runSnapshot is exported (config-driven entry)", function () {
   assert.equal(typeof vs.runSnapshot, "function");
 });
+
+test("runSnapshot THROWS (does not process.exit) when no SHA is resolvable", function () {
+  // Library owns no CLI shell: a fatal condition throws for the consumer's
+  // wrapper to catch. Network-free path — empty argv + absent vendored.json +
+  // no range → falls straight through to the no-SHA guard.
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), "vs-run-"));
+  assert.throws(function () {
+    vs.runSnapshot(
+      {
+        knowledgeRepo: "owner/repo",
+        vendorDir: path.join(dir, "vendor"),
+        vendoredJsonPath: path.join(dir, "vendored.json"),
+        excludeTopLevel: new Set(),
+      },
+      [],
+    );
+  }, /no SHA available/);
+  fs.rmSync(dir, { recursive: true, force: true });
+});

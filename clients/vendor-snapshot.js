@@ -344,8 +344,20 @@ function vendorContent(extractedRepoRoot, vendorDir, excludeSet) {
 
 // Config-driven entry. config = { knowledgeRepo, vendorDir, vendoredJsonPath,
 // excludeTopLevel, postVendorHook }. argv defaults to process.argv.slice(2)
-// (passed explicitly in tests). No require.main block here — the consumer's
-// thin wrapper owns the CLI shell + error handling.
+// (passed explicitly in tests).
+//
+// Contract (the consumer's thin wrapper owns the CLI shell — see clients/README):
+//   - No require.main block + NO process.exit here. On a fatal condition
+//     (no in-range tag, no resolvable SHA) the library THROWS; the wrapper's
+//     try/catch prints "[vendor] FATAL: <msg>" and exits non-zero. (The plugin's
+//     original main() exit(1)'d these inline; relocating the exit to the wrapper
+//     is the design — non-zero abort is preserved, the message is unchanged.)
+//   - postVendorHook() runs after a successful vendor copy, before "[vendor] OK":
+//     throw from it to abort, or set process.exitCode inside it for the plugin's
+//     "warn + non-zero exit, don't roll back" renderer semantics (respected — the
+//     snapshot is already on disk).
+//   - Returns { resolvedVersion, resolvedRange, sha } so a consumer (e.g. docs'
+//     GITHUB_ENV append) can read the resolution without re-parsing vendored.json.
 function runSnapshot(config, argv) {
   var args = parseArgs(argv || process.argv.slice(2));
   var current = readVendoredJson(config.vendoredJsonPath, config.knowledgeRepo);
@@ -364,14 +376,12 @@ function runSnapshot(config, argv) {
     var tags = fetchTagsFromGitHub(config.knowledgeRepo);
     var matchedTag = resolveTargetTag(tags, resolvedRange);
     if (!matchedTag) {
-      process.stderr.write(
+      throw new Error(
         "[vendor] no tag matches range '" +
           resolvedRange +
           "'. Available: " +
-          tags.join(", ") +
-          "\n",
+          tags.join(", "),
       );
-      process.exit(1);
     }
     sha = resolveTagSha(config.knowledgeRepo, matchedTag);
     resolvedVersion = matchedTag;
@@ -395,17 +405,20 @@ function runSnapshot(config, argv) {
   }
 
   if (!sha) {
-    process.stderr.write(
-      "[vendor] no SHA available — pass --sha, --range, or set knowledge_repo_version_range in vendored.json\n",
+    throw new Error(
+      "[vendor] no SHA available — pass --sha, --range, or set knowledge_repo_version_range in vendored.json",
     );
-    process.exit(1);
   }
 
   if (args.resolveOnly) {
     process.stdout.write("range=" + (resolvedRange || "") + "\n");
     process.stdout.write("version=" + (resolvedVersion || "") + "\n");
     process.stdout.write("sha=" + sha + "\n");
-    return;
+    return {
+      resolvedVersion: resolvedVersion,
+      resolvedRange: resolvedRange,
+      sha: sha,
+    };
   }
 
   // Fetch + extract into a tempdir so we don't pollute the consumer tree on
@@ -454,6 +467,11 @@ function runSnapshot(config, argv) {
     if (config.postVendorHook) config.postVendorHook();
 
     process.stdout.write("[vendor] OK\n");
+    return {
+      resolvedVersion: resolvedVersion,
+      resolvedRange: resolvedRange,
+      sha: sha,
+    };
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }
