@@ -39,7 +39,6 @@ function compile(schema: Record<string, unknown>): ValidateFunction {
 function pickSchemaKey(path: string): string | null {
   if (path.endsWith("/_meta.yml")) return "guideline-meta";
   if (path === "app-context/app-context.json") return "app-context";
-  if (path === "fm-to-ds-map/fm-to-ds-map.json") return "fm-to-ds-map";
   if (path === "components/src/icon-groups.json") return "icon-groups";
   return null;
 }

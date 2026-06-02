@@ -12,7 +12,7 @@ var GOOD_ZONES = {
   knowledge: ["accessibility", "components", "content", "foundations"],
   contract: ["graph"],
   metadata: ["appContext", "tokens"],
-  _pendingEviction: ["fmToDsMap"],
+  _pendingEviction: [],
 };
 
 test("validateZones flags an unclassified prefix", function () {

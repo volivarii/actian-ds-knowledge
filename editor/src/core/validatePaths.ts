@@ -13,7 +13,7 @@
 //      lockstep and break the vendor snapshot workflow.
 //
 // Everything else — components/src, accessibility, foundations/src, content/src,
-// app-context, fm-to-ds-map, components/src/icon-groups, components/src/categories
+// app-context, components/src/icon-groups, components/src/categories
 // — is writable.
 
 const READONLY_EXACT = new Set<string>([

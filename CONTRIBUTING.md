@@ -28,7 +28,6 @@ Single-origin domains stay flat (no `src/`+`dist/` nesting) — adding it would 
 content/         ← purely human (Content lead's content guidelines)
 accessibility/   ← purely human
 app-context/     ← purely human (curated patterns)
-fm-to-ds-map/    ← purely human (curated FM↔DS mapping)
 tokens/          ← interim: human-frozen (see tokens/README.md)
 ```
 
@@ -46,7 +45,6 @@ tokens/          ← interim: human-frozen (see tokens/README.md)
 | Global / cross-cutting content guidelines (voice, tone, words to avoid, UX-pattern topics) | `content/src/{writing,patterns,product}/<slug>.md` — see `content/src/AUTHORING.md` and `content/src/content-index.md` | `content-derive.yml` regenerates `content/dist/global.md` on PR |
 | Accessibility guidance | `accessibility/src/<slug>.md` (per-section, ordered by `_order.json`) | `accessibility-derive.yml` regenerates `accessibility/dist/a11y-index.json` on PR |
 | App context / persona / terminology | `app-context/app-context.json` | None |
-| FM↔DS component mapping | `fm-to-ds-map/fm-to-ds-map.json` | None — `dsSlug` is hand-maintained alongside `dsKey` |
 
 ## The "do not edit `dist/`" rule
 

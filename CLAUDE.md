@@ -16,11 +16,10 @@ CI does the rest automatically: on your PR it regenerates the `dist/` files, bum
 ## Editing rules
 
 1. **Never edit `dist/` content.** Folder name is the signal: `dist/` = CI-generated, edits revert. Mixed-origin domains (`foundations/`, `components/`) use `src/` for editable sources.
-2. **Flat domains (no `src/`+`dist/`).** `app-context/`, `fm-to-ds-map/` — everything human-authored, no derive. (`content/` and `accessibility/` are human-authored at the source too but DO have a `src/` → CI-generated `dist/` derive — never edit their `dist/`.)
+2. **Flat domains (no `src/`+`dist/`).** `app-context/` — everything human-authored, no derive. (`content/` and `accessibility/` are human-authored at the source too but DO have a `src/` → CI-generated `dist/` derive — never edit their `dist/`.)
 3. **Tokens are interim-flat.** `tokens/{tokens.json,tokens.css}` are human-frozen snapshots until a successor generator returns. `tokens/token-reference.md` is CI-generated. See `tokens/README.md`.
 4. **One hand-edit exception in `dist/`:** the `templates` block of `components/dist/registries/metakit.json` is hand-curated and preserved across syncs (`_meta.hybrid: true`). Editing this block is allowed; everything else in the file is regenerated from Figma.
-5. **`dsSlug` in `fm-to-ds-map.json` is hand-maintained.** Despite the historical `_authoringNote` claim, no auto-regeneration code exists. Keep `dsSlug` in sync with `dsKey` manually when adding/renaming entries.
-6. **Stamp regenerated content honestly.** Generated JSONs carry `_meta.auto_generated: true` + `_meta.source: <source path>` + `_meta.do_not_edit`. Generated MDs carry an `AUTO-GENERATED — DO NOT EDIT` banner near the top. If you write a new generator, follow this stamping pattern.
+5. **Stamp regenerated content honestly.** Generated JSONs carry `_meta.auto_generated: true` + `_meta.source: <source path>` + `_meta.do_not_edit`. Generated MDs carry an `AUTO-GENERATED — DO NOT EDIT` banner near the top. If you write a new generator, follow this stamping pattern.
 
 ## Manifest contract
 

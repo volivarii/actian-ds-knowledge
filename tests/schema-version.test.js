@@ -17,7 +17,6 @@ var FILES_REQUIRING_SCHEMA_VERSION = [
   "components/dist/categories.json",
   "tokens/tokens.json",
   "app-context/app-context.json",
-  "fm-to-ds-map/fm-to-ds-map.json",
   "accessibility/dist/a11y-index.json",
   "components/src/icon-groups.json",
 ];
