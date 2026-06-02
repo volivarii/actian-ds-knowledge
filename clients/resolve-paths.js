@@ -126,8 +126,25 @@ function buildPathsFromManifest(manifest, vendorRoot) {
 // entry point consumers call (then layer their own overlays on the result).
 function buildPaths(vendorRoot) {
   var manifestPath = path.join(vendorRoot, "paths-manifest.json");
+  if (!fs.existsSync(manifestPath)) {
+    throw new Error(
+      "resolve-paths.js: manifest not found at " +
+        manifestPath +
+        ". Check vendorRoot or re-run the vendor snapshot.",
+    );
+  }
   var raw = fs.readFileSync(manifestPath, "utf8");
-  var manifest = JSON.parse(raw);
+  var manifest;
+  try {
+    manifest = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(
+      "resolve-paths.js: manifest at " +
+        manifestPath +
+        " failed to parse: " +
+        err.message,
+    );
+  }
   return buildPathsFromManifest(manifest, vendorRoot);
 }
 
