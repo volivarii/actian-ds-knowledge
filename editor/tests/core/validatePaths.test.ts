@@ -34,9 +34,8 @@ test("validatePaths — allows accessibility/src/*.md", () => {
   assert.equal(isReadOnlyPath("accessibility/src/principles.md"), false);
 });
 
-test("validatePaths — allows app-context, fm-to-ds-map, icon-groups (Class C)", () => {
+test("validatePaths — allows app-context, icon-groups (Class C)", () => {
   assert.equal(isReadOnlyPath("app-context/app-context.json"), false);
-  assert.equal(isReadOnlyPath("fm-to-ds-map/fm-to-ds-map.json"), false);
   assert.equal(isReadOnlyPath("components/src/icon-groups.json"), false);
 });
 

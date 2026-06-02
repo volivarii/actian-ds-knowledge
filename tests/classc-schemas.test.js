@@ -51,13 +51,6 @@ test("D3 — schemas/app-context.json validates app-context/app-context.json", (
   );
 });
 
-test("D3 — schemas/fm-to-ds-map.json validates fm-to-ds-map/fm-to-ds-map.json", () => {
-  assert.equal(
-    validateFile("schemas/fm-to-ds-map.json", "fm-to-ds-map/fm-to-ds-map.json"),
-    true,
-  );
-});
-
 test("D3 — schemas/icon-groups.json validates components/src/icon-groups.json", () => {
   assert.equal(
     validateFile("schemas/icon-groups.json", "components/src/icon-groups.json"),
@@ -70,15 +63,6 @@ test("D3 — schemas/icon-groups.json validates components/src/icon-groups.json"
 // Editor's secondary tier will rely on. If any of these flip, the editor
 // could silently accept malformed authoring.
 // ───────────────────────────────────────────────────────────────────────────
-
-test("D3 — fm-to-ds-map rejects a mapping missing the required dsKey", () => {
-  const { validate } = compileSchema("schemas/fm-to-ds-map.json");
-  const bad = {
-    _schema_version: 1,
-    mappings: { fmButton: { dsSlug: "button" } },
-  };
-  assert.equal(validate(bad), false, "missing dsKey should reject");
-});
 
 test("D3 — icon-groups rejects an uppercase icon slug inside a group", () => {
   const { validate } = compileSchema("schemas/icon-groups.json");

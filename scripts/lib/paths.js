@@ -96,7 +96,6 @@ var PATHS = {
     index: path.join(REPO_ROOT, "accessibility", "dist", "a11y-index.json"),
   },
   appContext: path.join(REPO_ROOT, "app-context", "app-context.json"),
-  fmToDsMap: path.join(REPO_ROOT, "fm-to-ds-map", "fm-to-ds-map.json"),
 };
 
 module.exports = PATHS;

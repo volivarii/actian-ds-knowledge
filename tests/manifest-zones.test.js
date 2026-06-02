@@ -54,8 +54,6 @@ test("_zones + _pendingEviction classify every prefix exactly once", function ()
   });
 });
 
-test("_pendingEviction holds exactly the consumer-specific artifacts", function () {
-  assert.deepEqual((manifest._zones._pendingEviction || []).slice().sort(), [
-    "fmToDsMap",
-  ]);
+test("_pendingEviction is empty — Track E complete (fmToDsMap + presentation evicted)", function () {
+  assert.deepEqual((manifest._zones._pendingEviction || []).slice().sort(), []);
 });

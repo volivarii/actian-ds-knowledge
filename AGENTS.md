@@ -14,7 +14,7 @@ CI does the rest automatically: on your PR it regenerates the `dist/` files, bum
 
 - This repo is the federated knowledge layer for the Actian Design System 2026.
 - Mixed-origin domains use `src/`+`dist/` (visible folder boundary; never edit `dist/`).
-- Flat domains (no `src/`+`dist/`): `app-context/`, `fm-to-ds-map/`. `content/` and `accessibility/` are human-authored but have a `src/` → CI `dist/` derive (never edit `dist/`).
+- Flat domains (no `src/`+`dist/`): `app-context/`. `content/` and `accessibility/` are human-authored but have a `src/` → CI `dist/` derive (never edit `dist/`).
 - `tokens/` is interim-flat — human-frozen snapshots until a successor generator lands.
 - One hand-edit exception in `dist/`: `metakit.json.templates` block.
 - Consumers reference logical names from `paths-manifest.json` (not physical paths). Generators write only to canonical paths under `dist/`.

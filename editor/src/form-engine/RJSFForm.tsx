@@ -1,7 +1,7 @@
 // Generic RJSF wrapper. Keeps the schema-driven editing contract in one
 // place: a JSON Schema in → a React form out, validated by Ajv 8.
 //
-// Per-domain schemas (guideline-meta, app-context, fm-to-ds-map, icon-groups)
+// Per-domain schemas (guideline-meta, app-context, icon-groups)
 // each ship a paired uiSchema under editor/src/uiSchemas/. Task 17 polishes
 // the widget set to match Radix theming throughout.
 

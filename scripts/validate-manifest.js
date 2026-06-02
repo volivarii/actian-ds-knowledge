@@ -20,7 +20,6 @@ var CONTENT_DIRS = [
   "content",
   "accessibility",
   "app-context",
-  "fm-to-ds-map",
 ];
 
 // Files inside content dirs that don't need manifest entries.
