@@ -1,20 +1,26 @@
 # actian-ds-knowledge
 
-Actian Design System knowledge layer — tokens, components, guidelines, foundations, content. Single source of truth, consumed by the [Actian DS Claude plugin](https://github.com/volivarii/Actian-DS-Claude-plugin) and (future) docs site.
+The federated **knowledge substrate** (source of truth) for the Actian Design
+System — foundations, components, content, accessibility, tokens — consumed by
+the [Actian DS Claude plugin](https://github.com/volivarii/Actian-DS-Claude-plugin)
+and the docs site, and built to serve future consumers (Storybook, AI surfaces)
+without bending to any one of them.
 
-> **Federation status:** Active. Hosts foundations, per-component multi-domain guidelines, content, accessibility, tokens, and CI-derived media assets. Consumed by the [Actian DS Claude plugin](https://github.com/volivarii/Actian-DS-Claude-plugin) (vendor-pinned, nightly refresh) and (future) docs site. Currently at `volivarii/actian-ds-knowledge`; transfers to Actian org at trigger conditions (formal team adoption / cross-team consumption / external publication).
+> **New here? Read [`ARCHITECTURE.md`](ARCHITECTURE.md)** — it maps the top level
+> into layers (knowledge · contract · metadata · tooling) so you can tell the
+> design-system content from the build machinery at a glance.
 
-## I want to…
+## Quick routes
 
-| I want to… | Go here |
+| I want to… | Go to |
 |---|---|
-| **Author content guidelines** (writing rules, UX-pattern copy, product-surface copy) | [`content/src/AUTHORING.md`](content/src/AUTHORING.md) |
-| **Author foundations** (tokens, scales, primitives) | [`foundations/src/AUTHORING.md`](foundations/src/AUTHORING.md) |
-| **Author per-component guidelines** (anatomy, behavior, usage, tokens, content) | [`components/src/AUTHORING.md`](components/src/AUTHORING.md) |
-| **See what's in the repo** | [`paths-manifest.json`](paths-manifest.json) — every artifact, keyed and described |
+| **Consume this** (build a reader, Storybook, AI surface) | [`CONSUMING.md`](CONSUMING.md) |
+| **Understand the layout** | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| **Author content** | the `src/AUTHORING.md` in `foundations/`, `components/`, `content/`, `accessibility/` |
+| **See every artifact** | [`paths-manifest.json`](paths-manifest.json) — the contract, keyed + zoned |
 | **Check coverage / debt** | [`components/dist/guidelines/coverage.md`](components/dist/guidelines/coverage.md) |
-| **Use this from code / build a consumer** | [`paths-manifest.json`](paths-manifest.json) — the contract. See [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md) for AI-agent guides. |
-| **Understand the architecture** | [`CONTRIBUTING.md`](CONTRIBUTING.md) — src/+dist/ convention, manifest indirection, CI flows |
+| **Contribute / CI** | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
+| **AI-agent guide** | [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md) |
 | **Index for AI agents** | [`llms.txt`](llms.txt) |
 
 ## Versioning
