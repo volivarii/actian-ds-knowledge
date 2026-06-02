@@ -6,7 +6,28 @@
 // the widget set to match Radix theming throughout.
 
 import type { ComponentProps } from "react";
-import Form from "@rjsf/core";
+// @rjsf/core ships CJS (module.exports = ...). In Vite, the bundler handles
+// the default export transparently. In tsx/Node (type-stripping), the named
+// `default` import lands as the whole module object, and the actual Form class
+// lives at .default.default. We resolve it the same way we handle
+// @rjsf/validator-ajv8, then cast to the canonical TS type for ComponentProps.
+import * as rjsfCoreMod from "@rjsf/core";
+import type _FormType from "@rjsf/core";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const _rjsfCoreAny = rjsfCoreMod as any;
+// Resolution order:
+//   1. tsx/Node CJS bridge: .default is the module object; Form is at .default.default
+//   2. Vite/real ESM: .default IS the Form class
+//   3. Fallback to the whole module (shouldn't happen in practice)
+const Form = (
+  typeof _rjsfCoreAny?.default?.default === "function"
+    ? _rjsfCoreAny.default.default
+    : typeof _rjsfCoreAny?.default === "function"
+      ? _rjsfCoreAny.default
+      : _rjsfCoreAny
+) as typeof _FormType;
+
 // The default @rjsf/validator-ajv8 export targets draft-07; the knowledge
 // repo's schemas are draft-2020-12. customizeValidator + Ajv2020 swaps the
 // validator at build time.
@@ -63,6 +84,8 @@ export interface RJSFFormProps {
   children?: ComponentProps<typeof Form>["children"];
   /** Custom RJSF widgets (e.g. CategorySelectWidget, RelatedMultiSelectWidget). */
   widgets?: ComponentProps<typeof Form>["widgets"];
+  /** Custom RJSF templates (FieldTemplate / ObjectFieldTemplate). Scoped per-form. */
+  templates?: ComponentProps<typeof Form>["templates"];
   /** Arbitrary context threaded into widget props — used by typed
    *  pickers to access the Octokit instance for option-set fetches. */
   formContext?: Record<string, unknown>;
@@ -78,6 +101,7 @@ export function RJSFForm({
   submitLabel,
   children,
   widgets,
+  templates,
   formContext,
 }: RJSFFormProps) {
   return (
@@ -88,6 +112,7 @@ export function RJSFForm({
       formData={formData}
       disabled={disabled}
       widgets={widgets}
+      templates={templates}
       formContext={formContext}
       onChange={(e) => onChange(e.formData)}
       onSubmit={(e) => onSubmit?.(e.formData)}

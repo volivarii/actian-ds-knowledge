@@ -1,10 +1,12 @@
 import "../setup-dom";
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { render, screen, cleanup } from "@testing-library/react";
 import { MetaEditScreen } from "../../src/app/MetaEditScreen";
+import { metaFormTemplates } from "../../src/form-engine/templates";
 
 // Bare-minimum fake octokit — never called because the test only exercises
 // the null-path and loading branches. The real Octokit wiring is covered by
@@ -29,4 +31,21 @@ test("MetaEditScreen — shows sidebar prompt when path is null", () => {
   render(wrap(<MetaEditScreen path={null} octokit={fakeOctokit} />));
   assert.ok(screen.getByText(/Choose a component in the sidebar/i));
   cleanup();
+});
+
+test("MetaEditScreen — meta form templates exist and are the grouped set", () => {
+  assert.equal(typeof metaFormTemplates.FieldTemplate, "function");
+  assert.equal(typeof metaFormTemplates.ObjectFieldTemplate, "function");
+});
+
+test("MetaEditScreen — no 'Advanced metadata' callout copy in the component source", () => {
+  const src = readFileSync(
+    new URL("../../src/app/MetaEditScreen.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.equal(
+    /Advanced metadata/.test(src),
+    false,
+    "the 'Advanced metadata' callout copy was removed",
+  );
 });

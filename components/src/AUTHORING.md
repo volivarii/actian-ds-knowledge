@@ -43,6 +43,11 @@ domains:
   tokens:   { status: not-started }
 ```
 
+> **Note — domain status is normally derived, not hand-set.** `status` is inferred
+> from domain-file presence (and the "use category default" intent), and `owner` /
+> `updatedAt` come from git. The Knowledge Editor manages these for you; the explicit
+> values above are still accepted as substrate input but you rarely write them by hand.
+
 ### Domain status
 
 | status        | meaning                                                        | source file |
@@ -69,7 +74,7 @@ fill them as you author, not retroactively backfill.
 |---|---|---|
 | `related` | list of component slugs | Powers "See also" nav on the docs site + cross-component context in the plugin's component-brief. Each entry must match `^[a-z][a-z0-9-]*$`. |
 | `examples` | list of `{ label, figmaNode \| url }` | Canonical references. Plugin's component-brief deep-links to these; docs site renders them as an "Examples" section. Each entry needs a `label` plus at least one of `figmaNode` (Figma node id, `<page>:<id>` form) or `url` (absolute URL). |
-| `lastReviewed` | ISO date (YYYY-MM-DD) | When a domain owner last sanity-checked this component's guidance. Surfaced in `coverage.md` as a staleness signal. Bump it when you edit any domain file for the component. |
+| `lastReviewed` | ISO date (YYYY-MM-DD) | Optional. The date a human last reviewed this component's guidance for accuracy. Settable via the Knowledge Editor's metadata form; passed through to `components/dist/guidelines/<slug>.json` as `meta.lastReviewed`. Not currently surfaced in any coverage view (a coverage staleness signal is a possible future use). |
 
 All three pass through verbatim to the derived
 `components/dist/guidelines/<slug>.json` under `meta.*` — no consumer-side
