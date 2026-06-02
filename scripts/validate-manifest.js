@@ -19,7 +19,6 @@ var CONTENT_DIRS = [
   "tokens",
   "content",
   "accessibility",
-  "presentation",
   "app-context",
   "fm-to-ds-map",
 ];
