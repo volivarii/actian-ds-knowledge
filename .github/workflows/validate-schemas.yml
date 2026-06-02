@@ -26,6 +26,8 @@ on:
       - 'components/dist/registries/**/*.json'
       - 'paths-manifest.json'
       - 'foundations/dist/**/*.json'
+      - 'accessibility/dist/**/*.json'
+      - 'content/dist/**/*.json'
       - 'schemas/**/*.json'
       - 'scripts/validate/**'
       - '.github/workflows/validate-schemas.yml'
@@ -90,8 +92,29 @@ jobs:
           node scripts/validate/validate-guidelines-doc.js > guidelines-doc.rdjsonl
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Validate accessibility sections
+        id: a11y_sections
+        continue-on-error: true
+        run: |
+          node scripts/validate/validate-a11y-sections.js > a11y-sections.rdjsonl
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Validate accessibility index
+        id: a11y_index
+        continue-on-error: true
+        run: |
+          node scripts/validate/validate-a11y-index.js > a11y-index.rdjsonl
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Validate content dist
+        id: content
+        continue-on-error: true
+        run: |
+          node scripts/validate/validate-content.js > content.rdjsonl
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
       - name: Combine rdjsonl outputs
-        run: cat manifest.rdjsonl foundations.rdjsonl categories.rdjsonl registries.rdjsonl guidelines-doc.rdjsonl > combined.rdjsonl
+        run: cat manifest.rdjsonl foundations.rdjsonl categories.rdjsonl registries.rdjsonl guidelines-doc.rdjsonl a11y-sections.rdjsonl a11y-index.rdjsonl content.rdjsonl > combined.rdjsonl
 
       - name: Report annotations via reviewdog
         env:
