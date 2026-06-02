@@ -59,6 +59,12 @@ Across knowledge domains the derived `dist/` files follow one convention:
 responsibility. The manifest is your unified index of the distribution surface:
 `Object.values(manifest.paths).filter(e => e.origin === "ci")`.)
 
+> **Roll-ups are intentionally unschematized.** `*.bundle.json` (one-shot domain
+> roll-ups) and `foundations-index.json` (flat slug list) have no dedicated
+> schema — they're composed from already-validated per-item shapes. A schema is
+> added only when a consumer reads them programmatically. Per-item dist
+> (sections, guidelines, words-to-avoid, a11y-index) IS schema-validated in CI.
+
 ## 5. Validate against schemas
 
 Machine-readable schemas live in [`schemas/`](schemas/). Validate what you read
