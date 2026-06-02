@@ -297,7 +297,12 @@ function readVendorInclude(extractedRepoRoot) {
 // Otherwise fall back to the legacy exclude-set.
 function selectEntries(names, includeSet, excludeSet) {
   return names.filter(function (name) {
-    return includeSet ? includeSet.has(name) : !excludeSet.has(name);
+    // Inclusion-first. In the legacy exclude-fallback branch, tolerate an
+    // absent excludeSet (a consumer that omits config.excludeTopLevel) — treat
+    // it as "no exclusions" rather than throwing on excludeSet.has(...).
+    return includeSet
+      ? includeSet.has(name)
+      : !(excludeSet && excludeSet.has(name));
   });
 }
 
