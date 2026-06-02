@@ -12,7 +12,7 @@ var GOOD_ZONES = {
   knowledge: ["accessibility", "components", "content", "foundations"],
   contract: ["graph"],
   metadata: ["appContext", "tokens"],
-  _pendingEviction: ["fmToDsMap", "presentation"],
+  _pendingEviction: ["fmToDsMap"],
 };
 
 test("validateZones flags an unclassified prefix", function () {
@@ -39,7 +39,10 @@ test("validateZones passes when every prefix is classified", function () {
 });
 
 test("validateZones flags a missing _zones block", function () {
-  var errors = validateZones({ paths: { "accessibility.index": {} }, collections: {} });
+  var errors = validateZones({
+    paths: { "accessibility.index": {} },
+    collections: {},
+  });
   assert.ok(
     errors.some(function (e) {
       return /_zones/.test(e);
