@@ -36,7 +36,7 @@ function compile(schema: Record<string, unknown>): ValidateFunction {
   return fn;
 }
 
-function pickSchemaKey(path: string): string | null {
+export function pickSchemaKey(path: string): string | null {
   if (path.endsWith("/_meta.yml")) return "guideline-meta";
   if (path === "app-context/app-context.json") return "app-context";
   if (path === "components/src/icon-groups.json") return "icon-groups";
@@ -74,4 +74,37 @@ export function validateAgainstSchema({
   if (!validate(data)) {
     throw new SchemaValidationError(path, validate.errors ?? []);
   }
+}
+
+/**
+ * Build a SchemaMap for a batch of files by loading exactly the schemas their
+ * paths require (via `pickSchemaKey`). The on-disk convention is
+ * `schemas/<key>.json` for every key `pickSchemaKey` can return, so the loader
+ * stays in lockstep with the key system without a second mapping table.
+ *
+ * `fetchText` is injected so this stays free of any GitHub/transport
+ * dependency — callers pass a closure over `getTextFile`; tests pass a fake.
+ * Paths with no schema (markdown, etc.) contribute nothing: an all-markdown
+ * batch yields an empty map, and the validator then skips those files exactly
+ * as it did before. Repeated keys are deduped to one fetch.
+ *
+ * Without this, batch submits hand the validator an empty `{}` and every
+ * schema-bearing file (`_meta.yml`, `app-context.json`, `icon-groups.json`)
+ * fails with a false "no schema loaded for key …".
+ */
+export async function loadSchemasForPaths(
+  paths: string[],
+  fetchText: (schemaFile: string) => Promise<string>,
+): Promise<SchemaMap> {
+  const keys = new Set<string>();
+  for (const p of paths) {
+    const key = pickSchemaKey(p);
+    if (key) keys.add(key);
+  }
+  const schemas: SchemaMap = {};
+  for (const key of keys) {
+    const text = await fetchText(`schemas/${key}.json`);
+    schemas[key] = JSON.parse(text) as Record<string, unknown>;
+  }
+  return schemas;
 }

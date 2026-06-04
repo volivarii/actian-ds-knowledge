@@ -413,7 +413,10 @@ export function MarkdownEditScreen({
         } else if (err instanceof ReadonlyPathError) {
           setSubmitError(`This path is read-only: ${err.path}`);
         } else if (err instanceof SchemaValidationError) {
-          setSubmitError(`Schema validation failed for ${err.path}`);
+          const detail = err.detail();
+          setSubmitError(
+            `Schema validation failed for ${err.path}${detail ? `: ${detail}` : ""}`,
+          );
         } else {
           setSubmitError((err as Error).message);
         }
