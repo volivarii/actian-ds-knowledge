@@ -55,4 +55,21 @@ export class SchemaValidationError extends Error {
     super(`schema validation failed: ${path}`);
     this.name = "SchemaValidationError";
   }
+
+  /**
+   * One-line, human-readable summary of the underlying failures. Handles both
+   * AJV `ErrorObject`s (`instancePath` + `message`) and the validator's own
+   * `[{ message }]` shape (e.g. "no schema loaded for key …"). Returns "" when
+   * there are no errors, so callers can append it conditionally.
+   */
+  detail(): string {
+    return (this.errors ?? [])
+      .map((e) => {
+        const o = (e ?? {}) as { instancePath?: string; message?: string };
+        const loc = o.instancePath ? `${o.instancePath} ` : "";
+        return `${loc}${o.message ?? "is invalid"}`.trim();
+      })
+      .filter(Boolean)
+      .join("; ");
+  }
 }

@@ -25,6 +25,8 @@ import {
 } from "@radix-ui/themes";
 import type { CartEntry, SubmissionCart } from "../drafts/SubmissionCart";
 import { submitDraft } from "../core/submitDraft";
+import { loadSchemasForPaths } from "../core/validateAgainstSchema";
+import { getTextFile } from "./githubApi";
 import { AnchorPreservationError } from "../core/anchorPreservation";
 import { ReadonlyPathError, SchemaValidationError } from "../core/types";
 import {
@@ -86,6 +88,15 @@ export function SubmissionStaging({
           entries.length === 1
             ? `edit ${entries[0]!.path}`
             : `edit ${entries.length} files`;
+        // Load exactly the schemas this batch's files need. Without this the
+        // validator gets an empty map and every schema-bearing file (a
+        // `_meta.yml`, app-context, icon-groups) fails with a false
+        // "no schema loaded …". MetaEditScreen already loads its schema; the
+        // batch path was the one that didn't.
+        const schemas = await loadSchemasForPaths(
+          entries.map((e) => e.path),
+          (schemaFile) => getTextFile(octokit, schemaFile),
+        );
         const result = await submitDraft(
           {
             id: `batch-${Date.now()}`,
@@ -97,7 +108,7 @@ export function SubmissionStaging({
           {
             ...DEFAULT_COORDS,
             base: "main",
-            schemas: {},
+            schemas,
             octokit,
           },
         );
@@ -109,7 +120,10 @@ export function SubmissionStaging({
         } else if (err instanceof ReadonlyPathError) {
           setError(`Read-only path: ${err.path}`);
         } else if (err instanceof SchemaValidationError) {
-          setError(`Schema validation failed for ${err.path}`);
+          const detail = err.detail();
+          setError(
+            `Schema validation failed for ${err.path}${detail ? `: ${detail}` : ""}`,
+          );
         } else {
           setError((err as Error).message);
         }
