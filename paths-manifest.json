@@ -389,6 +389,19 @@
       "origin": "human",
       "description": "Icon → semantic group mapping (ζ.5). Curated from the Figma Actual-icons layout; consumed by sync orchestrator to populate registry entries' `group` + `secondaryGroups` fields for items in category === 'Icons'. Key order = priority for primary-group resolution (specific-first)."
     },
+    "components.icons.src": {
+      "path": "components/src/icons-svg.json",
+      "type": "json",
+      "origin": "human",
+      "description": "Curated icon SVG geometry ({viewBox, body} per slug) for the hi-fi render tier. Hand-extracted from Figma (REST format=svg -> normalize fills to currentColor). Provenance (dsKey/nodeId/group) is joined at derive time from the registry + icon-groups.json. Source for components.icons.svg."
+    },
+    "components.icons.svg": {
+      "path": "components/dist/icons/icons.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/icons/derive-icons-svg.js",
+      "description": "Derived icon-geometry read-surface: per-slug {viewBox, body, group, dsKey, nodeId} for the curated UI-icon set. Consumed by the plugin render tier's renderIcon() to inline real glyphs. Backfilled to the full 234 by the future icon-export pipeline."
+    },
     "components.media.index": {
       "path": "components/dist/media/_index.json",
       "type": "json",
