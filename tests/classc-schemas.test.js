@@ -64,6 +64,22 @@ test("D3 — schemas/icon-groups.json validates components/src/icon-groups.json"
 // could silently accept malformed authoring.
 // ───────────────────────────────────────────────────────────────────────────
 
+test("D3 — schemas/icons-svg.json validates components/src/icons-svg.json", () => {
+  assert.equal(
+    validateFile("schemas/icons-svg.json", "components/src/icons-svg.json"),
+    true,
+  );
+});
+
+test("icons-svg rejects an icon missing the required body", () => {
+  const { validate } = compileSchema("schemas/icons-svg.json");
+  const bad = {
+    _schema_version: 1,
+    icons: { close: { viewBox: "0 0 20 20" } }, // body missing
+  };
+  assert.equal(validate(bad), false, "icon without body should reject");
+});
+
 test("D3 — icon-groups rejects an uppercase icon slug inside a group", () => {
   const { validate } = compileSchema("schemas/icon-groups.json");
   const bad = {
