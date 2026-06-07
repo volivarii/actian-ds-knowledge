@@ -42,10 +42,23 @@ test("every tokens.yml binding resolves to a real token in tokens.json", () => {
   const known = tokenNameSet();
   const problems = [];
   for (const file of tokensYmlFiles()) {
-    const doc = yamlParser.parseFrontmatter(fs.readFileSync(file, "utf8"), 0) || {};
-    for (const b of doc.bindings || []) {
+    const doc =
+      yamlParser.parseFrontmatter(fs.readFileSync(file, "utf8"), 0) || {};
+    // Fail loudly on a parse failure / empty bindings rather than passing a
+    // file that contributes zero checks (e.g. a `binding:` typo or malformed
+    // block). The schema also requires minItems:1, but this gate must not
+    // silently green a tokens.yml that yielded nothing.
+    if (!Array.isArray(doc.bindings) || doc.bindings.length === 0) {
+      problems.push(
+        `${path.relative(SRC, file)} → no non-empty bindings array (parse failure or empty file)`,
+      );
+      continue;
+    }
+    for (const b of doc.bindings) {
       if (!known.has(b.token)) {
-        problems.push(`${path.relative(SRC, file)} → unknown token "${b.token}"`);
+        problems.push(
+          `${path.relative(SRC, file)} → unknown token "${b.token}"`,
+        );
       }
     }
   }
