@@ -118,8 +118,17 @@ export function metaPathFor(slug: string): string {
   return `components/src/${slug}/_meta.yml`;
 }
 
+// The on-disk filename a domain authors into. Most domains are prose
+// Markdown (`<domain>.md`); the `tokens` domain is structured YAML
+// bindings (`tokens.yml`, the K1 substrate shape) — NOT Markdown. Path
+// derivation, the workspace status probe, and the coupling validator all
+// route through here so the tokens domain never gets looked up as `.md`.
+export function domainFileName(domain: Domain): string {
+  return domain === "tokens" ? "tokens.yml" : `${domain}.md`;
+}
+
 export function domainPathFor(slug: string, domain: Domain): string {
-  return `components/src/${slug}/${domain}.md`;
+  return `components/src/${slug}/${domainFileName(domain)}`;
 }
 
 interface ParsedMeta {

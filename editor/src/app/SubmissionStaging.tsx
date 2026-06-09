@@ -30,6 +30,7 @@ import { getTextFile } from "./githubApi";
 import { AnchorPreservationError } from "../core/anchorPreservation";
 import { ReadonlyPathError, SchemaValidationError } from "../core/types";
 import {
+  domainFileName,
   validateCartCoupling,
   type CouplingMismatch,
 } from "../lib/workspaceState";
@@ -186,7 +187,7 @@ export function SubmissionStaging({
             <Callout.Root color="amber" mb="3">
               <Callout.Text>
                 <strong>Metadata ↔ content mismatch.</strong> Submission is
-                blocked until each declared domain has its `.md` file in the
+                blocked until each declared domain has its content file in the
                 batch (or already on remote). Found {mismatches.length} mismatch
                 {mismatches.length === 1 ? "" : "es"}:
               </Callout.Text>
@@ -202,14 +203,14 @@ export function SubmissionStaging({
                         </code>{" "}
                         but{" "}
                         <code>
-                          {m.slug}/{m.domain}.md
+                          {m.slug}/{domainFileName(m.domain)}
                         </code>{" "}
                         is not in the batch and not on remote.
                       </>
                     ) : (
                       <>
                         <code>
-                          {m.slug}/{m.domain}.md
+                          {m.slug}/{domainFileName(m.domain)}
                         </code>{" "}
                         is staged but <code>{m.slug}/_meta.yml</code> doesn't
                         declare it ({m.declaredStatus ?? "absent"}). Open the

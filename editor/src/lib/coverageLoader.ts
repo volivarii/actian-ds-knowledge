@@ -21,6 +21,7 @@
 import type { Octokit } from "@octokit/rest";
 import { parse as parseYaml } from "yaml";
 import { listDirectories, getTextFile } from "../app/githubApi";
+import { domainFileName } from "./workspaceState";
 
 export const DOMAINS = [
   "content",
@@ -248,7 +249,7 @@ export function summarize(rows: CoverageRow[]): CoverageCounts {
 export function cellTarget(row: CoverageRow, domain: Domain): string {
   const status = row.domains[domain].status;
   if (status === "approved" || status === "draft") {
-    return `components/src/${row.slug}/${domain}.md`;
+    return `components/src/${row.slug}/${domainFileName(domain)}`;
   }
   if (status === "inherited" && row.category) {
     return `components/src/categories/${row.category}.md`;

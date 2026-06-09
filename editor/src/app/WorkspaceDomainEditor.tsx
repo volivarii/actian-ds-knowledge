@@ -33,6 +33,7 @@ import { buildMarkdownStub } from "../lib/markdownStubs";
 import { loadAnchorIndex } from "../lib/anchorIndex";
 import { computeRenameWarnings } from "../markdown-engine/anchorLinter";
 import {
+  domainFileName,
   domainPathFor,
   promoteDomainToDraft,
   type Domain,
@@ -230,7 +231,7 @@ export function WorkspaceDomainEditor({
         <Flex align="center" gap="2">
           <Spinner />
           <Text size="1" color="gray">
-            Loading {domain}.md…
+            Loading {domainFileName(domain)}…
           </Text>
         </Flex>
       </Box>
