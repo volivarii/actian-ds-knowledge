@@ -1,11 +1,17 @@
-# yaml-language-server: $schema=../../../schemas/guideline-meta.json
-component: "Buttons"
+component: Buttons
 category: action
 a11y_refs:
-  - { ref: buttons }
+  - ref: buttons
 domains:
-  content: { status: approved, owner: content-team }
-  usage:    { status: not-started }
-  design:   { status: draft, owner: design }
-  behavior: { status: inherited }
-  tokens:   { status: approved }
+  content:
+    status: approved
+    owner: content-team
+  usage:
+    status: not-started
+  design:
+    status: draft
+    owner: design
+  behavior:
+    status: draft
+  tokens:
+    status: approved
