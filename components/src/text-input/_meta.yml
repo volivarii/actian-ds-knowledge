@@ -1,16 +1,11 @@
-component: Text input
+# yaml-language-server: $schema=../../../schemas/guideline-meta.json
+component: "Text input"
 category: form-input-selection
 a11y_refs:
-  - ref: forms
+  - { ref: forms }
 domains:
-  content:
-    status: approved
-    owner: content-team
-  usage:
-    status: not-started
-  design:
-    status: draft
-  behavior:
-    status: inherited
-  tokens:
-    status: approved
+  content: { status: approved, owner: content-team }
+  usage: { status: not-started }
+  design: { status: draft }
+  behavior: { status: inherited }
+  tokens: { status: approved }
