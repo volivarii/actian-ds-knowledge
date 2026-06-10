@@ -152,6 +152,13 @@
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'card' component (content, usage, design, behavior, tokens — each optional)."
     },
+    "components.guidelineDoc.chat-with-ai-steward": {
+      "path": "components/dist/guidelines/chat-with-ai-steward.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-guidelines.js",
+      "description": "Merged multi-domain guideline object for the 'chat-with-ai-steward' component (content, usage, design, behavior, tokens — each optional)."
+    },
     "components.guidelineDoc.checkbox": {
       "path": "components/dist/guidelines/checkbox.json",
       "type": "json",
