@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   domainFileName,
   domainPathFor,
+  promoteDomainToDraft,
+  setDomainInherited,
   validateCartCoupling,
 } from "../../src/lib/workspaceState";
 import { SubmissionCart } from "../../src/drafts/SubmissionCart";
@@ -104,6 +106,65 @@ test("validateCartCoupling: approved tokens satisfied by tokens.yml on remote (n
   const cart = cartWithMeta(META_TOKENS_APPROVED);
   const mismatches = await validateCartCoupling(gh, cart);
   assert.deepEqual(mismatches, []);
+});
+
+// A realistic remote _meta.yml: leading schema header + flow-style domains,
+// the on-disk shape every component currently ships. The restricted deriver
+// parser (scripts/categories/categories-parser.js) requires this flow style
+// and the editor must preserve it on rewrite. behavior starts not-started so
+// promoteDomainToDraft has something to promote.
+const META_WITH_HEADER = `# yaml-language-server: $schema=../../../schemas/guideline-meta.json
+component: "Buttons"
+category: action
+a11y_refs:
+  - { ref: buttons }
+domains:
+  content: { status: approved, owner: content-team }
+  usage: { status: not-started }
+  design: { status: inherited }
+  behavior: { status: not-started }
+  tokens: { status: approved }
+`;
+
+test("promoteDomainToDraft rewrites _meta.yml in flow-style with the schema header preserved (deriver-parseable)", async () => {
+  // Regression: workspaceState used the raw `yaml` stringify, which emits
+  // block-nested `domains.*` and drops the leading `# yaml-language-server`
+  // header. The restricted deriver parser rejects block nesting with
+  // "nested values must be scalars in this subset" — exactly the CI failure
+  // PR #228 hit on its first human submission. The editor MUST route through
+  // the form-engine serializer (flowAtDepth: 2 + originalText).
+  const gh = fakeGh({
+    "components/src/button/_meta.yml": META_WITH_HEADER,
+  });
+  const cart = new SubmissionCart(makeStorage());
+  await promoteDomainToDraft(gh, "button", "behavior", cart);
+  const entry = cart
+    .list()
+    .find((e) => e.path === "components/src/button/_meta.yml");
+  assert.ok(entry, "_meta.yml staged in cart");
+  const out = entry!.content;
+  // IDE schema-hinting header survives the rewrite.
+  assert.match(out, /^# yaml-language-server: \$schema=/);
+  // The promoted domain is emitted as an inline flow map.
+  assert.match(out, /behavior: \{ status: draft \}/);
+  // Untouched domains keep their flow-style shape.
+  assert.match(out, /content: \{ status: approved, owner: content-team \}/);
+  // No block-nested domain values (the corruption shape the deriver rejects).
+  assert.doesNotMatch(out, /\n {4}status:/);
+});
+
+test("setDomainInherited rewrites _meta.yml in flow-style with the schema header preserved", async () => {
+  const gh = fakeGh({
+    "components/src/button/_meta.yml": META_WITH_HEADER,
+  });
+  const cart = new SubmissionCart(makeStorage());
+  await setDomainInherited(gh, "button", "usage", true, cart);
+  const out = cart
+    .list()
+    .find((e) => e.path === "components/src/button/_meta.yml")!.content;
+  assert.match(out, /^# yaml-language-server: \$schema=/);
+  assert.match(out, /usage: \{ status: inherited \}/);
+  assert.doesNotMatch(out, /\n {4}status:/);
 });
 
 test("validateCartCoupling: approved tokens with neither tokens.yml on remote nor in cart → declared-but-missing", async () => {

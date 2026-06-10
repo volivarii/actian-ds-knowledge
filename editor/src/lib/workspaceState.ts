@@ -13,7 +13,8 @@
 // distinction (draft vs approved) is a review step, not an authoring step.
 
 import type { Octokit } from "@octokit/rest";
-import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { parse as parseYaml } from "yaml";
+import { stringifyYaml } from "../form-engine/yamlSerializer";
 import { getTextFile } from "../app/githubApi";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import type { SubmissionCart } from "../drafts/SubmissionCart";
@@ -319,7 +320,14 @@ export async function promoteDomainToDraft(
   if (!current || current === "not-started") {
     domains[domain] = { ...(domains[domain] ?? {}), status: "draft" };
     parsed.domains = domains;
-    const next = stringifyYaml(parsed);
+    // The restricted deriver parser (scripts/categories/categories-parser.js)
+    // requires flow-style `domains.*` maps and the leading schema header; the
+    // raw `yaml` stringify emits block nesting and drops the header, breaking
+    // derive. Route through the form-engine serializer.
+    const next = stringifyYaml(parsed, {
+      originalText: content,
+      flowAtDepth: 2,
+    });
     cart.add({
       path: metaPath,
       content: next,
@@ -361,7 +369,8 @@ export async function setDomainInherited(
   parsed.domains = domains;
   cart.add({
     path: metaPath,
-    content: stringifyYaml(parsed),
+    // Flow-style + header preserved — see promoteDomainToDraft.
+    content: stringifyYaml(parsed, { originalText: content, flowAtDepth: 2 }),
     basedOnSha: "",
     addedAt: Date.now(),
   });
