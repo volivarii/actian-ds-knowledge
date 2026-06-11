@@ -112,6 +112,42 @@ test("syncAnatomy skips icons + normalizes the default variant of a set", async 
   assert.equal(btn.source.variant, "Type=Primary, State=Default");
 });
 
+test("an empty Figma response does NOT wipe existing anatomy files (no data loss)", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  // pre-existing good data from a prior sync
+  writeJsonReal(path.join(anatomyDir, "button.json"), { slug: "button" });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: { button: { nodeId: "1:1", category: "Action" } },
+    }),
+  );
+  // transient outage: getNodes returns nothing
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({ nodes: {} });
+    },
+  };
+  var written = await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-06-11",
+    },
+    "dsKit",
+  );
+  assert.equal(written.count, 0);
+  // the existing file must survive — prune only runs when we wrote something
+  assert.equal(fs.existsSync(path.join(anatomyDir, "button.json")), true);
+});
+
 test("syncAnatomy writes per-slug files + bundle from a fake rest", async function () {
   var dir = tmpDir();
   var registriesDir = path.join(dir, "registries");

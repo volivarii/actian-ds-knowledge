@@ -44,12 +44,25 @@ function pickDefaultVariant(doc) {
   return { node: variants[0], variant: variants[0].name || null };
 }
 
-// Remove stale per-slug anatomy files before a fresh write so dropped components
-// (e.g. icons under the v2 filter, or components removed from Figma) don't linger.
-function cleanAnatomyDir(anatomyDir) {
-  if (!fs.existsSync(anatomyDir)) return;
-  fs.readdirSync(anatomyDir).forEach(function (f) {
-    if (f.endsWith(".json")) {
+// Prune stale per-slug anatomy files AFTER a successful write — delete only `.json`
+// files NOT in the freshly-written set (dropped icons, components removed from
+// Figma). Runs after writing (never wipe-then-write) and only when called with a
+// non-empty kept-set, so a transient empty Figma response can't silently delete all
+// anatomy data. `.gitkeep` is preserved (not `.json`); the bundle lives one dir up.
+function pruneStaleAnatomy(anatomyDir, keptSlugs) {
+  if (!keptSlugs.length || !fs.existsSync(anatomyDir)) return;
+  var keep = {};
+  keptSlugs.forEach(function (s) {
+    keep[s + ".json"] = true;
+  });
+  var entries;
+  try {
+    entries = fs.readdirSync(anatomyDir);
+  } catch (e) {
+    return; // unreadable dir — leave it alone rather than throw
+  }
+  entries.forEach(function (f) {
+    if (f.endsWith(".json") && !keep[f]) {
       try {
         fs.unlinkSync(path.join(anatomyDir, f));
       } catch (e) {
@@ -130,9 +143,6 @@ async function syncAnatomy(opts, kit) {
   var resp = await rest.getNodes(fileKey, ids);
   var nodes = (resp && resp.nodes) || {};
 
-  // Drop stale files (e.g. icon artifacts from a pre-v2 sync) before writing fresh.
-  cleanAnatomyDir(anatomyDir);
-
   // Bundle is a slug→file MAP under a `components` envelope — keeps it off the top
   // level so writeJson's _schema_version injection never appears as a phantom slug.
   var bundle = { _schema_version: 1, components: {} };
@@ -166,6 +176,9 @@ async function syncAnatomy(opts, kit) {
     }
   });
   writeJson(path.join(anatomyDir, "..", "anatomy.bundle.json"), bundle);
+  // Prune stale files AFTER the fresh write, and only when we wrote something — a
+  // transient empty/partial Figma response (count 0) must never wipe existing data.
+  pruneStaleAnatomy(anatomyDir, Object.keys(bundle.components));
   return result(count, failed.length ? { failed: failed } : undefined);
 }
 
