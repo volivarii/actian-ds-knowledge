@@ -23,6 +23,55 @@ function nodeIdToSlugMap(registry) {
   return map;
 }
 
+// Icons are vector wrappers with no layout structure and live in the curated icon
+// set — they don't belong in the anatomy (layout-structure) domain. (v2 quality)
+function isIconComponent(comp) {
+  return !!comp && comp.category === "Icons";
+}
+
+// A variant SET's registry nodeId points at the whole COMPONENT_SET grid. Normalize
+// the DEFAULT variant instead — conventionally the first COMPONENT child (Figma
+// orders the default top-left). Returns { node, variant } (variant = its name, or
+// null when the input isn't a set). (v2 quality)
+function pickDefaultVariant(doc) {
+  if (!doc || doc.type !== "COMPONENT_SET" || !Array.isArray(doc.children)) {
+    return { node: doc, variant: null };
+  }
+  var variants = doc.children.filter(function (c) {
+    return c && c.type === "COMPONENT";
+  });
+  if (variants.length === 0) return { node: doc, variant: null };
+  return { node: variants[0], variant: variants[0].name || null };
+}
+
+// Prune stale per-slug anatomy files AFTER a successful write — delete only `.json`
+// files NOT in the freshly-written set (dropped icons, components removed from
+// Figma). Runs after writing (never wipe-then-write) and only when called with a
+// non-empty kept-set, so a transient empty Figma response can't silently delete all
+// anatomy data. `.gitkeep` is preserved (not `.json`); the bundle lives one dir up.
+function pruneStaleAnatomy(anatomyDir, keptSlugs) {
+  if (!keptSlugs.length || !fs.existsSync(anatomyDir)) return;
+  var keep = {};
+  keptSlugs.forEach(function (s) {
+    keep[s + ".json"] = true;
+  });
+  var entries;
+  try {
+    entries = fs.readdirSync(anatomyDir);
+  } catch (e) {
+    return; // unreadable dir — leave it alone rather than throw
+  }
+  entries.forEach(function (f) {
+    if (f.endsWith(".json") && !keep[f]) {
+      try {
+        fs.unlinkSync(path.join(anatomyDir, f));
+      } catch (e) {
+        /* best-effort */
+      }
+    }
+  });
+}
+
 async function varNameByIdFor(rest, fileKey) {
   if (!rest || typeof rest.getLocalVariables !== "function") return {};
   try {
@@ -76,11 +125,16 @@ async function syncAnatomy(opts, kit) {
     });
   }
   var registry = JSON.parse(fs.readFileSync(regPath, "utf8"));
+  // nodeIdToSlug stays FULL (all components, incl. icons) so nested icon instances
+  // inside structural components can still resolve to their icon slug.
   var nodeIdToSlug = nodeIdToSlugMap(registry);
   var varNameById = await varNameByIdFor(rest, fileKey);
 
   var comps = registry.components || {};
-  var slugs = Object.keys(comps);
+  // v2 (B): skip icons — they have no layout anatomy.
+  var slugs = Object.keys(comps).filter(function (s) {
+    return !isIconComponent(comps[s]);
+  });
   var ids = slugs
     .map(function (s) {
       return comps[s].nodeId;
@@ -102,11 +156,15 @@ async function syncAnatomy(opts, kit) {
     // Isolate per-component failures — one malformed component must not abort the
     // whole anatomy phase (runWithGuard's catch is per-kit, not per-component).
     try {
-      var file = buildAnatomyFile(doc, {
+      // v2 (A): for variant sets, normalize the default variant, not the grid.
+      var picked = pickDefaultVariant(doc);
+      var source = { fileKey: fileKey, nodeId: nid };
+      if (picked.variant) source.variant = picked.variant;
+      var file = buildAnatomyFile(picked.node, {
         slug: slug,
         kit: kit.toLowerCase(),
         syncedAt: syncedAt,
-        source: { fileKey: fileKey, nodeId: nid },
+        source: source,
         nodeIdToSlug: nodeIdToSlug,
         varNameById: varNameById,
       });
@@ -118,7 +176,16 @@ async function syncAnatomy(opts, kit) {
     }
   });
   writeJson(path.join(anatomyDir, "..", "anatomy.bundle.json"), bundle);
+  // Prune stale files AFTER the fresh write, and only when we wrote something — a
+  // transient empty/partial Figma response (count 0) must never wipe existing data.
+  pruneStaleAnatomy(anatomyDir, Object.keys(bundle.components));
   return result(count, failed.length ? { failed: failed } : undefined);
 }
 
-module.exports = { syncAnatomy, nodeIdToSlugMap, fileKeyFor };
+module.exports = {
+  syncAnatomy,
+  nodeIdToSlugMap,
+  fileKeyFor,
+  isIconComponent,
+  pickDefaultVariant,
+};
