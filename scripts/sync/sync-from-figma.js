@@ -36,6 +36,7 @@ var KIT_MAP = {
 
 var REGISTRY_KITS = ["dsKit", "fmKit", "metaKit"];
 var STYLES_KITS = ["dsKit"]; // Only DS Kit hosts text + effect styles
+var ANATOMY_KITS = ["ds"];
 
 // ---- Helpers ----
 
@@ -381,6 +382,10 @@ async function run(opts) {
     categoriesPath: opts.categoriesPath || null,
     iconGroups: iconGroups,
   };
+  orchOpts.writeJson = writeJson;
+  orchOpts.registriesDir = outputDir;
+  orchOpts.anatomyDir = path.join(pluginDir, "components", "dist", "anatomy");
+  orchOpts.syncedAt = new Date().toISOString();
   var results = [];
   var errors = [];
 
@@ -484,6 +489,21 @@ async function run(opts) {
           };
         });
     });
+  }
+
+  if (phase === "anatomy" || phase === "all") {
+    var syncAnatomyMod = require("./sync-anatomy");
+    for (var a = 0; a < ANATOMY_KITS.length; a++) {
+      var aKit = ANATOMY_KITS[a];
+      // eslint-disable-next-line no-loop-func
+      await runWithGuard(
+        "anatomy:" + aKit,
+        (
+          (k) => () =>
+            syncAnatomyMod.syncAnatomy(orchOpts, k)
+        )(aKit),
+      );
+    }
   }
 
   var category = aggregateVerdict(results, errors);

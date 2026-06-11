@@ -12,6 +12,7 @@
     "derive:icons": "node scripts/icons/__cli.js",
     "derive:accessibility": "node scripts/accessibility/derive-a11y-index.js && node scripts/accessibility/derive-a11y-sections.js",
     "validate:manifest": "node scripts/validate-manifest.js",
+    "validate:anatomy": "node scripts/validate/validate-anatomy.js",
     "derive:vendor-include": "node scripts/derive-vendor-include.js",
     "sync:version": "node scripts/lib/sync-knowledge-version.js",
     "derive:graph": "node scripts/graph/derive-graph.js",

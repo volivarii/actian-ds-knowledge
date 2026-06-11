@@ -5,19 +5,9 @@
   "manifest_schema_version": "v1",
   "knowledge_version": "0.31.2",
   "_zones": {
-    "knowledge": [
-      "accessibility",
-      "components",
-      "content",
-      "foundations"
-    ],
-    "contract": [
-      "graph"
-    ],
-    "metadata": [
-      "appContext",
-      "tokens"
-    ],
+    "knowledge": ["accessibility", "components", "content", "foundations"],
+    "contract": ["graph"],
+    "metadata": ["appContext", "tokens"],
     "_pendingEviction": []
   },
   "paths": {
@@ -53,6 +43,13 @@
       "type": "json",
       "origin": "human",
       "description": "Per-app patterns + persona + terminology"
+    },
+    "components.anatomy.bundle": {
+      "path": "components/dist/anatomy.bundle.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/sync/sync-anatomy.js",
+      "description": "Roll-up of every per-component anatomy JSON, keyed by slug. One-shot LLM consumption for structure-tree access across the whole DS."
     },
     "components.categories": {
       "path": "components/dist/categories.json",
@@ -569,6 +566,13 @@
       "type": "json",
       "origin": "ci",
       "description": "Per-leaf accessibility section JSONs in hierarchical Pattern H layout (mirrors foundations.leaf). Each leaf mirrors its MD heading path. Branch nodes carry an `_index.json` instead. Single roll-up at accessibility.bundle. Recursive: any file under accessibility/dist/ is covered by this collection."
+    },
+    "components.anatomy.byKey": {
+      "dir": "components/dist/anatomy",
+      "pattern": "{slug}.json",
+      "type": "json",
+      "origin": "ci",
+      "description": "Per-component anatomy JSONs (normalized structure tree, Figma-synced). See components.anatomy.bundle for the roll-up."
     },
     "components.categoriesSrc": {
       "dir": "components/src/categories",
