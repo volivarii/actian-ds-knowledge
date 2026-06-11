@@ -113,8 +113,15 @@ jobs:
           node scripts/validate/validate-content.js > content.rdjsonl
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Validate anatomy dist
+        id: anatomy
+        continue-on-error: true
+        run: |
+          node scripts/validate/validate-anatomy.js > anatomy.rdjsonl
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
       - name: Combine rdjsonl outputs
-        run: cat manifest.rdjsonl foundations.rdjsonl categories.rdjsonl registries.rdjsonl guidelines-doc.rdjsonl a11y-sections.rdjsonl a11y-index.rdjsonl content.rdjsonl > combined.rdjsonl
+        run: cat manifest.rdjsonl foundations.rdjsonl categories.rdjsonl registries.rdjsonl guidelines-doc.rdjsonl a11y-sections.rdjsonl a11y-index.rdjsonl content.rdjsonl anatomy.rdjsonl > combined.rdjsonl
 
       - name: Report annotations via reviewdog
         env:
