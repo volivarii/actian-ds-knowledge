@@ -23,6 +23,42 @@ function nodeIdToSlugMap(registry) {
   return map;
 }
 
+// Icons are vector wrappers with no layout structure and live in the curated icon
+// set — they don't belong in the anatomy (layout-structure) domain. (v2 quality)
+function isIconComponent(comp) {
+  return !!comp && comp.category === "Icons";
+}
+
+// A variant SET's registry nodeId points at the whole COMPONENT_SET grid. Normalize
+// the DEFAULT variant instead — conventionally the first COMPONENT child (Figma
+// orders the default top-left). Returns { node, variant } (variant = its name, or
+// null when the input isn't a set). (v2 quality)
+function pickDefaultVariant(doc) {
+  if (!doc || doc.type !== "COMPONENT_SET" || !Array.isArray(doc.children)) {
+    return { node: doc, variant: null };
+  }
+  var variants = doc.children.filter(function (c) {
+    return c && c.type === "COMPONENT";
+  });
+  if (variants.length === 0) return { node: doc, variant: null };
+  return { node: variants[0], variant: variants[0].name || null };
+}
+
+// Remove stale per-slug anatomy files before a fresh write so dropped components
+// (e.g. icons under the v2 filter, or components removed from Figma) don't linger.
+function cleanAnatomyDir(anatomyDir) {
+  if (!fs.existsSync(anatomyDir)) return;
+  fs.readdirSync(anatomyDir).forEach(function (f) {
+    if (f.endsWith(".json")) {
+      try {
+        fs.unlinkSync(path.join(anatomyDir, f));
+      } catch (e) {
+        /* best-effort */
+      }
+    }
+  });
+}
+
 async function varNameByIdFor(rest, fileKey) {
   if (!rest || typeof rest.getLocalVariables !== "function") return {};
   try {
@@ -76,11 +112,16 @@ async function syncAnatomy(opts, kit) {
     });
   }
   var registry = JSON.parse(fs.readFileSync(regPath, "utf8"));
+  // nodeIdToSlug stays FULL (all components, incl. icons) so nested icon instances
+  // inside structural components can still resolve to their icon slug.
   var nodeIdToSlug = nodeIdToSlugMap(registry);
   var varNameById = await varNameByIdFor(rest, fileKey);
 
   var comps = registry.components || {};
-  var slugs = Object.keys(comps);
+  // v2 (B): skip icons — they have no layout anatomy.
+  var slugs = Object.keys(comps).filter(function (s) {
+    return !isIconComponent(comps[s]);
+  });
   var ids = slugs
     .map(function (s) {
       return comps[s].nodeId;
@@ -88,6 +129,9 @@ async function syncAnatomy(opts, kit) {
     .filter(Boolean);
   var resp = await rest.getNodes(fileKey, ids);
   var nodes = (resp && resp.nodes) || {};
+
+  // Drop stale files (e.g. icon artifacts from a pre-v2 sync) before writing fresh.
+  cleanAnatomyDir(anatomyDir);
 
   // Bundle is a slug→file MAP under a `components` envelope — keeps it off the top
   // level so writeJson's _schema_version injection never appears as a phantom slug.
@@ -102,11 +146,15 @@ async function syncAnatomy(opts, kit) {
     // Isolate per-component failures — one malformed component must not abort the
     // whole anatomy phase (runWithGuard's catch is per-kit, not per-component).
     try {
-      var file = buildAnatomyFile(doc, {
+      // v2 (A): for variant sets, normalize the default variant, not the grid.
+      var picked = pickDefaultVariant(doc);
+      var source = { fileKey: fileKey, nodeId: nid };
+      if (picked.variant) source.variant = picked.variant;
+      var file = buildAnatomyFile(picked.node, {
         slug: slug,
         kit: kit.toLowerCase(),
         syncedAt: syncedAt,
-        source: { fileKey: fileKey, nodeId: nid },
+        source: source,
         nodeIdToSlug: nodeIdToSlug,
         varNameById: varNameById,
       });
@@ -121,4 +169,10 @@ async function syncAnatomy(opts, kit) {
   return result(count, failed.length ? { failed: failed } : undefined);
 }
 
-module.exports = { syncAnatomy, nodeIdToSlugMap, fileKeyFor };
+module.exports = {
+  syncAnatomy,
+  nodeIdToSlugMap,
+  fileKeyFor,
+  isIconComponent,
+  pickDefaultVariant,
+};

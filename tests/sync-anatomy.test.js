@@ -5,11 +5,112 @@ var assert = require("node:assert/strict");
 var fs = require("node:fs");
 var os = require("node:os");
 var path = require("node:path");
-var { syncAnatomy } = require("../scripts/sync/sync-anatomy");
+var {
+  syncAnatomy,
+  isIconComponent,
+  pickDefaultVariant,
+} = require("../scripts/sync/sync-anatomy");
 
 function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "anat-"));
 }
+
+function writeJsonReal(p, o) {
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, JSON.stringify(o));
+}
+
+test("isIconComponent flags only category=Icons", function () {
+  assert.equal(isIconComponent({ category: "Icons" }), true);
+  assert.equal(isIconComponent({ category: "Action" }), false);
+  assert.equal(isIconComponent(null), false);
+});
+
+test("pickDefaultVariant returns the first COMPONENT child of a set", function () {
+  var set = {
+    type: "COMPONENT_SET",
+    children: [
+      { type: "COMPONENT", name: "Type=Primary, State=Default" },
+      { type: "COMPONENT", name: "Type=Secondary, State=Default" },
+    ],
+  };
+  var picked = pickDefaultVariant(set);
+  assert.equal(picked.node.name, "Type=Primary, State=Default");
+  assert.equal(picked.variant, "Type=Primary, State=Default");
+});
+
+test("pickDefaultVariant passes through a non-set node unchanged", function () {
+  var node = { type: "COMPONENT", name: "Solo" };
+  var picked = pickDefaultVariant(node);
+  assert.equal(picked.node, node);
+  assert.equal(picked.variant, null);
+});
+
+test("syncAnatomy skips icons + normalizes the default variant of a set", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  // a stale icon file from a pre-v2 sync — must be cleaned up
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  writeJsonReal(path.join(anatomyDir, "add.json"), {
+    slug: "add",
+    stale: true,
+  });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        button: { nodeId: "1:1", category: "Action", importMethod: "set" },
+        add: { nodeId: "2:2", category: "Icons", importMethod: "single" },
+      },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: {
+          "1:1": {
+            document: {
+              type: "COMPONENT_SET",
+              name: "Button",
+              children: [
+                {
+                  type: "COMPONENT",
+                  name: "Type=Primary, State=Default",
+                  layoutMode: "HORIZONTAL",
+                  itemSpacing: 8,
+                  children: [{ type: "TEXT", name: "Label", characters: "Go" }],
+                },
+                { type: "COMPONENT", name: "Type=Secondary, State=Default" },
+              ],
+            },
+          },
+        },
+      });
+    },
+  };
+  var written = await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-06-11",
+    },
+    "dsKit",
+  );
+  assert.equal(written.count, 1); // button only (icon skipped)
+  // icon was skipped AND its stale file cleaned
+  assert.equal(fs.existsSync(path.join(anatomyDir, "add.json")), false);
+  // button anatomy is the DEFAULT VARIANT (a real row), not the variant grid
+  var btn = JSON.parse(
+    fs.readFileSync(path.join(anatomyDir, "button.json"), "utf8"),
+  );
+  assert.equal(btn.root.layout.axis, "row"); // the variant's auto-layout, not a NONE grid
+  assert.equal(btn.source.variant, "Type=Primary, State=Default");
+});
 
 test("syncAnatomy writes per-slug files + bundle from a fake rest", async function () {
   var dir = tmpDir();
