@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://actian.com/schemas/anatomy.json",
+  "title": "Component anatomy (machine-extracted, Figma-synced)",
+  "type": "object",
+  "required": ["_schema_version", "slug", "kit", "quality", "root"],
+  "properties": {
+    "_schema_version": { "type": "integer" },
+    "slug": { "type": "string" },
+    "kit": { "type": "string" },
+    "synced_at": { "type": "string" },
+    "source": { "type": "object" },
+    "quality": {
+      "type": "object",
+      "required": ["nodesTotal", "nodesNormalized", "ratio", "degraded"],
+      "properties": {
+        "nodesTotal": { "type": "integer", "minimum": 0 },
+        "nodesNormalized": { "type": "integer", "minimum": 0 },
+        "ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "degraded": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "reason"],
+            "properties": { "name": { "type": "string" }, "reason": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "root": { "$ref": "#/$defs/node" }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": ["name", "kind"],
+      "properties": {
+        "name": { "type": "string" },
+        "kind": { "enum": ["container", "text", "instance", "icon", "vector"] },
+        "slug": { "type": "string" },
+        "unresolved": { "type": "boolean" },
+        "props": { "type": "object" },
+        "text": { "type": "string" },
+        "tokenRefs": { "type": "array", "items": { "type": "string" } },
+        "normalizable": { "type": "boolean" },
+        "rawHint": { "type": "object" },
+        "layout": {
+          "type": "object",
+          "required": ["axis", "gap", "padding", "align", "sizing"],
+          "properties": {
+            "axis": { "enum": ["row", "column"] },
+            "gap": { "type": "string" },
+            "padding": {
+              "type": "object",
+              "required": ["top", "right", "bottom", "left"],
+              "properties": {
+                "top": { "type": "string" }, "right": { "type": "string" },
+                "bottom": { "type": "string" }, "left": { "type": "string" }
+              }
+            },
+            "align": {
+              "type": "object",
+              "required": ["main", "cross"],
+              "properties": {
+                "main": { "enum": ["start", "center", "end", "space-between"] },
+                "cross": { "enum": ["start", "center", "end", "baseline", "stretch"] }
+              }
+            },
+            "sizing": {
+              "type": "object",
+              "required": ["h", "v"],
+              "properties": {
+                "h": { "enum": ["hug", "fill", "fixed"] },
+                "v": { "enum": ["hug", "fill", "fixed"] }
+              }
+            }
+          }
+        },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+      },
+      "additionalProperties": false
+    }
+  }
+}
