@@ -36,7 +36,7 @@ var KIT_MAP = {
 
 var REGISTRY_KITS = ["dsKit", "fmKit", "metaKit"];
 var STYLES_KITS = ["dsKit"]; // Only DS Kit hosts text + effect styles
-var ANATOMY_KITS = ["ds"];
+var ANATOMY_KITS = ["dsKit"]; // camelCase kit id — matches REGISTRY_KITS + opts.keys[kitId]
 
 // ---- Helpers ----
 
