@@ -41,6 +41,7 @@ on:
           - registries
           - styles
           - media-preview
+          - anatomy
 
 jobs:
   sync:

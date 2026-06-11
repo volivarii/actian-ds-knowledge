@@ -93,25 +93,32 @@ async function syncAnatomy(opts, kit) {
   // level so writeJson's _schema_version injection never appears as a phantom slug.
   var bundle = { _schema_version: 1, components: {} };
   var count = 0;
+  var failed = [];
   slugs.forEach(function (slug) {
     var nid = comps[slug].nodeId;
     var payload = nid && nodes[nid];
     var doc = payload && payload.document;
     if (!doc) return;
-    var file = buildAnatomyFile(doc, {
-      slug: slug,
-      kit: kit.toLowerCase(),
-      syncedAt: syncedAt,
-      source: { fileKey: fileKey, nodeId: nid },
-      nodeIdToSlug: nodeIdToSlug,
-      varNameById: varNameById,
-    });
-    writeJson(path.join(anatomyDir, slug + ".json"), file);
-    bundle.components[slug] = file;
-    count++;
+    // Isolate per-component failures — one malformed component must not abort the
+    // whole anatomy phase (runWithGuard's catch is per-kit, not per-component).
+    try {
+      var file = buildAnatomyFile(doc, {
+        slug: slug,
+        kit: kit.toLowerCase(),
+        syncedAt: syncedAt,
+        source: { fileKey: fileKey, nodeId: nid },
+        nodeIdToSlug: nodeIdToSlug,
+        varNameById: varNameById,
+      });
+      writeJson(path.join(anatomyDir, slug + ".json"), file);
+      bundle.components[slug] = file;
+      count++;
+    } catch (e) {
+      failed.push({ slug: slug, error: e.message });
+    }
   });
   writeJson(path.join(anatomyDir, "..", "anatomy.bundle.json"), bundle);
-  return result(count);
+  return result(count, failed.length ? { failed: failed } : undefined);
 }
 
 module.exports = { syncAnatomy, nodeIdToSlugMap, fileKeyFor };

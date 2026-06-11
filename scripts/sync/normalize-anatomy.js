@@ -153,7 +153,10 @@ function normalizeNode(node, ctx) {
 
   if (kind === "container") {
     var layout = normalizeLayout(node, ctx.varNameById);
-    var children = Array.isArray(node.children) ? node.children : [];
+    // filter null/undefined entries defensively — a malformed child must not throw.
+    var children = (Array.isArray(node.children) ? node.children : []).filter(
+      Boolean,
+    );
     if (layout) {
       n.layout = layout;
       ctx.normalized++;
