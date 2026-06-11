@@ -10,8 +10,21 @@ name: Auto-tag on merge to main
 # is orphaned the moment the PR squash-merges to a different main commit — the
 # off-main-orphan bug that broke consumer vendor-integrity (e.g. v0.25.5/v0.25.6).
 #
-# Scoped by paths to package.json so this only fires when the version may
-# have changed. Idempotent via tag-exists check — safe to re-run.
+# TRIGGERS (both needed):
+#   - push to main (package.json changed) — fires for human/direct merges.
+#   - pull_request closed (package.json changed) — fires for the App-authored
+#     sync/vendor PRs that auto-merge. Their merge is completed by GitHub's
+#     auto-merge, whose push to main does NOT fire the `push` trigger (the
+#     default-token suppression). The PR lifecycle event DOES fire for
+#     App-authored PRs, so this is the reliable path for bot merges. Without
+#     it, syncs bump the version but never get tagged, and the plugin vendor
+#     (which resolves by release TAG) lags a release behind (observed 2026-06-11
+#     with v0.33.1: had to tag manually).
+#
+# Idempotent via the tag-exists check — safe to run twice for the same version.
+# Uses the actian-ds-bot App token so the tag is pushed under the bot identity
+# (and so any tag-watching automation sees an App-attributed ref, not the
+# suppressed default GITHUB_TOKEN).
 
 on:
   push:
@@ -19,18 +32,39 @@ on:
       - main
     paths:
       - 'package.json'
+  pull_request:
+    types:
+      - closed
+    paths:
+      - 'package.json'
 
 jobs:
   tag:
     name: Emit version tag
+    # push events always run; PR events only when the PR was MERGED into main.
+    if: >-
+      github.event_name == 'push' ||
+      (github.event.pull_request.merged == true &&
+       github.event.pull_request.base.ref == 'main')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - name: Mint App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
       - name: Checkout main
         uses: actions/checkout@v5
         with:
+          # Always read main's tip (post-merge) — in the pull_request context the
+          # default ref would be the PR merge ref, not the updated base branch.
+          ref: main
           fetch-depth: 1
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Fetch tags
         run: git fetch --tags --depth=1
@@ -60,8 +94,8 @@ jobs:
       - name: Create + push tag
         if: steps.check.outputs.exists == 'false'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "actian-ds-bot[bot]"
+          git config user.email "actian-ds-bot[bot]@users.noreply.github.com"
           git tag "v${{ steps.ver.outputs.version }}"
           git push origin "v${{ steps.ver.outputs.version }}"
 
@@ -69,7 +103,7 @@ jobs:
         if: always()
         run: |
           if [ "${{ steps.check.outputs.exists }}" = "false" ]; then
-            echo "### Tagged v${{ steps.ver.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "### Tagged v${{ steps.ver.outputs.version }} (via ${{ github.event_name }})" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "### No tag emitted (v${{ steps.ver.outputs.version }} already exists)" >> "$GITHUB_STEP_SUMMARY"
           fi
