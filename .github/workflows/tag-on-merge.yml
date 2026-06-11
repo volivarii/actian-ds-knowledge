@@ -14,9 +14,14 @@ name: Auto-tag on merge to main
 #   - push to main (package.json changed) — fires for human/direct merges.
 #   - pull_request closed (package.json changed) — fires for the App-authored
 #     sync/vendor PRs that auto-merge. Their merge is completed by GitHub's
-#     auto-merge, whose push to main does NOT fire the `push` trigger (the
-#     default-token suppression). The PR lifecycle event DOES fire for
-#     App-authored PRs, so this is the reliable path for bot merges. Without
+#     auto-merge, and the resulting push to main is attributed to the
+#     actian-ds-bot App installation — GitHub suppresses `push`-triggered
+#     workflows for App-installation pushes (the same reason the sync workflow
+#     uses the App token to open PRs so PR checks fire). The pull_request
+#     lifecycle event is NOT suppressed for App-authored PRs, so it is the
+#     reliable path for bot merges. Both triggers fire for human merges; the
+#     idempotent tag-exists check + push-race guard make the duplicate a no-op.
+#     Without
 #     it, syncs bump the version but never get tagged, and the plugin vendor
 #     (which resolves by release TAG) lags a release behind (observed 2026-06-11
 #     with v0.33.1: had to tag manually).
@@ -94,10 +99,21 @@ jobs:
       - name: Create + push tag
         if: steps.check.outputs.exists == 'false'
         run: |
+          V="v${{ steps.ver.outputs.version }}"
           git config user.name "actian-ds-bot[bot]"
           git config user.email "actian-ds-bot[bot]@users.noreply.github.com"
-          git tag "v${{ steps.ver.outputs.version }}"
-          git push origin "v${{ steps.ver.outputs.version }}"
+          git tag "$V"
+          # Both triggers (push + pull_request:closed) can fire for the same merge;
+          # if they race past the exists-check, treat a lost push race (tag already
+          # on the remote) as success rather than a spurious red run.
+          git push origin "$V" || {
+            git fetch --tags
+            if git rev-parse "$V" >/dev/null 2>&1; then
+              echo "$V already pushed by the concurrent trigger — OK"
+            else
+              exit 1
+            fi
+          }
 
       - name: Summarize
         if: always()
