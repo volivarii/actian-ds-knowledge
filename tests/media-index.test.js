@@ -233,6 +233,14 @@ test("deriveSlugMedia emits multi-image roles as ordered string arrays", functio
   });
 });
 
+test("deriveSlugMedia emits a default role when default.webp exists", function () {
+  var root = tmpRepo();
+  seedMedia(root, "button", ["default.webp"]);
+  var mediaRoot = path.join(root, "components", "dist", "media");
+  var map = deriver.deriveSlugMedia(mediaRoot, "button");
+  assert.equal(map.default, "components/dist/media/button/default.webp");
+});
+
 test("deriveSlugMedia stops the multi-image scan at the first index gap", function () {
   // Contract: the scan increments from 0 and breaks on the first missing
   // index. parts-0 + parts-2 (NO parts-1) must yield ONLY parts-0 — the

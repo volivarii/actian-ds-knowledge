@@ -40,6 +40,7 @@ var MEDIA_ROLES = {
   spacing: { basename: "spacing", multi: true },
   behavior: { basename: "behavior", multi: true },
   layout: { basename: "layout", multi: true },
+  default: { basename: "default", multi: false },
 };
 
 // Per-slug derive: scan a slug's media dir for known role basenames; return
