@@ -8,7 +8,9 @@
 // The default-variant node id is NOT stored in the anatomy dist (it records the
 // COMPONENT_SET nodeId + the variant NAME). So we re-fetch the set and re-pick
 // the default child with pickDefaultVariant (the same logic sync-anatomy uses),
-// then export that child. Single (non-set) components export their own node.
+// then export that child. For a single (non-set) component, pickDefaultVariant
+// returns { node: doc, variant: null } (node === the set/doc itself), so capture
+// falls back to that node id and exports the component's own node.
 
 var fs = require("fs");
 var path = require("path");
@@ -75,8 +77,9 @@ async function run(opts) {
   var setIds = Array.from(new Set(Object.values(setIdBySlug)));
   if (setIds.length === 0) return { captured: [], missing: missing.sort() };
 
-  // Fetch the sets, pick the default child per slug. Single (non-set)
-  // components return null from pickDefaultVariant → fall back to the node id.
+  // Fetch the sets, pick the default child per slug. For a single (non-set)
+  // component, pickDefaultVariant returns { node: doc, variant: null } (node ===
+  // the set/doc) — never null — so capture falls back to the set id.
   var nodesResp = await rest.getNodes(fileKey, setIds);
   var nodes = (nodesResp && nodesResp.nodes) || {};
   var captureIdBySlug = {};

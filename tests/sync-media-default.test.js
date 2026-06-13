@@ -154,3 +154,67 @@ test("run() skips a slug whose anatomy file is missing (no crash)", async functi
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+// Drives the phase THROUGH the orchestrator (sync-from-figma.run) rather than
+// calling D.run directly — exercises the wiring block in sync-from-figma.js:
+// the dskit.json load from outputDir, the disk guard (dskit + anatomy dir),
+// the anatomyDir resolution (orchOpts.anatomyDir = <pluginDir>/.../anatomy),
+// the args object, and the verdict shaping. Mirrors the media-preview
+// orchestrator template (sync-media-preview.test.js): seeds dskit.json into
+// the registries dir, builds a mock rest, calls orch.run({ phase, pluginDir,
+// rest, keys, outputDir, mediaOutputDir, ... }), and asserts the webp landed
+// AND result.errors.length === 0.
+test("orchestrator runs media-default phase end-to-end", async function () {
+  var pluginDir = fs.mkdtempSync(path.join(os.tmpdir(), "kn-plugin-mdef-"));
+
+  // Seed dskit.json into the orchestrator's expected outputDir (registries).
+  fs.mkdirSync(path.join(pluginDir, "components", "dist", "registries"), {
+    recursive: true,
+  });
+  fs.writeFileSync(
+    path.join(pluginDir, "components", "dist", "registries", "dskit.json"),
+    JSON.stringify({
+      fileKey: "FILEKEY",
+      components: { button: { name: "Button", nodeId: "7206:2643" } },
+    }),
+  );
+
+  // Seed the anatomy file the media-default phase reads (orchOpts.anatomyDir =
+  // <pluginDir>/components/dist/anatomy). source.nodeId is the COMPONENT_SET id
+  // the mock rest returns; the variant name matches the first SET child.
+  var anatomyDir = path.join(pluginDir, "components", "dist", "anatomy");
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(anatomyDir, "button.json"),
+    JSON.stringify({
+      slug: "button",
+      source: {
+        fileKey: "FILEKEY",
+        nodeId: "7206:2643",
+        variant: "Type=Primary, Size=Default, State=Default",
+      },
+    }),
+  );
+
+  var orch = require("../scripts/sync/sync-from-figma.js");
+  var releaseDir = fs.mkdtempSync(path.join(os.tmpdir(), "kn-release-"));
+  var artifactsDir = fs.mkdtempSync(path.join(os.tmpdir(), "kn-arts-"));
+  var mediaDir = path.join(pluginDir, "components", "dist", "media");
+
+  var result = await orch.run({
+    phase: "media-default",
+    pluginDir: pluginDir,
+    rest: mockRest(), // COMPONENT_SET tree; getImages signed urls; fetchBinary real PNG
+    keys: { dsKit: "FILEKEY" },
+    outputDir: path.join(pluginDir, "components", "dist", "registries"),
+    releaseNotesDir: releaseDir,
+    artifactsDir: artifactsDir,
+    mediaOutputDir: mediaDir,
+  });
+
+  assert.equal(result.errors.length, 0, "no phase errors");
+  var out = path.join(mediaDir, "button", "default.webp");
+  assert.ok(fs.existsSync(out), "button default.webp must exist");
+  var bytes = fs.readFileSync(out);
+  assert.equal(bytes.subarray(0, 4).toString("ascii"), "RIFF");
+});

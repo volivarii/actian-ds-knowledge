@@ -30,9 +30,12 @@ var MEDIA_EXT = ".webp";
 // MEDIA_ROLES: role key → { basename, multi }. preview is single (bare string);
 // the five Bucket-C roles are multi-image (parts-0.webp, parts-1.webp, …) and
 // emit ordered string[]. Mirrors ROLE_FINDERS in sync-media-preview.js.
-// Adding a role means adding an entry in BOTH places (sync to capture, index
-// to enumerate). The duplication is intentional: each side describes a
-// different half of the contract (Figma source name vs. on-disk basename).
+// Adding a role means adding an entry HERE (to enumerate) AND on the capture
+// side (to write the files). The capture half lives in sync-media-preview.js
+// (ROLE_FINDERS, section-frame roles) OR in a dedicated sync-media-<role>.js
+// phase — e.g. the `default` role's capture lives in sync-media-default.js.
+// The duplication is intentional: each side describes a different half of the
+// contract (Figma source name vs. on-disk basename).
 var MEDIA_ROLES = {
   preview: { basename: "preview", multi: false },
   parts: { basename: "parts", multi: true },
