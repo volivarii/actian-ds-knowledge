@@ -26,6 +26,7 @@ var transformStyles = require("../transformers/transform-styles.js");
 var classify = require("../changelog/changelog-classifier.js");
 var defaultRest = require("./figma-rest.js");
 var syncMediaPreview = require("./sync-media-preview.js");
+var syncMediaDefault = require("./sync-media-default.js");
 var { syncKnowledgeVersion } = require("../lib/sync-knowledge-version.js");
 
 var KIT_MAP = {
@@ -504,6 +505,68 @@ async function run(opts) {
         )(aKit),
       );
     }
+  }
+
+  // media-default: capture each component's default variant in isolation as
+  // components/dist/media/<slug>/default.webp — single-component oracles for the
+  // fidelity gate. Placed AFTER anatomy so an `all` run reads the freshly
+  // synced anatomy dist (the phase resolves each slug's set node from there).
+  // No-op (not an error) when dskit.json or the anatomy dir is absent — same
+  // guard shape as media-preview, so `--phase media-default` in isolation
+  // degrades gracefully before a registries/anatomy run has populated disk.
+  if (phase === "media-default" || phase === "all") {
+    await runWithGuard("media-default", function () {
+      var mediaOutputDir =
+        opts.mediaOutputDir ||
+        path.join(pluginDir, "components", "dist", "media");
+      var anatomyDir = orchOpts.anatomyDir;
+      var dsKitPath = path.join(outputDir, "dskit.json");
+      if (!fs.existsSync(dsKitPath) || !fs.existsSync(anatomyDir)) {
+        return {
+          kind: "media-default",
+          category: "unchanged",
+          note: "no dskit.json or anatomy dir on disk yet",
+          fileLabel: "media-default",
+          verdict: {
+            category: "unchanged",
+            changelog: "_(no dskit.json or anatomy dir on disk yet)_",
+          },
+        };
+      }
+      var dsKit = JSON.parse(fs.readFileSync(dsKitPath, "utf8"));
+      return syncMediaDefault
+        .run({
+          registry: dsKit,
+          anatomyDir: anatomyDir,
+          outputDir: mediaOutputDir,
+          rest: rest,
+        })
+        .then(function (r) {
+          var cat = r.captured.length > 0 ? "additive" : "unchanged";
+          var lines = [];
+          if (r.captured.length > 0) {
+            lines.push(
+              "- Captured default oracles for: " + r.captured.join(", "),
+            );
+          }
+          if (r.missing.length > 0) {
+            lines.push(
+              "- Missing anatomy/default node: " + r.missing.join(", "),
+            );
+          }
+          return {
+            kind: "media-default",
+            category: cat,
+            captured: r.captured,
+            missing: r.missing,
+            fileLabel: "media-default",
+            verdict: {
+              category: cat,
+              changelog: lines.length > 0 ? lines.join("\n") : "_(no changes)_",
+            },
+          };
+        });
+    });
   }
 
   var category = aggregateVerdict(results, errors);
