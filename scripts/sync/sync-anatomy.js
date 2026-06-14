@@ -23,6 +23,21 @@ function nodeIdToSlugMap(registry) {
   return map;
 }
 
+// Mirror of nodeIdToSlugMap on the stable Figma component `key`. A `key` is
+// constant across the differing node ids Figma assigns the same published
+// component, so this map bridges the registry-node vs instance-node mismatch
+// that node-id matching cannot survive. 1:1 over the registry (all components
+// carry a unique non-empty key).
+function keyToSlugMap(registry) {
+  var map = {};
+  var comps = (registry && registry.components) || {};
+  Object.keys(comps).forEach(function (slug) {
+    var k = comps[slug] && comps[slug].key;
+    if (k) map[k] = slug;
+  });
+  return map;
+}
+
 // Icons are vector wrappers with no layout structure and live in the curated icon
 // set — they don't belong in the anatomy (layout-structure) domain. (v2 quality)
 function isIconComponent(comp) {
@@ -185,6 +200,7 @@ async function syncAnatomy(opts, kit) {
 module.exports = {
   syncAnatomy,
   nodeIdToSlugMap,
+  keyToSlugMap,
   fileKeyFor,
   isIconComponent,
   pickDefaultVariant,

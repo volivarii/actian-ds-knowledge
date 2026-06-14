@@ -9,6 +9,7 @@ var {
   syncAnatomy,
   isIconComponent,
   pickDefaultVariant,
+  keyToSlugMap,
 } = require("../scripts/sync/sync-anatomy");
 
 function tmpDir() {
@@ -214,6 +215,23 @@ test("syncAnatomy writes per-slug files + bundle from a fake rest", async functi
   // bundle is enveloped under `components` (not a bare slug map)
   assert.ok(bundle.components.button);
   assert.equal(bundle._schema_version, 1);
+});
+
+test("keyToSlugMap maps each component key to its slug, skipping keyless entries", function () {
+  var registry = {
+    components: {
+      button: { key: "K_BTN", nodeId: "1:1" },
+      add: { key: "K_ADD", nodeId: "2:2", category: "Icons" },
+      ghost: { nodeId: "3:3" }, // no key — skipped
+    },
+  };
+  assert.deepEqual(keyToSlugMap(registry), { K_BTN: "button", K_ADD: "add" });
+});
+
+test("keyToSlugMap tolerates a missing or empty registry", function () {
+  assert.deepEqual(keyToSlugMap(null), {});
+  assert.deepEqual(keyToSlugMap({}), {});
+  assert.deepEqual(keyToSlugMap({ components: {} }), {});
 });
 
 test("syncAnatomy resolves token refs when getLocalVariables is available", async function () {
