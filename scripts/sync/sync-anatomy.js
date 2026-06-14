@@ -23,6 +23,39 @@ function nodeIdToSlugMap(registry) {
   return map;
 }
 
+// Mirror of nodeIdToSlugMap on the stable Figma component `key`. A `key` is
+// constant across the differing node ids Figma assigns the same published
+// component, so this map bridges the registry-node vs instance-node mismatch
+// that node-id matching cannot survive. 1:1 over the registry (all components
+// carry a unique non-empty key).
+function keyToSlugMap(registry) {
+  var map = {};
+  var comps = (registry && registry.components) || {};
+  Object.keys(comps).forEach(function (slug) {
+    var k = comps[slug] && comps[slug].key;
+    if (k) map[k] = slug;
+  });
+  return map;
+}
+
+// Figma's getNodes response carries a `components` dict per fetched subtree
+// (componentId → { key, name, … }) describing every component referenced
+// inside it. Merge those dicts across all fetched set payloads into one
+// componentId → key map. Pure; no extra API call — the dict rides along in
+// the getNodes response already issued for pickDefaultVariant.
+function mergeComponentIdToKey(nodes) {
+  var map = {};
+  Object.keys(nodes || {}).forEach(function (id) {
+    var comps = nodes[id] && nodes[id].components;
+    if (!comps) return;
+    Object.keys(comps).forEach(function (cid) {
+      var k = comps[cid] && comps[cid].key;
+      if (k) map[cid] = k;
+    });
+  });
+  return map;
+}
+
 // Icons are vector wrappers with no layout structure and live in the curated icon
 // set — they don't belong in the anatomy (layout-structure) domain. (v2 quality)
 function isIconComponent(comp) {
@@ -128,6 +161,8 @@ async function syncAnatomy(opts, kit) {
   // nodeIdToSlug stays FULL (all components, incl. icons) so nested icon instances
   // inside structural components can still resolve to their icon slug.
   var nodeIdToSlug = nodeIdToSlugMap(registry);
+  // Key map (registry-wide) for the instance key fallback — see keyToSlugMap.
+  var keyToSlug = keyToSlugMap(registry);
   var varNameById = await varNameByIdFor(rest, fileKey);
 
   var comps = registry.components || {};
@@ -142,6 +177,9 @@ async function syncAnatomy(opts, kit) {
     .filter(Boolean);
   var resp = await rest.getNodes(fileKey, ids);
   var nodes = (resp && resp.nodes) || {};
+  // componentId -> key for every component referenced in the fetched subtrees;
+  // feeds the normalizer's key fallback. Rides along in the getNodes response.
+  var componentIdToKey = mergeComponentIdToKey(nodes);
 
   // Bundle is a slug→file MAP under a `components` envelope — keeps it off the top
   // level so writeJson's _schema_version injection never appears as a phantom slug.
@@ -166,6 +204,8 @@ async function syncAnatomy(opts, kit) {
         syncedAt: syncedAt,
         source: source,
         nodeIdToSlug: nodeIdToSlug,
+        keyToSlug: keyToSlug,
+        componentIdToKey: componentIdToKey,
         varNameById: varNameById,
       });
       writeJson(path.join(anatomyDir, slug + ".json"), file);
@@ -185,6 +225,8 @@ async function syncAnatomy(opts, kit) {
 module.exports = {
   syncAnatomy,
   nodeIdToSlugMap,
+  keyToSlugMap,
+  mergeComponentIdToKey,
   fileKeyFor,
   isIconComponent,
   pickDefaultVariant,

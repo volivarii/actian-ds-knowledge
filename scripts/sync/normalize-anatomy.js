@@ -129,7 +129,15 @@ function normalizeNode(node, ctx) {
 
   if (kind === "instance") {
     var out = { name: node.name || "", kind: "instance" };
+    // Tier 1 — node-id fast path (unchanged).
     var slug = node.componentId && ctx.nodeIdToSlug[node.componentId];
+    // Tier 2 — key fallback: componentId -> key -> slug. Bridges remote/library
+    // node ids, node-id drift between syncs, and the registry-node vs
+    // instance-node mismatch (e.g. icon swap-defaults in a different node space).
+    if (!slug && node.componentId && ctx.componentIdToKey) {
+      var key = ctx.componentIdToKey[node.componentId];
+      if (key && ctx.keyToSlug) slug = ctx.keyToSlug[key];
+    }
     if (slug) {
       out.slug = slug;
       ctx.normalized++;
@@ -186,6 +194,8 @@ function buildAnatomyFile(rootNode, opts) {
   opts = opts || {};
   var ctx = {
     nodeIdToSlug: opts.nodeIdToSlug || {},
+    componentIdToKey: opts.componentIdToKey || {},
+    keyToSlug: opts.keyToSlug || {},
     varNameById: opts.varNameById || {},
     total: 0,
     normalized: 0,
