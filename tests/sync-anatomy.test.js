@@ -265,6 +265,92 @@ test("mergeComponentIdToKey tolerates empty or missing input", function () {
   assert.deepEqual(mergeComponentIdToKey({}), {});
 });
 
+test("syncAnatomy resolves a nested icon instance via the key path (node id absent from nodeIdToSlug)", function () {
+  return (async function () {
+    var dir = tmpDir();
+    var registriesDir = path.join(dir, "registries");
+    var anatomyDir = path.join(dir, "anatomy");
+    fs.mkdirSync(registriesDir, { recursive: true });
+    // button is a structural set; add is a curated icon. The icon INSTANCE inside
+    // button references componentId "6001:1" (swap-default node space), which is
+    // NOT add's registry nodeId ("2:2") — so the node-id path misses and only the
+    // key path (via the getNodes components dict) can resolve it.
+    fs.writeFileSync(
+      path.join(registriesDir, "dskit.json"),
+      JSON.stringify({
+        components: {
+          button: {
+            nodeId: "1:1",
+            key: "K_BTN",
+            category: "Action",
+            importMethod: "set",
+          },
+          add: {
+            nodeId: "2:2",
+            key: "K_ADD",
+            category: "Icons",
+            importMethod: "single",
+          },
+        },
+      }),
+    );
+    var fakeRest = {
+      getNodes: function () {
+        return Promise.resolve({
+          nodes: {
+            "1:1": {
+              // the components dict Figma returns alongside the document
+              components: { "6001:1": { key: "K_ADD", name: "add" } },
+              document: {
+                type: "COMPONENT_SET",
+                name: "Button",
+                children: [
+                  {
+                    type: "COMPONENT",
+                    name: "Type=Primary",
+                    layoutMode: "HORIZONTAL",
+                    itemSpacing: 8,
+                    children: [
+                      {
+                        type: "INSTANCE",
+                        name: "Leading icon",
+                        componentId: "6001:1",
+                      },
+                      { type: "TEXT", name: "Label", characters: "Go" },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        });
+      },
+    };
+    var written = await syncAnatomy(
+      {
+        rest: fakeRest,
+        registriesDir: registriesDir,
+        anatomyDir: anatomyDir,
+        keys: { dsKit: "F" },
+        writeJson: writeJsonReal,
+        syncedAt: "2026-06-14",
+      },
+      "dsKit",
+    );
+    assert.equal(written.count, 1); // button (icon skipped from fetch)
+    var btn = JSON.parse(
+      fs.readFileSync(path.join(anatomyDir, "button.json"), "utf8"),
+    );
+    // the nested icon instance resolved via the KEY path, not node id
+    var icon = btn.root.children[0];
+    assert.equal(icon.kind, "instance");
+    assert.equal(icon.slug, "add");
+    assert.equal(icon.unresolved, undefined);
+    // variant + instance + label all normalized → ratio 1.0 (was 0.67 before the fix)
+    assert.equal(btn.quality.ratio, 1);
+  })();
+});
+
 test("syncAnatomy resolves token refs when getLocalVariables is available", async function () {
   var dir = tmpDir();
   var registriesDir = path.join(dir, "registries");

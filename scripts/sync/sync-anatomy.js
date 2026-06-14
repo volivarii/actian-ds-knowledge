@@ -161,6 +161,8 @@ async function syncAnatomy(opts, kit) {
   // nodeIdToSlug stays FULL (all components, incl. icons) so nested icon instances
   // inside structural components can still resolve to their icon slug.
   var nodeIdToSlug = nodeIdToSlugMap(registry);
+  // Key map (registry-wide) for the instance key fallback — see keyToSlugMap.
+  var keyToSlug = keyToSlugMap(registry);
   var varNameById = await varNameByIdFor(rest, fileKey);
 
   var comps = registry.components || {};
@@ -175,6 +177,9 @@ async function syncAnatomy(opts, kit) {
     .filter(Boolean);
   var resp = await rest.getNodes(fileKey, ids);
   var nodes = (resp && resp.nodes) || {};
+  // componentId -> key for every component referenced in the fetched subtrees;
+  // feeds the normalizer's key fallback. Rides along in the getNodes response.
+  var componentIdToKey = mergeComponentIdToKey(nodes);
 
   // Bundle is a slug→file MAP under a `components` envelope — keeps it off the top
   // level so writeJson's _schema_version injection never appears as a phantom slug.
@@ -199,6 +204,8 @@ async function syncAnatomy(opts, kit) {
         syncedAt: syncedAt,
         source: source,
         nodeIdToSlug: nodeIdToSlug,
+        keyToSlug: keyToSlug,
+        componentIdToKey: componentIdToKey,
         varNameById: varNameById,
       });
       writeJson(path.join(anatomyDir, slug + ".json"), file);
