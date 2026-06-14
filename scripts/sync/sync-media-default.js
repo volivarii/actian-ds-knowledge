@@ -63,19 +63,26 @@ async function run(opts) {
   var fileKey = opts.registry.fileKey;
   var slugs = Object.keys(opts.registry.components || {});
 
-  // Resolve each slug → its set nodeId from anatomy. Missing anatomy → missing.
+  // Resolve each slug → its set nodeId from anatomy. NO anatomy file → SKIPPED
+  // (out of scope this run: anatomy hasn't covered the component — icons, or
+  // components not yet anatomized). `missing` is reserved for slugs that DO have
+  // anatomy but whose default node/render could not be captured — a real gap
+  // worth listing. This mirrors sync-media-preview's skipped/missing split and
+  // keeps a non-empty `missing` meaningful as a regression signal.
   var missing = [];
+  var skipped = [];
   var setIdBySlug = {};
   slugs.forEach(function (slug) {
     var src = readSource(opts.anatomyDir, slug);
     if (!src) {
-      missing.push(slug);
+      skipped.push(slug);
       return;
     }
     setIdBySlug[slug] = src.nodeId;
   });
   var setIds = Array.from(new Set(Object.values(setIdBySlug)));
-  if (setIds.length === 0) return { captured: [], missing: missing.sort() };
+  if (setIds.length === 0)
+    return { captured: [], missing: [], skipped: skipped.sort() };
 
   // Fetch the sets, pick the default child per slug. For a single (non-set)
   // component, pickDefaultVariant returns { node: doc, variant: null } (node ===
@@ -95,7 +102,12 @@ async function run(opts) {
   });
 
   var captureIds = Array.from(new Set(Object.values(captureIdBySlug)));
-  if (captureIds.length === 0) return { captured: [], missing: missing.sort() };
+  if (captureIds.length === 0)
+    return {
+      captured: [],
+      missing: Array.from(new Set(missing)).sort(),
+      skipped: skipped.sort(),
+    };
 
   // Export → transcode → write.
   var imagesResp = await rest.getImages(fileKey, captureIds, {
@@ -127,6 +139,7 @@ async function run(opts) {
   return {
     captured: captured.sort(),
     missing: Array.from(new Set(missing)).sort(),
+    skipped: skipped.sort(),
   };
 }
 

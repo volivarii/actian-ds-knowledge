@@ -551,7 +551,13 @@ async function run(opts) {
           }
           if (r.missing.length > 0) {
             lines.push(
-              "- Missing anatomy/default node: " + r.missing.join(", "),
+              "- Missing default node (anatomy present, capture failed): " +
+                r.missing.join(", "),
+            );
+          }
+          if (r.skipped.length > 0) {
+            lines.push(
+              "- Skipped (no anatomy yet): " + r.skipped.length + " components",
             );
           }
           return {
@@ -559,6 +565,7 @@ async function run(opts) {
             category: cat,
             captured: r.captured,
             missing: r.missing,
+            skipped: r.skipped,
             fileLabel: "media-default",
             verdict: {
               category: cat,
