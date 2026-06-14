@@ -38,6 +38,24 @@ function keyToSlugMap(registry) {
   return map;
 }
 
+// Figma's getNodes response carries a `components` dict per fetched subtree
+// (componentId → { key, name, … }) describing every component referenced
+// inside it. Merge those dicts across all fetched set payloads into one
+// componentId → key map. Pure; no extra API call — the dict rides along in
+// the getNodes response already issued for pickDefaultVariant.
+function mergeComponentIdToKey(nodes) {
+  var map = {};
+  Object.keys(nodes || {}).forEach(function (id) {
+    var comps = nodes[id] && nodes[id].components;
+    if (!comps) return;
+    Object.keys(comps).forEach(function (cid) {
+      var k = comps[cid] && comps[cid].key;
+      if (k) map[cid] = k;
+    });
+  });
+  return map;
+}
+
 // Icons are vector wrappers with no layout structure and live in the curated icon
 // set — they don't belong in the anatomy (layout-structure) domain. (v2 quality)
 function isIconComponent(comp) {
@@ -201,6 +219,7 @@ module.exports = {
   syncAnatomy,
   nodeIdToSlugMap,
   keyToSlugMap,
+  mergeComponentIdToKey,
   fileKeyFor,
   isIconComponent,
   pickDefaultVariant,

@@ -10,6 +10,7 @@ var {
   isIconComponent,
   pickDefaultVariant,
   keyToSlugMap,
+  mergeComponentIdToKey,
 } = require("../scripts/sync/sync-anatomy");
 
 function tmpDir() {
@@ -232,6 +233,36 @@ test("keyToSlugMap tolerates a missing or empty registry", function () {
   assert.deepEqual(keyToSlugMap(null), {});
   assert.deepEqual(keyToSlugMap({}), {});
   assert.deepEqual(keyToSlugMap({ components: {} }), {});
+});
+
+test("mergeComponentIdToKey merges components dicts across node payloads", function () {
+  var nodes = {
+    "1:1": {
+      components: { C1: { key: "KA", name: "A" }, C2: { key: "KB" } },
+    },
+    "2:2": { components: { C3: { key: "KC" } } },
+    "3:3": {}, // no components — skipped
+  };
+  assert.deepEqual(mergeComponentIdToKey(nodes), {
+    C1: "KA",
+    C2: "KB",
+    C3: "KC",
+  });
+});
+
+test("mergeComponentIdToKey is deterministic last-writer-wins on a duplicate componentId", function () {
+  // Object.keys preserves insertion order for non-array-index string keys
+  // ("1:1", "2:2"), so the later payload deterministically overwrites.
+  var nodes = {
+    "1:1": { components: { C1: { key: "FIRST" } } },
+    "2:2": { components: { C1: { key: "SECOND" } } },
+  };
+  assert.equal(mergeComponentIdToKey(nodes).C1, "SECOND");
+});
+
+test("mergeComponentIdToKey tolerates empty or missing input", function () {
+  assert.deepEqual(mergeComponentIdToKey(null), {});
+  assert.deepEqual(mergeComponentIdToKey({}), {});
 });
 
 test("syncAnatomy resolves token refs when getLocalVariables is available", async function () {
