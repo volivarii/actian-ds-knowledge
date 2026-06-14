@@ -42,6 +42,7 @@ on:
           - styles
           - media-preview
           - anatomy
+          - media-default
 
 jobs:
   sync:
