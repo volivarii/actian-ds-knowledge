@@ -132,6 +132,9 @@ test("normalizeNode prefers the node-id path over the key path when both resolve
     ctx,
   );
   assert.equal(out.slug, "checkbox-with-label"); // fast path wins; key never consulted
+  // the shared resolved-block still counts: a misplaced ctx.normalized++ moved
+  // into the Tier-2 branch only would slip past the slug assertion above.
+  assert.equal(ctx.normalized, 1);
 });
 
 test("normalizeNode flags unresolved when both the node-id and key paths miss", function () {
