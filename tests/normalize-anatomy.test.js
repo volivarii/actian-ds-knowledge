@@ -107,6 +107,46 @@ test("unresolved instance is flagged, not crashed", function () {
   assert.equal(out.slug, undefined);
 });
 
+test("normalizeNode resolves an instance by key when the node-id path misses", function () {
+  var ctx = newCtx({
+    componentIdToKey: { "6001:1": "ICON_KEY" },
+    keyToSlug: { ICON_KEY: "add" },
+  });
+  var out = N.normalizeNode(
+    { type: "INSTANCE", name: "Leading icon", componentId: "6001:1" },
+    ctx,
+  );
+  assert.equal(out.slug, "add");
+  assert.equal(out.unresolved, undefined);
+  assert.equal(ctx.normalized, 1);
+});
+
+test("normalizeNode prefers the node-id path over the key path when both resolve", function () {
+  var ctx = newCtx({
+    nodeIdToSlug: { "7:7": "checkbox-with-label" },
+    componentIdToKey: { "7:7": "OTHER_KEY" },
+    keyToSlug: { OTHER_KEY: "wrong-slug" },
+  });
+  var out = N.normalizeNode(
+    { type: "INSTANCE", name: "Checkbox", componentId: "7:7" },
+    ctx,
+  );
+  assert.equal(out.slug, "checkbox-with-label"); // fast path wins; key never consulted
+});
+
+test("normalizeNode flags unresolved when both the node-id and key paths miss", function () {
+  var ctx = newCtx({
+    componentIdToKey: { "6001:1": "ICON_KEY" },
+    keyToSlug: {}, // key found but not mapped to any slug
+  });
+  var out = N.normalizeNode(
+    { type: "INSTANCE", name: "Leading icon", componentId: "6001:1" },
+    ctx,
+  );
+  assert.equal(out.unresolved, true);
+  assert.equal(out.slug, undefined);
+});
+
 test("text node captures characters", function () {
   var ctx = newCtx();
   var out = N.normalizeNode(
