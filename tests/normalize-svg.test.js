@@ -24,6 +24,12 @@ test("clean monochrome: ok, currentColor, stripped wrapper + dimensions, 24 view
   assert.doesNotMatch(r.body, /\b(width|height)=/, "no width/height");
   assert.match(r.body, /fill="currentColor"/);
   assert.doesNotMatch(r.body, /#0f5fdc/i, "hex fill rewritten");
+  assert.doesNotMatch(
+    r.body,
+    /\/\s+\w+=/,
+    "no attribute after a self-closing slash",
+  );
+  assert.doesNotMatch(r.body, /\/[^>]*\s\w+=/, "no attribute after a slash");
 });
 
 test("stroke-based monochrome: stroke rewritten to currentColor", () => {
@@ -59,6 +65,12 @@ test("grouped/transformed single color: ok (SVGO flattens), currentColor", () =>
   assert.equal(r.ok, true);
   assert.match(r.body, /currentColor/);
   assert.doesNotMatch(r.body, /#123456/i);
+  assert.doesNotMatch(
+    r.body,
+    /\/\s+\w+=/,
+    "no attribute after a self-closing slash",
+  );
+  assert.doesNotMatch(r.body, /\/[^>]*\s\w+=/, "no attribute after a slash");
 });
 
 test("empty / non-svg input: degraded empty", () => {
@@ -81,10 +93,32 @@ test("single black-fill icon: ok, fill rewritten to currentColor, no #000000", (
   assert.match(r.body, /fill="currentColor"/);
   assert.doesNotMatch(r.body, /#000000/i, "no residual #000000");
   assert.doesNotMatch(r.body, /#000\b/i, "no residual #000 shorthand");
+  assert.doesNotMatch(
+    r.body,
+    /\/\s+\w+=/,
+    "no attribute after a self-closing slash",
+  );
+  assert.match(
+    r.body,
+    /<path\b[^>]*\bfill="currentColor"\s*\/?>/,
+    "fill is inside the path tag",
+  );
+  assert.doesNotMatch(r.body, /\/[^>]*\s\w+=/, "no attribute after a slash");
 });
 
 test("implicit black shape (no fill/stroke attr): ok, fill injected as currentColor", () => {
   const r = normalizeIconSvg(IMPLICIT_BLACK);
   assert.equal(r.ok, true);
   assert.match(r.body, /fill="currentColor"/);
+  assert.doesNotMatch(
+    r.body,
+    /\/\s+\w+=/,
+    "no attribute after a self-closing slash",
+  );
+  assert.match(
+    r.body,
+    /<path\b[^>]*\bfill="currentColor"\s*\/?>/,
+    "fill is inside the path tag",
+  );
+  assert.doesNotMatch(r.body, /\/[^>]*\s\w+=/, "no attribute after a slash");
 });

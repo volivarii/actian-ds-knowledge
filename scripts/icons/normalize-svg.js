@@ -92,12 +92,13 @@ function normalizeIconSvg(rawSvg) {
   // carry no fill= and no stroke= are SVG-default black. Inject fill="currentColor"
   // so they are themeable. (Multicolor check already accounted for these as
   // "#000000" in the paint set above, so the monochrome guard already passed.)
-  const SHAPE_TAGS = "path|circle|rect|ellipse|polygon|polyline|line";
+  // Capture the attrs separately from the closing `/` or `>` so the injected
+  // attribute lands INSIDE the tag for both self-closing and open forms.
   body = body.replace(
-    new RegExp(`<(${SHAPE_TAGS})(\\b[^>]*)>`, "gi"),
-    (full, tag, attrs) => {
-      if (/\b(fill|stroke)=/i.test(attrs)) return full;
-      return `<${tag}${attrs} fill="currentColor">`;
+    /<(path|circle|rect|ellipse|polygon|polyline|line)\b([^>]*?)\s*(\/?)>/gi,
+    (full, tag, attrs, slash) => {
+      if (/\b(?:fill|stroke)=/i.test(attrs)) return full; // already painted — leave it
+      return `<${tag}${attrs} fill="currentColor"${slash}>`;
     },
   );
 
