@@ -27,6 +27,8 @@ var classify = require("../changelog/changelog-classifier.js");
 var defaultRest = require("./figma-rest.js");
 var syncMediaPreview = require("./sync-media-preview.js");
 var syncMediaDefault = require("./sync-media-default.js");
+var syncIcons = require("../icons/export-icons-svg.js");
+var deriveIconsMod = require("../icons/derive-icons-svg.js");
 var { syncKnowledgeVersion } = require("../lib/sync-knowledge-version.js");
 
 var KIT_MAP = {
@@ -567,6 +569,93 @@ async function run(opts) {
             missing: r.missing,
             skipped: r.skipped,
             fileLabel: "media-default",
+            verdict: {
+              category: cat,
+              changelog: lines.length > 0 ? lines.join("\n") : "_(no changes)_",
+            },
+          };
+        });
+    });
+  }
+
+  // icons: export + normalize the monochrome UI icons (category "Icons",
+  // primary group != "Connector") to components/src/icons-svg.auto.json, then
+  // re-derive components/dist/icons/icons.json (auto ⊕ curated override). No-op
+  // (not an error) when dskit.json or icon-groups isn't available yet — same
+  // guard shape as media-default.
+  if (phase === "icons" || phase === "all") {
+    await runWithGuard("icons", function () {
+      var dsKitPath = path.join(outputDir, "dskit.json");
+      if (!fs.existsSync(dsKitPath) || !orchOpts.iconGroups) {
+        return {
+          kind: "icons",
+          category: "unchanged",
+          fileLabel: "icons",
+          verdict: {
+            category: "unchanged",
+            changelog: "_(no dskit.json or icon-groups on disk yet)_",
+          },
+        };
+      }
+      var dsKit = JSON.parse(fs.readFileSync(dsKitPath, "utf8"));
+      var curatedPath = path.join(
+        pluginDir,
+        "components",
+        "src",
+        "icons-svg.json",
+      );
+      var curated = readJsonOrNull(curatedPath) || { icons: {} };
+      return syncIcons
+        .run({
+          registry: dsKit,
+          iconGroups: orchOpts.iconGroups,
+          curatedSlugs: new Set(Object.keys(curated.icons || {})),
+          autoOutPath: path.join(
+            pluginDir,
+            "components",
+            "src",
+            "icons-svg.auto.json",
+          ),
+          degradedOutPath: path.join(
+            pluginDir,
+            "components",
+            "dist",
+            "icons",
+            "icons.degraded.json",
+          ),
+          rest: rest,
+        })
+        .then(function (r) {
+          deriveIconsMod.deriveAndWrite({
+            pluginDir: pluginDir,
+            registry: dsKit,
+            iconGroups: orchOpts.iconGroups,
+          });
+          var cat = r.exported.length > 0 ? "additive" : "unchanged";
+          var lines = [];
+          if (r.exported.length > 0) {
+            lines.push(
+              "- Exported icon SVG for " + r.exported.length + " UI icons",
+            );
+          }
+          if (r.degraded.length > 0) {
+            lines.push(
+              "- Degraded worklist (" +
+                r.degraded.length +
+                "): " +
+                r.degraded
+                  .map(function (d) {
+                    return d.slug + " (" + d.reason + ")";
+                  })
+                  .join(", "),
+            );
+          }
+          return {
+            kind: "icons",
+            category: cat,
+            exported: r.exported,
+            degraded: r.degraded,
+            fileLabel: "icons",
             verdict: {
               category: cat,
               changelog: lines.length > 0 ? lines.join("\n") : "_(no changes)_",
