@@ -122,3 +122,26 @@ test("implicit black shape (no fill/stroke attr): ok, fill injected as currentCo
   );
   assert.doesNotMatch(r.body, /\/[^>]*\s\w+=/, "no attribute after a slash");
 });
+
+const STYLE_BLACK =
+  '<svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z" style="fill:#000000"/></svg>';
+const STYLE_TWO =
+  '<svg viewBox="0 0 24 24"><path d="M0 0h12v24H0z" style="fill:#0000FF"/><path d="M12 0h12v24H12z" style="fill:#FF0000"/></svg>';
+
+test("style= paint: single color → currentColor, no residual style fill", () => {
+  const r = normalizeIconSvg(STYLE_BLACK);
+  assert.equal(r.ok, true);
+  assert.match(r.body, /fill="currentColor"/);
+  assert.doesNotMatch(
+    r.body,
+    /style="[^"]*fill/i,
+    "no residual style-based fill paint",
+  );
+});
+
+test("style= paint, two distinct colors → multicolor", () => {
+  assert.deepEqual(normalizeIconSvg(STYLE_TWO), {
+    ok: false,
+    reason: "multicolor",
+  });
+});

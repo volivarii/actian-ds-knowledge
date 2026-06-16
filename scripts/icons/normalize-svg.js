@@ -22,6 +22,7 @@ const SVGO_CONFIG = {
         },
       },
     },
+    "convertStyleToAttrs",
     "removeDimensions",
   ],
 };
