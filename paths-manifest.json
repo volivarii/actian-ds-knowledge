@@ -3,7 +3,7 @@
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.34.11",
+  "knowledge_version": "0.34.12",
   "_zones": {
     "knowledge": [
       "accessibility",
@@ -60,6 +60,13 @@
       "origin": "ci",
       "generator": "scripts/sync/sync-anatomy.js",
       "description": "Roll-up of every per-component anatomy JSON, keyed by slug. One-shot LLM consumption for structure-tree access across the whole DS."
+    },
+    "components.canonicalSections": {
+      "path": "components/dist/canonical-sections.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-canonical-sections.js",
+      "description": "Canonical design-guideline section list (heading, stable anchor, aliases, media role) — single source for the editor stub scaffolder and the docs design-section renderer."
     },
     "components.categories": {
       "path": "components/dist/categories.json",
