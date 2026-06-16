@@ -2,7 +2,7 @@
 // component (by role, never by path) and insert the canonical <Media>
 // directive. Replaces the old free-text <Media src=""> skeleton.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import {
   Button,
@@ -49,6 +49,18 @@ export function MediaPickerPopover({
   const [selected, setSelected] = useState<MediaRole | null>(null);
   const [layout, setLayout] = useState<Layout>("grid");
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
+
+  // The parent (MarkdownEditScreen) is not remounted on file navigation, so
+  // when the component changes we must drop the cached roles/thumbs — else the
+  // picker would offer the previous component's media. Closes the popover too.
+  useEffect(() => {
+    setOpen(false);
+    setRoles(null);
+    setSelected(null);
+    setLayout("grid");
+    setThumbs({});
+    setLoading(false);
+  }, [componentSlug]);
 
   async function handleOpenChange(next: boolean) {
     setOpen(next);

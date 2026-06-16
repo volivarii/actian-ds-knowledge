@@ -1,7 +1,13 @@
 import "../setup-dom";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { render, screen, cleanup, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  cleanup,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { MediaPickerPopover } from "../../src/markdown-engine/MediaPickerPopover";
@@ -41,7 +47,11 @@ test("offers only author roles, never preview/default", async () => {
   cleanup();
   render(
     wrap(
-      <MediaPickerPopover octokit={fakeGh()} componentSlug="alert-banner" onInsert={() => {}} />,
+      <MediaPickerPopover
+        octokit={fakeGh()}
+        componentSlug="alert-banner"
+        onInsert={() => {}}
+      />,
     ),
   );
   fireEvent.click(screen.getByRole("button", { name: /insert media/i }));
@@ -81,14 +91,73 @@ test("empty state when the component has no placeable media", async () => {
     repos: {
       getContent: async () => ({
         data: {
-          content: Buffer.from(JSON.stringify({ media: { x: { default: "d" } } })).toString("base64"),
+          content: Buffer.from(
+            JSON.stringify({ media: { x: { default: "d" } } }),
+          ).toString("base64"),
           encoding: "base64",
         },
       }),
     },
   } as any;
-  render(wrap(<MediaPickerPopover octokit={gh} componentSlug="x" onInsert={() => {}} />));
+  render(
+    wrap(
+      <MediaPickerPopover octokit={gh} componentSlug="x" onInsert={() => {}} />,
+    ),
+  );
   fireEvent.click(screen.getByRole("button", { name: /insert media/i }));
   assert.ok(await screen.findByText(/no captured media/i));
+  cleanup();
+});
+
+test("re-fetches roles when componentSlug changes (no stale media)", async () => {
+  globalThis.sessionStorage.clear();
+  cleanup();
+  const INDEX2 = {
+    media: {
+      a: {
+        variations: ["components/dist/media/a/variations-0.webp"],
+        default: "d",
+      },
+      b: {
+        behavior: ["components/dist/media/b/behavior-0.webp"],
+        default: "d",
+      },
+    },
+  };
+  const indexB64 = Buffer.from(JSON.stringify(INDEX2)).toString("base64");
+  const imgB64 = Buffer.from("img").toString("base64");
+  const gh = {
+    repos: {
+      getContent: async ({ path }: { path: string }) =>
+        path === "components/dist/media/_index.json"
+          ? { data: { content: indexB64, encoding: "base64" } }
+          : { data: { content: imgB64, encoding: "base64" } },
+    },
+  } as any;
+
+  const { rerender } = render(
+    wrap(
+      <MediaPickerPopover octokit={gh} componentSlug="a" onInsert={() => {}} />,
+    ),
+  );
+  fireEvent.click(screen.getByRole("button", { name: /insert media/i }));
+  assert.ok(await screen.findByText(/Variations/i), "shows A's role");
+
+  // Navigate to component B (same instance — prop change, no remount).
+  rerender(
+    wrap(
+      <MediaPickerPopover octokit={gh} componentSlug="b" onInsert={() => {}} />,
+    ),
+  );
+  fireEvent.click(screen.getByRole("button", { name: /insert media/i }));
+  assert.ok(
+    await screen.findByText(/Behavior/i),
+    "shows B's role after slug change",
+  );
+  assert.equal(
+    screen.queryByText(/Variations/i),
+    null,
+    "no stale A role for B",
+  );
   cleanup();
 });
