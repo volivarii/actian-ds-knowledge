@@ -28,6 +28,7 @@ test("clean monochrome: ok, currentColor, stripped wrapper + dimensions, 24 view
   assert.doesNotMatch(r.body, /\b(width|height)=/, "no width/height");
   assert.match(r.body, /fill="currentColor"/);
   assert.doesNotMatch(r.body, /#0f5fdc/i, "hex fill rewritten");
+  assert.doesNotMatch(r.body, /\s(width|height)=/, "no width/height");
   assert.doesNotMatch(
     r.body,
     /\/\s+\w+=/,
@@ -41,6 +42,15 @@ test("stroke-based monochrome: stroke rewritten to currentColor", () => {
   assert.equal(r.ok, true);
   assert.match(r.body, /stroke="currentColor"/);
   assert.match(r.body, /fill="none"/, "fill=none preserved");
+  // stroke-width is legitimate geometry — the width/height guard must not fire
+  // on it (a `\b` boundary would wrongly match `-width=`). Regression for the
+  // favorite-filled backfill failure.
+  assert.match(r.body, /stroke-width=/, "stroke-width preserved");
+  assert.doesNotMatch(
+    r.body,
+    /\swidth=/,
+    "stroke-width is not a width= presentation attr",
+  );
 });
 
 test("two distinct colors: degraded multicolor", () => {
@@ -81,7 +91,7 @@ test("square 48x48 (Figma's real icon export): ok, viewBox PRESERVED, currentCol
   );
   assert.match(r.body, /fill="currentColor"/);
   assert.doesNotMatch(r.body, /#1a1a1a/i, "hex fill rewritten");
-  assert.doesNotMatch(r.body, /\b(width|height)=/, "no width/height");
+  assert.doesNotMatch(r.body, /\s(width|height)=/, "no width/height");
 });
 
 test("grouped/transformed single color: ok (SVGO flattens), currentColor", () => {

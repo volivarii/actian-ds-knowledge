@@ -58,12 +58,16 @@ test("body is inner markup — no root <svg> / width= / height=", () => {
       !/<svg[\s>]/i.test(icon.body),
       `${slug}: body contains a root <svg>`,
     );
+    // Match the width/height PRESENTATION attribute (always whitespace-preceded
+    // inside a tag), not the `-width`/`-height` suffix of `stroke-width` etc.
+    // A `\b` boundary wrongly fires on `stroke-width=` (boundary sits between the
+    // hyphen and "width"); stroked icons like favorite-filled legitimately carry it.
     assert.ok(
-      !/\bwidth=/.test(icon.body),
+      !/\swidth=/.test(icon.body),
       `${slug}: body carries a width= attr`,
     );
     assert.ok(
-      !/\bheight=/.test(icon.body),
+      !/\sheight=/.test(icon.body),
       `${slug}: body carries a height= attr`,
     );
   }
