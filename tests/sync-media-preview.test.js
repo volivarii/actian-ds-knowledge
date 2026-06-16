@@ -224,6 +224,70 @@ test("findRoleSourceNode returns all FRAME child ids for capture:all", function 
   assert.deepEqual(out, ["f1", "f2"]);
 });
 
+// The Figma "Parts" board was renamed; the parts role must resolve it under
+// any of its aliases ("Parts" legacy, "Parts & tokens", "Anatomy"). Each
+// returns the section's FRAME children (capture:"all"). Regression for the
+// silent media loss (parts role captured 0 of 84 after the rename).
+function partsPage(sectionName) {
+  return {
+    document: {
+      type: "CANVAS",
+      children: [
+        {
+          type: "FRAME",
+          name: "Design guidelines",
+          children: [
+            {
+              type: "FRAME",
+              name: sectionName,
+              children: [
+                { type: "TEXT", name: "title", id: "t1" },
+                { type: "FRAME", name: "Container", id: "f1" },
+                { type: "FRAME", name: "Label", id: "f2" },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
+}
+
+["Parts", "Parts & tokens", "Anatomy"].forEach(function (name) {
+  test('parts role resolves the renamed section "' + name + '"', function () {
+    var out = syncMedia.findRoleSourceNode(
+      partsPage(name),
+      syncMedia.ROLE_FINDERS.parts,
+    );
+    assert.deepEqual(out, ["f1", "f2"]);
+  });
+});
+
+test('parts alias match is case-insensitive ("PARTS & TOKENS")', function () {
+  var out = syncMedia.findRoleSourceNode(
+    partsPage("PARTS & TOKENS"),
+    syncMedia.ROLE_FINDERS.parts,
+  );
+  assert.deepEqual(out, ["f1", "f2"]);
+});
+
+test("ROLE_FINDERS.parts lists the Parts/Parts & tokens/Anatomy aliases", function () {
+  assert.deepEqual(syncMedia.ROLE_FINDERS.parts.sectionNames, [
+    "Parts",
+    "Parts & tokens",
+    "Anatomy",
+  ]);
+});
+
+test("wrapperSubsectionNames lists the Design-guidelines sub-section names", function () {
+  var tree = defaultFileTree();
+  var page1 = { document: tree.document.children[0] };
+  assert.deepEqual(syncMedia.wrapperSubsectionNames(page1), ["Preview"]);
+  // No wrapper → empty (the Badges page).
+  var page2 = { document: tree.document.children[1] };
+  assert.deepEqual(syncMedia.wrapperSubsectionNames(page2), []);
+});
+
 test("findRoleSourceNode returns one id for capture:first", function () {
   var page = {
     document: {
