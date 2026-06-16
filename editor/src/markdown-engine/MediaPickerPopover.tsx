@@ -2,7 +2,7 @@
 // component (by role, never by path) and insert the canonical <Media>
 // directive. Replaces the old free-text <Media src=""> skeleton.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import {
   Button,
@@ -50,10 +50,14 @@ export function MediaPickerPopover({
   const [layout, setLayout] = useState<Layout>("grid");
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
 
+  // Always tracks the current slug so in-flight fetches can detect staleness.
+  const slugRef = useRef(componentSlug);
+
   // The parent (MarkdownEditScreen) is not remounted on file navigation, so
   // when the component changes we must drop the cached roles/thumbs — else the
   // picker would offer the previous component's media. Closes the popover too.
   useEffect(() => {
+    slugRef.current = componentSlug;
     setOpen(false);
     setRoles(null);
     setSelected(null);
@@ -65,8 +69,10 @@ export function MediaPickerPopover({
   async function handleOpenChange(next: boolean) {
     setOpen(next);
     if (!next || roles !== null) return;
+    const slugAtOpen = componentSlug;
     setLoading(true);
     const found = await loadMediaRoles(octokit, componentSlug);
+    if (slugRef.current !== slugAtOpen) return; // navigated away mid-fetch — discard
     setRoles(found);
     setSelected(found[0]?.role ?? null);
     setLoading(false);
@@ -74,7 +80,10 @@ export function MediaPickerPopover({
       const firstPath = r.paths[0];
       if (!firstPath) continue;
       void getBinaryFileAsDataUrl(octokit, firstPath)
-        .then((url) => setThumbs((t) => ({ ...t, [r.role]: url })))
+        .then((url) => {
+          if (slugRef.current !== slugAtOpen) return; // stale — drop
+          setThumbs((t) => ({ ...t, [r.role]: url }));
+        })
         .catch(() => {
           /* thumbnail is decorative — ignore fetch failures */
         });

@@ -109,6 +109,71 @@ test("empty state when the component has no placeable media", async () => {
   cleanup();
 });
 
+test("discards an in-flight fetch when the component changes mid-load", async () => {
+  globalThis.sessionStorage.clear();
+  cleanup();
+  const INDEX = {
+    media: {
+      a: {
+        variations: ["components/dist/media/a/variations-0.webp"],
+        default: "d",
+      },
+      b: {
+        behavior: ["components/dist/media/b/behavior-0.webp"],
+        default: "d",
+      },
+    },
+  };
+  const indexB64 = Buffer.from(JSON.stringify(INDEX)).toString("base64");
+  const imgB64 = Buffer.from("img").toString("base64");
+  let releaseIndex: (() => void) | null = null;
+  const gated = new Promise<void>((res) => (releaseIndex = () => res()));
+  let firstIndexFetch = true;
+  const gh = {
+    repos: {
+      getContent: async ({ path }: { path: string }) => {
+        if (path === "components/dist/media/_index.json") {
+          if (firstIndexFetch) {
+            firstIndexFetch = false;
+            await gated; // hold the FIRST index fetch open
+          }
+          return { data: { content: indexB64, encoding: "base64" } };
+        }
+        return { data: { content: imgB64, encoding: "base64" } };
+      },
+    },
+  } as any;
+
+  const { rerender } = render(
+    wrap(
+      <MediaPickerPopover octokit={gh} componentSlug="a" onInsert={() => {}} />,
+    ),
+  );
+  // Open while on "a" — the index fetch is gated (in flight).
+  fireEvent.click(screen.getByRole("button", { name: /insert media/i }));
+  // Navigate to "b" before the fetch resolves.
+  rerender(
+    wrap(
+      <MediaPickerPopover octokit={gh} componentSlug="b" onInsert={() => {}} />,
+    ),
+  );
+  // Now let "a"'s fetch resolve — its result must be DISCARDED.
+  releaseIndex!();
+  await new Promise((r) => setTimeout(r, 0));
+  // Open the picker on "b": it must fetch + show b's role, never a's.
+  fireEvent.click(screen.getByRole("button", { name: /insert media/i }));
+  assert.ok(
+    await screen.findByText(/Behavior/i),
+    "shows b's role after the race",
+  );
+  assert.equal(
+    screen.queryByText(/Variations/i),
+    null,
+    "stale a roles discarded",
+  );
+  cleanup();
+});
+
 test("re-fetches roles when componentSlug changes (no stale media)", async () => {
   globalThis.sessionStorage.clear();
   cleanup();

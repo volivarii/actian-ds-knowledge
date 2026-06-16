@@ -52,7 +52,11 @@ test("loadMediaRoles: returns author-placeable roles present for the slug", asyn
 test("loadMediaRoles: never offers preview or default", async () => {
   globalThis.sessionStorage.clear();
   const roles = await loadMediaRoles(fakeGh(INDEX), "button");
-  assert.deepEqual(roles, [], "button has only preview+default → nothing to place");
+  assert.deepEqual(
+    roles,
+    [],
+    "button has only preview+default → nothing to place",
+  );
 });
 
 test("loadMediaRoles: normalizes single vs multi captures", async () => {
@@ -75,7 +79,11 @@ test("loadMediaRoles: unknown slug returns []", async () => {
 test("loadMediaRoles: fetch failure returns []", async () => {
   globalThis.sessionStorage.clear();
   const gh = {
-    repos: { getContent: async () => { throw new Error("boom"); } },
+    repos: {
+      getContent: async () => {
+        throw new Error("boom");
+      },
+    },
   } as any;
   assert.deepEqual(await loadMediaRoles(gh, "alert-banner"), []);
 });
@@ -92,4 +100,28 @@ test("loadMediaRoles: caches the index across calls + slugs", async () => {
 test("AUTHOR_ROLES excludes preview and default", () => {
   assert.equal(AUTHOR_ROLES.includes("preview" as never), false);
   assert.equal(AUTHOR_ROLES.includes("default" as never), false);
+});
+
+test("loadMediaRoles: normalizes a single-string role value (multi=false)", async () => {
+  globalThis.sessionStorage.clear();
+  const INDEX_SINGLE = {
+    media: {
+      widget: {
+        parts: "components/dist/media/widget/parts.webp",
+        default: "components/dist/media/widget/default.webp",
+      },
+    },
+  };
+  const content = Buffer.from(JSON.stringify(INDEX_SINGLE)).toString("base64");
+  const gh = {
+    repos: {
+      getContent: async () => ({ data: { content, encoding: "base64" } }),
+    },
+  } as any;
+  const roles = await loadMediaRoles(gh, "widget");
+  assert.equal(roles.length, 1);
+  const entry = roles[0]!;
+  assert.equal(entry.role, "parts");
+  assert.equal(entry.multi, false);
+  assert.deepEqual(entry.paths, ["components/dist/media/widget/parts.webp"]);
 });
