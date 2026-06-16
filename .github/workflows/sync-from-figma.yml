@@ -43,6 +43,7 @@ on:
           - media-preview
           - anatomy
           - media-default
+          - icons
 
 jobs:
   sync:

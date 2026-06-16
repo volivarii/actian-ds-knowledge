@@ -22,6 +22,13 @@ const src = load("components/src/icons-svg.json");
 const registry = load("components/dist/registries/dskit.json");
 const iconGroups = load("components/src/icon-groups.json");
 
+const autoPath = path.join(ROOT, "components/src/icons-svg.auto.json");
+const auto = fs.existsSync(autoPath)
+  ? JSON.parse(fs.readFileSync(autoPath, "utf8"))
+  : null;
+const { mergeIconSources } = require("../scripts/icons/derive-icons-svg");
+const mergedIcons = mergeIconSources(auto, src).icons;
+
 test("derive runs clean on live src and emits every icon", () => {
   const dist = deriveIcons(src, registry, iconGroups);
   assert.equal(
@@ -32,7 +39,7 @@ test("derive runs clean on live src and emits every icon", () => {
 });
 
 test("every icon: well-formed viewBox (4 numbers) + non-empty body", () => {
-  for (const [slug, icon] of Object.entries(src.icons)) {
+  for (const [slug, icon] of Object.entries(mergedIcons)) {
     const parts = icon.viewBox.trim().split(/\s+/);
     assert.equal(parts.length, 4, `${slug}: viewBox must be 4 numbers`);
     for (const p of parts) {
@@ -46,7 +53,7 @@ test("every icon: well-formed viewBox (4 numbers) + non-empty body", () => {
 });
 
 test("body is inner markup — no root <svg> / width= / height=", () => {
-  for (const [slug, icon] of Object.entries(src.icons)) {
+  for (const [slug, icon] of Object.entries(mergedIcons)) {
     assert.ok(
       !/<svg[\s>]/i.test(icon.body),
       `${slug}: body contains a root <svg>`,
@@ -64,7 +71,7 @@ test("body is inner markup — no root <svg> / width= / height=", () => {
 
 test("coloring contract — every fill/stroke is currentColor or none (no hex, no var())", () => {
   const problems = [];
-  for (const [slug, icon] of Object.entries(src.icons)) {
+  for (const [slug, icon] of Object.entries(mergedIcons)) {
     const attrs = icon.body.match(/(fill|stroke)="([^"]*)"/g) || [];
     for (const a of attrs) {
       const val = a.replace(/^(fill|stroke)="/, "").replace(/"$/, "");
@@ -127,8 +134,6 @@ test("derive is idempotent (twice → deep-equal)", () => {
   const b = deriveIcons(src, registry, iconGroups);
   assert.deepEqual(a, b);
 });
-
-const { mergeIconSources } = require("../scripts/icons/derive-icons-svg");
 
 test("mergeIconSources: auto-only when no curated", () => {
   const auto = {
