@@ -12,8 +12,16 @@ test("sectionTemplates: content uses the canonical content sections", () => {
 });
 
 test("sectionTemplates: usage + behavior have editorial headings", () => {
-  assert.ok(SECTION_TEMPLATES.usage.length >= 2);
-  assert.ok(SECTION_TEMPLATES.behavior.length >= 2);
+  assert.deepEqual(SECTION_TEMPLATES.usage, [
+    "When to use",
+    "When not to use",
+    "Choosing a variant",
+  ]);
+  assert.deepEqual(SECTION_TEMPLATES.behavior, [
+    "States",
+    "Keyboard interaction",
+    "Motion",
+  ]);
 });
 
 test("sectionTemplates: has no design key (design comes from the substrate canon)", () => {

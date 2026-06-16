@@ -22,9 +22,13 @@ test("content stub scaffolds the editorial content sections WITHOUT anchors", ()
   assert.equal(/\{#/.test(out), false, "no anchors in content stub");
 });
 
-test("usage + behavior stubs scaffold their editorial sections", () => {
-  assert.match(buildMarkdownStub("components/src/tag/usage.md"), /## When to use/);
-  assert.match(buildMarkdownStub("components/src/tag/behavior.md"), /## Keyboard interaction/);
+test("usage + behavior stubs scaffold their editorial sections without anchors", () => {
+  const usage = buildMarkdownStub("components/src/tag/usage.md");
+  const behavior = buildMarkdownStub("components/src/tag/behavior.md");
+  assert.match(usage, /## When to use/);
+  assert.match(behavior, /## Keyboard interaction/);
+  assert.equal(/\{#/.test(usage), false, "no anchors in usage stub");
+  assert.equal(/\{#/.test(behavior), false, "no anchors in behavior stub");
 });
 
 test("tokens domain keeps a minimal stub (no prose sections)", () => {
@@ -34,6 +38,9 @@ test("tokens domain keeps a minimal stub (no prose sections)", () => {
 });
 
 test("category + generic stubs are unchanged (minimal)", () => {
-  assert.match(buildMarkdownStub("components/src/categories/action.md"), /category defaults/);
+  assert.match(
+    buildMarkdownStub("components/src/categories/action.md"),
+    /category defaults/,
+  );
   assert.match(buildMarkdownStub("foundations/src/color.md"), /^# Color/);
 });
