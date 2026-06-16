@@ -1,7 +1,8 @@
 "use strict";
 
 // Pure normalizer for one raw Figma SVG export → the icon body contract:
-// inner markup only, viewBox 0 0 24 24, fills/strokes rewritten to
+// inner markup only, a square origin-0 viewBox preserved as-is (Figma renders
+// at 0 0 48 48; curated set is 0 0 24 24), fills/strokes rewritten to
 // currentColor. Returns { ok:true, viewBox, body } or { ok:false, reason }.
 // reason ∈ { empty, render-failed, bad-viewbox, gradient-or-image-fill, multicolor }.
 
@@ -47,9 +48,23 @@ function normalizeIconSvg(rawSvg) {
   const closeIdx = optimized.lastIndexOf("</svg>");
   if (!open || closeIdx === -1) return { ok: false, reason: "render-failed" };
 
+  // Accept any square, origin-0 viewBox and preserve it. Figma renders the DS
+  // Kit icons at "0 0 48 48"; the hand-curated set is "0 0 24 24". The SVG
+  // viewBox makes the body resolution-independent, so consumers scale via the
+  // <svg> element regardless of box size — no coordinate rescaling needed. A
+  // non-square or non-origin box signals a malformed capture → degrade.
   const vbMatch = open[0].match(/viewBox="([^"]*)"/i);
   const viewBox = vbMatch ? vbMatch[1].trim().replace(/\s+/g, " ") : null;
-  if (viewBox !== "0 0 24 24") return { ok: false, reason: "bad-viewbox" };
+  const vb = viewBox ? viewBox.split(" ").map(Number) : null;
+  const vbOk =
+    !!vb &&
+    vb.length === 4 &&
+    vb.every((n) => Number.isFinite(n)) &&
+    vb[0] === 0 &&
+    vb[1] === 0 &&
+    vb[2] > 0 &&
+    vb[2] === vb[3];
+  if (!vbOk) return { ok: false, reason: "bad-viewbox" };
 
   let body = optimized.slice(open.index + open[0].length, closeIdx).trim();
   if (body === "") return { ok: false, reason: "empty" };
@@ -108,7 +123,7 @@ function normalizeIconSvg(rawSvg) {
     return { ok: false, reason: "empty" };
   }
 
-  return { ok: true, viewBox: "0 0 24 24", body };
+  return { ok: true, viewBox, body };
 }
 
 module.exports = { normalizeIconSvg };
