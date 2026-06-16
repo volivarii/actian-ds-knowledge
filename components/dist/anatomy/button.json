@@ -2,11 +2,11 @@
   "_schema_version": 1,
   "slug": "button",
   "kit": "dskit",
-  "synced_at": "2026-06-15T13:10:36.917Z",
+  "synced_at": "2026-06-16T12:10:37.125Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "7206:2643",
-    "variant": "Type=Primary, Size=Default, State=Default"
+    "variant": "Emphasis=Primary, Intent=Default, Size=Default, State=Default"
   },
   "quality": {
     "nodesTotal": 4,
@@ -15,7 +15,7 @@
     "degraded": []
   },
   "root": {
-    "name": "Type=Primary, Size=Default, State=Default",
+    "name": "Emphasis=Primary, Intent=Default, Size=Default, State=Default",
     "kind": "container",
     "layout": {
       "axis": "row",

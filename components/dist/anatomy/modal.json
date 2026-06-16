@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "modal",
   "kit": "dskit",
-  "synced_at": "2026-06-15T13:10:36.917Z",
+  "synced_at": "2026-06-16T12:10:37.125Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "14175:14426",
@@ -72,7 +72,8 @@
               "Show label": true,
               "Show trailing icon": true,
               "Label": "Button",
-              "Type": "Icon",
+              "Emphasis": "Icon",
+              "Intent": "Default",
               "Size": "Small",
               "State": "Default"
             }
@@ -120,7 +121,8 @@
           "Show label": true,
           "Show trailing icon": true,
           "Label": "Button",
-          "Type": "Icon",
+          "Emphasis": "Icon",
+          "Intent": "Default",
           "Size": "Small",
           "State": "Default"
         }
@@ -156,7 +158,8 @@
               "Label": "Cancel",
               "Show trailing icon": false,
               "Show leading icon": false,
-              "Type": "Secondary",
+              "Emphasis": "Secondary",
+              "Intent": "Default",
               "Size": "Default",
               "State": "Default"
             }
@@ -170,7 +173,8 @@
               "Show label": true,
               "Show trailing icon": false,
               "Show leading icon": false,
-              "Type": "Primary",
+              "Emphasis": "Primary",
+              "Intent": "Default",
               "Size": "Default",
               "State": "Default"
             }

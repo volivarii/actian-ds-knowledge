@@ -1,0 +1,439 @@
+{
+  "_meta": {
+    "auto_generated": true
+  },
+  "degraded": [
+    {
+      "slug": "add-circle",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "alert",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "analytics",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "api-key",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "applications",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "arrow-alt",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "asleep",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "award-04",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "bin-type",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "book-bookmark",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "book-edit",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "boolean-type",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "brightness-contrast",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "catalog-design",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "catalogs",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "chart-bar",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "chart-pie",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "chevron-sort",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "circle-dash",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "connected",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "cursor-arrow",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "cursor-hand",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "data-access-request",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "data-file-question",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "data-model",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "data-product-output-port",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "data-structured",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "database",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "database-check",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "disconnected",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "discussion",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "event-time-type",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "expand",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "exploration",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "favorite",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "favorite-filled",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "filter-text",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "float-type",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "geo-point-type",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "glossary",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "graph-merge",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "help-bubble",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "help-circle",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "help-laptop",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "history",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "icon-query-queue",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "image",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "info",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "integer-type",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "layers-front",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "layers-front-curator-indicator",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "lifecycle-policy",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "lineage",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "link-type",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "list-bullets",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "list-numbers",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "mail",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "maintenance",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "map",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "maximize",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "minimize",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "misuse-outline",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "move",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "null-sign",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "open",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "output",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "paragraph-justify",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "pending",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "pii",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "process",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "relation",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "relation-incoming",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "relation-outgoing",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "rocket-1",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "rotate-back",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "scanner",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "schema",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "security-services",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "server-search",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "shield-lock",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "stop-outline",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "suggestion",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "tags-add",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "target-type",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "task-list",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "task-list-multiple",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "task-list-settings",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "text-file",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "text-type",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "thumbs-down",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "thumbs-up",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "tools",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "undo",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "unknown-type",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "upload-file",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "use-with-care",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "user-add",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "user-group",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "user-info",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "user-lock",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "view",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "view-card",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "view-details",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "view-table",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "zoom-in",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "zoom-out",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "zoom-reset",
+      "reason": "bad-viewbox"
+    },
+    {
+      "slug": "zoom-to-fit",
+      "reason": "bad-viewbox"
+    }
+  ]
+}
