@@ -68,9 +68,18 @@ var EXCLUDED_CATEGORIES = new Set(["Icons"]);
 //
 // `capture: "first"` (default) — one image per role, written as <role>.png.
 // `capture: "all"` — one image per FRAME child, written as <role>-<index>.png.
+// A finder may declare `sectionName` (one name) OR `sectionNames` (several
+// aliases). The `parts` board was renamed in Figma — different components now
+// label it "Parts & tokens" or "Anatomy" rather than the original "Parts" —
+// so its finder lists every alias it may carry. Matching is case-insensitive;
+// the per-page diagnostic log (below) surfaces any further rename so the alias
+// list can be extended without guesswork.
 var ROLE_FINDERS = {
   preview: { sectionName: "Preview", capture: "first" },
-  parts: { sectionName: "Parts", capture: "all" },
+  parts: {
+    sectionNames: ["Parts", "Parts & tokens", "Anatomy"],
+    capture: "all",
+  },
   variations: { sectionName: "Variations", capture: "all" },
   spacing: { sectionName: "Spacing", capture: "all" },
   behavior: { sectionName: "Behavior", capture: "all" },
@@ -111,12 +120,25 @@ function findRoleSourceNode(pageNode, findSpec) {
   if (!doc) return null;
   var wrapper = findFrameByNameRecursive(doc, OUTER_WRAPPER_NAME);
   if (!wrapper || !Array.isArray(wrapper.children)) return null;
-  var lcSection = findSpec.sectionName.toLowerCase();
+  // Accept one name (`sectionName`) or several aliases (`sectionNames`),
+  // case-insensitive. A role matches the first sub-section whose name is in
+  // the set, so the post-rename "Parts & tokens"/"Anatomy" resolve the same
+  // `parts` board the original "Parts" did.
+  var names = Array.isArray(findSpec.sectionNames)
+    ? findSpec.sectionNames
+    : [findSpec.sectionName];
+  var lcSections = names
+    .filter(function (n) {
+      return typeof n === "string";
+    })
+    .map(function (n) {
+      return n.toLowerCase();
+    });
   var mode = findSpec.capture || "first";
   for (var i = 0; i < wrapper.children.length; i++) {
     var sub = wrapper.children[i];
     if (!sub || sub.type !== "FRAME" || typeof sub.name !== "string") continue;
-    if (sub.name.toLowerCase() !== lcSection) continue;
+    if (lcSections.indexOf(sub.name.toLowerCase()) === -1) continue;
     if (!Array.isArray(sub.children)) return null;
     var frameIds = sub.children
       .filter(function (c) {
@@ -132,6 +154,23 @@ function findRoleSourceNode(pageNode, findSpec) {
     return mode === "all" ? frameIds : frameIds[0];
   }
   return null;
+}
+
+// wrapperSubsectionNames — the FRAME sub-section names directly under a page's
+// "Design guidelines" wrapper (or [] when the wrapper is absent). Diagnostic
+// only: logged per run so a silent Figma section rename (which would otherwise
+// just zero out a role's capture) is visible in the run output.
+function wrapperSubsectionNames(pageNode) {
+  var doc = pageNode && pageNode.document ? pageNode.document : pageNode;
+  var wrapper = doc ? findFrameByNameRecursive(doc, OUTER_WRAPPER_NAME) : null;
+  if (!wrapper || !Array.isArray(wrapper.children)) return [];
+  return wrapper.children
+    .filter(function (c) {
+      return c && c.type === "FRAME" && typeof c.name === "string";
+    })
+    .map(function (c) {
+      return c.name;
+    });
 }
 
 // mediaFilename — compute the output filename for a captured image.
@@ -245,6 +284,16 @@ async function run(opts) {
     var page = nodes[pageId];
     pageRoleSources[pageId] = {};
     if (!page) return;
+    // Diagnostic: the actual sub-section names under this page's "Design
+    // guidelines" wrapper. A silent rename (e.g. "Parts" → "Parts & tokens")
+    // shows up here, so a role that captures 0 frames is never opaque.
+    var doc0 = page.document || page;
+    console.log(
+      "[media-preview] " +
+        (doc0 && doc0.name ? doc0.name : pageId) +
+        " — sections: " +
+        JSON.stringify(wrapperSubsectionNames(page)),
+    );
     roleNames.forEach(function (role) {
       var src = findRoleSourceNode(page, ROLE_FINDERS[role]);
       if (src) pageRoleSources[pageId][role] = src;
@@ -480,6 +529,7 @@ module.exports = {
   run: run,
   findRoleSourceNode: findRoleSourceNode,
   findFrameByNameRecursive: findFrameByNameRecursive,
+  wrapperSubsectionNames: wrapperSubsectionNames,
   encodeWebp: encodeWebp,
   ROLE_FINDERS: ROLE_FINDERS,
   OUTER_WRAPPER_NAME: OUTER_WRAPPER_NAME,
