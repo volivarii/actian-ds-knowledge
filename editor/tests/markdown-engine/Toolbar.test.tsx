@@ -5,6 +5,7 @@ import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { Theme } from "@radix-ui/themes";
+import React from "react";
 import { Toolbar } from "../../src/markdown-engine/Toolbar";
 
 function mountWithView(initialDoc: string) {
@@ -17,6 +18,27 @@ function mountWithView(initialDoc: string) {
     </Theme>,
   );
   return { view, container };
+}
+
+// Minimal CM6 view stub — only the bits the toolbar touches.
+function stubView() {
+  return {
+    state: {
+      selection: { main: { from: 0, to: 0 } },
+      doc: { lineAt: () => ({ from: 0, to: 0, text: "" }) },
+      sliceDoc: () => "",
+    },
+    dispatch: () => {},
+    focus: () => {},
+  } as any;
+}
+
+function fakeGh() {
+  return { repos: { getContent: async () => ({ data: { content: "", encoding: "base64" } }) } } as any;
+}
+
+function wrap(node: React.ReactNode) {
+  return <Theme>{node}</Theme>;
 }
 
 test("Toolbar: bold wraps selection with **...**", () => {
@@ -52,19 +74,6 @@ test("Toolbar: table inserts a 2x2 markdown table at cursor", () => {
   fireEvent.click(screen.getByRole("button", { name: /insert table/i }));
   assert.match(view.state.doc.toString(), /\| Column 1 \| Column 2 \|/);
   assert.match(view.state.doc.toString(), /\| --- \| --- \|/);
-  cleanup();
-});
-
-test("Toolbar: Media inserts <Media> JSX skeleton at cursor", () => {
-  const { view } = mountWithView("");
-  view.dispatch({ selection: { anchor: 0, head: 0 } });
-  fireEvent.click(
-    screen.getByRole("button", { name: /insert media component/i }),
-  );
-  assert.match(
-    view.state.doc.toString(),
-    /<Media src="" alt="" caption="" \/>/,
-  );
   cleanup();
 });
 
@@ -105,5 +114,32 @@ test("Toolbar: code block inserts ``` fenced block at cursor", () => {
   view.dispatch({ selection: { anchor: 0, head: 0 } });
   fireEvent.click(screen.getByRole("button", { name: /code block/i }));
   assert.match(view.state.doc.toString(), /^[\s\S]*```[\s\S]*```[\s\S]*$/);
+  cleanup();
+});
+
+test("shows the media picker trigger in a component context", () => {
+  cleanup();
+  render(
+    wrap(<Toolbar view={stubView()} octokit={fakeGh()} componentSlug="button" />),
+  );
+  assert.ok(screen.queryByRole("button", { name: /insert media/i }), "media trigger present");
+  cleanup();
+});
+
+test("hides the media trigger when there is no component slug", () => {
+  cleanup();
+  render(wrap(<Toolbar view={stubView()} octokit={fakeGh()} componentSlug={null} />));
+  assert.equal(
+    screen.queryByRole("button", { name: /insert media/i }),
+    null,
+    "media trigger absent for non-component files",
+  );
+  cleanup();
+});
+
+test("never renders the old free-text <Media src> button", () => {
+  cleanup();
+  render(wrap(<Toolbar view={stubView()} octokit={fakeGh()} componentSlug="button" />));
+  assert.equal(screen.queryByRole("button", { name: /Insert Media component/i }), null);
   cleanup();
 });
