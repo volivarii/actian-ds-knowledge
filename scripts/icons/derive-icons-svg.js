@@ -14,17 +14,6 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..", "..");
-const SRC = path.join(ROOT, "components", "src", "icons-svg.json");
-const REGISTRY = path.join(
-  ROOT,
-  "components",
-  "dist",
-  "registries",
-  "dskit.json",
-);
-const ICON_GROUPS = path.join(ROOT, "components", "src", "icon-groups.json");
-const OUT_DIR = path.join(ROOT, "components", "dist", "icons");
-const OUT = path.join(OUT_DIR, "icons.json");
 
 // First key-order group in icon-groups.json whose array contains the slug.
 // Key order is specific-first (e.g. Cursor before Common); meta keys (_*) skipped.
