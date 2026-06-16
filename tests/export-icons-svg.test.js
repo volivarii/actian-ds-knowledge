@@ -26,13 +26,18 @@ const ICON_GROUPS = {
 };
 const SVG = {
   "1:1": '<svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z" fill="#000"/></svg>',
-  "1:2": '<svg viewBox="0 0 24 24"><path d="M0 0h12v24H0z" fill="#0000ff"/><path d="M12 0h12v24H12z" fill="#f00"/></svg>',
-  "1:3": '<svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="#ff9900"/></svg>',
+  "1:2":
+    '<svg viewBox="0 0 24 24"><path d="M0 0h12v24H0z" fill="#0000ff"/><path d="M12 0h12v24H12z" fill="#f00"/></svg>',
+  "1:3":
+    '<svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="#ff9900"/></svg>',
 };
 const fakeRest = {
   getImages: (fileKey, ids) =>
-    Promise.resolve({ images: Object.fromEntries(ids.map((id) => [id, "url://" + id])) }),
-  fetchBinary: (url) => Promise.resolve(Buffer.from(SVG[url.replace("url://", "")], "utf8")),
+    Promise.resolve({
+      images: Object.fromEntries(ids.map((id) => [id, "url://" + id])),
+    }),
+  fetchBinary: (url) =>
+    Promise.resolve(Buffer.from(SVG[url.replace("url://", "")], "utf8")),
 };
 
 test("exports clean UI icons, excludes Connector + non-Icons, degrades multicolor", async () => {
@@ -40,13 +45,24 @@ test("exports clean UI icons, excludes Connector + non-Icons, degrades multicolo
   const autoOutPath = path.join(dir, "icons-svg.auto.json");
   const degradedOutPath = path.join(dir, "icons.degraded.json");
   const r = await run({
-    registry: REGISTRY, iconGroups: ICON_GROUPS,
-    curatedSlugs: new Set(), autoOutPath, degradedOutPath, rest: fakeRest,
+    registry: REGISTRY,
+    iconGroups: ICON_GROUPS,
+    curatedSlugs: new Set(),
+    autoOutPath,
+    degradedOutPath,
+    rest: fakeRest,
   });
 
-  assert.deepEqual(r.exported, ["good"], "only the clean monochrome UI icon exported");
+  assert.deepEqual(
+    r.exported,
+    ["good"],
+    "only the clean monochrome UI icon exported",
+  );
   assert.deepEqual(r.degraded, [{ slug: "twocolor", reason: "multicolor" }]);
-  assert.ok(r.skipped >= 1, "amazons3 (Connector) + button (non-Icons) skipped");
+  assert.ok(
+    r.skipped >= 1,
+    "amazons3 (Connector) + button (non-Icons) skipped",
+  );
 
   const auto = JSON.parse(fs.readFileSync(autoOutPath, "utf8"));
   assert.deepEqual(Object.keys(auto.icons), ["good"]);
@@ -54,17 +70,53 @@ test("exports clean UI icons, excludes Connector + non-Icons, degrades multicolo
   assert.equal(auto._schema_version, 1);
 
   const degraded = JSON.parse(fs.readFileSync(degradedOutPath, "utf8"));
-  assert.deepEqual(degraded.degraded, [{ slug: "twocolor", reason: "multicolor" }]);
+  assert.deepEqual(degraded.degraded, [
+    { slug: "twocolor", reason: "multicolor" },
+  ]);
 });
 
 test("curated slugs are excluded from the degraded worklist", async () => {
   const dir = tmp();
   const r = await run({
-    registry: REGISTRY, iconGroups: ICON_GROUPS,
+    registry: REGISTRY,
+    iconGroups: ICON_GROUPS,
     curatedSlugs: new Set(["twocolor"]),
     autoOutPath: path.join(dir, "a.json"),
     degradedOutPath: path.join(dir, "d.json"),
     rest: fakeRest,
   });
-  assert.deepEqual(r.degraded, [], "twocolor covered by curated → not on the worklist");
+  assert.deepEqual(
+    r.degraded,
+    [],
+    "twocolor covered by curated → not on the worklist",
+  );
+});
+
+test("all targets degrade → no (empty, schema-invalid) auto file written; worklist still written", async () => {
+  const dir = tmp();
+  const autoOutPath = path.join(dir, "icons-svg.auto.json");
+  const degradedOutPath = path.join(dir, "icons.degraded.json");
+  const reg = {
+    fileKey: "F",
+    components: { twocolor: { category: "Icons", key: "k", nodeId: "1:2" } },
+  };
+  const groups = { _schema_version: 1, Common: ["twocolor"] };
+  const r = await run({
+    registry: reg,
+    iconGroups: groups,
+    curatedSlugs: new Set(),
+    autoOutPath,
+    degradedOutPath,
+    rest: fakeRest,
+  });
+  assert.deepEqual(r.exported, [], "nothing clean → empty exported");
+  assert.equal(
+    fs.existsSync(autoOutPath),
+    false,
+    "no auto file when there are no clean icons",
+  );
+  assert.ok(
+    fs.existsSync(degradedOutPath),
+    "degraded worklist is still written",
+  );
 });

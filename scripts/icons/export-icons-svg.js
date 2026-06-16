@@ -22,7 +22,9 @@ async function run(opts) {
 
   // Target = Icons-category, primary group ≠ Connector.
   const targets = Object.keys(comps).filter(
-    (slug) => comps[slug].category === "Icons" && primaryGroup(iconGroups, slug) !== "Connector",
+    (slug) =>
+      comps[slug].category === "Icons" &&
+      primaryGroup(iconGroups, slug) !== "Connector",
   );
   const skipped = Object.keys(comps).length - targets.length;
 
@@ -64,7 +66,8 @@ async function run(opts) {
 
   // Stable, sorted output for idempotent diffs.
   const sortedIcons = {};
-  for (const slug of Object.keys(cleanIcons).sort()) sortedIcons[slug] = cleanIcons[slug];
+  for (const slug of Object.keys(cleanIcons).sort())
+    sortedIcons[slug] = cleanIcons[slug];
   degraded.sort((a, b) => a.slug.localeCompare(b.slug));
 
   const auto = {
@@ -78,13 +81,20 @@ async function run(opts) {
     icons: sortedIcons,
   };
 
-  fs.mkdirSync(path.dirname(opts.autoOutPath), { recursive: true });
-  fs.writeFileSync(opts.autoOutPath, JSON.stringify(auto, null, 2) + "\n");
+  // Only (over)write the auto file when there's at least one clean icon — an
+  // empty set would violate the icons-svg schema (minProperties: 1) and, on a
+  // transient all-degraded run, would clobber a prior good export. The degraded
+  // worklist below is always written.
+  if (Object.keys(sortedIcons).length > 0) {
+    fs.mkdirSync(path.dirname(opts.autoOutPath), { recursive: true });
+    fs.writeFileSync(opts.autoOutPath, JSON.stringify(auto, null, 2) + "\n");
+  }
 
   fs.mkdirSync(path.dirname(opts.degradedOutPath), { recursive: true });
   fs.writeFileSync(
     opts.degradedOutPath,
-    JSON.stringify({ _meta: { auto_generated: true }, degraded }, null, 2) + "\n",
+    JSON.stringify({ _meta: { auto_generated: true }, degraded }, null, 2) +
+      "\n",
   );
 
   return { exported: Object.keys(sortedIcons), degraded, skipped };

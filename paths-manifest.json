@@ -5,19 +5,9 @@
   "manifest_schema_version": "v1",
   "knowledge_version": "0.34.6",
   "_zones": {
-    "knowledge": [
-      "accessibility",
-      "components",
-      "content",
-      "foundations"
-    ],
-    "contract": [
-      "graph"
-    ],
-    "metadata": [
-      "appContext",
-      "tokens"
-    ],
+    "knowledge": ["accessibility", "components", "content", "foundations"],
+    "contract": ["graph"],
+    "metadata": ["appContext", "tokens"],
     "_pendingEviction": []
   },
   "paths": {
@@ -414,7 +404,7 @@
       "type": "json",
       "origin": "ci",
       "generator": "scripts/icons/derive-icons-svg.js",
-      "description": "Derived icon-geometry read-surface: per-slug {viewBox, body, group, dsKey, nodeId} for the curated UI-icon set. Consumed by the plugin render tier's renderIcon() to inline real glyphs. Backfilled to the full 234 by the future icon-export pipeline."
+      "description": "Derived icon-geometry read-surface: per-slug {viewBox, body, group, dsKey, nodeId}. Consumed by the plugin render tier's renderIcon() to inline real glyphs. Auto-exported to the monochrome UI-icon set (~145 = Icons category minus the Connector group) by the icons sync phase, layered under the curated overrides; multicolor connector logos are a separate future asset class."
     },
     "components.media.index": {
       "path": "components/dist/media/_index.json",
