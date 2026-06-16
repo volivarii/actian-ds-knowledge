@@ -5,19 +5,9 @@
   "manifest_schema_version": "v1",
   "knowledge_version": "0.34.7",
   "_zones": {
-    "knowledge": [
-      "accessibility",
-      "components",
-      "content",
-      "foundations"
-    ],
-    "contract": [
-      "graph"
-    ],
-    "metadata": [
-      "appContext",
-      "tokens"
-    ],
+    "knowledge": ["accessibility", "components", "content", "foundations"],
+    "contract": ["graph"],
+    "metadata": ["appContext", "tokens"],
     "_pendingEviction": []
   },
   "paths": {
@@ -620,6 +610,13 @@
       "type": "binary",
       "origin": "human",
       "description": "Per-component static visual assets (anatomy callouts, hand-made diagrams). Optional per component — authors drop PNGs/SVGs into components/src/<slug>/images/ alongside their MD files. Consumed by docs site + plugin via manifest indirection."
+    },
+    "components.icons.dist": {
+      "dir": "components/dist/icons",
+      "pattern": "{name}.json",
+      "type": "json",
+      "origin": "ci",
+      "description": "The icons dist directory. Holds the derived read-surface icons.json (documented explicitly as components.icons.svg) plus the auto-generated icons.degraded.json worklist — the slugs the icons sync phase could not normalize (reasons: bad-viewbox, multicolor, gradient-or-image-fill, render-failed, empty), mirroring anatomy's quality.degraded honesty. A collection (not a per-file path) so the degraded worklist is covered without requiring the file to pre-exist on a clean checkout."
     },
     "components.media.ci": {
       "dir": "components/dist/media",
