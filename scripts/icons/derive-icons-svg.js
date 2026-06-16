@@ -14,11 +14,6 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..", "..");
-const SRC = path.join(ROOT, "components", "src", "icons-svg.json");
-const REGISTRY = path.join(ROOT, "components", "dist", "registries", "dskit.json");
-const ICON_GROUPS = path.join(ROOT, "components", "src", "icon-groups.json");
-const OUT_DIR = path.join(ROOT, "components", "dist", "icons");
-const OUT = path.join(OUT_DIR, "icons.json");
 
 // First key-order group in icon-groups.json whose array contains the slug.
 // Key order is specific-first (e.g. Cursor before Common); meta keys (_*) skipped.
@@ -62,15 +57,62 @@ function deriveIcons(src, registry, iconGroups) {
   return out;
 }
 
+// Merge the auto-exported base with the curated override. Curated wins on a
+// slug conflict (protects hand-fixed output from export regressions).
+function mergeIconSources(auto, curated) {
+  const a = (auto && auto.icons) || {};
+  const c = (curated && curated.icons) || {};
+  return { _schema_version: 1, icons: Object.assign({}, a, c) };
+}
+
+// Read auto (optional) + curated from disk under `root`, merge, derive, write
+// dist/icons/icons.json. Shared by the CLI and the sync `icons` phase.
+function deriveAndWrite(opts) {
+  opts = opts || {};
+  const root = opts.pluginDir || ROOT;
+  const curatedPath = path.join(root, "components", "src", "icons-svg.json");
+  const autoPath = path.join(root, "components", "src", "icons-svg.auto.json");
+  const curated = JSON.parse(fs.readFileSync(curatedPath, "utf8"));
+  const auto = fs.existsSync(autoPath)
+    ? JSON.parse(fs.readFileSync(autoPath, "utf8"))
+    : null;
+  const registry =
+    opts.registry ||
+    JSON.parse(
+      fs.readFileSync(
+        path.join(root, "components", "dist", "registries", "dskit.json"),
+        "utf8",
+      ),
+    );
+  const iconGroups =
+    opts.iconGroups ||
+    JSON.parse(
+      fs.readFileSync(
+        path.join(root, "components", "src", "icon-groups.json"),
+        "utf8",
+      ),
+    );
+  const merged = mergeIconSources(auto, curated);
+  const dist = deriveIcons(merged, registry, iconGroups);
+  const outDir = path.join(root, "components", "dist", "icons");
+  const out = path.join(outDir, "icons.json");
+  fs.mkdirSync(outDir, { recursive: true });
+  fs.writeFileSync(out, JSON.stringify(dist, null, 2) + "\n");
+  return dist;
+}
+
 function runCli() {
-  const src = JSON.parse(fs.readFileSync(SRC, "utf8"));
-  const registry = JSON.parse(fs.readFileSync(REGISTRY, "utf8"));
-  const iconGroups = JSON.parse(fs.readFileSync(ICON_GROUPS, "utf8"));
-  const dist = deriveIcons(src, registry, iconGroups);
-  fs.mkdirSync(OUT_DIR, { recursive: true });
-  fs.writeFileSync(OUT, JSON.stringify(dist, null, 2) + "\n");
-  console.log(`Wrote ${path.relative(ROOT, OUT)} (${Object.keys(dist.icons).length} icons)`);
+  const dist = deriveAndWrite({});
+  console.log(
+    `Wrote components/dist/icons/icons.json (${Object.keys(dist.icons).length} icons)`,
+  );
   return 0;
 }
 
-module.exports = { deriveIcons, primaryGroup, runCli };
+module.exports = {
+  deriveIcons,
+  mergeIconSources,
+  deriveAndWrite,
+  primaryGroup,
+  runCli,
+};
