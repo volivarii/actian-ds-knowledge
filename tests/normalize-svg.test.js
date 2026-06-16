@@ -12,7 +12,11 @@ const TWO_COLOR =
 const GRADIENT =
   '<svg viewBox="0 0 24 24"><defs><linearGradient id="g"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient></defs><path d="M5 5h14v14H5z" fill="url(#g)"/></svg>';
 const BAD_VIEWBOX =
-  '<svg viewBox="0 0 32 32"><path d="M5 5h14v14H5z" fill="#000"/></svg>';
+  '<svg viewBox="0 0 24 32"><path d="M5 5h14v14H5z" fill="#000"/></svg>';
+const NONZERO_VIEWBOX =
+  '<svg viewBox="2 2 24 24"><path d="M5 5h14v14H5z" fill="#000"/></svg>';
+const SQUARE_48 =
+  '<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 10h28v28H10z" fill="#1A1A1A"/></svg>';
 const GROUPED =
   '<svg viewBox="0 0 24 24"><g transform="translate(2 2)"><path d="M0 0h20v20H0z" fill="#123456"/></g></svg>';
 
@@ -53,11 +57,31 @@ test("gradient/url fill: degraded gradient-or-image-fill", () => {
   });
 });
 
-test("non-24 viewBox: degraded bad-viewbox", () => {
+test("non-square viewBox: degraded bad-viewbox", () => {
   assert.deepEqual(normalizeIconSvg(BAD_VIEWBOX), {
     ok: false,
     reason: "bad-viewbox",
   });
+});
+
+test("non-origin viewBox: degraded bad-viewbox", () => {
+  assert.deepEqual(normalizeIconSvg(NONZERO_VIEWBOX), {
+    ok: false,
+    reason: "bad-viewbox",
+  });
+});
+
+test("square 48x48 (Figma's real icon export): ok, viewBox PRESERVED, currentColor", () => {
+  const r = normalizeIconSvg(SQUARE_48);
+  assert.equal(r.ok, true);
+  assert.equal(
+    r.viewBox,
+    "0 0 48 48",
+    "non-24 square viewBox is preserved, not forced to 24",
+  );
+  assert.match(r.body, /fill="currentColor"/);
+  assert.doesNotMatch(r.body, /#1a1a1a/i, "hex fill rewritten");
+  assert.doesNotMatch(r.body, /\b(width|height)=/, "no width/height");
 });
 
 test("grouped/transformed single color: ok (SVGO flattens), currentColor", () => {

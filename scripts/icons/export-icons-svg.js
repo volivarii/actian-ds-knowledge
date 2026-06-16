@@ -70,6 +70,22 @@ async function run(opts) {
     sortedIcons[slug] = cleanIcons[slug];
   degraded.sort((a, b) => a.slug.localeCompare(b.slug));
 
+  // Operational visibility: one concise line so a run is never opaque (an
+  // earlier backfill exported 0 with no signal — every icon was rejected by an
+  // over-strict viewBox gate). Histogram is over the degraded worklist.
+  const reasonHist = {};
+  for (const d of degraded)
+    reasonHist[d.reason] = (reasonHist[d.reason] || 0) + 1;
+  console.log(
+    "[icons] exported=" +
+      Object.keys(sortedIcons).length +
+      " degraded=" +
+      degraded.length +
+      " skipped=" +
+      skipped +
+      (degraded.length ? " by-reason=" + JSON.stringify(reasonHist) : ""),
+  );
+
   const auto = {
     _schema_version: 1,
     _regen: {
