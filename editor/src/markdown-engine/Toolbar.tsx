@@ -3,9 +3,14 @@
 
 import { Button, Flex, Separator, Tooltip } from "@radix-ui/themes";
 import type { EditorView } from "@codemirror/view";
+import type { Octokit } from "@octokit/rest";
+import { MediaPickerPopover } from "./MediaPickerPopover";
 
 export interface ToolbarProps {
   view: EditorView;
+  /** Present only when editing a component-guideline .md (enables media). */
+  octokit?: Octokit;
+  componentSlug?: string | null;
 }
 
 function slugify(text: string): string {
@@ -66,16 +71,7 @@ function insertAnchor(view: EditorView) {
 function insertTable(view: EditorView) {
   // Insert a minimal 2x2 markdown table at the cursor position, preceded
   // by a blank line so it parses correctly when inserted mid-paragraph.
-  const insert =
-    "\n| Column 1 | Column 2 |\n| --- | --- |\n| Cell | Cell |\n";
-  insertAtCursor(view, insert);
-}
-
-function insertMedia(view: EditorView) {
-  // Insert the canonical <Media> JSX skeleton used throughout knowledge
-  // docs for embedded imagery. Cursor lands after insertion; user fills
-  // in src/alt/caption.
-  const insert = '\n<Media src="" alt="" caption="" />\n';
+  const insert = "\n| Column 1 | Column 2 |\n| --- | --- |\n| Cell | Cell |\n";
   insertAtCursor(view, insert);
 }
 
@@ -85,7 +81,7 @@ function insertMedia(view: EditorView) {
 const BTN_SIZE = "2" as const;
 const BTN_VARIANT = "soft" as const;
 
-export function Toolbar({ view }: ToolbarProps) {
+export function Toolbar({ view, octokit, componentSlug }: ToolbarProps) {
   return (
     <Flex className="md-toolbar" align="center" gap="3">
       {/* Group: Block-level */}
@@ -202,16 +198,13 @@ export function Toolbar({ view }: ToolbarProps) {
             table
           </Button>
         </Tooltip>
-        <Tooltip content="<Media> component">
-          <Button
-            size={BTN_SIZE}
-            variant={BTN_VARIANT}
-            aria-label="Insert Media component"
-            onClick={() => insertMedia(view)}
-          >
-            {"<Media/>"}
-          </Button>
-        </Tooltip>
+        {octokit && componentSlug && (
+          <MediaPickerPopover
+            octokit={octokit}
+            componentSlug={componentSlug}
+            onInsert={(snippet) => insertAtCursor(view, snippet)}
+          />
+        )}
         <Tooltip content="Insert {#anchor} on this line">
           <Button
             size={BTN_SIZE}

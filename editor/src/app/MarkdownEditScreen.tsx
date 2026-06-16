@@ -499,7 +499,15 @@ export function MarkdownEditScreen({
           </Callout.Text>
         </Callout.Root>
       )}
-      <Box>{view && <Toolbar view={view} />}</Box>
+      <Box>
+        {view && (
+          <Toolbar
+            view={view}
+            octokit={gh ?? undefined}
+            componentSlug={componentSlug}
+          />
+        )}
+      </Box>
       <Flex flexGrow="1" minHeight="0" gap="2">
         <Box
           className="editor-outline-pane"

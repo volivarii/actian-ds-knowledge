@@ -97,3 +97,27 @@ export async function listFilesByGlob(
     .map((entry) => entry.name)
     .sort();
 }
+
+/**
+ * Fetch a binary file (e.g. a .webp) and return it as a data: URL suitable
+ * for an <img src>. GitHub's getContent returns base64 (newline-wrapped at
+ * 76 cols) for files under ~1MB; we strip the wrapping and prefix the mime.
+ * Used by the media picker to render thumbnails without a public raw URL
+ * (the repo may be private, so an authenticated fetch is required).
+ */
+export async function getBinaryFileAsDataUrl(
+  gh: Octokit,
+  filePath: string,
+  mime = "image/webp",
+  coords?: RepoCoords,
+): Promise<string> {
+  const { owner, repo, ref } = withDefaults(coords);
+  const res = await gh.repos.getContent({ owner, repo, path: filePath, ref });
+  if (Array.isArray(res.data) || !("content" in res.data)) {
+    throw new Error(`expected a file at ${filePath}`);
+  }
+  if (res.data.encoding !== "base64") {
+    throw new Error(`unexpected encoding: ${res.data.encoding}`);
+  }
+  return `data:${mime};base64,${res.data.content.replace(/\n/g, "")}`;
+}
