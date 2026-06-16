@@ -88,6 +88,19 @@ function normalizeIconSvg(rawSvg) {
       : `${attr}="currentColor"`,
   );
 
+  // Implicit-black shapes: after the rewrite above, shape elements that still
+  // carry no fill= and no stroke= are SVG-default black. Inject fill="currentColor"
+  // so they are themeable. (Multicolor check already accounted for these as
+  // "#000000" in the paint set above, so the monochrome guard already passed.)
+  const SHAPE_TAGS = "path|circle|rect|ellipse|polygon|polyline|line";
+  body = body.replace(
+    new RegExp(`<(${SHAPE_TAGS})(\\b[^>]*)>`, "gi"),
+    (full, tag, attrs) => {
+      if (/\b(fill|stroke)=/i.test(attrs)) return full;
+      return `<${tag}${attrs} fill="currentColor">`;
+    },
+  );
+
   // No visible paint at all → invisible glyph; treat as degraded, not shipped.
   if (!/(?:fill|stroke)="currentColor"/.test(body)) {
     return { ok: false, reason: "empty" };
