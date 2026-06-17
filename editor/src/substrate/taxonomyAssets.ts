@@ -61,11 +61,26 @@ export interface GraphNodeRaw {
   wcag?: string[];
 }
 
+export interface GraphEdgeRaw {
+  source: string;
+  target: string;
+  type: string;
+  note?: string | null;
+  scope?: string;
+  confidence?: string;
+}
+
 export interface GraphFileRaw {
   nodes: GraphNodeRaw[];
+  edges: GraphEdgeRaw[];
 }
 
 const graph = graphRaw as GraphFileRaw;
+
+/** Raw baked graph node + edge arrays — consumed by graphIndex.ts to build
+ *  the build-once typed adjacency index. */
+export const graphNodes: GraphNodeRaw[] = graph.nodes;
+export const graphEdges: GraphEdgeRaw[] = graph.edges;
 
 /** Top-level foundation sections only (no `/` in slug) — these correspond to
  *  the entries authors reference in `foundations_refs` blocks. */
