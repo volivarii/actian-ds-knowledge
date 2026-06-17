@@ -179,6 +179,137 @@ test("collectMotionPatterns: node id uses the pattern .slug, not the object key"
   assert.ok(!ids.includes("motion:accordion"), "not the object key");
 });
 
+test("collectTransversalRefs: edges carry scope=category + provenance + confidence", function () {
+  var g = new (require("../scripts/lib/graph/model.js").GraphBuilder)();
+  D.collectTransversalRefs(g, "action", {
+    _meta: { source: "components/src/categories/action.md" },
+    a11y_refs: {
+      requirementRefs: [{ ref: "focus-keyboard", note: "Enter/Space" }],
+    },
+  });
+  var e = g.build().edges.find(function (x) {
+    return x.type === "a11y_ref" && x.target === "a11y:focus-keyboard";
+  });
+  assert.equal(e.scope, "category");
+  assert.equal(e.confidence, "asserted");
+  assert.equal(e.provenance.source_file, "components/src/categories/action.md");
+  assert.equal(e.provenance.method, "a11y_refs.requirementRefs");
+  assert.equal(e.note, "Enter/Space");
+});
+
+test("collectComponentRefs: keys by registry-slug (filename), guards node existence", function () {
+  var M = require("../scripts/lib/graph/model.js");
+  var g = new M.GraphBuilder();
+  g.addNode({ id: "component:button", type: "component", title: "Button" });
+  g.addNode({
+    id: "component:checkbox-with-label",
+    type: "component",
+    title: "Checkbox",
+  });
+  D.collectComponentRefs(g, [
+    {
+      slug: "button",
+      doc: {
+        slug: "button",
+        _meta: { source: "components/src/button/" },
+        meta: {
+          a11y_refs: [{ ref: "buttons" }],
+          foundations_refs: [{ ref: "tokens", note: "spacing" }],
+        },
+      },
+    },
+    {
+      slug: "checkbox-with-label",
+      doc: {
+        slug: "checkbox",
+        _alias_of: "checkbox",
+        meta: { a11y_refs: [{ ref: "forms" }] },
+      },
+    },
+    {
+      slug: "checkbox",
+      doc: { slug: "checkbox", meta: { a11y_refs: [{ ref: "forms" }] } },
+    },
+    {
+      slug: "card",
+      doc: { slug: "card", meta: { a11y_refs: [{ ref: "cards" }] } },
+    },
+  ]);
+  var e = g.build().edges;
+  var btn = e.find(function (x) {
+    return (
+      x.type === "a11y_ref" &&
+      x.source === "component:button" &&
+      x.target === "a11y:buttons"
+    );
+  });
+  assert.ok(btn, "button edge emitted");
+  assert.equal(btn.scope, "component");
+  assert.equal(btn.confidence, "asserted");
+  assert.equal(btn.provenance.method, "meta.a11y_refs");
+  assert.equal(btn.provenance.source_file, "components/src/button/");
+  assert.ok(
+    e.some(function (x) {
+      return (
+        x.type === "foundations_ref" &&
+        x.source === "component:button" &&
+        x.target === "foundation:tokens" &&
+        x.note === "spacing"
+      );
+    }),
+    "button → foundation:tokens with note",
+  );
+  assert.ok(
+    e.some(function (x) {
+      return (
+        x.source === "component:checkbox-with-label" &&
+        x.target === "a11y:forms"
+      );
+    }),
+    "alias filename emits under registry slug",
+  );
+  assert.ok(
+    !e.some(function (x) {
+      return x.source === "component:checkbox";
+    }),
+    "canonical non-node slug skipped (no dangling)",
+  );
+  assert.ok(
+    !e.some(function (x) {
+      return x.source === "component:card";
+    }),
+    "orphan guidance (no node) skipped",
+  );
+});
+
+test("graph.json: component-scoped a11y_ref edges are present after derive", function () {
+  var fs = require("node:fs"),
+    path = require("node:path");
+  var graph = JSON.parse(
+    fs.readFileSync(
+      path.join(__dirname, "..", "graph", "dist", "graph.json"),
+      "utf8",
+    ),
+  );
+  assert.equal(graph._schema_version, 2);
+  var compA11y = graph.edges.filter(function (e) {
+    return e.type === "a11y_ref" && e.scope === "component";
+  });
+  assert.ok(
+    compA11y.length >= 1,
+    "expected >=1 component-scoped a11y_ref edge",
+  );
+  assert.ok(
+    compA11y.some(function (e) {
+      return (
+        e.source === "component:checkbox-with-label" &&
+        e.target === "a11y:forms"
+      );
+    }),
+    "expected component:checkbox-with-label -> a11y:forms",
+  );
+});
+
 test("bundleToTree: reconstructs tree from bundle format; scoped sibling lookup + leaf fallback", function () {
   var bundle = {
     _index: {

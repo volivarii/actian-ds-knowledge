@@ -106,6 +106,9 @@ var REF_KINDS = [
   },
 ];
 function collectTransversalRefs(g, catSlug, defaults) {
+  var sourceFile =
+    (defaults._meta && defaults._meta.source) ||
+    "components/dist/categories/" + catSlug + "-defaults.json";
   REF_KINDS.forEach(function (k) {
     var refs = (defaults[k.field] && defaults[k.field][k.list]) || [];
     refs.forEach(function (r) {
@@ -113,11 +116,79 @@ function collectTransversalRefs(g, catSlug, defaults) {
         source: M.nodeId("category", catSlug),
         target: M.nodeId(k.targetType, r.ref),
         type: k.edge,
+        scope: "category",
+        confidence: "asserted",
+        provenance: {
+          source_file: sourceFile,
+          deriver: "derive-graph.js",
+          method: k.field + "." + k.list,
+        },
       };
       if (r.note) edge.note = r.note;
       g.addEdge(edge);
     });
   });
+}
+var COMPONENT_REF_KINDS = [
+  { field: "a11y_refs", edge: "a11y_ref", targetType: "a11y_criterion" },
+  { field: "motion_refs", edge: "motion_ref", targetType: "motion_pattern" },
+  {
+    field: "foundations_refs",
+    edge: "foundations_ref",
+    targetType: "foundation_section",
+  },
+];
+function collectComponentRefs(g, entries) {
+  entries.forEach(function (entry) {
+    var slug = entry && entry.slug;
+    var doc = (entry && entry.doc) || {};
+    if (!slug) return;
+    // Key by FILENAME slug (= registry component slug). Alias copies carry the
+    // canonical slug in doc.slug but the registry slug in the filename; the node
+    // guard keeps each edge attached to a real component node and drops
+    // canonical-only or orphan-guidance docs (no node → no edge, no dangle).
+    if (!g.hasNode(M.nodeId("component", slug))) return;
+    var meta = doc.meta || {};
+    var sourceFile =
+      (doc._meta && doc._meta.source) ||
+      "components/dist/guidelines/" + slug + ".json";
+    COMPONENT_REF_KINDS.forEach(function (k) {
+      var refs = meta[k.field];
+      if (!Array.isArray(refs)) return;
+      refs.forEach(function (r) {
+        if (!r || !r.ref) return;
+        var edge = {
+          source: M.nodeId("component", slug),
+          target: M.nodeId(k.targetType, r.ref),
+          type: k.edge,
+          scope: "component",
+          confidence: "asserted",
+          provenance: {
+            source_file: sourceFile,
+            deriver: "derive-graph.js",
+            method: "meta." + k.field,
+          },
+        };
+        if (r.note) edge.note = r.note;
+        g.addEdge(edge);
+      });
+    });
+  });
+}
+function readGuidelineDocs() {
+  var dir = path.join(ROOT, "components", "dist", "guidelines");
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter(function (f) {
+      return f.endsWith(".json") && f !== "guidelines.bundle.json";
+    })
+    .map(function (f) {
+      return {
+        slug: f.replace(/\.json$/, ""),
+        doc: readJSON("components/dist/guidelines/" + f),
+      };
+    });
 }
 function collectRelated(g, contentEntries) {
   contentEntries.forEach(function (entry) {
@@ -257,6 +328,7 @@ function derive() {
         );
       });
   }
+  collectComponentRefs(g, readGuidelineDocs());
   collectRelated(g, readContentEntries());
   if (
     fs.existsSync(path.join(ROOT, "foundations/dist/foundations.bundle.json"))
@@ -297,6 +369,8 @@ module.exports = {
   collectFoundationSections: collectFoundationSections,
   collectMotionPatterns: collectMotionPatterns,
   collectTransversalRefs: collectTransversalRefs,
+  collectComponentRefs: collectComponentRefs,
+  readGuidelineDocs: readGuidelineDocs,
   collectRelated: collectRelated,
   collectFoundationChildEdges: collectFoundationChildEdges,
   readJSON: readJSON,
