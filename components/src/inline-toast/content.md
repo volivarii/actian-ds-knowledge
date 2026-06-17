@@ -1,7 +1,3 @@
----
-title: "Inline toast"
-nav_order: 17
----
 # Inline toast
 
 An inline toast is a brief, non-blocking message displayed within a specific area of the page rather than at a global level. It provides feedback directly adjacent to the action or element it refers to.
@@ -12,7 +8,7 @@ An inline toast is a brief, non-blocking message displayed within a specific are
 
 - To confirm a localized action, such as copying a value or saving a field inline.
 - To surface a validation warning directly below or beside a specific form field.
-- Do not use an inline toast for global events - use the global toast or snackbar instead.
+- Do not use an inline toast for global events. Use a [global toast](global-toast) instead.
 
 ## Style
 
