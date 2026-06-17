@@ -221,10 +221,12 @@ function collectFoundationChildEdges(g, root) {
           child.id !== undefined &&
           child.id !== ""
         ) {
+          // SKOS-style broader/narrower hierarchy (non-transitive; topical,
+          // NOT subclass or part-of). The function name is historical.
           g.addEdge({
             source: M.nodeId("foundation_section", node.id),
             target: M.nodeId("foundation_section", child.id),
-            type: "child",
+            type: "narrower",
           });
         }
         walk(child);

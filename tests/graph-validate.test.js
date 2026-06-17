@@ -144,3 +144,81 @@ test("schemaErrors: valid graph yields no errors; malformed node type is caught"
   });
   assert.ok(errs.length > 0);
 });
+
+test("analyze: flags an edge whose endpoints violate the vocabulary", function () {
+  var vocab = {
+    edgeTypes: { in_category: { source: ["component"], target: ["category"] } },
+  };
+  var graph = {
+    nodes: [
+      { id: "component:button", type: "component", title: "B" },
+      { id: "a11y:contrast", type: "a11y_criterion", title: "C" },
+    ],
+    edges: [
+      {
+        source: "component:button",
+        target: "a11y:contrast",
+        type: "in_category",
+      },
+    ],
+  };
+  var r = V.analyze(graph, vocab);
+  assert.ok(
+    r.typeViolations.some(function (v) {
+      return /in_category target/.test(v);
+    }),
+    "wrong target type must be flagged",
+  );
+});
+
+test("analyze: clean graph → no type violations; absent vocabulary skips the check", function () {
+  var vocab = {
+    edgeTypes: { in_category: { source: ["component"], target: ["category"] } },
+  };
+  var graph = {
+    nodes: [
+      { id: "component:button", type: "component", title: "B" },
+      { id: "category:action", type: "category", title: "A" },
+    ],
+    edges: [
+      {
+        source: "component:button",
+        target: "category:action",
+        type: "in_category",
+      },
+    ],
+  };
+  assert.deepEqual(V.analyze(graph, vocab).typeViolations, []);
+  assert.deepEqual(V.analyze(graph).typeViolations, []);
+});
+
+test("analyze: an undeclared edge type is flagged against the vocabulary", function () {
+  var vocab = {
+    edgeTypes: { in_category: { source: ["component"], target: ["category"] } },
+  };
+  var graph = {
+    nodes: [
+      { id: "component:x", type: "component", title: "x" },
+      { id: "category:y", type: "category", title: "y" },
+    ],
+    edges: [{ source: "component:x", target: "category:y", type: "mystery" }],
+  };
+  assert.ok(
+    V.analyze(graph, vocab).typeViolations.some(function (v) {
+      return /not in the vocabulary/.test(v);
+    }),
+  );
+});
+
+test("real graph conforms to the real vocabulary (zero type violations)", function () {
+  var fs = require("node:fs"),
+    path = require("node:path");
+  var root = path.join(__dirname, "..");
+  var graph = JSON.parse(
+    fs.readFileSync(path.join(root, "graph", "dist", "graph.json"), "utf8"),
+  );
+  var vocab = JSON.parse(
+    fs.readFileSync(path.join(root, "graph", "vocabulary.json"), "utf8"),
+  );
+  assert.deepEqual(V.analyze(graph, vocab).typeViolations, []);
+});

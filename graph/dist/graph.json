@@ -4601,361 +4601,6 @@
       }
     },
     {
-      "source": "foundation:color-primitives",
-      "target": "foundation:color-primitives/oklch-shade-formula",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives",
-      "target": "foundation:color-primitives/primitives",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/blue",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/blue-grey",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/clematis-purple",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/cool-grey",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/dropped-brick-red",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/frosted-glass-green",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/glint-green",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/green",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/grey",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/kickstart-purple",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/mellow-melon-pink",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/olive-green",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/orange",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/pacific-blue",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/pomegranate-red",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/purple",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/red",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/royal-blue",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/shutters-green",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/singapore-orchid-purple",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/turquoise",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/viva-gold-orange",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/white-black",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/yellow",
-      "type": "child"
-    },
-    {
-      "source": "foundation:color-primitives/primitives",
-      "target": "foundation:color-primitives/primitives/zima-blue",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines",
-      "target": "foundation:design-guidelines/border-usage",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines",
-      "target": "foundation:design-guidelines/breakpoints",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines",
-      "target": "foundation:design-guidelines/brightness-filter-convention-interactive-states",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines",
-      "target": "foundation:design-guidelines/color-usage-rules",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines",
-      "target": "foundation:design-guidelines/elevation-rules",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines",
-      "target": "foundation:design-guidelines/focus-ring-rules",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines",
-      "target": "foundation:design-guidelines/placeholder-text",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines",
-      "target": "foundation:design-guidelines/spacing-rules",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines",
-      "target": "foundation:design-guidelines/typography-rules",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines/breakpoints",
-      "target": "foundation:design-guidelines/breakpoints/columns-gutters-and-margins",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines/breakpoints",
-      "target": "foundation:design-guidelines/breakpoints/grid-settings",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines/brightness-filter-convention-interactive-states",
-      "target": "foundation:design-guidelines/brightness-filter-convention-interactive-states/implementation",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines/brightness-filter-convention-interactive-states",
-      "target": "foundation:design-guidelines/brightness-filter-convention-interactive-states/types-of-states",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines/typography-rules",
-      "target": "foundation:design-guidelines/typography-rules/accessibility",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines/typography-rules",
-      "target": "foundation:design-guidelines/typography-rules/language-support",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines/typography-rules",
-      "target": "foundation:design-guidelines/typography-rules/line-length",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines/typography-rules",
-      "target": "foundation:design-guidelines/typography-rules/minimum-size",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines/typography-rules",
-      "target": "foundation:design-guidelines/typography-rules/paragraph-spacing",
-      "type": "child"
-    },
-    {
-      "source": "foundation:design-guidelines/typography-rules",
-      "target": "foundation:design-guidelines/typography-rules/typeface",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens",
-      "target": "foundation:tokens/backgrounds",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens",
-      "target": "foundation:tokens/borders",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens",
-      "target": "foundation:tokens/breakpoints",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens",
-      "target": "foundation:tokens/elevation",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens",
-      "target": "foundation:tokens/focus-rings",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens",
-      "target": "foundation:tokens/global-color",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens",
-      "target": "foundation:tokens/heights-and-trigger-areas",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens",
-      "target": "foundation:tokens/icons",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens",
-      "target": "foundation:tokens/motion",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens",
-      "target": "foundation:tokens/spacing",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens",
-      "target": "foundation:tokens/typography",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/borders",
-      "target": "foundation:tokens/borders/radius",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/borders",
-      "target": "foundation:tokens/borders/style-composite",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/borders",
-      "target": "foundation:tokens/borders/width",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/heights-and-trigger-areas",
-      "target": "foundation:tokens/heights-and-trigger-areas/component-heights",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/heights-and-trigger-areas",
-      "target": "foundation:tokens/heights-and-trigger-areas/trigger-area",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/icons",
-      "target": "foundation:tokens/icons/icon-colors",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/icons",
-      "target": "foundation:tokens/icons/icon-sizes",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/typography",
-      "target": "foundation:tokens/typography/font-family",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/typography",
-      "target": "foundation:tokens/typography/font-size",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/typography",
-      "target": "foundation:tokens/typography/font-weight",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/typography",
-      "target": "foundation:tokens/typography/letter-spacing",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/typography",
-      "target": "foundation:tokens/typography/line-height",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/typography",
-      "target": "foundation:tokens/typography/text-color-tokens",
-      "type": "child"
-    },
-    {
-      "source": "foundation:tokens/typography",
-      "target": "foundation:tokens/typography/text-style-tokens-composite",
-      "type": "child"
-    },
-    {
       "source": "category:action",
       "target": "foundation:design-guidelines",
       "type": "foundations_ref",
@@ -6894,6 +6539,361 @@
         "method": "motion_refs.patternRefs"
       },
       "note": "modals fade + scale; scrim cross-fades"
+    },
+    {
+      "source": "foundation:color-primitives",
+      "target": "foundation:color-primitives/oklch-shade-formula",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives",
+      "target": "foundation:color-primitives/primitives",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/blue",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/blue-grey",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/clematis-purple",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/cool-grey",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/dropped-brick-red",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/frosted-glass-green",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/glint-green",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/green",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/grey",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/kickstart-purple",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/mellow-melon-pink",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/olive-green",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/orange",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/pacific-blue",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/pomegranate-red",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/purple",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/red",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/royal-blue",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/shutters-green",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/singapore-orchid-purple",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/turquoise",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/viva-gold-orange",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/white-black",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/yellow",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:color-primitives/primitives",
+      "target": "foundation:color-primitives/primitives/zima-blue",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines",
+      "target": "foundation:design-guidelines/border-usage",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines",
+      "target": "foundation:design-guidelines/breakpoints",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines",
+      "target": "foundation:design-guidelines/brightness-filter-convention-interactive-states",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines",
+      "target": "foundation:design-guidelines/color-usage-rules",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines",
+      "target": "foundation:design-guidelines/elevation-rules",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines",
+      "target": "foundation:design-guidelines/focus-ring-rules",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines",
+      "target": "foundation:design-guidelines/placeholder-text",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines",
+      "target": "foundation:design-guidelines/spacing-rules",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines",
+      "target": "foundation:design-guidelines/typography-rules",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines/breakpoints",
+      "target": "foundation:design-guidelines/breakpoints/columns-gutters-and-margins",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines/breakpoints",
+      "target": "foundation:design-guidelines/breakpoints/grid-settings",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines/brightness-filter-convention-interactive-states",
+      "target": "foundation:design-guidelines/brightness-filter-convention-interactive-states/implementation",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines/brightness-filter-convention-interactive-states",
+      "target": "foundation:design-guidelines/brightness-filter-convention-interactive-states/types-of-states",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines/typography-rules",
+      "target": "foundation:design-guidelines/typography-rules/accessibility",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines/typography-rules",
+      "target": "foundation:design-guidelines/typography-rules/language-support",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines/typography-rules",
+      "target": "foundation:design-guidelines/typography-rules/line-length",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines/typography-rules",
+      "target": "foundation:design-guidelines/typography-rules/minimum-size",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines/typography-rules",
+      "target": "foundation:design-guidelines/typography-rules/paragraph-spacing",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:design-guidelines/typography-rules",
+      "target": "foundation:design-guidelines/typography-rules/typeface",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens",
+      "target": "foundation:tokens/backgrounds",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens",
+      "target": "foundation:tokens/borders",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens",
+      "target": "foundation:tokens/breakpoints",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens",
+      "target": "foundation:tokens/elevation",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens",
+      "target": "foundation:tokens/focus-rings",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens",
+      "target": "foundation:tokens/global-color",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens",
+      "target": "foundation:tokens/heights-and-trigger-areas",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens",
+      "target": "foundation:tokens/icons",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens",
+      "target": "foundation:tokens/motion",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens",
+      "target": "foundation:tokens/spacing",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens",
+      "target": "foundation:tokens/typography",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/borders",
+      "target": "foundation:tokens/borders/radius",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/borders",
+      "target": "foundation:tokens/borders/style-composite",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/borders",
+      "target": "foundation:tokens/borders/width",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/heights-and-trigger-areas",
+      "target": "foundation:tokens/heights-and-trigger-areas/component-heights",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/heights-and-trigger-areas",
+      "target": "foundation:tokens/heights-and-trigger-areas/trigger-area",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/icons",
+      "target": "foundation:tokens/icons/icon-colors",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/icons",
+      "target": "foundation:tokens/icons/icon-sizes",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/typography",
+      "target": "foundation:tokens/typography/font-family",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/typography",
+      "target": "foundation:tokens/typography/font-size",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/typography",
+      "target": "foundation:tokens/typography/font-weight",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/typography",
+      "target": "foundation:tokens/typography/letter-spacing",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/typography",
+      "target": "foundation:tokens/typography/line-height",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/typography",
+      "target": "foundation:tokens/typography/text-color-tokens",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/typography",
+      "target": "foundation:tokens/typography/text-style-tokens-composite",
+      "type": "narrower"
     },
     {
       "source": "content:empty-and-system-states",

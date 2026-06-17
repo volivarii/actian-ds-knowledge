@@ -157,7 +157,7 @@ test("collectFoundationChildEdges: parent→child from the tree", function () {
   assert.ok(
     e.some(function (x) {
       return (
-        x.type === "child" &&
+        x.type === "narrower" &&
         x.source === "foundation:tokens" &&
         x.target === "foundation:tokens/spacing"
       );
