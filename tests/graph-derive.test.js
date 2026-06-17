@@ -282,6 +282,34 @@ test("collectComponentRefs: keys by registry-slug (filename), guards node existe
   );
 });
 
+test("graph.json: component-scoped a11y_ref edges are present after derive", function () {
+  var fs = require("node:fs"),
+    path = require("node:path");
+  var graph = JSON.parse(
+    fs.readFileSync(
+      path.join(__dirname, "..", "graph", "dist", "graph.json"),
+      "utf8",
+    ),
+  );
+  assert.equal(graph._schema_version, 2);
+  var compA11y = graph.edges.filter(function (e) {
+    return e.type === "a11y_ref" && e.scope === "component";
+  });
+  assert.ok(
+    compA11y.length >= 1,
+    "expected >=1 component-scoped a11y_ref edge",
+  );
+  assert.ok(
+    compA11y.some(function (e) {
+      return (
+        e.source === "component:checkbox-with-label" &&
+        e.target === "a11y:forms"
+      );
+    }),
+    "expected component:checkbox-with-label -> a11y:forms",
+  );
+});
+
 test("bundleToTree: reconstructs tree from bundle format; scoped sibling lookup + leaf fallback", function () {
   var bundle = {
     _index: {
