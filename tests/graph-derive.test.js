@@ -197,6 +197,56 @@ test("collectTransversalRefs: edges carry scope=category + provenance + confiden
   assert.equal(e.note, "Enter/Space");
 });
 
+test("collectComponentRefs: component→criterion edges from flat meta.*_refs", function () {
+  var g = new (require("../scripts/lib/graph/model.js").GraphBuilder)();
+  D.collectComponentRefs(g, [
+    {
+      slug: "button",
+      _meta: { source: "components/src/button/" },
+      meta: {
+        a11y_refs: [{ ref: "buttons" }],
+        foundations_refs: [{ ref: "tokens", note: "spacing" }],
+      },
+    },
+    {
+      slug: "checkbox-with-label",
+      _alias_of: "checkbox",
+      meta: { a11y_refs: [{ ref: "forms" }] },
+    },
+    { slug: "no-refs", meta: {} },
+  ]);
+  var e = g.build().edges;
+  var a11y = e.find(function (x) {
+    return (
+      x.type === "a11y_ref" &&
+      x.source === "component:button" &&
+      x.target === "a11y:buttons"
+    );
+  });
+  assert.ok(a11y, "button → a11y:buttons emitted");
+  assert.equal(a11y.scope, "component");
+  assert.equal(a11y.confidence, "asserted");
+  assert.equal(a11y.provenance.method, "meta.a11y_refs");
+  assert.equal(a11y.provenance.source_file, "components/src/button/");
+  assert.ok(
+    e.some(function (x) {
+      return (
+        x.type === "foundations_ref" &&
+        x.source === "component:button" &&
+        x.target === "foundation:tokens" &&
+        x.note === "spacing"
+      );
+    }),
+    "button → foundation:tokens with note",
+  );
+  assert.ok(
+    !e.some(function (x) {
+      return x.source === "component:checkbox-with-label";
+    }),
+    "alias copy (_alias_of) is skipped",
+  );
+});
+
 test("bundleToTree: reconstructs tree from bundle format; scoped sibling lookup + leaf fallback", function () {
   var bundle = {
     _index: {

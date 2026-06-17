@@ -129,6 +129,59 @@ function collectTransversalRefs(g, catSlug, defaults) {
     });
   });
 }
+var COMPONENT_REF_KINDS = [
+  { field: "a11y_refs", edge: "a11y_ref", targetType: "a11y_criterion" },
+  { field: "motion_refs", edge: "motion_ref", targetType: "motion_pattern" },
+  {
+    field: "foundations_refs",
+    edge: "foundations_ref",
+    targetType: "foundation_section",
+  },
+];
+// Per-component transversal refs live FLAT at meta.<field> = [{ ref, note? }]
+// (distinct from the nested category shape read by collectTransversalRefs).
+function collectComponentRefs(g, docs) {
+  docs.forEach(function (doc) {
+    if (!doc || doc._alias_of || !doc.slug) return; // skip alias copies + malformed
+    var meta = doc.meta || {};
+    var sourceFile =
+      (doc._meta && doc._meta.source) ||
+      "components/dist/guidelines/" + doc.slug + ".json";
+    COMPONENT_REF_KINDS.forEach(function (k) {
+      var refs = meta[k.field];
+      if (!Array.isArray(refs)) return;
+      refs.forEach(function (r) {
+        if (!r || !r.ref) return;
+        var edge = {
+          source: M.nodeId("component", doc.slug),
+          target: M.nodeId(k.targetType, r.ref),
+          type: k.edge,
+          scope: "component",
+          confidence: "asserted",
+          provenance: {
+            source_file: sourceFile,
+            deriver: "derive-graph.js",
+            method: "meta." + k.field,
+          },
+        };
+        if (r.note) edge.note = r.note;
+        g.addEdge(edge);
+      });
+    });
+  });
+}
+function readGuidelineDocs() {
+  var dir = path.join(ROOT, "components", "dist", "guidelines");
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter(function (f) {
+      return f.endsWith(".json") && f !== "guidelines.bundle.json";
+    })
+    .map(function (f) {
+      return readJSON("components/dist/guidelines/" + f);
+    });
+}
 function collectRelated(g, contentEntries) {
   contentEntries.forEach(function (entry) {
     if (
@@ -267,6 +320,7 @@ function derive() {
         );
       });
   }
+  collectComponentRefs(g, readGuidelineDocs());
   collectRelated(g, readContentEntries());
   if (
     fs.existsSync(path.join(ROOT, "foundations/dist/foundations.bundle.json"))
@@ -307,6 +361,8 @@ module.exports = {
   collectFoundationSections: collectFoundationSections,
   collectMotionPatterns: collectMotionPatterns,
   collectTransversalRefs: collectTransversalRefs,
+  collectComponentRefs: collectComponentRefs,
+  readGuidelineDocs: readGuidelineDocs,
   collectRelated: collectRelated,
   collectFoundationChildEdges: collectFoundationChildEdges,
   readJSON: readJSON,
