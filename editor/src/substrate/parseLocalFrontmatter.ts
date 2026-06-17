@@ -22,7 +22,11 @@ export function parseLocalFrontmatter(
 ): OutgoingConnection[] {
   const { frontmatter } = parseFrontmatter(source);
   const out: OutgoingConnection[] = [];
-  for (const refType of ["a11y_refs", "motion_refs"] as const) {
+  for (const refType of [
+    "a11y_refs",
+    "motion_refs",
+    "foundations_refs",
+  ] as const) {
     for (const item of frontmatter[refType]) {
       out.push({
         slug: item.ref,

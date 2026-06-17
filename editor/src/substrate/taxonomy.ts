@@ -6,7 +6,7 @@
 
 import { readFile } from "node:fs/promises";
 
-export type Domain = "accessibility" | "motion";
+export type Domain = "accessibility" | "motion" | "foundations";
 
 export type Tier = "foundation" | "component-pattern" | "checklist" | "header";
 
@@ -115,7 +115,18 @@ export async function loadTaxonomy(opts: LoadOpts): Promise<Taxonomy> {
   function getMap(
     domain: Domain,
   ): Map<string, { title: string; body: string | null; tier: Tier | null }> {
-    return domain === "accessibility" ? a11yBySlug : motionBySlug;
+    switch (domain) {
+      case "accessibility":
+        return a11yBySlug;
+      case "motion":
+        return motionBySlug;
+      default:
+        // Future domains (foundations, component, content) load via
+        // buildTaxonomyFromAssets which extends the switch. The file-based
+        // loader returns an empty map so new domains fail loudly (empty
+        // results) rather than silently returning wrong data.
+        return new Map();
+    }
   }
 
   return {

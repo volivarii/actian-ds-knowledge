@@ -6,7 +6,19 @@ import type { Domain } from "./taxonomy";
 import type { RefType } from "./refGraph";
 
 export function refTypeFor(domain: Domain): RefType {
-  return domain === "accessibility" ? "a11y_refs" : "motion_refs";
+  switch (domain) {
+    case "accessibility":
+      return "a11y_refs";
+    case "motion":
+      return "motion_refs";
+    case "foundations":
+      return "foundations_refs";
+    default: {
+      // Exhaustiveness check: TypeScript will flag unhandled Domain values here.
+      const _never: never = domain;
+      throw new Error(`refTypeFor: unhandled domain "${String(_never)}"`);
+    }
+  }
 }
 
 // Use `[ \t]*` around the `---` fences instead of `\s*` — `\s` matches

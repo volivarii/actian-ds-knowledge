@@ -5,12 +5,12 @@
 
 import React, { useMemo, useState } from "react";
 import { Box, Button, Card, Flex, Text, TextField } from "@radix-ui/themes";
-import type { SearchResult, Taxonomy } from "../substrate";
+import type { Domain, SearchResult, Taxonomy } from "../substrate";
 import { TopicResultRow } from "./TopicResultRow";
 
 export interface PickedTopic {
   slug: string;
-  domain: "accessibility" | "motion";
+  domain: Domain;
   title: string;
   note: string | null;
 }

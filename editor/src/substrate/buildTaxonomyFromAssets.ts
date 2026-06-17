@@ -41,7 +41,17 @@ export function buildTaxonomyFromAssets(): Taxonomy {
   function getMap(
     domain: Domain,
   ): Map<string, { title: string; body: string | null; tier: Tier | null }> {
-    return domain === "accessibility" ? a11yBySlug : motionBySlug;
+    switch (domain) {
+      case "accessibility":
+        return a11yBySlug;
+      case "motion":
+        return motionBySlug;
+      default:
+        // Future domains (foundations, component, content) are added in
+        // subsequent steps. Return an empty map so new domain values fail
+        // loudly (empty results) rather than silently returning wrong data.
+        return new Map();
+    }
   }
 
   return {

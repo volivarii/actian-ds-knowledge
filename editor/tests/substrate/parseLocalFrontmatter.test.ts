@@ -85,3 +85,49 @@ test("parseLocalFrontmatter: unknown slug surfaces as domain: null", () => {
   assert.equal(out[0]!.slug, "ghost-topic");
   assert.equal(out[0]!.domain, null);
 });
+
+// Step 1 — foundations_refs
+const taxWithFoundations: Taxonomy = {
+  getSlugs: () => [],
+  getTitle: () => null,
+  getBody: () => null,
+  getTier: () => null,
+  domainOfSlug: (slug) => {
+    if (slug === "tokens") return "foundations";
+    if (slug === "color-contrast") return "accessibility";
+    return null;
+  },
+  searchSections: () => [],
+};
+
+test("parseLocalFrontmatter: extracts foundations_refs entries", () => {
+  const src = [
+    "---",
+    "foundations_refs:",
+    "  - { ref: tokens }",
+    "---",
+    "",
+    "## Heading\n",
+  ].join("\n");
+  const out = parseLocalFrontmatter(src, taxWithFoundations);
+  assert.equal(out.length, 1);
+  assert.equal(out[0]!.slug, "tokens");
+  assert.equal(out[0]!.refType, "foundations_refs");
+  assert.equal(out[0]!.domain, "foundations");
+});
+
+test("parseLocalFrontmatter: mixes a11y_refs and foundations_refs", () => {
+  const src = [
+    "---",
+    "a11y_refs:",
+    "  - { ref: color-contrast }",
+    "foundations_refs:",
+    "  - { ref: tokens }",
+    "---",
+    "",
+  ].join("\n");
+  const out = parseLocalFrontmatter(src, taxWithFoundations);
+  assert.equal(out.length, 2);
+  assert.equal(out[0]!.refType, "a11y_refs");
+  assert.equal(out[1]!.refType, "foundations_refs");
+});
