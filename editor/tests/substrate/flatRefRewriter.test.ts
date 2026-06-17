@@ -48,6 +48,29 @@ relatedComponents: [button, input]
   assert.doesNotMatch(result, /button, button/);
 });
 
+test("flatRefRewriter: add does not create a duplicate key for an out-of-contract block-style list", () => {
+  // Block-style multi-line arrays are outside the documented inline authoring
+  // subset. The add path must NOT blindly insert a second inline key — that
+  // would produce a duplicate `relatedComponents:` key (invalid frontmatter /
+  // silent data loss). Safe behavior: leave the source unchanged.
+  const source = `---
+relatedComponents:
+  - button
+  - input
+---
+
+## Section
+`;
+  const result = addFlatRefToFrontmatter(source, "relatedComponents", "badge");
+  const keyCount = (result.match(/^relatedComponents:/gm) ?? []).length;
+  assert.equal(
+    keyCount,
+    1,
+    "must not introduce a duplicate relatedComponents key",
+  );
+  assert.equal(result, source, "block-style source returned unchanged");
+});
+
 // ── removeFlatRefFromFrontmatter ─────────────────────────────────────────────
 
 test("flatRefRewriter: remove a slug from the middle of the list", () => {

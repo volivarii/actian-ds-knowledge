@@ -14,7 +14,13 @@ export type {
   OutgoingConnection,
   BrokenRef,
   RefType,
+  AnyRefField,
 } from "./refGraph";
+// NOTE: refStore VALUE helpers (FrontmatterRefStore, refFieldFor,
+// isFlatField, isFlatRefDomain) are intentionally NOT re-exported here.
+// The barrel re-exports Node-only modules (loadTaxonomy → node:fs); browser
+// code must value-import from the concrete module path (../substrate/refStore)
+// to keep those out of the bundle. Type re-exports above are erased, so safe.
 export { suggestRefs } from "./ai";
 export type { RefSuggestion, SuggestResult, SuggestOpts } from "./ai";
 export {

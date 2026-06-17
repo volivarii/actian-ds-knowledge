@@ -6,6 +6,10 @@
 import React, { useMemo, useState } from "react";
 import { Box, Button, Card, Flex, Text, TextField } from "@radix-ui/themes";
 import type { Domain, SearchResult, Taxonomy } from "../substrate";
+// Value import via the concrete module path (NOT the barrel): the substrate
+// barrel re-exports Node-only modules, so browser code must reach refStore
+// helpers directly to keep node:fs out of the bundle.
+import { isFlatRefDomain } from "../substrate/refStore";
 import { TopicResultRow } from "./TopicResultRow";
 
 export interface PickedTopic {
@@ -29,9 +33,17 @@ export function TopicPicker(props: TopicPickerProps) {
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const [note, setNote] = useState("");
 
+  // Narrow the search to the allowed domains BEFORE the result cap so a valid
+  // hit can't be crowded out by other-domain matches that fill the limit. The
+  // client-side filter below is belt-and-suspenders for taxonomy
+  // implementations that ignore the `domains` opt (e.g. test fakes).
   const allResults = useMemo(
-    () => props.taxonomy.searchSections(query, { limit: 20 }),
-    [query, props.taxonomy],
+    () =>
+      props.taxonomy.searchSections(query, {
+        limit: 20,
+        domains: props.allowedDomains,
+      }),
+    [query, props.taxonomy, props.allowedDomains],
   );
 
   const results = useMemo(() => {
@@ -40,6 +52,11 @@ export function TopicPicker(props: TopicPickerProps) {
     const allowed = new Set<Domain>(props.allowedDomains);
     return allResults.filter((r) => allowed.has(r.domain));
   }, [allResults, props.allowedDomains]);
+
+  // Flat-array fields (relatedComponents) can't store a per-entry note, so the
+  // note input is hidden for component/content picks — showing it would let an
+  // author type a note that is silently dropped on write.
+  const noteAllowed = selected ? !isFlatRefDomain(selected.domain) : false;
 
   return (
     <Box p="3">
@@ -70,7 +87,7 @@ export function TopicPicker(props: TopicPickerProps) {
         ) : null}
       </Flex>
 
-      {selected ? (
+      {selected && noteAllowed ? (
         <Box
           mt="3"
           p="2"
@@ -97,7 +114,7 @@ export function TopicPicker(props: TopicPickerProps) {
               slug: selected.slug,
               domain: selected.domain,
               title: selected.title,
-              note: note.trim().length > 0 ? note.trim() : null,
+              note: noteAllowed && note.trim().length > 0 ? note.trim() : null,
             });
           }}
         >

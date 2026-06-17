@@ -100,3 +100,25 @@ test("buildTaxonomyFromAssets: searchSections('tokens') returns foundations hit"
     `expected a foundations hit for "tokens", got: ${JSON.stringify(results)}`,
   );
 });
+
+test("buildTaxonomyFromAssets: searchSections honors `domains` scope before the result cap", () => {
+  const tax = buildTaxonomyFromAssets();
+  // A bare-letter query matches across many domains; scoping to foundations
+  // must return ONLY foundations hits even with a tiny cap — proving the
+  // domain narrow is applied BEFORE the limit, not after (otherwise allowed
+  // hits could be crowded out by other-domain matches that fill the cap).
+  const results = tax.searchSections("o", {
+    domains: ["foundations"],
+    limit: 3,
+  });
+  assert.ok(
+    results.length > 0,
+    "expected ≥1 foundations hit for scoped search",
+  );
+  assert.ok(
+    results.every((r) => r.domain === "foundations"),
+    `all results must be foundations, got: ${JSON.stringify(
+      results.map((r) => r.domain),
+    )}`,
+  );
+});

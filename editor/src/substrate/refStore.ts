@@ -11,7 +11,7 @@
 // This lets ConnectionsPopover stay agnostic of the format difference:
 // it calls store.addRef / store.removeRef and the store dispatches.
 
-import type { RefType } from "./refGraph";
+import type { RefType, AnyRefField } from "./refGraph";
 import {
   addRefToFrontmatter,
   removeRefFromFrontmatter,
@@ -21,13 +21,15 @@ import {
   removeFlatRefFromFrontmatter,
 } from "./flatRefRewriter";
 
-/** All ref-field names the editor can write. Object-ref fields live in
- *  RefType; flat-array fields are enumerated here as a union extension. */
-export type AnyRefField = RefType | "relatedComponents";
+// AnyRefField is the union of object-ref fields (RefType) and the flat-array
+// field. It lives in refGraph.ts (the types home) to keep this module free of
+// a circular import; re-exported here for callers that reach the field union
+// through the store.
+export type { AnyRefField };
 
 const FLAT_FIELDS: ReadonlySet<string> = new Set(["relatedComponents"]);
 
-function isFlatField(field: AnyRefField): boolean {
+export function isFlatField(field: AnyRefField): boolean {
   return FLAT_FIELDS.has(field);
 }
 
@@ -77,4 +79,12 @@ export function refFieldFor(domain: string): AnyRefField {
     default:
       throw new Error(`refFieldFor: unhandled domain "${domain}"`);
   }
+}
+
+/** True when a Domain's ref-field is a flat-array field (relatedComponents)
+ *  rather than an object-ref block. Flat fields cannot carry a per-entry
+ *  note, so the picker hides the note input for them (otherwise a typed note
+ *  would be silently dropped on write). */
+export function isFlatRefDomain(domain: string): boolean {
+  return isFlatField(refFieldFor(domain));
 }

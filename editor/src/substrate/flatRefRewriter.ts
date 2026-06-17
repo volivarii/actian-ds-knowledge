@@ -37,6 +37,17 @@ function serializeSlugs(field: string, slugs: string[]): string {
 
 const FRONTMATTER_RE = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*\n/;
 
+/** True when a key of this name already exists ANYWHERE in the frontmatter
+ *  envelope — including forms we don't parse (e.g. block-style multi-line
+ *  arrays). Used to avoid inserting a duplicate key. */
+function frontmatterHasKey(source: string, field: string): boolean {
+  const m = source.match(FRONTMATTER_RE);
+  if (!m) return false;
+  const block = m[1] ?? "";
+  const escaped = field.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^${escaped}:`, "m").test(block);
+}
+
 function insertIntoFrontmatter(source: string, line: string): string {
   const m = source.match(FRONTMATTER_RE);
   if (!m) {
@@ -68,7 +79,16 @@ export function addFlatRefToFrontmatter(
     const updated = serializeSlugs(field, [...slugs, slug]);
     return source.replace(re, updated);
   }
-  // Field absent — insert it.
+  // No inline form matched. Before inserting a fresh inline key, ensure a
+  // key of this name doesn't already exist in a form we don't parse (e.g.
+  // a block-style multi-line array). Inserting unconditionally would yield a
+  // DUPLICATE YAML key — invalid frontmatter / silent data loss. The
+  // documented authoring subset for flat fields is the inline `field: [a, b]`
+  // form (see content/src/AUTHORING.md), so a block-style key here is
+  // out-of-contract; leave the source unchanged (the pick is a safe no-op)
+  // rather than corrupt it.
+  if (frontmatterHasKey(source, field)) return source;
+  // Field genuinely absent — insert it.
   return insertIntoFrontmatter(source, serializeSlugs(field, [slug]));
 }
 
@@ -90,7 +110,13 @@ export function removeFlatRefFromFrontmatter(
   const next = slugs.filter((s) => s !== slug);
   if (next.length === 0) {
     // Drop the key entirely (+ trailing newline).
-    return source.replace(new RegExp(`^${field.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:\\s*\\[[^\\]]*\\]\\s*\\n?`, "m"), "");
+    return source.replace(
+      new RegExp(
+        `^${field.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:\\s*\\[[^\\]]*\\]\\s*\\n?`,
+        "m",
+      ),
+      "",
+    );
   }
   return source.replace(re, serializeSlugs(field, next));
 }

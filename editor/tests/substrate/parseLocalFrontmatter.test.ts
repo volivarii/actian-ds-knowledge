@@ -131,3 +131,63 @@ test("parseLocalFrontmatter: mixes a11y_refs and foundations_refs", () => {
   assert.equal(out[0]!.refType, "a11y_refs");
   assert.equal(out[1]!.refType, "foundations_refs");
 });
+
+// Step 5 — relatedComponents (flat array on content files). Without read-back
+// the picker is write-only: you could add a component but never see/remove it.
+const taxWithComponents: Taxonomy = {
+  getSlugs: () => [],
+  getTitle: (domain, slug) =>
+    domain === "component" && (slug === "button" || slug === "input")
+      ? slug[0]!.toUpperCase() + slug.slice(1)
+      : null,
+  getBody: () => null,
+  getTier: () => null,
+  domainOfSlug: (slug) => (slug === "color-contrast" ? "accessibility" : null),
+  searchSections: () => [],
+};
+
+test("parseLocalFrontmatter: extracts inline relatedComponents as component connections", () => {
+  const src = [
+    "---",
+    "relatedComponents: [button, input]",
+    "---",
+    "",
+    "## Section\n",
+  ].join("\n");
+  const out = parseLocalFrontmatter(src, taxWithComponents);
+  assert.equal(out.length, 2);
+  assert.equal(out[0]!.slug, "button");
+  assert.equal(out[0]!.refType, "relatedComponents");
+  assert.equal(out[0]!.domain, "component");
+  assert.equal(out[0]!.note, null);
+  assert.equal(out[1]!.slug, "input");
+  assert.equal(out[1]!.domain, "component");
+});
+
+test("parseLocalFrontmatter: unknown relatedComponents slug surfaces as domain null", () => {
+  const src = ["---", "relatedComponents: [ghost-widget]", "---", ""].join(
+    "\n",
+  );
+  const out = parseLocalFrontmatter(src, taxWithComponents);
+  assert.equal(out.length, 1);
+  assert.equal(out[0]!.slug, "ghost-widget");
+  assert.equal(out[0]!.refType, "relatedComponents");
+  assert.equal(out[0]!.domain, null);
+});
+
+test("parseLocalFrontmatter: mixes object-refs and relatedComponents in one file", () => {
+  const src = [
+    "---",
+    "a11y_refs:",
+    "  - { ref: color-contrast }",
+    "relatedComponents: [button]",
+    "---",
+    "",
+  ].join("\n");
+  const out = parseLocalFrontmatter(src, taxWithComponents);
+  assert.equal(out.length, 2);
+  assert.equal(out[0]!.refType, "a11y_refs");
+  assert.equal(out[0]!.domain, "accessibility");
+  assert.equal(out[1]!.refType, "relatedComponents");
+  assert.equal(out[1]!.domain, "component");
+});

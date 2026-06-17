@@ -124,6 +124,12 @@ export function buildTaxonomyFromAssets(): Taxonomy {
       return getMap(domain).get(slug)?.tier ?? null;
     },
     domainOfSlug(slug) {
+      // Resolution order is fixed precedence, NOT uniqueness: a few slugs
+      // exist in more than one corpus (e.g. "tabs" is both an a11y section
+      // and a component). The first match wins, so a colliding slug resolves
+      // to accessibility. Callers that already know the intended domain (e.g.
+      // the relatedComponents read path → "component") should resolve via
+      // getTitle(domain, slug) rather than relying on this order.
       if (a11yBySlug.has(slug)) return "accessibility";
       if (motionBySlug.has(slug)) return "motion";
       if (foundationsBySlug.has(slug)) return "foundations";
@@ -136,9 +142,15 @@ export function buildTaxonomyFromAssets(): Taxonomy {
       if (q === "") return [];
       const limit = opts?.limit ?? 20;
       const out: SearchResult[] = [];
-      const scopes: Domain[] = opts?.domain
-        ? [opts.domain]
-        : ["accessibility", "motion", "foundations", "component", "content"];
+      // Scope precedence: an explicit `domains` list (multi-domain pickers)
+      // narrows BEFORE the result cap so allowed-domain hits aren't crowded
+      // out by other domains; a single `domain` is the legacy narrow; absent
+      // both, search every domain.
+      const scopes: Domain[] = opts?.domains
+        ? opts.domains
+        : opts?.domain
+          ? [opts.domain]
+          : ["accessibility", "motion", "foundations", "component", "content"];
       for (const domain of scopes) {
         for (const [slug, entry] of getMap(domain)) {
           const haystack = `${entry.title} ${entry.body ?? ""}`.toLowerCase();

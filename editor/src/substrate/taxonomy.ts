@@ -31,7 +31,10 @@ export interface Taxonomy {
   domainOfSlug(slug: string): Domain | null;
   searchSections(
     query: string,
-    opts?: { domain?: Domain; limit?: number },
+    /** `domains` narrows to a set BEFORE the result cap (multi-domain
+     *  pickers); `domain` is the single-domain legacy narrow; omit both to
+     *  search every domain. */
+    opts?: { domain?: Domain; domains?: Domain[]; limit?: number },
   ): SearchResult[];
 }
 
@@ -157,9 +160,15 @@ export async function loadTaxonomy(opts: LoadOpts): Promise<Taxonomy> {
       if (q === "") return [];
       const limit = opts?.limit ?? 20;
       const out: SearchResult[] = [];
-      const scopes: Domain[] = opts?.domain
-        ? [opts.domain]
-        : ["accessibility", "motion"];
+      // `domains` (multi-domain narrow) takes precedence over `domain`; the
+      // file-based loader only carries a11y+motion, so other requested
+      // domains simply yield no hits here (the asset builder is the full
+      // multi-domain path).
+      const scopes: Domain[] = opts?.domains
+        ? opts.domains
+        : opts?.domain
+          ? [opts.domain]
+          : ["accessibility", "motion"];
       for (const domain of scopes) {
         for (const [slug, entry] of getMap(domain)) {
           const haystack = `${entry.title} ${entry.body ?? ""}`.toLowerCase();

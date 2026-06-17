@@ -13,11 +13,11 @@ import { SectionInspector } from "./SectionInspector";
 import { TopicPicker } from "./TopicPicker";
 import type { PickedTopic } from "./TopicPicker";
 import type {
+  AnyRefField,
   BrokenRef,
   Consumer,
   Domain,
   OutgoingConnection,
-  RefType,
   Taxonomy,
 } from "../substrate";
 import { FrontmatterRefStore, refFieldFor } from "../substrate/refStore";
@@ -33,9 +33,11 @@ import { FrontmatterRefStore, refFieldFor } from "../substrate/refStore";
 //     components via the relatedComponents flat-array field)
 //   foundations/src/ | accessibility/src/ | motion/ → a11y + motion only
 //     (those domain files cross-reference within a11y+motion, not foundations)
-//   All other paths → all available domains (default)
-function allowedDomainsFor(filePath: string | undefined): Domain[] | undefined {
-  if (!filePath) return undefined;
+//   All other paths → a11y + motion (the conservative default: every domain
+//     file supports the object-ref fields, and this avoids offering flat
+//     relatedComponents on a file whose schema doesn't support it).
+function allowedDomainsFor(filePath: string | undefined): Domain[] {
+  if (!filePath) return ["accessibility", "motion"];
   if (filePath.startsWith("components/src/categories/")) {
     return ["accessibility", "motion", "foundations"];
   }
@@ -49,7 +51,7 @@ function allowedDomainsFor(filePath: string | undefined): Domain[] | undefined {
   ) {
     return ["accessibility", "motion"];
   }
-  return undefined;
+  return ["accessibility", "motion"];
 }
 
 export interface ConnectionsPopoverProps {
@@ -100,7 +102,7 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
   // (refType, slug) to remove on the next successful pick. On cancel, the
   // value is cleared and the source stays untouched.
   const [repointing, setRepointing] = useState<{
-    refType: RefType;
+    refType: AnyRefField;
     slug: string;
   } | null>(null);
 
@@ -120,7 +122,7 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
     setMode("inspector");
   }
 
-  function applyRemove(refType: RefType, slug: string) {
+  function applyRemove(refType: AnyRefField, slug: string) {
     const store = new FrontmatterRefStore(text);
     onTextChange(store.removeRef(refType, slug));
   }

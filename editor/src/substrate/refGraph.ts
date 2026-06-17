@@ -22,6 +22,13 @@ export const parseFrontmatter = parseFrontmatterImpl;
 
 export type RefType = "a11y_refs" | "motion_refs" | "foundations_refs";
 
+/** Object-ref fields (RefType) plus the flat-array field used by content
+ *  files. An OutgoingConnection can be a relatedComponents entry, so its
+ *  refType spans both worlds; the write-back dispatcher (refStore) keys off
+ *  this to choose the object-ref vs flat-array rewriter. Defined here (the
+ *  types home) so refGraph stays free of a refStore import cycle. */
+export type AnyRefField = RefType | "relatedComponents";
+
 export interface Consumer {
   file: string;
   refType: RefType;
@@ -30,7 +37,7 @@ export interface Consumer {
 
 export interface OutgoingConnection {
   slug: string;
-  refType: RefType;
+  refType: AnyRefField;
   note: string | null;
   domain: Domain | null; // null if broken
 }
