@@ -15,6 +15,8 @@ import type {
   OutgoingConnection,
   Taxonomy,
 } from "../substrate";
+import { NeighborhoodPanel } from "./NeighborhoodPanel";
+import type { GraphIndex } from "../substrate/graphIndex";
 
 export interface SectionInspectorProps {
   sectionTitle: string;
@@ -33,6 +35,10 @@ export interface SectionInspectorProps {
   // handlers as an a11y/motion/foundations one.
   onRemoveConnection: (refType: AnyRefField, slug: string) => void;
   onRepointConnection: (refType: AnyRefField, slug: string) => void;
+  /** Graph node id for the edited file, or null if it isn't a graph node. */
+  nodeId?: string | null;
+  /** Index for typed referenced-by; the panel defaults to the baked index. */
+  graphIndex?: GraphIndex;
 }
 
 export function SectionInspector(props: SectionInspectorProps) {
@@ -123,30 +129,34 @@ export function SectionInspector(props: SectionInspectorProps) {
         </Box>
       )}
 
-      {incoming.length > 0 && (
-        <Box mt="4">
-          <Text
-            size="1"
-            color="gray"
-            weight="medium"
-            style={{ textTransform: "uppercase", letterSpacing: 0.5 }}
-          >
-            Referenced by ({incoming.length})
-          </Text>
-          <Flex direction="column" gap="1" mt="2">
-            {incoming.map((c) => (
-              <Text key={c.file} size="2">
-                {c.file}
-                {c.note ? (
-                  <Text color="gray" size="1">
-                    {" "}
-                    — {c.note}
-                  </Text>
-                ) : null}
-              </Text>
-            ))}
-          </Flex>
-        </Box>
+      {props.nodeId ? (
+        <NeighborhoodPanel nodeId={props.nodeId} index={props.graphIndex} />
+      ) : (
+        incoming.length > 0 && (
+          <Box mt="4">
+            <Text
+              size="1"
+              color="gray"
+              weight="medium"
+              style={{ textTransform: "uppercase", letterSpacing: 0.5 }}
+            >
+              Referenced by ({incoming.length})
+            </Text>
+            <Flex direction="column" gap="1" mt="2">
+              {incoming.map((c) => (
+                <Text key={c.file} size="2">
+                  {c.file}
+                  {c.note ? (
+                    <Text color="gray" size="1">
+                      {" "}
+                      — {c.note}
+                    </Text>
+                  ) : null}
+                </Text>
+              ))}
+            </Flex>
+          </Box>
+        )
       )}
     </Box>
   );

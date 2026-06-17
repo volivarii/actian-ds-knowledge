@@ -6,6 +6,8 @@ import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { SectionInspector } from "../../src/app/SectionInspector";
 import type { OutgoingConnection } from "../../src/substrate";
+import { buildGraphIndex } from "../../src/substrate/graphIndex";
+import type { Taxonomy } from "../../src/substrate";
 
 afterEach(cleanup);
 
@@ -106,4 +108,67 @@ test("SectionInspector: section scope hides outgoing + Connect button", () => {
   );
   // A guidance message explains where to add a connection.
   assert.ok(screen.getByText(/connections live at the file level/i));
+});
+
+const graphIndex = buildGraphIndex({
+  nodes: [
+    { id: "component:button", type: "component", title: "Button" },
+    { id: "content:loading", type: "content_topic", title: "Loading states" },
+  ],
+  edges: [
+    {
+      source: "content:loading",
+      target: "component:button",
+      type: "related",
+      note: null,
+    },
+  ],
+});
+const graphTaxonomy = {
+  getTitle: () => null,
+  domainOfSlug: () => null,
+} as unknown as Taxonomy;
+
+function baseGraphProps() {
+  return {
+    sectionTitle: "Button",
+    outgoing: [],
+    incoming: [
+      { file: "some/anchor/ref.md", refType: "a11y_refs" as const, note: null },
+    ],
+    taxonomy: graphTaxonomy,
+    scope: "file" as const,
+    onAddConnection: () => {},
+    onRemoveConnection: () => {},
+    onRepointConnection: () => {},
+  };
+}
+
+test("graph-node file: shows typed referenced-by titles, not anchor file paths", () => {
+  const { getByText, queryByText } = render(
+    <Theme>
+      <SectionInspector
+        {...baseGraphProps()}
+        nodeId="component:button"
+        graphIndex={graphIndex}
+      />
+    </Theme>,
+  );
+  getByText("Loading states");
+  assert.equal(queryByText(/some\/anchor\/ref\.md/), null);
+  cleanup();
+});
+
+test("non-graph file (nodeId null): falls back to the anchor incoming list", () => {
+  const { getByText } = render(
+    <Theme>
+      <SectionInspector
+        {...baseGraphProps()}
+        nodeId={null}
+        graphIndex={graphIndex}
+      />
+    </Theme>,
+  );
+  getByText(/some\/anchor\/ref\.md/);
+  cleanup();
 });

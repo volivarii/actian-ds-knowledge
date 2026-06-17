@@ -21,6 +21,7 @@ import type {
   Taxonomy,
 } from "../substrate";
 import { FrontmatterRefStore, refFieldFor } from "../substrate/refStore";
+import { nodeIdForFile } from "../substrate/nodeIdForFile";
 
 // Derive which topic domains are valid targets for the picker based on
 // the file being edited. Returns undefined (= all domains) when the path
@@ -94,6 +95,7 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
   } = props;
 
   const allowedDomains = allowedDomainsFor(filePath);
+  const nodeId = nodeIdForFile(filePath);
 
   // Two views inside the popover: the Inspector (default) and the Topic
   // Picker (opened by + Connect or Repoint).
@@ -164,6 +166,7 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
             broken={broken}
             taxonomy={taxonomy}
             scope={scope}
+            nodeId={nodeId}
             onAddConnection={() => {
               setRepointing(null);
               setMode("picker");
