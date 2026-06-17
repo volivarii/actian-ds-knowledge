@@ -139,6 +139,50 @@
             "examples": [
               "applies to all interactive surfaces in this component"
             ]
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Optional longer-form rationale for the relationship, when the source provides it.",
+            "examples": [
+              "WCAG 2.4.3 requires focus order to be logical for all interactive elements."
+            ]
+          },
+          "scope": {
+            "enum": ["category", "component"],
+            "description": "For transversal-ref edges: whether the ref was declared at the category level (inherited by members) or the component level (specific)."
+          },
+          "confidence": {
+            "enum": ["asserted", "derived", "inferred", "candidate"],
+            "description": "Trust level of the relationship. Deterministically derived refs are 'asserted'."
+          },
+          "provenance": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Where this edge came from (PROV-style: source file, deriver, extraction method).",
+            "examples": [
+              {
+                "source_file": "components/src/categories/action.md",
+                "deriver": "derive-graph.js",
+                "method": "a11y_refs.requirementRefs"
+              }
+            ],
+            "properties": {
+              "source_file": {
+                "type": "string",
+                "description": "Authored source file the edge was derived from.",
+                "examples": ["components/src/categories/action.md"]
+              },
+              "deriver": {
+                "type": "string",
+                "description": "Script that emitted the edge.",
+                "examples": ["derive-graph.js"]
+              },
+              "method": {
+                "type": "string",
+                "description": "Which field/path produced it.",
+                "examples": ["meta.a11y_refs", "a11y_refs.requirementRefs"]
+              }
+            }
           }
         }
       }

@@ -106,6 +106,9 @@ var REF_KINDS = [
   },
 ];
 function collectTransversalRefs(g, catSlug, defaults) {
+  var sourceFile =
+    (defaults._meta && defaults._meta.source) ||
+    "components/dist/categories/" + catSlug + "-defaults.json";
   REF_KINDS.forEach(function (k) {
     var refs = (defaults[k.field] && defaults[k.field][k.list]) || [];
     refs.forEach(function (r) {
@@ -113,6 +116,13 @@ function collectTransversalRefs(g, catSlug, defaults) {
         source: M.nodeId("category", catSlug),
         target: M.nodeId(k.targetType, r.ref),
         type: k.edge,
+        scope: "category",
+        confidence: "asserted",
+        provenance: {
+          source_file: sourceFile,
+          deriver: "derive-graph.js",
+          method: k.field + "." + k.list,
+        },
       };
       if (r.note) edge.note = r.note;
       g.addEdge(edge);

@@ -179,6 +179,24 @@ test("collectMotionPatterns: node id uses the pattern .slug, not the object key"
   assert.ok(!ids.includes("motion:accordion"), "not the object key");
 });
 
+test("collectTransversalRefs: edges carry scope=category + provenance + confidence", function () {
+  var g = new (require("../scripts/lib/graph/model.js").GraphBuilder)();
+  D.collectTransversalRefs(g, "action", {
+    _meta: { source: "components/src/categories/action.md" },
+    a11y_refs: {
+      requirementRefs: [{ ref: "focus-keyboard", note: "Enter/Space" }],
+    },
+  });
+  var e = g.build().edges.find(function (x) {
+    return x.type === "a11y_ref" && x.target === "a11y:focus-keyboard";
+  });
+  assert.equal(e.scope, "category");
+  assert.equal(e.confidence, "asserted");
+  assert.equal(e.provenance.source_file, "components/src/categories/action.md");
+  assert.equal(e.provenance.method, "a11y_refs.requirementRefs");
+  assert.equal(e.note, "Enter/Space");
+});
+
 test("bundleToTree: reconstructs tree from bundle format; scoped sibling lookup + leaf fallback", function () {
   var bundle = {
     _index: {

@@ -83,6 +83,49 @@ test("schemaErrors: accepts _schema_version 2", function () {
   assert.deepEqual(V.schemaErrors(graph), []);
 });
 
+test("schemaErrors: accepts structured edge fields; rejects bad confidence enum", function () {
+  var V = require("../scripts/graph/validate-graph.js");
+  var base = {
+    _schema_version: 2,
+    _meta: { auto_generated: true, generator: "x", do_not_edit: "x" },
+    nodes: [
+      { id: "category:action", type: "category", title: "Action" },
+      { id: "a11y:focus-keyboard", type: "a11y_criterion", title: "Focus" },
+    ],
+  };
+  var good = Object.assign({}, base, {
+    edges: [
+      {
+        source: "category:action",
+        target: "a11y:focus-keyboard",
+        type: "a11y_ref",
+        scope: "category",
+        confidence: "asserted",
+        provenance: {
+          source_file: "x",
+          deriver: "derive-graph.js",
+          method: "a11y_refs.requirementRefs",
+        },
+      },
+    ],
+  });
+  assert.deepEqual(V.schemaErrors(good), []);
+  var bad = Object.assign({}, base, {
+    edges: [
+      {
+        source: "category:action",
+        target: "a11y:focus-keyboard",
+        type: "a11y_ref",
+        confidence: "maybe",
+      },
+    ],
+  });
+  assert.ok(
+    V.schemaErrors(bad).length > 0,
+    "bad confidence enum must be rejected",
+  );
+});
+
 test("schemaErrors: valid graph yields no errors; malformed node type is caught", function () {
   assert.deepEqual(
     V.schemaErrors({
