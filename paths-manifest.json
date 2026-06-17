@@ -3,7 +3,7 @@
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.34.12",
+  "knowledge_version": "0.34.17",
   "_zones": {
     "knowledge": [
       "accessibility",
@@ -243,6 +243,13 @@
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'global-header' component (content, usage, design, behavior, tokens — each optional)."
     },
+    "components.guidelineDoc.global-toast": {
+      "path": "components/dist/guidelines/global-toast.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-guidelines.js",
+      "description": "Merged multi-domain guideline object for the 'global-toast' component (content, usage, design, behavior, tokens — each optional)."
+    },
     "components.guidelineDoc.inline-toast": {
       "path": "components/dist/guidelines/inline-toast.json",
       "type": "json",
@@ -306,6 +313,20 @@
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'multi-select' component (content, usage, design, behavior, tokens — each optional)."
     },
+    "components.guidelineDoc.notification": {
+      "path": "components/dist/guidelines/notification.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-guidelines.js",
+      "description": "Merged multi-domain guideline object for the 'notification' component (content, usage, design, behavior, tokens — each optional)."
+    },
+    "components.guidelineDoc.notification-dropdown": {
+      "path": "components/dist/guidelines/notification-dropdown.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-guidelines.js",
+      "description": "Merged multi-domain guideline object for the 'notification-dropdown' component (content, usage, design, behavior, tokens — each optional)."
+    },
     "components.guidelineDoc.page-header": {
       "path": "components/dist/guidelines/page-header.json",
       "type": "json",
@@ -319,6 +340,13 @@
       "origin": "ci",
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'popover' component (content, usage, design, behavior, tokens — each optional)."
+    },
+    "components.guidelineDoc.progress-bar-small": {
+      "path": "components/dist/guidelines/progress-bar-small.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-guidelines.js",
+      "description": "Merged multi-domain guideline object for the 'progress-bar-small' component (content, usage, design, behavior, tokens — each optional)."
     },
     "components.guidelineDoc.radio-button": {
       "path": "components/dist/guidelines/radio-button.json",
@@ -362,6 +390,13 @@
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'sticky-footer' component (content, usage, design, behavior, tokens — each optional)."
     },
+    "components.guidelineDoc.success-state": {
+      "path": "components/dist/guidelines/success-state.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-guidelines.js",
+      "description": "Merged multi-domain guideline object for the 'success-state' component (content, usage, design, behavior, tokens — each optional)."
+    },
     "components.guidelineDoc.table": {
       "path": "components/dist/guidelines/table.json",
       "type": "json",
@@ -396,6 +431,20 @@
       "origin": "ci",
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'toggle-control' component (content, usage, design, behavior, tokens — each optional)."
+    },
+    "components.guidelineDoc.tooltip": {
+      "path": "components/dist/guidelines/tooltip.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-guidelines.js",
+      "description": "Merged multi-domain guideline object for the 'tooltip' component (content, usage, design, behavior, tokens — each optional)."
+    },
+    "components.guidelineDoc.upload-file": {
+      "path": "components/dist/guidelines/upload-file.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-guidelines.js",
+      "description": "Merged multi-domain guideline object for the 'upload-file' component (content, usage, design, behavior, tokens — each optional)."
     },
     "components.guidelineDoc.whats-new": {
       "path": "components/dist/guidelines/whats-new.json",
@@ -675,8 +724,7 @@
     "tag-default": "tag",
     "input": "text-input",
     "toggle": "toggle-control",
-    "whats-new-dropdown": "whats-new",
-    "notification": "inline-toast"
+    "whats-new-dropdown": "whats-new"
   },
   "_notes": {
     "foundations_auto": "foundations.* entries are auto-regenerated by scripts/foundations/derive-foundations.js. Do not hand-edit. Hierarchical layout: bundle for one-shot, per-H2 _index entries for navigation; full per-leaf tree lives under foundations/dist/<slug>/.",
