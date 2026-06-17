@@ -1,46 +1,23 @@
 "use strict";
 
+// Independent coverage counter for the knowledge graph. It re-counts authored
+// transversal refs from source docs and compares to the edges actually emitted
+// in graph.json. Independence is on the EMITTED axis (this counts graph edges
+// separately from the derive) — it catches the derive silently DROPPING authored
+// refs. The authoring-LOCATION (which fields hold refs) is shared with the derive
+// via scripts/lib/graph/ref-kinds.js; the "authored-location canary" test guards
+// that axis. Coverage = emitted / authored per kind.
+
 var fs = require("node:fs");
 var path = require("node:path");
 var M = require("../lib/graph/model.js");
+var refKinds = require("../lib/graph/ref-kinds.js");
 
 var ROOT = path.resolve(__dirname, "..", "..");
 
-// The transversal edge kinds that have authored refs in source docs.
-var EDGE_KINDS = ["a11y_ref", "foundations_ref", "motion_ref"];
-
-// CATEGORY-scoped authored refs: defaults[field][list]. Mirrors REF_KINDS in derive-graph.js.
-var CATEGORY_REF_KINDS = [
-  {
-    field: "a11y_refs",
-    list: "requirementRefs",
-    edge: "a11y_ref",
-    targetType: "a11y_criterion",
-  },
-  {
-    field: "motion_refs",
-    list: "patternRefs",
-    edge: "motion_ref",
-    targetType: "motion_pattern",
-  },
-  {
-    field: "foundations_refs",
-    list: "sectionRefs",
-    edge: "foundations_ref",
-    targetType: "foundation_section",
-  },
-];
-
-// per-COMPONENT authored refs: doc.meta[field]. Mirrors COMPONENT_REF_KINDS in derive-graph.js.
-var COMPONENT_REF_KINDS = [
-  { field: "a11y_refs", edge: "a11y_ref", targetType: "a11y_criterion" },
-  { field: "motion_refs", edge: "motion_ref", targetType: "motion_pattern" },
-  {
-    field: "foundations_refs",
-    edge: "foundations_ref",
-    targetType: "foundation_section",
-  },
-];
+var EDGE_KINDS = refKinds.EDGE_KINDS;
+var CATEGORY_REF_KINDS = refKinds.CATEGORY_REF_KINDS;
+var COMPONENT_REF_KINDS = refKinds.COMPONENT_REF_KINDS;
 
 // Independently read authored transversal ref-pairs from source docs, keyed
 // identically to the derive (Set of "source|target" per edge kind, deduped).

@@ -47,3 +47,24 @@ test("computeCoverage: real substrate has full coverage (every authored ref emit
   });
   assert.equal(c.overall.ratio, 1);
 });
+
+test("authored-location canary: every kind has > 0 authored refs in the real substrate", function () {
+  var root = path.join(__dirname, "..");
+  var graph = JSON.parse(
+    fs.readFileSync(path.join(root, "graph", "dist", "graph.json"), "utf8"),
+  );
+  var nodeIds = new Set(
+    graph.nodes.map(function (n) {
+      return n.id;
+    }),
+  );
+  var authored = C.readAuthored(root, nodeIds);
+  C.EDGE_KINDS.forEach(function (k) {
+    assert.ok(
+      authored[k].size > 0,
+      "no authored " +
+        k +
+        " refs found — has the authoring location moved? coverage would falsely read 1.0",
+    );
+  });
+});
