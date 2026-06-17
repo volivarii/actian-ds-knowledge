@@ -5,6 +5,8 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { SectionInspector } from "../../src/app/SectionInspector";
+import { NeighborhoodPanel } from "../../src/app/NeighborhoodPanel";
+import { buildGraphIndex } from "../../src/substrate/graphIndex";
 import { TopicPicker } from "../../src/app/TopicPicker";
 import { AddSectionDialog } from "../../src/app/AddSectionDialog";
 import { DeleteSectionDialog } from "../../src/app/DeleteSectionDialog";
@@ -111,6 +113,79 @@ test("doctrine: SectionInspector renders no forbidden vocabulary", () => {
       text.includes(token.toLowerCase()),
       false,
       `forbidden token "${token}" appeared in SectionInspector rendered text — author-facing UI must use "topic" / "connection" / "identifier"`,
+    );
+  }
+});
+
+test("doctrine: NeighborhoodPanel renders no forbidden vocabulary (all incoming labels + clickable rows)", () => {
+  // One target receiving every incoming edge type, so all six human labels
+  // render. onNavigate is supplied so resolvable rows render as buttons (the
+  // richer path this PR added). Titles are clean; the sweep proves no raw
+  // id/slug/edge-type vocabulary leaks into author-facing text.
+  const index = buildGraphIndex({
+    nodes: [
+      { id: "a11y:contrast", type: "a11y_criterion", title: "Contrast" },
+      { id: "component:button", type: "component", title: "Button" },
+      { id: "component:card", type: "component", title: "Card" },
+      { id: "foundation:tokens", type: "foundation_section", title: "Tokens" },
+      { id: "motion:fade", type: "motion_pattern", title: "Fade" },
+      { id: "content:loading", type: "content_topic", title: "Loading states" },
+      { id: "category:forms", type: "category", title: "Forms" },
+    ],
+    edges: [
+      {
+        source: "component:button",
+        target: "a11y:contrast",
+        type: "a11y_ref",
+        note: "AA contrast",
+      },
+      {
+        source: "foundation:tokens",
+        target: "a11y:contrast",
+        type: "foundations_ref",
+        note: null,
+      },
+      {
+        source: "motion:fade",
+        target: "a11y:contrast",
+        type: "motion_ref",
+        note: null,
+      },
+      {
+        source: "content:loading",
+        target: "a11y:contrast",
+        type: "related",
+        note: null,
+      },
+      {
+        source: "component:card",
+        target: "a11y:contrast",
+        type: "in_category",
+        note: null,
+      },
+      {
+        source: "category:forms",
+        target: "a11y:contrast",
+        type: "narrower",
+        note: null,
+      },
+    ],
+  });
+  const { container } = render(
+    <Theme>
+      <NeighborhoodPanel
+        nodeId="a11y:contrast"
+        index={index}
+        onNavigate={() => {}}
+      />
+    </Theme>,
+  );
+  const text = gatherText(container).toLowerCase();
+  for (const token of FORBIDDEN_TOKENS) {
+    assert.equal(
+      text.includes(token.toLowerCase()),
+      false,
+      `forbidden token "${token}" appeared in NeighborhoodPanel rendered text — author-facing UI must use human labels + titles`,
     );
   }
 });

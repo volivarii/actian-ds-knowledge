@@ -133,6 +133,9 @@ export function SectionInspector(props: SectionInspectorProps) {
 
       {props.nodeId ? (
         <NeighborhoodPanel
+          // key by node so per-group "Show all" state can't leak across
+          // nodes if this panel is ever rendered in-place with a changing id
+          key={props.nodeId}
           nodeId={props.nodeId}
           index={props.graphIndex}
           onNavigate={props.onNavigate}
