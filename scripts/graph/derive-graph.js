@@ -94,6 +94,7 @@ function collectTransversalRefs(g, catSlug, defaults) {
   REF_KINDS.forEach(function (k) {
     var refs = (defaults[k.field] && defaults[k.field][k.list]) || [];
     refs.forEach(function (r) {
+      if (!r || !r.ref) return;
       var edge = {
         source: M.nodeId("category", catSlug),
         target: M.nodeId(k.targetType, r.ref),
