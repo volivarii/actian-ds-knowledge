@@ -138,22 +138,27 @@ var COMPONENT_REF_KINDS = [
     targetType: "foundation_section",
   },
 ];
-// Per-component transversal refs live FLAT at meta.<field> = [{ ref, note? }]
-// (distinct from the nested category shape read by collectTransversalRefs).
-function collectComponentRefs(g, docs) {
-  docs.forEach(function (doc) {
-    if (!doc || doc._alias_of || !doc.slug) return; // skip alias copies + malformed
+function collectComponentRefs(g, entries) {
+  entries.forEach(function (entry) {
+    var slug = entry && entry.slug;
+    var doc = (entry && entry.doc) || {};
+    if (!slug) return;
+    // Key by FILENAME slug (= registry component slug). Alias copies carry the
+    // canonical slug in doc.slug but the registry slug in the filename; the node
+    // guard keeps each edge attached to a real component node and drops
+    // canonical-only or orphan-guidance docs (no node → no edge, no dangle).
+    if (!g.hasNode(M.nodeId("component", slug))) return;
     var meta = doc.meta || {};
     var sourceFile =
       (doc._meta && doc._meta.source) ||
-      "components/dist/guidelines/" + doc.slug + ".json";
+      "components/dist/guidelines/" + slug + ".json";
     COMPONENT_REF_KINDS.forEach(function (k) {
       var refs = meta[k.field];
       if (!Array.isArray(refs)) return;
       refs.forEach(function (r) {
         if (!r || !r.ref) return;
         var edge = {
-          source: M.nodeId("component", doc.slug),
+          source: M.nodeId("component", slug),
           target: M.nodeId(k.targetType, r.ref),
           type: k.edge,
           scope: "component",
@@ -179,7 +184,10 @@ function readGuidelineDocs() {
       return f.endsWith(".json") && f !== "guidelines.bundle.json";
     })
     .map(function (f) {
-      return readJSON("components/dist/guidelines/" + f);
+      return {
+        slug: f.replace(/\.json$/, ""),
+        doc: readJSON("components/dist/guidelines/" + f),
+      };
     });
 }
 function collectRelated(g, contentEntries) {

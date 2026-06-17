@@ -197,37 +197,57 @@ test("collectTransversalRefs: edges carry scope=category + provenance + confiden
   assert.equal(e.note, "Enter/Space");
 });
 
-test("collectComponentRefs: component→criterion edges from flat meta.*_refs", function () {
-  var g = new (require("../scripts/lib/graph/model.js").GraphBuilder)();
+test("collectComponentRefs: keys by registry-slug (filename), guards node existence", function () {
+  var M = require("../scripts/lib/graph/model.js");
+  var g = new M.GraphBuilder();
+  g.addNode({ id: "component:button", type: "component", title: "Button" });
+  g.addNode({
+    id: "component:checkbox-with-label",
+    type: "component",
+    title: "Checkbox",
+  });
   D.collectComponentRefs(g, [
     {
       slug: "button",
-      _meta: { source: "components/src/button/" },
-      meta: {
-        a11y_refs: [{ ref: "buttons" }],
-        foundations_refs: [{ ref: "tokens", note: "spacing" }],
+      doc: {
+        slug: "button",
+        _meta: { source: "components/src/button/" },
+        meta: {
+          a11y_refs: [{ ref: "buttons" }],
+          foundations_refs: [{ ref: "tokens", note: "spacing" }],
+        },
       },
     },
     {
       slug: "checkbox-with-label",
-      _alias_of: "checkbox",
-      meta: { a11y_refs: [{ ref: "forms" }] },
+      doc: {
+        slug: "checkbox",
+        _alias_of: "checkbox",
+        meta: { a11y_refs: [{ ref: "forms" }] },
+      },
     },
-    { slug: "no-refs", meta: {} },
+    {
+      slug: "checkbox",
+      doc: { slug: "checkbox", meta: { a11y_refs: [{ ref: "forms" }] } },
+    },
+    {
+      slug: "card",
+      doc: { slug: "card", meta: { a11y_refs: [{ ref: "cards" }] } },
+    },
   ]);
   var e = g.build().edges;
-  var a11y = e.find(function (x) {
+  var btn = e.find(function (x) {
     return (
       x.type === "a11y_ref" &&
       x.source === "component:button" &&
       x.target === "a11y:buttons"
     );
   });
-  assert.ok(a11y, "button → a11y:buttons emitted");
-  assert.equal(a11y.scope, "component");
-  assert.equal(a11y.confidence, "asserted");
-  assert.equal(a11y.provenance.method, "meta.a11y_refs");
-  assert.equal(a11y.provenance.source_file, "components/src/button/");
+  assert.ok(btn, "button edge emitted");
+  assert.equal(btn.scope, "component");
+  assert.equal(btn.confidence, "asserted");
+  assert.equal(btn.provenance.method, "meta.a11y_refs");
+  assert.equal(btn.provenance.source_file, "components/src/button/");
   assert.ok(
     e.some(function (x) {
       return (
@@ -240,10 +260,25 @@ test("collectComponentRefs: component→criterion edges from flat meta.*_refs", 
     "button → foundation:tokens with note",
   );
   assert.ok(
-    !e.some(function (x) {
-      return x.source === "component:checkbox-with-label";
+    e.some(function (x) {
+      return (
+        x.source === "component:checkbox-with-label" &&
+        x.target === "a11y:forms"
+      );
     }),
-    "alias copy (_alias_of) is skipped",
+    "alias filename emits under registry slug",
+  );
+  assert.ok(
+    !e.some(function (x) {
+      return x.source === "component:checkbox";
+    }),
+    "canonical non-node slug skipped (no dangling)",
+  );
+  assert.ok(
+    !e.some(function (x) {
+      return x.source === "component:card";
+    }),
+    "orphan guidance (no node) skipped",
   );
 });
 

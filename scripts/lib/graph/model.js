@@ -50,6 +50,9 @@ GraphBuilder.prototype.addEdge = function (edge) {
   if (!this._edges.has(key)) this._edges.set(key, edge);
   return this;
 };
+GraphBuilder.prototype.hasNode = function (id) {
+  return this._nodes.has(id);
+};
 GraphBuilder.prototype.build = function () {
   var nodes = Array.from(this._nodes.values()).sort(function (a, b) {
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;

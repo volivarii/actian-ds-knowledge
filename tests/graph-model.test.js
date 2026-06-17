@@ -103,6 +103,13 @@ test("GraphBuilder.build: emits _schema_version 2", function () {
   assert.equal(g.build()._schema_version, 2);
 });
 
+test("GraphBuilder.hasNode reports node presence", function () {
+  var g = new M.GraphBuilder();
+  g.addNode({ id: "component:button", type: "component", title: "Button" });
+  assert.equal(g.hasNode("component:button"), true);
+  assert.equal(g.hasNode("component:nope"), false);
+});
+
 test("GraphBuilder dedups identical edges (type+source+target), first-wins", function () {
   var g = new M.GraphBuilder();
   g.addEdge({
