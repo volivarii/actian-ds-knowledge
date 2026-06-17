@@ -589,6 +589,7 @@ export function MarkdownEditScreen({
             connectionsPopover.section.anchor
           }
           text={text}
+          filePath={path}
           anchorEl={connectionsPopover.anchorEl}
           // P8 Option A v1: only the file's top H2 owns the file-level
           // outgoing refs. Sub-section inspectors are read-only incoming

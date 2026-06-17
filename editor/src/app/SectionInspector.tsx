@@ -9,10 +9,10 @@
 import React from "react";
 import { Box, Button, Flex, Heading, Text } from "@radix-ui/themes";
 import type {
+  AnyRefField,
   BrokenRef,
   Consumer,
   OutgoingConnection,
-  RefType,
   Taxonomy,
 } from "../substrate";
 
@@ -28,8 +28,11 @@ export interface SectionInspectorProps {
    *  hidden and the empty-state copy is the incoming-reference framing. */
   scope: "file" | "section";
   onAddConnection: () => void;
-  onRemoveConnection: (refType: RefType, slug: string) => void;
-  onRepointConnection: (refType: RefType, slug: string) => void;
+  // refType spans object-ref fields AND the flat relatedComponents field, so
+  // a content-file connection can be disconnected/repointed through the same
+  // handlers as an a11y/motion/foundations one.
+  onRemoveConnection: (refType: AnyRefField, slug: string) => void;
+  onRepointConnection: (refType: AnyRefField, slug: string) => void;
 }
 
 export function SectionInspector(props: SectionInspectorProps) {

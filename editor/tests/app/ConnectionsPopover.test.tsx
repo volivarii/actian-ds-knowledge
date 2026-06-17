@@ -232,6 +232,51 @@ test("ConnectionsPopover: repoint performs atomic swap on pick", () => {
   assert.match(calls[0]!, /ref: typography/);
 });
 
+// Step 3 — foundations_refs picker on category files
+const TOKENS_TOPIC: SearchResult = {
+  slug: "tokens",
+  domain: "foundations",
+  title: "Tokens",
+  body: null,
+  tier: null,
+};
+
+test("ConnectionsPopover: picking a foundations result on a category file writes foundations_refs", () => {
+  let captured: string | null = null;
+  render(
+    <Theme>
+      <ConnectionsPopover
+        sectionTitle="Section"
+        text={EMPTY_SOURCE}
+        outgoing={[]}
+        incoming={[]}
+        broken={[]}
+        taxonomy={fakeTaxonomy([TOKENS_TOPIC])}
+        onTextChange={(next) => {
+          captured = next;
+        }}
+        onClose={() => {}}
+        anchorEl={null}
+        scope="file"
+        filePath="components/src/categories/action.md"
+      />
+    </Theme>,
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /\+ Connect to another topic/i }),
+  );
+  fireEvent.change(screen.getByPlaceholderText(/find a topic/i), {
+    target: { value: "tokens" },
+  });
+  fireEvent.click(screen.getByText("Tokens"));
+  fireEvent.click(screen.getByRole("button", { name: /^connect/i }));
+
+  assert.ok(captured, "onTextChange should fire on pick");
+  assert.match(captured!, /foundations_refs:/);
+  assert.match(captured!, /ref: tokens/);
+});
+
 test("ConnectionsPopover: cancelling repoint leaves source untouched", () => {
   const calls: string[] = [];
   render(
@@ -262,4 +307,49 @@ test("ConnectionsPopover: cancelling repoint leaves source untouched", () => {
   fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
 
   assert.equal(calls.length, 0, "cancel should not write back");
+});
+
+// Step 5 — relatedComponents picker on content files
+const BADGE_COMPONENT: SearchResult = {
+  slug: "badge",
+  domain: "component" as import("../../src/substrate").Domain,
+  title: "Badge",
+  body: null,
+  tier: null,
+};
+
+test("ConnectionsPopover: picking a component on a content file writes relatedComponents flat array", () => {
+  let captured: string | null = null;
+  render(
+    <Theme>
+      <ConnectionsPopover
+        sectionTitle="Section"
+        text={EMPTY_SOURCE}
+        outgoing={[]}
+        incoming={[]}
+        broken={[]}
+        taxonomy={fakeTaxonomy([BADGE_COMPONENT])}
+        onTextChange={(next) => {
+          captured = next;
+        }}
+        onClose={() => {}}
+        anchorEl={null}
+        scope="file"
+        filePath="content/src/patterns/forms.md"
+      />
+    </Theme>,
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /\+ Connect to another topic/i }),
+  );
+  fireEvent.change(screen.getByPlaceholderText(/find a topic/i), {
+    target: { value: "badge" },
+  });
+  fireEvent.click(screen.getByText("Badge"));
+  fireEvent.click(screen.getByRole("button", { name: /^connect/i }));
+
+  assert.ok(captured, "onTextChange should fire on pick");
+  assert.match(captured!, /relatedComponents: \[badge\]/);
+  assert.doesNotMatch(captured!, /ref: badge/);
 });

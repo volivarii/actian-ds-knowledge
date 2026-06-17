@@ -17,15 +17,16 @@ import type { RefType } from "./refGraph";
 // body. Round-trip safety with frontmatterRewriter.ts depends on this.
 const FRONTMATTER_RE = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*\n/;
 
-// Match `a11y_refs:` / `motion_refs:` blocks with `- { ref: <slug> [, note: ...] }` entries.
+// Match `a11y_refs:` / `motion_refs:` / `foundations_refs:` blocks with `- { ref: <slug> [, note: ...] }` entries.
 const REF_BLOCK_RE =
-  /^(a11y_refs|motion_refs):\s*\n((?:\s*-\s+\{[^}]*\}\s*\n?)+)/gm;
+  /^(a11y_refs|motion_refs|foundations_refs):\s*\n((?:\s*-\s+\{[^}]*\}\s*\n?)+)/gm;
 const REF_ENTRY_RE =
   /\{\s*ref\s*:\s*([a-z][a-z0-9-]*)(?:\s*,\s*note\s*:\s*(?:"([^"]*)"|'([^']*)'|([^},]*)))?\s*\}/g;
 
 export interface ParsedFrontmatter {
   a11y_refs: Array<{ ref: string; note: string | null }>;
   motion_refs: Array<{ ref: string; note: string | null }>;
+  foundations_refs: Array<{ ref: string; note: string | null }>;
 }
 
 export function parseFrontmatter(raw: string): {
@@ -33,7 +34,11 @@ export function parseFrontmatter(raw: string): {
   body: string;
 } {
   const match = raw.match(FRONTMATTER_RE);
-  const frontmatter: ParsedFrontmatter = { a11y_refs: [], motion_refs: [] };
+  const frontmatter: ParsedFrontmatter = {
+    a11y_refs: [],
+    motion_refs: [],
+    foundations_refs: [],
+  };
   if (!match || match[1] === undefined) {
     return { frontmatter, body: raw };
   }

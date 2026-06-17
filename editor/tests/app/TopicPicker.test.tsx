@@ -126,6 +126,59 @@ test("TopicPicker: optional note input round-trips to onPick", () => {
   assert.equal(picked.value?.note, "preserves contrast under theming");
 });
 
+test("TopicPicker: note input hidden for a flat-field (component) pick", () => {
+  // relatedComponents (component/content domains) is a flat array that can't
+  // store a per-entry note — the note input must not appear, otherwise an
+  // author would type a note that is silently dropped on write.
+  const results: SearchResult[] = [
+    {
+      slug: "badge",
+      domain: "component",
+      title: "Badge",
+      body: null,
+      tier: null,
+    },
+  ];
+  render(
+    <Theme>
+      <TopicPicker
+        taxonomy={fakeTaxonomy(results)}
+        onPick={() => {}}
+        onCancel={() => {}}
+      />
+    </Theme>,
+  );
+  fireEvent.change(screen.getByPlaceholderText(/find a topic/i), {
+    target: { value: "badge" },
+  });
+  fireEvent.click(screen.getByText("Badge"));
+  assert.equal(
+    screen.queryByPlaceholderText(/how this section connects/i),
+    null,
+    "note input must be hidden for a component (flat-field) pick",
+  );
+});
+
+test("TopicPicker: note input shown for an object-ref (accessibility) pick", () => {
+  render(
+    <Theme>
+      <TopicPicker
+        taxonomy={fakeTaxonomy(SAMPLE_RESULTS)}
+        onPick={() => {}}
+        onCancel={() => {}}
+      />
+    </Theme>,
+  );
+  fireEvent.change(screen.getByPlaceholderText(/find a topic/i), {
+    target: { value: "color" },
+  });
+  fireEvent.click(screen.getByText("Color contrast"));
+  assert.ok(
+    screen.getByPlaceholderText(/how this section connects/i),
+    "note input must be shown for an accessibility (object-ref) pick",
+  );
+});
+
 test("TopicPicker: shows file context for each result", () => {
   const results: SearchResult[] = [
     {
