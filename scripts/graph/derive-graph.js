@@ -3,6 +3,7 @@
 var fs = require("node:fs");
 var path = require("node:path");
 var M = require("../lib/graph/model.js");
+var refKinds = require("../lib/graph/ref-kinds.js");
 var categoriesParser = require("../categories/categories-parser.js");
 
 var ROOT = path.resolve(__dirname, "..", "..");
@@ -85,26 +86,7 @@ function collectMotionPatterns(g, motion) {
   });
 }
 
-var REF_KINDS = [
-  {
-    field: "a11y_refs",
-    list: "requirementRefs",
-    edge: "a11y_ref",
-    targetType: "a11y_criterion",
-  },
-  {
-    field: "motion_refs",
-    list: "patternRefs",
-    edge: "motion_ref",
-    targetType: "motion_pattern",
-  },
-  {
-    field: "foundations_refs",
-    list: "sectionRefs",
-    edge: "foundations_ref",
-    targetType: "foundation_section",
-  },
-];
+var REF_KINDS = refKinds.CATEGORY_REF_KINDS;
 function collectTransversalRefs(g, catSlug, defaults) {
   var sourceFile =
     (defaults._meta && defaults._meta.source) ||
@@ -112,6 +94,7 @@ function collectTransversalRefs(g, catSlug, defaults) {
   REF_KINDS.forEach(function (k) {
     var refs = (defaults[k.field] && defaults[k.field][k.list]) || [];
     refs.forEach(function (r) {
+      if (!r || !r.ref) return;
       var edge = {
         source: M.nodeId("category", catSlug),
         target: M.nodeId(k.targetType, r.ref),
@@ -129,15 +112,7 @@ function collectTransversalRefs(g, catSlug, defaults) {
     });
   });
 }
-var COMPONENT_REF_KINDS = [
-  { field: "a11y_refs", edge: "a11y_ref", targetType: "a11y_criterion" },
-  { field: "motion_refs", edge: "motion_ref", targetType: "motion_pattern" },
-  {
-    field: "foundations_refs",
-    edge: "foundations_ref",
-    targetType: "foundation_section",
-  },
-];
+var COMPONENT_REF_KINDS = refKinds.COMPONENT_REF_KINDS;
 function collectComponentRefs(g, entries) {
   entries.forEach(function (entry) {
     var slug = entry && entry.slug;

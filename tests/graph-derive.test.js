@@ -310,6 +310,32 @@ test("graph.json: component-scoped a11y_ref edges are present after derive", fun
   );
 });
 
+test("collectTransversalRefs: skips malformed refs missing .ref (no throw, no edge)", function () {
+  var M = require("../scripts/lib/graph/model.js");
+  var g = new M.GraphBuilder();
+  g.addNode({
+    id: M.nodeId("category", "action"),
+    type: "category",
+    title: "Action",
+  });
+  g.addNode({
+    id: M.nodeId("a11y_criterion", "contrast"),
+    type: "a11y_criterion",
+    title: "Contrast",
+  });
+  assert.doesNotThrow(function () {
+    D.collectTransversalRefs(g, "action", {
+      a11y_refs: {
+        requirementRefs: [{ ref: "contrast" }, { note: "no ref" }, {}],
+      },
+    });
+  });
+  var edges = g.build().edges.filter(function (e) {
+    return e.type === "a11y_ref";
+  });
+  assert.equal(edges.length, 1);
+});
+
 test("bundleToTree: reconstructs tree from bundle format; scoped sibling lookup + leaf fallback", function () {
   var bundle = {
     _index: {
