@@ -6,7 +6,12 @@
 
 import { readFile } from "node:fs/promises";
 
-export type Domain = "accessibility" | "motion";
+export type Domain =
+  | "accessibility"
+  | "motion"
+  | "foundations"
+  | "component"
+  | "content";
 
 export type Tier = "foundation" | "component-pattern" | "checklist" | "header";
 
@@ -26,7 +31,10 @@ export interface Taxonomy {
   domainOfSlug(slug: string): Domain | null;
   searchSections(
     query: string,
-    opts?: { domain?: Domain; limit?: number },
+    /** `domains` narrows to a set BEFORE the result cap (multi-domain
+     *  pickers); `domain` is the single-domain legacy narrow; omit both to
+     *  search every domain. */
+    opts?: { domain?: Domain; domains?: Domain[]; limit?: number },
   ): SearchResult[];
 }
 
@@ -115,7 +123,18 @@ export async function loadTaxonomy(opts: LoadOpts): Promise<Taxonomy> {
   function getMap(
     domain: Domain,
   ): Map<string, { title: string; body: string | null; tier: Tier | null }> {
-    return domain === "accessibility" ? a11yBySlug : motionBySlug;
+    switch (domain) {
+      case "accessibility":
+        return a11yBySlug;
+      case "motion":
+        return motionBySlug;
+      default:
+        // Future domains (foundations, component, content) load via
+        // buildTaxonomyFromAssets which extends the switch. The file-based
+        // loader returns an empty map so new domains fail loudly (empty
+        // results) rather than silently returning wrong data.
+        return new Map();
+    }
   }
 
   return {
@@ -141,9 +160,15 @@ export async function loadTaxonomy(opts: LoadOpts): Promise<Taxonomy> {
       if (q === "") return [];
       const limit = opts?.limit ?? 20;
       const out: SearchResult[] = [];
-      const scopes: Domain[] = opts?.domain
-        ? [opts.domain]
-        : ["accessibility", "motion"];
+      // `domains` (multi-domain narrow) takes precedence over `domain`; the
+      // file-based loader only carries a11y+motion, so other requested
+      // domains simply yield no hits here (the asset builder is the full
+      // multi-domain path).
+      const scopes: Domain[] = opts?.domains
+        ? opts.domains
+        : opts?.domain
+          ? [opts.domain]
+          : ["accessibility", "motion"];
       for (const domain of scopes) {
         for (const [slug, entry] of getMap(domain)) {
           const haystack = `${entry.title} ${entry.body ?? ""}`.toLowerCase();

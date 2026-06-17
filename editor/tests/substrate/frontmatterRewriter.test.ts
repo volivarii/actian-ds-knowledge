@@ -155,3 +155,60 @@ test("removeRefFromFrontmatter: preserves the closing --- in multi-key frontmatt
   assert.doesNotMatch(result, /ref: color-contrast/);
   assert.match(result, /ref: state-transitions/);
 });
+
+// Step 1 — foundations_refs tests
+test("addRefToFrontmatter: creates foundations_refs block when absent", () => {
+  const result = addRefToFrontmatter(NO_FRONTMATTER, "foundations_refs", {
+    slug: "tokens",
+    note: null,
+  });
+  assert.match(result, /^---/);
+  assert.match(result, /foundations_refs:/);
+  assert.match(result, /ref: tokens/);
+  assert.doesNotMatch(result, /a11y_refs:/);
+  assert.doesNotMatch(result, /motion_refs:/);
+});
+
+test("addRefToFrontmatter: appends to existing foundations_refs block", () => {
+  const withFoundations = `---
+foundations_refs:
+  - { ref: tokens }
+---
+
+## Intro
+`;
+  const result = addRefToFrontmatter(withFoundations, "foundations_refs", {
+    slug: "color-primitives",
+    note: null,
+  });
+  assert.match(result, /foundations_refs:/);
+  assert.match(result, /ref: tokens/);
+  assert.match(result, /ref: color-primitives/);
+});
+
+test("removeRefFromFrontmatter: removes foundations_refs entry", () => {
+  const src = `---
+foundations_refs:
+  - { ref: tokens }
+  - { ref: color-primitives }
+---
+
+## Intro
+`;
+  const result = removeRefFromFrontmatter(src, "foundations_refs", "tokens");
+  assert.doesNotMatch(result, /ref: tokens/);
+  assert.match(result, /ref: color-primitives/);
+});
+
+test("removeRefFromFrontmatter: drops foundations_refs key when last entry removed", () => {
+  const src = `---
+foundations_refs:
+  - { ref: tokens }
+---
+
+## Intro
+`;
+  const result = removeRefFromFrontmatter(src, "foundations_refs", "tokens");
+  assert.doesNotMatch(result, /foundations_refs:/);
+  assert.match(result, /## Intro/);
+});

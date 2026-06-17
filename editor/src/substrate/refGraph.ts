@@ -20,7 +20,14 @@ import {
 // and tree-shaking can't strip the value imports through a barrel).
 export const parseFrontmatter = parseFrontmatterImpl;
 
-export type RefType = "a11y_refs" | "motion_refs";
+export type RefType = "a11y_refs" | "motion_refs" | "foundations_refs";
+
+/** Object-ref fields (RefType) plus the flat-array field used by content
+ *  files. An OutgoingConnection can be a relatedComponents entry, so its
+ *  refType spans both worlds; the write-back dispatcher (refStore) keys off
+ *  this to choose the object-ref vs flat-array rewriter. Defined here (the
+ *  types home) so refGraph stays free of a refStore import cycle. */
+export type AnyRefField = RefType | "relatedComponents";
 
 export interface Consumer {
   file: string;
@@ -30,7 +37,7 @@ export interface Consumer {
 
 export interface OutgoingConnection {
   slug: string;
-  refType: RefType;
+  refType: AnyRefField;
   note: string | null;
   domain: Domain | null; // null if broken
 }
@@ -114,7 +121,11 @@ export async function buildRefGraph(opts: BuildOpts): Promise<RefGraph> {
   const bySlug = new Map<string, Consumer[]>();
   const broken: BrokenRef[] = [];
   for (const entry of fileEntries) {
-    for (const refType of ["a11y_refs", "motion_refs"] as const) {
+    for (const refType of [
+      "a11y_refs",
+      "motion_refs",
+      "foundations_refs",
+    ] as const) {
       for (const item of entry.frontmatter[refType]) {
         const domain = opts.taxonomy.domainOfSlug(item.ref);
         const consumer: Consumer = {
@@ -148,7 +159,11 @@ export async function buildRefGraph(opts: BuildOpts): Promise<RefGraph> {
     const entry = byFile.get(file);
     if (!entry) return [];
     const out: OutgoingConnection[] = [];
-    for (const refType of ["a11y_refs", "motion_refs"] as const) {
+    for (const refType of [
+      "a11y_refs",
+      "motion_refs",
+      "foundations_refs",
+    ] as const) {
       for (const item of entry.frontmatter[refType]) {
         out.push({
           slug: item.ref,

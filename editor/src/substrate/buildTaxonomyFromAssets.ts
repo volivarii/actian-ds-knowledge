@@ -8,7 +8,13 @@
 // for the rationale).
 
 import type { Domain, SearchResult, Taxonomy, Tier } from "./taxonomy";
-import { a11yIndex, motionPatterns } from "./taxonomyAssets";
+import {
+  a11yIndex,
+  componentNodes,
+  contentTopicNodes,
+  foundationSections,
+  motionPatterns,
+} from "./taxonomyAssets";
 
 export function buildTaxonomyFromAssets(): Taxonomy {
   const a11yBySlug = new Map<
@@ -38,10 +44,70 @@ export function buildTaxonomyFromAssets(): Taxonomy {
     });
   }
 
+  // Foundation sections from the graph corpus. New node types get
+  // tier:null, body:null — we deliberately preserve the a11y tier/body
+  // values (consumed by A11yRefsWidget/TopicResultRow) while adding graph
+  // nodes alongside.
+  const foundationsBySlug = new Map<
+    string,
+    { title: string; body: string | null; tier: Tier | null }
+  >();
+  for (const section of foundationSections) {
+    foundationsBySlug.set(section.slug, {
+      title: section.title,
+      body: null,
+      tier: null,
+    });
+  }
+
+  // Component and content-topic nodes from the graph corpus.
+  const componentsBySlug = new Map<
+    string,
+    { title: string; body: string | null; tier: Tier | null }
+  >();
+  for (const node of componentNodes) {
+    componentsBySlug.set(node.slug, {
+      title: node.title,
+      body: null,
+      tier: null,
+    });
+  }
+
+  const contentTopicsBySlug = new Map<
+    string,
+    { title: string; body: string | null; tier: Tier | null }
+  >();
+  for (const node of contentTopicNodes) {
+    contentTopicsBySlug.set(node.slug, {
+      title: node.title,
+      body: null,
+      tier: null,
+    });
+  }
+
   function getMap(
     domain: Domain,
   ): Map<string, { title: string; body: string | null; tier: Tier | null }> {
-    return domain === "accessibility" ? a11yBySlug : motionBySlug;
+    switch (domain) {
+      case "accessibility":
+        return a11yBySlug;
+      case "motion":
+        return motionBySlug;
+      case "foundations":
+        return foundationsBySlug;
+      case "component":
+        return componentsBySlug;
+      case "content":
+        return contentTopicsBySlug;
+      default: {
+        // Exhaustiveness guard: TypeScript will flag unhandled Domain values.
+        const _never: never = domain;
+        // Return empty map so unknown domains fail loudly (no data) rather
+        // than silently returning wrong data.
+        void _never;
+        return new Map();
+      }
+    }
   }
 
   return {
@@ -58,8 +124,17 @@ export function buildTaxonomyFromAssets(): Taxonomy {
       return getMap(domain).get(slug)?.tier ?? null;
     },
     domainOfSlug(slug) {
+      // Resolution order is fixed precedence, NOT uniqueness: a few slugs
+      // exist in more than one corpus (e.g. "tabs" is both an a11y section
+      // and a component). The first match wins, so a colliding slug resolves
+      // to accessibility. Callers that already know the intended domain (e.g.
+      // the relatedComponents read path → "component") should resolve via
+      // getTitle(domain, slug) rather than relying on this order.
       if (a11yBySlug.has(slug)) return "accessibility";
       if (motionBySlug.has(slug)) return "motion";
+      if (foundationsBySlug.has(slug)) return "foundations";
+      if (componentsBySlug.has(slug)) return "component";
+      if (contentTopicsBySlug.has(slug)) return "content";
       return null;
     },
     searchSections(query, opts) {
@@ -67,9 +142,15 @@ export function buildTaxonomyFromAssets(): Taxonomy {
       if (q === "") return [];
       const limit = opts?.limit ?? 20;
       const out: SearchResult[] = [];
-      const scopes: Domain[] = opts?.domain
-        ? [opts.domain]
-        : ["accessibility", "motion"];
+      // Scope precedence: an explicit `domains` list (multi-domain pickers)
+      // narrows BEFORE the result cap so allowed-domain hits aren't crowded
+      // out by other domains; a single `domain` is the legacy narrow; absent
+      // both, search every domain.
+      const scopes: Domain[] = opts?.domains
+        ? opts.domains
+        : opts?.domain
+          ? [opts.domain]
+          : ["accessibility", "motion", "foundations", "component", "content"];
       for (const domain of scopes) {
         for (const [slug, entry] of getMap(domain)) {
           const haystack = `${entry.title} ${entry.body ?? ""}`.toLowerCase();

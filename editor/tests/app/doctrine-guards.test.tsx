@@ -22,7 +22,51 @@ const FORBIDDEN_TOKENS = [
   "ref:",
   "a11y_refs",
   "motion_refs",
+  "foundations_refs",
+  "relatedComponents",
   "frontmatter",
+];
+
+// Return one result per domain so the TopicPicker doctrine scan exercises
+// EVERY domain badge (Accessibility / Motion / Foundations / Component /
+// Content) — a single-domain corpus would leave the new badge labels
+// unverified against the forbidden-vocabulary rule.
+const MULTI_DOMAIN_RESULTS: SearchResult[] = [
+  {
+    slug: "color-contrast",
+    domain: "accessibility",
+    title: "Color contrast",
+    body: "WCAG 1.4.3",
+    tier: null,
+  },
+  {
+    slug: "state-transitions",
+    domain: "motion",
+    title: "State transitions",
+    body: "100-200ms band",
+    tier: null,
+  },
+  {
+    slug: "tokens",
+    domain: "foundations",
+    title: "Tokens",
+    body: null,
+    tier: null,
+  },
+  {
+    slug: "badge",
+    domain: "component",
+    title: "Badge",
+    body: null,
+    tier: null,
+  },
+  {
+    slug: "forms",
+    domain: "content",
+    title: "Forms",
+    body: null,
+    tier: null,
+  },
 ];
 
 const fakeTaxonomy: Taxonomy = {
@@ -31,15 +75,7 @@ const fakeTaxonomy: Taxonomy = {
   getBody: () => null,
   getTier: () => null,
   domainOfSlug: () => "accessibility",
-  searchSections: () => [
-    {
-      slug: "color-contrast",
-      domain: "accessibility",
-      title: "Color contrast",
-      body: "WCAG 1.4.3",
-      tier: null,
-    } as SearchResult,
-  ],
+  searchSections: () => MULTI_DOMAIN_RESULTS,
 };
 
 function gatherText(container: HTMLElement): string {
@@ -138,6 +174,8 @@ const DIALOG_FORBIDDEN_TOKENS = [
   "ref:",
   "a11y_refs",
   "motion_refs",
+  "foundations_refs",
+  "relatedComponents",
   "frontmatter",
   "_order.json",
   ".md",
