@@ -9,9 +9,9 @@
   "properties": {
     "_schema_version": {
       "type": "integer",
-      "enum": [1],
-      "description": "Schema version for the graph JSON shape. Currently 1. Bumps require coordinated consumer updates.",
-      "examples": [1]
+      "minimum": 1,
+      "description": "Schema version for the graph JSON shape. Monotonic integer; additive changes do not bump, breaking structural changes do. Consumers must accept any version >= the one they were built against and ignore unknown fields.",
+      "examples": [2]
     },
     "_meta": {
       "type": "object",

@@ -63,7 +63,7 @@ GraphBuilder.prototype.build = function () {
     return ka < kb ? -1 : ka > kb ? 1 : 0;
   });
   return {
-    _schema_version: 1,
+    _schema_version: 2,
     _meta: {
       auto_generated: true,
       generator: "scripts/graph/derive-graph.js",

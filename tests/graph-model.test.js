@@ -54,7 +54,7 @@ test("GraphBuilder dedups nodes by id and sorts deterministically", function () 
     }),
     ["in_category", "related"],
   );
-  assert.equal(out._schema_version, 1);
+  assert.equal(out._schema_version, 2);
 });
 
 test("schemas/graph.json validates a well-formed graph and rejects a malformed one", function () {
@@ -94,6 +94,13 @@ test("nodeId throws on an empty slug", function () {
 test("slugify collapses all-punctuation/empty input to empty string", function () {
   assert.equal(M.slugify(""), "");
   assert.equal(M.slugify("  & ()  "), "");
+});
+
+test("GraphBuilder.build: emits _schema_version 2", function () {
+  var M = require("../scripts/lib/graph/model.js");
+  var g = new M.GraphBuilder();
+  g.addNode({ id: "component:button", type: "component", title: "Button" });
+  assert.equal(g.build()._schema_version, 2);
 });
 
 test("GraphBuilder dedups identical edges (type+source+target), first-wins", function () {
