@@ -96,16 +96,16 @@ jobs:
       - name: Derive knowledge graph
         run: npm run derive:graph
 
-      - name: Graph drift guard (committed graph.json must match regeneration)
-        run: |
-          if ! git diff --quiet -- graph/dist/graph.json; then
-            echo "::error::graph/dist/graph.json is stale — run 'npm run derive:graph' and commit."
-            git diff -- graph/dist/graph.json
-            exit 1
-          fi
-
       - name: Validate knowledge graph
         run: npm run validate:graph
+
+      - name: Graph drift guard (committed graph.json + quality-report.json must match regeneration)
+        run: |
+          if ! git diff --quiet -- graph/dist/graph.json graph/dist/quality-report.json; then
+            echo "::error::graph/dist/{graph,quality-report}.json is stale — run 'npm run derive:graph && npm run validate:graph' and commit."
+            git diff -- graph/dist/graph.json graph/dist/quality-report.json
+            exit 1
+          fi
 
       - name: Run test suite
         run: npm test
