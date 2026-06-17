@@ -59,6 +59,10 @@ test("authored-location canary: every kind has > 0 authored refs in the real sub
     }),
   );
   var authored = C.readAuthored(root, nodeIds);
+  assert.ok(
+    C.EDGE_KINDS.length > 0,
+    "EDGE_KINDS is empty — canary would pass vacuously",
+  );
   C.EDGE_KINDS.forEach(function (k) {
     assert.ok(
       authored[k].size > 0,
