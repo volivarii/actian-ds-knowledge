@@ -77,6 +77,9 @@ export interface ConnectionsPopoverProps {
    *  Radix's floating layout has something concrete to attach to even
    *  when the trigger lives in a different React subtree. */
   anchorEl: HTMLElement | null;
+  /** Navigate to another file/workspace (e.g. clicking a referrer in the
+   *  Referenced-by panel). The popover closes before navigating. */
+  onNavigate?: (path: string) => void;
 }
 
 export function ConnectionsPopover(props: ConnectionsPopoverProps) {
@@ -92,6 +95,7 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
     onTextChange,
     onClose,
     anchorEl,
+    onNavigate,
   } = props;
 
   const allowedDomains = allowedDomainsFor(filePath);
@@ -167,6 +171,14 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
             taxonomy={taxonomy}
             scope={scope}
             nodeId={nodeId}
+            onNavigate={
+              onNavigate
+                ? (p) => {
+                    onClose();
+                    onNavigate(p);
+                  }
+                : undefined
+            }
             onAddConnection={() => {
               setRepointing(null);
               setMode("picker");
