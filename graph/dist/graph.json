@@ -3459,11 +3459,6 @@
       "title": "Forms"
     },
     {
-      "id": "content:loading-and-progress",
-      "type": "content_topic",
-      "title": "Loading and progress"
-    },
-    {
       "id": "content:notifications-and-messaging",
       "type": "content_topic",
       "title": "Notifications and messaging"
@@ -6204,26 +6199,6 @@
     {
       "source": "content:forms",
       "target": "component:toggle",
-      "type": "related"
-    },
-    {
-      "source": "content:loading-and-progress",
-      "target": "component:loader",
-      "type": "related"
-    },
-    {
-      "source": "content:loading-and-progress",
-      "target": "component:loader-with-logo",
-      "type": "related"
-    },
-    {
-      "source": "content:loading-and-progress",
-      "target": "component:loading-skeleton",
-      "type": "related"
-    },
-    {
-      "source": "content:loading-and-progress",
-      "target": "component:spinner",
       "type": "related"
     },
     {
