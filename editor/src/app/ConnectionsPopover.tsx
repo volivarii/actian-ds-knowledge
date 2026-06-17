@@ -20,10 +20,36 @@ import {
 import type {
   BrokenRef,
   Consumer,
+  Domain,
   OutgoingConnection,
   RefType,
   Taxonomy,
 } from "../substrate";
+
+// Derive which topic domains are valid targets for the picker based on
+// the file being edited. Returns undefined (= all domains) when the path
+// doesn't match a known restrictive pattern.
+//
+// Mapping rationale (mirrors the write-back field mapping):
+//   components/src/categories/ → a11y + motion + foundations (supports
+//     a11y_refs, motion_refs, AND foundations_refs frontmatter fields)
+//   foundations/src/ | accessibility/src/ | motion/ → a11y + motion only
+//     (those domain files cross-reference within a11y+motion, not foundations)
+//   All other paths → all available domains (default)
+function allowedDomainsFor(filePath: string | undefined): Domain[] | undefined {
+  if (!filePath) return undefined;
+  if (filePath.startsWith("components/src/categories/")) {
+    return ["accessibility", "motion", "foundations"];
+  }
+  if (
+    filePath.startsWith("foundations/src/") ||
+    filePath.startsWith("accessibility/src/") ||
+    filePath.startsWith("motion/")
+  ) {
+    return ["accessibility", "motion"];
+  }
+  return undefined;
+}
 
 export interface ConnectionsPopoverProps {
   sectionTitle: string;
@@ -36,6 +62,10 @@ export interface ConnectionsPopoverProps {
    *  When `"file"` the inspector shows + manages outgoing; when
    *  `"section"` it's a read-only incoming view. */
   scope: "file" | "section";
+  /** The path of the file being edited. Used to determine which topic
+   *  domains the picker offers (category files add foundations_refs;
+   *  a11y/foundations/motion section files offer a11y+motion only). */
+  filePath?: string;
   onTextChange: (next: string) => void;
   onClose: () => void;
   /** DOM element the popover anchors to. The Outline pill the author
@@ -54,10 +84,13 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
     broken = [],
     taxonomy,
     scope,
+    filePath,
     onTextChange,
     onClose,
     anchorEl,
   } = props;
+
+  const allowedDomains = allowedDomainsFor(filePath);
 
   // Two views inside the popover: the Inspector (default) and the Topic
   // Picker (opened by + Connect or Repoint).
@@ -174,6 +207,7 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
             ) : null}
             <TopicPicker
               taxonomy={taxonomy}
+              allowedDomains={allowedDomains}
               onPick={applyPick}
               onCancel={() => {
                 setRepointing(null);

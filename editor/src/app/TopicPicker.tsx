@@ -17,6 +17,9 @@ export interface PickedTopic {
 
 export interface TopicPickerProps {
   taxonomy: Taxonomy;
+  /** When set, only results whose domain is in this list are shown.
+   *  If omitted, all domains from searchSections are offered. */
+  allowedDomains?: Domain[];
   onPick: (topic: PickedTopic) => void;
   onCancel: () => void;
 }
@@ -26,10 +29,17 @@ export function TopicPicker(props: TopicPickerProps) {
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const [note, setNote] = useState("");
 
-  const results = useMemo(
+  const allResults = useMemo(
     () => props.taxonomy.searchSections(query, { limit: 20 }),
     [query, props.taxonomy],
   );
+
+  const results = useMemo(() => {
+    if (!props.allowedDomains || props.allowedDomains.length === 0)
+      return allResults;
+    const allowed = new Set<Domain>(props.allowedDomains);
+    return allResults.filter((r) => allowed.has(r.domain));
+  }, [allResults, props.allowedDomains]);
 
   return (
     <Box p="3">
