@@ -12,11 +12,6 @@ import { Box, Button, Callout, Flex, Popover, Text } from "@radix-ui/themes";
 import { SectionInspector } from "./SectionInspector";
 import { TopicPicker } from "./TopicPicker";
 import type { PickedTopic } from "./TopicPicker";
-import {
-  addRefToFrontmatter,
-  refTypeFor,
-  removeRefFromFrontmatter,
-} from "../substrate/frontmatterRewriter";
 import type {
   BrokenRef,
   Consumer,
@@ -25,6 +20,7 @@ import type {
   RefType,
   Taxonomy,
 } from "../substrate";
+import { FrontmatterRefStore, refFieldFor } from "../substrate/refStore";
 
 // Derive which topic domains are valid targets for the picker based on
 // the file being edited. Returns undefined (= all domains) when the path
@@ -33,6 +29,8 @@ import type {
 // Mapping rationale (mirrors the write-back field mapping):
 //   components/src/categories/ → a11y + motion + foundations (supports
 //     a11y_refs, motion_refs, AND foundations_refs frontmatter fields)
+//   content/src/ → component only (content files cross-reference DS
+//     components via the relatedComponents flat-array field)
 //   foundations/src/ | accessibility/src/ | motion/ → a11y + motion only
 //     (those domain files cross-reference within a11y+motion, not foundations)
 //   All other paths → all available domains (default)
@@ -40,6 +38,9 @@ function allowedDomainsFor(filePath: string | undefined): Domain[] | undefined {
   if (!filePath) return undefined;
   if (filePath.startsWith("components/src/categories/")) {
     return ["accessibility", "motion", "foundations"];
+  }
+  if (filePath.startsWith("content/src/")) {
+    return ["component"];
   }
   if (
     filePath.startsWith("foundations/src/") ||
@@ -106,27 +107,22 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
   const rect = anchorEl?.getBoundingClientRect();
 
   function applyPick(pick: PickedTopic) {
-    const newRefType = refTypeFor(pick.domain);
+    const newField = refFieldFor(pick.domain);
     let next = text;
     if (repointing) {
-      next = removeRefFromFrontmatter(
-        next,
-        repointing.refType,
-        repointing.slug,
-      );
+      const store = new FrontmatterRefStore(next);
+      next = store.removeRef(repointing.refType, repointing.slug);
     }
-    next = addRefToFrontmatter(next, newRefType, {
-      slug: pick.slug,
-      note: pick.note,
-    });
+    const store = new FrontmatterRefStore(next);
+    next = store.addRef(newField, pick.slug, pick.note);
     onTextChange(next);
     setRepointing(null);
     setMode("inspector");
   }
 
   function applyRemove(refType: RefType, slug: string) {
-    const next = removeRefFromFrontmatter(text, refType, slug);
-    onTextChange(next);
+    const store = new FrontmatterRefStore(text);
+    onTextChange(store.removeRef(refType, slug));
   }
 
   return (

@@ -6,7 +6,12 @@
 
 import { readFile } from "node:fs/promises";
 
-export type Domain = "accessibility" | "motion" | "foundations";
+export type Domain =
+  | "accessibility"
+  | "motion"
+  | "foundations"
+  | "component"
+  | "content";
 
 export type Tier = "foundation" | "component-pattern" | "checklist" | "header";
 

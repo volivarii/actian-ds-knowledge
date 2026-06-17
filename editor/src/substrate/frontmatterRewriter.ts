@@ -13,6 +13,15 @@ export function refTypeFor(domain: Domain): RefType {
       return "motion_refs";
     case "foundations":
       return "foundations_refs";
+    case "component":
+    case "content":
+      // "component" and "content" domains use flat-array fields
+      // (relatedComponents); callers that need to handle those should use
+      // refFieldFor() from refStore.ts instead. This function is retained
+      // for object-ref fields only — throw to surface miscalls.
+      throw new Error(
+        `refTypeFor: domain "${domain}" uses a flat-array field — use refFieldFor() instead`,
+      );
     default: {
       // Exhaustiveness check: TypeScript will flag unhandled Domain values here.
       const _never: never = domain;

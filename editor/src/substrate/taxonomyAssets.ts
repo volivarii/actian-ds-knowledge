@@ -76,3 +76,17 @@ export const foundationSections: Array<{ slug: string; title: string }> =
         n.type === "foundation_section" && !n.id.split(":")[1]?.includes("/"),
     )
     .map((n) => ({ slug: n.id.split(":")[1] ?? n.id, title: n.title }));
+
+/** Component nodes from the graph corpus — used by the `component` domain
+ *  picker to let content-file authors cross-reference DS components. */
+export const componentNodes: Array<{ slug: string; title: string }> =
+  graph.nodes
+    .filter((n) => n.type === "component")
+    .map((n) => ({ slug: n.id.split(":")[1] ?? n.id, title: n.title }));
+
+/** Content-topic nodes from the graph corpus — used by the `content` domain.
+ *  The graph uses the node type `content_topic` with id prefix `content:`. */
+export const contentTopicNodes: Array<{ slug: string; title: string }> =
+  graph.nodes
+    .filter((n) => n.type === "content_topic")
+    .map((n) => ({ slug: n.id.split(":")[1] ?? n.id, title: n.title }));

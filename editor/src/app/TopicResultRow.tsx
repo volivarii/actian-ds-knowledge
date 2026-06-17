@@ -20,6 +20,8 @@ const DOMAIN_DISPLAY: Record<
   accessibility: { label: "Accessibility", color: "blue" },
   motion: { label: "Motion", color: "amber" },
   foundations: { label: "Foundations", color: "green" },
+  component: { label: "Component", color: "violet" },
+  content: { label: "Content", color: "cyan" },
 };
 
 // Presentational row for a topic search result: title + domain badge + body

@@ -10,6 +10,8 @@
 import type { Domain, SearchResult, Taxonomy, Tier } from "./taxonomy";
 import {
   a11yIndex,
+  componentNodes,
+  contentTopicNodes,
   foundationSections,
   motionPatterns,
 } from "./taxonomyAssets";
@@ -58,6 +60,31 @@ export function buildTaxonomyFromAssets(): Taxonomy {
     });
   }
 
+  // Component and content-topic nodes from the graph corpus.
+  const componentsBySlug = new Map<
+    string,
+    { title: string; body: string | null; tier: Tier | null }
+  >();
+  for (const node of componentNodes) {
+    componentsBySlug.set(node.slug, {
+      title: node.title,
+      body: null,
+      tier: null,
+    });
+  }
+
+  const contentTopicsBySlug = new Map<
+    string,
+    { title: string; body: string | null; tier: Tier | null }
+  >();
+  for (const node of contentTopicNodes) {
+    contentTopicsBySlug.set(node.slug, {
+      title: node.title,
+      body: null,
+      tier: null,
+    });
+  }
+
   function getMap(
     domain: Domain,
   ): Map<string, { title: string; body: string | null; tier: Tier | null }> {
@@ -68,6 +95,10 @@ export function buildTaxonomyFromAssets(): Taxonomy {
         return motionBySlug;
       case "foundations":
         return foundationsBySlug;
+      case "component":
+        return componentsBySlug;
+      case "content":
+        return contentTopicsBySlug;
       default: {
         // Exhaustiveness guard: TypeScript will flag unhandled Domain values.
         const _never: never = domain;
@@ -96,6 +127,8 @@ export function buildTaxonomyFromAssets(): Taxonomy {
       if (a11yBySlug.has(slug)) return "accessibility";
       if (motionBySlug.has(slug)) return "motion";
       if (foundationsBySlug.has(slug)) return "foundations";
+      if (componentsBySlug.has(slug)) return "component";
+      if (contentTopicsBySlug.has(slug)) return "content";
       return null;
     },
     searchSections(query, opts) {
@@ -105,7 +138,7 @@ export function buildTaxonomyFromAssets(): Taxonomy {
       const out: SearchResult[] = [];
       const scopes: Domain[] = opts?.domain
         ? [opts.domain]
-        : ["accessibility", "motion", "foundations"];
+        : ["accessibility", "motion", "foundations", "component", "content"];
       for (const domain of scopes) {
         for (const [slug, entry] of getMap(domain)) {
           const haystack = `${entry.title} ${entry.body ?? ""}`.toLowerCase();

@@ -22,6 +22,8 @@ const FORBIDDEN_TOKENS = [
   "ref:",
   "a11y_refs",
   "motion_refs",
+  "foundations_refs",
+  "relatedComponents",
   "frontmatter",
 ];
 
@@ -138,6 +140,8 @@ const DIALOG_FORBIDDEN_TOKENS = [
   "ref:",
   "a11y_refs",
   "motion_refs",
+  "foundations_refs",
+  "relatedComponents",
   "frontmatter",
   "_order.json",
   ".md",
