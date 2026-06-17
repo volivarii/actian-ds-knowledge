@@ -5,19 +5,9 @@
   "manifest_schema_version": "v1",
   "knowledge_version": "0.34.19",
   "_zones": {
-    "knowledge": [
-      "accessibility",
-      "components",
-      "content",
-      "foundations"
-    ],
-    "contract": [
-      "graph"
-    ],
-    "metadata": [
-      "appContext",
-      "tokens"
-    ],
+    "knowledge": ["accessibility", "components", "content", "foundations"],
+    "contract": ["graph"],
+    "metadata": ["appContext", "tokens"],
     "_pendingEviction": []
   },
   "paths": {
@@ -595,7 +585,14 @@
       "type": "json",
       "origin": "ci",
       "generator": "scripts/graph/derive-graph.js",
-      "description": "Derived knowledge graph: typed nodes (component/category/a11y_criterion/foundation_section/motion_pattern/content_topic) + typed edges (in_category, a11y_ref, motion_ref, foundations_ref, related, child). Transversal refs are category-mediated. Consumed by future graph viz + AI agents."
+      "description": "Derived knowledge graph: typed nodes (component/category/a11y_criterion/foundation_section/motion_pattern/content_topic) + typed edges (in_category, a11y_ref, motion_ref, foundations_ref, related, narrower). Transversal refs are category-mediated. Consumed by future graph viz + AI agents."
+    },
+    "graph.quality-report": {
+      "path": "graph/dist/quality-report.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/graph/validate-graph.js",
+      "description": "Derived graph quality/health report: per-dimension metrics — coverage (authored transversal refs that became edges), integrity violation counts, connectivity/orphan counts — each tagged with a severity tier (violation/warning/info). Emitted by validate-graph.js; timestamp injected by CI at publish. Trendable graph-health signal."
     },
     "tokens.css": {
       "path": "tokens/tokens.css",

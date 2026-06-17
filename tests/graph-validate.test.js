@@ -222,3 +222,118 @@ test("real graph conforms to the real vocabulary (zero type violations)", functi
   );
   assert.deepEqual(V.analyze(graph, vocab).typeViolations, []);
 });
+
+test("buildQualityReport: every entry has the documented 5-key shape with null timestamp", function () {
+  var analysis = {
+    dangling: [],
+    typeViolations: [],
+    coverage: {
+      categoriesWithoutA11y: ["category:x"],
+      criteriaUnreferenced: [],
+      componentsWithoutCategory: [],
+    },
+    orphans: ["component:y"],
+  };
+  var coverage = {
+    byKind: {
+      a11y_ref: { authored: 2, emitted: 2, ratio: 1 },
+      foundations_ref: { authored: 0, emitted: 0, ratio: 1 },
+      motion_ref: { authored: 0, emitted: 0, ratio: 1 },
+    },
+    overall: { authored: 2, emitted: 2, ratio: 1 },
+  };
+  var report = V.buildQualityReport(analysis, coverage, 0);
+  assert.ok(report.length >= 8);
+  report.forEach(function (e) {
+    assert.deepEqual(Object.keys(e).sort(), [
+      "dimension",
+      "metric",
+      "severity",
+      "timestamp",
+      "value",
+    ]);
+    assert.equal(e.timestamp, null);
+  });
+  assert.ok(
+    report.some(function (e) {
+      return (
+        e.dimension === "coverage" &&
+        e.metric === "overall" &&
+        e.severity === "info"
+      );
+    }),
+  );
+});
+
+test("buildQualityReport: coverage below threshold is a warning; dangling is a violation", function () {
+  var analysis = {
+    dangling: ["x"],
+    typeViolations: [],
+    coverage: {
+      categoriesWithoutA11y: [],
+      criteriaUnreferenced: [],
+      componentsWithoutCategory: [],
+    },
+    orphans: [],
+  };
+  var coverage = {
+    byKind: {
+      a11y_ref: { authored: 10, emitted: 5, ratio: 0.5 },
+      foundations_ref: { authored: 0, emitted: 0, ratio: 1 },
+      motion_ref: { authored: 0, emitted: 0, ratio: 1 },
+    },
+    overall: { authored: 10, emitted: 5, ratio: 0.5 },
+  };
+  var report = V.buildQualityReport(analysis, coverage, 0);
+  assert.ok(
+    report.some(function (e) {
+      return (
+        e.dimension === "coverage" &&
+        e.metric === "a11y_ref" &&
+        e.severity === "warning"
+      );
+    }),
+  );
+  assert.ok(
+    report.some(function (e) {
+      return (
+        e.dimension === "integrity" &&
+        e.metric === "dangling_edges" &&
+        e.value === 1 &&
+        e.severity === "violation"
+      );
+    }),
+  );
+});
+
+test("emitted quality-report.json exists, is valid JSON, and matches the documented shape", function () {
+  var fs = require("node:fs"),
+    path = require("node:path");
+  var root = path.join(__dirname, "..");
+  var report = JSON.parse(
+    fs.readFileSync(
+      path.join(root, "graph", "dist", "quality-report.json"),
+      "utf8",
+    ),
+  );
+  assert.ok(Array.isArray(report) && report.length >= 8);
+  report.forEach(function (e) {
+    assert.deepEqual(Object.keys(e).sort(), [
+      "dimension",
+      "metric",
+      "severity",
+      "timestamp",
+      "value",
+    ]);
+  });
+  assert.ok(
+    report.some(function (e) {
+      return (
+        e.dimension === "coverage" &&
+        e.metric === "overall" &&
+        e.value === 1 &&
+        e.severity === "info"
+      );
+    }),
+  );
+});

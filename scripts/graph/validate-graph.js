@@ -6,6 +6,17 @@ var Ajv = require("ajv/dist/2020");
 
 var ROOT = path.resolve(__dirname, "..", "..");
 
+var coverageMod = require("./coverage.js");
+
+var COVERAGE_WARN_THRESHOLD = 0.95;
+// Coverage breaches report as Warning during PR2b rollout; promote to
+// "violation" once PR1's per-component fix is confirmed stable (spec PR2).
+var COVERAGE_BREACH_TIER = "warning";
+
+function round4(n) {
+  return Math.round(n * 10000) / 10000;
+}
+
 // Pure analysis over a graph object. Returns { dangling[], coverage{}, orphans[], typeViolations[] }.
 // Optional `vocabulary` (graph/vocabulary.json shape) enables typed-edge endpoint checks.
 function analyze(graph, vocabulary) {
@@ -139,6 +150,65 @@ function schemaErrors(graph) {
   });
 }
 
+// Pure: fold analysis + coverage into a DQV-shaped report array. `timestamp` is
+// always null in the artifact (deterministic; the CI run supplies temporal context).
+function buildQualityReport(analysis, coverage, schemaErrorCount) {
+  var out = [];
+  function push(dimension, metric, value, severity) {
+    out.push({
+      dimension: dimension,
+      metric: metric,
+      value: value,
+      timestamp: null,
+      severity: severity,
+    });
+  }
+  coverageMod.EDGE_KINDS.forEach(function (k) {
+    var ratio = coverage.byKind[k].ratio;
+    push(
+      "coverage",
+      k,
+      round4(ratio),
+      ratio >= COVERAGE_WARN_THRESHOLD ? "info" : COVERAGE_BREACH_TIER,
+    );
+  });
+  var overall = coverage.overall.ratio;
+  push(
+    "coverage",
+    "overall",
+    round4(overall),
+    overall >= COVERAGE_WARN_THRESHOLD ? "info" : COVERAGE_BREACH_TIER,
+  );
+
+  function integrity(metric, value) {
+    push("integrity", metric, value, value > 0 ? "violation" : "info");
+  }
+  integrity("schema_errors", schemaErrorCount);
+  integrity("dangling_edges", analysis.dangling.length);
+  integrity("typed_edge_violations", analysis.typeViolations.length);
+
+  push("connectivity", "orphan_nodes", analysis.orphans.length, "info");
+  push(
+    "connectivity",
+    "components_without_category",
+    analysis.coverage.componentsWithoutCategory.length,
+    "info",
+  );
+  push(
+    "connectivity",
+    "categories_without_a11y",
+    analysis.coverage.categoriesWithoutA11y.length,
+    "info",
+  );
+  push(
+    "connectivity",
+    "criteria_unreferenced",
+    analysis.coverage.criteriaUnreferenced.length,
+    "info",
+  );
+  return out;
+}
+
 function main() {
   var graph = JSON.parse(
     fs.readFileSync(path.join(ROOT, "graph", "dist", "graph.json"), "utf8"),
@@ -148,6 +218,12 @@ function main() {
   );
   var schemaErrs = schemaErrors(graph);
   var r = analyze(graph, vocabulary);
+  var coverage = coverageMod.computeCoverage(ROOT, graph);
+  var qualityReport = buildQualityReport(r, coverage, schemaErrs.length);
+  fs.writeFileSync(
+    path.join(ROOT, "graph", "dist", "quality-report.json"),
+    JSON.stringify(qualityReport, null, 2) + "\n",
+  );
 
   var report = [
     "### Knowledge graph report",
@@ -158,6 +234,7 @@ function main() {
       r.coverage.componentsWithoutCategory.length,
     "- orphan nodes: " + r.orphans.length,
     "- edge-type violations: " + r.typeViolations.length,
+    "- coverage (overall): " + round4(coverage.overall.ratio),
   ].join("\n");
   var summary = process.env.GITHUB_STEP_SUMMARY;
   if (summary) {
@@ -167,6 +244,20 @@ function main() {
       console.log(report);
     }
   } else console.log(report);
+
+  var coverageWarnings = qualityReport.filter(function (e) {
+    return e.severity === "warning";
+  });
+  if (coverageWarnings.length) {
+    console.warn(
+      "validate-graph WARNING — coverage below " +
+        COVERAGE_WARN_THRESHOLD +
+        ":",
+    );
+    coverageWarnings.forEach(function (e) {
+      console.warn("  - " + e.metric + ": " + e.value);
+    });
+  }
 
   if (schemaErrs.length || r.dangling.length || r.typeViolations.length) {
     var failParts = [];
@@ -239,4 +330,8 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { analyze: analyze, schemaErrors: schemaErrors };
+module.exports = {
+  analyze: analyze,
+  schemaErrors: schemaErrors,
+  buildQualityReport: buildQualityReport,
+};
