@@ -39,6 +39,8 @@ export interface SectionInspectorProps {
   nodeId?: string | null;
   /** Index for typed referenced-by; the panel defaults to the baked index. */
   graphIndex?: GraphIndex;
+  /** Forwarded to NeighborhoodPanel: makes resolvable referrers clickable. */
+  onNavigate?: (path: string) => void;
 }
 
 export function SectionInspector(props: SectionInspectorProps) {
@@ -130,7 +132,14 @@ export function SectionInspector(props: SectionInspectorProps) {
       )}
 
       {props.nodeId ? (
-        <NeighborhoodPanel nodeId={props.nodeId} index={props.graphIndex} />
+        <NeighborhoodPanel
+          // key by node so per-group "Show all" state can't leak across
+          // nodes if this panel is ever rendered in-place with a changing id
+          key={props.nodeId}
+          nodeId={props.nodeId}
+          index={props.graphIndex}
+          onNavigate={props.onNavigate}
+        />
       ) : (
         incoming.length > 0 && (
           <Box mt="4">

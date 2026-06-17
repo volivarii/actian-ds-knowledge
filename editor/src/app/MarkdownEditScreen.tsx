@@ -622,6 +622,7 @@ export function MarkdownEditScreen({
             });
           }}
           onClose={() => setConnectionsPopover(null)}
+          onNavigate={onNavigate}
         />
       )}
       <Flex gap="2" justify="end" align="center" wrap="wrap">
