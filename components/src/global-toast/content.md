@@ -1,3 +1,6 @@
+---
+title: "Global toast"
+---
 # Global toast
 
 Global toasts appear at a fixed position on screen, independent of the triggering element.

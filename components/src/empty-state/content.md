@@ -1,3 +1,6 @@
+---
+title: "Empty state"
+---
 # Empty state
 
 Empty states appear when users have not yet created items, or when filters return no results. Clear copy and a direct CTA reduce friction and encourage engagement.

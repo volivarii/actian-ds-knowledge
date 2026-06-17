@@ -1,3 +1,6 @@
+---
+title: "Tooltip"
+---
 # Tooltip
 
 Tooltips provide short contextual help on hover or focus. They are best for icon-only controls that need a label, or for brief supplementary information that does not need to be persistently visible.

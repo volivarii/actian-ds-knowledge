@@ -1,3 +1,6 @@
+---
+title: "Upload file"
+---
 # Upload file
 
 Upload components allow users to add files to the platform. They appear in dataset import flows, connection setup, and file attachment contexts.

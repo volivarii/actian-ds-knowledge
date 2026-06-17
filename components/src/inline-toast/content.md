@@ -1,3 +1,6 @@
+---
+title: "Inline toast"
+---
 # Inline toast
 
 An inline toast is a brief, non-blocking message displayed within a specific area of the page rather than at a global level. It provides feedback directly adjacent to the action or element it refers to.
