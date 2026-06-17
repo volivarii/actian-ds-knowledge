@@ -6,12 +6,14 @@
 // SPA deploy model — the knowledge repo and editor ship in lockstep).
 //
 // Vite imports JSON natively as the default export when `resolveJsonModule`
-// is enabled in tsconfig.json (it is). Both files are sibling-resolved
+// is enabled in tsconfig.json (it is). Files are sibling-resolved
 // from editor/src/substrate/ to the knowledge repo's dist artifacts.
 //   ../../../accessibility/dist/a11y-index.json  → accessibility dist
 //   ../../../foundations/dist/tokens/motion.json → motion dist
+//   ../../../graph/dist/graph.json               → full substrate graph
 import a11yIndexRaw from "../../../accessibility/dist/a11y-index.json";
 import motionRaw from "../../../foundations/dist/tokens/motion.json";
+import graphRaw from "../../../graph/dist/graph.json";
 
 // We deliberately model the RAW shape here (matches what actually lands
 // in dist/), not the loader's normalized internals. buildTaxonomyFromAssets
@@ -46,3 +48,31 @@ export interface MotionFileRaw {
 
 export const a11yIndex = a11yIndexRaw as A11yIndexRaw;
 export const motionPatterns = motionRaw as MotionFileRaw;
+
+// ── Graph corpus ──────────────────────────────────────────────────────────────
+// graph.json carries all substrate nodes (a11y_criterion, foundation_section,
+// component, content_topic, motion_pattern, category). We extract subsets here
+// so buildTaxonomyFromAssets can extend the Taxonomy without a runtime fetch.
+
+export interface GraphNodeRaw {
+  id: string;
+  type: string;
+  title: string;
+  wcag?: string[];
+}
+
+export interface GraphFileRaw {
+  nodes: GraphNodeRaw[];
+}
+
+const graph = graphRaw as GraphFileRaw;
+
+/** Top-level foundation sections only (no `/` in slug) — these correspond to
+ *  the entries authors reference in `foundations_refs` blocks. */
+export const foundationSections: Array<{ slug: string; title: string }> =
+  graph.nodes
+    .filter(
+      (n) =>
+        n.type === "foundation_section" && !n.id.split(":")[1]?.includes("/"),
+    )
+    .map((n) => ({ slug: n.id.split(":")[1] ?? n.id, title: n.title }));

@@ -66,3 +66,37 @@ test("buildTaxonomyFromAssets: searchSections empty query → empty list", () =>
   const tax = buildTaxonomyFromAssets();
   assert.deepEqual(tax.searchSections(""), []);
 });
+
+// Step 2 — foundations domain from graph.json
+test("buildTaxonomyFromAssets: exposes ≥1 foundations section", () => {
+  const tax = buildTaxonomyFromAssets();
+  const slugs = tax.getSlugs("foundations");
+  assert.ok(
+    slugs.length > 0,
+    `expected ≥1 foundations section, got ${slugs.length}`,
+  );
+});
+
+test("buildTaxonomyFromAssets: getTitle resolves 'tokens' as a foundations slug", () => {
+  const tax = buildTaxonomyFromAssets();
+  const title = tax.getTitle("foundations", "tokens");
+  assert.ok(
+    title && title.length > 0,
+    `expected non-empty title for "tokens", got ${title}`,
+  );
+});
+
+test("buildTaxonomyFromAssets: domainOfSlug routes 'tokens' to foundations", () => {
+  const tax = buildTaxonomyFromAssets();
+  assert.equal(tax.domainOfSlug("tokens"), "foundations");
+});
+
+test("buildTaxonomyFromAssets: searchSections('tokens') returns foundations hit", () => {
+  const tax = buildTaxonomyFromAssets();
+  const results = tax.searchSections("tokens");
+  const foundationsHit = results.find((r) => r.domain === "foundations");
+  assert.ok(
+    foundationsHit !== undefined,
+    `expected a foundations hit for "tokens", got: ${JSON.stringify(results)}`,
+  );
+});

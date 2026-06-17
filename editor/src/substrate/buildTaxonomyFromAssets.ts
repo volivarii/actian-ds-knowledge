@@ -8,7 +8,11 @@
 // for the rationale).
 
 import type { Domain, SearchResult, Taxonomy, Tier } from "./taxonomy";
-import { a11yIndex, motionPatterns } from "./taxonomyAssets";
+import {
+  a11yIndex,
+  foundationSections,
+  motionPatterns,
+} from "./taxonomyAssets";
 
 export function buildTaxonomyFromAssets(): Taxonomy {
   const a11yBySlug = new Map<
@@ -38,6 +42,22 @@ export function buildTaxonomyFromAssets(): Taxonomy {
     });
   }
 
+  // Foundation sections from the graph corpus. New node types get
+  // tier:null, body:null — we deliberately preserve the a11y tier/body
+  // values (consumed by A11yRefsWidget/TopicResultRow) while adding graph
+  // nodes alongside.
+  const foundationsBySlug = new Map<
+    string,
+    { title: string; body: string | null; tier: Tier | null }
+  >();
+  for (const section of foundationSections) {
+    foundationsBySlug.set(section.slug, {
+      title: section.title,
+      body: null,
+      tier: null,
+    });
+  }
+
   function getMap(
     domain: Domain,
   ): Map<string, { title: string; body: string | null; tier: Tier | null }> {
@@ -46,11 +66,16 @@ export function buildTaxonomyFromAssets(): Taxonomy {
         return a11yBySlug;
       case "motion":
         return motionBySlug;
-      default:
-        // Future domains (foundations, component, content) are added in
-        // subsequent steps. Return an empty map so new domain values fail
-        // loudly (empty results) rather than silently returning wrong data.
+      case "foundations":
+        return foundationsBySlug;
+      default: {
+        // Exhaustiveness guard: TypeScript will flag unhandled Domain values.
+        const _never: never = domain;
+        // Return empty map so unknown domains fail loudly (no data) rather
+        // than silently returning wrong data.
+        void _never;
         return new Map();
+      }
     }
   }
 
@@ -70,6 +95,7 @@ export function buildTaxonomyFromAssets(): Taxonomy {
     domainOfSlug(slug) {
       if (a11yBySlug.has(slug)) return "accessibility";
       if (motionBySlug.has(slug)) return "motion";
+      if (foundationsBySlug.has(slug)) return "foundations";
       return null;
     },
     searchSections(query, opts) {
@@ -79,7 +105,7 @@ export function buildTaxonomyFromAssets(): Taxonomy {
       const out: SearchResult[] = [];
       const scopes: Domain[] = opts?.domain
         ? [opts.domain]
-        : ["accessibility", "motion"];
+        : ["accessibility", "motion", "foundations"];
       for (const domain of scopes) {
         for (const [slug, entry] of getMap(domain)) {
           const haystack = `${entry.title} ${entry.body ?? ""}`.toLowerCase();

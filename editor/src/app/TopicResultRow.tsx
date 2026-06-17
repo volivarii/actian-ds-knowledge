@@ -1,5 +1,5 @@
 import { Badge, Box, Flex, Text } from "@radix-ui/themes";
-import type { SearchResult } from "../substrate";
+import type { Domain, SearchResult } from "../substrate";
 
 export interface TopicResultRowProps {
   result: SearchResult;
@@ -7,9 +7,32 @@ export interface TopicResultRowProps {
   onClick?: () => void;
 }
 
-// Presentational row for an a11y/motion topic search result: title + domain
-// badge + body excerpt. Never renders the slug (vocabulary doctrine).
-export function TopicResultRow({ result, selected, onClick }: TopicResultRowProps) {
+// Domain → author-facing label + badge colour.
+// Never expose raw domain strings (e.g. "accessibility") as badge labels —
+// the doctrine-guards test forbids "a11y_refs", "motion_refs",
+// "foundations_refs", "relatedComponents" in rendered UI. This lookup also
+// maps "accessibility" → "Accessibility" so the badge reads as a label, not
+// an internal slug.
+const DOMAIN_DISPLAY: Record<
+  Domain,
+  { label: string; color: "blue" | "amber" | "green" | "violet" | "cyan" }
+> = {
+  accessibility: { label: "Accessibility", color: "blue" },
+  motion: { label: "Motion", color: "amber" },
+  foundations: { label: "Foundations", color: "green" },
+};
+
+// Presentational row for a topic search result: title + domain badge + body
+// excerpt. Never renders the slug (vocabulary doctrine).
+export function TopicResultRow({
+  result,
+  selected,
+  onClick,
+}: TopicResultRowProps) {
+  const display = DOMAIN_DISPLAY[result.domain] ?? {
+    label: result.domain,
+    color: "violet" as const,
+  };
   return (
     <Box
       onClick={onClick}
@@ -27,16 +50,17 @@ export function TopicResultRow({ result, selected, onClick }: TopicResultRowProp
         <Text weight="medium" size="2">
           {result.title}
         </Text>
-        <Badge
-          color={result.domain === "accessibility" ? "blue" : "amber"}
-          size="1"
-          style={{ flexShrink: 0 }}
-        >
-          {result.domain}
+        <Badge color={display.color} size="1" style={{ flexShrink: 0 }}>
+          {display.label}
         </Badge>
       </Flex>
       {result.body ? (
-        <Text size="2" color="gray" as="p" style={{ lineHeight: 1.45, marginTop: 4 }}>
+        <Text
+          size="2"
+          color="gray"
+          as="p"
+          style={{ lineHeight: 1.45, marginTop: 4 }}
+        >
           {result.body.slice(0, 110)}
           {result.body.length > 110 ? "…" : ""}
         </Text>
