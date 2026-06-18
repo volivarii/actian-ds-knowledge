@@ -207,10 +207,8 @@ Outlined focus rings must be applied with an offset on interactive elements. For
 | Token | Value | Usage | Status |
 |-------|-------|-------|--------|
 | `--zen-spacing-3xs` | `0.125rem` (2px) | Tightest spacing, hairline gaps | 🟡 Proposed |
-| `--zen-spacing-2xs` | `0.25rem` (4px) | Between elements within a small component & default paddings within an extra compact component
- | 🟢 Shipped |
-| `--zen-spacing-xs` | `0.5rem` (8px) | Default spacing between components & default paddings within a small component
- | 🟢 Shipped |
+| `--zen-spacing-2xs` | `0.25rem` (4px) | Between elements within a small component & default paddings within an extra compact component | 🟢 Shipped |
+| `--zen-spacing-xs` | `0.5rem` (8px) | Default spacing between components & default paddings within a small component | 🟢 Shipped |
 | `--zen-spacing-sm` | `0.75rem` (12px) | Padding in a large component | 🟢 Shipped |
 | `--zen-spacing-md` | `1rem` (16px) | Padding in a large component; spacing between components | 🟢 Shipped |
 | `--zen-spacing-lg` | `1.5rem` (24px) | Spacing between sections | 🟢 Shipped |
