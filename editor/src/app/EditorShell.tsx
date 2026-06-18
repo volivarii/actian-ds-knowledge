@@ -8,6 +8,7 @@ import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { RefusalBanner } from "./RefusalBanner";
 import { CoverageDashboard } from "./CoverageDashboard";
 import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
+import { GraphHealthTab } from "./GraphHealthTab";
 import { AuthoringWorkspace } from "./AuthoringWorkspace";
 import { DraftInbox } from "./DraftInbox";
 import { draftStoreSingleton } from "../drafts/store-instance";
@@ -86,9 +87,9 @@ export function EditorShell({
     }
   }, [octokit]);
 
-  const [landingTab, setLandingTab] = useState<"domains" | "accessibility">(
-    "domains",
-  );
+  const [landingTab, setLandingTab] = useState<
+    "domains" | "accessibility" | "relationships"
+  >("domains");
 
   const [pendingPaths, setPendingPaths] = useState<Set<string>>(() =>
     draftStoreSingleton.allPaths(),
@@ -139,17 +140,23 @@ export function EditorShell({
     pane = (
       <Tabs.Root
         value={landingTab}
-        onValueChange={(v) => setLandingTab(v as "domains" | "accessibility")}
+        onValueChange={(v) =>
+          setLandingTab(v as "domains" | "accessibility" | "relationships")
+        }
       >
         <Tabs.List>
           <Tabs.Trigger value="domains">Domains</Tabs.Trigger>
           <Tabs.Trigger value="accessibility">Accessibility</Tabs.Trigger>
+          <Tabs.Trigger value="relationships">Relationships</Tabs.Trigger>
         </Tabs.List>
         <Tabs.Content value="domains">
           <CoverageDashboard octokit={gh} onOpenFile={setActivePathSafe} />
         </Tabs.Content>
         <Tabs.Content value="accessibility">
           <A11yCoverageDashboard octokit={gh} onOpenFile={setActivePathSafe} />
+        </Tabs.Content>
+        <Tabs.Content value="relationships">
+          <GraphHealthTab onOpenFile={setActivePathSafe} />
         </Tabs.Content>
       </Tabs.Root>
     );
