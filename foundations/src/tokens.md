@@ -82,7 +82,7 @@ All tokens are implemented as CSS custom properties under the `--zen-` namespace
 
 | Token | Value | Usage | Status |
 |-------|-------|-------|--------|
-| `--zen-font-size-xs` | `0.6875rem` (11px) *(update from 10px)* | Hint | 🟡 Proposed |
+| `--zen-font-size-xs` | `0.6875rem` (11px) | Hint | 🟢 Shipped  |
 | `--zen-font-size-sm` | `0.75rem` (12px) | Body, section subtitle | 🟢 Shipped |
 | `--zen-font-size-md` | `0.875rem` (14px) | Page subtitle, card header (small) | 🟢 Shipped |
 | `--zen-font-size-lg` | `1rem` (16px) | Section title, card header (default) | 🟢 Shipped |
@@ -107,12 +107,12 @@ All tokens are implemented as CSS custom properties under the `--zen-` namespace
 
 | Token | Value | Usage | Status |
 |-------|-------|-------|--------|
-| `--zen-font-lineheight-xs` | `14px / 0.875rem` | Font size 11px or smaller | 🔵 In Review |
-| `--zen-font-lineheight-sm` | `16px / 1rem` | Font size 12px | 🔵 In Review |
-| `--zen-font-lineheight-md` | `20px / 1.25rem` | Font size 14px | 🔵 In Review |
-| `--zen-font-lineheight-lg` | `24px / 1.5rem` | Font size 16px | 🔵 In Review |
-| `--zen-font-lineheight-xl` | `26px / 1.625rem` | Font size 18px | 🔵 In Review |
-| `--zen-font-lineheight-2xl` | `32px / 2rem` | Font size 24px | 🔵 In Review |
+| `--zen-font-lineheight-xs` | `14px / 0.875rem` | Font size 11px or smaller | 🟢 Shipped  |
+| `--zen-font-lineheight-sm` | `16px / 1rem` | Font size 12px | 🟢 Shipped  |
+| `--zen-font-lineheight-md` | `20px / 1.25rem` | Font size 14px | 🟢 Shipped |
+| `--zen-font-lineheight-lg` | `24px / 1.5rem` | Font size 16px | 🟢 Shipped  |
+| `--zen-font-lineheight-xl` | `26px / 1.625rem` | Font size 18px | 🟢 Shipped |
+| `--zen-font-lineheight-2xl` | `32px / 2rem` | Font size 24px | 🟢 Shipped  |
 
 #### Text Style Tokens (Composite)
 
@@ -120,18 +120,19 @@ These are semantic aliases that combine weight + size + letter spacing + line he
 
 | Token | Weight | Size | Letter Spacing | Line Height | Usage | Status |
 |-------|--------|------|---------------|-------------|-------|--------|
-| `--zen-text-heading-display` | semibold | 3xl | letterspacing-normal | 2xl | Primary header, display font | 🔵 In Review |
-| `--zen-text-heading-prominent` | semibold | xl | letterspacing-normal | xl | Secondary header, default page header | 🔵 In Review |
-| `--zen-text-heading-standard` | semibold | lg | letterspacing-wide-1 | lg | Tertiary header, section header | 🔵 In Review |
-| `--zen-text-heading-subtle` | semibold | md | letterspacing-wide-2 | md | Subsection header | 🔵 In Review |
-| `--zen-text-heading-micro` | semibold | sm | letterspacing-wide-3 | sm | Low-emphasis header | 🔵 In Review |
-| `--zen-text-body-prominent` | regular | lg | letterspacing-wide-1 | lg | Intro, highlighted paragraph | 🔵 In Review |
-| `--zen-text-body-standard` | regular | md | letterspacing-wide-2 | md | Main content | 🔵 In Review |
-| `--zen-text-body-subtle` | regular | sm | letterspacing-wide-3 | sm | Secondary content | 🔵 In Review |
-| `--zen-text-body-micro` | regular | xs | letterspacing-wide-4 | xs | Footnotes, microcopy | 🔵 In Review |
-| `--zen-text-label-standard` | medium | md | letterspacing-wide-2 | md | Default button, form label | 🔵 In Review |
-| `--zen-text-label-subtle` | medium | sm | letterspacing-wide-3 | sm | Less prominent actions, secondary info label | 🔵 In Review |
-| `--zen-text-label-micro` | medium | xs | letterspacing-wide-4 | xs | Microcopy | 🔵 In Review |
+| `--zen-text-heading-display` | semibold | 3xl | letterspacing-normal | 2xl | Primary header, display font | 🟢 Shipped  |
+| `--zen-text-heading-prominent` | semibold | xl | letterspacing-normal | xl | Secondary header, default page header | 🟢 Shipped  |
+| `--zen-text-heading-standard` | semibold | lg | letterspacing-wide-1 | lg | Tertiary header, section header | 🟢 Shipped  |
+| `--zen-text-heading-subtle` | semibold | md | letterspacing-wide-2 | md | Subsection header | 🟢 Shipped  |
+| `--zen-text-heading-micro` | semibold | sm | letterspacing-wide-3 | sm | Low-emphasis header | 🟢 Shipped  |
+| `--zen-text-body-display` | regular | xl | letterspacing-wide-1 | lg | Support text next to header | 🟢 Shipped  |
+| `--zen-text-body-prominent` | regular | lg | letterspacing-wide-1 | lg | Intro, highlighted paragraph | 🟢 Shipped  |
+| `--zen-text-body-standard` | regular | md | letterspacing-wide-2 | md | Main content | 🟢 Shipped  |
+| `--zen-text-body-subtle` | regular | sm | letterspacing-wide-3 | sm | Secondary content | 🟢 Shipped  |
+| `--zen-text-body-micro` | regular | xs | letterspacing-wide-4 | xs | Footnotes, microcopy | 🟢 Shipped |
+| `--zen-text-label-standard` | medium | md | letterspacing-wide-2 | md | Default button, form label | 🟢 Shipped  |
+| `--zen-text-label-subtle` | medium | sm | letterspacing-wide-3 | sm | Less prominent actions, secondary info label | 🟢 Shipped  |
+| `--zen-text-label-micro` | medium | xs | letterspacing-wide-4 | xs | Microcopy | 🟢 Shipped  |
 
 ### 2.3 Borders
 
@@ -206,8 +207,10 @@ Outlined focus rings must be applied with an offset on interactive elements. For
 | Token | Value | Usage | Status |
 |-------|-------|-------|--------|
 | `--zen-spacing-3xs` | `0.125rem` (2px) | Tightest spacing, hairline gaps | 🟡 Proposed |
-| `--zen-spacing-2xs` | `0.25rem` (4px) | Between elements within a small component | 🟢 Shipped |
-| `--zen-spacing-xs` | `0.5rem` (8px) | Default spacing between components | 🟢 Shipped |
+| `--zen-spacing-2xs` | `0.25rem` (4px) | Between elements within a small component & default paddings within an extra compact component
+ | 🟢 Shipped |
+| `--zen-spacing-xs` | `0.5rem` (8px) | Default spacing between components & default paddings within a small component
+ | 🟢 Shipped |
 | `--zen-spacing-sm` | `0.75rem` (12px) | Padding in a large component | 🟢 Shipped |
 | `--zen-spacing-md` | `1rem` (16px) | Padding in a large component; spacing between components | 🟢 Shipped |
 | `--zen-spacing-lg` | `1.5rem` (24px) | Spacing between sections | 🟢 Shipped |
