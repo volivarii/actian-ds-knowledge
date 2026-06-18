@@ -94,7 +94,15 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
         the file; <em>Explore</em> re-centers the graph.
       </Text>
 
-      {/* Connectivity metric cards */}
+      {/* Connectivity metric cards — whole-substrate CI metrics from
+          quality-report.json (they INCLUDE visual assets); the hub/orphan
+          tables below are the eligible, asset-excluded view. The caption keeps
+          the two populations from reading as a contradiction (e.g. the
+          substrate-wide "Orphan nodes" count vs the eligible "Orphans" table). */}
+      <Text size="1" color="gray" as="p" mb="2">
+        Substrate-wide metrics — include visual assets (icons, logos). The hub
+        and orphan tables below show the eligible, asset-excluded view.
+      </Text>
       <Grid columns={{ initial: "2", sm: "4" }} gap="3" mb="4">
         {connectivity.map((m) => (
           <Card key={m.metric}>
@@ -172,9 +180,12 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
             </Table.Body>
           </Table.Root>
 
-          <Heading size="3" mb="2">
+          <Heading size="3" mb="1">
             Orphans ({orphans.length})
           </Heading>
+          <Text size="1" color="gray" as="p" mb="2">
+            Eligible entities with no connections — visual assets excluded.
+          </Text>
           {orphans.length === 0 ? (
             <Text size="2" color="gray">
               No orphaned entities.
