@@ -57,10 +57,18 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
   const index = useMemo(() => eligibleGraphIndex(), []);
   const hubs = useMemo(() => topHubs(subset, index, 10), [subset, index]);
   const orphans = useMemo(() => orphanRows(subset, index), [subset, index]);
-  const connectivity = metricsByDimension(qualityReport, "connectivity");
-  const coverage = metricsByDimension(qualityReport, "coverage");
+  // P4: memoize — inputs are module-stable so deps are intentionally []
+  const connectivity = useMemo(
+    () => metricsByDimension(qualityReport, "connectivity"),
+    [],
+  );
+  const coverage = useMemo(
+    () => metricsByDimension(qualityReport, "coverage"),
+    [],
+  );
 
-  const [focusId, setFocusId] = useState<string | null>(hubs[0]?.id ?? null);
+  const defaultFocusId = hubs[0]?.id ?? null;
+  const [focusId, setFocusId] = useState<string | null>(defaultFocusId);
   const [query, setQuery] = useState("");
 
   const layout = useMemo(
@@ -76,12 +84,8 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
       .slice(0, 8);
   }, [query, subset]);
 
-  function open(id: string) {
-    const target = navTargetForNodeId(id);
-    if (target) onOpenFile(target);
-  }
-
   const focusTitle = focusId ? (index.node(focusId)?.title ?? "") : "";
+  const focusTarget = focusId ? navTargetForNodeId(focusId) : null;
 
   return (
     <Box p="5" style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -145,38 +149,41 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {hubs.map((h) => (
-                <Table.Row key={h.id}>
-                  <Table.RowHeaderCell>{h.title}</Table.RowHeaderCell>
-                  <Table.Cell>
-                    <Badge variant="soft" color="gray">
-                      {typeLabel(h.type)}
-                    </Badge>
-                  </Table.Cell>
-                  <Table.Cell>{h.degree}</Table.Cell>
-                  <Table.Cell>
-                    <Flex gap="2">
-                      <Button
-                        size="1"
-                        variant="soft"
-                        onClick={() => setFocusId(h.id)}
-                      >
-                        Explore
-                      </Button>
-                      {navTargetForNodeId(h.id) ? (
+              {hubs.map((h) => {
+                const hubTarget = navTargetForNodeId(h.id);
+                return (
+                  <Table.Row key={h.id}>
+                    <Table.RowHeaderCell>{h.title}</Table.RowHeaderCell>
+                    <Table.Cell>
+                      <Badge variant="soft" color="gray">
+                        {typeLabel(h.type)}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell>{h.degree}</Table.Cell>
+                    <Table.Cell>
+                      <Flex gap="2">
                         <Button
                           size="1"
-                          variant="outline"
-                          aria-label={`Open in editor: ${h.title}`}
-                          onClick={() => open(h.id)}
+                          variant="soft"
+                          onClick={() => setFocusId(h.id)}
                         >
-                          Open in editor
+                          Explore
                         </Button>
-                      ) : null}
-                    </Flex>
-                  </Table.Cell>
-                </Table.Row>
-              ))}
+                        {hubTarget ? (
+                          <Button
+                            size="1"
+                            variant="outline"
+                            aria-label={`Open in editor: ${h.title}`}
+                            onClick={() => onOpenFile(hubTarget)}
+                          >
+                            Open in editor
+                          </Button>
+                        ) : null}
+                      </Flex>
+                    </Table.Cell>
+                  </Table.Row>
+                );
+              })}
             </Table.Body>
           </Table.Root>
 
@@ -200,28 +207,31 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {orphans.slice(0, 30).map((o) => (
-                  <Table.Row key={o.id}>
-                    <Table.RowHeaderCell>{o.title}</Table.RowHeaderCell>
-                    <Table.Cell>
-                      <Badge variant="soft" color="gray">
-                        {typeLabel(o.type)}
-                      </Badge>
-                    </Table.Cell>
-                    <Table.Cell>
-                      {navTargetForNodeId(o.id) ? (
-                        <Button
-                          size="1"
-                          variant="outline"
-                          aria-label={`Open in editor: ${o.title}`}
-                          onClick={() => open(o.id)}
-                        >
-                          Open in editor
-                        </Button>
-                      ) : null}
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
+                {orphans.slice(0, 30).map((o) => {
+                  const orphanTarget = navTargetForNodeId(o.id);
+                  return (
+                    <Table.Row key={o.id}>
+                      <Table.RowHeaderCell>{o.title}</Table.RowHeaderCell>
+                      <Table.Cell>
+                        <Badge variant="soft" color="gray">
+                          {typeLabel(o.type)}
+                        </Badge>
+                      </Table.Cell>
+                      <Table.Cell>
+                        {orphanTarget ? (
+                          <Button
+                            size="1"
+                            variant="outline"
+                            aria-label={`Open in editor: ${o.title}`}
+                            onClick={() => onOpenFile(orphanTarget)}
+                          >
+                            Open in editor
+                          </Button>
+                        ) : null}
+                      </Table.Cell>
+                    </Table.Row>
+                  );
+                })}
               </Table.Body>
             </Table.Root>
           )}
@@ -262,18 +272,22 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
                 <Text size="2" weight="medium">
                   {focusTitle}
                 </Text>
-                {navTargetForNodeId(focusId) ? (
+                {focusTarget ? (
                   <Button
                     size="1"
                     variant="outline"
                     aria-label={`Open in editor: ${focusTitle}`}
-                    onClick={() => open(focusId)}
+                    onClick={() => onOpenFile(focusTarget)}
                   >
                     Open in editor
                   </Button>
                 ) : null}
               </Flex>
-              <GraphView layout={layout} onFocusNode={setFocusId} />
+              <GraphView
+                layout={layout}
+                onFocusNode={setFocusId}
+                onReset={() => setFocusId(defaultFocusId)}
+              />
             </Box>
           ) : (
             <Text size="2" color="gray">
