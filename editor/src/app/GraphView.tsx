@@ -5,8 +5,10 @@
 // every node's aria-label and the legend. Clicking a node re-roots (explore);
 // "open in editor" lives in the tab's node card (separate explore/open).
 import React, { useMemo, useState } from "react";
-import { Badge, Box, Flex } from "@radix-ui/themes";
+import { Badge, Box, Button, Flex } from "@radix-ui/themes";
 import type { Layout, PlacedNode } from "../substrate/neighborhoodLayout";
+
+const MAX_LABEL_LEN = 18;
 
 export const NODE_TYPE_COLOR: Record<string, string> = {
   component: "var(--indigo-9)",
@@ -38,9 +40,10 @@ function typeLabel(t: string): string {
 export interface GraphViewProps {
   layout: Layout;
   onFocusNode?: (id: string) => void;
+  onReset?: () => void;
 }
 
-export function GraphView({ layout, onFocusNode }: GraphViewProps) {
+export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
   const presentTypes = useMemo(
     () => [...new Set(layout.nodes.map((n) => n.type))].sort(),
     [layout],
@@ -62,6 +65,11 @@ export function GraphView({ layout, onFocusNode }: GraphViewProps) {
     });
   }
 
+  function handleReset() {
+    setHidden(new Set());
+    onReset?.();
+  }
+
   const focusTitle = layout.nodes.find((n) => n.isFocus)?.title ?? "node";
 
   return (
@@ -71,43 +79,60 @@ export function GraphView({ layout, onFocusNode }: GraphViewProps) {
         gap="2"
         wrap="wrap"
         mb="2"
-        role="group"
-        aria-label="Filter by node type"
+        align="center"
+        role="toolbar"
+        aria-label="Graph view controls"
       >
-        {presentTypes.map((t) => {
-          const off = hidden.has(t);
-          return (
-            <button
-              key={t}
-              type="button"
-              aria-pressed={!off}
-              aria-label={`Toggle ${typeLabel(t)}`}
-              onClick={() => toggle(t)}
-              style={{
-                background: "none",
-                border: 0,
-                padding: 0,
-                cursor: "pointer",
-              }}
-            >
-              <Badge variant={off ? "outline" : "soft"} color="gray">
-                <span
-                  aria-hidden
-                  style={{
-                    display: "inline-block",
-                    width: 8,
-                    height: 8,
-                    borderRadius: 8,
-                    background: typeColor(t),
-                    marginRight: 6,
-                    opacity: off ? 0.3 : 1,
-                  }}
-                />
-                {typeLabel(t)}
-              </Badge>
-            </button>
-          );
-        })}
+        <Flex
+          gap="2"
+          wrap="wrap"
+          align="center"
+          role="group"
+          aria-label="Filter by node type"
+        >
+          {presentTypes.map((t) => {
+            const off = hidden.has(t);
+            return (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={!off}
+                aria-label={`Toggle ${typeLabel(t)}`}
+                onClick={() => toggle(t)}
+                style={{
+                  background: "none",
+                  border: 0,
+                  padding: 0,
+                  cursor: "pointer",
+                }}
+              >
+                <Badge variant={off ? "outline" : "soft"} color="gray">
+                  <span
+                    aria-hidden
+                    style={{
+                      display: "inline-block",
+                      width: 8,
+                      height: 8,
+                      borderRadius: 8,
+                      background: typeColor(t),
+                      marginRight: 6,
+                      opacity: off ? 0.3 : 1,
+                    }}
+                  />
+                  {typeLabel(t)}
+                </Badge>
+              </button>
+            );
+          })}
+        </Flex>
+        <Button
+          size="1"
+          variant="soft"
+          aria-label="Reset graph view"
+          onClick={handleReset}
+        >
+          Reset view
+        </Button>
       </Flex>
 
       <svg
@@ -141,6 +166,11 @@ export function GraphView({ layout, onFocusNode }: GraphViewProps) {
   );
 }
 
+function truncateLabel(title: string): string {
+  if (title.length <= MAX_LABEL_LEN) return title;
+  return title.slice(0, MAX_LABEL_LEN) + "…";
+}
+
 function GraphNode({
   node,
   onFocusNode,
@@ -150,6 +180,7 @@ function GraphNode({
 }) {
   const r = node.isFocus ? 10 : 7;
   const activate = () => onFocusNode?.(node.id);
+  const visibleLabel = truncateLabel(node.title);
   return (
     <g
       role="button"
@@ -164,6 +195,8 @@ function GraphNode({
         }
       }}
     >
+      {/* SVG <title> provides hover tooltip with the full title */}
+      <title>{node.title}</title>
       <circle
         cx={node.x}
         cy={node.y}
@@ -179,7 +212,7 @@ function GraphNode({
         fontSize={11}
         fill="var(--gray-12)"
       >
-        {node.title}
+        {visibleLabel}
       </text>
     </g>
   );
