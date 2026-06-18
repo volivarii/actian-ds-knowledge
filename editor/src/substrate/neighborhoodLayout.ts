@@ -52,7 +52,10 @@ export function layoutNeighborhood(
   const height = opts.height ?? 480;
   const cx = Math.round(width / 2);
   const cy = Math.round(height / 2);
-  const ringGap = Math.round(Math.min(width, height) / 2 / (depth + 1));
+  const ringGap = Math.max(
+    1,
+    Math.round(Math.min(width, height) / 2 / (depth + 1)),
+  );
 
   // BFS by hop (both directions), id-sorted within each frontier for stability.
   const hopOf = new Map<string, number>();
@@ -145,5 +148,8 @@ export function layoutNeighborhood(
   // contract, not an artifact of Map insertion order.
   edges.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  return { nodes: [...placed.values()], edges, width, height };
+  const sortedNodes = [...placed.values()].sort(
+    (a, b) => a.hop - b.hop || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+  );
+  return { nodes: sortedNodes, edges, width, height };
 }

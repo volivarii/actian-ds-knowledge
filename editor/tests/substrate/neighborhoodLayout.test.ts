@@ -89,6 +89,26 @@ test("edgeTypes filter restricts traversal", () => {
   ]);
 });
 
+test("nodes are returned in canonical hop-then-id order", () => {
+  const l = layoutNeighborhood("component:button", index, {
+    depth: 1,
+    width: 600,
+    height: 400,
+  });
+  const ids = l.nodes.map((n) => n.id);
+  // Canonical order: focus (hop 0) first, then hop-1 ids ascending.
+  assert.deepEqual(ids, [
+    "component:button",
+    "a11y:contrast",
+    "category:action",
+  ]);
+  // Also verify it equals a hop-then-id sorted copy of itself.
+  const sorted = [...l.nodes]
+    .sort((a, b) => a.hop - b.hop || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+    .map((n) => n.id);
+  assert.deepEqual(ids, sorted);
+});
+
 test("depth 2 includes 2-hop neighbors on the outer ring", () => {
   const l = layoutNeighborhood("component:button", index, {
     depth: 2,
