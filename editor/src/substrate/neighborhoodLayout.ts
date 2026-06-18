@@ -141,5 +141,9 @@ export function layoutNeighborhood(
     }
   }
 
+  // Sort edges by id (type|source|target) so output order is an explicit
+  // contract, not an artifact of Map insertion order.
+  edges.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
   return { nodes: [...placed.values()], edges, width, height };
 }
