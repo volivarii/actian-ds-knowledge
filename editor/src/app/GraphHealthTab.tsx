@@ -45,7 +45,7 @@ const COVERAGE_LABEL: Record<string, string> = {
 };
 
 function typeLabel(t: string): string {
-  return NODE_TYPE_LABEL[t] ?? t;
+  return NODE_TYPE_LABEL[t] ?? "Node";
 }
 
 export interface GraphHealthTabProps {
@@ -81,7 +81,7 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
     if (target) onOpenFile(target);
   }
 
-  const focusTitle = focusId ? index.node(focusId)?.title ?? "" : "";
+  const focusTitle = focusId ? (index.node(focusId)?.title ?? "") : "";
 
   return (
     <Box p="5" style={{ maxWidth: 1200, margin: "0 auto" }}>

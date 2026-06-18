@@ -1,11 +1,22 @@
 // src/substrate/graphEligibility.ts
 // Single source of truth for the "visual asset, not a relationship-bearing
-// DS entity" exclusion. Icons (235 degree-1 leaves), product logos,
-// illustrations, local + white-label components carry no useful edges; they
-// drown the graph explorer and the hub/orphan tables. Same policy as
-// coverageLoader's SKIP_REGISTRY_CATEGORIES — exported here in both the
-// category-SLUG representation (the graph uses `category:<slug>` ids) and the
-// registry-LABEL representation (DS Kit registry categories are human labels).
+// DS entity" exclusion. Two rules are applied:
+//
+//   1. Category-based: Icons, product logos, illustrations, local components,
+//      and white-label services — and every component wired to them via an
+//      `in_category` edge — are excluded. Same policy as the DS Kit registry
+//      filter (EXCLUDED_CATEGORY_LABELS, shared by coverageLoader).
+//
+//   2. Degree-0 component nodes: component nodes that have zero edges (they
+//      appear as neither source nor target of any edge) are excluded. This
+//      catches unclassified/unwired asset components — e.g. the ~292 Heroicon
+//      nodes (`academic-cap`, `bell`, …) that exist in the graph JSON but are
+//      not wired to any category or relationship. Real unwired DS components
+//      (if any) are surfaced by the Coverage tab, not the Relationships tab.
+//
+// Together these rules prevent asset-set noise from flooding the orphan table
+// and the title search. The exported constants are the registry-LABEL
+// representation; EXCLUDED_CATEGORY_SLUGS is the graph `category:<slug>` form.
 // Browser-safe: only the baked JSON via taxonomyAssets; never node:fs.
 import {
   graphNodes,
@@ -42,16 +53,25 @@ function slugOf(nodeId: string): string {
   return i < 0 ? nodeId : nodeId.slice(i + 1);
 }
 
-/** Ids to drop: the excluded category nodes + every component that sits in one
- *  (via an in_category edge). */
+/** Ids to drop:
+ *  1. The excluded category nodes + every component wired to them via
+ *     `in_category` (category-based rule).
+ *  2. Every `component` node that is completely disconnected (degree-0 —
+ *     appears as neither source nor target of any edge). These are
+ *     unclassified/unwired asset components (e.g. the Heroicon set) that
+ *     carry no relationship information; real unwired DS components are
+ *     surfaced by the Coverage tab instead.
+ */
 export function excludedNodeIds(
   nodes: GraphNodeRaw[],
   edges: GraphEdgeRaw[],
 ): Set<string> {
+  // Rule 1: category-based exclusions
   const excludedCategories = new Set(
     nodes
       .filter(
-        (n) => n.type === "category" && EXCLUDED_CATEGORY_SLUGS.has(slugOf(n.id)),
+        (n) =>
+          n.type === "category" && EXCLUDED_CATEGORY_SLUGS.has(slugOf(n.id)),
       )
       .map((n) => n.id),
   );
@@ -61,6 +81,19 @@ export function excludedNodeIds(
       drop.add(e.source);
     }
   }
+
+  // Rule 2: degree-0 component nodes (no edges at all)
+  const connected = new Set<string>();
+  for (const e of edges) {
+    connected.add(e.source);
+    connected.add(e.target);
+  }
+  for (const n of nodes) {
+    if (n.type === "component" && !connected.has(n.id)) {
+      drop.add(n.id);
+    }
+  }
+
   return drop;
 }
 

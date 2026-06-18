@@ -1,6 +1,5 @@
 // tests/app/EditorShell.relationships-tab.test.tsx
 import { test } from "node:test";
-import assert from "node:assert/strict";
 import "../setup-dom";
 import { render, cleanup, fireEvent } from "@testing-library/react";
 import React from "react";

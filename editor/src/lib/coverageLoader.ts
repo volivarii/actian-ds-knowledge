@@ -6,11 +6,11 @@
 // components that have no _meta.yml yet. Ghost rows offer the
 // Start-authoring action (stub _meta.yml → submission cart).
 //
-// Eligibility filter: registry categories in SKIP_REGISTRY_CATEGORIES
-// (Icons, Product logos, Illustrations & graphics, Local components,
-// White-label services, uncategorized) are excluded — leaves ~74
-// "eligible non-icon" registry components, of which ~15 overlap with
-// authored slugs.
+// Eligibility filter: registry categories in EXCLUDED_CATEGORY_LABELS
+// (shared from src/substrate/graphEligibility.ts — Icons, Product logos,
+// Illustrations & graphics, Local components, White-label services,
+// uncategorized) are excluded — leaves ~74 "eligible non-icon" registry
+// components, of which ~15 overlap with authored slugs.
 //
 // Known debt (NOT solved here): the F1 alias mismatch — 5 _meta slugs
 // alias to multi-key registry entries (e.g. `tag` ↔ `tag-default`,
