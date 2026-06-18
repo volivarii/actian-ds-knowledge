@@ -22,6 +22,7 @@ import type { Octokit } from "@octokit/rest";
 import { parse as parseYaml } from "yaml";
 import { listDirectories, getTextFile } from "../app/githubApi";
 import { domainFileName } from "./workspaceState";
+import { EXCLUDED_CATEGORY_LABELS } from "../substrate/graphEligibility";
 
 export const DOMAINS = [
   "content",
@@ -61,14 +62,6 @@ export interface CoverageRow {
 }
 
 const SKIP_DIRS = new Set(["categories", "guidelines"]);
-const SKIP_REGISTRY_CATEGORIES = new Set([
-  "Icons",
-  "Product logos",
-  "Illustrations & graphics",
-  "Local components",
-  "White-label services",
-  "uncategorized",
-]);
 
 const DSKIT_REGISTRY_PATH = "components/dist/registries/dskit.json";
 
@@ -117,7 +110,7 @@ async function loadDskitEligible(
     const out: Record<string, DskitEntry> = {};
     for (const [slug, entry] of Object.entries(parsed.components ?? {})) {
       const cat = entry?.category ?? "uncategorized";
-      if (SKIP_REGISTRY_CATEGORIES.has(cat)) continue;
+      if (EXCLUDED_CATEGORY_LABELS.has(cat)) continue;
       out[slug] = entry;
     }
     return out;
