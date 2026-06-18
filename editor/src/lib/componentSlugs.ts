@@ -12,19 +12,12 @@
 
 import type { Octokit } from "@octokit/rest";
 import { getTextFile, listDirectories } from "../app/githubApi";
+import { EXCLUDED_CATEGORY_LABELS } from "../substrate/graphEligibility";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const CACHE_KEY = "editor:component-slugs:v1";
 const SKIP_DIRS = new Set(["categories", "guidelines"]);
 const DSKIT_REGISTRY_PATH = "components/dist/registries/dskit.json";
-const SKIP_REGISTRY_CATEGORIES = new Set([
-  "Icons",
-  "Product logos",
-  "Illustrations & graphics",
-  "Local components",
-  "White-label services",
-  "uncategorized",
-]);
 
 interface CachedEntry {
   slugs: string[];
@@ -57,7 +50,7 @@ async function loadRegistryEligibleSlugs(gh: Octokit): Promise<string[]> {
     const out: string[] = [];
     for (const [slug, entry] of Object.entries(parsed.components ?? {})) {
       const cat = entry?.category ?? "uncategorized";
-      if (!SKIP_REGISTRY_CATEGORIES.has(cat)) out.push(slug);
+      if (!EXCLUDED_CATEGORY_LABELS.has(cat)) out.push(slug);
     }
     return out;
   } catch {

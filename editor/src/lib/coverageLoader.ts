@@ -6,11 +6,11 @@
 // components that have no _meta.yml yet. Ghost rows offer the
 // Start-authoring action (stub _meta.yml → submission cart).
 //
-// Eligibility filter: registry categories in SKIP_REGISTRY_CATEGORIES
-// (Icons, Product logos, Illustrations & graphics, Local components,
-// White-label services, uncategorized) are excluded — leaves ~74
-// "eligible non-icon" registry components, of which ~15 overlap with
-// authored slugs.
+// Eligibility filter: registry categories in EXCLUDED_CATEGORY_LABELS
+// (shared from src/substrate/graphEligibility.ts — Icons, Product logos,
+// Illustrations & graphics, Local components, White-label services,
+// uncategorized) are excluded — leaves ~74 "eligible non-icon" registry
+// components, of which ~15 overlap with authored slugs.
 //
 // Known debt (NOT solved here): the F1 alias mismatch — 5 _meta slugs
 // alias to multi-key registry entries (e.g. `tag` ↔ `tag-default`,
@@ -22,6 +22,7 @@ import type { Octokit } from "@octokit/rest";
 import { parse as parseYaml } from "yaml";
 import { listDirectories, getTextFile } from "../app/githubApi";
 import { domainFileName } from "./workspaceState";
+import { EXCLUDED_CATEGORY_LABELS } from "../substrate/graphEligibility";
 
 export const DOMAINS = [
   "content",
@@ -61,14 +62,6 @@ export interface CoverageRow {
 }
 
 const SKIP_DIRS = new Set(["categories", "guidelines"]);
-const SKIP_REGISTRY_CATEGORIES = new Set([
-  "Icons",
-  "Product logos",
-  "Illustrations & graphics",
-  "Local components",
-  "White-label services",
-  "uncategorized",
-]);
 
 const DSKIT_REGISTRY_PATH = "components/dist/registries/dskit.json";
 
@@ -117,7 +110,7 @@ async function loadDskitEligible(
     const out: Record<string, DskitEntry> = {};
     for (const [slug, entry] of Object.entries(parsed.components ?? {})) {
       const cat = entry?.category ?? "uncategorized";
-      if (SKIP_REGISTRY_CATEGORIES.has(cat)) continue;
+      if (EXCLUDED_CATEGORY_LABELS.has(cat)) continue;
       out[slug] = entry;
     }
     return out;
