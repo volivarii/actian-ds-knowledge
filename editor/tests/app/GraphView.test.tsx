@@ -5,7 +5,7 @@ import "../setup-dom";
 import { render, cleanup, fireEvent } from "@testing-library/react";
 import React from "react";
 import { Theme } from "@radix-ui/themes";
-import { GraphView } from "../../src/app/GraphView";
+import { GraphView, EDGE_TYPE_LABEL } from "../../src/app/GraphView";
 import { layoutNeighborhood } from "../../src/substrate/neighborhoodLayout";
 import { buildGraphIndex } from "../../src/substrate/graphIndex";
 
@@ -204,5 +204,245 @@ test("toggling a node type removes edges touching that type's nodes", () => {
     linesAfter < linesBefore,
     `edge count should drop after hiding a type (was ${linesBefore}, now ${linesAfter})`,
   );
+  cleanup();
+});
+
+// ─── FEATURE A: Edge-type filter ────────────────────────────────────────────
+
+// Build a multi-edge-type fixture: button→contrast (a11y_ref) + button→action (in_category)
+// These are the same as the shared `index` / `layout` used above.
+
+test("EDGE_TYPE_LABEL exports human labels for known edge types", () => {
+  assert.equal(EDGE_TYPE_LABEL["a11y_ref"], "Accessibility");
+  assert.equal(EDGE_TYPE_LABEL["foundations_ref"], "Foundation");
+  assert.equal(EDGE_TYPE_LABEL["motion_ref"], "Motion");
+  assert.equal(EDGE_TYPE_LABEL["related"], "Related");
+  assert.equal(EDGE_TYPE_LABEL["in_category"], "Category");
+  assert.equal(EDGE_TYPE_LABEL["narrower"], "Narrower");
+});
+
+test("edge-type legend section renders with human labels, not raw keys", () => {
+  const { container } = renderView();
+  const toolbar = container.querySelector('[role="toolbar"]');
+  assert.ok(toolbar, "toolbar should exist");
+  const toolbarText = toolbar!.textContent ?? "";
+  // Human labels should be present
+  assert.ok(
+    toolbarText.includes("Accessibility"),
+    'should show "Accessibility" label',
+  );
+  assert.ok(toolbarText.includes("Category"), 'should show "Category" label');
+  // Raw keys must NOT appear
+  assert.ok(!toolbarText.includes("a11y_ref"), 'must not show raw "a11y_ref"');
+  assert.ok(
+    !toolbarText.includes("in_category"),
+    'must not show raw "in_category"',
+  );
+  cleanup();
+});
+
+test("toggling an edge-type chip removes that type's lines", () => {
+  const { getAllByRole, container } = renderView();
+  const linesBefore = container.querySelectorAll("line").length;
+  assert.ok(linesBefore > 0, "there should be edges initially");
+  // toggle Accessibility (a11y_ref) edges off
+  const btn = getAllByRole("button", {
+    name: /Toggle Accessibility relationships/i,
+  });
+  assert.ok(btn.length > 0, "edge-type toggle button should exist");
+  fireEvent.click(btn[0]!);
+  const linesAfter = container.querySelectorAll("line").length;
+  assert.ok(
+    linesAfter < linesBefore,
+    `lines should drop after hiding a11y_ref edges (was ${linesBefore}, now ${linesAfter})`,
+  );
+  cleanup();
+});
+
+test("toggling an edge type hides floating (non-focus) nodes with no remaining edges", () => {
+  // layout: button (focus) --a11y_ref--> contrast --in_category--> action
+  // If we hide the a11y_ref edge type, contrast has no remaining edge to button,
+  // so contrast (non-focus) should disappear. Button (focus) must stay.
+  const { getAllByRole, container } = renderView();
+  // Hide a11y_ref edges
+  const btn = getAllByRole("button", {
+    name: /Toggle Accessibility relationships/i,
+  });
+  fireEvent.click(btn[0]!);
+  const svgTexts = Array.from(container.querySelectorAll("svg text")).map(
+    (el) => el.textContent,
+  );
+  assert.ok(
+    !svgTexts.includes("Contrast"),
+    "Contrast should be hidden (no remaining connection)",
+  );
+  assert.ok(svgTexts.includes("Button"), "Button (focus) must remain visible");
+  cleanup();
+});
+
+test("Reset clears edge-type filter so hidden edge and its node reappear", () => {
+  const { getAllByRole, getByRole, container } = renderView();
+  function getSvgTexts() {
+    return Array.from(container.querySelectorAll("svg text")).map(
+      (el) => el.textContent,
+    );
+  }
+  // Hide a11y_ref
+  const btn = getAllByRole("button", {
+    name: /Toggle Accessibility relationships/i,
+  });
+  fireEvent.click(btn[0]!);
+  assert.ok(
+    !getSvgTexts().includes("Contrast"),
+    "Contrast hidden after edge toggle",
+  );
+  // Reset
+  fireEvent.click(getByRole("button", { name: /Reset graph view/i }));
+  assert.ok(
+    getSvgTexts().includes("Contrast"),
+    "Contrast reappears after Reset",
+  );
+  cleanup();
+});
+
+// ─── FEATURE B: Arrow-key roving focus ─────────────────────────────────────
+
+function getNodeGs(container: HTMLElement) {
+  return Array.from(container.querySelectorAll("[role='button']")).filter(
+    (el) => el.closest("svg"),
+  ) as HTMLElement[];
+}
+
+test("initially exactly one node has tabIndex=0, the rest have -1", () => {
+  const { container } = renderView();
+  const nodeGs = getNodeGs(container);
+  assert.ok(nodeGs.length >= 2, "there should be at least 2 nodes");
+  const zeros = nodeGs.filter((g) => g.tabIndex === 0);
+  const negOnes = nodeGs.filter((g) => g.tabIndex === -1);
+  assert.equal(zeros.length, 1, "exactly one node should have tabIndex=0");
+  assert.equal(
+    negOnes.length,
+    nodeGs.length - 1,
+    "remaining nodes should have tabIndex=-1",
+  );
+  cleanup();
+});
+
+test("focus node (isFocus=true) starts as the active node (tabIndex=0)", () => {
+  const { container } = renderView();
+  const nodeGs = getNodeGs(container);
+  const activeNode = nodeGs.find((g) => g.tabIndex === 0);
+  assert.ok(activeNode, "there should be an active node");
+  // The focus node is "Button" (component:button is the focus)
+  const ariaLabel = activeNode!.getAttribute("aria-label") ?? "";
+  assert.ok(
+    ariaLabel.includes("Button"),
+    `focus node should be Button, got: ${ariaLabel}`,
+  );
+  cleanup();
+});
+
+test("ArrowRight moves tabIndex=0 to the next node", () => {
+  const { container } = renderView();
+  const nodeGs = getNodeGs(container);
+  const firstActive = nodeGs.findIndex((g) => g.tabIndex === 0);
+  assert.equal(firstActive, 0, "initially the first node should be active");
+  fireEvent.keyDown(nodeGs[0]!, { key: "ArrowRight" });
+  // After ArrowRight, the second node should now be tabIndex=0
+  const updatedGs = getNodeGs(container);
+  assert.equal(
+    updatedGs[1]!.tabIndex,
+    0,
+    "second node should be active after ArrowRight",
+  );
+  assert.equal(
+    updatedGs[0]!.tabIndex,
+    -1,
+    "first node should have tabIndex=-1 after ArrowRight",
+  );
+  cleanup();
+});
+
+test("clamps the active node when the visible set shrinks after a filter toggle", () => {
+  const r = renderView();
+  const before = getNodeGs(r.container);
+  // Move the active node to the last of the three (Button → Contrast → Action).
+  fireEvent.keyDown(before[0]!, { key: "ArrowRight" });
+  const mid = getNodeGs(r.container);
+  fireEvent.keyDown(mid[1]!, { key: "ArrowRight" });
+  let gs = getNodeGs(r.container);
+  assert.equal(
+    gs[gs.length - 1]!.tabIndex,
+    0,
+    "last node active after two ArrowRights",
+  );
+  // Hiding the 'category' node type removes the Action node, shrinking the
+  // visible set; the clamp must leave exactly one tabIndex=0 (no stale/
+  // out-of-range active index, no element with multiple actives).
+  // Anchored: the node-type chip is exactly "Toggle Category" (the edge-type
+  // chip is "Toggle Category relationships" — don't match that one).
+  fireEvent.click(r.getByRole("button", { name: /^Toggle Category$/i }));
+  gs = getNodeGs(r.container);
+  const zeros = gs.filter((g) => g.tabIndex === 0);
+  assert.equal(
+    zeros.length,
+    1,
+    "exactly one node remains active after the visible set shrinks",
+  );
+  cleanup();
+});
+
+test("ArrowLeft wraps from first to last node", () => {
+  const { container } = renderView();
+  const nodeGs = getNodeGs(container);
+  const n = nodeGs.length;
+  fireEvent.keyDown(nodeGs[0]!, { key: "ArrowLeft" });
+  const updatedGs = getNodeGs(container);
+  assert.equal(
+    updatedGs[n - 1]!.tabIndex,
+    0,
+    "last node should be active after ArrowLeft from first",
+  );
+  cleanup();
+});
+
+test("Home key moves active to first node", () => {
+  const { container } = renderView();
+  const nodeGs = getNodeGs(container);
+  // First move to a later node
+  fireEvent.keyDown(nodeGs[0]!, { key: "ArrowRight" });
+  // Then press Home
+  const afterArrow = getNodeGs(container);
+  fireEvent.keyDown(afterArrow[1]!, { key: "Home" });
+  const final = getNodeGs(container);
+  assert.equal(final[0]!.tabIndex, 0, "first node should be active after Home");
+  cleanup();
+});
+
+test("End key moves active to last node", () => {
+  const { container } = renderView();
+  const nodeGs = getNodeGs(container);
+  const n = nodeGs.length;
+  fireEvent.keyDown(nodeGs[0]!, { key: "End" });
+  const updated = getNodeGs(container);
+  assert.equal(
+    updated[n - 1]!.tabIndex,
+    0,
+    "last node should be active after End",
+  );
+  cleanup();
+});
+
+test("Enter on a node still calls onFocusNode with its id", () => {
+  const calls: string[] = [];
+  const { container } = renderView((id) => calls.push(id));
+  const nodeGs = getNodeGs(container);
+  // Press ArrowRight to move to second node, then Enter
+  fireEvent.keyDown(nodeGs[0]!, { key: "ArrowRight" });
+  const updated = getNodeGs(container);
+  const activeNode = updated.find((g) => g.tabIndex === 0);
+  assert.ok(activeNode, "there should be an active node");
+  fireEvent.keyDown(activeNode!, { key: "Enter" });
+  assert.equal(calls.length, 1, "onFocusNode should have been called once");
   cleanup();
 });

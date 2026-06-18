@@ -2,9 +2,10 @@
 // Presentational SVG renderer for a focus-node neighborhood Layout. Plain SVG
 // (no canvas/WebGL) → DOM-queryable, ARIA-able, Radix-themeable, jsdom-
 // testable. Node color is by type but NEVER the sole channel: the type is in
-// every node's aria-label and the legend. Clicking a node re-roots (explore);
-// "open in editor" lives in the tab's node card (separate explore/open).
-import React, { useMemo, useState } from "react";
+// every node's accessible name and the legend. Clicking a node re-roots
+// (explore); "open in editor" lives in the tab's node card (separate
+// explore/open). Roving tabindex over visible nodes; arrow keys move focus.
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { Badge, Box, Button, Flex } from "@radix-ui/themes";
 import type { Layout, PlacedNode } from "../substrate/neighborhoodLayout";
 
@@ -30,11 +31,23 @@ export const NODE_TYPE_LABEL: Record<string, string> = {
   unknown: "Node",
 };
 
+export const EDGE_TYPE_LABEL: Record<string, string> = {
+  a11y_ref: "Accessibility",
+  foundations_ref: "Foundation",
+  motion_ref: "Motion",
+  related: "Related",
+  in_category: "Category",
+  narrower: "Narrower",
+};
+
 function typeColor(t: string): string {
   return NODE_TYPE_COLOR[t] ?? NODE_TYPE_COLOR.unknown!;
 }
 function typeLabel(t: string): string {
   return NODE_TYPE_LABEL[t] ?? NODE_TYPE_LABEL.unknown!;
+}
+function edgeLabel(t: string): string {
+  return EDGE_TYPE_LABEL[t] ?? "Related";
 }
 
 export interface GraphViewProps {
@@ -44,20 +57,79 @@ export interface GraphViewProps {
 }
 
 export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
+  // ── Node-type filter ────────────────────────────────────────────────────
   const presentTypes = useMemo(
     () => [...new Set(layout.nodes.map((n) => n.type))].sort(),
     [layout],
   );
-  const [hidden, setHidden] = useState<Set<string>>(new Set());
-
-  const visibleNodes = layout.nodes.filter((n) => !hidden.has(n.type));
-  const visibleIds = new Set(visibleNodes.map((n) => n.id));
-  const visibleEdges = layout.edges.filter(
-    (e) => visibleIds.has(e.source) && visibleIds.has(e.target),
+  const [hiddenNodeTypes, setHiddenNodeTypes] = useState<Set<string>>(
+    new Set(),
   );
 
-  function toggle(type: string) {
-    setHidden((prev) => {
+  // ── Edge-type filter ────────────────────────────────────────────────────
+  const presentEdgeTypes = useMemo(
+    () => [...new Set(layout.edges.map((e) => e.type))].sort(),
+    [layout],
+  );
+  const [hiddenEdgeTypes, setHiddenEdgeTypes] = useState<Set<string>>(
+    new Set(),
+  );
+
+  // ── Visibility computation ───────────────────────────────────────────────
+  // 1. Candidate edges: edge type not hidden AND both endpoints pass node-type filter.
+  // 2. Visible nodes: passes node-type filter AND (is focus OR has a candidate edge).
+  // 3. Visible edges: the candidate edges (endpoints are visible by construction).
+  const { visibleNodes, visibleEdges } = useMemo(() => {
+    const nodePassesTypeFilter = (n: PlacedNode) =>
+      !hiddenNodeTypes.has(n.type);
+
+    const typePassingIds = new Set(
+      layout.nodes.filter(nodePassesTypeFilter).map((n) => n.id),
+    );
+
+    const candidateEdges = layout.edges.filter(
+      (e) =>
+        !hiddenEdgeTypes.has(e.type) &&
+        typePassingIds.has(e.source) &&
+        typePassingIds.has(e.target),
+    );
+
+    const connectedIds = new Set<string>();
+    for (const e of candidateEdges) {
+      connectedIds.add(e.source);
+      connectedIds.add(e.target);
+    }
+
+    const vNodes = layout.nodes.filter(
+      (n) => nodePassesTypeFilter(n) && (n.isFocus || connectedIds.has(n.id)),
+    );
+
+    return { visibleNodes: vNodes, visibleEdges: candidateEdges };
+  }, [layout, hiddenNodeTypes, hiddenEdgeTypes]);
+
+  // ── Roving tabindex (Feature B) ──────────────────────────────────────────
+  const [activeIndex, setActiveIndex] = useState(0);
+  const nodeRefs = useRef<(SVGGElement | null)[]>([]);
+
+  // Clamp activeIndex into [0, n-1] whenever visible node count changes.
+  useEffect(() => {
+    const n = visibleNodes.length;
+    if (n === 0) return;
+    setActiveIndex((prev) => Math.min(prev, n - 1));
+  }, [visibleNodes.length]);
+
+  // ── Toggle helpers ───────────────────────────────────────────────────────
+  function toggleNodeType(type: string) {
+    setHiddenNodeTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  }
+
+  function toggleEdgeType(type: string) {
+    setHiddenEdgeTypes((prev) => {
       const next = new Set(prev);
       if (next.has(type)) next.delete(type);
       else next.add(type);
@@ -66,11 +138,51 @@ export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
   }
 
   function handleReset() {
-    setHidden(new Set());
+    setHiddenNodeTypes(new Set());
+    setHiddenEdgeTypes(new Set());
     onReset?.();
   }
 
+  // ── Arrow-key handler (lives here, drives roving focus) ──────────────────
+  function handleNodeKeyDown(
+    ev: React.KeyboardEvent<SVGGElement>,
+    nodeIndex: number,
+  ) {
+    const n = visibleNodes.length;
+    if (n === 0) return;
+    let next: number | null = null;
+
+    if (ev.key === "ArrowRight" || ev.key === "ArrowDown") {
+      ev.preventDefault();
+      next = (nodeIndex + 1) % n;
+    } else if (ev.key === "ArrowLeft" || ev.key === "ArrowUp") {
+      ev.preventDefault();
+      next = (nodeIndex - 1 + n) % n;
+    } else if (ev.key === "Home") {
+      ev.preventDefault();
+      next = 0;
+    } else if (ev.key === "End") {
+      ev.preventDefault();
+      next = n - 1;
+    } else if (ev.key === "Enter" || ev.key === " ") {
+      ev.preventDefault();
+      onFocusNode?.(visibleNodes[nodeIndex]!.id);
+      return;
+    }
+
+    if (next !== null) {
+      setActiveIndex(next);
+      // Imperatively focus the new active node's element.
+      nodeRefs.current[next]?.focus();
+    }
+  }
+
   const focusTitle = layout.nodes.find((n) => n.isFocus)?.title ?? "node";
+
+  // Keep the roving ref array in sync with the visible nodes: drop stale
+  // entries when the visible set shrinks (e.g. after a filter toggle) so a
+  // clamped activeIndex never points at a detached, unmounted element.
+  nodeRefs.current.length = visibleNodes.length;
 
   return (
     <Box>
@@ -83,6 +195,7 @@ export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
         role="toolbar"
         aria-label="Graph view controls"
       >
+        {/* Node-type toggles */}
         <Flex
           gap="2"
           wrap="wrap"
@@ -91,14 +204,14 @@ export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
           aria-label="Filter by node type"
         >
           {presentTypes.map((t) => {
-            const off = hidden.has(t);
+            const off = hiddenNodeTypes.has(t);
             return (
               <button
                 key={t}
                 type="button"
                 aria-pressed={!off}
                 aria-label={`Toggle ${typeLabel(t)}`}
-                onClick={() => toggle(t)}
+                onClick={() => toggleNodeType(t)}
                 style={{
                   background: "none",
                   border: 0,
@@ -125,6 +238,42 @@ export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
             );
           })}
         </Flex>
+
+        {/* Edge-type toggles */}
+        {presentEdgeTypes.length > 0 && (
+          <Flex
+            gap="2"
+            wrap="wrap"
+            align="center"
+            role="group"
+            aria-label="Filter by relationship type"
+          >
+            {presentEdgeTypes.map((t) => {
+              const off = hiddenEdgeTypes.has(t);
+              const label = edgeLabel(t);
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  aria-pressed={!off}
+                  aria-label={`Toggle ${label} relationships`}
+                  onClick={() => toggleEdgeType(t)}
+                  style={{
+                    background: "none",
+                    border: 0,
+                    padding: 0,
+                    cursor: "pointer",
+                  }}
+                >
+                  <Badge variant={off ? "outline" : "soft"} color="gray">
+                    {label}
+                  </Badge>
+                </button>
+              );
+            })}
+          </Flex>
+        )}
+
         <Button
           size="1"
           variant="soft"
@@ -158,8 +307,21 @@ export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
             strokeWidth={1}
           />
         ))}
-        {visibleNodes.map((n) => (
-          <GraphNode key={n.id} node={n} onFocusNode={onFocusNode} />
+        {visibleNodes.map((n, i) => (
+          <GraphNode
+            key={n.id}
+            node={n}
+            tabIndex={i === activeIndex ? 0 : -1}
+            onFocusNode={onFocusNode}
+            onKeyDown={(ev) => handleNodeKeyDown(ev, i)}
+            onClick={() => {
+              setActiveIndex(i);
+              onFocusNode?.(n.id);
+            }}
+            nodeRef={(el) => {
+              nodeRefs.current[i] = el;
+            }}
+          />
         ))}
       </svg>
     </Box>
@@ -173,27 +335,30 @@ function truncateLabel(title: string): string {
 
 function GraphNode({
   node,
+  tabIndex,
   onFocusNode,
+  onKeyDown,
+  onClick,
+  nodeRef,
 }: {
   node: PlacedNode;
+  tabIndex: number;
   onFocusNode?: (id: string) => void;
+  onKeyDown: (ev: React.KeyboardEvent<SVGGElement>) => void;
+  onClick: () => void;
+  nodeRef: (el: SVGGElement | null) => void;
 }) {
   const r = node.isFocus ? 10 : 7;
-  const activate = () => onFocusNode?.(node.id);
   const visibleLabel = truncateLabel(node.title);
   return (
     <g
+      ref={nodeRef}
       role="button"
-      tabIndex={0}
+      tabIndex={tabIndex}
       aria-label={`${node.title}, ${typeLabel(node.type)}, ${node.degree} connections`}
       style={{ cursor: onFocusNode ? "pointer" : "default" }}
-      onClick={activate}
-      onKeyDown={(ev) => {
-        if (ev.key === "Enter" || ev.key === " ") {
-          ev.preventDefault();
-          activate();
-        }
-      }}
+      onClick={onClick}
+      onKeyDown={onKeyDown}
     >
       {/* SVG <title> provides hover tooltip with the full title */}
       <title>{node.title}</title>
