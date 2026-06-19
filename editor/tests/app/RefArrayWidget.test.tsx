@@ -28,8 +28,13 @@ function wrap(node: React.ReactNode) {
 
 test("motion ref renders as its title, never the slug", () => {
   cleanup();
-  render(wrap(<RefArrayWidget {...props([{ ref: "state-transitions" }], "motion")} />));
-  // Title comes from foundations/dist/tokens/motion.json patterns[*].name.
+  render(
+    wrap(
+      <RefArrayWidget {...props([{ ref: "state-transitions" }], "motion")} />,
+    ),
+  );
+  // Title comes from foundations/dist/tokens/motion.json patterns[*].name ("State Transitions").
+  assert.ok(screen.queryByText(/state transitions/i), "shows the motion title");
   assert.equal(
     screen.queryByText("state-transitions"),
     null,
@@ -40,10 +45,20 @@ test("motion ref renders as its title, never the slug", () => {
 
 test("a11y ref renders as a title chip", () => {
   cleanup();
-  render(wrap(<RefArrayWidget {...props([{ ref: "color-contrast" }], "accessibility")} />));
-  assert.ok(
-    screen.queryByText(/contrast/i),
-    "shows a human title for the a11y slug",
+  render(
+    wrap(
+      <RefArrayWidget
+        {...props([{ ref: "color-contrast" }], "accessibility")}
+      />,
+    ),
+  );
+  const chipNode = screen.queryByText(/contrast/i);
+  assert.ok(chipNode, "shows a human title for the a11y slug");
+  // Verify the match came from the chip title, not an input element.
+  assert.notEqual(
+    chipNode?.tagName?.toLowerCase(),
+    "input",
+    "chip title renders as text, not inside an input",
   );
   cleanup();
 });
