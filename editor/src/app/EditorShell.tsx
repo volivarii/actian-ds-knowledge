@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import { Box, Button, Callout, Flex, Tabs } from "@radix-ui/themes";
+import type { UiSchema } from "@rjsf/utils";
 import { createOctokit, MissingPATError } from "../core/octokit";
 import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
 import { categoryDefaultsUiSchema } from "../uiSchemas/categoryDefaults";
+import { appContextAppUiSchema } from "../uiSchemas/appContextApp";
+import { appContextEntityUiSchema } from "../uiSchemas/appContextEntity";
+import { appContextPatternUiSchema } from "../uiSchemas/appContextPattern";
 import { RefusalBanner } from "./RefusalBanner";
 import { CoverageDashboard } from "./CoverageDashboard";
 import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
@@ -45,6 +49,34 @@ export function isPlainMarkdown(path: string): boolean {
       /^content\/src\/(patterns|product|writing)\/[^/]+\.md$/.test(path)) &&
     !/AUTHORING\.md$/.test(path)
   );
+}
+
+export function isAppContextFile(path: string): boolean {
+  return /^app-context\/src\/(apps|entities|patterns)\/[^/]+\.md$/.test(path);
+}
+
+export function appContextKindConfig(
+  path: string,
+): { schemaKey: string; uiSchema: UiSchema; bodyless: boolean } | null {
+  if (/^app-context\/src\/apps\/[^/]+\.md$/.test(path))
+    return {
+      schemaKey: "app-context-app",
+      uiSchema: appContextAppUiSchema,
+      bodyless: true,
+    };
+  if (/^app-context\/src\/entities\/[^/]+\.md$/.test(path))
+    return {
+      schemaKey: "app-context-entity",
+      uiSchema: appContextEntityUiSchema,
+      bodyless: false,
+    };
+  if (/^app-context\/src\/patterns\/[^/]+\.md$/.test(path))
+    return {
+      schemaKey: "app-context-pattern",
+      uiSchema: appContextPatternUiSchema,
+      bodyless: false,
+    };
+  return null;
 }
 
 // Category files (components/src/categories/<slug>.md) route to the
@@ -191,6 +223,19 @@ export function EditorShell({
     pane = (
       <MetaEditScreen
         path={activePath}
+        octokit={gh}
+        onOpenSettings={onOpenSettings}
+        onNavigate={setActivePathSafe}
+      />
+    );
+  } else if (isAppContextFile(activePath)) {
+    const cfg = appContextKindConfig(activePath)!;
+    pane = (
+      <FrontmatterBodyEditScreen
+        path={activePath}
+        schemaKey={cfg.schemaKey}
+        uiSchema={cfg.uiSchema}
+        bodyless={cfg.bodyless}
         octokit={gh}
         onOpenSettings={onOpenSettings}
         onNavigate={setActivePathSafe}
