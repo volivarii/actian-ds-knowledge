@@ -34,8 +34,15 @@ test("validatePaths — allows accessibility/src/*.md", () => {
   assert.equal(isReadOnlyPath("accessibility/src/principles.md"), false);
 });
 
-test("validatePaths — allows app-context, icon-groups (Class C)", () => {
-  assert.equal(isReadOnlyPath("app-context/app-context.json"), false);
+test("validatePaths — refuses app-context/dist output; allows app-context/src authored files", () => {
+  assert.equal(isReadOnlyPath("app-context/dist/app-context.json"), true);
+  assert.equal(
+    isReadOnlyPath("app-context/src/entities/data-product.md"),
+    false,
+  );
+});
+
+test("validatePaths — allows components/src/icon-groups.json (authored Class C)", () => {
   assert.equal(isReadOnlyPath("components/src/icon-groups.json"), false);
 });
 
