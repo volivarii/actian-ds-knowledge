@@ -4,6 +4,7 @@ import type { Octokit } from "@octokit/rest";
 import type { RJSFSchema } from "@rjsf/utils";
 import { Box, Flex, Button, Text, Callout } from "@radix-ui/themes";
 import { RJSFForm } from "../form-engine/RJSFForm";
+import { frontmatterTemplates } from "../form-engine/templates";
 import { stringifyYaml } from "../form-engine/yamlSerializer";
 import { splitFrontmatter } from "../substrate/splitFrontmatter";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
@@ -63,11 +64,16 @@ export function FrontmatterBodyEditScreen(props: Props) {
     (async () => {
       setState({ kind: "loading" });
       try {
-        const schemaText = await getTextFile(octokit, `schemas/${schemaKey}.json`);
+        const schemaText = await getTextFile(
+          octokit,
+          `schemas/${schemaKey}.json`,
+        );
         const schema = JSON.parse(schemaText) as RJSFSchema;
 
         // Cart wins, then remote main, then a 404 → stub ("" → raw fallback).
-        const cartHit = submissionCartSingleton.list().find((e) => e.path === path);
+        const cartHit = submissionCartSingleton
+          .list()
+          .find((e) => e.path === path);
         let text: string;
         let basedOnSha = "";
         if (cartHit) {
@@ -162,6 +168,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
         uiSchema={uiSchema}
         formData={formData}
         widgets={WIDGETS}
+        templates={frontmatterTemplates}
         onChange={(next) => {
           setFormData(next);
           scheduleFlush(next, body);
@@ -173,7 +180,13 @@ export function FrontmatterBodyEditScreen(props: Props) {
           <Text size="2" weight="bold" as="div" mb="1">
             Prose body
           </Text>
-          <Box style={{ height: 320, border: "1px solid var(--gray-5)", borderRadius: 6 }}>
+          <Box
+            style={{
+              height: 320,
+              border: "1px solid var(--gray-5)",
+              borderRadius: 6,
+            }}
+          >
             <CodeMirrorEditor
               key={path}
               initialText={body}

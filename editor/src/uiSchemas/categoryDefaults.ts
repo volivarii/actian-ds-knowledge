@@ -1,37 +1,50 @@
 import type { UiSchema } from "@rjsf/utils";
 
 export const categoryDefaultsUiSchema: UiSchema = {
+  // Editable, author-owned fields lead; the Figma-sourced facts
+  // (anatomy/variants/confidence) trail and are grouped into a collapsed,
+  // disabled (greyed-out, non-editable) "Synced from Figma" disclosure by
+  // FrontmatterObjectFieldTemplate. Their values still round-trip via formData.
   "ui:order": [
     "label",
     "slug",
     "authoring_status",
-    "confidence",
     "last_reviewed",
-    "anatomy",
-    "variants",
     "a11y_refs",
     "motion_refs",
     "foundations_refs",
+    "anatomy",
+    "variants",
+    "confidence",
     "_schema_version",
     "_extends",
     "*",
   ],
+  "ui:options": {
+    syncedFields: ["anatomy", "variants", "confidence"],
+    syncedTitle: "Synced from Figma",
+    syncedNote:
+      "These fields are sourced from Figma and aren't edited here — they're shown for reference and saved unchanged.",
+  },
   _schema_version: { "ui:readonly": true },
   slug: { "ui:title": "Slug", "ui:readonly": true },
   label: { "ui:title": "Category label", "ui:placeholder": "e.g. Action" },
   authoring_status: { "ui:title": "Authoring status" },
-  last_reviewed: { "ui:title": "Last reviewed", "ui:placeholder": "2026-05-23" },
+  last_reviewed: {
+    "ui:title": "Last reviewed",
+    "ui:placeholder": "2026-05-23",
+  },
   anatomy: {
     "ui:title": "Anatomy (shared parts)",
-    items: {
-      name: { "ui:placeholder": "e.g. Container" },
-      description: { "ui:placeholder": "one sentence" },
-    },
+    "ui:disabled": true,
+    "ui:options": { addable: false, removable: false, orderable: false },
   },
   variants: {
     "ui:title": "Variant axes",
-    items: { axis: { "ui:placeholder": "e.g. Style" } },
+    "ui:disabled": true,
+    "ui:options": { addable: false, removable: false, orderable: false },
   },
+  confidence: { "ui:title": "Confidence", "ui:disabled": true },
   a11y_refs: {
     "ui:title": "Accessibility topics",
     "ui:widget": "RefArray",
