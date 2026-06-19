@@ -457,12 +457,15 @@ export function Sidebar({
         loadOrderManifest(octokit, "accessibility/src").catch(() => null),
         listFilesByGlob(octokit, "app-context/src/apps", {
           extension: ".md",
+          exclude: ["AUTHORING.md"],
         }).catch(() => [] as string[]),
         listFilesByGlob(octokit, "app-context/src/entities", {
           extension: ".md",
+          exclude: ["AUTHORING.md"],
         }).catch(() => [] as string[]),
         listFilesByGlob(octokit, "app-context/src/patterns", {
           extension: ".md",
+          exclude: ["AUTHORING.md"],
         }).catch(() => [] as string[]),
       ]);
       setEntries({
