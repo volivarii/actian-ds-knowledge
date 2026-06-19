@@ -1,7 +1,10 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { recordToMarkdown, markdownToRecord } = require("../scripts/app-context/lib");
+const {
+  recordToMarkdown,
+  markdownToRecord,
+} = require("../scripts/app-context/lib");
 
 test("entity round-trips: description ↔ body, structured fields ↔ frontmatter", () => {
   const rec = {
@@ -17,9 +20,16 @@ test("entity round-trips: description ↔ body, structured fields ↔ frontmatte
     schemaRelPath: "../../../schemas/app-context-entity.json",
     bodyField: "description",
   });
-  assert.ok(md.startsWith("---\n# yaml-language-server: $schema=../../../schemas/app-context-entity.json\n"));
+  assert.ok(
+    md.startsWith(
+      "---\n# yaml-language-server: $schema=../../../schemas/app-context-entity.json\n",
+    ),
+  );
   assert.ok(!md.includes("description:"), "description is NOT in frontmatter");
-  assert.ok(md.includes("Curated, business-ready asset"), "description is in the body");
+  assert.ok(
+    md.includes("Curated, business-ready asset"),
+    "description is in the body",
+  );
   const back = markdownToRecord(md, { bodyField: "description" });
   assert.deepEqual(back, rec);
 });
@@ -35,7 +45,27 @@ test("app round-trips with no body (frontmatter-only)", () => {
     sidebar: [{ label: "Catalog", id: "catalog" }],
     signals: ["steward", "govern"],
   };
-  const md = recordToMarkdown(rec, { schemaRelPath: "../../../schemas/app-context-app.json" });
+  const md = recordToMarkdown(rec, {
+    schemaRelPath: "../../../schemas/app-context-app.json",
+  });
   const back = markdownToRecord(md, {});
+  assert.deepEqual(back, rec);
+});
+
+test("entity round-trips a multi-line description with a trailing newline", () => {
+  const rec = {
+    _schema_version: 1,
+    slug: "x",
+    label: "X",
+    description: "Line one.\n\nLine two.\n",
+    properties: [],
+    relationships: {},
+    apps: [],
+  };
+  const md = recordToMarkdown(rec, {
+    schemaRelPath: "../../../schemas/app-context-entity.json",
+    bodyField: "description",
+  });
+  const back = markdownToRecord(md, { bodyField: "description" });
   assert.deepEqual(back, rec);
 });

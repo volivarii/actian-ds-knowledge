@@ -30,7 +30,8 @@ function markdownToRecord(text, opts) {
   const m = text.match(FRONTMATTER_RE);
   if (!m) throw new Error("markdownToRecord: no frontmatter block");
   const record = YAML.parse(m[1]) || {};
-  const body = (m[2] || "").trim();
+  const raw = m[2] || "";
+  const body = raw.endsWith("\n") ? raw.slice(0, -1) : raw;
   if (opts.bodyField) record[opts.bodyField] = body;
   return record;
 }
@@ -45,4 +46,9 @@ function writeAtomic(absPath, contents) {
   fs.writeFileSync(absPath, contents);
 }
 
-module.exports = { recordToMarkdown, markdownToRecord, stableStringify, writeAtomic };
+module.exports = {
+  recordToMarkdown,
+  markdownToRecord,
+  stableStringify,
+  writeAtomic,
+};
