@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://actian-ds.example.com/schemas/app-context-term.json",
+  "title": "App-context terminology entry",
+  "type": "object",
+  "required": ["_schema_version", "slug", "use", "meaning", "notUse"],
+  "additionalProperties": false,
+  "properties": {
+    "_schema_version": { "const": 1 },
+    "slug": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 60 },
+    "use": { "type": "string" },
+    "meaning": { "type": "string" },
+    "notUse": { "type": "array", "items": { "type": "string" } }
+  }
+}

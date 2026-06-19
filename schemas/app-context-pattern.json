@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://actian-ds.example.com/schemas/app-context-pattern.json",
+  "title": "App-context pattern (per-record frontmatter)",
+  "type": "object",
+  "required": ["_schema_version", "slug", "label", "apps"],
+  "additionalProperties": false,
+  "properties": {
+    "_schema_version": { "const": 1 },
+    "slug": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 60 },
+    "label": { "type": "string" },
+    "apps": { "type": "array", "items": { "type": "string" } }
+  }
+}
