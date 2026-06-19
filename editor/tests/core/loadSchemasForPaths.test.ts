@@ -45,7 +45,7 @@ test("maps app-context and icon-groups to their schema files", async () => {
     "schemas/icon-groups.json": "{}",
   });
   const schemas = await loadSchemasForPaths(
-    ["app-context/app-context.json", "components/src/icon-groups.json"],
+    ["app-context/dist/app-context.json", "components/src/icon-groups.json"],
     fetchText,
   );
   assert.deepEqual(

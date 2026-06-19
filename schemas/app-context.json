@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://actian-ds.example.com/schemas/app-context.json",
   "title": "App context — Actian product surface area",
-  "description": "Schema for app-context/app-context.json — the hand-maintained catalogue of Actian apps (Studio, Explorer, Administration), the entities they expose, the canonical product terminology, and the cross-app UX patterns. Consumed by flow generators, content guardrails, and the Knowledge Editor's secondary tier (form-driven editing). The optional `_regen` block records provenance (D4 from R6).",
+  "description": "Schema for the app-context domain — validates the CI-derived consolidated output `app-context/dist/app-context.json`.",
   "type": "object",
   "required": [
     "_schema_version",

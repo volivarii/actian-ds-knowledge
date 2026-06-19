@@ -44,9 +44,7 @@ test("validateAgainstSchema — compiles the real guideline-meta (draft 2020-12)
 test("validateAgainstSchema — rejects a guideline-meta missing `component`", () => {
   const schema = loadSchema("schemas/guideline-meta.json");
   const bad =
-    "category: action\n" +
-    "domains:\n" +
-    "  content: { status: approved }\n";
+    "category: action\n" + "domains:\n" + "  content: { status: approved }\n";
   assert.throws(() =>
     validateAgainstSchema({
       path: "components/src/x/_meta.yml",
@@ -59,12 +57,12 @@ test("validateAgainstSchema — rejects a guideline-meta missing `component`", (
 test("validateAgainstSchema — compiles the real app-context schema (draft 2020-12)", () => {
   const schema = loadSchema("schemas/app-context.json");
   const data = fs.readFileSync(
-    path.join(REPO_ROOT, "app-context/app-context.json"),
+    path.join(REPO_ROOT, "app-context/dist/app-context.json"),
     "utf8",
   );
   assert.doesNotThrow(() =>
     validateAgainstSchema({
-      path: "app-context/app-context.json",
+      path: "app-context/dist/app-context.json",
       content: data,
       schemas: { "app-context": schema },
     }),
