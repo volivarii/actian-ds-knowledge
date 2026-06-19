@@ -8,6 +8,7 @@
     "derive:foundations": "node scripts/foundations/derive-foundations.js --src-dir foundations/src --out foundations/dist",
     "derive:content": "node scripts/content/derive-content.js --src content/src --index content/src/content-index.md",
     "derive:canonical-sections": "node scripts/components/derive-canonical-sections.js",
+    "derive:app-context": "node scripts/app-context/__cli.js",
     "derive:categories": "node scripts/categories/__cli.js",
     "derive:guidelines": "node scripts/components/__cli.js",
     "derive:icons": "node scripts/icons/__cli.js",
@@ -30,5 +31,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "yaml": "^2.9.0"
   }
 }

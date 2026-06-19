@@ -16,7 +16,7 @@ var FILES_REQUIRING_SCHEMA_VERSION = [
   "components/dist/registries/metakit.json",
   "components/dist/categories.json",
   "tokens/tokens.json",
-  "app-context/app-context.json",
+  "app-context/dist/app-context.json",
   "accessibility/dist/a11y-index.json",
   "components/src/icon-groups.json",
 ];

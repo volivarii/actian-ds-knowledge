@@ -25,10 +25,23 @@ components/
 Single-origin domains stay flat (no `src/`+`dist/` nesting) — adding it would be noise:
 
 ```
-content/         ← purely human (Content lead's content guidelines)
-accessibility/   ← purely human
-app-context/     ← purely human (curated patterns)
 tokens/          ← interim: human-frozen (see tokens/README.md)
+```
+
+Derived domains also follow the `src/` + `dist/` split but are shown separately in the table below:
+
+```
+content/
+├── src/         ← edit here (Content lead's content guidelines)
+└── dist/        ← CI-generated, do not edit
+
+accessibility/
+├── src/         ← edit here (per-section MD files)
+└── dist/        ← CI-generated, do not edit
+
+app-context/
+├── src/         ← edit here (apps/, entities/, patterns/*.md + terminology.yml)
+└── dist/        ← CI-generated via app-context-derive.yml, do not edit
 ```
 
 ## Edit-here / never-edit table
@@ -44,7 +57,7 @@ tokens/          ← interim: human-frozen (see tokens/README.md)
 | Component content guidelines (UI copy rules) | `components/src/<slug>/content.md` — see `components/src/AUTHORING.md` | `guidelines-derive.yml` regenerates `components/dist/guidelines/<slug>.json` on PR |
 | Global / cross-cutting content guidelines (voice, tone, words to avoid, UX-pattern topics) | `content/src/{writing,patterns,product}/<slug>.md` — see `content/src/AUTHORING.md` and `content/src/content-index.md` | `content-derive.yml` regenerates `content/dist/global.md` on PR |
 | Accessibility guidance | `accessibility/src/<slug>.md` (per-section, ordered by `_order.json`) | `accessibility-derive.yml` regenerates `accessibility/dist/a11y-index.json` on PR |
-| App context / persona / terminology | `app-context/app-context.json` | None |
+| App context / persona / terminology | `app-context/src/{apps,entities,patterns}/<slug>.md` + `app-context/src/terminology.yml` | `app-context-derive.yml` regenerates `app-context/dist/app-context.json` + `app-context/dist/app-context.bundle.json` on PR |
 
 ## The "do not edit `dist/`" rule
 
@@ -72,7 +85,7 @@ Workflows live in `.github/workflows/`. Source of truth is the workflow files th
 - `sync-from-figma.yml` — Figma REST → registries + categories + text/effect styles + token reference + anatomy. `media-preview` phase captures each component's "Preview" frame as WebP; `media-default` captures each component's default variant in isolation (`default.webp`) as a fidelity-gate oracle, resolved from the anatomy dist (so it runs after the `anatomy` phase). Auto-bumps patch via the 2-file lockstep (`package.json` + `paths-manifest.json#knowledge_version`), opens PR, auto-merges additive, labels breaking.
 
 **Derive (PR-event, regenerate `dist/` on `src/` edits):**
-- `foundations-derive.yml` / `categories-derive.yml` / `guidelines-derive.yml` / `content-derive.yml` — each regenerates the corresponding `dist/` artifacts on PR-touch of its inputs. Auto-bump + auto-commit the regenerated dist back to the PR branch.
+- `foundations-derive.yml` / `categories-derive.yml` / `guidelines-derive.yml` / `content-derive.yml` / `app-context-derive.yml` — each regenerates the corresponding `dist/` artifacts on PR-touch of its inputs. Auto-bump + auto-commit the regenerated dist back to the PR branch.
 
 **Validate (PR-event, required gates):**
 - `validate-manifest.yml` — manifest schema + every path resolves + test suite. **Required.**

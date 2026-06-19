@@ -95,7 +95,7 @@ var PATHS = {
     src: path.join(REPO_ROOT, "accessibility", "src"),
     index: path.join(REPO_ROOT, "accessibility", "dist", "a11y-index.json"),
   },
-  appContext: path.join(REPO_ROOT, "app-context", "app-context.json"),
+  appContext: path.join(REPO_ROOT, "app-context", "dist", "app-context.json"),
 };
 
 module.exports = PATHS;

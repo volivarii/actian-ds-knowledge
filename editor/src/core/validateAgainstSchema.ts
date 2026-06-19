@@ -39,7 +39,7 @@ function compile(schema: Record<string, unknown>): ValidateFunction {
 
 export function pickSchemaKey(path: string): string | null {
   if (path.endsWith("/_meta.yml")) return "guideline-meta";
-  if (path === "app-context/app-context.json") return "app-context";
+  if (path === "app-context/dist/app-context.json") return "app-context";
   if (path === "components/src/icon-groups.json") return "icon-groups";
   if (/^components\/src\/categories\/[^/]+\.md$/.test(path))
     return "category-defaults";
