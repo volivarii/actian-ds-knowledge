@@ -50,8 +50,8 @@
   "design-guidelines/typography-rules/paragraph-spacing.json": "477dea3aa2e53b09bc3d4032d19d5a2128a1eaef245eaf251af135e0e81ba2e0",
   "design-guidelines/typography-rules/typeface.json": "8ff26c45d647205dbc92c3992464f198932e1eae777963bbd0fdf32b4efd0d70",
   "foundations-index.json": "18c26fd49d9fa19ffca1fc0014387bc7e880669af065569e5c7b4d90e4810898",
-  "foundations.bundle.json": "adf74540f594c50f3739aa46f6d2413032121329f5bf769e59b71154f6c46d83",
-  "foundations.md": "71a97365f0c17a79653e4c8860fba289106a426e7067dbb9378b92972c2ae122",
+  "foundations.bundle.json": "fa2c59116da82550b66afe87d581a17effcf1127f25b9e3120a5d617ced50143",
+  "foundations.md": "3a5a7cc10e5279d9bedd685c16e3b94e6e2e84542bf7e6cd9e08598d744ed86e",
   "tokens/_index.json": "41751c8a9aa704e91e3a20330a15f47c610d9e0edfb875c70e44f81cb40a21ef",
   "tokens/backgrounds.json": "43b92ba6183a7af1b267c6cff63c773bb4bf008c154068cd76736ba02aa5f17e",
   "tokens/borders/_index.json": "258872f28a6b78dd1eb510d9bf8ae0c1e86f50e155c64b23e3c8ce36121e8798",
@@ -69,13 +69,13 @@
   "tokens/icons/icon-colors.json": "036cef321eb3e6fd67643e59699344ecd1fb8c94fb19e6f62a19edae01ecceb8",
   "tokens/icons/icon-sizes.json": "92eddeb1c75289a5c47beb7b5d0cf149ae6e928e4ed2f844198c60b6f1ddede7",
   "tokens/motion.json": "e3259ba0770bb0df5165808a068ec6bb1fe8e55d1193340409948cf6502f55e6",
-  "tokens/spacing.json": "7ce87bd1381252c48b3e28b7e762dfbf6dd46ba787a9c1e3366e9334b384de24",
+  "tokens/spacing.json": "de33e0295993416ec5de4e53d415744f7eb6590e31ddbd5b5d09d349a2c5327f",
   "tokens/typography/_index.json": "7496e94b712529801545cb9e0f0b87f2f7f38dd0eebf8c0794f721d83158e4b3",
   "tokens/typography/font-family.json": "b4fe2797977e97153cda8f8d731129e2ff5767c6167a85d031c355c5f6c2a35a",
-  "tokens/typography/font-size.json": "4f9d86e5ab4fe93653ad5d0925febc8e5a11b2e7fbd7c1e5d0fb3a6e38c6d999",
+  "tokens/typography/font-size.json": "5e1b63aa81667e894718a0504ebe4dde3c8af6fc17961c5065632e76a1f7c307",
   "tokens/typography/font-weight.json": "e61cf6460671abebe224a195a0953faf47a36bfd234ef9710788b42f9e814cfb",
   "tokens/typography/letter-spacing.json": "4242078857a64e25013f6476366c1a0c87476d43ada1bbb0e4686cd665432363",
-  "tokens/typography/line-height.json": "e442e2f4e327798335cc27c74544cb377a81ce1aaa2a29ca718bc3c35e52bb22",
+  "tokens/typography/line-height.json": "77ea1aa132fd2c35369b30c6dca1f97f57ec6926039476edade828bc32ce7603",
   "tokens/typography/text-color-tokens.json": "013ddea86932019a326bdd550dcfe3978942c23db88ef1c6d2b1cb8b40c4fb1a",
-  "tokens/typography/text-style-tokens-composite.json": "b51ac19d05f281e972fca4d36f501d4cdcd05e980c6c39e079e35eb5651a4963"
+  "tokens/typography/text-style-tokens-composite.json": "3803cec92099efbd09c28b237ce215d7bf6416dc57d14908944326274bafebf6"
 }
