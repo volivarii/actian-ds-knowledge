@@ -107,6 +107,35 @@ jobs:
             exit 1
           fi
 
+      # Re-derive + git-diff drift guards for the snapshot-fixture domains
+      # (replaces the removed tests/snapshots/*-dist.snapshot.json fixtures —
+      # same re-derive-and-compare gate as graph above, one source of truth =
+      # the committed dist). The per-domain *-derive.yml workflows auto-commit
+      # the regenerated dist back to the PR, so an editor source-only edit
+      # self-heals; this guard is the belt-and-suspenders that fails if stale
+      # dist is ever committed directly.
+      - name: Derive foundations
+        run: npm run derive:foundations
+
+      - name: Foundations dist drift guard (committed foundations/dist must match regeneration)
+        run: |
+          if ! git diff --quiet -- foundations/dist; then
+            echo "::error::foundations/dist is stale — run 'npm run derive:foundations' and commit."
+            git --no-pager diff --stat -- foundations/dist
+            exit 1
+          fi
+
+      - name: Derive accessibility
+        run: npm run derive:accessibility
+
+      - name: Accessibility dist drift guard (committed accessibility/dist must match regeneration)
+        run: |
+          if ! git diff --quiet -- accessibility/dist; then
+            echo "::error::accessibility/dist is stale — run 'npm run derive:accessibility' and commit."
+            git --no-pager diff --stat -- accessibility/dist
+            exit 1
+          fi
+
       - name: Run test suite
         run: npm test
 
