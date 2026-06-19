@@ -17,6 +17,7 @@ import Ajv2020, { type ValidateFunction } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
 import { parseYaml } from "../form-engine/yamlSerializer";
 import { SchemaValidationError } from "./types";
+import { splitFrontmatter } from "../substrate/splitFrontmatter";
 
 export type SchemaMap = Record<string, Record<string, unknown>>;
 
@@ -40,6 +41,8 @@ export function pickSchemaKey(path: string): string | null {
   if (path.endsWith("/_meta.yml")) return "guideline-meta";
   if (path === "app-context/app-context.json") return "app-context";
   if (path === "components/src/icon-groups.json") return "icon-groups";
+  if (/^components\/src\/categories\/[^/]+\.md$/.test(path))
+    return "category-defaults";
   return null;
 }
 
@@ -47,6 +50,7 @@ function parseContent(path: string, content: string): unknown {
   if (path.endsWith(".yml") || path.endsWith(".yaml"))
     return parseYaml(content);
   if (path.endsWith(".json")) return JSON.parse(content);
+  if (path.endsWith(".md")) return splitFrontmatter(content).data;
   return content;
 }
 

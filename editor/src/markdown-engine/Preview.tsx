@@ -12,38 +12,10 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
-import { parse as parseYaml } from "yaml";
+import { splitFrontmatter } from "../substrate/splitFrontmatter";
 
 export interface PreviewProps {
   text: string;
-}
-
-interface ParsedFrontmatter {
-  data: Record<string, unknown> | null;
-  body: string;
-}
-
-// Split a markdown document into its YAML frontmatter (if any) and the
-// remaining body. Returns null `data` when there's no frontmatter or it
-// fails to parse.
-function splitFrontmatter(text: string): ParsedFrontmatter {
-  if (!text.startsWith("---")) return { data: null, body: text };
-  // Match an opening `---` line, capture until the closing `---` on its
-  // own line. \r? to tolerate CRLF line endings.
-  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
-  if (!match || !match[1]) return { data: null, body: text };
-  try {
-    const data = parseYaml(match[1]);
-    if (!data || typeof data !== "object" || Array.isArray(data)) {
-      return { data: null, body: text };
-    }
-    return {
-      data: data as Record<string, unknown>,
-      body: text.slice(match[0].length),
-    };
-  } catch {
-    return { data: null, body: text };
-  }
 }
 
 function renderFrontmatterValue(value: unknown): React.ReactNode {
