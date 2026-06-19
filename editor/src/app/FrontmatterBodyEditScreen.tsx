@@ -37,6 +37,9 @@ interface Props {
   octokit: Octokit;
   onOpenSettings?: () => void;
   onNavigate?: (p: string | null) => void;
+  /** When true, hide the prose-body editor — used for frontmatter-only
+   *  records (e.g. app-context apps). The loaded body round-trips unchanged. */
+  bodyless?: boolean;
 }
 
 type Loaded =
@@ -53,7 +56,7 @@ type Loaded =
     };
 
 export function FrontmatterBodyEditScreen(props: Props) {
-  const { path, schemaKey, uiSchema, octokit } = props;
+  const { path, schemaKey, uiSchema, octokit, bodyless } = props;
   const [state, setState] = useState<Loaded>({ kind: "loading" });
   const [formData, setFormData] = useState<unknown>(undefined);
   const [body, setBody] = useState<string>("");
@@ -176,27 +179,29 @@ export function FrontmatterBodyEditScreen(props: Props) {
         onSubmit={(next) => flushToCart(next, body)}
         submitLabel="Add to batch"
       >
-        <Box mt="4">
-          <Text size="2" weight="bold" as="div" mb="1">
-            Prose body
-          </Text>
-          <Box
-            style={{
-              height: 320,
-              border: "1px solid var(--gray-5)",
-              borderRadius: 6,
-            }}
-          >
-            <CodeMirrorEditor
-              key={path}
-              initialText={body}
-              onChange={(t) => {
-                setBody(t);
-                scheduleFlush(formData, t);
+        {!bodyless && (
+          <Box mt="4">
+            <Text size="2" weight="bold" as="div" mb="1">
+              Prose body
+            </Text>
+            <Box
+              style={{
+                height: 320,
+                border: "1px solid var(--gray-5)",
+                borderRadius: 6,
               }}
-            />
+            >
+              <CodeMirrorEditor
+                key={path}
+                initialText={body}
+                onChange={(t) => {
+                  setBody(t);
+                  scheduleFlush(formData, t);
+                }}
+              />
+            </Box>
           </Box>
-        </Box>
+        )}
         <Flex gap="2" mt="3">
           <Button type="submit">Add to batch</Button>
         </Flex>
