@@ -44,9 +44,12 @@ function validateFile(schemaRelPath, dataRelPath) {
   return true;
 }
 
-test("D3 — schemas/app-context.json validates app-context/app-context.json", () => {
+test("D3 — schemas/app-context.json validates app-context/dist/app-context.json", () => {
   assert.equal(
-    validateFile("schemas/app-context.json", "app-context/app-context.json"),
+    validateFile(
+      "schemas/app-context.json",
+      "app-context/dist/app-context.json",
+    ),
     true,
   );
 });

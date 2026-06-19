@@ -17,6 +17,35 @@
       "const": 1,
       "description": "Substrate schema version. Pinned at 1; bump only on a schema-incompatible change to the file shape."
     },
+    "_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Provenance stamp on the CI-derived consolidated file. Present only on the derived dist output; absent on hand-authored src files.",
+      "examples": [
+        {
+          "auto_generated": true,
+          "source": "scripts/app-context/derive-app-context.js",
+          "do_not_edit": true
+        }
+      ],
+      "properties": {
+        "auto_generated": {
+          "type": "boolean",
+          "description": "True when this file was produced by the derive script rather than hand-authored.",
+          "examples": [true]
+        },
+        "source": {
+          "type": "string",
+          "description": "Relative path (from repo root) of the script that generated this file.",
+          "examples": ["scripts/app-context/derive-app-context.js"]
+        },
+        "do_not_edit": {
+          "type": "boolean",
+          "description": "True signals that manual edits will be overwritten on next derive run; edit the src files instead.",
+          "examples": [true]
+        }
+      }
+    },
     "_regen": {
       "$ref": "#/$defs/regenBlock",
       "description": "Optional provenance block describing how this file is regenerated. See $defs.regenBlock.",
