@@ -43,6 +43,12 @@ export function pickSchemaKey(path: string): string | null {
   if (path === "components/src/icon-groups.json") return "icon-groups";
   if (/^components\/src\/categories\/[^/]+\.md$/.test(path))
     return "category-defaults";
+  if (/^app-context\/src\/apps\/[^/]+\.md$/.test(path))
+    return "app-context-app";
+  if (/^app-context\/src\/entities\/[^/]+\.md$/.test(path))
+    return "app-context-entity";
+  if (/^app-context\/src\/patterns\/[^/]+\.md$/.test(path))
+    return "app-context-pattern";
   return null;
 }
 

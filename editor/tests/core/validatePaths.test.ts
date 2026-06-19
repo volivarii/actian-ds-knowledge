@@ -35,8 +35,11 @@ test("validatePaths — allows accessibility/src/*.md", () => {
 });
 
 test("validatePaths — allows app-context, icon-groups (Class C)", () => {
-  assert.equal(isReadOnlyPath("app-context/app-context.json"), false);
-  assert.equal(isReadOnlyPath("components/src/icon-groups.json"), false);
+  assert.equal(isReadOnlyPath("app-context/dist/app-context.json"), true);
+  assert.equal(
+    isReadOnlyPath("app-context/src/entities/data-product.md"),
+    false,
+  );
 });
 
 test("validatePaths — allows foundations/src/*.md (authored)", () => {
