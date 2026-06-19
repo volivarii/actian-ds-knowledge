@@ -8,7 +8,7 @@ const SCHEMA_VERSION = 1;
 const META = {
   auto_generated: true,
   source: "scripts/app-context/derive-app-context.js",
-  do_not_edit: true,
+  do_not_edit: "Edit the app-context/src/ files; CI regenerates this file.",
 };
 
 const KINDS = {

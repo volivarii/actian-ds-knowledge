@@ -25,7 +25,7 @@
         {
           "auto_generated": true,
           "source": "scripts/app-context/derive-app-context.js",
-          "do_not_edit": true
+          "do_not_edit": "Edit the app-context/src/ files; CI regenerates this file."
         }
       ],
       "properties": {
@@ -40,9 +40,11 @@
           "examples": ["scripts/app-context/derive-app-context.js"]
         },
         "do_not_edit": {
-          "type": "boolean",
-          "description": "True signals that manual edits will be overwritten on next derive run; edit the src files instead.",
-          "examples": [true]
+          "type": "string",
+          "description": "Guidance string signalling that manual edits will be overwritten on next derive run; edit the src files instead.",
+          "examples": [
+            "Edit the app-context/src/ files; CI regenerates this file."
+          ]
         }
       }
     },

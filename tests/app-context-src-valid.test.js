@@ -60,10 +60,7 @@ for (const kind of KINDS) {
     const failures = [];
     for (const file of files) {
       const text = fs.readFileSync(path.join(kind.dir, file), "utf8");
-      const record = markdownToRecord(
-        text,
-        kind.bodyField ? { bodyField: kind.bodyField } : {},
-      );
+      const record = markdownToRecord(text, {});
       const valid = validate(record);
       if (!valid) {
         failures.push(`${file}: ${JSON.stringify(validate.errors, null, 2)}`);

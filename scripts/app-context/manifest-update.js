@@ -25,7 +25,11 @@ function updatePathsManifest(manifestPath, opts) {
   // Also drop any stale collection entries under the appContext prefix.
   const dropped = [];
   Object.keys(manifest.paths).forEach((k) => {
-    if (k === "appContext" || k.indexOf("appContext.") === 0) {
+    if (
+      k === "appContext" ||
+      k === "appContextBundle" ||
+      k.indexOf("appContext.") === 0
+    ) {
       dropped.push(k);
       delete manifest.paths[k];
     }
@@ -38,7 +42,9 @@ function updatePathsManifest(manifestPath, opts) {
 
   const added = [];
 
-  // 2. Single consolidated dist leaf — replaces the old bare "appContext" human entry
+  // 2. Dist leaves — appContext (primary) + appContextBundle (embedded wrapper).
+  // Named "appContextBundle" (not "appContext.bundle") to respect the leaf-XOR-namespace
+  // convention: "appContext" is a leaf so no "appContext." prefix may be used in keys.
   manifest.paths["appContext"] = {
     path: "app-context/dist/app-context.json",
     type: "json",
@@ -49,30 +55,44 @@ function updatePathsManifest(manifestPath, opts) {
   };
   added.push("appContext");
 
+  manifest.paths["appContextBundle"] = {
+    path: "app-context/dist/app-context.bundle.json",
+    type: "json",
+    origin: "ci",
+    generator: "scripts/app-context/derive-app-context.js",
+    description:
+      "Self-contained bundle wrapping the app-context dist under an `appContext` key; consumed by tools that embed the whole domain in a single JSON.",
+  };
+  added.push("appContextBundle");
+
   // 3. Collections — src (human) only; no byKey because dist is a single file.
   // Named "appContextSrc" (not "appContext.src") to avoid the leaf-XOR-namespace
   // collision: "appContext" is a leaf in paths, so nothing may use "appContext."
   // as a namespace prefix in collections — same pattern as "components.categoriesSrc".
+  // recursive: true so gatherCoveredFiles walks into apps/, entities/, patterns/
+  // subdirs and also picks up terminology.yml at the collection root.
   manifest.collections["appContextSrc"] = {
     dir: "app-context/src",
     pattern: "{kind}/{slug}.md",
     type: "markdown",
     origin: "human",
+    recursive: true,
     description:
       "Authoring surface for app context. Per-kind subdirs: apps, entities, patterns. Terminology lives in terminology.yml (not covered by this collection).",
   };
   added.push("appContextSrc");
 
-  // 4. Zones — ensure appContextSrc is classified in _zones.metadata.
-  // The prefix "appContextSrc" (split(".")[0]) must appear in _zones so the
-  // manifest-zones test passes. "appContext" is already there; "appContextSrc"
-  // must be added separately because it cannot be named "appContext.src" (that
-  // would violate the leaf-XOR-namespace convention).
+  // 4. Zones — ensure appContextSrc + appContextBundle are classified in _zones.metadata.
+  // Each non-namespaced key prefix must appear in _zones so the manifest-zones check passes.
+  // "appContext" is already there; "appContextSrc" and "appContextBundle" must be added
+  // separately (they cannot use the "appContext." prefix — that violates leaf-XOR-namespace).
   if (manifest._zones && Array.isArray(manifest._zones.metadata)) {
-    if (!manifest._zones.metadata.includes("appContextSrc")) {
-      manifest._zones.metadata.push("appContextSrc");
-      manifest._zones.metadata.sort();
+    for (const key of ["appContextSrc", "appContextBundle"]) {
+      if (!manifest._zones.metadata.includes(key)) {
+        manifest._zones.metadata.push(key);
+      }
     }
+    manifest._zones.metadata.sort();
   }
 
   // 5. Marker note

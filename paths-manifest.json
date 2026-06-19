@@ -16,6 +16,7 @@
     ],
     "metadata": [
       "appContext",
+      "appContextBundle",
       "appContextSrc",
       "tokens"
     ],
@@ -55,6 +56,13 @@
       "origin": "ci",
       "generator": "scripts/app-context/derive-app-context.js",
       "description": "Per-app patterns + persona + terminology (consolidated dist — do not edit)"
+    },
+    "appContextBundle": {
+      "path": "app-context/dist/app-context.bundle.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/app-context/derive-app-context.js",
+      "description": "Self-contained bundle wrapping the app-context dist under an `appContext` key; consumed by tools that embed the whole domain in a single JSON."
     },
     "components.anatomy.bundle": {
       "path": "components/dist/anatomy.bundle.json",
@@ -647,6 +655,7 @@
       "pattern": "{kind}/{slug}.md",
       "type": "markdown",
       "origin": "human",
+      "recursive": true,
       "description": "Authoring surface for app context. Per-kind subdirs: apps, entities, patterns. Terminology lives in terminology.yml (not covered by this collection)."
     },
     "components.anatomy.byKey": {

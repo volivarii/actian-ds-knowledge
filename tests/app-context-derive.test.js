@@ -5,13 +5,18 @@ const path = require("node:path");
 const { deriveToObject } = require("../scripts/app-context/derive-app-context");
 
 const ROOT = path.resolve(__dirname, "..");
-const golden = require("../app-context/dist/app-context.golden.json");
+const srcDir = path.join(ROOT, "app-context", "src");
 
-test("derive(src) reproduces the golden collections (lossless round-trip)", () => {
-  const dist = deriveToObject(path.join(ROOT, "app-context", "src"));
-  for (const kind of ["apps", "entities", "terminology", "patterns"]) {
-    assert.deepEqual(dist[kind], golden[kind], `${kind} must match golden`);
-  }
-  assert.equal(dist._schema_version, 1);
-  assert.equal(dist._meta.auto_generated, true);
+test("derive(src) deep-equals the committed dist (round-trip drift gate)", () => {
+  // PR #273 convention: committed dist is the snapshot; re-derive must reproduce it.
+  const derived = deriveToObject(srcDir);
+  const committed = require("../app-context/dist/app-context.json");
+  assert.deepEqual(derived, committed);
+});
+
+test("derive(src) carries expected _meta shape", () => {
+  const derived = deriveToObject(srcDir);
+  assert.equal(derived._schema_version, 1);
+  assert.equal(derived._meta.auto_generated, true);
+  assert.equal(typeof derived._meta.do_not_edit, "string");
 });
