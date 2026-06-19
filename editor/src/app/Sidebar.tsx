@@ -46,6 +46,9 @@ interface GroupedEntries {
   product: string[];
   writing: string[];
   components: string[];
+  appContextApps: string[];
+  appContextEntities: string[];
+  appContextPatterns: string[];
 }
 
 type SectionKey =
@@ -54,7 +57,10 @@ type SectionKey =
   | "patterns"
   | "product"
   | "writing"
-  | "components";
+  | "components"
+  | "appContextApps"
+  | "appContextEntities"
+  | "appContextPatterns";
 
 const SECTION_KEYS: ReadonlyArray<SectionKey> = [
   "foundations",
@@ -63,6 +69,9 @@ const SECTION_KEYS: ReadonlyArray<SectionKey> = [
   "product",
   "writing",
   "components",
+  "appContextApps",
+  "appContextEntities",
+  "appContextPatterns",
 ];
 
 const SECTION_STORAGE_KEY = "sidebar.section.collapsed.v1";
@@ -78,6 +87,9 @@ function defaultCollapsed(): Record<SectionKey, boolean> {
     product: true,
     writing: true,
     components: true,
+    appContextApps: true,
+    appContextEntities: true,
+    appContextPatterns: true,
   };
 }
 
@@ -416,6 +428,9 @@ export function Sidebar({
         comps,
         foundationsOrder,
         accessibilityOrder,
+        appContextApps,
+        appContextEntities,
+        appContextPatterns,
       ] = await Promise.all([
         listFilesByGlob(octokit, "foundations/src", {
           extension: ".md",
@@ -440,6 +455,15 @@ export function Sidebar({
         listDirectories(octokit, "components/src").catch(() => [] as string[]),
         loadOrderManifest(octokit, "foundations/src").catch(() => null),
         loadOrderManifest(octokit, "accessibility/src").catch(() => null),
+        listFilesByGlob(octokit, "app-context/src/apps", {
+          extension: ".md",
+        }).catch(() => [] as string[]),
+        listFilesByGlob(octokit, "app-context/src/entities", {
+          extension: ".md",
+        }).catch(() => [] as string[]),
+        listFilesByGlob(octokit, "app-context/src/patterns", {
+          extension: ".md",
+        }).catch(() => [] as string[]),
       ]);
       setEntries({
         foundations: applyOrder(foundations, foundationsOrder?.order),
@@ -448,6 +472,9 @@ export function Sidebar({
         product,
         writing,
         components: comps.filter((c) => !SKIP_COMPONENT_DIRS.has(c)),
+        appContextApps,
+        appContextEntities,
+        appContextPatterns,
       });
       setOrderShas({
         foundations: foundationsOrder?.sha ?? null,
@@ -573,7 +600,11 @@ export function Sidebar({
     const slug = slugFromPath(path);
     const isActive = activePath === path;
     const isDraft = pendingPaths.has(path);
-    const trashable = domain !== "components";
+    const trashable =
+      domain !== "components" &&
+      domain !== "appContextApps" &&
+      domain !== "appContextEntities" &&
+      domain !== "appContextPatterns";
     return (
       <Flex
         align="center"
@@ -838,6 +869,47 @@ export function Sidebar({
                       {renderRow({
                         path: `content/src/${group}/${path}`,
                         domain: group,
+                        leftHandle: null,
+                      })}
+                    </li>
+                  ))}
+                </ul>
+              </Box>
+            )}
+          </Box>
+        );
+      })}
+
+      {(
+        [
+          ["appContextApps", "apps"],
+          ["appContextEntities", "entities"],
+          ["appContextPatterns", "patterns"],
+        ] as const
+      ).map(([entriesKey, kind]) => {
+        const items = entries[entriesKey];
+        if (items.length === 0) return null;
+        const label = `App context — ${kind[0]!.toUpperCase()}${kind.slice(1)}`;
+        const listId = `list-appcontext-${kind}`;
+        const collapsed = sectionCollapsed[entriesKey];
+        return (
+          <Box key={entriesKey}>
+            {sectionHeader(entriesKey, label, items.length, listId, null)}
+            {!collapsed && (
+              <Box
+                id={listId}
+                role="group"
+                aria-labelledby={`sidebar-section-${entriesKey}-header`}
+              >
+                <ul
+                  role="list"
+                  style={{ listStyle: "none", padding: 0, margin: 0 }}
+                >
+                  {items.map((file) => (
+                    <li key={file}>
+                      {renderRow({
+                        path: `app-context/src/${kind}/${file}`,
+                        domain: entriesKey,
                         leftHandle: null,
                       })}
                     </li>
