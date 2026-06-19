@@ -5,6 +5,8 @@ import { createOctokit, MissingPATError } from "../core/octokit";
 import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
+import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
+import { categoryDefaultsUiSchema } from "../uiSchemas/categoryDefaults";
 import { RefusalBanner } from "./RefusalBanner";
 import { CoverageDashboard } from "./CoverageDashboard";
 import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
@@ -33,15 +35,24 @@ interface EditorShellProps {
   onOpenStaging?: () => void;
 }
 
-function isPlainMarkdown(path: string): boolean {
+export function isPlainMarkdown(path: string): boolean {
   return (
     (/^foundations\/src\/[^/]+\.md$/.test(path) ||
       /^accessibility\/src\/[^/]+\.md$/.test(path) ||
-      /^components\/src\/(?!categories\/AUTHORING\.md|AUTHORING\.md|EDITING-GUIDE\.md)[^/]+\/[^/]+\.md$/.test(
+      /^components\/src\/(?!categories\/|AUTHORING\.md|EDITING-GUIDE\.md)[^/]+\/[^/]+\.md$/.test(
         path,
       ) ||
-      /^components\/src\/categories\/[^/]+\.md$/.test(path) ||
       /^content\/src\/(patterns|product|writing)\/[^/]+\.md$/.test(path)) &&
+    !/AUTHORING\.md$/.test(path)
+  );
+}
+
+// Category files (components/src/categories/<slug>.md) route to the
+// frontmatter form editor, not the raw markdown editor — so they are
+// deliberately excluded from isPlainMarkdown above.
+export function isCategoryFile(path: string): boolean {
+  return (
+    /^components\/src\/categories\/[^/]+\.md$/.test(path) &&
     !/AUTHORING\.md$/.test(path)
   );
 }
@@ -180,6 +191,17 @@ export function EditorShell({
     pane = (
       <MetaEditScreen
         path={activePath}
+        octokit={gh}
+        onOpenSettings={onOpenSettings}
+        onNavigate={setActivePathSafe}
+      />
+    );
+  } else if (isCategoryFile(activePath)) {
+    pane = (
+      <FrontmatterBodyEditScreen
+        path={activePath}
+        schemaKey="category-defaults"
+        uiSchema={categoryDefaultsUiSchema}
         octokit={gh}
         onOpenSettings={onOpenSettings}
         onNavigate={setActivePathSafe}
