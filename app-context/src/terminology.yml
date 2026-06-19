@@ -1,4 +1,3 @@
-# yaml-language-server: $schema=../../schemas/app-context-term.json
 _schema_version: 1
 terms:
   data-intelligence-platform:
