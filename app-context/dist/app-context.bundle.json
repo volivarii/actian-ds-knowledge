@@ -293,6 +293,16 @@
         ],
         "description": "Curated, business-ready asset. Contains Input Ports and Output Ports. Published to marketplace."
       },
+      "dataset": {
+        "label": "Dataset",
+        "properties": [],
+        "relationships": {},
+        "apps": [
+          "studio",
+          "explorer"
+        ],
+        "description": "A dataset asset contained by a data product; a type of catalog object."
+      },
       "discussion-thread": {
         "label": "Discussion Thread",
         "properties": [
@@ -358,6 +368,15 @@
         ],
         "description": "Access rules, quality rules, compliance constraints"
       },
+      "input-port": {
+        "label": "Input Port",
+        "properties": [],
+        "relationships": {},
+        "apps": [
+          "studio"
+        ],
+        "description": "An input port of a data product — a defined ingestion point that feeds the product."
+      },
       "lineage": {
         "label": "Lineage",
         "properties": [
@@ -371,6 +390,16 @@
           "explorer"
         ],
         "description": "Field-level transformation tracking from source to downstream"
+      },
+      "metadata": {
+        "label": "Metadata",
+        "properties": [],
+        "relationships": {},
+        "apps": [
+          "studio",
+          "explorer"
+        ],
+        "description": "Metadata attached to a catalog object — descriptive, technical, and business attributes."
       },
       "observability-signal": {
         "label": "Observability Signal",
@@ -388,6 +417,15 @@
         ],
         "description": "Quality score, freshness, usage stats attached to assets"
       },
+      "output-port": {
+        "label": "Output Port",
+        "properties": [],
+        "relationships": {},
+        "apps": [
+          "studio"
+        ],
+        "description": "An output port of a data product — a published interface that a data contract can attach to."
+      },
       "scanner": {
         "label": "Scanner",
         "properties": [
@@ -402,6 +440,15 @@
           "administration"
         ],
         "description": "External data ingestion agent that discovers and imports metadata from connections"
+      },
+      "suggestion": {
+        "label": "Suggestion",
+        "properties": [],
+        "relationships": {},
+        "apps": [
+          "studio"
+        ],
+        "description": "A suggested enrichment or change on a catalog object, pending steward review."
       },
       "user-group": {
         "label": "User / Group",

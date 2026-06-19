@@ -22,13 +22,21 @@ function readKind(srcDir, kind) {
   const dir = path.join(srcDir, cfg.dir);
   const out = {};
   if (!fs.existsSync(dir)) return out;
-  for (const file of fs.readdirSync(dir).filter((f) => f.endsWith(".md")).sort()) {
+  for (const file of fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(".md"))
+    .sort()) {
     const slug = file.replace(/\.md$/, "");
-    const rec = markdownToRecord(fs.readFileSync(path.join(dir, file), "utf8"), {
-      bodyField: cfg.bodyField,
-    });
+    const rec = markdownToRecord(
+      fs.readFileSync(path.join(dir, file), "utf8"),
+      {
+        bodyField: cfg.bodyField,
+      },
+    );
     if (rec.slug !== slug) {
-      throw new Error(`${kind}/${file}: slug "${rec.slug}" != filename "${slug}"`);
+      throw new Error(
+        `${kind}/${file}: slug "${rec.slug}" != filename "${slug}"`,
+      );
     }
     // Strip authoring-only keys; keep the consumer-facing shape.
     delete rec._schema_version;
@@ -61,10 +69,20 @@ function runCli(argv) {
   const srcDir = path.join(repoRoot, "app-context", "src");
   const distDir = path.join(repoRoot, "app-context", "dist");
   const dist = deriveToObject(srcDir);
+  const { validateAppContext } = require("./validate-app-context");
+  const { errors } = validateAppContext(dist);
+  if (errors.length) {
+    console.error("app-context integrity errors:\n" + errors.join("\n"));
+    return 1;
+  }
   writeAtomic(path.join(distDir, "app-context.json"), stableStringify(dist));
   writeAtomic(
     path.join(distDir, "app-context.bundle.json"),
-    stableStringify({ _schema_version: SCHEMA_VERSION, _meta: META, appContext: dist }),
+    stableStringify({
+      _schema_version: SCHEMA_VERSION,
+      _meta: META,
+      appContext: dist,
+    }),
   );
   require("./manifest-update").updatePathsManifest(
     path.join(repoRoot, "paths-manifest.json"),
