@@ -20,9 +20,9 @@ const META = {
 };
 
 const KINDS = {
-  apps: { dir: "apps", bodyField: null },
-  entities: { dir: "entities", bodyField: "description" },
-  patterns: { dir: "patterns", bodyField: "description" },
+  apps: { dir: "apps", mode: "sections" },
+  entities: { dir: "entities", mode: "field", bodyField: "description" },
+  patterns: { dir: "patterns", mode: "field", bodyField: "description" },
 };
 
 function findSection(sections, title) {
@@ -57,12 +57,18 @@ function readKind(srcDir, kind) {
     .filter((f) => f.endsWith(".md"))
     .sort()) {
     const slug = file.replace(/\.md$/, "");
-    const rec = markdownToRecord(
-      fs.readFileSync(path.join(dir, file), "utf8"),
-      {
-        bodyField: cfg.bodyField,
-      },
-    );
+    const text = fs.readFileSync(path.join(dir, file), "utf8");
+    if (cfg.mode === "sections") {
+      const { data, body } = splitFrontmatter(text);
+      if (data.slug !== slug) {
+        throw new Error(
+          `${kind}/${file}: slug "${data.slug}" != filename "${slug}"`,
+        );
+      }
+      out[slug] = assembleAppRecord(data, parseBodySections(body));
+      continue;
+    }
+    const rec = markdownToRecord(text, { bodyField: cfg.bodyField });
     if (rec.slug !== slug) {
       throw new Error(
         `${kind}/${file}: slug "${rec.slug}" != filename "${slug}"`,

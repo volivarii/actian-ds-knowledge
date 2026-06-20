@@ -3,26 +3,32 @@
 _schema_version: 1
 slug: explorer
 label: Explorer
-purpose: Data marketplace, discovery, consumption, business glossary browsing,
-  data product access
-users:
-  - Business user
-  - Analyst
-  - Data consumer
 header:
   type: Explorer
 sidebar: []
-signals:
-  - browse
-  - discover
-  - search
-  - marketplace
-  - consume
-  - request access
-  - data product
-  - business glossary
-  - explore
-  - ask AI
-  - suggestion
-  - favorite
 ---
+
+## Purpose
+
+Data marketplace, discovery, consumption, business glossary browsing, data product access
+
+## Users
+
+- Business user
+- Analyst
+- Data consumer
+
+## Signals
+
+- browse
+- discover
+- search
+- marketplace
+- consume
+- request access
+- data product
+- business glossary
+- explore
+- ask AI
+- suggestion
+- favorite
