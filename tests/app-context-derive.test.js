@@ -2,7 +2,11 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("node:path");
-const { deriveToObject } = require("../scripts/app-context/derive-app-context");
+const {
+  deriveToObject,
+  assembleAppRecord,
+} = require("../scripts/app-context/derive-app-context");
+const { parseBodySections } = require("../scripts/app-context/lib");
 
 const ROOT = path.resolve(__dirname, "..");
 const srcDir = path.join(ROOT, "app-context", "src");
@@ -12,6 +16,34 @@ test("derive(src) deep-equals the committed dist (round-trip drift gate)", () =>
   const derived = deriveToObject(srcDir);
   const committed = require("../app-context/dist/app-context.json");
   assert.deepEqual(derived, committed);
+});
+
+test("assembleAppRecord maps sections to fields in canonical key order", () => {
+  const fm = {
+    label: "Studio",
+    header: { type: "Studio" },
+    sidebar: [{ label: "Dashboard", id: "dashboard" }],
+  };
+  const body =
+    "\n## Purpose\n\nGovernance and catalog\n\n## Users\n\n- Data steward\n- Data engineer\n\n## Signals\n\n- steward\n- glossary admin\n";
+  const rec = assembleAppRecord(fm, parseBodySections(body));
+  assert.deepEqual(rec, {
+    label: "Studio",
+    purpose: "Governance and catalog",
+    users: ["Data steward", "Data engineer"],
+    header: { type: "Studio" },
+    sidebar: [{ label: "Dashboard", id: "dashboard" }],
+    signals: ["steward", "glossary admin"],
+  });
+  // Key order must be exactly label, purpose, users, header, sidebar, signals.
+  assert.deepEqual(Object.keys(rec), [
+    "label",
+    "purpose",
+    "users",
+    "header",
+    "sidebar",
+    "signals",
+  ]);
 });
 
 test("derive(src) carries expected _meta shape", () => {
