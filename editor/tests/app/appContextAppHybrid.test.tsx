@@ -123,3 +123,36 @@ test("header.type renders as a dropdown with the known variants", async () => {
   );
   cleanup();
 });
+
+test("structured fields collapse under an App settings disclosure", async () => {
+  cleanup();
+  globalThis.sessionStorage.clear();
+  const gh = fakeGh({
+    "schemas/app-context-app.json": CORE_SCHEMA,
+    "app-context/src/apps/studio.md": STUDIO_FILE,
+  });
+  render(
+    <Theme>
+      <FrontmatterBodyEditScreen
+        path="app-context/src/apps/studio.md"
+        schemaKey="app-context-app"
+        uiSchema={appContextAppUiSchema}
+        octokit={gh}
+        bodyless={false}
+      />
+    </Theme>,
+  );
+  await waitFor(
+    () =>
+      assert.ok(
+        screen.queryByText("App settings"),
+        "App settings disclosure present",
+      ),
+    { timeout: 5000 },
+  );
+  assert.ok(
+    screen.queryByText("App label"),
+    "label stays visible outside the disclosure",
+  );
+  cleanup();
+});
