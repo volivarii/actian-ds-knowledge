@@ -69,6 +69,15 @@ test("pattern + term schemas compile and validate", () => {
   );
 });
 
+test("app schema constrains header.type to the known variants", () => {
+  const schema = require("../schemas/app-context-app.json");
+  assert.deepEqual(schema.properties.header.properties.type.enum, [
+    "Studio",
+    "Explorer",
+    "Admin",
+  ]);
+});
+
 test("schemas reject unknown fields (additionalProperties:false)", () => {
   const cases = [
     [

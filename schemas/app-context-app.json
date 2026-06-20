@@ -25,12 +25,13 @@
       "required": ["type"],
       "additionalProperties": false,
       "description": "Global-header configuration for the app; controls the DS header variant rendered at runtime.",
-      "examples": [{ "type": "app" }],
+      "examples": [{ "type": "Studio" }],
       "properties": {
         "type": {
           "type": "string",
+          "enum": ["Studio", "Explorer", "Admin"],
           "description": "Header variant; matches the DS global-header App type axis.",
-          "examples": ["app", "admin", "explorer"]
+          "examples": ["Studio", "Explorer", "Admin"]
         }
       }
     },
