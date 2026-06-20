@@ -62,7 +62,7 @@ export function appContextKindConfig(
     return {
       schemaKey: "app-context-app",
       uiSchema: appContextAppUiSchema,
-      bodyless: true,
+      bodyless: false,
     };
   if (/^app-context\/src\/entities\/[^/]+\.md$/.test(path))
     return {
