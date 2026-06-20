@@ -16,15 +16,19 @@ import { RefArrayWidget } from "../form-engine/widgets/RefArrayWidget";
 
 const WIDGETS = { RefArray: RefArrayWidget };
 
-/** Pure: serialize form frontmatter + re-join the prose body into a file. */
+/** Pure: serialize form frontmatter + re-join the prose body into a file.
+ *  Pass `flowAtDepth` to control inline-object depth (default 2 = flow at
+ *  depth ≥ 2). Pass `null` for fully block-style output (no inline objects at
+ *  any depth — use for records whose YAML must stay fully expanded). */
 export function assembleFrontmatterFile(
   formData: unknown,
   frontmatterText: string | null,
   body: string,
+  flowAtDepth: number | null = 2,
 ): string {
   const yaml = stringifyYaml(formData, {
     originalText: frontmatterText ?? undefined,
-    flowAtDepth: 2,
+    flowAtDepth: flowAtDepth === null ? undefined : flowAtDepth,
   });
   const fm = yaml.endsWith("\n") ? yaml : yaml + "\n";
   return `---\n${fm}---\n${body.startsWith("\n") ? body : "\n" + body}`;
@@ -37,9 +41,13 @@ interface Props {
   octokit: Octokit;
   onOpenSettings?: () => void;
   onNavigate?: (p: string | null) => void;
-  /** When true, hide the prose-body editor — used for frontmatter-only
-   *  records (e.g. app-context apps). The loaded body round-trips unchanged. */
+  /** When true, hide the prose-body editor — used for records with no prose
+   *  body. The loaded body round-trips unchanged. */
   bodyless?: boolean;
+  /** Controls the YAML flow depth passed to `assembleFrontmatterFile`.
+   *  - `undefined` / omitted → defaults to 2 (flow-style at depth ≥ 2).
+   *  - `null` → block-style only (no inline objects at any depth). */
+  yamlFlowAtDepth?: number | null;
 }
 
 type Loaded =
@@ -56,7 +64,8 @@ type Loaded =
     };
 
 export function FrontmatterBodyEditScreen(props: Props) {
-  const { path, schemaKey, uiSchema, octokit, bodyless } = props;
+  const { path, schemaKey, uiSchema, octokit, bodyless, yamlFlowAtDepth } =
+    props;
   const [state, setState] = useState<Loaded>({ kind: "loading" });
   const [formData, setFormData] = useState<unknown>(undefined);
   const [body, setBody] = useState<string>("");
@@ -120,7 +129,14 @@ export function FrontmatterBodyEditScreen(props: Props) {
   const flushToCart = useCallback(
     (fd: unknown, b: string) => {
       if (state.kind !== "ready") return;
-      const content = assembleFrontmatterFile(fd, state.frontmatterText, b);
+      // yamlFlowAtDepth prop: undefined → use default (2); null → block-style
+      // assembleFrontmatterFile accepts null for block-style; default arg is 2.
+      const content = assembleFrontmatterFile(
+        fd,
+        state.frontmatterText,
+        b,
+        yamlFlowAtDepth !== undefined ? yamlFlowAtDepth : 2,
+      );
       submissionCartSingleton.add({
         path,
         content,
@@ -128,7 +144,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
         addedAt: Date.now(),
       });
     },
-    [state, path],
+    [state, path, yamlFlowAtDepth],
   );
 
   const scheduleFlush = useCallback(

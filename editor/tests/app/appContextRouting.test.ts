@@ -25,13 +25,20 @@ test("appContextKindConfig selects schema/uiSchema/bodyless per kind", () => {
       ...appContextKindConfig("app-context/src/apps/studio.md"),
       uiSchema: undefined,
     },
-    { schemaKey: "app-context-app", bodyless: false, uiSchema: undefined },
+    {
+      schemaKey: "app-context-app",
+      bodyless: false,
+      uiSchema: undefined,
+      flowAtDepth: null,
+    },
   );
   const ent = appContextKindConfig("app-context/src/entities/x.md");
   assert.equal(ent?.schemaKey, "app-context-entity");
   assert.equal(ent?.bodyless, false);
+  assert.equal(ent?.flowAtDepth, 2);
   const pat = appContextKindConfig("app-context/src/patterns/x.md");
   assert.equal(pat?.schemaKey, "app-context-pattern");
   assert.equal(pat?.bodyless, false);
+  assert.equal(pat?.flowAtDepth, 2);
   assert.equal(appContextKindConfig("app-context/dist/app-context.json"), null);
 });
