@@ -55,26 +55,32 @@ export function isAppContextFile(path: string): boolean {
   return /^app-context\/src\/(apps|entities|patterns)\/[^/]+\.md$/.test(path);
 }
 
-export function appContextKindConfig(
-  path: string,
-): { schemaKey: string; uiSchema: UiSchema; bodyless: boolean } | null {
+export function appContextKindConfig(path: string): {
+  schemaKey: string;
+  uiSchema: UiSchema;
+  bodyless: boolean;
+  flowAtDepth: number | null;
+} | null {
   if (/^app-context\/src\/apps\/[^/]+\.md$/.test(path))
     return {
       schemaKey: "app-context-app",
       uiSchema: appContextAppUiSchema,
-      bodyless: true,
+      bodyless: false,
+      flowAtDepth: null,
     };
   if (/^app-context\/src\/entities\/[^/]+\.md$/.test(path))
     return {
       schemaKey: "app-context-entity",
       uiSchema: appContextEntityUiSchema,
       bodyless: false,
+      flowAtDepth: 2,
     };
   if (/^app-context\/src\/patterns\/[^/]+\.md$/.test(path))
     return {
       schemaKey: "app-context-pattern",
       uiSchema: appContextPatternUiSchema,
       bodyless: false,
+      flowAtDepth: 2,
     };
   return null;
 }
@@ -236,6 +242,7 @@ export function EditorShell({
         schemaKey={cfg.schemaKey}
         uiSchema={cfg.uiSchema}
         bodyless={cfg.bodyless}
+        yamlFlowAtDepth={cfg.flowAtDepth}
         octokit={gh}
         onOpenSettings={onOpenSettings}
         onNavigate={setActivePathSafe}

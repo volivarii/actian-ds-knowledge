@@ -1,12 +1,16 @@
 import type { UiSchema } from "@rjsf/utils";
 
-// App records are frontmatter-only (no prose body); the screen renders this
-// with `bodyless`. Nested header/sidebar use default RJSF inputs.
+// Apps author purpose/users/signals in the markdown body (Phase 1). The
+// frontmatter form is core-only: label, header, sidebar (+ readonly slug/version).
 export const appContextAppUiSchema: UiSchema = {
-  "ui:order": ["label", "purpose", "users", "header", "sidebar", "signals", "slug", "_schema_version", "*"],
+  "ui:order": ["label", "header", "sidebar", "slug", "_schema_version", "*"],
+  "ui:options": {
+    syncedFields: ["header", "sidebar", "slug", "_schema_version"],
+    syncedTitle: "App settings",
+    syncedNote:
+      "Structured app settings — header variant and sidebar navigation. The app's description lives in the markdown body below.",
+  },
   _schema_version: { "ui:readonly": true },
   slug: { "ui:title": "Slug", "ui:readonly": true },
   label: { "ui:title": "App label" },
-  purpose: { "ui:title": "Purpose", "ui:widget": "textarea" },
-  signals: { "ui:title": "Routing signals" },
 };
