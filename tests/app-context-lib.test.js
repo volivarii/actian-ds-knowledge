@@ -4,6 +4,10 @@ const assert = require("node:assert/strict");
 const {
   recordToMarkdown,
   markdownToRecord,
+  splitFrontmatter,
+  parseBodySections,
+  sectionProse,
+  sectionBullets,
 } = require("../scripts/app-context/lib");
 
 test("entity round-trips: description ↔ body, structured fields ↔ frontmatter", () => {
@@ -68,4 +72,44 @@ test("entity round-trips a multi-line description with a trailing newline", () =
   });
   const back = markdownToRecord(md, { bodyField: "description" });
   assert.deepEqual(back, rec);
+});
+
+test("splitFrontmatter separates frontmatter data from body", () => {
+  const text = "---\nslug: x\nlabel: X\n---\n\n## Purpose\n\nHello world\n";
+  const { data, body } = splitFrontmatter(text);
+  assert.equal(data.slug, "x");
+  assert.equal(data.label, "X");
+  assert.equal(body, "\n## Purpose\n\nHello world");
+});
+
+test("splitFrontmatter throws when no frontmatter block", () => {
+  assert.throws(
+    () => splitFrontmatter("no frontmatter here"),
+    /no frontmatter block/,
+  );
+});
+
+test("parseBodySections splits on H2 and trims blank lines", () => {
+  const body = "\n## Purpose\n\nA paragraph\n\n## Users\n\n- Alice\n- Bob\n";
+  const sections = parseBodySections(body);
+  assert.equal(sections.length, 2);
+  assert.equal(sections[0].title, "Purpose");
+  assert.deepEqual(sections[0].lines, ["A paragraph"]);
+  assert.equal(sections[1].title, "Users");
+  assert.deepEqual(sections[1].lines, ["- Alice", "- Bob"]);
+});
+
+test("sectionProse joins non-blank lines with single spaces", () => {
+  assert.equal(
+    sectionProse(["Data governance,", "catalog management"]),
+    "Data governance, catalog management",
+  );
+  assert.equal(sectionProse(["one line"]), "one line");
+});
+
+test("sectionBullets strips list markers and trims", () => {
+  assert.deepEqual(
+    sectionBullets(["- Data steward", "- glossary admin", "ignored"]),
+    ["Data steward", "glossary admin"],
+  );
 });
