@@ -3,13 +3,6 @@
 _schema_version: 1
 slug: studio
 label: Studio
-purpose: Data governance, catalog management, stewardship, lineage, glossary
-  admin, metadata enrichment
-users:
-  - Data steward
-  - Data engineer
-  - Data architect
-  - Domain expert
 header:
   type: Studio
 sidebar:
@@ -27,21 +20,34 @@ sidebar:
     id: catalog-design
   - label: Analytics
     id: analytics
-signals:
-  - steward
-  - govern
-  - curate
-  - lineage
-  - glossary admin
-  - metadata
-  - enrich
-  - template
-  - ontology
-  - knowledge graph
-  - catalog management
-  - import
-  - topics
-  - watchlist
-  - analytics
-  - catalog design
 ---
+
+## Purpose
+
+Data governance, catalog management, stewardship, lineage, glossary admin, metadata enrichment
+
+## Users
+
+- Data steward
+- Data engineer
+- Data architect
+- Domain expert
+
+## Signals
+
+- steward
+- govern
+- curate
+- lineage
+- glossary admin
+- metadata
+- enrich
+- template
+- ontology
+- knowledge graph
+- catalog management
+- import
+- topics
+- watchlist
+- analytics
+- catalog design

@@ -3,10 +3,6 @@
 _schema_version: 1
 slug: administration
 label: Administration
-purpose: User management, connections, catalog configuration, system settings
-users:
-  - Admin
-  - IT ops
 header:
   type: Admin
 sidebar:
@@ -26,20 +22,31 @@ sidebar:
     id: policies
   - label: Maintenance mode
     id: maintenance-mode
-signals:
-  - users
-  - permissions
-  - connections
-  - connectors
-  - settings
-  - configuration
-  - system
-  - LDAP
-  - SSO
-  - roles
-  - groups
-  - scanners
-  - API keys
-  - maintenance
-  - catalogs
 ---
+
+## Purpose
+
+User management, connections, catalog configuration, system settings
+
+## Users
+
+- Admin
+- IT ops
+
+## Signals
+
+- users
+- permissions
+- connections
+- connectors
+- settings
+- configuration
+- system
+- LDAP
+- SSO
+- roles
+- groups
+- scanners
+- API keys
+- maintenance
+- catalogs

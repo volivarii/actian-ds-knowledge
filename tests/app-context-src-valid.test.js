@@ -13,7 +13,11 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const Ajv = require("ajv/dist/2020");
-const { markdownToRecord } = require("../scripts/app-context/lib.js");
+const {
+  markdownToRecord,
+  splitFrontmatter,
+  parseBodySections,
+} = require("../scripts/app-context/lib.js");
 
 const ROOT = path.join(__dirname, "..");
 
@@ -74,3 +78,17 @@ for (const kind of KINDS) {
     );
   });
 }
+
+test("every app source has Purpose, Users and Signals sections", () => {
+  const appsDir = path.resolve(__dirname, "..", "app-context", "src", "apps");
+  const required = ["purpose", "users", "signals"];
+  for (const file of fs.readdirSync(appsDir).filter((f) => f.endsWith(".md"))) {
+    const { body } = splitFrontmatter(
+      fs.readFileSync(path.join(appsDir, file), "utf8"),
+    );
+    const titles = parseBodySections(body).map((s) => s.title.toLowerCase());
+    for (const r of required) {
+      assert.ok(titles.includes(r), `${file}: missing "## ${r}" section`);
+    }
+  }
+});

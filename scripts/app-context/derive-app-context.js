@@ -2,7 +2,15 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const YAML = require("yaml");
-const { markdownToRecord, stableStringify, writeAtomic } = require("./lib");
+const {
+  markdownToRecord,
+  splitFrontmatter,
+  parseBodySections,
+  sectionProse,
+  sectionBullets,
+  stableStringify,
+  writeAtomic,
+} = require("./lib");
 
 const SCHEMA_VERSION = 1;
 const META = {
@@ -12,10 +20,32 @@ const META = {
 };
 
 const KINDS = {
-  apps: { dir: "apps", bodyField: null },
-  entities: { dir: "entities", bodyField: "description" },
-  patterns: { dir: "patterns", bodyField: "description" },
+  apps: { dir: "apps", mode: "sections" },
+  entities: { dir: "entities", mode: "field", bodyField: "description" },
+  patterns: { dir: "patterns", mode: "field", bodyField: "description" },
 };
+
+function findSection(sections, title) {
+  const want = title.toLowerCase();
+  return sections.find((s) => s.title.toLowerCase() === want) || null;
+}
+
+// Build the consumer-facing app record in the canonical key order:
+// label, purpose, users, header, sidebar, signals. (Order is load-bearing —
+// it is the dist's JSON key order; see the byte-compat gate.)
+function assembleAppRecord(fm, sections) {
+  const purpose = findSection(sections, "Purpose");
+  const users = findSection(sections, "Users");
+  const signals = findSection(sections, "Signals");
+  return {
+    label: fm.label,
+    purpose: purpose ? sectionProse(purpose.lines) : "",
+    users: users ? sectionBullets(users.lines) : [],
+    header: fm.header,
+    sidebar: fm.sidebar,
+    signals: signals ? sectionBullets(signals.lines) : [],
+  };
+}
 
 function readKind(srcDir, kind) {
   const cfg = KINDS[kind];
@@ -27,12 +57,18 @@ function readKind(srcDir, kind) {
     .filter((f) => f.endsWith(".md"))
     .sort()) {
     const slug = file.replace(/\.md$/, "");
-    const rec = markdownToRecord(
-      fs.readFileSync(path.join(dir, file), "utf8"),
-      {
-        bodyField: cfg.bodyField,
-      },
-    );
+    const text = fs.readFileSync(path.join(dir, file), "utf8");
+    if (cfg.mode === "sections") {
+      const { data, body } = splitFrontmatter(text);
+      if (data.slug !== slug) {
+        throw new Error(
+          `${kind}/${file}: slug "${data.slug}" != filename "${slug}"`,
+        );
+      }
+      out[slug] = assembleAppRecord(data, parseBodySections(body));
+      continue;
+    }
+    const rec = markdownToRecord(text, { bodyField: cfg.bodyField });
     if (rec.slug !== slug) {
       throw new Error(
         `${kind}/${file}: slug "${rec.slug}" != filename "${slug}"`,
@@ -91,4 +127,4 @@ function runCli(argv) {
   return 0;
 }
 
-module.exports = { deriveToObject, runCli };
+module.exports = { deriveToObject, assembleAppRecord, runCli };
