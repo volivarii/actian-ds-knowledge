@@ -37,6 +37,13 @@ jobs:
       - name: Install deps
         run: npm install --no-audit --no-fund
 
+      # The editor's round-trip tests import the real derive (scripts/app-context/*)
+      # to assert dist-equivalence; those modules require root deps (e.g. `yaml`),
+      # resolved from the repo-root node_modules. Install them so the tests run.
+      - name: Install root deps (for scripts/* imported by editor tests)
+        working-directory: ${{ github.workspace }}
+        run: npm install --no-audit --no-fund
+
       - name: Typecheck
         run: npx tsc --noEmit
 
