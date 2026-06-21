@@ -31,10 +31,8 @@ async function milkdownRoundTrip(body: string): Promise<string> {
   return out;
 }
 
-const CAT_DIR = new URL(
-  "../../../components/src/categories/",
-  import.meta.url,
-).pathname;
+const CAT_DIR = new URL("../../../components/src/categories/", import.meta.url)
+  .pathname;
 function categoryFiles(): string[] {
   return readdirSync(CAT_DIR).filter(
     (f) => f.endsWith(".md") && !/AUTHORING/.test(f),
@@ -69,7 +67,11 @@ test("every category source is a fixed point under the editor save cycle (no chu
   assert.ok(files.length >= 1, "expected at least one category fixture");
   for (const f of files) {
     const text = readFileSync(CAT_DIR + f, "utf8");
-    assert.equal(await editSaveCycle(text), text, `category not canonical: ${f}`);
+    assert.equal(
+      await editSaveCycle(text),
+      text,
+      `category not canonical: ${f}`,
+    );
   }
 });
 
@@ -92,6 +94,24 @@ test("category bodies contain no inline HTML (rollout gate)", () => {
     assert.ok(
       !/<[a-zA-Z][a-zA-Z0-9]*[ >/]/.test(body),
       `inline HTML in ${f} is not round-trip safe — keep WYSIWYG off until handled`,
+    );
+  }
+});
+
+test("category sources contain no backslash (rollout gate — escape desync)", () => {
+  // Fail-closed gate. The derive's restricted parser does NOT process escape
+  // sequences (categories-parser.js), but the editor's yaml lib double-quotes +
+  // escapes a value that needs quoting (e.g. one containing a comma or ": ").
+  // So a scalar with BOTH a quote-forcing char AND a backslash would desync:
+  // the saved source carries "\\" while the derived dist would read it as a
+  // literal "\\" (extra backslash) — not what the author typed. No category
+  // content has backslashes today; reject them until the save/derive path is
+  // escape-aware (mirrors the inline-HTML gate above).
+  for (const f of categoryFiles()) {
+    const text = readFileSync(CAT_DIR + f, "utf8");
+    assert.ok(
+      !text.includes("\\"),
+      `backslash in ${f} is not round-trip safe — the derive parser doesn't process escapes; handle escapes before keeping it`,
     );
   }
 });
