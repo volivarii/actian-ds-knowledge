@@ -34,8 +34,10 @@ async function milkdownRoundTrip(body: string): Promise<string> {
 const CAT_DIR = new URL("../../../components/src/categories/", import.meta.url)
   .pathname;
 function categoryFiles(): string[] {
+  // Mirror the production predicate (lib/wysiwygPaths.isCategoryFile): exclude
+  // AUTHORING.md exactly, not any filename containing "AUTHORING".
   return readdirSync(CAT_DIR).filter(
-    (f) => f.endsWith(".md") && !/AUTHORING/.test(f),
+    (f) => f.endsWith(".md") && !/AUTHORING\.md$/.test(f),
   );
 }
 
@@ -88,7 +90,9 @@ test("the editor save cycle preserves the derive-parser view (no silent dist dri
   }
 });
 
-test("category bodies contain no inline HTML (rollout gate)", () => {
+test("category bodies contain no inline HTML (rollout gate, body-scoped)", () => {
+  // Body-scoped by design: HTML inside a YAML frontmatter scalar is just a
+  // string (no Milkdown round-trip), so only the body is a round-trip risk.
   for (const f of categoryFiles()) {
     const { body } = splitFrontmatter(readFileSync(CAT_DIR + f, "utf8"));
     assert.ok(
@@ -117,6 +121,12 @@ test("category sources contain no backslash (rollout gate — escape desync)", (
 });
 
 test("category constructs survive the round-trip (idempotent + content preserved)", async () => {
+  // NOTE: the FIRST pass may normalize — Milkdown escapes a bare `_` in prose
+  // (`data_product` → `data\_product`), so we deliberately do NOT assert
+  // first-pass identity here. The real protections against that class are the
+  // fixed-point test over actual sources (canonical = first-pass-stable) and the
+  // fail-closed backslash gate. This test asserts the editor reaches a fixed
+  // point by the SECOND pass and preserves inline-code / bold content.
   const body =
     "# Action — design rationale\n\nMembers: `button`, `link` and data_product flows.\n\n## Reference patterns\n\n* **Polaris** — Button, Link\n* **Material** — Buttons\n";
   const once = await milkdownRoundTrip(body);
