@@ -5,11 +5,11 @@ import {
   defaultValueCtx,
   editorViewOptionsCtx,
 } from "@milkdown/core";
-import { commonmark } from "@milkdown/preset-commonmark";
 import { listener, listenerCtx } from "@milkdown/plugin-listener";
 import { MilkdownProvider, Milkdown, useEditor } from "@milkdown/react";
 import { Flex, Button } from "@radix-ui/themes";
 import { CodeMirrorEditor } from "./CodeMirrorEditor";
+import { useMilkdownPresets } from "./milkdownPreset";
 
 function MilkdownBody({
   initialText,
@@ -22,34 +22,38 @@ function MilkdownBody({
 }) {
   useEditor(
     (root) =>
-      Editor.make()
-        .config((ctx) => {
-          ctx.set(rootCtx, root);
-          ctx.set(defaultValueCtx, initialText);
-          // Set accessible attributes on the ProseMirror contenteditable.
-          // editorViewOptionsCtx.attributes → passed to ProseMirror EditorView
-          // which applies them to view.dom (the contenteditable element).
-          // Signature: { [name: string]: string }
-          ctx.update(editorViewOptionsCtx, (prev) => ({
-            ...prev,
-            attributes: {
-              ...(typeof prev.attributes === "object" &&
-              prev.attributes !== null &&
-              !Array.isArray(prev.attributes)
-                ? (prev.attributes as Record<string, string>)
-                : {}),
-              role: "textbox",
-              "aria-multiline": "true",
-              "aria-label": label,
-            },
-          }));
-          // markdownUpdated callback receives (ctx, markdown, prevMarkdown)
-          ctx
-            .get(listenerCtx)
-            .markdownUpdated((_ctx, markdown) => onChange(markdown));
-        })
-        .use(listener)
-        .use(commonmark),
+      // Presets (commonmark + gfm) come from the shared milkdownPreset module
+      // so the live editor and the round-trip drift guards never diverge.
+      // listener is applied before the presets, as before.
+      useMilkdownPresets(
+        Editor.make()
+          .config((ctx) => {
+            ctx.set(rootCtx, root);
+            ctx.set(defaultValueCtx, initialText);
+            // Set accessible attributes on the ProseMirror contenteditable.
+            // editorViewOptionsCtx.attributes → passed to ProseMirror EditorView
+            // which applies them to view.dom (the contenteditable element).
+            // Signature: { [name: string]: string }
+            ctx.update(editorViewOptionsCtx, (prev) => ({
+              ...prev,
+              attributes: {
+                ...(typeof prev.attributes === "object" &&
+                prev.attributes !== null &&
+                !Array.isArray(prev.attributes)
+                  ? (prev.attributes as Record<string, string>)
+                  : {}),
+                role: "textbox",
+                "aria-multiline": "true",
+                "aria-label": label,
+              },
+            }));
+            // markdownUpdated callback receives (ctx, markdown, prevMarkdown)
+            ctx
+              .get(listenerCtx)
+              .markdownUpdated((_ctx, markdown) => onChange(markdown));
+          })
+          .use(listener),
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
