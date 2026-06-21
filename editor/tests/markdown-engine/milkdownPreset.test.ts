@@ -19,6 +19,31 @@ test("a heading with {#anchor} adjacent to a table is NOT escaped under gfm", as
   const doc =
     "## 6. Title {#anchor}\n\ntext\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n";
   const out = await roundTripMarkdown(doc);
-  assert.doesNotMatch(out, /\\#/, "heading hashes must not be backslash-escaped");
+  assert.doesNotMatch(
+    out,
+    /\\#/,
+    "heading hashes must not be backslash-escaped",
+  );
   assert.match(out, /\{#anchor\}/, "{#anchor} preserved");
+});
+
+test("GFM constructs preserve their content across the round-trip", async () => {
+  const cases: Array<[string, string, RegExp]> = [
+    ["strikethrough", "~~gone~~ stays\n", /~~gone~~/],
+    [
+      "task list",
+      "- [ ] todo item\n- [x] done item\n",
+      /\[[ x]\]\s+todo item/i,
+    ],
+    [
+      "autolink",
+      "See <https://example.com> for more.\n",
+      /https:\/\/example\.com/,
+    ],
+  ];
+  for (const [label, input, re] of cases) {
+    const out = await roundTripMarkdown(input);
+    assert.match(out, re, `${label} content preserved`);
+    assert.equal(await roundTripMarkdown(out), out, `${label} idempotent`);
+  }
 });
