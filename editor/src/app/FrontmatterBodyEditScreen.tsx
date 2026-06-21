@@ -211,6 +211,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
             >
               {isWysiwygEnabled() && path.startsWith("app-context/") ? (
                 <RichBodyEditor
+                  key={path}
                   initialText={body}
                   onChange={(t) => {
                     setBody(t);
