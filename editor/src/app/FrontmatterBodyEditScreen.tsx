@@ -8,6 +8,8 @@ import { frontmatterTemplates } from "../form-engine/templates";
 import { stringifyYaml } from "../form-engine/yamlSerializer";
 import { splitFrontmatter } from "../substrate/splitFrontmatter";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
+import { RichBodyEditor } from "../markdown-engine/RichBodyEditor";
+import { isWysiwygEnabled } from "../lib/editorFlags";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { getTextFile } from "./githubApi";
 import { TierBanner } from "./TierBanner";
@@ -207,14 +209,25 @@ export function FrontmatterBodyEditScreen(props: Props) {
                 borderRadius: 6,
               }}
             >
-              <CodeMirrorEditor
-                key={path}
-                initialText={body}
-                onChange={(t) => {
-                  setBody(t);
-                  scheduleFlush(formData, t);
-                }}
-              />
+              {isWysiwygEnabled() && path.startsWith("app-context/") ? (
+                <RichBodyEditor
+                  initialText={body}
+                  onChange={(t) => {
+                    setBody(t);
+                    scheduleFlush(formData, t);
+                  }}
+                  filename={path.split("/").pop()}
+                />
+              ) : (
+                <CodeMirrorEditor
+                  key={path}
+                  initialText={body}
+                  onChange={(t) => {
+                    setBody(t);
+                    scheduleFlush(formData, t);
+                  }}
+                />
+              )}
             </Box>
           </Box>
         )}
