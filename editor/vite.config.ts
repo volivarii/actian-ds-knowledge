@@ -27,6 +27,13 @@ function chunkFor(id: string): string | undefined {
     id.includes("/ajv-formats/")
   )
     return "rjsf";
+  // Milkdown + ProseMirror are reachable ONLY through the dynamic import of
+  // RichBodyEditor (the WYSIWYG body editor). Return undefined so Rollup's
+  // dynamic-import code-splitting keeps them in the on-demand chunk rather than
+  // the always-loaded `vendor` bucket — they should not ship to flag-off users.
+  // Safe vs the React init-cycle caution above: this is a NON-initial chunk, so
+  // React (in vendor) is already initialised by the time it loads.
+  if (id.includes("@milkdown") || id.includes("prosemirror")) return undefined;
   return "vendor";
 }
 

@@ -9,8 +9,30 @@ const {
   sectionProse,
   sectionBullets,
   stableStringify,
+  unescapeMarkdownText,
   writeAtomic,
 } = require("./lib");
+
+// Reverse the WYSIWYG editor's serializer artifacts as the body is derived into
+// the consumer-facing dist: unescape CommonMark punctuation escapes
+// (`data\_product` → `data_product`) and trim surrounding whitespace. The trim
+// must be symmetric: the editor save (assembleFrontmatterFile) injects a blank
+// line AFTER the frontmatter fence, so the verbatim field body arrives with a
+// LEADING newline a trailing-only strip would leak into the dist. Field bodies
+// are single-block prose, so trimming both ends is safe and keeps the dist
+// stable across authoring tools. No-op on hand-authored sources.
+function normalizeBodyField(text) {
+  return unescapeMarkdownText(String(text || "")).trim();
+}
+
+// Field-mode derive (entities/patterns): read the record, then normalize the
+// verbatim body field. markdownToRecord stays a pure inverse; normalization is
+// applied here, at the derive boundary.
+function deriveFieldRecord(text, bodyField) {
+  const rec = markdownToRecord(text, { bodyField });
+  rec[bodyField] = normalizeBodyField(rec[bodyField]);
+  return rec;
+}
 
 const SCHEMA_VERSION = 1;
 const META = {
@@ -39,11 +61,13 @@ function assembleAppRecord(fm, sections) {
   const signals = findSection(sections, "Signals");
   return {
     label: fm.label,
-    purpose: purpose ? sectionProse(purpose.lines) : "",
-    users: users ? sectionBullets(users.lines) : [],
+    purpose: purpose ? unescapeMarkdownText(sectionProse(purpose.lines)) : "",
+    users: users ? sectionBullets(users.lines).map(unescapeMarkdownText) : [],
     header: fm.header,
     sidebar: fm.sidebar,
-    signals: signals ? sectionBullets(signals.lines) : [],
+    signals: signals
+      ? sectionBullets(signals.lines).map(unescapeMarkdownText)
+      : [],
   };
 }
 
@@ -68,7 +92,7 @@ function readKind(srcDir, kind) {
       out[slug] = assembleAppRecord(data, parseBodySections(body));
       continue;
     }
-    const rec = markdownToRecord(text, { bodyField: cfg.bodyField });
+    const rec = deriveFieldRecord(text, cfg.bodyField);
     if (rec.slug !== slug) {
       throw new Error(
         `${kind}/${file}: slug "${rec.slug}" != filename "${slug}"`,
@@ -127,4 +151,9 @@ function runCli(argv) {
   return 0;
 }
 
-module.exports = { deriveToObject, assembleAppRecord, runCli };
+module.exports = {
+  deriveToObject,
+  assembleAppRecord,
+  deriveFieldRecord,
+  runCli,
+};

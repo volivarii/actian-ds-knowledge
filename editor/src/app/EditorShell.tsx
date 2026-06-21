@@ -7,6 +7,7 @@ import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
+import { isAppContextFile } from "../lib/appContextPaths";
 import { categoryDefaultsUiSchema } from "../uiSchemas/categoryDefaults";
 import { appContextAppUiSchema } from "../uiSchemas/appContextApp";
 import { appContextEntityUiSchema } from "../uiSchemas/appContextEntity";
@@ -51,9 +52,9 @@ export function isPlainMarkdown(path: string): boolean {
   );
 }
 
-export function isAppContextFile(path: string): boolean {
-  return /^app-context\/src\/(apps|entities|patterns)\/[^/]+\.md$/.test(path);
-}
+// Re-exported from lib/appContextPaths so existing importers (and tests) keep
+// working; the canonical definition lives there to avoid a circular import.
+export { isAppContextFile };
 
 export function appContextKindConfig(path: string): {
   schemaKey: string;

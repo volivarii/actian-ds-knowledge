@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { UiSchema } from "@rjsf/utils";
 import type { Octokit } from "@octokit/rest";
 import type { RJSFSchema } from "@rjsf/utils";
@@ -8,11 +15,21 @@ import { frontmatterTemplates } from "../form-engine/templates";
 import { stringifyYaml } from "../form-engine/yamlSerializer";
 import { splitFrontmatter } from "../substrate/splitFrontmatter";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
+import { shouldUseWysiwyg } from "../lib/appContextPaths";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { getTextFile } from "./githubApi";
 import { TierBanner } from "./TierBanner";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { RefArrayWidget } from "../form-engine/widgets/RefArrayWidget";
+
+// Lazy-loaded so the Milkdown/ProseMirror bundle (the largest editor dep) splits
+// into an async chunk fetched only when the WYSIWYG flag is on — it stays out of
+// the initial load for the default (flag-off) CodeMirror path.
+const RichBodyEditor = lazy(() =>
+  import("../markdown-engine/RichBodyEditor").then((m) => ({
+    default: m.RichBodyEditor,
+  })),
+);
 
 const WIDGETS = { RefArray: RefArrayWidget };
 
@@ -69,6 +86,15 @@ export function FrontmatterBodyEditScreen(props: Props) {
   const [state, setState] = useState<Loaded>({ kind: "loading" });
   const [formData, setFormData] = useState<unknown>(undefined);
   const [body, setBody] = useState<string>("");
+  // Latest-value mirrors. The body editors (Milkdown's useEditor([]) and
+  // CodeMirror's useEffect([])) FREEZE their onChange at mount, capturing the
+  // formData/body of that render. Reading these refs in the flush handlers keeps
+  // a body edit from flushing the cart with stale frontmatter (and vice-versa),
+  // which would silently revert an interleaved field edit.
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
+  const bodyRef = useRef(body);
+  bodyRef.current = body;
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -190,9 +216,9 @@ export function FrontmatterBodyEditScreen(props: Props) {
         templates={frontmatterTemplates}
         onChange={(next) => {
           setFormData(next);
-          scheduleFlush(next, body);
+          scheduleFlush(next, bodyRef.current);
         }}
-        onSubmit={(next) => flushToCart(next, body)}
+        onSubmit={(next) => flushToCart(next, bodyRef.current)}
         submitLabel="Add to batch"
       >
         {!bodyless && (
@@ -207,14 +233,36 @@ export function FrontmatterBodyEditScreen(props: Props) {
                 borderRadius: 6,
               }}
             >
-              <CodeMirrorEditor
-                key={path}
-                initialText={body}
-                onChange={(t) => {
-                  setBody(t);
-                  scheduleFlush(formData, t);
-                }}
-              />
+              {shouldUseWysiwyg(path) ? (
+                <Suspense
+                  fallback={
+                    <Box p="3" role="status">
+                      <Text size="1" color="gray">
+                        Loading rich editor…
+                      </Text>
+                    </Box>
+                  }
+                >
+                  <RichBodyEditor
+                    key={path}
+                    initialText={body}
+                    onChange={(t) => {
+                      setBody(t);
+                      scheduleFlush(formData, t);
+                    }}
+                    filename={path.split("/").pop()}
+                  />
+                </Suspense>
+              ) : (
+                <CodeMirrorEditor
+                  key={path}
+                  initialText={body}
+                  onChange={(t) => {
+                    setBody(t);
+                    scheduleFlush(formDataRef.current, t);
+                  }}
+                />
+              )}
             </Box>
           </Box>
         )}
