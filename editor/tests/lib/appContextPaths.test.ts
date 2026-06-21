@@ -1,0 +1,39 @@
+import "../setup-dom";
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import {
+  isAppContextFile,
+  shouldUseWysiwyg,
+} from "../../src/lib/appContextPaths";
+
+test("isAppContextFile matches only per-record app-context markdown", () => {
+  assert.equal(isAppContextFile("app-context/src/apps/studio.md"), true);
+  assert.equal(
+    isAppContextFile("app-context/src/entities/data-product.md"),
+    true,
+  );
+  assert.equal(
+    isAppContextFile("app-context/src/patterns/import-wizard.md"),
+    true,
+  );
+  // Non-records under the app-context prefix — the `startsWith` bug class.
+  assert.equal(isAppContextFile("app-context/dist/app-context.json"), false);
+  assert.equal(isAppContextFile("app-context/CONSUMING.md"), false);
+  assert.equal(isAppContextFile("app-context/src/terminology.yml"), false);
+  assert.equal(isAppContextFile("app-context/src/apps/sub/deep.md"), false);
+});
+
+test("shouldUseWysiwyg requires the flag AND a per-record app-context path", () => {
+  globalThis.sessionStorage.clear();
+  // Flag off → never, even for a real record.
+  assert.equal(shouldUseWysiwyg("app-context/src/apps/studio.md"), false);
+  globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
+  // Flag on + per-record path → yes.
+  assert.equal(shouldUseWysiwyg("app-context/src/apps/studio.md"), true);
+  assert.equal(shouldUseWysiwyg("app-context/src/entities/x.md"), true);
+  // Flag on but NOT a per-record path → no (where `startsWith` was wrong).
+  assert.equal(shouldUseWysiwyg("app-context/dist/app-context.json"), false);
+  assert.equal(shouldUseWysiwyg("app-context/CONSUMING.md"), false);
+  assert.equal(shouldUseWysiwyg("foundations/src/x.md"), false);
+  globalThis.sessionStorage.clear();
+});

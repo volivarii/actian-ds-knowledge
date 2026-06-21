@@ -1,6 +1,31 @@
 "use strict";
 const YAML = require("yaml");
 
+// CommonMark escapable ASCII punctuation: a backslash before any of these
+// renders as the bare character.
+const MD_PUNCT = new Set("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~".split(""));
+
+// Reverse the defensive backslash-escaping a CommonMark serializer introduces in
+// text. The WYSIWYG editor (Milkdown → remark-stringify) round-trips a body and
+// escapes punctuation — `data_product` → `data\_product`, `2*3` → `2\*3` — which
+// would otherwise leak into the derived dist. Applied ONCE at the derive
+// boundary (see derive-app-context.js) so these artifacts don't reach consumers.
+// Only strips a backslash that precedes ASCII punctuation; leaves e.g. `\n`
+// (literal backslash-n) untouched.
+//
+// LIMITATION — a markdown round-trip is inherently ambiguous: the serializer
+// emits an author-intended literal `\_` identically to a defensive `\_`, so this
+// drops the backslash in BOTH cases. That is correct for this substrate's prose
+// (entity/pattern descriptions, app Purpose/Signals), which carries no literal
+// backslash-before-punctuation — verified zero backslashes in app-context/src,
+// so it is a no-op on every current source. NOT idempotent on `\\` runs (a
+// second pass would keep collapsing); the derive applies it exactly once.
+function unescapeMarkdownText(s) {
+  return String(s).replace(/\\([\s\S])/g, (m, ch) =>
+    MD_PUNCT.has(ch) ? ch : m,
+  );
+}
+
 // Serialize a record to a per-record markdown file: a yaml-language-server
 // directive, the structured frontmatter, then an optional prose body (the
 // single long-text field, e.g. `description`). Uses full YAML so the output
@@ -66,6 +91,9 @@ function sectionBullets(lines) {
     .map((l) => l.replace(/^\s*[-*]\s+/, "").trim());
 }
 
+// Pure inverse of recordToMarkdown: reads a body field back VERBATIM (byte
+// faithful). Serializer-artifact normalization is a derive concern and lives in
+// derive-app-context.js, NOT here — this must stay a faithful inverse.
 function markdownToRecord(text, opts) {
   opts = opts || {};
   const { data, body } = splitFrontmatter(text);
@@ -77,4 +105,13 @@ function stableStringify(obj) {
   return JSON.stringify(obj, null, 2) + "\n";
 }
 
-module.exports = { recordToMarkdown, markdownToRecord, splitFrontmatter, parseBodySections, sectionProse, sectionBullets, stableStringify };
+module.exports = {
+  recordToMarkdown,
+  markdownToRecord,
+  splitFrontmatter,
+  parseBodySections,
+  sectionProse,
+  sectionBullets,
+  stableStringify,
+  unescapeMarkdownText,
+};

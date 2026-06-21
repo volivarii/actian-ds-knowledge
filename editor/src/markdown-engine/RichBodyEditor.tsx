@@ -1,5 +1,10 @@
 import React from "react";
-import { Editor, rootCtx, defaultValueCtx, editorViewOptionsCtx } from "@milkdown/core";
+import {
+  Editor,
+  rootCtx,
+  defaultValueCtx,
+  editorViewOptionsCtx,
+} from "@milkdown/core";
 import { commonmark } from "@milkdown/preset-commonmark";
 import { listener, listenerCtx } from "@milkdown/plugin-listener";
 import { MilkdownProvider, Milkdown, useEditor } from "@milkdown/react";
@@ -28,7 +33,9 @@ function MilkdownBody({
           ctx.update(editorViewOptionsCtx, (prev) => ({
             ...prev,
             attributes: {
-              ...(typeof prev.attributes === "object" && prev.attributes !== null && !Array.isArray(prev.attributes)
+              ...(typeof prev.attributes === "object" &&
+              prev.attributes !== null &&
+              !Array.isArray(prev.attributes)
                 ? (prev.attributes as Record<string, string>)
                 : {}),
               role: "textbox",
@@ -37,7 +44,9 @@ function MilkdownBody({
             },
           }));
           // markdownUpdated callback receives (ctx, markdown, prevMarkdown)
-          ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => onChange(markdown));
+          ctx
+            .get(listenerCtx)
+            .markdownUpdated((_ctx, markdown) => onChange(markdown));
         })
         .use(listener)
         .use(commonmark),
@@ -68,10 +77,18 @@ export function RichBodyEditor({
   return (
     <div>
       <Flex justify="end" mb="1">
+        {/* Action-model toggle: the accessible name states the action this
+            button performs (not a pressed state). A flipping label + aria-pressed
+            would announce contradictory state, and aria-label also keeps the
+            "</>" glyphs from being read out literally. */}
         <Button
           size="1"
           variant="soft"
-          aria-pressed={mode === "source"}
+          aria-label={
+            mode === "rich"
+              ? "Edit markdown source"
+              : "Switch to rich text editor"
+          }
           onClick={() => setMode((m) => (m === "rich" ? "source" : "rich"))}
         >
           {mode === "rich" ? "</> Source" : "Rich text"}
@@ -79,7 +96,11 @@ export function RichBodyEditor({
       </Flex>
       {mode === "rich" ? (
         <MilkdownProvider>
-          <MilkdownBody initialText={text} onChange={handleChange} label={label} />
+          <MilkdownBody
+            initialText={text}
+            onChange={handleChange}
+            label={label}
+          />
         </MilkdownProvider>
       ) : (
         <CodeMirrorEditor initialText={text} onChange={handleChange} />
