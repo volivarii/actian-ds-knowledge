@@ -3,9 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
-import { Editor, rootCtx, defaultValueCtx } from "@milkdown/core";
-import { commonmark } from "@milkdown/preset-commonmark";
-import { getMarkdown } from "@milkdown/utils";
+import { roundTripMarkdown } from "../../src/markdown-engine/milkdownPreset";
 
 const require = createRequire(import.meta.url);
 // splitFrontmatter returns { data, body } — data is already YAML-parsed
@@ -18,20 +16,6 @@ const {
   deriveFieldRecord,
 } = require("../../../scripts/app-context/derive-app-context");
 import { assembleFrontmatterFile } from "../../src/app/FrontmatterBodyEditScreen";
-
-async function milkdownRoundTrip(body: string): Promise<string> {
-  const root = globalThis.document.createElement("div");
-  const editor = await Editor.make()
-    .config((ctx) => {
-      ctx.set(rootCtx, root);
-      ctx.set(defaultValueCtx, body);
-    })
-    .use(commonmark)
-    .create();
-  const out = editor.action(getMarkdown());
-  await editor.destroy();
-  return out;
-}
 
 const SRC_DIR = new URL("../../../app-context/src/", import.meta.url).pathname;
 const APPS_DIR = SRC_DIR + "apps/";
@@ -57,7 +41,7 @@ test("every app-context app body derives identically after a Milkdown round-trip
     const original = assembleAppRecord(fm, parseBodySections(body));
     const roundtripped = assembleAppRecord(
       fm,
-      parseBodySections(await milkdownRoundTrip(body)),
+      parseBodySections(await roundTripMarkdown(body)),
     );
     assert.deepEqual(roundtripped, original, `dist drift for ${f}`);
   }
@@ -73,7 +57,7 @@ for (const kind of ["entities", "patterns"] as const) {
     for (const f of files) {
       const { body } = splitFrontmatter(readFileSync(dir + f, "utf8"));
       const original = deriveField(body);
-      const roundtripped = deriveField(await milkdownRoundTrip(body));
+      const roundtripped = deriveField(await roundTripMarkdown(body));
       assert.deepEqual(roundtripped, original, `${kind} dist drift for ${f}`);
     }
   });
@@ -98,7 +82,7 @@ test("app sections survive a Milkdown round-trip with snake_case / * prose and b
     "- cost*spike",
   ].join("\n");
   const original = deriveSections(fm, body);
-  const roundtripped = deriveSections(fm, await milkdownRoundTrip(body));
+  const roundtripped = deriveSections(fm, await roundTripMarkdown(body));
   assert.deepEqual(roundtripped, original);
   // Guard against the test passing vacuously — the special chars must survive.
   assert.equal(
@@ -112,7 +96,7 @@ test("verbatim description survives a Milkdown round-trip with snake_case / * te
   const body =
     "Consumer request for data_product access with cost*benefit and a_b_c metadata";
   const original = deriveField(body);
-  const roundtripped = deriveField(await milkdownRoundTrip(body));
+  const roundtripped = deriveField(await roundTripMarkdown(body));
   assert.deepEqual(roundtripped, original);
   assert.equal(roundtripped.description, body);
 });
@@ -134,7 +118,7 @@ test("field description survives the real editor save→derive cycle (no leading
 test("field description survives editor save→derive after a Milkdown round-trip", async () => {
   const body = "Consumer request for data_product access with cost*benefit";
   assert.equal(
-    deriveFieldViaSave(await milkdownRoundTrip(body)).description,
+    deriveFieldViaSave(await roundTripMarkdown(body)).description,
     body,
   );
 });
@@ -146,14 +130,14 @@ test("verbatim description round-trips a markdown link with _ in the URL", async
   const body =
     "See [the docs](https://x.example/data_product/guide) for details";
   assert.equal(
-    deriveField(await milkdownRoundTrip(body)).description,
+    deriveField(await roundTripMarkdown(body)).description,
     deriveField(body).description,
   );
 });
 
 test("verbatim description round-trips an inline code span with _ and *", async () => {
   const body = "Use the `data_product` and `a*b` identifiers verbatim";
-  const rt = deriveField(await milkdownRoundTrip(body)).description;
+  const rt = deriveField(await roundTripMarkdown(body)).description;
   assert.equal(rt, deriveField(body).description);
   // The code span must survive — and NOT be unescaped away inside the backticks.
   assert.match(rt, /`data_product`/);
@@ -162,7 +146,7 @@ test("verbatim description round-trips an inline code span with _ and *", async 
 test("verbatim description round-trips a <Media> directive with _ in the src", async () => {
   const body = 'Intro <Media src="x_y.png" alt="a diagram" /> outro';
   assert.equal(
-    deriveField(await milkdownRoundTrip(body)).description,
+    deriveField(await roundTripMarkdown(body)).description,
     deriveField(body).description,
   );
 });
@@ -173,7 +157,7 @@ test("verbatim description round-trips a <Media> directive with _ in the src", a
 // test documents the behavior and is a ROLLOUT GATE: WYSIWYG must not be enabled
 // for any domain whose bodies carry raw inline HTML until this is solved.
 test("KNOWN LIMITATION: inline HTML (<br>) is dropped on the WYSIWYG round-trip", async () => {
-  const rt = await milkdownRoundTrip("Line with a <br> void tag");
+  const rt = await roundTripMarkdown("Line with a <br> void tag");
   assert.ok(
     !rt.includes("<br>"),
     "inline HTML does not survive the round-trip",

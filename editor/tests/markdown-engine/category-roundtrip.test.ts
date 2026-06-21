@@ -3,11 +3,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
-import { Editor, rootCtx, defaultValueCtx } from "@milkdown/core";
-import { commonmark } from "@milkdown/preset-commonmark";
-import { getMarkdown } from "@milkdown/utils";
 import { assembleFrontmatterFile } from "../../src/app/FrontmatterBodyEditScreen";
 import { splitFrontmatter } from "../../src/substrate/splitFrontmatter";
+import { roundTripMarkdown } from "../../src/markdown-engine/milkdownPreset";
 
 // The derive's restricted YAML parser — the SoT for what consumers get. The
 // editor uses the standard `yaml` lib, which parses category frontmatter
@@ -16,20 +14,6 @@ import { splitFrontmatter } from "../../src/substrate/splitFrontmatter";
 // edit can't silently change the derived dist.
 const require = createRequire(import.meta.url);
 const categoriesParser = require("../../../scripts/categories/categories-parser");
-
-async function milkdownRoundTrip(body: string): Promise<string> {
-  const root = globalThis.document.createElement("div");
-  const editor = await Editor.make()
-    .config((ctx) => {
-      ctx.set(rootCtx, root);
-      ctx.set(defaultValueCtx, body);
-    })
-    .use(commonmark)
-    .create();
-  const out = editor.action(getMarkdown());
-  await editor.destroy();
-  return out;
-}
 
 const CAT_DIR = new URL("../../../components/src/categories/", import.meta.url)
   .pathname;
@@ -51,7 +35,7 @@ async function editSaveCycle(text: string): Promise<string> {
   return assembleFrontmatterFile(
     data,
     frontmatterText,
-    await milkdownRoundTrip(body),
+    await roundTripMarkdown(body),
   );
 }
 
@@ -129,8 +113,8 @@ test("category constructs survive the round-trip (idempotent + content preserved
   // point by the SECOND pass and preserves inline-code / bold content.
   const body =
     "# Action — design rationale\n\nMembers: `button`, `link` and data_product flows.\n\n## Reference patterns\n\n* **Polaris** — Button, Link\n* **Material** — Buttons\n";
-  const once = await milkdownRoundTrip(body);
-  const twice = await milkdownRoundTrip(once);
+  const once = await roundTripMarkdown(body);
+  const twice = await roundTripMarkdown(once);
   assert.equal(twice, once, "round-trip must reach a fixed point (idempotent)");
   assert.match(once, /`button`/, "inline code preserved");
   assert.match(once, /\*\*Polaris\*\*/, "bold preserved");
