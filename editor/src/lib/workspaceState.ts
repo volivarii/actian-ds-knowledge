@@ -15,7 +15,7 @@
 import type { Octokit } from "@octokit/rest";
 import { parse as parseYaml } from "yaml";
 import { stringifyYaml } from "../form-engine/yamlSerializer";
-import { getTextFile } from "../app/githubApi";
+import { getTextFile, getTextFileWithSha } from "../app/githubApi";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import type { SubmissionCart } from "../drafts/SubmissionCart";
 import { fetchLatestCommit, type CommitInfo } from "./derivedFields";
@@ -160,6 +160,22 @@ async function tryGetText(gh: Octokit, path: string): Promise<string | null> {
   }
 }
 
+// Like tryGetText, but also returns the blob sha — used when the fetched
+// content is staged for submission, so the staged edit carries a real base
+// for detectStaleBase (an empty base is silently skipped → silent overwrite).
+async function tryGetTextWithSha(
+  gh: Octokit,
+  path: string,
+): Promise<{ text: string; sha: string } | null> {
+  try {
+    return await getTextFileWithSha(gh, path);
+  } catch (err) {
+    const status = (err as { status?: number }).status;
+    if (status === 404) return null;
+    throw err;
+  }
+}
+
 export interface LoadWorkspaceOptions {
   cart?: SubmissionCart;
 }
@@ -271,19 +287,22 @@ async function ensureMetaInCart(
   gh: Octokit,
   slug: string,
   cart: SubmissionCart,
-): Promise<string> {
+): Promise<{ content: string; basedOnSha: string }> {
   const metaPath = metaPathFor(slug);
   const existing = cart.list().find((e) => e.path === metaPath);
-  if (existing) return existing.content;
-  const remote = await tryGetText(gh, metaPath);
+  if (existing)
+    return { content: existing.content, basedOnSha: existing.basedOnSha };
+  const remote = await tryGetTextWithSha(gh, metaPath);
   if (remote) {
+    // Stage with the real blob sha so a concurrent remote change is caught
+    // by detectStaleBase instead of silently overwritten.
     cart.add({
       path: metaPath,
-      content: remote,
-      basedOnSha: "",
+      content: remote.text,
+      basedOnSha: remote.sha,
       addedAt: Date.now(),
     });
-    return remote;
+    return { content: remote.text, basedOnSha: remote.sha };
   }
   const registry = await loadRegistryEntry(gh, slug);
   const stub = buildStubMetaContent(
@@ -293,10 +312,10 @@ async function ensureMetaInCart(
   cart.add({
     path: metaPath,
     content: stub,
-    basedOnSha: "",
+    basedOnSha: "", // brand-new file — no remote base to be stale against
     addedAt: Date.now(),
   });
-  return stub;
+  return { content: stub, basedOnSha: "" };
 }
 
 // User clicked "Write Content" on the workspace — stage the metadata
@@ -313,7 +332,7 @@ export async function promoteDomainToDraft(
   cart: SubmissionCart = submissionCartSingleton,
 ): Promise<void> {
   const metaPath = metaPathFor(slug);
-  const content = await ensureMetaInCart(gh, slug, cart);
+  const { content, basedOnSha } = await ensureMetaInCart(gh, slug, cart);
   const parsed = safeParseMeta(content);
   const domains = parsed.domains ?? {};
   const current = domains[domain]?.status;
@@ -331,7 +350,7 @@ export async function promoteDomainToDraft(
     cart.add({
       path: metaPath,
       content: next,
-      basedOnSha: "",
+      basedOnSha, // preserve the base ensureMetaInCart established
       addedAt: Date.now(),
     });
   }
@@ -361,7 +380,7 @@ export async function setDomainInherited(
   cart: SubmissionCart = submissionCartSingleton,
 ): Promise<void> {
   const metaPath = metaPathFor(slug);
-  const content = await ensureMetaInCart(gh, slug, cart);
+  const { content, basedOnSha } = await ensureMetaInCart(gh, slug, cart);
   const parsed = safeParseMeta(content);
   const domains = parsed.domains ?? {};
   const targetStatus = inherited ? "inherited" : "not-started";
@@ -371,7 +390,7 @@ export async function setDomainInherited(
     path: metaPath,
     // Flow-style + header preserved — see promoteDomainToDraft.
     content: stringifyYaml(parsed, { originalText: content, flowAtDepth: 2 }),
-    basedOnSha: "",
+    basedOnSha, // preserve the base ensureMetaInCart established
     addedAt: Date.now(),
   });
 }
