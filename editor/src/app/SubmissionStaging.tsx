@@ -40,6 +40,7 @@ import {
 } from "../lib/workspaceState";
 import { StaleBaseError, type StaleBaseConflict } from "../core/staleBase";
 import { ConflictDialog, type ConflictResolution } from "./ConflictDialog";
+import { buildResolvedFiles } from "./submissionStagingHelpers";
 
 export interface SubmissionStagingProps {
   cart: SubmissionCart;
@@ -66,6 +67,7 @@ export function SubmissionStaging({
   const [confirmClear, setConfirmClear] = useState(false);
   const [mismatches, setMismatches] = useState<CouplingMismatch[]>([]);
   const [conflicts, setConflicts] = useState<StaleBaseConflict[] | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<FileChange[] | null>(null);
 
   // Re-validate the coupling whenever the cart contents (or dialog open
   // state) change. We surface mismatches as a callout AND block submit.
@@ -87,6 +89,10 @@ export function SubmissionStaging({
 
   const runSubmit = useCallback(
     async (files: FileChange[], allowAnchorDrop: boolean) => {
+      if (submitting) return;
+      setSubmitting(true);
+      setPendingFiles(files);
+      setError(null);
       const message =
         entries.length === 1
           ? `edit ${entries[0]!.path}`
@@ -133,16 +139,16 @@ export function SubmissionStaging({
         } else {
           setError((err as Error).message);
         }
+      } finally {
+        setSubmitting(false);
       }
     },
-    [entries, cart, octokit],
+    [entries, cart, octokit, submitting],
   );
 
   const doSubmit = useCallback(
     async (allowAnchorDrop: boolean) => {
-      if (entries.length === 0 || submitting) return;
-      setSubmitting(true);
-      setError(null);
+      if (entries.length === 0) return;
       setPrUrl(null);
       const files: FileChange[] = entries.map((e) => ({
         path: e.path,
@@ -150,13 +156,9 @@ export function SubmissionStaging({
         basedOnSha: e.basedOnSha,
         deleted: e.deleted,
       }));
-      try {
-        await runSubmit(files, allowAnchorDrop);
-      } finally {
-        setSubmitting(false);
-      }
+      await runSubmit(files, allowAnchorDrop);
     },
-    [entries, submitting, runSubmit],
+    [entries, runSubmit],
   );
 
   return (
@@ -313,7 +315,16 @@ export function SubmissionStaging({
                 color="red"
                 onClick={() => {
                   setAnchorWarning(null);
-                  void doSubmit(true);
+                  void runSubmit(
+                    pendingFiles ??
+                      entries.map((e) => ({
+                        path: e.path,
+                        content: e.content,
+                        basedOnSha: e.basedOnSha,
+                        deleted: e.deleted,
+                      })),
+                    true,
+                  );
                 }}
               >
                 Drop anchors & submit
@@ -361,24 +372,8 @@ export function SubmissionStaging({
           onCancel={() => setConflicts(null)}
           onResolve={(resolved: ConflictResolution[]) => {
             setConflicts(null);
-            const byPath = new Map(resolved.map((r) => [r.path, r]));
-            const files: FileChange[] = entries.map((e) => {
-              const r = byPath.get(e.path);
-              return r
-                ? {
-                    path: e.path,
-                    content: r.content,
-                    basedOnSha: r.basedOnSha,
-                    deleted: e.deleted,
-                  }
-                : {
-                    path: e.path,
-                    content: e.content,
-                    basedOnSha: e.basedOnSha,
-                    deleted: e.deleted,
-                  };
-            });
-            void runSubmit(files, true); // anchors already reviewed on the first pass
+            const files = buildResolvedFiles(entries, resolved);
+            void runSubmit(files, false); // anchor-check resolved content; dialog will appear if anchors dropped
           }}
         />
       )}
