@@ -33,7 +33,9 @@ export function decodeBase64(b64: string): string {
  */
 export async function detectStaleBase(
   files: FileChange[],
-  gh: { repos: { getContent(args: unknown): Promise<{ data: { sha: string; content: string } }> } },
+  // Loose shape so the real Octokit (whose getContent `data` is a file|dir|… union)
+  // is assignable; the runtime body below handles the file case + 404.
+  gh: { repos: { getContent(args: any): Promise<{ data: any }> } },
   coords: { owner: string; repo: string; base: string },
 ): Promise<StaleBaseConflict[]> {
   const conflicts: StaleBaseConflict[] = [];
@@ -59,7 +61,12 @@ export async function detectStaleBase(
       }
     } catch (err) {
       if ((err as { status?: number }).status === 404) {
-        conflicts.push({ path: file.path, basedOnSha: expected, remoteSha: "", remoteContent: "" });
+        conflicts.push({
+          path: file.path,
+          basedOnSha: expected,
+          remoteSha: "",
+          remoteContent: "",
+        });
         continue;
       }
       throw err;
