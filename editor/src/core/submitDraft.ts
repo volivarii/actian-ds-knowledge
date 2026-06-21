@@ -20,6 +20,7 @@ import { isReadOnlyPath } from "./validatePaths";
 import { type SchemaMap, validateAgainstSchema } from "./validateAgainstSchema";
 import { createOctokit } from "./octokit";
 import { droppedAnchors, AnchorPreservationError } from "./anchorPreservation";
+import { detectStaleBase, StaleBaseError } from "./staleBase";
 
 export interface SubmitDraftConfig {
   owner: string;
@@ -114,6 +115,16 @@ export async function submitDraft(
     ref: `heads/${base}`,
   });
   const baseSha = baseRef.data.object.sha;
+
+  // Refuse to silently overwrite a co-author's merged change.
+  const staleConflicts = await detectStaleBase(draft.files, gh, {
+    owner,
+    repo,
+    base,
+  });
+  if (staleConflicts.length > 0) {
+    throw new StaleBaseError(staleConflicts);
+  }
 
   const branch = buildBranchName(draft);
   await gh.git.createRef({
