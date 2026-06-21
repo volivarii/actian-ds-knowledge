@@ -11,6 +11,12 @@ export interface FileChange {
    * for deletion entries.
    */
   deleted?: boolean;
+  /**
+   * The remote blob SHA this content was authored against. Used by
+   * detectStaleBase to refuse silent overwrites. Empty/undefined means
+   * "no known base" (new file / reorder stub) → stale-base check skipped.
+   */
+  basedOnSha?: string;
 }
 
 export interface SourceMetadata {

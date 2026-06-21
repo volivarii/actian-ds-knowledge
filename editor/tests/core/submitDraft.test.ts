@@ -7,6 +7,7 @@ import {
 } from "../../src/core/types";
 import { submitDraft } from "../../src/core/submitDraft";
 import { AnchorPreservationError } from "../../src/core/anchorPreservation";
+import { StaleBaseError } from "../../src/core/staleBase";
 
 const META_SCHEMA = {
   type: "object",
@@ -363,4 +364,38 @@ test("submitDraft — does not run anchor-preservation or schema guards on delet
   const treeArg = calls["git.createTree"]![0]!;
   assert.equal(treeArg.tree.length, 1);
   assert.equal(treeArg.tree[0]!.sha, null);
+});
+
+test("submitDraft throws StaleBaseError and writes nothing when a base drifted", async () => {
+  const { gh, calls } = makeFakeOctokit();
+  // getContent answers with a DIFFERENT sha than the file's basedOnSha:
+  gh.repos = {
+    getContent: async () => ({
+      data: {
+        sha: "REMOTE_NEW",
+        content: Buffer.from("their text", "utf-8").toString("base64"),
+      },
+    }),
+  };
+  const draft: Draft = {
+    id: "d1",
+    message: "edit",
+    files: [
+      { path: "foundations/src/intro.md", content: "mine", basedOnSha: "OLD" },
+    ],
+  };
+  await assert.rejects(
+    submitDraft(draft, {
+      owner: "o",
+      repo: "r",
+      base: "main",
+      schemas: {},
+      octokit: gh,
+    }),
+    (err) =>
+      err instanceof StaleBaseError &&
+      err.conflicts[0]!.path === "foundations/src/intro.md",
+  );
+  assert.equal(calls["git.createRef"]!.length, 0); // proved: no write happened
+  assert.equal(calls["git.createTree"]!.length, 0);
 });
