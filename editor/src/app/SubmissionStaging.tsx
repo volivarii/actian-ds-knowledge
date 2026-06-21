@@ -28,12 +28,18 @@ import { submitDraft } from "../core/submitDraft";
 import { loadSchemasForPaths } from "../core/validateAgainstSchema";
 import { getTextFile } from "./githubApi";
 import { AnchorPreservationError } from "../core/anchorPreservation";
-import { ReadonlyPathError, SchemaValidationError } from "../core/types";
+import {
+  ReadonlyPathError,
+  SchemaValidationError,
+  type FileChange,
+} from "../core/types";
 import {
   domainFileName,
   validateCartCoupling,
   type CouplingMismatch,
 } from "../lib/workspaceState";
+import { StaleBaseError, type StaleBaseConflict } from "../core/staleBase";
+import { ConflictDialog, type ConflictResolution } from "./ConflictDialog";
 
 export interface SubmissionStagingProps {
   cart: SubmissionCart;
@@ -59,6 +65,7 @@ export function SubmissionStaging({
   } | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [mismatches, setMismatches] = useState<CouplingMismatch[]>([]);
+  const [conflicts, setConflicts] = useState<StaleBaseConflict[] | null>(null);
 
   // Re-validate the coupling whenever the cart contents (or dialog open
   // state) change. We surface mismatches as a callout AND block submit.
@@ -78,31 +85,27 @@ export function SubmissionStaging({
     };
   }, [open, octokit, cart, entries]);
 
-  const doSubmit = useCallback(
-    async (allowAnchorDrop: boolean) => {
-      if (entries.length === 0 || submitting) return;
-      setSubmitting(true);
-      setError(null);
-      setPrUrl(null);
+  const runSubmit = useCallback(
+    async (files: FileChange[], allowAnchorDrop: boolean) => {
+      const message =
+        entries.length === 1
+          ? `edit ${entries[0]!.path}`
+          : `edit ${entries.length} files`;
+      // Load exactly the schemas this batch's files need. Without this the
+      // validator gets an empty map and every schema-bearing file (a
+      // `_meta.yml`, app-context, icon-groups) fails with a false
+      // "no schema loaded …". MetaEditScreen already loads its schema; the
+      // batch path was the one that didn't.
+      const schemas = await loadSchemasForPaths(
+        entries.map((e) => e.path),
+        (schemaFile) => getTextFile(octokit, schemaFile),
+      );
       try {
-        const message =
-          entries.length === 1
-            ? `edit ${entries[0]!.path}`
-            : `edit ${entries.length} files`;
-        // Load exactly the schemas this batch's files need. Without this the
-        // validator gets an empty map and every schema-bearing file (a
-        // `_meta.yml`, app-context, icon-groups) fails with a false
-        // "no schema loaded …". MetaEditScreen already loads its schema; the
-        // batch path was the one that didn't.
-        const schemas = await loadSchemasForPaths(
-          entries.map((e) => e.path),
-          (schemaFile) => getTextFile(octokit, schemaFile),
-        );
         const result = await submitDraft(
           {
             id: `batch-${Date.now()}`,
             message,
-            files: entries.map((e) => ({ path: e.path, content: e.content })),
+            files,
             sourceMetadata: { kind: "human", via: "SubmissionStaging" },
             allowAnchorDrop,
           },
@@ -116,7 +119,9 @@ export function SubmissionStaging({
         setPrUrl(result.prUrl);
         cart.clear();
       } catch (err) {
-        if (err instanceof AnchorPreservationError) {
+        if (err instanceof StaleBaseError) {
+          setConflicts(err.conflicts);
+        } else if (err instanceof AnchorPreservationError) {
           setAnchorWarning({ path: err.path, dropped: err.dropped });
         } else if (err instanceof ReadonlyPathError) {
           setError(`Read-only path: ${err.path}`);
@@ -128,11 +133,30 @@ export function SubmissionStaging({
         } else {
           setError((err as Error).message);
         }
+      }
+    },
+    [entries, cart, octokit],
+  );
+
+  const doSubmit = useCallback(
+    async (allowAnchorDrop: boolean) => {
+      if (entries.length === 0 || submitting) return;
+      setSubmitting(true);
+      setError(null);
+      setPrUrl(null);
+      const files: FileChange[] = entries.map((e) => ({
+        path: e.path,
+        content: e.content,
+        basedOnSha: e.basedOnSha,
+        deleted: e.deleted,
+      }));
+      try {
+        await runSubmit(files, allowAnchorDrop);
       } finally {
         setSubmitting(false);
       }
     },
-    [entries, submitting, cart, octokit],
+    [entries, submitting, runSubmit],
   );
 
   return (
@@ -324,6 +348,40 @@ export function SubmissionStaging({
           </Flex>
         </AlertDialog.Content>
       </AlertDialog.Root>
+
+      {conflicts && (
+        <ConflictDialog
+          conflicts={conflicts}
+          mineByPath={Object.fromEntries(
+            entries.map((e) => [e.path, e.content]),
+          )}
+          octokit={octokit}
+          owner={DEFAULT_COORDS.owner}
+          repo={DEFAULT_COORDS.repo}
+          onCancel={() => setConflicts(null)}
+          onResolve={(resolved: ConflictResolution[]) => {
+            setConflicts(null);
+            const byPath = new Map(resolved.map((r) => [r.path, r]));
+            const files: FileChange[] = entries.map((e) => {
+              const r = byPath.get(e.path);
+              return r
+                ? {
+                    path: e.path,
+                    content: r.content,
+                    basedOnSha: r.basedOnSha,
+                    deleted: e.deleted,
+                  }
+                : {
+                    path: e.path,
+                    content: e.content,
+                    basedOnSha: e.basedOnSha,
+                    deleted: e.deleted,
+                  };
+            });
+            void runSubmit(files, true); // anchors already reviewed on the first pass
+          }}
+        />
+      )}
     </>
   );
 }
