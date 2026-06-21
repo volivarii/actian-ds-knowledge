@@ -42,6 +42,23 @@ export async function getTextFile(
   filePath: string,
   coords?: RepoCoords,
 ): Promise<string> {
+  return (await getTextFileWithSha(gh, filePath, coords)).text;
+}
+
+/**
+ * Like {@link getTextFile}, but also returns the blob `sha` GitHub reports for
+ * the file. The sha is the base for optimistic-concurrency / stale-base
+ * detection (see `core/staleBase.ts` — `detectStaleBase` skips any file whose
+ * `basedOnSha` is empty). Callers that stage edits for submission MUST thread
+ * this sha into the cart so a concurrent remote change is caught instead of
+ * silently overwritten. `getTextFile` deliberately drops the sha for the many
+ * read-only callers that don't stage edits.
+ */
+export async function getTextFileWithSha(
+  gh: Octokit,
+  filePath: string,
+  coords?: RepoCoords,
+): Promise<{ text: string; sha: string }> {
   const { owner, repo, ref } = withDefaults(coords);
   const res = await gh.repos.getContent({
     owner,
@@ -56,7 +73,7 @@ export async function getTextFile(
   if (res.data.encoding !== "base64") {
     throw new Error(`unexpected encoding: ${res.data.encoding}`);
   }
-  return decodeBase64Utf8(res.data.content);
+  return { text: decodeBase64Utf8(res.data.content), sha: res.data.sha };
 }
 
 /**

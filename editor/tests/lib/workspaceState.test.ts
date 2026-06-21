@@ -44,7 +44,15 @@ function fakeGh(files: Record<string, string>) {
           err.status = 404;
           throw err;
         }
-        return { data: { content: b64(content), encoding: "base64" } };
+        // Real GitHub always reports a blob sha; model it so staging paths
+        // (which require a string basedOnSha) behave as in production.
+        return {
+          data: {
+            content: b64(content),
+            encoding: "base64",
+            sha: `sha-${path}`,
+          },
+        };
       },
     },
   } as any;

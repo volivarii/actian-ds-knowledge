@@ -17,7 +17,7 @@ import { splitFrontmatter } from "../substrate/splitFrontmatter";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { shouldUseWysiwyg } from "../lib/appContextPaths";
 import { submissionCartSingleton } from "../drafts/store-instance";
-import { getTextFile } from "./githubApi";
+import { getTextFile, getTextFileWithSha } from "./githubApi";
 import { TierBanner } from "./TierBanner";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { RefArrayWidget } from "../form-engine/widgets/RefArrayWidget";
@@ -119,10 +119,19 @@ export function FrontmatterBodyEditScreen(props: Props) {
           basedOnSha = cartHit.basedOnSha;
         } else {
           try {
-            text = await getTextFile(octokit, path);
+            // Capture the blob sha alongside content so staged edits carry a
+            // real base. Without it, basedOnSha stays "" and detectStaleBase
+            // skips this file (core/staleBase.ts) — the no-silent-overwrite
+            // guarantee (#280) would be a no-op for app-context records, which
+            // MarkdownEditScreen already avoids by threading res.data.sha.
+            const loaded = await getTextFileWithSha(octokit, path);
+            text = loaded.text;
+            basedOnSha = loaded.sha;
           } catch (err) {
             if ((err as { status?: number }).status !== 404) throw err;
             text = ""; // new file — no frontmatter yet → raw fallback to start it
+            // basedOnSha stays "" — a 404 means there's no remote base yet, so
+            // there is nothing to be stale against.
           }
         }
         if (cancelled) return;

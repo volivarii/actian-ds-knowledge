@@ -22,7 +22,7 @@ import {
 } from "@radix-ui/themes";
 import { createOctokit, MissingPATError } from "../core/octokit";
 import { submitDraft } from "../core/submitDraft";
-import { getTextFile } from "./githubApi";
+import { getTextFile, getTextFileWithSha } from "./githubApi";
 import { DEFAULT_COORDS } from "../config/coords";
 import { RJSFForm } from "../form-engine/RJSFForm";
 import { guidelineMetaUiSchema } from "../uiSchemas/guidelineMeta";
@@ -94,6 +94,10 @@ export function MetaEditScreen({
       value: unknown;
       originalText: string;
       source: "remote" | "cart" | "stub";
+      // Blob sha of the loaded base — threaded into submit/stage so
+      // detectStaleBase catches a concurrent remote change instead of
+      // silently overwriting it. "" for a brand-new (stub) file.
+      basedOnSha: string;
     }>
   >({ kind: "idle" });
   // Tracks in-progress edits; kept in sync with meta on load and reset
@@ -140,12 +144,18 @@ export function MetaEditScreen({
         const schemaText = await getTextFile(gh, "schemas/guideline-meta.json");
         let metaText: string;
         let source: "remote" | "cart" | "stub";
+        let basedOnSha = "";
         if (cartHit) {
           metaText = cartHit.content;
+          basedOnSha = cartHit.basedOnSha;
           source = "cart";
         } else {
           try {
-            metaText = await getTextFile(gh, metaPath);
+            // Capture the blob sha so staged/submitted edits carry a real
+            // base for detectStaleBase (mirrors FrontmatterBodyEditScreen).
+            const loaded = await getTextFileWithSha(gh, metaPath);
+            metaText = loaded.text;
+            basedOnSha = loaded.sha;
             source = "remote";
           } catch (err) {
             const status = (err as { status?: number }).status;
@@ -155,6 +165,7 @@ export function MetaEditScreen({
             // this path is rare — e.g. direct URL hit or stale draft.)
             metaText = bareStub(slug);
             source = "stub";
+            // basedOnSha stays "" — no remote base for a brand-new file.
           }
         }
         const parsed = parseYaml(metaText);
@@ -164,7 +175,7 @@ export function MetaEditScreen({
         });
         setMeta({
           kind: "ready",
-          value: { value: parsed, originalText: metaText, source },
+          value: { value: parsed, originalText: metaText, source, basedOnSha },
         });
         setFormData(parsed);
       } catch (err) {
@@ -199,7 +210,13 @@ export function MetaEditScreen({
         {
           id: `meta-${slug}-${Date.now()}`,
           message: `chore(${slug}): ${verb} _meta.yml via editor\n\nEdited through the Knowledge Editor (Phase 1b).`,
-          files: [{ path: metaPath, content: yaml }],
+          files: [
+            {
+              path: metaPath,
+              content: yaml,
+              basedOnSha: meta.value.basedOnSha,
+            },
+          ],
           sourceMetadata: { kind: "human", via: "MetaEditScreen" },
         },
         {
@@ -230,7 +247,7 @@ export function MetaEditScreen({
       submissionCartSingleton.add({
         path: metaPath,
         content: yaml,
-        basedOnSha: "",
+        basedOnSha: meta.value.basedOnSha,
         addedAt: Date.now(),
       });
       setStagedAt(Date.now());
