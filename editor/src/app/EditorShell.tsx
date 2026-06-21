@@ -7,7 +7,7 @@ import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
-import { isAppContextFile } from "../lib/appContextPaths";
+import { isAppContextFile, isCategoryFile } from "../lib/wysiwygPaths";
 import { categoryDefaultsUiSchema } from "../uiSchemas/categoryDefaults";
 import { appContextAppUiSchema } from "../uiSchemas/appContextApp";
 import { appContextEntityUiSchema } from "../uiSchemas/appContextEntity";
@@ -52,9 +52,9 @@ export function isPlainMarkdown(path: string): boolean {
   );
 }
 
-// Re-exported from lib/appContextPaths so existing importers (and tests) keep
-// working; the canonical definition lives there to avoid a circular import.
-export { isAppContextFile };
+// Re-exported from lib/wysiwygPaths so existing importers (and tests) keep
+// working; the canonical definitions live there to avoid a circular import.
+export { isAppContextFile, isCategoryFile };
 
 export function appContextKindConfig(path: string): {
   schemaKey: string;
@@ -88,13 +88,8 @@ export function appContextKindConfig(path: string): {
 
 // Category files (components/src/categories/<slug>.md) route to the
 // frontmatter form editor, not the raw markdown editor — so they are
-// deliberately excluded from isPlainMarkdown above.
-export function isCategoryFile(path: string): boolean {
-  return (
-    /^components\/src\/categories\/[^/]+\.md$/.test(path) &&
-    !/AUTHORING\.md$/.test(path)
-  );
-}
+// deliberately excluded from isPlainMarkdown above. isCategoryFile is
+// imported from lib/wysiwygPaths and re-exported above.
 
 function isMetaYaml(path: string): boolean {
   return /^components\/src\/[^/]+\/_meta\.yml$/.test(path);

@@ -15,7 +15,7 @@ import { frontmatterTemplates } from "../form-engine/templates";
 import { stringifyYaml } from "../form-engine/yamlSerializer";
 import { splitFrontmatter } from "../substrate/splitFrontmatter";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
-import { shouldUseWysiwyg } from "../lib/appContextPaths";
+import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { getTextFile, getTextFileWithSha } from "./githubApi";
 import { TierBanner } from "./TierBanner";
