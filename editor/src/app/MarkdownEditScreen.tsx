@@ -23,7 +23,11 @@ import { decodeBase64Utf8 } from "./githubApi";
 import { DEFAULT_COORDS } from "../config/coords";
 import { submitDraft } from "../core/submitDraft";
 import { AnchorPreservationError } from "../core/anchorPreservation";
-import { ReadonlyPathError, SchemaValidationError } from "../core/types";
+import {
+  FileChange,
+  ReadonlyPathError,
+  SchemaValidationError,
+} from "../core/types";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { RichBodyEditor } from "../markdown-engine/RichBodyEditor";
 import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
@@ -117,6 +121,10 @@ export function MarkdownEditScreen({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [prUrl, setPrUrl] = useState<string | null>(null);
+  // Bumped on draft-restore to force RichBodyEditor to re-seed with the
+  // restored text (the editor is uncontrolled, keyed by path alone, so a
+  // path-only key would not trigger a remount when restoring on the same file).
+  const [remountNonce, setRemountNonce] = useState(0);
   // Preview pane visibility — hidden by default to give the editor the
   // full width. Persisted to localStorage so the user's choice survives
   // page reloads + cross-file navigation.
@@ -345,10 +353,20 @@ export function MarkdownEditScreen({
 
   const onRestore = () => {
     const draft = draftStoreSingleton.load(path);
-    if (draft && view) {
-      view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: draft.text },
-      });
+    if (draft) {
+      // Always update the React text state so the WYSIWYG branch re-seeds.
+      setText(draft.text);
+      // Bump the nonce so RichBodyEditor gets a new key and re-mounts with
+      // the restored text (it is uncontrolled — initialText only applies at
+      // mount time).
+      setRemountNonce((n) => n + 1);
+      // CodeMirror path: also dispatch directly into the editor so the view
+      // reflects the change without waiting for a full re-mount.
+      if (view) {
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: draft.text },
+        });
+      }
     }
     setRestorePromptOpen(false);
   };
@@ -380,15 +398,11 @@ export function MarkdownEditScreen({
         const orderedMatch = path.match(
           /^(foundations|accessibility)\/src\/[^/]+\.md$/,
         );
-        const filesToSubmit: {
-          path: string;
-          content: string;
-          basedOnSha?: string;
-        }[] = [
+        const filesToSubmit: FileChange[] = [
           {
             path,
             content: text,
-            basedOnSha: load.source === "remote" ? load.remoteSha : undefined,
+            basedOnSha: load.source !== "stub" ? load.remoteSha : undefined,
           },
         ];
         if (orderedMatch) {
@@ -476,9 +490,11 @@ export function MarkdownEditScreen({
   const isNewFile = load.source !== "remote";
   // Body-only WYSIWYG: split frontmatter off (raw, byte-exact) so Milkdown only
   // sees the body; reassemble on every change. Flag-off keeps full CodeMirror.
+  // Guard: only split when wysiwyg is active — CodeMirror path never needs it.
   const wysiwyg = shouldUseWysiwyg(path);
-  const { frontmatterBlock: fmBlock, body: richBody } =
-    splitRawFrontmatter(text);
+  const { frontmatterBlock: fmBlock, body: richBody } = wysiwyg
+    ? splitRawFrontmatter(text)
+    : { frontmatterBlock: "", body: "" };
   return (
     <Flex direction="column" height="100%" gap="2">
       <TierBanner path={path} />
@@ -544,7 +560,7 @@ export function MarkdownEditScreen({
           }}
         >
           <RichBodyEditor
-            key={path}
+            key={`${path}:${remountNonce}`}
             initialText={richBody}
             onChange={(b) => handleChange(joinRawFrontmatter(fmBlock, b))}
             filename={path.split("/").pop()}
