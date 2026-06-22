@@ -30,6 +30,8 @@
 var fs = require("fs");
 var path = require("path");
 
+var frontmatter = require("../lib/frontmatter");
+
 var ROOT = path.resolve(__dirname, "..", "..");
 
 var KNOWN_FLAGS = ["src", "index"];
@@ -131,65 +133,39 @@ function shiftHeadings(s) {
   return lines.join("\n");
 }
 
-// Parse a markdown "Words to avoid" Do/Don't table into structured rules.
-// The table is `| <rule note> | <Do example> | <Don't example> |`. The
-// literal avoid tokens are the double-quoted terms inside the note column;
-// rows with no quoted term are advisory (avoid: []). Throws if no data
-// rows are found. Straight (") and smart (" ") quotes both supported.
-// Note: trailing .,;!? is stripped from each token, so dotted abbreviations (e.g. "e.g.") would lose the final dot — fine for the current brand-voice word list.
-function parseWordsToAvoid(md) {
-  var src = String(md).replace(/\r\n/g, "\n");
-  var lines = src.split("\n");
-  var dataRows = [];
-  var sawHeader = false;
-  var inTable = false;
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i].trim();
-    var isRow = line.charAt(0) === "|" && line.charAt(line.length - 1) === "|";
-    if (!isRow) {
-      if (inTable) break; // table ended
-      continue;
-    }
-    inTable = true;
-    var cells = line
-      .slice(1, -1)
-      .split("|")
-      .map(function (c) {
-        return c.trim();
-      });
-    if (!sawHeader) {
-      sawHeader = true; // first table row is the header — skip it
-      continue;
-    }
-    var isSeparator = cells.every(function (c) {
-      return /^:?-+:?$/.test(c);
-    });
-    if (isSeparator) continue;
-    if (cells.length < 3) continue;
-    dataRows.push(cells);
+// STEP 4: words-to-avoid data is typed frontmatter, not a body table.
+// Read the rules in source order; reshape to the dist rule key-order
+// {avoid, reason, example:{do,dont}} so JSON.stringify is byte-identical.
+function readWordsToAvoidRules(config) {
+  var srcFile = path.join(config.src, "writing", "words-to-avoid.md");
+  if (!fs.existsSync(srcFile)) {
+    throw new Error(
+      "words-to-avoid source not found: " + path.relative(ROOT, srcFile),
+    );
   }
-  if (dataRows.length === 0) {
-    throw new Error("words-to-avoid: no table rows found in source");
+  var data = frontmatter.parse(fs.readFileSync(srcFile, "utf8")).data;
+  var rules = data && data.wordsToAvoid;
+  if (!Array.isArray(rules) || rules.length === 0) {
+    throw new Error("words-to-avoid: no `wordsToAvoid` frontmatter rules");
   }
-  var quoteRe = /["“”]([^"“”]+)["“”]/g;
-  return dataRows.map(function (cells) {
-    var note = cells[0];
-    var avoid = [];
-    quoteRe.lastIndex = 0;
-    var m;
-    while ((m = quoteRe.exec(note)) !== null) {
-      var term = m[1]
-        .trim()
-        .toLowerCase()
-        .replace(/[.,;!?]+$/, "");
-      if (term) avoid.push(term);
-    }
+  return rules.map(function (r) {
     return {
-      avoid: avoid,
-      reason: note,
-      example: { do: cells[1], dont: cells[2] },
+      avoid: r.avoid,
+      reason: r.reason,
+      example: { do: r.example.do, dont: r.example.dont },
     };
   });
+}
+
+// Render the rules back into the markdown section that lives in global.md:
+// the `---` separator + the Do/Don't table (reproducing the committed bytes,
+// including the 3-column `|---|---|---|` separator).
+function renderWordsToAvoidSection(rules) {
+  var lines = ["---", "", "| Example | Do | Don't |", "|---|---|---|"];
+  rules.forEach(function (r) {
+    lines.push("| " + r.reason + " | " + r.example.do + " | " + r.example.dont + " |");
+  });
+  return lines.join("\n");
 }
 
 // Sub-buckets we walk inside content/src/. Order is not significant
@@ -315,6 +291,18 @@ function buildGlobalOutput(config) {
   var sections = resolveAllSections(config).filter(function (s) {
     return s.scope === "global";
   });
+  // STEP 4: the words-to-avoid table now lives in frontmatter; its prose-only
+  // body is mirrored as usual, then the table is re-rendered from the rules.
+  var wtaRules = readWordsToAvoidRules(config);
+  sections = sections.map(function (s) {
+    if (s.slug !== "words-to-avoid") return s;
+    return {
+      slug: s.slug,
+      title: s.title,
+      scope: s.scope,
+      body: s.body + "\n\n" + renderWordsToAvoidSection(wtaRules),
+    };
+  });
   var header = [
     "# Content guidelines — global topics",
     "",
@@ -337,23 +325,11 @@ function buildGlobalOutput(config) {
   return assembleDoc(header, sections);
 }
 
-// Build content's structured words-to-avoid artifact from the prose source.
-// Additive: does not touch global.md. Single source of truth = the prose
-// table in content/src/writing/words-to-avoid.md.
 function buildWordsToAvoid(config) {
-  var srcFile = path.join(config.src, "writing", "words-to-avoid.md");
-  if (!fs.existsSync(srcFile)) {
-    throw new Error(
-      "words-to-avoid source not found: " + path.relative(ROOT, srcFile),
-    );
-  }
-  var raw = fs.readFileSync(srcFile, "utf8");
-  var rules = parseWordsToAvoid(raw);
   return {
     _schema_version: 1,
-    // Canonical substrate-relative path (not config.src, which may be a test override).
     _source: "content/src/writing/words-to-avoid.md",
-    rules: rules,
+    rules: readWordsToAvoidRules(config),
   };
 }
 
@@ -408,7 +384,8 @@ module.exports = {
   stripJekyllAttrs: stripJekyllAttrs,
   collapseBlankLines: collapseBlankLines,
   shiftHeadings: shiftHeadings,
-  parseWordsToAvoid: parseWordsToAvoid,
+  readWordsToAvoidRules: readWordsToAvoidRules,
+  renderWordsToAvoidSection: renderWordsToAvoidSection,
   buildWordsToAvoid: buildWordsToAvoid,
   resolveSectionFile: resolveSectionFile,
   readSection: readSection,
