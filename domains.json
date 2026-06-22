@@ -1,0 +1,102 @@
+{
+  "_schema_version": 1,
+  "_note": "Per-domain authoring contract. Hand-authored source of truth; governed by schemas/domains.json; checked by scripts/validate/validate-domains.js. STEP 4's derive engine will read this.",
+  "domains": {
+    "categories": {
+      "summary": "Component category defaults — anatomy/variants/refs from frontmatter; body mirrored verbatim to dist .md.",
+      "src": "components/src/categories/*.md",
+      "generator": "scripts/categories/derive-categories.js",
+      "frontmatterSchema": "schemas/category-defaults.json",
+      "body": { "parse": "none", "mirror": true, "field": null },
+      "distShape": "per-record+bundle"
+    },
+    "foundations": {
+      "summary": "Foundations guidance — body parsed into a Pattern-H section tree; also emits a synthesized foundations.md concatenation (not byte-verbatim).",
+      "src": "foundations/src/*.md",
+      "generator": "scripts/foundations/derive-foundations.js",
+      "frontmatterSchema": null,
+      "body": { "parse": "sections", "mirror": true, "field": null },
+      "distShape": "pattern-H-tree"
+    },
+    "accessibility": {
+      "summary": "WCAG guidance — body parsed into a Pattern-H section tree (same engine as foundations).",
+      "src": "accessibility/src/*.md",
+      "generator": "scripts/accessibility/derive-a11y-sections.js",
+      "frontmatterSchema": null,
+      "body": { "parse": "sections", "mirror": false, "field": null },
+      "distShape": "pattern-H-tree"
+    },
+    "guidelines": {
+      "summary": "Per-component guidelines — body domains (content/usage/design/behavior) parsed into sections + kept verbatim per-domain; frontmatter in sibling _meta.yml (+tokens.yml).",
+      "src": "components/src/*/{content,usage,design,behavior}.md",
+      "generator": "scripts/components/derive-guidelines.js",
+      "frontmatterSchema": "schemas/guideline-meta.json",
+      "body": { "parse": "sections", "mirror": true, "field": null },
+      "distShape": "per-record+bundle"
+    },
+    "app-context/apps": {
+      "summary": "App-context apps — body parsed into H2/H3 sections.",
+      "src": "app-context/src/apps/*.md",
+      "generator": "scripts/app-context/derive-app-context.js",
+      "frontmatterSchema": "schemas/app-context-app.json",
+      "body": { "parse": "sections", "mirror": false, "field": null },
+      "distShape": "single-object"
+    },
+    "app-context/entities": {
+      "summary": "App-context entities — body normalized verbatim into a single description field.",
+      "src": "app-context/src/entities/*.md",
+      "generator": "scripts/app-context/derive-app-context.js",
+      "frontmatterSchema": "schemas/app-context-entity.json",
+      "body": { "parse": "none", "mirror": false, "field": "description" },
+      "distShape": "single-object"
+    },
+    "app-context/patterns": {
+      "summary": "App-context patterns — body normalized verbatim into a single description field.",
+      "src": "app-context/src/patterns/*.md",
+      "generator": "scripts/app-context/derive-app-context.js",
+      "frontmatterSchema": "schemas/app-context-pattern.json",
+      "body": { "parse": "none", "mirror": false, "field": "description" },
+      "distShape": "single-object"
+    },
+    "content/global": {
+      "summary": "Global content/writing guidance — bodies concatenated verbatim into one global.md (+ words-to-avoid.json). NOTE: frontmatterSchema gap (closed in a later STEP-3 slice).",
+      "src": "content/src/{writing,product}/*.md",
+      "generator": "scripts/content/derive-content.js",
+      "frontmatterSchema": null,
+      "body": { "parse": "none", "mirror": true, "field": null },
+      "distShape": "single-object"
+    },
+    "content/patterns": {
+      "summary": "Content pattern files — parsed into sections and fanned out (appended) into component guideline records.",
+      "src": "content/src/patterns/*.md",
+      "generator": "scripts/content/fanout-patterns.js",
+      "frontmatterSchema": null,
+      "body": { "parse": "sections", "mirror": false, "field": null },
+      "distShape": "embedded"
+    },
+    "graph": {
+      "summary": "Knowledge graph — derived from dist artifacts (+ content/src frontmatter for related-component edges); reads no prose body.",
+      "src": null,
+      "generator": "scripts/graph/derive-graph.js",
+      "frontmatterSchema": null,
+      "body": { "parse": "none", "mirror": false, "field": null },
+      "distShape": "single-object"
+    },
+    "tokens": {
+      "summary": "Design tokens — hand-authored data file; no markdown body. NOTE: frontmatterSchema gap (closed in a later STEP-3 slice).",
+      "src": "tokens/tokens.json",
+      "generator": null,
+      "frontmatterSchema": null,
+      "body": { "parse": "none", "mirror": false, "field": null },
+      "distShape": "single-object"
+    },
+    "canonical-sections": {
+      "summary": "Canonical design-section catalogue — JSON→JSON projection; no markdown body.",
+      "src": "components/src/canonical-sections.json",
+      "generator": "scripts/components/derive-canonical-sections.js",
+      "frontmatterSchema": "schemas/canonical-sections.json",
+      "body": { "parse": "none", "mirror": false, "field": null },
+      "distShape": "single-object"
+    }
+  }
+}

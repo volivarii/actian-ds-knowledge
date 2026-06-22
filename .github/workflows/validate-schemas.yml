@@ -25,6 +25,7 @@ on:
       - 'components/dist/guidelines/**/*.json'
       - 'components/dist/registries/**/*.json'
       - 'paths-manifest.json'
+      - 'domains.json'
       - 'foundations/dist/**/*.json'
       - 'accessibility/dist/**/*.json'
       - 'content/dist/**/*.json'
@@ -120,8 +121,15 @@ jobs:
           node scripts/validate/validate-anatomy.js > anatomy.rdjsonl
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Validate domains registry
+        id: domains
+        continue-on-error: true
+        run: |
+          node scripts/validate/validate-domains.js > domains.rdjsonl
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
       - name: Combine rdjsonl outputs
-        run: cat manifest.rdjsonl foundations.rdjsonl categories.rdjsonl registries.rdjsonl guidelines-doc.rdjsonl a11y-sections.rdjsonl a11y-index.rdjsonl content.rdjsonl anatomy.rdjsonl > combined.rdjsonl
+        run: cat manifest.rdjsonl foundations.rdjsonl categories.rdjsonl registries.rdjsonl guidelines-doc.rdjsonl a11y-sections.rdjsonl a11y-index.rdjsonl content.rdjsonl anatomy.rdjsonl domains.rdjsonl > combined.rdjsonl
 
       - name: Report annotations via reviewdog
         env:
