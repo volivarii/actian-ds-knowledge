@@ -52,7 +52,7 @@ on:
       # — the derive itself + its libs + the validating schema
       - 'scripts/graph/**'
       - 'scripts/lib/graph/**'
-      - 'scripts/categories/categories-parser.js'
+      - 'scripts/lib/frontmatter.js'
       - 'schemas/graph.json'
       # graph/dist/graph.json (OUTPUT) and package.json (bumped below) are
       # intentionally excluded — including them would self-retrigger this run.

@@ -20,6 +20,7 @@ on:
       - 'foundations/src/**'
       - 'scripts/foundations/derive-foundations.js'
       - 'scripts/foundations/foundations-parser/**'
+      - 'scripts/lib/frontmatter.js'
       - 'paths-manifest.json'
 
 jobs:

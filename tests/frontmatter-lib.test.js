@@ -74,5 +74,37 @@ test("parse: ISO date stays a string (YAML 1.2 core, no timestamp type)", () => 
 });
 
 test("parse: indented top-level key is rejected (strict YAML)", () => {
-  assert.throws(() => fm.parse("---\n  slug: x\nlabel: X\n---\n"));
+  // yaml lib raises YAMLParseError "Unexpected scalar at node end" here — a
+  // different (generic) message than the old bespoke parser, but still rejected.
+  assert.throws(() => fm.parse("---\n  slug: x\nlabel: X\n---\n"), /scalar/);
+});
+
+// ── Strict-YAML profile pins (intended divergence from the old parser) ────────
+// These document the contract the swap adopted; they also fail loudly if a
+// future `yaml`-lib upgrade silently changes coercion/strictness.
+
+test("profile: duplicate keys throw (old parser was last-wins)", () => {
+  assert.throws(
+    () => fm.parse("---\nslug: a\nslug: b\n---\n"),
+    /keys must be unique/i,
+  );
+});
+
+test("profile: an UNQUOTED comma in a flow value mis-parses into phantom keys", () => {
+  // This is exactly why values with commas MUST be quoted and why the
+  // source-shape guard (tests/frontmatter-sources-shape.test.js) exists.
+  const { data } = fm.parse(
+    "---\nx:\n  - { name: A, description: receives focus, hover, press }\n---\n",
+  );
+  assert.deepEqual(data.x, [
+    { name: "A", description: "receives focus", hover: null, press: null },
+  ]);
+});
+
+test("profile: boolean coercion follows YAML 1.2 core (true/True bool; yes string)", () => {
+  const { data } = fm.parse("---\na: true\nb: True\nc: yes\nd: false\n---\n");
+  assert.equal(data.a, true);
+  assert.equal(data.b, true);
+  assert.equal(data.c, "yes");
+  assert.equal(data.d, false);
 });
