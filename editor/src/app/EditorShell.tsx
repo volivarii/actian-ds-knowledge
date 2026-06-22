@@ -12,6 +12,7 @@ import { categoryDefaultsUiSchema } from "../uiSchemas/categoryDefaults";
 import { appContextAppUiSchema } from "../uiSchemas/appContextApp";
 import { appContextEntityUiSchema } from "../uiSchemas/appContextEntity";
 import { appContextPatternUiSchema } from "../uiSchemas/appContextPattern";
+import { wordsToAvoidUiSchema } from "../uiSchemas/wordsToAvoid";
 import { RefusalBanner } from "./RefusalBanner";
 import { CoverageDashboard } from "./CoverageDashboard";
 import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
@@ -250,6 +251,17 @@ export function EditorShell({
         path={activePath}
         schemaKey="category-defaults"
         uiSchema={categoryDefaultsUiSchema}
+        octokit={gh}
+        onOpenSettings={onOpenSettings}
+        onNavigate={setActivePathSafe}
+      />
+    );
+  } else if (activePath === "content/src/writing/words-to-avoid.md") {
+    pane = (
+      <FrontmatterBodyEditScreen
+        path={activePath}
+        schemaKey="content"
+        uiSchema={wordsToAvoidUiSchema}
         octokit={gh}
         onOpenSettings={onOpenSettings}
         onNavigate={setActivePathSafe}
