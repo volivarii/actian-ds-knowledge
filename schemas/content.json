@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://actian.com/ds-knowledge/content.json",
+  "title": "Content source frontmatter",
+  "description": "Frontmatter contract for content/src/**/*.md (writing/product/patterns guidance). Authored by the content team; governs nav + related-component wiring. README.md/AUTHORING.md are exempt (no frontmatter).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable page/section title.",
+      "examples": ["Forms", "Empty & system states"]
+    },
+    "nav_order": {
+      "type": "integer",
+      "description": "Sort position in the docs navigation (lower = earlier).",
+      "examples": [14, 52]
+    },
+    "relatedComponents": {
+      "type": "array",
+      "description": "Component registry slugs this content relates to; drives graph edges + guideline fan-out.",
+      "examples": [["input", "checkbox-with-label", "radio-button"]],
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9-]+$" }
+    },
+    "nav_exclude": {
+      "type": "boolean",
+      "description": "Exclude this page from the docs navigation.",
+      "examples": [true]
+    },
+    "search_exclude": {
+      "type": "boolean",
+      "description": "Exclude this page from docs search.",
+      "examples": [true]
+    }
+  }
+}
