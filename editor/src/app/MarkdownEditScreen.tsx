@@ -380,8 +380,16 @@ export function MarkdownEditScreen({
         const orderedMatch = path.match(
           /^(foundations|accessibility)\/src\/[^/]+\.md$/,
         );
-        const filesToSubmit: { path: string; content: string }[] = [
-          { path, content: text },
+        const filesToSubmit: {
+          path: string;
+          content: string;
+          basedOnSha?: string;
+        }[] = [
+          {
+            path,
+            content: text,
+            basedOnSha: load.source === "remote" ? load.remoteSha : undefined,
+          },
         ];
         if (orderedMatch) {
           const orderPath = `${orderedMatch[1]}/src/_order.json`;
