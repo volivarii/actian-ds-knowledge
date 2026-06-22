@@ -22,6 +22,7 @@
       "type": "array",
       "description": "Component registry slugs this content relates to; drives graph edges + guideline fan-out.",
       "examples": [["input", "checkbox-with-label", "radio-button"]],
+      "uniqueItems": true,
       "items": { "type": "string", "pattern": "^[a-z0-9-]+$" }
     },
     "nav_exclude": {

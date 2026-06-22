@@ -19,6 +19,8 @@ const fmLib = require("../lib/frontmatter");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const TARGET = path.join(REPO_ROOT, "content", "dist", "words-to-avoid.json");
+// Excluded by exact basename at ANY depth — intentionally exempts nested
+// authoring/readme files (e.g. content/src/patterns/README.md), not just root.
 const EXCLUDE = new Set(["README.md", "AUTHORING.md"]);
 
 function walkMd(dir, out) {
@@ -48,7 +50,9 @@ function validateContentSrc(repoRoot = REPO_ROOT) {
     const rel = path.relative(repoRoot, abs).split(path.sep).join("/");
     const raw = fs.readFileSync(abs, "utf8");
     if (!raw.startsWith("---")) {
-      records.push(rec("content/src doc missing frontmatter (--- fence required)", rel));
+      records.push(
+        rec("content/src doc missing frontmatter (--- fence required)", rel),
+      );
       continue;
     }
     let data;
@@ -59,7 +63,8 @@ function validateContentSrc(repoRoot = REPO_ROOT) {
       continue;
     }
     if (!validate(data)) {
-      for (const err of validate.errors || []) records.push(ajvErrorToRdjsonl(err, rel));
+      for (const err of validate.errors || [])
+        records.push(ajvErrorToRdjsonl(err, rel));
     }
   }
   return records;
@@ -80,7 +85,8 @@ function run() {
       records.push(rec("Invalid JSON: " + e.message, rel));
     }
     if (data && !validate(data)) {
-      for (const err of validate.errors || []) records.push(ajvErrorToRdjsonl(err, rel));
+      for (const err of validate.errors || [])
+        records.push(ajvErrorToRdjsonl(err, rel));
     }
   }
   return { invalid: records.length, records, skipped };

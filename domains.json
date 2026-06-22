@@ -83,7 +83,7 @@
       "distShape": "single-object"
     },
     "tokens": {
-      "summary": "Design tokens — hand-authored data file; no markdown body. NOTE: frontmatterSchema gap (closed in a later STEP-3 slice).",
+      "summary": "Design tokens — hand-authored JSON data file; no markdown body, so no frontmatterSchema applies (null is permanently correct, not a gap).",
       "src": "tokens/tokens.json",
       "generator": null,
       "frontmatterSchema": null,
