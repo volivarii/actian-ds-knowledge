@@ -116,3 +116,41 @@ test("words-to-avoid.json conforms to its schema (structural)", function () {
     });
   });
 });
+
+// ── NEW TESTS (Fix #3+#4) ────────────────────────────────────────────────────
+
+test("normalizeWordsToAvoidRules — lowercases avoid tokens", function () {
+  var rules = derive.normalizeWordsToAvoidRules([
+    {
+      avoid: ["Execute", "Sign In"],
+      reason: "r",
+      example: { do: "d", dont: "x" },
+    },
+  ]);
+  assert.deepEqual(rules[0].avoid, ["execute", "sign in"]);
+});
+
+test("normalizeWordsToAvoidRules — throws on malformed rule (no example)", function () {
+  assert.throws(function () {
+    derive.normalizeWordsToAvoidRules([{ avoid: [], reason: "r" }]);
+  }, /malformed rule at index 0/);
+});
+
+// ── NEW TEST (Fix #1) ────────────────────────────────────────────────────────
+
+test("renderWordsToAvoidSection — escapes pipe and flattens newline in cells", function () {
+  var section = derive.renderWordsToAvoidSection([
+    {
+      avoid: [],
+      reason: "a | b",
+      example: { do: "c\nd", dont: "e" },
+    },
+  ]);
+  // reason cell: pipe escaped; do cell: newline flattened to space
+  assert.ok(section.indexOf("a \\| b") !== -1, "pipe should be escaped as \\|");
+  assert.ok(
+    section.indexOf("c d") !== -1,
+    "newline should be flattened to space",
+  );
+  assert.ok(section.indexOf("c\nd") === -1, "raw newline must not appear");
+});

@@ -134,6 +134,38 @@ function shiftHeadings(s) {
 }
 
 // STEP 4: words-to-avoid data is typed frontmatter, not a body table.
+// Pure reshaper — validates required fields and lowercases avoid tokens.
+// Guard required fields (clear error, not an opaque TypeError) + lowercase
+// the avoid tokens (honors the schema's "Lowercased" contract) + fix key order.
+function normalizeWordsToAvoidRules(rawRules) {
+  if (!Array.isArray(rawRules) || rawRules.length === 0) {
+    throw new Error("words-to-avoid: no `wordsToAvoid` frontmatter rules");
+  }
+  return rawRules.map(function (r, i) {
+    if (
+      !r ||
+      !Array.isArray(r.avoid) ||
+      typeof r.reason !== "string" ||
+      !r.example ||
+      typeof r.example.do !== "string" ||
+      typeof r.example.dont !== "string"
+    ) {
+      throw new Error(
+        "words-to-avoid: malformed rule at index " +
+          i +
+          " (need avoid[], reason, example.{do,dont})",
+      );
+    }
+    return {
+      avoid: r.avoid.map(function (t) {
+        return String(t).toLowerCase();
+      }),
+      reason: r.reason,
+      example: { do: r.example.do, dont: r.example.dont },
+    };
+  });
+}
+
 // Read the rules in source order; reshape to the dist rule key-order
 // {avoid, reason, example:{do,dont}} so JSON.stringify is byte-identical.
 function readWordsToAvoidRules(config) {
@@ -144,17 +176,15 @@ function readWordsToAvoidRules(config) {
     );
   }
   var data = frontmatter.parse(fs.readFileSync(srcFile, "utf8")).data;
-  var rules = data && data.wordsToAvoid;
-  if (!Array.isArray(rules) || rules.length === 0) {
-    throw new Error("words-to-avoid: no `wordsToAvoid` frontmatter rules");
-  }
-  return rules.map(function (r) {
-    return {
-      avoid: r.avoid,
-      reason: r.reason,
-      example: { do: r.example.do, dont: r.example.dont },
-    };
-  });
+  return normalizeWordsToAvoidRules(data && data.wordsToAvoid);
+}
+
+// A reason/example may contain `|` or newlines once authored via the editor;
+// escape them so a cell can't break the Markdown table. No-op on current data.
+function mdCell(s) {
+  return String(s)
+    .replace(/\r?\n+/g, " ")
+    .replace(/\|/g, "\\|");
 }
 
 // Render the rules back into the markdown section that lives in global.md:
@@ -163,7 +193,15 @@ function readWordsToAvoidRules(config) {
 function renderWordsToAvoidSection(rules) {
   var lines = ["---", "", "| Example | Do | Don't |", "|---|---|---|"];
   rules.forEach(function (r) {
-    lines.push("| " + r.reason + " | " + r.example.do + " | " + r.example.dont + " |");
+    lines.push(
+      "| " +
+        mdCell(r.reason) +
+        " | " +
+        mdCell(r.example.do) +
+        " | " +
+        mdCell(r.example.dont) +
+        " |",
+    );
   });
   return lines.join("\n");
 }
@@ -293,14 +331,18 @@ function buildGlobalOutput(config) {
   });
   // STEP 4: the words-to-avoid table now lives in frontmatter; its prose-only
   // body is mirrored as usual, then the table is re-rendered from the rules.
-  var wtaRules = readWordsToAvoidRules(config);
+  // Read lazily so buildGlobalOutput doesn't require words-to-avoid.md when
+  // no such section is present in the index.
   sections = sections.map(function (s) {
     if (s.slug !== "words-to-avoid") return s;
     return {
       slug: s.slug,
       title: s.title,
       scope: s.scope,
-      body: s.body + "\n\n" + renderWordsToAvoidSection(wtaRules),
+      body:
+        s.body +
+        "\n\n" +
+        renderWordsToAvoidSection(readWordsToAvoidRules(config)),
     };
   });
   var header = [
@@ -384,7 +426,9 @@ module.exports = {
   stripJekyllAttrs: stripJekyllAttrs,
   collapseBlankLines: collapseBlankLines,
   shiftHeadings: shiftHeadings,
+  normalizeWordsToAvoidRules: normalizeWordsToAvoidRules,
   readWordsToAvoidRules: readWordsToAvoidRules,
+  mdCell: mdCell,
   renderWordsToAvoidSection: renderWordsToAvoidSection,
   buildWordsToAvoid: buildWordsToAvoid,
   resolveSectionFile: resolveSectionFile,
