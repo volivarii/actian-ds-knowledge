@@ -20,7 +20,7 @@ const {
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const CATEGORIES_DIR = path.join(REPO_ROOT, "components", "src", "categories");
-const parser = require(path.join(REPO_ROOT, "scripts", "categories", "categories-parser"));
+const parser = require(path.join(REPO_ROOT, "scripts", "lib", "frontmatter"));
 
 function main() {
   if (!fs.existsSync(CATEGORIES_DIR)) {

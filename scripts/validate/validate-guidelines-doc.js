@@ -24,7 +24,7 @@ const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const SRC_DIR = path.join(REPO_ROOT, "components", "src");
 const DIST_DIR = path.join(REPO_ROOT, "components", "dist", "guidelines");
 const yamlParser = require(
-  path.join(REPO_ROOT, "scripts", "categories", "categories-parser"),
+  path.join(REPO_ROOT, "scripts", "lib", "frontmatter"),
 );
 
 function rel(abs) {
@@ -118,17 +118,10 @@ function main() {
   // Derived: components/dist/guidelines/<slug>.json (skip bundle + coverage).
   if (fs.existsSync(DIST_DIR)) {
     fs.readdirSync(DIST_DIR)
-      .filter(
-        (f) =>
-          f.endsWith(".json") && f !== "guidelines.bundle.json",
-      )
+      .filter((f) => f.endsWith(".json") && f !== "guidelines.bundle.json")
       .sort()
       .forEach((f) => {
-        validateJsonFile(
-          path.join(DIST_DIR, f),
-          componentValidator,
-          counters,
-        );
+        validateJsonFile(path.join(DIST_DIR, f), componentValidator, counters);
       });
   }
 

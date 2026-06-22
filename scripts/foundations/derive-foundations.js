@@ -39,7 +39,7 @@ var path = require("path");
 // them (see module.exports at the bottom) so existing requirers keep working.
 var sectionDist = require("../lib/section-dist/index.js");
 var astWalk = sectionDist.astWalk;
-var categoriesParser = require("../categories/categories-parser.js");
+var categoriesParser = require("../lib/frontmatter");
 var { writeManifest } = require("../lib/manifest-io");
 var orderManifest = require("../lib/order-manifest.js");
 var ORDER_MANIFEST_NAME = orderManifest.ORDER_MANIFEST_NAME;

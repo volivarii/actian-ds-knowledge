@@ -23,7 +23,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const Ajv2020 = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
-const parser = require("./categories-parser");
+const parser = require("../lib/frontmatter");
 const { writeManifest } = require("../lib/manifest-io");
 
 const SCHEMA_VERSION = 1;
