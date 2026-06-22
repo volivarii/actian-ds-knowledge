@@ -8,7 +8,11 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
-const { createValidator, emitRdjsonl, emitSummary } = require("./lib-validator");
+const {
+  createValidator,
+  emitRdjsonl,
+  emitSummary,
+} = require("./lib-validator");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 
@@ -16,6 +20,10 @@ const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const INFRA_DERIVES = new Set(["icons", "vendor-include"]);
 
 // Literal prefix of a glob (up to first `*` or `{`), trailing slash trimmed.
+// NOTE: the referential check below only asserts this LITERAL PREFIX exists —
+// it does NOT expand `*`/`{...}` segments. So it catches a typo in the literal
+// part (e.g. `componnents/src/...`) but not inside a globbed segment. A full
+// match-count check would need a glob engine (none is installed). Cheap by design.
 function globPrefix(glob) {
   const i = glob.search(/[*{]/);
   const lit = i === -1 ? glob : glob.slice(0, i);
@@ -53,13 +61,21 @@ function mirrorExists(unitKey, repoRoot) {
       .readdirSync(dir)
       .filter((f) => f.endsWith(".json") && f !== "guidelines.bundle.json")
       .some((f) => {
-        const j = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+        let j;
+        try {
+          j = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+        } catch (_e) {
+          return false; // corrupt dist json → not a valid mirror (caught, not thrown)
+        }
         return Object.values(j.domains || {}).some(
           (d) => typeof d.markdown === "string" && d.markdown.length > 0,
         );
       });
   }
-  return true; // content/global mirror (global.md) not cheaply checked in this slice
+  if (unitKey === "content/global") {
+    return fs.existsSync(path.join(repoRoot, "content", "dist", "global.md"));
+  }
+  return true; // any other mirror:true unit is not cheaply probed in this slice
 }
 
 function collectViolations(opts = {}) {
@@ -106,6 +122,11 @@ function collectViolations(opts = {}) {
   }
 
   // 3. Coverage: every non-infra derive:* target maps to >=1 unit.
+  // CAVEAT: answers "does each derive TARGET map to a unit", not "is every
+  // generator script represented". A target may chain scripts — e.g.
+  // `derive:accessibility` runs derive-a11y-index.js && derive-a11y-sections.js
+  // but only the latter is the registered unit generator (the index is a derived
+  // lookup, not a body domain). Accepted limitation.
   const unitKeys = Object.keys(units);
   for (const t of deriveTargets(repoRoot)) {
     if (INFRA_DERIVES.has(t)) continue;

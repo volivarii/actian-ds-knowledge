@@ -11,7 +11,7 @@
       "distShape": "per-record+bundle"
     },
     "foundations": {
-      "summary": "Foundations guidance — body parsed into a Pattern-H section tree; also emits a verbatim foundations.md mirror.",
+      "summary": "Foundations guidance — body parsed into a Pattern-H section tree; also emits a synthesized foundations.md concatenation (not byte-verbatim).",
       "src": "foundations/src/*.md",
       "generator": "scripts/foundations/derive-foundations.js",
       "frontmatterSchema": null,
@@ -59,12 +59,12 @@
       "distShape": "single-object"
     },
     "content/global": {
-      "summary": "Global content/writing guidance — bodies copied verbatim into global.md. NOTE: frontmatterSchema gap (closed in a later STEP-3 slice).",
+      "summary": "Global content/writing guidance — bodies concatenated verbatim into one global.md (+ words-to-avoid.json). NOTE: frontmatterSchema gap (closed in a later STEP-3 slice).",
       "src": "content/src/{writing,product}/*.md",
       "generator": "scripts/content/derive-content.js",
       "frontmatterSchema": null,
       "body": { "parse": "none", "mirror": true, "field": null },
-      "distShape": "per-record+bundle"
+      "distShape": "single-object"
     },
     "content/patterns": {
       "summary": "Content pattern files — parsed into sections and fanned out (appended) into component guideline records.",
@@ -75,7 +75,7 @@
       "distShape": "embedded"
     },
     "graph": {
-      "summary": "Knowledge graph — derived from dist artifacts; no markdown body.",
+      "summary": "Knowledge graph — derived from dist artifacts (+ content/src frontmatter for related-component edges); reads no prose body.",
       "src": null,
       "generator": "scripts/graph/derive-graph.js",
       "frontmatterSchema": null,
