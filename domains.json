@@ -59,10 +59,10 @@
       "distShape": "single-object"
     },
     "content/global": {
-      "summary": "Global content/writing guidance — bodies concatenated verbatim into one global.md (+ words-to-avoid.json). NOTE: frontmatterSchema gap (closed in a later STEP-3 slice).",
+      "summary": "Global content/writing guidance — bodies concatenated verbatim into one global.md (+ words-to-avoid.json).",
       "src": "content/src/{writing,product}/*.md",
       "generator": "scripts/content/derive-content.js",
-      "frontmatterSchema": null,
+      "frontmatterSchema": "schemas/content.json",
       "body": { "parse": "none", "mirror": true, "field": null },
       "distShape": "single-object"
     },
@@ -70,7 +70,7 @@
       "summary": "Content pattern files — parsed into sections and fanned out (appended) into component guideline records.",
       "src": "content/src/patterns/*.md",
       "generator": "scripts/content/fanout-patterns.js",
-      "frontmatterSchema": null,
+      "frontmatterSchema": "schemas/content.json",
       "body": { "parse": "sections", "mirror": false, "field": null },
       "distShape": "embedded"
     },

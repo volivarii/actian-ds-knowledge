@@ -29,6 +29,7 @@ on:
       - 'foundations/dist/**/*.json'
       - 'accessibility/dist/**/*.json'
       - 'content/dist/**/*.json'
+      - 'content/src/**/*.md'
       - 'schemas/**/*.json'
       - 'scripts/validate/**'
       - '.github/workflows/validate-schemas.yml'
