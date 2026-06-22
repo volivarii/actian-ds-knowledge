@@ -23,9 +23,29 @@ export function isWordsToAvoidFile(path: string): boolean {
   return path === "content/src/writing/words-to-avoid.md";
 }
 
+/** Foundations files proven WYSIWYG-safe (dist-equivalent + idempotent body
+ *  round-trip; see the drift guard). Single source of truth shared with the
+ *  guard test. tokens.md + color-primitives.md are EXCLUDED — their tables churn. */
+export const FOUNDATIONS_WYSIWYG_SAFE: readonly string[] = [
+  "foundations/src/design-guidelines.md",
+  "foundations/src/intro.md",
+  "foundations/src/handoff-protocol.md",
+  "foundations/src/related-guidelines.md",
+  "foundations/src/table-of-contents.md",
+];
+
+export function isFoundationsWysiwygSafe(path: string): boolean {
+  return FOUNDATIONS_WYSIWYG_SAFE.includes(path);
+}
+
 /** The WYSIWYG body editor is used only for per-record markdown whose body
  *  round-trips dist-equivalently (app-context + categories), and only when the
  *  alpha flag is on. Precise predicates — not prefix matches. */
 export function shouldUseWysiwyg(path: string): boolean {
-  return isWysiwygEnabled() && (isAppContextFile(path) || isCategoryFile(path));
+  return (
+    isWysiwygEnabled() &&
+    (isAppContextFile(path) ||
+      isCategoryFile(path) ||
+      isFoundationsWysiwygSafe(path))
+  );
 }

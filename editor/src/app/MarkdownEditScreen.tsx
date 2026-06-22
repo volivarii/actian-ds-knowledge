@@ -23,8 +23,18 @@ import { decodeBase64Utf8 } from "./githubApi";
 import { DEFAULT_COORDS } from "../config/coords";
 import { submitDraft } from "../core/submitDraft";
 import { AnchorPreservationError } from "../core/anchorPreservation";
-import { ReadonlyPathError, SchemaValidationError } from "../core/types";
+import {
+  FileChange,
+  ReadonlyPathError,
+  SchemaValidationError,
+} from "../core/types";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
+import { RichBodyEditor } from "../markdown-engine/RichBodyEditor";
+import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
+import {
+  splitRawFrontmatter,
+  joinRawFrontmatter,
+} from "../markdown-engine/rawFrontmatter";
 import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
 import { Outline } from "./Outline";
@@ -111,6 +121,10 @@ export function MarkdownEditScreen({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [prUrl, setPrUrl] = useState<string | null>(null);
+  // Bumped on draft-restore to force RichBodyEditor to re-seed with the
+  // restored text (the editor is uncontrolled, keyed by path alone, so a
+  // path-only key would not trigger a remount when restoring on the same file).
+  const [remountNonce, setRemountNonce] = useState(0);
   // Preview pane visibility — hidden by default to give the editor the
   // full width. Persisted to localStorage so the user's choice survives
   // page reloads + cross-file navigation.
@@ -339,10 +353,20 @@ export function MarkdownEditScreen({
 
   const onRestore = () => {
     const draft = draftStoreSingleton.load(path);
-    if (draft && view) {
-      view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: draft.text },
-      });
+    if (draft) {
+      // Always update the React text state so the WYSIWYG branch re-seeds.
+      setText(draft.text);
+      // Bump the nonce so RichBodyEditor gets a new key and re-mounts with
+      // the restored text (it is uncontrolled — initialText only applies at
+      // mount time).
+      setRemountNonce((n) => n + 1);
+      // CodeMirror path: also dispatch directly into the editor so the view
+      // reflects the change without waiting for a full re-mount.
+      if (view) {
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: draft.text },
+        });
+      }
     }
     setRestorePromptOpen(false);
   };
@@ -374,8 +398,12 @@ export function MarkdownEditScreen({
         const orderedMatch = path.match(
           /^(foundations|accessibility)\/src\/[^/]+\.md$/,
         );
-        const filesToSubmit: { path: string; content: string }[] = [
-          { path, content: text },
+        const filesToSubmit: FileChange[] = [
+          {
+            path,
+            content: text,
+            basedOnSha: load.source !== "stub" ? load.remoteSha : undefined,
+          },
         ];
         if (orderedMatch) {
           const orderPath = `${orderedMatch[1]}/src/_order.json`;
@@ -460,6 +488,13 @@ export function MarkdownEditScreen({
   }
 
   const isNewFile = load.source !== "remote";
+  // Body-only WYSIWYG: split frontmatter off (raw, byte-exact) so Milkdown only
+  // sees the body; reassemble on every change. Flag-off keeps full CodeMirror.
+  // Guard: only split when wysiwyg is active — CodeMirror path never needs it.
+  const wysiwyg = shouldUseWysiwyg(path);
+  const { frontmatterBlock: fmBlock, body: richBody } = wysiwyg
+    ? splitRawFrontmatter(text)
+    : { frontmatterBlock: "", body: "" };
   return (
     <Flex direction="column" height="100%" gap="2">
       <TierBanner path={path} />
@@ -476,15 +511,19 @@ export function MarkdownEditScreen({
               In batch
             </Badge>
           )}
-          <Button
-            size="1"
-            variant={showPreview ? "soft" : "outline"}
-            onClick={() => setShowPreview((v) => !v)}
-            aria-label={showPreview ? "Hide preview pane" : "Show preview pane"}
-            aria-pressed={showPreview}
-          >
-            {showPreview ? "Hide preview" : "Show preview"}
-          </Button>
+          {!wysiwyg && (
+            <Button
+              size="1"
+              variant={showPreview ? "soft" : "outline"}
+              onClick={() => setShowPreview((v) => !v)}
+              aria-label={
+                showPreview ? "Hide preview pane" : "Show preview pane"
+              }
+              aria-pressed={showPreview}
+            >
+              {showPreview ? "Hide preview" : "Show preview"}
+            </Button>
+          )}
         </Flex>
       </Flex>
       {renameWarnings.length > 0 && (
@@ -499,70 +538,55 @@ export function MarkdownEditScreen({
           </Callout.Text>
         </Callout.Root>
       )}
-      <Box>
-        {view && (
-          <Toolbar
-            view={view}
-            octokit={gh ?? undefined}
-            componentSlug={componentSlug}
-          />
-        )}
-      </Box>
-      <Flex flexGrow="1" minHeight="0" gap="2">
-        <Box
-          className="editor-outline-pane"
-          style={{
-            width: 200,
-            minWidth: 200,
-            flexShrink: 0,
-            border: "1px solid var(--gray-5)",
-            borderRadius: 6,
-            overflow: "hidden",
-          }}
-        >
-          <Outline
-            text={text}
-            view={view}
-            file={path}
-            connectionCounts={connectionCounts}
-            onOpenConnectionsForSection={openConnectionsForSection}
-          />
-        </Box>
-        <Box
-          flexGrow="1"
-          flexShrink="1"
-          flexBasis="0"
-          style={{
-            border: "1px solid var(--gray-5)",
-            borderRadius: 6,
-            minWidth: 0,
-            overflow: "hidden",
-          }}
-        >
-          <CodeMirrorEditor
-            key={path}
-            initialText={text}
-            onChange={handleChange}
-            onReady={setView}
-            onAnchorClick={(slug, el) =>
-              setAnchorPopover({ slug, triggerEl: el })
-            }
-            onCursorLineChange={handleCursorLineChange}
-          />
-          {anchorPopover && (
-            <AnchorReferencesPopover
-              slug={anchorPopover.slug}
-              triggerEl={anchorPopover.triggerEl}
-              open
-              onOpenChange={(o) => !o && setAnchorPopover(null)}
-              onNavigate={(p) => {
-                setAnchorPopover(null);
-                onNavigate?.(p);
-              }}
+      {!wysiwyg && (
+        <Box>
+          {view && (
+            <Toolbar
+              view={view}
+              octokit={gh ?? undefined}
+              componentSlug={componentSlug}
             />
           )}
         </Box>
-        {showPreview && (
+      )}
+      {wysiwyg ? (
+        <Box
+          flexGrow="1"
+          minHeight="0"
+          style={{
+            border: "1px solid var(--gray-5)",
+            borderRadius: 6,
+            overflow: "auto",
+          }}
+        >
+          <RichBodyEditor
+            key={`${path}:${remountNonce}`}
+            initialText={richBody}
+            onChange={(b) => handleChange(joinRawFrontmatter(fmBlock, b))}
+            filename={path.split("/").pop()}
+          />
+        </Box>
+      ) : (
+        <Flex flexGrow="1" minHeight="0" gap="2">
+          <Box
+            className="editor-outline-pane"
+            style={{
+              width: 200,
+              minWidth: 200,
+              flexShrink: 0,
+              border: "1px solid var(--gray-5)",
+              borderRadius: 6,
+              overflow: "hidden",
+            }}
+          >
+            <Outline
+              text={text}
+              view={view}
+              file={path}
+              connectionCounts={connectionCounts}
+              onOpenConnectionsForSection={openConnectionsForSection}
+            />
+          </Box>
           <Box
             flexGrow="1"
             flexShrink="1"
@@ -570,18 +594,54 @@ export function MarkdownEditScreen({
             style={{
               border: "1px solid var(--gray-5)",
               borderRadius: 6,
-              padding: 12,
-              overflow: "auto",
               minWidth: 0,
+              overflow: "hidden",
             }}
           >
-            <Text size="1" color="gray">
-              Preview is informational, not the production renderer.
-            </Text>
-            <Preview text={text} />
+            <CodeMirrorEditor
+              key={path}
+              initialText={text}
+              onChange={handleChange}
+              onReady={setView}
+              onAnchorClick={(slug, el) =>
+                setAnchorPopover({ slug, triggerEl: el })
+              }
+              onCursorLineChange={handleCursorLineChange}
+            />
+            {anchorPopover && (
+              <AnchorReferencesPopover
+                slug={anchorPopover.slug}
+                triggerEl={anchorPopover.triggerEl}
+                open
+                onOpenChange={(o) => !o && setAnchorPopover(null)}
+                onNavigate={(p) => {
+                  setAnchorPopover(null);
+                  onNavigate?.(p);
+                }}
+              />
+            )}
           </Box>
-        )}
-      </Flex>
+          {showPreview && (
+            <Box
+              flexGrow="1"
+              flexShrink="1"
+              flexBasis="0"
+              style={{
+                border: "1px solid var(--gray-5)",
+                borderRadius: 6,
+                padding: 12,
+                overflow: "auto",
+                minWidth: 0,
+              }}
+            >
+              <Text size="1" color="gray">
+                Preview is informational, not the production renderer.
+              </Text>
+              <Preview text={text} />
+            </Box>
+          )}
+        </Flex>
+      )}
       {connectionsPopover && (
         <ConnectionsPopover
           sectionTitle={

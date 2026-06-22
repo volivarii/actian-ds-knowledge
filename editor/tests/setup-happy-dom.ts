@@ -56,3 +56,11 @@ if (!(g.document as { createRange?: unknown }).createRange) {
   (g.document as { createRange: () => unknown }).createRange = () =>
     (win.document as unknown as { createRange: () => unknown }).createRange();
 }
+
+// Radix UI dialog/presence components call getComputedStyle when opening
+// overlays. happy-dom provides it on win but not on globalThis by default.
+if (!("getComputedStyle" in globalThis)) {
+  g.getComputedStyle = (
+    win as unknown as { getComputedStyle: unknown }
+  ).getComputedStyle;
+}
