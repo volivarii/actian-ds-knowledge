@@ -7,7 +7,11 @@ import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
-import { isAppContextFile, isCategoryFile } from "../lib/wysiwygPaths";
+import {
+  isAppContextFile,
+  isCategoryFile,
+  isWordsToAvoidFile,
+} from "../lib/wysiwygPaths";
 import { categoryDefaultsUiSchema } from "../uiSchemas/categoryDefaults";
 import { appContextAppUiSchema } from "../uiSchemas/appContextApp";
 import { appContextEntityUiSchema } from "../uiSchemas/appContextEntity";
@@ -256,7 +260,7 @@ export function EditorShell({
         onNavigate={setActivePathSafe}
       />
     );
-  } else if (activePath === "content/src/writing/words-to-avoid.md") {
+  } else if (isWordsToAvoidFile(activePath)) {
     pane = (
       <FrontmatterBodyEditScreen
         path={activePath}

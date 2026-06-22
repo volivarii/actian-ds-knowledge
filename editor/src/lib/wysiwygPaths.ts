@@ -17,6 +17,12 @@ export function isCategoryFile(path: string): boolean {
   );
 }
 
+/** True only for the single words-to-avoid source file. Used by EditorShell
+ *  to route to the FrontmatterBodyEditScreen without a raw string literal. */
+export function isWordsToAvoidFile(path: string): boolean {
+  return path === "content/src/writing/words-to-avoid.md";
+}
+
 /** The WYSIWYG body editor is used only for per-record markdown whose body
  *  round-trips dist-equivalently (app-context + categories), and only when the
  *  alpha flag is on. Precise predicates — not prefix matches. */
