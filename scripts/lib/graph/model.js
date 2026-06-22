@@ -1,5 +1,7 @@
 "use strict";
 
+const { stableStringify } = require("../dist-io");
+
 // Node type → id prefix. The id is `<prefix>:<slug>`; prefixes dissolve
 // cross-domain slug collisions (e.g. a11y:color-contrast vs foundation:color-contrast).
 var PREFIX = {
@@ -30,10 +32,6 @@ function slugify(label) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-}
-
-function stableStringify(obj) {
-  return JSON.stringify(obj, null, 2) + "\n";
 }
 
 function GraphBuilder() {

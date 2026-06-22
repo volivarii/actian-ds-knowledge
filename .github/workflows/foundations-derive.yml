@@ -21,6 +21,7 @@ on:
       - 'scripts/foundations/derive-foundations.js'
       - 'scripts/foundations/foundations-parser/**'
       - 'scripts/lib/frontmatter.js'
+      - 'scripts/lib/dist-io.js'
       - 'paths-manifest.json'
 
 jobs:

@@ -1,5 +1,6 @@
 "use strict";
 const YAML = require("yaml");
+const { stableStringify } = require("../lib/dist-io");
 
 // CommonMark escapable ASCII punctuation: a backslash before any of these
 // renders as the bare character.
@@ -99,10 +100,6 @@ function markdownToRecord(text, opts) {
   const { data, body } = splitFrontmatter(text);
   if (opts.bodyField) data[opts.bodyField] = body;
   return data;
-}
-
-function stableStringify(obj) {
-  return JSON.stringify(obj, null, 2) + "\n";
 }
 
 module.exports = {
