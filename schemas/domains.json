@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://actian.com/ds-knowledge/domains.json",
+  "title": "Domains registry (per-domain authoring contract)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["_schema_version", "domains"],
+  "properties": {
+    "_schema_version": { "const": 1 },
+    "_note": { "type": "string" },
+    "domains": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)?$" },
+      "additionalProperties": { "$ref": "#/$defs/unit" }
+    }
+  },
+  "$defs": {
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "src", "generator", "frontmatterSchema", "body", "distShape"],
+      "properties": {
+        "summary": { "type": "string", "minLength": 1 },
+        "src": { "type": ["string", "null"] },
+        "generator": { "type": ["string", "null"], "pattern": "^scripts/.*\\.js$" },
+        "frontmatterSchema": { "type": ["string", "null"], "pattern": "^schemas/.*\\.json$" },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["parse", "mirror", "field"],
+          "properties": {
+            "parse": { "enum": ["sections", "none"] },
+            "mirror": { "type": "boolean" },
+            "field": { "type": ["string", "null"] }
+          }
+        },
+        "distShape": {
+          "enum": ["per-record+bundle", "pattern-H-tree", "single-object", "embedded", "none"]
+        }
+      }
+    }
+  }
+}
