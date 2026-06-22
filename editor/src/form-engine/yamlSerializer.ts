@@ -10,13 +10,13 @@
 //   - `flowAtDepth`: switches every YAMLMap at that depth (1-based, root
 //     map = depth 0) to flow style; also recurses into YAMLSeq items at
 //     that depth, so array-of-object fields like `examples` emit their
-//     items as inline `- { … }` flow maps. Required for `_meta.yml` files:
-//     the knowledge repo's restricted YAML parser at scripts/categories/
-//     categories-parser.js rejects block-nested values under `domains.*`
-//     with "nested values must be scalars in this subset (no deeper
-//     nesting)". The `domains.<name>` maps live at depth 2 (as do
-//     `examples` / `a11y_refs` items), so the editor calls stringifyYaml
-//     with flowAtDepth: 2.
+//     items as inline `- { … }` flow maps. The knowledge repo's `_meta.yml`
+//     files are authored in flow style — the `domains.<name>` maps live at
+//     depth 2 (as do `examples` / `a11y_refs` items) — so the editor calls
+//     stringifyYaml with flowAtDepth: 2 to round-trip them byte-identically
+//     instead of churning every file to block style on first edit. (The
+//     derive parser, scripts/lib/frontmatter, parses both styles; flow is a
+//     round-trip-stability choice, not a parser requirement.)
 //
 // In-body / trailing comments are NOT preserved in Phase 1a. The `yaml`
 // package's CST API supports it, but the document-mutate-via-JSON path is

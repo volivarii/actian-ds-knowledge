@@ -3,9 +3,9 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-// js-yaml is NOT a dependency. Reuse the repo's YAML-subset parser — the exact
-// one derive-guidelines.js uses for tokens.yml (parseFrontmatter(text, 0)).
-const yamlParser = require("../scripts/categories/categories-parser");
+// Reuse the shared frontmatter parser — the exact one derive-guidelines.js
+// uses for tokens.yml (parseFrontmatter(text, 0)).
+const yamlParser = require("../scripts/lib/frontmatter");
 
 // Every binding token in any components/src/<slug>/tokens.yml MUST resolve to a
 // real token in tokens/tokens.json. Schema validation can't check cross-file

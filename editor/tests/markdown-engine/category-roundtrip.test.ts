@@ -7,13 +7,12 @@ import { assembleFrontmatterFile } from "../../src/app/FrontmatterBodyEditScreen
 import { splitFrontmatter } from "../../src/substrate/splitFrontmatter";
 import { roundTripMarkdown } from "../../src/markdown-engine/milkdownPreset";
 
-// The derive's restricted YAML parser — the SoT for what consumers get. The
-// editor uses the standard `yaml` lib, which parses category frontmatter
-// differently (it splits unquoted commas in flow maps into phantom keys). The
-// guard below proves the editor save path agrees with the derive parser, so an
-// edit can't silently change the derived dist.
+// The derive's frontmatter parser — the SoT for what consumers get. Both the
+// editor and the derive now use the standard `yaml` lib (via
+// scripts/lib/frontmatter), so the guard below proves the editor save path
+// agrees with the derive parser and an edit can't silently change the dist.
 const require = createRequire(import.meta.url);
-const categoriesParser = require("../../../scripts/categories/categories-parser");
+const categoriesParser = require("../../../scripts/lib/frontmatter");
 
 const CAT_DIR = new URL("../../../components/src/categories/", import.meta.url)
   .pathname;
@@ -87,14 +86,12 @@ test("category bodies contain no inline HTML (rollout gate, body-scoped)", () =>
 });
 
 test("category sources contain no backslash (rollout gate — escape desync)", () => {
-  // Fail-closed gate. The derive's restricted parser does NOT process escape
-  // sequences (categories-parser.js), but the editor's yaml lib double-quotes +
-  // escapes a value that needs quoting (e.g. one containing a comma or ": ").
-  // So a scalar with BOTH a quote-forcing char AND a backslash would desync:
-  // the saved source carries "\\" while the derived dist would read it as a
-  // literal "\\" (extra backslash) — not what the author typed. No category
-  // content has backslashes today; reject them until the save/derive path is
-  // escape-aware (mirrors the inline-HTML gate above).
+  // Fail-closed gate. The derive and the editor now share the standard `yaml`
+  // lib (scripts/lib/frontmatter), so quoted-scalar escapes parse identically
+  // on both sides. This gate stays conservative: a backslash combined with the
+  // body's Milkdown round-trip is not yet proven safe, and no category content
+  // has backslashes today — reject them until the body path is escape-aware
+  // (mirrors the inline-HTML gate above).
   for (const f of categoryFiles()) {
     const text = readFileSync(CAT_DIR + f, "utf8");
     assert.ok(

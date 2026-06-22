@@ -117,9 +117,9 @@ test("validateCartCoupling: approved tokens satisfied by tokens.yml on remote (n
 });
 
 // A realistic remote _meta.yml: leading schema header + flow-style domains,
-// the on-disk shape every component currently ships. The restricted deriver
-// parser (scripts/categories/categories-parser.js) requires this flow style
-// and the editor must preserve it on rewrite. behavior starts not-started so
+// the on-disk shape every component currently ships. The editor must preserve
+// this flow style on rewrite to keep the file byte-stable (the derive parser,
+// scripts/lib/frontmatter, accepts both styles). behavior starts not-started so
 // promoteDomainToDraft has something to promote.
 const META_WITH_HEADER = `# yaml-language-server: $schema=../../../schemas/guideline-meta.json
 component: "Buttons"

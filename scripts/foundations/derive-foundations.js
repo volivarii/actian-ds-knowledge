@@ -466,7 +466,7 @@ function stripFrontmatterEnvelope(raw) {
 // Strip optional YAML frontmatter from a single src file. Per-file frontmatter
 // is OPTIONAL (most files don't carry it). When present, it follows the same
 // strict YAML subset as components/src/categories/<slug>.md and is parsed by
-// the shared categories-parser. The frontmatter is stripped BEFORE concat so
+// the shared lib/frontmatter parser. The frontmatter is stripped BEFORE concat so
 // the markdown AST never sees stray `---` fences. Returns { frontmatter, body }
 // where frontmatter is `null` if absent.
 //

@@ -2,11 +2,13 @@
 
 // Tests for the Phase 2 v2 category-defaults derive pipeline (PR δ, v0.4.5+).
 //
-// Three test layers:
-//   1. YAML frontmatter parser (categories-parser.js)
-//   2. Derive transformer (deriveCategoryFile)
-//   3. End-to-end pipeline (live MD files in components/src/categories/
+// Two test layers:
+//   1. Derive transformer (deriveCategoryFile)
+//   2. End-to-end pipeline (live MD files in components/src/categories/
 //      validate + derive cleanly, idempotently, with slug refs that resolve)
+//
+// Frontmatter-parser correctness lives in tests/frontmatter-lib.test.js
+// (the shared scripts/lib/frontmatter module the deriver now uses).
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -16,9 +18,6 @@ const path = require("node:path");
 const REPO_ROOT = path.resolve(__dirname, "..");
 const FIXTURES = path.join(__dirname, "fixtures", "categories");
 
-const parser = require(
-  path.join(REPO_ROOT, "scripts", "categories", "categories-parser"),
-);
 const derive = require(
   path.join(REPO_ROOT, "scripts", "categories", "derive-categories"),
 );
@@ -26,134 +25,6 @@ const derive = require(
 function readFixture(name) {
   return fs.readFileSync(path.join(FIXTURES, name), "utf8");
 }
-
-// ───────────────────────────────────────────────────────────────────────────
-// Parser tests
-// ───────────────────────────────────────────────────────────────────────────
-
-test("parser: happy path produces frontmatter object + body", () => {
-  const { data, body } = parser.parse(readFixture("valid-minimal.md"));
-  assert.equal(data.slug, "test-cat");
-  assert.equal(data.label, "Test category");
-  assert.equal(data._schema_version, 2);
-  assert.equal(data.confidence.anatomy, "medium");
-  assert.equal(data.confidence.a11y, "high");
-  assert.equal(data.anatomy.length, 2);
-  assert.equal(data.anatomy[0].name, "Label");
-  assert.deepEqual(data.variants[0].values, ["default", "focus", "error"]);
-  assert.equal(data.motion_refs[0].ref, "state-transitions");
-  assert.equal(data.a11y_refs.length, 3);
-  assert.match(body, /^# Test body/);
-});
-
-test("parser: missing opening fence throws", () => {
-  assert.throws(
-    () => parser.parse("slug: test\n"),
-    /Missing opening `---` fence/,
-  );
-});
-
-test("parser: missing closing fence throws", () => {
-  assert.throws(
-    () => parser.parse("---\nslug: test\nlabel: T\n"),
-    /Missing closing `---` fence/,
-  );
-});
-
-test("parser: inline array of scalars", () => {
-  const result = parser.parseInlineArray("[a, b, c]", 1);
-  assert.deepEqual(result, ["a", "b", "c"]);
-});
-
-test("parser: inline array preserves quoted strings with commas", () => {
-  const result = parser.parseInlineArray('["a, b", c]', 1);
-  assert.deepEqual(result, ["a, b", "c"]);
-});
-
-test("parser: inline object with nested array", () => {
-  const result = parser.parseInlineObject(
-    "{ axis: State, values: [default, focus, error] }",
-    1,
-  );
-  assert.deepEqual(result, {
-    axis: "State",
-    values: ["default", "focus", "error"],
-  });
-});
-
-test("parser: inline object permits unquoted prose with commas in description", () => {
-  // This is the bread-and-butter case for category MDs.
-  const result = parser.parseInlineObject(
-    "{ name: Container, description: receives focus, hover, press states }",
-    1,
-  );
-  assert.deepEqual(result, {
-    name: "Container",
-    description: "receives focus, hover, press states",
-  });
-});
-
-test("parser: nested object (confidence map)", () => {
-  const md =
-    "---\n" +
-    "slug: x\n" +
-    "label: X\n" +
-    "confidence:\n" +
-    "  anatomy: medium\n" +
-    "  variants: low\n" +
-    "  motion: high\n" +
-    "  a11y: high\n" +
-    "---\n";
-  const { data } = parser.parse(md);
-  assert.deepEqual(data.confidence, {
-    anatomy: "medium",
-    variants: "low",
-    motion: "high",
-    a11y: "high",
-  });
-});
-
-test("parser: block-style array of inline objects", () => {
-  const md =
-    "---\n" +
-    "slug: x\n" +
-    "label: X\n" +
-    "anatomy:\n" +
-    "  - { name: A, description: alpha }\n" +
-    "  - { name: B, description: beta }\n" +
-    "---\n";
-  const { data } = parser.parse(md);
-  assert.equal(data.anatomy.length, 2);
-  assert.equal(data.anatomy[0].name, "A");
-  assert.equal(data.anatomy[1].description, "beta");
-});
-
-test("parser: strips comments", () => {
-  const md =
-    "---\n" +
-    "slug: x  # this is a comment\n" +
-    "label: X\n" +
-    "_schema_version: 1   # version pin\n" +
-    "---\n";
-  const { data } = parser.parse(md);
-  assert.equal(data.slug, "x");
-  assert.equal(data._schema_version, 1);
-});
-
-test("parser: coerces _schema_version to integer", () => {
-  const md = "---\n_schema_version: 1\nslug: x\nlabel: X\n---\n";
-  const { data } = parser.parse(md);
-  assert.equal(data._schema_version, 1);
-  assert.equal(typeof data._schema_version, "number");
-});
-
-test("parser: indented top-level key throws", () => {
-  const md = "---\n  slug: x\nlabel: X\n---\n";
-  assert.throws(
-    () => parser.parse(md),
-    /top-level keys must start at column 1/,
-  );
-});
 
 // ───────────────────────────────────────────────────────────────────────────
 // Derive transformer tests

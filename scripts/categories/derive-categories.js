@@ -6,7 +6,7 @@
 //
 // Per Pattern H philosophy, this is a single-pass projection:
 //
-//   1. Parse YAML frontmatter (categories-parser.js)
+//   1. Parse YAML frontmatter (scripts/lib/frontmatter)
 //   2. Validate frontmatter against schemas/category-defaults.json (Ajv)
 //   3. Project frontmatter shape to dist JSON shape (domain-anchored keys)
 //   4. Emit components/dist/categories/<slug>-defaults.json (per-category)
