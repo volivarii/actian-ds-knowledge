@@ -25,6 +25,12 @@ import { submitDraft } from "../core/submitDraft";
 import { AnchorPreservationError } from "../core/anchorPreservation";
 import { ReadonlyPathError, SchemaValidationError } from "../core/types";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
+import { RichBodyEditor } from "../markdown-engine/RichBodyEditor";
+import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
+import {
+  splitRawFrontmatter,
+  joinRawFrontmatter,
+} from "../markdown-engine/rawFrontmatter";
 import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
 import { Outline } from "./Outline";
@@ -460,6 +466,11 @@ export function MarkdownEditScreen({
   }
 
   const isNewFile = load.source !== "remote";
+  // Body-only WYSIWYG: split frontmatter off (raw, byte-exact) so Milkdown only
+  // sees the body; reassemble on every change. Flag-off keeps full CodeMirror.
+  const wysiwyg = shouldUseWysiwyg(path);
+  const { frontmatterBlock: fmBlock, body: richBody } =
+    splitRawFrontmatter(text);
   return (
     <Flex direction="column" height="100%" gap="2">
       <TierBanner path={path} />
@@ -476,15 +487,19 @@ export function MarkdownEditScreen({
               In batch
             </Badge>
           )}
-          <Button
-            size="1"
-            variant={showPreview ? "soft" : "outline"}
-            onClick={() => setShowPreview((v) => !v)}
-            aria-label={showPreview ? "Hide preview pane" : "Show preview pane"}
-            aria-pressed={showPreview}
-          >
-            {showPreview ? "Hide preview" : "Show preview"}
-          </Button>
+          {!wysiwyg && (
+            <Button
+              size="1"
+              variant={showPreview ? "soft" : "outline"}
+              onClick={() => setShowPreview((v) => !v)}
+              aria-label={
+                showPreview ? "Hide preview pane" : "Show preview pane"
+              }
+              aria-pressed={showPreview}
+            >
+              {showPreview ? "Hide preview" : "Show preview"}
+            </Button>
+          )}
         </Flex>
       </Flex>
       {renameWarnings.length > 0 && (
@@ -499,70 +514,55 @@ export function MarkdownEditScreen({
           </Callout.Text>
         </Callout.Root>
       )}
-      <Box>
-        {view && (
-          <Toolbar
-            view={view}
-            octokit={gh ?? undefined}
-            componentSlug={componentSlug}
-          />
-        )}
-      </Box>
-      <Flex flexGrow="1" minHeight="0" gap="2">
-        <Box
-          className="editor-outline-pane"
-          style={{
-            width: 200,
-            minWidth: 200,
-            flexShrink: 0,
-            border: "1px solid var(--gray-5)",
-            borderRadius: 6,
-            overflow: "hidden",
-          }}
-        >
-          <Outline
-            text={text}
-            view={view}
-            file={path}
-            connectionCounts={connectionCounts}
-            onOpenConnectionsForSection={openConnectionsForSection}
-          />
-        </Box>
-        <Box
-          flexGrow="1"
-          flexShrink="1"
-          flexBasis="0"
-          style={{
-            border: "1px solid var(--gray-5)",
-            borderRadius: 6,
-            minWidth: 0,
-            overflow: "hidden",
-          }}
-        >
-          <CodeMirrorEditor
-            key={path}
-            initialText={text}
-            onChange={handleChange}
-            onReady={setView}
-            onAnchorClick={(slug, el) =>
-              setAnchorPopover({ slug, triggerEl: el })
-            }
-            onCursorLineChange={handleCursorLineChange}
-          />
-          {anchorPopover && (
-            <AnchorReferencesPopover
-              slug={anchorPopover.slug}
-              triggerEl={anchorPopover.triggerEl}
-              open
-              onOpenChange={(o) => !o && setAnchorPopover(null)}
-              onNavigate={(p) => {
-                setAnchorPopover(null);
-                onNavigate?.(p);
-              }}
+      {!wysiwyg && (
+        <Box>
+          {view && (
+            <Toolbar
+              view={view}
+              octokit={gh ?? undefined}
+              componentSlug={componentSlug}
             />
           )}
         </Box>
-        {showPreview && (
+      )}
+      {wysiwyg ? (
+        <Box
+          flexGrow="1"
+          minHeight="0"
+          style={{
+            border: "1px solid var(--gray-5)",
+            borderRadius: 6,
+            overflow: "auto",
+          }}
+        >
+          <RichBodyEditor
+            key={path}
+            initialText={richBody}
+            onChange={(b) => handleChange(joinRawFrontmatter(fmBlock, b))}
+            filename={path.split("/").pop()}
+          />
+        </Box>
+      ) : (
+        <Flex flexGrow="1" minHeight="0" gap="2">
+          <Box
+            className="editor-outline-pane"
+            style={{
+              width: 200,
+              minWidth: 200,
+              flexShrink: 0,
+              border: "1px solid var(--gray-5)",
+              borderRadius: 6,
+              overflow: "hidden",
+            }}
+          >
+            <Outline
+              text={text}
+              view={view}
+              file={path}
+              connectionCounts={connectionCounts}
+              onOpenConnectionsForSection={openConnectionsForSection}
+            />
+          </Box>
           <Box
             flexGrow="1"
             flexShrink="1"
@@ -570,18 +570,54 @@ export function MarkdownEditScreen({
             style={{
               border: "1px solid var(--gray-5)",
               borderRadius: 6,
-              padding: 12,
-              overflow: "auto",
               minWidth: 0,
+              overflow: "hidden",
             }}
           >
-            <Text size="1" color="gray">
-              Preview is informational, not the production renderer.
-            </Text>
-            <Preview text={text} />
+            <CodeMirrorEditor
+              key={path}
+              initialText={text}
+              onChange={handleChange}
+              onReady={setView}
+              onAnchorClick={(slug, el) =>
+                setAnchorPopover({ slug, triggerEl: el })
+              }
+              onCursorLineChange={handleCursorLineChange}
+            />
+            {anchorPopover && (
+              <AnchorReferencesPopover
+                slug={anchorPopover.slug}
+                triggerEl={anchorPopover.triggerEl}
+                open
+                onOpenChange={(o) => !o && setAnchorPopover(null)}
+                onNavigate={(p) => {
+                  setAnchorPopover(null);
+                  onNavigate?.(p);
+                }}
+              />
+            )}
           </Box>
-        )}
-      </Flex>
+          {showPreview && (
+            <Box
+              flexGrow="1"
+              flexShrink="1"
+              flexBasis="0"
+              style={{
+                border: "1px solid var(--gray-5)",
+                borderRadius: 6,
+                padding: 12,
+                overflow: "auto",
+                minWidth: 0,
+              }}
+            >
+              <Text size="1" color="gray">
+                Preview is informational, not the production renderer.
+              </Text>
+              <Preview text={text} />
+            </Box>
+          )}
+        </Flex>
+      )}
       {connectionsPopover && (
         <ConnectionsPopover
           sectionTitle={
