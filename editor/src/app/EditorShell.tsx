@@ -7,11 +7,16 @@ import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
-import { isAppContextFile, isCategoryFile } from "../lib/wysiwygPaths";
+import {
+  isAppContextFile,
+  isCategoryFile,
+  isWordsToAvoidFile,
+} from "../lib/wysiwygPaths";
 import { categoryDefaultsUiSchema } from "../uiSchemas/categoryDefaults";
 import { appContextAppUiSchema } from "../uiSchemas/appContextApp";
 import { appContextEntityUiSchema } from "../uiSchemas/appContextEntity";
 import { appContextPatternUiSchema } from "../uiSchemas/appContextPattern";
+import { wordsToAvoidUiSchema } from "../uiSchemas/wordsToAvoid";
 import { RefusalBanner } from "./RefusalBanner";
 import { CoverageDashboard } from "./CoverageDashboard";
 import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
@@ -250,6 +255,17 @@ export function EditorShell({
         path={activePath}
         schemaKey="category-defaults"
         uiSchema={categoryDefaultsUiSchema}
+        octokit={gh}
+        onOpenSettings={onOpenSettings}
+        onNavigate={setActivePathSafe}
+      />
+    );
+  } else if (isWordsToAvoidFile(activePath)) {
+    pane = (
+      <FrontmatterBodyEditScreen
+        path={activePath}
+        schemaKey="content"
+        uiSchema={wordsToAvoidUiSchema}
         octokit={gh}
         onOpenSettings={onOpenSettings}
         onNavigate={setActivePathSafe}

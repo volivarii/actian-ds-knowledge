@@ -29,4 +29,3 @@ Related content panels surface assets or resources connected to the currently vi
 | Related datasets | Other items |
 | No related datasets found. | (empty panel with no message) |
 | Used in 3 reports | Reports: 3 |
-{: .do-dont-table}

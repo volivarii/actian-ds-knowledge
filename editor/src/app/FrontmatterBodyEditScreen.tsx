@@ -21,6 +21,7 @@ import { getTextFile, getTextFileWithSha } from "./githubApi";
 import { TierBanner } from "./TierBanner";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { RefArrayWidget } from "../form-engine/widgets/RefArrayWidget";
+import { TagInputWidget } from "../form-engine/widgets/TagInputWidget";
 
 // Lazy-loaded so the Milkdown/ProseMirror bundle (the largest editor dep) splits
 // into an async chunk fetched only when the WYSIWYG flag is on — it stays out of
@@ -31,7 +32,7 @@ const RichBodyEditor = lazy(() =>
   })),
 );
 
-const WIDGETS = { RefArray: RefArrayWidget };
+const WIDGETS = { RefArray: RefArrayWidget, TagInput: TagInputWidget };
 
 /** Pure: serialize form frontmatter + re-join the prose body into a file.
  *  Pass `flowAtDepth` to control inline-object depth (default 2 = flow at

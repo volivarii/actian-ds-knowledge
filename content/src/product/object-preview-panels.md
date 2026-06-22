@@ -31,4 +31,3 @@ Object preview panels display a summary of an asset's key attributes without req
 | Last modified | Date of last modification |
 | Type | Object type |
 | Description | Asset description |
-{: .do-dont-table}

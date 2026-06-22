@@ -31,3 +31,32 @@ test("schema accepts a full valid record", () => {
   });
   assert.ok(ok, JSON.stringify(validate.errors));
 });
+
+test("schema accepts a words-to-avoid frontmatter record", () => {
+  const validate = createValidator("content.json");
+  const ok = validate({
+    title: "Words to avoid",
+    nav_order: 5,
+    wordsToAvoid: [
+      {
+        avoid: ["please", "sorry"],
+        reason: 'Never say "Please" or "Sorry" — they are unnecessary.',
+        example: { do: "Contact Support", dont: "Please Contact Support" },
+      },
+      {
+        avoid: [],
+        reason: "Never use developer-speak.",
+        example: { do: "Click the **OK** button.", dont: "Click the OK CTA." },
+      },
+    ],
+  });
+  assert.ok(ok, JSON.stringify(validate.errors));
+});
+
+test("schema rejects a words-to-avoid row missing example", () => {
+  const validate = createValidator("content.json");
+  assert.equal(
+    validate({ title: "X", wordsToAvoid: [{ avoid: [], reason: "y" }] }),
+    false,
+  );
+});

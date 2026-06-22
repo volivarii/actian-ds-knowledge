@@ -40,7 +40,6 @@ Forms collect or update user data. Consistent structure, clear labels, and helpf
 | Do | Don't |
 |---|---|
 | Group name | Group Name |
-{: .do-dont-table}
 - Clarify optional vs. required fields: mark required fields consistently using the asterisk (*) symbol or text label.
 - Avoid redundancy: if a section title already establishes context, field labels can be shorter.
 - Provide context when needed: helper text should explain the "why," never just restate the label.
@@ -49,7 +48,6 @@ Forms collect or update user data. Consistent structure, clear labels, and helpf
 | Do | Don't |
 |---|---|
 | Enter a valid date | Invalid input |
-{: .do-dont-table}
 - Success or confirmation text should be brief, reassuring, and specific. For example, `The policy was successfully created`.
 - Use progressive disclosure for field entry assistance: Label → Tooltip → Descriptive text → Link to docs.
 
@@ -82,8 +80,6 @@ Forms collect or update user data. Consistent structure, clear labels, and helpf
 |---|---|
 | Label: Connection name / Helper: Use a unique name to identify this connection. | Placeholder: Enter connection name (no visible label) |
 | Helper: Must be 8–32 characters. | Helper: Please enter a valid password. |
-{: .do-dont-table}
-
 ---
 
 ## Dropdown

@@ -30,8 +30,6 @@ Each section file follows this pattern:
 | Do | Don't |
 |---|---|
 | ... | ... |
-{: .do-dont-table}
-
 ### Examples  ← optional; always a table
 
 | Element | Example text |

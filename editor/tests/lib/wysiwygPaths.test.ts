@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   isAppContextFile,
   isCategoryFile,
+  isWordsToAvoidFile,
   shouldUseWysiwyg,
 } from "../../src/lib/wysiwygPaths";
 
@@ -36,6 +37,18 @@ test("isCategoryFile matches only category records (not AUTHORING or nested)", (
   assert.equal(isCategoryFile("components/dist/categories/action.md"), false);
 });
 
+test("isWordsToAvoidFile matches only the single words-to-avoid source file", () => {
+  assert.equal(
+    isWordsToAvoidFile("content/src/writing/words-to-avoid.md"),
+    true,
+  );
+  assert.equal(
+    isWordsToAvoidFile("content/src/writing/capitalization.md"),
+    false,
+  );
+  assert.equal(isWordsToAvoidFile("content/dist/words-to-avoid.json"), false);
+});
+
 test("shouldUseWysiwyg requires the flag AND an app-context OR category record", () => {
   globalThis.sessionStorage.clear();
   // Flag off → never, even for a real record.
@@ -49,7 +62,10 @@ test("shouldUseWysiwyg requires the flag AND an app-context OR category record",
   // Flag on but NOT a per-record path → no.
   assert.equal(shouldUseWysiwyg("app-context/dist/app-context.json"), false);
   assert.equal(shouldUseWysiwyg("app-context/CONSUMING.md"), false);
-  assert.equal(shouldUseWysiwyg("components/src/categories/AUTHORING.md"), false);
+  assert.equal(
+    shouldUseWysiwyg("components/src/categories/AUTHORING.md"),
+    false,
+  );
   assert.equal(shouldUseWysiwyg("components/src/button/content.md"), false);
   assert.equal(shouldUseWysiwyg("foundations/src/x.md"), false);
   globalThis.sessionStorage.clear();
