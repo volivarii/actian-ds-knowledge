@@ -24,6 +24,7 @@ on:
       - 'scripts/accessibility/derive-a11y-index.js'
       - 'scripts/accessibility/derive-a11y-sections.js'
       - 'scripts/lib/section-dist/**'
+      - 'scripts/lib/dist-io.js'
 
 jobs:
   derive:

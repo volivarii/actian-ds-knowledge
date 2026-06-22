@@ -22,3 +22,12 @@ test("writeAtomic: creates missing parent dirs and writes contents", () => {
   assert.equal(fs.readFileSync(dest, "utf8"), '{\n  "ok": true\n}\n');
   fs.rmSync(base, { recursive: true, force: true });
 });
+
+test("writeAtomic: overwrites an existing file (re-derive case)", () => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), "dist-io-"));
+  const dest = path.join(base, "out.json");
+  writeAtomic(dest, stableStringify({ v: 1 }));
+  writeAtomic(dest, stableStringify({ v: 2 }));
+  assert.equal(fs.readFileSync(dest, "utf8"), '{\n  "v": 2\n}\n');
+  fs.rmSync(base, { recursive: true, force: true });
+});

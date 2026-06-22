@@ -11,10 +11,21 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { writeManifest } = require("../lib/manifest-io");
+const { stableStringify } = require("../lib/dist-io");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
-const SRC = path.join(REPO_ROOT, "components", "src", "canonical-sections.json");
-const DIST = path.join(REPO_ROOT, "components", "dist", "canonical-sections.json");
+const SRC = path.join(
+  REPO_ROOT,
+  "components",
+  "src",
+  "canonical-sections.json",
+);
+const DIST = path.join(
+  REPO_ROOT,
+  "components",
+  "dist",
+  "canonical-sections.json",
+);
 const MANIFEST = path.join(REPO_ROOT, "paths-manifest.json");
 
 // Pure: src object → dist object. No I/O. Tested directly for freshness.
@@ -31,18 +42,30 @@ function buildCanonicalSections(src) {
   };
 }
 
-function serialize(obj) {
-  return JSON.stringify(obj, null, 2) + "\n";
-}
+// Alias to the shared serializer (scripts/lib/dist-io); kept as a named export
+// for existing tests + the internal write path.
+const serialize = stableStringify;
 
 function writeCanonicalSections(repoRoot) {
-  const srcPath = path.join(repoRoot, "components", "src", "canonical-sections.json");
-  const distPath = path.join(repoRoot, "components", "dist", "canonical-sections.json");
+  const srcPath = path.join(
+    repoRoot,
+    "components",
+    "src",
+    "canonical-sections.json",
+  );
+  const distPath = path.join(
+    repoRoot,
+    "components",
+    "dist",
+    "canonical-sections.json",
+  );
   const manifestPath = path.join(repoRoot, "paths-manifest.json");
 
   const src = JSON.parse(fs.readFileSync(srcPath, "utf8"));
   const next = serialize(buildCanonicalSections(src));
-  const current = fs.existsSync(distPath) ? fs.readFileSync(distPath, "utf8") : "";
+  const current = fs.existsSync(distPath)
+    ? fs.readFileSync(distPath, "utf8")
+    : "";
   let wrote = false;
   if (next !== current) {
     fs.mkdirSync(path.dirname(distPath), { recursive: true });
@@ -72,4 +95,11 @@ if (require.main === module) {
   );
 }
 
-module.exports = { buildCanonicalSections, writeCanonicalSections, serialize, SRC, DIST, MANIFEST };
+module.exports = {
+  buildCanonicalSections,
+  writeCanonicalSections,
+  serialize,
+  SRC,
+  DIST,
+  MANIFEST,
+};

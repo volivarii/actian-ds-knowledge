@@ -53,6 +53,7 @@ on:
       - 'scripts/graph/**'
       - 'scripts/lib/graph/**'
       - 'scripts/lib/frontmatter.js'
+      - 'scripts/lib/dist-io.js'
       - 'schemas/graph.json'
       # graph/dist/graph.json (OUTPUT) and package.json (bumped below) are
       # intentionally excluded — including them would self-retrigger this run.

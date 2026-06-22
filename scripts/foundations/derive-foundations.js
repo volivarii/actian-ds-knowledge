@@ -743,8 +743,7 @@ function runCli(argv) {
       ? fs.readFileSync(bundleDest, "utf-8")
       : "";
     if (bundleActual !== bundleExpected) drifts.push("foundations.bundle.json");
-    var indexExpected =
-      JSON.stringify(buildFoundationsIndex(srcDir), null, 2) + "\n";
+    var indexExpected = stableStringify(buildFoundationsIndex(srcDir));
     var indexDest = path.join(outDir, "foundations-index.json");
     var indexActual = fs.existsSync(indexDest)
       ? fs.readFileSync(indexDest, "utf-8")
@@ -774,7 +773,7 @@ function runCli(argv) {
   var fIndex = buildFoundationsIndex(srcDir);
   writeAtomic(
     path.join(outDir, "foundations-index.json"),
-    JSON.stringify(fIndex, null, 2) + "\n",
+    stableStringify(fIndex),
   );
 
   if (!args.noManifest) {
