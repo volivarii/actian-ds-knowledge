@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   isAppContextFile,
   isCategoryFile,
+  isFoundationsWysiwygSafe,
   isWordsToAvoidFile,
   shouldUseWysiwyg,
 } from "../../src/lib/wysiwygPaths";
@@ -68,5 +69,34 @@ test("shouldUseWysiwyg requires the flag AND an app-context OR category record",
   );
   assert.equal(shouldUseWysiwyg("components/src/button/content.md"), false);
   assert.equal(shouldUseWysiwyg("foundations/src/x.md"), false);
+  globalThis.sessionStorage.clear();
+});
+
+test("isFoundationsWysiwygSafe — only the verified-safe foundations files", () => {
+  assert.equal(
+    isFoundationsWysiwygSafe("foundations/src/design-guidelines.md"),
+    true,
+  );
+  assert.equal(isFoundationsWysiwygSafe("foundations/src/intro.md"), true);
+  assert.equal(
+    isFoundationsWysiwygSafe("foundations/src/table-of-contents.md"),
+    true,
+  );
+  // unsafe (tables churn) — must NOT be gated
+  assert.equal(isFoundationsWysiwygSafe("foundations/src/tokens.md"), false);
+  assert.equal(
+    isFoundationsWysiwygSafe("foundations/src/color-primitives.md"),
+    false,
+  );
+  assert.equal(isFoundationsWysiwygSafe("foundations/src/AUTHORING.md"), false);
+});
+
+test("shouldUseWysiwyg includes SAFE foundations (not tokens/color) when flagged", () => {
+  globalThis.sessionStorage.clear();
+  assert.equal(shouldUseWysiwyg("foundations/src/design-guidelines.md"), false);
+  globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
+  assert.equal(shouldUseWysiwyg("foundations/src/design-guidelines.md"), true);
+  assert.equal(shouldUseWysiwyg("foundations/src/tokens.md"), false);
+  assert.equal(shouldUseWysiwyg("foundations/src/color-primitives.md"), false);
   globalThis.sessionStorage.clear();
 });
