@@ -41,6 +41,7 @@ var sectionDist = require("../lib/section-dist/index.js");
 var astWalk = sectionDist.astWalk;
 var categoriesParser = require("../lib/frontmatter");
 var { writeManifest } = require("../lib/manifest-io");
+var { stableStringify, writeAtomic } = require("../lib/dist-io");
 var orderManifest = require("../lib/order-manifest.js");
 var ORDER_MANIFEST_NAME = orderManifest.ORDER_MANIFEST_NAME;
 var META_FILES = orderManifest.META_FILES;
@@ -97,16 +98,6 @@ function deriveFromMarkdown(mdSource, opts) {
 // ───────────────────────────────────────────────────────────────────────────
 // Filesystem write + prune
 // ───────────────────────────────────────────────────────────────────────────
-
-function stableStringify(obj) {
-  return JSON.stringify(obj, null, 2) + "\n";
-}
-
-function writeAtomic(absPath, contents) {
-  var dir = path.dirname(absPath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(absPath, contents);
-}
 
 // Recursively walk a directory and return relative paths of all files
 // that match `predicate(relPath)`. relPaths use forward slashes.

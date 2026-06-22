@@ -25,6 +25,7 @@ const Ajv2020 = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
 const parser = require("../lib/frontmatter");
 const { writeManifest } = require("../lib/manifest-io");
+const { stableStringify, writeAtomic } = require("../lib/dist-io");
 
 const SCHEMA_VERSION = 1;
 const SCHEMA_NAME = "category-defaults.json";
@@ -124,16 +125,6 @@ function deriveCategoryFile(mdSource, sourceRel, opts) {
 // ───────────────────────────────────────────────────────────────────────────
 // Filesystem write
 // ───────────────────────────────────────────────────────────────────────────
-
-function stableStringify(obj) {
-  return JSON.stringify(obj, null, 2) + "\n";
-}
-
-function writeAtomic(absPath, contents) {
-  const dir = path.dirname(absPath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(absPath, contents);
-}
 
 // Cleanup: remove dist files for slugs that no longer exist in srcDir.
 // Mirrors foundations-derive's prune step so a renamed/removed source MD

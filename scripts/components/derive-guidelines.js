@@ -38,6 +38,7 @@ const Ajv2020 = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
 const yamlParser = require("../lib/frontmatter");
 const mdParser = require("./guideline-md-parser");
+const { stableStringify, writeAtomic } = require("../lib/dist-io");
 const fanoutPatterns = require("../content/fanout-patterns");
 const { writeManifest } = require("../lib/manifest-io");
 
@@ -504,16 +505,6 @@ function resolveRegistryAliases(registryAliases, perComponent) {
 // ───────────────────────────────────────────────────────────────────────────
 // Filesystem
 // ───────────────────────────────────────────────────────────────────────────
-
-function stableStringify(obj) {
-  return JSON.stringify(obj, null, 2) + "\n";
-}
-
-function writeAtomic(absPath, contents) {
-  const dir = path.dirname(absPath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(absPath, contents);
-}
 
 function cleanupStaleDistFiles(distDir, expectedFiles) {
   if (!fs.existsSync(distDir)) return [];

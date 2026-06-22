@@ -29,6 +29,7 @@
 
 var fs = require("node:fs");
 var path = require("node:path");
+var { stableStringify, writeAtomic } = require("../lib/dist-io");
 
 var a11yIndex = require("./derive-a11y-index.js");
 var concatA11ySources = a11yIndex.concatA11ySources;
@@ -43,18 +44,6 @@ var ROOT_ANCHOR = "accessibility";
 // Files the FLAT index derive owns — the per-section derive must never write
 // over them. (a11y-index.json is the only one today; guarded defensively.)
 var RESERVED_FILENAMES = { "a11y-index.json": true };
-
-// Match the repo's stable JSON writer (derive-foundations.js stableStringify):
-// 2-space indent + trailing newline.
-function stableStringify(obj) {
-  return JSON.stringify(obj, null, 2) + "\n";
-}
-
-function writeAtomic(absPath, contents) {
-  var dir = path.dirname(absPath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(absPath, contents);
-}
 
 // Recursively walk a directory and return relative paths (forward-slashed) of
 // all files matching `predicate(relPath)`. Mirrors derive-foundations.js so the
