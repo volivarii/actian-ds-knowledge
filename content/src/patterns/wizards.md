@@ -48,4 +48,3 @@ Follow the [stepper button terminology guidelines](/components/navigation/steppe
 | Review and create | Confirmation |
 | Create connection | Finish / Submit / Done |
 | Connect to your data source. This will allow the platform to read and write data on your behalf. | Please complete all required fields in this step before proceeding. |
-{: .do-dont-table}

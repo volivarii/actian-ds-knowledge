@@ -30,8 +30,6 @@ Use present, active tense in all possible cases. In some cases, you can use pass
 | Do | Don't |
 |---|---|
 | Submit form | Click here to submit the form |
-{: .do-dont-table}
-
 ## Personification
 
 Do not personify the product as the subject of the text. Keep the user in focus, rather than the product.
@@ -40,4 +38,3 @@ Do not personify the product as the subject of the text. Keep the user in focus,
 |---|---|
 | In the Delivery Information window, specify the name of the sender. | The Delivery Information window allows you to specify the name of the sender. |
 | Use this menu to create diagrams. | This menu enables you to create diagrams. |
-{: .do-dont-table}
