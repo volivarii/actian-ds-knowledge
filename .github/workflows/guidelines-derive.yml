@@ -26,6 +26,7 @@ on:
       - 'components/src/*/behavior.md'
       - 'components/src/*/tokens.yml'
       - 'scripts/components/**'
+      - 'scripts/lib/frontmatter.js'
       - 'scripts/content/fanout-patterns.js'
       - 'schemas/guideline-component.json'
       - 'schemas/guideline-meta.json'

@@ -39,7 +39,7 @@ var path = require("path");
 // them (see module.exports at the bottom) so existing requirers keep working.
 var sectionDist = require("../lib/section-dist/index.js");
 var astWalk = sectionDist.astWalk;
-var categoriesParser = require("../categories/categories-parser.js");
+var categoriesParser = require("../lib/frontmatter");
 var { writeManifest } = require("../lib/manifest-io");
 var orderManifest = require("../lib/order-manifest.js");
 var ORDER_MANIFEST_NAME = orderManifest.ORDER_MANIFEST_NAME;
@@ -466,7 +466,7 @@ function stripFrontmatterEnvelope(raw) {
 // Strip optional YAML frontmatter from a single src file. Per-file frontmatter
 // is OPTIONAL (most files don't carry it). When present, it follows the same
 // strict YAML subset as components/src/categories/<slug>.md and is parsed by
-// the shared categories-parser. The frontmatter is stripped BEFORE concat so
+// the shared lib/frontmatter parser. The frontmatter is stripped BEFORE concat so
 // the markdown AST never sees stray `---` fences. Returns { frontmatter, body }
 // where frontmatter is `null` if absent.
 //

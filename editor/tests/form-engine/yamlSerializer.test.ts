@@ -85,12 +85,11 @@ test("yamlSerializer — stringifyYaml without originalText emits no header", ()
 });
 
 test("yamlSerializer — flowAtDepth:2 emits domains.<name> as inline flow maps", () => {
-  // The knowledge repo's restricted YAML parser
-  // (scripts/categories/categories-parser.js) rejects block-nested values
-  // under domains.* with "nested values must be scalars in this subset".
-  // The editor MUST emit flow-style for each domain entry. This test pins
-  // that contract — a regression here breaks every _meta.yml the editor
-  // submits, as caught by PR #128's CI on first dogfood.
+  // The knowledge repo's `_meta.yml` files are authored in flow style; the
+  // editor MUST emit flow-style domain entries so a rewrite stays byte-stable
+  // (the derive parser, scripts/lib/frontmatter, accepts both styles, but
+  // switching to block would churn every file). This test pins that contract —
+  // a regression here churns every _meta.yml the editor submits.
   const sample = {
     component: "Buttons",
     category: "action",

@@ -6,7 +6,7 @@
 //
 // Per Pattern H philosophy, this is a single-pass projection:
 //
-//   1. Parse YAML frontmatter (categories-parser.js)
+//   1. Parse YAML frontmatter (scripts/lib/frontmatter)
 //   2. Validate frontmatter against schemas/category-defaults.json (Ajv)
 //   3. Project frontmatter shape to dist JSON shape (domain-anchored keys)
 //   4. Emit components/dist/categories/<slug>-defaults.json (per-category)
@@ -23,7 +23,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const Ajv2020 = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
-const parser = require("./categories-parser");
+const parser = require("../lib/frontmatter");
 const { writeManifest } = require("../lib/manifest-io");
 
 const SCHEMA_VERSION = 1;

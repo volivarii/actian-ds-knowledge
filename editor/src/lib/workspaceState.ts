@@ -339,10 +339,10 @@ export async function promoteDomainToDraft(
   if (!current || current === "not-started") {
     domains[domain] = { ...(domains[domain] ?? {}), status: "draft" };
     parsed.domains = domains;
-    // The restricted deriver parser (scripts/categories/categories-parser.js)
-    // requires flow-style `domains.*` maps and the leading schema header; the
-    // raw `yaml` stringify emits block nesting and drops the header, breaking
-    // derive. Route through the form-engine serializer.
+    // `_meta.yml` is authored with flow-style `domains.*` maps + a leading
+    // schema header; the raw `yaml` stringify emits block nesting and drops the
+    // header, churning the file (and the WYSIWYG round-trip). Route through the
+    // form-engine serializer to keep it byte-stable.
     const next = stringifyYaml(parsed, {
       originalText: content,
       flowAtDepth: 2,

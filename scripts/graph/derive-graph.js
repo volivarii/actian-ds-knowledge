@@ -4,7 +4,7 @@ var fs = require("node:fs");
 var path = require("node:path");
 var M = require("../lib/graph/model.js");
 var refKinds = require("../lib/graph/ref-kinds.js");
-var categoriesParser = require("../categories/categories-parser.js");
+var categoriesParser = require("../lib/frontmatter");
 
 var ROOT = path.resolve(__dirname, "..", "..");
 function readJSON(rel) {
