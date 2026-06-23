@@ -9,30 +9,11 @@ import { roundTripMarkdown } from "../../src/markdown-engine/milkdownPreset";
 import { splitRawFrontmatter } from "../../src/markdown-engine/rawFrontmatter";
 
 const require = createRequire(import.meta.url);
-const {
-  deriveFromMarkdown,
-} = require("../../../scripts/lib/section-dist/index.js");
-const {
-  SKIP_H2_SLUGS,
-} = require("../../../scripts/foundations/derive-foundations.js");
 const domains = require("../../../domains.json") as {
-  domains: Record<
-    string,
-    {
-      wysiwyg?: {
-        safePaths?: string[];
-        distEquivalence?: {
-          engine: string;
-          sourceRel: string;
-          rootAnchor?: string;
-          applySkipH2Slugs?: boolean;
-        };
-      };
-    }
-  >;
+  domains: Record<string, { wysiwyg?: { safePaths?: string[] } }>;
 };
 const {
-  distEquivalenceFor,
+  deriveEquivalenceView,
 } = require("../../../scripts/lib/wysiwyg-registry.js");
 const REPO = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -43,24 +24,18 @@ const SAFE_PATHS: string[] = Object.values(domains.domains).flatMap(
   (d) => d.wysiwyg?.safePaths ?? [],
 );
 
-// Per-file dist-equivalence is asserted only for section-dist domains that
-// declare a `wysiwyg.distEquivalence` in domains.json (currently foundations
-// and accessibility). Content domains have no distEquivalence entry; their
-// dist-safety is instead proven holistically by CI derive-and-diff gates:
+// Per-file dist-equivalence is asserted only for domains that declare a
+// `wysiwyg.distEquivalence` in domains.json. The engine dispatch lives in
+// scripts/lib/wysiwyg-registry.js (deriveEquivalenceView):
+//   foundations/accessibility -> "section-dist"       (Pattern-H file tree)
+//   guidelines (components)    -> "guideline-sections" (per-component sections[];
+//                                  ignores the rendered-equivalent markdown field)
+// Content domains declare no distEquivalence; their dist-safety is instead
+// proven holistically by CI derive-and-diff gates:
 //   content/global  -> content-derive.yml  (regenerates content/dist/global.md)
 //   content/patterns -> guidelines-derive.yml (triggers on content/src/patterns/*.md,
 //                        auto-commits components/dist/guidelines/*)
 // If those CI gates were removed, content would lose its dist safety net.
-function deriveFiles(body: string, rel: string): unknown | null {
-  const cfg = distEquivalenceFor(domains, rel);
-  if (cfg === null) return null;
-  return deriveFromMarkdown(body, {
-    sourceRel: cfg.sourceRel,
-    ...(cfg.rootAnchor !== undefined ? { rootAnchor: cfg.rootAnchor } : {}),
-    ...(cfg.applySkipH2Slugs ? { skipH2Slugs: SKIP_H2_SLUGS } : {}),
-    logger: { warn: () => {} },
-  }).files;
-}
 
 for (const rel of SAFE_PATHS) {
   test(`WYSIWYG dist-safe: ${rel}`, async () => {
@@ -75,12 +50,12 @@ for (const rel of SAFE_PATHS) {
       null,
       "no inline HTML except <br>",
     );
-    const want = deriveFiles(body, rel);
+    const want = deriveEquivalenceView(domains, rel, body);
     if (want !== null) {
       assert.deepEqual(
-        deriveFiles(rt1, rel),
+        deriveEquivalenceView(domains, rel, rt1),
         want,
-        "section-dist must be unchanged by the round-trip",
+        "structured dist view must be unchanged by the round-trip",
       );
     }
   });

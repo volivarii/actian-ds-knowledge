@@ -136,7 +136,7 @@
             "distEquivalence": {
               "type": "object",
               "additionalProperties": false,
-              "description": "Per-file dist-equivalence config for section-dist domains. Tells the drift guard which engine to use and how to call it. Absent for domains whose dist-safety is proven holistically (e.g. content/global, content/patterns).",
+              "description": "Per-file dist-equivalence config. Tells the drift guard which engine to compute the structured view it compares across a Milkdown round-trip, and how to call it. Absent for domains whose dist-safety is proven holistically by a CI derive-and-diff gate (e.g. content/global, content/patterns).",
               "examples": [
                 {
                   "engine": "section-dist",
@@ -147,18 +147,27 @@
                   "engine": "section-dist",
                   "sourceRel": "accessibility/src/",
                   "rootAnchor": "accessibility"
+                },
+                { "engine": "guideline-sections" }
+              ],
+              "required": ["engine"],
+              "allOf": [
+                {
+                  "if": {
+                    "required": ["engine"],
+                    "properties": { "engine": { "const": "section-dist" } }
+                  },
+                  "then": { "required": ["sourceRel"] }
                 }
               ],
-              "required": ["engine", "sourceRel"],
               "properties": {
                 "engine": {
-                  "const": "section-dist",
-                  "description": "The derive engine used by this domain. Currently only 'section-dist' is supported (scripts/lib/section-dist/index.js).",
-                  "examples": ["section-dist"]
+                  "enum": ["section-dist", "guideline-sections"],
+                  "description": "The drift-guard equivalence engine. 'section-dist' (scripts/lib/section-dist/index.js) parses the body into a Pattern-H file tree — used by foundations/accessibility, requires sourceRel. 'guideline-sections' (scripts/components/guideline-md-parser.js) parses the body into the per-component sections[] array, accepting the verbatim markdown-field drift as rendered-equivalent — used by the guidelines domain, needs no further options."
                 },
                 "sourceRel": {
                   "type": "string",
-                  "description": "Repo-relative source prefix passed as the sourceRel option to deriveFromMarkdown (e.g. 'foundations/src/').",
+                  "description": "Repo-relative source prefix passed as the sourceRel option to deriveFromMarkdown (e.g. 'foundations/src/'). Required by the section-dist engine; unused by guideline-sections.",
                   "examples": ["foundations/src/", "accessibility/src/"]
                 },
                 "rootAnchor": {

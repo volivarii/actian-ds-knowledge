@@ -60,6 +60,8 @@ test("shouldUseWysiwyg requires the flag AND an app-context OR category record",
   assert.equal(shouldUseWysiwyg("app-context/src/apps/studio.md"), true);
   assert.equal(shouldUseWysiwyg("app-context/src/entities/x.md"), true);
   assert.equal(shouldUseWysiwyg("components/src/categories/action.md"), true);
+  // Flag on + registry-safe component guideline (slice 3) → yes.
+  assert.equal(shouldUseWysiwyg("components/src/button/content.md"), true);
   // Flag on but NOT a per-record path → no.
   assert.equal(shouldUseWysiwyg("app-context/dist/app-context.json"), false);
   assert.equal(shouldUseWysiwyg("app-context/CONSUMING.md"), false);
@@ -67,7 +69,10 @@ test("shouldUseWysiwyg requires the flag AND an app-context OR category record",
     shouldUseWysiwyg("components/src/categories/AUTHORING.md"),
     false,
   );
-  assert.equal(shouldUseWysiwyg("components/src/button/content.md"), false);
+  // Component guideline kinds NOT in the registry stay CodeMirror: behavior.md
+  // (out of scope) and the dropped stragglers (link/content.md — failed the guard).
+  assert.equal(shouldUseWysiwyg("components/src/button/behavior.md"), false);
+  assert.equal(shouldUseWysiwyg("components/src/link/content.md"), false);
   assert.equal(shouldUseWysiwyg("foundations/src/x.md"), false);
   globalThis.sessionStorage.clear();
 });
@@ -77,6 +82,13 @@ test("isWysiwygSafePath — true for the registry's safe paths across domains", 
   assert.equal(isWysiwygSafePath("accessibility/src/color-contrast.md"), true);
   assert.equal(isWysiwygSafePath("content/src/global-guidelines.md"), true);
   assert.equal(isWysiwygSafePath("content/src/patterns/forms.md"), true);
+  // Slice 3 — component guideline content + design kinds.
+  assert.equal(isWysiwygSafePath("components/src/button/content.md"), true);
+  assert.equal(isWysiwygSafePath("components/src/text-input/design.md"), true);
+  assert.equal(
+    isWysiwygSafePath("components/src/chat-with-ai-steward/usage.md"),
+    true,
+  );
 });
 
 test("isWysiwygSafePath — false for files NOT in the registry", () => {
@@ -88,6 +100,11 @@ test("isWysiwygSafePath — false for files NOT in the registry", () => {
     false,
   );
   assert.equal(isWysiwygSafePath("content/src/AUTHORING.md"), false);
+  // Slice 3 — behavior.md (out of scope) + dropped stragglers stay out.
+  assert.equal(isWysiwygSafePath("components/src/button/behavior.md"), false);
+  assert.equal(isWysiwygSafePath("components/src/link/content.md"), false);
+  assert.equal(isWysiwygSafePath("components/src/table/content.md"), false);
+  assert.equal(isWysiwygSafePath("components/src/button/design.md"), false);
 });
 
 test("shouldUseWysiwyg includes registry-safe content/a11y files when flagged", () => {

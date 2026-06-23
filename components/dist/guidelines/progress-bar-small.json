@@ -14,7 +14,7 @@
     "content": {
       "status": "approved",
       "owner": "content-team",
-      "markdown": "# Progress bar\n\nProgress bars communicate the status of multi-step flows, file operations, and long-running background processes.\n\n---\n\n## When to use\n\n- For multi-step flows such as wizards or onboarding sequences.\n- For file uploads or long-running background processes.\n\n## Style\n\n- For step-based progress, show current step and total count.\n- For upload or processing progress, show percentage or bytes transferred.\n- Use short noun or verb phrases for step labels.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Step 2 of 4 | Step two |\n| 45% complete | Almost done... |\n| 3.2 MB of 10 MB uploaded | Uploading... |",
+      "markdown": "# Progress bar\n\nProgress bars communicate the status of multi-step flows, file operations, and long-running background processes.\n\n***\n\n## When to use\n\n* For multi-step flows such as wizards or onboarding sequences.\n\n* For file uploads or long-running background processes.\n\n## Style\n\n* For step-based progress, show current step and total count.\n\n* For upload or processing progress, show percentage or bytes transferred.\n\n* Use short noun or verb phrases for step labels.\n\n## Do / Don't\n\n| Do                       | Don't          |\n| ------------------------ | -------------- |\n| Step 2 of 4              | Step two       |\n| 45% complete             | Almost done... |\n| 3.2 MB of 10 MB uploaded | Uploading...   |",
       "sections": [
         {
           "heading": "",

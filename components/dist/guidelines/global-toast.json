@@ -14,7 +14,7 @@
     "content": {
       "status": "approved",
       "owner": "content-team",
-      "markdown": "# Global toast\n\nGlobal toasts appear at a fixed position on screen, independent of the triggering element.\n\n---\n\n## When to use\n\n- To confirm background action completions.\n- To surface non-critical errors or warnings that do not block the user.\n- Do not use for actions that require user input.\n- For confirmations that need to persist, use an [alert / banner](alert-banner) instead.\n\n## Style\n\n- Keep to one short sentence.\n- Include an undo action where relevant.\n\n## Examples\n\n| Scenario | Toast text |\n|---|---|\n| Dataset deleted | Dataset deleted. Undo |\n| Export complete | Export ready. Download |\n| Connection failed | Connection failed. Try again |",
+      "markdown": "# Global toast\n\nGlobal toasts appear at a fixed position on screen, independent of the triggering element.\n\n***\n\n## When to use\n\n* To confirm background action completions.\n\n* To surface non-critical errors or warnings that do not block the user.\n\n* Do not use for actions that require user input.\n\n* For confirmations that need to persist, use an [alert / banner](alert-banner) instead.\n\n## Style\n\n* Keep to one short sentence.\n\n* Include an undo action where relevant.\n\n## Examples\n\n| Scenario          | Toast text                   |\n| ----------------- | ---------------------------- |\n| Dataset deleted   | Dataset deleted. Undo        |\n| Export complete   | Export ready. Download       |\n| Connection failed | Connection failed. Try again |",
       "sections": [
         {
           "heading": "",

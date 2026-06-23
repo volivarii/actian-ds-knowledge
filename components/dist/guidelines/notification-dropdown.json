@@ -14,7 +14,7 @@
     "content": {
       "status": "approved",
       "owner": "content-team",
-      "markdown": "# Notification dropdown\n\nThe notification dropdown is the panel that surfaces all recent notifications. It provides the frame for browsing, acting on, and dismissing notification items.\n\n---\n\n## When to use\n\n- As the primary entry point for viewing all recent notifications.\n\n## Style\n\n- Panel header: use **Notifications** in title case with no article.\n- Empty state: use \"No notifications\" with a brief supporting line if helpful.\n- Do not truncate notification body text in the panel if it can be avoided.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Notifications | Your Notifications |\n| You're all caught up. | No new notifications at this time. |\n| Mark all as read | Clear all / Dismiss all |",
+      "markdown": "# Notification dropdown\n\nThe notification dropdown is the panel that surfaces all recent notifications. It provides the frame for browsing, acting on, and dismissing notification items.\n\n***\n\n## When to use\n\n* As the primary entry point for viewing all recent notifications.\n\n## Style\n\n* Panel header: use **Notifications** in title case with no article.\n\n* Empty state: use \"No notifications\" with a brief supporting line if helpful.\n\n* Do not truncate notification body text in the panel if it can be avoided.\n\n## Do / Don't\n\n| Do                    | Don't                              |\n| --------------------- | ---------------------------------- |\n| Notifications         | Your Notifications                 |\n| You're all caught up. | No new notifications at this time. |\n| Mark all as read      | Clear all / Dismiss all            |",
       "sections": [
         {
           "heading": "",
