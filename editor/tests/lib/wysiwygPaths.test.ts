@@ -69,9 +69,10 @@ test("shouldUseWysiwyg requires the flag AND an app-context OR category record",
     shouldUseWysiwyg("components/src/categories/AUTHORING.md"),
     false,
   );
-  // Component guideline kinds NOT in the registry stay CodeMirror: behavior.md
-  // (out of scope) and the dropped stragglers (link/content.md — failed the guard).
-  assert.equal(shouldUseWysiwyg("components/src/button/behavior.md"), false);
+  // Slice 4 recovered button/behavior + button/design (<Media> allowlist) → eligible.
+  assert.equal(shouldUseWysiwyg("components/src/button/behavior.md"), true);
+  assert.equal(shouldUseWysiwyg("components/src/button/design.md"), true);
+  // Dropped stragglers stay CodeMirror (link/table — sections/escape drift, slice 4 tail).
   assert.equal(shouldUseWysiwyg("components/src/link/content.md"), false);
   assert.equal(shouldUseWysiwyg("foundations/src/x.md"), false);
   globalThis.sessionStorage.clear();
@@ -89,22 +90,29 @@ test("isWysiwygSafePath — true for the registry's safe paths across domains", 
     isWysiwygSafePath("components/src/chat-with-ai-steward/usage.md"),
     true,
   );
+  // Slice 4 — guard refinement recovered <Media>/inline-code + behavior.md.
+  assert.equal(isWysiwygSafePath("components/src/button/design.md"), true);
+  assert.equal(isWysiwygSafePath("components/src/button/behavior.md"), true);
+  assert.equal(isWysiwygSafePath("accessibility/src/aria-labels.md"), true);
+  assert.equal(isWysiwygSafePath("accessibility/src/components.md"), true);
 });
 
 test("isWysiwygSafePath — false for files NOT in the registry", () => {
   assert.equal(isWysiwygSafePath("foundations/src/tokens.md"), false);
+  // color-primitives stays out — section-dist drift (bare `*` escaped in italic cell).
   assert.equal(isWysiwygSafePath("foundations/src/color-primitives.md"), false);
-  assert.equal(isWysiwygSafePath("accessibility/src/aria-labels.md"), false);
   assert.equal(
     isWysiwygSafePath("content/src/writing/words-to-avoid.md"),
     false,
   );
   assert.equal(isWysiwygSafePath("content/src/AUTHORING.md"), false);
-  // Slice 3 — behavior.md (out of scope) + dropped stragglers stay out.
-  assert.equal(isWysiwygSafePath("components/src/button/behavior.md"), false);
+  // Dropped stragglers stay out (slice 4 tail — non-idempotent / sections drift).
   assert.equal(isWysiwygSafePath("components/src/link/content.md"), false);
   assert.equal(isWysiwygSafePath("components/src/table/content.md"), false);
-  assert.equal(isWysiwygSafePath("components/src/button/design.md"), false);
+  assert.equal(
+    isWysiwygSafePath("components/src/text-input/content.md"),
+    false,
+  );
 });
 
 test("shouldUseWysiwyg includes registry-safe content/a11y files when flagged", () => {
@@ -117,6 +125,7 @@ test("shouldUseWysiwyg includes registry-safe content/a11y files when flagged", 
     shouldUseWysiwyg("content/src/writing/words-to-avoid.md"),
     false,
   );
-  assert.equal(shouldUseWysiwyg("accessibility/src/aria-labels.md"), false);
+  // Slice 4 recovered aria-labels (inline-code/<Media>-aware fail-closed).
+  assert.equal(shouldUseWysiwyg("accessibility/src/aria-labels.md"), true);
   globalThis.sessionStorage.clear();
 });

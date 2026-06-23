@@ -41,7 +41,9 @@
       "distShape": "pattern-H-tree",
       "wysiwyg": {
         "safePaths": [
+          "accessibility/src/aria-labels.md",
           "accessibility/src/color-contrast.md",
+          "accessibility/src/components.md",
           "accessibility/src/designer-handoff-checklist.md",
           "accessibility/src/error-prevention.md",
           "accessibility/src/focus-keyboard.md",
@@ -72,8 +74,11 @@
           "components/src/alert-banner/content.md",
           "components/src/badge/content.md",
           "components/src/breadcrumbs/content.md",
+          "components/src/button/behavior.md",
           "components/src/button/content.md",
+          "components/src/button/design.md",
           "components/src/card/content.md",
+          "components/src/chat-with-ai-steward/content.md",
           "components/src/chat-with-ai-steward/design.md",
           "components/src/chat-with-ai-steward/usage.md",
           "components/src/checkbox/content.md",
