@@ -14,15 +14,16 @@ const domains = require("../../../domains.json") as {
 };
 const {
   deriveEquivalenceView,
+  listSafePaths,
 } = require("../../../scripts/lib/wysiwyg-registry.js");
 const REPO = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../..",
 );
 
-const SAFE_PATHS: string[] = Object.values(domains.domains).flatMap(
-  (d) => d.wysiwyg?.safePaths ?? [],
-);
+// Single source of truth shared with the baseline runner — don't re-inline the
+// flatMap (the editor gate mirrors it inline only to avoid bundling this CJS module).
+const SAFE_PATHS: string[] = listSafePaths(domains);
 
 // Per-file dist-equivalence is asserted only for domains that declare a
 // `wysiwyg.distEquivalence` in domains.json. The engine dispatch lives in
