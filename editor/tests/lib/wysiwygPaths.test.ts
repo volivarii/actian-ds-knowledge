@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   isAppContextFile,
   isCategoryFile,
-  isFoundationsWysiwygSafe,
+  isWysiwygSafePath,
   isWordsToAvoidFile,
   shouldUseWysiwyg,
 } from "../../src/lib/wysiwygPaths";
@@ -72,31 +72,34 @@ test("shouldUseWysiwyg requires the flag AND an app-context OR category record",
   globalThis.sessionStorage.clear();
 });
 
-test("isFoundationsWysiwygSafe — only the verified-safe foundations files", () => {
-  assert.equal(
-    isFoundationsWysiwygSafe("foundations/src/design-guidelines.md"),
-    true,
-  );
-  assert.equal(isFoundationsWysiwygSafe("foundations/src/intro.md"), true);
-  assert.equal(
-    isFoundationsWysiwygSafe("foundations/src/table-of-contents.md"),
-    true,
-  );
-  // unsafe (tables churn) — must NOT be gated
-  assert.equal(isFoundationsWysiwygSafe("foundations/src/tokens.md"), false);
-  assert.equal(
-    isFoundationsWysiwygSafe("foundations/src/color-primitives.md"),
-    false,
-  );
-  assert.equal(isFoundationsWysiwygSafe("foundations/src/AUTHORING.md"), false);
+test("isWysiwygSafePath — true for the registry's safe paths across domains", () => {
+  assert.equal(isWysiwygSafePath("foundations/src/design-guidelines.md"), true);
+  assert.equal(isWysiwygSafePath("accessibility/src/color-contrast.md"), true);
+  assert.equal(isWysiwygSafePath("content/src/global-guidelines.md"), true);
+  assert.equal(isWysiwygSafePath("content/src/patterns/forms.md"), true);
 });
 
-test("shouldUseWysiwyg includes SAFE foundations (not tokens/color) when flagged", () => {
+test("isWysiwygSafePath — false for files NOT in the registry", () => {
+  assert.equal(isWysiwygSafePath("foundations/src/tokens.md"), false);
+  assert.equal(isWysiwygSafePath("foundations/src/color-primitives.md"), false);
+  assert.equal(isWysiwygSafePath("accessibility/src/aria-labels.md"), false);
+  assert.equal(
+    isWysiwygSafePath("content/src/writing/words-to-avoid.md"),
+    false,
+  );
+  assert.equal(isWysiwygSafePath("content/src/AUTHORING.md"), false);
+});
+
+test("shouldUseWysiwyg includes registry-safe content/a11y files when flagged", () => {
   globalThis.sessionStorage.clear();
-  assert.equal(shouldUseWysiwyg("foundations/src/design-guidelines.md"), false);
+  assert.equal(shouldUseWysiwyg("accessibility/src/color-contrast.md"), false);
   globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
-  assert.equal(shouldUseWysiwyg("foundations/src/design-guidelines.md"), true);
-  assert.equal(shouldUseWysiwyg("foundations/src/tokens.md"), false);
-  assert.equal(shouldUseWysiwyg("foundations/src/color-primitives.md"), false);
+  assert.equal(shouldUseWysiwyg("accessibility/src/color-contrast.md"), true);
+  assert.equal(shouldUseWysiwyg("content/src/global-guidelines.md"), true);
+  assert.equal(
+    shouldUseWysiwyg("content/src/writing/words-to-avoid.md"),
+    false,
+  );
+  assert.equal(shouldUseWysiwyg("accessibility/src/aria-labels.md"), false);
   globalThis.sessionStorage.clear();
 });

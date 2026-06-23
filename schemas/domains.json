@@ -11,7 +11,9 @@
     "_note": {
       "type": "string",
       "description": "Free-text provenance note for human readers (not consumed by tooling).",
-      "examples": ["Per-domain authoring contract. Hand-authored source of truth."]
+      "examples": [
+        "Per-domain authoring contract. Hand-authored source of truth."
+      ]
     },
     "domains": {
       "type": "object",
@@ -37,18 +39,31 @@
     "unit": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["summary", "src", "generator", "frontmatterSchema", "body", "distShape"],
+      "required": [
+        "summary",
+        "src",
+        "generator",
+        "frontmatterSchema",
+        "body",
+        "distShape"
+      ],
       "properties": {
         "summary": {
           "type": "string",
           "minLength": 1,
           "description": "One-line human description of the domain and how its body is handled.",
-          "examples": ["Component category defaults — body mirrored verbatim to dist .md."]
+          "examples": [
+            "Component category defaults — body mirrored verbatim to dist .md."
+          ]
         },
         "src": {
           "type": ["string", "null"],
           "description": "Source location glob (or exact file); null for body-less domains derived from dist (e.g. graph).",
-          "examples": ["components/src/categories/*.md", "tokens/tokens.json", null]
+          "examples": [
+            "components/src/categories/*.md",
+            "tokens/tokens.json",
+            null
+          ]
         },
         "generator": {
           "type": ["string", "null"],
@@ -87,7 +102,78 @@
           }
         },
         "distShape": {
-          "enum": ["per-record+bundle", "pattern-H-tree", "single-object", "embedded", "none"]
+          "enum": [
+            "per-record+bundle",
+            "pattern-H-tree",
+            "single-object",
+            "embedded",
+            "none"
+          ]
+        },
+        "wysiwyg": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["safePaths"],
+          "description": "WYSIWYG enablement: explicit allowlist of source paths whose Milkdown body round-trip is proven dist-safe (idempotent + fail-closed; + dist-equivalent for section-dist domains). Consumed by the editor gate, the drift guard, and the baseline runner.",
+          "examples": [
+            {
+              "safePaths": [
+                "foundations/src/intro.md",
+                "accessibility/src/principles.md"
+              ]
+            }
+          ],
+          "properties": {
+            "safePaths": {
+              "type": "array",
+              "items": { "type": "string" },
+              "uniqueItems": true,
+              "description": "Repo-relative .md paths in this domain proven WYSIWYG-safe.",
+              "examples": [
+                ["foundations/src/intro.md", "content/src/global-guidelines.md"]
+              ]
+            },
+            "distEquivalence": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Per-file dist-equivalence config for section-dist domains. Tells the drift guard which engine to use and how to call it. Absent for domains whose dist-safety is proven holistically (e.g. content/global, content/patterns).",
+              "examples": [
+                {
+                  "engine": "section-dist",
+                  "sourceRel": "foundations/src/",
+                  "applySkipH2Slugs": true
+                },
+                {
+                  "engine": "section-dist",
+                  "sourceRel": "accessibility/src/",
+                  "rootAnchor": "accessibility"
+                }
+              ],
+              "required": ["engine", "sourceRel"],
+              "properties": {
+                "engine": {
+                  "const": "section-dist",
+                  "description": "The derive engine used by this domain. Currently only 'section-dist' is supported (scripts/lib/section-dist/index.js).",
+                  "examples": ["section-dist"]
+                },
+                "sourceRel": {
+                  "type": "string",
+                  "description": "Repo-relative source prefix passed as the sourceRel option to deriveFromMarkdown (e.g. 'foundations/src/').",
+                  "examples": ["foundations/src/", "accessibility/src/"]
+                },
+                "rootAnchor": {
+                  "type": "string",
+                  "description": "Optional rootAnchor option passed to deriveFromMarkdown. Required by domains whose top-level anchor differs from the default.",
+                  "examples": ["accessibility"]
+                },
+                "applySkipH2Slugs": {
+                  "type": "boolean",
+                  "description": "When true the guard imports SKIP_H2_SLUGS from derive-foundations.js and passes it as skipH2Slugs. Only foundations currently needs this.",
+                  "examples": [true]
+                }
+              }
+            }
+          }
         }
       }
     }

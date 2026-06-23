@@ -45,6 +45,15 @@ interface EditorShellProps {
   onOpenStaging?: () => void;
 }
 
+/**
+ * True for source markdown files routed to MarkdownEditScreen (the raw CodeMirror
+ * or WYSIWYG body editor). Matches foundations, accessibility, component domain
+ * files, and content files, excluding structural meta-files.
+ *
+ * NOTE: intentionally does NOT match content/src/writing/words-to-avoid.md
+ * (which has a frontmatter form). EditorShell always checks `isWordsToAvoidFile`
+ * BEFORE calling this function, so that file is never accidentally routed here.
+ */
 export function isPlainMarkdown(path: string): boolean {
   return (
     (/^foundations\/src\/[^/]+\.md$/.test(path) ||
@@ -52,7 +61,10 @@ export function isPlainMarkdown(path: string): boolean {
       /^components\/src\/(?!categories\/|AUTHORING\.md|EDITING-GUIDE\.md)[^/]+\/[^/]+\.md$/.test(
         path,
       ) ||
-      /^content\/src\/(patterns|product|writing)\/[^/]+\.md$/.test(path)) &&
+      /^content\/src\/(patterns|product|writing)\/[^/]+\.md$/.test(path) ||
+      /^content\/src\/(?!AUTHORING\.md$|README\.md$|content-index\.md$)[^/]+\.md$/.test(
+        path,
+      )) &&
     !/AUTHORING\.md$/.test(path)
   );
 }

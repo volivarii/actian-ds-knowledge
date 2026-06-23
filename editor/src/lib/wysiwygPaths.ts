@@ -1,4 +1,26 @@
 import { isWysiwygEnabled } from "./editorFlags";
+import domainsRaw from "../../../domains.json";
+
+type DomainsConfig = {
+  domains: Record<string, { wysiwyg?: { safePaths?: string[] } }>;
+};
+
+/** Union of every domain's wysiwyg.safePaths from domains.json — the single
+ *  source of truth shared with the drift guard and the baseline runner.
+ *  NOTE: the canonical listSafePaths() logic lives in
+ *  scripts/lib/wysiwyg-registry.js for CJS (non-bundled) consumers.
+ *  This ESM/vite-bundled gate intentionally mirrors the one-liner inline
+ *  to avoid pulling a CJS module into the bundle. */
+const WYSIWYG_SAFE_PATHS: ReadonlySet<string> = new Set(
+  Object.values((domainsRaw as DomainsConfig).domains).flatMap(
+    (d) => d.wysiwyg?.safePaths ?? [],
+  ),
+);
+
+/** True for any source file the registry marks WYSIWYG-safe (guard-verified). */
+export function isWysiwygSafePath(path: string): boolean {
+  return WYSIWYG_SAFE_PATHS.has(path);
+}
 
 /** True only for the three per-record app-context markdown kinds (apps,
  *  entities, patterns). Excludes the dist JSON, terminology.yml, nested paths,
@@ -23,29 +45,14 @@ export function isWordsToAvoidFile(path: string): boolean {
   return path === "content/src/writing/words-to-avoid.md";
 }
 
-/** Foundations files proven WYSIWYG-safe (dist-equivalent + idempotent body
- *  round-trip; see the drift guard). Single source of truth shared with the
- *  guard test. tokens.md + color-primitives.md are EXCLUDED — their tables churn. */
-export const FOUNDATIONS_WYSIWYG_SAFE: readonly string[] = [
-  "foundations/src/design-guidelines.md",
-  "foundations/src/intro.md",
-  "foundations/src/handoff-protocol.md",
-  "foundations/src/related-guidelines.md",
-  "foundations/src/table-of-contents.md",
-];
-
-export function isFoundationsWysiwygSafe(path: string): boolean {
-  return FOUNDATIONS_WYSIWYG_SAFE.includes(path);
-}
-
-/** The WYSIWYG body editor is used only for per-record markdown whose body
- *  round-trips dist-equivalently (app-context + categories), and only when the
- *  alpha flag is on. Precise predicates — not prefix matches. */
+/** The WYSIWYG body editor is used only for markdown whose body round-trips
+ *  safely (app-context, categories, and registry-safe paths), and only when the
+ *  alpha flag is on. Foundations/accessibility are dist-equivalent (guard-proven
+ *  per file); content is rendered-equivalent (proven holistically by the
+ *  derive-no-op gate). Precise predicates, not prefix matches. */
 export function shouldUseWysiwyg(path: string): boolean {
   return (
     isWysiwygEnabled() &&
-    (isAppContextFile(path) ||
-      isCategoryFile(path) ||
-      isFoundationsWysiwygSafe(path))
+    (isAppContextFile(path) || isCategoryFile(path) || isWysiwygSafePath(path))
   );
 }
