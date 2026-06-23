@@ -18,11 +18,6 @@ export function isWysiwygSafePath(path: string): boolean {
   return WYSIWYG_SAFE_PATHS.has(path);
 }
 
-/** Back-compat: slice-1's foundations safe list, now sourced from the registry.
- *  Retained until the drift guard (Task 4) reads domains.json directly. */
-export const FOUNDATIONS_WYSIWYG_SAFE: readonly string[] =
-  (domainsRaw as DomainsConfig).domains.foundations?.wysiwyg?.safePaths ?? [];
-
 /** True only for the three per-record app-context markdown kinds (apps,
  *  entities, patterns). Excludes the dist JSON, terminology.yml, nested paths,
  *  and other app-context files. Lives here (not in EditorShell) so screens can
