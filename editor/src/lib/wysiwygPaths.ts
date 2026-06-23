@@ -6,7 +6,11 @@ type DomainsConfig = {
 };
 
 /** Union of every domain's wysiwyg.safePaths from domains.json — the single
- *  source of truth shared with the drift guard and the baseline runner. */
+ *  source of truth shared with the drift guard and the baseline runner.
+ *  NOTE: the canonical listSafePaths() logic lives in
+ *  scripts/lib/wysiwyg-registry.js for CJS (non-bundled) consumers.
+ *  This ESM/vite-bundled gate intentionally mirrors the one-liner inline
+ *  to avoid pulling a CJS module into the bundle. */
 const WYSIWYG_SAFE_PATHS: ReadonlySet<string> = new Set(
   Object.values((domainsRaw as DomainsConfig).domains).flatMap(
     (d) => d.wysiwyg?.safePaths ?? [],

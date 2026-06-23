@@ -132,6 +132,46 @@
               "examples": [
                 ["foundations/src/intro.md", "content/src/global-guidelines.md"]
               ]
+            },
+            "distEquivalence": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Per-file dist-equivalence config for section-dist domains. Tells the drift guard which engine to use and how to call it. Absent for domains whose dist-safety is proven holistically (e.g. content/global, content/patterns).",
+              "examples": [
+                {
+                  "engine": "section-dist",
+                  "sourceRel": "foundations/src/",
+                  "applySkipH2Slugs": true
+                },
+                {
+                  "engine": "section-dist",
+                  "sourceRel": "accessibility/src/",
+                  "rootAnchor": "accessibility"
+                }
+              ],
+              "required": ["engine", "sourceRel"],
+              "properties": {
+                "engine": {
+                  "const": "section-dist",
+                  "description": "The derive engine used by this domain. Currently only 'section-dist' is supported (scripts/lib/section-dist/index.js).",
+                  "examples": ["section-dist"]
+                },
+                "sourceRel": {
+                  "type": "string",
+                  "description": "Repo-relative source prefix passed as the sourceRel option to deriveFromMarkdown (e.g. 'foundations/src/').",
+                  "examples": ["foundations/src/", "accessibility/src/"]
+                },
+                "rootAnchor": {
+                  "type": "string",
+                  "description": "Optional rootAnchor option passed to deriveFromMarkdown. Required by domains whose top-level anchor differs from the default.",
+                  "examples": ["accessibility"]
+                },
+                "applySkipH2Slugs": {
+                  "type": "boolean",
+                  "description": "When true the guard imports SKIP_H2_SLUGS from derive-foundations.js and passes it as skipH2Slugs. Only foundations currently needs this.",
+                  "examples": [true]
+                }
+              }
             }
           }
         }

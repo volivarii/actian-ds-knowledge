@@ -16,8 +16,24 @@ const {
   SKIP_H2_SLUGS,
 } = require("../../../scripts/foundations/derive-foundations.js");
 const domains = require("../../../domains.json") as {
-  domains: Record<string, { wysiwyg?: { safePaths?: string[] } }>;
+  domains: Record<
+    string,
+    {
+      wysiwyg?: {
+        safePaths?: string[];
+        distEquivalence?: {
+          engine: string;
+          sourceRel: string;
+          rootAnchor?: string;
+          applySkipH2Slugs?: boolean;
+        };
+      };
+    }
+  >;
 };
+const {
+  distEquivalenceFor,
+} = require("../../../scripts/lib/wysiwyg-registry.js");
 const REPO = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../..",
@@ -27,27 +43,23 @@ const SAFE_PATHS: string[] = Object.values(domains.domains).flatMap(
   (d) => d.wysiwyg?.safePaths ?? [],
 );
 
-// Per-file dist-equivalence is asserted only for the section-dist domains.
-// Content uses other engines; its dist-safety is proven holistically by the
-// derive-no-op gate after the baseline (see plan Task 5 / verification), and on
-// every future content edit by the CI derive-and-diff gate, NOT by this unit
-// guard. If that CI gate were removed, content would lose its dist safety net.
+// Per-file dist-equivalence is asserted only for section-dist domains that
+// declare a `wysiwyg.distEquivalence` in domains.json (currently foundations
+// and accessibility). Content domains have no distEquivalence entry; their
+// dist-safety is instead proven holistically by CI derive-and-diff gates:
+//   content/global  -> content-derive.yml  (regenerates content/dist/global.md)
+//   content/patterns -> guidelines-derive.yml (triggers on content/src/patterns/*.md,
+//                        auto-commits components/dist/guidelines/*)
+// If those CI gates were removed, content would lose its dist safety net.
 function deriveFiles(body: string, rel: string): unknown | null {
-  if (rel.startsWith("foundations/src/")) {
-    return deriveFromMarkdown(body, {
-      skipH2Slugs: SKIP_H2_SLUGS,
-      sourceRel: "foundations/src/",
-      logger: { warn: () => {} },
-    }).files;
-  }
-  if (rel.startsWith("accessibility/src/")) {
-    return deriveFromMarkdown(body, {
-      sourceRel: "accessibility/src/",
-      rootAnchor: "accessibility",
-      logger: { warn: () => {} },
-    }).files;
-  }
-  return null; // content -- no per-file dist-equivalence
+  const cfg = distEquivalenceFor(domains, rel);
+  if (cfg === null) return null;
+  return deriveFromMarkdown(body, {
+    sourceRel: cfg.sourceRel,
+    ...(cfg.rootAnchor !== undefined ? { rootAnchor: cfg.rootAnchor } : {}),
+    ...(cfg.applySkipH2Slugs ? { skipH2Slugs: SKIP_H2_SLUGS } : {}),
+    logger: { warn: () => {} },
+  }).files;
 }
 
 for (const rel of SAFE_PATHS) {

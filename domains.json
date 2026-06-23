@@ -17,13 +17,20 @@
       "frontmatterSchema": null,
       "body": { "parse": "sections", "mirror": true, "field": null },
       "distShape": "pattern-H-tree",
-      "wysiwyg": { "safePaths": [
-        "foundations/src/design-guidelines.md",
-        "foundations/src/intro.md",
-        "foundations/src/handoff-protocol.md",
-        "foundations/src/related-guidelines.md",
-        "foundations/src/table-of-contents.md"
-      ] }
+      "wysiwyg": {
+        "safePaths": [
+          "foundations/src/design-guidelines.md",
+          "foundations/src/intro.md",
+          "foundations/src/handoff-protocol.md",
+          "foundations/src/related-guidelines.md",
+          "foundations/src/table-of-contents.md"
+        ],
+        "distEquivalence": {
+          "engine": "section-dist",
+          "sourceRel": "foundations/src/",
+          "applySkipH2Slugs": true
+        }
+      }
     },
     "accessibility": {
       "summary": "WCAG guidance — body parsed into a Pattern-H section tree (same engine as foundations).",
@@ -32,19 +39,26 @@
       "frontmatterSchema": null,
       "body": { "parse": "sections", "mirror": false, "field": null },
       "distShape": "pattern-H-tree",
-      "wysiwyg": { "safePaths": [
-        "accessibility/src/color-contrast.md",
-        "accessibility/src/designer-handoff-checklist.md",
-        "accessibility/src/error-prevention.md",
-        "accessibility/src/focus-keyboard.md",
-        "accessibility/src/intro.md",
-        "accessibility/src/motion.md",
-        "accessibility/src/principles.md",
-        "accessibility/src/reading-order-landmarks.md",
-        "accessibility/src/session-timeout-warnings.md",
-        "accessibility/src/touch-pointer.md",
-        "accessibility/src/typography.md"
-      ] }
+      "wysiwyg": {
+        "safePaths": [
+          "accessibility/src/color-contrast.md",
+          "accessibility/src/designer-handoff-checklist.md",
+          "accessibility/src/error-prevention.md",
+          "accessibility/src/focus-keyboard.md",
+          "accessibility/src/intro.md",
+          "accessibility/src/motion.md",
+          "accessibility/src/principles.md",
+          "accessibility/src/reading-order-landmarks.md",
+          "accessibility/src/session-timeout-warnings.md",
+          "accessibility/src/touch-pointer.md",
+          "accessibility/src/typography.md"
+        ],
+        "distEquivalence": {
+          "engine": "section-dist",
+          "sourceRel": "accessibility/src/",
+          "rootAnchor": "accessibility"
+        }
+      }
     },
     "guidelines": {
       "summary": "Per-component guidelines — body domains (content/usage/design/behavior) parsed into sections + kept verbatim per-domain; frontmatter in sibling _meta.yml (+tokens.yml).",
@@ -85,21 +99,23 @@
       "frontmatterSchema": "schemas/content.json",
       "body": { "parse": "none", "mirror": true, "field": null },
       "distShape": "single-object",
-      "wysiwyg": { "safePaths": [
-        "content/src/global-guidelines.md",
-        "content/src/format-spec.md",
-        "content/src/product/lineage-specific-ui.md",
-        "content/src/product/object-preview-panels.md",
-        "content/src/product/related-content-panels.md",
-        "content/src/writing/abbreviations-and-articles.md",
-        "content/src/writing/acronyms.md",
-        "content/src/writing/grid-and-spacing.md",
-        "content/src/writing/numerical-formatting.md",
-        "content/src/writing/plurals.md",
-        "content/src/writing/prepositions.md",
-        "content/src/writing/voice-and-tone.md",
-        "content/src/writing/writing-style.md"
-      ] }
+      "wysiwyg": {
+        "safePaths": [
+          "content/src/global-guidelines.md",
+          "content/src/format-spec.md",
+          "content/src/product/lineage-specific-ui.md",
+          "content/src/product/object-preview-panels.md",
+          "content/src/product/related-content-panels.md",
+          "content/src/writing/abbreviations-and-articles.md",
+          "content/src/writing/acronyms.md",
+          "content/src/writing/grid-and-spacing.md",
+          "content/src/writing/numerical-formatting.md",
+          "content/src/writing/plurals.md",
+          "content/src/writing/prepositions.md",
+          "content/src/writing/voice-and-tone.md",
+          "content/src/writing/writing-style.md"
+        ]
+      }
     },
     "content/patterns": {
       "summary": "Content pattern files — parsed into sections and fanned out (appended) into component guideline records.",
@@ -108,16 +124,18 @@
       "frontmatterSchema": "schemas/content.json",
       "body": { "parse": "sections", "mirror": false, "field": null },
       "distShape": "embedded",
-      "wysiwyg": { "safePaths": [
-        "content/src/patterns/empty-and-system-states.md",
-        "content/src/patterns/forms.md",
-        "content/src/patterns/icons.md",
-        "content/src/patterns/loading-and-progress.md",
-        "content/src/patterns/notifications-and-messaging.md",
-        "content/src/patterns/onboarding.md",
-        "content/src/patterns/validation-messages.md",
-        "content/src/patterns/wizards.md"
-      ] }
+      "wysiwyg": {
+        "safePaths": [
+          "content/src/patterns/empty-and-system-states.md",
+          "content/src/patterns/forms.md",
+          "content/src/patterns/icons.md",
+          "content/src/patterns/loading-and-progress.md",
+          "content/src/patterns/notifications-and-messaging.md",
+          "content/src/patterns/onboarding.md",
+          "content/src/patterns/validation-messages.md",
+          "content/src/patterns/wizards.md"
+        ]
+      }
     },
     "graph": {
       "summary": "Knowledge graph — derived from dist artifacts (+ content/src frontmatter for related-component edges); reads no prose body.",
