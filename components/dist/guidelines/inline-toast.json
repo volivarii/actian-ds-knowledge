@@ -19,7 +19,7 @@
     "content": {
       "status": "approved",
       "owner": "content-team",
-      "markdown": "# Inline toast\n\nAn inline toast is a brief, non-blocking message displayed within a specific area of the page rather than at a global level. It provides feedback directly adjacent to the action or element it refers to.\n\n---\n\n## When to use\n\n- To confirm a localized action, such as copying a value or saving a field inline.\n- To surface a validation warning directly below or beside a specific form field.\n- Do not use an inline toast for global events. Use a [global toast](global-toast) instead.\n\n## Style\n\n- One short sentence maximum. Ideally fewer than ten words.\n- Use present or past tense to confirm what happened. For example, `Copied` or `Saved`.\n- Do not use inline toasts for error messages that require user action - use inline validation instead.\n\n## Examples\n\n| Scenario | Inline toast text |\n|---|---|\n| Value copied to clipboard | Copied |\n| Field saved inline | Saved |\n| Tag added to asset | Tag added |\n| Link generated | Link created |",
+      "markdown": "# Inline toast\n\nAn inline toast is a brief, non-blocking message displayed within a specific area of the page rather than at a global level. It provides feedback directly adjacent to the action or element it refers to.\n\n***\n\n## When to use\n\n* To confirm a localized action, such as copying a value or saving a field inline.\n\n* To surface a validation warning directly below or beside a specific form field.\n\n* Do not use an inline toast for global events. Use a [global toast](global-toast) instead.\n\n## Style\n\n* One short sentence maximum. Ideally fewer than ten words.\n\n* Use present or past tense to confirm what happened. For example, `Copied` or `Saved`.\n\n* Do not use inline toasts for error messages that require user action - use inline validation instead.\n\n## Examples\n\n| Scenario                  | Inline toast text |\n| ------------------------- | ----------------- |\n| Value copied to clipboard | Copied            |\n| Field saved inline        | Saved             |\n| Tag added to asset        | Tag added         |\n| Link generated            | Link created      |",
       "sections": [
         {
           "heading": "",
@@ -99,5 +99,5 @@
       "status": "not-started"
     }
   },
-  "updated_at": "2026-06-16T20:00:20-07:00"
+  "updated_at": "2026-06-23T13:14:48+02:00"
 }

@@ -14,7 +14,7 @@
     "content": {
       "status": "approved",
       "owner": "content-team",
-      "markdown": "# Loader\n\nThe loader appears during page transitions, data fetches, and background processes to communicate that the system is working. For application startup or full-screen transitions, use the [loader with logo](loader-with-logo) instead.\n\n---\n\n## When to use\n\n- During page loads, data fetches, or transitions that require the user to wait.\n- For in-page or component-level loading states.\n\n## Style\n\n- Include a loading message only when the wait is likely to exceed three seconds.\n- Keep messages brief and present-tense.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Loading datasets... | Please wait. |\n| Fetching results... | Loading, this may take a moment. |",
+      "markdown": "# Loader\n\nThe loader appears during page transitions, data fetches, and background processes to communicate that the system is working. For application startup or full-screen transitions, use the [loader with logo](loader-with-logo) instead.\n\n***\n\n## When to use\n\n* During page loads, data fetches, or transitions that require the user to wait.\n\n* For in-page or component-level loading states.\n\n## Style\n\n* Include a loading message only when the wait is likely to exceed three seconds.\n\n* Keep messages brief and present-tense.\n\n## Do / Don't\n\n| Do                  | Don't                            |\n| ------------------- | -------------------------------- |\n| Loading datasets... | Please wait.                     |\n| Fetching results... | Loading, this may take a moment. |",
       "sections": [
         {
           "heading": "",
@@ -74,5 +74,5 @@
       "status": "not-started"
     }
   },
-  "updated_at": "2026-06-16T19:44:17-07:00"
+  "updated_at": "2026-06-23T13:14:48+02:00"
 }

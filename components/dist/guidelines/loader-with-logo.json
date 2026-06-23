@@ -14,7 +14,7 @@
     "content": {
       "status": "approved",
       "owner": "content-team",
-      "markdown": "# Loader with logo\n\nThe loader with logo is a branded loading screen used during application startup or major full-screen transitions. For in-page or component-level loading, use the standard [loader](loader) instead.\n\n---\n\n## When to use\n\n- During application startup.\n- During major context switches that require a full-screen loading experience.\n\n## Style\n\n- Include a loading message only when the wait is likely to exceed three seconds.\n- Keep messages brief and present-tense.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Loading your workspace... | Please wait while we load your experience. |\n| Preparing your environment... | Please wait. |",
+      "markdown": "# Loader with logo\n\nThe loader with logo is a branded loading screen used during application startup or major full-screen transitions. For in-page or component-level loading, use the standard [loader](loader) instead.\n\n***\n\n## When to use\n\n* During application startup.\n\n* During major context switches that require a full-screen loading experience.\n\n## Style\n\n* Include a loading message only when the wait is likely to exceed three seconds.\n\n* Keep messages brief and present-tense.\n\n## Do / Don't\n\n| Do                            | Don't                                      |\n| ----------------------------- | ------------------------------------------ |\n| Loading your workspace...     | Please wait while we load your experience. |\n| Preparing your environment... | Please wait.                               |",
       "sections": [
         {
           "heading": "",
@@ -74,5 +74,5 @@
       "status": "not-started"
     }
   },
-  "updated_at": "2026-06-16T19:44:17-07:00"
+  "updated_at": "2026-06-23T13:14:48+02:00"
 }

@@ -14,7 +14,7 @@
     "content": {
       "status": "approved",
       "owner": "content-team",
-      "markdown": "# Error state\n\nError states communicate that something failed or a resource could not be loaded. Copy must be specific, non-blaming, and give users a path forward.\n\n---\n\n## When to use\n\n- When a page, component, or resource fails to load.\n- When a user action fails to complete.\n\n## Style\n\n- Be specific about what failed where possible.\n- Offer a resolution step or next action.\n- Do not use technical error codes as the primary message.\n- Do not blame the user.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Something went wrong / Try again or contact support if the problem continues. | Error 500. |\n| We couldn't load your datasets. / Refresh the page or try again later. | An unexpected error occurred. |\n\n## Examples\n\n| Element | Example text |\n|---|---|\n| Title | Something went wrong |\n| Body | There was an error creating your item. Try again or contact support if the problem continues. |\n| Primary CTA | Try again |",
+      "markdown": "# Error state\n\nError states communicate that something failed or a resource could not be loaded. Copy must be specific, non-blaming, and give users a path forward.\n\n***\n\n## When to use\n\n* When a page, component, or resource fails to load.\n\n* When a user action fails to complete.\n\n## Style\n\n* Be specific about what failed where possible.\n\n* Offer a resolution step or next action.\n\n* Do not use technical error codes as the primary message.\n\n* Do not blame the user.\n\n## Do / Don't\n\n| Do                                                                            | Don't                         |\n| ----------------------------------------------------------------------------- | ----------------------------- |\n| Something went wrong / Try again or contact support if the problem continues. | Error 500.                    |\n| We couldn't load your datasets. / Refresh the page or try again later.        | An unexpected error occurred. |\n\n## Examples\n\n| Element     | Example text                                                                                  |\n| ----------- | --------------------------------------------------------------------------------------------- |\n| Title       | Something went wrong                                                                          |\n| Body        | There was an error creating your item. Try again or contact support if the problem continues. |\n| Primary CTA | Try again                                                                                     |",
       "sections": [
         {
           "heading": "",
@@ -112,5 +112,5 @@
       "status": "not-started"
     }
   },
-  "updated_at": "2026-06-16T19:44:17-07:00"
+  "updated_at": "2026-06-23T13:14:48+02:00"
 }

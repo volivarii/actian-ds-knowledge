@@ -14,7 +14,7 @@
     "content": {
       "status": "approved",
       "owner": "content-team",
-      "markdown": "# Loading skeleton\n\nLoading skeletons are visual placeholders that show the layout of a page or component while content loads. They do not include copy.\n\n---\n\n## When to use\n\n- When loading a page or section where the layout structure is known in advance.\n- As an alternative to a spinner for content-heavy views.\n\n## Style\n\n- Skeletons are visual only and require no text labels.\n- Do not add placeholder text such as \"Loading...\" inside skeleton blocks.\n- If a loading message is needed alongside a skeleton, pair with a [loader](loader) instead.",
+      "markdown": "# Loading skeleton\n\nLoading skeletons are visual placeholders that show the layout of a page or component while content loads. They do not include copy.\n\n***\n\n## When to use\n\n* When loading a page or section where the layout structure is known in advance.\n\n* As an alternative to a spinner for content-heavy views.\n\n## Style\n\n* Skeletons are visual only and require no text labels.\n\n* Do not add placeholder text such as \"Loading...\" inside skeleton blocks.\n\n* If a loading message is needed alongside a skeleton, pair with a [loader](loader) instead.",
       "sections": [
         {
           "heading": "",
@@ -62,5 +62,5 @@
       "status": "not-started"
     }
   },
-  "updated_at": "2026-06-16T19:44:17-07:00"
+  "updated_at": "2026-06-23T13:14:48+02:00"
 }

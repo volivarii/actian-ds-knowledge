@@ -14,7 +14,7 @@
     "content": {
       "status": "approved",
       "owner": "content-team",
-      "markdown": "# Spinner\n\nThe spinner communicates that the system is processing an action. It is used inline, inside buttons, form fields, or small UI sections, rather than as a full-page loading state.\n\n---\n\n## When to use\n\n- After a user triggers an action and the system is processing it.\n- Inline within a component rather than as a full-page loader.\n\n## Style\n\n- Use an accompanying label only when the context does not make it clear what is happening.\n- Keep labels brief and present-tense.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Running query... | Please wait while your query runs. |\n| Saving... | Loading. |",
+      "markdown": "# Spinner\n\nThe spinner communicates that the system is processing an action. It is used inline, inside buttons, form fields, or small UI sections, rather than as a full-page loading state.\n\n***\n\n## When to use\n\n* After a user triggers an action and the system is processing it.\n\n* Inline within a component rather than as a full-page loader.\n\n## Style\n\n* Use an accompanying label only when the context does not make it clear what is happening.\n\n* Keep labels brief and present-tense.\n\n## Do / Don't\n\n| Do               | Don't                              |\n| ---------------- | ---------------------------------- |\n| Running query... | Please wait while your query runs. |\n| Saving...        | Loading.                           |",
       "sections": [
         {
           "heading": "",
@@ -74,5 +74,5 @@
       "status": "not-started"
     }
   },
-  "updated_at": "2026-06-16T19:44:17-07:00"
+  "updated_at": "2026-06-23T13:14:48+02:00"
 }
