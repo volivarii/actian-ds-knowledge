@@ -22,23 +22,27 @@ Actian Data Intelligence speaks to data professionals: engineers, analysts, and 
 
 Apply these guidelines to all UI copy, including labels, tooltips, empty states, error messages, and notifications.
 
----
+***
 
 ### Style
 
-- Use active voice. "Export the dataset" not "The dataset can be exported."
-- Use present tense. "Saves automatically" not "Will save automatically."
-- Use sentence case for all UI text, including headings and button labels.
-- Do not use exclamation points except in genuine success states.
-- Do not use "please" or "sorry" — they add length without value.
+* Use active voice. "Export the dataset" not "The dataset can be exported."
+
+* Use present tense. "Saves automatically" not "Will save automatically."
+
+* Use sentence case for all UI text, including headings and button labels.
+
+* Do not use exclamation points except in genuine success states.
+
+* Do not use "please" or "sorry" — they add length without value.
 
 ### Do / Don't
 
-| Do | Don't |
-|---|---|
-| Export the dataset | The dataset will be exported |
+| Do                   | Don't                             |
+| -------------------- | --------------------------------- |
+| Export the dataset   | The dataset will be exported      |
 | Something went wrong | We're sorry, something went wrong |
-| Log in | Sign in / Signin |
+| Log in               | Sign in / Signin                  |
 
 ---
 
@@ -46,38 +50,47 @@ Apply these guidelines to all UI copy, including labels, tooltips, empty states,
 
 Use present, active tense in all possible cases. In some cases, you can use passive voice if the focus needs to be on a system instead of a person.
 
----
+***
 
 ### Tense and voice
 
-| Voice | When and how to use | Example |
-|---|---|---|
-| Active | All cases except where passive is needed | Only an administrator can create a warehouse. |
-| Passive | Use only when focus is not on a person | The database needs to be shut down. |
+| Voice   | When and how to use                      | Example                                       |
+| ------- | ---------------------------------------- | --------------------------------------------- |
+| Active  | All cases except where passive is needed | Only an administrator can create a warehouse. |
+| Passive | Use only when focus is not on a person   | The database needs to be shut down.           |
 
 ### Tone
 
-- Be direct, active, and consistent.
-- Be friendly and helpful.
-- Use the simplest terms. Don't try to "beautify" with alternatives.
-- Do not personify the product as the subject of the text.
-- Avoid humor; it rarely translates.
-- Avoid idioms, sarcasm, metaphors, slang, colloquialisms, and jargon.
-- Do not use racial, gender, or cultural-biased language.
-- Use gender-neutral pronouns to help make text inclusive.
-- Use the second person: "you." Don't use "I," "we," or "us" to refer to the user.
+* Be direct, active, and consistent.
 
-| Do | Don't |
-|---|---|
+* Be friendly and helpful.
+
+* Use the simplest terms. Don't try to "beautify" with alternatives.
+
+* Do not personify the product as the subject of the text.
+
+* Avoid humor; it rarely translates.
+
+* Avoid idioms, sarcasm, metaphors, slang, colloquialisms, and jargon.
+
+* Do not use racial, gender, or cultural-biased language.
+
+* Use gender-neutral pronouns to help make text inclusive.
+
+* Use the second person: "you." Don't use "I," "we," or "us" to refer to the user.
+
+| Do          | Don't                         |
+| ----------- | ----------------------------- |
 | Submit form | Click here to submit the form |
+
 ### Personification
 
 Do not personify the product as the subject of the text. Keep the user in focus, rather than the product.
 
-| Do — User focus | Don't — Product focus |
-|---|---|
+| Do — User focus                                                     | Don't — Product focus                                                         |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | In the Delivery Information window, specify the name of the sender. | The Delivery Information window allows you to specify the name of the sender. |
-| Use this menu to create diagrams. | This menu enables you to create diagrams. |
+| Use this menu to create diagrams.                                   | This menu enables you to create diagrams.                                     |
 
 ---
 
@@ -169,22 +182,23 @@ Use exclamation marks only positively, not negatively. Use no more than one excl
 
 ## Numerical formatting
 
----
+***
 
 ### Currency and phone numbers
 
-- Currency: `$1,000,000.00`
-- Phone numbers: `+1 (212) 123 4567`
+* Currency: `$1,000,000.00`
+
+* Phone numbers: `+1 (212) 123 4567`
 
 ### Dates and times
 
-| Type | When and how to use | Example |
-|---|---|---|
-| Time | Within the current day, use uppercase AM or PM without periods | 2:00 PM |
-| 24-hour clock | Display the time without AM/PM | 14:00 |
-| Date | Show the date with the year. If it's within the current calendar year, don't show the year. | January 14 / Jan 3, 2012 / 10/23/2022 |
-| Timestamp | Display an exact time | 2:36:17 PM PST |
-| Approximate time | Round down to the largest and most recent date or time | In 5 minutes / 3 days ago |
+| Type             | When and how to use                                                                         | Example                               |
+| ---------------- | ------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Time             | Within the current day, use uppercase AM or PM without periods                              | 2:00 PM                               |
+| 24-hour clock    | Display the time without AM/PM                                                              | 14:00                                 |
+| Date             | Show the date with the year. If it's within the current calendar year, don't show the year. | January 14 / Jan 3, 2012 / 10/23/2022 |
+| Timestamp        | Display an exact time                                                                       | 2:36:17 PM PST                        |
+| Approximate time | Round down to the largest and most recent date or time                                      | In 5 minutes / 3 days ago             |
 
 ---
 
@@ -192,40 +206,43 @@ Use exclamation marks only positively, not negatively. Use no more than one excl
 
 Prepositions indicate relationships between different elements, actions, or concepts. Proper use maintains clarity and precision; misuse leads to confusion.
 
----
+***
 
 ### Conciseness — avoid overuse
 
 Minimize unnecessary prepositions. Omit them when they don't add meaning.
 
-| Do | Don't |
-|---|---|
+| Do                            | Don't                                                    |
+| ----------------------------- | -------------------------------------------------------- |
 | Manage notification settings. | The settings for managing notifications on your profile. |
-| Contact Support | Contact to Support |
+| Contact Support               | Contact to Support                                       |
+
 ### Accuracy and clarity
 
 Use prepositions that clearly express the relationship between actions, objects, or concepts.
 
-| Do | Don't |
-|---|---|
-| Upload to the server | Upload on the server |
+| Do                                   | Don't                      |
+| ------------------------------------ | -------------------------- |
+| Upload to the server                 | Upload on the server       |
 | Details on how to configure settings | Information about settings |
+
 ### Keep prepositional phrases short
 
 Avoid long prepositional chains — break them up for clarity.
 
-| Do | Don't |
-|---|---|
+| Do                                                       | Don't                                                            |
+| -------------------------------------------------------- | ---------------------------------------------------------------- |
 | Click the link in your email to view your order details. | Click on the link in the email for information about your order. |
+
 ### Consistency
 
 Standardize common prepositional phrases and use them consistently throughout the product.
 
-| Do | Don't |
-|---|---|
+| Do                                | Don't                             |
+| --------------------------------- | --------------------------------- |
 | Save the changes to your profile. | Save the changes on your profile. |
-| Drag the file into the folder | Drag the file to the folder |
-| Tap the icon | Tap on the icon |
+| Drag the file into the folder     | Drag the file to the folder       |
+| Tap the icon                      | Tap on the icon                   |
 
 ---
 
@@ -233,16 +250,21 @@ Standardize common prepositional phrases and use them consistently throughout th
 
 Spell out an acronym the first time it's mentioned. On subsequent references, use the abbreviation. If the abbreviation isn't clearly related to the full version, specify it in parentheses after the spelled-out version in the first instance.
 
----
+***
 
 Fully capitalize all letters in abbreviations:
 
-- PDF
-- AM/PM
-- FAQ
-- HTML
-- OK (not Ok or Okay)
-- HCL
+* PDF
+
+* AM/PM
+
+* FAQ
+
+* HTML
+
+* OK (not Ok or Okay)
+
+* HCL
 
 If there's a chance that an abbreviation might not be known to the target audience, spell it out in full the first time you use it. However, don't spell out commonly known abbreviations. If the abbreviation or acronym is well-known to the average client (for example, CIC or CDE), use it on the first reference without spelling it out.
 
@@ -258,21 +280,22 @@ Do not use "(s)" or "/s" after a noun to make it plural. If you must indicate bo
 
 ## Abbreviations and articles
 
----
+***
 
 ### Abbreviations
 
 Do not use "i.e." or "e.g." in UI copy. Avoid using a slash between two words to mean "and/or" — use the word "or" instead.
 
-| Do | Don't |
-|---|---|
+| Do                                   | Don't                      |
+| ------------------------------------ | -------------------------- |
 | You can select green, blue, or both. | You can select green/blue. |
+
 ### Articles
 
 Don't speak like a robot — use "a," "an," and "the" articles.
 
-| Do | Don't |
-|---|---|
+| Do                                           | Don't                                  |
+| -------------------------------------------- | -------------------------------------- |
 | Use the default JRE to run a shell instance. | Use default JRE to run shell instance. |
 
 ---
@@ -287,92 +310,114 @@ System states communicate the current condition of the platform or a specific vi
 
 Forms collect or update user data. Consistent structure, clear labels, and helpful guidance reduce friction and prevent errors.
 
----
+***
 
 ### When to use
 
-- To collect user input that affects data, configuration, or permissions.
-- To edit or update existing records or entities.
-- To guide users through multi-step flows where input drives behavior.
-- To allow users to provide comments and suggestions, or to confirm, approve, or reject requests that require context.
+* To collect user input that affects data, configuration, or permissions.
+
+* To edit or update existing records or entities.
+
+* To guide users through multi-step flows where input drives behavior.
+
+* To allow users to provide comments and suggestions, or to confirm, approve, or reject requests that require context.
 
 ### Types of forms
 
-| Type | Usage | Examples |
-|---|---|---|
-| Single page or simple form | Data entry for simple workflows | Editing a dataset name or description |
-| Stepper or multi-page form | Task-based workflows | Creating a data connection or access request |
-| Modal form | Short, focused tasks that require user confirmation | Adding a note or setting permissions |
+| Type                       | Usage                                               | Examples                                     |
+| -------------------------- | --------------------------------------------------- | -------------------------------------------- |
+| Single page or simple form | Data entry for simple workflows                     | Editing a dataset name or description        |
+| Stepper or multi-page form | Task-based workflows                                | Creating a data connection or access request |
+| Modal form                 | Short, focused tasks that require user confirmation | Adding a note or setting permissions         |
 
----
+***
 
 ### General form guidelines
 
 #### How to use
 
-- Be concise and directive: each label or helper text should clearly describe the required action.
-- Use sentence case for labels and titles.
+* Be concise and directive: each label or helper text should clearly describe the required action.
 
-| Do | Don't |
-|---|---|
+* Use sentence case for labels and titles.
+
+| Do         | Don't      |
+| ---------- | ---------- |
 | Group name | Group Name |
-- Clarify optional vs. required fields: mark required fields consistently using the asterisk (*) symbol or text label.
-- Avoid redundancy: if a section title already establishes context, field labels can be shorter.
-- Provide context when needed: helper text should explain the "why," never just restate the label.
-- Error text should guide correction.
 
-| Do | Don't |
-|---|---|
+* Clarify optional vs. required fields: mark required fields consistently using the asterisk (\*) symbol or text label.
+
+* Avoid redundancy: if a section title already establishes context, field labels can be shorter.
+
+* Provide context when needed: helper text should explain the "why," never just restate the label.
+
+* Error text should guide correction.
+
+| Do                 | Don't         |
+| ------------------ | ------------- |
 | Enter a valid date | Invalid input |
-- Success or confirmation text should be brief, reassuring, and specific. For example, `The policy was successfully created`.
-- Use progressive disclosure for field entry assistance: Label → Tooltip → Descriptive text → Link to docs.
+
+* Success or confirmation text should be brief, reassuring, and specific. For example, `The policy was successfully created`.
+
+* Use progressive disclosure for field entry assistance: Label → Tooltip → Descriptive text → Link to docs.
 
 #### Structure
 
-- Group related fields together under sections.
-- Always place the primary CTA at the bottom right for consistency.
-- Avoid multi-column layouts when possible - single column is easier to read. Exceptions such as separate fields for first and last names are acceptable.
+* Group related fields together under sections.
+
+* Always place the primary CTA at the bottom right for consistency.
+
+* Avoid multi-column layouts when possible - single column is easier to read. Exceptions such as separate fields for first and last names are acceptable.
 
 #### Behavior
 
-- Labels should be visible even when the field is in focus.
-- Include placeholder text only when it provides value - never to just repeat the label.
-- The primary CTA should be disabled until all required fields are filled.
-- Validate fields inline and provide red error text below the field. See [validation messages](validation-messages) for error text guidelines.
+* Labels should be visible even when the field is in focus.
 
----
+* Include placeholder text only when it provides value - never to just repeat the label.
+
+* The primary CTA should be disabled until all required fields are filled.
+
+* Validate fields inline and provide red error text below the field. See [validation messages](validation-messages) for error text guidelines.
+
+***
 
 ### Input labels and helper text
 
 #### Style
 
-- Labels describe the purpose of the field. They are always visible.
-- Helper text provides brief instruction or clarification below the field. Use it sparingly.
-- Placeholder text is a hint only - never a substitute for a label. It disappears when the user starts typing.
+* Labels describe the purpose of the field. They are always visible.
+
+* Helper text provides brief instruction or clarification below the field. Use it sparingly.
+
+* Placeholder text is a hint only - never a substitute for a label. It disappears when the user starts typing.
 
 #### Do / Don't
 
-| Do | Don't |
-|---|---|
+| Do                                                                              | Don't                                                 |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | Label: Connection name / Helper: Use a unique name to identify this connection. | Placeholder: Enter connection name (no visible label) |
-| Helper: Must be 8–32 characters. | Helper: Please enter a valid password. |
----
+| Helper: Must be 8–32 characters.                                                | Helper: Please enter a valid password.                |
+
+***
 
 ### Dropdown
 
 #### When to use
 
-- For lists of 5 to 20 options.
-- When the full list does not need to be visible at all times.
+* For lists of 5 to 20 options.
+
+* When the full list does not need to be visible at all times.
 
 #### Style
 
-- Label the dropdown clearly. The label should describe the category of options, not the action.
-- Close after selection.
-- Keep option phrasing consistent within the same dropdown.
-- Use sentence case for all options.
+* Label the dropdown clearly. The label should describe the category of options, not the action.
 
----
+* Close after selection.
+
+* Keep option phrasing consistent within the same dropdown.
+
+* Use sentence case for all options.
+
+***
 
 ### Calendar
 
@@ -384,63 +429,83 @@ For any interaction involving date ranges, filtering, or scheduling.
 
 #### Style
 
-- Use labels like `From` and `To`, or `Start date` and `End date` for range fields. Do not leave any fields unlabeled.
-- Display date formats clearly (MM/DD/YYYY or regional format) with placeholders or hints where appropriate.
-- Do not pre-fill dates for users.
+* Use labels like `From` and `To`, or `Start date` and `End date` for range fields. Do not leave any fields unlabeled.
+
+* Display date formats clearly (MM/DD/YYYY or regional format) with placeholders or hints where appropriate.
+
+* Do not pre-fill dates for users.
 
 #### Behavior
 
-- Support both typing and calendar picking.
-- Auto-close the calendar when the selection is complete.
-- Highlight today, weekends, and blocked dates visually when appropriate.
-- Visually display any selected range in the calendar.
+* Support both typing and calendar picking.
 
----
+* Auto-close the calendar when the selection is complete.
+
+* Highlight today, weekends, and blocked dates visually when appropriate.
+
+* Visually display any selected range in the calendar.
+
+***
 
 ### Toggle
 
 #### Style
 
-- Label the toggle next to or above the control. For example, **Enable alerts**.
-- Show the label for the state that is currently active. For example, show `Off` when off, `On` when on - but not both at the same time.
+* Label the toggle next to or above the control. For example, **Enable alerts**.
+
+* Show the label for the state that is currently active. For example, show `Off` when off, `On` when on - but not both at the same time.
 
 #### Behavior
 
-- The action should happen on toggle with no confirmation step.
-- Left = off, right = on.
-- Should update instantly unless a delay is unavoidable - show a loading indicator if delayed.
-- Do not use toggles for destructive or irreversible actions.
+* The action should happen on toggle with no confirmation step.
+
+* Left = off, right = on.
+
+* Should update instantly unless a delay is unavoidable - show a loading indicator if delayed.
+
+* Do not use toggles for destructive or irreversible actions.
 
 #### Toggle vs Checkbox vs Radio button
 
 **Use a toggle when:**
-- The action takes effect immediately.
-- It represents a system state (for example, ON/OFF, enabled/disabled).
-- It is a binary setting that persists (for example, dark mode, notifications).
 
-**Use a [checkbox](/components/form-input-selection/checkbox-with-label/) when:**
-- The user is selecting one or more items.
-- The action does not take effect immediately (typically part of a form or group submission).
-- It is a yes/no decision that is reviewed later. For example, **Agree to terms and conditions** or **Subscribe to newsletter**.
+* The action takes effect immediately.
 
----
+* It represents a system state (for example, ON/OFF, enabled/disabled).
+
+* It is a binary setting that persists (for example, dark mode, notifications).
+
+**Use a** **[checkbox](/components/form-input-selection/checkbox-with-label/)** **when:**
+
+* The user is selecting one or more items.
+
+* The action does not take effect immediately (typically part of a form or group submission).
+
+* It is a yes/no decision that is reviewed later. For example, **Agree to terms and conditions** or **Subscribe to newsletter**.
+
+***
 
 ### Radio button
 
 #### When to use
 
-- When the user must select exactly one option from a short visible list (typically two to six options).
-- When all choices should be visible up front rather than hidden in a dropdown.
+* When the user must select exactly one option from a short visible list (typically two to six options).
+
+* When all choices should be visible up front rather than hidden in a dropdown.
 
 #### Style
 
-- Use short, descriptive labels that clearly state each option.
-- Write labels as direct answers to the group's prompt or question. For example, **Yes / No** instead of `Select yes if you agree`.
-- Ensure the group label or question is always visible next to the options.
-- Avoid jargon or abbreviations.
-- Keep labels parallel in structure - all nouns, or all verb phrases.
+* Use short, descriptive labels that clearly state each option.
 
----
+* Write labels as direct answers to the group's prompt or question. For example, **Yes / No** instead of `Select yes if you agree`.
+
+* Ensure the group label or question is always visible next to the options.
+
+* Avoid jargon or abbreviations.
+
+* Keep labels parallel in structure - all nouns, or all verb phrases.
+
+***
 
 ### Radio button card format
 
@@ -448,17 +513,23 @@ Use card-format radio buttons instead of traditional radio buttons when each opt
 
 #### When to use
 
-- Primary decision point: when the consequences of the choice are important, or they drive a main workflow or journey.
-- Examples: pricing tiers, template selections (for example, use cases), or layout choices.
+* Primary decision point: when the consequences of the choice are important, or they drive a main workflow or journey.
+
+* Examples: pricing tiers, template selections (for example, use cases), or layout choices.
 
 #### Behavior
 
-- Indicate selected state visually (`Selected` highlight border, and so on).
-- Click anywhere on the tile to toggle selection.
-- For multi-select: use checkbox behavior. For single-select: use radio group behavior.
-- Maintain selection across steps if part of a multi-step process.
-- Title: short, descriptive, and consistent across tiles.
-- Supporting text: use only in the large variant.
+* Indicate selected state visually (`Selected` highlight border, and so on).
+
+* Click anywhere on the tile to toggle selection.
+
+* For multi-select: use checkbox behavior. For single-select: use radio group behavior.
+
+* Maintain selection across steps if part of a multi-step process.
+
+* Title: short, descriptive, and consistent across tiles.
+
+* Supporting text: use only in the large variant.
 
 ---
 
@@ -466,19 +537,23 @@ Use card-format radio buttons instead of traditional radio buttons when each opt
 
 Grid and spacing guidelines govern the visual rhythm of the interface. Consistent spatial decisions make the UI easier to scan and reduce cognitive load.
 
----
+***
 
 ### Content implications
 
-- Short labels and values work best in tight grid contexts. Avoid wrapping text in narrow columns.
-- When content must appear in a constrained space, abbreviate predictably or truncate with a tooltip.
-- Do not force content into a fixed width by using non-breaking spaces or artificial line breaks.
+* Short labels and values work best in tight grid contexts. Avoid wrapping text in narrow columns.
+
+* When content must appear in a constrained space, abbreviate predictably or truncate with a tooltip.
+
+* Do not force content into a fixed width by using non-breaking spaces or artificial line breaks.
 
 ### Density considerations
 
-- Default density is appropriate for most catalog views.
-- Compact density is appropriate for power users working with large datasets where row count matters.
-- Do not vary density within the same table or list view.
+* Default density is appropriate for most catalog views.
+
+* Compact density is appropriate for power users working with large datasets where row count matters.
+
+* Do not vary density within the same table or list view.
 
 ---
 
@@ -486,25 +561,31 @@ Grid and spacing guidelines govern the visual rhythm of the interface. Consisten
 
 Icons support communication by providing visual cues alongside or instead of text. They should reinforce meaning, not replace it, unless paired with a tooltip or accessible label.
 
----
+***
 
 ### When to use
 
-- To supplement a text label and help users scan faster.
-- For icon-only controls (such as toolbar buttons) that have a visible tooltip or aria-label.
-- Do not use an icon as the only affordance for a critical action - always pair with a text label or tooltip.
+* To supplement a text label and help users scan faster.
+
+* For icon-only controls (such as toolbar buttons) that have a visible tooltip or aria-label.
+
+* Do not use an icon as the only affordance for a critical action - always pair with a text label or tooltip.
 
 ### Style
 
-- Use icons from the approved Actian icon set only.
-- Do not add decorative icons that have no functional meaning.
-- Icon labels (tooltips or aria-labels) use sentence case and follow the same verb/noun conventions as button labels.
+* Use icons from the approved Actian icon set only.
+
+* Do not add decorative icons that have no functional meaning.
+
+* Icon labels (tooltips or aria-labels) use sentence case and follow the same verb/noun conventions as button labels.
 
 ### Accessibility
 
-- Every icon-only control must have an accessible name via aria-label or a visually hidden text label.
-- Decorative icons must be marked `aria-hidden="true"` so screen readers skip them.
-- Do not rely on color alone to convey the meaning of an icon.
+* Every icon-only control must have an accessible name via aria-label or a visually hidden text label.
+
+* Decorative icons must be marked `aria-hidden="true"` so screen readers skip them.
+
+* Do not rely on color alone to convey the meaning of an icon.
 
 ---
 
@@ -512,33 +593,37 @@ Icons support communication by providing visual cues alongside or instead of tex
 
 Lineage views display the origin, transformation history, and downstream dependencies of data assets. The UI uses graph-based visualizations with nodes and edges. Copy in this context must be precise and unambiguous to support data governance workflows.
 
----
+***
 
 ### When to use
 
-- On dataset and column detail pages where traceability is relevant.
-- In audit and governance workflows where users need to trace data origin or impact.
+* On dataset and column detail pages where traceability is relevant.
+
+* In audit and governance workflows where users need to trace data origin or impact.
 
 ### Node labels
 
-- Use the exact asset name as the node label - do not paraphrase or abbreviate.
-- Include the asset type as a secondary label below the name. For example, `Orders` with `Table` below it.
-- Use sentence case for all labels.
+* Use the exact asset name as the node label - do not paraphrase or abbreviate.
+
+* Include the asset type as a secondary label below the name. For example, `Orders` with `Table` below it.
+
+* Use sentence case for all labels.
 
 ### Edge and relationship labels
 
-- Describe the relationship with a short verb phrase. For example, `Reads from`, `Writes to`, `Transforms`.
-- Avoid technical jargon that non-engineer users will not understand.
+* Describe the relationship with a short verb phrase. For example, `Reads from`, `Writes to`, `Transforms`.
+
+* Avoid technical jargon that non-engineer users will not understand.
 
 ### Terminology
 
-| Term | Definition |
-|---|---|
-| Upstream | Assets that provide data to the selected asset |
-| Downstream | Assets that consume data from the selected asset |
-| Source | The originating system or dataset |
+| Term           | Definition                                         |
+| -------------- | -------------------------------------------------- |
+| Upstream       | Assets that provide data to the selected asset     |
+| Downstream     | Assets that consume data from the selected asset   |
+| Source         | The originating system or dataset                  |
 | Transformation | A processing step that modifies or aggregates data |
-| Impact | The downstream effect of a change to this asset |
+| Impact         | The downstream effect of a change to this asset    |
 
 ---
 
@@ -554,28 +639,32 @@ Lineage views display the origin, transformation history, and downstream depende
 
 Object preview panels display a summary of an asset's key attributes without requiring full navigation to the detail page. They appear as side panels or overlays and are used to support quick inspection workflows.
 
----
+***
 
 ### When to use
 
-- When a user hovers over or clicks an item in a list or search result and wants a quick view of its properties.
-- To reduce context switching during browsing or review tasks.
+* When a user hovers over or clicks an item in a list or search result and wants a quick view of its properties.
+
+* To reduce context switching during browsing or review tasks.
 
 ### Style
 
-- Panel title is the asset name. Use the exact name - do not rephrase.
-- Use short attribute labels (one to two words) followed by their values.
-- Group related attributes under a subheading where the panel is long.
-- Include a **View full details** link at the bottom to navigate to the full detail page.
+* Panel title is the asset name. Use the exact name - do not rephrase.
+
+* Use short attribute labels (one to two words) followed by their values.
+
+* Group related attributes under a subheading where the panel is long.
+
+* Include a **View full details** link at the bottom to navigate to the full detail page.
 
 ### Attribute label examples
 
-| Use | Avoid |
-|---|---|
-| Owner | Assigned owner |
+| Use           | Avoid                     |
+| ------------- | ------------------------- |
+| Owner         | Assigned owner            |
 | Last modified | Date of last modification |
-| Type | Object type |
-| Description | Asset description |
+| Type          | Object type               |
+| Description   | Asset description         |
 
 ---
 
@@ -583,24 +672,29 @@ Object preview panels display a summary of an asset's key attributes without req
 
 Onboarding helps users understand the platform and reach their first success quickly. Copy should be encouraging without being patronizing.
 
----
+***
 
 ### When to use
 
-- On first login or when a user accesses a new product area for the first time.
-- As part of [wizard](wizards) flows for complex setup tasks.
+* On first login or when a user accesses a new product area for the first time.
+
+* As part of [wizard](wizards) flows for complex setup tasks.
 
 ### Style
 
-- Lead with what the user can do, not what the product does.
-- Keep each step focused on one task.
-- Use action-oriented **CTAs**. For example, **Set up your first connection**.
-- Do not use marketing language in onboarding flows.
+* Lead with what the user can do, not what the product does.
+
+* Keep each step focused on one task.
+
+* Use action-oriented **CTAs**. For example, **Set up your first connection**.
+
+* Do not use marketing language in onboarding flows.
 
 ### Wizard step titles
 
-- Step titles are short imperative phrases. For example, `Choose a data source`, `Configure access`.
-- Do not number the step in the title text - the stepper component handles that.
+* Step titles are short imperative phrases. For example, `Choose a data source`, `Configure access`.
+
+* Do not number the step in the title text - the stepper component handles that.
 
 ---
 
@@ -608,27 +702,31 @@ Onboarding helps users understand the platform and reach their first success qui
 
 Related content panels surface assets or resources connected to the currently viewed item. They help users discover relevant datasets, reports, lineage connections, or documentation without leaving their current context.
 
----
+***
 
 ### When to use
 
-- On asset detail pages to surface downstream or upstream dependencies.
-- To show related documentation, reports, or catalog entries.
-- Do not use related content panels for primary navigation - they are supplementary.
+* On asset detail pages to surface downstream or upstream dependencies.
+
+* To show related documentation, reports, or catalog entries.
+
+* Do not use related content panels for primary navigation - they are supplementary.
 
 ### Style
 
-- Panel heading describes the relationship type. For example, `Related datasets`, `Used in reports`.
-- Each item in the panel shows the asset name as a link, plus one or two metadata attributes (type, owner, or last modified).
-- If the panel is empty, show a brief empty state message. For example, `No related datasets found`.
+* Panel heading describes the relationship type. For example, `Related datasets`, `Used in reports`.
+
+* Each item in the panel shows the asset name as a link, plus one or two metadata attributes (type, owner, or last modified).
+
+* If the panel is empty, show a brief empty state message. For example, `No related datasets found`.
 
 ### Do / Don't
 
-| Do | Don't |
-|---|---|
-| Related datasets | Other items |
+| Do                         | Don't                         |
+| -------------------------- | ----------------------------- |
+| Related datasets           | Other items                   |
 | No related datasets found. | (empty panel with no message) |
-| Used in 3 reports | Reports: 3 |
+| Used in 3 reports          | Reports: 3                    |
 
 ---
 
@@ -636,32 +734,39 @@ Related content panels surface assets or resources connected to the currently vi
 
 Validation messages appear inline with [form](forms) fields to help users correct input errors. They are the primary mechanism for communicating what went wrong and how to fix it.
 
----
+***
 
 ### When to use
 
-- On field blur (when the user leaves a field), not on every keystroke.
-- On form submission when required fields are empty or invalid.
-- Do not show validation errors before the user has interacted with a field.
+* On field blur (when the user leaves a field), not on every keystroke.
+
+* On form submission when required fields are empty or invalid.
+
+* Do not show validation errors before the user has interacted with a field.
 
 ### Style
 
-- Be specific: say what is wrong and how to fix it.
-- Use plain language - do not expose technical error codes or internal validation rule names.
-- Keep messages to one sentence.
-- Do not use "Invalid" as a standalone message - explain why it is invalid.
-- Do not blame the user. Use neutral, factual language.
-- Do not use "Please" - omit it.
+* Be specific: say what is wrong and how to fix it.
+
+* Use plain language - do not expose technical error codes or internal validation rule names.
+
+* Keep messages to one sentence.
+
+* Do not use "Invalid" as a standalone message - explain why it is invalid.
+
+* Do not blame the user. Use neutral, factual language.
+
+* Do not use "Please" - omit it.
 
 ### Do / Don't
 
-| Do | Don't |
-|---|---|
-| Enter a valid email address. | Invalid email. |
-| Connection name is required. | Please fill out this field. |
-| Password must be 8–32 characters. | Password does not meet requirements. |
-| This name is already in use. Choose a different name. | Duplicate entry error. |
-| Select at least one data domain. | You must make a selection. |
+| Do                                                    | Don't                                |
+| ----------------------------------------------------- | ------------------------------------ |
+| Enter a valid email address.                          | Invalid email.                       |
+| Connection name is required.                          | Please fill out this field.          |
+| Password must be 8–32 characters.                     | Password does not meet requirements. |
+| This name is already in use. Choose a different name. | Duplicate entry error.               |
+| Select at least one data domain.                      | You must make a selection.           |
 
 ---
 
@@ -669,32 +774,41 @@ Validation messages appear inline with [form](forms) fields to help users correc
 
 Wizards are guided multi-step flows that walk users through complex setup or configuration tasks. They combine steppers, forms, and confirmation screens into a linear sequence with clear progression.
 
----
+***
 
 ### When to use
 
-- For complex setup tasks that cannot be completed on a single form - for example, creating a connection, configuring a pipeline, or onboarding a new dataset.
-- When the steps have a natural sequence and later steps depend on earlier choices.
-- Do not use a wizard for simple tasks that can be completed in a single form or modal.
+* For complex setup tasks that cannot be completed on a single form - for example, creating a connection, configuring a pipeline, or onboarding a new dataset.
+
+* When the steps have a natural sequence and later steps depend on earlier choices.
+
+* Do not use a wizard for simple tasks that can be completed in a single form or modal.
 
 ### Step titles
 
-- Short imperative verb phrases. For example, `Choose a connector`, `Set connection details`, `Test and save`.
-- Parallel structure across all steps.
-- Do not repeat the wizard title in each step title.
+* Short imperative verb phrases. For example, `Choose a connector`, `Set connection details`, `Test and save`.
+
+* Parallel structure across all steps.
+
+* Do not repeat the wizard title in each step title.
 
 ### In-step content
 
-- Use a short paragraph at the top of each step to explain what the user is about to do and why.
-- Keep explanatory text to two sentences maximum.
-- Use inline help (popovers or helper text) for field-level guidance rather than long step-level explanations.
+* Use a short paragraph at the top of each step to explain what the user is about to do and why.
+
+* Keep explanatory text to two sentences maximum.
+
+* Use inline help (popovers or helper text) for field-level guidance rather than long step-level explanations.
 
 ### Confirmation and summary step
 
-- The final step before submission should present a summary of the user's choices.
-- Label the summary step `Review` or `Review and create`.
-- Use the same attribute labels as the preceding form fields - do not rephrase.
-- Show an edit link next to each section so the user can go back and change specific settings.
+* The final step before submission should present a summary of the user's choices.
+
+* Label the summary step `Review` or `Review and create`.
+
+* Use the same attribute labels as the preceding form fields - do not rephrase.
+
+* Show an edit link next to each section so the user can go back and change specific settings.
 
 ### Navigation buttons
 
@@ -702,9 +816,9 @@ Follow the [stepper button terminology guidelines](/components/navigation/steppe
 
 ### Do / Don't
 
-| Do | Don't |
-|---|---|
-| Choose a connector | Connector selection step |
-| Review and create | Confirmation |
-| Create connection | Finish / Submit / Done |
+| Do                                                                                               | Don't                                                               |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Choose a connector                                                                               | Connector selection step                                            |
+| Review and create                                                                                | Confirmation                                                        |
+| Create connection                                                                                | Finish / Submit / Done                                              |
 | Connect to your data source. This will allow the platform to read and write data on your behalf. | Please complete all required fields in this step before proceeding. |
