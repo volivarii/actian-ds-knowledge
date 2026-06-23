@@ -24,6 +24,7 @@ import { GraphHealthTab } from "./GraphHealthTab";
 import { AuthoringWorkspace } from "./AuthoringWorkspace";
 import { DraftInbox } from "./DraftInbox";
 import { draftStoreSingleton } from "../drafts/store-instance";
+import { isWysiwygEnabled, setWysiwygEnabled } from "../lib/editorFlags";
 
 /** Section currently under the editor caret. MarkdownEditScreen renders
  *  the Section Inspector as a right-side panel alongside the body editor
@@ -156,6 +157,8 @@ export function EditorShell({
   const [pendingPaths, setPendingPaths] = useState<Set<string>>(() =>
     draftStoreSingleton.allPaths(),
   );
+
+  const [wysiwygOn, setWysiwygOn] = useState(isWysiwygEnabled);
 
   useEffect(() => {
     const refresh = () => setPendingPaths(draftStoreSingleton.allPaths());
@@ -317,6 +320,12 @@ export function EditorShell({
         pendingPaths={pendingPaths}
         activePath={activePath}
         onSelect={setActivePathSafe}
+        wysiwygOn={wysiwygOn}
+        onToggleWysiwyg={() => {
+          const next = !wysiwygOn;
+          setWysiwygEnabled(next);
+          setWysiwygOn(next);
+        }}
       />
       <Box
         flexGrow="1"

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Octokit } from "@octokit/rest";
-import { Badge, Box, Flex, Heading, Text } from "@radix-ui/themes";
+import { Badge, Box, Flex, Heading, Switch, Text } from "@radix-ui/themes";
 import {
   DndContext,
   closestCenter,
@@ -32,6 +32,8 @@ interface SidebarProps {
   activePath: string | null;
   // `null` selects the Coverage dashboard (the landing surface).
   onSelect: (path: string | null) => void;
+  wysiwygOn?: boolean;
+  onToggleWysiwyg?: () => void;
 }
 
 // Same set as the original MetaEditScreen — components/src dirs that aren't
@@ -147,6 +149,8 @@ export function Sidebar({
   pendingPaths,
   activePath,
   onSelect,
+  wysiwygOn = false,
+  onToggleWysiwyg,
 }: SidebarProps) {
   const [entries, setEntries] = useState<GroupedEntries | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -1013,6 +1017,32 @@ export function Sidebar({
           onCancel={() => setDeleteDialog(null)}
           onConfirm={handleDeleteConfirm}
         />
+      )}
+      {onToggleWysiwyg && (
+        <Flex
+          align="center"
+          gap="2"
+          px="3"
+          py="2"
+          style={{ borderTop: "1px solid var(--gray-4)", marginTop: "auto" }}
+        >
+          <Switch
+            id="wysiwyg-toggle"
+            size="1"
+            checked={wysiwygOn}
+            onCheckedChange={onToggleWysiwyg}
+            aria-label="Toggle WYSIWYG editor alpha"
+          />
+          <Text
+            as="label"
+            htmlFor="wysiwyg-toggle"
+            size="1"
+            color="gray"
+            style={{ cursor: "pointer" }}
+          >
+            WYSIWYG editor (alpha)
+          </Text>
+        </Flex>
       )}
     </Flex>
   );
