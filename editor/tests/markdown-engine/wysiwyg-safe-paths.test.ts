@@ -9,12 +9,19 @@ import { roundTripMarkdown } from "../../src/markdown-engine/milkdownPreset";
 import { splitRawFrontmatter } from "../../src/markdown-engine/rawFrontmatter";
 
 const require = createRequire(import.meta.url);
-const { deriveFromMarkdown } = require("../../../scripts/lib/section-dist/index.js");
-const { SKIP_H2_SLUGS } = require("../../../scripts/foundations/derive-foundations.js");
+const {
+  deriveFromMarkdown,
+} = require("../../../scripts/lib/section-dist/index.js");
+const {
+  SKIP_H2_SLUGS,
+} = require("../../../scripts/foundations/derive-foundations.js");
 const domains = require("../../../domains.json") as {
   domains: Record<string, { wysiwyg?: { safePaths?: string[] } }>;
 };
-const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const REPO = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../..",
+);
 
 const SAFE_PATHS: string[] = Object.values(domains.domains).flatMap(
   (d) => d.wysiwyg?.safePaths ?? [],
@@ -22,7 +29,9 @@ const SAFE_PATHS: string[] = Object.values(domains.domains).flatMap(
 
 // Per-file dist-equivalence is asserted only for the section-dist domains.
 // Content uses other engines; its dist-safety is proven holistically by the
-// derive-no-op gate after the baseline (see plan Task 5 / verification).
+// derive-no-op gate after the baseline (see plan Task 5 / verification), and on
+// every future content edit by the CI derive-and-diff gate, NOT by this unit
+// guard. If that CI gate were removed, content would lose its dist safety net.
 function deriveFiles(body: string, rel: string): unknown | null {
   if (rel.startsWith("foundations/src/")) {
     return deriveFromMarkdown(body, {
@@ -49,10 +58,18 @@ for (const rel of SAFE_PATHS) {
     const rt2 = await roundTripMarkdown(rt1);
     assert.equal(rt2, rt1, "round-trip must be idempotent (RT2 === RT1)");
     assert.ok(!/\{:/.test(rt1), "no Kramdown IAL in round-tripped body");
-    assert.equal(rt1.match(/<(?!br\b\/?>)[A-Za-z]/g), null, "no inline HTML except <br>");
+    assert.equal(
+      rt1.match(/<(?!br\b\/?>)[A-Za-z]/g),
+      null,
+      "no inline HTML except <br>",
+    );
     const want = deriveFiles(body, rel);
     if (want !== null) {
-      assert.deepEqual(deriveFiles(rt1, rel), want, "section-dist must be unchanged by the round-trip");
+      assert.deepEqual(
+        deriveFiles(rt1, rel),
+        want,
+        "section-dist must be unchanged by the round-trip",
+      );
     }
   });
 }

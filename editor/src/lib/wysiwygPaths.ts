@@ -41,9 +41,11 @@ export function isWordsToAvoidFile(path: string): boolean {
   return path === "content/src/writing/words-to-avoid.md";
 }
 
-/** The WYSIWYG body editor is used only for per-record markdown whose body
- *  round-trips dist-equivalently (app-context + categories + registry-safe),
- *  and only when the alpha flag is on. Precise predicates — not prefix matches. */
+/** The WYSIWYG body editor is used only for markdown whose body round-trips
+ *  safely (app-context, categories, and registry-safe paths), and only when the
+ *  alpha flag is on. Foundations/accessibility are dist-equivalent (guard-proven
+ *  per file); content is rendered-equivalent (proven holistically by the
+ *  derive-no-op gate). Precise predicates, not prefix matches. */
 export function shouldUseWysiwyg(path: string): boolean {
   return (
     isWysiwygEnabled() &&
