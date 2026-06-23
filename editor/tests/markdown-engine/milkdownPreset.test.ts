@@ -1,7 +1,6 @@
 import "../setup-happy-dom";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { Editor, rootCtx, defaultValueCtx } from "@milkdown/core";
 import { commonmark } from "@milkdown/preset-commonmark";
 import { getMarkdown } from "@milkdown/utils";
@@ -31,11 +30,23 @@ test("gfm parses a table as a real node — commonmark leaves it literal (discri
   const gfmOut = await roundTripMarkdown(table);
   const cmOut = await commonmarkOnly(table);
   // Anti-vacuity anchor: if gfm were removed, gfmOut would equal cmOut.
-  assert.notEqual(gfmOut, cmOut, "gfm must transform the table; commonmark-only cannot");
+  assert.notEqual(
+    gfmOut,
+    cmOut,
+    "gfm must transform the table; commonmark-only cannot",
+  );
   // commonmark keeps the raw `---` delimiter (it never built a table node);
   // gfm re-serializes through a real table node, normalizing the delimiter.
-  assert.match(cmOut, /\| --- \| --- \|/, "commonmark leaves the raw delimiter (A/B is real)");
-  assert.doesNotMatch(gfmOut, /---/, "gfm normalizes the raw `---` delimiter away");
+  assert.match(
+    cmOut,
+    /\| --- \| --- \|/,
+    "commonmark leaves the raw delimiter (A/B is real)",
+  );
+  assert.doesNotMatch(
+    gfmOut,
+    /---/,
+    "gfm normalizes the raw `---` delimiter away",
+  );
   // content preserved + idempotent under gfm.
   assert.match(gfmOut, /\| *A *\| *B *\|/, "header preserved");
   assert.match(gfmOut, /\| *1 *\| *2 *\|/, "body cells preserved");
@@ -51,7 +62,11 @@ test("gfm constructs are NOT degraded to escaped literal text (discriminating)",
     /\\~/,
     "commonmark-only escapes ~~ (A/B is real)",
   );
-  assert.doesNotMatch(strike, /\\~/, "gfm must NOT backslash-escape strikethrough");
+  assert.doesNotMatch(
+    strike,
+    /\\~/,
+    "gfm must NOT backslash-escape strikethrough",
+  );
   assert.match(strike, /~~gone~~/, "strikethrough content preserved");
 
   // task list: commonmark escapes the `[ ]` checkbox to `\[ ]`; gfm keeps a task item.
@@ -62,26 +77,52 @@ test("gfm constructs are NOT degraded to escaped literal text (discriminating)",
     /\\\[/,
     "commonmark-only escapes the checkbox (A/B is real)",
   );
-  assert.doesNotMatch(task, /\\\[/, "gfm must NOT backslash-escape the task checkbox");
+  assert.doesNotMatch(
+    task,
+    /\\\[/,
+    "gfm must NOT backslash-escape the task checkbox",
+  );
   assert.match(task, /\[[ xX]\]\s+todo item/, "task content preserved");
 
   // idempotent under gfm.
-  assert.equal(await roundTripMarkdown(strike), strike, "strikethrough idempotent");
+  assert.equal(
+    await roundTripMarkdown(strike),
+    strike,
+    "strikethrough idempotent",
+  );
   assert.equal(await roundTripMarkdown(task), task, "task list idempotent");
 });
 
-test("gfm keeps a real table-heavy file's heading + anchor intact (vs commonmark) — discriminating", async () => {
-  // accessibility/aria-labels.md is table-heavy with no frontmatter. commonmark
-  // cannot parse its tables → its output diverges; gfm parses them and keeps the
-  // leading `## 6. ... {#anchor}` heading intact and unescaped.
-  const body = readFileSync(
-    new URL("../../../accessibility/src/aria-labels.md", import.meta.url).pathname,
-    "utf8",
-  );
+test("gfm keeps a table-heavy heading + {#anchor} intact (vs commonmark) — discriminating", async () => {
+  // A table-heavy section with a Kramdown {#anchor} heading. commonmark cannot
+  // parse the pipe table → leaves the rows literal, so its output diverges from
+  // gfm, which parses + normalizes the (deliberately ragged) table and keeps the
+  // leading `## ... {#anchor}` heading intact and unescaped. Inline fixture, NOT a
+  // live content file — so WYSIWYG baseline normalization can't invalidate it
+  // (this previously read accessibility/src/aria-labels.md, which is now gated).
+  const body = [
+    "## 6. ARIA & Labels {#aria-labels}",
+    "",
+    "Designers annotate specs. Engineering implements.",
+    "",
+    "| Attribute | When to use |",
+    "|---|------------------------------|",
+    "| aria-label | Element has no visible text (icon buttons) |",
+    "| aria-labelledby | A visible element labels this one |",
+    "",
+  ].join("\n");
   const gfmOut = await roundTripMarkdown(body);
   const cmOut = await commonmarkOnly(body);
-  assert.notEqual(gfmOut, cmOut, "gfm parses the tables; commonmark cannot → outputs differ");
-  assert.match(gfmOut, /## 6\. ARIA & Labels/, "leading heading text intact under gfm");
+  assert.notEqual(
+    gfmOut,
+    cmOut,
+    "gfm parses the tables; commonmark cannot → outputs differ",
+  );
+  assert.match(
+    gfmOut,
+    /## 6\. ARIA & Labels/,
+    "leading heading text intact under gfm",
+  );
   assert.match(gfmOut, /\{#aria-labels\}/, "{#anchor} preserved under gfm");
   assert.doesNotMatch(gfmOut, /\\#/, "no backslash-escaped hashes under gfm");
 });

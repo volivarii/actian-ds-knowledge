@@ -46,10 +46,17 @@ for (const rel of SAFE_PATHS) {
     const rt2 = await roundTripMarkdown(rt1);
     assert.equal(rt2, rt1, "round-trip must be idempotent (RT2 === RT1)");
     assert.ok(!/\{:/.test(rt1), "no Kramdown IAL in round-tripped body");
+    // Fail-closed on raw inline HTML, with two principled exceptions:
+    //   • code spans / fenced blocks hold LITERAL text (e.g. `Source: <asset>`),
+    //     not HTML — strip them before the scan so they can't false-positive.
+    //   • <br> and the registered <Media> directive round-trip cleanly; the
+    //     per-file idempotency + dist-equivalence asserts above/below still
+    //     guard them, so allowlist them here.
+    const htmlScan = rt1.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
     assert.equal(
-      rt1.match(/<(?!br\b\/?>)[A-Za-z]/g),
+      htmlScan.match(/<(?!br\b\/?>|Media\b)[A-Za-z]/g),
       null,
-      "no inline HTML except <br>",
+      "no inline HTML except <br> and the <Media> directive (code spans ignored)",
     );
     const want = deriveEquivalenceView(domains, rel, body);
     if (want !== null) {
