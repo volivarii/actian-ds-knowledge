@@ -11,7 +11,9 @@
     "_note": {
       "type": "string",
       "description": "Free-text provenance note for human readers (not consumed by tooling).",
-      "examples": ["Per-domain authoring contract. Hand-authored source of truth."]
+      "examples": [
+        "Per-domain authoring contract. Hand-authored source of truth."
+      ]
     },
     "domains": {
       "type": "object",
@@ -37,18 +39,31 @@
     "unit": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["summary", "src", "generator", "frontmatterSchema", "body", "distShape"],
+      "required": [
+        "summary",
+        "src",
+        "generator",
+        "frontmatterSchema",
+        "body",
+        "distShape"
+      ],
       "properties": {
         "summary": {
           "type": "string",
           "minLength": 1,
           "description": "One-line human description of the domain and how its body is handled.",
-          "examples": ["Component category defaults — body mirrored verbatim to dist .md."]
+          "examples": [
+            "Component category defaults — body mirrored verbatim to dist .md."
+          ]
         },
         "src": {
           "type": ["string", "null"],
           "description": "Source location glob (or exact file); null for body-less domains derived from dist (e.g. graph).",
-          "examples": ["components/src/categories/*.md", "tokens/tokens.json", null]
+          "examples": [
+            "components/src/categories/*.md",
+            "tokens/tokens.json",
+            null
+          ]
         },
         "generator": {
           "type": ["string", "null"],
@@ -87,7 +102,27 @@
           }
         },
         "distShape": {
-          "enum": ["per-record+bundle", "pattern-H-tree", "single-object", "embedded", "none"]
+          "enum": [
+            "per-record+bundle",
+            "pattern-H-tree",
+            "single-object",
+            "embedded",
+            "none"
+          ]
+        },
+        "wysiwyg": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["safePaths"],
+          "description": "WYSIWYG enablement: explicit allowlist of source paths whose Milkdown body round-trip is proven dist-safe (idempotent + fail-closed; + dist-equivalent for section-dist domains). Consumed by the editor gate, the drift guard, and the baseline runner.",
+          "properties": {
+            "safePaths": {
+              "type": "array",
+              "items": { "type": "string" },
+              "uniqueItems": true,
+              "description": "Repo-relative .md paths in this domain proven WYSIWYG-safe."
+            }
+          }
         }
       }
     }
