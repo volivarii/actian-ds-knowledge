@@ -52,7 +52,10 @@ export function isPlainMarkdown(path: string): boolean {
       /^components\/src\/(?!categories\/|AUTHORING\.md|EDITING-GUIDE\.md)[^/]+\/[^/]+\.md$/.test(
         path,
       ) ||
-      /^content\/src\/(patterns|product|writing)\/[^/]+\.md$/.test(path)) &&
+      /^content\/src\/(patterns|product|writing)\/[^/]+\.md$/.test(path) ||
+      /^content\/src\/(?!AUTHORING\.md$|README\.md$|content-index\.md$)[^/]+\.md$/.test(
+        path,
+      )) &&
     !/AUTHORING\.md$/.test(path)
   );
 }
