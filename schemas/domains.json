@@ -115,12 +115,23 @@
           "additionalProperties": false,
           "required": ["safePaths"],
           "description": "WYSIWYG enablement: explicit allowlist of source paths whose Milkdown body round-trip is proven dist-safe (idempotent + fail-closed; + dist-equivalent for section-dist domains). Consumed by the editor gate, the drift guard, and the baseline runner.",
+          "examples": [
+            {
+              "safePaths": [
+                "foundations/src/intro.md",
+                "accessibility/src/principles.md"
+              ]
+            }
+          ],
           "properties": {
             "safePaths": {
               "type": "array",
               "items": { "type": "string" },
               "uniqueItems": true,
-              "description": "Repo-relative .md paths in this domain proven WYSIWYG-safe."
+              "description": "Repo-relative .md paths in this domain proven WYSIWYG-safe.",
+              "examples": [
+                ["foundations/src/intro.md", "content/src/global-guidelines.md"]
+              ]
             }
           }
         }
