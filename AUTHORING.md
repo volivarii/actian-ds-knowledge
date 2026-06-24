@@ -76,6 +76,7 @@ These apply to every domain's markdown body — tables appear in content, compon
 
 - **Tables must not have empty cells.** Use `—` (em-dash, U+2014) for a no-entry / not-applicable cell. An empty cell round-trips through the WYSIWYG editor to `<br />`, which the fail-closed drift guard rejects (and which would leak literal HTML into the derived dist).
 - **No Jekyll/Kramdown attribute lists** (e.g. `{: .do-dont-table}`) in source. They are a docs-renderer concern, not source-of-truth content — see `GOVERNANCE.md` P1 — and corrupt the WYSIWYG round-trip. Styling is the consumer's job.
+- **Wrap literal values in backticks.** Identifiers, filenames, URLs, emails, and placeholders (e.g. `` `Q4_sales_report` ``, `` `http://example.com` ``, `` `[term]` ``) belong in code spans. Left bare, the WYSIWYG round-trip escapes or autolinks them (`\_`, `\[`, `<http://…>`) — rendered-identical but byte-different, so it trips the strict drift guard. Backticks also read better in docs.
 
 ## Cross-references
 

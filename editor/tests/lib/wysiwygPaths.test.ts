@@ -72,8 +72,8 @@ test("shouldUseWysiwyg requires the flag AND an app-context OR category record",
   // Slice 4 recovered button/behavior + button/design (<Media> allowlist) → eligible.
   assert.equal(shouldUseWysiwyg("components/src/button/behavior.md"), true);
   assert.equal(shouldUseWysiwyg("components/src/button/design.md"), true);
-  // Dropped stragglers stay CodeMirror (link/table — sections/escape drift, slice 4 tail).
-  assert.equal(shouldUseWysiwyg("components/src/link/content.md"), false);
+  // Slice 7 recovered link/content (backtick-wrapped URL → no autolink drift) → eligible.
+  assert.equal(shouldUseWysiwyg("components/src/link/content.md"), true);
   assert.equal(shouldUseWysiwyg("foundations/src/x.md"), false);
   globalThis.sessionStorage.clear();
 });
@@ -104,6 +104,10 @@ test("isWysiwygSafePath — true for the registry's safe paths across domains", 
     true,
   );
   assert.equal(isWysiwygSafePath("content/src/writing/punctuation.md"), true);
+  // Slice 7 — backtick-wrapped literals (URL/email/filename/placeholder) → no escape/autolink drift.
+  assert.equal(isWysiwygSafePath("components/src/link/content.md"), true);
+  assert.equal(isWysiwygSafePath("components/src/table/content.md"), true);
+  assert.equal(isWysiwygSafePath("components/src/text-input/content.md"), true);
 });
 
 test("isWysiwygSafePath — false for files NOT in the registry", () => {
@@ -114,13 +118,6 @@ test("isWysiwygSafePath — false for files NOT in the registry", () => {
     false,
   );
   assert.equal(isWysiwygSafePath("content/src/AUTHORING.md"), false);
-  // Dropped stragglers stay out (slice 4 tail — non-idempotent / sections drift).
-  assert.equal(isWysiwygSafePath("components/src/link/content.md"), false);
-  assert.equal(isWysiwygSafePath("components/src/table/content.md"), false);
-  assert.equal(
-    isWysiwygSafePath("components/src/text-input/content.md"),
-    false,
-  );
 });
 
 test("shouldUseWysiwyg includes registry-safe content/a11y files when flagged", () => {
