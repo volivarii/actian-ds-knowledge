@@ -95,12 +95,14 @@ test("isWysiwygSafePath — true for the registry's safe paths across domains", 
   assert.equal(isWysiwygSafePath("components/src/button/behavior.md"), true);
   assert.equal(isWysiwygSafePath("accessibility/src/aria-labels.md"), true);
   assert.equal(isWysiwygSafePath("accessibility/src/components.md"), true);
+  // Slice 5 — foundations escapes (tokens empty-cell → —; color-primitives `\*` accepted).
+  assert.equal(isWysiwygSafePath("foundations/src/tokens.md"), true);
+  assert.equal(isWysiwygSafePath("foundations/src/color-primitives.md"), true);
 });
 
 test("isWysiwygSafePath — false for files NOT in the registry", () => {
-  assert.equal(isWysiwygSafePath("foundations/src/tokens.md"), false);
-  // color-primitives stays out — section-dist drift (bare `*` escaped in italic cell).
-  assert.equal(isWysiwygSafePath("foundations/src/color-primitives.md"), false);
+  // AUTHORING.md stays out — non-idempotent round-trip (rt2 !== rt1: loose-list + cell normalization).
+  assert.equal(isWysiwygSafePath("foundations/src/AUTHORING.md"), false);
   assert.equal(
     isWysiwygSafePath("content/src/writing/words-to-avoid.md"),
     false,

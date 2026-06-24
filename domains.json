@@ -19,11 +19,13 @@
       "distShape": "pattern-H-tree",
       "wysiwyg": {
         "safePaths": [
+          "foundations/src/color-primitives.md",
           "foundations/src/design-guidelines.md",
           "foundations/src/intro.md",
           "foundations/src/handoff-protocol.md",
           "foundations/src/related-guidelines.md",
-          "foundations/src/table-of-contents.md"
+          "foundations/src/table-of-contents.md",
+          "foundations/src/tokens.md"
         ],
         "distEquivalence": {
           "engine": "section-dist",

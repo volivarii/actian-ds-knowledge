@@ -108,7 +108,7 @@
             {
               "Shade": "25",
               "Lightness (L)": "`0.97` 🟡 Proposed *(update from 0.99)*",
-              "Chroma (C)": "`calc(c * 0.005)` 🟡 Proposed *(update from c * 0.2)*"
+              "Chroma (C)": "`calc(c * 0.005)` 🟡 Proposed *(update from c \\* 0.2)*"
             },
             {
               "Shade": "50",
@@ -3176,7 +3176,7 @@
                 "Token": "--zen-color-text-default",
                 "Resolves To": "--zen-color-black",
                 "Usage": "Titles, labels, body text",
-                "status_note": "Proposed *(rename from `text-primary` — eng update required)*",
+                "status_note": "Proposed (rename from `text-primary` — eng update required)",
                 "status": "proposed"
               },
               {
@@ -3218,7 +3218,7 @@
                 "Token": "--zen-color-text-primary",
                 "Resolves To": "--zen-color-primary-500",
                 "Usage": "Interactive text",
-                "status_note": "Proposed *(named `primary` to align with primary color convention)*",
+                "status_note": "Proposed (named `primary` to align with primary color convention)",
                 "status": "proposed"
               },
               {
@@ -3857,14 +3857,14 @@
               {
                 "Token": "--zen-border-radius-2xs",
                 "Value": "2px",
-                "Usage": "",
+                "Usage": "—",
                 "status_note": "Shipped",
                 "status": "shipped"
               },
               {
                 "Token": "--zen-border-radius-xs",
                 "Value": "4px",
-                "Usage": "",
+                "Usage": "—",
                 "status_note": "Shipped",
                 "status": "shipped"
               },
@@ -3878,21 +3878,21 @@
               {
                 "Token": "--zen-border-radius-md",
                 "Value": "8px",
-                "Usage": "",
+                "Usage": "—",
                 "status_note": "Shipped",
                 "status": "shipped"
               },
               {
                 "Token": "--zen-border-radius-lg",
                 "Value": "10px",
-                "Usage": "",
+                "Usage": "—",
                 "status_note": "Shipped",
                 "status": "shipped"
               },
               {
                 "Token": "--zen-border-radius-xl",
                 "Value": "12px",
-                "Usage": "",
+                "Usage": "—",
                 "status_note": "Shipped",
                 "status": "shipped"
               },
