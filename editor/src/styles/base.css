@@ -183,18 +183,26 @@ body {
   color: var(--zen-color-neutral-500);
 }
 
-.md-prose table {
+/* Tables: shared by the rendered preview (.md-prose) and the WYSIWYG edit
+   surface (Milkdown mounts into [data-milkdown-root]). Without the editor
+   selector, GFM tables render borderless in the rich editor — one source of
+   truth keeps the edit surface visually faithful to the preview. */
+.md-prose table,
+[data-milkdown-root] table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 0.9em;
 }
 .md-prose th,
-.md-prose td {
+.md-prose td,
+[data-milkdown-root] th,
+[data-milkdown-root] td {
   border: 1px solid var(--zen-color-neutral-200);
   padding: 6px 10px;
   text-align: left;
 }
-.md-prose th {
+.md-prose th,
+[data-milkdown-root] th {
   font-weight: 600;
   background: var(--zen-color-bg-muted);
 }
