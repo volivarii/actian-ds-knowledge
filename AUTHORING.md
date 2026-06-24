@@ -70,6 +70,13 @@ If you DO use an IDE: every schema property carries `description` + `examples`, 
 
 Fields prefixed with `_` are system-managed (`_schema_version`, `_meta`, `_sourceFile`, `_generatedAt`). Authored content uses bare keys. Don't name new content fields with `_`-prefix.
 
+## Markdown body conventions
+
+These apply to every domain's markdown body — tables appear in content, components, foundations, and accessibility — so they live here rather than in any single domain guide.
+
+- **Tables must not have empty cells.** Use `—` (em-dash, U+2014) for a no-entry / not-applicable cell. An empty cell round-trips through the WYSIWYG editor to `<br />`, which the fail-closed drift guard rejects (and which would leak literal HTML into the derived dist).
+- **No Jekyll/Kramdown attribute lists** (e.g. `{: .do-dont-table}`) in source. They are a docs-renderer concern, not source-of-truth content — see `GOVERNANCE.md` P1 — and corrupt the WYSIWYG round-trip. Styling is the consumer's job.
+
 ## Cross-references
 
 Cross-domain references use **slugs**, not quoted names:
