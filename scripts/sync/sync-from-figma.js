@@ -626,6 +626,10 @@ async function run(opts) {
           rest: rest,
         })
         .then(function (r) {
+          // deriveAndWrite re-reads the curated icons-svg.json from disk and
+          // derives `curatedSlugs` itself for the resilience guard (a dangling
+          // curated slug warns+skips rather than failing the whole sync), so we
+          // don't forward it here.
           deriveIconsMod.deriveAndWrite({
             pluginDir: pluginDir,
             registry: dsKit,
