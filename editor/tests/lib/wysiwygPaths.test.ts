@@ -98,6 +98,12 @@ test("isWysiwygSafePath — true for the registry's safe paths across domains", 
   // Slice 5 — foundations escapes (tokens empty-cell → —; color-primitives `\*` accepted).
   assert.equal(isWysiwygSafePath("foundations/src/tokens.md"), true);
   assert.equal(isWysiwygSafePath("foundations/src/color-primitives.md"), true);
+  // Slice 6 — content/global empty-cell fix (— for no-entry).
+  assert.equal(
+    isWysiwygSafePath("content/src/writing/capitalization.md"),
+    true,
+  );
+  assert.equal(isWysiwygSafePath("content/src/writing/punctuation.md"), true);
 });
 
 test("isWysiwygSafePath — false for files NOT in the registry", () => {
@@ -123,6 +129,9 @@ test("shouldUseWysiwyg includes registry-safe content/a11y files when flagged", 
   globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
   assert.equal(shouldUseWysiwyg("accessibility/src/color-contrast.md"), true);
   assert.equal(shouldUseWysiwyg("content/src/global-guidelines.md"), true);
+  // Slice 6 — content/global stragglers now registry-safe.
+  assert.equal(shouldUseWysiwyg("content/src/writing/capitalization.md"), true);
+  assert.equal(shouldUseWysiwyg("content/src/writing/punctuation.md"), true);
   assert.equal(
     shouldUseWysiwyg("content/src/writing/words-to-avoid.md"),
     false,
