@@ -49,7 +49,11 @@ const fakeGh = (text: string) =>
   }) as any;
 
 const SAFE = "foundations/src/design-guidelines.md";
-const UNSAFE = "foundations/src/color-primitives.md";
+// AUTHORING.md is the only foundations/src file still outside the registry
+// (round-trip is not idempotent — Milkdown injects loose-list blank lines + cell
+// normalization, rt2 !== rt1). color-primitives + tokens were flipped in slice 5,
+// so they're no longer valid "unsafe" fixtures.
+const UNSAFE = "foundations/src/AUTHORING.md";
 const FILE = "## 3. Guidelines {#g}\n\nProse.\n";
 
 test("SAFE foundations file renders RichBodyEditor when the wysiwyg flag is on", async () => {
@@ -69,7 +73,7 @@ test("SAFE foundations file renders RichBodyEditor when the wysiwyg flag is on",
   cleanup();
 });
 
-test("UNSAFE foundations file (color-primitives) stays CodeMirror even with the flag on", async () => {
+test("UNSAFE foundations file (AUTHORING) stays CodeMirror even with the flag on", async () => {
   cleanup();
   globalThis.localStorage.clear();
   globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
