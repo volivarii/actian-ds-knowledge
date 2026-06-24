@@ -26,9 +26,24 @@ function primaryGroup(iconGroups, slug) {
   return null;
 }
 
-// Pure transform: (src, registry, iconGroups) -> dist object. Keys sorted for
-// stable, idempotent output. Throws on an invalid slug.
-function deriveIcons(src, registry, iconGroups) {
+// Pure transform: (src, registry, iconGroups, opts?) -> dist object. Keys sorted
+// for stable, idempotent output.
+//
+// Slug validity is still the gate, but how a violation is handled depends on the
+// slug's provenance (opts.curatedSlugs — the set of slugs that came from the
+// hand-curated icons-svg.json):
+//   - A CURATED-only slug whose Figma component was renamed / removed /
+//     recategorized is a dangling override, not a pipeline bug. WARN + SKIP it
+//     (drop from output) so one stale icon can't fail the whole multi-domain
+//     sync. The fix is to remove it from components/src/icons-svg.json.
+//   - Any other invalid slug (auto-exported, i.e. registry-derived) is a genuine
+//     inconsistency → THROW, loud as before.
+// Without opts.curatedSlugs, every invalid slug throws (back-compat for the bare
+// deriveIcons(src, registry, iconGroups) call).
+function deriveIcons(src, registry, iconGroups, opts) {
+  opts = opts || {};
+  const logger = opts.logger || console;
+  const curatedSlugs = opts.curatedSlugs || null;
   const comps = registry.components || {};
   const out = {
     _schema_version: 1,
@@ -38,13 +53,20 @@ function deriveIcons(src, registry, iconGroups) {
   for (const slug of Object.keys(src.icons).sort()) {
     const geo = src.icons[slug];
     const reg = comps[slug];
-    if (!reg) {
-      throw new Error(`icons-svg: slug "${slug}" not found in dskit registry`);
-    }
-    if (reg.category !== "Icons") {
-      throw new Error(
-        `icons-svg: slug "${slug}" is category "${reg.category}", expected "Icons"`,
-      );
+    const problem = !reg
+      ? "not found in dskit registry"
+      : reg.category !== "Icons"
+        ? `is category "${reg.category}", expected "Icons"`
+        : null;
+    if (problem) {
+      if (curatedSlugs && curatedSlugs.has(slug)) {
+        logger.warn(
+          `icons-svg: skipping dangling curated slug "${slug}" — ${problem}. ` +
+            `Its Figma component was likely renamed/removed; remove it from components/src/icons-svg.json.`,
+        );
+        continue;
+      }
+      throw new Error(`icons-svg: slug "${slug}" ${problem}`);
     }
     out.icons[slug] = {
       viewBox: geo.viewBox,
@@ -93,7 +115,13 @@ function deriveAndWrite(opts) {
       ),
     );
   const merged = mergeIconSources(auto, curated);
-  const dist = deriveIcons(merged, registry, iconGroups);
+  // Curated slugs drive the resilience guard: a dangling override (Figma
+  // renamed/removed the component) warns + skips instead of failing the sync.
+  const curatedSlugs = new Set(Object.keys((curated && curated.icons) || {}));
+  const dist = deriveIcons(merged, registry, iconGroups, {
+    curatedSlugs: curatedSlugs,
+    logger: opts.logger || console,
+  });
   const outDir = path.join(root, "components", "dist", "icons");
   const out = path.join(outDir, "icons.json");
   fs.mkdirSync(outDir, { recursive: true });

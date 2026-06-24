@@ -133,6 +133,73 @@ test("derive rejects a slug absent from the registry", () => {
   );
 });
 
+// Resilience guard: a curated override whose Figma component was renamed/
+// removed/recategorized must NOT fail the whole multi-domain sync. deriveIcons
+// warns + skips a dangling CURATED-only slug, but still throws for an
+// auto-derived (registry-sourced) slug that's invalid — a genuine pipeline bug.
+const fakeReg = {
+  components: { real: { key: "k", nodeId: "1:1", category: "Icons" } },
+};
+const fakeGroups = { Common: ["real"] };
+
+test("resilience: warns + skips a dangling CURATED-only slug instead of throwing", () => {
+  const src2 = {
+    _schema_version: 1,
+    icons: {
+      real: { viewBox: "0 0 24 24", body: "<path/>" },
+      "ghost-renamed-in-figma": { viewBox: "0 0 24 24", body: "<path/>" },
+    },
+  };
+  const warnings = [];
+  const dist = deriveIcons(src2, fakeReg, fakeGroups, {
+    curatedSlugs: new Set(["ghost-renamed-in-figma"]),
+    logger: { warn: (m) => warnings.push(m) },
+  });
+  assert.deepEqual(
+    Object.keys(dist.icons),
+    ["real"],
+    "dangling curated slug dropped; valid icon retained",
+  );
+  assert.equal(warnings.length, 1, "exactly one warning emitted");
+  assert.match(warnings[0], /ghost-renamed-in-figma/);
+});
+
+test("resilience: a category-recategorized CURATED slug is also warned + skipped", () => {
+  const reg2 = {
+    components: {
+      moved: { key: "k", nodeId: "2:2", category: "Brand assets" },
+    },
+  };
+  const src2 = {
+    _schema_version: 1,
+    icons: { moved: { viewBox: "0 0 24 24", body: "<path/>" } },
+  };
+  const warnings = [];
+  const dist = deriveIcons(
+    src2,
+    reg2,
+    { Common: [] },
+    {
+      curatedSlugs: new Set(["moved"]),
+      logger: { warn: (m) => warnings.push(m) },
+    },
+  );
+  assert.deepEqual(Object.keys(dist.icons), []);
+  assert.match(warnings[0], /category/);
+});
+
+test("resilience: still throws for a non-curated (auto-derived) invalid slug", () => {
+  const src2 = {
+    _schema_version: 1,
+    icons: { "auto-bug-xyz": { viewBox: "0 0 1 1", body: "<path/>" } },
+  };
+  assert.throws(
+    () => deriveIcons(src2, fakeReg, fakeGroups, { curatedSlugs: new Set() }),
+    /not found in dskit registry/,
+    "an invalid slug NOT known to be curated is a real bug → throw",
+  );
+});
+
 test("derive is idempotent (twice → deep-equal)", () => {
   const a = deriveIcons(src, registry, iconGroups);
   const b = deriveIcons(src, registry, iconGroups);
