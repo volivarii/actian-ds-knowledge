@@ -58,6 +58,49 @@ test("runSnapshot is exported (config-driven entry)", function () {
   assert.equal(typeof vs.runSnapshot, "function");
 });
 
+test("githubCurlArgs: -sSL only when no token; adds auth header when a token is set; GH_TOKEN wins over GITHUB_TOKEN", function () {
+  var saved = { gh: process.env.GH_TOKEN, gt: process.env.GITHUB_TOKEN };
+  try {
+    delete process.env.GH_TOKEN;
+    delete process.env.GITHUB_TOKEN;
+    assert.deepEqual(vs.githubCurlArgs(["URL"]), ["-sSL", "URL"]);
+
+    process.env.GH_TOKEN = "ghs_abc";
+    assert.deepEqual(vs.githubCurlArgs(["URL"]), [
+      "-sSL",
+      "-H",
+      "Authorization: Bearer ghs_abc",
+      "URL",
+    ]);
+
+    // GITHUB_TOKEN is the fallback; extra args (e.g. -o dest) are preserved.
+    delete process.env.GH_TOKEN;
+    process.env.GITHUB_TOKEN = "ghp_xyz";
+    assert.deepEqual(vs.githubCurlArgs(["-o", "dest", "URL"]), [
+      "-sSL",
+      "-H",
+      "Authorization: Bearer ghp_xyz",
+      "-o",
+      "dest",
+      "URL",
+    ]);
+
+    // GH_TOKEN takes precedence when both are present.
+    process.env.GH_TOKEN = "ghs_abc";
+    assert.deepEqual(vs.githubCurlArgs(["URL"]), [
+      "-sSL",
+      "-H",
+      "Authorization: Bearer ghs_abc",
+      "URL",
+    ]);
+  } finally {
+    if (saved.gh === undefined) delete process.env.GH_TOKEN;
+    else process.env.GH_TOKEN = saved.gh;
+    if (saved.gt === undefined) delete process.env.GITHUB_TOKEN;
+    else process.env.GITHUB_TOKEN = saved.gt;
+  }
+});
+
 test("runSnapshot THROWS (does not process.exit) when no SHA is resolvable", function () {
   // Library owns no CLI shell: a fatal condition throws for the consumer's
   // wrapper to catch. Network-free path — empty argv + absent vendored.json +
