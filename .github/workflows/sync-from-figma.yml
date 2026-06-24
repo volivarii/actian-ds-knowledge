@@ -52,6 +52,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -172,3 +173,40 @@ jobs:
         run: |
           echo "::error::Sync orchestrator reported errors. See logs above."
           exit 1
+
+      # Self-managing failure surfacing — these run AFTER the fail step so
+      # success()/failure() reflect the real job outcome. A silent nightly
+      # failure once blocked the whole sync (icons/tokens/components/media) for a
+      # week; this turns that into a single tracking issue that opens on failure
+      # and closes when a sync next succeeds. Uses the default GITHUB_TOKEN
+      # (issues don't need the App-token downstream-trigger workaround PRs do).
+      - name: Resolve sync-failure issue on success
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        # Best-effort: a notification hiccup must never flip a good sync to failed.
+        run: |
+          for n in $(gh issue list --state open --label sync-failure --json number --jq '.[].number' 2>/dev/null || true); do
+            gh issue close "$n" --comment "✅ Sync succeeded again — $RUN_URL" || true
+          done
+
+      - name: Notify on sync failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          VERDICT: ${{ steps.verdict.outputs.category }}
+        # Best-effort (the job has already failed; don't mask the real error).
+        run: |
+          # One tracking issue, not one per night: ensure the dedupe label, then
+          # comment on the open issue if present, else open a new one.
+          gh label create sync-failure --color B60205 --description "Nightly Figma sync is failing" 2>/dev/null || true
+          existing=$(gh issue list --state open --label sync-failure --json number --jq '.[0].number // empty' 2>/dev/null || true)
+          note="Run: $RUN_URL"$'\n'"Verdict: \`${VERDICT:-unknown}\`"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Still failing. $note" || true
+          else
+            gh issue create --title "🔴 Figma sync is failing" --label sync-failure \
+              --body "The nightly **Sync from Figma** workflow failed and will keep failing until fixed."$'\n\n'"$note"$'\n\n'"Common cause: a Figma component was renamed/removed so a curated override now dangles (e.g. an icon slug in \`components/src/icons-svg.json\`). The icons phase warn-skips dangling *curated* slugs; check the run log for the failing phase. This issue auto-closes when a sync next succeeds." || true
+          fi
