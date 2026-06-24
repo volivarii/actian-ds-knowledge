@@ -28,7 +28,7 @@ A link should be used when navigating between pages, while a button should be us
 | Do | Don't |
 |---|---|
 | View pipeline details | Click here |
-{: .do-dont-table}
+
 - Avoid standalone icons as links unless accompanied by an accessible label.
 - Use sentence case and no terminal punctuation.
 - Keep links clear, concise, accessible, and consistent.
@@ -50,7 +50,6 @@ Link text should clearly describe the destination or action. Avoid vague text th
 | Download report | Get report |
 | Explore features | Click to learn more |
 | View our services | Click here to view our list of services |
-{: .do-dont-table}
 
 ## Action-oriented language
 
@@ -67,4 +66,3 @@ Link only the specific, relevant portion of text. Avoid linking entire sentences
 | Do | Don't |
 |---|---|
 | Read our [user experience design blog](). | [Click here to read our blog about user experience design](). |
-{: .do-dont-table}

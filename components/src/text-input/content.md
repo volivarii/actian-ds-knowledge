@@ -31,4 +31,3 @@ Error validation should happen at the latest when the user clicks out of the tex
 |---|---|
 | Label: Dataset name / Placeholder: e.g. Q4_sales_report | Placeholder: Enter dataset name |
 | Placeholder: e.g. john.doe@company.com | Placeholder: Enter your email address |
-{: .do-dont-table}

@@ -41,7 +41,6 @@ The table component displays structured information in rows and columns. It is t
 | Status | Current status |
 | Row count | No. of rows |
 | Revenue (USD) | Revenue in U.S. Dollars |
-{: .do-dont-table}
 
 ## Cell content
 
@@ -100,4 +99,3 @@ The table component displays structured information in rows and columns. It is t
 | No connections found + CTA | (blank table with no explanation) |
 | Delete (overflow menu item) | Delete this connection |
 | Showing 1-25 of 340 results | Page 1 of 14 |
-{: .do-dont-table}
