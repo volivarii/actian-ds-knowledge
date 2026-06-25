@@ -156,15 +156,9 @@ test("every leaf has $type AND $value", () => {
   const leaves = [];
   collectNodes(tree, "", leaves, new Set());
 
-  const missing = leaves
-    .filter((l) => !l.node.$type)
-    .map((l) => l.path);
+  const missing = leaves.filter((l) => !l.node.$type).map((l) => l.path);
 
-  assert.deepEqual(
-    missing,
-    [],
-    "Leaves missing $type: " + missing.join(", "),
-  );
+  assert.deepEqual(missing, [], "Leaves missing $type: " + missing.join(", "));
 });
 
 test("every leaf $type is a known DTCG type", () => {
@@ -190,9 +184,7 @@ test("no leaf+group collision (leaf node has no non-$ children)", () => {
 
   const collisions = leaves
     .filter((l) =>
-      Object.keys(l.node).some(
-        (k) => !k.startsWith("$") && !k.startsWith("_"),
-      ),
+      Object.keys(l.node).some((k) => !k.startsWith("$") && !k.startsWith("_")),
     )
     .map((l) => l.path);
 
@@ -251,6 +243,34 @@ test("reference counts: value, typography, ext refs all present", () => {
   );
 });
 
+test("resolveRef returns null/falsy for dangling references", () => {
+  // Build a tiny tree with one real leaf
+  const tree = {
+    color: {
+      primary: {
+        500: { $type: "color", $value: "#000000" },
+      },
+    },
+  };
+  // Real path resolves truthy
+  assert.ok(
+    resolveRef(tree, "color.primary.500"),
+    "Expected to resolve real path",
+  );
+  // Missing shade returns null/falsy
+  assert.equal(
+    resolveRef(tree, "color.primary.999"),
+    null,
+    "Missing shade should return null",
+  );
+  // Missing branch returns null/falsy
+  assert.equal(
+    resolveRef(tree, "color.nonexistent.path"),
+    null,
+    "Missing branch should return null",
+  );
+});
+
 // ─── Test 4: Theme-extension integrity ───────────────────────────────────────
 
 test("every com.actian.themes entry has all three theme keys {actian,studio,explorer} as valid hex", () => {
@@ -298,10 +318,15 @@ test("renderer dry-run: renderMarkdown over candidate produces non-empty markdow
     result = renderMarkdown(tree);
   }, "renderMarkdown must not throw on the candidate tree");
 
-  assert.ok(result && result.markdown, "renderMarkdown must return an object with .markdown");
+  assert.ok(
+    result && result.markdown,
+    "renderMarkdown must return an object with .markdown",
+  );
   assert.ok(
     result.markdown.length > 500,
-    "Rendered markdown must be non-trivial (got " + (result.markdown || "").length + " chars)",
+    "Rendered markdown must be non-trivial (got " +
+      (result.markdown || "").length +
+      " chars)",
   );
   assert.ok(
     result.markdown.includes("# Token Reference"),
@@ -317,7 +342,11 @@ test("renderer dry-run: candidate output written to derived staging path (no clo
   const { renderMarkdown } = require("../scripts/render-token-reference.js");
   const LIVE_PATH = path.join(REPO_ROOT, "tokens", "token-reference.md");
   const tree = loadCandidate();
-  const { markdown } = renderMarkdown(tree);
+  // Render with the candidate source path so the generated header is truthful
+  const { markdown } = renderMarkdown(
+    tree,
+    "tokens/src/derived/tokens.candidate.json",
+  );
 
   // Write to the derived staging directory, NOT the live path
   fs.writeFileSync(DRY_RUN_OUT, markdown, "utf8");
