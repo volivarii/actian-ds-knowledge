@@ -22,6 +22,7 @@ const {
   parseFocusStyles,
   parseShadows,
 } = require("./lib/parse-composites.js");
+const { parseMotion } = require("./lib/parse-motion.js");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 
@@ -438,6 +439,66 @@ function deriveCompositeStyles({ tokensMd, primitivesMd }) {
   return { border: borderTree, "focus-ring": focusTree, shadow: shadowTree };
 }
 
+// ─── P3: Motion family assembler ─────────────────────────────────────────────
+
+/**
+ * Derives the motion token tree from §2.11 of tokens.md.
+ *
+ * Emits three sub-families under `motion`:
+ *   motion.duration.<k>  $type:"duration"  $value:"200ms"   — transition durations
+ *   motion.ease.<k>      $type:"string"    $value:"ease-out" — CSS easing keywords
+ *   motion.delay.<k>     $type:"duration"  $value:"20ms"    — pre-animation delays
+ *
+ * NOTE on $type:"string" for easing: DTCG's `cubicBezier` type requires a 4-number
+ * tuple (P1x, P1y, P2x, P2y). These tokens hold CSS keyword values (`ease-out`,
+ * `ease-in`, `ease-in-out`) which are aliases for built-in cubic-bezier curves —
+ * they are NOT numeric tuples. Using $type:"string" correctly represents the
+ * keyword as-is; a P4 CSS emitter can emit them verbatim without conversion.
+ *
+ * Integration choice: standalone exported function (not merged into deriveNumericTree
+ * or deriveCompositeStyles) because motion needs no color resolver or Figma bindings —
+ * only tokensMd. Task 6's CLI deep-merges the motion tree alongside numeric and
+ * composite trees. This keeps Task 2/4 tests green with zero changes to their assemblers.
+ *
+ * All §2.11 tokens are 🟡 Proposed — verified per row via statusFrom().
+ * Motion is a new family with no frozen tokens.json counterpart; Task 7 parity
+ * will not check it.
+ *
+ * @param {{ tokensMd: string }} opts
+ * @returns {{ motion: { duration: object, ease: object, delay: object } }}
+ */
+function deriveMotion({ tokensMd }) {
+  const { duration, easing, delay } = parseMotion(tokensMd);
+
+  const tree = { motion: { duration: {}, ease: {}, delay: {} } };
+
+  for (const { name, value, status } of duration) {
+    tree.motion.duration[name] = {
+      $type: "duration",
+      $value: value,
+      $extensions: { "com.actian.status": status },
+    };
+  }
+
+  for (const { name, value, status } of easing) {
+    tree.motion.ease[name] = {
+      $type: "string",
+      $value: value,
+      $extensions: { "com.actian.status": status },
+    };
+  }
+
+  for (const { name, value, status } of delay) {
+    tree.motion.delay[name] = {
+      $type: "duration",
+      $value: value,
+      $extensions: { "com.actian.status": status },
+    };
+  }
+
+  return tree;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function main() {
@@ -519,4 +580,5 @@ module.exports = {
   deriveSemanticTree,
   deriveNumericTree,
   deriveCompositeStyles,
+  deriveMotion,
 };
