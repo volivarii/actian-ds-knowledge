@@ -11,6 +11,11 @@ function parsePrimitives(markdown) {
   const lines = String(markdown).split(/\r?\n/);
   for (const line of lines) {
     if (line.indexOf("--zen-color-") === -1) continue;
+    // NB: palette names can contain hyphens (e.g. singapore-orchid-purple).
+    // The `(?:[a-z]+-)*[a-z]+?` form matches the full hyphenated name, then the
+    // optional `-(\d{2,3})` peels off the shade. Do NOT simplify to
+    // `[a-z]+(?:-[a-z]+)*?` — its lazy tail collapses to the first word before a
+    // shade digit group (royal-blue-25 would parse as palette "royal").
     const tok = line.match(
       /--zen-color-((?:[a-z]+-)*[a-z]+?)(?:-(\d{2,3}))?\b/,
     );
