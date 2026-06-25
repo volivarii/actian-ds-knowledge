@@ -14,21 +14,24 @@ const { hexToOklch } = require("./oklch.js");
 // 5 Actian backing palettes: royal-blue, cool-grey, green, orange, red.
 
 const SHADE_SPEC = {
-  "25":  { lFn: (_l) => 0.97,                     cScale: 0.005 },
-  "50":  { lFn: (l) => l + (0.99 - l) * (5 / 6), cScale: 0.30  },
-  "100": { lFn: (l) => l + (0.99 - l) * (4 / 6), cScale: 0.40  },
-  "200": { lFn: (l) => l + (0.99 - l) * (1 / 2), cScale: 0.60  },
-  "300": { lFn: (l) => l + (0.99 - l) * (2 / 6), cScale: 0.70  },
-  "400": { lFn: (l) => l + (0.99 - l) * (1 / 6), cScale: 0.85  },
-  "600": { lFn: (l) => l * 0.94,                  cScale: 1.05  },
-  "700": { lFn: (l) => l * 0.85,                  cScale: 0.95  },
-  "800": { lFn: (l) => l * 0.73,                  cScale: 0.75  },
-  "900": { lFn: (l) => l * 0.63,                  cScale: 0.55  },
+  25: { lFn: (_l) => 0.97, cScale: 0.005 },
+  50: { lFn: (l) => l + (0.99 - l) * (5 / 6), cScale: 0.3 },
+  100: { lFn: (l) => l + (0.99 - l) * (4 / 6), cScale: 0.4 },
+  200: { lFn: (l) => l + (0.99 - l) * (1 / 2), cScale: 0.6 },
+  300: { lFn: (l) => l + (0.99 - l) * (2 / 6), cScale: 0.7 },
+  400: { lFn: (l) => l + (0.99 - l) * (1 / 6), cScale: 0.85 },
+  600: { lFn: (l) => l * 0.94, cScale: 1.05 },
+  700: { lFn: (l) => l * 0.85, cScale: 0.95 },
+  800: { lFn: (l) => l * 0.73, cScale: 0.75 },
+  900: { lFn: (l) => l * 0.63, cScale: 0.55 },
 };
 
 // Warn threshold: flag |deltaL| > THRESH or |deltaC| > THRESH.
 // Must not exceed 0.05 (per task spec). Set to 0.03 — tight enough to catch
 // genuine off-ramp deviations while allowing hex-rounding noise (~0.001–0.01).
+// Empirical calibration: worst-case on the 26 shipped palettes is |ΔL|≤0.0152,
+// |ΔC|≤0.0216 — chroma margin is ~1.4×, so a future hand-tuned brand palette
+// could approach the bound.
 const THRESH = 0.03;
 
 /**

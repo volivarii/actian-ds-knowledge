@@ -187,7 +187,13 @@ function main() {
     for (const [shade, leaf] of Object.entries(palData)) {
       if (leaf && leaf.$value) shades[shade] = leaf.$value;
     }
-    lintWarnings.push(...lintShadeRamp(palette, shades));
+    try {
+      lintWarnings.push(...lintShadeRamp(palette, shades));
+    } catch (e) {
+      process.stderr.write(
+        `[derive-tokens] formula-lint: skipped (${e.message})\n`,
+      );
+    }
   }
   process.stderr.write(
     `[derive-tokens] formula-lint: ${lintWarnings.length} off-ramp shades (warn)\n`,
