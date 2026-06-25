@@ -629,6 +629,13 @@
       "generator": "scripts/tokens/derive-tokens.js",
       "description": "Generated numeric/dimension token layer (DTCG: spacing, border, focus-ring, font, icon, size, shadow, motion + Figma bindings) — staging output of derive-tokens.js (P3)"
     },
+    "tokens.derivedCandidate": {
+      "path": "tokens/src/derived/tokens.candidate.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/tokens/derive-tokens.js",
+      "description": "Full-tokens DTCG candidate: primitives + semantics + numerics merged into one tree (_frozen:false). Staging only — live tokens/tokens.json is untouched until P5 flip-diff validation passes. Key order mirrors frozen file + P3 additions (shadow, motion)."
+    },
     "tokens.figmaBindingsRaw": {
       "path": "tokens/src/figma-bindings-raw.json",
       "type": "json",

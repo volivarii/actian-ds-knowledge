@@ -551,6 +551,105 @@ function countLeaves(tree) {
   return Object.values(tree).reduce((acc, v) => acc + countLeaves(v), 0);
 }
 
+// ─── P4a: Full-tokens merge assembler ────────────────────────────────────────
+
+/**
+ * Canonical top-level key order for the candidate tokens.json.
+ * Mirrors the frozen tokens/tokens.json order (meta-keys first, then domain
+ * families) and appends the P3 additions: shadow and motion.
+ */
+const FULL_TREE_KEY_ORDER = [
+  "_schema_version",
+  "$schema",
+  "$description",
+  "$metadata",
+  "color",
+  "spacing",
+  "border",
+  "size",
+  "breakpoint",
+  "focus-ring",
+  "font",
+  "icon",
+  "shadow",
+  "motion",
+];
+
+/**
+ * Combines primitives (P1) + semantics (P2) + numerics/composites/motion (P3)
+ * into a single DTCG candidate tree.
+ *
+ * - color = deepMerge(primitive color, semantic color)
+ *   Result: color.primitive.* coexists with color.primary/neutral/.../text/bg/icon/annotation.
+ *   color.icon (semantic icon-color roles) and top-level icon (numeric icon sizes) are DISTINCT keys.
+ * - Numeric domain keys (spacing/border/size/breakpoint/focus-ring/font/icon/shadow/motion)
+ *   come from the fully assembled numeric tree (deriveNumericTree + deriveCompositeStyles +
+ *   deriveMotion + binding sidecar).
+ * - $metadata is UNFROZEN (_frozen: false). Schema-meta values are stable constants
+ *   matching the frozen tokens/tokens.json schema.
+ *
+ * @param {{ primitivesMd: string, tokensMd: string, rawBindings: object }} opts
+ * @returns {object} DTCG full-tokens candidate tree (never written to live tokens.json)
+ */
+function deriveFullTokens({ primitivesMd, tokensMd, rawBindings }) {
+  // ── 1. Primitive tree (P1) ─────────────────────────────────────────────────
+  const primTree = derivePrimitiveTree({ primitivesMd, rawBindings });
+
+  // ── 2. Semantic tree (P2) ─────────────────────────────────────────────────
+  // semanticsMd = tokensMd (contains global-role table, theme-palette table,
+  // and resolves-to tables for text/bg/icon/annotation).
+  const semTree = deriveSemanticTree({
+    primitivesMd,
+    semanticsMd: tokensMd,
+    rawBindings,
+  });
+
+  // ── 3. Numeric/composite/motion tree (P3) ─────────────────────────────────
+  const numericBase = deriveNumericTree({ tokensMd });
+  const compositeTree = deriveCompositeStyles({ tokensMd, primitivesMd });
+  const motionTree = deriveMotion({ tokensMd });
+  let numericTree = deepMerge(numericBase, compositeTree);
+  numericTree = deepMerge(numericTree, motionTree);
+  attachBindings(numericTree, curateNumericBindings(rawBindings));
+
+  // ── 4. Merge color: primitive + semantic ──────────────────────────────────
+  // primTree.color = { primitive: { "royal-blue": {...}, ... } }
+  // semTree.color  = { primary: {...}, neutral: {...}, text: {...}, ... }
+  // deepMerge puts primitive.* alongside the semantic roles; no collision since
+  // "primitive" is not a semantic role name.
+  // NOTE: color.icon (semantic, icon-color roles under color) and top-level
+  // icon (numeric, icon-sizes) are at different tree depths — no collision.
+  const mergedColor = deepMerge(primTree.color, semTree.color);
+
+  // ── 5. Assemble with enforced key order ───────────────────────────────────
+  const candidate = {};
+  for (const k of FULL_TREE_KEY_ORDER) {
+    if (k === "_schema_version") {
+      candidate._schema_version = 1;
+    } else if (k === "$schema") {
+      candidate.$schema =
+        "https://www.designtokens.org/schemas/design-tokens.schema.json";
+    } else if (k === "$description") {
+      candidate.$description =
+        "Actian Design System 2026 — Design Tokens (DTCG W3C format)";
+    } else if (k === "$metadata") {
+      candidate.$metadata = {
+        generatedBy: "scripts/tokens/derive-tokens.js",
+        source:
+          "foundations/src/color-primitives.md + foundations/src/tokens.md",
+        _frozen: false,
+      };
+    } else if (k === "color") {
+      candidate.color = mergedColor;
+    } else if (numericTree[k] !== undefined) {
+      candidate[k] = numericTree[k];
+    }
+    // If a numeric key is absent (no source rows) it is simply omitted.
+  }
+
+  return candidate;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function main() {
@@ -646,6 +745,16 @@ function main() {
   process.stdout.write(
     `[derive-tokens] wrote ${nn} numeric tokens to tokens/src/derived/numerics.tokens.json\n`,
   );
+
+  // Full-tokens candidate (P4a): merge primitives + semantics + numerics into
+  // one DTCG tree. Written to staging only — live tokens/tokens.json is untouched.
+  const fullTree = deriveFullTokens({ primitivesMd, tokensMd, rawBindings });
+  const candidatePath = path.join(outDir, "tokens.candidate.json");
+  fs.writeFileSync(candidatePath, JSON.stringify(fullTree, null, 2) + "\n");
+  const fn = countLeaves(fullTree);
+  process.stdout.write(
+    `[derive-tokens] wrote ${fn} total tokens to tokens/src/derived/tokens.candidate.json\n`,
+  );
 }
 
 if (require.main === module) main();
@@ -656,6 +765,7 @@ module.exports = {
   deriveNumericTree,
   deriveCompositeStyles,
   deriveMotion,
+  deriveFullTokens,
   deepMerge,
   attachBindings,
 };
