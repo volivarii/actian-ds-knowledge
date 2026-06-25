@@ -3,17 +3,34 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
+const { deriveSemanticTree } = require("../scripts/tokens/derive-tokens.js");
 
 const ROOT = path.resolve(__dirname, "..");
 const frozen = JSON.parse(
   fs.readFileSync(path.join(ROOT, "tokens/tokens.json"), "utf8"),
 );
-const gen = JSON.parse(
+
+// Derive semantic tree in-memory from authoritative sources, matching main()
+const primitivesMd = fs.readFileSync(
+  path.join(ROOT, "foundations", "src", "color-primitives.md"),
+  "utf8",
+);
+const tokensMd = fs.readFileSync(
+  path.join(ROOT, "foundations", "src", "tokens.md"),
+  "utf8",
+);
+const rawBindings = JSON.parse(
   fs.readFileSync(
-    path.join(ROOT, "tokens/src/derived/semantics.tokens.json"),
+    path.join(ROOT, "tokens", "src", "figma-bindings-raw.json"),
     "utf8",
   ),
 );
+
+const gen = deriveSemanticTree({
+  primitivesMd,
+  semanticsMd: tokensMd,
+  rawBindings,
+});
 
 const THEMES = ["actian", "studio", "explorer"];
 
@@ -202,5 +219,20 @@ test("plugin-consumed tokens are present in generated semantics", () => {
     0,
     "Plugin-consumed tokens MISSING from generated semantics:\n" +
       missing.join("\n"),
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Test 3: Freshness gate — committed artifact must not be stale
+// ---------------------------------------------------------------------------
+test("committed semantics.tokens.json is in sync with the deriver (not stale)", () => {
+  const committed = fs.readFileSync(
+    path.join(ROOT, "tokens/src/derived/semantics.tokens.json"),
+    "utf8",
+  );
+  assert.equal(
+    committed,
+    JSON.stringify(gen, null, 2) + "\n",
+    "tokens/src/derived/semantics.tokens.json is stale — re-run `node scripts/tokens/derive-tokens.js`",
   );
 });
