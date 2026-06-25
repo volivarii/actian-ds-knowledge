@@ -74,10 +74,10 @@ function deriveSemanticTree({ primitivesMd, semanticsMd, rawBindings }) {
 
   // 1) Ramp roles → 11 shades, alias to the Actian palette, themes resolved.
   for (const role of RAMP_ROLES) {
-    tree.color[role] = {};
     const actianPalette =
       (themes.actian && themes.actian[role]) || globalRoles[role];
     if (!actianPalette) continue;
+    tree.color[role] = {};
     for (const shade of SHADES) {
       if (
         !primitiveTree.color.primitive[actianPalette] ||
@@ -112,7 +112,7 @@ function deriveSemanticTree({ primitivesMd, semanticsMd, rawBindings }) {
       s.opacity != null
         ? applyAlpha(R.resolveHex(s.resolvesTo, "actian"), s.opacity)
         : aliasTarget;
-    const tokenPath = `color.${s.group}.${s.name.replace(/\./g, ".")}`;
+    const tokenPath = `color.${s.group}.${s.name}`;
     const node = semLeaf(
       value,
       semBindings,

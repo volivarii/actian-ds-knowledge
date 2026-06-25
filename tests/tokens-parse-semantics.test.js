@@ -23,13 +23,20 @@ test("splits group + dotted leaf name, captures resolvesTo + status", () => {
   const sec = out.find((t) => t.group === "text" && t.name === "secondary");
   assert.deepEqual(
     { resolvesTo: sec.resolvesTo, status: sec.status, opacity: sec.opacity },
-    { resolvesTo: "neutral-800", status: "Shipped", opacity: null }
+    { resolvesTo: "neutral-800", status: "Shipped", opacity: null },
   );
 });
 
 test("nested leaf: text-link-default → group text, name link.default", () => {
   const out = parseSemantics(MD);
-  assert.ok(out.find((t) => t.group === "text" && t.name === "link.default" && t.resolvesTo === "primary-500"));
+  assert.ok(
+    out.find(
+      (t) =>
+        t.group === "text" &&
+        t.name === "link.default" &&
+        t.resolvesTo === "primary-500",
+    ),
+  );
 });
 
 test("captures opacity from 'black at 40% opacity'", () => {
@@ -42,4 +49,19 @@ test("captures opacity from 'black at 40% opacity'", () => {
 test("In Review / Proposed / Shipped normalized from emoji", () => {
   const out = parseSemantics(MD);
   assert.equal(out.find((t) => t.name === "default").status, "Proposed");
+});
+
+test("placeholder-subtle stays a flat key; link-default nests", () => {
+  const MD2 = [
+    "#### Text Color Tokens",
+    "| Token | Resolves To | Usage | Status |",
+    "| --- | --- | --- | --- |",
+    "| `--zen-color-text-placeholder-subtle` | `--zen-color-neutral-400` | x | 🟢 Shipped |",
+    "| `--zen-color-text-link-default` | `--zen-color-primary-500` | x | 🟢 Shipped |",
+  ].join("\n");
+  const out = parseSemantics(MD2);
+  assert.ok(
+    out.find((t) => t.group === "text" && t.name === "placeholder-subtle"),
+  );
+  assert.ok(out.find((t) => t.group === "text" && t.name === "link.default"));
 });

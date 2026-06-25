@@ -1098,16 +1098,16 @@
             "studio": "#8D8D8D",
             "explorer": "#8D8D8D"
           }
-        },
-        "subtle": {
-          "$type": "color",
-          "$value": "{color.primitive.cool-grey.400}",
-          "$extensions": {
-            "com.actian.themes": {
-              "actian": "#7C7C8A",
-              "studio": "#A9A9A9",
-              "explorer": "#A9A9A9"
-            }
+        }
+      },
+      "placeholder-subtle": {
+        "$type": "color",
+        "$value": "{color.primitive.cool-grey.400}",
+        "$extensions": {
+          "com.actian.themes": {
+            "actian": "#7C7C8A",
+            "studio": "#A9A9A9",
+            "explorer": "#A9A9A9"
           }
         }
       },
