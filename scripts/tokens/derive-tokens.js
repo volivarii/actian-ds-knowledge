@@ -11,6 +11,7 @@ const {
 const { parseGlobalRoles, parseThemes } = require("./lib/parse-themes.js");
 const { parseSemantics } = require("./lib/parse-semantics.js");
 const { buildResolver, applyAlpha } = require("./lib/resolve.js");
+const { lintShadeRamp } = require("./lib/formula-lint.js");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 
@@ -176,6 +177,20 @@ function main() {
   );
   process.stdout.write(
     `[derive-tokens] wrote ${n} primitive tokens to tokens/src/derived/primitives.tokens.json\n`,
+  );
+
+  // Formula lint — report-only, never exit non-zero.
+  const lintWarnings = [];
+  for (const [palette, palData] of Object.entries(tree.color.primitive)) {
+    if (typeof palData !== "object" || palData.$type) continue; // skip singletons
+    const shades = {};
+    for (const [shade, leaf] of Object.entries(palData)) {
+      if (leaf && leaf.$value) shades[shade] = leaf.$value;
+    }
+    lintWarnings.push(...lintShadeRamp(palette, shades));
+  }
+  process.stderr.write(
+    `[derive-tokens] formula-lint: ${lintWarnings.length} off-ramp shades (warn)\n`,
   );
 
   // Semantic tree — primitivesMd = color-primitives.md (palette rows only);
