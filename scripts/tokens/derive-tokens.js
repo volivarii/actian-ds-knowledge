@@ -13,6 +13,10 @@ const { parseSemantics } = require("./lib/parse-semantics.js");
 const { buildResolver, applyAlpha } = require("./lib/resolve.js");
 const { lintShadeRamp } = require("./lib/formula-lint.js");
 const { parseValues } = require("./lib/parse-values.js");
+const {
+  parseTextStyles,
+  buildTextStyle,
+} = require("./lib/parse-text-styles.js");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 
@@ -316,6 +320,11 @@ function deriveNumericTree({ tokensMd }) {
       $extensions: { "com.actian.status": status },
     };
     setPath(tree, route.dotPath, leaf);
+  }
+
+  // text-styles composite typography — from §2.2 table
+  for (const spec of parseTextStyles(tokensMd)) {
+    setPath(tree, `font.text-styles.${spec.name}`, buildTextStyle(spec));
   }
 
   // figma-only carry-forwards — legacy size scale
