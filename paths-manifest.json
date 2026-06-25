@@ -5,21 +5,9 @@
   "manifest_schema_version": "v1",
   "knowledge_version": "0.34.32",
   "_zones": {
-    "knowledge": [
-      "accessibility",
-      "components",
-      "content",
-      "foundations"
-    ],
-    "contract": [
-      "graph"
-    ],
-    "metadata": [
-      "appContext",
-      "appContextBundle",
-      "appContextSrc",
-      "tokens"
-    ],
+    "knowledge": ["accessibility", "components", "content", "foundations"],
+    "contract": ["graph"],
+    "metadata": ["appContext", "appContextBundle", "appContextSrc", "tokens"],
     "_pendingEviction": []
   },
   "paths": {
@@ -626,6 +614,13 @@
       "origin": "ci",
       "generator": "scripts/tokens/derive-tokens.js",
       "description": "Generated primitive color layer (DTCG: hex + oklch + Figma binding) — staging output of derive-tokens.js (P1)"
+    },
+    "tokens.derivedSemantics": {
+      "path": "tokens/src/derived/semantics.tokens.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/tokens/derive-tokens.js",
+      "description": "Generated semantic color layer (DTCG: alias $value + 3-theme hex expansion + Figma binding) — staging output of derive-tokens.js (P2)"
     },
     "tokens.figmaBindingsRaw": {
       "path": "tokens/src/figma-bindings-raw.json",
