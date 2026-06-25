@@ -61,6 +61,7 @@ Use the sidebar to navigate, or jump directly to a section below.
   <a href="onboarding">Onboarding</a>
   <a href="popover">Popover</a>
   <a href="progress-bar-small">Progress bar</a>
+  <a href="radio-button">Radio button</a>
   <a href="related-content-panels">Related content panels</a>
   <a href="search">Search</a>
   <a href="side-nav">Side nav</a>
