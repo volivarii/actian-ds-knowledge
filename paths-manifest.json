@@ -620,6 +620,19 @@
       "origin": "human",
       "description": "CSS custom properties (--zen-*) — frozen snapshot"
     },
+    "tokens.derivedPrimitives": {
+      "path": "tokens/src/derived/primitives.tokens.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/tokens/derive-tokens.js",
+      "description": "Generated primitive color layer (DTCG: hex + oklch + Figma binding) — staging output of derive-tokens.js (P1)"
+    },
+    "tokens.figmaBindingsRaw": {
+      "path": "tokens/src/figma-bindings-raw.json",
+      "type": "json",
+      "origin": "human",
+      "description": "Figma variable + style binding harvest (MCP search export) — input to the tokens deriver binding sidecar (P0)"
+    },
     "tokens.json": {
       "path": "tokens/tokens.json",
       "type": "json",
