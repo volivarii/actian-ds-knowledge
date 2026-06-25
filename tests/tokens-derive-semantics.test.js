@@ -40,21 +40,44 @@ const tablesMd = [
 ].join("\n");
 
 test("primary ramp leaf: alias $value + per-theme hex themes", () => {
-  const tree = deriveSemanticTree({ primitivesMd: primitivesMd + "\n" + tablesMd, semanticsMd, rawBindings: { variables: [] } });
+  const tree = deriveSemanticTree({
+    primitivesMd,
+    semanticsMd: semanticsMd + "\n" + tablesMd,
+    rawBindings: { variables: [] },
+  });
   const leaf = tree.color.primary["500"];
   assert.equal(leaf.$value, "{color.primitive.royal-blue.500}");
-  assert.deepEqual(leaf.$extensions["com.actian.themes"], { actian: "#0F5FDC", studio: "#0283BE", explorer: "#049B98" });
+  assert.deepEqual(leaf.$extensions["com.actian.themes"], {
+    actian: "#0F5FDC",
+    studio: "#0283BE",
+    explorer: "#049B98",
+  });
 });
 
 test("derived text.secondary aliases the Actian-resolved neutral-800 + theme hex", () => {
-  const tree = deriveSemanticTree({ primitivesMd: primitivesMd + "\n" + tablesMd, semanticsMd, rawBindings: { variables: [] } });
+  const tree = deriveSemanticTree({
+    primitivesMd,
+    semanticsMd: semanticsMd + "\n" + tablesMd,
+    rawBindings: { variables: [] },
+  });
   const leaf = tree.color.text.secondary;
   assert.equal(leaf.$value, "{color.primitive.cool-grey.800}");
-  assert.deepEqual(leaf.$extensions["com.actian.themes"], { actian: "#2A2A30", studio: "#636363", explorer: "#636363" });
+  assert.deepEqual(leaf.$extensions["com.actian.themes"], {
+    actian: "#2A2A30",
+    studio: "#636363",
+    explorer: "#636363",
+  });
 });
 
 test("annotation is a figma-only token", () => {
-  const tree = deriveSemanticTree({ primitivesMd: primitivesMd + "\n" + tablesMd, semanticsMd, rawBindings: { variables: [] } });
+  const tree = deriveSemanticTree({
+    primitivesMd,
+    semanticsMd: semanticsMd + "\n" + tablesMd,
+    rawBindings: { variables: [] },
+  });
   assert.equal(tree.color.annotation.annotation.$value, "#D71D6D");
-  assert.equal(tree.color.annotation.annotation.$extensions["com.actian.status"], "figma-only");
+  assert.equal(
+    tree.color.annotation.annotation.$extensions["com.actian.status"],
+    "figma-only",
+  );
 });
