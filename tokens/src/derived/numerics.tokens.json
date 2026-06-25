@@ -1173,35 +1173,35 @@
   "shadow": {
     "xs": {
       "$type": "shadow",
-      "$value": "0px 1px 3px 1px #0F, 0px 1px 5px 0px #12",
+      "$value": "0px 1px 3px 1px rgba(0, 0, 15, 0.06), 0px 1px 5px 0px rgba(0, 0, 18, 0.07)",
       "$extensions": {
         "com.actian.status": "Shipped"
       }
     },
     "sm": {
       "$type": "shadow",
-      "$value": "0px 1px 7px 3px #14, 0px 1px 3px 1px #1F",
+      "$value": "0px 1px 7px 3px rgba(0, 0, 20, 0.08), 0px 1px 3px 1px rgba(0, 0, 31, 0.12)",
       "$extensions": {
         "com.actian.status": "Shipped"
       }
     },
     "md": {
       "$type": "shadow",
-      "$value": "0px 1px 3px 0px #4D, 0px 4px 8px 3px #26",
+      "$value": "0px 1px 3px 0px rgba(0, 0, 77, 0.3), 0px 4px 8px 3px rgba(0, 0, 38, 0.15)",
       "$extensions": {
         "com.actian.status": "Shipped"
       }
     },
     "lg": {
       "$type": "shadow",
-      "$value": "0px 2px 3px 0px #4D, 0px 6px 10px 4px #26",
+      "$value": "0px 6px 10px 4px rgba(0, 0, 38, 0.15), 0px 2px 3px 0px rgba(0, 0, 77, 0.3)",
       "$extensions": {
         "com.actian.status": "Shipped"
       }
     },
     "xl": {
       "$type": "shadow",
-      "$value": "0px 4px 4px 0px #4D, 0px 8px 12px 6px #26",
+      "$value": "0px 8px 12px 6px rgba(0, 0, 38, 0.15), 0px 4px 4px 0px rgba(0, 0, 77, 0.3)",
       "$extensions": {
         "com.actian.status": "Shipped"
       }
