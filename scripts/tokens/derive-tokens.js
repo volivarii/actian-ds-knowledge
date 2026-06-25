@@ -7,6 +7,7 @@ const { hexToOklch, formatOklch } = require("./lib/oklch.js");
 const {
   curatePrimitiveBindings,
   curateSemanticBindings,
+  curateNumericBindings,
 } = require("./lib/curate-bindings.js");
 const { parseGlobalRoles, parseThemes } = require("./lib/parse-themes.js");
 const { parseSemantics } = require("./lib/parse-semantics.js");
@@ -499,6 +500,56 @@ function deriveMotion({ tokensMd }) {
   return tree;
 }
 
+// ─── P3 shared helpers ────────────────────────────────────────────────────────
+
+/**
+ * Deep-merge two DTCG trees. Objects without $value/$type are recursed into;
+ * leaf nodes (with $value or $type) in `b` replace those in `a` wholesale.
+ * Returns a new object — neither `a` nor `b` is mutated.
+ */
+function deepMerge(a, b) {
+  const out = Object.assign({}, a);
+  for (const [k, bv] of Object.entries(b)) {
+    const av = out[k];
+    const aIntermediate =
+      av && typeof av === "object" && !("$value" in av) && !("$type" in av);
+    const bIntermediate =
+      bv && typeof bv === "object" && !("$value" in bv) && !("$type" in bv);
+    if (aIntermediate && bIntermediate) {
+      out[k] = deepMerge(av, bv);
+    } else {
+      out[k] = bv;
+    }
+  }
+  return out;
+}
+
+/**
+ * Walk `tree`, computing each leaf's dot-path. If the path matches a key in
+ * `bindings`, attach `$extensions["com.figma"]` on the leaf (mutates in place).
+ */
+function attachBindings(tree, bindings, prefix) {
+  if (!prefix) prefix = "";
+  for (const [k, v] of Object.entries(tree)) {
+    const dotPath = prefix ? `${prefix}.${k}` : k;
+    if (v && typeof v === "object" && ("$value" in v || "$type" in v)) {
+      if (bindings[dotPath]) {
+        v.$extensions = v.$extensions || {};
+        v.$extensions["com.figma"] = bindings[dotPath];
+      }
+    } else if (v && typeof v === "object") {
+      attachBindings(v, bindings, dotPath);
+    }
+  }
+}
+
+/** Count leaf nodes (those with $value or $type) in a DTCG tree. */
+function countLeaves(tree) {
+  if (!tree || typeof tree !== "object") return 0;
+  if ("$value" in tree || "$type" in tree) return 1;
+  return Object.values(tree).reduce((acc, v) => acc + countLeaves(v), 0);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function main() {
@@ -571,6 +622,29 @@ function main() {
   process.stdout.write(
     `[derive-tokens] wrote ${sn} semantic tokens to tokens/src/derived/semantics.tokens.json\n`,
   );
+
+  // Numeric tree (P3): numeric + composite styles + motion, with bindings.
+  const numericBase = deriveNumericTree({ tokensMd });
+  const compositeTree = deriveCompositeStyles({ tokensMd, primitivesMd });
+  const motionTree = deriveMotion({ tokensMd });
+
+  // Deep-merge: composite (border styles + focus-ring styles + shadow) first,
+  // then motion (top-level motion subtree), into the numeric base.
+  let numericTree = deepMerge(numericBase, compositeTree);
+  numericTree = deepMerge(numericTree, motionTree);
+
+  // Attach numeric Figma bindings on matching leaves.
+  const numBindings = curateNumericBindings(rawBindings);
+  attachBindings(numericTree, numBindings);
+
+  fs.writeFileSync(
+    path.join(outDir, "numerics.tokens.json"),
+    JSON.stringify(numericTree, null, 2) + "\n",
+  );
+  const nn = countLeaves(numericTree);
+  process.stdout.write(
+    `[derive-tokens] wrote ${nn} numeric tokens to tokens/src/derived/numerics.tokens.json\n`,
+  );
 }
 
 if (require.main === module) main();
@@ -581,4 +655,5 @@ module.exports = {
   deriveNumericTree,
   deriveCompositeStyles,
   deriveMotion,
+  deepMerge,
 };

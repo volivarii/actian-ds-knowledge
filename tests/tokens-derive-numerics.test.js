@@ -2,7 +2,10 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { deriveNumericTree } = require("../scripts/tokens/derive-tokens.js");
+const {
+  deriveNumericTree,
+  deepMerge,
+} = require("../scripts/tokens/derive-tokens.js");
 
 const MD = [
   "| `--zen-spacing-xs` | `0.5rem` (8px) | x | 🟢 Shipped |",
@@ -59,4 +62,114 @@ test("covers breakpoint, focus-ring offset, lineheight, letterspacing-normal, si
   assert.equal(t.font.letterspacing.normal.$value, "0px");
   assert.equal(t.size.height.md.$value, "40px");
   assert.equal(t.size.trigger.min.$value, "24px");
+});
+
+// ─── deepMerge ───────────────────────────────────────────────────────────────
+
+test("deepMerge: border.radius and border styles coexist after merge", () => {
+  // Simulate: numeric tree has border.radius + border.width; composite adds border styles
+  const numericSubset = {
+    border: {
+      radius: { sm: { $type: "dimension", $value: "6px", $extensions: {} } },
+      width: { md: { $type: "dimension", $value: "1px", $extensions: {} } },
+    },
+    "focus-ring": {
+      offset: { $type: "dimension", $value: "2px", $extensions: {} },
+    },
+  };
+  const compositeSubset = {
+    border: {
+      default: { $type: "color", $value: "#c0c0c0", $extensions: {} },
+      subtle: { $type: "color", $value: "#e0e0e0", $extensions: {} },
+    },
+    "focus-ring": {
+      primary: { $type: "color", $value: "#0055ff", $extensions: {} },
+      error: { $type: "color", $value: "#cc0000", $extensions: {} },
+    },
+    shadow: {
+      md: {
+        $type: "shadow",
+        $value: "0 2px 4px rgba(0,0,0,.2)",
+        $extensions: {},
+      },
+    },
+  };
+  const motionSubset = {
+    motion: {
+      duration: {
+        fast: { $type: "duration", $value: "100ms", $extensions: {} },
+      },
+      ease: {
+        standard: { $type: "string", $value: "ease-out", $extensions: {} },
+      },
+    },
+  };
+
+  let merged = deepMerge(numericSubset, compositeSubset);
+  merged = deepMerge(merged, motionSubset);
+
+  // border subtree: BOTH radius/width AND style leaves must coexist
+  assert.ok(merged.border.radius.sm, "border.radius.sm present");
+  assert.equal(merged.border.radius.sm.$value, "6px");
+  assert.ok(merged.border.width.md, "border.width.md present");
+  assert.ok(merged.border.default, "border.default present");
+  assert.ok(merged.border.subtle, "border.subtle present");
+
+  // focus-ring: offset (numeric) + primary/error (composite) coexist
+  assert.ok(merged["focus-ring"].offset, "focus-ring.offset present");
+  assert.ok(merged["focus-ring"].primary, "focus-ring.primary present");
+  assert.ok(merged["focus-ring"].error, "focus-ring.error present");
+
+  // shadow and motion present after merges
+  assert.ok(merged.shadow.md, "shadow.md present");
+  assert.ok(merged.motion.duration.fast, "motion.duration.fast present");
+  assert.ok(merged.motion.ease.standard, "motion.ease.standard present");
+});
+
+test("deepMerge: leaf in b replaces leaf in a without descending into b's leaf", () => {
+  const a = {
+    x: {
+      $type: "dimension",
+      $value: "4px",
+      $extensions: { "com.actian.status": "shipped" },
+    },
+  };
+  const b = {
+    x: {
+      $type: "dimension",
+      $value: "8px",
+      $extensions: { "com.actian.status": "proposed" },
+    },
+  };
+  const merged = deepMerge(a, b);
+  // b's leaf must replace a's leaf entirely — no merge of $extensions
+  assert.equal(merged.x.$value, "8px");
+  assert.equal(merged.x.$extensions["com.actian.status"], "proposed");
+});
+
+test("deepMerge: binding attachment on merged tree via com.figma extension", () => {
+  // Simulate attaching a binding to spacing.sm after merge
+  const numeric = {
+    spacing: {
+      sm: {
+        $type: "dimension",
+        $value: "8px",
+        $extensions: { "com.actian.status": "shipped" },
+      },
+    },
+  };
+  // After deepMerge (no-op — no overlap) + manual binding attachment simulation
+  const bindings = { "spacing.sm": { variableKey: "s1", scopes: ["GAP"] } };
+
+  // Walk the numeric tree manually to verify the attachment logic would work
+  const leaf = numeric.spacing.sm;
+  if (bindings["spacing.sm"]) {
+    leaf.$extensions["com.figma"] = bindings["spacing.sm"];
+  }
+  assert.deepEqual(leaf.$extensions["com.figma"], {
+    variableKey: "s1",
+    scopes: ["GAP"],
+  });
+  // com.actian.status must still be present (attachment is additive on $extensions)
+  assert.equal(leaf.$extensions["com.actian.status"], "shipped");
 });

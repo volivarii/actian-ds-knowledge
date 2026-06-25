@@ -622,6 +622,13 @@
       "generator": "scripts/tokens/derive-tokens.js",
       "description": "Generated semantic color layer (DTCG: alias $value + 3-theme hex expansion + Figma binding) — staging output of derive-tokens.js (P2)"
     },
+    "tokens.derivedNumerics": {
+      "path": "tokens/src/derived/numerics.tokens.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/tokens/derive-tokens.js",
+      "description": "Generated numeric/dimension token layer (DTCG: spacing, border, focus-ring, font, icon, size, shadow, motion + Figma bindings) — staging output of derive-tokens.js (P3)"
+    },
     "tokens.figmaBindingsRaw": {
       "path": "tokens/src/figma-bindings-raw.json",
       "type": "json",
