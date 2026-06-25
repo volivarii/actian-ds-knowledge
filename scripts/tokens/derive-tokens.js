@@ -2,6 +2,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
+const { emitCss } = require("./emit-css.js");
 const { parsePrimitives } = require("./lib/parse-primitives.js");
 const { hexToOklch, formatOklch } = require("./lib/oklch.js");
 const {
@@ -754,6 +755,14 @@ function main() {
   const fn = countLeaves(fullTree);
   process.stdout.write(
     `[derive-tokens] wrote ${fn} total tokens to tokens/src/derived/tokens.candidate.json\n`,
+  );
+
+  // CSS candidate (P4a): emit all vars to staging — live tokens/tokens.css is untouched.
+  const cssCandidate = emitCss(fullTree);
+  const cssCandidatePath = path.join(outDir, "tokens.candidate.css");
+  fs.writeFileSync(cssCandidatePath, cssCandidate);
+  process.stdout.write(
+    `[derive-tokens] wrote tokens/src/derived/tokens.candidate.css\n`,
   );
 }
 
