@@ -23,13 +23,16 @@ function resolveRef(ref, fullTree) {
   let cur = fullTree;
   for (const p of parts) {
     cur = cur?.[p];
-    if (cur === undefined) return ref;
+    if (cur === undefined) throw new Error("emit-css: unresolved ref " + ref);
   }
-  return cur?.$value !== undefined ? cur.$value : ref;
+  if (cur?.$value === undefined)
+    throw new Error("emit-css: unresolved ref " + ref);
+  return cur.$value;
 }
 
 function resolveColorThemes(colorRef, fullTree) {
-  const m = colorRef && typeof colorRef === "string" && colorRef.match(/^\{(.+)\}$/);
+  const m =
+    colorRef && typeof colorRef === "string" && colorRef.match(/^\{(.+)\}$/);
   if (!m) return null;
   const parts = m[1].split(".");
   let cur = fullTree;
@@ -39,14 +42,36 @@ function resolveColorThemes(colorRef, fullTree) {
   }
   const themes = cur?.$extensions?.["com.actian.themes"];
   if (!themes) return null;
-  return { actian: lc(themes.actian), studio: lc(themes.studio), explorer: lc(themes.explorer) };
+  return {
+    actian: lc(themes.actian),
+    studio: lc(themes.studio),
+    explorer: lc(themes.explorer),
+  };
 }
 
 const COLOR_SEMANTIC_GROUPS = [
-  "annotation", "bg", "error", "icon", "neutral", "primary", "success", "text", "warning",
+  "annotation",
+  "bg",
+  "error",
+  "icon",
+  "neutral",
+  "primary",
+  "success",
+  "text",
+  "warning",
 ];
 
-const SPACING_ORDER = ["3xs", "2xs", "xs", "sm", "md", "lg", "xl", "2xl", "3xl"];
+const SPACING_ORDER = [
+  "3xs",
+  "2xs",
+  "xs",
+  "sm",
+  "md",
+  "lg",
+  "xl",
+  "2xl",
+  "3xl",
+];
 const SIZE_ORDER = ["sx", "sm", "md", "lg", "xl", "2xl", "3xl"];
 const BREAKPOINT_ORDER = ["sm", "md", "lg", "xl"];
 const FAMILY_ORDER = ["brand", "mono", "text"];
@@ -55,18 +80,22 @@ const FONT_SIZE_ORDER = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl"];
 const LINEHEIGHT_ORDER = ["xs", "sm", "md", "lg", "xl", "2xl"];
 const LETTERSPACING_WIDE_ORDER = ["1", "2", "3", "4"];
 const TEXT_STYLE_ORDER = [
-  "heading-display", "heading-prominent", "heading-standard", "heading-subtle", "heading-micro",
-  "body-display", "body-prominent", "body-standard", "body-subtle", "body-micro",
-  "label-standard", "label-subtle", "label-micro",
+  "heading-display",
+  "heading-prominent",
+  "heading-standard",
+  "heading-subtle",
+  "heading-micro",
+  "body-display",
+  "body-prominent",
+  "body-standard",
+  "body-subtle",
+  "body-micro",
+  "label-standard",
+  "label-subtle",
+  "label-micro",
 ];
 const ICON_ORDER = ["xs", "sm", "md", "lg"];
 const SHADOW_ORDER = ["xs", "sm", "md", "lg", "xl"];
-
-const FAMILY_FORMAT = {
-  brand: '"AllRpungGothic", sans-serif',
-  mono: '"Roboto Mono", sans-serif',
-  text: '"Roboto", sans-serif',
-};
 
 function collectVars(fullTree) {
   const vars = [];
@@ -101,17 +130,23 @@ function collectVars(fullTree) {
     if (k === "radius" || k === "width") continue;
     if (!leaf || !("$value" in leaf)) continue;
     const colorRef = leaf.$extensions?.["com.actian.border"]?.color;
-    const actian = lc(leaf.$value);
+    let actian = lc(leaf.$value);
     let studio = actian;
     let explorer = actian;
     if (colorRef) {
       const resolved = resolveColorThemes(colorRef, fullTree);
       if (resolved) {
+        actian = resolved.actian;
         studio = resolved.studio;
         explorer = resolved.explorer;
       }
     }
-    borderCompositeVars.push({ varName: `--zen-border-${k}`, actian, studio, explorer });
+    borderCompositeVars.push({
+      varName: `--zen-border-${k}`,
+      actian,
+      studio,
+      explorer,
+    });
   }
   borderCompositeVars.sort((a, b) => a.varName.localeCompare(b.varName));
   vars.push(...borderCompositeVars);
@@ -122,17 +157,23 @@ function collectVars(fullTree) {
     if (k === "offset") continue;
     if (!leaf || !("$value" in leaf)) continue;
     const colorRef = leaf.$extensions?.["com.actian.focusRing"]?.color;
-    const actian = lc(leaf.$value);
+    let actian = lc(leaf.$value);
     let studio = actian;
     let explorer = actian;
     if (colorRef) {
       const resolved = resolveColorThemes(colorRef, fullTree);
       if (resolved) {
+        actian = resolved.actian;
         studio = resolved.studio;
         explorer = resolved.explorer;
       }
     }
-    focusColorVars.push({ varName: `--zen-focus-ring-${k}`, actian, studio, explorer });
+    focusColorVars.push({
+      varName: `--zen-focus-ring-${k}`,
+      actian,
+      studio,
+      explorer,
+    });
   }
   focusColorVars.sort((a, b) => a.varName.localeCompare(b.varName));
   vars.push(...focusColorVars);
@@ -142,7 +183,12 @@ function collectVars(fullTree) {
   for (const k of SPACING_ORDER) {
     const leaf = fullTree.spacing?.[k];
     if (!leaf) continue;
-    vars.push({ varName: `--zen-spacing-${k}`, actian: leaf.$value, studio: leaf.$value, explorer: leaf.$value });
+    vars.push({
+      varName: `--zen-spacing-${k}`,
+      actian: leaf.$value,
+      studio: leaf.$value,
+      explorer: leaf.$value,
+    });
   }
 
   // ── Border ──────────────────────────────────────────────────────────────────
@@ -151,14 +197,24 @@ function collectVars(fullTree) {
   const radVars = [];
   for (const [k, leaf] of Object.entries(fullTree.border?.radius || {})) {
     if (!leaf?.$value) continue;
-    radVars.push({ varName: `--zen-border-radius-${k}`, actian: leaf.$value, studio: leaf.$value, explorer: leaf.$value });
+    radVars.push({
+      varName: `--zen-border-radius-${k}`,
+      actian: leaf.$value,
+      studio: leaf.$value,
+      explorer: leaf.$value,
+    });
   }
   radVars.sort((a, b) => a.varName.localeCompare(b.varName));
   vars.push(...radVars);
   const widthVars = [];
   for (const [k, leaf] of Object.entries(fullTree.border?.width || {})) {
     if (!leaf?.$value) continue;
-    widthVars.push({ varName: `--zen-border-width-${k}`, actian: leaf.$value, studio: leaf.$value, explorer: leaf.$value });
+    widthVars.push({
+      varName: `--zen-border-width-${k}`,
+      actian: leaf.$value,
+      studio: leaf.$value,
+      explorer: leaf.$value,
+    });
   }
   widthVars.sort((a, b) => a.varName.localeCompare(b.varName));
   vars.push(...widthVars);
@@ -168,7 +224,12 @@ function collectVars(fullTree) {
   for (const k of SIZE_ORDER) {
     const leaf = fullTree.size?.[k];
     if (!leaf) continue;
-    vars.push({ varName: `--zen-size-${k}`, actian: leaf.$value, studio: leaf.$value, explorer: leaf.$value });
+    vars.push({
+      varName: `--zen-size-${k}`,
+      actian: leaf.$value,
+      studio: leaf.$value,
+      explorer: leaf.$value,
+    });
   }
 
   // ── Breakpoint ──────────────────────────────────────────────────────────────
@@ -176,47 +237,88 @@ function collectVars(fullTree) {
   for (const k of BREAKPOINT_ORDER) {
     const leaf = fullTree.breakpoint?.[k];
     if (!leaf) continue;
-    vars.push({ varName: `--zen-breakpoint-${k}`, actian: leaf.$value, studio: leaf.$value, explorer: leaf.$value });
+    vars.push({
+      varName: `--zen-breakpoint-${k}`,
+      actian: leaf.$value,
+      studio: leaf.$value,
+      explorer: leaf.$value,
+    });
   }
 
   // ── Focus-ring ──────────────────────────────────────────────────────────────
   vars.push({ _sectionComment: "/* ── Focus-ring ── */" });
   const offsetLeaf = fullTree["focus-ring"]?.offset;
   if (offsetLeaf) {
-    vars.push({ varName: "--zen-focus-ring-offset", actian: offsetLeaf.$value, studio: offsetLeaf.$value, explorer: offsetLeaf.$value });
+    vars.push({
+      varName: "--zen-focus-ring-offset",
+      actian: offsetLeaf.$value,
+      studio: offsetLeaf.$value,
+      explorer: offsetLeaf.$value,
+    });
   }
 
   // ── Font ────────────────────────────────────────────────────────────────────
   vars.push({ _sectionComment: "/* ── Font ── */" });
   for (const k of FAMILY_ORDER) {
-    if (!fullTree.font?.family?.[k]) continue;
-    const fmt = FAMILY_FORMAT[k] || `"${fullTree.font.family[k].$value}", sans-serif`;
-    vars.push({ varName: `--zen-font-family-${k}`, actian: fmt, studio: fmt, explorer: fmt });
+    const familyLeaf = fullTree.font?.family?.[k];
+    if (!familyLeaf) continue;
+    const fmt = `"${familyLeaf.$value}", sans-serif`;
+    vars.push({
+      varName: `--zen-font-family-${k}`,
+      actian: fmt,
+      studio: fmt,
+      explorer: fmt,
+    });
   }
   for (const k of WEIGHT_ORDER) {
     const leaf = fullTree.font?.weight?.[k];
     if (!leaf) continue;
     const val = String(leaf.$value);
-    vars.push({ varName: `--zen-font-weight-${k}`, actian: val, studio: val, explorer: val });
+    vars.push({
+      varName: `--zen-font-weight-${k}`,
+      actian: val,
+      studio: val,
+      explorer: val,
+    });
   }
   for (const k of FONT_SIZE_ORDER) {
     const leaf = fullTree.font?.size?.[k];
     if (!leaf) continue;
-    vars.push({ varName: `--zen-font-size-${k}`, actian: leaf.$value, studio: leaf.$value, explorer: leaf.$value });
+    vars.push({
+      varName: `--zen-font-size-${k}`,
+      actian: leaf.$value,
+      studio: leaf.$value,
+      explorer: leaf.$value,
+    });
   }
   for (const k of LINEHEIGHT_ORDER) {
     const leaf = fullTree.font?.lineheight?.[k];
     if (!leaf) continue;
-    vars.push({ varName: `--zen-font-lineheight-${k}`, actian: leaf.$value, studio: leaf.$value, explorer: leaf.$value });
+    vars.push({
+      varName: `--zen-font-lineheight-${k}`,
+      actian: leaf.$value,
+      studio: leaf.$value,
+      explorer: leaf.$value,
+    });
   }
   const lsNormal = fullTree.font?.letterspacing?.normal;
   if (lsNormal) {
-    vars.push({ varName: "--zen-font-letterspacing-normal", actian: lsNormal.$value, studio: lsNormal.$value, explorer: lsNormal.$value });
+    vars.push({
+      varName: "--zen-font-letterspacing-normal",
+      actian: lsNormal.$value,
+      studio: lsNormal.$value,
+      explorer: lsNormal.$value,
+    });
   }
   for (const n of LETTERSPACING_WIDE_ORDER) {
     const leaf = fullTree.font?.letterspacing?.wide?.[n];
     if (!leaf) continue;
-    vars.push({ varName: `--zen-font-letterspacing-wide-${n}`, actian: leaf.$value, studio: leaf.$value, explorer: leaf.$value });
+    vars.push({
+      varName: `--zen-font-letterspacing-wide-${n}`,
+      actian: leaf.$value,
+      studio: leaf.$value,
+      explorer: leaf.$value,
+    });
   }
 
   // ── Icon ────────────────────────────────────────────────────────────────────
@@ -224,7 +326,12 @@ function collectVars(fullTree) {
   for (const k of ICON_ORDER) {
     const leaf = fullTree.icon?.[k];
     if (!leaf) continue;
-    vars.push({ varName: `--zen-icon-${k}`, actian: leaf.$value, studio: leaf.$value, explorer: leaf.$value });
+    vars.push({
+      varName: `--zen-icon-${k}`,
+      actian: leaf.$value,
+      studio: leaf.$value,
+      explorer: leaf.$value,
+    });
   }
 
   // ── Typography (text styles) ─────────────────────────────────────────────────
@@ -239,11 +346,36 @@ function collectVars(fullTree) {
     const ls = String(resolveRef(v.letterSpacing, fullTree));
     const fam = "var(--zen-font-family-text)";
     const prefix = `--zen-font-${styleName}`;
-    vars.push({ varName: `${prefix}-family`, actian: fam, studio: fam, explorer: fam });
-    vars.push({ varName: `${prefix}-weight`, actian: weight, studio: weight, explorer: weight });
-    vars.push({ varName: `${prefix}-size`, actian: size, studio: size, explorer: size });
-    vars.push({ varName: `${prefix}-line-height`, actian: lh, studio: lh, explorer: lh });
-    vars.push({ varName: `${prefix}-letter-spacing`, actian: ls, studio: ls, explorer: ls });
+    vars.push({
+      varName: `${prefix}-family`,
+      actian: fam,
+      studio: fam,
+      explorer: fam,
+    });
+    vars.push({
+      varName: `${prefix}-weight`,
+      actian: weight,
+      studio: weight,
+      explorer: weight,
+    });
+    vars.push({
+      varName: `${prefix}-size`,
+      actian: size,
+      studio: size,
+      explorer: size,
+    });
+    vars.push({
+      varName: `${prefix}-line-height`,
+      actian: lh,
+      studio: lh,
+      explorer: lh,
+    });
+    vars.push({
+      varName: `${prefix}-letter-spacing`,
+      actian: ls,
+      studio: ls,
+      explorer: ls,
+    });
   }
 
   // ── Shadows ─────────────────────────────────────────────────────────────────
@@ -251,7 +383,13 @@ function collectVars(fullTree) {
   for (const k of SHADOW_ORDER) {
     const leaf = fullTree.shadow?.[k];
     if (!leaf) continue;
-    vars.push({ varName: `--zen-shadow-${k}`, actian: leaf.$value, studio: leaf.$value, explorer: leaf.$value, multiline: true });
+    vars.push({
+      varName: `--zen-shadow-${k}`,
+      actian: leaf.$value,
+      studio: leaf.$value,
+      explorer: leaf.$value,
+      multiline: true,
+    });
   }
 
   return vars;
@@ -275,8 +413,10 @@ function emitCss(fullTree) {
       continue;
     }
     actianLines.push(emitVar(entry, "actian"));
-    if (entry.studio !== entry.actian) studioLines.push(emitVar(entry, "studio"));
-    if (entry.explorer !== entry.actian) explorerLines.push(emitVar(entry, "explorer"));
+    if (entry.studio !== entry.actian)
+      studioLines.push(emitVar(entry, "studio"));
+    if (entry.explorer !== entry.actian)
+      explorerLines.push(emitVar(entry, "explorer"));
   }
 
   const header = [

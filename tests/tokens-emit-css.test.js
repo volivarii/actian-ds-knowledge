@@ -13,34 +13,50 @@ const fixture = {
         $type: "color",
         $value: "#D71D6D",
         $extensions: {
-          "com.actian.themes": { actian: "#D71D6D", studio: "#D71D6D", explorer: "#D71D6D" },
+          "com.actian.themes": {
+            actian: "#D71D6D",
+            studio: "#D71D6D",
+            explorer: "#D71D6D",
+          },
         },
       },
     },
     primary: {
-      "500": {
+      500: {
         $type: "color",
         $value: "{color.primitive.royal-blue.500}",
         $extensions: {
-          "com.actian.themes": { actian: "#0F5FDC", studio: "#0283BE", explorer: "#049B98" },
+          "com.actian.themes": {
+            actian: "#0F5FDC",
+            studio: "#0283BE",
+            explorer: "#049B98",
+          },
         },
       },
     },
     neutral: {
-      "100": {
+      100: {
         $type: "color",
         $value: "#C7C7CE",
         $extensions: {
-          "com.actian.themes": { actian: "#C7C7CE", studio: "#DADADA", explorer: "#DADADA" },
+          "com.actian.themes": {
+            actian: "#C7C7CE",
+            studio: "#DADADA",
+            explorer: "#DADADA",
+          },
         },
       },
     },
     error: {
-      "600": {
+      600: {
         $type: "color",
         $value: "#DC3514",
         $extensions: {
-          "com.actian.themes": { actian: "#DC3514", studio: "#DC3514", explorer: "#DC3514" },
+          "com.actian.themes": {
+            actian: "#DC3514",
+            studio: "#DC3514",
+            explorer: "#DC3514",
+          },
         },
       },
     },
@@ -57,7 +73,11 @@ const fixture = {
       $value: "#C7C7CE",
       $extensions: {
         "com.actian.status": "Shipped",
-        "com.actian.border": { width: "1px", style: "solid", color: "{color.neutral.100}" },
+        "com.actian.border": {
+          width: "1px",
+          style: "solid",
+          color: "{color.neutral.100}",
+        },
       },
     },
     selected: {
@@ -65,7 +85,11 @@ const fixture = {
       $value: "#0F5FDC",
       $extensions: {
         "com.actian.status": "Shipped",
-        "com.actian.border": { width: "2px", style: "solid", color: "{color.primary.500}" },
+        "com.actian.border": {
+          width: "2px",
+          style: "solid",
+          color: "{color.primary.500}",
+        },
       },
     },
     error: {
@@ -73,7 +97,11 @@ const fixture = {
       $value: "#DC3514",
       $extensions: {
         "com.actian.status": "Shipped",
-        "com.actian.border": { width: "1px", style: "solid", color: "{color.error.600}" },
+        "com.actian.border": {
+          width: "1px",
+          style: "solid",
+          color: "{color.error.600}",
+        },
       },
     },
   },
@@ -88,7 +116,11 @@ const fixture = {
       $value: "#0F5FDC",
       $extensions: {
         "com.actian.status": "Shipped",
-        "com.actian.focusRing": { width: "2px", style: "solid", color: "{color.primary.500}" },
+        "com.actian.focusRing": {
+          width: "2px",
+          style: "solid",
+          color: "{color.primary.500}",
+        },
       },
     },
   },
@@ -118,7 +150,7 @@ const fixture = {
     letterspacing: {
       normal: { $type: "dimension", $value: "0px", $extensions: {} },
       wide: {
-        "1": { $type: "dimension", $value: "0.1px", $extensions: {} },
+        1: { $type: "dimension", $value: "0.1px", $extensions: {} },
       },
     },
     "text-styles": {
@@ -140,7 +172,8 @@ const fixture = {
   shadow: {
     xs: {
       $type: "shadow",
-      $value: "0px 1px 3px 1px rgba(0, 0, 15, 0.06), 0px 1px 5px 0px rgba(0, 0, 18, 0.07)",
+      $value:
+        "0px 1px 3px 1px rgba(0, 0, 15, 0.06), 0px 1px 5px 0px rgba(0, 0, 18, 0.07)",
       $extensions: { "com.actian.status": "Shipped" },
     },
   },
@@ -161,7 +194,7 @@ test("emitCss - actian block has primary-500 hex", () => {
   const actianBlock = css.split('[data-theme="studio"]')[0];
   assert.ok(
     actianBlock.includes("--zen-color-primary-500: #0f5fdc;"),
-    "actian block must contain --zen-color-primary-500: #0f5fdc;"
+    "actian block must contain --zen-color-primary-500: #0f5fdc;",
   );
 });
 
@@ -170,16 +203,18 @@ test("emitCss - studio block has primary-500 override", () => {
   const studioSection = css.split('[data-theme="studio"] {')[1].split("}")[0];
   assert.ok(
     studioSection.includes("--zen-color-primary-500: #0283be;"),
-    "studio block must contain --zen-color-primary-500: #0283be;"
+    "studio block must contain --zen-color-primary-500: #0283be;",
   );
 });
 
 test("emitCss - explorer omits var equal to actian (annotation)", () => {
   const css = emitCss(fixture);
-  const explorerSection = css.split('[data-theme="explorer"] {')[1].split("}")[0];
+  const explorerSection = css
+    .split('[data-theme="explorer"] {')[1]
+    .split("}")[0];
   assert.ok(
     !explorerSection.includes("--zen-color-annotation-annotation"),
-    "explorer must not emit annotation var when equal to actian"
+    "explorer must not emit annotation var when equal to actian",
   );
 });
 
@@ -187,7 +222,7 @@ test("emitCss - heading-standard weight resolved from {font.weight.semibold}", (
   const css = emitCss(fixture);
   assert.ok(
     css.includes("--zen-font-heading-standard-weight: 600;"),
-    "--zen-font-heading-standard-weight: 600;"
+    "--zen-font-heading-standard-weight: 600;",
   );
 });
 
@@ -195,7 +230,7 @@ test("emitCss - heading-standard size resolved from {font.size.lg}", () => {
   const css = emitCss(fixture);
   assert.ok(
     css.includes("--zen-font-heading-standard-size: 16px;"),
-    "--zen-font-heading-standard-size: 16px;"
+    "--zen-font-heading-standard-size: 16px;",
   );
 });
 
@@ -204,7 +239,7 @@ test("emitCss - border-default present in actian block", () => {
   const actianBlock = css.split('[data-theme="studio"]')[0];
   assert.ok(
     actianBlock.includes("--zen-border-default:"),
-    "--zen-border-default: must appear in actian block"
+    "--zen-border-default: must appear in actian block",
   );
 });
 
@@ -213,7 +248,7 @@ test("emitCss - border-selected differs per theme (studio override)", () => {
   const studioSection = css.split('[data-theme="studio"] {')[1].split("}")[0];
   assert.ok(
     studioSection.includes("--zen-border-selected: #0283be;"),
-    "studio must override --zen-border-selected"
+    "studio must override --zen-border-selected",
   );
 });
 
@@ -221,7 +256,7 @@ test("emitCss - shadow-xs multiline format", () => {
   const css = emitCss(fixture);
   assert.ok(
     css.includes("--zen-shadow-xs:\n    0px 1px 3px 1px rgba(0, 0, 15, 0.06)"),
-    "--zen-shadow-xs must use multi-line format"
+    "--zen-shadow-xs must use multi-line format",
   );
 });
 
@@ -230,12 +265,12 @@ test("emitCss - focus-ring-offset in actian block (not studio/explorer)", () => 
   const actianBlock = css.split('[data-theme="studio"]')[0];
   assert.ok(
     actianBlock.includes("--zen-focus-ring-offset: 2px;"),
-    "--zen-focus-ring-offset must appear in actian block"
+    "--zen-focus-ring-offset must appear in actian block",
   );
   const studioSection = css.split('[data-theme="studio"] {')[1].split("}")[0];
   assert.ok(
     !studioSection.includes("--zen-focus-ring-offset"),
-    "--zen-focus-ring-offset must not appear in studio block"
+    "--zen-focus-ring-offset must not appear in studio block",
   );
 });
 
@@ -244,7 +279,7 @@ test("emitCss - focus-ring-primary overrides in studio block", () => {
   const studioSection = css.split('[data-theme="studio"] {')[1].split("}")[0];
   assert.ok(
     studioSection.includes("--zen-focus-ring-primary: #0283be;"),
-    "studio must override --zen-focus-ring-primary"
+    "studio must override --zen-focus-ring-primary",
   );
 });
 
@@ -260,10 +295,37 @@ test("emitCss - heading-standard line-height and letter-spacing resolved", () =>
   const css = emitCss(fixture);
   assert.ok(
     css.includes("--zen-font-heading-standard-line-height: 24px;"),
-    "--zen-font-heading-standard-line-height: 24px;"
+    "--zen-font-heading-standard-line-height: 24px;",
   );
   assert.ok(
     css.includes("--zen-font-heading-standard-letter-spacing: 0.1px;"),
-    "--zen-font-heading-standard-letter-spacing: 0.1px;"
+    "--zen-font-heading-standard-letter-spacing: 0.1px;",
+  );
+});
+
+test("emitCss - explorer block has primary-500 override", () => {
+  const css = emitCss(fixture);
+  const explorerSection = css
+    .split('[data-theme="explorer"] {')[1]
+    .split("}")[0];
+  assert.ok(
+    explorerSection.includes("--zen-color-primary-500: #049b98;"),
+    "explorer block must contain --zen-color-primary-500: #049b98;",
+  );
+});
+
+test("emitCss - border-error absent from studio and explorer blocks (theme-invariant)", () => {
+  const css = emitCss(fixture);
+  const studioSection = css.split('[data-theme="studio"] {')[1].split("}")[0];
+  const explorerSection = css
+    .split('[data-theme="explorer"] {')[1]
+    .split("}")[0];
+  assert.ok(
+    !studioSection.includes("--zen-border-error"),
+    "--zen-border-error must NOT appear in studio block (error-600 is theme-invariant)",
+  );
+  assert.ok(
+    !explorerSection.includes("--zen-border-error"),
+    "--zen-border-error must NOT appear in explorer block (error-600 is theme-invariant)",
   );
 });
