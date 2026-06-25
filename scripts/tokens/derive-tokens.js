@@ -12,6 +12,7 @@ const { parseGlobalRoles, parseThemes } = require("./lib/parse-themes.js");
 const { parseSemantics } = require("./lib/parse-semantics.js");
 const { buildResolver, applyAlpha } = require("./lib/resolve.js");
 const { lintShadeRamp } = require("./lib/formula-lint.js");
+const { parseValues } = require("./lib/parse-values.js");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 
@@ -147,6 +148,194 @@ function deriveSemanticTree({ primitivesMd, semanticsMd, rawBindings }) {
   return tree;
 }
 
+// ─── P3: Numeric/dimension families assembler ────────────────────────────────
+
+const FIGMA_ONLY_SIZE = {
+  sx: "4px",
+  sm: "8px",
+  md: "16px",
+  lg: "24px",
+  xl: "32px",
+  "2xl": "40px",
+  "3xl": "44px",
+};
+
+/** Place a leaf at a dot-separated path inside tree (mutates tree). */
+function setPath(tree, dotted, leaf) {
+  const segs = dotted.split(".");
+  let cur = tree;
+  for (let i = 0; i < segs.length - 1; i++)
+    cur = cur[segs[i]] = cur[segs[i]] || {};
+  cur[segs[segs.length - 1]] = leaf;
+}
+
+/**
+ * Route a parsed token name+value to a DTCG dot-path + $type.
+ * Returns { dotPath, $type, $value } or null if unrecognised.
+ */
+function routeToken(token, rawValue) {
+  // spacing-<k> → spacing.<k> · dimension
+  let m = token.match(/^spacing-(.+)$/);
+  if (m)
+    return { dotPath: `spacing.${m[1]}`, $type: "dimension", $value: rawValue };
+
+  // border-radius-<k> → border.radius.<k> · dimension
+  m = token.match(/^border-radius-(.+)$/);
+  if (m)
+    return {
+      dotPath: `border.radius.${m[1]}`,
+      $type: "dimension",
+      $value: rawValue,
+    };
+
+  // border-width-<k> → border.width.<k> · dimension
+  m = token.match(/^border-width-(.+)$/);
+  if (m)
+    return {
+      dotPath: `border.width.${m[1]}`,
+      $type: "dimension",
+      $value: rawValue,
+    };
+
+  // breakpoint-<k> → breakpoint.<k> · dimension
+  m = token.match(/^breakpoint-(.+)$/);
+  if (m)
+    return {
+      dotPath: `breakpoint.${m[1]}`,
+      $type: "dimension",
+      $value: rawValue,
+    };
+
+  // focus-ring-offset → focus-ring.offset · dimension
+  if (token === "focus-ring-offset")
+    return {
+      dotPath: "focus-ring.offset",
+      $type: "dimension",
+      $value: rawValue,
+    };
+
+  // font-size-<k> → font.size.<k> · dimension
+  m = token.match(/^font-size-(.+)$/);
+  if (m)
+    return {
+      dotPath: `font.size.${m[1]}`,
+      $type: "dimension",
+      $value: rawValue,
+    };
+
+  // font-lineheight-<k> → font.lineheight.<k> · dimension
+  m = token.match(/^font-lineheight-(.+)$/);
+  if (m)
+    return {
+      dotPath: `font.lineheight.${m[1]}`,
+      $type: "dimension",
+      $value: rawValue,
+    };
+
+  // font-weight-<k> → font.weight.<k> · fontWeight (numeric)
+  m = token.match(/^font-weight-(.+)$/);
+  if (m)
+    return {
+      dotPath: `font.weight.${m[1]}`,
+      $type: "fontWeight",
+      $value: Number(rawValue),
+    };
+
+  // font-family-<k> → font.family.<k> · fontFamily
+  m = token.match(/^font-family-(.+)$/);
+  if (m)
+    return {
+      dotPath: `font.family.${m[1]}`,
+      $type: "fontFamily",
+      $value: rawValue,
+    };
+
+  // font-letterspacing-normal → font.letterspacing.normal · dimension
+  if (token === "font-letterspacing-normal")
+    return {
+      dotPath: "font.letterspacing.normal",
+      $type: "dimension",
+      $value: rawValue,
+    };
+
+  // font-letterspacing-wide-<n> → font.letterspacing.wide.<n> · dimension
+  m = token.match(/^font-letterspacing-wide-(.+)$/);
+  if (m)
+    return {
+      dotPath: `font.letterspacing.wide.${m[1]}`,
+      $type: "dimension",
+      $value: rawValue,
+    };
+
+  // size-icon-<k> → icon.<k> · dimension (top-level icon, matches frozen)
+  m = token.match(/^size-icon-(.+)$/);
+  if (m)
+    return { dotPath: `icon.${m[1]}`, $type: "dimension", $value: rawValue };
+
+  // size-height-<k> → size.height.<k> · dimension
+  m = token.match(/^size-height-(.+)$/);
+  if (m)
+    return {
+      dotPath: `size.height.${m[1]}`,
+      $type: "dimension",
+      $value: rawValue,
+    };
+
+  // size-trigger-<rest> → size.trigger.<rest> · dimension
+  m = token.match(/^size-trigger-(.+)$/);
+  if (m)
+    return {
+      dotPath: `size.trigger.${m[1]}`,
+      $type: "dimension",
+      $value: rawValue,
+    };
+
+  return null; // unrecognised — skip
+}
+
+/**
+ * Derives the numeric/dimension token tree from tokens.md value tables.
+ * Routing follows the brief's exact table. After routing all md rows the
+ * figma-only carry-forwards (legacy size scale + brand font) are injected.
+ *
+ * @param {{ tokensMd: string }} opts
+ * @returns {object} DTCG tree
+ */
+function deriveNumericTree({ tokensMd }) {
+  const tree = {};
+
+  for (const { token, value, status } of parseValues(tokensMd)) {
+    const route = routeToken(token, value);
+    if (!route) continue;
+    const leaf = {
+      $type: route.$type,
+      $value: route.$value,
+      $extensions: { "com.actian.status": status },
+    };
+    setPath(tree, route.dotPath, leaf);
+  }
+
+  // figma-only carry-forwards — legacy size scale
+  for (const [key, px] of Object.entries(FIGMA_ONLY_SIZE)) {
+    setPath(tree, `size.${key}`, {
+      $type: "dimension",
+      $value: px,
+      $extensions: { "com.actian.status": "figma-only" },
+    });
+  }
+
+  // figma-only carry-forward — brand font
+  setPath(tree, "font.family.brand", {
+    $type: "fontFamily",
+    $value: "AllRpungGothic",
+    $extensions: { "com.actian.status": "figma-only" },
+  });
+
+  return tree;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function main() {
   const primitivesMd = fs.readFileSync(
     path.join(REPO_ROOT, "foundations", "src", "color-primitives.md"),
@@ -221,4 +410,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { derivePrimitiveTree, deriveSemanticTree };
+module.exports = { derivePrimitiveTree, deriveSemanticTree, deriveNumericTree };
