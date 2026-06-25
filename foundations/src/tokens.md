@@ -43,6 +43,18 @@ All tokens are implemented as CSS custom properties under the `--zen-` namespace
 | `--zen-color-error`   | `--zen-color-red`        | 🟢 Shipped  |
 | `--zen-color-neutral` | `--zen-color-cool-grey`  | 🟡 Proposed |
 
+#### Theme Palettes
+
+A theme is a choice of two base palettes — `primary` and `neutral`. All other
+semantics (success/warning/error/annotation) are theme-invariant. Adding a theme
+is two values. Default (un-suffixed) theme is Actian.
+
+| Theme    | primary    | neutral   | Status     |
+| -------- | ---------- | --------- | ---------- |
+| Actian   | royal-blue | cool-grey | 🟢 Shipped |
+| Studio   | blue       | grey      | 🟢 Shipped |
+| Explorer | turquoise  | grey      | 🟢 Shipped |
+
 ### 2.2 Typography
 
 #### Text Color Tokens
