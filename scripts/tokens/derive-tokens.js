@@ -17,6 +17,11 @@ const {
   parseTextStyles,
   buildTextStyle,
 } = require("./lib/parse-text-styles.js");
+const {
+  parseBorderStyles,
+  parseFocusStyles,
+  parseShadows,
+} = require("./lib/parse-composites.js");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 
@@ -346,6 +351,93 @@ function deriveNumericTree({ tokensMd }) {
   return tree;
 }
 
+// ─── P3: Composite styles assembler ─────────────────────────────────────────
+
+/**
+ * Resolves a color ref like "neutral-100" or "primary-500" or "white" to the
+ * DTCG alias string "{color.<role>.<shade>}" or "{color.primitive.<singleton>}".
+ * Used in composite border/focus-ring extensions.
+ */
+function colorRefToAlias(colorRef) {
+  // Singleton (no shade): "white", "black", etc.
+  const m = colorRef.match(/^(.+)-(\d{2,3})$/);
+  if (!m) return `{color.primitive.${colorRef}}`;
+  const [, role, shade] = m;
+  return `{color.${role}.${shade}}`;
+}
+
+/**
+ * Derives border, focus-ring, and shadow composite token trees.
+ * Color $value is resolved to the Actian theme hex via the P2 resolver so
+ * border/focus-ring leaves are parity-comparable with frozen tokens.json.
+ * The composite parts (width/style/color-alias) are preserved in
+ * $extensions.com.actian.border / com.actian.focusRing for P4 css emission.
+ *
+ * Integration choice: kept as a standalone exported function (not merged into
+ * deriveNumericTree) because it requires primitivesMd+tokensMd+resolver setup
+ * that deriveNumericTree intentionally avoids. Task 6's CLI deep-merges the
+ * composite tree alongside the numeric tree. This keeps Task 2's tests green
+ * with zero changes to deriveNumericTree.
+ *
+ * @param {{ tokensMd: string, primitivesMd: string }} opts
+ * @returns {{ border: object, "focus-ring": object, shadow: object }}
+ */
+function deriveCompositeStyles({ tokensMd, primitivesMd }) {
+  // Build resolver (same as deriveSemanticTree setup, minimal — no Figma bindings needed).
+  const primitiveTree = derivePrimitiveTree({
+    primitivesMd,
+    rawBindings: { variables: [] },
+  });
+  const globalRoles = parseGlobalRoles(tokensMd);
+  const themes = parseThemes(tokensMd);
+  const R = buildResolver({ primitiveTree, globalRoles, themes });
+
+  const borderTree = {};
+  for (const { name, width, color, status } of parseBorderStyles(tokensMd)) {
+    const hex = R.resolveHex(color, "actian");
+    borderTree[name] = {
+      $type: "color",
+      $value: hex,
+      $extensions: {
+        "com.actian.status": status,
+        "com.actian.border": {
+          width,
+          style: "solid",
+          color: colorRefToAlias(color),
+        },
+      },
+    };
+  }
+
+  const focusTree = {};
+  for (const { name, width, color, status } of parseFocusStyles(tokensMd)) {
+    const hex = R.resolveHex(color, "actian");
+    focusTree[name] = {
+      $type: "color",
+      $value: hex,
+      $extensions: {
+        "com.actian.status": status,
+        "com.actian.focusRing": {
+          width,
+          style: "solid",
+          color: colorRefToAlias(color),
+        },
+      },
+    };
+  }
+
+  const shadowTree = {};
+  for (const { name, value, status } of parseShadows(tokensMd)) {
+    shadowTree[name] = {
+      $type: "shadow",
+      $value: value,
+      $extensions: { "com.actian.status": status },
+    };
+  }
+
+  return { border: borderTree, "focus-ring": focusTree, shadow: shadowTree };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function main() {
@@ -422,4 +514,9 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { derivePrimitiveTree, deriveSemanticTree, deriveNumericTree };
+module.exports = {
+  derivePrimitiveTree,
+  deriveSemanticTree,
+  deriveNumericTree,
+  deriveCompositeStyles,
+};
