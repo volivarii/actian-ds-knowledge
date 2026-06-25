@@ -34,7 +34,7 @@
 | Page header | not started | not started | not started | not started | approved |
 | Popover | approved | not started | inherited | inherited | not started |
 | Progress bar | approved | not started | inherited | inherited | not started |
-| Radio button | synthesized | — | — | — | — |
+| Radio button | approved | not started | inherited | inherited | not started |
 | Search | approved | not started | inherited | inherited | approved |
 | Side nav | approved | not started | inherited | inherited | approved |
 | Spinner | approved | not started | inherited | inherited | not started |
@@ -54,11 +54,11 @@
 
 | Domain | Approved | Draft | Inherited | Not started | Absent |
 |---|---|---|---|---|---|
-| content | 41 | 1 | 0 | 1 | 0 |
-| usage | 0 | 1 | 0 | 42 | 2 |
-| design | 0 | 3 | 39 | 1 | 2 |
-| behavior | 0 | 1 | 40 | 2 | 2 |
-| tokens | 12 | 0 | 0 | 31 | 2 |
+| content | 42 | 1 | 0 | 1 | 0 |
+| usage | 0 | 1 | 0 | 43 | 1 |
+| design | 0 | 3 | 40 | 1 | 1 |
+| behavior | 0 | 1 | 41 | 2 | 1 |
+| tokens | 12 | 0 | 0 | 32 | 1 |
 
 ## Registry aliases
 
