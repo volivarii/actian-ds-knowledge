@@ -234,12 +234,15 @@ function routeToken(token, rawValue) {
 
   // font-weight-<k> → font.weight.<k> · fontWeight (numeric)
   m = token.match(/^font-weight-(.+)$/);
-  if (m)
+  if (m) {
+    // Guard against non-numeric weight: emit numeric if valid, else fall back to raw string.
+    const numVal = Number(rawValue);
     return {
       dotPath: `font.weight.${m[1]}`,
       $type: "fontWeight",
-      $value: Number(rawValue),
+      $value: !isNaN(numVal) ? numVal : rawValue,
     };
+  }
 
   // font-family-<k> → font.family.<k> · fontFamily
   m = token.match(/^font-family-(.+)$/);
