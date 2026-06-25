@@ -13,14 +13,12 @@ function statusFrom(cell) {
 function normalizeValue(cell) {
   // strip backticks for inspection
   const raw = cell.replace(/`/g, "").trim();
-  // px-precedence: "(NNNpx)" first, then leading "NNNpx", then bare
+  // px-precedence: "(NNNpx)" first, then leading "NNNpx"
   const paren = raw.match(/\((\d+(?:\.\d+)?)px\)/);
   if (paren) return paren[1] + "px";
   const lead = raw.match(/(^|\s|\/)\s*(\d+(?:\.\d+)?)px\b/);
   if (lead) return lead[2] + "px";
-  // unit-less number (font-weight) or already-clean token (9999px handled above as bare px below)
-  const barePx = raw.match(/^(\d+(?:\.\d+)?)px$/);
-  if (barePx) return raw;
+  // unit-less number (font-weight)
   const num = raw.match(/^(\d+(?:\.\d+)?)$/);
   if (num) return raw;
   // family: drop surrounding quotes
@@ -34,7 +32,7 @@ function parseValues(markdown) {
   for (const line of String(markdown).split(/\r?\n/)) {
     if (line.indexOf("`--zen-") === -1) continue;
     if (line.indexOf("--zen-color-") !== -1) continue; // P2 color rows
-    if (/ solid /.test(line)) continue;                 // composite style rows (Task 3/4)
+    if (/ solid /.test(line)) continue; // composite style rows (Task 3/4)
     const cells = line.split("|").map((c) => c.trim());
     const tokCell = cells.find((c) => /`--zen-[a-z0-9-]+`/.test(c));
     if (!tokCell) continue;
@@ -45,8 +43,13 @@ function parseValues(markdown) {
     const ti = cells.indexOf(tokCell);
     const valueCell = cells[ti + 1] || "";
     if (valueCell.indexOf("--zen-") !== -1) continue; // resolves-to / composite reference
+    if (valueCell.includes(",")) continue; // comma-separated shadow/composite values (Task 4)
     const statusCell = cells[cells.length - 1] || cells[cells.length - 2] || "";
-    out.push({ token, value: normalizeValue(valueCell), status: statusFrom(statusCell) });
+    out.push({
+      token,
+      value: normalizeValue(valueCell),
+      status: statusFrom(statusCell),
+    });
   }
   return out;
 }
