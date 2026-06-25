@@ -2974,11 +2974,6 @@
       "title": "star"
     },
     {
-      "id": "component:stars",
-      "type": "component",
-      "title": "stars"
-    },
-    {
       "id": "component:status-offline",
       "type": "component",
       "title": "status-offline"
@@ -6063,11 +6058,6 @@
     },
     {
       "source": "component:sqlserver",
-      "target": "category:icons",
-      "type": "in_category"
-    },
-    {
-      "source": "component:stars",
       "target": "category:icons",
       "type": "in_category"
     },
