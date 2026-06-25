@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const {
   deriveNumericTree,
   deepMerge,
+  attachBindings,
 } = require("../scripts/tokens/derive-tokens.js");
 
 const MD = [
@@ -172,4 +173,36 @@ test("deepMerge: binding attachment on merged tree via com.figma extension", () 
   });
   // com.actian.status must still be present (attachment is additive on $extensions)
   assert.equal(leaf.$extensions["com.actian.status"], "shipped");
+});
+
+// ─── attachBindings ──────────────────────────────────────────────────────────
+
+test("attachBindings adds com.figma without clobbering existing $extensions, leaves unmatched alone", () => {
+  const tree = {
+    spacing: {
+      sm: {
+        $type: "dimension",
+        $value: "8px",
+        $extensions: { "com.actian.status": "Shipped" },
+      },
+    },
+    border: {
+      radius: {
+        sm: {
+          $type: "dimension",
+          $value: "6px",
+          $extensions: {},
+        },
+      },
+    },
+  };
+  attachBindings(tree, {
+    "spacing.sm": { variableKey: "s1", scopes: ["GAP"] },
+  });
+  assert.deepEqual(tree.spacing.sm.$extensions["com.figma"], {
+    variableKey: "s1",
+    scopes: ["GAP"],
+  });
+  assert.equal(tree.spacing.sm.$extensions["com.actian.status"], "Shipped"); // preserved
+  assert.equal(tree.border.radius.sm.$extensions["com.figma"], undefined); // no binding → untouched
 });

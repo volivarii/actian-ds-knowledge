@@ -506,6 +506,7 @@ function deriveMotion({ tokensMd }) {
  * Deep-merge two DTCG trees. Objects without $value/$type are recursed into;
  * leaf nodes (with $value or $type) in `b` replace those in `a` wholesale.
  * Returns a new object — neither `a` nor `b` is mutated.
+ * Note: leaf nodes ($value/$type objects) in the output share references with the inputs; only intermediate nodes are new objects.
  */
 function deepMerge(a, b) {
   const out = Object.assign({}, a);
@@ -656,4 +657,5 @@ module.exports = {
   deriveCompositeStyles,
   deriveMotion,
   deepMerge,
+  attachBindings,
 };
