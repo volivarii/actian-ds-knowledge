@@ -1,19 +1,32 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { buildResolver, applyAlpha } = require("../scripts/tokens/lib/resolve.js");
+const {
+  buildResolver,
+  applyAlpha,
+} = require("../scripts/tokens/lib/resolve.js");
 
-const primitiveTree = { color: { primitive: {
-  "royal-blue": { "500": { $value: "#0F5FDC" } },
-  "blue":       { "500": { $value: "#0283BE" } },
-  "turquoise":  { "500": { $value: "#049B98" } },
-  "cool-grey":  { "800": { $value: "#2A2A30" } },
-  "grey":       { "800": { $value: "#636363" } },
-  "green":      { "600": { $value: "#299315" } },
-  "black": { $value: "#000000" },
-  "white": { $value: "#FFFFFF" },
-} } };
-const globalRoles = { primary: "royal-blue", neutral: "cool-grey", success: "green", warning: "orange", error: "red" };
+const primitiveTree = {
+  color: {
+    primitive: {
+      "royal-blue": { 500: { $value: "#0F5FDC" } },
+      blue: { 500: { $value: "#0283BE" } },
+      turquoise: { 500: { $value: "#049B98" } },
+      "cool-grey": { 800: { $value: "#2A2A30" } },
+      grey: { 800: { $value: "#636363" } },
+      green: { 600: { $value: "#299315" } },
+      black: { $value: "#000000" },
+      white: { $value: "#FFFFFF" },
+    },
+  },
+};
+const globalRoles = {
+  primary: "royal-blue",
+  neutral: "cool-grey",
+  success: "green",
+  warning: "orange",
+  error: "red",
+};
 const themes = {
   actian: { primary: "royal-blue", neutral: "cool-grey" },
   studio: { primary: "blue", neutral: "grey" },
@@ -43,4 +56,8 @@ test("singletons", () => {
 
 test("applyAlpha appends the alpha byte (40% → 66)", () => {
   assert.equal(applyAlpha("#000000", 0.4), "#00000066");
+});
+
+test("applyAlpha returns hex unchanged when opacity is null", () => {
+  assert.equal(applyAlpha("#0F5FDC", null), "#0F5FDC");
 });
