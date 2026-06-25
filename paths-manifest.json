@@ -636,6 +636,20 @@
       "generator": "scripts/tokens/derive-tokens.js",
       "description": "Full-tokens DTCG candidate: primitives + semantics + numerics merged into one tree (_frozen:false). Staging only — live tokens/tokens.json is untouched until P5 flip-diff validation passes. Key order mirrors frozen file + P3 additions (shadow, motion)."
     },
+    "tokens.derivedCandidateCss": {
+      "path": "tokens/src/derived/tokens.candidate.css",
+      "type": "css",
+      "origin": "ci",
+      "generator": "scripts/tokens/emit-css.js",
+      "description": "CSS custom-properties output for the candidate full-tokens tree — staging output, parallel to tokens.candidate.json. Live tokens/tokens.css is untouched until P5."
+    },
+    "tokens.derivedCandidateReference": {
+      "path": "tokens/src/derived/token-reference.candidate.md",
+      "type": "markdown",
+      "origin": "ci",
+      "generator": "scripts/render-token-reference.js",
+      "description": "Dry-run renderer output over tokens.candidate.json — staging reference doc, parallel to live tokens/token-reference.md. Written by tests/tokens-candidate-valid.test.js (P4a)."
+    },
     "tokens.figmaBindingsRaw": {
       "path": "tokens/src/figma-bindings-raw.json",
       "type": "json",

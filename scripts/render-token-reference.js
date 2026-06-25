@@ -13,8 +13,21 @@ var REPO_ROOT = path.resolve(__dirname, "..");
 var TOKENS_PATH = path.join(REPO_ROOT, "tokens", "tokens.json");
 var OUT_PATH = path.join(REPO_ROOT, "tokens", "token-reference.md");
 
-function loadTokens() {
-  return JSON.parse(fs.readFileSync(TOKENS_PATH, "utf8"));
+// Allow callers to override paths via argv: --tokens-path=... --out-path=...
+// Used by dry-run tests and CI tooling. Defaults preserve existing behaviour.
+function parseArgPaths(argv) {
+  var tokensPath = TOKENS_PATH;
+  var outPath = OUT_PATH;
+  for (var arg of argv) {
+    var m;
+    if ((m = arg.match(/^--tokens-path=(.+)$/))) tokensPath = m[1];
+    if ((m = arg.match(/^--out-path=(.+)$/))) outPath = m[1];
+  }
+  return { tokensPath, outPath };
+}
+
+function loadTokens(tokensPath) {
+  return JSON.parse(fs.readFileSync(tokensPath || TOKENS_PATH, "utf8"));
 }
 
 // Walk the DTCG tree, collecting flat { path, type, value } entries.
@@ -61,8 +74,7 @@ function renderGroup(type, entries) {
   return lines.join("\n");
 }
 
-function main() {
-  var tokens = loadTokens();
+function renderMarkdown(tokens) {
   var entries = [];
   walk(tokens, [], entries);
   var grouped = groupByType(entries);
@@ -88,12 +100,24 @@ function main() {
     out.push(renderGroup(t, grouped[t]));
   }
 
-  fs.writeFileSync(OUT_PATH, out.join("\n"));
+  return {
+    markdown: out.join("\n"),
+    entryCount: entries.length,
+    outPath: OUT_PATH,
+  };
+}
+
+function main() {
+  var { tokensPath, outPath } = parseArgPaths(process.argv.slice(2));
+  var tokens = loadTokens(tokensPath);
+  var { markdown, entryCount } = renderMarkdown(tokens);
+
+  // Honour out-path override (default: TOKENS_PATH → OUT_PATH, but caller may
+  // pass --out-path= to dry-run without touching the live token-reference.md).
+  var dest = outPath;
+  fs.writeFileSync(dest, markdown);
   console.log(
-    "[render-token-reference] wrote " +
-      entries.length +
-      " tokens to " +
-      OUT_PATH,
+    "[render-token-reference] wrote " + entryCount + " tokens to " + dest,
   );
 }
 
@@ -102,4 +126,7 @@ module.exports = {
   walk: walk,
   groupByType: groupByType,
   renderGroup: renderGroup,
+  renderMarkdown: renderMarkdown,
+  TOKENS_PATH: TOKENS_PATH,
+  OUT_PATH: OUT_PATH,
 };
