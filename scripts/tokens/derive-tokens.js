@@ -747,23 +747,21 @@ function main() {
     `[derive-tokens] wrote ${nn} numeric tokens to tokens/src/derived/numerics.tokens.json\n`,
   );
 
-  // Full-tokens candidate (P4a): merge primitives + semantics + numerics into
-  // one DTCG tree. Written to staging only — live tokens/tokens.json is untouched.
+  // Full-tokens (P4b flip): merge primitives + semantics + numerics into
+  // one DTCG tree. Now writes directly to live tokens/tokens.json.
   const fullTree = deriveFullTokens({ primitivesMd, tokensMd, rawBindings });
-  const candidatePath = path.join(outDir, "tokens.candidate.json");
-  fs.writeFileSync(candidatePath, JSON.stringify(fullTree, null, 2) + "\n");
+  const liveJsonPath = path.join(REPO_ROOT, "tokens", "tokens.json");
+  fs.writeFileSync(liveJsonPath, JSON.stringify(fullTree, null, 2) + "\n");
   const fn = countLeaves(fullTree);
   process.stdout.write(
-    `[derive-tokens] wrote ${fn} total tokens to tokens/src/derived/tokens.candidate.json\n`,
+    `[derive-tokens] wrote ${fn} total tokens to tokens/tokens.json (LIVE)\n`,
   );
 
-  // CSS candidate (P4a): emit all vars to staging — live tokens/tokens.css is untouched.
-  const cssCandidate = emitCss(fullTree);
-  const cssCandidatePath = path.join(outDir, "tokens.candidate.css");
-  fs.writeFileSync(cssCandidatePath, cssCandidate);
-  process.stdout.write(
-    `[derive-tokens] wrote tokens/src/derived/tokens.candidate.css\n`,
-  );
+  // CSS (P4b flip): emit all vars to live tokens/tokens.css.
+  const liveCss = emitCss(fullTree);
+  const liveCssPath = path.join(REPO_ROOT, "tokens", "tokens.css");
+  fs.writeFileSync(liveCssPath, liveCss);
+  process.stdout.write(`[derive-tokens] wrote tokens/tokens.css (LIVE)\n`);
 }
 
 if (require.main === module) main();

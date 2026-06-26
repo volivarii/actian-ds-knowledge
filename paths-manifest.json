@@ -3,7 +3,7 @@
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.34.32",
+  "knowledge_version": "0.34.33",
   "_zones": {
     "knowledge": ["accessibility", "components", "content", "foundations"],
     "contract": ["graph"],
@@ -605,8 +605,9 @@
     "tokens.css": {
       "path": "tokens/tokens.css",
       "type": "css",
-      "origin": "human",
-      "description": "CSS custom properties (--zen-*) — frozen snapshot"
+      "origin": "ci",
+      "generator": "scripts/tokens/derive-tokens.js",
+      "description": "CSS custom properties (--zen-*) — now generator-owned (P4b flip). Emitted by derive-tokens.js via emit-css.js from the live tokens.json tree."
     },
     "tokens.derivedPrimitives": {
       "path": "tokens/src/derived/primitives.tokens.json",
@@ -629,27 +630,6 @@
       "generator": "scripts/tokens/derive-tokens.js",
       "description": "Generated numeric/dimension token layer (DTCG: spacing, border, focus-ring, font, icon, size, shadow, motion + Figma bindings) — staging output of derive-tokens.js (P3)"
     },
-    "tokens.derivedCandidate": {
-      "path": "tokens/src/derived/tokens.candidate.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/tokens/derive-tokens.js",
-      "description": "Full-tokens DTCG candidate: primitives + semantics + numerics merged into one tree (_frozen:false). Staging only — live tokens/tokens.json is untouched until P5 flip-diff validation passes. Key order mirrors frozen file + P3 additions (shadow, motion)."
-    },
-    "tokens.derivedCandidateCss": {
-      "path": "tokens/src/derived/tokens.candidate.css",
-      "type": "css",
-      "origin": "ci",
-      "generator": "scripts/tokens/emit-css.js",
-      "description": "CSS custom-properties output for the candidate full-tokens tree — staging output, parallel to tokens.candidate.json. Live tokens/tokens.css is untouched until P5."
-    },
-    "tokens.derivedCandidateReference": {
-      "path": "tokens/src/derived/token-reference.candidate.md",
-      "type": "markdown",
-      "origin": "ci",
-      "generator": "scripts/render-token-reference.js",
-      "description": "Dry-run renderer output over tokens.candidate.json — staging reference doc, parallel to live tokens/token-reference.md. Written by tests/tokens-candidate-valid.test.js (P4a)."
-    },
     "tokens.figmaBindingsRaw": {
       "path": "tokens/src/figma-bindings-raw.json",
       "type": "json",
@@ -659,8 +639,9 @@
     "tokens.json": {
       "path": "tokens/tokens.json",
       "type": "json",
-      "origin": "human",
-      "description": "DTCG W3C-format design tokens (frozen snapshot until successor generator returns)"
+      "origin": "ci",
+      "generator": "scripts/tokens/derive-tokens.js",
+      "description": "DTCG W3C-format design tokens — now generator-owned (P4b flip). Written by derive-tokens.js from color-primitives.md + tokens.md + figma-bindings-raw.json. _frozen:false."
     },
     "tokens.reference": {
       "path": "tokens/token-reference.md",

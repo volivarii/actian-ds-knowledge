@@ -36,31 +36,11 @@ const BACKS = {
 const resolvedHex = (leaf) =>
   leaf?.$extensions?.["com.actian.themes"]?.actian ?? leaf.$value;
 
-// Intentional md-forward divergences from the frozen 2026-04-30 tokens.json,
-// ratified 2026-06-25: the markdown is the canonical source; the frozen json is
-// the stale export being replaced. Each entry is a known, explained change:
-//   *.25      — md adopts the documented (color-primitives.md) shade-formula
-//               update for the lightest step (L 0.99->0.97, C *0.2->*0.005):
-//               a less-tinted .25.
-//   neutral.* — post-April refresh of the cool-grey ramp captured by the md
-//               (the export confirms Actian neutral -> cool-grey).
-// Any mismatch OUTSIDE this set is an unexplained regression and fails the gate.
-const ALLOWLIST = new Set([
-  "primary.25",
-  "success.25",
-  "warning.25",
-  "error.25",
-  "neutral.25",
-  "neutral.50",
-  "neutral.100",
-  "neutral.200",
-  "neutral.300",
-  "neutral.400",
-  "neutral.600",
-  "neutral.700",
-  "neutral.800",
-  "neutral.900",
-]);
+// P4b flip (2026-06-26): the live tokens.json is now generator-owned.
+// All previously ratified ALLOWLIST entries have been cleared — the live file
+// and the in-memory primitive tree are now in lockstep and match exactly.
+// See docs/superpowers/notes/2026-06-25-tokens-p3-parity-diffs.md for history.
+const ALLOWLIST = new Set();
 
 const norm = (v) =>
   typeof v === "string" ? v.replace(/^#/, "").toUpperCase() : v;

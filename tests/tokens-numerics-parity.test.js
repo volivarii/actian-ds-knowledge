@@ -10,7 +10,9 @@ const {
   deepMerge,
   attachBindings,
 } = require("../scripts/tokens/derive-tokens.js");
-const { curateNumericBindings } = require("../scripts/tokens/lib/curate-bindings.js");
+const {
+  curateNumericBindings,
+} = require("../scripts/tokens/lib/curate-bindings.js");
 
 const ROOT = path.resolve(__dirname, "..");
 
@@ -116,37 +118,11 @@ const genLeaves = collectLeaves(gen, "");
 // Full cross-reference:
 //   docs/superpowers/notes/2026-06-25-tokens-p3-parity-diffs.md
 // ---------------------------------------------------------------------------
-const ALLOW = {
-  // --- Bucket A: P1 neutral.100 refresh downstream ---
-  // tokens.md §2.4: border.default / border.disabled → --zen-color-neutral-100
-  // neutral.100 was refreshed P1: actian cool-grey.100 #E4E4F0 → #C7C7CE.
-  "border.default":
-    "P1 neutral.100 refresh downstream: border.default→neutral-100 #E4E4F0→#C7C7CE (tokens.md §2.4 l.174)",
-  "border.disabled":
-    "P1 neutral.100 refresh downstream: border.disabled→neutral-100 #E4E4F0→#C7C7CE (tokens.md §2.4 l.176)",
-
-  // --- Bucket A: P1 neutral.50 refresh downstream ---
-  // tokens.md §2.4: border.subtle → --zen-color-neutral-50
-  // neutral.50 was refreshed P1: actian cool-grey.50 #F5F5FA → #E1E1E6.
-  "border.subtle":
-    "P1 neutral.50 refresh downstream: border.subtle→neutral-50 #F5F5FA→#E1E1E6 (tokens.md §2.4 l.175)",
-
-  // --- Bucket A: md unifies all error usages on error-600 ---
-  // tokens.md §2.4 l.179: border.error → --zen-color-error-600
-  // tokens.md §2.5 l.202: focus-ring.error → --zen-color-error-600
-  // Frozen had error-500 (#E6492D) for both — inconsistent with text.error=error-600.
-  // md canonical value: error-600 = #DC3514.
-  "border.error":
-    "md §2.4 canonical: border.error→error-600 #DC3514; frozen=error-500 #E6492D (tokens.md §2.4 l.179)",
-  "focus-ring.error":
-    "md §2.5 canonical: focus-ring.error→error-600 #DC3514; frozen=error-500 #E6492D (tokens.md §2.5 l.202)",
-
-  // --- Bucket A: font.size.xs corrected from 10px to 11px ---
-  // tokens.md §2.1 l.97: `--zen-font-size-xs | 0.6875rem (11px) | Hint | 🟢 Shipped`
-  // Frozen had 10px — md canonical is 11px.
-  "font.size.xs":
-    "md §2.1 canonical: font-size-xs = 11px (0.6875rem); frozen had 10px (tokens.md §2.1 l.97)",
-};
+// P4b flip: the live tokens.json is now generator-owned (no longer "frozen").
+// All previously ratified ALLOW entries have been cleared — the deriver and
+// the live file are now in lockstep and should match exactly.
+// See docs/superpowers/notes/2026-06-25-tokens-p3-parity-diffs.md for history.
+const ALLOW = {};
 
 // ---------------------------------------------------------------------------
 // Test 1: Per-leaf parity (excluding ALLOW)

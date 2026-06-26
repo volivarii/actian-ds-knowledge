@@ -78,7 +78,12 @@ test("semantic tokens resolving to primary == canonical royal-blue-500", () => {
   ];
   for (const [name, entry] of checks) {
     assert.ok(entry, `tokens.json ${name} is missing`);
-    const actian = entry.$extensions["com.actian.themes"].actian.toUpperCase();
+    // Composite tokens (border.*, focus-ring.*) carry a direct hex $value but no
+    // com.actian.themes extension; semantic color tokens have the extension. Fall
+    // back to $value for those so the guard works for both token shapes.
+    const actian = (
+      entry.$extensions?.["com.actian.themes"]?.actian ?? entry.$value
+    ).toUpperCase();
     assert.equal(
       actian,
       expected,

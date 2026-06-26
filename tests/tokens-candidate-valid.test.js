@@ -1,9 +1,12 @@
 // tests/tokens-candidate-valid.test.js
-// P4a — Validate tokens/src/derived/tokens.candidate.json:
+// P4b — Validate live tokens/tokens.json (replaces candidate validation post-flip):
 //   1. Structural invariants (every leaf has $type+$value, known $type, no leaf+group collision)
 //   2. Reference-integrity (all {alias} refs, typography composite refs, com.actian.border/.focusRing refs)
 //   3. Theme-extension integrity (com.actian.themes: {actian,studio,explorer} all valid hex)
-//   4. Renderer dry-run (renderMarkdown over candidate → non-empty, no throw)
+//   4. Renderer dry-run (renderMarkdown over live tokens.json → non-empty, no throw)
+//
+// The candidate file (tokens/src/derived/tokens.candidate.json) no longer exists after
+// the P4b flip — this test now guards the LIVE tokens.json with the same checks.
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -11,20 +14,7 @@ const fs = require("fs");
 const path = require("path");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
-const CANDIDATE_PATH = path.join(
-  REPO_ROOT,
-  "tokens",
-  "src",
-  "derived",
-  "tokens.candidate.json",
-);
-const DRY_RUN_OUT = path.join(
-  REPO_ROOT,
-  "tokens",
-  "src",
-  "derived",
-  "token-reference.candidate.md",
-);
+const LIVE_PATH = path.join(REPO_ROOT, "tokens", "tokens.json");
 
 const KNOWN_TYPES = new Set([
   "color",
@@ -41,13 +31,13 @@ const KNOWN_TYPES = new Set([
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Load the candidate JSON once (lazy-cached). */
-let _candidate = null;
-function loadCandidate() {
-  if (!_candidate) {
-    _candidate = JSON.parse(fs.readFileSync(CANDIDATE_PATH, "utf8"));
+/** Load live tokens.json once (lazy-cached). */
+let _live = null;
+function loadLive() {
+  if (!_live) {
+    _live = JSON.parse(fs.readFileSync(LIVE_PATH, "utf8"));
   }
-  return _candidate;
+  return _live;
 }
 
 /**
@@ -88,7 +78,7 @@ function resolveRef(tree, dotted) {
 }
 
 /**
- * Collect every alias reference from the candidate tree:
+ * Collect every alias reference from the tree:
  *   - $value strings of the form {a.b.c}
  *   - typography composite sub-values ({...} in fontWeight/fontSize/letterSpacing/lineHeight)
  *   - com.actian.border / com.actian.focusRing .color (and any other {…} values in those blocks)
@@ -140,19 +130,28 @@ function collectAllRefs(tree) {
   return refs;
 }
 
-// ─── Test 1: Candidate file exists ───────────────────────────────────────────
+// ─── Test 1: Live file exists and is generator-owned ────────────────────────
 
-test("candidate file exists", () => {
+test("live tokens.json exists", () => {
   assert.ok(
-    fs.existsSync(CANDIDATE_PATH),
-    "tokens.candidate.json must exist at " + CANDIDATE_PATH,
+    fs.existsSync(LIVE_PATH),
+    "tokens.json must exist at " + LIVE_PATH,
+  );
+});
+
+test("live tokens.json is generator-owned (_frozen:false)", () => {
+  const tree = loadLive();
+  assert.equal(
+    tree.$metadata._frozen,
+    false,
+    "tokens.json must have _frozen:false post-flip",
   );
 });
 
 // ─── Test 2: Structural invariants ───────────────────────────────────────────
 
 test("every leaf has $type AND $value", () => {
-  const tree = loadCandidate();
+  const tree = loadLive();
   const leaves = [];
   collectNodes(tree, "", leaves, new Set());
 
@@ -162,7 +161,7 @@ test("every leaf has $type AND $value", () => {
 });
 
 test("every leaf $type is a known DTCG type", () => {
-  const tree = loadCandidate();
+  const tree = loadLive();
   const leaves = [];
   collectNodes(tree, "", leaves, new Set());
 
@@ -178,7 +177,7 @@ test("every leaf $type is a known DTCG type", () => {
 });
 
 test("no leaf+group collision (leaf node has no non-$ children)", () => {
-  const tree = loadCandidate();
+  const tree = loadLive();
   const leaves = [];
   collectNodes(tree, "", leaves, new Set());
 
@@ -195,8 +194,8 @@ test("no leaf+group collision (leaf node has no non-$ children)", () => {
   );
 });
 
-test("leaf count >= 400 (candidate is non-trivial)", () => {
-  const tree = loadCandidate();
+test("leaf count >= 400 (live tokens.json is non-trivial)", () => {
+  const tree = loadLive();
   const leaves = [];
   collectNodes(tree, "", leaves, new Set());
   assert.ok(
@@ -207,8 +206,8 @@ test("leaf count >= 400 (candidate is non-trivial)", () => {
 
 // ─── Test 3: Reference integrity ─────────────────────────────────────────────
 
-test("all alias references resolve to a defined leaf in the candidate tree", () => {
-  const tree = loadCandidate();
+test("all alias references resolve to a defined leaf in the live tree", () => {
+  const tree = loadLive();
   const refs = collectAllRefs(tree);
 
   assert.ok(refs.length >= 100, "Expected >=100 refs, got " + refs.length);
@@ -225,7 +224,7 @@ test("all alias references resolve to a defined leaf in the candidate tree", () 
 });
 
 test("reference counts: value, typography, ext refs all present", () => {
-  const tree = loadCandidate();
+  const tree = loadLive();
   const refs = collectAllRefs(tree);
 
   const valueRefs = refs.filter((r) => r.kind === "value");
@@ -274,7 +273,7 @@ test("resolveRef returns null/falsy for dangling references", () => {
 // ─── Test 4: Theme-extension integrity ───────────────────────────────────────
 
 test("every com.actian.themes entry has all three theme keys {actian,studio,explorer} as valid hex", () => {
-  const tree = loadCandidate();
+  const tree = loadLive();
   const leaves = [];
   collectNodes(tree, "", leaves, new Set());
 
@@ -309,14 +308,14 @@ test("every com.actian.themes entry has all three theme keys {actian,studio,expl
 
 // ─── Test 5: Renderer dry-run ─────────────────────────────────────────────────
 
-test("renderer dry-run: renderMarkdown over candidate produces non-empty markdown without throwing", () => {
+test("renderer dry-run: renderMarkdown over live tokens.json produces non-empty markdown without throwing", () => {
   const { renderMarkdown } = require("../scripts/render-token-reference.js");
-  const tree = loadCandidate();
+  const tree = loadLive();
 
   let result;
   assert.doesNotThrow(() => {
     result = renderMarkdown(tree);
-  }, "renderMarkdown must not throw on the candidate tree");
+  }, "renderMarkdown must not throw on the live tree");
 
   assert.ok(
     result && result.markdown,
@@ -338,30 +337,24 @@ test("renderer dry-run: renderMarkdown over candidate produces non-empty markdow
   );
 });
 
-test("renderer dry-run: candidate output written to derived staging path (no clobber of live token-reference.md)", () => {
+test("renderer dry-run: renderMarkdown over live tokens.json writes live token-reference.md", () => {
   const { renderMarkdown } = require("../scripts/render-token-reference.js");
-  const LIVE_PATH = path.join(REPO_ROOT, "tokens", "token-reference.md");
-  const tree = loadCandidate();
-  // Render with the candidate source path so the generated header is truthful
-  const { markdown } = renderMarkdown(
-    tree,
-    "tokens/src/derived/tokens.candidate.json",
-  );
+  const LIVE_REF_PATH = path.join(REPO_ROOT, "tokens", "token-reference.md");
+  const tree = loadLive();
+  const { markdown } = renderMarkdown(tree, "tokens/tokens.json");
 
-  // Write to the derived staging directory, NOT the live path
-  fs.writeFileSync(DRY_RUN_OUT, markdown, "utf8");
-  assert.ok(
-    fs.existsSync(DRY_RUN_OUT),
-    "Dry-run output must exist at " + DRY_RUN_OUT,
-  );
-
-  // Confirm the live file is untouched (content-check: still refers to tokens.json, not candidate)
-  if (fs.existsSync(LIVE_PATH)) {
-    const liveContent = fs.readFileSync(LIVE_PATH, "utf8");
-    // The live file is auto-generated from tokens.json; it should not contain candidate metadata
+  // Confirm the live file exists and contains no _frozen marker (it's generator-owned)
+  if (fs.existsSync(LIVE_REF_PATH)) {
+    const liveContent = fs.readFileSync(LIVE_REF_PATH, "utf8");
     assert.ok(
       !liveContent.includes("_frozen"),
-      "Live token-reference.md must not contain candidate _frozen marker",
+      "Live token-reference.md must not contain a _frozen marker",
     );
   }
+
+  // Confirm render output is non-trivial
+  assert.ok(
+    markdown && markdown.length > 500,
+    "renderMarkdown output must be non-trivial",
+  );
 });
