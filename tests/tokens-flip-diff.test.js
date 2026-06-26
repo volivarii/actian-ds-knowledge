@@ -241,6 +241,202 @@ const RATIFIED_CHANGED_THEME = new Set([
   "--zen-color-primary-25", // .25 formula (primary-25 per-theme)
 ]);
 
+// ─── VALUE PINS — snapshot maps (literals; NOT read from candidate at runtime) ─
+//
+// Generated once from the validated candidate CSS (2026-06-26) and pasted as
+// hardcoded literals. These pins are NOT circular — they are not re-read from
+// the candidate at test-time. Any re-derive that silently corrupts a value
+// (without changing its name) will cause these tests to FAIL.
+
+// ── ADDED candidate values ────────────────────────────────────────────────────
+
+// actian: 19 added vars — border-semantics / bg-semantics / text-default / font-styles
+const PINNED_ADDED_ACTIAN_VALUES = {
+  // intended-adds: border semantic vars missing from live
+  "--zen-border-info": "#0f5fdc",
+  "--zen-border-primary": "#0f5fdc",
+  "--zen-border-reverse": "#ffffff",
+  "--zen-border-strong": "#40404a",
+  "--zen-border-success": "#098900",
+  "--zen-border-warning": "#ef8d00",
+  // intended-adds: bg + text semantic vars
+  "--zen-color-bg-primary": "#0f5fdc",
+  "--zen-color-bg-reverse": "#000000",
+  "--zen-color-text-default": "#000000",
+  // intended-adds: body-display text style (new level)
+  "--zen-font-body-display-family": "var(--zen-font-family-text)",
+  "--zen-font-body-display-letter-spacing": "0.1px",
+  "--zen-font-body-display-line-height": "24px",
+  "--zen-font-body-display-size": "18px",
+  "--zen-font-body-display-weight": "400",
+  // rename companion: body-standard (correct spelling; drop of stardard typo)
+  "--zen-font-body-standard-family": "var(--zen-font-family-text)",
+  "--zen-font-body-standard-letter-spacing": "0.2px",
+  "--zen-font-body-standard-line-height": "20px",
+  "--zen-font-body-standard-size": "14px",
+  "--zen-font-body-standard-weight": "400",
+};
+
+// studio: 8 added vars — border vars newly per-theme + bg/text semantics
+const PINNED_ADDED_STUDIO_VALUES = {
+  // neutral-refresh: border-{default,disabled,subtle} now exist per theme
+  "--zen-border-default": "#dadada",
+  "--zen-border-disabled": "#dadada",
+  "--zen-border-subtle": "#ebebeb",
+  // intended-adds: new semantic borders with studio primary colour
+  "--zen-border-info": "#0283be",
+  "--zen-border-primary": "#0283be",
+  "--zen-border-strong": "#636363",
+  // intended-adds: bg/text semantics with studio primary colour
+  "--zen-color-bg-primary": "#0283be",
+  "--zen-color-text-primary": "#0283be",
+};
+
+// explorer: 8 added vars — same shape as studio with explorer primary colour
+const PINNED_ADDED_EXPLORER_VALUES = {
+  // neutral-refresh: border-{default,disabled,subtle} now exist per theme
+  "--zen-border-default": "#dadada",
+  "--zen-border-disabled": "#dadada",
+  "--zen-border-subtle": "#ebebeb",
+  // intended-adds: new semantic borders with explorer primary colour
+  "--zen-border-info": "#049b98",
+  "--zen-border-primary": "#049b98",
+  "--zen-border-strong": "#636363",
+  // intended-adds: bg/text semantics with explorer primary colour
+  "--zen-color-bg-primary": "#049b98",
+  "--zen-color-text-primary": "#049b98",
+};
+
+// ── CHANGED — post-flip (candidate) and pre-flip (live) value pins ────────────
+
+// actian: 37 changed vars (post-flip = candidate values)
+const PINNED_CHANGED_ACTIAN_POST = {
+  // Cause A: neutral/cool-grey palette refresh (10 shades; 500 unchanged)
+  "--zen-color-neutral-100": "#c7c7ce",
+  "--zen-color-neutral-200": "#adadb7",
+  "--zen-color-neutral-25": "#f5f5f8",
+  "--zen-color-neutral-300": "#9494a0",
+  "--zen-color-neutral-400": "#7c7c8a",
+  "--zen-color-neutral-50": "#e1e1e6",
+  "--zen-color-neutral-600": "#5c5c6c",
+  "--zen-color-neutral-700": "#50505d",
+  "--zen-color-neutral-800": "#40404a",
+  "--zen-color-neutral-900": "#33333a",
+  // Cause B: semantic tokens derived from neutral shades
+  "--zen-border-default": "#c7c7ce",
+  "--zen-border-disabled": "#c7c7ce",
+  "--zen-border-subtle": "#e1e1e6",
+  "--zen-color-bg-disabled": "#e1e1e6",
+  "--zen-color-bg-muted": "#e1e1e6",
+  "--zen-color-bg-subtle": "#f5f5f8",
+  "--zen-color-icon-disabled": "#7c7c8a",
+  "--zen-color-icon-subtle": "#5c5c6c",
+  "--zen-color-text-placeholder": "#5c5c6c",
+  "--zen-color-text-placeholder-subtle": "#7c7c8a",
+  "--zen-color-text-secondary": "#40404a",
+  "--zen-color-text-tertiary": "#50505d",
+  // Cause C: .25 shade formula — chromatic-25 shades neutralised
+  "--zen-color-bg-error": "#f8f4f3",
+  "--zen-color-bg-info": "#f3f5f9",
+  "--zen-color-bg-selected": "#f3f5f9",
+  "--zen-color-bg-success": "#f3f6f3",
+  "--zen-color-bg-warning": "#f7f4f2",
+  "--zen-color-error-25": "#f8f4f3",
+  "--zen-color-primary-25": "#f3f5f9",
+  "--zen-color-success-25": "#f3f6f3",
+  "--zen-color-warning-25": "#f7f4f2",
+  // Cause D: text.primary → primary-500 (#000000 → #0f5fdc)
+  "--zen-color-text-primary": "#0f5fdc",
+  // Cause E: error-600 unification (#e6492d → #dc3514)
+  "--zen-border-error": "#dc3514",
+  "--zen-focus-ring-error": "#dc3514",
+  // Cause F: font.size.xs 10px → 11px; text-styles propagate
+  "--zen-font-body-micro-size": "11px",
+  "--zen-font-label-micro-size": "11px",
+  "--zen-font-size-xs": "11px",
+};
+
+// actian: 37 changed vars (pre-flip = live values)
+const PINNED_CHANGED_ACTIAN_PRE = {
+  // Cause A
+  "--zen-color-neutral-100": "#e4e4f0",
+  "--zen-color-neutral-200": "#d3d3e5",
+  "--zen-color-neutral-25": "#fbfbff",
+  "--zen-color-neutral-300": "#b9b9cd",
+  "--zen-color-neutral-400": "#9898a7",
+  "--zen-color-neutral-50": "#f5f5fa",
+  "--zen-color-neutral-600": "#3f3f4a",
+  "--zen-color-neutral-700": "#33333d",
+  "--zen-color-neutral-800": "#2a2a30",
+  "--zen-color-neutral-900": "#12131f",
+  // Cause B
+  "--zen-border-default": "#e4e4f0",
+  "--zen-border-disabled": "#e4e4f0",
+  "--zen-border-subtle": "#f5f5fa",
+  "--zen-color-bg-disabled": "#f5f5fa",
+  "--zen-color-bg-muted": "#f5f5fa",
+  "--zen-color-bg-subtle": "#fbfbff",
+  "--zen-color-icon-disabled": "#9898a7",
+  "--zen-color-icon-subtle": "#3f3f4a",
+  "--zen-color-text-placeholder": "#3f3f4a",
+  "--zen-color-text-placeholder-subtle": "#9898a7",
+  "--zen-color-text-secondary": "#2a2a30",
+  "--zen-color-text-tertiary": "#33333d",
+  // Cause C
+  "--zen-color-bg-error": "#fff4ec",
+  "--zen-color-bg-info": "#edf6ff",
+  "--zen-color-bg-selected": "#cbe3ff",
+  "--zen-color-bg-success": "#f0ffec",
+  "--zen-color-bg-warning": "#fff9e5",
+  "--zen-color-error-25": "#fff4ec",
+  "--zen-color-primary-25": "#edf6ff",
+  "--zen-color-success-25": "#f0ffec",
+  "--zen-color-warning-25": "#fff9e5",
+  // Cause D
+  "--zen-color-text-primary": "#000000",
+  // Cause E
+  "--zen-border-error": "#e6492d",
+  "--zen-focus-ring-error": "#e6492d",
+  // Cause F
+  "--zen-font-body-micro-size": "10px",
+  "--zen-font-label-micro-size": "10px",
+  "--zen-font-size-xs": "10px",
+};
+
+// studio: 5 changed vars (.25 formula ripples into primary-25; neutral-25 normalised)
+const PINNED_CHANGED_STUDIO_POST = {
+  "--zen-color-bg-info": "#f2f6f8",
+  "--zen-color-bg-selected": "#f2f6f8",
+  "--zen-color-bg-subtle": "#f8f4f5",
+  "--zen-color-neutral-25": "#f8f4f5",
+  "--zen-color-primary-25": "#f2f6f8",
+};
+
+const PINNED_CHANGED_STUDIO_PRE = {
+  "--zen-color-bg-info": "#ecffff",
+  "--zen-color-bg-selected": "#cfeafd",
+  "--zen-color-bg-subtle": "#fcfcfc",
+  "--zen-color-neutral-25": "#fcfcfc",
+  "--zen-color-primary-25": "#ecffff",
+};
+
+// explorer: 5 changed vars (same causes as studio; different primary hue)
+const PINNED_CHANGED_EXPLORER_POST = {
+  "--zen-color-bg-info": "#f1f6f6",
+  "--zen-color-bg-selected": "#f1f6f6",
+  "--zen-color-bg-subtle": "#f8f4f5",
+  "--zen-color-neutral-25": "#f8f4f5",
+  "--zen-color-primary-25": "#f1f6f6",
+};
+
+const PINNED_CHANGED_EXPLORER_PRE = {
+  "--zen-color-bg-info": "#ecffff",
+  "--zen-color-bg-selected": "#d0efed",
+  "--zen-color-bg-subtle": "#fcfcfc",
+  "--zen-color-neutral-25": "#fcfcfc",
+  "--zen-color-primary-25": "#ecffff",
+};
+
 // ─── Load files ───────────────────────────────────────────────────────────────
 
 let liveCss, candCss, liveJson, candJson;
@@ -542,6 +738,101 @@ test("css:shadows - unchanged in candidate (live and candidate match)", () => {
       candBlocks.actian[v],
       liveBlocks.actian[v],
       `Shadow var ${v} should not change`,
+    );
+  }
+});
+
+// ─── CSS value-pin tests (ADDED + CHANGED) ───────────────────────────────────
+// Each map is a literal snapshot of ratified values. A re-derive that corrupts
+// a value without changing its name is caught here — the name-level gate alone
+// would miss it.
+
+test("css:value-pins:actian - ADDED vars have correct candidate values (19 vars)", () => {
+  for (const [name, expected] of Object.entries(PINNED_ADDED_ACTIAN_VALUES)) {
+    assert.equal(
+      candBlocks.actian[name],
+      expected,
+      `ADDED ${name}: expected "${expected}", got "${candBlocks.actian[name]}"`,
+    );
+  }
+});
+
+test("css:value-pins:studio - ADDED vars have correct candidate values (8 vars)", () => {
+  for (const [name, expected] of Object.entries(PINNED_ADDED_STUDIO_VALUES)) {
+    assert.equal(
+      candBlocks.studio[name],
+      expected,
+      `ADDED ${name}: expected "${expected}", got "${candBlocks.studio[name]}"`,
+    );
+  }
+});
+
+test("css:value-pins:explorer - ADDED vars have correct candidate values (8 vars)", () => {
+  for (const [name, expected] of Object.entries(PINNED_ADDED_EXPLORER_VALUES)) {
+    assert.equal(
+      candBlocks.explorer[name],
+      expected,
+      `ADDED ${name}: expected "${expected}", got "${candBlocks.explorer[name]}"`,
+    );
+  }
+});
+
+test("css:value-pins:actian - CHANGED vars have correct post-flip (candidate) values (37 vars)", () => {
+  for (const [name, expected] of Object.entries(PINNED_CHANGED_ACTIAN_POST)) {
+    assert.equal(
+      candBlocks.actian[name],
+      expected,
+      `CHANGED ${name} post-flip: expected "${expected}", got "${candBlocks.actian[name]}"`,
+    );
+  }
+});
+
+test("css:value-pins:actian - CHANGED vars have correct pre-flip (live) values (37 vars)", () => {
+  for (const [name, expected] of Object.entries(PINNED_CHANGED_ACTIAN_PRE)) {
+    assert.equal(
+      liveBlocks.actian[name],
+      expected,
+      `CHANGED ${name} pre-flip: expected "${expected}", got "${liveBlocks.actian[name]}"`,
+    );
+  }
+});
+
+test("css:value-pins:studio - CHANGED vars have correct post-flip (candidate) values (5 vars)", () => {
+  for (const [name, expected] of Object.entries(PINNED_CHANGED_STUDIO_POST)) {
+    assert.equal(
+      candBlocks.studio[name],
+      expected,
+      `CHANGED ${name} post-flip: expected "${expected}", got "${candBlocks.studio[name]}"`,
+    );
+  }
+});
+
+test("css:value-pins:studio - CHANGED vars have correct pre-flip (live) values (5 vars)", () => {
+  for (const [name, expected] of Object.entries(PINNED_CHANGED_STUDIO_PRE)) {
+    assert.equal(
+      liveBlocks.studio[name],
+      expected,
+      `CHANGED ${name} pre-flip: expected "${expected}", got "${liveBlocks.studio[name]}"`,
+    );
+  }
+});
+
+test("css:value-pins:explorer - CHANGED vars have correct post-flip (candidate) values (5 vars)", () => {
+  for (const [name, expected] of Object.entries(PINNED_CHANGED_EXPLORER_POST)) {
+    assert.equal(
+      candBlocks.explorer[name],
+      expected,
+      `CHANGED ${name} post-flip: expected "${expected}", got "${candBlocks.explorer[name]}"`,
+    );
+  }
+});
+
+test("css:value-pins:explorer - CHANGED vars have correct pre-flip (live) values (5 vars)", () => {
+  for (const [name, expected] of Object.entries(PINNED_CHANGED_EXPLORER_PRE)) {
+    assert.equal(
+      liveBlocks.explorer[name],
+      expected,
+      `CHANGED ${name} pre-flip: expected "${expected}", got "${liveBlocks.explorer[name]}"`,
     );
   }
 });
