@@ -125,8 +125,7 @@ test("post-flip: color.primary.500 com.actian.themes.actian is valid hex", () =>
 });
 
 test("post-flip: color.text.secondary com.actian.themes.actian is valid hex", () => {
-  const themes =
-    liveJson.color.text.secondary.$extensions["com.actian.themes"];
+  const themes = liveJson.color.text.secondary.$extensions["com.actian.themes"];
   assert.ok(
     themes && themes.actian && /^#[0-9A-Fa-f]{6}$/.test(themes.actian),
     `Expected valid hex; got: ${themes && themes.actian}`,
@@ -166,6 +165,112 @@ test("post-flip: tokens.css focus-ring-error uses error-600 (#dc3514)", () => {
 test("post-flip: tokens.css font-size-xs is 11px (not old 10px)", () => {
   const val = liveBlocks.actian["--zen-font-size-xs"];
   assert.equal(val, "11px", `Expected 11px; got: ${val}`);
+});
+
+// ─── (d.1) Neutral palette value pins (11 shades) ─────────────────────────────
+
+test("post-flip: tokens.css neutral-25 is #f5f5f8 (ratified)", () => {
+  const val = liveBlocks.actian["--zen-color-neutral-25"];
+  assert.equal(val, "#f5f5f8", `Expected #f5f5f8; got: ${val}`);
+});
+
+test("post-flip: tokens.css neutral-50 is #e1e1e6 (ratified)", () => {
+  const val = liveBlocks.actian["--zen-color-neutral-50"];
+  assert.equal(val, "#e1e1e6", `Expected #e1e1e6; got: ${val}`);
+});
+
+test("post-flip: tokens.css neutral-100 is #c7c7ce (ratified)", () => {
+  const val = liveBlocks.actian["--zen-color-neutral-100"];
+  assert.equal(val, "#c7c7ce", `Expected #c7c7ce; got: ${val}`);
+});
+
+test("post-flip: tokens.css neutral-200 is #adadb7 (ratified)", () => {
+  const val = liveBlocks.actian["--zen-color-neutral-200"];
+  assert.equal(val, "#adadb7", `Expected #adadb7; got: ${val}`);
+});
+
+test("post-flip: tokens.css neutral-300 is #9494a0 (ratified)", () => {
+  const val = liveBlocks.actian["--zen-color-neutral-300"];
+  assert.equal(val, "#9494a0", `Expected #9494a0; got: ${val}`);
+});
+
+test("post-flip: tokens.css neutral-400 is #7c7c8a (ratified)", () => {
+  const val = liveBlocks.actian["--zen-color-neutral-400"];
+  assert.equal(val, "#7c7c8a", `Expected #7c7c8a; got: ${val}`);
+});
+
+test("post-flip: tokens.css neutral-500 is #656574 (ratified)", () => {
+  const val = liveBlocks.actian["--zen-color-neutral-500"];
+  assert.equal(val, "#656574", `Expected #656574; got: ${val}`);
+});
+
+test("post-flip: tokens.css neutral-600 is #5c5c6c (ratified)", () => {
+  const val = liveBlocks.actian["--zen-color-neutral-600"];
+  assert.equal(val, "#5c5c6c", `Expected #5c5c6c; got: ${val}`);
+});
+
+test("post-flip: tokens.css neutral-700 is #50505d (ratified)", () => {
+  const val = liveBlocks.actian["--zen-color-neutral-700"];
+  assert.equal(val, "#50505d", `Expected #50505d; got: ${val}`);
+});
+
+test("post-flip: tokens.css neutral-800 is #40404a (ratified)", () => {
+  const val = liveBlocks.actian["--zen-color-neutral-800"];
+  assert.equal(val, "#40404a", `Expected #40404a; got: ${val}`);
+});
+
+test("post-flip: tokens.css neutral-900 is #33333a (ratified)", () => {
+  const val = liveBlocks.actian["--zen-color-neutral-900"];
+  assert.equal(val, "#33333a", `Expected #33333a; got: ${val}`);
+});
+
+// ─── (d.2) Micro-font sizes (body + label) ───────────────────────────────────
+
+test("post-flip: tokens.css font-body-micro-size is 11px (ratified)", () => {
+  const val = liveBlocks.actian["--zen-font-body-micro-size"];
+  assert.equal(val, "11px", `Expected 11px; got: ${val}`);
+});
+
+test("post-flip: tokens.css font-label-micro-size is 11px (ratified)", () => {
+  const val = liveBlocks.actian["--zen-font-label-micro-size"];
+  assert.equal(val, "11px", `Expected 11px; got: ${val}`);
+});
+
+// ─── (d.3) Shadow value pins (xs/sm/md/lg/xl with full rgba literals) ────────
+
+test("post-flip: tokens.css shadow-xs is dual-layer rgba shadow (ratified)", () => {
+  const val = liveBlocks.actian["--zen-shadow-xs"];
+  const expected =
+    "0px 1px 3px 1px rgba(0, 0, 15, 0.06), 0px 1px 5px 0px rgba(0, 0, 18, 0.07)";
+  assert.equal(val, expected, `Expected shadow-xs literal; got: ${val}`);
+});
+
+test("post-flip: tokens.css shadow-sm is dual-layer rgba shadow (ratified)", () => {
+  const val = liveBlocks.actian["--zen-shadow-sm"];
+  const expected =
+    "0px 1px 7px 3px rgba(0, 0, 20, 0.08), 0px 1px 3px 1px rgba(0, 0, 31, 0.12)";
+  assert.equal(val, expected, `Expected shadow-sm literal; got: ${val}`);
+});
+
+test("post-flip: tokens.css shadow-md is dual-layer rgba shadow (ratified)", () => {
+  const val = liveBlocks.actian["--zen-shadow-md"];
+  const expected =
+    "0px 1px 3px 0px rgba(0, 0, 77, 0.3), 0px 4px 8px 3px rgba(0, 0, 38, 0.15)";
+  assert.equal(val, expected, `Expected shadow-md literal; got: ${val}`);
+});
+
+test("post-flip: tokens.css shadow-lg is dual-layer rgba shadow (ratified)", () => {
+  const val = liveBlocks.actian["--zen-shadow-lg"];
+  const expected =
+    "0px 6px 10px 4px rgba(0, 0, 38, 0.15), 0px 2px 3px 0px rgba(0, 0, 77, 0.3)";
+  assert.equal(val, expected, `Expected shadow-lg literal; got: ${val}`);
+});
+
+test("post-flip: tokens.css shadow-xl is dual-layer rgba shadow (ratified)", () => {
+  const val = liveBlocks.actian["--zen-shadow-xl"];
+  const expected =
+    "0px 8px 12px 6px rgba(0, 0, 38, 0.15), 0px 4px 4px 0px rgba(0, 0, 77, 0.3)";
+  assert.equal(val, expected, `Expected shadow-xl literal; got: ${val}`);
 });
 
 // ─── (e) Structure: live CSS has the expected three theme blocks ────────────
