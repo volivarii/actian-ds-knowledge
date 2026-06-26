@@ -6,12 +6,35 @@ const path = require("path");
 const { derivePrimitiveTree } = require("../scripts/tokens/derive-tokens.js");
 
 const ROOT = path.resolve(__dirname, "..");
-const md = fs.readFileSync(path.join(ROOT, "foundations/src/color-primitives.md"), "utf8");
-const raw = JSON.parse(fs.readFileSync(path.join(ROOT, "tokens/src/figma-bindings-raw.json"), "utf8"));
-const frozen = JSON.parse(fs.readFileSync(path.join(ROOT, "tokens/tokens.json"), "utf8"));
+const md = fs.readFileSync(
+  path.join(ROOT, "foundations/src/color-primitives.md"),
+  "utf8",
+);
+const raw = JSON.parse(
+  fs.readFileSync(
+    path.join(ROOT, "tokens/src/figma-bindings-raw.json"),
+    "utf8",
+  ),
+);
+const frozen = JSON.parse(
+  fs.readFileSync(path.join(ROOT, "tokens/tokens.json"), "utf8"),
+);
 const tree = derivePrimitiveTree({ primitivesMd: md, rawBindings: raw });
 
-const BACKS = { primary: "royal-blue", neutral: "cool-grey", success: "green", warning: "orange", error: "red" };
+const BACKS = {
+  primary: "royal-blue",
+  neutral: "cool-grey",
+  success: "green",
+  warning: "orange",
+  error: "red",
+};
+
+// Prefer the already-resolved hex from com.actian.themes.actian; falls back to
+// $value for non-color tokens (numerics, spacing) that have no themes extension.
+// This makes parity checks alias-tolerant: correct both pre-flip ($value == hex)
+// and post-flip ($value == {alias}).
+const resolvedHex = (leaf) =>
+  leaf?.$extensions?.["com.actian.themes"]?.actian ?? leaf.$value;
 
 // Intentional md-forward divergences from the frozen 2026-04-30 tokens.json,
 // ratified 2026-06-25: the markdown is the canonical source; the frozen json is
@@ -23,12 +46,24 @@ const BACKS = { primary: "royal-blue", neutral: "cool-grey", success: "green", w
 //               (the export confirms Actian neutral -> cool-grey).
 // Any mismatch OUTSIDE this set is an unexplained regression and fails the gate.
 const ALLOWLIST = new Set([
-  "primary.25", "success.25", "warning.25", "error.25",
-  "neutral.25", "neutral.50", "neutral.100", "neutral.200", "neutral.300",
-  "neutral.400", "neutral.600", "neutral.700", "neutral.800", "neutral.900",
+  "primary.25",
+  "success.25",
+  "warning.25",
+  "error.25",
+  "neutral.25",
+  "neutral.50",
+  "neutral.100",
+  "neutral.200",
+  "neutral.300",
+  "neutral.400",
+  "neutral.600",
+  "neutral.700",
+  "neutral.800",
+  "neutral.900",
 ]);
 
-const norm = (v) => (typeof v === "string" ? v.replace(/^#/, "").toUpperCase() : v);
+const norm = (v) =>
+  typeof v === "string" ? v.replace(/^#/, "").toUpperCase() : v;
 
 for (const [role, palette] of Object.entries(BACKS)) {
   test(`Actian ${role}.* hex == primitive ${palette}.* hex (allowlisted diffs excepted)`, () => {
@@ -36,13 +71,22 @@ for (const [role, palette] of Object.entries(BACKS)) {
     const prim = tree.color.primitive[palette] || {};
     const unexplained = [];
     for (const shade of Object.keys(sem)) {
-      const semHex = sem[shade] && sem[shade].$value;
+      const semHex = sem[shade] && resolvedHex(sem[shade]);
       const primHex = prim[shade] && prim[shade].$value;
-      if (semHex && primHex && norm(semHex) !== norm(primHex) && !ALLOWLIST.has(`${role}.${shade}`)) {
+      if (
+        semHex &&
+        primHex &&
+        norm(semHex) !== norm(primHex) &&
+        !ALLOWLIST.has(`${role}.${shade}`)
+      ) {
         unexplained.push(`${role}.${shade}: frozen ${semHex} vs md ${primHex}`);
       }
     }
-    assert.equal(unexplained.length, 0, "UNEXPLAINED PARITY DRIFT (not in allowlist):\n" + unexplained.join("\n"));
+    assert.equal(
+      unexplained.length,
+      0,
+      "UNEXPLAINED PARITY DRIFT (not in allowlist):\n" + unexplained.join("\n"),
+    );
   });
 }
 
@@ -51,9 +95,21 @@ test("allowlisted diffs are all still real divergences (no stale allowlist entri
   for (const key of ALLOWLIST) {
     const [role, shade] = key.split(".");
     const palette = BACKS[role];
-    const semHex = frozen.color && frozen.color[role] && frozen.color[role][shade] && frozen.color[role][shade].$value;
-    const primHex = tree.color.primitive[palette] && tree.color.primitive[palette][shade] && tree.color.primitive[palette][shade].$value;
+    const semHex =
+      frozen.color &&
+      frozen.color[role] &&
+      frozen.color[role][shade] &&
+      resolvedHex(frozen.color[role][shade]);
+    const primHex =
+      tree.color.primitive[palette] &&
+      tree.color.primitive[palette][shade] &&
+      tree.color.primitive[palette][shade].$value;
     if (semHex && primHex && norm(semHex) === norm(primHex)) stale.push(key);
   }
-  assert.equal(stale.length, 0, "stale allowlist entries (now matching — remove them):\n" + stale.join("\n"));
+  assert.equal(
+    stale.length,
+    0,
+    "stale allowlist entries (now matching — remove them):\n" +
+      stale.join("\n"),
+  );
 });

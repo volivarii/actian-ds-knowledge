@@ -30,6 +30,17 @@ function loadTokens(tokensPath) {
   return JSON.parse(fs.readFileSync(tokensPath || TOKENS_PATH, "utf8"));
 }
 
+// Prefer the already-resolved hex from com.actian.themes.actian; falls back to
+// $value for non-color tokens (numerics, spacing) that have no themes extension.
+// This makes the renderer alias-tolerant: correct both pre-flip ($value == hex)
+// and post-flip ($value == {alias}).
+function resolvedHex(leaf) {
+  var ext = leaf && leaf.$extensions;
+  var themes = ext && ext["com.actian.themes"];
+  var actian = themes && themes.actian;
+  return actian != null ? actian : leaf.$value;
+}
+
 // Walk the DTCG tree, collecting flat { path, type, value } entries.
 // DTCG marker: an entry is a token if it has `$value` + `$type`.
 function walk(obj, prefix, out) {
@@ -39,7 +50,7 @@ function walk(obj, prefix, out) {
       name: prefix.join("."),
       cssVar: "--zen-" + prefix.join("-"),
       type: obj.$type,
-      value: obj.$value,
+      value: resolvedHex(obj),
       description: obj.$description || "",
     });
     return;
