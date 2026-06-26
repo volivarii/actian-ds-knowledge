@@ -3774,6 +3774,11 @@
       "title": "Global Color"
     },
     {
+      "id": "foundation:tokens/global-color/theme-palettes",
+      "type": "foundation_section",
+      "title": "Theme Palettes"
+    },
+    {
       "id": "foundation:tokens/heights-and-trigger-areas",
       "type": "foundation_section",
       "title": "Heights and Trigger Areas"
@@ -6828,6 +6833,11 @@
     {
       "source": "foundation:tokens/borders",
       "target": "foundation:tokens/borders/width",
+      "type": "narrower"
+    },
+    {
+      "source": "foundation:tokens/global-color",
+      "target": "foundation:tokens/global-color/theme-palettes",
       "type": "narrower"
     },
     {
