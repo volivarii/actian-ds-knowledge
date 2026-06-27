@@ -58,6 +58,33 @@ test("app schema accepts a header.type beyond the original three (open by design
   assert.equal(ok, true, JSON.stringify(v.errors));
 });
 
+test("app schema accepts structured useCases, rejects malformed", () => {
+  const localAjv = new Ajv({ strict: false, allowUnionTypes: true });
+  const v = localAjv.compile(load("app-context-app.json"));
+  const base = {
+    _schema_version: 1,
+    slug: "studio",
+    label: "Studio",
+    header: { type: "Studio" },
+    sidebar: [{ label: "Catalog", id: "catalog" }],
+  };
+  assert.equal(
+    v({
+      ...base,
+      useCases: [
+        {
+          audience: ["Data steward"],
+          jobs: ["Govern the catalog"],
+          patterns: ["asset-detail-360"],
+        },
+      ],
+    }),
+    true,
+    JSON.stringify(v.errors),
+  );
+  assert.equal(v({ ...base, useCases: [{ audience: ["x"] }] }), false); // missing jobs
+});
+
 test("pattern + term schemas compile and validate", () => {
   const vp = ajv.compile(load("app-context-pattern.json"));
   assert.ok(

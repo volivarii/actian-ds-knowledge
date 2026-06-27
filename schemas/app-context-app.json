@@ -61,6 +61,46 @@
           }
         }
       }
+    },
+    "useCases": {
+      "type": "array",
+      "description": "What the app is FOR, framed as audience → jobs. Optionally links each use case to app-scoped patterns. Drives flow framing + scaffold selection in consumers.",
+      "examples": [
+        [
+          {
+            "audience": ["Data steward", "Data engineer"],
+            "jobs": ["Govern the catalog", "Review access requests"],
+            "patterns": ["asset-detail-360"]
+          }
+        ]
+      ],
+      "items": {
+        "type": "object",
+        "required": ["audience", "jobs"],
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" },
+            "description": "Primary users this use case serves.",
+            "examples": [["Data steward", "Data engineer"]]
+          },
+          "jobs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" },
+            "description": "Jobs-to-be-done for this audience in this app.",
+            "examples": [["Govern the catalog", "Review access requests"]]
+          },
+          "patterns": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "App-scoped pattern slugs idiomatic to this use case. Integrity (exists + app-scoped) enforced by validate-app-context.js.",
+            "examples": [["asset-detail-360", "access-request-management"]]
+          }
+        }
+      }
     }
   }
 }
