@@ -14,6 +14,7 @@ properties:
   - last modified
 relationships:
   belongsTo: domain
+  discoveredVia: connection
   hasMetadata: metadata
   hasLineage: lineage
   hasGlossaryTerms: glossary-term
