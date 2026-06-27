@@ -285,9 +285,57 @@
         },
         "properties": {
           "type": "array",
-          "items": { "type": "string" },
-          "description": "Common attributes/fields the entity carries.",
-          "examples": [["name", "description", "status"]]
+          "description": "Common attributes/fields the entity carries. Each item is a bare field name (legacy) or a typed descriptor for realistic generated content.",
+          "examples": [
+            [
+              "name",
+              "description",
+              {
+                "name": "status",
+                "type": "enum",
+                "states": ["Draft", "Published"]
+              }
+            ]
+          ],
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "required": ["name"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Field name as shown in the UI.",
+                    "examples": ["status", "connection type"]
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "Logical type of the field, used to shape generated form controls and table columns.",
+                    "examples": [
+                      "string",
+                      "enum",
+                      "number",
+                      "date",
+                      "reference"
+                    ]
+                  },
+                  "example": {
+                    "type": "string",
+                    "description": "Realistic example value(s) for generated content.",
+                    "examples": ["Snowflake, BigQuery, S3 (93+ connectors)"]
+                  },
+                  "states": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Enumerated states, when the type is enum.",
+                    "examples": [["Draft", "Published", "Deprecated"]]
+                  }
+                }
+              }
+            ]
+          }
         },
         "relationships": {
           "type": "object",

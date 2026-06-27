@@ -115,6 +115,34 @@ test("app schema leaves header.type open (no enum) so new apps can declare a hea
   assert.equal(schema.properties.header.properties.type.minLength, 1);
 });
 
+test("entity properties accept both bare strings and typed objects", () => {
+  const localAjv = new Ajv({ strict: false, allowUnionTypes: true });
+  const v = localAjv.compile(load("app-context-entity.json"));
+  const base = {
+    _schema_version: 1,
+    slug: "x",
+    label: "X",
+    relationships: {},
+    apps: ["studio"],
+  };
+  assert.equal(
+    v({ ...base, properties: ["name", "status"] }),
+    true,
+    JSON.stringify(v.errors),
+  );
+  assert.equal(
+    v({
+      ...base,
+      properties: [
+        { name: "status", type: "enum", example: "Draft | Published" },
+      ],
+    }),
+    true,
+    JSON.stringify(v.errors),
+  );
+  assert.equal(v({ ...base, properties: [{ type: "enum" }] }), false); // missing name
+});
+
 test("schemas reject unknown fields (additionalProperties:false)", () => {
   const cases = [
     [
