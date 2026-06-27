@@ -16,7 +16,7 @@ relationships:
   discoveredVia: connection
   hasMetadata: metadata
   hasLineage: lineage
-  hasGlossaryTerms: glossary-term
+  hasGlossaryItems: glossary-item
   hasGovernancePolicies: governance-policy
   hasDiscussionThreads: discussion-thread
   hasSuggestions: suggestion
@@ -25,4 +25,4 @@ apps:
   - studio
   - explorer
 ---
-Any indexed item. Types: Dataset, Field, Visualization, Data Process, Data Product, Glossary Item, Custom Item, Category
+Any indexed item. Types: Dataset, Field, Visualization, Data Process, Data Product, Glossary Item, Custom Item

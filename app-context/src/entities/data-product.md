@@ -12,6 +12,8 @@ properties:
   - { name: datasets, type: reference, example: "1–N linked Datasets" }
   - contacts
   - attachments
+  - { name: apiVersion, type: string, example: "ODPS descriptor version" }
+  - { name: kind, type: string, example: "DataProduct" }
 relationships:
   hasInputPorts: input-port
   hasOutputPorts: output-port
@@ -20,4 +22,4 @@ apps:
   - studio
   - explorer
 ---
-Curated, business-ready asset. Contains Input Ports and Output Ports. Published to marketplace.
+Curated, business-ready asset. Contains Input Ports and Output Ports. Published to the marketplace via an ODPS YAML descriptor; access requests target the output-port level (each governed by a data-contract).
