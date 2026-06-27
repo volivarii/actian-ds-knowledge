@@ -45,6 +45,19 @@ test("app schema accepts a valid app record", () => {
   );
 });
 
+test("app schema accepts a header.type beyond the original three (open by design)", () => {
+  const localAjv = new Ajv({ strict: false, allowUnionTypes: true });
+  const v = localAjv.compile(load("app-context-app.json"));
+  const ok = v({
+    _schema_version: 1,
+    slug: "observability",
+    label: "Observability",
+    header: { type: "Observability" },
+    sidebar: [{ label: "Signals", id: "signals" }],
+  });
+  assert.equal(ok, true, JSON.stringify(v.errors));
+});
+
 test("pattern + term schemas compile and validate", () => {
   const vp = ajv.compile(load("app-context-pattern.json"));
   assert.ok(
@@ -69,13 +82,10 @@ test("pattern + term schemas compile and validate", () => {
   );
 });
 
-test("app schema constrains header.type to the known variants", () => {
+test("app schema leaves header.type open (no enum) so new apps can declare a header", () => {
   const schema = require("../schemas/app-context-app.json");
-  assert.deepEqual(schema.properties.header.properties.type.enum, [
-    "Studio",
-    "Explorer",
-    "Admin",
-  ]);
+  assert.equal(schema.properties.header.properties.type.enum, undefined);
+  assert.equal(schema.properties.header.properties.type.minLength, 1);
 });
 
 test("schemas reject unknown fields (additionalProperties:false)", () => {

@@ -29,9 +29,9 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["Studio", "Explorer", "Admin"],
-          "description": "Header variant; matches the DS global-header App type axis.",
-          "examples": ["Studio", "Explorer", "Admin"]
+          "minLength": 1,
+          "description": "Header variant; matches a DS global-header App type. Open by design so new apps can declare their own header.",
+          "examples": ["Studio", "Explorer", "Admin", "Observability"]
         }
       }
     },
