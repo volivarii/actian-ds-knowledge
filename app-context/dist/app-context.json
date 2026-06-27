@@ -268,9 +268,29 @@
       "properties": [
         "name",
         "description",
-        "type",
-        "completion level",
-        "quality status",
+        {
+          "name": "type",
+          "type": "enum",
+          "example": "Dataset, Data Product, Glossary Term, Domain"
+        },
+        {
+          "name": "completion level",
+          "type": "enum",
+          "states": [
+            "Incomplete",
+            "In progress",
+            "Complete"
+          ]
+        },
+        {
+          "name": "quality status",
+          "type": "enum",
+          "states": [
+            "Unverified",
+            "Verified",
+            "At risk"
+          ]
+        },
         "owner",
         "contacts",
         "last modified"
@@ -295,8 +315,20 @@
       "label": "Connection",
       "properties": [
         "name",
-        "type",
-        "status",
+        {
+          "name": "type",
+          "type": "enum",
+          "example": "Snowflake, BigQuery, S3, Postgres (93+ connectors)"
+        },
+        {
+          "name": "status",
+          "type": "enum",
+          "states": [
+            "Connected",
+            "Error",
+            "Pending"
+          ]
+        },
         "provider"
       ],
       "relationships": {
@@ -341,10 +373,30 @@
       "properties": [
         "name",
         "description",
-        "status",
-        "input ports",
-        "output ports",
-        "datasets",
+        {
+          "name": "status",
+          "type": "enum",
+          "states": [
+            "Draft",
+            "Published",
+            "Deprecated"
+          ]
+        },
+        {
+          "name": "input ports",
+          "type": "reference",
+          "example": "links to Input Port entities"
+        },
+        {
+          "name": "output ports",
+          "type": "reference",
+          "example": "links to Output Port entities"
+        },
+        {
+          "name": "datasets",
+          "type": "reference",
+          "example": "1–N linked Datasets"
+        },
         "contacts",
         "attachments"
       ],

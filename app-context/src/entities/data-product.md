@@ -6,10 +6,10 @@ label: Data Product
 properties:
   - name
   - description
-  - status
-  - input ports
-  - output ports
-  - datasets
+  - { name: status, type: enum, states: [Draft, Published, Deprecated] }
+  - { name: input ports, type: reference, example: "links to Input Port entities" }
+  - { name: output ports, type: reference, example: "links to Output Port entities" }
+  - { name: datasets, type: reference, example: "1–N linked Datasets" }
   - contacts
   - attachments
 relationships:

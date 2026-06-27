@@ -6,9 +6,9 @@ label: Catalog Object
 properties:
   - name
   - description
-  - type
-  - completion level
-  - quality status
+  - { name: type, type: enum, example: "Dataset, Data Product, Glossary Term, Domain" }
+  - { name: completion level, type: enum, states: [Incomplete, In progress, Complete] }
+  - { name: quality status, type: enum, states: [Unverified, Verified, At risk] }
   - owner
   - contacts
   - last modified
