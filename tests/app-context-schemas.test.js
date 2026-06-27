@@ -45,6 +45,54 @@ test("app schema accepts a valid app record", () => {
   );
 });
 
+test("app schema accepts a header.type beyond the original three (open by design)", () => {
+  const localAjv = new Ajv({ strict: false, allowUnionTypes: true });
+  const v = localAjv.compile(load("app-context-app.json"));
+  const ok = v({
+    _schema_version: 1,
+    slug: "observability",
+    label: "Observability",
+    header: { type: "Observability" },
+    sidebar: [{ label: "Signals", id: "signals" }],
+  });
+  assert.equal(ok, true, JSON.stringify(v.errors));
+});
+
+test("app schema accepts structured useCases, rejects malformed", () => {
+  const localAjv = new Ajv({ strict: false, allowUnionTypes: true });
+  const v = localAjv.compile(load("app-context-app.json"));
+  const base = {
+    _schema_version: 1,
+    slug: "studio",
+    label: "Studio",
+    header: { type: "Studio" },
+    sidebar: [{ label: "Catalog", id: "catalog" }],
+  };
+  assert.equal(
+    v({
+      ...base,
+      useCases: [
+        {
+          audience: ["Data steward"],
+          jobs: ["Govern the catalog"],
+          patterns: ["asset-detail-360"],
+        },
+      ],
+    }),
+    true,
+    JSON.stringify(v.errors),
+  );
+  assert.equal(v({ ...base, useCases: [{ audience: ["x"] }] }), false); // missing jobs
+  assert.equal(
+    v({ ...base, useCases: [{ audience: [], jobs: ["j"] }] }),
+    false,
+  ); // audience minItems:1
+  assert.equal(
+    v({ ...base, useCases: [{ audience: ["a"], jobs: ["j"], bogus: true }] }),
+    false,
+  ); // additionalProperties:false
+});
+
 test("pattern + term schemas compile and validate", () => {
   const vp = ajv.compile(load("app-context-pattern.json"));
   assert.ok(
@@ -69,13 +117,38 @@ test("pattern + term schemas compile and validate", () => {
   );
 });
 
-test("app schema constrains header.type to the known variants", () => {
+test("app schema leaves header.type open (no enum) so new apps can declare a header", () => {
   const schema = require("../schemas/app-context-app.json");
-  assert.deepEqual(schema.properties.header.properties.type.enum, [
-    "Studio",
-    "Explorer",
-    "Admin",
-  ]);
+  assert.equal(schema.properties.header.properties.type.enum, undefined);
+  assert.equal(schema.properties.header.properties.type.minLength, 1);
+});
+
+test("entity properties accept both bare strings and typed objects", () => {
+  const localAjv = new Ajv({ strict: false, allowUnionTypes: true });
+  const v = localAjv.compile(load("app-context-entity.json"));
+  const base = {
+    _schema_version: 1,
+    slug: "x",
+    label: "X",
+    relationships: {},
+    apps: ["studio"],
+  };
+  assert.equal(
+    v({ ...base, properties: ["name", "status"] }),
+    true,
+    JSON.stringify(v.errors),
+  );
+  assert.equal(
+    v({
+      ...base,
+      properties: [
+        { name: "status", type: "enum", example: "Draft | Published" },
+      ],
+    }),
+    true,
+    JSON.stringify(v.errors),
+  );
+  assert.equal(v({ ...base, properties: [{ type: "enum" }] }), false); // missing name
 });
 
 test("schemas reject unknown fields (additionalProperties:false)", () => {

@@ -66,6 +66,24 @@
         "API keys",
         "maintenance",
         "catalogs"
+      ],
+      "useCases": [
+        {
+          "audience": [
+            "Administrator",
+            "IT operations"
+          ],
+          "jobs": [
+            "Configure connections and scanners",
+            "Manage users, groups and permissions",
+            "Set governance policies and maintenance windows"
+          ],
+          "patterns": [
+            "search-filtered-table",
+            "filter-groups-form",
+            "table-with-tabs"
+          ]
+        }
       ]
     },
     "explorer": {
@@ -93,6 +111,27 @@
         "ask AI",
         "suggestion",
         "favorite"
+      ],
+      "useCases": [
+        {
+          "audience": [
+            "Business user",
+            "Analyst",
+            "Data consumer"
+          ],
+          "jobs": [
+            "Discover and browse data products in the marketplace",
+            "Understand an asset before using it",
+            "Request access to the data they need",
+            "Ask AI for help finding and understanding data"
+          ],
+          "patterns": [
+            "marketplace-browsing",
+            "asset-detail-360",
+            "access-request-workflow",
+            "ask-ai"
+          ]
+        }
       ]
     },
     "studio": {
@@ -154,6 +193,40 @@
         "watchlist",
         "analytics",
         "catalog design"
+      ],
+      "useCases": [
+        {
+          "audience": [
+            "Data steward",
+            "Data architect"
+          ],
+          "jobs": [
+            "Govern and curate the catalog",
+            "Manage lineage and the business glossary",
+            "Enrich metadata and design catalog structure"
+          ],
+          "patterns": [
+            "asset-detail-360",
+            "search-filtered-table",
+            "table-with-tabs"
+          ]
+        },
+        {
+          "audience": [
+            "Data steward",
+            "Data engineer"
+          ],
+          "jobs": [
+            "Import and connect data sources",
+            "Review and resolve access requests",
+            "Track stewardship activity"
+          ],
+          "patterns": [
+            "import-wizard",
+            "access-request-management",
+            "activity-timeline"
+          ]
+        }
       ]
     }
   },
@@ -195,15 +268,23 @@
       "properties": [
         "name",
         "description",
-        "type",
-        "completion level",
-        "quality status",
+        {
+          "name": "type",
+          "type": "enum",
+          "example": "Dataset, Visualization, Data Process, Custom Item, Glossary Item, Data Product"
+        },
+        {
+          "name": "documentation completion",
+          "type": "number",
+          "example": "percentage (0–100) from 4 criteria: description, contact, glossary link, properties filled"
+        },
         "owner",
         "contacts",
         "last modified"
       ],
       "relationships": {
         "belongsTo": "domain",
+        "discoveredVia": "connection",
         "hasMetadata": "metadata",
         "hasLineage": "lineage",
         "hasGlossaryTerms": "glossary-term",
@@ -222,8 +303,20 @@
       "label": "Connection",
       "properties": [
         "name",
-        "type",
-        "status",
+        {
+          "name": "type",
+          "type": "enum",
+          "example": "Snowflake, BigQuery, S3, Postgres (93+ connectors)"
+        },
+        {
+          "name": "status",
+          "type": "enum",
+          "states": [
+            "Connected",
+            "Error",
+            "Pending"
+          ]
+        },
         "provider"
       ],
       "relationships": {
@@ -268,10 +361,30 @@
       "properties": [
         "name",
         "description",
-        "status",
-        "input ports",
-        "output ports",
-        "datasets",
+        {
+          "name": "status",
+          "type": "enum",
+          "states": [
+            "Draft",
+            "Published",
+            "Deprecated"
+          ]
+        },
+        {
+          "name": "input ports",
+          "type": "reference",
+          "example": "links to Input Port entities"
+        },
+        {
+          "name": "output ports",
+          "type": "reference",
+          "example": "links to Output Port entities"
+        },
+        {
+          "name": "datasets",
+          "type": "reference",
+          "example": "1–N linked Datasets"
+        },
         "contacts",
         "attachments"
       ],

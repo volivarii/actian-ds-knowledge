@@ -6,14 +6,14 @@ label: Catalog Object
 properties:
   - name
   - description
-  - type
-  - completion level
-  - quality status
+  - { name: type, type: enum, example: "Dataset, Visualization, Data Process, Custom Item, Glossary Item, Data Product" }
+  - { name: documentation completion, type: number, example: "percentage (0–100) from 4 criteria: description, contact, glossary link, properties filled" }
   - owner
   - contacts
   - last modified
 relationships:
   belongsTo: domain
+  discoveredVia: connection
   hasMetadata: metadata
   hasLineage: lineage
   hasGlossaryTerms: glossary-term
