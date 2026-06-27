@@ -74,7 +74,24 @@
           "maintenance",
           "catalogs"
         ],
-        "useCases": []
+        "useCases": [
+          {
+            "audience": [
+              "Administrator",
+              "IT operations"
+            ],
+            "jobs": [
+              "Configure connections and scanners",
+              "Manage users, groups and permissions",
+              "Set governance policies and maintenance windows"
+            ],
+            "patterns": [
+              "search-filtered-table",
+              "filter-groups-form",
+              "table-with-tabs"
+            ]
+          }
+        ]
       },
       "explorer": {
         "label": "Explorer",
@@ -102,7 +119,27 @@
           "suggestion",
           "favorite"
         ],
-        "useCases": []
+        "useCases": [
+          {
+            "audience": [
+              "Business user",
+              "Analyst",
+              "Data consumer"
+            ],
+            "jobs": [
+              "Discover and browse data products in the marketplace",
+              "Understand an asset before using it",
+              "Request access to the data they need",
+              "Ask AI for help finding and understanding data"
+            ],
+            "patterns": [
+              "marketplace-browsing",
+              "asset-detail-360",
+              "access-request-workflow",
+              "ask-ai"
+            ]
+          }
+        ]
       },
       "studio": {
         "label": "Studio",
@@ -164,7 +201,40 @@
           "analytics",
           "catalog design"
         ],
-        "useCases": []
+        "useCases": [
+          {
+            "audience": [
+              "Data steward",
+              "Data architect"
+            ],
+            "jobs": [
+              "Govern and curate the catalog",
+              "Manage lineage and the business glossary",
+              "Enrich metadata and design catalog structure"
+            ],
+            "patterns": [
+              "asset-detail-360",
+              "search-filtered-table",
+              "table-with-tabs"
+            ]
+          },
+          {
+            "audience": [
+              "Data steward",
+              "Data engineer"
+            ],
+            "jobs": [
+              "Import and connect data sources",
+              "Review and resolve access requests",
+              "Track stewardship activity"
+            ],
+            "patterns": [
+              "import-wizard",
+              "access-request-management",
+              "activity-timeline"
+            ]
+          }
+        ]
       }
     },
     "entities": {
