@@ -378,7 +378,17 @@
         "name",
         "quality thresholds",
         "access rules",
-        "validation rules"
+        "validation rules",
+        {
+          "name": "apiVersion",
+          "type": "string",
+          "example": "ODCS descriptor version"
+        },
+        {
+          "name": "schema",
+          "type": "reference",
+          "example": "fields with logicalType/physicalType/primaryKey"
+        }
       ],
       "relationships": {
         "attachedTo": "output-port"
@@ -386,7 +396,7 @@
       "apps": [
         "studio"
       ],
-      "description": "Formal agreement on an Output Port defining quality thresholds, access permissions, validation rules"
+      "description": "Formal agreement on an Output Port (ODCS YAML descriptor) defining schema, quality thresholds, access permissions, and validation rules."
     },
     "data-process": {
       "label": "Data Process",
@@ -444,7 +454,17 @@
           "example": "1–N linked Datasets"
         },
         "contacts",
-        "attachments"
+        "attachments",
+        {
+          "name": "apiVersion",
+          "type": "string",
+          "example": "ODPS descriptor version"
+        },
+        {
+          "name": "kind",
+          "type": "string",
+          "example": "DataProduct"
+        }
       ],
       "relationships": {
         "hasInputPorts": "input-port",
@@ -455,17 +475,47 @@
         "studio",
         "explorer"
       ],
-      "description": "Curated, business-ready asset. Contains Input Ports and Output Ports. Published to marketplace."
+      "description": "Curated, business-ready asset. Contains Input Ports and Output Ports. Published to the marketplace via an ODPS YAML descriptor; access requests target the output-port level (each governed by a data-contract)."
     },
     "dataset": {
       "label": "Dataset",
-      "properties": [],
-      "relationships": {},
+      "properties": [
+        "name",
+        "description",
+        {
+          "name": "orphan",
+          "type": "enum",
+          "states": [
+            "Present",
+            "Orphan"
+          ]
+        },
+        {
+          "name": "import date",
+          "type": "date",
+          "example": "when the dataset was imported by a scan"
+        },
+        {
+          "name": "deletion date",
+          "type": "date",
+          "example": "set when removed from the source connection"
+        },
+        {
+          "name": "documentation completion",
+          "type": "number",
+          "example": "percentage (0–100)"
+        }
+      ],
+      "relationships": {
+        "hasFields": "field",
+        "discoveredVia": "connection",
+        "exposedVia": "output-port"
+      },
       "apps": [
         "studio",
         "explorer"
       ],
-      "description": "A dataset asset contained by a data product; a type of catalog object."
+      "description": "A dataset asset contained by a data product; a type of catalog object. Has a schema of Fields; becomes an orphan when removed from its source connection."
     },
     "discussion-thread": {
       "label": "Discussion Thread",
