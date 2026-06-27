@@ -1137,6 +1137,13 @@
       ],
       "description": "Chronological timeline with date headers, user avatars, action descriptions."
     },
+    "ai-analyst-panel": {
+      "label": "AI Analyst Panel",
+      "apps": [
+        "explorer"
+      ],
+      "description": "Conversational analytics assistant (AI Analyst, formerly Wobby) for business users to query and understand data in natural language."
+    },
     "analytics-dashboard": {
       "label": "Analytics dashboard",
       "apps": [
@@ -1159,12 +1166,26 @@
       ],
       "description": "Every catalog object has a tabbed detail page with property panel/sidebar."
     },
+    "bulk-edit": {
+      "label": "Bulk Edit",
+      "apps": [
+        "studio"
+      ],
+      "description": "Multi-item batch update of properties, contacts, and glossary links across the catalog."
+    },
     "data-profiling-sampling": {
       "label": "Data profiling and sampling",
       "apps": [
         "studio"
       ],
       "description": "Statistical graphs on fields (profiling) and sample data preview rows (sampling)."
+    },
+    "data-steward-agent-panel": {
+      "label": "Data Steward Agent Panel",
+      "apps": [
+        "studio"
+      ],
+      "description": "AI metadata-curation agent panel with approval-gated writes, tenant memory, and plan mode, assisting stewards in Studio."
     },
     "discussion-threads": {
       "label": "Discussion threads",
@@ -1173,6 +1194,13 @@
         "explorer"
       ],
       "description": "Available on Dataset detail pages. Users create threads, reply, edit own messages."
+    },
+    "documentation-completion-dashboard": {
+      "label": "Documentation Completion Dashboard",
+      "apps": [
+        "studio"
+      ],
+      "description": "Stewardship dashboard of per-item documentation-completion percentages and the criteria contributing to each score."
     },
     "federated-catalog": {
       "label": "Federated Catalog",
@@ -1211,6 +1239,14 @@
       ],
       "description": "Used for lineage (DAG), View 360 (radial knowledge graph), and Data Model (ER diagram). Nodes are clickable."
     },
+    "lineage-graph": {
+      "label": "Lineage Graph",
+      "apps": [
+        "studio",
+        "explorer"
+      ],
+      "description": "Directional data-flow graph with field-level path highlighting and an incomplete-process filter; rendered from data-process input/output edges."
+    },
     "marketplace-browsing": {
       "label": "Marketplace browsing",
       "apps": [
@@ -1225,6 +1261,13 @@
         "explorer"
       ],
       "description": "7 tools for AI integrations (Find Glossary, Semantic Search, Get Data Model, etc.)."
+    },
+    "metamodel-designer": {
+      "label": "Metamodel Designer",
+      "apps": [
+        "studio"
+      ],
+      "description": "Drag-and-drop configuration of templates and properties per item type in Studio Catalog Design."
     },
     "notification-system": {
       "label": "Notification system",
@@ -1282,6 +1325,13 @@
         "studio"
       ],
       "description": "Studio feature for creating documentation templates via Catalog Design page."
+    },
+    "topic-browse": {
+      "label": "Topic Browse",
+      "apps": [
+        "explorer"
+      ],
+      "description": "Curated topic collections browsed via carousel + selector + favorites for business-user discovery."
     },
     "type-picker-grid": {
       "label": "Type picker grid",
