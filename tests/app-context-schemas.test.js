@@ -83,6 +83,14 @@ test("app schema accepts structured useCases, rejects malformed", () => {
     JSON.stringify(v.errors),
   );
   assert.equal(v({ ...base, useCases: [{ audience: ["x"] }] }), false); // missing jobs
+  assert.equal(
+    v({ ...base, useCases: [{ audience: [], jobs: ["j"] }] }),
+    false,
+  ); // audience minItems:1
+  assert.equal(
+    v({ ...base, useCases: [{ audience: ["a"], jobs: ["j"], bogus: true }] }),
+    false,
+  ); // additionalProperties:false
 });
 
 test("pattern + term schemas compile and validate", () => {
