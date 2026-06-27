@@ -629,6 +629,42 @@
         ],
         "description": "A suggested enrichment or change on a catalog object, pending steward review."
       },
+      "topic": {
+        "label": "Topic",
+        "properties": [
+          "name",
+          "description",
+          {
+            "name": "color",
+            "type": "string",
+            "example": "display color for the topic card"
+          }
+        ],
+        "relationships": {
+          "groups": "catalog-object"
+        },
+        "apps": [
+          "studio",
+          "explorer"
+        ],
+        "description": "A curated collection of catalog items for business-user navigation in Explorer (carousel + browse). Created and curated by stewards in Studio. Replaces the deprecated \"Category\" concept."
+      },
+      "use-case": {
+        "label": "Use Case",
+        "properties": [
+          "name",
+          "description"
+        ],
+        "relationships": {
+          "justifies": "access-request",
+          "relatesTo": "data-product"
+        },
+        "apps": [
+          "studio",
+          "explorer"
+        ],
+        "description": "A built-in catalog item describing an analytical use case. Required as justification when a consumer submits an access request in Explorer."
+      },
       "user-group": {
         "label": "User / Group",
         "properties": [
