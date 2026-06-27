@@ -294,7 +294,7 @@
           "discoveredVia": "connection",
           "hasMetadata": "metadata",
           "hasLineage": "lineage",
-          "hasGlossaryTerms": "glossary-term",
+          "hasGlossaryItems": "glossary-item",
           "hasGovernancePolicies": "governance-policy",
           "hasDiscussionThreads": "discussion-thread",
           "hasSuggestions": "suggestion",
@@ -304,7 +304,7 @@
           "studio",
           "explorer"
         ],
-        "description": "Any indexed item. Types: Dataset, Field, Visualization, Data Process, Data Product, Glossary Item, Custom Item, Category"
+        "description": "Any indexed item. Types: Dataset, Field, Visualization, Data Process, Data Product, Glossary Item, Custom Item"
       },
       "connection": {
         "label": "Connection",
@@ -448,8 +448,8 @@
         ],
         "description": "Organizational/business unit owning a set of data assets"
       },
-      "glossary-term": {
-        "label": "Glossary Term",
+      "glossary-item": {
+        "label": "Glossary Item",
         "properties": [
           "name",
           "definition",
@@ -462,7 +462,7 @@
           "studio",
           "explorer"
         ],
-        "description": "Business vocabulary entry linked to technical assets"
+        "description": "A glossary item — business term, KPI, report, or domain — in the business glossary, linked to technical assets. Glossary item types are tenant-defined."
       },
       "governance-policy": {
         "label": "Governance Policy",
