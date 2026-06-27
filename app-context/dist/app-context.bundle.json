@@ -625,6 +625,42 @@
         ],
         "description": "An output port of a data product — a published interface that a data contract can attach to."
       },
+      "property": {
+        "label": "Property",
+        "properties": [
+          "name",
+          {
+            "name": "type",
+            "type": "enum",
+            "states": [
+              "Short text",
+              "Rich text",
+              "Number",
+              "URL",
+              "Select",
+              "Multi-select",
+              "Date",
+              "Tag"
+            ]
+          },
+          {
+            "name": "importance",
+            "type": "enum",
+            "states": [
+              "Standard",
+              "Important",
+              "Required"
+            ]
+          }
+        ],
+        "relationships": {
+          "partOf": "template"
+        },
+        "apps": [
+          "studio"
+        ],
+        "description": "A typed metadata field definition in the catalog metamodel (8 value types). Importance (Standard/Important/Required) feeds the documentation-completion score. Configured in Studio Catalog Design."
+      },
       "responsibility": {
         "label": "Responsibility",
         "properties": [
@@ -666,6 +702,25 @@
           "studio"
         ],
         "description": "A suggested enrichment or change on a catalog object, pending steward review."
+      },
+      "template": {
+        "label": "Template",
+        "properties": [
+          "name",
+          {
+            "name": "item type",
+            "type": "enum",
+            "example": "Dataset, Visualization, Data Process, Custom Item, Glossary Item"
+          },
+          "sections"
+        ],
+        "relationships": {
+          "contains": "property"
+        },
+        "apps": [
+          "studio"
+        ],
+        "description": "The documentation structure (ordered sections + properties) applied to an item type. Authored in Studio Catalog Design."
       },
       "topic": {
         "label": "Topic",
