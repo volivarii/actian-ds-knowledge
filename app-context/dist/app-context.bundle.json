@@ -363,6 +363,32 @@
         ],
         "description": "Formal agreement on an Output Port defining quality thresholds, access permissions, validation rules"
       },
+      "data-process": {
+        "label": "Data Process",
+        "properties": [
+          "name",
+          "description",
+          {
+            "name": "job status",
+            "type": "enum",
+            "states": [
+              "Created",
+              "Processing",
+              "Processed"
+            ]
+          }
+        ],
+        "relationships": {
+          "hasInputs": "dataset",
+          "hasOutputs": "dataset",
+          "produces": "lineage"
+        },
+        "apps": [
+          "studio",
+          "explorer"
+        ],
+        "description": "A transformation/pipeline catalog item. Its input/output connections to datasets (and custom items) generate the horizontal data lineage graph; supports field-level lineage."
+      },
       "data-product": {
         "label": "Data Product",
         "properties": [
@@ -448,6 +474,44 @@
           "explorer"
         ],
         "description": "Organizational/business unit owning a set of data assets"
+      },
+      "field": {
+        "label": "Field",
+        "properties": [
+          "name",
+          {
+            "name": "type",
+            "type": "enum",
+            "example": "string, integer, decimal, date, boolean"
+          },
+          {
+            "name": "nullable",
+            "type": "enum",
+            "states": [
+              "Nullable",
+              "Not null"
+            ]
+          },
+          {
+            "name": "key",
+            "type": "enum",
+            "states": [
+              "Primary key",
+              "Foreign key",
+              "Business key",
+              "None"
+            ]
+          },
+          "description"
+        ],
+        "relationships": {
+          "belongsTo": "dataset"
+        },
+        "apps": [
+          "studio",
+          "explorer"
+        ],
+        "description": "A column within a dataset's schema. Auto-created on import; participates in field-level lineage. Business keys (BK) are editable by Data Stewards."
       },
       "glossary-item": {
         "label": "Glossary Item",
@@ -581,6 +645,28 @@
           "administration"
         ],
         "description": "Identity and role assignments. Groups: Explorer, Data Steward, Super Admin"
+      },
+      "visualization": {
+        "label": "Visualization",
+        "properties": [
+          "name",
+          {
+            "name": "source tool",
+            "type": "enum",
+            "example": "Power BI, Tableau, Looker, Qlik"
+          },
+          "description",
+          "contacts"
+        ],
+        "relationships": {
+          "builtFrom": "dataset",
+          "discoveredVia": "connection"
+        },
+        "apps": [
+          "studio",
+          "explorer"
+        ],
+        "description": "A BI report or dashboard catalog item (Power BI, Tableau, Looker, Qlik…), auto-discovered by a connector and surfaced in lineage. Distinct from a dataset."
       },
       "watchlist": {
         "label": "Watchlist",
