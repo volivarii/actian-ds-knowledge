@@ -327,8 +327,8 @@
       ],
       "description": "Configuration for a data source connector (93+ pre-built)"
     },
-    "custom-asset": {
-      "label": "Custom Asset",
+    "custom-item": {
+      "label": "Custom Item",
       "properties": [
         "name",
         "description",
@@ -338,7 +338,7 @@
       "apps": [
         "studio"
       ],
-      "description": "User-defined asset type extending the catalog model"
+      "description": "A user-defined custom item type extending the catalog metamodel."
     },
     "data-contract": {
       "label": "Data Contract",
