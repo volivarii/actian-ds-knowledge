@@ -218,6 +218,46 @@
           "items": { "type": "string" },
           "description": "Keywords/phrases that, when present in a user request, route work to this app. Used by skill routing to pick an app context.",
           "examples": [["steward", "govern", "lineage"]]
+        },
+        "useCases": {
+          "type": "array",
+          "description": "What the app is FOR, framed as audience → jobs, optionally linked to app-scoped patterns. Drives flow framing + scaffold selection in consumers.",
+          "examples": [
+            [
+              {
+                "audience": ["Data steward", "Data engineer"],
+                "jobs": ["Govern the catalog", "Review access requests"],
+                "patterns": ["asset-detail-360"]
+              }
+            ]
+          ],
+          "items": {
+            "type": "object",
+            "required": ["audience", "jobs"],
+            "additionalProperties": false,
+            "properties": {
+              "audience": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string" },
+                "description": "Primary users this use case serves.",
+                "examples": [["Data steward", "Data engineer"]]
+              },
+              "jobs": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string" },
+                "description": "Jobs-to-be-done for this audience in this app.",
+                "examples": [["Govern the catalog", "Review access requests"]]
+              },
+              "patterns": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "App-scoped pattern slugs idiomatic to this use case; existence + app-scope enforced by validate-app-context.js.",
+                "examples": [["asset-detail-360", "access-request-management"]]
+              }
+            }
+          }
         }
       }
     },

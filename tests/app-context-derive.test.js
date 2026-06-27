@@ -34,8 +34,9 @@ test("assembleAppRecord maps sections to fields in canonical key order", () => {
     header: { type: "Studio" },
     sidebar: [{ label: "Dashboard", id: "dashboard" }],
     signals: ["steward", "glossary admin"],
+    useCases: [],
   });
-  // Key order must be exactly label, purpose, users, header, sidebar, signals.
+  // Key order must be exactly label, purpose, users, header, sidebar, signals, useCases.
   assert.deepEqual(Object.keys(rec), [
     "label",
     "purpose",
@@ -43,7 +44,42 @@ test("assembleAppRecord maps sections to fields in canonical key order", () => {
     "header",
     "sidebar",
     "signals",
+    "useCases",
   ]);
+});
+
+test("assembleAppRecord carries useCases and appends them after signals", () => {
+  const fm = {
+    label: "Studio",
+    header: { type: "Studio" },
+    sidebar: [],
+    useCases: [
+      {
+        audience: ["Data steward"],
+        jobs: ["Govern the catalog"],
+        patterns: ["asset-detail-360"],
+      },
+    ],
+  };
+  const rec = assembleAppRecord(fm, []);
+  assert.deepEqual(rec.useCases, fm.useCases);
+  assert.deepEqual(Object.keys(rec), [
+    "label",
+    "purpose",
+    "users",
+    "header",
+    "sidebar",
+    "signals",
+    "useCases",
+  ]);
+});
+
+test("assembleAppRecord defaults useCases to [] when absent", () => {
+  const rec = assembleAppRecord(
+    { label: "X", header: { type: "X" }, sidebar: [] },
+    [],
+  );
+  assert.deepEqual(rec.useCases, []);
 });
 
 test("derive(src) carries expected _meta shape", () => {

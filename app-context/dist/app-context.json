@@ -66,7 +66,8 @@
         "API keys",
         "maintenance",
         "catalogs"
-      ]
+      ],
+      "useCases": []
     },
     "explorer": {
       "label": "Explorer",
@@ -93,7 +94,8 @@
         "ask AI",
         "suggestion",
         "favorite"
-      ]
+      ],
+      "useCases": []
     },
     "studio": {
       "label": "Studio",
@@ -154,7 +156,8 @@
         "watchlist",
         "analytics",
         "catalog design"
-      ]
+      ],
+      "useCases": []
     }
   },
   "entities": {
