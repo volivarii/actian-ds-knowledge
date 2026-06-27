@@ -334,6 +334,26 @@
         ],
         "description": "Configuration for a data source connector (93+ pre-built)"
       },
+      "contact": {
+        "label": "Contact",
+        "properties": [
+          "name",
+          {
+            "name": "email",
+            "type": "string",
+            "example": "person email"
+          }
+        ],
+        "relationships": {
+          "hasResponsibility": "responsibility"
+        },
+        "apps": [
+          "studio",
+          "explorer",
+          "administration"
+        ],
+        "description": "A person assigned a responsibility on a catalog item (e.g. Owner, Steward). Distinct from a user-group; surfaces on the item detail \"People\" section."
+      },
       "custom-item": {
         "label": "Custom Item",
         "properties": [
@@ -604,6 +624,24 @@
           "studio"
         ],
         "description": "An output port of a data product — a published interface that a data contract can attach to."
+      },
+      "responsibility": {
+        "label": "Responsibility",
+        "properties": [
+          "name",
+          {
+            "name": "role",
+            "type": "enum",
+            "example": "Data Owner, Data Steward, Reader (tenant-configurable)"
+          }
+        ],
+        "relationships": {
+          "assignedTo": "contact"
+        },
+        "apps": [
+          "studio"
+        ],
+        "description": "A named contact role-type (Data Owner, Data Steward, Reader…), defined in Studio Catalog Design and assignable to any catalog item. Tenant-configurable."
       },
       "scanner": {
         "label": "Scanner",
