@@ -238,17 +238,29 @@
         "item",
         "use case",
         "reason",
-        "status",
+        {
+          "name": "status",
+          "type": "enum",
+          "states": [
+            "Pending",
+            "Accepted",
+            "Rejected",
+            "Granted",
+            "Error",
+            "Closed"
+          ]
+        },
         "created at"
       ],
       "relationships": {
-        "targetsOutputPort": "output-port"
+        "targetsOutputPort": "output-port",
+        "requiresJustification": "use-case"
       },
       "apps": [
         "studio",
         "explorer"
       ],
-      "description": "Consumer request for data product/item access with policy-driven approval workflow"
+      "description": "Consumer request for data-product/item access, submitted in Explorer with a required use-case justification. Accepted ≠ Granted (provisioned); processing happens in external systems (ServiceNow/Jira/owner) and status is tracked in Explorer."
     },
     "api-key": {
       "label": "API Key",
@@ -306,7 +318,7 @@
         {
           "name": "type",
           "type": "enum",
-          "example": "Snowflake, BigQuery, S3, Postgres (93+ connectors)"
+          "example": "Snowflake, PostgreSQL, Oracle, SQL Server, BigQuery, Databricks, Synapse, S3, ADLS, Power BI, Tableau, Looker, Kafka, dbt, Talend (91 connectors across 16 categories)"
         },
         {
           "name": "status",
@@ -325,7 +337,7 @@
       "apps": [
         "administration"
       ],
-      "description": "Configuration for a data source connector (93+ pre-built)"
+      "description": "Configuration for a data source connector (91 pre-built across 16 categories)"
     },
     "contact": {
       "label": "Contact",
