@@ -1,8 +1,6 @@
 # yaml-language-server: $schema=../../../schemas/guideline-meta.json
 component: "Search dropdown menu"
 category: form-input-selection
-a11y_refs:
-  - { ref: dropdowns-menus-popovers }
 domains:
   content:  { status: approved, owner: content-team }
   usage:    { status: not-started }
