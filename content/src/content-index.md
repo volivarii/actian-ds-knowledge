@@ -72,7 +72,6 @@ Use the sidebar to navigate, or jump directly to a section below.
   <a href="scroll-bar">Scroll bar</a>
   <a href="search">Search</a>
   <a href="search-dropdown-menu">Search dropdown menu</a>
-  <a href="search-filters">Search filters</a>
   <a href="search-result-card">Search result card</a>
   <a href="segmented-control">Segmented control</a>
   <a href="side-nav">Side nav</a>
