@@ -1,0 +1,40 @@
+{
+  "Spacing": {
+    "spacing-3xs": {
+      "$type": "dimension",
+      "$value": "2px"
+    },
+    "spacing-2xs": {
+      "$type": "dimension",
+      "$value": "4px"
+    },
+    "spacing-xs": {
+      "$type": "dimension",
+      "$value": "8px"
+    },
+    "spacing-sm": {
+      "$type": "dimension",
+      "$value": "12px"
+    },
+    "spacing-md": {
+      "$type": "dimension",
+      "$value": "16px"
+    },
+    "spacing-lg": {
+      "$type": "dimension",
+      "$value": "24px"
+    },
+    "spacing-xl": {
+      "$type": "dimension",
+      "$value": "32px"
+    },
+    "spacing-2xl": {
+      "$type": "dimension",
+      "$value": "48px"
+    },
+    "spacing-3xl": {
+      "$type": "dimension",
+      "$value": "64px"
+    }
+  }
+}

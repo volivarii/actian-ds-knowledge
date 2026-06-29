@@ -1,0 +1,14 @@
+{
+  "focus-ring-primary": {
+    "$type": "color",
+    "$value": "{primary.500}"
+  },
+  "focus-ring-error": {
+    "$type": "color",
+    "$value": "{error.600}"
+  },
+  "focus-ring-offset": {
+    "$type": "dimension",
+    "$value": "2px"
+  }
+}

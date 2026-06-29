@@ -1,0 +1,50 @@
+{
+  "size-icon-xs": {
+    "$type": "dimension",
+    "$value": "12px"
+  },
+  "size-icon-sm": {
+    "$type": "dimension",
+    "$value": "16px"
+  },
+  "size-icon-md": {
+    "$type": "dimension",
+    "$value": "20px"
+  },
+  "size-icon-lg": {
+    "$type": "dimension",
+    "$value": "24px"
+  },
+  "color-icon-default": {
+    "$type": "color",
+    "$value": "{black}"
+  },
+  "color-icon-subtle": {
+    "$type": "color",
+    "$value": "{neutral.600}"
+  },
+  "color-icon-disabled": {
+    "$type": "color",
+    "$value": "{neutral.400}"
+  },
+  "color-icon-primary": {
+    "$type": "color",
+    "$value": "{primary.500}"
+  },
+  "color-icon-success": {
+    "$type": "color",
+    "$value": "{success.600}"
+  },
+  "color-icon-warning": {
+    "$type": "color",
+    "$value": "{warning.600}"
+  },
+  "color-icon-error": {
+    "$type": "color",
+    "$value": "{error.600}"
+  },
+  "color-icon-reverse": {
+    "$type": "color",
+    "$value": "{white}"
+  }
+}

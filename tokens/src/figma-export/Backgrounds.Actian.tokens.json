@@ -1,0 +1,58 @@
+{
+  "color-bg-default": {
+    "$type": "color",
+    "$value": "{white}"
+  },
+  "color-bg-surface": {
+    "$type": "color",
+    "$value": "{neutral.25}"
+  },
+  "color-bg-sunken": {
+    "$type": "color",
+    "$value": "{neutral.50}"
+  },
+  "color-bg-disabled": {
+    "$type": "color",
+    "$value": "{neutral.50}"
+  },
+  "color-bg-selected": {
+    "$type": "color",
+    "$value": "{primary.25}"
+  },
+  "color-bg-overlay": {
+    "$type": "color",
+    "$value": "#00000066"
+  },
+  "color-bg-primary": {
+    "$type": "color",
+    "$value": "{primary.500}"
+  },
+  "color-bg-info": {
+    "$type": "color",
+    "$value": "{primary.25}"
+  },
+  "color-bg-success": {
+    "$type": "color",
+    "$value": "{success.25}"
+  },
+  "color-bg-warning": {
+    "$type": "color",
+    "$value": "{warning.25}"
+  },
+  "color-bg-error": {
+    "$type": "color",
+    "$value": "{error.25}"
+  },
+  "color-bg-reverse": {
+    "$type": "color",
+    "$value": "{black}"
+  },
+  "Hovered": {
+    "$type": "color",
+    "$value": "#0000000d"
+  },
+  "Pressed": {
+    "$type": "color",
+    "$value": "#0000001a"
+  }
+}

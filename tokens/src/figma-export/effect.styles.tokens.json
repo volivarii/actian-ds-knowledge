@@ -1,0 +1,116 @@
+{
+  "shadow-2xs": {
+    "$type": "shadow",
+    "$value": [
+      {
+        "offsetX": "0px",
+        "offsetY": "1px",
+        "blur": "2px",
+        "spread": "1px",
+        "color": "#00000f08"
+      },
+      {
+        "offsetX": "0px",
+        "offsetY": "1px",
+        "blur": "3px",
+        "spread": "0px",
+        "color": "#00001208"
+      }
+    ]
+  },
+  "shadow-xs": {
+    "$type": "shadow",
+    "$value": [
+      {
+        "offsetX": "0px",
+        "offsetY": "1px",
+        "blur": "3px",
+        "spread": "1px",
+        "color": "#00000f0f"
+      },
+      {
+        "offsetX": "0px",
+        "offsetY": "1px",
+        "blur": "5px",
+        "spread": "0px",
+        "color": "#00001212"
+      }
+    ]
+  },
+  "shadow-sm": {
+    "$type": "shadow",
+    "$value": [
+      {
+        "offsetX": "0px",
+        "offsetY": "1px",
+        "blur": "7px",
+        "spread": "3px",
+        "color": "#00001414"
+      },
+      {
+        "offsetX": "0px",
+        "offsetY": "1px",
+        "blur": "3px",
+        "spread": "1px",
+        "color": "#00001f1f"
+      }
+    ]
+  },
+  "shadow-md": {
+    "$type": "shadow",
+    "$value": [
+      {
+        "offsetX": "0px",
+        "offsetY": "1px",
+        "blur": "3px",
+        "spread": "0px",
+        "color": "#00004d4d"
+      },
+      {
+        "offsetX": "0px",
+        "offsetY": "4px",
+        "blur": "8px",
+        "spread": "3px",
+        "color": "#00002626"
+      }
+    ]
+  },
+  "shadow-lg": {
+    "$type": "shadow",
+    "$value": [
+      {
+        "offsetX": "0px",
+        "offsetY": "6px",
+        "blur": "10px",
+        "spread": "4px",
+        "color": "#00002626"
+      },
+      {
+        "offsetX": "0px",
+        "offsetY": "2px",
+        "blur": "3px",
+        "spread": "0px",
+        "color": "#00004d4d"
+      }
+    ]
+  },
+  "shadow-xl": {
+    "$type": "shadow",
+    "$value": [
+      {
+        "offsetX": "0px",
+        "offsetY": "8px",
+        "blur": "12px",
+        "spread": "6px",
+        "color": "#00002626"
+      },
+      {
+        "offsetX": "0px",
+        "offsetY": "4px",
+        "blur": "4px",
+        "spread": "0px",
+        "color": "#00004d4d"
+      }
+    ]
+  }
+}

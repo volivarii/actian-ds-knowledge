@@ -1,0 +1,10 @@
+{
+  "size-trigger-min": {
+    "$type": "dimension",
+    "$value": "24px"
+  },
+  "size-trigger-min-mobile": {
+    "$type": "dimension",
+    "$value": "44px"
+  }
+}
