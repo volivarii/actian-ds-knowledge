@@ -2,10 +2,11 @@
 // Token leaves are detected by the `$value` field; intermediate keys become
 // path segments. Keys starting with $ or _ are control fields and skipped.
 //
-// The editor's chrome consumes the resulting var(--zen-…) names. Token resolution
-// for {alias.references} is deferred to a later task — for now, alias values
-// pass through as-is and the editor falls back to Radix's defaults until a
-// referenced token resolves.
+// The editor's chrome consumes the resulting var(--zen-…) names. Color tokens
+// emit the actian resolved hex from com.actian.themes.actian, falling back to
+// $value for non-color tokens (numerics, spacing) that carry no themes extension.
+// This makes the emitter alias-tolerant: correct both pre-flip ($value == hex)
+// and post-flip ($value == {alias}).
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,6 +21,12 @@ function sanitize(segment) {
   return segment.replace(/[^a-zA-Z0-9-]/g, "-").toLowerCase();
 }
 
+// Prefer the already-resolved hex from com.actian.themes.actian; falls back to
+// $value for non-color tokens (numerics, spacing) that have no themes extension.
+function resolvedHex(leaf) {
+  return leaf?.$extensions?.["com.actian.themes"]?.actian ?? leaf.$value;
+}
+
 function flatten(obj, prefix = "--zen") {
   const out = [];
   for (const [k, v] of Object.entries(obj)) {
@@ -27,7 +34,7 @@ function flatten(obj, prefix = "--zen") {
     if (!v || typeof v !== "object") continue;
     const name = `${prefix}-${sanitize(k)}`;
     if ("$value" in v) {
-      out.push([name, String(v.$value)]);
+      out.push([name, String(resolvedHex(v))]);
     } else {
       out.push(...flatten(v, name));
     }

@@ -27,6 +27,7 @@ const COPY_KEYS = [
   "Window",
   "HTMLDivElement",
   "DOMException",
+  "DocumentFragment",
   "localStorage",
   "sessionStorage",
 ] as const;

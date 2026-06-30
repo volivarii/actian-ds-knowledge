@@ -6,5 +6,5 @@ export const appContextPatternUiSchema: UiSchema = {
   _schema_version: { "ui:readonly": true },
   slug: { "ui:title": "Slug", "ui:readonly": true },
   label: { "ui:title": "Pattern label" },
-  apps: { "ui:title": "Appears in apps" },
+  apps: { "ui:title": "Appears in apps", "ui:options": { addLabel: "app" } },
 };

@@ -596,6 +596,18 @@ All tokens are implemented as CSS custom properties under the `--zen-` namespace
 | `--zen-color-error`   | `--zen-color-red`        | 🟢 Shipped  |
 | `--zen-color-neutral` | `--zen-color-cool-grey`  | 🟡 Proposed |
 
+#### Theme Palettes
+
+A theme is a choice of two base palettes — `primary` and `neutral`. All other
+semantics (success/warning/error/annotation) are theme-invariant. Adding a theme
+is two values. Default (un-suffixed) theme is Actian.
+
+| Theme    | primary    | neutral   | Status     |
+| -------- | ---------- | --------- | ---------- |
+| Actian   | royal-blue | cool-grey | 🟢 Shipped |
+| Studio   | blue       | grey      | 🟢 Shipped |
+| Explorer | turquoise  | grey      | 🟢 Shipped |
+
 ### 2.2 Typography
 
 #### Text Color Tokens
@@ -610,7 +622,10 @@ All tokens are implemented as CSS custom properties under the `--zen-` namespace
 | `--zen-color-text-disabled`           | `--zen-color-neutral-500` | Disabled inputs, buttons, form elements     | 🟢 Shipped                                                           |
 | `--zen-color-text-primary`            | `--zen-color-primary-500` | Interactive text                            | 🟡 Proposed (named `primary` to align with primary color convention) |
 | `--zen-color-text-error`              | `--zen-color-error-600`   | Error messages                              | 🟢 Shipped                                                           |
-| `--zen-color-text-warning`            | `--zen-color-warning-600` | Warning messages                            | 🟢 Shipped                                                           |
+| `--zen-color-text-link-default`       | `--zen-color-primary-500` | Hyperlinks                                  | 🟢 Shipped                                                           |
+| `--zen-color-text-link-reverse`       | `--zen-color-white`       | Hyperlinks on dark or primary-colored backgrounds | 🟡 Proposed                                                     |
+| `--zen-color-text-link-visited`       | `--zen-color-primary-700` | Visited hyperlinks                          | 🟡 Proposed                                                          |
+| `--zen-color-text-warning`            | `--zen-color-warning-800` | Warning messages                            | 🟡 Proposed                                                          |
 | `--zen-color-text-success`            | `--zen-color-success-600` | Success messages                            | 🟢 Shipped                                                           |
 | `--zen-color-text-reverse`            | `--zen-color-white`       | Text on dark or primary-colored backgrounds | 🟡 Proposed                                                          |
 
@@ -717,7 +732,7 @@ These are semantic aliases that combine weight + size + letter spacing + line he
 | `--zen-border-primary`  | `1px solid --zen-color-primary-500` | Interactive elements                           | 🟡 Proposed |
 | `--zen-border-selected` | `2px solid --zen-color-primary-500` | Selected state of components                   | 🟡 Proposed |
 | `--zen-border-error`    | `1px solid --zen-color-error-600`   | Error state inputs                             | 🟡 Proposed |
-| `--zen-border-warning`  | `1px solid --zen-color-warning-600` | Warning state                                  | 🟡 Proposed |
+| `--zen-border-warning`  | `1px solid --zen-color-warning-700` | Warning state                                  | 🟡 Proposed |
 | `--zen-border-success`  | `1px solid --zen-color-success-600` | Success state                                  | 🟡 Proposed |
 | `--zen-border-info`     | `1px solid --zen-color-primary-500` | Info state                                     | 🟡 Proposed |
 | `--zen-border-strong`   | `1px solid --zen-color-neutral-800` | High emphasis borders                          | 🟡 Proposed |
@@ -748,11 +763,11 @@ Outlined focus rings must be applied with an offset on interactive elements. For
 
 | Token             | Value                                       | Usage                                              | Status     |
 | ----------------- | ------------------------------------------- | -------------------------------------------------- | ---------- |
-| `--zen-shadow-xs` | `0px 1px 3px 1px #0F, 0px 1px 5px 0px #12`  | Dropdowns, elevated button (default), card hover   | 🟢 Shipped |
-| `--zen-shadow-sm` | `0px 1px 7px 3px #14, 0px 1px 3px 1px #1F`  | App header, navigation menu, elevated button hover | 🟢 Shipped |
-| `--zen-shadow-md` | `0px 1px 3px 0px #4D, 0px 4px 8px 3px #26`  | Notification message, snackbar                     | 🟢 Shipped |
-| `--zen-shadow-lg` | `0px 2px 3px 0px #4D, 0px 6px 10px 4px #26` | —                                                  | 🟢 Shipped |
-| `--zen-shadow-xl` | `0px 4px 4px 0px #4D, 0px 8px 12px 6px #26` | Dialogs, toasts, overview panel                    | 🟢 Shipped |
+| `--zen-shadow-xs` | `0px 1px 3px 1px rgba(0, 0, 15, 0.06), 0px 1px 5px 0px rgba(0, 0, 18, 0.07)` | Dropdowns, elevated button (default), card hover   | 🟢 Shipped |
+| `--zen-shadow-sm` | `0px 1px 7px 3px rgba(0, 0, 20, 0.08), 0px 1px 3px 1px rgba(0, 0, 31, 0.12)` | App header, navigation menu, elevated button hover | 🟢 Shipped |
+| `--zen-shadow-md` | `0px 1px 3px 0px rgba(0, 0, 77, 0.3), 0px 4px 8px 3px rgba(0, 0, 38, 0.15)` | Notification message, snackbar                     | 🟢 Shipped |
+| `--zen-shadow-lg` | `0px 6px 10px 4px rgba(0, 0, 38, 0.15), 0px 2px 3px 0px rgba(0, 0, 77, 0.3)` | —                                                  | 🟢 Shipped |
+| `--zen-shadow-xl` | `0px 8px 12px 6px rgba(0, 0, 38, 0.15), 0px 4px 4px 0px rgba(0, 0, 77, 0.3)` | Dialogs, toasts, overview panel                    | 🟢 Shipped |
 
 ### 2.7 Spacing
 
@@ -779,6 +794,7 @@ Outlined focus rings must be applied with an offset on interactive elements. For
 | `--zen-color-bg-selected` | `--zen-color-primary-25`           | Selected row or item background      | 🟡 Proposed |
 | `--zen-color-bg-overlay`  | `--zen-color-black` at 40% opacity | Modal/dialog backdrop                | 🟡 Proposed |
 | `--zen-color-bg-primary`  | `--zen-color-primary-500`          | CTA banners, primary filled areas    | 🟡 Proposed |
+| `--zen-color-bg-emphasis` | `--zen-color-primary-500`          | Consumer-facing alias of bg-primary; emphasis fills | 🟡 Proposed |
 | `--zen-color-bg-success`  | `--zen-color-success-25`           | Success alert backgrounds            | 🟡 Proposed |
 | `--zen-color-bg-warning`  | `--zen-color-warning-25`           | Warning alert backgrounds            | 🟡 Proposed |
 | `--zen-color-bg-error`    | `--zen-color-error-25`             | Error alert backgrounds              | 🟡 Proposed |
@@ -826,7 +842,7 @@ Outlined focus rings must be applied with an offset on interactive elements. For
 | `--zen-color-icon-primary`  | `--zen-color-primary-500` | Primary action icons                                  | 🟡 Proposed |
 | `--zen-color-icon-error`    | `--zen-color-error-600`   | Error state icons                                     | 🟡 Proposed |
 | `--zen-color-icon-success`  | `--zen-color-success-600` | Success state icons                                   | 🟡 Proposed |
-| `--zen-color-icon-warning`  | `--zen-color-warning-600` | Warning state icons                                   | 🟡 Proposed |
+| `--zen-color-icon-warning`  | `--zen-color-warning-700` | Warning state icons                                   | 🟡 Proposed |
 | `--zen-color-icon-reverse`  | `--zen-color-white`       | Icons on dark or primary-colored backgrounds          | 🟡 Proposed |
 
 ### 2.11 Motion

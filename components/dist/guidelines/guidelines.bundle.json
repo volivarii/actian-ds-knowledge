@@ -142,6 +142,104 @@
       },
       "updated_at": "2026-06-23T13:38:19+02:00"
     },
+    "avatar": {
+      "_schema_version": 1,
+      "_meta": {
+        "auto_generated": true,
+        "source": "components/src/avatar/",
+        "do_not_edit": "Edit the per-domain source files; CI regenerates this file."
+      },
+      "slug": "avatar",
+      "component": "Avatar",
+      "meta": {
+        "category": "data-display"
+      },
+      "domains": {
+        "content": {
+          "status": "approved",
+          "owner": "content-team",
+          "markdown": "# Avatar\n\nAvatars represent a user with their profile image or initials. They appear in headers, comments, assignee fields, and anywhere user identity is surfaced.\n\n***\n\n## When to use\n\n- To identify a user in context, such as in a list, a comment thread, or an assignee field.\n- As a compact representation when showing a full name would take too much space.\n\n## Style\n\n- Initials use first and last initial in uppercase. For example, \"CF\" for Chris Frost.\n- Always include a tooltip or accessible label with the user's full name, role, and email address.\n- If a profile image fails to load, fall back to initials. If initials are unavailable, use a generic placeholder.\n\n## Behavior\n\n- Clicking an avatar should open the user's profile or display their contact information at minimum.\n- When a group of avatars exceeds available space, show a \"+N\" overflow indicator instead of additional avatars. Use this pattern when displaying 5 or more avatars.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Initials: CF | Initials: C or Chris |\n| Tooltip: Chris Frost / Designer / chris.frost@example.com | Tooltip: Chris Frost only |\n| Fall back to initials when image is unavailable | Show a broken image icon |\n| Show +3 when a fourth avatar would overflow | Truncate without indicating how many are hidden |",
+          "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "Avatars represent a user with their profile image or initials. They appear in headers, comments, assignee fields, and anywhere user identity is surfaced."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "To identify a user in context, such as in a list, a comment thread, or an assignee field.",
+                    "As a compact representation when showing a full name would take too much space."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Initials use first and last initial in uppercase. For example, \"CF\" for Chris Frost.",
+                    "Always include a tooltip or accessible label with the user's full name, role, and email address.",
+                    "If a profile image fails to load, fall back to initials. If initials are unavailable, use a generic placeholder."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Behavior",
+              "content": [
+                {
+                  "bullets": [
+                    "Clicking an avatar should open the user's profile or display their contact information at minimum.",
+                    "When a group of avatars exceeds available space, show a \"+N\" overflow indicator instead of additional avatars. Use this pattern when displaying 5 or more avatars."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Initials: CF",
+                  "dont": "Initials: C or Chris"
+                },
+                {
+                  "do": "Tooltip: Chris Frost / Designer / chris.frost@example.com",
+                  "dont": "Tooltip: Chris Frost only"
+                },
+                {
+                  "do": "Fall back to initials when image is unavailable",
+                  "dont": "Show a broken image icon"
+                },
+                {
+                  "do": "Show +3 when a fourth avatar would overflow",
+                  "dont": "Truncate without indicating how many are hidden"
+                }
+              ]
+            }
+          ]
+        },
+        "usage": {
+          "status": "not-started"
+        },
+        "design": {
+          "status": "inherited"
+        },
+        "behavior": {
+          "status": "inherited"
+        },
+        "tokens": {
+          "status": "not-started"
+        }
+      },
+      "updated_at": "2026-06-25T13:12:15-07:00"
+    },
     "badge": {
       "_schema_version": 1,
       "_meta": {
@@ -483,7 +581,7 @@
         "design": {
           "status": "draft",
           "owner": "design",
-          "markdown": "## Anatomy\n\nA button is a single container holding an optional leading icon and a text\nlabel. The container is the click target; padding and the icon-to-label gap\nare token-driven so every variant shares one geometry.\n\n<Media role=\"parts\" layout=\"grid\" />\n\n> The icon is optional. When present it always leads the label — never trails\n> it — so the action verb stays the last thing read.\n\n## Variants\n\nFour variants cover the action hierarchy: primary, secondary, ghost, and\ndestructive. They differ only in fill, border, and text colour — never in\nshape or size.\n\n<Media role=\"variations\" layout=\"stack\" />\n\n## Spacing & size\n\n<Media role=\"spacing\" />\n\n* Three sizes: small (28px), medium (32px), large (40px). Medium is the\n  default.\n\n* Horizontal padding is `space-150`; the icon-to-label gap is `space-100`.\n\n* Buttons never set their own margins — spacing belongs to the parent layout.\n\n## Behavior\n\nButtons expose five interaction states. Hover and focus are always visible;\nthe loading state replaces the label with a spinner and locks the width so\nthe layout never shifts.\n\n<Media role=\"behavior\" layout=\"grid\" />\n\n## Layout\n\n<Media role=\"layout\" />\n\nIn a button group the primary action sits right-most (LTR). Groups align to\nthe 4px baseline grid and wrap as a unit, never mid-group.",
+          "markdown": "## Anatomy\n\nA button is a single container holding an optional leading icon and a text\nlabel. The container is the click target; padding and the icon-to-label gap\nare token-driven so every variant shares one geometry.\n\n<Media role=\"parts\" layout=\"stack\" />\n\n> The icon is optional. When present it always leads the label — never trails\n> it — so the action verb stays the last thing read.\n\n## Variants\n\nFour variants cover the action hierarchy: primary, secondary, ghost, and\ndestructive. They differ only in fill, border, and text colour — never in\nshape or size.\n\n<Media role=\"variations\" layout=\"stack\" />\n\n## Spacing & size\n\n<Media role=\"spacing\" />\n\n* Three sizes: small (28px), medium (32px), large (40px). Medium is the\n  default.\n\n* Horizontal padding is `space-150`; the icon-to-label gap is `space-100`.\n\n* Buttons never set their own margins — spacing belongs to the parent layout.\n\n## Behavior\n\nButtons expose five interaction states. Hover and focus are always visible;\nthe loading state replaces the label with a spinner and locks the width so\nthe layout never shifts.\n\n<Media role=\"behavior\" layout=\"grid\" />\n\n## Layout\n\n<Media role=\"layout\" />\n\nIn a button group the primary action sits right-most (LTR). Groups align to\nthe 4px baseline grid and wrap as a unit, never mid-group.",
           "sections": [
             {
               "heading": "Anatomy",
@@ -494,7 +592,7 @@
                 {
                   "media": {
                     "role": "parts",
-                    "layout": "grid"
+                    "layout": "stack"
                   }
                 },
                 {
@@ -660,7 +758,102 @@
           ]
         }
       },
-      "updated_at": "2026-06-23T14:42:59+02:00"
+      "updated_at": "2026-06-29T20:01:58+02:00"
+    },
+    "calendar": {
+      "_schema_version": 1,
+      "_meta": {
+        "auto_generated": true,
+        "source": "components/src/calendar/",
+        "do_not_edit": "Edit the per-domain source files; CI regenerates this file."
+      },
+      "slug": "calendar",
+      "component": "Calendar",
+      "meta": {
+        "category": "form-input-selection"
+      },
+      "domains": {
+        "content": {
+          "status": "approved",
+          "owner": "content-team",
+          "markdown": "# Calendar\n\nThe calendar lets users pick a date or date range from a visual month view. It appears on its own or attached to a date input.\n\n***\n\n## When to use\n\n- When users need to select a date or date range and seeing surrounding days adds context.\n- For a compact single-date entry where a visual month view is unnecessary, use a [date input](input-date) instead.\n\n## Style\n\n- Label the action by what the date represents. For example, \"Start date\" or \"Effective date\", not \"Select date\".\n- Use a single, consistent date format across the product. Spell out or abbreviate the month to avoid ambiguity. For example, \"Jun 28, 2026\".\n- For a range, label both ends clearly as \"Start date\" and \"End date\".\n\n## Behavior\n\n- Highlight today's date for orientation.\n- Disable dates that are not selectable rather than allowing selection and then showing an error.\n- For a range, show the span between the two selected dates.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Start date | Select date |\n| Jun 28, 2026 | 06/28/26 |\n| End date must be after start date. | Invalid range. |",
+          "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "The calendar lets users pick a date or date range from a visual month view. It appears on its own or attached to a date input."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "When users need to select a date or date range and seeing surrounding days adds context.",
+                    "For a compact single-date entry where a visual month view is unnecessary, use a [date input](input-date) instead."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Label the action by what the date represents. For example, \"Start date\" or \"Effective date\", not \"Select date\".",
+                    "Use a single, consistent date format across the product. Spell out or abbreviate the month to avoid ambiguity. For example, \"Jun 28, 2026\".",
+                    "For a range, label both ends clearly as \"Start date\" and \"End date\"."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Behavior",
+              "content": [
+                {
+                  "bullets": [
+                    "Highlight today's date for orientation.",
+                    "Disable dates that are not selectable rather than allowing selection and then showing an error.",
+                    "For a range, show the span between the two selected dates."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Start date",
+                  "dont": "Select date"
+                },
+                {
+                  "do": "Jun 28, 2026",
+                  "dont": "06/28/26"
+                },
+                {
+                  "do": "End date must be after start date.",
+                  "dont": "Invalid range."
+                }
+              ]
+            }
+          ]
+        },
+        "usage": {
+          "status": "not-started"
+        },
+        "design": {
+          "status": "inherited"
+        },
+        "behavior": {
+          "status": "inherited"
+        },
+        "tokens": {
+          "status": "not-started"
+        }
+      },
+      "updated_at": "2026-06-29T22:22:59+02:00"
     },
     "card": {
       "_schema_version": 1,
@@ -2328,6 +2521,102 @@
       },
       "updated_at": "2026-06-23T13:38:19+02:00",
       "_alias_of": "checkbox"
+    },
+    "collapse-accordion": {
+      "_schema_version": 1,
+      "_meta": {
+        "auto_generated": true,
+        "source": "components/src/collapse-accordion/",
+        "do_not_edit": "Edit the per-domain source files; CI regenerates this file."
+      },
+      "slug": "collapse-accordion",
+      "component": "Collapse / accordion",
+      "meta": {
+        "category": "data-display"
+      },
+      "domains": {
+        "content": {
+          "status": "approved",
+          "owner": "content-team",
+          "markdown": "# Collapse / accordion\n\nThe collapse accordion progressively discloses content that users may not always need. Use it to reduce visual complexity in long pages or settings panels.\n\n***\n\n## When to use\n\n- To hide optional or advanced content that does not need to be visible by default.\n- When content is long and only some users will need all of it.\n- Do not use for content users will need on every visit. Keep frequently accessed content visible.\n\n## Style\n\n- Write header labels as short noun phrases that describe the content inside.\n- Avoid generic labels like \"More\", \"Details\", or \"Other\".\n- The label should not change when the section is expanded or collapsed.\n\n## Behavior\n\n- With few exceptions, only one section should be open at a time. Opening a section should close the currently open one.\n- Transitions should be smooth. Avoid layout shift.\n- The chevron icon rotates to indicate open and closed states.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Advanced settings | More options |\n| Connection details | Click to expand |\n| Notification preferences | Details |",
+          "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "The collapse accordion progressively discloses content that users may not always need. Use it to reduce visual complexity in long pages or settings panels."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "To hide optional or advanced content that does not need to be visible by default.",
+                    "When content is long and only some users will need all of it.",
+                    "Do not use for content users will need on every visit. Keep frequently accessed content visible."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Write header labels as short noun phrases that describe the content inside.",
+                    "Avoid generic labels like \"More\", \"Details\", or \"Other\".",
+                    "The label should not change when the section is expanded or collapsed."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Behavior",
+              "content": [
+                {
+                  "bullets": [
+                    "With few exceptions, only one section should be open at a time. Opening a section should close the currently open one.",
+                    "Transitions should be smooth. Avoid layout shift.",
+                    "The chevron icon rotates to indicate open and closed states."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Advanced settings",
+                  "dont": "More options"
+                },
+                {
+                  "do": "Connection details",
+                  "dont": "Click to expand"
+                },
+                {
+                  "do": "Notification preferences",
+                  "dont": "Details"
+                }
+              ]
+            }
+          ]
+        },
+        "usage": {
+          "status": "not-started"
+        },
+        "design": {
+          "status": "inherited"
+        },
+        "behavior": {
+          "status": "inherited"
+        },
+        "tokens": {
+          "status": "not-started"
+        }
+      },
+      "updated_at": "2026-06-25T13:12:15-07:00"
     },
     "combo-box": {
       "_schema_version": 1,
@@ -4542,18 +4831,83 @@
       "_schema_version": 1,
       "_meta": {
         "auto_generated": true,
-        "source": "(patterns)",
+        "source": "components/src/input-date/",
         "do_not_edit": "Edit the per-domain source files; CI regenerates this file."
       },
       "slug": "input-date",
-      "component": "Input, date",
+      "component": "Date input",
       "meta": {
-        "category": "form-input-selection"
+        "category": "form-input-selection",
+        "related": [
+          "calendar",
+          "text-input"
+        ]
       },
       "domains": {
         "content": {
-          "status": "synthesized",
+          "status": "approved",
+          "owner": "content-team",
+          "markdown": "# Date input\n\nA date input lets users enter a single date by typing or by picking from an attached [calendar](calendar). Use it for compact date entry within a form.\n\n***\n\n## When to use\n\n- For single-date entry in a form, such as a deadline or an effective date.\n- When a visual month view would help the user choose, pair it with a [calendar](calendar).\n\n## Style\n\n- Label the field by what the date represents. For example, \"Start date\", not \"Date\".\n- Show the expected format as a placeholder example, not as an instruction. For example, \"YYYY-MM-DD\".\n- Use a single, consistent date format across the product.\n\n## Behavior\n\n- Validate the date on blur, not on every keystroke. See [text input](text-input) for the general rule.\n- State what is wrong and how to fix it when a date is invalid or out of range.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Label: Start date / Placeholder: YYYY-MM-DD | Placeholder: Enter a date |\n| Enter a date on or after today. | Invalid date. |\n| Effective date | Date field |",
           "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "A date input lets users enter a single date by typing or by picking from an attached [calendar](calendar). Use it for compact date entry within a form."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "For single-date entry in a form, such as a deadline or an effective date.",
+                    "When a visual month view would help the user choose, pair it with a [calendar](calendar)."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Label the field by what the date represents. For example, \"Start date\", not \"Date\".",
+                    "Show the expected format as a placeholder example, not as an instruction. For example, \"YYYY-MM-DD\".",
+                    "Use a single, consistent date format across the product."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Behavior",
+              "content": [
+                {
+                  "bullets": [
+                    "Validate the date on blur, not on every keystroke. See [text input](text-input) for the general rule.",
+                    "State what is wrong and how to fix it when a date is invalid or out of range."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Label: Start date / Placeholder: YYYY-MM-DD",
+                  "dont": "Placeholder: Enter a date"
+                },
+                {
+                  "do": "Enter a date on or after today.",
+                  "dont": "Invalid date."
+                },
+                {
+                  "do": "Effective date",
+                  "dont": "Date field"
+                }
+              ]
+            },
             {
               "heading": "",
               "source": "pattern:forms",
@@ -4971,8 +5325,21 @@
               ]
             }
           ]
+        },
+        "usage": {
+          "status": "not-started"
+        },
+        "design": {
+          "status": "inherited"
+        },
+        "behavior": {
+          "status": "inherited"
+        },
+        "tokens": {
+          "status": "not-started"
         }
-      }
+      },
+      "updated_at": "2026-06-29T22:22:59+02:00"
     },
     "link": {
       "_schema_version": 1,
@@ -5839,7 +6206,60 @@
       },
       "domains": {
         "content": {
-          "status": "not-started"
+          "status": "approved",
+          "owner": "content-team",
+          "markdown": "# Page header\n\nThe page header identifies the current page and surfaces its primary actions. It appears at the top of every main content area.\n\n***\n\n## When to use\n\n- At the top of every main page to orient the user and provide primary actions.\n- Do not use inside modals, panels, or nested sections. Those use their own title patterns.\n\n## Style\n\n- The title should match the name of the item or section exactly.\n- Use sentence case for page titles.\n- Keep action labels in the header short. Prefer one or two words. For example, \"New dataset\" not \"Create a new dataset\".\n- Avoid putting more than two primary actions in the header. Move secondary actions to a menu.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| New connection | Create a new connection |\n| Edit | Edit this item |\n| Sales pipeline | Sales Pipeline Overview |",
+          "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "The page header identifies the current page and surfaces its primary actions. It appears at the top of every main content area."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "At the top of every main page to orient the user and provide primary actions.",
+                    "Do not use inside modals, panels, or nested sections. Those use their own title patterns."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "The title should match the name of the item or section exactly.",
+                    "Use sentence case for page titles.",
+                    "Keep action labels in the header short. Prefer one or two words. For example, \"New dataset\" not \"Create a new dataset\".",
+                    "Avoid putting more than two primary actions in the header. Move secondary actions to a menu."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "New connection",
+                  "dont": "Create a new connection"
+                },
+                {
+                  "do": "Edit",
+                  "dont": "Edit this item"
+                },
+                {
+                  "do": "Sales pipeline",
+                  "dont": "Sales Pipeline Overview"
+                }
+              ]
+            }
+          ]
         },
         "usage": {
           "status": "not-started"
@@ -5912,7 +6332,7 @@
           ]
         }
       },
-      "updated_at": "2026-06-07T17:50:37+02:00"
+      "updated_at": "2026-06-25T13:12:15-07:00"
     },
     "popover": {
       "_schema_version": 1,
@@ -6147,7 +6567,7 @@
       "_schema_version": 1,
       "_meta": {
         "auto_generated": true,
-        "source": "(patterns)",
+        "source": "components/src/radio-button/",
         "do_not_edit": "Edit the per-domain source files; CI regenerates this file."
       },
       "slug": "radio-button",
@@ -6157,8 +6577,73 @@
       },
       "domains": {
         "content": {
-          "status": "synthesized",
+          "status": "approved",
+          "owner": "content-team",
+          "markdown": "# Radio button\n\nRadio buttons let users select exactly one option from a group. Use them when options are mutually exclusive and all choices should be visible at once.\n\n***\n\n## When to use\n\n- When users must choose exactly one option from a small set (2-6 options).\n- When the options are mutually exclusive.\n- When all options should be visible without interaction.\n- For larger or dynamic option sets, use a [dropdown select](dropdown-select) instead.\n\n## Style\n\n- Write labels as short noun phrases or adjectives, not full sentences.\n- Keep labels parallel in structure across the group.\n- Always include a group label that describes what is being selected.\n- Avoid labels like \"Option 1\" or \"Other\" without further context.\n\n## Behavior\n\n- One option in the group should be selected by default when a choice is required.\n- If no default is appropriate, leave all options unselected and require an explicit choice.\n- Clicking either the button or the label selects the option.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Daily / Weekly / Monthly | Every day / Once per week / Once per month |\n| Administrator / Editor / Viewer | The user is an administrator |\n| Select one | Choose from the following options below |",
           "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "Radio buttons let users select exactly one option from a group. Use them when options are mutually exclusive and all choices should be visible at once."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "When users must choose exactly one option from a small set (2-6 options).",
+                    "When the options are mutually exclusive.",
+                    "When all options should be visible without interaction.",
+                    "For larger or dynamic option sets, use a [dropdown select](dropdown-select) instead."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Write labels as short noun phrases or adjectives, not full sentences.",
+                    "Keep labels parallel in structure across the group.",
+                    "Always include a group label that describes what is being selected.",
+                    "Avoid labels like \"Option 1\" or \"Other\" without further context."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Behavior",
+              "content": [
+                {
+                  "bullets": [
+                    "One option in the group should be selected by default when a choice is required.",
+                    "If no default is appropriate, leave all options unselected and require an explicit choice.",
+                    "Clicking either the button or the label selects the option."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Daily / Weekly / Monthly",
+                  "dont": "Every day / Once per week / Once per month"
+                },
+                {
+                  "do": "Administrator / Editor / Viewer",
+                  "dont": "The user is an administrator"
+                },
+                {
+                  "do": "Select one",
+                  "dont": "Choose from the following options below"
+                }
+              ]
+            },
             {
               "heading": "",
               "source": "pattern:forms",
@@ -6576,8 +7061,170 @@
               ]
             }
           ]
+        },
+        "usage": {
+          "status": "not-started"
+        },
+        "design": {
+          "status": "inherited"
+        },
+        "behavior": {
+          "status": "inherited"
+        },
+        "tokens": {
+          "status": "not-started"
         }
-      }
+      },
+      "updated_at": "2026-06-25T12:05:17-07:00"
+    },
+    "rich-text": {
+      "_schema_version": 1,
+      "_meta": {
+        "auto_generated": true,
+        "source": "components/src/rich-text/",
+        "do_not_edit": "Edit the per-domain source files; CI regenerates this file."
+      },
+      "slug": "rich-text",
+      "component": "Rich text",
+      "meta": {
+        "category": "form-input-selection"
+      },
+      "domains": {
+        "content": {
+          "status": "approved",
+          "owner": "content-team",
+          "markdown": "# Rich text\n\nThe rich text editor allows users to write and format long-form content such as descriptions, notes, and documentation.\n\n***\n\n## When to use\n\n- When users need to format content with headings, lists, links, or emphasis.\n- For long-form inputs such as descriptions, notes, or comments.\n- Do not use for short single-line inputs. Use a [text input](text-input) instead.\n\n## Style\n\n- Placeholder text should describe what kind of content belongs here. For example, \"Add a description\" or \"Write release notes.\"\n- Toolbar button labels follow standard conventions: Bold, Italic, Link, Bullet list, Numbered list.\n- Do not use placeholder text to convey formatting instructions. Use helper text below the field instead.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Add a description | Write here... |\n| Helper text: Markdown is supported | Placeholder: Use **bold** for emphasis |\n| Release notes | Enter text |",
+          "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "The rich text editor allows users to write and format long-form content such as descriptions, notes, and documentation."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "When users need to format content with headings, lists, links, or emphasis.",
+                    "For long-form inputs such as descriptions, notes, or comments.",
+                    "Do not use for short single-line inputs. Use a [text input](text-input) instead."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Placeholder text should describe what kind of content belongs here. For example, \"Add a description\" or \"Write release notes.\"",
+                    "Toolbar button labels follow standard conventions: Bold, Italic, Link, Bullet list, Numbered list.",
+                    "Do not use placeholder text to convey formatting instructions. Use helper text below the field instead."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Add a description",
+                  "dont": "Write here..."
+                },
+                {
+                  "do": "Helper text: Markdown is supported",
+                  "dont": "Placeholder: Use **bold** for emphasis"
+                },
+                {
+                  "do": "Release notes",
+                  "dont": "Enter text"
+                }
+              ]
+            }
+          ]
+        },
+        "usage": {
+          "status": "not-started"
+        },
+        "design": {
+          "status": "inherited"
+        },
+        "behavior": {
+          "status": "inherited"
+        },
+        "tokens": {
+          "status": "not-started"
+        }
+      },
+      "updated_at": "2026-06-25T13:12:15-07:00"
+    },
+    "scroll-bar": {
+      "_schema_version": 1,
+      "_meta": {
+        "auto_generated": true,
+        "source": "components/src/scroll-bar/",
+        "do_not_edit": "Edit the per-domain source files; CI regenerates this file."
+      },
+      "slug": "scroll-bar",
+      "component": "Scroll bar",
+      "meta": {
+        "category": "data-display"
+      },
+      "domains": {
+        "content": {
+          "status": "approved",
+          "owner": "content-team",
+          "markdown": "# Scroll bar\n\nThe scroll bar indicates that a container has overflow content and lets users navigate it. It appears automatically when content exceeds its container.\n\n***\n\n## When to use\n\n- Automatically when content exceeds the visible area of a container.\n- Do not suppress scroll bars in contexts where content overflow is expected.\n\n## Style\n\n- Scroll bars carry no copy.\n- Scrollable regions should have an accessible label so screen reader users understand the context. For example, \"Dataset list\" or \"Query results\".",
+          "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "The scroll bar indicates that a container has overflow content and lets users navigate it. It appears automatically when content exceeds its container."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Automatically when content exceeds the visible area of a container.",
+                    "Do not suppress scroll bars in contexts where content overflow is expected."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Scroll bars carry no copy.",
+                    "Scrollable regions should have an accessible label so screen reader users understand the context. For example, \"Dataset list\" or \"Query results\"."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "usage": {
+          "status": "not-started"
+        },
+        "design": {
+          "status": "inherited"
+        },
+        "behavior": {
+          "status": "inherited"
+        },
+        "tokens": {
+          "status": "not-started"
+        }
+      },
+      "updated_at": "2026-06-25T13:12:15-07:00"
     },
     "search": {
       "_schema_version": 1,
@@ -6755,6 +7402,101 @@
         }
       },
       "updated_at": "2026-06-23T13:38:19+02:00"
+    },
+    "search-dropdown-menu": {
+      "_schema_version": 1,
+      "_meta": {
+        "auto_generated": true,
+        "source": "components/src/search-dropdown-menu/",
+        "do_not_edit": "Edit the per-domain source files; CI regenerates this file."
+      },
+      "slug": "search-dropdown-menu",
+      "component": "Search dropdown menu",
+      "meta": {
+        "category": "form-input-selection"
+      },
+      "domains": {
+        "content": {
+          "status": "approved",
+          "owner": "content-team",
+          "markdown": "# Search dropdown menu\n\nThe search dropdown menu shows suggestions and matching results below a [search](search) field as the user types. It helps users reach a result without leaving the field.\n\n***\n\n## When to use\n\n- To surface matching results or suggestions as the user types in a search field.\n- Do not use it to show filters or unrelated actions. Keep it to query matches and suggestions.\n\n## Style\n\n- Group results by type when more than one type can match. Use a short heading for each group. For example, \"Datasets\", \"Topics\".\n- Highlight the matched portion of each result so users can confirm relevance.\n- Keep each result to its name plus minimal context, such as type or owner.\n\n## Behavior\n\n- Show a brief empty message when there are no matches. For example, \"No matches for [query]\".\n- Let users move through results with the keyboard and select with Enter.\n- Offer a way to see all results when matches exceed what the menu shows. For example, \"See all results\".\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| No matches for \"sales_q4\" | Nothing found. |\n| See all results | View more |\n| Datasets (group heading) | Mixing datasets and topics with no grouping |",
+          "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "The search dropdown menu shows suggestions and matching results below a [search](search) field as the user types. It helps users reach a result without leaving the field."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "To surface matching results or suggestions as the user types in a search field.",
+                    "Do not use it to show filters or unrelated actions. Keep it to query matches and suggestions."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Group results by type when more than one type can match. Use a short heading for each group. For example, \"Datasets\", \"Topics\".",
+                    "Highlight the matched portion of each result so users can confirm relevance.",
+                    "Keep each result to its name plus minimal context, such as type or owner."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Behavior",
+              "content": [
+                {
+                  "bullets": [
+                    "Show a brief empty message when there are no matches. For example, \"No matches for [query]\".",
+                    "Let users move through results with the keyboard and select with Enter.",
+                    "Offer a way to see all results when matches exceed what the menu shows. For example, \"See all results\"."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "No matches for \"sales_q4\"",
+                  "dont": "Nothing found."
+                },
+                {
+                  "do": "See all results",
+                  "dont": "View more"
+                },
+                {
+                  "do": "Datasets (group heading)",
+                  "dont": "Mixing datasets and topics with no grouping"
+                }
+              ]
+            }
+          ]
+        },
+        "usage": {
+          "status": "not-started"
+        },
+        "design": {
+          "status": "inherited"
+        },
+        "behavior": {
+          "status": "inherited"
+        },
+        "tokens": {
+          "status": "not-started"
+        }
+      },
+      "updated_at": "2026-06-29T22:22:59+02:00"
     },
     "search-filters": {
       "_schema_version": 1,
@@ -7193,6 +7935,175 @@
       },
       "updated_at": "2026-06-23T13:38:19+02:00",
       "_alias_of": "filters"
+    },
+    "search-result-card": {
+      "_schema_version": 1,
+      "_meta": {
+        "auto_generated": true,
+        "source": "components/src/search-result-card/",
+        "do_not_edit": "Edit the per-domain source files; CI regenerates this file."
+      },
+      "slug": "search-result-card",
+      "component": "Search result card",
+      "meta": {
+        "category": "data-display"
+      },
+      "domains": {
+        "content": {
+          "status": "approved",
+          "owner": "content-team",
+          "markdown": "# Search result card\n\nSearch result cards display individual items returned by a search. Each card identifies the result and provides enough context for the user to evaluate relevance.\n\n***\n\n## When to use\n\n- To display individual results in a search results list.\n- When results need to show metadata alongside the item title to help users identify the right result.\n\n## Style\n\n- The result title should match the item name exactly. Do not truncate titles in the title field.\n- Metadata labels should be concise. Use nouns or short phrases. For example, \"Dataset\", \"Last modified\", \"Owner\".\n- Excerpt or description text should be trimmed at a consistent length with an ellipsis.\n- Highlight matched terms in the result text to help users confirm relevance.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Title: Sales pipeline Q4 2025 | Title: Sales pipeline Q4 2025 - copy - FINAL |\n| Owner: Chris Frost | Created by: Chris Frost on June 1, 2025 at 9:00 AM |\n| Last modified 2 days ago | Last modified: 2025-06-23T14:32:00Z |",
+          "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "Search result cards display individual items returned by a search. Each card identifies the result and provides enough context for the user to evaluate relevance."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "To display individual results in a search results list.",
+                    "When results need to show metadata alongside the item title to help users identify the right result."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "The result title should match the item name exactly. Do not truncate titles in the title field.",
+                    "Metadata labels should be concise. Use nouns or short phrases. For example, \"Dataset\", \"Last modified\", \"Owner\".",
+                    "Excerpt or description text should be trimmed at a consistent length with an ellipsis.",
+                    "Highlight matched terms in the result text to help users confirm relevance."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Title: Sales pipeline Q4 2025",
+                  "dont": "Title: Sales pipeline Q4 2025 - copy - FINAL"
+                },
+                {
+                  "do": "Owner: Chris Frost",
+                  "dont": "Created by: Chris Frost on June 1, 2025 at 9:00 AM"
+                },
+                {
+                  "do": "Last modified 2 days ago",
+                  "dont": "Last modified: 2025-06-23T14:32:00Z"
+                }
+              ]
+            }
+          ]
+        },
+        "usage": {
+          "status": "not-started"
+        },
+        "design": {
+          "status": "inherited"
+        },
+        "behavior": {
+          "status": "inherited"
+        },
+        "tokens": {
+          "status": "not-started"
+        }
+      },
+      "updated_at": "2026-06-25T13:12:15-07:00"
+    },
+    "segmented-control": {
+      "_schema_version": 1,
+      "_meta": {
+        "auto_generated": true,
+        "source": "components/src/segmented-control/",
+        "do_not_edit": "Edit the per-domain source files; CI regenerates this file."
+      },
+      "slug": "segmented-control",
+      "component": "Segmented control",
+      "meta": {
+        "category": "form-input-selection"
+      },
+      "domains": {
+        "content": {
+          "status": "approved",
+          "owner": "content-team",
+          "markdown": "# Segmented control\n\nA segmented control lets users switch between mutually exclusive views or modes. All options are visible simultaneously.\n\n***\n\n## When to use\n\n- To switch between 2-5 mutually exclusive views or modes within a single surface.\n- When all options benefit from side-by-side visibility.\n- Do not use for page-level navigation. Use [tabs](tabs) instead.\n- Do not use when options represent independent toggles. Use separate [toggle controls](toggle-control) instead.\n\n## Style\n\n- Labels should be short nouns or verbs. One or two words maximum.\n- Keep all labels similar in length for visual balance.\n- Use sentence case.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| List / Grid | List view / Grid view |\n| Day / Week / Month | Daily / Weekly / Monthly view |\n| Chart / Table | Show as chart / Show as table |",
+          "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "A segmented control lets users switch between mutually exclusive views or modes. All options are visible simultaneously."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "To switch between 2-5 mutually exclusive views or modes within a single surface.",
+                    "When all options benefit from side-by-side visibility.",
+                    "Do not use for page-level navigation. Use [tabs](tabs) instead.",
+                    "Do not use when options represent independent toggles. Use separate [toggle controls](toggle-control) instead."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Labels should be short nouns or verbs. One or two words maximum.",
+                    "Keep all labels similar in length for visual balance.",
+                    "Use sentence case."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "List / Grid",
+                  "dont": "List view / Grid view"
+                },
+                {
+                  "do": "Day / Week / Month",
+                  "dont": "Daily / Weekly / Monthly view"
+                },
+                {
+                  "do": "Chart / Table",
+                  "dont": "Show as chart / Show as table"
+                }
+              ]
+            }
+          ]
+        },
+        "usage": {
+          "status": "not-started"
+        },
+        "design": {
+          "status": "inherited"
+        },
+        "behavior": {
+          "status": "inherited"
+        },
+        "tokens": {
+          "status": "not-started"
+        }
+      },
+      "updated_at": "2026-06-25T13:12:15-07:00"
     },
     "side-nav": {
       "_schema_version": 1,
@@ -10087,6 +10998,101 @@
         }
       },
       "updated_at": "2026-06-23T13:38:19+02:00"
+    },
+    "toolbar": {
+      "_schema_version": 1,
+      "_meta": {
+        "auto_generated": true,
+        "source": "components/src/toolbar/",
+        "do_not_edit": "Edit the per-domain source files; CI regenerates this file."
+      },
+      "slug": "toolbar",
+      "component": "Toolbar",
+      "meta": {
+        "category": "data-display"
+      },
+      "domains": {
+        "content": {
+          "status": "approved",
+          "owner": "content-team",
+          "markdown": "# Toolbar\n\nA toolbar groups the primary actions for the content below it, such as a table or a canvas. It keeps frequent actions visible and in a predictable place.\n\n***\n\n## When to use\n\n- To group the main actions that apply to a view or a selection within it.\n- Do not use a toolbar for page-level title actions. Those belong in the [page header](page-header).\n\n## Style\n\n- Use short action labels. Prefer one or two words. For example, \"Export\", \"Add filter\".\n- Order actions by frequency of use, most common first.\n- Use icon-only buttons only for well-understood actions, and always pair them with a [tooltip](tooltip).\n- Group related actions together and separate unrelated groups.\n\n## Behavior\n\n- Disable actions that do not apply to the current selection rather than hiding them, so the layout stays stable.\n- When actions depend on a selection, state that in the empty case. For example, \"Select items to export\".\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Export | Export selected items to file |\n| Add filter | Filtering |\n| Delete (disabled until selection) | Hide Delete until a row is selected |",
+          "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "A toolbar groups the primary actions for the content below it, such as a table or a canvas. It keeps frequent actions visible and in a predictable place."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "To group the main actions that apply to a view or a selection within it.",
+                    "Do not use a toolbar for page-level title actions. Those belong in the [page header](page-header)."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Style",
+              "content": [
+                {
+                  "bullets": [
+                    "Use short action labels. Prefer one or two words. For example, \"Export\", \"Add filter\".",
+                    "Order actions by frequency of use, most common first.",
+                    "Use icon-only buttons only for well-understood actions, and always pair them with a [tooltip](tooltip).",
+                    "Group related actions together and separate unrelated groups."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Behavior",
+              "content": [
+                {
+                  "bullets": [
+                    "Disable actions that do not apply to the current selection rather than hiding them, so the layout stays stable.",
+                    "When actions depend on a selection, state that in the empty case. For example, \"Select items to export\"."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Export",
+                  "dont": "Export selected items to file"
+                },
+                {
+                  "do": "Add filter",
+                  "dont": "Filtering"
+                },
+                {
+                  "do": "Delete (disabled until selection)",
+                  "dont": "Hide Delete until a row is selected"
+                }
+              ]
+            }
+          ]
+        },
+        "usage": {
+          "status": "not-started"
+        },
+        "design": {
+          "status": "inherited"
+        },
+        "behavior": {
+          "status": "inherited"
+        },
+        "tokens": {
+          "status": "not-started"
+        }
+      },
+      "updated_at": "2026-06-29T22:22:59+02:00"
     },
     "tooltip": {
       "_schema_version": 1,

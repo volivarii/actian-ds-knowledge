@@ -42,6 +42,13 @@ on:
       - 'components/dist/registries/metakit.json'
       # — category-defaults (derived + auto-committed by categories-derive.yml)
       - 'components/dist/categories/**'
+      # — component guidelines (derived + auto-committed by guidelines-derive.yml,
+      #   which pushes with the App token so this re-triggers). Source of
+      #   component-tier a11y_ref edges (scripts/graph/derive-graph.js
+      #   readGuidelineDocs → collectComponentRefs). Without this path, a
+      #   component a11y_ref change never re-triggers the graph rebuild, so
+      #   graph.json stays stale and graph-coverage fails with no self-heal.
+      - 'components/dist/guidelines/**'
       # — accessibility index (derived by accessibility-derive.yml)
       - 'accessibility/dist/a11y-index.json'
       # — foundations bundle + motion tokens (derived by foundations-derive.yml)
