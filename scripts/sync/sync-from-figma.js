@@ -84,6 +84,28 @@ function filterStandalones(componentsList) {
   });
 }
 
+// Figma pages that hold file-local scratch/annotations, not shippable DS
+// components (e.g. the "Notes/Feedback" label, a two-node text annotation).
+// Components resolved onto these pages are dropped from the registry, which
+// also keeps them out of the derived categories.json (built from the same
+// object) instead of surfacing as an orphan "Local components" category.
+var DENIED_PAGES = ["Local components"];
+
+// Remove components whose resolved Figma `page` is in `deniedPages`. Operates on
+// a transformed registry ({ components: { slug: { page, ... } } }) and returns a
+// new object; the input is not mutated. Unknown/missing pages are kept.
+function excludeDeniedPages(registry, deniedPages) {
+  if (!registry || !registry.components) return registry;
+  var denied = deniedPages || [];
+  var kept = {};
+  Object.keys(registry.components).forEach(function (slug) {
+    var entry = registry.components[slug];
+    if (entry && denied.includes(entry.page)) return;
+    kept[slug] = entry;
+  });
+  return Object.assign({}, registry, { components: kept });
+}
+
 // Fetch /nodes for many ids via the wrapper's batched getNodes. Returns a
 // map of nodeId → node payload. Internal batching keeps Figma's rate limit
 // happy — a single sync that needs 300+ nodes lands in ~6 batched calls
@@ -177,6 +199,33 @@ async function syncRegistry(opts, kitId) {
       categoryWarnings = ws || [];
     },
   });
+
+  // Drop file-local scratch pages (e.g. "Local components") before classify +
+  // write, so they leak into neither the registry nor the derived
+  // categories.json. dsKit-only: the page-naming convention (and these scratch
+  // pages) is a DS Kit concept; FM Kit / Meta Kit have no page categories.
+  // The exclusion is silent by design, so log what it removed: a non-empty
+  // drop confirms the filter ran; an empty drop means a denied page matched
+  // nothing, which usually signals a Figma page rename that would otherwise
+  // silently re-leak the scratch nodes (cf. the icon-rename sync failure).
+  if (kitId === "dsKit") {
+    var preKeys = Object.keys(after.components || {});
+    after = excludeDeniedPages(after, DENIED_PAGES);
+    var dropped = preKeys.filter(function (slug) {
+      return !(after.components && slug in after.components);
+    });
+    if (dropped.length) {
+      console.warn(
+        "[sync] excluded scratch-page component(s): " + dropped.join(", "),
+      );
+    } else {
+      console.warn(
+        "[sync] DENIED_PAGES " +
+          JSON.stringify(DENIED_PAGES) +
+          " matched no components (possible Figma page rename).",
+      );
+    }
+  }
 
   // Meta Kit: preserve hand-curated `templates` section across resync (Task 2.3).
   if (kitId === "metaKit" && beforeFile && beforeFile.templates) {
@@ -815,4 +864,9 @@ if (require.main === module) {
   );
 }
 
-module.exports = { run: run, parseArgs: parseArgs };
+module.exports = {
+  run: run,
+  parseArgs: parseArgs,
+  excludeDeniedPages: excludeDeniedPages,
+  DENIED_PAGES: DENIED_PAGES,
+};
