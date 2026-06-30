@@ -43,6 +43,7 @@ const Form = (
 import * as rjsfValidatorAjv8Mod from "@rjsf/validator-ajv8";
 import Ajv2020 from "ajv/dist/2020";
 import type { RJSFSchema, UiSchema } from "@rjsf/utils";
+import { radixTheme } from "./theme";
 
 type CustomizeValidatorFn = (opts: {
   AjvClass?: unknown;
@@ -104,6 +105,21 @@ export function RJSFForm({
   templates,
   formContext,
 }: RJSFFormProps) {
+  // Radix theme is the base; per-form templates/widgets override it.
+  // ButtonTemplates merges one level deeper so a form can replace a single button.
+  const mergedTemplates = {
+    ...radixTheme.templates,
+    ...templates,
+    ButtonTemplates: {
+      ...radixTheme.templates.ButtonTemplates,
+      ...(templates?.ButtonTemplates ?? {}),
+    },
+  } as ComponentProps<typeof Form>["templates"];
+  const mergedWidgets = {
+    ...radixTheme.widgets,
+    ...(widgets ?? {}),
+  } as ComponentProps<typeof Form>["widgets"];
+
   return (
     <Form
       schema={schema}
@@ -111,8 +127,8 @@ export function RJSFForm({
       validator={validator}
       formData={formData}
       disabled={disabled}
-      widgets={widgets}
-      templates={templates}
+      widgets={mergedWidgets}
+      templates={mergedTemplates}
       formContext={formContext}
       onChange={(e) => onChange(e.formData)}
       onSubmit={(e) => onSubmit?.(e.formData)}
