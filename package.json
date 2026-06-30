@@ -6,6 +6,7 @@
   "scripts": {
     "sync": "node scripts/sync/sync-from-figma.js",
     "derive:foundations": "node scripts/foundations/derive-foundations.js --src-dir foundations/src --out foundations/dist",
+    "derive:tokens": "node scripts/tokens/derive-tokens.js",
     "derive:content": "node scripts/content/derive-content.js --src content/src --index content/src/content-index.md",
     "derive:canonical-sections": "node scripts/components/derive-canonical-sections.js",
     "derive:app-context": "node scripts/app-context/__cli.js",
