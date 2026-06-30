@@ -1,6 +1,6 @@
 // Shared Radix theme for RJSF. Registered as the base in RJSFForm; per-form
-// templates/widgets override it. FieldTemplate and the textarea/select widgets
-// are added in later tasks.
+// templates/widgets override it. The textarea/select widgets are added in the
+// next task.
 import {
   AddButton,
   MoveUpButton,
@@ -10,6 +10,7 @@ import {
 import { ArrayFieldTemplate } from "./ArrayFieldTemplate";
 import { ArrayFieldItemTemplate } from "./ArrayFieldItemTemplate";
 import { BaseInputTemplate } from "./BaseInputTemplate";
+import { FieldTemplate } from "./FieldTemplate";
 
 export const radixTheme = {
   templates: {
@@ -17,6 +18,7 @@ export const radixTheme = {
     ArrayFieldTemplate,
     ArrayFieldItemTemplate,
     BaseInputTemplate,
+    FieldTemplate,
   },
   widgets: {},
 };
