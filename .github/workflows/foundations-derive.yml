@@ -3,8 +3,14 @@ name: Derive foundations JSON from foundations/src/
 # Federation Phase 1.2 — knowledge-repo CI lifted from
 # Actian-DS-Claude-plugin/.github/workflows/foundations-derive.yml.
 # Runs on PR events that touch the source MD or parser. Regenerates the
-# foundation JSONs and pushes them back to the PR branch. Designers never
-# need a local toolchain — they edit MD, CI handles the rest.
+# foundation JSONs AND the live token snapshot (tokens.json/css + DTCG
+# src + token-reference.md), then pushes them back to the PR branch.
+# Designers never need a local toolchain — they edit MD, CI handles the rest.
+#
+# foundations/src/*.md is a dual-consumer source: it feeds foundations/dist
+# (derive:foundations) and the live token snapshot (derive:tokens). Both must
+# regenerate in the SAME job/commit so a token-binding edit never leaves the
+# tokens artifacts stale (which the parity/freshness gates fail-closed on).
 #
 # Required repo setting (already enabled for sync-from-figma workflow):
 #   Settings → Actions → General → Workflow permissions → Allow GH Actions
@@ -23,6 +29,10 @@ on:
       - 'scripts/lib/frontmatter.js'
       - 'scripts/lib/dist-io.js'
       - 'paths-manifest.json'
+      # Token deriver inputs + code — a token-only edit must also regenerate
+      # the live snapshot, not just foundations/src/*.md edits.
+      - 'tokens/src/**'
+      - 'scripts/tokens/**'
 
 jobs:
   derive:
@@ -67,19 +77,27 @@ jobs:
             --src-dir foundations/src \
             --out foundations/dist
 
+      # Token snapshot is derived from the same foundations/src/*.md sources.
+      # Regenerate it here so the freshness/parity gates in `npm test` below
+      # run against fresh artifacts, and the commit step picks up the result.
+      - name: Derive token snapshot (live tokens.json/css + DTCG src + reference)
+        run: |
+          npm run derive:tokens
+          npm run render:tokens
+
       - name: Run tests against regenerated output
         run: npm test
 
       - name: Detect changes
         id: diff
         run: |
-          if git diff --quiet -- foundations/; then
+          if git diff --quiet -- foundations/ tokens/; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No JSON changes after regeneration."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "JSON changes detected:"
-            git diff --stat -- foundations/
+            git diff --stat -- foundations/ tokens/
           fi
 
       - name: Auto-bump package.json patch
@@ -92,8 +110,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add foundations/ package.json paths-manifest.json
-          git commit -m "chore(foundations): regenerate JSONs from foundations/src/ + bump patch"
+          git add foundations/ tokens/ package.json paths-manifest.json
+          git commit -m "chore(foundations): regenerate foundations + token JSONs from src + bump patch"
           git push
 
       - name: Post semantic-diff comment

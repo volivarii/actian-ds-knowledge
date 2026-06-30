@@ -27,3 +27,9 @@ Thumbs.db
 # Figma file keys (sensitive — create from .figma-keys.json.example)
 .figma-keys.json
 release-notes/sync-*.md
+
+# Tokens: local-only raw Figma export, a P2 parity-reference oracle for the
+# deriver. NOT read by derive-tokens.js or any test, and NOT covered by
+# paths-manifest.json — so it must stay untracked, else validate-manifest's
+# orphan guard reds (a stray `git add tokens/` once swept it into PR #320).
+tokens/src/figma-export/
