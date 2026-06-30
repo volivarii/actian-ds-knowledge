@@ -13,4 +13,13 @@ export const appContextAppUiSchema: UiSchema = {
   _schema_version: { "ui:readonly": true },
   slug: { "ui:title": "Slug", "ui:readonly": true },
   label: { "ui:title": "App label" },
+  useCases: {
+    "ui:options": { addLabel: "use case" },
+    items: {
+      audience: { "ui:options": { addLabel: "audience" } },
+      jobs: { "ui:options": { addLabel: "job" } },
+      patterns: { "ui:options": { addLabel: "pattern" } },
+    },
+  },
+  sidebar: { "ui:options": { addLabel: "nav item" } },
 };
