@@ -1,11 +1,12 @@
 {
   "name": "actian-ds-knowledge",
-  "version": "0.34.32",
+  "version": "0.34.47",
   "private": true,
   "description": "Actian Design System knowledge layer — tokens, components, guidelines, foundations, content. Consumed by the Actian DS Claude plugin.",
   "scripts": {
     "sync": "node scripts/sync/sync-from-figma.js",
     "derive:foundations": "node scripts/foundations/derive-foundations.js --src-dir foundations/src --out foundations/dist",
+    "derive:tokens": "node scripts/tokens/derive-tokens.js",
     "derive:content": "node scripts/content/derive-content.js --src content/src --index content/src/content-index.md",
     "derive:canonical-sections": "node scripts/components/derive-canonical-sections.js",
     "derive:app-context": "node scripts/app-context/__cli.js",

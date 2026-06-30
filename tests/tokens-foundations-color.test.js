@@ -54,13 +54,14 @@ test("actian color.primary ramp == canonical royal-blue (shipped shades)", () =>
     const entry = tokens.color.primary[shade];
     assert.ok(entry, `tokens.json color.primary.${shade} is missing`);
     const actian = entry.$extensions["com.actian.themes"].actian.toUpperCase();
-    const value = entry.$value.toUpperCase();
     const msg =
       `color.primary.${shade} = ${actian} but canonical royal-blue is ${expected}. ` +
       `tokens.json is a frozen snapshot — sync the actian primary ramp to ` +
       `foundations/dist/color-primitives/primitives/royal-blue.json (§2.1: primary = royal-blue).`;
+    // Guard the actian-resolved hex (correct pre-flip AND post-flip when $value becomes {alias}).
+    // The redundant $value == hex assertion is intentionally omitted: post-flip $value is an
+    // alias reference, not the hex, so asserting $value == canonical hex would break.
     assert.equal(actian, expected, msg);
-    assert.equal(value, expected, msg + " (top-level $value)");
   }
 });
 
@@ -77,7 +78,12 @@ test("semantic tokens resolving to primary == canonical royal-blue-500", () => {
   ];
   for (const [name, entry] of checks) {
     assert.ok(entry, `tokens.json ${name} is missing`);
-    const actian = entry.$extensions["com.actian.themes"].actian.toUpperCase();
+    // Composite tokens (border.*, focus-ring.*) carry a direct hex $value but no
+    // com.actian.themes extension; semantic color tokens have the extension. Fall
+    // back to $value for those so the guard works for both token shapes.
+    const actian = (
+      entry.$extensions?.["com.actian.themes"]?.actian ?? entry.$value
+    ).toUpperCase();
     assert.equal(
       actian,
       expected,

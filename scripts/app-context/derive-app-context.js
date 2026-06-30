@@ -53,8 +53,8 @@ function findSection(sections, title) {
 }
 
 // Build the consumer-facing app record in the canonical key order:
-// label, purpose, users, header, sidebar, signals. (Order is load-bearing —
-// it is the dist's JSON key order; see the byte-compat gate.)
+// label, purpose, users, header, sidebar, signals, useCases. (Order is
+// load-bearing — it is the dist's JSON key order; see the byte-compat gate.)
 function assembleAppRecord(fm, sections) {
   const purpose = findSection(sections, "Purpose");
   const users = findSection(sections, "Users");
@@ -68,6 +68,7 @@ function assembleAppRecord(fm, sections) {
     signals: signals
       ? sectionBullets(signals.lines).map(unescapeMarkdownText)
       : [],
+    useCases: Array.isArray(fm.useCases) ? fm.useCases : [],
   };
 }
 
