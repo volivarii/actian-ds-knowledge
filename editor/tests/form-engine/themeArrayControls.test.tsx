@@ -64,6 +64,16 @@ test("first item move-up is disabled, last item move-down is disabled", () => {
     true,
     "last move-down disabled",
   );
+  assert.equal(
+    (ups[1] as HTMLButtonElement).disabled,
+    false,
+    "second move-up enabled",
+  );
+  assert.equal(
+    (downs[0] as HTMLButtonElement).disabled,
+    false,
+    "first move-down enabled",
+  );
   cleanup();
 });
 
