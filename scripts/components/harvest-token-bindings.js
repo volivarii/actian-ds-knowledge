@@ -68,15 +68,6 @@ function run(opts) {
     opts;
   const schema = loadSchema();
   const validate = makeValidator(schema);
-  // The schema's `property` enum is the render-grade-eligible CSS property
-  // set (currently color/border/typography — layout properties like
-  // padding/gap aren't schema-supported yet). Bindings for other CSS
-  // properties are real (the lib's CLASS_PROP table maps more Tailwind
-  // classes than the schema currently grades) but out of scope for this
-  // sidecar; drop them per-node rather than failing the whole doc.
-  const allowedProperties = new Set(
-    schema.$defs.binding.properties.property.enum,
-  );
 
   const tokensJson = JSON.parse(fs.readFileSync(tokensPath, "utf8"));
   const tokenNameSet = buildTokenNameSet(tokensJson);
@@ -110,12 +101,7 @@ function run(opts) {
     const filtered = {};
     Object.keys(parsedByNode).forEach((nodeId) => {
       if (!ownNodeIds.has(nodeId)) return;
-      const props = parsedByNode[nodeId];
-      const keptProps = {};
-      Object.keys(props).forEach((prop) => {
-        if (allowedProperties.has(prop)) keptProps[prop] = props[prop];
-      });
-      if (Object.keys(keptProps).length > 0) filtered[nodeId] = keptProps;
+      filtered[nodeId] = parsedByNode[nodeId];
     });
 
     if (Object.keys(filtered).length === 0) {

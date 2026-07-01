@@ -19,12 +19,29 @@
     "_meta": {
       "type": "object",
       "description": "Metadata about the harvest: auto_generated flag, source (figma-mcp:get_design_context), harvested_at timestamp, do_not_edit flag.",
-      "examples": [{ "auto_generated": true, "source": "figma-mcp:get_design_context", "harvested_at": "2026-07-01", "do_not_edit": true }]
+      "examples": [
+        {
+          "auto_generated": true,
+          "source": "figma-mcp:get_design_context",
+          "harvested_at": "2026-07-01",
+          "do_not_edit": true
+        }
+      ]
     },
     "byNodeId": {
       "type": "object",
       "description": "Map of Figma node IDs to arrays of token binding objects.",
-      "examples": [{ "14783:7564": [{ "property": "background-color", "token": "--zen-color-bg-default", "grade": "semantic" }] }],
+      "examples": [
+        {
+          "14783:7564": [
+            {
+              "property": "background-color",
+              "token": "--zen-color-bg-default",
+              "grade": "semantic"
+            }
+          ]
+        }
+      ],
       "additionalProperties": {
         "type": "array",
         "items": {
@@ -59,7 +76,17 @@
             "fill",
             "stroke",
             "box-shadow",
-            "opacity"
+            "opacity",
+            "padding",
+            "padding-top",
+            "padding-bottom",
+            "padding-left",
+            "padding-right",
+            "padding-inline",
+            "padding-block",
+            "gap",
+            "row-gap",
+            "column-gap"
           ],
           "description": "CSS property name (normalized to dash-case)."
         },
@@ -67,7 +94,11 @@
           "type": "string",
           "pattern": "^--zen-",
           "description": "Design token name (must start with --zen- prefix).",
-          "examples": ["--zen-color-bg-default", "--zen-spacing-200", "--zen-font-family-body"]
+          "examples": [
+            "--zen-color-bg-default",
+            "--zen-spacing-200",
+            "--zen-font-family-body"
+          ]
         },
         "grade": {
           "enum": ["semantic", "primitive", "literal"],

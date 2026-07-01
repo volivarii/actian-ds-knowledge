@@ -45,6 +45,14 @@ test("run() writes a validated sidecar for card-for-perimeter", () => {
     token: "--zen-color-bg-default",
     grade: "semantic",
   });
+  const paddingBinding = doc.byNodeId["14783:7564"].find(
+    (b) => b.property === "padding",
+  );
+  assert.deepEqual(paddingBinding, {
+    property: "padding",
+    token: "--zen-spacing-sm",
+    grade: "semantic",
+  }); // proves spacing is harvested, not dropped by the schema-property workaround
   assert.equal(doc.byNodeId["14783:7552"], undefined); // nested instance (Digram, blue/50) excluded by the anatomy join
   assert.ok(fs.existsSync(path.join(out, "coverage.md")));
 });
