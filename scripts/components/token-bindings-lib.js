@@ -48,4 +48,41 @@ function parseDesignContext(text) {
   return out;
 }
 
-module.exports = { parseDesignContext };
+function slug(name) {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/[/\s]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function buildTokenNameSet(tokensJson) {
+  const set = new Set();
+  (function walk(o, path) {
+    if (!o || typeof o !== "object") return;
+    for (const k of Object.keys(o)) {
+      if (k[0] === "$" || k[0] === "_") continue;
+      const v = o[k];
+      if (!v || typeof v !== "object") continue;
+      if ("$value" in v) set.add(path.concat(k).join("-"));
+      else walk(v, path.concat(k));
+    }
+  })(tokensJson, []);
+  return set;
+}
+
+function normalizeBinding(varName, tokenNameSet) {
+  const full = slug(varName);
+  const candidates = [full];
+  if (varName.indexOf("/") !== -1)
+    candidates.push(slug(varName.slice(varName.indexOf("/") + 1)));
+  for (const c of candidates)
+    if (tokenNameSet.has(c)) return { token: "--zen-" + c, grade: "semantic" };
+  return { token: "--zen-" + full, grade: "primitive" };
+}
+
+module.exports = {
+  parseDesignContext,
+  buildTokenNameSet,
+  normalizeBinding,
+  slug,
+};
