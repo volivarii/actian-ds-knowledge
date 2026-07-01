@@ -30,7 +30,10 @@ test("DENIED_PAGES includes the Local components scratch page", function () {
 
 test("excludeDeniedPages drops components on a denied page, keeps the rest", function () {
   var out = excludeDeniedPages(fixtureRegistry(), DENIED_PAGES);
-  assert.deepEqual(Object.keys(out.components).sort(), ["breadcrumbs", "side-nav"]);
+  assert.deepEqual(Object.keys(out.components).sort(), [
+    "breadcrumbs",
+    "side-nav",
+  ]);
   assert.equal(out.components["notes-feedback"], undefined);
   // Non-component fields are preserved.
   assert.equal(out.library, "DS Kit");
@@ -52,4 +55,28 @@ test("excludeDeniedPages tolerates null / missing components", function () {
   assert.equal(excludeDeniedPages(null, DENIED_PAGES), null);
   var noComps = { library: "x" };
   assert.equal(excludeDeniedPages(noComps, DENIED_PAGES), noComps);
+});
+
+// transformRegistry sets componentCount on the FULL set BEFORE this drop runs,
+// so removing a scratch-page component here must recompute the count or dskit.json
+// ships a stale componentCount (the v0.34.54 regression: 318 declared, 317 real).
+test("excludeDeniedPages recomputes componentCount when it drops components", function () {
+  var reg = fixtureRegistry();
+  reg.componentCount = 3; // as transformRegistry set it, counting notes-feedback
+  var out = excludeDeniedPages(reg, DENIED_PAGES);
+  assert.equal(
+    out.componentCount,
+    2,
+    "count must follow the 2 kept components, not the stale 3",
+  );
+});
+
+test("excludeDeniedPages leaves componentCount absent when the input had none", function () {
+  var reg = fixtureRegistry(); // no componentCount field
+  var out = excludeDeniedPages(reg, DENIED_PAGES);
+  assert.equal(
+    "componentCount" in out,
+    false,
+    "must not invent a componentCount the input never had",
+  );
 });
