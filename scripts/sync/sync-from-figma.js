@@ -103,7 +103,15 @@ function excludeDeniedPages(registry, deniedPages) {
     if (entry && denied.includes(entry.page)) return;
     kept[slug] = entry;
   });
-  return Object.assign({}, registry, { components: kept });
+  var out = Object.assign({}, registry, { components: kept });
+  // transformRegistry sets componentCount on the full set BEFORE this drop, so
+  // recompute it here or a scratch-page removal leaves the count stale (the
+  // v0.34.54 dskit.json regression: notes-feedback dropped, count stuck at 318).
+  // Only when the input already carried a count — never invent one.
+  if (typeof registry.componentCount === "number") {
+    out.componentCount = Object.keys(kept).length;
+  }
+  return out;
 }
 
 // Fetch /nodes for many ids via the wrapper's batched getNodes. Returns a
