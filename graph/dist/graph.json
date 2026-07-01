@@ -359,12 +359,6 @@
       "provenance": "figma-dskit"
     },
     {
-      "id": "category:local-components",
-      "type": "category",
-      "title": "Local components",
-      "provenance": "figma-dskit"
-    },
-    {
       "id": "category:navigation",
       "type": "category",
       "title": "Navigation",
@@ -2392,11 +2386,6 @@
       "id": "component:newspaper",
       "type": "component",
       "title": "newspaper"
-    },
-    {
-      "id": "component:notes-feedback",
-      "type": "component",
-      "title": "Notes/Feedback"
     },
     {
       "id": "component:notification",
@@ -5749,11 +5738,6 @@
     {
       "source": "component:netezza",
       "target": "category:icons",
-      "type": "in_category"
-    },
-    {
-      "source": "component:notes-feedback",
-      "target": "category:local-components",
       "type": "in_category"
     },
     {
