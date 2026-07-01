@@ -1075,7 +1075,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-01T11:48:10+02:00"
+      "updated_at": "2026-07-01T12:29:36+02:00"
     },
     "chat-with-ai-steward": {
       "_schema_version": 1,
@@ -1920,7 +1920,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-01T11:48:10+02:00"
+      "updated_at": "2026-07-01T12:29:36+02:00"
     },
     "checkbox-with-label": {
       "_schema_version": 1,
@@ -2546,7 +2546,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-01T11:48:10+02:00",
+      "updated_at": "2026-07-01T12:29:36+02:00",
       "_alias_of": "checkbox"
     },
     "collapse-accordion": {
@@ -4425,7 +4425,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-01T11:48:10+02:00"
+      "updated_at": "2026-07-01T12:29:36+02:00"
     },
     "input-date": {
       "_schema_version": 1,
@@ -8869,7 +8869,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-01T11:48:10+02:00"
+      "updated_at": "2026-07-01T12:29:36+02:00"
     },
     "tag-default": {
       "_schema_version": 1,
@@ -9007,7 +9007,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-01T11:48:10+02:00",
+      "updated_at": "2026-07-01T12:29:36+02:00",
       "_alias_of": "tag"
     },
     "toggle": {
