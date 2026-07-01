@@ -41,3 +41,43 @@ test("buildTokenNameSet + normalizeBinding grade against tokens.json", () => {
     grade: "primitive",
   });
 });
+
+test("buildSidecar shapes byNodeId with graded bindings", () => {
+  const set = lib.buildTokenNameSet(require("../tokens/tokens.json"));
+  const parsed = {
+    "14783:7564": {
+      "background-color": "color-bg-default",
+      padding: "spacing/spacing-sm",
+    },
+  };
+  const doc = lib.buildSidecar(
+    "card-for-perimeter",
+    parsed,
+    set,
+    "2026-07-01T00:00:00Z",
+  );
+  assert.equal(doc.slug, "card-for-perimeter");
+  assert.equal(doc._meta.auto_generated, true);
+  assert.deepEqual(doc.byNodeId["14783:7564"], [
+    {
+      property: "background-color",
+      token: "--zen-color-bg-default",
+      grade: "semantic",
+    },
+    { property: "padding", token: "--zen-spacing-sm", grade: "semantic" },
+  ]);
+});
+
+test("bindingGradeStats + renderCoverage tally per slug", () => {
+  const stats = lib.bindingGradeStats({
+    "card-for-perimeter": {
+      byNodeId: { a: [{ grade: "semantic" }, { grade: "primitive" }] },
+    },
+  });
+  assert.deepEqual(stats["card-for-perimeter"], {
+    semantic: 1,
+    primitive: 1,
+    total: 2,
+  });
+  assert.match(lib.renderCoverage(stats), /card-for-perimeter/);
+});

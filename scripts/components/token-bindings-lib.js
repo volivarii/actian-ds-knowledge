@@ -80,9 +80,91 @@ function normalizeBinding(varName, tokenNameSet) {
   return { token: "--zen-" + full, grade: "primitive" };
 }
 
+function buildSidecar(slug, parsedByNode, tokenNameSet, harvestedAt) {
+  const byNodeId = {};
+
+  // Sort node IDs for determinism
+  const nodeIds = Object.keys(parsedByNode).sort();
+
+  for (const nodeId of nodeIds) {
+    const props = parsedByNode[nodeId];
+    const bindings = [];
+
+    // Collect all bindings for this node
+    const propEntries = Object.entries(props);
+
+    // Sort by property name for determinism
+    propEntries.sort((a, b) => a[0].localeCompare(b[0]));
+
+    for (const [property, varName] of propEntries) {
+      const { token, grade } = normalizeBinding(varName, tokenNameSet);
+      bindings.push({ property, token, grade });
+    }
+
+    byNodeId[nodeId] = bindings;
+  }
+
+  return {
+    _schema_version: 1,
+    slug,
+    _meta: {
+      auto_generated: true,
+      source: "figma-mcp:get_design_context",
+      harvested_at: harvestedAt,
+      do_not_edit: true,
+    },
+    byNodeId,
+  };
+}
+
+function bindingGradeStats(sidecars) {
+  const stats = {};
+
+  for (const [slug, doc] of Object.entries(sidecars)) {
+    let semantic = 0;
+    let primitive = 0;
+    let total = 0;
+
+    for (const bindings of Object.values(doc.byNodeId)) {
+      for (const binding of bindings) {
+        total++;
+        if (binding.grade === "semantic") {
+          semantic++;
+        } else if (binding.grade === "primitive") {
+          primitive++;
+        }
+      }
+    }
+
+    stats[slug] = { semantic, primitive, total };
+  }
+
+  return stats;
+}
+
+function renderCoverage(stats) {
+  const slugs = Object.keys(stats).sort();
+
+  let md = "# Token-binding coverage\n\n";
+  md += "| Component | Semantic | Primitive | Total |\n";
+  md += "|-----------|----------|-----------|-------|\n";
+
+  for (const slug of slugs) {
+    const { semantic, primitive, total } = stats[slug];
+    md += `| ${slug} | ${semantic}/${total} | ${primitive} | ${total} |\n`;
+  }
+
+  md += "\n";
+
+  return md;
+}
+
 module.exports = {
   parseDesignContext,
   buildTokenNameSet,
   normalizeBinding,
   slug,
+  buildSidecar,
+  bindingGradeStats,
+  renderCoverage,
 };
