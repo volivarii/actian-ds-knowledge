@@ -26,9 +26,16 @@ const {
 // `kind !== "instance"`. Instances are leaves rendered by their own
 // component — their internal nodes (and any primitive-token leaks inside
 // them) are excluded from this component's own harvested bindings.
+//
+// This is an explicit instance-boundary guard, not a byproduct of the
+// "instances have no children" anatomy convention: that convention is not
+// schema-enforced, so if an instance node ever carried children (future
+// sync change, malformed input) we must still stop at the boundary rather
+// than silently walking into the instance's internals.
 function collectOwnNodeIds(node, out) {
   if (!node || typeof node !== "object") return out;
-  if (node.kind !== "instance" && node.id) out.add(node.id);
+  if (node.kind === "instance") return out; // instance boundary: exclude own id, never descend
+  if (node.id) out.add(node.id);
   if (Array.isArray(node.children)) {
     for (const child of node.children) collectOwnNodeIds(child, out);
   }
