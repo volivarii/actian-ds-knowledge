@@ -79,3 +79,22 @@
 | dropdown-select-default | dropdown-select |
 | tag-default | tag |
 
+## Token render-grade
+
+> Bindings carrying a CSS `property` (render-grade) over total token bindings, per component. Absent = prose-only, not yet render-grade.
+
+| Component | Render-grade |
+|---|---|
+| Badges | 0/6 |
+| Breadcrumbs | 0/8 |
+| Buttons | 0/19 |
+| Cards | 13/15 |
+| Checkboxes | 7/13 |
+| Global header | 0/15 |
+| Text input | 11/19 |
+| Page header | 0/14 |
+| Search | 0/13 |
+| Side nav | 0/16 |
+| Tabs | 0/15 |
+| Tags | 13/13 |
+

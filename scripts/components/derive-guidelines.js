@@ -345,6 +345,24 @@ const STATUS_GLYPH = {
   "not-started": "not started",
 };
 
+// Per-component token render-grade tally: how many token bindings carry a valid
+// `property` (render-grade) out of the total. Components with no tokens domain
+// are omitted. Feeds the coverage report and tracks harvest progress.
+function tokenRenderGradeStats(perComponent) {
+  const out = {};
+  Object.keys(perComponent).forEach((slug) => {
+    const doc = perComponent[slug];
+    const dom = doc.domains && doc.domains.tokens;
+    if (!dom || !Array.isArray(dom.bindings)) return;
+    const total = dom.bindings.length;
+    const graded = dom.bindings.filter(
+      (b) => typeof b.property === "string" && b.property.length > 0,
+    ).length;
+    out[slug] = { total, graded };
+  });
+  return out;
+}
+
 // `registryAliases` (optional) is the { registryKey: canonicalSlug } map from
 // paths-manifest.json — rendered as a visible "Registry aliases" table so the
 // interim naming-divergence debt surfaces in the backlog report, not just the
@@ -431,6 +449,33 @@ function buildCoverage(perComponent, registryAliases) {
     lines.push("|---|---|");
     aliasKeys.forEach((from) => {
       lines.push("| " + from + " | " + registryAliases[from] + " |");
+    });
+  }
+
+  const rg = tokenRenderGradeStats(perComponent);
+  const rgSlugs = Object.keys(rg).sort();
+  if (rgSlugs.length) {
+    lines.push("");
+    lines.push("## Token render-grade");
+    lines.push("");
+    lines.push(
+      "> Bindings carrying a CSS `property` (render-grade) over total token " +
+        "bindings, per component. Absent = prose-only, not yet render-grade.",
+    );
+    lines.push("");
+    lines.push("| Component | Render-grade |");
+    lines.push("|---|---|");
+    rgSlugs.forEach((slug) => {
+      const s = rg[slug];
+      lines.push(
+        "| " +
+          perComponent[slug].component +
+          " | " +
+          s.graded +
+          "/" +
+          s.total +
+          " |",
+      );
     });
   }
 
@@ -962,6 +1007,7 @@ module.exports = {
   deriveComponentDir,
   buildBundle,
   buildCoverage,
+  tokenRenderGradeStats,
   buildAliasDoc,
   resolveRegistryAliases,
   listComponentDirs,

@@ -1001,22 +1001,27 @@
           "bindings": [
             {
               "token": "spacing-md",
+              "property": "padding",
               "context": "Card padding"
             },
             {
               "token": "spacing-xs",
+              "property": "gap",
               "context": "Inner stack gap"
             },
             {
               "token": "color-bg-default",
+              "property": "background-color",
               "context": "Fill (default)"
             },
             {
               "token": "border-default",
+              "property": "border-color",
               "context": "Border (default)"
             },
             {
               "token": "border-radius-sm",
+              "property": "border-radius",
               "context": "Corner rounding"
             },
             {
@@ -1029,40 +1034,48 @@
             },
             {
               "token": "color-text-primary",
+              "property": "color",
               "context": "Title text"
             },
             {
               "token": "color-text-tertiary",
+              "property": "color",
               "context": "Body text"
             },
             {
               "token": "font-family-text",
+              "property": "font-family",
               "context": "Font family"
             },
             {
               "token": "font-size-md",
+              "property": "font-size",
               "context": "Title and body font size"
             },
             {
               "token": "font-weight-semibold",
+              "property": "font-weight",
               "context": "Title font weight"
             },
             {
               "token": "font-weight-regular",
+              "property": "font-weight",
               "context": "Body font weight"
             },
             {
               "token": "font-lineheight-md",
+              "property": "line-height",
               "context": "Title and body line height"
             },
             {
               "token": "font-letterspacing-wide-2",
+              "property": "letter-spacing",
               "context": "Title letter spacing"
             }
           ]
         }
       },
-      "updated_at": "2026-06-23T13:38:19+02:00"
+      "updated_at": "2026-07-01T11:48:10+02:00"
     },
     "chat-with-ai-steward": {
       "_schema_version": 1,
@@ -1871,36 +1884,43 @@
             },
             {
               "token": "spacing-2xs",
+              "property": "gap",
               "context": "Gap between box and label"
             },
             {
               "token": "color-text-primary",
+              "property": "color",
               "context": "Label text"
             },
             {
               "token": "font-family-text",
+              "property": "font-family",
               "context": "Label font family"
             },
             {
               "token": "font-size-md",
+              "property": "font-size",
               "context": "Label font size"
             },
             {
               "token": "font-weight-regular",
+              "property": "font-weight",
               "context": "Label font weight"
             },
             {
               "token": "font-lineheight-md",
+              "property": "line-height",
               "context": "Label line height"
             },
             {
               "token": "font-letterspacing-wide-2",
+              "property": "letter-spacing",
               "context": "Label letter spacing"
             }
           ]
         }
       },
-      "updated_at": "2026-06-23T13:38:19+02:00"
+      "updated_at": "2026-07-01T11:48:10+02:00"
     },
     "checkbox-with-label": {
       "_schema_version": 1,
@@ -2490,36 +2510,43 @@
             },
             {
               "token": "spacing-2xs",
+              "property": "gap",
               "context": "Gap between box and label"
             },
             {
               "token": "color-text-primary",
+              "property": "color",
               "context": "Label text"
             },
             {
               "token": "font-family-text",
+              "property": "font-family",
               "context": "Label font family"
             },
             {
               "token": "font-size-md",
+              "property": "font-size",
               "context": "Label font size"
             },
             {
               "token": "font-weight-regular",
+              "property": "font-weight",
               "context": "Label font weight"
             },
             {
               "token": "font-lineheight-md",
+              "property": "line-height",
               "context": "Label line height"
             },
             {
               "token": "font-letterspacing-wide-2",
+              "property": "letter-spacing",
               "context": "Label letter spacing"
             }
           ]
         }
       },
-      "updated_at": "2026-06-23T13:38:19+02:00",
+      "updated_at": "2026-07-01T11:48:10+02:00",
       "_alias_of": "checkbox"
     },
     "collapse-accordion": {
@@ -4310,14 +4337,17 @@
           "bindings": [
             {
               "token": "color-bg-default",
+              "property": "background-color",
               "context": "Input field fill"
             },
             {
               "token": "border-default",
+              "property": "border-color",
               "context": "Input field border"
             },
             {
               "token": "border-radius-xs",
+              "property": "border-radius",
               "context": "Input field corner rounding"
             },
             {
@@ -4326,6 +4356,7 @@
             },
             {
               "token": "color-text-primary",
+              "property": "color",
               "context": "Label and description text"
             },
             {
@@ -4338,6 +4369,7 @@
             },
             {
               "token": "color-icon-default",
+              "property": "fill",
               "context": "Info icon and trailing icon"
             },
             {
@@ -4346,14 +4378,17 @@
             },
             {
               "token": "spacing-2xs",
+              "property": "gap",
               "context": "Label-row gap"
             },
             {
               "token": "font-family-text",
+              "property": "font-family",
               "context": "Font family"
             },
             {
               "token": "font-size-md",
+              "property": "font-size",
               "context": "Label, input and description font size"
             },
             {
@@ -4362,6 +4397,7 @@
             },
             {
               "token": "font-weight-medium",
+              "property": "font-weight",
               "context": "Label font weight"
             },
             {
@@ -4370,6 +4406,7 @@
             },
             {
               "token": "font-lineheight-md",
+              "property": "line-height",
               "context": "Label and input line height"
             },
             {
@@ -4378,6 +4415,7 @@
             },
             {
               "token": "font-letterspacing-wide-2",
+              "property": "letter-spacing",
               "context": "Label and input letter spacing"
             },
             {
@@ -4387,7 +4425,7 @@
           ]
         }
       },
-      "updated_at": "2026-06-30T21:05:33+02:00"
+      "updated_at": "2026-07-01T11:48:10+02:00"
     },
     "input-date": {
       "_schema_version": 1,
@@ -7495,7 +7533,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-30T21:05:33+02:00"
+      "updated_at": "2026-06-30T21:13:00+02:00"
     },
     "search-result-card": {
       "_schema_version": 1,
@@ -8765,60 +8803,73 @@
           "bindings": [
             {
               "token": "size-lg",
+              "property": "height",
               "context": "Height"
             },
             {
               "token": "spacing-xs",
+              "property": "padding",
               "context": "Horizontal padding"
             },
             {
               "token": "spacing-2xs",
+              "property": "gap",
               "context": "Gap between icon and label"
             },
             {
               "token": "border-default",
+              "property": "border-color",
               "context": "Border (Default color)"
             },
             {
               "token": "border-radius-sm",
+              "property": "border-radius",
               "context": "Corner rounding"
             },
             {
               "token": "color-bg-subtle",
+              "property": "background-color",
               "context": "Fill (Default color)"
             },
             {
               "token": "color-text-tertiary",
+              "property": "color",
               "context": "Label text"
             },
             {
               "token": "color-icon-default",
+              "property": "fill",
               "context": "Leading icon"
             },
             {
               "token": "font-family-text",
+              "property": "font-family",
               "context": "Font family"
             },
             {
               "token": "font-size-sm",
+              "property": "font-size",
               "context": "Label font size"
             },
             {
               "token": "font-weight-regular",
+              "property": "font-weight",
               "context": "Label font weight"
             },
             {
               "token": "font-lineheight-sm",
+              "property": "line-height",
               "context": "Label line height"
             },
             {
               "token": "font-letterspacing-wide-3",
+              "property": "letter-spacing",
               "context": "Label letter spacing"
             }
           ]
         }
       },
-      "updated_at": "2026-06-23T13:38:19+02:00"
+      "updated_at": "2026-07-01T11:48:10+02:00"
     },
     "tag-default": {
       "_schema_version": 1,
@@ -8890,60 +8941,73 @@
           "bindings": [
             {
               "token": "size-lg",
+              "property": "height",
               "context": "Height"
             },
             {
               "token": "spacing-xs",
+              "property": "padding",
               "context": "Horizontal padding"
             },
             {
               "token": "spacing-2xs",
+              "property": "gap",
               "context": "Gap between icon and label"
             },
             {
               "token": "border-default",
+              "property": "border-color",
               "context": "Border (Default color)"
             },
             {
               "token": "border-radius-sm",
+              "property": "border-radius",
               "context": "Corner rounding"
             },
             {
               "token": "color-bg-subtle",
+              "property": "background-color",
               "context": "Fill (Default color)"
             },
             {
               "token": "color-text-tertiary",
+              "property": "color",
               "context": "Label text"
             },
             {
               "token": "color-icon-default",
+              "property": "fill",
               "context": "Leading icon"
             },
             {
               "token": "font-family-text",
+              "property": "font-family",
               "context": "Font family"
             },
             {
               "token": "font-size-sm",
+              "property": "font-size",
               "context": "Label font size"
             },
             {
               "token": "font-weight-regular",
+              "property": "font-weight",
               "context": "Label font weight"
             },
             {
               "token": "font-lineheight-sm",
+              "property": "line-height",
               "context": "Label line height"
             },
             {
               "token": "font-letterspacing-wide-3",
+              "property": "letter-spacing",
               "context": "Label letter spacing"
             }
           ]
         }
       },
-      "updated_at": "2026-06-23T13:38:19+02:00",
+      "updated_at": "2026-07-01T11:48:10+02:00",
       "_alias_of": "tag"
     },
     "toggle": {
@@ -9448,7 +9512,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-30T21:05:33+02:00"
+      "updated_at": "2026-06-30T21:13:00+02:00"
     },
     "toolbar": {
       "_schema_version": 1,
@@ -9782,7 +9846,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-30T21:05:33+02:00"
+      "updated_at": "2026-06-30T21:13:00+02:00"
     }
   }
 }
