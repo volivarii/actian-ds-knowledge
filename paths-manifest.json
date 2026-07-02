@@ -3,11 +3,23 @@
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.34.61",
+  "knowledge_version": "0.34.62",
   "_zones": {
-    "knowledge": ["accessibility", "components", "content", "foundations"],
-    "contract": ["graph"],
-    "metadata": ["appContext", "appContextBundle", "appContextSrc", "tokens"],
+    "knowledge": [
+      "accessibility",
+      "components",
+      "content",
+      "foundations"
+    ],
+    "contract": [
+      "graph"
+    ],
+    "metadata": [
+      "appContext",
+      "appContextBundle",
+      "appContextSrc",
+      "tokens"
+    ],
     "_pendingEviction": []
   },
   "paths": {
@@ -121,6 +133,12 @@
       "origin": "ci",
       "generator": "scripts/categories/derive-categories.js",
       "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'overlays' category. Consumed by the component-brief skill for stub components."
+    },
+    "components.categoryOverrides": {
+      "path": "components/src/category-overrides.json",
+      "type": "json",
+      "origin": "human",
+      "description": "Curated slug -> category display-name overrides consumed by scripts/graph/derive-graph.js when a registry component carries no category (Figma frames on a category-header page). Registry wins when present; entries self-retire after the Figma page reorg + re-sync. Provenance manual-override."
     },
     "components.guidelineDoc.alert-banner": {
       "path": "components/dist/guidelines/alert-banner.json",
@@ -513,12 +531,6 @@
       "origin": "ci",
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'whats-new-dropdown' component (content, usage, design, behavior, tokens — each optional)."
-    },
-    "components.categoryOverrides": {
-      "path": "components/src/category-overrides.json",
-      "type": "json",
-      "origin": "human",
-      "description": "Curated slug -> category display-name overrides consumed by scripts/graph/derive-graph.js when a registry component carries no category (Figma frames on a category-header page). Registry wins when present; entries self-retire after the Figma page reorg + re-sync. Provenance manual-override."
     },
     "components.iconGroups": {
       "path": "components/src/icon-groups.json",
