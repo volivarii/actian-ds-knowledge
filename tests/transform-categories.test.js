@@ -1374,3 +1374,457 @@ test("transform-registry — non-icon components unaffected by icon-groups (ζ.5
     false,
   );
 });
+
+// ---- COMPONENT_ON_CATEGORY_PAGE: component frames sitting directly on a
+// category-header canvas (e.g. "Form (input & selection)") instead of their
+// own member page. lookupCategoryEntry misses (header pages are never in
+// categoryMap) and MEMBER_WITHOUT_CATEGORY never fires (header canvases are
+// correctly classified as headers, not orphan members) — so without this
+// detection the sync silently produces a category-less registry entry.
+//
+// Vincent's rule (2026-07-02): this is now a publish gate, not just a
+// warning. A component whose frames sit directly on a category-header page
+// is EXCLUDED from registry.components entirely — a component is published
+// by giving it its own member page. The warning still fires. ----
+
+function knownCategoryHeaders() {
+  return [
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+}
+
+test("transform-registry — component frame directly on a category-header page: no category, warns", function () {
+  var componentSets = [
+    {
+      name: "Rogue Field",
+      key: "k-rogue",
+      node_id: "1:1",
+      description: "",
+      // Sits directly on the "Form (input & selection)" category canvas —
+      // no member page of its own, no status-emoji prefix.
+      containing_frame: { pageName: "Form (input & selection)" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [{ type: "CANVAS", name: "🧱 COMPONENTS" }].concat(
+    knownCategoryHeaders(),
+  );
+
+  var warningBatches = [];
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    onWarnings: function (ws) {
+      warningBatches.push(ws);
+    },
+  });
+
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(registry.components, "rogue-field"),
+    false,
+    "component on a category-header page is excluded from the registry",
+  );
+  assert.equal(
+    registry.componentCount,
+    0,
+    "componentCount reflects the exclusion",
+  );
+
+  var allWarnings = [].concat.apply([], warningBatches);
+  var componentWarnings = allWarnings.filter(function (w) {
+    return w.code === "COMPONENT_ON_CATEGORY_PAGE";
+  });
+  assert.equal(componentWarnings.length, 1);
+  assert.equal(componentWarnings[0].page, "Form (input & selection)");
+  assert.equal(componentWarnings[0].component, "rogue-field");
+});
+
+test("transform-registry — component frame on a category-header page WITH a status-emoji prefix: no category, warns", function () {
+  var componentSets = [
+    {
+      name: "Rogue Field",
+      key: "k-rogue",
+      node_id: "1:1",
+      description: "",
+      // Status emoji prefixed directly on the category canvas name itself
+      // (as opposed to a member page under it) — still a header miss.
+      containing_frame: { pageName: "✍️ Form (input & selection)" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [{ type: "CANVAS", name: "🧱 COMPONENTS" }].concat(
+    knownCategoryHeaders(),
+  );
+
+  var warningBatches = [];
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    onWarnings: function (ws) {
+      warningBatches.push(ws);
+    },
+  });
+
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(registry.components, "rogue-field"),
+    false,
+    "component on a category-header page (emoji-prefixed) is excluded from the registry",
+  );
+
+  var allWarnings = [].concat.apply([], warningBatches);
+  var componentWarnings = allWarnings.filter(function (w) {
+    return w.code === "COMPONENT_ON_CATEGORY_PAGE";
+  });
+  assert.equal(componentWarnings.length, 1);
+  assert.equal(componentWarnings[0].page, "Form (input & selection)");
+  assert.equal(componentWarnings[0].component, "rogue-field");
+});
+
+test("transform-registry — component SET on a category-header page is excluded from the registry (set-loop exclusion)", function () {
+  var componentSets = [
+    {
+      name: "Rogue Set",
+      key: "k-rogue-set",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "Navigation" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [{ type: "CANVAS", name: "🧱 COMPONENTS" }].concat(
+    knownCategoryHeaders(),
+  );
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    onWarnings: function () {},
+  });
+
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(registry.components, "rogue-set"),
+    false,
+    "component set on a category-header page is excluded from the registry",
+  );
+  assert.equal(registry.componentCount, 0);
+});
+
+test("transform-registry — normally-categorized component emits no COMPONENT_ON_CATEGORY_PAGE warning", function () {
+  var componentSets = [
+    {
+      name: "Button",
+      key: "k-button",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "✅ Button" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "     ✅ Button" },
+  ].concat(knownCategoryHeaders().slice(1));
+
+  var warningBatches = [];
+  transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    onWarnings: function (ws) {
+      warningBatches.push(ws);
+    },
+  });
+
+  var allWarnings = [].concat.apply([], warningBatches);
+  var componentWarnings = allWarnings.filter(function (w) {
+    return w.code === "COMPONENT_ON_CATEGORY_PAGE";
+  });
+  assert.equal(componentWarnings.length, 0);
+});
+
+test("transform-registry — onWarnings concat semantics: category-inference warnings AND component warnings both arrive", function () {
+  // Mirrors how sync-from-figma.js accumulates: categoryWarnings =
+  // categoryWarnings.concat(ws || []) across multiple onWarnings calls,
+  // rather than a plain assignment that would clobber the first batch.
+  var componentSets = [
+    {
+      name: "Rogue Field",
+      key: "k-rogue",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "Form (input & selection)" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  // "Custom Family" is a category header not in KNOWN_CATEGORIES — triggers
+  // an UNKNOWN_CATEGORY warning from inferCategoryMap (the first batch).
+  var documentChildren = [
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Custom Family" },
+  ].concat(knownCategoryHeaders());
+
+  var categoryWarnings = [];
+  transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    onWarnings: function (ws) {
+      categoryWarnings = categoryWarnings.concat(ws || []);
+    },
+  });
+
+  var codes = categoryWarnings.map(function (w) {
+    return w.code;
+  });
+  assert.ok(
+    codes.indexOf("UNKNOWN_CATEGORY") >= 0,
+    "first batch (category inference) still received: " + JSON.stringify(codes),
+  );
+  assert.ok(
+    codes.indexOf("COMPONENT_ON_CATEGORY_PAGE") >= 0,
+    "second batch (component-on-category-page) also received: " +
+      JSON.stringify(codes),
+  );
+});
+
+test("transform-registry — same-slug collision: header-page duplicate never clobbers member-page original (member-first order)", function () {
+  // Two component sets with the same name (→ same slug "rogue-field"):
+  // - one on a member page: "✅ Rogue Field" under "Form (input & selection)"
+  // - one on the category header itself: "Form (input & selection)"
+  //
+  // The member-page original should win; the header-page duplicate should be
+  // excluded. The duplicate must NOT overwrite the member entry in the registry.
+  var componentSets = [
+    {
+      name: "Rogue Field",
+      key: "k-rogue-member",
+      node_id: "1:1",
+      description: "",
+      // Member page under Form (input & selection)
+      containing_frame: { pageName: "✅ Rogue Field" },
+    },
+    {
+      name: "Rogue Field",
+      key: "k-rogue-header",
+      node_id: "1:2",
+      description: "",
+      // Same-slug duplicate on the category header itself
+      containing_frame: { pageName: "Form (input & selection)" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+    "1:2": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "     ✅ Rogue Field" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var warningBatches = [];
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    onWarnings: function (ws) {
+      warningBatches.push(ws);
+    },
+  });
+
+  // Slug present exactly once
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(registry.components, "rogue-field"),
+    true,
+    "rogue-field slug is present in registry",
+  );
+  var allKeys = Object.keys(registry.components);
+  var rogueFieldCount = allKeys.filter(function (k) {
+    return k === "rogue-field";
+  }).length;
+  assert.equal(rogueFieldCount, 1, "rogue-field slug appears exactly once");
+
+  // Key and nodeId are the MEMBER-page ones
+  assert.equal(
+    registry.components["rogue-field"].key,
+    "k-rogue-member",
+    "member-page key is retained (not overwritten by header-page duplicate)",
+  );
+  assert.equal(
+    registry.components["rogue-field"].nodeId,
+    "1:1",
+    "member-page nodeId is retained (not overwritten by header-page duplicate)",
+  );
+
+  // componentCount counts it once
+  assert.equal(registry.componentCount, 1, "componentCount is 1");
+
+  // COMPONENT_ON_CATEGORY_PAGE warning fired once for that slug
+  var allWarnings = [].concat.apply([], warningBatches);
+  var componentWarnings = allWarnings.filter(function (w) {
+    return w.code === "COMPONENT_ON_CATEGORY_PAGE";
+  });
+  assert.equal(
+    componentWarnings.length,
+    1,
+    "COMPONENT_ON_CATEGORY_PAGE warning fired exactly once",
+  );
+  assert.equal(
+    componentWarnings[0].component,
+    "rogue-field",
+    "warning is for rogue-field slug",
+  );
+  assert.equal(
+    componentWarnings[0].page,
+    "Form (input & selection)",
+    "warning cites the category header page",
+  );
+});
+
+test("transform-registry — same-slug collision: header-page duplicate never clobbers member-page original (header-first order)", function () {
+  // Same scenario as above, but componentSets array order reversed: header
+  // duplicate comes first in the array. The transformation must still retain
+  // the member-page original; the order of discovery must not affect the outcome.
+  var componentSets = [
+    {
+      name: "Rogue Field",
+      key: "k-rogue-header",
+      node_id: "1:2",
+      description: "",
+      // Same-slug duplicate on the category header itself (FIRST in array)
+      containing_frame: { pageName: "Form (input & selection)" },
+    },
+    {
+      name: "Rogue Field",
+      key: "k-rogue-member",
+      node_id: "1:1",
+      description: "",
+      // Member page under Form (input & selection) (SECOND in array)
+      containing_frame: { pageName: "✅ Rogue Field" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:2": { document: { componentPropertyDefinitions: {} } },
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [
+    { type: "CANVAS", name: "🧱 COMPONENTS" },
+    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "     ✅ Rogue Field" },
+    { type: "CANVAS", name: "Action" },
+    { type: "CANVAS", name: "Navigation" },
+    { type: "CANVAS", name: "Data Display" },
+    { type: "CANVAS", name: "Feedback" },
+    { type: "CANVAS", name: "Overlays" },
+  ];
+
+  var warningBatches = [];
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    onWarnings: function (ws) {
+      warningBatches.push(ws);
+    },
+  });
+
+  // Slug present exactly once
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(registry.components, "rogue-field"),
+    true,
+    "rogue-field slug is present in registry",
+  );
+  var allKeys = Object.keys(registry.components);
+  var rogueFieldCount = allKeys.filter(function (k) {
+    return k === "rogue-field";
+  }).length;
+  assert.equal(rogueFieldCount, 1, "rogue-field slug appears exactly once");
+
+  // Key and nodeId are STILL the MEMBER-page ones (despite header-first order)
+  assert.equal(
+    registry.components["rogue-field"].key,
+    "k-rogue-member",
+    "member-page key is retained even when header-page duplicate comes first",
+  );
+  assert.equal(
+    registry.components["rogue-field"].nodeId,
+    "1:1",
+    "member-page nodeId is retained even when header-page duplicate comes first",
+  );
+
+  // componentCount counts it once
+  assert.equal(registry.componentCount, 1, "componentCount is 1");
+
+  // COMPONENT_ON_CATEGORY_PAGE warning fired once for that slug
+  var allWarnings = [].concat.apply([], warningBatches);
+  var componentWarnings = allWarnings.filter(function (w) {
+    return w.code === "COMPONENT_ON_CATEGORY_PAGE";
+  });
+  assert.equal(
+    componentWarnings.length,
+    1,
+    "COMPONENT_ON_CATEGORY_PAGE warning fired exactly once",
+  );
+  assert.equal(
+    componentWarnings[0].component,
+    "rogue-field",
+    "warning is for rogue-field slug",
+  );
+  assert.equal(
+    componentWarnings[0].page,
+    "Form (input & selection)",
+    "warning cites the category header page",
+  );
+});

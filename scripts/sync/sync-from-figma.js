@@ -204,7 +204,9 @@ async function syncRegistry(opts, kitId) {
     documentChildren: documentChildren,
     iconGroups: opts.iconGroups || null,
     onWarnings: function (ws) {
-      categoryWarnings = ws || [];
+      // transformRegistry can call onWarnings twice (category inference,
+      // then component-on-category-page detection) — concat, don't clobber.
+      categoryWarnings = categoryWarnings.concat(ws || []);
     },
   });
 
@@ -389,6 +391,14 @@ function buildChangelog(date, category, results, errors) {
             "- ⚠️ Member page `" +
               escapeBackticks(w.page) +
               "` has no category",
+          );
+        } else if (w.code === "COMPONENT_ON_CATEGORY_PAGE") {
+          lines.push(
+            "- ⚠️ Component `" +
+              escapeBackticks(w.component) +
+              "` sits directly on category page `" +
+              escapeBackticks(w.page) +
+              "` — EXCLUDED from sync; give it its own member page (5-space indent + status emoji) to publish it",
           );
         }
       });

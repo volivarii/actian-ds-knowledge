@@ -40,6 +40,12 @@ on:
       - 'components/dist/registries/dskit.json'
       - 'components/dist/registries/fmkit.json'
       - 'components/dist/registries/metakit.json'
+      # — curated category-override stopgap (readCategoryOverrides in
+      #   scripts/graph/derive-graph.js): registry-less-category components
+      #   pinned to a category until their Figma pages are reorganized. See
+      #   components/src/category-overrides.json _meta for provenance +
+      #   self-retirement condition.
+      - 'components/src/category-overrides.json'
       # — category-defaults (derived + auto-committed by categories-derive.yml)
       - 'components/dist/categories/**'
       # — component guidelines (derived + auto-committed by guidelines-derive.yml,

@@ -20,7 +20,9 @@
 //
 // Output: registry JSON, same shape as components/registries/{dskit,fmkit,metakit}.json.
 
-var inferCategoryMap = require("./transform-categories.js").inferCategoryMap;
+var categoriesModule = require("./transform-categories.js");
+var inferCategoryMap = categoriesModule.inferCategoryMap;
+var KNOWN_CATEGORIES = categoriesModule.KNOWN_CATEGORIES;
 var statusParser = require("./component-status-emoji.js");
 
 function slugify(name) {
@@ -253,14 +255,51 @@ function transformRegistry(input) {
   // not by component name. A single page can host multiple components (tag-*,
   // loading variants, data-viz variants); they all share the page's category.
   // Look up by the component's containing_frame.pageName with the status
-  // emoji stripped.
+  // emoji stripped. Also returns the derived cleanPage so callers can detect
+  // the "component frame sits directly on a category-header page" case
+  // (header pages are never in categoryMap, so this would otherwise miss
+  // silently — see COMPONENT_ON_CATEGORY_PAGE below).
   function lookupCategoryEntry(meta) {
-    if (!categoryMap) return null;
     var pageName =
       (meta && meta.containing_frame && meta.containing_frame.pageName) || "";
     var cleanPage = statusParser.extractStatus(pageName).cleanName;
-    if (!cleanPage) return null;
-    return categoryMap[cleanPage] || null;
+    var entry =
+      categoryMap && cleanPage ? categoryMap[cleanPage] || null : null;
+    return { entry: entry, cleanPage: cleanPage };
+  }
+
+  // Component-level warnings collected alongside the two buildEntry loops
+  // below: a component whose page resolves to no categoryMap entry AND
+  // whose clean page name is itself a known category header means the
+  // component's frames live directly on the category canvas instead of
+  // their own member page. Only meaningful when category inference
+  // actually ran (categoryMap non-null); kits without page-category
+  // structure (FM/Meta Kit) never pass documentChildren and shouldn't
+  // emit these.
+  //
+  // Vincent's rule (2026-07-02): this is a publish gate, not just a
+  // warning — the component is EXCLUDED from registry.components (see
+  // isOnCategoryHeaderPage below); the page convention is how a component
+  // gets published at all. The warning still fires so the sync PR
+  // changelog surfaces the exclusion.
+  var componentWarnings = [];
+  var seenComponentWarnings = {};
+  function isOnCategoryHeaderPage(lookup) {
+    if (!categoryMap) return false;
+    if (lookup.entry) return false;
+    if (!lookup.cleanPage) return false;
+    return KNOWN_CATEGORIES.indexOf(lookup.cleanPage) >= 0;
+  }
+  function collectComponentWarning(lookup, slug) {
+    if (!isOnCategoryHeaderPage(lookup)) return;
+    var dedupeKey = lookup.cleanPage + "|" + slug;
+    if (seenComponentWarnings[dedupeKey]) return;
+    seenComponentWarnings[dedupeKey] = true;
+    componentWarnings.push({
+      code: "COMPONENT_ON_CATEGORY_PAGE",
+      page: lookup.cleanPage,
+      component: slug,
+    });
   }
 
   // Component sets
@@ -268,11 +307,14 @@ function transformRegistry(input) {
     if (isInternalName(meta.name)) return;
     var node = componentSetNodes[meta.node_id];
     var slug = slugify(meta.name);
+    var lookup = lookupCategoryEntry(meta);
+    collectComponentWarning(lookup, slug);
+    if (isOnCategoryHeaderPage(lookup)) return;
     var entry = buildEntry(
       meta,
       node,
       "set",
-      lookupCategoryEntry(meta),
+      lookup.entry,
       slug,
       iconGroupsLookup,
     );
@@ -286,16 +328,23 @@ function transformRegistry(input) {
     var slug = slugify(meta.name);
     // Don't clobber a set entry on a name collision (sets win).
     if (slug in registry.components) return;
+    var lookup = lookupCategoryEntry(meta);
+    collectComponentWarning(lookup, slug);
+    if (isOnCategoryHeaderPage(lookup)) return;
     var entry = buildEntry(
       meta,
       node,
       "single",
-      lookupCategoryEntry(meta),
+      lookup.entry,
       slug,
       iconGroupsLookup,
     );
     registry.components[slug] = entry;
   });
+
+  if (componentWarnings.length > 0 && typeof input.onWarnings === "function") {
+    input.onWarnings(componentWarnings);
+  }
 
   registry.componentCount = Object.keys(registry.components).length;
 
