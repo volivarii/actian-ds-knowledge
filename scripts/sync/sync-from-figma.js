@@ -398,7 +398,7 @@ function buildChangelog(date, category, results, errors) {
               escapeBackticks(w.component) +
               "` sits directly on category page `" +
               escapeBackticks(w.page) +
-              "` — give it its own member page (5-space indent + status emoji) or it stays uncategorized",
+              "` — EXCLUDED from sync; give it its own member page (5-space indent + status emoji) to publish it",
           );
         }
       });

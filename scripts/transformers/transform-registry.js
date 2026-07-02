@@ -272,17 +272,26 @@ function transformRegistry(input) {
   // below: a component whose page resolves to no categoryMap entry AND
   // whose clean page name is itself a known category header means the
   // component's frames live directly on the category canvas instead of
-  // their own member page — a silent uncategorized regression otherwise.
-  // Only meaningful when category inference actually ran (categoryMap
-  // non-null); kits without page-category structure (FM/Meta Kit) never
-  // pass documentChildren and shouldn't emit these.
+  // their own member page. Only meaningful when category inference
+  // actually ran (categoryMap non-null); kits without page-category
+  // structure (FM/Meta Kit) never pass documentChildren and shouldn't
+  // emit these.
+  //
+  // Vincent's rule (2026-07-02): this is a publish gate, not just a
+  // warning — the component is EXCLUDED from registry.components (see
+  // isOnCategoryHeaderPage below); the page convention is how a component
+  // gets published at all. The warning still fires so the sync PR
+  // changelog surfaces the exclusion.
   var componentWarnings = [];
   var seenComponentWarnings = {};
+  function isOnCategoryHeaderPage(lookup) {
+    if (!categoryMap) return false;
+    if (lookup.entry) return false;
+    if (!lookup.cleanPage) return false;
+    return KNOWN_CATEGORIES.indexOf(lookup.cleanPage) >= 0;
+  }
   function collectComponentWarning(lookup, slug) {
-    if (!categoryMap) return;
-    if (lookup.entry) return;
-    if (!lookup.cleanPage) return;
-    if (KNOWN_CATEGORIES.indexOf(lookup.cleanPage) < 0) return;
+    if (!isOnCategoryHeaderPage(lookup)) return;
     var dedupeKey = lookup.cleanPage + "|" + slug;
     if (seenComponentWarnings[dedupeKey]) return;
     seenComponentWarnings[dedupeKey] = true;
@@ -300,6 +309,7 @@ function transformRegistry(input) {
     var slug = slugify(meta.name);
     var lookup = lookupCategoryEntry(meta);
     collectComponentWarning(lookup, slug);
+    if (isOnCategoryHeaderPage(lookup)) return;
     var entry = buildEntry(
       meta,
       node,
@@ -320,6 +330,7 @@ function transformRegistry(input) {
     if (slug in registry.components) return;
     var lookup = lookupCategoryEntry(meta);
     collectComponentWarning(lookup, slug);
+    if (isOnCategoryHeaderPage(lookup)) return;
     var entry = buildEntry(
       meta,
       node,

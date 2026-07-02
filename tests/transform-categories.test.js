@@ -1380,7 +1380,12 @@ test("transform-registry — non-icon components unaffected by icon-groups (ζ.5
 // own member page. lookupCategoryEntry misses (header pages are never in
 // categoryMap) and MEMBER_WITHOUT_CATEGORY never fires (header canvases are
 // correctly classified as headers, not orphan members) — so without this
-// detection the sync silently produces a category-less registry entry. ----
+// detection the sync silently produces a category-less registry entry.
+//
+// Vincent's rule (2026-07-02): this is now a publish gate, not just a
+// warning. A component whose frames sit directly on a category-header page
+// is EXCLUDED from registry.components entirely — a component is published
+// by giving it its own member page. The warning still fires. ----
 
 function knownCategoryHeaders() {
   return [
@@ -1427,12 +1432,14 @@ test("transform-registry — component frame directly on a category-header page:
   });
 
   assert.equal(
-    Object.prototype.hasOwnProperty.call(
-      registry.components["rogue-field"],
-      "category",
-    ),
+    Object.prototype.hasOwnProperty.call(registry.components, "rogue-field"),
     false,
-    "component on a category-header page gets no category",
+    "component on a category-header page is excluded from the registry",
+  );
+  assert.equal(
+    registry.componentCount,
+    0,
+    "componentCount reflects the exclusion",
   );
 
   var allWarnings = [].concat.apply([], warningBatches);
@@ -1478,11 +1485,9 @@ test("transform-registry — component frame on a category-header page WITH a st
   });
 
   assert.equal(
-    Object.prototype.hasOwnProperty.call(
-      registry.components["rogue-field"],
-      "category",
-    ),
+    Object.prototype.hasOwnProperty.call(registry.components, "rogue-field"),
     false,
+    "component on a category-header page (emoji-prefixed) is excluded from the registry",
   );
 
   var allWarnings = [].concat.apply([], warningBatches);
@@ -1492,6 +1497,42 @@ test("transform-registry — component frame on a category-header page WITH a st
   assert.equal(componentWarnings.length, 1);
   assert.equal(componentWarnings[0].page, "Form (input & selection)");
   assert.equal(componentWarnings[0].component, "rogue-field");
+});
+
+test("transform-registry — component SET on a category-header page is excluded from the registry (set-loop exclusion)", function () {
+  var componentSets = [
+    {
+      name: "Rogue Set",
+      key: "k-rogue-set",
+      node_id: "1:1",
+      description: "",
+      containing_frame: { pageName: "Navigation" },
+    },
+  ];
+  var componentSetNodes = {
+    "1:1": { document: { componentPropertyDefinitions: {} } },
+  };
+  var documentChildren = [{ type: "CANVAS", name: "🧱 COMPONENTS" }].concat(
+    knownCategoryHeaders(),
+  );
+
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test",
+    componentSets: componentSets,
+    componentSetNodes: componentSetNodes,
+    standalones: [],
+    standaloneNodes: {},
+    documentChildren: documentChildren,
+    onWarnings: function () {},
+  });
+
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(registry.components, "rogue-set"),
+    false,
+    "component set on a category-header page is excluded from the registry",
+  );
+  assert.equal(registry.componentCount, 0);
 });
 
 test("transform-registry — normally-categorized component emits no COMPONENT_ON_CATEGORY_PAGE warning", function () {
