@@ -1,23 +1,23 @@
 {
   "_schema_version": 1,
-  "slug": "input",
+  "slug": "text-input",
   "kit": "dskit",
   "synced_at": "2026-07-02T07:26:12.568Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
-    "nodeId": "18857:3168",
+    "nodeId": "7238:2487",
     "variant": "States=Default"
   },
   "quality": {
-    "nodesTotal": 12,
-    "nodesNormalized": 12,
+    "nodesTotal": 10,
+    "nodesNormalized": 10,
     "ratio": 1,
     "degraded": []
   },
   "root": {
     "name": "States=Default",
     "kind": "container",
-    "id": "18857:3169",
+    "id": "7243:2947",
     "layout": {
       "axis": "column",
       "gap": "4px",
@@ -38,12 +38,12 @@
     },
     "children": [
       {
-        "name": "Label + description",
+        "name": "Label",
         "kind": "container",
-        "id": "18857:3170",
+        "id": "7243:2948",
         "layout": {
-          "axis": "column",
-          "gap": "0px",
+          "axis": "row",
+          "gap": "4px",
           "padding": {
             "top": "0px",
             "right": "0px",
@@ -52,7 +52,7 @@
           },
           "align": {
             "main": "start",
-            "cross": "start"
+            "cross": "center"
           },
           "sizing": {
             "h": "fill",
@@ -62,59 +62,34 @@
         "children": [
           {
             "name": "Label",
-            "kind": "container",
-            "id": "18857:3171",
-            "layout": {
-              "axis": "row",
-              "gap": "4px",
-              "padding": {
-                "top": "0px",
-                "right": "0px",
-                "bottom": "0px",
-                "left": "0px"
-              },
-              "align": {
-                "main": "start",
-                "cross": "center"
-              },
-              "sizing": {
-                "h": "fill",
-                "v": "hug"
-              }
-            },
-            "children": [
-              {
-                "name": "Label",
-                "kind": "text",
-                "id": "18857:3172",
-                "text": "Label"
-              },
-              {
-                "name": "Label",
-                "kind": "text",
-                "id": "18857:3173",
-                "text": "*"
-              },
-              {
-                "name": "info",
-                "kind": "instance",
-                "slug": "info",
-                "id": "18857:3174"
-              }
-            ]
+            "kind": "text",
+            "id": "7243:2949",
+            "text": "Label"
           },
           {
-            "name": "description",
+            "name": "Required",
             "kind": "text",
-            "id": "18857:3175",
-            "text": "A description helps users to define and understand the purpose of the input."
+            "id": "7243:2950",
+            "text": "*"
+          },
+          {
+            "name": "info",
+            "kind": "instance",
+            "slug": "info",
+            "id": "7243:2951"
           }
         ]
       },
       {
-        "name": "input field",
+        "name": "Description",
+        "kind": "text",
+        "id": "7243:3387",
+        "text": "A description helps users to define and understand the purpose of the input."
+      },
+      {
+        "name": "Input field",
         "kind": "container",
-        "id": "18857:3176",
+        "id": "7243:2953",
         "layout": {
           "axis": "row",
           "gap": "8px",
@@ -137,27 +112,21 @@
           {
             "name": "Input text",
             "kind": "text",
-            "id": "18857:3177",
+            "id": "7243:2955",
             "text": "Placeholder text"
           },
           {
             "name": "close",
             "kind": "instance",
             "slug": "close",
-            "id": "18857:3178"
-          },
-          {
-            "name": "arrow-down",
-            "kind": "instance",
-            "slug": "arrow-down",
-            "id": "18857:3179"
+            "id": "9482:7474"
           }
         ]
       },
       {
-        "name": "helper text",
+        "name": "Helper text",
         "kind": "text",
-        "id": "18857:3180",
+        "id": "7243:2958",
         "text": "Helper text goes here"
       }
     ]
