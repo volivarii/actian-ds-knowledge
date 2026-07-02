@@ -7,7 +7,9 @@ const assert = require("node:assert/strict");
 const Ajv2020 = require("ajv/dist/2020");
 const schema = require("../schemas/token-bindings.json");
 
-const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema);
+const validate = new Ajv2020({ allErrors: true, strict: false }).compile(
+  schema,
+);
 
 function doc(overrides) {
   return Object.assign(
@@ -16,7 +18,11 @@ function doc(overrides) {
       slug: "tag-status",
       byNodeId: {
         "7370:4928": [
-          { property: "border-radius", token: "--zen-border-radius-xs", grade: "semantic" },
+          {
+            property: "border-radius",
+            token: "--zen-border-radius-xs",
+            grade: "semantic",
+          },
         ],
       },
     },
@@ -46,19 +52,96 @@ test("schema accepts a variant-scoped binding + variantDefaults + height/width",
 test("schema rejects malformed variant scopes", () => {
   // missing values
   assert.equal(
-    validate(doc({ byNodeId: { a: [{ property: "color", token: "--zen-x", grade: "semantic", variant: { prop: "Status" } }] } })),
+    validate(
+      doc({
+        byNodeId: {
+          a: [
+            {
+              property: "color",
+              token: "--zen-x",
+              grade: "semantic",
+              variant: { prop: "Status" },
+            },
+          ],
+        },
+      }),
+    ),
     false,
   );
   // empty values
   assert.equal(
-    validate(doc({ byNodeId: { a: [{ property: "color", token: "--zen-x", grade: "semantic", variant: { prop: "Status", values: [] } }] } })),
+    validate(
+      doc({
+        byNodeId: {
+          a: [
+            {
+              property: "color",
+              token: "--zen-x",
+              grade: "semantic",
+              variant: { prop: "Status", values: [] },
+            },
+          ],
+        },
+      }),
+    ),
     false,
   );
   // extra key inside variant
   assert.equal(
-    validate(doc({ byNodeId: { a: [{ property: "color", token: "--zen-x", grade: "semantic", variant: { prop: "Status", values: ["A"], extra: 1 } }] } })),
+    validate(
+      doc({
+        byNodeId: {
+          a: [
+            {
+              property: "color",
+              token: "--zen-x",
+              grade: "semantic",
+              variant: { prop: "Status", values: ["A"], extra: 1 },
+            },
+          ],
+        },
+      }),
+    ),
     false,
   );
   // non-string variantDefaults value
   assert.equal(validate(doc({ variantDefaults: { Status: 3 } })), false);
+});
+
+test("valid sidecar passes, bad property/token fails", () => {
+  const good = doc({
+    slug: "card-for-perimeter",
+    _meta: {
+      auto_generated: true,
+      source: "figma-mcp:get_design_context",
+      harvested_at: "2026-07-01",
+      do_not_edit: true,
+    },
+    byNodeId: {
+      "14783:7564": [
+        {
+          property: "background-color",
+          token: "--zen-color-bg-default",
+          grade: "semantic",
+        },
+      ],
+    },
+  });
+  assert.equal(validate(good), true, "valid sidecar should pass");
+
+  const badToken = JSON.parse(JSON.stringify(good));
+  badToken.byNodeId["14783:7564"][0].token = "zen-x"; // not --zen-
+  assert.equal(
+    validate(badToken),
+    false,
+    "token without --zen- prefix should fail",
+  );
+
+  const badProperty = JSON.parse(JSON.stringify(good));
+  badProperty.byNodeId["14783:7564"][0].property = "wobble"; // not in enum
+  assert.equal(
+    validate(badProperty),
+    false,
+    "property not in enum should fail",
+  );
 });
