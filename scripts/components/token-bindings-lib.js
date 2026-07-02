@@ -179,6 +179,151 @@ function renderCoverage(stats) {
   return md;
 }
 
+// ── Set-shape helpers (variant-prop component sets) ─────────────────────────
+// A component SET emits ONE conditional codegen: variant metadata lives in the
+// Props type union + destructure defaults, and per-variant facts live in
+// ternary/includes() conditionals. All helpers are pure text parsers with the
+// same doctrine as CLASS_PROP: an unrecognized shape yields null/skip, never
+// a guessed binding.
+
+// Declared variant values (from the Props type union) + default (from the
+// exported function's destructure). Only quoted unions register: `className?:
+// string` and single-value props don't (single-value sets emit no conditionals).
+function parseSetMeta(text) {
+  const props = {};
+  const unionRe = /(\w+)\?:\s*("[^"]*"(?:\s*\|\s*"[^"]*")+)/g;
+  let m;
+  while ((m = unionRe.exec(text))) {
+    const values = (m[2].match(/"([^"]*)"/g) || []).map((s) => s.slice(1, -1));
+    props[m[1]] = { values, default: null };
+  }
+  const sig = /function\s+\w+\(\{([^}]*)\}/.exec(text);
+  if (sig) {
+    const defRe = /(\w+)\s*=\s*"([^"]*)"/g;
+    while ((m = defRe.exec(sig[1]))) {
+      if (props[m[1]]) props[m[1]].default = m[2];
+    }
+  }
+  return { props };
+}
+
+// `const isFail = status === "Fail";` declarations -> condition name map.
+function buildConstMap(text) {
+  const map = {};
+  const re = /const\s+(is\w+)\s*=\s*(\w+)\s*===\s*"([^"]*)"/g;
+  let m;
+  while ((m = re.exec(text))) map[m[1]] = { prop: m[2], values: [m[3]] };
+  return map;
+}
+
+// Resolve a ternary condition to a single-prop variant scope, or null.
+// Recognized: an isX const name, or `["A","B"].includes(prop)`.
+function resolveCondition(cond, constMap) {
+  const c = String(cond || "").trim();
+  if (constMap[c])
+    return { prop: constMap[c].prop, values: constMap[c].values.slice() };
+  const inc = /^\[((?:\s*"[^"]*"\s*,?)+)\]\.includes\((\w+)\)$/.exec(c);
+  if (inc) {
+    const values = (inc[1].match(/"([^"]*)"/g) || []).map((s) =>
+      s.slice(1, -1),
+    );
+    return { prop: inc[2], values };
+  }
+  return null;
+}
+
+// Read a leading string literal ("…" or String.raw`…`) off `s`.
+// Returns { value, rest } or null when `s` doesn't start with one.
+function readStringLiteral(s) {
+  s = s.trim();
+  const raw = /^String\.raw`/.exec(s);
+  if (raw) {
+    const end = s.indexOf("`", raw[0].length);
+    if (end === -1) return null;
+    return { value: s.slice(raw[0].length, end), rest: s.slice(end + 1) };
+  }
+  if (s[0] === '"') {
+    const end = s.indexOf('"', 1);
+    if (end === -1) return null;
+    return { value: s.slice(1, end), rest: s.slice(end + 1) };
+  }
+  return null;
+}
+
+// Find the first '?' outside quoted/backticked spans.
+function indexOfTopLevelQuestion(s) {
+  let inTick = false;
+  let inQuote = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inTick) {
+      if (ch === "`") inTick = false;
+    } else if (inQuote) {
+      if (ch === '"') inQuote = false;
+    } else if (ch === "`") inTick = true;
+    else if (ch === '"') inQuote = true;
+    else if (ch === "?") return i;
+  }
+  return -1;
+}
+
+// `cond ? "A" : cond2 ? \`B\` : "C"` -> { branches: [{cond,value}], elseValue }.
+// elseValue is null when the trailing expression isn't a recognized literal
+// (caller skips the else branch; never mis-emit).
+function splitTernary(expr) {
+  const branches = [];
+  let s = String(expr || "").trim();
+  for (;;) {
+    const q = indexOfTopLevelQuestion(s);
+    if (q === -1) {
+      const lit = readStringLiteral(s);
+      return { branches, elseValue: lit ? lit.value : null };
+    }
+    const cond = s.slice(0, q).trim();
+    const lit = readStringLiteral(s.slice(q + 1));
+    if (!lit) return { branches, elseValue: null }; // unrecognized value form
+    branches.push({ cond, value: lit.value });
+    s = lit.rest.replace(/^\s*:\s*/, "");
+  }
+}
+
+// Split a template-literal BODY into raw literal segments and ${…} expression
+// bodies. Brace-depth aware; quotes/backticks inside ${…} are respected.
+function splitTemplate(tpl) {
+  const literals = [];
+  const exprs = [];
+  let cur = "";
+  const s = String(tpl || "");
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === "$" && s[i + 1] === "{") {
+      literals.push(cur);
+      cur = "";
+      let depth = 1;
+      let j = i + 2;
+      const start = j;
+      let inTick = false;
+      let inQuote = false;
+      for (; j < s.length && depth > 0; j++) {
+        const ch = s[j];
+        if (inTick) {
+          if (ch === "`") inTick = false;
+        } else if (inQuote) {
+          if (ch === '"') inQuote = false;
+        } else if (ch === "`") inTick = true;
+        else if (ch === '"') inQuote = true;
+        else if (ch === "{") depth++;
+        else if (ch === "}") depth--;
+      }
+      exprs.push(s.slice(start, j - 1));
+      i = j - 1;
+    } else {
+      cur += s[i];
+    }
+  }
+  literals.push(cur);
+  return { literals, exprs };
+}
+
 module.exports = {
   parseDesignContext,
   buildTokenNameSet,
@@ -187,4 +332,9 @@ module.exports = {
   buildSidecar,
   bindingGradeStats,
   renderCoverage,
+  parseSetMeta,
+  buildConstMap,
+  resolveCondition,
+  splitTernary,
+  splitTemplate,
 };

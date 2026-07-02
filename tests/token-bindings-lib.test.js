@@ -122,3 +122,68 @@ test("parseDesignContext captures border-width/border-color and height/width/siz
   });
   assert.deepEqual(parsed["2:2"], { height: "sm", width: "sm" });
 });
+
+const SET_SNIPPET = `
+type TagStatusProps = {
+  className?: string;
+  status?: "Fail" | "Warning" | "Success";
+};
+export default function TagStatus({ className, status = "Fail" }: TagStatusProps) {
+  const isFail = status === "Fail";
+  const isSuccess = status === "Success";
+  const isWarning = status === "Warning";
+`;
+
+test("parseSetMeta extracts declared values + destructure defaults", () => {
+  const meta = lib.parseSetMeta(SET_SNIPPET);
+  assert.deepEqual(meta.props.status, {
+    values: ["Fail", "Warning", "Success"],
+    default: "Fail",
+  });
+  assert.equal(meta.props.className, undefined); // not a quoted union
+});
+
+test("buildConstMap + resolveCondition handle isX, includes-lists, and unknowns", () => {
+  const cm = lib.buildConstMap(SET_SNIPPET);
+  assert.deepEqual(cm.isSuccess, { prop: "status", values: ["Success"] });
+  assert.deepEqual(lib.resolveCondition("isWarning", cm), {
+    prop: "status",
+    values: ["Warning"],
+  });
+  assert.deepEqual(
+    lib.resolveCondition('["Stopped", "Sleeping"].includes(status)', cm),
+    {
+      prop: "status",
+      values: ["Stopped", "Sleeping"],
+    },
+  );
+  assert.equal(lib.resolveCondition('type === "X" && state === "Y"', cm), null); // mixed: skip
+});
+
+test("splitTernary splits cond?value:chains with quoted and String.raw values", () => {
+  const chain =
+    'isSuccess ? String.raw`bg-[var(--success\\/25,#f0ffec)]` : isWarning ? "bg-[var(--color-bg-warning,#fff9e5)]" : String.raw`bg-[var(--error\\/25,#fff4ec)]`';
+  const t = lib.splitTernary(chain);
+  assert.equal(t.branches.length, 2);
+  assert.equal(t.branches[0].cond, "isSuccess");
+  assert.match(t.branches[0].value, /success/);
+  assert.equal(t.branches[1].cond.trim(), "isWarning");
+  assert.match(t.branches[1].value, /color-bg-warning/);
+  assert.match(t.elseValue, /error/);
+});
+
+test("splitTernary: '?' inside quoted class strings does not split", () => {
+  const chain = 'isA ? "content-[\'?\']" : "b"';
+  const t = lib.splitTernary(chain);
+  assert.equal(t.branches.length, 1);
+  assert.match(t.branches[0].value, /\?/);
+});
+
+test("splitTemplate separates literal text from ${…} expression bodies", () => {
+  const tpl = '${String.raw`base-a base-b `}${isX ? "c1" : "c2"} tail';
+  const { literals, exprs } = lib.splitTemplate(tpl);
+  assert.equal(exprs.length, 2);
+  assert.match(exprs[0], /base-a/);
+  assert.match(exprs[1], /isX/);
+  assert.equal(literals.join(""), " tail");
+});
