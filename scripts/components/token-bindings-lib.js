@@ -30,9 +30,40 @@ function unescapeName(raw) {
   return raw.replace(/\\+/g, ""); // Strip all backslashes (handles both \/ and \\/)
 }
 
+// Parse one class-attribute chunk into [{property, varName}] (deduped by
+// property, first match wins), applying unescapeName.
+function parseClassEntries(chunk) {
+  const seen = new Set();
+  const entries = [];
+  for (const [rx, prop] of CLASS_PROP) {
+    rx.lastIndex = 0;
+    let mm;
+    while ((mm = rx.exec(chunk))) {
+      const p = prop();
+      if (seen.has(p)) continue;
+      seen.add(p);
+      entries.push({ property: p, varName: unescapeName(mm[1]) });
+    }
+  }
+  return entries;
+}
+
+// Locate the set root: the element whose className is `{className || `…`}`
+// immediately followed by a ternary id over "node-…" strings. Returns
+// { classExpr, idExpr } or null (non-set captures, or drifted grammar -> the
+// root is skipped and the miss shows in coverage).
+function parseSetRoot(text) {
+  const m = /className=\{className \|\| `([\s\S]*?)`\}\s+id=\{([^}]*)\}/.exec(
+    text,
+  );
+  if (!m) return null;
+  return { classExpr: m[1], idExpr: m[2] };
+}
+
 function parseDesignContext(text) {
-  const out = {};
-  // Split into element chunks by data-node-id occurrences.
+  const nodes = {};
+  // Plain elements carrying data-node-id (own-nodes first pass; instance
+  // internals skipped). Unchanged v1 logic, list-shaped output.
   const re = /data-node-id="([^"]+)"/g;
   const marks = [];
   let m;
@@ -40,21 +71,95 @@ function parseDesignContext(text) {
   for (let i = 0; i < marks.length; i++) {
     const id = marks[i].id;
     if (/^I\d+[:-]\d+;/.test(id)) continue; // instance-internal -> skip (own-nodes only)
-    // The class attribute for this element precedes its data-node-id within the same tag.
     const tagStart = text.lastIndexOf("<", marks[i].idx);
-    const chunk = text.slice(tagStart, marks[i].idx);
-    const props = {};
-    for (const [rx, prop] of CLASS_PROP) {
-      rx.lastIndex = 0;
-      let mm;
-      while ((mm = rx.exec(chunk))) {
-        const p = prop();
-        if (!(p in props)) props[p] = unescapeName(mm[1]);
-      }
-    }
-    if (Object.keys(props).length) out[id] = props;
+    const entries = parseClassEntries(text.slice(tagStart, marks[i].idx));
+    if (entries.length && !(id in nodes)) nodes[id] = entries;
   }
-  return out;
+
+  // Set root (conditional codegen).
+  let root = null;
+  const variantDefaults = {};
+  const sr = parseSetRoot(text);
+  if (sr) {
+    const meta = parseSetMeta(text);
+    const constMap = buildConstMap(text);
+
+    // Root ids from the id ternary ("node-a_b" -> "a:b").
+    const idChain = splitTernary(sr.idExpr);
+    const ids = [];
+    const pushId = (v) => {
+      const mm = /^node-(\d+)_(\d+)$/.exec(String(v || "").trim());
+      if (mm) ids.push(mm[1] + ":" + mm[2]);
+    };
+    idChain.branches.forEach((b) => pushId(b.value));
+    pushId(idChain.elseValue);
+
+    // Root bindings: template literals -> unscoped; ternary chains -> scoped.
+    const bindings = [];
+    const referenced = new Set();
+    const seen = new Set(); // dedupe by property + scope signature, first wins
+    const push = (entry, variant) => {
+      const sig =
+        entry.property +
+        "|" +
+        (variant ? variant.prop + "=" + variant.values.join(",") : "");
+      if (seen.has(sig)) return;
+      seen.add(sig);
+      const b = { property: entry.property, varName: entry.varName };
+      if (variant) {
+        b.variant = variant;
+        referenced.add(variant.prop);
+      }
+      bindings.push(b);
+    };
+
+    const { literals, exprs } = splitTemplate(sr.classExpr);
+    literals.forEach((lit) =>
+      parseClassEntries(lit).forEach((e) => push(e, null)),
+    );
+    exprs.forEach((expr) => {
+      const asLiteral = readStringLiteral(expr);
+      if (asLiteral && !asLiteral.rest.trim()) {
+        parseClassEntries(asLiteral.value).forEach((e) => push(e, null));
+        return;
+      }
+      const chain = splitTernary(expr);
+      if (!chain.branches.length) return; // unrecognized expression: skip
+      let prop = null;
+      const covered = new Set();
+      chain.branches.forEach((br) => {
+        const scope = resolveCondition(br.cond, constMap);
+        if (!scope) return; // unrecognized condition: skip branch
+        prop = prop || scope.prop;
+        if (scope.prop !== prop) return; // mixed-prop chain: skip branch
+        scope.values.forEach((v) => covered.add(v));
+        parseClassEntries(br.value).forEach((e) =>
+          push(e, { prop: scope.prop, values: scope.values.slice() }),
+        );
+      });
+      // Else branch = declared values minus covered (needs known meta).
+      if (chain.elseValue != null && prop && meta.props[prop]) {
+        const remaining = meta.props[prop].values.filter(
+          (v) => !covered.has(v),
+        );
+        if (remaining.length) {
+          parseClassEntries(chain.elseValue).forEach((e) =>
+            push(e, { prop, values: remaining }),
+          );
+        }
+      }
+    });
+
+    if (ids.length && bindings.length) {
+      root = { ids, bindings };
+      referenced.forEach((p) => {
+        if (meta.props[p] && meta.props[p].default != null)
+          variantDefaults[p] = meta.props[p].default;
+      });
+    }
+  }
+
+  return { nodes, root, variantDefaults };
 }
 
 function slug(name) {
@@ -98,33 +203,47 @@ function normalizeBinding(varName, tokenNameSet) {
   return { token: "--zen-" + full, grade: "primitive" };
 }
 
-function buildSidecar(slug, parsedByNode, tokenNameSet, harvestedAt) {
+// Scope rank for the defensive-ordering invariant: under CSS last-wins a
+// variant-UNAWARE consumer must resolve exactly the default variant, so
+// same-property bindings order: non-default-scoped (0), unscoped (1),
+// default-variant-scoped LAST (2).
+function scopeRank(binding, defaults) {
+  if (!binding.variant) return 1;
+  const def = defaults[binding.variant.prop];
+  return def != null && binding.variant.values.indexOf(def) !== -1 ? 2 : 0;
+}
+
+function buildSidecar(
+  slugName,
+  nodes,
+  tokenNameSet,
+  harvestedAt,
+  variantDefaults,
+) {
+  const defaults = variantDefaults || {};
   const byNodeId = {};
-
-  // Sort node IDs for determinism
-  const nodeIds = Object.keys(parsedByNode).sort();
-
-  for (const nodeId of nodeIds) {
-    const props = parsedByNode[nodeId];
-    const bindings = [];
-
-    // Collect all bindings for this node
-    const propEntries = Object.entries(props);
-
-    // Sort by property name for determinism
-    propEntries.sort((a, b) => a[0].localeCompare(b[0]));
-
-    for (const [property, varName] of propEntries) {
-      const { token, grade } = normalizeBinding(varName, tokenNameSet);
-      bindings.push({ property, token, grade });
-    }
-
+  for (const nodeId of Object.keys(nodes).sort()) {
+    const bindings = nodes[nodeId].map((e) => {
+      const { token, grade } = normalizeBinding(e.varName, tokenNameSet);
+      const b = { property: e.property, token, grade };
+      if (e.variant)
+        b.variant = { prop: e.variant.prop, values: e.variant.values.slice() };
+      return b;
+    });
+    bindings.sort(
+      (a, b) =>
+        a.property.localeCompare(b.property) ||
+        scopeRank(a, defaults) - scopeRank(b, defaults) ||
+        a.token.localeCompare(b.token) ||
+        ((a.variant && a.variant.values.join(",")) || "").localeCompare(
+          (b.variant && b.variant.values.join(",")) || "",
+        ),
+    );
     byNodeId[nodeId] = bindings;
   }
-
-  return {
+  const doc = {
     _schema_version: 1,
-    slug,
+    slug: slugName,
     _meta: {
       auto_generated: true,
       source: "figma-mcp:get_design_context",
@@ -133,49 +252,42 @@ function buildSidecar(slug, parsedByNode, tokenNameSet, harvestedAt) {
     },
     byNodeId,
   };
+  if (Object.keys(defaults).length) doc.variantDefaults = defaults;
+  return doc;
 }
 
 function bindingGradeStats(sidecars) {
   const stats = {};
-
-  for (const [slug, doc] of Object.entries(sidecars)) {
+  for (const [slugName, doc] of Object.entries(sidecars)) {
     let semantic = 0;
     let primitive = 0;
+    let scoped = 0;
     let total = 0;
-
     for (const bindings of Object.values(doc.byNodeId)) {
       for (const binding of bindings) {
         total++;
-        if (binding.grade === "semantic") {
-          semantic++;
-        } else if (binding.grade === "primitive") {
-          primitive++;
-        }
+        if (binding.grade === "semantic") semantic++;
+        else if (binding.grade === "primitive") primitive++;
+        if (binding.variant) scoped++;
       }
     }
-
-    stats[slug] = { semantic, primitive, total };
+    stats[slugName] = { semantic, primitive, scoped, total };
   }
-
   return stats;
 }
 
 function renderCoverage(stats) {
   const slugs = Object.keys(stats).sort();
-
   let md = "# Token-binding coverage\n\n";
   md +=
     "> AUTO-GENERATED — DO NOT EDIT. Source: scripts/components/harvest-token-bindings.js\n\n";
-  md += "| Component | Semantic | Primitive | Total |\n";
-  md += "|-----------|----------|-----------|-------|\n";
-
-  for (const slug of slugs) {
-    const { semantic, primitive, total } = stats[slug];
-    md += `| ${slug} | ${semantic}/${total} | ${primitive} | ${total} |\n`;
+  md += "| Component | Semantic | Primitive | Scoped | Total |\n";
+  md += "|-----------|----------|-----------|--------|-------|\n";
+  for (const slugName of slugs) {
+    const { semantic, primitive, scoped, total } = stats[slugName];
+    md += `| ${slugName} | ${semantic}/${total} | ${primitive} | ${scoped} | ${total} |\n`;
   }
-
   md += "\n";
-
   return md;
 }
 
@@ -326,6 +438,7 @@ function splitTemplate(tpl) {
 
 module.exports = {
   parseDesignContext,
+  parseSetRoot,
   buildTokenNameSet,
   normalizeBinding,
   slug,

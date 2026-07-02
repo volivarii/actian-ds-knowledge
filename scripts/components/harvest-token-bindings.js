@@ -42,6 +42,51 @@ function collectOwnNodeIds(node, out) {
   return out;
 }
 
+// Canonical axis names from the anatomy root's variant name
+// ("Status=Fail" / "Type=Item, State=Default"): codegen lowercases prop
+// names, the anatomy root carries the Figma casing.
+function canonicalAxes(rootName) {
+  const map = {};
+  String(rootName || "")
+    .split(",")
+    .forEach((part) => {
+      const eq = part.indexOf("=");
+      if (eq === -1) return;
+      const axis = part.slice(0, eq).trim();
+      if (axis) map[axis.toLowerCase().replace(/[^a-z0-9]/g, "")] = axis;
+    });
+  return map;
+}
+
+// Rename codegen prop names to canonical Figma axis names across scoped
+// bindings + defaults; keep only defaults for axes actually referenced.
+function canonicalizeVariants(entries, variantDefaults, rootName) {
+  const axes = canonicalAxes(rootName);
+  const canon = (p) =>
+    axes[
+      String(p)
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "")
+    ] || p;
+  const referenced = new Set();
+  const out = entries.map((e) => {
+    if (!e.variant) return e;
+    const prop = canon(e.variant.prop);
+    referenced.add(prop);
+    return {
+      property: e.property,
+      varName: e.varName,
+      variant: { prop, values: e.variant.values },
+    };
+  });
+  const defaults = {};
+  Object.keys(variantDefaults || {}).forEach((p) => {
+    const cp = canon(p);
+    if (referenced.has(cp)) defaults[cp] = variantDefaults[p];
+  });
+  return { entries: out, defaults };
+}
+
 function loadSchema() {
   const repoRoot = path.resolve(__dirname, "..", "..");
   return JSON.parse(
@@ -66,9 +111,14 @@ function assertValid(validate, doc, label) {
 
 // run({ captureDir, tokensPath, anatomyDir, outDir, slugs, harvestedAt })
 // For each slug: parse captured design-context text, intersect with the
-// anatomy own-node set, validate, and write a sidecar. Slugs with no
-// captured text, no anatomy, or an empty intersection are skipped
-// gracefully (recorded in the coverage report, not thrown).
+// anatomy own-node set, join the set-root bindings (canonicalized), build a
+// sidecar doc. ALL docs are validated before ANY are written (a validation
+// failure writes nothing and throws listing every failing slug). Coverage is
+// then computed from every sidecar JSON on disk in outDir (so previously
+// harvested families keep their rows across narrower re-runs). Slugs with no
+// captured text, no anatomy, an unjoinable set root, or an empty own-node
+// intersection are skipped gracefully (recorded with a reason in the
+// coverage report, not thrown).
 function run(opts) {
   opts = opts || {};
   const { captureDir, tokensPath, anatomyDir, outDir, slugs, harvestedAt } =
@@ -79,70 +129,118 @@ function run(opts) {
   const tokensJson = JSON.parse(fs.readFileSync(tokensPath, "utf8"));
   const tokenNameSet = buildTokenNameSet(tokensJson);
 
-  const writtenDocs = {};
+  const docs = {};
   const skipped = [];
 
   (slugs || []).forEach((slug) => {
     const captureAbs = path.join(captureDir, slug + ".design-context.txt");
     if (!fs.existsSync(captureAbs)) {
-      skipped.push(slug);
+      skipped.push({ slug, reason: "no capture" });
       return;
     }
-    const text = fs.readFileSync(captureAbs, "utf8");
-    const parsedByNode = parseDesignContext(text);
+    const parsed = parseDesignContext(fs.readFileSync(captureAbs, "utf8"));
 
     const anatomyAbs = path.join(anatomyDir, slug + ".json");
     if (!fs.existsSync(anatomyAbs)) {
-      skipped.push(slug);
+      skipped.push({ slug, reason: "no anatomy" });
       return;
     }
     let anatomy;
     try {
       anatomy = JSON.parse(fs.readFileSync(anatomyAbs, "utf8"));
     } catch (err) {
-      skipped.push(slug);
+      skipped.push({ slug, reason: "unparseable anatomy" });
       return;
     }
     const ownNodeIds = collectOwnNodeIds(anatomy.root, new Set());
 
-    const filtered = {};
-    Object.keys(parsedByNode).forEach((nodeId) => {
+    // Own-node intersection over data-node-id elements.
+    const nodes = {};
+    Object.keys(parsed.nodes).forEach((nodeId) => {
       if (!ownNodeIds.has(nodeId)) return;
-      filtered[nodeId] = parsedByNode[nodeId];
+      nodes[nodeId] = parsed.nodes[nodeId];
     });
 
-    if (Object.keys(filtered).length === 0) {
-      skipped.push(slug);
+    // Set root: the anatomy root must be among the chain ids; root bindings
+    // attach to the anatomy root id (canonical join key for all variants).
+    let variantDefaults = {};
+    if (parsed.root) {
+      const rootId = anatomy.root && anatomy.root.id;
+      if (!rootId || parsed.root.ids.indexOf(rootId) === -1) {
+        skipped.push({ slug, reason: "anatomy root not among set root ids" });
+        return;
+      }
+      const canon = canonicalizeVariants(
+        parsed.root.bindings,
+        parsed.variantDefaults,
+        anatomy.root.name,
+      );
+      nodes[rootId] = (nodes[rootId] || []).concat(canon.entries);
+      variantDefaults = canon.defaults;
+    }
+
+    if (Object.keys(nodes).length === 0) {
+      skipped.push({ slug, reason: "empty own-node intersection" });
       return;
     }
 
-    const doc = buildSidecar(slug, filtered, tokenNameSet, harvestedAt);
-    assertValid(
-      validate,
-      doc,
-      "components/dist/token-bindings/" + slug + ".json",
+    docs[slug] = buildSidecar(
+      slug,
+      nodes,
+      tokenNameSet,
+      harvestedAt,
+      variantDefaults,
     );
-
-    writeAtomic(path.join(outDir, slug + ".json"), stableStringify(doc));
-    writtenDocs[slug] = doc;
   });
 
-  const stats = bindingGradeStats(writtenDocs);
-  let coverage = renderCoverage(stats);
+  // Validate ALL before writing ANY (no partial-batch writes).
+  const failures = [];
+  Object.keys(docs).forEach((slug) => {
+    if (!validate(docs[slug])) {
+      const errs = (validate.errors || [])
+        .map((e) => (e.instancePath || "(root)") + " " + e.message)
+        .join("; ");
+      failures.push(slug + ": " + errs);
+    }
+  });
+  if (failures.length) {
+    throw new Error(
+      "schema validation failed, nothing written — " + failures.join(" | "),
+    );
+  }
+
+  Object.keys(docs).forEach((slug) => {
+    writeAtomic(path.join(outDir, slug + ".json"), stableStringify(docs[slug]));
+  });
+
+  // Coverage from ALL sidecars on disk (previously harvested families keep
+  // their rows when a later run harvests a different slug batch).
+  const allDocs = {};
+  fs.readdirSync(outDir)
+    .filter((f) => f.endsWith(".json"))
+    .forEach((f) => {
+      try {
+        const d = JSON.parse(fs.readFileSync(path.join(outDir, f), "utf8"));
+        if (d && d.byNodeId) allDocs[d.slug || f.replace(/\.json$/, "")] = d;
+      } catch (err) {
+        /* unreadable sidecar: not this run's problem; committed tests guard it */
+      }
+    });
+  let coverage = renderCoverage(bindingGradeStats(allDocs));
   if (skipped.length > 0) {
     coverage +=
       "## Skipped\n\n" +
-      "> No sidecar written — capture text, anatomy, or the own-node intersection was missing/empty.\n\n" +
+      "> No sidecar written — capture text, anatomy, the own-node intersection, or the set-root join was missing/empty.\n\n" +
       skipped
         .slice()
-        .sort()
-        .map((s) => "- " + s)
+        .sort((a, b) => a.slug.localeCompare(b.slug))
+        .map((s) => "- " + s.slug + " (" + s.reason + ")")
         .join("\n") +
       "\n";
   }
   writeAtomic(path.join(outDir, "coverage.md"), coverage);
 
-  return { written: writtenDocs, skipped };
+  return { written: docs, skipped };
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -151,13 +249,20 @@ function run(opts) {
 
 function parseArgs(argv) {
   const args = {};
+  const next = (i, flag) => {
+    const v = argv[i];
+    if (v == null || v.startsWith("--"))
+      throw new Error(flag + " requires a value");
+    return v;
+  };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
-    if (a === "--capture-dir") args.captureDir = argv[++i];
-    else if (a === "--tokens") args.tokensPath = argv[++i];
-    else if (a === "--anatomy-dir") args.anatomyDir = argv[++i];
-    else if (a === "--out-dir") args.outDir = argv[++i];
-    else if (a === "--slugs") args.slugs = argv[++i].split(",").filter(Boolean);
+    if (a === "--capture-dir") args.captureDir = next(++i, a);
+    else if (a === "--tokens") args.tokensPath = next(++i, a);
+    else if (a === "--anatomy-dir") args.anatomyDir = next(++i, a);
+    else if (a === "--out-dir") args.outDir = next(++i, a);
+    else if (a === "--slugs")
+      args.slugs = next(++i, a).split(",").filter(Boolean);
   }
   return args;
 }
@@ -203,7 +308,7 @@ function runCli() {
         ? "; skipped " +
           result.skipped.length +
           ": " +
-          result.skipped.join(", ")
+          result.skipped.map((s) => s.slug + " (" + s.reason + ")").join(", ")
         : ""),
   );
 }
@@ -216,4 +321,7 @@ module.exports = {
   run,
   runCli,
   collectOwnNodeIds,
+  canonicalAxes,
+  canonicalizeVariants,
+  parseArgs,
 };
