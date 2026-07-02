@@ -108,3 +108,17 @@ test("bindingGradeStats + renderCoverage tally per slug", () => {
     /^# Token-binding coverage\n\n> AUTO-GENERATED — DO NOT EDIT\. Source: scripts\/components\/harvest-token-bindings\.js\n/,
   );
 });
+
+test("parseDesignContext captures border-width/border-color and height/width/size rules", () => {
+  const text =
+    '<div className="border-[length:var(--border-width-md,1px)] border-[var(--border-disabled,#c7c7ce)] h-[var(--lg,24px)] w-[var(--md,16px)]" data-node-id="2:1"></div>' +
+    '<div className="size-[var(--sm,12px)]" data-node-id="2:2"></div>';
+  const parsed = lib.parseDesignContext(text);
+  assert.deepEqual(parsed["2:1"], {
+    "border-width": "border-width-md",
+    "border-color": "border-disabled",
+    height: "lg",
+    width: "md",
+  });
+  assert.deepEqual(parsed["2:2"], { height: "sm", width: "sm" });
+});

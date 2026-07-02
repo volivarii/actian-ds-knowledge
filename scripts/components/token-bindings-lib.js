@@ -18,6 +18,12 @@ const CLASS_PROP = [
   [/\btracking-\[var\(--([^,\)\]]+)/g, () => "letter-spacing"],
   [/\bfont-\[family-name:var\(--([^,\)\]]+)/g, () => "font-family"],
   [/\bfont-\[var\(--([^,\)\]]+)/g, () => "font-weight"],
+  [/\bborder-\[length:var\(--([^,\)\]]+)/g, () => "border-width"],
+  [/\bborder-\[var\(--([^,\)\]]+)/g, () => "border-color"],
+  [/\bh-\[var\(--([^,\)\]]+)/g, () => "height"],
+  [/\bw-\[var\(--([^,\)\]]+)/g, () => "width"],
+  [/\bsize-\[var\(--([^,\)\]]+)/g, () => "height"],
+  [/\bsize-\[var\(--([^,\)\]]+)/g, () => "width"],
 ];
 
 function unescapeName(raw) {
