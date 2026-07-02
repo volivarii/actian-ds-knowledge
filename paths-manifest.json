@@ -5,21 +5,9 @@
   "manifest_schema_version": "v1",
   "knowledge_version": "0.34.61",
   "_zones": {
-    "knowledge": [
-      "accessibility",
-      "components",
-      "content",
-      "foundations"
-    ],
-    "contract": [
-      "graph"
-    ],
-    "metadata": [
-      "appContext",
-      "appContextBundle",
-      "appContextSrc",
-      "tokens"
-    ],
+    "knowledge": ["accessibility", "components", "content", "foundations"],
+    "contract": ["graph"],
+    "metadata": ["appContext", "appContextBundle", "appContextSrc", "tokens"],
     "_pendingEviction": []
   },
   "paths": {
@@ -525,6 +513,12 @@
       "origin": "ci",
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'whats-new-dropdown' component (content, usage, design, behavior, tokens — each optional)."
+    },
+    "components.categoryOverrides": {
+      "path": "components/src/category-overrides.json",
+      "type": "json",
+      "origin": "human",
+      "description": "Curated slug -> category display-name overrides consumed by scripts/graph/derive-graph.js when a registry component carries no category (Figma frames on a category-header page). Registry wins when present; entries self-retire after the Figma page reorg + re-sync. Provenance manual-override."
     },
     "components.iconGroups": {
       "path": "components/src/icon-groups.json",

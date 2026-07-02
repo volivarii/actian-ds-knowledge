@@ -22,16 +22,24 @@ var fs = require("node:fs");
 var path = require("node:path");
 var YAML = require("yaml");
 
-var WORKFLOW = path.join(__dirname, "..", ".github", "workflows", "graph-derive.yml");
+var WORKFLOW = path.join(
+  __dirname,
+  "..",
+  ".github",
+  "workflows",
+  "graph-derive.yml",
+);
 
 // Every data input glob derive-graph.js consumes (registries: lines 16-17;
-// categories + guidelines + a11y-index; foundations bundle + motion tokens via
+// category-overrides stopgap (readCategoryOverrides); categories + guidelines
+// + a11y-index; foundations bundle + motion tokens via
 // collectMotionPatterns; content/src UX-pattern topics). Keep in sync with the
 // "Graph inputs" comment block in graph-derive.yml.
 var REQUIRED_TRIGGER_PATHS = [
   "components/dist/registries/dskit.json",
   "components/dist/registries/fmkit.json",
   "components/dist/registries/metakit.json",
+  "components/src/category-overrides.json",
   "components/dist/categories/**",
   "components/dist/guidelines/**",
   "accessibility/dist/a11y-index.json",

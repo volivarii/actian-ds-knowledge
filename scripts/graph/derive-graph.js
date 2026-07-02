@@ -18,7 +18,8 @@ var REGISTRY_FILES = [
 ];
 
 // Component nodes + category nodes (all distinct labels, slugified, figma-dskit) + in_category edges.
-function collectComponentsAndCategories(g, registries) {
+function collectComponentsAndCategories(g, registries, categoryOverrides) {
+  var overrides = (categoryOverrides && categoryOverrides.overrides) || {};
   // Components are deduped by slug across registries (GraphBuilder first-wins); REGISTRY_FILES lists dskit first, so dskit's title wins on cross-kit slug collisions.
   registries.forEach(function (reg) {
     var comps = (reg && reg.components) || {};
@@ -29,13 +30,19 @@ function collectComponentsAndCategories(g, registries) {
         type: "component",
         title: c.name || slug,
       });
-      if (c.category) {
-        // fmkit/metakit components carry no category; node-only, no edge — not an error
-        var catSlug = M.slugify(c.category);
+      var cat = c.category || overrides[slug] || null;
+      if (cat) {
+        // fmkit/metakit components carry no category; node-only, no edge — not
+        // an error. overrides = curated stopgap
+        // (components/src/category-overrides.json) for components the sync
+        // cannot attribute (frames sitting directly on a category-header
+        // page); the registry value always wins, so entries self-retire on
+        // the next re-sync once the Figma pages are reorganized.
+        var catSlug = M.slugify(cat);
         g.addNode({
           id: M.nodeId("category", catSlug),
           type: "category",
-          title: c.category,
+          title: cat,
           provenance: "figma-dskit",
         });
         g.addEdge({
@@ -270,12 +277,21 @@ function bundleToTree(bundle) {
   return buildNode(rootIdx, bundle);
 }
 
+var CATEGORY_OVERRIDES_FILE = "components/src/category-overrides.json";
+function readCategoryOverrides() {
+  // Tolerate a missing file — the derive never hard-fails on this curated,
+  // self-retiring stopgap (see components/src/category-overrides.json _meta).
+  var abs = path.join(ROOT, CATEGORY_OVERRIDES_FILE);
+  if (!fs.existsSync(abs)) return { overrides: {} };
+  return readJSON(CATEGORY_OVERRIDES_FILE);
+}
+
 function derive() {
   var g = new M.GraphBuilder();
   var registries = REGISTRY_FILES.filter(function (rel) {
     return fs.existsSync(path.join(ROOT, rel));
   }).map(readJSON);
-  collectComponentsAndCategories(g, registries);
+  collectComponentsAndCategories(g, registries, readCategoryOverrides());
   if (fs.existsSync(path.join(ROOT, "accessibility/dist/a11y-index.json"))) {
     collectA11yCriteria(g, readJSON("accessibility/dist/a11y-index.json"));
   }

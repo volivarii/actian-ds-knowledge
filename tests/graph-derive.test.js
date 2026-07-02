@@ -47,6 +47,61 @@ test("collectComponentsAndCategories: component nodes, category nodes, in_catego
   );
 });
 
+test("collectComponentsAndCategories: category overrides apply only when the registry carries no category (registry always wins)", function () {
+  var registries = {
+    components: {
+      "radio-button": { name: "Radio Button" },
+      button: { name: "Button", category: "Action" },
+      "ghost-slug": {},
+    },
+  };
+  var overrides = {
+    overrides: {
+      "radio-button": "Form (input & selection)",
+      button: "Ignored Category",
+      "unknown-slug": "Nowhere",
+    },
+  };
+  var g = new (require("../scripts/lib/graph/model.js").GraphBuilder)();
+  D.collectComponentsAndCategories(g, [registries], overrides);
+  var out = g.build();
+  assert.ok(
+    out.edges.some(function (e) {
+      return (
+        e.type === "in_category" &&
+        e.source === "component:radio-button" &&
+        e.target === "category:form-input-selection"
+      );
+    }),
+    "override applied for category-less component",
+  );
+  assert.ok(
+    out.edges.some(function (e) {
+      return (
+        e.type === "in_category" &&
+        e.source === "component:button" &&
+        e.target === "category:action"
+      );
+    }),
+    "registry category kept",
+  );
+  assert.ok(
+    !out.edges.some(function (e) {
+      return (
+        e.source === "component:button" &&
+        e.target === "category:ignored-category"
+      );
+    }),
+    "override ignored when registry already carries a category (registry wins)",
+  );
+  assert.ok(
+    !out.nodes.some(function (n) {
+      return n.id === "category:nowhere";
+    }),
+    "override for a slug absent from all registries produces nothing",
+  );
+});
+
 test("collectA11yCriteria: nodes from a11y-index sections", function () {
   var g = new (require("../scripts/lib/graph/model.js").GraphBuilder)();
   D.collectA11yCriteria(g, {
@@ -307,6 +362,27 @@ test("graph.json: component-scoped a11y_ref edges are present after derive", fun
       );
     }),
     "expected component:checkbox-with-label -> a11y:forms",
+  );
+});
+
+test("graph.json: category-override stopgap keeps in_category edges for category-less dskit components", function () {
+  var fs = require("node:fs"),
+    path = require("node:path");
+  var graph = JSON.parse(
+    fs.readFileSync(
+      path.join(__dirname, "..", "graph", "dist", "graph.json"),
+      "utf8",
+    ),
+  );
+  assert.ok(
+    graph.edges.some(function (e) {
+      return (
+        e.type === "in_category" &&
+        e.source === "component:radio-button" &&
+        e.target === "category:form-input-selection"
+      );
+    }),
+    "expected component:radio-button -> category:form-input-selection via the curated override (components/src/category-overrides.json)",
   );
 });
 
