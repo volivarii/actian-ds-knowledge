@@ -163,7 +163,7 @@ function run(opts) {
 
     // Set root: the anatomy root must be among the chain ids; root bindings
     // attach to the anatomy root id (canonical join key for all variants).
-    let variantDefaults = {};
+    const variantDefaults = {};
     if (parsed.root) {
       const rootId = anatomy.root && anatomy.root.id;
       if (!rootId || parsed.root.ids.indexOf(rootId) === -1) {
@@ -176,8 +176,23 @@ function run(opts) {
         anatomy.root.name,
       );
       nodes[rootId] = (nodes[rootId] || []).concat(canon.entries);
-      variantDefaults = canon.defaults;
+      Object.assign(variantDefaults, canon.defaults);
     }
+
+    // Non-root conditional elements (e.g. a state-styled label): attach each
+    // to the single anatomy own-node id present in its id chain. An element
+    // with no own-node id simply isn't this component's fact (skip silently).
+    (parsed.conditionals || []).forEach((el) => {
+      const matchId = el.ids.find((id) => ownNodeIds.has(id));
+      if (!matchId) return;
+      const canonEl = canonicalizeVariants(
+        el.bindings,
+        parsed.variantDefaults,
+        anatomy.root && anatomy.root.name,
+      );
+      nodes[matchId] = (nodes[matchId] || []).concat(canonEl.entries);
+      Object.assign(variantDefaults, canonEl.defaults);
+    });
 
     if (Object.keys(nodes).length === 0) {
       skipped.push({ slug, reason: "empty own-node intersection" });

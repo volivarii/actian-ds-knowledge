@@ -48,16 +48,98 @@ function parseClassEntries(chunk) {
   return entries;
 }
 
-// Locate the set root: the element whose className is `{className || `…`}`
-// immediately followed by a ternary id over "node-…" strings. Returns
-// { classExpr, idExpr } or null (non-set captures, or drifted grammar -> the
-// root is skipped and the miss shows in coverage).
-function parseSetRoot(text) {
-  const m = /className=\{className \|\| `([\s\S]*?)`\}\s+id=\{([^}]*)\}/.exec(
-    text,
-  );
-  if (!m) return null;
-  return { classExpr: m[1], idExpr: m[2] };
+// Locate every conditional element: `className={<expr>} id={<expr>}` where
+// the id expression carries "node-…" string literals (the codegen shape for
+// any part whose styling varies per variant — the component root, a
+// state-styled label, …). The root form is `className={className || …}`.
+function findConditionalElements(text) {
+  const out = [];
+  const re = /className=\{((?:[^{}]|\{[^{}]*\})*)\}\s+id=\{([^}]*)\}/g;
+  let m;
+  while ((m = re.exec(text))) {
+    if (m[2].indexOf('"node-') === -1) continue;
+    const raw = m[1].trim();
+    const isRoot = /^className\s*\|\|/.test(raw);
+    out.push({
+      isRoot,
+      classExpr: isRoot ? raw.replace(/^className\s*\|\|\s*/, "") : raw,
+      idExpr: m[2],
+    });
+  }
+  return out;
+}
+
+// Parse one conditional element into { ids, bindings } (or null when nothing
+// parseable — skip, never guess). Bindings follow the same scoping grammar as
+// the root: template base + unconditional exprs -> unscoped; ternary branches
+// -> scoped via resolveCondition; else branch -> declared minus covered.
+function parseConditionalElement(el, meta, constMap) {
+  const idChain = splitTernary(el.idExpr);
+  const ids = [];
+  const pushId = (v) => {
+    const mm = /^node-(\d+)_(\d+)$/.exec(String(v || "").trim());
+    if (mm) ids.push(mm[1] + ":" + mm[2]);
+  };
+  idChain.branches.forEach((b) => pushId(b.value));
+  pushId(idChain.elseValue);
+  if (!ids.length) return null;
+
+  const bindings = [];
+  const seen = new Set();
+  const push = (entry, variant) => {
+    const sig =
+      entry.property +
+      "|" +
+      (variant ? variant.prop + "=" + variant.values.join(",") : "");
+    if (seen.has(sig)) return;
+    seen.add(sig);
+    const b = { property: entry.property, varName: entry.varName };
+    if (variant) b.variant = variant;
+    bindings.push(b);
+  };
+  const handleExpr = (expr) => {
+    const asLiteral = readStringLiteral(expr);
+    if (asLiteral && !asLiteral.rest.trim()) {
+      parseClassEntries(asLiteral.value).forEach((e) => push(e, null));
+      return;
+    }
+    const chain = splitTernary(expr);
+    if (!chain.branches.length) return;
+    let prop = null;
+    const covered = new Set();
+    chain.branches.forEach((br) => {
+      const scope = resolveCondition(br.cond, constMap);
+      if (!scope) return;
+      prop = prop || scope.prop;
+      if (scope.prop !== prop) return;
+      scope.values.forEach((v) => covered.add(v));
+      parseClassEntries(br.value).forEach((e) =>
+        push(e, { prop: scope.prop, values: scope.values.slice() }),
+      );
+    });
+    if (chain.elseValue != null && prop && meta.props[prop]) {
+      const remaining = meta.props[prop].values.filter((v) => !covered.has(v));
+      if (remaining.length) {
+        parseClassEntries(chain.elseValue).forEach((e) =>
+          push(e, { prop, values: remaining }),
+        );
+      }
+    }
+  };
+
+  const expr = el.classExpr.trim();
+  if (expr[0] === "`") {
+    const body = expr.slice(1, expr.lastIndexOf("`"));
+    const { literals, exprs } = splitTemplate(body);
+    literals.forEach((lit) =>
+      parseClassEntries(lit).forEach((e) => push(e, null)),
+    );
+    exprs.forEach(handleExpr);
+  } else {
+    handleExpr(expr);
+  }
+  if (!bindings.length) return null;
+  return { ids, bindings };
 }
 
 function parseDesignContext(text) {
@@ -76,90 +158,32 @@ function parseDesignContext(text) {
     if (entries.length && !(id in nodes)) nodes[id] = entries;
   }
 
-  // Set root (conditional codegen).
+  // Conditional elements (component set codegen): the root plus any part
+  // whose styling varies per variant. Same grammar for all of them.
   let root = null;
+  const conditionals = [];
   const variantDefaults = {};
-  const sr = parseSetRoot(text);
-  if (sr) {
+  const els = findConditionalElements(text);
+  if (els.length) {
     const meta = parseSetMeta(text);
     const constMap = buildConstMap(text);
-
-    // Root ids from the id ternary ("node-a_b" -> "a:b").
-    const idChain = splitTernary(sr.idExpr);
-    const ids = [];
-    const pushId = (v) => {
-      const mm = /^node-(\d+)_(\d+)$/.exec(String(v || "").trim());
-      if (mm) ids.push(mm[1] + ":" + mm[2]);
-    };
-    idChain.branches.forEach((b) => pushId(b.value));
-    pushId(idChain.elseValue);
-
-    // Root bindings: template literals -> unscoped; ternary chains -> scoped.
-    const bindings = [];
     const referenced = new Set();
-    const seen = new Set(); // dedupe by property + scope signature, first wins
-    const push = (entry, variant) => {
-      const sig =
-        entry.property +
-        "|" +
-        (variant ? variant.prop + "=" + variant.values.join(",") : "");
-      if (seen.has(sig)) return;
-      seen.add(sig);
-      const b = { property: entry.property, varName: entry.varName };
-      if (variant) {
-        b.variant = variant;
-        referenced.add(variant.prop);
-      }
-      bindings.push(b);
-    };
-
-    const { literals, exprs } = splitTemplate(sr.classExpr);
-    literals.forEach((lit) =>
-      parseClassEntries(lit).forEach((e) => push(e, null)),
-    );
-    exprs.forEach((expr) => {
-      const asLiteral = readStringLiteral(expr);
-      if (asLiteral && !asLiteral.rest.trim()) {
-        parseClassEntries(asLiteral.value).forEach((e) => push(e, null));
-        return;
-      }
-      const chain = splitTernary(expr);
-      if (!chain.branches.length) return; // unrecognized expression: skip
-      let prop = null;
-      const covered = new Set();
-      chain.branches.forEach((br) => {
-        const scope = resolveCondition(br.cond, constMap);
-        if (!scope) return; // unrecognized condition: skip branch
-        prop = prop || scope.prop;
-        if (scope.prop !== prop) return; // mixed-prop chain: skip branch
-        scope.values.forEach((v) => covered.add(v));
-        parseClassEntries(br.value).forEach((e) =>
-          push(e, { prop: scope.prop, values: scope.values.slice() }),
-        );
+    for (const el of els) {
+      const parsedEl = parseConditionalElement(el, meta, constMap);
+      if (!parsedEl) continue;
+      parsedEl.bindings.forEach((b) => {
+        if (b.variant) referenced.add(b.variant.prop);
       });
-      // Else branch = declared values minus covered (needs known meta).
-      if (chain.elseValue != null && prop && meta.props[prop]) {
-        const remaining = meta.props[prop].values.filter(
-          (v) => !covered.has(v),
-        );
-        if (remaining.length) {
-          parseClassEntries(chain.elseValue).forEach((e) =>
-            push(e, { prop, values: remaining }),
-          );
-        }
-      }
-    });
-
-    if (ids.length && bindings.length) {
-      root = { ids, bindings };
-      referenced.forEach((p) => {
-        if (meta.props[p] && meta.props[p].default != null)
-          variantDefaults[p] = meta.props[p].default;
-      });
+      if (el.isRoot && !root) root = parsedEl;
+      else conditionals.push(parsedEl);
     }
+    referenced.forEach((p) => {
+      if (meta.props[p] && meta.props[p].default != null)
+        variantDefaults[p] = meta.props[p].default;
+    });
   }
 
-  return { nodes, root, variantDefaults };
+  return { nodes, root, conditionals, variantDefaults };
 }
 
 function slug(name) {
@@ -359,6 +383,11 @@ function readStringLiteral(s) {
     if (end === -1) return null;
     return { value: s.slice(1, end), rest: s.slice(end + 1) };
   }
+  if (s[0] === "'") {
+    const end = s.indexOf("'", 1);
+    if (end === -1) return null;
+    return { value: s.slice(1, end), rest: s.slice(end + 1) };
+  }
   return null;
 }
 
@@ -438,7 +467,7 @@ function splitTemplate(tpl) {
 
 module.exports = {
   parseDesignContext,
-  parseSetRoot,
+  findConditionalElements,
   buildTokenNameSet,
   normalizeBinding,
   slug,

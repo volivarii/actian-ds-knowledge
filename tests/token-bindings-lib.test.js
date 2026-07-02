@@ -17,6 +17,7 @@ test("parseDesignContext extracts own-node property->varName, skipping instance 
   ]);
   assert.equal(parsed.nodes["I14783:7552;14007:23213"], undefined);
   assert.equal(parsed.root, null); // non-set capture
+  assert.deepEqual(parsed.conditionals, []);
   assert.deepEqual(parsed.variantDefaults, {});
 });
 
@@ -197,7 +198,7 @@ export default function TagX({ className, status = "Fail" }: TagXProps) {
   const isWarning = status === "Warning";
   return (
     <div className={className || \`\${String.raw\`gap-[var(--spacing\\/spacing-2xs,4px)] h-[var(--lg,24px)] \`}\${["Stopped", "Sleeping"].includes(status) ? "bg-[var(--color-bg-sunken,#e1e1e6)]" : isSuccess ? String.raw\`bg-[var(--success\\/25,#f0ffec)]\` : isWarning ? "bg-[var(--color-bg-warning,#fff9e5)]" : String.raw\`bg-[var(--error\\/25,#fff4ec)]\`}\`} id={isSuccess ? "node-7370_4927" : isWarning ? "node-7370_4929" : "node-7370_4928"}>
-      <p className="text-[color:var(--color-text-tertiary,#50505d)]" data-node-id="7314:4575">x</p>
+      <p className={\`text-[length:var(--font-size-sm,12px)] \${isSuccess ? "text-[color:var(--color-text-default,black)]" : 'text-[color:var(--color-text-tertiary,#50505d)]'}\`} id={isSuccess ? "node-7314_4999" : "node-7314_4575"}>x</p>
     </div>
   );
 }`;
@@ -234,10 +235,28 @@ test("parseDesignContext v2 parses a set root: ids, base + scoped bindings, defa
   assert.deepEqual(byToken["error/25"], { prop: "status", values: ["Fail"] });
   // defaults only for referenced props
   assert.deepEqual(parsed.variantDefaults, { status: "Fail" });
-  // child element still parses as a plain node
-  assert.deepEqual(parsed.nodes["7314:4575"], [
-    { property: "color", varName: "color-text-tertiary" },
-  ]);
+  // conditional (non-root) label element
+  assert.equal(parsed.nodes["7314:4575"], undefined); // no data-node-id anymore
+  assert.equal(parsed.conditionals.length, 1);
+  const label = parsed.conditionals[0];
+  assert.deepEqual(label.ids.sort(), ["7314:4575", "7314:4999"]);
+  const labelByVar = Object.fromEntries(
+    label.bindings.map((b) => [b.varName, b.variant || null]),
+  );
+  assert.deepEqual(labelByVar["font-size-sm"], null); // template base = unscoped
+  assert.deepEqual(labelByVar["color-text-default"], {
+    prop: "status",
+    values: ["Success"],
+  });
+  // else branch: declared minus covered = every non-Success value
+  assert.deepEqual(
+    labelByVar["color-text-tertiary"].values.includes("Fail"),
+    true,
+  );
+  assert.equal(
+    labelByVar["color-text-tertiary"].values.includes("Success"),
+    false,
+  );
 });
 
 const SET_SNIPPET = `
