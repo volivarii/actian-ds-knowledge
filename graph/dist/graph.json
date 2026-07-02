@@ -4401,18 +4401,6 @@
       }
     },
     {
-      "source": "component:input",
-      "target": "a11y:forms",
-      "type": "a11y_ref",
-      "scope": "component",
-      "confidence": "asserted",
-      "provenance": {
-        "source_file": "components/src/input/",
-        "deriver": "derive-graph.js",
-        "method": "meta.a11y_refs"
-      }
-    },
-    {
       "source": "component:modal",
       "target": "a11y:modals",
       "type": "a11y_ref",
@@ -4564,6 +4552,18 @@
       "confidence": "asserted",
       "provenance": {
         "source_file": "components/src/tag/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "source": "component:text-input",
+      "target": "a11y:forms",
+      "type": "a11y_ref",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/text-input/",
         "deriver": "derive-graph.js",
         "method": "meta.a11y_refs"
       }
@@ -6896,11 +6896,6 @@
     },
     {
       "source": "content:forms",
-      "target": "component:input",
-      "type": "related"
-    },
-    {
-      "source": "content:forms",
       "target": "component:input-date",
       "type": "related"
     },
@@ -6912,6 +6907,11 @@
     {
       "source": "content:forms",
       "target": "component:search-filters",
+      "type": "related"
+    },
+    {
+      "source": "content:forms",
+      "target": "component:text-input",
       "type": "related"
     },
     {
@@ -6971,17 +6971,17 @@
     },
     {
       "source": "content:validation-messages",
-      "target": "component:input",
-      "type": "related"
-    },
-    {
-      "source": "content:validation-messages",
       "target": "component:input-date",
       "type": "related"
     },
     {
       "source": "content:validation-messages",
       "target": "component:radio-button",
+      "type": "related"
+    },
+    {
+      "source": "content:validation-messages",
+      "target": "component:text-input",
       "type": "related"
     },
     {
