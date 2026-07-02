@@ -1930,7 +1930,7 @@
     {
       "id": "component:input",
       "type": "component",
-      "title": "Input"
+      "title": "input"
     },
     {
       "id": "component:input-date",
@@ -5073,12 +5073,7 @@
     {
       "source": "component:checkbox-with-label",
       "target": "category:form-input-selection",
-      "type": "in_category",
-      "provenance": {
-        "source_file": "components/src/category-overrides.json",
-        "deriver": "derive-graph.js",
-        "method": "collectComponentsAndCategories.override"
-      }
+      "type": "in_category"
     },
     {
       "source": "component:checkmark-outline",
@@ -5328,12 +5323,7 @@
     {
       "source": "component:dropdown-select-default",
       "target": "category:form-input-selection",
-      "type": "in_category",
-      "provenance": {
-        "source_file": "components/src/category-overrides.json",
-        "deriver": "derive-graph.js",
-        "method": "collectComponentsAndCategories.override"
-      }
+      "type": "in_category"
     },
     {
       "source": "component:edit",
@@ -5552,13 +5542,8 @@
     },
     {
       "source": "component:input",
-      "target": "category:form-input-selection",
-      "type": "in_category",
-      "provenance": {
-        "source_file": "components/src/category-overrides.json",
-        "deriver": "derive-graph.js",
-        "method": "collectComponentsAndCategories.override"
-      }
+      "target": "category:icons",
+      "type": "in_category"
     },
     {
       "source": "component:input-date",
@@ -5903,12 +5888,7 @@
     {
       "source": "component:radio-button",
       "target": "category:form-input-selection",
-      "type": "in_category",
-      "provenance": {
-        "source_file": "components/src/category-overrides.json",
-        "deriver": "derive-graph.js",
-        "method": "collectComponentsAndCategories.override"
-      }
+      "type": "in_category"
     },
     {
       "source": "component:relation",
@@ -6008,22 +5988,12 @@
     {
       "source": "component:search",
       "target": "category:form-input-selection",
-      "type": "in_category",
-      "provenance": {
-        "source_file": "components/src/category-overrides.json",
-        "deriver": "derive-graph.js",
-        "method": "collectComponentsAndCategories.override"
-      }
+      "type": "in_category"
     },
     {
       "source": "component:search-dropdown-menu",
       "target": "category:form-input-selection",
-      "type": "in_category",
-      "provenance": {
-        "source_file": "components/src/category-overrides.json",
-        "deriver": "derive-graph.js",
-        "method": "collectComponentsAndCategories.override"
-      }
+      "type": "in_category"
     },
     {
       "source": "component:search-filters",
@@ -6263,12 +6233,7 @@
     {
       "source": "component:toggle",
       "target": "category:form-input-selection",
-      "type": "in_category",
-      "provenance": {
-        "source_file": "components/src/category-overrides.json",
-        "deriver": "derive-graph.js",
-        "method": "collectComponentsAndCategories.override"
-      }
+      "type": "in_category"
     },
     {
       "source": "component:toolbar",
