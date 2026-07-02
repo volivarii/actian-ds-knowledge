@@ -45,11 +45,20 @@ function collectComponentsAndCategories(g, registries, categoryOverrides) {
           title: cat,
           provenance: "figma-dskit",
         });
-        g.addEdge({
+        var edge = {
           source: M.nodeId("component", slug),
           target: M.nodeId("category", catSlug),
           type: "in_category",
-        });
+        };
+        // If category came from an override (not the registry), add provenance
+        if (!c.category && overrides[slug]) {
+          edge.provenance = {
+            source_file: "components/src/category-overrides.json",
+            deriver: "derive-graph.js",
+            method: "collectComponentsAndCategories.override",
+          };
+        }
+        g.addEdge(edge);
       }
     });
   });

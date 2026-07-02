@@ -65,25 +65,41 @@ test("collectComponentsAndCategories: category overrides apply only when the reg
   var g = new (require("../scripts/lib/graph/model.js").GraphBuilder)();
   D.collectComponentsAndCategories(g, [registries], overrides);
   var out = g.build();
-  assert.ok(
-    out.edges.some(function (e) {
-      return (
-        e.type === "in_category" &&
-        e.source === "component:radio-button" &&
-        e.target === "category:form-input-selection"
-      );
-    }),
-    "override applied for category-less component",
+  var overrideEdge = out.edges.find(function (e) {
+    return (
+      e.type === "in_category" &&
+      e.source === "component:radio-button" &&
+      e.target === "category:form-input-selection"
+    );
+  });
+  assert.ok(overrideEdge, "override applied for category-less component");
+  assert.equal(
+    overrideEdge.provenance.source_file,
+    "components/src/category-overrides.json",
+    "override-derived edge carries correct source_file",
   );
-  assert.ok(
-    out.edges.some(function (e) {
-      return (
-        e.type === "in_category" &&
-        e.source === "component:button" &&
-        e.target === "category:action"
-      );
-    }),
-    "registry category kept",
+  assert.equal(
+    overrideEdge.provenance.deriver,
+    "derive-graph.js",
+    "override-derived edge carries correct deriver",
+  );
+  assert.equal(
+    overrideEdge.provenance.method,
+    "collectComponentsAndCategories.override",
+    "override-derived edge carries correct method",
+  );
+  var registryEdge = out.edges.find(function (e) {
+    return (
+      e.type === "in_category" &&
+      e.source === "component:button" &&
+      e.target === "category:action"
+    );
+  });
+  assert.ok(registryEdge, "registry category kept");
+  assert.equal(
+    registryEdge.provenance,
+    undefined,
+    "registry-derived in_category edges carry NO provenance field",
   );
   assert.ok(
     !out.edges.some(function (e) {
