@@ -594,6 +594,27 @@
       "generator": "scripts/styles-to-md.js",
       "description": "DS Kit text styles (human-readable catalog)"
     },
+    "components.tokenBindings.card-for-grouped-content": {
+      "path": "components/dist/token-bindings/card-for-grouped-content.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/harvest-token-bindings.js",
+      "description": "Per-part render-grade token bindings for card-for-grouped-content, harvested from Figma via get_design_context (agent-run) and keyed by Figma node-id for joining to the anatomy tree. --zen- token refs graded semantic|primitive."
+    },
+    "components.tokenBindings.card-for-perimeter": {
+      "path": "components/dist/token-bindings/card-for-perimeter.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/harvest-token-bindings.js",
+      "description": "Per-part render-grade token bindings for card-for-perimeter, harvested from Figma via get_design_context (agent-run) and keyed by Figma node-id for joining to the anatomy tree. --zen- token refs graded semantic|primitive."
+    },
+    "components.tokenBindings.coverage": {
+      "path": "components/dist/token-bindings/coverage.md",
+      "type": "markdown",
+      "origin": "ci",
+      "generator": "scripts/components/harvest-token-bindings.js",
+      "description": "Per-component semantic/primitive/total token-binding coverage tally for the harvested sidecars."
+    },
     "content.globalMd": {
       "path": "content/dist/global.md",
       "type": "markdown",
