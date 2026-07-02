@@ -27,7 +27,7 @@ function graded(data) {
 }
 
 // Expected render-grade counts per pilot (default-state, root-level bindings).
-const EXPECTED = { card: 13, tag: 13, checkbox: 7, input: 11 };
+const EXPECTED = { card: 13, tag: 13, checkbox: 7, "text-input": 11 };
 
 for (const slug of Object.keys(EXPECTED)) {
   test(`pilot ${slug}: validates and has expected render-grade count`, () => {

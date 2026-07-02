@@ -281,13 +281,6 @@
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'inline-toast' component (content, usage, design, behavior, tokens — each optional)."
     },
-    "components.guidelineDoc.input": {
-      "path": "components/dist/guidelines/input.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/components/derive-guidelines.js",
-      "description": "Merged multi-domain guideline object for the 'input' component (content, usage, design, behavior, tokens — each optional)."
-    },
     "components.guidelineDoc.input-date": {
       "path": "components/dist/guidelines/input-date.json",
       "type": "json",
@@ -490,6 +483,13 @@
       "origin": "ci",
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'tag' component (content, usage, design, behavior, tokens — each optional)."
+    },
+    "components.guidelineDoc.text-input": {
+      "path": "components/dist/guidelines/text-input.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-guidelines.js",
+      "description": "Merged multi-domain guideline object for the 'text-input' component (content, usage, design, behavior, tokens — each optional)."
     },
     "components.guidelineDoc.toggle": {
       "path": "components/dist/guidelines/toggle.json",
