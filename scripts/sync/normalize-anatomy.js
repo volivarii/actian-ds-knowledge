@@ -147,11 +147,13 @@ function normalizeNode(node, ctx) {
     var props = instanceProps(node);
     if (props) out.props = props;
     if (refs.length) out.tokenRefs = refs;
+    if (typeof node.id === "string" && node.id) out.id = node.id;
     return out; // R1: no recursion
   }
 
   var n = { name: node.name || "", kind: kind };
   if (refs.length) n.tokenRefs = refs;
+  if (typeof node.id === "string" && node.id) n.id = node.id;
 
   if (kind === "text") {
     n.text = typeof node.characters === "string" ? node.characters : "";
