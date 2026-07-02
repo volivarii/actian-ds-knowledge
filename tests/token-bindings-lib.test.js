@@ -20,6 +20,17 @@ test("parseDesignContext extracts own-node property->varName, skipping instance 
   assert.equal(parsed["I14783:7552;14007:23213"], undefined);
 });
 
+test("parseDesignContext captures directional padding (pb-/pl-/pr-) alongside pt-", () => {
+  const text =
+    '<div className="pb-[var(--spacing\\/spacing-sm,12px)] pl-[var(--spacing\\/spacing-sm,12px)] pr-[var(--spacing\\/spacing-sm,12px)]" data-node-id="1:1"></div>';
+  const parsed = lib.parseDesignContext(text);
+  assert.deepEqual(parsed["1:1"], {
+    "padding-bottom": "spacing/spacing-sm",
+    "padding-left": "spacing/spacing-sm",
+    "padding-right": "spacing/spacing-sm",
+  });
+});
+
 test("buildTokenNameSet + normalizeBinding grade against tokens.json", () => {
   const tokens = require("../tokens/tokens.json");
   const set = lib.buildTokenNameSet(tokens);
@@ -38,6 +49,17 @@ test("buildTokenNameSet + normalizeBinding grade against tokens.json", () => {
   // primitive leak
   assert.deepEqual(lib.normalizeBinding("blue/50", set), {
     token: "--zen-blue-50",
+    grade: "primitive",
+  });
+  // cross-domain guard: "text/size-sm" must NOT match the different-domain
+  // "size-sm" token via a blind drop-first-segment fallback. The
+  // drop-first-segment candidate is only accepted when it is a
+  // repeated-prefix form (afterFirst === firstSeg or starts with
+  // firstSeg + "-"). Here afterFirst="size-sm" does not start with "text-",
+  // so the candidate is rejected and the full slug "text-size-sm" (not in
+  // set) falls through to primitive.
+  assert.deepEqual(lib.normalizeBinding("text/size-sm", set), {
+    token: "--zen-text-size-sm",
     grade: "primitive",
   });
 });
@@ -79,5 +101,10 @@ test("bindingGradeStats + renderCoverage tally per slug", () => {
     primitive: 1,
     total: 2,
   });
-  assert.match(lib.renderCoverage(stats), /card-for-perimeter/);
+  const md = lib.renderCoverage(stats);
+  assert.match(md, /card-for-perimeter/);
+  assert.match(
+    md,
+    /^# Token-binding coverage\n\n> AUTO-GENERATED — DO NOT EDIT\. Source: scripts\/components\/harvest-token-bindings\.js\n/,
+  );
 });

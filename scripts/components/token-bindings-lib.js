@@ -8,6 +8,9 @@ const CLASS_PROP = [
   [/\bpx-\[var\(--([^,\)\]]+)/g, () => "padding-inline"],
   [/\bpy-\[var\(--([^,\)\]]+)/g, () => "padding-block"],
   [/\bpt-\[var\(--([^,\)\]]+)/g, () => "padding-top"],
+  [/\bpb-\[var\(--([^,\)\]]+)/g, () => "padding-bottom"],
+  [/\bpl-\[var\(--([^,\)\]]+)/g, () => "padding-left"],
+  [/\bpr-\[var\(--([^,\)\]]+)/g, () => "padding-right"],
   [/\bgap-\[var\(--([^,\)\]]+)/g, () => "gap"],
   [/\brounded-\[var\(--([^,\)\]]+)/g, () => "border-radius"],
   [/\btext-\[length:var\(--([^,\)\]]+)/g, () => "font-size"],
@@ -73,8 +76,17 @@ function buildTokenNameSet(tokensJson) {
 function normalizeBinding(varName, tokenNameSet) {
   const full = slug(varName);
   const candidates = [full];
-  if (varName.indexOf("/") !== -1)
-    candidates.push(slug(varName.slice(varName.indexOf("/") + 1)));
+  const slashIdx = varName.indexOf("/");
+  if (slashIdx !== -1) {
+    const firstSeg = slug(varName.slice(0, slashIdx));
+    const afterFirst = slug(varName.slice(slashIdx + 1));
+    // Only accept the drop-first-segment candidate when it is a
+    // repeated-prefix form (e.g. "spacing/spacing-sm"), never a blind
+    // strip that could collide with a token in a different domain
+    // (e.g. "text/size-sm" must not match the unrelated "size-sm" token).
+    if (afterFirst === firstSeg || afterFirst.startsWith(firstSeg + "-"))
+      candidates.push(afterFirst);
+  }
   for (const c of candidates)
     if (tokenNameSet.has(c)) return { token: "--zen-" + c, grade: "semantic" };
   return { token: "--zen-" + full, grade: "primitive" };
@@ -146,6 +158,8 @@ function renderCoverage(stats) {
   const slugs = Object.keys(stats).sort();
 
   let md = "# Token-binding coverage\n\n";
+  md +=
+    "> AUTO-GENERATED — DO NOT EDIT. Source: scripts/components/harvest-token-bindings.js\n\n";
   md += "| Component | Semantic | Primitive | Total |\n";
   md += "|-----------|----------|-----------|-------|\n";
 
