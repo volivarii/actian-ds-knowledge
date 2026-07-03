@@ -231,3 +231,197 @@ test("buildAnatomyFile assembles envelope + quality ratio", function () {
   assert.equal(file.quality.degraded.length, 1);
   assert.equal(file.root.children.length, 2);
 });
+
+test("figmaColorToCss emits hex for opaque, rgba for alpha", function () {
+  assert.equal(N.figmaColorToCss({ r: 1, g: 1, b: 1, a: 1 }), "#ffffff");
+  assert.equal(N.figmaColorToCss({ r: 0, g: 0, b: 0, a: 1 }), "#000000");
+  assert.equal(
+    N.figmaColorToCss({ r: 0.949, g: 0.965, b: 0.973, a: 1 }),
+    "#f2f6f8",
+  );
+  assert.equal(
+    N.figmaColorToCss({ r: 0, g: 0, b: 0, a: 0.5 }),
+    "rgba(0, 0, 0, 0.5)",
+  );
+  assert.equal(
+    N.figmaColorToCss({ r: 0, g: 0, b: 0, a: 1 }, 0.5),
+    "rgba(0, 0, 0, 0.5)",
+  );
+});
+
+test("topVisibleSolid returns the top-most solid, skips hidden and non-solid", function () {
+  assert.equal(N.topVisibleSolid(null), null);
+  assert.equal(N.topVisibleSolid([]), null);
+  assert.equal(N.topVisibleSolid([{ type: "GRADIENT_LINEAR" }]), null);
+  // a hidden top layer is skipped, falling through to the visible one below it
+  var solid = { type: "SOLID", color: { r: 0, g: 0, b: 0, a: 1 } };
+  assert.deepEqual(
+    N.topVisibleSolid([
+      solid,
+      { type: "SOLID", visible: false, color: { r: 1, g: 1, b: 1, a: 1 } },
+    ]),
+    solid,
+  );
+  // two visible solids: the LAST (top-most, actually rendered) wins, not the first
+  var top = { type: "SOLID", color: { r: 1, g: 1, b: 1, a: 1 } };
+  assert.deepEqual(
+    N.topVisibleSolid([
+      { type: "SOLID", color: { r: 0, g: 0, b: 0, a: 1 } },
+      top,
+    ]),
+    top,
+  );
+});
+
+test("cornerRadiusCss handles uniform, per-corner scalars, rectangle array, rounding, and none", function () {
+  assert.equal(N.cornerRadiusCss({ cornerRadius: 4 }), "4px");
+  // Figma float drift is rounded (like the text metrics are)
+  assert.equal(N.cornerRadiusCss({ cornerRadius: 3.9999999999999996 }), "4px");
+  assert.equal(
+    N.cornerRadiusCss({ rectangleCornerRadii: [4, 4, 4, 4] }),
+    "4px",
+  );
+  assert.equal(
+    N.cornerRadiusCss({ rectangleCornerRadii: [4, 4, 0, 0] }),
+    "4px 4px 0px 0px",
+  );
+  // per-corner scalar fields (FRAME/COMPONENT), CSS order TL TR BR BL
+  assert.equal(
+    N.cornerRadiusCss({
+      topLeftRadius: 8,
+      topRightRadius: 8,
+      bottomRightRadius: 0,
+      bottomLeftRadius: 0,
+    }),
+    "8px 8px 0px 0px",
+  );
+  // per-corner scalars all equal collapse to a single value
+  assert.equal(
+    N.cornerRadiusCss({
+      topLeftRadius: 6,
+      topRightRadius: 6,
+      bottomRightRadius: 6,
+      bottomLeftRadius: 6,
+    }),
+    "6px",
+  );
+  assert.equal(N.cornerRadiusCss({}), null);
+});
+
+test("resolveAppearance maps fill/stroke/radius on a container", function () {
+  var node = {
+    type: "COMPONENT",
+    fills: [{ type: "SOLID", color: { r: 0.949, g: 0.965, b: 0.973, a: 1 } }],
+    strokes: [{ type: "SOLID", color: { r: 0.376, g: 0.49, b: 0.549, a: 1 } }],
+    strokeWeight: 1,
+    cornerRadius: 4,
+  };
+  assert.deepEqual(N.resolveAppearance(node), {
+    background: "#f2f6f8",
+    border: { color: "#607d8c", width: "1px" },
+    radius: "4px",
+  });
+});
+
+test("resolveAppearance maps color + type on a text node", function () {
+  var node = {
+    type: "TEXT",
+    fills: [{ type: "SOLID", color: { r: 0.314, g: 0.314, b: 0.365, a: 1 } }],
+    style: {
+      fontSize: 14,
+      fontWeight: 400,
+      lineHeightPx: 20,
+      letterSpacing: 0.14,
+    },
+  };
+  assert.deepEqual(N.resolveAppearance(node), {
+    text: {
+      color: "#50505d",
+      size: "14px",
+      weight: 400,
+      lineHeight: "20px",
+      letterSpacing: "0.14px",
+    },
+  });
+});
+
+test("resolveAppearance returns null when nothing to capture", function () {
+  assert.equal(N.resolveAppearance({ type: "FRAME" }), null);
+  assert.equal(N.resolveAppearance({ type: "TEXT" }), null);
+});
+
+test("resolveAppearance folds node-level opacity into paint alpha", function () {
+  var node = {
+    type: "COMPONENT",
+    opacity: 0.5,
+    fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0, a: 1 } }],
+  };
+  assert.deepEqual(N.resolveAppearance(node), {
+    background: "rgba(255, 0, 0, 0.5)",
+  });
+});
+
+test("resolveAppearance rounds strokeWeight float drift", function () {
+  var node = {
+    type: "COMPONENT",
+    strokes: [{ type: "SOLID", color: { r: 0, g: 0, b: 0, a: 1 } }],
+    strokeWeight: 1.0000000000000002,
+  };
+  assert.deepEqual(N.resolveAppearance(node), {
+    border: { color: "#000000", width: "1px" },
+  });
+});
+
+function bareCtx() {
+  return {
+    nodeIdToSlug: {},
+    componentIdToKey: {},
+    keyToSlug: {},
+    varNameById: {},
+    total: 0,
+    normalized: 0,
+    degraded: [],
+  };
+}
+
+test("normalizeNode attaches appearance on a container with a fill", function () {
+  var out = N.normalizeNode(
+    {
+      type: "COMPONENT",
+      name: "Tag",
+      fills: [{ type: "SOLID", color: { r: 0.949, g: 0.965, b: 0.973, a: 1 } }],
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 4,
+      paddingTop: 0,
+      paddingRight: 8,
+      paddingBottom: 0,
+      paddingLeft: 8,
+      children: [],
+    },
+    bareCtx(),
+  );
+  assert.equal(out.appearance.background, "#f2f6f8");
+});
+
+test("normalizeNode attaches text appearance on a text node", function () {
+  var out = N.normalizeNode(
+    {
+      type: "TEXT",
+      name: "Label",
+      characters: "Purple",
+      fills: [{ type: "SOLID", color: { r: 0.314, g: 0.314, b: 0.365, a: 1 } }],
+      style: { fontSize: 14 },
+    },
+    bareCtx(),
+  );
+  assert.equal(out.appearance.text.color, "#50505d");
+  assert.equal(out.appearance.text.size, "14px");
+});
+
+test("normalizeNode omits appearance when node has no paints", function () {
+  var out = N.normalizeNode(
+    { type: "FRAME", name: "Wrap", layoutMode: "VERTICAL", children: [] },
+    bareCtx(),
+  );
+  assert.equal("appearance" in out, false);
+});

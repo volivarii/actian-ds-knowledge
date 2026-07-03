@@ -35,6 +35,123 @@ var CROSS_ALIGN = {
 };
 var SIZING = { FIXED: "fixed", HUG: "hug", FILL: "fill" };
 
+function clamp01(n) {
+  return n < 0 ? 0 : n > 1 ? 1 : n;
+}
+function hex2(n) {
+  var s = Math.round(n).toString(16);
+  return s.length === 1 ? "0" + s : s;
+}
+function round3(n) {
+  return Math.round(n * 1000) / 1000;
+}
+
+function figmaColorToCss(color, opacity) {
+  if (!color) return null;
+  var a =
+    (typeof color.a === "number" ? color.a : 1) *
+    (typeof opacity === "number" ? opacity : 1);
+  var r = clamp01(color.r) * 255;
+  var g = clamp01(color.g) * 255;
+  var b = clamp01(color.b) * 255;
+  if (a >= 0.999) return "#" + hex2(r) + hex2(g) + hex2(b);
+  return (
+    "rgba(" +
+    Math.round(r) +
+    ", " +
+    Math.round(g) +
+    ", " +
+    Math.round(b) +
+    ", " +
+    round3(a) +
+    ")"
+  );
+}
+
+// Figma paint arrays are ordered back-to-front (index 0 = bottom-most,
+// last = top-most / actually rendered). Return the top-most visible SOLID.
+function topVisibleSolid(paints) {
+  if (!Array.isArray(paints)) return null;
+  for (var i = paints.length - 1; i >= 0; i--) {
+    var p = paints[i];
+    if (p && p.type === "SOLID" && p.visible !== false && p.color) return p;
+  }
+  return null;
+}
+
+function cornerCss(values) {
+  var allEqual = values.every(function (v) {
+    return v === values[0];
+  });
+  if (allEqual) return round3(values[0]) + "px";
+  return values
+    .map(function (v) {
+      return round3(v) + "px";
+    })
+    .join(" ");
+}
+
+function cornerRadiusCss(node) {
+  if (typeof node.cornerRadius === "number")
+    return round3(node.cornerRadius) + "px";
+  // Per-corner scalar fields (FRAME/COMPONENT/INSTANCE nodes). CSS order: TL TR BR BL.
+  var perCorner = [
+    node.topLeftRadius,
+    node.topRightRadius,
+    node.bottomRightRadius,
+    node.bottomLeftRadius,
+  ];
+  if (
+    perCorner.some(function (v) {
+      return typeof v === "number";
+    })
+  ) {
+    return cornerCss(
+      perCorner.map(function (v) {
+        return typeof v === "number" ? v : 0;
+      }),
+    );
+  }
+  // rectangleCornerRadii (RECTANGLE nodes): same [TL, TR, BR, BL] order.
+  var rr = node.rectangleCornerRadii;
+  if (Array.isArray(rr) && rr.length === 4) return cornerCss(rr);
+  return null;
+}
+
+function resolveAppearance(node) {
+  // Node-level opacity dims the node's own paints; fold it into each paint's alpha.
+  var nodeOpacity = typeof node.opacity === "number" ? node.opacity : 1;
+  function paintAlpha(p) {
+    return (typeof p.opacity === "number" ? p.opacity : 1) * nodeOpacity;
+  }
+  if (node.type === "TEXT") {
+    var t = {};
+    var tf = topVisibleSolid(node.fills);
+    if (tf) t.color = figmaColorToCss(tf.color, paintAlpha(tf));
+    var st = node.style || {};
+    if (typeof st.fontSize === "number") t.size = round3(st.fontSize) + "px";
+    if (typeof st.fontWeight === "number") t.weight = st.fontWeight;
+    if (typeof st.lineHeightPx === "number")
+      t.lineHeight = round3(st.lineHeightPx) + "px";
+    if (typeof st.letterSpacing === "number" && st.letterSpacing !== 0)
+      t.letterSpacing = round3(st.letterSpacing) + "px";
+    return Object.keys(t).length ? { text: t } : null;
+  }
+  var a = {};
+  var fill = topVisibleSolid(node.fills);
+  if (fill) a.background = figmaColorToCss(fill.color, paintAlpha(fill));
+  var stroke = topVisibleSolid(node.strokes);
+  if (stroke) {
+    var border = { color: figmaColorToCss(stroke.color, paintAlpha(stroke)) };
+    if (typeof node.strokeWeight === "number")
+      border.width = round3(node.strokeWeight) + "px";
+    a.border = border;
+  }
+  var radius = cornerRadiusCss(node);
+  if (radius) a.radius = radius;
+  return Object.keys(a).length ? a : null;
+}
+
 function tokenForBound(boundVariables, field, varNameById) {
   var b = boundVariables && boundVariables[field];
   if (b && b.id && varNameById && varNameById[b.id]) return varNameById[b.id];
@@ -126,6 +243,7 @@ function normalizeNode(node, ctx) {
   ctx.total++;
   var kind = classifyKind(node);
   var refs = collectTokenRefs(node, ctx.varNameById);
+  var appearance = resolveAppearance(node);
 
   if (kind === "instance") {
     var out = { name: node.name || "", kind: "instance" };
@@ -148,12 +266,14 @@ function normalizeNode(node, ctx) {
     if (props) out.props = props;
     if (refs.length) out.tokenRefs = refs;
     if (typeof node.id === "string" && node.id) out.id = node.id;
+    if (appearance) out.appearance = appearance;
     return out; // R1: no recursion
   }
 
   var n = { name: node.name || "", kind: kind };
   if (refs.length) n.tokenRefs = refs;
   if (typeof node.id === "string" && node.id) n.id = node.id;
+  if (appearance) n.appearance = appearance;
 
   if (kind === "text") {
     n.text = typeof node.characters === "string" ? node.characters : "";
@@ -231,4 +351,8 @@ module.exports = {
   instanceProps,
   normalizeNode,
   buildAnatomyFile,
+  figmaColorToCss,
+  topVisibleSolid,
+  cornerRadiusCss,
+  resolveAppearance,
 };
