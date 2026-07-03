@@ -94,6 +94,35 @@ function cornerRadiusCss(node) {
   return null;
 }
 
+function resolveAppearance(node) {
+  if (node.type === "TEXT") {
+    var t = {};
+    var tf = firstVisibleSolid(node.fills);
+    if (tf) t.color = figmaColorToCss(tf.color, tf.opacity);
+    var st = node.style || {};
+    if (typeof st.fontSize === "number") t.size = round3(st.fontSize) + "px";
+    if (typeof st.fontWeight === "number") t.weight = st.fontWeight;
+    if (typeof st.lineHeightPx === "number")
+      t.lineHeight = round3(st.lineHeightPx) + "px";
+    if (typeof st.letterSpacing === "number" && st.letterSpacing !== 0)
+      t.letterSpacing = round3(st.letterSpacing) + "px";
+    return Object.keys(t).length ? { text: t } : null;
+  }
+  var a = {};
+  var fill = firstVisibleSolid(node.fills);
+  if (fill) a.background = figmaColorToCss(fill.color, fill.opacity);
+  var stroke = firstVisibleSolid(node.strokes);
+  if (stroke) {
+    var border = { color: figmaColorToCss(stroke.color, stroke.opacity) };
+    if (typeof node.strokeWeight === "number")
+      border.width = node.strokeWeight + "px";
+    a.border = border;
+  }
+  var radius = cornerRadiusCss(node);
+  if (radius) a.radius = radius;
+  return Object.keys(a).length ? a : null;
+}
+
 function tokenForBound(boundVariables, field, varNameById) {
   var b = boundVariables && boundVariables[field];
   if (b && b.id && varNameById && varNameById[b.id]) return varNameById[b.id];
@@ -293,4 +322,5 @@ module.exports = {
   figmaColorToCss,
   firstVisibleSolid,
   cornerRadiusCss,
+  resolveAppearance,
 };
