@@ -48,12 +48,13 @@ function round3(n) {
 
 function figmaColorToCss(color, opacity) {
   if (!color) return null;
-  var a =
+  var a = clamp01(
     (typeof color.a === "number" ? color.a : 1) *
-    (typeof opacity === "number" ? opacity : 1);
-  var r = clamp01(color.r) * 255;
-  var g = clamp01(color.g) * 255;
-  var b = clamp01(color.b) * 255;
+      (typeof opacity === "number" ? opacity : 1),
+  );
+  var r = clamp01(typeof color.r === "number" ? color.r : 0) * 255;
+  var g = clamp01(typeof color.g === "number" ? color.g : 0) * 255;
+  var b = clamp01(typeof color.b === "number" ? color.b : 0) * 255;
   if (a >= 0.999) return "#" + hex2(r) + hex2(g) + hex2(b);
   return (
     "rgba(" +
@@ -118,6 +119,29 @@ function cornerRadiusCss(node) {
   return null;
 }
 
+// Uniform per-side stroke weight (strokeTopWeight etc.) when the scalar
+// strokeWeight is absent. Returns the shared value only when all four sides
+// agree; mixed per-side widths are a follow-on (returns null -> width omitted).
+function uniformSideWeight(node) {
+  var sides = [
+    node.strokeTopWeight,
+    node.strokeRightWeight,
+    node.strokeBottomWeight,
+    node.strokeLeftWeight,
+  ];
+  if (
+    sides.some(function (s) {
+      return typeof s !== "number";
+    })
+  )
+    return null;
+  return sides.every(function (s) {
+    return s === sides[0];
+  })
+    ? sides[0]
+    : null;
+}
+
 function resolveAppearance(node) {
   // Node-level opacity dims the node's own paints; fold it into each paint's alpha.
   var nodeOpacity = typeof node.opacity === "number" ? node.opacity : 1;
@@ -143,8 +167,11 @@ function resolveAppearance(node) {
   var stroke = topVisibleSolid(node.strokes);
   if (stroke) {
     var border = { color: figmaColorToCss(stroke.color, paintAlpha(stroke)) };
-    if (typeof node.strokeWeight === "number")
-      border.width = round3(node.strokeWeight) + "px";
+    var w =
+      typeof node.strokeWeight === "number"
+        ? node.strokeWeight
+        : uniformSideWeight(node);
+    if (typeof w === "number") border.width = round3(w) + "px";
     a.border = border;
   }
   var radius = cornerRadiusCss(node);
@@ -162,7 +189,7 @@ function spacingValue(node, field, varNameById) {
   var tok = tokenForBound(node.boundVariables, field, varNameById);
   if (tok) return tok;
   var n = typeof node[field] === "number" ? node[field] : 0;
-  return n + "px";
+  return round3(n) + "px";
 }
 
 function normalizeLayout(node, varNameById) {
@@ -355,4 +382,5 @@ module.exports = {
   topVisibleSolid,
   cornerRadiusCss,
   resolveAppearance,
+  __spacingValue: spacingValue,
 };

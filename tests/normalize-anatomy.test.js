@@ -3,6 +3,9 @@
 var test = require("node:test");
 var assert = require("node:assert/strict");
 var N = require("../scripts/sync/normalize-anatomy");
+function resolveApp(n) {
+  return N.resolveAppearance(n);
+}
 
 test("classifyKind maps Figma types", function () {
   assert.equal(N.classifyKind({ type: "INSTANCE" }), "instance");
@@ -424,4 +427,33 @@ test("normalizeNode omits appearance when node has no paints", function () {
     bareCtx(),
   );
   assert.equal("appearance" in out, false);
+});
+
+test("figmaColorToCss guards missing rgb channels and clamps alpha", function () {
+  // malformed SOLID: only alpha present -> channels default to 0, not NaN
+  assert.equal(N.figmaColorToCss({ a: 1 }), "#000000");
+  // alpha > 1 clamps to 1 -> hex branch (>=0.999), not rgba(...,1.002)
+  assert.equal(N.figmaColorToCss({ r: 0, g: 0, b: 0, a: 1.5 }), "#000000");
+});
+
+test("resolveAppearance uses per-side stroke weight when scalar strokeWeight absent", function () {
+  var node = {
+    type: "FRAME",
+    strokes: [{ type: "SOLID", color: { r: 0, g: 0, b: 0, a: 1 } }],
+    strokeTopWeight: 2,
+    strokeBottomWeight: 2,
+    strokeLeftWeight: 2,
+    strokeRightWeight: 2,
+  };
+  assert.deepEqual(resolveApp(node).border, {
+    color: "#000000",
+    width: "2px",
+  });
+});
+
+test("spacingValue rounds the px path to 3 decimals", function () {
+  assert.equal(
+    N.__spacingValue({ paddingLeft: 15.999 }, "paddingLeft", {}),
+    "15.999px",
+  );
 });
