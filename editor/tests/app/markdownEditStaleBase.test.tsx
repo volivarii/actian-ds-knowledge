@@ -1,8 +1,14 @@
-// TDD test for stale-base guard on the MarkdownEditScreen direct-submit path.
+// TDD test for stale-base guard on the MarkdownEditScreen submit path.
 //
-// The "Submit as PR" button builds filesToSubmit without basedOnSha (bug).
-// With the fix, it threads load.remoteSha so detectStaleBase fires when the
-// remote has drifted since the editor loaded the file.
+// doSubmit builds filesToSubmit with basedOnSha threaded from `load`, so
+// detectStaleBase fires when the remote has drifted since the editor loaded
+// the file. doSubmit is exercised here via the workspace "Submit only this
+// file…" escape hatch — the direct "Submit as PR" button was removed (fix
+// for the duplicate-PR bug: every edit now funnels through the batch, and
+// the escape hatch is the sole surviving single-file submit path). The
+// workspace escape hatch only renders when a sibling file for the same
+// component is staged in the cart (inWorkspaceContext), so each test below
+// pre-stages a sibling before rendering.
 import "../setup-dom";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -24,7 +30,8 @@ function b64(s: string) {
 }
 
 const REMOTE_TEXT = "## Color {#color}\n\nSome prose.\n";
-const FILE_PATH = "foundations/src/color-primitives.md";
+const FILE_PATH = "components/src/button/guidelines.md";
+const SIBLING_PATH = "components/src/button/_meta.yml";
 const REMOTE_SHA = "MARKDOWN_SHA_1";
 const DRIFTED_SHA = "MARKDOWN_SHA_2_DRIFTED";
 
@@ -75,9 +82,20 @@ function makeStaleFakeGh() {
   } as any;
 }
 
-test("MarkdownEditScreen direct submit: basedOnSha is threaded so stale-base guard fires on a drifted remote", async () => {
+test("MarkdownEditScreen workspace escape hatch: basedOnSha is threaded so stale-base guard fires on a drifted remote", async () => {
   cleanup();
   localStorage.clear();
+  submissionCartSingleton.clear();
+
+  // Stage a sibling file for the same component so the workspace escape
+  // hatch ("Submit only this file…") renders (inWorkspaceContext requires
+  // siblingStaged > 0).
+  submissionCartSingleton.add({
+    path: SIBLING_PATH,
+    content: 'component: "button"\n',
+    basedOnSha: "META_SHA_1",
+    addedAt: Date.now(),
+  });
 
   const gh = makeStaleFakeGh();
 
@@ -87,17 +105,22 @@ test("MarkdownEditScreen direct submit: basedOnSha is threaded so stale-base gua
     </Theme>,
   );
 
-  // Wait until the file loads and the Submit button appears.
-  await waitFor(() => screen.getByRole("button", { name: /submit as pr/i }), {
-    timeout: 5000,
+  // Wait until the file loads and the workspace escape hatch appears.
+  const trigger = await waitFor(
+    () => screen.getByRole("button", { name: /^submit only this file/i }),
+    { timeout: 5000 },
+  );
+  await act(async () => {
+    fireEvent.click(trigger);
   });
 
-  // Click "Submit as PR" — with the fix this should detect the stale base
-  // (remote drifted from REMOTE_SHA to DRIFTED_SHA) and display an error.
-  // Without the fix, basedOnSha is absent, the check is skipped, and the
-  // submit succeeds silently (no error shown).
+  // Confirm the orphan-submit AlertDialog — this is what actually calls
+  // doSubmit(false).
+  const confirm = await waitFor(() =>
+    screen.getByRole("button", { name: /^yes, submit only this file/i }),
+  );
   await act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: /submit as pr/i }));
+    fireEvent.click(confirm);
   });
 
   // With the fix: the StaleBaseError message ("stale base for 1 file: ...")
@@ -115,6 +138,7 @@ test("MarkdownEditScreen direct submit: basedOnSha is threaded so stale-base gua
     { timeout: 5000 },
   );
 
+  submissionCartSingleton.clear();
   cleanup();
 });
 
@@ -126,24 +150,34 @@ test("MarkdownEditScreen direct submit: basedOnSha is threaded so stale-base gua
 // when load.source === "remote" — so cart-loaded files had no stale-base
 // protection. The fix changes the condition to load.source !== "stub".
 //
-// This test pre-populates the cart with a file that has a known SHA, then
-// confirms that a direct "Submit as PR" triggers the stale-base guard (the
-// remote returns a DIFFERENT sha during the detectStaleBase check).
-test("MarkdownEditScreen cart-source direct submit: basedOnSha threaded so stale-base guard fires", async () => {
+// This test pre-populates the cart with the active file (so it loads with
+// source="cart") PLUS a sibling file for the same component (so the
+// workspace escape hatch renders), then confirms that triggering doSubmit
+// via "Submit only this file…" hits the stale-base guard (the remote
+// returns a DIFFERENT sha during the detectStaleBase check).
+test("MarkdownEditScreen cart-source workspace escape hatch: basedOnSha threaded so stale-base guard fires", async () => {
   cleanup();
   localStorage.clear();
   submissionCartSingleton.clear();
 
-  const CART_PATH = "foundations/src/color-primitives.md";
+  const CART_PATH = "components/src/button/guidelines.md";
+  const SIBLING_PATH2 = "components/src/button/_meta.yml";
   const CART_SHA = "CART_SHA_1";
-  const DRIFTED_SHA = "CART_SHA_2_DRIFTED";
+  const DRIFTED_SHA2 = "CART_SHA_2_DRIFTED";
   const CART_TEXT = "## Color {#color}\n\nCart prose.\n";
 
-  // Pre-load the cart with an entry that has a known SHA.
+  // Pre-load the cart with the active file (known SHA) AND a sibling so
+  // the workspace escape hatch renders.
   submissionCartSingleton.add({
     path: CART_PATH,
     content: CART_TEXT,
     basedOnSha: CART_SHA,
+    addedAt: Date.now(),
+  });
+  submissionCartSingleton.add({
+    path: SIBLING_PATH2,
+    content: 'component: "button"\n',
+    basedOnSha: "META_SHA_1",
     addedAt: Date.now(),
   });
 
@@ -159,7 +193,7 @@ test("MarkdownEditScreen cart-source direct submit: basedOnSha threaded so stale
             data: {
               content: Buffer.from(CART_TEXT, "utf8").toString("base64"),
               encoding: "base64",
-              sha: DRIFTED_SHA,
+              sha: DRIFTED_SHA2,
             },
           };
         }
@@ -189,19 +223,27 @@ test("MarkdownEditScreen cart-source direct submit: basedOnSha threaded so stale
     </Theme>,
   );
 
-  // Wait until the cart-loaded file renders and the Submit button appears.
-  await waitFor(() => screen.getByRole("button", { name: /submit as pr/i }), {
-    timeout: 5000,
-  });
-
-  // Click "Submit as PR" — with the fix, basedOnSha = CART_SHA_1 is threaded,
-  // so detectStaleBase detects the drift (remote now returns CART_SHA_2_DRIFTED)
-  // and surfaces "stale base" in the error. Without the fix, basedOnSha is
-  // undefined for cart-source files, the check is skipped, and submit succeeds.
+  // Wait until the cart-loaded file renders and the workspace escape hatch
+  // appears.
+  const trigger = await waitFor(
+    () => screen.getByRole("button", { name: /^submit only this file/i }),
+    { timeout: 5000 },
+  );
   await act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: /submit as pr/i }));
+    fireEvent.click(trigger);
   });
 
+  const confirm = await waitFor(() =>
+    screen.getByRole("button", { name: /^yes, submit only this file/i }),
+  );
+  await act(async () => {
+    fireEvent.click(confirm);
+  });
+
+  // With the fix, basedOnSha = CART_SHA_1 is threaded, so detectStaleBase
+  // detects the drift (remote now returns CART_SHA_2_DRIFTED) and surfaces
+  // "stale base" in the error. Without the fix, basedOnSha is undefined for
+  // cart-source files, the check is skipped, and submit succeeds.
   await waitFor(
     () => {
       const body = document.body.textContent ?? "";

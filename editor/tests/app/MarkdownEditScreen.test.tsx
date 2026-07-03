@@ -12,6 +12,7 @@ import {
 import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { MarkdownEditScreen } from "../../src/app/MarkdownEditScreen";
+import { submissionCartSingleton } from "../../src/drafts/store-instance";
 
 function makeFakeOctokit(remoteText: string, remoteSha = "SHA_REMOTE_1") {
   const remoteB64 = Buffer.from(remoteText, "utf-8").toString("base64");
@@ -63,8 +64,14 @@ test("MarkdownEditScreen: loads remote and shows file path heading", async () =>
   cleanup();
 });
 
-test("MarkdownEditScreen: submit opens a PR (happy path)", async () => {
+// The direct "Submit as PR" path was removed (a real incident: using both
+// the direct button AND "Add to batch" produced duplicate PRs for one
+// edit). Every edit now funnels through the batch/staging cart — this test
+// asserts the non-workspace (empty-cart) render has no direct-submit button
+// at all, and that "Add to batch" only stages (never opens a PR itself).
+test("MarkdownEditScreen: non-workspace render has no direct 'Submit as PR' button; Add to batch only stages", async () => {
   localStorage.clear();
+  submissionCartSingleton.clear();
   const { gh, calls } = makeFakeOctokit("## Hello {#hello}\n");
   render(
     wrap(
@@ -74,10 +81,22 @@ test("MarkdownEditScreen: submit opens a PR (happy path)", async () => {
       />,
     ),
   );
-  await waitFor(() => screen.getByRole("button", { name: /submit/i }));
+  const addToBatch = await waitFor(() =>
+    screen.getByRole("button", { name: /add to batch/i }),
+  );
+  assert.equal(
+    screen.queryByRole("button", { name: /submit as pr/i }),
+    null,
+    "the direct 'Submit as PR' button must be removed",
+  );
   await act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    fireEvent.click(addToBatch);
   });
-  await waitFor(() => assert.equal(calls["pulls.create"]!.length, 1));
+  assert.equal(
+    calls["pulls.create"]!.length,
+    0,
+    "Add to batch must stage only — it must never open a PR directly",
+  );
+  submissionCartSingleton.clear();
   cleanup();
 });
