@@ -35,6 +35,65 @@ var CROSS_ALIGN = {
 };
 var SIZING = { FIXED: "fixed", HUG: "hug", FILL: "fill" };
 
+function clamp01(n) {
+  return n < 0 ? 0 : n > 1 ? 1 : n;
+}
+function hex2(n) {
+  var s = Math.round(n).toString(16);
+  return s.length === 1 ? "0" + s : s;
+}
+function round3(n) {
+  return Math.round(n * 1000) / 1000;
+}
+
+function figmaColorToCss(color, opacity) {
+  if (!color) return null;
+  var a =
+    (typeof color.a === "number" ? color.a : 1) *
+    (typeof opacity === "number" ? opacity : 1);
+  var r = clamp01(color.r) * 255;
+  var g = clamp01(color.g) * 255;
+  var b = clamp01(color.b) * 255;
+  if (a >= 0.999) return "#" + hex2(r) + hex2(g) + hex2(b);
+  return (
+    "rgba(" +
+    Math.round(r) +
+    ", " +
+    Math.round(g) +
+    ", " +
+    Math.round(b) +
+    ", " +
+    round3(a) +
+    ")"
+  );
+}
+
+function firstVisibleSolid(paints) {
+  if (!Array.isArray(paints)) return null;
+  for (var i = 0; i < paints.length; i++) {
+    var p = paints[i];
+    if (p && p.type === "SOLID" && p.visible !== false && p.color) return p;
+  }
+  return null;
+}
+
+function cornerRadiusCss(node) {
+  if (typeof node.cornerRadius === "number") return node.cornerRadius + "px";
+  var rr = node.rectangleCornerRadii;
+  if (Array.isArray(rr) && rr.length === 4) {
+    var allEqual = rr.every(function (v) {
+      return v === rr[0];
+    });
+    if (allEqual) return rr[0] + "px";
+    return rr
+      .map(function (v) {
+        return v + "px";
+      })
+      .join(" ");
+  }
+  return null;
+}
+
 function tokenForBound(boundVariables, field, varNameById) {
   var b = boundVariables && boundVariables[field];
   if (b && b.id && varNameById && varNameById[b.id]) return varNameById[b.id];
@@ -231,4 +290,7 @@ module.exports = {
   instanceProps,
   normalizeNode,
   buildAnatomyFile,
+  figmaColorToCss,
+  firstVisibleSolid,
+  cornerRadiusCss,
 };

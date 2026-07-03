@@ -231,3 +231,47 @@ test("buildAnatomyFile assembles envelope + quality ratio", function () {
   assert.equal(file.quality.degraded.length, 1);
   assert.equal(file.root.children.length, 2);
 });
+
+test("figmaColorToCss emits hex for opaque, rgba for alpha", function () {
+  assert.equal(N.figmaColorToCss({ r: 1, g: 1, b: 1, a: 1 }), "#ffffff");
+  assert.equal(N.figmaColorToCss({ r: 0, g: 0, b: 0, a: 1 }), "#000000");
+  assert.equal(
+    N.figmaColorToCss({ r: 0.949, g: 0.965, b: 0.973, a: 1 }),
+    "#f2f6f8",
+  );
+  assert.equal(
+    N.figmaColorToCss({ r: 0, g: 0, b: 0, a: 0.5 }),
+    "rgba(0, 0, 0, 0.5)",
+  );
+  assert.equal(
+    N.figmaColorToCss({ r: 0, g: 0, b: 0, a: 1 }, 0.5),
+    "rgba(0, 0, 0, 0.5)",
+  );
+});
+
+test("firstVisibleSolid returns first solid, skips hidden and non-solid", function () {
+  assert.equal(N.firstVisibleSolid(null), null);
+  assert.equal(N.firstVisibleSolid([]), null);
+  assert.equal(N.firstVisibleSolid([{ type: "GRADIENT_LINEAR" }]), null);
+  var solid = { type: "SOLID", color: { r: 0, g: 0, b: 0, a: 1 } };
+  assert.deepEqual(
+    N.firstVisibleSolid([
+      { type: "SOLID", visible: false, color: { r: 1, g: 1, b: 1, a: 1 } },
+      solid,
+    ]),
+    solid,
+  );
+});
+
+test("cornerRadiusCss handles uniform, per-corner, and none", function () {
+  assert.equal(N.cornerRadiusCss({ cornerRadius: 4 }), "4px");
+  assert.equal(
+    N.cornerRadiusCss({ rectangleCornerRadii: [4, 4, 4, 4] }),
+    "4px",
+  );
+  assert.equal(
+    N.cornerRadiusCss({ rectangleCornerRadii: [4, 4, 0, 0] }),
+    "4px 4px 0px 0px",
+  );
+  assert.equal(N.cornerRadiusCss({}), null);
+});
