@@ -134,6 +134,21 @@
         "appearance": {
           "type": "object",
           "description": "Resolved sRGB visual values captured from Figma for this node — the render substrate; consumers emit var(--token, <value>).",
+          "examples": [
+            {
+              "background": "#f2f6f8",
+              "border": { "color": "#607d8c", "width": "1px" },
+              "radius": "4px"
+            },
+            {
+              "text": {
+                "color": "#50505d",
+                "size": "14px",
+                "weight": 400,
+                "lineHeight": "20px"
+              }
+            }
+          ],
           "additionalProperties": false,
           "properties": {
             "background": {
@@ -143,10 +158,20 @@
             },
             "border": {
               "type": "object",
+              "description": "Resolved border color and width.",
+              "examples": [{ "color": "#607d8c", "width": "1px" }],
               "additionalProperties": false,
               "properties": {
-                "color": { "type": "string", "examples": ["#607d8c"] },
-                "width": { "type": "string", "examples": ["1px"] }
+                "color": {
+                  "type": "string",
+                  "description": "Stroke color as sRGB hex or rgba.",
+                  "examples": ["#607d8c"]
+                },
+                "width": {
+                  "type": "string",
+                  "description": "Stroke weight as px value.",
+                  "examples": ["1px"]
+                }
               }
             },
             "radius": {
@@ -156,13 +181,42 @@
             },
             "text": {
               "type": "object",
+              "description": "Resolved text properties (color, size, weight, line height, letter spacing).",
+              "examples": [
+                {
+                  "color": "#50505d",
+                  "size": "14px",
+                  "weight": 400,
+                  "lineHeight": "20px"
+                }
+              ],
               "additionalProperties": false,
               "properties": {
-                "color": { "type": "string", "examples": ["#50505d"] },
-                "size": { "type": "string", "examples": ["14px"] },
-                "weight": { "type": "number", "examples": [400] },
-                "lineHeight": { "type": "string", "examples": ["20px"] },
-                "letterSpacing": { "type": "string", "examples": ["0.14px"] }
+                "color": {
+                  "type": "string",
+                  "description": "Text fill color as sRGB hex or rgba.",
+                  "examples": ["#50505d"]
+                },
+                "size": {
+                  "type": "string",
+                  "description": "Font size as px value.",
+                  "examples": ["14px"]
+                },
+                "weight": {
+                  "type": "number",
+                  "description": "Font weight (100, 200, ..., 900).",
+                  "examples": [400, 600, 700]
+                },
+                "lineHeight": {
+                  "type": "string",
+                  "description": "Line height as px value or unitless multiplier.",
+                  "examples": ["20px", "1.5"]
+                },
+                "letterSpacing": {
+                  "type": "string",
+                  "description": "Letter spacing as px value.",
+                  "examples": ["0.14px"]
+                }
               }
             }
           }
