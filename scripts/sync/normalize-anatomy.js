@@ -533,6 +533,9 @@ function diffAppearance(base, variant) {
   ["background", "radius", "border", "text"].forEach(function (k) {
     var bv = base[k],
       vv = variant[k];
+    // Both bv and vv are resolveAppearance output, whose keys are always
+    // inserted in the same fixed order, so JSON.stringify is a valid,
+    // order-stable deep-equal check here (not a general-purpose one).
     var sameJson =
       JSON.stringify(bv === undefined ? null : bv) ===
       JSON.stringify(vv === undefined ? null : vv);

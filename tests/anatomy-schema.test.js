@@ -178,3 +178,69 @@ test("schema rejects a variant entry missing prop/values", function () {
   };
   assert.equal(v(doc), false);
 });
+
+test("schema rejects a variant border delta with unknown keys (constrained via $defs/borderShape)", function () {
+  var v = makeValidator();
+  var doc = {
+    _schema_version: 1,
+    slug: "x",
+    kit: "dskit",
+    quality: { nodesTotal: 1, nodesNormalized: 1, ratio: 1, degraded: [] },
+    root: {
+      name: "x",
+      kind: "container",
+      appearance: {
+        variants: [{ prop: "Type", values: ["X"], border: { foo: "bar" } }],
+      },
+    },
+  };
+  // Before the $defs tightening, variant border/text deltas were typed
+  // ["object", "null"] with no inner constraint, so this malformed border
+  // would have passed. Confirm the schema now genuinely discriminates: a
+  // schema with the pre-fix (untyped) variant border slot accepts this doc,
+  // while the current, $defs-constrained schema rejects it.
+  var unfixedSchema = JSON.parse(JSON.stringify(schema));
+  unfixedSchema.$defs.node.properties.appearance.properties.variants.items.properties.border =
+    {
+      type: ["object", "null"],
+      description: "Delta border (null = removed).",
+      examples: [{ color: "#dc3514", width: "1px" }, null],
+    };
+  var vUnfixed = new (require("ajv/dist/2020"))({
+    allErrors: true,
+    strict: false,
+  });
+  require("ajv-formats")(vUnfixed);
+  var unfixedValidate = vUnfixed.compile(unfixedSchema);
+  assert.ok(
+    unfixedValidate(doc),
+    "sanity check: pre-fix schema shape should have accepted the malformed border",
+  );
+
+  assert.equal(v(doc), false, "current schema should reject malformed border");
+});
+
+test("schema accepts a well-formed variant border and a null variant border", function () {
+  var v = makeValidator();
+  var doc = {
+    _schema_version: 1,
+    slug: "x",
+    kit: "dskit",
+    quality: { nodesTotal: 1, nodesNormalized: 1, ratio: 1, degraded: [] },
+    root: {
+      name: "x",
+      kind: "container",
+      appearance: {
+        variants: [
+          {
+            prop: "Type",
+            values: ["Danger"],
+            border: { color: "#dc3514", width: "1px" },
+          },
+          { prop: "Emphasis", values: ["Ghost"], border: null },
+        ],
+      },
+    },
+  };
+  assert.ok(v(doc), JSON.stringify(v.errors));
+});
