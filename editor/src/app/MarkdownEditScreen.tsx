@@ -741,9 +741,6 @@ export function MarkdownEditScreen({
             >
               {inCart ? "Update in batch" : "Add to batch"}
             </Button>
-            <Button onClick={() => void doSubmit(false)} loading={submitting}>
-              Submit as PR
-            </Button>
           </>
         )}
       </Flex>

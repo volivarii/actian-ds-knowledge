@@ -341,7 +341,7 @@ export function MetaEditScreen({
           uiSchema={guidelineMetaUiSchema}
           formData={formData}
           onChange={(next) => setFormData(next)}
-          onSubmit={(v) => handleSubmit(v)}
+          onSubmit={() => handleAddToBatch()}
           widgets={META_WIDGETS}
           templates={metaFormTemplates}
           formContext={{
@@ -375,9 +375,6 @@ export function MetaEditScreen({
               </>
             ) : (
               <>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? "Opening PR…" : "Submit as PR"}
-                </Button>
                 <Button
                   type="button"
                   variant="soft"

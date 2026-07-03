@@ -8,7 +8,7 @@
 //
 // On success: clears the cart + closes drawer + shows the PR URL.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import { DEFAULT_COORDS } from "../config/coords";
 import {
@@ -68,6 +68,11 @@ export function SubmissionStaging({
   const [mismatches, setMismatches] = useState<CouplingMismatch[]>([]);
   const [conflicts, setConflicts] = useState<StaleBaseConflict[] | null>(null);
   const [pendingFiles, setPendingFiles] = useState<FileChange[] | null>(null);
+  // Synchronous re-entry guard. React state (`submitting`) updates
+  // asynchronously, so a double-click within the same tick can fire submit
+  // twice before the button visually disables (mirrors MarkdownEditScreen's
+  // doSubmit guard pattern).
+  const submittingRef = useRef(false);
 
   // Re-validate the coupling whenever the cart contents (or dialog open
   // state) change. We surface mismatches as a callout AND block submit.
@@ -89,7 +94,8 @@ export function SubmissionStaging({
 
   const runSubmit = useCallback(
     async (files: FileChange[], allowAnchorDrop: boolean) => {
-      if (submitting) return;
+      if (submittingRef.current) return;
+      submittingRef.current = true;
       setSubmitting(true);
       setPendingFiles(files);
       setError(null);
@@ -97,16 +103,17 @@ export function SubmissionStaging({
         entries.length === 1
           ? `edit ${entries[0]!.path}`
           : `edit ${entries.length} files`;
-      // Load exactly the schemas this batch's files need. Without this the
-      // validator gets an empty map and every schema-bearing file (a
-      // `_meta.yml`, app-context, icon-groups) fails with a false
-      // "no schema loaded …". MetaEditScreen already loads its schema; the
-      // batch path was the one that didn't.
-      const schemas = await loadSchemasForPaths(
-        entries.map((e) => e.path),
-        (schemaFile) => getTextFile(octokit, schemaFile),
-      );
       try {
+        // Load exactly the schemas this batch's files need. Without this the
+        // validator gets an empty map and every schema-bearing file (a
+        // `_meta.yml`, app-context, icon-groups) fails with a false
+        // "no schema loaded …". MetaEditScreen already loads its schema; the
+        // batch path was the one that didn't. Kept INSIDE try/finally so a
+        // schema-fetch failure still resets the submit guard (no permanent lock).
+        const schemas = await loadSchemasForPaths(
+          entries.map((e) => e.path),
+          (schemaFile) => getTextFile(octokit, schemaFile),
+        );
         const result = await submitDraft(
           {
             id: `batch-${Date.now()}`,
@@ -141,6 +148,7 @@ export function SubmissionStaging({
         }
       } finally {
         setSubmitting(false);
+        submittingRef.current = false;
       }
     },
     [entries, cart, octokit, submitting],

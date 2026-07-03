@@ -2,7 +2,7 @@ import "../setup-happy-dom";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { roundTripMarkdown } from "../../src/markdown-engine/milkdownPreset";
@@ -38,7 +38,12 @@ const SAFE_PATHS: string[] = listSafePaths(domains);
 //                        auto-commits components/dist/guidelines/*)
 // If those CI gates were removed, content would lose its dist safety net.
 
-for (const rel of SAFE_PATHS) {
+// A component removed by a breaking Figma sync can leave a stale safePaths
+// entry in domains.json (its content.md no longer exists). Existence is
+// enforced by the manifest-validation gate, not here; this round-trip test
+// only covers files that exist, so skip missing ones rather than ENOENT the
+// whole editor suite.
+for (const rel of SAFE_PATHS.filter((p) => existsSync(path.join(REPO, p)))) {
   test(`WYSIWYG dist-safe: ${rel}`, async () => {
     const text = readFileSync(path.join(REPO, rel), "utf8");
     const { body } = splitRawFrontmatter(text);
