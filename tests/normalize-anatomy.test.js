@@ -276,7 +276,7 @@ test("topVisibleSolid returns the top-most solid, skips hidden and non-solid", f
   );
 });
 
-test("cornerRadiusCss handles uniform, per-corner scalars, rectangle array, rounding, and none", function () {
+test("cornerRadiusCss handles uniform cornerRadius, rectangleCornerRadii array, rounding, and none", function () {
   assert.equal(N.cornerRadiusCss({ cornerRadius: 4 }), "4px");
   // Figma float drift is rounded (like the text metrics are)
   assert.equal(N.cornerRadiusCss({ cornerRadius: 3.9999999999999996 }), "4px");
@@ -483,6 +483,78 @@ test("resolveAppearance does not emit an occluded SOLID background when a visibl
   assert.equal(a, null);
   assert.deepEqual(ctx.degraded, [
     { name: "Occluded", reason: "non-solid-fill:GRADIENT_LINEAR" },
+  ]);
+});
+
+test("resolveAppearance does not emit an occluded SOLID border when a visible non-SOLID stroke sits on top", function () {
+  // Mirrors the fill-occlusion regression above: strokes are the same
+  // back-to-front paint array shape, so a visible gradient stroke on top
+  // occludes the green solid stroke below it -- no border should be emitted.
+  var node = {
+    type: "FRAME",
+    name: "StrokeOccluded",
+    strokes: [
+      { type: "SOLID", color: { r: 0, g: 1, b: 0, a: 1 }, visible: true },
+      { type: "GRADIENT_LINEAR", visible: true },
+    ],
+  };
+  var a = N.resolveAppearance(node);
+  // pre-fix behavior (same-type-only scan) would have found the green SOLID
+  // underneath and emitted border.color: "#00ff00" -- it must not appear here.
+  assert.equal(a, null);
+});
+
+test("resolveAppearance emits border.color for a single visible SOLID stroke (no occlusion)", function () {
+  var node = {
+    type: "FRAME",
+    name: "StrokeSolid",
+    strokes: [
+      { type: "SOLID", color: { r: 0, g: 1, b: 0, a: 1 }, visible: true },
+    ],
+  };
+  assert.deepEqual(N.resolveAppearance(node).border, { color: "#00ff00" });
+});
+
+test("resolveAppearance does not emit an occluded SOLID text color when a visible non-SOLID fill sits on top", function () {
+  // Text fills use the same topVisiblePaint occlusion logic as containers: a
+  // visible gradient on top occludes the blue solid text fill below it -- no
+  // text.color should be emitted.
+  var node = {
+    type: "TEXT",
+    name: "TextOccluded",
+    fills: [
+      { type: "SOLID", color: { r: 0, g: 0, b: 1, a: 1 }, visible: true },
+      { type: "GRADIENT_LINEAR", visible: true },
+    ],
+  };
+  var a = N.resolveAppearance(node);
+  // pre-fix behavior (same-type-only scan) would have found the blue SOLID
+  // underneath and emitted text.color: "#0000ff" -- it must not appear here.
+  assert.equal(a, null);
+});
+
+test("resolveAppearance emits text.color for a single visible SOLID text fill (no occlusion)", function () {
+  var node = {
+    type: "TEXT",
+    name: "TextSolid",
+    fills: [
+      { type: "SOLID", color: { r: 0, g: 0, b: 1, a: 1 }, visible: true },
+    ],
+  };
+  assert.deepEqual(N.resolveAppearance(node).text.color, "#0000ff");
+});
+
+test("resolveAppearance records a malformed color-less SOLID fill distinctly from a non-SOLID fill", function () {
+  var ctx = { degraded: [] };
+  var node = {
+    type: "FRAME",
+    name: "NoColor",
+    fills: [{ type: "SOLID", visible: true }], // SOLID but no .color -- malformed, not "non-solid"
+  };
+  var a = N.resolveAppearance(node, ctx);
+  assert.equal(a, null);
+  assert.deepEqual(ctx.degraded, [
+    { name: "NoColor", reason: "malformed-fill:SOLID" },
   ]);
 });
 
@@ -815,6 +887,85 @@ test("buildAnatomyFile emits structuralVariants sorted deterministically regardl
   // [A, Z]; removing the sort flips this to a failing assertion.
   assert.deepEqual(outA.quality.structuralVariants, expected);
   assert.deepEqual(outB.quality.structuralVariants, expected);
+});
+
+test("buildAnatomyFile surfaces a non-SOLID fill found only in an isolated variant, tagged with its variant scope", function () {
+  // Finding D4: each isolated variant is normalized with a throwaway vctx whose
+  // vctx.degraded is otherwise discarded, so a gradient/unnormalizable node that
+  // appears ONLY in a non-default variant would be invisible in quality.degraded.
+  var mk = function (name, fills) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      fills: fills,
+      children: [],
+    };
+  };
+  var white = { r: 1, g: 1, b: 1, a: 1 };
+  var def = mk("State=Default", [{ type: "SOLID", color: white }]);
+  var special = mk("State=Special", [
+    { type: "GRADIENT_LINEAR", visible: true },
+  ]);
+  var out = N.buildAnatomyFile(def, {
+    slug: "x",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [def, special],
+    defaultVariantName: "State=Default",
+  });
+  // default tree itself is clean -> before the fix quality.degraded is []
+  assert.deepEqual(out.quality.degraded, [
+    {
+      name: "State=Special",
+      reason: "non-solid-fill:GRADIENT_LINEAR (variant State=Special)",
+    },
+  ]);
+  // ctx.total/ctx.normalized (and thus quality.ratio) stay default-tree-only:
+  // the isolated variant's own node must not inflate nodesTotal.
+  assert.equal(out.quality.nodesTotal, 1);
+  assert.equal(out.quality.nodesNormalized, 1);
+});
+
+test("buildAnatomyFile records an unparseable variant child name in uncapturedValues instead of dropping it", function () {
+  // Finding M5: variant COMPONENT children whose name does not parse
+  // (parseVariantName returns null) were filtered out silently.
+  var mk = function (name) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      children: [],
+    };
+  };
+  var def = mk("Type=Default");
+  var broken = mk("BrokenName"); // no "=" -> parseVariantName returns null
+  var out = N.buildAnatomyFile(def, {
+    slug: "x",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [def, broken],
+    defaultVariantName: "Type=Default",
+  });
+  assert.deepEqual(out.quality.uncapturedValues, [
+    {
+      prop: "(unparseable)",
+      value: "BrokenName",
+      reason: "unparseable variant name",
+    },
+  ]);
 });
 
 test("buildAnatomyFile output unchanged when no variants passed (P1A byte-compat)", function () {

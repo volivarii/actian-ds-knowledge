@@ -186,6 +186,13 @@ function resolveAppearance(node, ctx) {
   var fill = topVisiblePaint(node.fills);
   if (fill && fill.type === "SOLID" && fill.color) {
     a.background = figmaColorToCss(fill.color, paintAlpha(fill));
+  } else if (fill && fill.type === "SOLID" && ctx && ctx.degraded) {
+    // SOLID paint present but missing .color -- malformed, not "non-solid";
+    // keep the reason distinct so it does not read as self-contradictory.
+    ctx.degraded.push({
+      name: node.name || "",
+      reason: "malformed-fill:SOLID",
+    });
   } else if (fill && ctx && ctx.degraded) {
     ctx.degraded.push({
       name: node.name || "",
@@ -422,11 +429,20 @@ function attachVariantDeltas(root, allDeltas) {
   sortVariants(root);
 }
 
+// Total-order 3-way compare on the JSON.stringify form of two plain-object
+// entries: -1 / 0 / 1, with 0 on equal (byte-identical) entries. A comparator
+// that returns 1 on ties (rather than 0) is not a valid total order and can
+// yield inconsistent results across sort implementations; this is the single
+// shared implementation used by both sortVariants and sortByJson below.
+function jsonCompare(a, b) {
+  var as = JSON.stringify(a);
+  var bs = JSON.stringify(b);
+  return as < bs ? -1 : as > bs ? 1 : 0;
+}
+
 function sortVariants(node) {
   if (node && node.appearance && Array.isArray(node.appearance.variants))
-    node.appearance.variants.sort(function (a, b) {
-      return JSON.stringify(a) < JSON.stringify(b) ? -1 : 1;
-    });
+    node.appearance.variants.sort(jsonCompare);
   if (node && Array.isArray(node.children)) node.children.forEach(sortVariants);
 }
 
@@ -435,11 +451,7 @@ function sortVariants(node) {
 // quality.uncapturedValues byte-stable regardless of Figma's COMPONENT_SET
 // child order (dist must not churn on cosmetic Figma-side reordering).
 function sortByJson(entries) {
-  return entries.slice().sort(function (a, b) {
-    var as = JSON.stringify(a);
-    var bs = JSON.stringify(b);
-    return as < bs ? -1 : as > bs ? 1 : 0;
-  });
+  return entries.slice().sort(jsonCompare);
 }
 
 function buildAnatomyFile(rootNode, opts) {
@@ -462,12 +474,26 @@ function buildAnatomyFile(rootNode, opts) {
     ? parseVariantName(opts.defaultVariantName)
     : null;
   if (variantDefaults && Array.isArray(opts.variants) && opts.variants.length) {
+    // Finding M5: a variant COMPONENT child whose name does not parse (no
+    // "key=value" segments) used to be dropped silently here. Record it
+    // instead so its existence is visible in quality.uncapturedValues.
+    var unparseable = [];
     var parsed = opts.variants
       .map(function (vn) {
         return { node: vn, props: parseVariantName(vn.name) || {} };
       })
       .filter(function (pv) {
-        return Object.keys(pv.props).length;
+        if (Object.keys(pv.props).length) return true;
+        var rawName =
+          pv.node && typeof pv.node.name === "string" && pv.node.name
+            ? pv.node.name
+            : "(unnamed)";
+        unparseable.push({
+          prop: "(unparseable)",
+          value: rawName,
+          reason: "unparseable variant name",
+        });
+        return false;
       });
     var sel = selectIsolatedVariants(parsed, variantDefaults);
     var allDeltas = [];
@@ -501,13 +527,28 @@ function buildAnatomyFile(rootNode, opts) {
           reason: s.reason,
         });
       });
+      // Finding D4: an isolated variant's own vctx.degraded was discarded here,
+      // so a gradient/unnormalizable node appearing ONLY in a non-default
+      // variant was invisible in quality.degraded. Fold it into the file's
+      // ctx.degraded (default-tree entries stay untouched), tagging each entry
+      // with its variant scope so it is distinguishable and cannot collide with
+      // a default-tree entry of the same name. ctx.total/ctx.normalized (and
+      // thus quality.ratio) intentionally stay default-tree-only -- vctx.total/
+      // vctx.normalized are NOT folded in.
+      vctx.degraded.forEach(function (dd) {
+        ctx.degraded.push({
+          name: dd.name,
+          reason: dd.reason + " (variant " + iso.prop + "=" + iso.value + ")",
+        });
+      });
     });
     attachVariantDeltas(root, allDeltas);
     variantExtras.variantDefaults = variantDefaults;
     if (structural.length)
       variantExtras.structuralVariants = sortByJson(structural);
-    if (sel.uncaptured.length)
-      variantExtras.uncapturedValues = sortByJson(sel.uncaptured);
+    var uncapturedValues = sel.uncaptured.concat(unparseable);
+    if (uncapturedValues.length)
+      variantExtras.uncapturedValues = sortByJson(uncapturedValues);
   }
 
   var file = {
@@ -575,6 +616,15 @@ function collectDeltas(cNode, vNode, path, acc) {
       });
     return; // indices no longer correspond -> stop, own delta already kept
   }
+  // Children are paired by INDEX (kind-gated by the check above), not by name
+  // or identity. This means a same-kind sibling REORDER within a variant
+  // (identical child count, identical kind sequence, but the children
+  // shuffled relative to the default tree) is an uncaught limitation: index i
+  // in the default is diffed against index i in the variant even though they
+  // may no longer be "the same" node, which can misattribute a delta to the
+  // wrong sibling instead of flagging a divergence. A name-keyed LCS-style
+  // salvage (align by structural identity, not raw index) is the tracked
+  // follow-on for this case.
   for (var i = 0; i < cc.length; i++)
     collectDeltas(cc[i], vc[i], path.concat(i), acc);
 }
