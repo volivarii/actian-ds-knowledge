@@ -405,6 +405,22 @@ function buildAnatomyFile(rootNode, opts) {
   };
 }
 
+function diffAppearance(base, variant) {
+  base = base || {};
+  variant = variant || {};
+  var diff = {};
+  ["background", "radius", "border", "text"].forEach(function (k) {
+    var bv = base[k],
+      vv = variant[k];
+    var sameJson =
+      JSON.stringify(bv === undefined ? null : bv) ===
+      JSON.stringify(vv === undefined ? null : vv);
+    if (sameJson) return;
+    diff[k] = vv === undefined ? null : vv; // null = removed relative to base
+  });
+  return Object.keys(diff).length ? diff : null;
+}
+
 module.exports = {
   classifyKind,
   normalizeLayout,
@@ -417,5 +433,6 @@ module.exports = {
   topVisibleSolid,
   cornerRadiusCss,
   resolveAppearance,
+  diffAppearance,
   __spacingValue: spacingValue,
 };

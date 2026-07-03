@@ -500,3 +500,35 @@ test("parseVariantName returns null for unparseable names", function () {
   assert.equal(N.parseVariantName(""), null);
   assert.equal(N.parseVariantName(null), null);
 });
+
+test("diffAppearance returns only differing keys, null for removals", function () {
+  assert.deepEqual(
+    N.diffAppearance(
+      { background: "#fff", radius: "4px" },
+      { background: "#f00", radius: "4px" },
+    ),
+    { background: "#f00" },
+  );
+  // border object change -> whole border in delta
+  assert.deepEqual(
+    N.diffAppearance(
+      { border: { color: "#aaa", width: "1px" } },
+      { border: { color: "#f00", width: "1px" } },
+    ),
+    { border: { color: "#f00", width: "1px" } },
+  );
+  // removal: base has border, variant does not
+  assert.deepEqual(
+    N.diffAppearance({ border: { color: "#aaa", width: "1px" } }, {}),
+    { border: null },
+  );
+  // identical -> null
+  assert.equal(
+    N.diffAppearance({ background: "#fff" }, { background: "#fff" }),
+    null,
+  );
+  // undefined base
+  assert.deepEqual(N.diffAppearance(undefined, { background: "#f00" }), {
+    background: "#f00",
+  });
+});
