@@ -103,16 +103,17 @@ export function SubmissionStaging({
         entries.length === 1
           ? `edit ${entries[0]!.path}`
           : `edit ${entries.length} files`;
-      // Load exactly the schemas this batch's files need. Without this the
-      // validator gets an empty map and every schema-bearing file (a
-      // `_meta.yml`, app-context, icon-groups) fails with a false
-      // "no schema loaded …". MetaEditScreen already loads its schema; the
-      // batch path was the one that didn't.
-      const schemas = await loadSchemasForPaths(
-        entries.map((e) => e.path),
-        (schemaFile) => getTextFile(octokit, schemaFile),
-      );
       try {
+        // Load exactly the schemas this batch's files need. Without this the
+        // validator gets an empty map and every schema-bearing file (a
+        // `_meta.yml`, app-context, icon-groups) fails with a false
+        // "no schema loaded …". MetaEditScreen already loads its schema; the
+        // batch path was the one that didn't. Kept INSIDE try/finally so a
+        // schema-fetch failure still resets the submit guard (no permanent lock).
+        const schemas = await loadSchemasForPaths(
+          entries.map((e) => e.path),
+          (schemaFile) => getTextFile(octokit, schemaFile),
+        );
         const result = await submitDraft(
           {
             id: `batch-${Date.now()}`,
