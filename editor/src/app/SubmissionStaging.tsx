@@ -8,7 +8,7 @@
 //
 // On success: clears the cart + closes drawer + shows the PR URL.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import { DEFAULT_COORDS } from "../config/coords";
 import {
@@ -68,6 +68,11 @@ export function SubmissionStaging({
   const [mismatches, setMismatches] = useState<CouplingMismatch[]>([]);
   const [conflicts, setConflicts] = useState<StaleBaseConflict[] | null>(null);
   const [pendingFiles, setPendingFiles] = useState<FileChange[] | null>(null);
+  // Synchronous re-entry guard. React state (`submitting`) updates
+  // asynchronously, so a double-click within the same tick can fire submit
+  // twice before the button visually disables (mirrors MarkdownEditScreen's
+  // doSubmit guard pattern).
+  const submittingRef = useRef(false);
 
   // Re-validate the coupling whenever the cart contents (or dialog open
   // state) change. We surface mismatches as a callout AND block submit.
@@ -89,7 +94,8 @@ export function SubmissionStaging({
 
   const runSubmit = useCallback(
     async (files: FileChange[], allowAnchorDrop: boolean) => {
-      if (submitting) return;
+      if (submittingRef.current) return;
+      submittingRef.current = true;
       setSubmitting(true);
       setPendingFiles(files);
       setError(null);
@@ -141,6 +147,7 @@ export function SubmissionStaging({
         }
       } finally {
         setSubmitting(false);
+        submittingRef.current = false;
       }
     },
     [entries, cart, octokit, submitting],

@@ -22,11 +22,24 @@
 import "../setup-dom";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  cleanup,
+  waitFor,
+  fireEvent,
+  act,
+} from "@testing-library/react";
+import React from "react";
+import { Theme } from "@radix-ui/themes";
 import { buildResolvedFiles } from "../../src/app/submissionStagingHelpers";
 import { droppedAnchors } from "../../src/core/anchorPreservation";
-import type { CartEntry } from "../../src/drafts/SubmissionCart";
+import {
+  SubmissionCart,
+  type CartEntry,
+} from "../../src/drafts/SubmissionCart";
 import type { ConflictResolution } from "../../src/app/ConflictDialog";
+import { SubmissionStaging } from "../../src/app/SubmissionStaging";
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -170,5 +183,116 @@ test("resolve→anchor-check pipeline: merged content that drops an anchor is de
       "AnchorPreservationError and runSubmit would set anchorWarning state, " +
       "surfacing the warning dialog instead of shipping silently.",
   );
+  cleanup();
+});
+
+// ---------------------------------------------------------------------------
+// Synchronous re-entry guard (submittingRef) — proves the fix for the
+// duplicate-PR bug: a double-click within the same tick used to be able to
+// slip past the async `submitting` state guard (React state updates
+// asynchronously) and fire submitDraft twice. The fix adds a synchronous
+// ref flipped BEFORE any await, mirroring MarkdownEditScreen's doSubmit
+// guard.
+// ---------------------------------------------------------------------------
+
+function makeMemoryStorage(): Storage {
+  const store = new Map<string, string>();
+  return {
+    getItem: (k: string) => (store.has(k) ? (store.get(k) as string) : null),
+    setItem: (k: string, v: string) => {
+      store.set(k, v);
+    },
+    removeItem: (k: string) => {
+      store.delete(k);
+    },
+    clear: () => store.clear(),
+    key: (i: number) => Array.from(store.keys())[i] ?? null,
+    get length() {
+      return store.size;
+    },
+  } as unknown as Storage;
+}
+
+const BATCH_ENTRY: CartEntry = {
+  path: "foundations/src/color-primitives.md",
+  content: "## Color {#color}\n\nBody.\n",
+  basedOnSha: "BATCH_SHA_1",
+  addedAt: Date.now(),
+  deleted: false,
+};
+
+function makeBatchFakeGh(calls: { create: unknown[] }) {
+  return {
+    repos: {
+      // Used both by submitDraft's anchor-check refetch and by
+      // detectStaleBase — return content/sha matching BATCH_ENTRY exactly
+      // so neither guard fires and the submit proceeds to open a PR.
+      getContent: async () => ({
+        data: {
+          content: Buffer.from(BATCH_ENTRY.content, "utf8").toString("base64"),
+          encoding: "base64",
+          sha: BATCH_ENTRY.basedOnSha,
+        },
+      }),
+    },
+    git: {
+      getRef: async () => ({ data: { object: { sha: "BASE_SHA" } } }),
+      createRef: async () => ({ data: {} }),
+      createBlob: async () => ({ data: { sha: "BLOB" } }),
+      createTree: async () => ({ data: { sha: "TREE" } }),
+      createCommit: async () => ({ data: { sha: "COMMIT" } }),
+      updateRef: async () => ({ data: {} }),
+    },
+    pulls: {
+      create: async (args: unknown) => {
+        calls.create.push(args);
+        return { data: { html_url: "https://github.com/x/y/pull/99" } };
+      },
+    },
+  } as any;
+}
+
+test("SubmissionStaging: two synchronous clicks on 'Submit batch' open only ONE PR (submittingRef guard)", async () => {
+  cleanup();
+  const cart = new SubmissionCart(makeMemoryStorage());
+  cart.add(BATCH_ENTRY);
+  const calls = { create: [] as unknown[] };
+  const gh = makeBatchFakeGh(calls);
+
+  render(
+    <Theme>
+      <SubmissionStaging
+        cart={cart}
+        entries={cart.list()}
+        octokit={gh}
+        open={true}
+        onOpenChange={() => {}}
+      />
+    </Theme>,
+  );
+
+  const submitBtn = await waitFor(() =>
+    screen.getByRole("button", { name: /submit batch/i }),
+  );
+
+  // Fire two clicks synchronously within one act() — no await between them
+  // — so both handlers run before either's continuation (past the first
+  // await inside runSubmit) gets a chance to execute. Before the fix, the
+  // `submitting` state guard (`if (submitting) return;`) is stale on the
+  // second call (React state hasn't re-rendered yet) and both calls proceed
+  // to call submitDraft, opening 2 PRs.
+  await act(async () => {
+    fireEvent.click(submitBtn);
+    fireEvent.click(submitBtn);
+  });
+
+  await waitFor(() => assert.ok(screen.queryByText(/PR opened/i)));
+
+  assert.equal(
+    calls.create.length,
+    1,
+    "the synchronous ref guard must prevent a same-tick double-click from opening 2 PRs",
+  );
+
   cleanup();
 });
