@@ -532,3 +532,102 @@ test("diffAppearance returns only differing keys, null for removals", function (
     background: "#f00",
   });
 });
+
+function acc() {
+  return { deltas: [], structural: [] };
+}
+
+test("collectDeltas records a root recolor delta", function () {
+  var c = {
+    kind: "container",
+    appearance: { background: "#fff4ec" },
+    children: [],
+  };
+  var v = {
+    kind: "container",
+    appearance: { background: "#f0ffec" },
+    children: [],
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, [
+    { path: [], appearance: { background: "#f0ffec" } },
+  ]);
+  assert.deepEqual(a.structural, []);
+});
+
+test("collectDeltas keeps an aligned sibling delta while flagging a kind-mismatch sibling (text-input Error)", function () {
+  var c = {
+    kind: "container",
+    children: [
+      {
+        kind: "container",
+        appearance: { border: { color: "#e1e1e6", width: "1px" } },
+        children: [],
+      },
+      { kind: "text", appearance: { text: { color: "#40404a" } } },
+    ],
+  };
+  var v = {
+    kind: "container",
+    children: [
+      {
+        kind: "container",
+        appearance: { border: { color: "#dc3514", width: "1px" } },
+        children: [],
+      },
+      { kind: "container", children: [] },
+    ],
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, [
+    { path: [0], appearance: { border: { color: "#dc3514", width: "1px" } } },
+  ]);
+  assert.deepEqual(a.structural, [
+    { path: [1], reason: "kind:text!=container" },
+  ]);
+});
+
+test("collectDeltas flags a child-count mismatch and keeps the root delta (button Hover overlay)", function () {
+  var c = {
+    kind: "container",
+    appearance: { background: "#0f5fdc" },
+    children: [{ kind: "vector" }, { kind: "text" }, { kind: "vector" }],
+  };
+  var v = {
+    kind: "container",
+    appearance: { background: "#0f5fdc" },
+    children: [
+      { kind: "container" },
+      { kind: "vector" },
+      { kind: "text" },
+      { kind: "vector" },
+    ],
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, []); // bg identical -> no root delta
+  assert.deepEqual(a.structural, [{ path: [], reason: "childCount:3!=4" }]);
+});
+
+test("collectDeltas aligns children whose names differ (tag status icons)", function () {
+  var c = {
+    kind: "container",
+    children: [
+      { kind: "vector", name: "misuse--outline" },
+      { kind: "text", appearance: { text: { color: "#50505d" } } },
+    ],
+  };
+  var v = {
+    kind: "container",
+    children: [
+      { kind: "vector", name: "warning--alt" },
+      { kind: "text", appearance: { text: { color: "#50505d" } } },
+    ],
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, []); // icons align by index+kind; label color identical
+  assert.deepEqual(a.structural, []); // differing names are NOT a divergence
+});

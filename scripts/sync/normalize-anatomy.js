@@ -421,6 +421,31 @@ function diffAppearance(base, variant) {
   return Object.keys(diff).length ? diff : null;
 }
 
+function collectDeltas(cNode, vNode, path, acc) {
+  if (!cNode || !vNode) return;
+  if (cNode.kind !== vNode.kind) {
+    acc.structural.push({
+      path: path.slice(),
+      reason: "kind:" + cNode.kind + "!=" + vNode.kind,
+    });
+    return;
+  }
+  var d = diffAppearance(cNode.appearance, vNode.appearance);
+  if (d) acc.deltas.push({ path: path.slice(), appearance: d });
+  var cc = Array.isArray(cNode.children) ? cNode.children : [];
+  var vc = Array.isArray(vNode.children) ? vNode.children : [];
+  if (cc.length !== vc.length) {
+    if (cc.length || vc.length)
+      acc.structural.push({
+        path: path.slice(),
+        reason: "childCount:" + cc.length + "!=" + vc.length,
+      });
+    return; // indices no longer correspond -> stop, own delta already kept
+  }
+  for (var i = 0; i < cc.length; i++)
+    collectDeltas(cc[i], vc[i], path.concat(i), acc);
+}
+
 module.exports = {
   classifyKind,
   normalizeLayout,
@@ -434,5 +459,6 @@ module.exports = {
   cornerRadiusCss,
   resolveAppearance,
   diffAppearance,
+  collectDeltas,
   __spacingValue: spacingValue,
 };
