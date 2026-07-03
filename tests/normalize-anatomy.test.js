@@ -3,6 +3,9 @@
 var test = require("node:test");
 var assert = require("node:assert/strict");
 var N = require("../scripts/sync/normalize-anatomy");
+function resolveApp(n) {
+  return N.resolveAppearance(n);
+}
 
 test("classifyKind maps Figma types", function () {
   assert.equal(N.classifyKind({ type: "INSTANCE" }), "instance");
@@ -273,7 +276,7 @@ test("topVisibleSolid returns the top-most solid, skips hidden and non-solid", f
   );
 });
 
-test("cornerRadiusCss handles uniform, per-corner scalars, rectangle array, rounding, and none", function () {
+test("cornerRadiusCss handles uniform cornerRadius, rectangleCornerRadii array, rounding, and none", function () {
   assert.equal(N.cornerRadiusCss({ cornerRadius: 4 }), "4px");
   // Figma float drift is rounded (like the text metrics are)
   assert.equal(N.cornerRadiusCss({ cornerRadius: 3.9999999999999996 }), "4px");
@@ -285,24 +288,14 @@ test("cornerRadiusCss handles uniform, per-corner scalars, rectangle array, roun
     N.cornerRadiusCss({ rectangleCornerRadii: [4, 4, 0, 0] }),
     "4px 4px 0px 0px",
   );
-  // per-corner scalar fields (FRAME/COMPONENT), CSS order TL TR BR BL
+  // REST shape (RECTANGLE nodes): rectangleCornerRadii array, CSS order TL TR BR BL
   assert.equal(
-    N.cornerRadiusCss({
-      topLeftRadius: 8,
-      topRightRadius: 8,
-      bottomRightRadius: 0,
-      bottomLeftRadius: 0,
-    }),
+    N.cornerRadiusCss({ rectangleCornerRadii: [8, 8, 0, 0] }),
     "8px 8px 0px 0px",
   );
-  // per-corner scalars all equal collapse to a single value
+  // rectangleCornerRadii all equal collapse to a single value
   assert.equal(
-    N.cornerRadiusCss({
-      topLeftRadius: 6,
-      topRightRadius: 6,
-      bottomRightRadius: 6,
-      bottomLeftRadius: 6,
-    }),
+    N.cornerRadiusCss({ rectangleCornerRadii: [6, 6, 6, 6] }),
     "6px",
   );
   assert.equal(N.cornerRadiusCss({}), null);
@@ -424,4 +417,576 @@ test("normalizeNode omits appearance when node has no paints", function () {
     bareCtx(),
   );
   assert.equal("appearance" in out, false);
+});
+
+test("figmaColorToCss guards missing rgb channels and clamps alpha", function () {
+  // malformed SOLID: only alpha present -> channels default to 0, not NaN
+  assert.equal(N.figmaColorToCss({ a: 1 }), "#000000");
+  // alpha < 0 clamps to 0 -> rgba branch reads the clamped value, not the raw negative
+  assert.equal(
+    N.figmaColorToCss({ r: 0, g: 0, b: 0, a: -0.5 }),
+    "rgba(0, 0, 0, 0)",
+  );
+});
+
+test("resolveAppearance uses per-side stroke weight when scalar strokeWeight absent (REST individualStrokeWeights)", function () {
+  // REST shape: the Figma REST API exposes per-side stroke weights only as
+  // node.individualStrokeWeights = { top, right, bottom, left }. The Plugin-API
+  // field names (strokeTopWeight etc.) never appear in REST payloads.
+  var node = {
+    type: "FRAME",
+    strokes: [{ type: "SOLID", color: { r: 0, g: 0, b: 0, a: 1 } }],
+    individualStrokeWeights: { top: 2, right: 2, bottom: 2, left: 2 },
+  };
+  assert.deepEqual(resolveApp(node).border, {
+    color: "#000000",
+    width: "2px",
+  });
+});
+
+test("spacingValue rounds the px path to 3 decimals", function () {
+  assert.equal(
+    N.__spacingValue({ paddingLeft: 15.99949999999998 }, "paddingLeft", {}),
+    "15.999px",
+  );
+});
+
+test("resolveAppearance records a non-SOLID fill in ctx.degraded", function () {
+  var ctx = { degraded: [] };
+  var node = {
+    type: "FRAME",
+    name: "Hero",
+    fills: [{ type: "GRADIENT_LINEAR", visible: true }],
+  };
+  N.resolveAppearance(node, ctx);
+  assert.deepEqual(ctx.degraded, [
+    { name: "Hero", reason: "non-solid-fill:GRADIENT_LINEAR" },
+  ]);
+});
+
+test("resolveAppearance does not emit an occluded SOLID background when a visible non-SOLID paint sits on top", function () {
+  // Figma paint arrays are back-to-front: index 0 = bottom-most, last = top-most
+  // / actually rendered. A visible gradient on top OCCLUDES the red solid below
+  // it, so the rendered result has no flat background color at all -- emitting
+  // the red would be wrong.
+  var ctx = { degraded: [] };
+  var node = {
+    type: "FRAME",
+    name: "Occluded",
+    fills: [
+      { type: "SOLID", color: { r: 1, g: 0, b: 0, a: 1 }, visible: true },
+      { type: "GRADIENT_LINEAR", visible: true },
+    ],
+  };
+  var a = N.resolveAppearance(node, ctx);
+  // no capturable appearance at all (no background, no border, no radius) -> null
+  assert.equal(a, null);
+  assert.deepEqual(ctx.degraded, [
+    { name: "Occluded", reason: "non-solid-fill:GRADIENT_LINEAR" },
+  ]);
+});
+
+test("resolveAppearance does not emit an occluded SOLID border when a visible non-SOLID stroke sits on top", function () {
+  // Mirrors the fill-occlusion regression above: strokes are the same
+  // back-to-front paint array shape, so a visible gradient stroke on top
+  // occludes the green solid stroke below it -- no border should be emitted.
+  var node = {
+    type: "FRAME",
+    name: "StrokeOccluded",
+    strokes: [
+      { type: "SOLID", color: { r: 0, g: 1, b: 0, a: 1 }, visible: true },
+      { type: "GRADIENT_LINEAR", visible: true },
+    ],
+  };
+  var a = N.resolveAppearance(node);
+  // pre-fix behavior (same-type-only scan) would have found the green SOLID
+  // underneath and emitted border.color: "#00ff00" -- it must not appear here.
+  assert.equal(a, null);
+});
+
+test("resolveAppearance emits border.color for a single visible SOLID stroke (no occlusion)", function () {
+  var node = {
+    type: "FRAME",
+    name: "StrokeSolid",
+    strokes: [
+      { type: "SOLID", color: { r: 0, g: 1, b: 0, a: 1 }, visible: true },
+    ],
+  };
+  assert.deepEqual(N.resolveAppearance(node).border, { color: "#00ff00" });
+});
+
+test("resolveAppearance does not emit an occluded SOLID text color when a visible non-SOLID fill sits on top", function () {
+  // Text fills use the same topVisiblePaint occlusion logic as containers: a
+  // visible gradient on top occludes the blue solid text fill below it -- no
+  // text.color should be emitted.
+  var node = {
+    type: "TEXT",
+    name: "TextOccluded",
+    fills: [
+      { type: "SOLID", color: { r: 0, g: 0, b: 1, a: 1 }, visible: true },
+      { type: "GRADIENT_LINEAR", visible: true },
+    ],
+  };
+  var a = N.resolveAppearance(node);
+  // pre-fix behavior (same-type-only scan) would have found the blue SOLID
+  // underneath and emitted text.color: "#0000ff" -- it must not appear here.
+  assert.equal(a, null);
+});
+
+test("resolveAppearance emits text.color for a single visible SOLID text fill (no occlusion)", function () {
+  var node = {
+    type: "TEXT",
+    name: "TextSolid",
+    fills: [
+      { type: "SOLID", color: { r: 0, g: 0, b: 1, a: 1 }, visible: true },
+    ],
+  };
+  assert.deepEqual(N.resolveAppearance(node).text.color, "#0000ff");
+});
+
+test("resolveAppearance records a malformed color-less SOLID fill distinctly from a non-SOLID fill", function () {
+  var ctx = { degraded: [] };
+  var node = {
+    type: "FRAME",
+    name: "NoColor",
+    fills: [{ type: "SOLID", visible: true }], // SOLID but no .color -- malformed, not "non-solid"
+  };
+  var a = N.resolveAppearance(node, ctx);
+  assert.equal(a, null);
+  assert.deepEqual(ctx.degraded, [
+    { name: "NoColor", reason: "malformed-fill:SOLID" },
+  ]);
+});
+
+test("parseVariantName parses clean and dirty names verbatim", function () {
+  assert.deepEqual(N.parseVariantName("Intent=Default, Emphasis=Filled"), {
+    Intent: "Default",
+    Emphasis: "Filled",
+  });
+  // apostrophe typo + spaces preserved verbatim
+  assert.deepEqual(
+    N.parseVariantName("Type=Primary, Orientation'=Horizontal"),
+    { Type: "Primary", "Orientation'": "Horizontal" },
+  );
+  // ampersand/space in prop, emoji in value, unit values
+  assert.deepEqual(
+    N.parseVariantName("Size & Type=1200px, Dev status=🟢 Ready"),
+    { "Size & Type": "1200px", "Dev status": "🟢 Ready" },
+  );
+  // un-renamed placeholder
+  assert.deepEqual(N.parseVariantName("Property 1=Default"), {
+    "Property 1": "Default",
+  });
+});
+
+test("parseVariantName returns null for unparseable names", function () {
+  assert.equal(N.parseVariantName("Background/Explore"), null);
+  assert.equal(N.parseVariantName(""), null);
+  assert.equal(N.parseVariantName(null), null);
+});
+
+test("diffAppearance returns only differing keys, null for removals", function () {
+  assert.deepEqual(
+    N.diffAppearance(
+      { background: "#fff", radius: "4px" },
+      { background: "#f00", radius: "4px" },
+    ),
+    { background: "#f00" },
+  );
+  // border object change -> whole border in delta
+  assert.deepEqual(
+    N.diffAppearance(
+      { border: { color: "#aaa", width: "1px" } },
+      { border: { color: "#f00", width: "1px" } },
+    ),
+    { border: { color: "#f00", width: "1px" } },
+  );
+  // removal: base has border, variant does not
+  assert.deepEqual(
+    N.diffAppearance({ border: { color: "#aaa", width: "1px" } }, {}),
+    { border: null },
+  );
+  // identical -> null
+  assert.equal(
+    N.diffAppearance({ background: "#fff" }, { background: "#fff" }),
+    null,
+  );
+  // undefined base
+  assert.deepEqual(N.diffAppearance(undefined, { background: "#f00" }), {
+    background: "#f00",
+  });
+});
+
+function acc() {
+  return { deltas: [], structural: [] };
+}
+
+test("collectDeltas records a root recolor delta", function () {
+  var c = {
+    kind: "container",
+    appearance: { background: "#fff4ec" },
+    children: [],
+  };
+  var v = {
+    kind: "container",
+    appearance: { background: "#f0ffec" },
+    children: [],
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, [
+    { path: [], appearance: { background: "#f0ffec" } },
+  ]);
+  assert.deepEqual(a.structural, []);
+});
+
+test("collectDeltas keeps an aligned sibling delta while flagging a kind-mismatch sibling (text-input Error)", function () {
+  var c = {
+    kind: "container",
+    children: [
+      {
+        kind: "container",
+        appearance: { border: { color: "#e1e1e6", width: "1px" } },
+        children: [],
+      },
+      { kind: "text", appearance: { text: { color: "#40404a" } } },
+    ],
+  };
+  var v = {
+    kind: "container",
+    children: [
+      {
+        kind: "container",
+        appearance: { border: { color: "#dc3514", width: "1px" } },
+        children: [],
+      },
+      { kind: "container", children: [] },
+    ],
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, [
+    { path: [0], appearance: { border: { color: "#dc3514", width: "1px" } } },
+  ]);
+  assert.deepEqual(a.structural, [
+    { path: [1], reason: "kind:text!=container" },
+  ]);
+});
+
+test("collectDeltas flags a child-count mismatch and keeps the root delta (button Hover overlay)", function () {
+  var c = {
+    kind: "container",
+    appearance: { background: "#0f5fdc" },
+    children: [{ kind: "vector" }, { kind: "text" }, { kind: "vector" }],
+  };
+  var v = {
+    kind: "container",
+    appearance: { background: "#0f5fdc" },
+    children: [
+      { kind: "container" },
+      { kind: "vector" },
+      { kind: "text" },
+      { kind: "vector" },
+    ],
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, []); // bg identical -> no root delta
+  assert.deepEqual(a.structural, [{ path: [], reason: "childCount:3!=4" }]);
+});
+
+test("collectDeltas aligns children whose names differ (tag status icons)", function () {
+  var c = {
+    kind: "container",
+    children: [
+      { kind: "vector", name: "misuse--outline" },
+      { kind: "text", appearance: { text: { color: "#50505d" } } },
+    ],
+  };
+  var v = {
+    kind: "container",
+    children: [
+      { kind: "vector", name: "warning--alt" },
+      { kind: "text", appearance: { text: { color: "#50505d" } } },
+    ],
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, []); // icons align by index+kind; label color identical
+  assert.deepEqual(a.structural, []); // differing names are NOT a divergence
+});
+
+test("selectIsolatedVariants isolates each axis at default, records missing", function () {
+  var D = { Intent: "Default", Size: "Default" };
+  var parsed = [
+    { node: { name: "d" }, props: { Intent: "Default", Size: "Default" } }, // default
+    { node: { name: "crit" }, props: { Intent: "Critical", Size: "Default" } }, // Intent iso
+    { node: { name: "sm" }, props: { Intent: "Default", Size: "Small" } }, // Size iso
+    { node: { name: "critSm" }, props: { Intent: "Critical", Size: "Small" } }, // not isolated
+  ];
+  var r = N.selectIsolatedVariants(parsed, D);
+  assert.deepEqual(r.isolated, [
+    { prop: "Intent", value: "Critical", node: { name: "crit" } },
+    { prop: "Size", value: "Small", node: { name: "sm" } },
+  ]);
+  assert.deepEqual(r.uncaptured, []);
+});
+
+test("selectIsolatedVariants records a value with no isolated row", function () {
+  var D = { Intent: "Default", Size: "Default" };
+  var parsed = [
+    { node: { name: "d" }, props: { Intent: "Default", Size: "Default" } },
+    { node: { name: "ghostSm" }, props: { Intent: "Ghost", Size: "Small" } }, // Ghost only paired with Small
+  ];
+  var r = N.selectIsolatedVariants(parsed, D);
+  assert.deepEqual(r.isolated, []);
+  assert.deepEqual(r.uncaptured, [
+    { prop: "Intent", value: "Ghost", reason: "no isolated variant" },
+    { prop: "Size", value: "Small", reason: "no isolated variant" },
+  ]);
+});
+
+test("buildAnatomyFile attaches per-variant deltas merged across values", function () {
+  var mk = function (name, bg) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      fills: [{ type: "SOLID", color: bg }],
+      children: [],
+    };
+  };
+  var white = { r: 1, g: 1, b: 1, a: 1 };
+  var red = { r: 0.863, g: 0.208, b: 0.078, a: 1 }; // #dc3514
+  var green = { r: 0.941, g: 1, b: 0.925, a: 1 }; // #f0ffec
+  var variants = [
+    mk("Type=Default", white),
+    mk("Type=Danger", red),
+    mk("Type=Success", green),
+  ];
+  var out = N.buildAnatomyFile(variants[0], {
+    slug: "banner",
+    kit: "dskit",
+    syncedAt: "2026-07-03",
+    source: {},
+    variants: variants,
+    defaultVariantName: "Type=Default",
+  });
+  assert.deepEqual(out.variantDefaults, { Type: "Default" });
+  assert.deepEqual(out.root.appearance.variants, [
+    { prop: "Type", values: ["Danger"], background: "#dc3514" },
+    { prop: "Type", values: ["Success"], background: "#f0ffec" },
+  ]);
+});
+
+test("buildAnatomyFile emits uncapturedValues sorted deterministically regardless of variant order", function () {
+  var mk = function (name) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      children: [],
+    };
+  };
+  var def = mk("Z=Default, A=Default");
+  var v1 = mk("Z=Bee, A=Foo");
+  var v2 = mk("Z=Aardvark, A=Bar");
+  var expected = [
+    { prop: "A", value: "Bar", reason: "no isolated variant" },
+    { prop: "A", value: "Foo", reason: "no isolated variant" },
+    { prop: "Z", value: "Aardvark", reason: "no isolated variant" },
+    { prop: "Z", value: "Bee", reason: "no isolated variant" },
+  ];
+  var outA = N.buildAnatomyFile(def, {
+    slug: "banner",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [def, v1, v2],
+    defaultVariantName: "Z=Default, A=Default",
+  });
+  var outB = N.buildAnatomyFile(def, {
+    slug: "banner",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [def, v2, v1], // shuffled Figma child order
+    defaultVariantName: "Z=Default, A=Default",
+  });
+  assert.deepEqual(outA.quality.uncapturedValues, expected);
+  assert.deepEqual(outB.quality.uncapturedValues, expected);
+});
+
+test("buildAnatomyFile emits structuralVariants sorted deterministically regardless of variant order", function () {
+  var bg = { r: 1, g: 1, b: 1, a: 1 };
+  var leaf = function (name) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      fills: [{ type: "SOLID", color: bg }],
+      children: [],
+    };
+  };
+  var withChild = function (name) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      fills: [{ type: "SOLID", color: bg }],
+      children: [{ type: "TEXT", name: "t", characters: "x" }],
+    };
+  };
+  // default is a leaf (0 children); isolated Z and isolated A each add one child,
+  // so both diverge structurally from the canonical (childCount 0 != 1).
+  var def = leaf("Z=Default, A=Default");
+  var isoZ = withChild("Z=Bee, A=Default");
+  var isoA = withChild("Z=Default, A=Foo");
+  var expected = [
+    { prop: "A", value: "Foo", path: "", reason: "childCount:0!=1" },
+    { prop: "Z", value: "Bee", path: "", reason: "childCount:0!=1" },
+  ];
+  var outA = N.buildAnatomyFile(def, {
+    slug: "banner",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [def, isoZ, isoA],
+    defaultVariantName: "Z=Default, A=Default",
+  });
+  var outB = N.buildAnatomyFile(def, {
+    slug: "banner",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [def, isoA, isoZ], // shuffled Figma child order
+    defaultVariantName: "Z=Default, A=Default",
+  });
+  // Production order (collectDeltas walks variantDefaults' key order, Z then A)
+  // is [Z, A], so this assertion only passes because buildAnatomyFile sorts it to
+  // [A, Z]; removing the sort flips this to a failing assertion.
+  assert.deepEqual(outA.quality.structuralVariants, expected);
+  assert.deepEqual(outB.quality.structuralVariants, expected);
+});
+
+test("buildAnatomyFile surfaces a non-SOLID fill found only in an isolated variant, tagged with its variant scope", function () {
+  // Finding D4: each isolated variant is normalized with a throwaway vctx whose
+  // vctx.degraded is otherwise discarded, so a gradient/unnormalizable node that
+  // appears ONLY in a non-default variant would be invisible in quality.degraded.
+  var mk = function (name, fills) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      fills: fills,
+      children: [],
+    };
+  };
+  var white = { r: 1, g: 1, b: 1, a: 1 };
+  var def = mk("State=Default", [{ type: "SOLID", color: white }]);
+  var special = mk("State=Special", [
+    { type: "GRADIENT_LINEAR", visible: true },
+  ]);
+  var out = N.buildAnatomyFile(def, {
+    slug: "x",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [def, special],
+    defaultVariantName: "State=Default",
+  });
+  // default tree itself is clean -> before the fix quality.degraded is []
+  assert.deepEqual(out.quality.degraded, [
+    {
+      name: "State=Special",
+      reason: "non-solid-fill:GRADIENT_LINEAR (variant State=Special)",
+    },
+  ]);
+  // ctx.total/ctx.normalized (and thus quality.ratio) stay default-tree-only:
+  // the isolated variant's own node must not inflate nodesTotal.
+  assert.equal(out.quality.nodesTotal, 1);
+  assert.equal(out.quality.nodesNormalized, 1);
+});
+
+test("buildAnatomyFile records an unparseable variant child name in uncapturedValues instead of dropping it", function () {
+  // Finding M5: variant COMPONENT children whose name does not parse
+  // (parseVariantName returns null) were filtered out silently.
+  var mk = function (name) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      children: [],
+    };
+  };
+  var def = mk("Type=Default");
+  var broken = mk("BrokenName"); // no "=" -> parseVariantName returns null
+  var out = N.buildAnatomyFile(def, {
+    slug: "x",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [def, broken],
+    defaultVariantName: "Type=Default",
+  });
+  assert.deepEqual(out.quality.uncapturedValues, [
+    {
+      prop: "(unparseable)",
+      value: "BrokenName",
+      reason: "unparseable variant name",
+    },
+  ]);
+});
+
+test("buildAnatomyFile output unchanged when no variants passed (P1A byte-compat)", function () {
+  var raw = {
+    type: "COMPONENT",
+    name: "x",
+    layoutMode: "HORIZONTAL",
+    itemSpacing: 0,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    fills: [{ type: "SOLID", color: { r: 1, g: 1, b: 1, a: 1 } }],
+    children: [],
+  };
+  var a = N.buildAnatomyFile(raw, {
+    slug: "x",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+  });
+  assert.equal("variantDefaults" in a, false);
+  assert.equal("variants" in a.root.appearance, false);
 });
