@@ -80,6 +80,16 @@ function topVisibleSolid(paints) {
   return null;
 }
 
+// Return the top-most visible paint (any type), used to detect non-SOLID fills.
+function topVisiblePaint(paints) {
+  if (!Array.isArray(paints)) return null;
+  for (var i = paints.length - 1; i >= 0; i--) {
+    var p = paints[i];
+    if (p && p.visible !== false) return p;
+  }
+  return null;
+}
+
 function cornerCss(values) {
   var allEqual = values.every(function (v) {
     return v === values[0];
@@ -142,7 +152,7 @@ function uniformSideWeight(node) {
     : null;
 }
 
-function resolveAppearance(node) {
+function resolveAppearance(node, ctx) {
   // Node-level opacity dims the node's own paints; fold it into each paint's alpha.
   var nodeOpacity = typeof node.opacity === "number" ? node.opacity : 1;
   function paintAlpha(p) {
@@ -163,7 +173,16 @@ function resolveAppearance(node) {
   }
   var a = {};
   var fill = topVisibleSolid(node.fills);
-  if (fill) a.background = figmaColorToCss(fill.color, paintAlpha(fill));
+  if (fill) {
+    a.background = figmaColorToCss(fill.color, paintAlpha(fill));
+  } else if (ctx && ctx.degraded) {
+    var top = topVisiblePaint(node.fills);
+    if (top && top.type !== "SOLID")
+      ctx.degraded.push({
+        name: node.name || "",
+        reason: "non-solid-fill:" + top.type,
+      });
+  }
   var stroke = topVisibleSolid(node.strokes);
   if (stroke) {
     var border = { color: figmaColorToCss(stroke.color, paintAlpha(stroke)) };
@@ -270,7 +289,7 @@ function normalizeNode(node, ctx) {
   ctx.total++;
   var kind = classifyKind(node);
   var refs = collectTokenRefs(node, ctx.varNameById);
-  var appearance = resolveAppearance(node);
+  var appearance = resolveAppearance(node, ctx);
 
   if (kind === "instance") {
     var out = { name: node.name || "", kind: "instance" };

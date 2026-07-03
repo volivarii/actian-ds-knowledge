@@ -460,3 +460,16 @@ test("spacingValue rounds the px path to 3 decimals", function () {
     "15.999px",
   );
 });
+
+test("resolveAppearance records a non-SOLID fill in ctx.degraded", function () {
+  var ctx = { degraded: [] };
+  var node = {
+    type: "FRAME",
+    name: "Hero",
+    fills: [{ type: "GRADIENT_LINEAR", visible: true }],
+  };
+  N.resolveAppearance(node, ctx);
+  assert.deepEqual(ctx.degraded, [
+    { name: "Hero", reason: "non-solid-fill:GRADIENT_LINEAR" },
+  ]);
+});
