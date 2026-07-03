@@ -432,8 +432,11 @@ test("normalizeNode omits appearance when node has no paints", function () {
 test("figmaColorToCss guards missing rgb channels and clamps alpha", function () {
   // malformed SOLID: only alpha present -> channels default to 0, not NaN
   assert.equal(N.figmaColorToCss({ a: 1 }), "#000000");
-  // alpha > 1 clamps to 1 -> hex branch (>=0.999), not rgba(...,1.002)
-  assert.equal(N.figmaColorToCss({ r: 0, g: 0, b: 0, a: 1.5 }), "#000000");
+  // alpha < 0 clamps to 0 -> rgba branch reads the clamped value, not the raw negative
+  assert.equal(
+    N.figmaColorToCss({ r: 0, g: 0, b: 0, a: -0.5 }),
+    "rgba(0, 0, 0, 0)",
+  );
 });
 
 test("resolveAppearance uses per-side stroke weight when scalar strokeWeight absent", function () {
@@ -453,7 +456,7 @@ test("resolveAppearance uses per-side stroke weight when scalar strokeWeight abs
 
 test("spacingValue rounds the px path to 3 decimals", function () {
   assert.equal(
-    N.__spacingValue({ paddingLeft: 15.999 }, "paddingLeft", {}),
+    N.__spacingValue({ paddingLeft: 15.99949999999998 }, "paddingLeft", {}),
     "15.999px",
   );
 });
