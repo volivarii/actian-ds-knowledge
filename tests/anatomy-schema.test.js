@@ -128,3 +128,53 @@ test("text appearance validates; unknown appearance key rejected", function () {
   });
   assert.equal(v(bad), false);
 });
+
+test("schema accepts per-variant appearance + variantDefaults + quality extras", function () {
+  var v = makeValidator();
+  var doc = {
+    _schema_version: 1,
+    slug: "banner",
+    kit: "dskit",
+    variantDefaults: { Type: "Default" },
+    quality: {
+      nodesTotal: 1,
+      nodesNormalized: 1,
+      ratio: 1,
+      degraded: [],
+      structuralVariants: [
+        { prop: "State", value: "Hover", path: "0", reason: "childCount:3!=4" },
+      ],
+      uncapturedValues: [
+        { prop: "Intent", value: "Ghost", reason: "no isolated variant" },
+      ],
+    },
+    root: {
+      name: "Banner",
+      kind: "container",
+      appearance: {
+        background: "#ffffff",
+        variants: [
+          { prop: "Type", values: ["Danger"], background: "#dc3514" },
+          { prop: "Emphasis", values: ["Ghost"], border: null },
+        ],
+      },
+    },
+  };
+  assert.ok(v(doc), JSON.stringify(v.errors));
+});
+
+test("schema rejects a variant entry missing prop/values", function () {
+  var v = makeValidator();
+  var doc = {
+    _schema_version: 1,
+    slug: "x",
+    kit: "dskit",
+    quality: { nodesTotal: 1, nodesNormalized: 1, ratio: 1, degraded: [] },
+    root: {
+      name: "x",
+      kind: "container",
+      appearance: { variants: [{ background: "#fff" }] },
+    },
+  };
+  assert.equal(v(doc), false);
+});
