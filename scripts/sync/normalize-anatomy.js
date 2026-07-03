@@ -214,6 +214,7 @@ function normalizeNode(node, ctx) {
   ctx.total++;
   var kind = classifyKind(node);
   var refs = collectTokenRefs(node, ctx.varNameById);
+  var appearance = resolveAppearance(node);
 
   if (kind === "instance") {
     var out = { name: node.name || "", kind: "instance" };
@@ -236,12 +237,14 @@ function normalizeNode(node, ctx) {
     if (props) out.props = props;
     if (refs.length) out.tokenRefs = refs;
     if (typeof node.id === "string" && node.id) out.id = node.id;
+    if (appearance) out.appearance = appearance;
     return out; // R1: no recursion
   }
 
   var n = { name: node.name || "", kind: kind };
   if (refs.length) n.tokenRefs = refs;
   if (typeof node.id === "string" && node.id) n.id = node.id;
+  if (appearance) n.appearance = appearance;
 
   if (kind === "text") {
     n.text = typeof node.characters === "string" ? node.characters : "";

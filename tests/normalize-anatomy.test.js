@@ -317,3 +317,57 @@ test("resolveAppearance returns null when nothing to capture", function () {
   assert.equal(N.resolveAppearance({ type: "FRAME" }), null);
   assert.equal(N.resolveAppearance({ type: "TEXT" }), null);
 });
+
+function bareCtx() {
+  return {
+    nodeIdToSlug: {},
+    componentIdToKey: {},
+    keyToSlug: {},
+    varNameById: {},
+    total: 0,
+    normalized: 0,
+    degraded: [],
+  };
+}
+
+test("normalizeNode attaches appearance on a container with a fill", function () {
+  var out = N.normalizeNode(
+    {
+      type: "COMPONENT",
+      name: "Tag",
+      fills: [{ type: "SOLID", color: { r: 0.949, g: 0.965, b: 0.973, a: 1 } }],
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 4,
+      paddingTop: 0,
+      paddingRight: 8,
+      paddingBottom: 0,
+      paddingLeft: 8,
+      children: [],
+    },
+    bareCtx(),
+  );
+  assert.equal(out.appearance.background, "#f2f6f8");
+});
+
+test("normalizeNode attaches text appearance on a text node", function () {
+  var out = N.normalizeNode(
+    {
+      type: "TEXT",
+      name: "Label",
+      characters: "Purple",
+      fills: [{ type: "SOLID", color: { r: 0.314, g: 0.314, b: 0.365, a: 1 } }],
+      style: { fontSize: 14 },
+    },
+    bareCtx(),
+  );
+  assert.equal(out.appearance.text.color, "#50505d");
+  assert.equal(out.appearance.text.size, "14px");
+});
+
+test("normalizeNode omits appearance when node has no paints", function () {
+  var out = N.normalizeNode(
+    { type: "FRAME", name: "Wrap", layoutMode: "VERTICAL", children: [] },
+    bareCtx(),
+  );
+  assert.equal("appearance" in out, false);
+});
