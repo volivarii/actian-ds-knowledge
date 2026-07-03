@@ -68,37 +68,66 @@ function figmaColorToCss(color, opacity) {
   );
 }
 
-function firstVisibleSolid(paints) {
+// Figma paint arrays are ordered back-to-front (index 0 = bottom-most,
+// last = top-most / actually rendered). Return the top-most visible SOLID.
+function topVisibleSolid(paints) {
   if (!Array.isArray(paints)) return null;
-  for (var i = 0; i < paints.length; i++) {
+  for (var i = paints.length - 1; i >= 0; i--) {
     var p = paints[i];
     if (p && p.type === "SOLID" && p.visible !== false && p.color) return p;
   }
   return null;
 }
 
+function cornerCss(values) {
+  var allEqual = values.every(function (v) {
+    return v === values[0];
+  });
+  if (allEqual) return round3(values[0]) + "px";
+  return values
+    .map(function (v) {
+      return round3(v) + "px";
+    })
+    .join(" ");
+}
+
 function cornerRadiusCss(node) {
-  if (typeof node.cornerRadius === "number") return node.cornerRadius + "px";
-  var rr = node.rectangleCornerRadii;
-  if (Array.isArray(rr) && rr.length === 4) {
-    var allEqual = rr.every(function (v) {
-      return v === rr[0];
-    });
-    if (allEqual) return rr[0] + "px";
-    return rr
-      .map(function (v) {
-        return v + "px";
-      })
-      .join(" ");
+  if (typeof node.cornerRadius === "number")
+    return round3(node.cornerRadius) + "px";
+  // Per-corner scalar fields (FRAME/COMPONENT/INSTANCE nodes). CSS order: TL TR BR BL.
+  var perCorner = [
+    node.topLeftRadius,
+    node.topRightRadius,
+    node.bottomRightRadius,
+    node.bottomLeftRadius,
+  ];
+  if (
+    perCorner.some(function (v) {
+      return typeof v === "number";
+    })
+  ) {
+    return cornerCss(
+      perCorner.map(function (v) {
+        return typeof v === "number" ? v : 0;
+      }),
+    );
   }
+  // rectangleCornerRadii (RECTANGLE nodes): same [TL, TR, BR, BL] order.
+  var rr = node.rectangleCornerRadii;
+  if (Array.isArray(rr) && rr.length === 4) return cornerCss(rr);
   return null;
 }
 
 function resolveAppearance(node) {
+  // Node-level opacity dims the node's own paints; fold it into each paint's alpha.
+  var nodeOpacity = typeof node.opacity === "number" ? node.opacity : 1;
+  function paintAlpha(p) {
+    return (typeof p.opacity === "number" ? p.opacity : 1) * nodeOpacity;
+  }
   if (node.type === "TEXT") {
     var t = {};
-    var tf = firstVisibleSolid(node.fills);
-    if (tf) t.color = figmaColorToCss(tf.color, tf.opacity);
+    var tf = topVisibleSolid(node.fills);
+    if (tf) t.color = figmaColorToCss(tf.color, paintAlpha(tf));
     var st = node.style || {};
     if (typeof st.fontSize === "number") t.size = round3(st.fontSize) + "px";
     if (typeof st.fontWeight === "number") t.weight = st.fontWeight;
@@ -109,13 +138,13 @@ function resolveAppearance(node) {
     return Object.keys(t).length ? { text: t } : null;
   }
   var a = {};
-  var fill = firstVisibleSolid(node.fills);
-  if (fill) a.background = figmaColorToCss(fill.color, fill.opacity);
-  var stroke = firstVisibleSolid(node.strokes);
+  var fill = topVisibleSolid(node.fills);
+  if (fill) a.background = figmaColorToCss(fill.color, paintAlpha(fill));
+  var stroke = topVisibleSolid(node.strokes);
   if (stroke) {
-    var border = { color: figmaColorToCss(stroke.color, stroke.opacity) };
+    var border = { color: figmaColorToCss(stroke.color, paintAlpha(stroke)) };
     if (typeof node.strokeWeight === "number")
-      border.width = node.strokeWeight + "px";
+      border.width = round3(node.strokeWeight) + "px";
     a.border = border;
   }
   var radius = cornerRadiusCss(node);
@@ -323,7 +352,7 @@ module.exports = {
   normalizeNode,
   buildAnatomyFile,
   figmaColorToCss,
-  firstVisibleSolid,
+  topVisibleSolid,
   cornerRadiusCss,
   resolveAppearance,
 };
