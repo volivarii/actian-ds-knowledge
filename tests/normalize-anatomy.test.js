@@ -631,3 +631,33 @@ test("collectDeltas aligns children whose names differ (tag status icons)", func
   assert.deepEqual(a.deltas, []); // icons align by index+kind; label color identical
   assert.deepEqual(a.structural, []); // differing names are NOT a divergence
 });
+
+test("selectIsolatedVariants isolates each axis at default, records missing", function () {
+  var D = { Intent: "Default", Size: "Default" };
+  var parsed = [
+    { node: { name: "d" }, props: { Intent: "Default", Size: "Default" } }, // default
+    { node: { name: "crit" }, props: { Intent: "Critical", Size: "Default" } }, // Intent iso
+    { node: { name: "sm" }, props: { Intent: "Default", Size: "Small" } }, // Size iso
+    { node: { name: "critSm" }, props: { Intent: "Critical", Size: "Small" } }, // not isolated
+  ];
+  var r = N.selectIsolatedVariants(parsed, D);
+  assert.deepEqual(r.isolated, [
+    { prop: "Intent", value: "Critical", node: { name: "crit" } },
+    { prop: "Size", value: "Small", node: { name: "sm" } },
+  ]);
+  assert.deepEqual(r.uncaptured, []);
+});
+
+test("selectIsolatedVariants records a value with no isolated row", function () {
+  var D = { Intent: "Default", Size: "Default" };
+  var parsed = [
+    { node: { name: "d" }, props: { Intent: "Default", Size: "Default" } },
+    { node: { name: "ghostSm" }, props: { Intent: "Ghost", Size: "Small" } }, // Ghost only paired with Small
+  ];
+  var r = N.selectIsolatedVariants(parsed, D);
+  assert.deepEqual(r.isolated, []);
+  assert.deepEqual(r.uncaptured, [
+    { prop: "Intent", value: "Ghost", reason: "no isolated variant" },
+    { prop: "Size", value: "Small", reason: "no isolated variant" },
+  ]);
+});

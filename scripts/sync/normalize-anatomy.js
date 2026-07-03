@@ -446,6 +446,35 @@ function collectDeltas(cNode, vNode, path, acc) {
     collectDeltas(cc[i], vc[i], path.concat(i), acc);
 }
 
+function selectIsolatedVariants(parsed, variantDefaults) {
+  var isolated = [];
+  var uncaptured = [];
+  var axes = Object.keys(variantDefaults);
+  axes.forEach(function (axis) {
+    var seen = {};
+    parsed.forEach(function (pv) {
+      var val = pv.props[axis];
+      if (val === undefined || val === variantDefaults[axis] || seen[val])
+        return;
+      seen[val] = true;
+      var match = parsed.find(function (cand) {
+        if (cand.props[axis] !== val) return false;
+        return axes.every(function (a) {
+          return a === axis || cand.props[a] === variantDefaults[a];
+        });
+      });
+      if (match) isolated.push({ prop: axis, value: val, node: match.node });
+      else
+        uncaptured.push({
+          prop: axis,
+          value: val,
+          reason: "no isolated variant",
+        });
+    });
+  });
+  return { isolated: isolated, uncaptured: uncaptured };
+}
+
 module.exports = {
   classifyKind,
   normalizeLayout,
@@ -460,5 +489,6 @@ module.exports = {
   resolveAppearance,
   diffAppearance,
   collectDeltas,
+  selectIsolatedVariants,
   __spacingValue: spacingValue,
 };
