@@ -70,17 +70,10 @@ function figmaColorToCss(color, opacity) {
 }
 
 // Figma paint arrays are ordered back-to-front (index 0 = bottom-most,
-// last = top-most / actually rendered). Return the top-most visible SOLID.
-function topVisibleSolid(paints) {
-  if (!Array.isArray(paints)) return null;
-  for (var i = paints.length - 1; i >= 0; i--) {
-    var p = paints[i];
-    if (p && p.type === "SOLID" && p.visible !== false && p.color) return p;
-  }
-  return null;
-}
-
-// Return the top-most visible paint (any type), used to detect non-SOLID fills.
+// last = top-most / actually rendered). Return the top-most visible paint
+// (any type). A visible non-SOLID paint occludes any SOLID paint beneath it,
+// so callers must key off THIS (not a same-type-only scan) to avoid emitting
+// a color that Figma would not actually render.
 function topVisiblePaint(paints) {
   if (!Array.isArray(paints)) return null;
   for (var i = paints.length - 1; i >= 0; i--) {
@@ -88,6 +81,15 @@ function topVisiblePaint(paints) {
     if (p && p.visible !== false) return p;
   }
   return null;
+}
+
+// Thin wrapper over topVisiblePaint kept for its exported name and existing
+// callers/tests: returns the top-most visible paint only if it is a SOLID.
+// Unlike a same-type-only scan, this does NOT skip past a visible non-SOLID
+// paint to find a SOLID underneath it (that solid would be occluded).
+function topVisibleSolid(paints) {
+  var p = topVisiblePaint(paints);
+  return p && p.type === "SOLID" && p.color ? p : null;
 }
 
 function cornerCss(values) {
@@ -105,7 +107,11 @@ function cornerCss(values) {
 function cornerRadiusCss(node) {
   if (typeof node.cornerRadius === "number")
     return round3(node.cornerRadius) + "px";
-  // Per-corner scalar fields (FRAME/COMPONENT/INSTANCE nodes). CSS order: TL TR BR BL.
+  // Per-corner scalar fields (topLeftRadius etc.) are Plugin-API-only and are
+  // dead on the Figma REST API (this pipeline's actual source); they are kept
+  // as a harmless guarded fallback for callers that pass Plugin-API-shaped
+  // nodes directly. Per-corner radius on non-RECTANGLE nodes is a known REST
+  // capture gap, rescued only for RECTANGLE nodes via rectangleCornerRadii below.
   var perCorner = [
     node.topLeftRadius,
     node.topRightRadius,
@@ -129,16 +135,17 @@ function cornerRadiusCss(node) {
   return null;
 }
 
-// Uniform per-side stroke weight (strokeTopWeight etc.) when the scalar
-// strokeWeight is absent. Returns the shared value only when all four sides
-// agree; mixed per-side widths are a follow-on (returns null -> width omitted).
+// Uniform per-side stroke weight when the scalar strokeWeight is absent. The
+// Figma REST API exposes per-side stroke weights only as
+// node.individualStrokeWeights = { top, right, bottom, left } (there is no
+// REST equivalent of the Plugin API's strokeTopWeight/strokeRightWeight/
+// strokeBottomWeight/strokeLeftWeight fields). Returns the shared value only
+// when all four sides agree; mixed per-side widths are a follow-on (returns
+// null -> width omitted).
 function uniformSideWeight(node) {
-  var sides = [
-    node.strokeTopWeight,
-    node.strokeRightWeight,
-    node.strokeBottomWeight,
-    node.strokeLeftWeight,
-  ];
+  var isw = node.individualStrokeWeights;
+  if (!isw || typeof isw !== "object") return null;
+  var sides = [isw.top, isw.right, isw.bottom, isw.left];
   if (
     sides.some(function (s) {
       return typeof s !== "number";
@@ -160,8 +167,9 @@ function resolveAppearance(node, ctx) {
   }
   if (node.type === "TEXT") {
     var t = {};
-    var tf = topVisibleSolid(node.fills);
-    if (tf) t.color = figmaColorToCss(tf.color, paintAlpha(tf));
+    var tf = topVisiblePaint(node.fills);
+    if (tf && tf.type === "SOLID" && tf.color)
+      t.color = figmaColorToCss(tf.color, paintAlpha(tf));
     var st = node.style || {};
     if (typeof st.fontSize === "number") t.size = round3(st.fontSize) + "px";
     if (typeof st.fontWeight === "number") t.weight = st.fontWeight;
@@ -172,19 +180,20 @@ function resolveAppearance(node, ctx) {
     return Object.keys(t).length ? { text: t } : null;
   }
   var a = {};
-  var fill = topVisibleSolid(node.fills);
-  if (fill) {
+  // Key off the TOP visible paint of ANY type, not a same-type-only scan: a
+  // visible non-SOLID paint occludes any SOLID paint beneath it, so scanning
+  // past it for a SOLID would emit a color Figma never actually renders.
+  var fill = topVisiblePaint(node.fills);
+  if (fill && fill.type === "SOLID" && fill.color) {
     a.background = figmaColorToCss(fill.color, paintAlpha(fill));
-  } else if (ctx && ctx.degraded) {
-    var top = topVisiblePaint(node.fills);
-    if (top && top.type !== "SOLID")
-      ctx.degraded.push({
-        name: node.name || "",
-        reason: "non-solid-fill:" + top.type,
-      });
+  } else if (fill && ctx && ctx.degraded) {
+    ctx.degraded.push({
+      name: node.name || "",
+      reason: "non-solid-fill:" + fill.type,
+    });
   }
-  var stroke = topVisibleSolid(node.strokes);
-  if (stroke) {
+  var stroke = topVisiblePaint(node.strokes);
+  if (stroke && stroke.type === "SOLID" && stroke.color) {
     var border = { color: figmaColorToCss(stroke.color, paintAlpha(stroke)) };
     var w =
       typeof node.strokeWeight === "number"

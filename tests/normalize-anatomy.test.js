@@ -288,24 +288,14 @@ test("cornerRadiusCss handles uniform, per-corner scalars, rectangle array, roun
     N.cornerRadiusCss({ rectangleCornerRadii: [4, 4, 0, 0] }),
     "4px 4px 0px 0px",
   );
-  // per-corner scalar fields (FRAME/COMPONENT), CSS order TL TR BR BL
+  // REST shape (RECTANGLE nodes): rectangleCornerRadii array, CSS order TL TR BR BL
   assert.equal(
-    N.cornerRadiusCss({
-      topLeftRadius: 8,
-      topRightRadius: 8,
-      bottomRightRadius: 0,
-      bottomLeftRadius: 0,
-    }),
+    N.cornerRadiusCss({ rectangleCornerRadii: [8, 8, 0, 0] }),
     "8px 8px 0px 0px",
   );
-  // per-corner scalars all equal collapse to a single value
+  // rectangleCornerRadii all equal collapse to a single value
   assert.equal(
-    N.cornerRadiusCss({
-      topLeftRadius: 6,
-      topRightRadius: 6,
-      bottomRightRadius: 6,
-      bottomLeftRadius: 6,
-    }),
+    N.cornerRadiusCss({ rectangleCornerRadii: [6, 6, 6, 6] }),
     "6px",
   );
   assert.equal(N.cornerRadiusCss({}), null);
@@ -439,14 +429,14 @@ test("figmaColorToCss guards missing rgb channels and clamps alpha", function ()
   );
 });
 
-test("resolveAppearance uses per-side stroke weight when scalar strokeWeight absent", function () {
+test("resolveAppearance uses per-side stroke weight when scalar strokeWeight absent (REST individualStrokeWeights)", function () {
+  // REST shape: the Figma REST API exposes per-side stroke weights only as
+  // node.individualStrokeWeights = { top, right, bottom, left }. The Plugin-API
+  // field names (strokeTopWeight etc.) never appear in REST payloads.
   var node = {
     type: "FRAME",
     strokes: [{ type: "SOLID", color: { r: 0, g: 0, b: 0, a: 1 } }],
-    strokeTopWeight: 2,
-    strokeBottomWeight: 2,
-    strokeLeftWeight: 2,
-    strokeRightWeight: 2,
+    individualStrokeWeights: { top: 2, right: 2, bottom: 2, left: 2 },
   };
   assert.deepEqual(resolveApp(node).border, {
     color: "#000000",
@@ -471,6 +461,28 @@ test("resolveAppearance records a non-SOLID fill in ctx.degraded", function () {
   N.resolveAppearance(node, ctx);
   assert.deepEqual(ctx.degraded, [
     { name: "Hero", reason: "non-solid-fill:GRADIENT_LINEAR" },
+  ]);
+});
+
+test("resolveAppearance does not emit an occluded SOLID background when a visible non-SOLID paint sits on top", function () {
+  // Figma paint arrays are back-to-front: index 0 = bottom-most, last = top-most
+  // / actually rendered. A visible gradient on top OCCLUDES the red solid below
+  // it, so the rendered result has no flat background color at all -- emitting
+  // the red would be wrong.
+  var ctx = { degraded: [] };
+  var node = {
+    type: "FRAME",
+    name: "Occluded",
+    fills: [
+      { type: "SOLID", color: { r: 1, g: 0, b: 0, a: 1 }, visible: true },
+      { type: "GRADIENT_LINEAR", visible: true },
+    ],
+  };
+  var a = N.resolveAppearance(node, ctx);
+  // no capturable appearance at all (no background, no border, no radius) -> null
+  assert.equal(a, null);
+  assert.deepEqual(ctx.degraded, [
+    { name: "Occluded", reason: "non-solid-fill:GRADIENT_LINEAR" },
   ]);
 });
 
