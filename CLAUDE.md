@@ -65,6 +65,27 @@ Plugin (`volivarii/Actian-DS-Claude-plugin`) vendors a pinned snapshot of this r
 - Don't rename a top-level domain without checking `MIGRATIONS.md` Rule 1 (parallel change) — there are downstream consumers (plugin's hardcoded vendor paths, future docs site URLs).
 - Don't commit specs / audits / planning docs from `docs/superpowers/` (gitignored, working artifacts only) per `feedback_no_commit_specs`.
 
+## Changelog & PR doc hygiene (ecosystem-wide ground rule)
+
+On every **notable** PR (new capability, schema/contract change, breaking sync, anything a consumer
+must know; not routine automated patch or sync bumps), update the docs the change touches, in the
+same PR:
+
+1. root [`CHANGELOG.md`](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com) + SemVer): add
+   the entry under `## [Unreleased]`, link the PR, promote to a versioned section at release.
+2. [`README.md`](README.md) if the change alters what it states (counts, capabilities, structure).
+3. any other relevant docs the change touches (`paths-manifest.json`, `llms.txt`, guidelines,
+   `CONTRIBUTING.md`).
+4. a plain-language summary into `actian-ds-ecosystem` (its bundle, `confluence/`, combined changelog),
+   per the standing ecosystem-sync rule.
+
+Never hand-edit version fields (CI owns them). This is an **ecosystem-wide** rule: all four DS repos
+(`actian-ds-knowledge`, `actian-design-system-plugin`, `actian-ds-docs`, `actian-ds-ecosystem`) follow
+it, and `actian-ds-ecosystem` additionally combines the three consumers' notable entries. The global
+cross-repo copy of this rule lives in the shared-brain memory `feedback_changelog_discipline` (it
+auto-loads in every repo's Claude context); this section is the authoritative checked-in copy for
+this repo.
+
 ## Roles
 
 - Plugin lead — orchestration, plugin maintenance, knowledge-repo CI

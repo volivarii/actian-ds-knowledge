@@ -20,6 +20,7 @@ without bending to any one of them.
 | **See every artifact** | [`paths-manifest.json`](paths-manifest.json) — the contract, keyed + zoned |
 | **Check coverage / debt** | [`components/dist/guidelines/coverage.md`](components/dist/guidelines/coverage.md) |
 | **Contribute / CI** | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
+| **See what changed** | [`CHANGELOG.md`](CHANGELOG.md) |
 | **AI-agent guide** | [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md) |
 | **Index for AI agents** | [`llms.txt`](llms.txt) |
 
