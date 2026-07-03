@@ -473,3 +473,30 @@ test("resolveAppearance records a non-SOLID fill in ctx.degraded", function () {
     { name: "Hero", reason: "non-solid-fill:GRADIENT_LINEAR" },
   ]);
 });
+
+test("parseVariantName parses clean and dirty names verbatim", function () {
+  assert.deepEqual(N.parseVariantName("Intent=Default, Emphasis=Filled"), {
+    Intent: "Default",
+    Emphasis: "Filled",
+  });
+  // apostrophe typo + spaces preserved verbatim
+  assert.deepEqual(
+    N.parseVariantName("Type=Primary, Orientation'=Horizontal"),
+    { Type: "Primary", "Orientation'": "Horizontal" },
+  );
+  // ampersand/space in prop, emoji in value, unit values
+  assert.deepEqual(
+    N.parseVariantName("Size & Type=1200px, Dev status=🟢 Ready"),
+    { "Size & Type": "1200px", "Dev status": "🟢 Ready" },
+  );
+  // un-renamed placeholder
+  assert.deepEqual(N.parseVariantName("Property 1=Default"), {
+    "Property 1": "Default",
+  });
+});
+
+test("parseVariantName returns null for unparseable names", function () {
+  assert.equal(N.parseVariantName("Background/Explore"), null);
+  assert.equal(N.parseVariantName(""), null);
+  assert.equal(N.parseVariantName(null), null);
+});

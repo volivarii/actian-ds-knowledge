@@ -358,6 +358,21 @@ function normalizeNode(node, ctx) {
   return n;
 }
 
+function parseVariantName(name) {
+  if (typeof name !== "string" || name.indexOf("=") === -1) return null;
+  var props = {};
+  var ok = false;
+  name.split(",").forEach(function (seg) {
+    var eq = seg.indexOf("=");
+    if (eq === -1) return;
+    var key = seg.slice(0, eq).trim();
+    if (!key) return;
+    props[key] = seg.slice(eq + 1).trim(); // value verbatim (may itself contain '=')
+    ok = true;
+  });
+  return ok ? props : null;
+}
+
 function buildAnatomyFile(rootNode, opts) {
   opts = opts || {};
   var ctx = {
@@ -397,6 +412,7 @@ module.exports = {
   instanceProps,
   normalizeNode,
   buildAnatomyFile,
+  parseVariantName,
   figmaColorToCss,
   topVisibleSolid,
   cornerRadiusCss,
