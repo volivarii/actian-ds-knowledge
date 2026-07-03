@@ -661,3 +661,64 @@ test("selectIsolatedVariants records a value with no isolated row", function () 
     { prop: "Size", value: "Small", reason: "no isolated variant" },
   ]);
 });
+
+test("buildAnatomyFile attaches per-variant deltas merged across values", function () {
+  var mk = function (name, bg) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      fills: [{ type: "SOLID", color: bg }],
+      children: [],
+    };
+  };
+  var white = { r: 1, g: 1, b: 1, a: 1 };
+  var red = { r: 0.863, g: 0.208, b: 0.078, a: 1 }; // #dc3514
+  var green = { r: 0.941, g: 1, b: 0.925, a: 1 }; // #f0ffec
+  var variants = [
+    mk("Type=Default", white),
+    mk("Type=Danger", red),
+    mk("Type=Success", green),
+  ];
+  var out = N.buildAnatomyFile(variants[0], {
+    slug: "banner",
+    kit: "dskit",
+    syncedAt: "2026-07-03",
+    source: {},
+    variants: variants,
+    defaultVariantName: "Type=Default",
+  });
+  assert.deepEqual(out.variantDefaults, { Type: "Default" });
+  assert.deepEqual(out.root.appearance.variants, [
+    { prop: "Type", values: ["Danger"], background: "#dc3514" },
+    { prop: "Type", values: ["Success"], background: "#f0ffec" },
+  ]);
+});
+
+test("buildAnatomyFile output unchanged when no variants passed (P1A byte-compat)", function () {
+  var raw = {
+    type: "COMPONENT",
+    name: "x",
+    layoutMode: "HORIZONTAL",
+    itemSpacing: 0,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    fills: [{ type: "SOLID", color: { r: 1, g: 1, b: 1, a: 1 } }],
+    children: [],
+  };
+  var a = N.buildAnatomyFile(raw, {
+    slug: "x",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+  });
+  assert.equal("variantDefaults" in a, false);
+  assert.equal("variants" in a.root.appearance, false);
+});

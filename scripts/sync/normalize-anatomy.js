@@ -373,6 +373,54 @@ function parseVariantName(name) {
   return ok ? props : null;
 }
 
+function nodeAtPath(root, path) {
+  var n = root;
+  for (var i = 0; i < path.length; i++) {
+    if (!n || !Array.isArray(n.children)) return null;
+    n = n.children[path[i]];
+  }
+  return n || null;
+}
+
+function attachVariantDeltas(root, allDeltas) {
+  // allDeltas: [{ path:number[], prop, value, appearance }]
+  var groups = {};
+  allDeltas.forEach(function (d) {
+    var key =
+      d.path.join(".") + "|" + d.prop + "|" + JSON.stringify(d.appearance);
+    if (!groups[key])
+      groups[key] = {
+        path: d.path,
+        prop: d.prop,
+        appearance: d.appearance,
+        values: [],
+      };
+    if (groups[key].values.indexOf(d.value) === -1)
+      groups[key].values.push(d.value);
+  });
+  Object.keys(groups).forEach(function (key) {
+    var g = groups[key];
+    var node = nodeAtPath(root, g.path);
+    if (!node) return;
+    if (!node.appearance) node.appearance = {};
+    if (!node.appearance.variants) node.appearance.variants = [];
+    var entry = { prop: g.prop, values: g.values.slice().sort() };
+    Object.keys(g.appearance).forEach(function (k) {
+      entry[k] = g.appearance[k];
+    });
+    node.appearance.variants.push(entry);
+  });
+  sortVariants(root);
+}
+
+function sortVariants(node) {
+  if (node && node.appearance && Array.isArray(node.appearance.variants))
+    node.appearance.variants.sort(function (a, b) {
+      return JSON.stringify(a) < JSON.stringify(b) ? -1 : 1;
+    });
+  if (node && Array.isArray(node.children)) node.children.forEach(sortVariants);
+}
+
 function buildAnatomyFile(rootNode, opts) {
   opts = opts || {};
   var ctx = {
@@ -387,7 +435,59 @@ function buildAnatomyFile(rootNode, opts) {
   var root = normalizeNode(rootNode, ctx);
   var ratio =
     ctx.total === 0 ? 1 : Math.round((ctx.normalized / ctx.total) * 100) / 100;
-  return {
+
+  var variantExtras = {};
+  var variantDefaults = opts.defaultVariantName
+    ? parseVariantName(opts.defaultVariantName)
+    : null;
+  if (variantDefaults && Array.isArray(opts.variants) && opts.variants.length) {
+    var parsed = opts.variants
+      .map(function (vn) {
+        return { node: vn, props: parseVariantName(vn.name) || {} };
+      })
+      .filter(function (pv) {
+        return Object.keys(pv.props).length;
+      });
+    var sel = selectIsolatedVariants(parsed, variantDefaults);
+    var allDeltas = [];
+    var structural = [];
+    sel.isolated.forEach(function (iso) {
+      var vctx = {
+        nodeIdToSlug: ctx.nodeIdToSlug,
+        componentIdToKey: ctx.componentIdToKey,
+        keyToSlug: ctx.keyToSlug,
+        varNameById: ctx.varNameById,
+        total: 0,
+        normalized: 0,
+        degraded: [],
+      };
+      var vroot = normalizeNode(iso.node, vctx);
+      var a = { deltas: [], structural: [] };
+      collectDeltas(root, vroot, [], a);
+      a.deltas.forEach(function (dd) {
+        allDeltas.push({
+          path: dd.path,
+          prop: iso.prop,
+          value: iso.value,
+          appearance: dd.appearance,
+        });
+      });
+      a.structural.forEach(function (s) {
+        structural.push({
+          prop: iso.prop,
+          value: iso.value,
+          path: s.path.join("."),
+          reason: s.reason,
+        });
+      });
+    });
+    attachVariantDeltas(root, allDeltas);
+    variantExtras.variantDefaults = variantDefaults;
+    if (structural.length) variantExtras.structuralVariants = structural;
+    if (sel.uncaptured.length) variantExtras.uncapturedValues = sel.uncaptured;
+  }
+
+  var file = {
     // Explicit (don't rely on writeJson's auto-injection) — the schema requires it,
     // and consumers/tests should see a complete, valid artifact from the builder.
     _schema_version: 1,
@@ -403,6 +503,13 @@ function buildAnatomyFile(rootNode, opts) {
     },
     root: root,
   };
+  if (variantExtras.variantDefaults)
+    file.variantDefaults = variantExtras.variantDefaults;
+  if (variantExtras.structuralVariants)
+    file.quality.structuralVariants = variantExtras.structuralVariants;
+  if (variantExtras.uncapturedValues)
+    file.quality.uncapturedValues = variantExtras.uncapturedValues;
+  return file;
 }
 
 function diffAppearance(base, variant) {
