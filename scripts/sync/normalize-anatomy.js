@@ -421,6 +421,18 @@ function sortVariants(node) {
   if (node && Array.isArray(node.children)) node.children.forEach(sortVariants);
 }
 
+// Sort a flat array of plain-object entries by their JSON.stringify form — the
+// same stable key sortVariants uses. Keeps quality.structuralVariants and
+// quality.uncapturedValues byte-stable regardless of Figma's COMPONENT_SET
+// child order (dist must not churn on cosmetic Figma-side reordering).
+function sortByJson(entries) {
+  return entries.slice().sort(function (a, b) {
+    var as = JSON.stringify(a);
+    var bs = JSON.stringify(b);
+    return as < bs ? -1 : as > bs ? 1 : 0;
+  });
+}
+
 function buildAnatomyFile(rootNode, opts) {
   opts = opts || {};
   var ctx = {
@@ -483,8 +495,10 @@ function buildAnatomyFile(rootNode, opts) {
     });
     attachVariantDeltas(root, allDeltas);
     variantExtras.variantDefaults = variantDefaults;
-    if (structural.length) variantExtras.structuralVariants = structural;
-    if (sel.uncaptured.length) variantExtras.uncapturedValues = sel.uncaptured;
+    if (structural.length)
+      variantExtras.structuralVariants = sortByJson(structural);
+    if (sel.uncaptured.length)
+      variantExtras.uncapturedValues = sortByJson(sel.uncaptured);
   }
 
   var file = {

@@ -700,6 +700,49 @@ test("buildAnatomyFile attaches per-variant deltas merged across values", functi
   ]);
 });
 
+test("buildAnatomyFile emits uncapturedValues sorted deterministically regardless of variant order", function () {
+  var mk = function (name) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      children: [],
+    };
+  };
+  var def = mk("Z=Default, A=Default");
+  var v1 = mk("Z=Bee, A=Foo");
+  var v2 = mk("Z=Aardvark, A=Bar");
+  var expected = [
+    { prop: "A", value: "Bar", reason: "no isolated variant" },
+    { prop: "A", value: "Foo", reason: "no isolated variant" },
+    { prop: "Z", value: "Aardvark", reason: "no isolated variant" },
+    { prop: "Z", value: "Bee", reason: "no isolated variant" },
+  ];
+  var outA = N.buildAnatomyFile(def, {
+    slug: "banner",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [def, v1, v2],
+    defaultVariantName: "Z=Default, A=Default",
+  });
+  var outB = N.buildAnatomyFile(def, {
+    slug: "banner",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [def, v2, v1], // shuffled Figma child order
+    defaultVariantName: "Z=Default, A=Default",
+  });
+  assert.deepEqual(outA.quality.uncapturedValues, expected);
+  assert.deepEqual(outB.quality.uncapturedValues, expected);
+});
+
 test("buildAnatomyFile output unchanged when no variants passed (P1A byte-compat)", function () {
   var raw = {
     type: "COMPONENT",

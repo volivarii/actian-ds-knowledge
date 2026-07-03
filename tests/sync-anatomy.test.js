@@ -351,6 +351,65 @@ test("syncAnatomy resolves a nested icon instance via the key path (node id abse
   })();
 });
 
+test("syncAnatomy captures per-variant appearance for a COMPONENT_SET", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: { banner: { nodeId: "1:1", category: "Feedback" } },
+    }),
+  );
+  function variantComp(name, color) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      fills: [{ type: "SOLID", color: color }],
+      children: [],
+    };
+  }
+  var setDoc = {
+    type: "COMPONENT_SET",
+    name: "Banner",
+    children: [
+      variantComp("Type=Default", { r: 1, g: 1, b: 1, a: 1 }),
+      variantComp("Type=Danger", { r: 0.863, g: 0.208, b: 0.078, a: 1 }),
+    ],
+  };
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({ nodes: { "1:1": { document: setDoc } } });
+    },
+  };
+  var written = {};
+  await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: function (p, o) {
+        written[path.basename(p)] = o;
+      },
+      syncedAt: "2026-07-03",
+    },
+    "dsKit",
+  );
+  var banner = written["banner.json"];
+  assert.deepEqual(banner.variantDefaults, { Type: "Default" });
+  assert.deepEqual(banner.root.appearance.variants, [
+    { prop: "Type", values: ["Danger"], background: "#dc3514" },
+  ]);
+});
+
 test("syncAnatomy resolves token refs when getLocalVariables is available", async function () {
   var dir = tmpDir();
   var registriesDir = path.join(dir, "registries");

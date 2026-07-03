@@ -198,6 +198,16 @@ async function syncAnatomy(opts, kit) {
       var picked = pickDefaultVariant(doc);
       var source = { fileKey: fileKey, nodeId: nid };
       if (picked.variant) source.variant = picked.variant;
+      // v3: for a COMPONENT_SET, carry its COMPONENT siblings through so
+      // buildAnatomyFile can isolate + capture per-variant appearance deltas.
+      // No extra API call — doc.children already rode along in the getNodes
+      // response fetched above for pickDefaultVariant.
+      var variants =
+        doc.type === "COMPONENT_SET" && Array.isArray(doc.children)
+          ? doc.children.filter(function (c) {
+              return c && c.type === "COMPONENT";
+            })
+          : [];
       var file = buildAnatomyFile(picked.node, {
         slug: slug,
         kit: kit.toLowerCase(),
@@ -207,6 +217,8 @@ async function syncAnatomy(opts, kit) {
         keyToSlug: keyToSlug,
         componentIdToKey: componentIdToKey,
         varNameById: varNameById,
+        variants: variants,
+        defaultVariantName: picked.variant,
       });
       writeJson(path.join(anatomyDir, slug + ".json"), file);
       bundle.components[slug] = file;
