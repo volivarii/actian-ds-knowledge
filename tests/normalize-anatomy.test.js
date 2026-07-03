@@ -743,6 +743,68 @@ test("buildAnatomyFile emits uncapturedValues sorted deterministically regardles
   assert.deepEqual(outB.quality.uncapturedValues, expected);
 });
 
+test("buildAnatomyFile emits structuralVariants sorted deterministically regardless of variant order", function () {
+  var bg = { r: 1, g: 1, b: 1, a: 1 };
+  var leaf = function (name) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      fills: [{ type: "SOLID", color: bg }],
+      children: [],
+    };
+  };
+  var withChild = function (name) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      fills: [{ type: "SOLID", color: bg }],
+      children: [{ type: "TEXT", name: "t", characters: "x" }],
+    };
+  };
+  // default is a leaf (0 children); isolated Z and isolated A each add one child,
+  // so both diverge structurally from the canonical (childCount 0 != 1).
+  var def = leaf("Z=Default, A=Default");
+  var isoZ = withChild("Z=Bee, A=Default");
+  var isoA = withChild("Z=Default, A=Foo");
+  var expected = [
+    { prop: "A", value: "Foo", path: "", reason: "childCount:0!=1" },
+    { prop: "Z", value: "Bee", path: "", reason: "childCount:0!=1" },
+  ];
+  var outA = N.buildAnatomyFile(def, {
+    slug: "banner",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [def, isoZ, isoA],
+    defaultVariantName: "Z=Default, A=Default",
+  });
+  var outB = N.buildAnatomyFile(def, {
+    slug: "banner",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [def, isoA, isoZ], // shuffled Figma child order
+    defaultVariantName: "Z=Default, A=Default",
+  });
+  // Production order (collectDeltas walks variantDefaults' key order, Z then A)
+  // is [Z, A] — this assertion only passes because buildAnatomyFile sorts it to
+  // [A, Z]; removing the sort flips this to a failing assertion.
+  assert.deepEqual(outA.quality.structuralVariants, expected);
+  assert.deepEqual(outB.quality.structuralVariants, expected);
+});
+
 test("buildAnatomyFile output unchanged when no variants passed (P1A byte-compat)", function () {
   var raw = {
     type: "COMPONENT",

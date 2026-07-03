@@ -200,7 +200,7 @@ async function syncAnatomy(opts, kit) {
       if (picked.variant) source.variant = picked.variant;
       // v3: for a COMPONENT_SET, carry its COMPONENT siblings through so
       // buildAnatomyFile can isolate + capture per-variant appearance deltas.
-      // No extra API call — doc.children already rode along in the getNodes
+      // No extra API call: doc.children already rode along in the getNodes
       // response fetched above for pickDefaultVariant.
       var variants =
         doc.type === "COMPONENT_SET" && Array.isArray(doc.children)

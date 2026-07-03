@@ -421,8 +421,8 @@ function sortVariants(node) {
   if (node && Array.isArray(node.children)) node.children.forEach(sortVariants);
 }
 
-// Sort a flat array of plain-object entries by their JSON.stringify form — the
-// same stable key sortVariants uses. Keeps quality.structuralVariants and
+// Sort a flat array of plain-object entries by their JSON.stringify form (the
+// same stable key sortVariants uses). Keeps quality.structuralVariants and
 // quality.uncapturedValues byte-stable regardless of Figma's COMPONENT_SET
 // child order (dist must not churn on cosmetic Figma-side reordering).
 function sortByJson(entries) {
