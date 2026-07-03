@@ -209,8 +209,8 @@
                 },
                 "lineHeight": {
                   "type": "string",
-                  "description": "Line height as px value or unitless multiplier.",
-                  "examples": ["20px", "1.5"]
+                  "description": "Line height as a px value.",
+                  "examples": ["20px"]
                 },
                 "letterSpacing": {
                   "type": "string",
