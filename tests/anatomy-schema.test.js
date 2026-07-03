@@ -7,7 +7,10 @@ var Ajv2020 = require("ajv/dist/2020");
 var addFormats = require("ajv-formats");
 
 var schema = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "..", "schemas", "anatomy.json"), "utf8"),
+  fs.readFileSync(
+    path.join(__dirname, "..", "schemas", "anatomy.json"),
+    "utf8",
+  ),
 );
 function makeValidator() {
   var ajv = new Ajv2020({ allErrors: true, strict: false });
@@ -23,11 +26,17 @@ function minimalFile(overrides) {
       synced_at: "2026-06-11",
       source: { fileKey: "X", nodeId: "1:1" },
       quality: { nodesTotal: 1, nodesNormalized: 1, ratio: 1, degraded: [] },
-      root: { name: "Button", kind: "container", layout: {
-        axis: "row", gap: "8px",
-        padding: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
-        align: { main: "center", cross: "center" },
-        sizing: { h: "hug", v: "hug" } } },
+      root: {
+        name: "Button",
+        kind: "container",
+        layout: {
+          axis: "row",
+          gap: "8px",
+          padding: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
+          align: { main: "center", cross: "center" },
+          sizing: { h: "hug", v: "hug" },
+        },
+      },
     },
     overrides || {},
   );
@@ -40,24 +49,82 @@ test("valid minimal anatomy file passes", function () {
 
 test("instance node with slug passes; recursion-stop has no children", function () {
   var v = makeValidator();
-  var ok = minimalFile({ root: { name: "Checkbox", kind: "instance", slug: "checkbox-with-label", props: { State: "Default" } } });
+  var ok = minimalFile({
+    root: {
+      name: "Checkbox",
+      kind: "instance",
+      slug: "checkbox-with-label",
+      props: { State: "Default" },
+    },
+  });
   assert.ok(v(ok), JSON.stringify(v.errors));
 });
 
 test("non-normalizable node passes with rawHint", function () {
   var v = makeValidator();
-  var ok = minimalFile({ root: { name: "Overlay", kind: "container", normalizable: false, rawHint: { layoutMode: "NONE" }, children: [] } });
+  var ok = minimalFile({
+    root: {
+      name: "Overlay",
+      kind: "container",
+      normalizable: false,
+      rawHint: { layoutMode: "NONE" },
+      children: [],
+    },
+  });
   assert.ok(v(ok), JSON.stringify(v.errors));
 });
 
 test("missing quality.ratio fails", function () {
   var v = makeValidator();
-  var bad = minimalFile({ quality: { nodesTotal: 1, nodesNormalized: 1, degraded: [] } });
+  var bad = minimalFile({
+    quality: { nodesTotal: 1, nodesNormalized: 1, degraded: [] },
+  });
   assert.equal(v(bad), false);
 });
 
 test("unknown kind fails", function () {
   var v = makeValidator();
   var bad = minimalFile({ root: { name: "x", kind: "widget" } });
+  assert.equal(v(bad), false);
+});
+
+test("node with appearance (background/border/radius) validates", function () {
+  var v = makeValidator();
+  var ok = minimalFile({
+    root: {
+      name: "Tag",
+      kind: "container",
+      appearance: {
+        background: "#f2f6f8",
+        border: { color: "#607d8c", width: "1px" },
+        radius: "4px",
+      },
+      layout: {
+        axis: "row",
+        gap: "4px",
+        padding: { top: "0px", right: "8px", bottom: "0px", left: "8px" },
+        align: { main: "center", cross: "center" },
+        sizing: { h: "hug", v: "hug" },
+      },
+    },
+  });
+  assert.ok(v(ok), JSON.stringify(v.errors));
+});
+
+test("text appearance validates; unknown appearance key rejected", function () {
+  var v = makeValidator();
+  var textOk = minimalFile({
+    root: {
+      name: "Label",
+      kind: "text",
+      text: "Purple",
+      appearance: { text: { color: "#50505d", size: "14px", weight: 400 } },
+    },
+  });
+  assert.ok(v(textOk), JSON.stringify(v.errors));
+
+  var bad = minimalFile({
+    root: { name: "Tag", kind: "container", appearance: { bogus: 1 } },
+  });
   assert.equal(v(bad), false);
 });

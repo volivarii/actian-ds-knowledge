@@ -131,6 +131,42 @@
           "examples": [["--zen-color-surface-warning"]],
           "items": { "type": "string" }
         },
+        "appearance": {
+          "type": "object",
+          "description": "Resolved sRGB visual values captured from Figma for this node — the render substrate; consumers emit var(--token, <value>).",
+          "additionalProperties": false,
+          "properties": {
+            "background": {
+              "type": "string",
+              "description": "Resolved fill color.",
+              "examples": ["#f2f6f8", "rgba(0, 0, 0, 0.5)"]
+            },
+            "border": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "color": { "type": "string", "examples": ["#607d8c"] },
+                "width": { "type": "string", "examples": ["1px"] }
+              }
+            },
+            "radius": {
+              "type": "string",
+              "description": "Resolved corner radius (uniform or 4-value).",
+              "examples": ["4px", "4px 4px 0px 0px"]
+            },
+            "text": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "color": { "type": "string", "examples": ["#50505d"] },
+                "size": { "type": "string", "examples": ["14px"] },
+                "weight": { "type": "number", "examples": [400] },
+                "lineHeight": { "type": "string", "examples": ["20px"] },
+                "letterSpacing": { "type": "string", "examples": ["0.14px"] }
+              }
+            }
+          }
+        },
         "normalizable": {
           "type": "boolean",
           "description": "False when this container could not be expressed as flex intent (see rawHint).",
