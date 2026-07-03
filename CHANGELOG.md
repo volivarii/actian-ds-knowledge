@@ -1,0 +1,76 @@
+# Changelog
+
+All notable changes to the Actian Product Design System knowledge layer are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
+project's `knowledge_version` follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## How this changelog works
+
+`package.json#version` and `paths-manifest.json#knowledge_version` are bumped **automatically by
+CI** (2-file lockstep) on every Figma sync and every `src/` derive, so the repo produces many patch
+releases per week. This file does **not** list every automated patch bump. It records the
+**notable** changes: new capabilities, schema and contract changes, breaking syncs, and anything a
+downstream consumer (plugin, docs, future MCP, Claude Design) should know about. Routine additive
+Figma refreshes are summarized, not enumerated.
+
+Each entry links its pull request. Dates are the merge date (UTC).
+
+## [Unreleased]
+
+### Added
+- Nothing yet.
+
+## [0.34.69] - 2026-07-03
+
+### Added
+- **Per-variant resolved appearance (Phase 1A-ii).** The nightly anatomy sync now captures how a
+  component's resolved appearance (fill, border, radius, text) changes across variant values, inline
+  on the anatomy tree as `appearance.variants[]` deltas relative to `variantDefaults`. Root-anchored
+  alignment captures where nodes align and records structural divergence in `quality.structuralVariants`
+  / `quality.uncapturedValues` instead of mis-emitting. Variant names are preserved verbatim so they
+  match consumer instance props. Live on real data: 81 of 83 components carry `appearance`, 40 carry
+  per-variant deltas. ([#347], [#344])
+
+### Changed
+- `schemas/anatomy.json`: additive `appearance.variants[]`, file-level `variantDefaults`, and
+  `quality.structuralVariants` / `quality.uncapturedValues`. Variant `border`/`text` deltas are
+  shape-constrained via shared `$defs`. All existing dist anatomy files remain valid. ([#347])
+
+### Fixed
+- Anatomy appearance capture now reads the correct Figma **REST** field names
+  (`individualStrokeWeights`, `rectangleCornerRadii`) rather than Plugin-API names, and no longer
+  emits a color occluded beneath a visible non-solid paint. ([#347])
+
+## [0.34.68] - 2026-07-03
+
+### Added
+- **Resolved appearance capture (Phase 1A).** Anatomy nodes now carry a resolved `appearance`
+  (fill/border/radius/text) captured from Figma's REST paint data, the render-fidelity substrate:
+  consumers emit the resolved value with the token name added later for theming. ([#345])
+- **Tag-family token-binding sidecars (harvest).** Variant-prop scoped bindings with schema v2
+  (`variant:{prop,values}` + `variantDefaults`), 9 sidecars. ([#338])
+
+### Fixed
+- **Editor: single submission path.** Every edit now routes through the batch/cart; the direct
+  "Submit as PR" paths were removed, and batch submit is hardened with a synchronous re-entry guard
+  and a `try/finally` guard reset. ([#346])
+- **Sync publish gate.** Components on category-header pages are excluded from the sync (publish gate
+  is the member page), restoring 6 form-component originals that duplicates had masked. ([#339], [#340])
+
+## Earlier
+
+Prior releases (token-render-facts harvest predecessors, app-context restructure, WYSIWYG editor
+rollout, foundations/content derive pipelines) predate this changelog and are recorded in the git
+history and pull-request record.
+
+[Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
+[0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
+[0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#347]: https://github.com/volivarii/actian-ds-knowledge/pull/347
+[#346]: https://github.com/volivarii/actian-ds-knowledge/pull/346
+[#345]: https://github.com/volivarii/actian-ds-knowledge/pull/345
+[#344]: https://github.com/volivarii/actian-ds-knowledge/pull/344
+[#340]: https://github.com/volivarii/actian-ds-knowledge/pull/340
+[#339]: https://github.com/volivarii/actian-ds-knowledge/pull/339
+[#338]: https://github.com/volivarii/actian-ds-knowledge/pull/338

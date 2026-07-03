@@ -96,6 +96,13 @@ Workflows live in `.github/workflows/`. Source of truth is the workflow files th
 - `tag-on-merge.yml` — creates `v$VERSION` git tag on every push to `main`. Consumers' `vendor-snapshot.cjs --range` resolves against these tags.
 - `llms-txt.yml` — regenerates `llms.txt` index when knowledge content changes.
 
+## Changelog
+
+Notable changes (new capabilities, schema or contract changes, breaking syncs, anything a consumer
+should know) go in [`CHANGELOG.md`](CHANGELOG.md) at the repo root, following
+[Keep a Changelog](https://keepachangelog.com/). Routine automated Figma-sync patch bumps are not
+listed individually; add an entry when a change is notable to a downstream consumer.
+
 ## Roles
 
 - Plugin lead — orchestration, plugin maintenance, knowledge-repo CI
