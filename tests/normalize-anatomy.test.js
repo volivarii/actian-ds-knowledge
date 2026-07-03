@@ -799,7 +799,7 @@ test("buildAnatomyFile emits structuralVariants sorted deterministically regardl
     defaultVariantName: "Z=Default, A=Default",
   });
   // Production order (collectDeltas walks variantDefaults' key order, Z then A)
-  // is [Z, A] — this assertion only passes because buildAnatomyFile sorts it to
+  // is [Z, A], so this assertion only passes because buildAnatomyFile sorts it to
   // [A, Z]; removing the sort flips this to a failing assertion.
   assert.deepEqual(outA.quality.structuralVariants, expected);
   assert.deepEqual(outB.quality.structuralVariants, expected);
