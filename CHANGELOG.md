@@ -18,8 +18,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
-### Added
-- Nothing yet.
+### Fixed
+- **Anatomy prune guard.** A transient per-slug Figma fetch miss or normalization failure no longer
+  lets the nightly sync delete that component's existing anatomy file: failed slugs are protected
+  from the prune, rendered in the sync PR changelog, and any real anatomy deletion now escalates the
+  sync verdict to breaking (review-required) instead of auto-merging.
+- **Media mass-prune guard.** A capture role resolving to zero frames on more than 3 slugs at once
+  (the signature of a library-wide sub-section rename outside the alias list) is refused instead of
+  deleting every `<role>-*.webp` across the library; the refusal is surfaced as a warning in the
+  sync PR changelog. Single-slug removals and shrink prunes behave as before.
+
+### Changed
+- **CI hardening.** The Figma sync and all derive/validate workflows now run under concurrency
+  groups (queued, never cancelled mid-push), auto-commit pushes rebase and retry once on a lost
+  race, and `content-derive` pushes with the actian-ds-bot App token like its siblings, so required
+  checks re-run on its auto-commits without a manual empty commit.
 
 ## [0.34.69] - 2026-07-03
 
