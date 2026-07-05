@@ -163,6 +163,48 @@ test("schema accepts per-variant appearance + variantDefaults + quality extras",
   assert.ok(v(doc), JSON.stringify(v.errors));
 });
 
+test("schema accepts a variant delta carrying an icon slug swap", function () {
+  var v = makeValidator();
+  var doc = {
+    _schema_version: 1,
+    slug: "tag-status",
+    kit: "dskit",
+    quality: { nodesTotal: 1, nodesNormalized: 1, ratio: 1, degraded: [] },
+    root: {
+      name: "Icon",
+      kind: "instance",
+      appearance: {
+        variants: [
+          {
+            prop: "Status",
+            values: ["Success"],
+            slug: "check-circle--outline",
+          },
+        ],
+      },
+    },
+  };
+  assert.ok(v(doc), JSON.stringify(v.errors));
+});
+
+test("schema rejects a non-string slug in a variant delta", function () {
+  var v = makeValidator();
+  var doc = {
+    _schema_version: 1,
+    slug: "tag-status",
+    kit: "dskit",
+    quality: { nodesTotal: 1, nodesNormalized: 1, ratio: 1, degraded: [] },
+    root: {
+      name: "Icon",
+      kind: "instance",
+      appearance: {
+        variants: [{ prop: "Status", values: ["Success"], slug: 7 }],
+      },
+    },
+  };
+  assert.equal(v(doc), false);
+});
+
 test("schema rejects a variant entry missing prop/values", function () {
   var v = makeValidator();
   var doc = {
