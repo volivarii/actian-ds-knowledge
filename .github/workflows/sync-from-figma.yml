@@ -153,6 +153,7 @@ jobs:
             tokens/**
             package.json
             paths-manifest.json
+            package-lock.json
 
       - name: Enable auto-merge for additive PRs
         if: steps.verdict.outputs.category == 'additive' && steps.cpr.outputs.pull-request-number
@@ -174,7 +175,12 @@ jobs:
         run: |
           # The create-pull-request action committed the dist changes to the
           # sync branch; discard local leftovers and board that branch.
+          # clean -fd: reset --hard leaves UNTRACKED files (new media/anatomy
+          # this sync created), and checkout refuses to overwrite them even
+          # when byte-identical. Ignored files (release-notes, .figma-keys,
+          # node_modules) are untouched without -x.
           git reset --hard
+          git clean -fd
           git fetch origin "sync/figma-${{ steps.verdict.outputs.date }}"
           git checkout "sync/figma-${{ steps.verdict.outputs.date }}"
           node scripts/sync/insert-sync-changelog.js \

@@ -100,20 +100,33 @@ async function run(opts) {
   // Only (over)write the auto file when there's at least one clean icon — an
   // empty set would violate the icons-svg schema (minProperties: 1) and, on a
   // transient all-degraded run, would clobber a prior good export. The degraded
-  // worklist below is always written.
+  // worklist below is always emitted. Both writes are byte-gated: `wrote`
+  // reports whether anything actually changed, so an unchanged icon library
+  // no longer forces every nightly sync verdict to additive.
+  var wrote = false;
   if (Object.keys(sortedIcons).length > 0) {
-    fs.mkdirSync(path.dirname(opts.autoOutPath), { recursive: true });
-    fs.writeFileSync(opts.autoOutPath, JSON.stringify(auto, null, 2) + "\n");
+    wrote =
+      writeIfChangedStr(
+        opts.autoOutPath,
+        JSON.stringify(auto, null, 2) + "\n",
+      ) || wrote;
   }
+  wrote =
+    writeIfChangedStr(
+      opts.degradedOutPath,
+      JSON.stringify({ _meta: { auto_generated: true }, degraded }, null, 2) +
+        "\n",
+    ) || wrote;
 
-  fs.mkdirSync(path.dirname(opts.degradedOutPath), { recursive: true });
-  fs.writeFileSync(
-    opts.degradedOutPath,
-    JSON.stringify({ _meta: { auto_generated: true }, degraded }, null, 2) +
-      "\n",
-  );
+  return { exported: Object.keys(sortedIcons), degraded, skipped, wrote };
+}
 
-  return { exported: Object.keys(sortedIcons), degraded, skipped };
+// Byte-gated write — returns true only when the file content actually changed.
+function writeIfChangedStr(p, str) {
+  if (fs.existsSync(p) && fs.readFileSync(p, "utf8") === str) return false;
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, str);
+  return true;
 }
 
 module.exports = { run };

@@ -583,6 +583,9 @@ async function run(opts) {
                 " components",
             );
           }
+          if (r.pruned > 0) {
+            lines.push("- Pruned " + r.pruned + " stale media file(s).");
+          }
           if (r.pruneRefused && r.pruneRefused.length > 0) {
             r.pruneRefused.forEach(function (p) {
               // Cap the slug list — a library-wide refusal can span 80+ slugs
@@ -610,7 +613,10 @@ async function run(opts) {
             missing: r.missing,
             skipped: r.skipped,
             pruneRefused: r.pruneRefused,
-            wrote: r.captured.length > 0,
+            pruned: r.pruned,
+            // Deletions are content changes too — a prune-only night must
+            // still open a PR or the deletion is silently re-done forever.
+            wrote: r.captured.length > 0 || r.pruned > 0,
             fileLabel: "media-preview",
             verdict: {
               category: cat,
@@ -721,12 +727,11 @@ async function run(opts) {
       var mediaOutputDir =
         opts.mediaOutputDir ||
         path.join(pluginDir, "components", "dist", "media");
-      // writeMediaIndex takes the repo root; the media dir is always
-      // <root>/components/dist/media (prod and test fixtures alike).
-      var repoRoot = path.resolve(mediaOutputDir, "..", "..", "..");
-      var writeMediaIndex =
-        require("../components/derive-media-index").writeMediaIndex;
-      var r = writeMediaIndex(repoRoot);
+      // Addressed by the media dir itself — no repo-root shape inference, so
+      // a custom mediaOutputDir can never index a different tree.
+      var writeMediaIndexAt =
+        require("../components/derive-media-index").writeMediaIndexAt;
+      var r = writeMediaIndexAt(mediaOutputDir);
       var cat = r.wrote ? "additive" : "unchanged";
       return {
         kind: "media-index",
@@ -795,14 +800,18 @@ async function run(opts) {
           // derives `curatedSlugs` itself for the resilience guard (a dangling
           // curated slug warns+skips rather than failing the whole sync), so we
           // don't forward it here.
-          deriveIconsMod.deriveAndWrite({
+          var derived = deriveIconsMod.deriveAndWrite({
             pluginDir: pluginDir,
             registry: dsKit,
             iconGroups: orchOpts.iconGroups,
           });
-          var cat = r.exported.length > 0 ? "additive" : "unchanged";
+          // Additive only when icon bytes actually changed (auto/degraded/
+          // icons.json). `exported` lists ALL clean icons every run, so using
+          // it as the verdict made every nightly sync additive by construction.
+          var iconsWrote = r.wrote === true || derived.wrote === true;
+          var cat = iconsWrote ? "additive" : "unchanged";
           var lines = [];
-          if (r.exported.length > 0) {
+          if (iconsWrote && r.exported.length > 0) {
             lines.push(
               "- Exported icon SVG for " + r.exported.length + " UI icons",
             );
@@ -824,6 +833,7 @@ async function run(opts) {
             category: cat,
             exported: r.exported,
             degraded: r.degraded,
+            wrote: iconsWrote,
             fileLabel: "icons",
             verdict: {
               category: cat,

@@ -23,16 +23,30 @@ function insertSyncChangelog(content, opts) {
   if (idx === -1) {
     return { content: content, inserted: false, reason: "no Unreleased" };
   }
-  var insertAt = idx + heading.length;
   var link =
     "[#" + pr + "](https://github.com/" + opts.repo + "/pull/" + pr + ")";
-  var entry =
-    "\n\n### Changed\n- **Breaking Figma sync (" +
+  var bullet =
+    "- **Breaking Figma sync (" +
     opts.date +
     ").** Component or variant changes the nightly sync classified as " +
     "breaking; the PR body carries the per-component diff summary. (" +
     link +
     ")";
+  // Reuse an existing "### Changed" heading inside the Unreleased section
+  // (bounded by the next "## [" release heading) instead of duplicating it.
+  var sectionEnd = content.indexOf("\n## [", idx + heading.length);
+  if (sectionEnd === -1) sectionEnd = content.length;
+  var changedHeading = "### Changed";
+  var changedIdx = content.indexOf(changedHeading, idx);
+  var insertAt;
+  var entry;
+  if (changedIdx !== -1 && changedIdx < sectionEnd) {
+    insertAt = changedIdx + changedHeading.length;
+    entry = "\n" + bullet;
+  } else {
+    insertAt = idx + heading.length;
+    entry = "\n\n" + changedHeading + "\n" + bullet;
+  }
   return {
     content: content.slice(0, insertAt) + entry + content.slice(insertAt),
     inserted: true,

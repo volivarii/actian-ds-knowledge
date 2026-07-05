@@ -809,11 +809,14 @@ test("prune: all role files removed when role yields 0 frames (fully removed)", 
     },
   };
 
-  await syncMedia.run({
+  var zeroResult = await syncMedia.run({
     registry: partsReg,
     outputDir: dir,
     rest: noPartsRest,
   });
+  // Deletions are real content changes — they must be reported so the sync
+  // commits them (a prune-only night must not strand deletions uncommitted).
+  assert.equal(zeroResult.pruned, 3);
 
   // All stale parts-*.webp must be deleted (role fully removed).
   assert.ok(

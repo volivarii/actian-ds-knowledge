@@ -109,7 +109,13 @@ function buildMediaIndex(mediaRoot) {
 // location. Returns { wrote, path, slugCount }. No-op when the media root
 // doesn't exist (keeps the deriver portable for non-knowledge consumers).
 function writeMediaIndex(repoRoot) {
-  var mediaRoot = path.join(repoRoot, "components", "dist", "media");
+  return writeMediaIndexAt(path.join(repoRoot, "components", "dist", "media"));
+}
+
+// writeMediaIndexAt — same derive, addressed by the media root itself. For
+// callers that already hold the media dir (e.g. the sync orchestrator's
+// mediaOutputDir), so no repo-root shape inference is needed.
+function writeMediaIndexAt(mediaRoot) {
   if (!fs.existsSync(mediaRoot)) {
     return { wrote: false, path: null, slugCount: 0 };
   }
@@ -130,6 +136,7 @@ function writeMediaIndex(repoRoot) {
 module.exports = {
   buildMediaIndex: buildMediaIndex,
   writeMediaIndex: writeMediaIndex,
+  writeMediaIndexAt: writeMediaIndexAt,
   deriveSlugMedia: deriveSlugMedia,
   MEDIA_ROLES: MEDIA_ROLES,
 };

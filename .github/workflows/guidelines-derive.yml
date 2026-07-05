@@ -140,7 +140,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add components/dist/guidelines/ paths-manifest.json package.json
+          git add components/dist/guidelines/ paths-manifest.json package.json package-lock.json
           # The media/_index.json sidecar only exists once a branch has merged
           # in #92 (the commit that added it). A stale PR branch branched before
           # then has no such file, and `git add` of a literal pathspec aborts

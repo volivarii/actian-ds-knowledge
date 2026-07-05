@@ -50,6 +50,30 @@ test("idempotent per PR number (workflow retry must not duplicate)", function ()
   assert.equal(occurrences, 1, "exactly one entry for PR #360");
 });
 
+test("reuses an existing Changed heading instead of emitting a duplicate", function () {
+  var withChanged = [
+    "# Changelog",
+    "",
+    "## [Unreleased]",
+    "",
+    "### Changed",
+    "- Existing entry.",
+    "",
+    "## [0.34.71] - 2026-07-05",
+    "",
+  ].join("\n");
+  var r = insertSyncChangelog(withChanged, OPTS);
+  assert.equal(r.inserted, true);
+  var headings = r.content.split("### Changed").length - 1;
+  assert.equal(headings, 1, "no duplicate Changed heading");
+  var entryIdx = r.content.indexOf("Breaking Figma sync");
+  var existingIdx = r.content.indexOf("- Existing entry.");
+  assert.ok(
+    entryIdx > 0 && entryIdx < existingIdx,
+    "new bullet inserted at top of Changed",
+  );
+});
+
 test("no Unreleased heading: refuses to guess, leaves content untouched", function () {
   var r = insertSyncChangelog("# Changelog\n\n## [1.0.0]\n", OPTS);
   assert.equal(r.inserted, false);

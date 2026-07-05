@@ -340,11 +340,21 @@ async function syncAnatomy(opts, kit) {
     );
   }
   var changed = written > 0 || bundleWrote || deleted.length > 0;
+  // Failure-only nights (transient outage, nothing written, files preserved)
+  // stay "unchanged": an additive verdict would mint a content-free version
+  // bump PR. The failure is still loud in the run log + release notes.
+  if (failed.length && !changed) {
+    console.warn(
+      "[sync-anatomy] " +
+        failed.length +
+        " slug(s) failed with nothing written (transient outage?) — existing anatomy preserved, verdict stays unchanged.",
+    );
+  }
   var extra = {
     verdict: {
       category: deleted.length
         ? "breaking"
-        : changed || failed.length
+        : changed
           ? "additive"
           : "unchanged",
       changelog: changelog.join("\n"),
