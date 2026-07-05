@@ -716,6 +716,131 @@ test("collectDeltas aligns children whose names differ (tag status icons)", func
   assert.deepEqual(a.structural, []); // differing names are NOT a divergence
 });
 
+test("collectDeltas records an instance icon slug swap as a variant delta", function () {
+  var c = {
+    kind: "container",
+    children: [
+      { kind: "instance", name: "Icon", slug: "x-circle--outline" },
+      { kind: "text", appearance: { text: { color: "#50505d" } } },
+    ],
+  };
+  var v = {
+    kind: "container",
+    children: [
+      { kind: "instance", name: "Icon", slug: "check-circle--outline" },
+      { kind: "text", appearance: { text: { color: "#50505d" } } },
+    ],
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, [
+    { path: [0], appearance: { slug: "check-circle--outline" } },
+  ]);
+  assert.deepEqual(a.structural, []);
+});
+
+test("collectDeltas emits no slug delta when the variant instance is unresolved", function () {
+  var c = {
+    kind: "container",
+    children: [{ kind: "instance", name: "Icon", slug: "x-circle--outline" }],
+  };
+  var v = {
+    kind: "container",
+    children: [{ kind: "instance", name: "Icon", unresolved: true }],
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, []);
+  assert.deepEqual(a.structural, []);
+});
+
+test("collectDeltas captures a variant-only slug when the default instance is unresolved", function () {
+  var c = {
+    kind: "container",
+    children: [{ kind: "instance", name: "Icon", unresolved: true }],
+  };
+  var v = {
+    kind: "container",
+    children: [
+      { kind: "instance", name: "Icon", slug: "check-circle--outline" },
+    ],
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, [
+    { path: [0], appearance: { slug: "check-circle--outline" } },
+  ]);
+});
+
+test("collectDeltas merges a slug swap with a paint delta on the same instance", function () {
+  var c = {
+    kind: "instance",
+    name: "Icon",
+    slug: "x-circle--outline",
+    appearance: { background: "#ffffff" },
+  };
+  var v = {
+    kind: "instance",
+    name: "Icon",
+    slug: "check-circle--outline",
+    appearance: { background: "#f0ffec" },
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, [
+    {
+      path: [],
+      appearance: { background: "#f0ffec", slug: "check-circle--outline" },
+    },
+  ]);
+});
+
+test("buildAnatomyFile captures per-variant icon slug swaps grouped across values", function () {
+  var mk = function (name, iconId) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      children: [
+        { type: "INSTANCE", name: "Icon", componentId: iconId },
+        { type: "TEXT", name: "Label", characters: "Status" },
+      ],
+    };
+  };
+  var variants = [
+    mk("Status=Fail", "9:1"),
+    mk("Status=Success", "9:2"),
+    mk("Status=Done", "9:2"),
+    mk("Status=Offline", "9:1"), // shares the default icon -> no delta
+  ];
+  var out = N.buildAnatomyFile(variants[0], {
+    slug: "tag-status",
+    kit: "dskit",
+    syncedAt: "2026-07-06",
+    source: {},
+    nodeIdToSlug: {
+      "9:1": "x-circle--outline",
+      "9:2": "check-circle--outline",
+    },
+    variants: variants,
+    defaultVariantName: "Status=Fail",
+  });
+  var icon = out.root.children[0];
+  assert.equal(icon.slug, "x-circle--outline"); // default slug stays on the node
+  assert.deepEqual(icon.appearance.variants, [
+    {
+      prop: "Status",
+      values: ["Done", "Success"],
+      slug: "check-circle--outline",
+    },
+  ]);
+});
+
 test("selectIsolatedVariants isolates each axis at default, records missing", function () {
   var D = { Intent: "Default", Size: "Default" };
   var parsed = [

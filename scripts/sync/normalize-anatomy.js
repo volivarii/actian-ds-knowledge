@@ -605,6 +605,17 @@ function collectDeltas(cNode, vNode, path, acc) {
     return;
   }
   var d = diffAppearance(cNode.appearance, vNode.appearance);
+  // Instance nodes are R1 leaves whose rendered content IS the referenced
+  // component; a variant that points the instance at a different component
+  // (e.g. tag-status swapping the per-status icon) is a content delta, not a
+  // paint delta. Capture it as a slug swap so consumers can render the right
+  // glyph per variant. Only a RESOLVED variant slug is captured: an
+  // unresolved variant instance is a lookup miss, and emitting a removal for
+  // it would make consumers drop the default glyph on good data.
+  if (cNode.kind === "instance" && vNode.slug && vNode.slug !== cNode.slug) {
+    d = d || {};
+    d.slug = vNode.slug;
+  }
   if (d) acc.deltas.push({ path: path.slice(), appearance: d });
   var cc = Array.isArray(cNode.children) ? cNode.children : [];
   var vc = Array.isArray(vNode.children) ? vNode.children : [];
