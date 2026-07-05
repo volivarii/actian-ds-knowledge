@@ -18,6 +18,14 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Added
+- **Per-variant icon capture in the anatomy sync.** A variant that swaps an instance's referenced
+  component (tag-status swapping its per-status icon) is now captured as a `slug` field on the
+  variant delta in `appearance.variants`, so consumers can render each variant's own glyph instead
+  of the default variant's (the Success-tag-shows-Fail-icon defect). Additive and optional: the
+  anatomy schema's variant delta gains an optional string `slug`; existing dist stays valid, and
+  consumers that ignore it behave as before. Real data lands on the next nightly sync. ([#354])
+
 ### Changed
 - **Canonical sync emit (wave 2).** The nightly sync can now tell "re-emitted" from "changed":
   registry components, categories, and the anatomy bundle are emitted in sorted key order (ends the
@@ -111,6 +119,7 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#354]: https://github.com/volivarii/actian-ds-knowledge/pull/354
 [#351]: https://github.com/volivarii/actian-ds-knowledge/pull/351
 [#347]: https://github.com/volivarii/actian-ds-knowledge/pull/347
 [#341]: https://github.com/volivarii/actian-ds-knowledge/pull/341
