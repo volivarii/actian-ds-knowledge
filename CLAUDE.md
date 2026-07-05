@@ -52,7 +52,7 @@ Workflow files in `.github/workflows/` are the source of truth — list here is 
 - **`tag-on-merge.yml`** — On push to `main`, reads `package.json#version`, creates a `v$VERSION` git tag if not already present. Downstream consumers' `vendor-snapshot.cjs --range` resolves against these tags.
 - **`llms-txt.yml`** — Regenerates the root `llms.txt` index when knowledge content changes.
 
-Recurring gotcha: `guidelines-derive`'s auto-commit uses `GITHUB_TOKEN`, which can't trigger further workflows. After it auto-bumps + commits, an empty commit (from a real user/App push) may be needed to re-run the required checks on the new HEAD. Long-term fix tracked separately (switch to App-token push).
+Auto-commit re-trigger: every derive/validate workflow that commits back to a PR pushes with the `actian-ds-bot` App token, so the required checks re-run on the new HEAD automatically. The old GITHUB_TOKEN gotcha (checks stuck pending after an auto-bump, needing an empty commit) only remains on fork PRs, where the App secret is not exposed and the push step is skipped.
 
 ## Federated consumers
 

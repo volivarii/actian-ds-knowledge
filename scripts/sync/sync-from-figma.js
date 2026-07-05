@@ -545,12 +545,33 @@ async function run(opts) {
                 " components",
             );
           }
+          if (r.pruneRefused && r.pruneRefused.length > 0) {
+            r.pruneRefused.forEach(function (p) {
+              // Cap the slug list — a library-wide refusal can span 80+ slugs
+              // and the PR body line should stay readable.
+              var shown = p.slugs.slice(0, 10).join(", ");
+              var more =
+                p.slugs.length > 10
+                  ? ", +" + (p.slugs.length - 10) + " more"
+                  : "";
+              lines.push(
+                "- ⚠️ REFUSED mass zero-count prune for role '" +
+                  p.role +
+                  "' — " +
+                  p.slugs.length +
+                  " slugs would lose every capture (sub-section rename suspected), files preserved: " +
+                  shown +
+                  more,
+              );
+            });
+          }
           return {
             kind: "media-preview",
             category: cat,
             captured: r.captured,
             missing: r.missing,
             skipped: r.skipped,
+            pruneRefused: r.pruneRefused,
             fileLabel: "media-preview",
             verdict: {
               category: cat,

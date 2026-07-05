@@ -15,6 +15,13 @@ name: Validate manifest
 on:
   pull_request:
 
+# Serialize runs per branch: concurrent auto-commit pushes to the same PR
+# head race each other (lost push = red required check). Queue, never cancel:
+# cancelling mid-push could strand a half-committed dist.
+concurrency:
+  group: validate-manifest-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   validate:
     name: Validate manifest schema + coverage
@@ -88,7 +95,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add paths-manifest.json
           git commit -m "chore(version): stamp knowledge_version from package.json"
-          git push
+          # Race-safe push: another derive workflow may have pushed to this
+          # branch since checkout (concurrent auto-commits) — rebase and retry
+          # once instead of failing the required check on a lost race.
+          # --autostash: npm install rewrites the stale tracked package-lock.json
+          # in every run, and a dirty tree makes a bare rebase refuse to start.
+          git push || (git pull --rebase --autostash && git push)
 
       - name: Validate manifest
         run: node scripts/validate-manifest.js
