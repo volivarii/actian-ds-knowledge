@@ -172,3 +172,40 @@ test("CLI does not rewrite paths-manifest.json if knowledge_version already matc
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });
+
+test("stampLockfile keeps package-lock.json version fields in lockstep", function () {
+  var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bump-lock-"));
+  try {
+    var lockPath = path.join(tmpDir, "package-lock.json");
+    fs.writeFileSync(
+      lockPath,
+      JSON.stringify(
+        {
+          name: "fixture",
+          version: "1.0.0",
+          lockfileVersion: 3,
+          packages: { "": { name: "fixture", version: "1.0.0" } },
+        },
+        null,
+        2,
+      ) + "\n",
+      "utf8",
+    );
+    var stamped = bumpVersion.stampLockfile(tmpDir, "1.2.3");
+    assert.equal(stamped, true);
+    var lock = JSON.parse(fs.readFileSync(lockPath, "utf8"));
+    assert.equal(lock.version, "1.2.3");
+    assert.equal(lock.packages[""].version, "1.2.3");
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test("stampLockfile no-ops without a lockfile", function () {
+  var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bump-lock-"));
+  try {
+    assert.equal(bumpVersion.stampLockfile(tmpDir, "1.2.3"), false);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});

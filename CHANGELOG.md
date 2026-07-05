@@ -18,23 +18,41 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Changed
+- **Canonical sync emit (wave 2).** The nightly sync can now tell "re-emitted" from "changed":
+  registry components, categories, and the anatomy bundle are emitted in sorted key order (ends the
+  ~97% move-noise in breaking-PR diffs); files are written only when canonical bytes differ;
+  `lastSynced`/`generatedAt`/`synced_at` are preserved on content-equal re-emits (they now mean
+  "last content change"); media captures count only real writes. A night with zero changes is now a
+  true no-op: no PR, no version bump, no tag. The first sync after this lands a one-time key-order
+  migration PR.
+- **TAG-GAP closed for the sync, visible elsewhere.** Any sync run that writes vendorable content
+  opens a PR and bumps, even when the entry-level verdict is unchanged; `validate-manifest` adds a
+  report-only notice when a human PR changes vendorable content without a bump.
+- **Sync owns `media/_index.json`.** The media index regenerates inside the sync run, so
+  `guidelines-derive` no longer heals it afterwards with a stacked second bump (the phantom
+  untagged versions like 0.34.66-67 stop being minted).
+- **Breaking syncs self-record in this changelog.** The sync bot inserts an entry with the real PR
+  number under Unreleased on every breaking sync (additive nightly refreshes stay unlisted by
+  design).
+- **`package-lock.json` joins the version lockstep** (and is resynced from 0.34.55 to current):
+  bumps stamp its version fields, so `npm install` in CI stops dirtying the tree on every run.
+- **CI hardening.** The Figma sync and all derive/validate workflows now run under concurrency
+  groups (queued, never cancelled mid-push), auto-commit pushes rebase and retry once on a lost
+  race, and `content-derive` pushes with the actian-ds-bot App token like its siblings, so required
+  checks re-run on its auto-commits without a manual empty commit. ([#351])
+
 ### Fixed
 - **Anatomy prune guard.** A transient per-slug Figma fetch miss or normalization failure no longer
   lets the nightly sync delete that component's existing anatomy file or drop its entry from
   `anatomy.bundle.json` (failed slugs are re-seeded from the existing dist, so even a total outage
   re-emits the prior bundle instead of wiping it). Failures are rendered in the sync PR changelog,
   and any real anatomy deletion now escalates the sync verdict to breaking (review-required)
-  instead of auto-merging.
+  instead of auto-merging. ([#351])
 - **Media mass-prune guard.** A capture role resolving to zero frames on more than 3 slugs at once
   (the signature of a library-wide sub-section rename outside the alias list) is refused instead of
   deleting every `<role>-*.webp` across the library; the refusal is surfaced as a warning in the
-  sync PR changelog. Single-slug removals and shrink prunes behave as before.
-
-### Changed
-- **CI hardening.** The Figma sync and all derive/validate workflows now run under concurrency
-  groups (queued, never cancelled mid-push), auto-commit pushes rebase and retry once on a lost
-  race, and `content-derive` pushes with the actian-ds-bot App token like its siblings, so required
-  checks re-run on its auto-commits without a manual empty commit.
+  sync PR changelog. Single-slug removals and shrink prunes behave as before. ([#351])
 
 ## [0.34.69] - 2026-07-03
 
@@ -82,6 +100,7 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#351]: https://github.com/volivarii/actian-ds-knowledge/pull/351
 [#347]: https://github.com/volivarii/actian-ds-knowledge/pull/347
 [#346]: https://github.com/volivarii/actian-ds-knowledge/pull/346
 [#345]: https://github.com/volivarii/actian-ds-knowledge/pull/345

@@ -139,6 +139,35 @@ test("run() captures the default variant child as default.webp", async function 
   }
 });
 
+test("run() captured counts only real writes on a second identical run", async function () {
+  var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "mdef-"));
+  try {
+    var anatomyDir = path.join(tmp, "anatomy");
+    var mediaDir = path.join(tmp, "media");
+    fs.mkdirSync(anatomyDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(anatomyDir, "button.json"),
+      JSON.stringify({
+        slug: "button",
+        source: { fileKey: "FILEKEY", nodeId: "7206:2643" },
+      }),
+    );
+    var opts = {
+      registry: { fileKey: "FILEKEY", components: { button: {} } },
+      anatomyDir: anatomyDir,
+      outputDir: mediaDir,
+      rest: mockRest(),
+    };
+    var r1 = await D.run(opts);
+    assert.deepEqual(r1.captured, ["button/default"]);
+    var r2 = await D.run(opts);
+    // byte-identical → no write → no capture → verdict stays unchanged
+    assert.deepEqual(r2.captured, []);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("run() reports a slug with NO anatomy file as skipped, not missing", async function () {
   var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "mdef-"));
   try {
@@ -322,6 +351,22 @@ test("orchestrator runs media-default phase end-to-end", async function () {
     assert.ok(fs.existsSync(out), "button default.webp must exist");
     var bytes = fs.readFileSync(out);
     assert.equal(bytes.subarray(0, 4).toString("ascii"), "RIFF");
+
+    // K6: the sync run itself derives media/_index.json — previously only
+    // guidelines-derive healed it afterwards, stacking a second version bump
+    // (phantom untagged versions) on every media-writing sync.
+    var idxPath = path.join(mediaDir, "_index.json");
+    assert.ok(
+      fs.existsSync(idxPath),
+      "media/_index.json derived in the same sync run",
+    );
+    var idx = JSON.parse(fs.readFileSync(idxPath, "utf8"));
+    assert.ok(idx.media.button, "button media indexed");
+    var mi = result.results.find(function (r) {
+      return r.kind === "media-index";
+    });
+    assert.ok(mi, "media-index phase result present");
+    assert.equal(mi.wrote, true);
   } finally {
     fs.rmSync(pluginDir, { recursive: true, force: true });
     fs.rmSync(releaseDir, { recursive: true, force: true });

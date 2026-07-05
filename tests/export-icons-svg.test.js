@@ -120,3 +120,20 @@ test("all targets degrade → no (empty, schema-invalid) auto file written; work
     "degraded worklist is still written",
   );
 });
+
+test("second identical run writes nothing (wrote=false) — no-op nights stay no-op", async () => {
+  const dir = tmp();
+  const opts = {
+    registry: REGISTRY,
+    iconGroups: ICON_GROUPS,
+    curatedSlugs: new Set(),
+    autoOutPath: path.join(dir, "icons-svg.auto.json"),
+    degradedOutPath: path.join(dir, "icons.degraded.json"),
+    rest: fakeRest,
+  };
+  const r1 = await run(opts);
+  assert.equal(r1.wrote, true, "first run writes");
+  const r2 = await run(opts);
+  assert.equal(r2.wrote, false, "byte-identical rerun must not report a write");
+  assert.deepEqual(r2.exported, r1.exported, "exported list itself unchanged");
+});

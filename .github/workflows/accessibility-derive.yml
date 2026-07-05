@@ -108,7 +108,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # bump-version.js syncs paths-manifest.json's knowledge_version in
           # lockstep with the version bump — stage both alongside the dist JSON.
-          git add accessibility/dist/ package.json paths-manifest.json
+          git add accessibility/dist/ package.json paths-manifest.json package-lock.json
           git commit -m "chore(accessibility): regenerate a11y-index.json + bump patch"
           # Race-safe push: another derive workflow may have pushed to this
           # branch since checkout (concurrent auto-commits) — rebase and retry

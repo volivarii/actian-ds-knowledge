@@ -124,15 +124,23 @@ function deriveAndWrite(opts) {
   });
   const outDir = path.join(root, "components", "dist", "icons");
   const out = path.join(outDir, "icons.json");
-  fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(out, JSON.stringify(dist, null, 2) + "\n");
-  return dist;
+  const serialized = JSON.stringify(dist, null, 2) + "\n";
+  // Byte-gated: `wrote` lets the sync verdict distinguish a real icons.json
+  // change from an identical re-derive (no-op nights must stay no-op).
+  let wrote = false;
+  if (!fs.existsSync(out) || fs.readFileSync(out, "utf8") !== serialized) {
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(out, serialized);
+    wrote = true;
+  }
+  return { dist, wrote };
 }
 
 function runCli() {
-  const dist = deriveAndWrite({});
+  const r = deriveAndWrite({});
   console.log(
-    `Wrote components/dist/icons/icons.json (${Object.keys(dist.icons).length} icons)`,
+    (r.wrote ? "Wrote" : "Unchanged") +
+      ` components/dist/icons/icons.json (${Object.keys(r.dist.icons).length} icons)`,
   );
   return 0;
 }
