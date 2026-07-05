@@ -45,6 +45,12 @@ on:
           - media-default
           - icons
 
+# A manual dispatch racing the nightly cron would fight over the same
+# sync/figma-<date> branch — serialize all sync runs.
+concurrency:
+  group: sync-from-figma
+  cancel-in-progress: false
+
 jobs:
   sync:
     name: Sync Figma → JSON
