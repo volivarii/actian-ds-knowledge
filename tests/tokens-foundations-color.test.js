@@ -65,14 +65,14 @@ test("actian color.primary ramp == canonical royal-blue (shipped shades)", () =>
   }
 });
 
-// Tokens resolving to non-500 shades (text.link.visited -> 700, bg.selected -> 50)
-// are covered by the ramp test above; this test guards only the -500-resolving tokens.
+// Tokens resolving to non-500 shades (bg.selected -> 50) are covered by the
+// ramp test above; this test guards only the -500-resolving tokens.
 test("semantic tokens resolving to primary == canonical royal-blue-500", () => {
   const expected = canonicalRoyalBlue()["500"]; // #0F5FDC
   const checks = [
     ["color.bg.emphasis", tokens.color.bg.emphasis],
     ["color.icon.primary", tokens.color.icon.primary],
-    ["color.text.link.default", tokens.color.text.link.default],
+    ["color.text.primary", tokens.color.text.primary],
     ["border.selected", tokens.border.selected],
     ["focus-ring.primary", tokens["focus-ring"].primary],
   ];

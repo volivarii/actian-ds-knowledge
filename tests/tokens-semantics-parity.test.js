@@ -141,7 +141,6 @@ test("plugin-consumed tokens are present in generated semantics", () => {
     "color.text.primary",
     "color.text.secondary",
     "color.text.error",
-    "color.text.link.default",
     "color.bg.default",
   ];
   const missing = PLUGIN_CONSUMED.filter((p) => !genLeaves[p]);

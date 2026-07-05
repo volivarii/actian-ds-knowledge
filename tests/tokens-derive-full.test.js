@@ -258,7 +258,7 @@ test("deriveFullTokens works with real source files (smoke)", () => {
   // Semantics
   assert.ok(full.color.primary["500"], "real: primary.500");
   assert.ok(full.color.text.secondary, "real: text.secondary");
-  assert.ok(full.color.text.link.visited, "real: text.link.visited");
+  assert.ok(full.color.text.default, "real: text.default");
   // Numerics
   assert.ok(full.spacing.xs, "real: spacing.xs");
   assert.ok(full.border.radius.sm, "real: border.radius.sm");

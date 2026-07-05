@@ -74,39 +74,10 @@ test("parseShadows(real tokensMd): no abbreviated hex shorthands remain (no #0F/
 });
 
 // ─── Fix 2: P2-deferred semantic tokens ───────────────────────────────────────
-// These 3 tokens exist in the live tokens.css but were not authored in the md.
-// They must now be present so a css emit won't drop them.
-
-test("parseSemantics(real tokensMd): text.link.reverse exists and resolves to white", () => {
-  const rows = parseSemantics(tokensMd);
-  const row = rows.find((r) => r.group === "text" && r.name === "link.reverse");
-  assert.ok(
-    row,
-    "text.link.reverse must be present in tokens.md §2.2 Text Color table",
-  );
-  assert.equal(
-    row.resolvesTo,
-    "white",
-    "text.link.reverse must resolve to --zen-color-white (live css: #ffffff in all themes)",
-  );
-});
-
-test("parseSemantics(real tokensMd): text.link.visited exists and resolves to primary-700", () => {
-  const rows = parseSemantics(tokensMd);
-  const row = rows.find(
-    (r) => r.group === "text" && r.name === "link.visited",
-  );
-  assert.ok(
-    row,
-    "text.link.visited must be present in tokens.md §2.2 Text Color table",
-  );
-  assert.equal(
-    row.resolvesTo,
-    "primary-700",
-    "text.link.visited must resolve to --zen-color-primary-700 " +
-      "(actian=#0047bc, studio=#00699f, explorer=#007e7b — all match primary-700)",
-  );
-});
+// bg.emphasis exists in the live tokens.css but was not authored in the md.
+// It must now be present so a css emit won't drop it. (text.link.reverse and
+// text.link.visited were also once guarded here; the text-link-* family was
+// deliberately retired 2026-07 in favor of text-primary = interactive text.)
 
 test("parseSemantics(real tokensMd): bg.emphasis exists and resolves to primary-500", () => {
   const rows = parseSemantics(tokensMd);

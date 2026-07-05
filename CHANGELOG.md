@@ -42,6 +42,17 @@ Each entry links its pull request. Dates are the merge date (UTC).
   race, and `content-derive` pushes with the actian-ds-bot App token like its siblings, so required
   checks re-run on its auto-commits without a manual empty commit. ([#351])
 
+### Removed
+- **`--zen-color-text-link-{default,reverse,visited}` tokens retired.** The text-link family is
+  deleted from `foundations/src/tokens.md` (and so from `tokens/tokens.json` / `tokens.css`);
+  interactive/link text is `--zen-color-text-primary` (primary-500, same resolved value as the old
+  link-default) and body text is `--zen-color-text-default`. The five component `tokens.yml`
+  bindings that used `color-text-link-default` (tabs, side-nav, global-header, button, breadcrumbs)
+  now bind `color-text-primary`, and stale pre-rename body-text uses of `color-text-primary` across
+  nine components now bind `color-text-default`. Consumers emitting
+  `var(--zen-color-text-link-default)` must migrate to `var(--zen-color-text-primary)` before
+  vendoring a snapshot with this change. ([#341])
+
 ### Fixed
 - **Anatomy prune guard.** A transient per-slug Figma fetch miss or normalization failure no longer
   lets the nightly sync delete that component's existing anatomy file or drop its entry from
@@ -102,6 +113,7 @@ history and pull-request record.
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
 [#351]: https://github.com/volivarii/actian-ds-knowledge/pull/351
 [#347]: https://github.com/volivarii/actian-ds-knowledge/pull/347
+[#341]: https://github.com/volivarii/actian-ds-knowledge/pull/341
 [#346]: https://github.com/volivarii/actian-ds-knowledge/pull/346
 [#345]: https://github.com/volivarii/actian-ds-knowledge/pull/345
 [#344]: https://github.com/volivarii/actian-ds-knowledge/pull/344
