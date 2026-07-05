@@ -835,8 +835,27 @@ async function run(opts) {
   }
 
   var category = aggregateVerdict(results, errors);
+  // TAG-GAP rule: consumers vendor by TAG RANGE, so ANY vendorable content
+  // that reaches disk must reach a version/tag — and the workflow only opens
+  // a PR for additive/breaking verdicts. A byte-level write with an
+  // entry-level "unchanged" verdict (e.g. the one-time key-order
+  // canonicalization migration, or a timestamp-preserving rewrite) therefore
+  // escalates to additive; a night with zero writes stays unchanged and
+  // produces no PR, no bump, no tag — a true no-op.
+  var anyWrote = results.some(function (r) {
+    return r && r.wrote === true;
+  });
+  var maintenanceOnly = false;
+  if (category === "unchanged" && anyWrote) {
+    category = "additive";
+    maintenanceOnly = true;
+  }
   var exitCode = exitCodeFor(category);
   var changelog = buildChangelog(date, category, results, errors);
+  if (maintenanceOnly) {
+    changelog +=
+      "\n_Byte-level maintenance writes only (canonicalization / ordering migration); no entry-level registry changes._\n";
+  }
 
   // Per-day release notes
   fs.mkdirSync(releaseNotesDir, { recursive: true });
@@ -867,17 +886,11 @@ async function run(opts) {
   var bumpedFrom = null;
   var bumpedTo = null;
   var pluginJsonPath = opts.pluginJsonPath || null;
-  // TAG-GAP rule: consumers vendor by TAG RANGE, so ANY vendorable content
-  // that reaches disk must reach a version (and therefore a tag) — not only
-  // runs whose entry-level verdict is additive/breaking. `wrote` flags catch
-  // byte-level changes with an unchanged verdict (e.g. the one-time key-order
-  // canonicalization migration).
-  var anyWrote = results.some(function (r) {
-    return r && r.wrote === true;
-  });
+  // (anyWrote already escalated unchanged→additive above, so this condition
+  // now also covers byte-level-only maintenance writes.)
   if (
     pluginJsonPath &&
-    (category === "additive" || category === "breaking" || anyWrote) &&
+    (category === "additive" || category === "breaking") &&
     fs.existsSync(pluginJsonPath)
   ) {
     var bumpVersion = require("../lib/bump-version.js");

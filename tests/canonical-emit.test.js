@@ -169,9 +169,12 @@ test("C: non-canonical on-disk key order is migrated (sorted, lastSynced preserv
     );
 
     const r2 = await sync.run(Object.assign({ rest: makeFakeRest() }, s.opts));
-    // Entries unchanged → verdict stays unchanged (no false "breaking")…
-    assert.equal(r2.category, "unchanged");
-    // …but the file is migrated to canonical order,
+    // Entries are unchanged, but bytes were written (the migration) — the run
+    // must escalate to additive so the workflow actually opens the PR that
+    // carries the write (an unchanged verdict opens no PR and would strand
+    // the bump + rewrite in the discarded CI workspace).
+    assert.equal(r2.category, "additive");
+    // The file is migrated to canonical order,
     const regAfter = JSON.parse(fs.readFileSync(regPath, "utf8"));
     assert.deepEqual(Object.keys(regAfter.components), [
       "alphawidget",
