@@ -673,6 +673,101 @@ test("pruning a genuinely-removed slug escalates the phase verdict to breaking",
   assert.match(written.verdict.changelog, /deleted/i);
 });
 
+test("a second identical sync writes nothing and reports unchanged (no synced_at churn)", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: { button: { nodeId: "1:1", category: "Action" } },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: { "1:1": { document: wave1ComponentDoc("Button") } },
+      });
+    },
+  };
+  var writes = [];
+  var countingWrite = function (p, o) {
+    writes.push(path.basename(p));
+    writeJsonReal(p, o);
+  };
+  var optsFor = function (syncedAt) {
+    return {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: countingWrite,
+      syncedAt: syncedAt,
+    };
+  };
+  var r1 = await syncAnatomy(optsFor("2026-07-05T01:00:00Z"), "dsKit");
+  assert.equal(r1.verdict.category, "additive");
+  assert.ok(writes.length >= 2); // button.json + bundle
+  var syncedAt1 = JSON.parse(
+    fs.readFileSync(path.join(anatomyDir, "button.json"), "utf8"),
+  ).synced_at;
+
+  writes.length = 0;
+  // Next night: identical Figma data, NEW syncedAt stamp.
+  var r2 = await syncAnatomy(optsFor("2026-07-06T01:00:00Z"), "dsKit");
+  assert.deepEqual(writes, [], "no-op night must write zero files");
+  assert.equal(r2.verdict.category, "unchanged");
+  assert.ok(!r2.wrote, "no-op night must not flag wrote");
+  var syncedAt2 = JSON.parse(
+    fs.readFileSync(path.join(anatomyDir, "button.json"), "utf8"),
+  ).synced_at;
+  // synced_at now means "last content change", not "last run".
+  assert.equal(syncedAt2, syncedAt1);
+});
+
+test("bundle components are emitted in sorted slug order", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  // registry key order deliberately NOT sorted (pre-migration on-disk state)
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        zeta: { nodeId: "1:1", category: "Action" },
+        alpha: { nodeId: "2:2", category: "Action" },
+      },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: {
+          "1:1": { document: wave1ComponentDoc("Zeta") },
+          "2:2": { document: wave1ComponentDoc("Alpha") },
+        },
+      });
+    },
+  };
+  await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-07-05",
+    },
+    "dsKit",
+  );
+  var bundle = JSON.parse(
+    fs.readFileSync(path.join(anatomyDir, "..", "anatomy.bundle.json"), "utf8"),
+  );
+  assert.deepEqual(Object.keys(bundle.components), ["alpha", "zeta"]);
+});
+
 test("syncAnatomy resolves token refs when getLocalVariables is available", async function () {
   var dir = tmpDir();
   var registriesDir = path.join(dir, "registries");

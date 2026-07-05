@@ -194,6 +194,7 @@ async function syncAnatomy(opts, kit) {
   // level so writeJson's _schema_version injection never appears as a phantom slug.
   var bundle = { _schema_version: 1, components: {} };
   var count = 0;
+  var written = 0;
   var failed = [];
   slugs.forEach(function (slug) {
     var nid = comps[slug].nodeId;
@@ -235,8 +236,24 @@ async function syncAnatomy(opts, kit) {
         variants: variants,
         defaultVariantName: picked.variant,
       });
-      writeJson(path.join(anatomyDir, slug + ".json"), file);
-      bundle.components[slug] = file;
+      // Canonical write gate: when the freshly built file equals the on-disk
+      // one apart from synced_at, keep the on-disk file (in the bundle too).
+      // synced_at therefore means "last content change from Figma", and a
+      // no-op night writes zero anatomy files instead of restamping all ~83.
+      var outPath = path.join(anatomyDir, slug + ".json");
+      var prior = null;
+      try {
+        prior = JSON.parse(fs.readFileSync(outPath, "utf8"));
+      } catch (e2) {
+        prior = null;
+      }
+      if (prior && anatomyContentEqual(prior, file)) {
+        bundle.components[slug] = prior;
+      } else {
+        writeJson(outPath, file);
+        bundle.components[slug] = file;
+        written++;
+      }
       count++;
     } catch (e) {
       failed.push({ slug: slug, error: e.message });
@@ -256,7 +273,27 @@ async function syncAnatomy(opts, kit) {
       /* no prior file — nothing to preserve */
     }
   });
-  writeJson(path.join(anatomyDir, "..", "anatomy.bundle.json"), bundle);
+  // Canonical bundle: slug-sorted (registry order is arbitrary pre-migration)
+  // and written only when it actually differs from the on-disk bundle.
+  var sortedBundleComponents = {};
+  Object.keys(bundle.components)
+    .sort()
+    .forEach(function (s) {
+      sortedBundleComponents[s] = bundle.components[s];
+    });
+  bundle.components = sortedBundleComponents;
+  var bundlePath = path.join(anatomyDir, "..", "anatomy.bundle.json");
+  var priorBundle = null;
+  try {
+    priorBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+  } catch (e3) {
+    priorBundle = null;
+  }
+  var bundleWrote = false;
+  if (!priorBundle || JSON.stringify(priorBundle) !== JSON.stringify(bundle)) {
+    writeJson(bundlePath, bundle);
+    bundleWrote = true;
+  }
   // Prune stale files AFTER the fresh write, and only when we wrote something — a
   // transient empty/partial Figma response (count 0) must never wipe existing data.
   // Failed slugs are protected: their prior files stay until a clean sync replaces
@@ -268,7 +305,20 @@ async function syncAnatomy(opts, kit) {
       return f.slug;
     }),
   );
-  var changelog = ["- Wrote " + count + " anatomy file(s)."];
+  var changelog = [];
+  if (written > 0 || bundleWrote) {
+    changelog.push(
+      "- Wrote " +
+        written +
+        " anatomy file(s)" +
+        (written === 0 && bundleWrote ? " (bundle refreshed)" : "") +
+        ".",
+    );
+  } else {
+    changelog.push(
+      "- No anatomy changes (" + count + " component(s) verified).",
+    );
+  }
   if (failed.length) {
     changelog.push(
       "- ⚠️ FAILED " +
@@ -289,15 +339,30 @@ async function syncAnatomy(opts, kit) {
         deleted.join(", "),
     );
   }
+  var changed = written > 0 || bundleWrote || deleted.length > 0;
   var extra = {
     verdict: {
-      category: deleted.length ? "breaking" : "additive",
+      category: deleted.length
+        ? "breaking"
+        : changed || failed.length
+          ? "additive"
+          : "unchanged",
       changelog: changelog.join("\n"),
     },
+    wrote: changed,
   };
   if (failed.length) extra.failed = failed;
   if (deleted.length) extra.deleted = deleted;
   return result(count, extra);
+}
+
+// Content equality ignoring the synced_at stamp — the write gate's notion of
+// "did Figma actually change anything for this component".
+function anatomyContentEqual(a, b) {
+  return (
+    JSON.stringify(Object.assign({}, a, { synced_at: null })) ===
+    JSON.stringify(Object.assign({}, b, { synced_at: null }))
+  );
 }
 
 module.exports = {
