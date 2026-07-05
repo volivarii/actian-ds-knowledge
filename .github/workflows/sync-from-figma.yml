@@ -162,6 +162,36 @@ jobs:
         run: |
           gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --squash --repo "${{ github.repository }}"
 
+      # Breaking syncs are notable changes — the repo's changelog rule
+      # (CLAUDE.md) applies to the bot too. Runs AFTER PR creation so the
+      # entry carries the real PR number; committed onto the sync branch.
+      # Additive nightly refreshes stay unlisted by design. Idempotent per
+      # PR number (safe on workflow retries).
+      - name: Record breaking sync in CHANGELOG
+        if: steps.verdict.outputs.category == 'breaking' && steps.cpr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          # The create-pull-request action committed the dist changes to the
+          # sync branch; discard local leftovers and board that branch.
+          git reset --hard
+          git fetch origin "sync/figma-${{ steps.verdict.outputs.date }}"
+          git checkout "sync/figma-${{ steps.verdict.outputs.date }}"
+          node scripts/sync/insert-sync-changelog.js \
+            --pr "${{ steps.cpr.outputs.pull-request-number }}" \
+            --date "${{ steps.verdict.outputs.date }}" \
+            --repo "${{ github.repository }}"
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "No changelog change (already recorded)."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "docs(changelog): record breaking sync PR #${{ steps.cpr.outputs.pull-request-number }}"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" \
+            "HEAD:sync/figma-${{ steps.verdict.outputs.date }}"
+
       - name: Summarize
         if: always()
         run: |
