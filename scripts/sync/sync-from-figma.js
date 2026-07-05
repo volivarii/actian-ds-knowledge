@@ -51,8 +51,10 @@ function readJsonOrNull(p) {
   }
 }
 
-function writeJson(p, obj) {
-  fs.mkdirSync(path.dirname(p), { recursive: true });
+// Canonical dist serialization — the single shape both writeJson and the
+// byte-compare write gates below use, so "would this write change the file"
+// is answered against the exact bytes that would land.
+function serializeJson(obj) {
   // Inject _schema_version: 1 as first key if not already present (Q1 2026
   // ecosystem plan PR α: every dist artifact carries a schema version).
   var withVersion = obj;
@@ -64,7 +66,12 @@ function writeJson(p, obj) {
   ) {
     withVersion = Object.assign({ _schema_version: 1 }, obj);
   }
-  fs.writeFileSync(p, JSON.stringify(withVersion, null, 2) + "\n", "utf8");
+  return JSON.stringify(withVersion, null, 2) + "\n";
+}
+
+function writeJson(p, obj) {
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, serializeJson(obj), "utf8");
 }
 
 function todayIso() {
@@ -253,18 +260,28 @@ async function syncRegistry(opts, kitId) {
     before: before,
     after: after,
   });
-  // Skip the write when nothing meaningful changed AND the file already exists.
-  // Otherwise `lastSynced` timestamps drift every run and the GH workflow
-  // would open a no-op PR every night.
+  // Canonical write gate. When the entries are unchanged, carry the previous
+  // lastSynced forward so the timestamp never churns on a re-emit; then write
+  // ONLY when the canonical bytes differ from what is on disk. Three cases:
+  // unchanged + identical bytes → skip; unchanged + byte drift (the one-time
+  // key-order canonicalization migration) → write, timestamp preserved;
+  // entry changes → write with the fresh timestamp.
   var wrote = false;
-  if (verdict.category !== "unchanged" || !fs.existsSync(outputPath)) {
+  if (verdict.category === "unchanged" && beforeFile && beforeFile.lastSynced) {
+    after.lastSynced = beforeFile.lastSynced;
+  }
+  if (
+    !fs.existsSync(outputPath) ||
+    fs.readFileSync(outputPath, "utf8") !== serializeJson(after)
+  ) {
     writeJson(outputPath, after);
     wrote = true;
   }
 
   // Emit components/dist/categories.json alongside the registry for dsKit
-  // only. Always rewrite — small file; downstream consumers should never
-  // read a stale snapshot when registry data shifted.
+  // only. Content-compared: the artifact's generatedAt is preserved from the
+  // previous file when everything else is equal (generatedAt then means
+  // "last content change", and a no-op night stops rewriting the file).
   if (kitId === "dsKit" && documentChildren) {
     var categoriesTransformer = require("../transformers/transform-categories.js");
     var artifact = categoriesTransformer.buildCategoriesArtifact(after);
@@ -274,7 +291,28 @@ async function syncRegistry(opts, kitId) {
     var categoriesPath =
       opts.categoriesPath ||
       path.join(path.dirname(opts.outputDir), "categories.json");
-    writeJson(categoriesPath, artifact);
+    var prevCategories = readJsonOrNull(categoriesPath);
+    var categoriesContent = function (o) {
+      return JSON.stringify({
+        library: o.library,
+        categories: o.categories,
+        uncategorized: o.uncategorized,
+      });
+    };
+    if (
+      prevCategories &&
+      prevCategories.generatedAt &&
+      categoriesContent(prevCategories) === categoriesContent(artifact)
+    ) {
+      artifact.generatedAt = prevCategories.generatedAt;
+    }
+    if (
+      !fs.existsSync(categoriesPath) ||
+      fs.readFileSync(categoriesPath, "utf8") !== serializeJson(artifact)
+    ) {
+      writeJson(categoriesPath, artifact);
+      wrote = true;
+    }
   }
 
   return {
@@ -790,9 +828,17 @@ async function run(opts) {
   var bumpedFrom = null;
   var bumpedTo = null;
   var pluginJsonPath = opts.pluginJsonPath || null;
+  // TAG-GAP rule: consumers vendor by TAG RANGE, so ANY vendorable content
+  // that reaches disk must reach a version (and therefore a tag) — not only
+  // runs whose entry-level verdict is additive/breaking. `wrote` flags catch
+  // byte-level changes with an unchanged verdict (e.g. the one-time key-order
+  // canonicalization migration).
+  var anyWrote = results.some(function (r) {
+    return r && r.wrote === true;
+  });
   if (
     pluginJsonPath &&
-    (category === "additive" || category === "breaking") &&
+    (category === "additive" || category === "breaking" || anyWrote) &&
     fs.existsSync(pluginJsonPath)
   ) {
     var bumpVersion = require("../lib/bump-version.js");

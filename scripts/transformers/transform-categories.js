@@ -203,14 +203,20 @@ function buildCategoriesArtifact(registry) {
     categories[cat].count++;
   });
 
-  Object.keys(categories).forEach(function (cat) {
-    categories[cat].components.sort();
-  });
+  // Canonical emit: category keys sorted (member lists sorted too) so the
+  // artifact is byte-stable regardless of registry iteration order.
+  var sortedCategories = {};
+  Object.keys(categories)
+    .sort()
+    .forEach(function (cat) {
+      categories[cat].components.sort();
+      sortedCategories[cat] = categories[cat];
+    });
 
   return {
     library: (registry && registry.library) || null,
     generatedAt: new Date().toISOString(),
-    categories: categories,
+    categories: sortedCategories,
     uncategorized: { count: uncategorizedCount },
   };
 }

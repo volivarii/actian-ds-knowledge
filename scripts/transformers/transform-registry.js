@@ -346,6 +346,18 @@ function transformRegistry(input) {
     input.onWarnings(componentWarnings);
   }
 
+  // Canonical emit: components sorted by slug so a re-emitted file is
+  // byte-stable and a real diff stays readable. Figma's API iteration order
+  // (sets then standalones, each in service order) is arbitrary and made
+  // ~97% of breaking-PR registry diffs pure move-noise.
+  var sortedComponents = {};
+  Object.keys(registry.components)
+    .sort()
+    .forEach(function (slug) {
+      sortedComponents[slug] = registry.components[slug];
+    });
+  registry.components = sortedComponents;
+
   registry.componentCount = Object.keys(registry.components).length;
 
   // ζ.3 (2026-05-13): post-pass — populate nestedComponents.
