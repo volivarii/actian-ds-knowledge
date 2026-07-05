@@ -39,6 +39,27 @@ function bumpVersion(version, level) {
 
 module.exports = bumpVersion;
 
+// stampLockfile — keep package-lock.json's two version fields in lockstep
+// with a just-bumped package.json. The committed lockfile otherwise goes
+// stale on the first bump, and `npm install` then rewrites it in EVERY CI
+// run, leaving a dirty tree at auto-commit push time (the wave-1 --autostash
+// papered over the symptom; this removes the cause). No-op (returns false)
+// when the lockfile is absent, keeping the utility portable.
+function stampLockfile(repoRoot, version) {
+  var fsLocal = require("fs");
+  var pathLocal = require("path");
+  var lockPath = pathLocal.join(repoRoot, "package-lock.json");
+  if (!fsLocal.existsSync(lockPath)) return false;
+  var lock = JSON.parse(fsLocal.readFileSync(lockPath, "utf8"));
+  lock.version = version;
+  if (lock.packages && lock.packages[""]) {
+    lock.packages[""].version = version;
+  }
+  fsLocal.writeFileSync(lockPath, JSON.stringify(lock, null, 2) + "\n", "utf8");
+  return true;
+}
+module.exports.stampLockfile = stampLockfile;
+
 // CLI: node bump-version.js <plugin.json path> <level>
 // Reads, bumps, writes back. Used by GitHub workflows.
 //
@@ -84,6 +105,11 @@ if (require.main === module) {
       "[bump-version] synced paths-manifest.knowledge_version -> " +
         newVersion +
         "\n",
+    );
+  }
+  if (stampLockfile(repoRoot, newVersion)) {
+    process.stdout.write(
+      "[bump-version] stamped package-lock.json -> " + newVersion + "\n",
     );
   }
 }

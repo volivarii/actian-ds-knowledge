@@ -903,6 +903,8 @@ async function run(opts) {
       JSON.stringify(plugin, null, 2) + "\n",
       "utf8",
     );
+    // Keep package-lock.json's version fields in lockstep (see stampLockfile).
+    bumpVersion.stampLockfile(path.dirname(pluginJsonPath), bumpedTo);
   }
 
   // Also bump paths-manifest.json#knowledge_version if a manifest path is
