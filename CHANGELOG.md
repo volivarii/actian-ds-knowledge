@@ -20,9 +20,11 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 - **Anatomy prune guard.** A transient per-slug Figma fetch miss or normalization failure no longer
-  lets the nightly sync delete that component's existing anatomy file: failed slugs are protected
-  from the prune, rendered in the sync PR changelog, and any real anatomy deletion now escalates the
-  sync verdict to breaking (review-required) instead of auto-merging.
+  lets the nightly sync delete that component's existing anatomy file or drop its entry from
+  `anatomy.bundle.json` (failed slugs are re-seeded from the existing dist, so even a total outage
+  re-emits the prior bundle instead of wiping it). Failures are rendered in the sync PR changelog,
+  and any real anatomy deletion now escalates the sync verdict to breaking (review-required)
+  instead of auto-merging.
 - **Media mass-prune guard.** A capture role resolving to zero frames on more than 3 slugs at once
   (the signature of a library-wide sub-section rename outside the alias list) is refused instead of
   deleting every `<role>-*.webp` across the library; the refusal is surfaced as a warning in the

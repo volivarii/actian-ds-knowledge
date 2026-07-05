@@ -106,6 +106,13 @@ test("syncAnatomy skips icons + normalizes the default variant of a set", async 
   assert.equal(written.count, 1); // button only (icon skipped)
   // icon was skipped AND its stale file cleaned
   assert.equal(fs.existsSync(path.join(anatomyDir, "add.json")), false);
+  // an icon-transition prune is a real deletion — review-required + visible
+  // (pins the intended escalation for real recategorizations, e.g. input→icon)
+  assert.equal(written.verdict.category, "breaking");
+  assert.match(
+    written.verdict.changelog,
+    /Deleted 1 stale anatomy file\(s\): add/,
+  );
   // button anatomy is the DEFAULT VARIANT (a real row), not the variant grid
   var btn = JSON.parse(
     fs.readFileSync(path.join(anatomyDir, "button.json"), "utf8"),
@@ -529,6 +536,102 @@ test("a slug whose per-slug write throws keeps its existing file and is reported
   assert.match(written.verdict.changelog, /card/);
   // prior card.json untouched by the prune
   assert.equal(fs.existsSync(path.join(anatomyDir, "card.json")), true);
+});
+
+test("a full transient outage preserves the bundle from disk (no bundle wipe)", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  // prior sync state: two good per-slug files
+  writeJsonReal(path.join(anatomyDir, "button.json"), {
+    slug: "button",
+    prior: true,
+  });
+  writeJsonReal(path.join(anatomyDir, "card.json"), {
+    slug: "card",
+    prior: true,
+  });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        button: { nodeId: "1:1", category: "Action" },
+        card: { nodeId: "2:2", category: "Data Display" },
+      },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({ nodes: {} }); // total outage
+    },
+  };
+  var written = await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-07-05",
+    },
+    "dsKit",
+  );
+  assert.equal(written.count, 0);
+  assert.equal(written.failed.length, 2);
+  // the bundle is NOT wiped — failed slugs are seeded from the existing dist
+  var bundle = JSON.parse(
+    fs.readFileSync(path.join(anatomyDir, "..", "anatomy.bundle.json"), "utf8"),
+  );
+  assert.equal(bundle.components.button.prior, true);
+  assert.equal(bundle.components.card.prior, true);
+});
+
+test("a partially-failed sync keeps the failed slug's prior entry in the bundle", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  writeJsonReal(path.join(anatomyDir, "card.json"), {
+    slug: "card",
+    prior: true,
+  });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        button: { nodeId: "1:1", category: "Action" },
+        card: { nodeId: "2:2", category: "Data Display" },
+      },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: { "1:1": { document: wave1ComponentDoc("Button") } },
+      });
+    },
+  };
+  await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-07-05",
+    },
+    "dsKit",
+  );
+  var bundle = JSON.parse(
+    fs.readFileSync(path.join(anatomyDir, "..", "anatomy.bundle.json"), "utf8"),
+  );
+  // fresh slug is fresh, failed slug is the preserved prior entry
+  assert.equal(bundle.components.button.slug, "button");
+  assert.equal(bundle.components.button.prior, undefined);
+  assert.equal(bundle.components.card.prior, true);
 });
 
 test("pruning a genuinely-removed slug escalates the phase verdict to breaking", async function () {

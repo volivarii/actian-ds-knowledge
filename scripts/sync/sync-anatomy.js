@@ -242,6 +242,20 @@ async function syncAnatomy(opts, kit) {
       failed.push({ slug: slug, error: e.message });
     }
   });
+  // Failed slugs must not vanish from the bundle either: seed their entries
+  // from the existing per-slug dist so both manifest surfaces (per-slug files
+  // and anatomy.bundle.json) stay consistent through transient failures. A
+  // total outage therefore re-emits the prior bundle instead of wiping it.
+  failed.forEach(function (f) {
+    if (bundle.components[f.slug]) return;
+    try {
+      bundle.components[f.slug] = JSON.parse(
+        fs.readFileSync(path.join(anatomyDir, f.slug + ".json"), "utf8"),
+      );
+    } catch (e) {
+      /* no prior file — nothing to preserve */
+    }
+  });
   writeJson(path.join(anatomyDir, "..", "anatomy.bundle.json"), bundle);
   // Prune stale files AFTER the fresh write, and only when we wrote something — a
   // transient empty/partial Figma response (count 0) must never wipe existing data.
@@ -275,14 +289,15 @@ async function syncAnatomy(opts, kit) {
         deleted.join(", "),
     );
   }
-  return result(count, {
+  var extra = {
     verdict: {
       category: deleted.length ? "breaking" : "additive",
       changelog: changelog.join("\n"),
     },
-    failed: failed.length ? failed : undefined,
-    deleted: deleted.length ? deleted : undefined,
-  });
+  };
+  if (failed.length) extra.failed = failed;
+  if (deleted.length) extra.deleted = deleted;
+  return result(count, extra);
 }
 
 module.exports = {

@@ -907,6 +907,142 @@ test("prune guard: zero-count prune spanning many slugs is refused (section-rena
   assert.deepEqual(result.pruneRefused[0].slugs.sort(), slugs);
 });
 
+test("prune guard: refusal also fires on the zero-pending early return (wrapper rename)", async function () {
+  var dir = tmpdir();
+  // 5 slugs with existing parts captures; pages resolve but the whole
+  // "Design guidelines" wrapper is gone (outer-wrapper rename) → zero
+  // pending entries → the early-return path must still refuse the prune.
+  var slugs = ["w1", "w2", "w3", "w4", "w5"];
+  slugs.forEach(function (s) {
+    var d = path.join(dir, s);
+    fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(d, "parts-0.webp"), "stale");
+  });
+  var comps = {};
+  var pages = slugs.map(function (s, i) {
+    comps[s] = { name: s, nodeId: "n:" + i, page: "Page" + i };
+    return { id: "p:" + i, type: "CANVAS", name: "Page" + i, children: [] };
+  });
+  var reg = { fileKey: "FILEKEY", components: comps };
+  var tree = { document: { id: "0:0", type: "DOCUMENT", children: pages } };
+  var restStub = {
+    getFile: function () {
+      return Promise.resolve(tree);
+    },
+    getNodes: function (fileKey, ids) {
+      var byId = {};
+      tree.document.children.forEach(function (p) {
+        byId[p.id] = { document: p };
+      });
+      var resp = { nodes: {} };
+      ids.forEach(function (id) {
+        if (byId[id]) resp.nodes[id] = byId[id];
+      });
+      return Promise.resolve(resp);
+    },
+    getImages: function () {
+      return Promise.resolve({ images: {} });
+    },
+    fetchBinary: function () {
+      return Promise.resolve(REAL_PNG);
+    },
+  };
+
+  var result = await syncMedia.run({
+    registry: reg,
+    outputDir: dir,
+    rest: restStub,
+  });
+
+  assert.equal(result.captured.length, 0);
+  slugs.forEach(function (s) {
+    assert.ok(
+      fs.existsSync(path.join(dir, s, "parts-0.webp")),
+      s + "/parts-0.webp must survive the early-return prune",
+    );
+  });
+  assert.ok(Array.isArray(result.pruneRefused));
+  assert.equal(result.pruneRefused.length, 1);
+  assert.equal(result.pruneRefused[0].role, "parts");
+});
+
+test("prune guard boundary: exactly 3 zero-count slugs still prune (threshold is > 3)", async function () {
+  var dir = tmpdir();
+  var slugs = ["w1", "w2", "w3"];
+  slugs.forEach(function (s) {
+    var d = path.join(dir, s);
+    fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(d, "parts-0.webp"), "stale");
+  });
+  var comps = {};
+  var pages = slugs.map(function (s, i) {
+    comps[s] = { name: s, nodeId: "n:" + i, page: "Page" + i };
+    return {
+      id: "p:" + i,
+      type: "CANVAS",
+      name: "Page" + i,
+      children: [
+        {
+          id: "dg:" + i,
+          type: "FRAME",
+          name: "Design guidelines",
+          children: [
+            {
+              id: "ss:pv" + i,
+              type: "FRAME",
+              name: "Preview",
+              children: [{ id: "vis:" + i, type: "FRAME", name: "Overview" }],
+            },
+          ],
+        },
+      ],
+    };
+  });
+  var reg = { fileKey: "FILEKEY", components: comps };
+  var tree = { document: { id: "0:0", type: "DOCUMENT", children: pages } };
+  var restStub = {
+    getFile: function () {
+      return Promise.resolve(tree);
+    },
+    getNodes: function (fileKey, ids) {
+      var byId = {};
+      tree.document.children.forEach(function (p) {
+        byId[p.id] = { document: p };
+      });
+      var resp = { nodes: {} };
+      ids.forEach(function (id) {
+        if (byId[id]) resp.nodes[id] = byId[id];
+      });
+      return Promise.resolve(resp);
+    },
+    getImages: function (fileKey, ids) {
+      var images = {};
+      ids.forEach(function (id) {
+        images[id] = "https://signed/" + id + ".png";
+      });
+      return Promise.resolve({ images: images });
+    },
+    fetchBinary: function () {
+      return Promise.resolve(REAL_PNG);
+    },
+  };
+
+  var result = await syncMedia.run({
+    registry: reg,
+    outputDir: dir,
+    rest: restStub,
+  });
+
+  // at the threshold (3, not more) the prune is a legitimate removal
+  slugs.forEach(function (s) {
+    assert.ok(
+      !fs.existsSync(path.join(dir, s, "parts-0.webp")),
+      s + "/parts-0.webp must be pruned at the threshold",
+    );
+  });
+  assert.equal((result.pruneRefused || []).length, 0);
+});
+
 test("pruneLegacyPng: pre-WebP .png files are removed on sync", async function () {
   var dir = tmpdir();
   // Simulate a pre-migration media tree: legacy .png files on disk.

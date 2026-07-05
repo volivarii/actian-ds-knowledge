@@ -99,12 +99,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add content/dist/ package.json
+          git add content/dist/ package.json paths-manifest.json
           git commit -m "chore(content): regenerate global.md + bump patch"
           # Race-safe push: another derive workflow may have pushed to this
           # branch since checkout (concurrent auto-commits) — rebase and retry
           # once instead of failing the required check on a lost race.
-          git push || (git pull --rebase && git push)
+          # --autostash: npm install rewrites the stale tracked package-lock.json
+          # in every run, and a dirty tree makes a bare rebase refuse to start.
+          git push || (git pull --rebase --autostash && git push)
 
       - name: Summarize
         if: always()

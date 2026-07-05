@@ -112,8 +112,9 @@ jobs:
         run: |
           node scripts/lib/bump-version.js package.json patch
 
+      # Skip on fork PRs — GITHUB_TOKEN can't push to forks.
       - name: Commit derived JSONs back to PR
-        if: steps.diff.outputs.changed == 'true'
+        if: steps.diff.outputs.changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -122,7 +123,9 @@ jobs:
           # Race-safe push: another derive workflow may have pushed to this
           # branch since checkout (concurrent auto-commits) — rebase and retry
           # once instead of failing the required check on a lost race.
-          git push || (git pull --rebase && git push)
+          # --autostash: npm install rewrites the stale tracked package-lock.json
+          # in every run, and a dirty tree makes a bare rebase refuse to start.
+          git push || (git pull --rebase --autostash && git push)
 
       - name: Post semantic-diff comment
         if: steps.diff.outputs.changed == 'true'

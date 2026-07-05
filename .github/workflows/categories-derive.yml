@@ -107,7 +107,9 @@ jobs:
           # Race-safe push: another derive workflow may have pushed to this
           # branch since checkout (concurrent auto-commits) — rebase and retry
           # once instead of failing the required check on a lost race.
-          git push || (git pull --rebase && git push)
+          # --autostash: npm install rewrites the stale tracked package-lock.json
+          # in every run, and a dirty tree makes a bare rebase refuse to start.
+          git push || (git pull --rebase --autostash && git push)
 
       - name: Summarize
         if: always()
