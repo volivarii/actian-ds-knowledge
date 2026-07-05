@@ -412,6 +412,24 @@ test("idempotent: second run does not rewrite when bytes match", async function 
   assert.equal(stat1.mtimeMs, stat2.mtimeMs, "stable bytes → no rewrite");
 });
 
+test("captured counts only real writes: second identical run reports zero captured", async function () {
+  var dir = tmpdir();
+  var r1 = await syncMedia.run({
+    registry: registry,
+    outputDir: dir,
+    rest: mockRest(),
+  });
+  assert.ok(r1.captured.length > 0, "first run captures");
+  var r2 = await syncMedia.run({
+    registry: registry,
+    outputDir: dir,
+    rest: mockRest(),
+  });
+  // Byte-identical night: nothing was written, so nothing was "captured" —
+  // this is what stops the phase from inflating every night to additive.
+  assert.deepEqual(r2.captured, []);
+});
+
 test("page-name lookup tolerates leading/trailing whitespace on Figma side", async function () {
   // Real-world quirk (2026-05-19): designers pad Figma page names with
   // leading whitespace for visual sorting in the pages panel (e.g.

@@ -610,6 +610,7 @@ async function run(opts) {
             missing: r.missing,
             skipped: r.skipped,
             pruneRefused: r.pruneRefused,
+            wrote: r.captured.length > 0,
             fileLabel: "media-preview",
             verdict: {
               category: cat,
@@ -694,6 +695,7 @@ async function run(opts) {
             captured: r.captured,
             missing: r.missing,
             skipped: r.skipped,
+            wrote: r.captured.length > 0,
             fileLabel: "media-default",
             verdict: {
               category: cat,

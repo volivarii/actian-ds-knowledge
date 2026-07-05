@@ -401,12 +401,15 @@ async function run(opts) {
     }
     var filename = mediaFilename(p.role, p.index);
     var outPath = path.join(opts.outputDir, p.slug, filename);
-    writeIfChanged(outPath, bytes);
     // Captured key: slug/role for first, slug/role-N for multi. Derived
     // from mediaFilename so the filename contract is defined in one place.
-    var basename = filename.slice(0, -MEDIA_EXT.length);
-    var capturedKey = p.slug + "/" + basename;
-    captured.push(capturedKey);
+    // Only a REAL write counts as captured — a byte-identical re-render is
+    // not a change, and reporting it as one inflated every night's verdict
+    // to additive (nightly no-op PRs + version bumps).
+    if (writeIfChanged(outPath, bytes)) {
+      var basename = filename.slice(0, -MEDIA_EXT.length);
+      captured.push(p.slug + "/" + basename);
+    }
   }
 
   // Step 7: prune stale multi-image files from processed slug dirs.

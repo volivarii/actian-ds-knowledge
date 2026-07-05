@@ -139,6 +139,35 @@ test("run() captures the default variant child as default.webp", async function 
   }
 });
 
+test("run() captured counts only real writes on a second identical run", async function () {
+  var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "mdef-"));
+  try {
+    var anatomyDir = path.join(tmp, "anatomy");
+    var mediaDir = path.join(tmp, "media");
+    fs.mkdirSync(anatomyDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(anatomyDir, "button.json"),
+      JSON.stringify({
+        slug: "button",
+        source: { fileKey: "FILEKEY", nodeId: "7206:2643" },
+      }),
+    );
+    var opts = {
+      registry: { fileKey: "FILEKEY", components: { button: {} } },
+      anatomyDir: anatomyDir,
+      outputDir: mediaDir,
+      rest: mockRest(),
+    };
+    var r1 = await D.run(opts);
+    assert.deepEqual(r1.captured, ["button/default"]);
+    var r2 = await D.run(opts);
+    // byte-identical → no write → no capture → verdict stays unchanged
+    assert.deepEqual(r2.captured, []);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("run() reports a slug with NO anatomy file as skipped, not missing", async function () {
   var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "mdef-"));
   try {
