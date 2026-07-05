@@ -351,6 +351,22 @@ test("orchestrator runs media-default phase end-to-end", async function () {
     assert.ok(fs.existsSync(out), "button default.webp must exist");
     var bytes = fs.readFileSync(out);
     assert.equal(bytes.subarray(0, 4).toString("ascii"), "RIFF");
+
+    // K6: the sync run itself derives media/_index.json — previously only
+    // guidelines-derive healed it afterwards, stacking a second version bump
+    // (phantom untagged versions) on every media-writing sync.
+    var idxPath = path.join(mediaDir, "_index.json");
+    assert.ok(
+      fs.existsSync(idxPath),
+      "media/_index.json derived in the same sync run",
+    );
+    var idx = JSON.parse(fs.readFileSync(idxPath, "utf8"));
+    assert.ok(idx.media.button, "button media indexed");
+    var mi = result.results.find(function (r) {
+      return r.kind === "media-index";
+    });
+    assert.ok(mi, "media-index phase result present");
+    assert.equal(mi.wrote, true);
   } finally {
     fs.rmSync(pluginDir, { recursive: true, force: true });
     fs.rmSync(releaseDir, { recursive: true, force: true });

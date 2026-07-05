@@ -706,6 +706,43 @@ async function run(opts) {
     });
   }
 
+  // media-index: re-derive components/dist/media/_index.json inside the SAME
+  // sync run whenever a media phase ran. Previously the sync wrote media
+  // without the sidecar and relied on guidelines-derive's auto-commit to heal
+  // it afterwards — stacking a second version bump per sync (the phantom
+  // untagged versions, e.g. 0.34.66-67). writeMediaIndex is already
+  // byte-compare-gated, so a no-op night writes nothing here.
+  if (
+    phase === "media-preview" ||
+    phase === "media-default" ||
+    phase === "all"
+  ) {
+    await runWithGuard("media-index", function () {
+      var mediaOutputDir =
+        opts.mediaOutputDir ||
+        path.join(pluginDir, "components", "dist", "media");
+      // writeMediaIndex takes the repo root; the media dir is always
+      // <root>/components/dist/media (prod and test fixtures alike).
+      var repoRoot = path.resolve(mediaOutputDir, "..", "..", "..");
+      var writeMediaIndex =
+        require("../components/derive-media-index").writeMediaIndex;
+      var r = writeMediaIndex(repoRoot);
+      var cat = r.wrote ? "additive" : "unchanged";
+      return {
+        kind: "media-index",
+        category: cat,
+        wrote: r.wrote === true,
+        fileLabel: "media/_index.json",
+        verdict: {
+          category: cat,
+          changelog: r.wrote
+            ? "- Regenerated media/_index.json (" + r.slugCount + " slugs)."
+            : "_(no changes)_",
+        },
+      };
+    });
+  }
+
   // icons: export + normalize the monochrome UI icons (category "Icons",
   // primary group != "Connector") to components/src/icons-svg.auto.json, then
   // re-derive components/dist/icons/icons.json (auto ⊕ curated override). No-op
