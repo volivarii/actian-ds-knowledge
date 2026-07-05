@@ -410,6 +410,166 @@ test("syncAnatomy captures per-variant appearance for a COMPONENT_SET", async fu
   ]);
 });
 
+// --- prune guard + failed-slug visibility ---
+// A transient Figma miss (payload absent) or a per-slug normalization failure
+// must never let pruneStaleAnatomy delete the slug's existing file, and must be
+// visible in the changelog the sync PR renders. Deleting a file (slug genuinely
+// gone from the registry) is consumer-visible → escalates the phase to breaking.
+
+function wave1ComponentDoc(name) {
+  return {
+    type: "COMPONENT",
+    name: name,
+    layoutMode: "HORIZONTAL",
+    itemSpacing: 8,
+    children: [{ type: "TEXT", name: "Label", characters: "Go" }],
+  };
+}
+
+test("a slug with a missing node payload is reported failed and its file survives the prune", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  // pre-existing good data from a prior sync
+  writeJsonReal(path.join(anatomyDir, "card.json"), {
+    slug: "card",
+    prior: true,
+  });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        button: { nodeId: "1:1", category: "Action" },
+        card: { nodeId: "2:2", category: "Data Display" },
+      },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      // transient hiccup: card's subtree is missing from the response
+      return Promise.resolve({
+        nodes: { "1:1": { document: wave1ComponentDoc("Button") } },
+      });
+    },
+  };
+  var written = await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-07-05",
+    },
+    "dsKit",
+  );
+  assert.equal(written.count, 1);
+  // the miss is RECORDED, not silent
+  assert.ok(written.failed, "missing payload must be recorded in failed");
+  assert.equal(written.failed.length, 1);
+  assert.equal(written.failed[0].slug, "card");
+  // and visible in the changelog the PR body renders
+  assert.match(written.verdict.changelog, /card/);
+  assert.match(written.verdict.changelog, /preserved/i);
+  // the existing file SURVIVES the prune (was: silently deleted)
+  assert.equal(fs.existsSync(path.join(anatomyDir, "card.json")), true);
+  // a recorded failure with the file preserved is not a deletion — stays additive
+  assert.equal(written.verdict.category, "additive");
+});
+
+test("a slug whose per-slug write throws keeps its existing file and is reported failed", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  writeJsonReal(path.join(anatomyDir, "card.json"), {
+    slug: "card",
+    prior: true,
+  });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        button: { nodeId: "1:1", category: "Action" },
+        card: { nodeId: "2:2", category: "Data Display" },
+      },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: {
+          "1:1": { document: wave1ComponentDoc("Button") },
+          "2:2": { document: wave1ComponentDoc("Card") },
+        },
+      });
+    },
+  };
+  var failingWriteJson = function (p, o) {
+    if (path.basename(p) === "card.json") throw new Error("disk full");
+    writeJsonReal(p, o);
+  };
+  var written = await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: failingWriteJson,
+      syncedAt: "2026-07-05",
+    },
+    "dsKit",
+  );
+  assert.equal(written.count, 1);
+  assert.ok(written.failed);
+  assert.equal(written.failed[0].slug, "card");
+  assert.match(written.verdict.changelog, /card/);
+  // prior card.json untouched by the prune
+  assert.equal(fs.existsSync(path.join(anatomyDir, "card.json")), true);
+});
+
+test("pruning a genuinely-removed slug escalates the phase verdict to breaking", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  // a slug that no longer exists in the registry — its file is legitimately stale
+  writeJsonReal(path.join(anatomyDir, "gone.json"), { slug: "gone" });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: { button: { nodeId: "1:1", category: "Action" } },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: { "1:1": { document: wave1ComponentDoc("Button") } },
+      });
+    },
+  };
+  var written = await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-07-05",
+    },
+    "dsKit",
+  );
+  assert.equal(fs.existsSync(path.join(anatomyDir, "gone.json")), false);
+  // deletion is consumer-visible → the phase must demand review
+  assert.equal(written.verdict.category, "breaking");
+  assert.match(written.verdict.changelog, /gone/);
+  assert.match(written.verdict.changelog, /deleted/i);
+});
+
 test("syncAnatomy resolves token refs when getLocalVariables is available", async function () {
   var dir = tmpDir();
   var registriesDir = path.join(dir, "registries");

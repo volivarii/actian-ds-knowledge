@@ -81,28 +81,37 @@ function pickDefaultVariant(doc) {
 // files NOT in the freshly-written set (dropped icons, components removed from
 // Figma). Runs after writing (never wipe-then-write) and only when called with a
 // non-empty kept-set, so a transient empty Figma response can't silently delete all
-// anatomy data. `.gitkeep` is preserved (not `.json`); the bundle lives one dir up.
-function pruneStaleAnatomy(anatomyDir, keptSlugs) {
-  if (!keptSlugs.length || !fs.existsSync(anatomyDir)) return;
+// anatomy data. `protectSlugs` (slugs whose fetch/normalize FAILED this run) are
+// never deleted either: a transient per-slug hiccup must keep the prior file, not
+// lose it. Returns the pruned slugs so the caller can escalate real deletions.
+// `.gitkeep` is preserved (not `.json`); the bundle lives one dir up.
+function pruneStaleAnatomy(anatomyDir, keptSlugs, protectSlugs) {
+  var deleted = [];
+  if (!keptSlugs.length || !fs.existsSync(anatomyDir)) return deleted;
   var keep = {};
   keptSlugs.forEach(function (s) {
+    keep[s + ".json"] = true;
+  });
+  (protectSlugs || []).forEach(function (s) {
     keep[s + ".json"] = true;
   });
   var entries;
   try {
     entries = fs.readdirSync(anatomyDir);
   } catch (e) {
-    return; // unreadable dir — leave it alone rather than throw
+    return deleted; // unreadable dir — leave it alone rather than throw
   }
   entries.forEach(function (f) {
     if (f.endsWith(".json") && !keep[f]) {
       try {
         fs.unlinkSync(path.join(anatomyDir, f));
+        deleted.push(f.slice(0, -".json".length));
       } catch (e) {
         /* best-effort */
       }
     }
   });
+  return deleted;
 }
 
 async function varNameByIdFor(rest, fileKey) {
@@ -190,7 +199,13 @@ async function syncAnatomy(opts, kit) {
     var nid = comps[slug].nodeId;
     var payload = nid && nodes[nid];
     var doc = payload && payload.document;
-    if (!doc) return;
+    if (!doc) {
+      // A missing subtree is a transient fetch miss, not an absent component —
+      // record it (visible in the changelog) instead of silently skipping, and
+      // let the prune below preserve the slug's existing file.
+      failed.push({ slug: slug, error: "no node payload from Figma" });
+      return;
+    }
     // Isolate per-component failures — one malformed component must not abort the
     // whole anatomy phase (runWithGuard's catch is per-kit, not per-component).
     try {
@@ -230,8 +245,44 @@ async function syncAnatomy(opts, kit) {
   writeJson(path.join(anatomyDir, "..", "anatomy.bundle.json"), bundle);
   // Prune stale files AFTER the fresh write, and only when we wrote something — a
   // transient empty/partial Figma response (count 0) must never wipe existing data.
-  pruneStaleAnatomy(anatomyDir, Object.keys(bundle.components));
-  return result(count, failed.length ? { failed: failed } : undefined);
+  // Failed slugs are protected: their prior files stay until a clean sync replaces
+  // them. Anything actually deleted is a consumer-visible removal → breaking.
+  var deleted = pruneStaleAnatomy(
+    anatomyDir,
+    Object.keys(bundle.components),
+    failed.map(function (f) {
+      return f.slug;
+    }),
+  );
+  var changelog = ["- Wrote " + count + " anatomy file(s)."];
+  if (failed.length) {
+    changelog.push(
+      "- ⚠️ FAILED " +
+        failed.length +
+        " slug(s), existing anatomy preserved: " +
+        failed
+          .map(function (f) {
+            return f.slug + " (" + f.error + ")";
+          })
+          .join(", "),
+    );
+  }
+  if (deleted.length) {
+    changelog.push(
+      "- ⚠️ Deleted " +
+        deleted.length +
+        " stale anatomy file(s): " +
+        deleted.join(", "),
+    );
+  }
+  return result(count, {
+    verdict: {
+      category: deleted.length ? "breaking" : "additive",
+      changelog: changelog.join("\n"),
+    },
+    failed: failed.length ? failed : undefined,
+    deleted: deleted.length ? deleted : undefined,
+  });
 }
 
 module.exports = {
