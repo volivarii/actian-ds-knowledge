@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "library": "ds",
   "fileKey": "l8biHxfarNi1I2RMvVxVOK",
-  "lastSynced": "2026-07-02T13:31:20.835Z",
+  "lastSynced": "2026-07-05T11:32:29.429Z",
   "componentCount": 320,
   "components": {
     "xs-grid": {
@@ -31,7 +31,7 @@
       "nodeId": "13792:15247",
       "importMethod": "set",
       "description": "Use to show the user's current location within a hierarchical multi-level structure. Enables 1-click navigation back to parent pages.",
-      "page": "✅ Breadcrumbs",
+      "page": "✍️ Breadcrumbs",
       "properties": {},
       "nestedComponents": [],
       "documentationLinks": [],
@@ -281,36 +281,6 @@
         ]
       }
     },
-    "avatar": {
-      "name": "Avatar",
-      "key": "67e11f5d63bbe3cb24cae7d38ab5e90ee506d266",
-      "nodeId": "7384:14212",
-      "importMethod": "set",
-      "description": "Visual representation of a user or entity. Use \"Image\" variant if a photo exists, or \"Initials\" as a fallback.",
-      "page": "✅ Avatar",
-      "properties": {},
-      "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "categorySlug": "data-display",
-      "group": "Avatar",
-      "variants": {
-        "State": [
-          "Default",
-          "Hovered",
-          "Focused",
-          "Pressed",
-          "Disabled",
-          "Selected"
-        ],
-        "Type": [
-          "One group",
-          "Two groups",
-          "Default"
-        ]
-      }
-    },
     "loading-skeleton": {
       "name": "Loading skeleton",
       "key": "b798100889bf79e5b9b3c0bb28bafe9713342871",
@@ -329,32 +299,6 @@
         "Transition": [
           "1",
           "2"
-        ]
-      }
-    },
-    "tooltip": {
-      "name": "⚠️ Tooltip",
-      "key": "558adad968a5b5e1e3714307fb19de73d1ac6d21",
-      "nodeId": "7038:351",
-      "importMethod": "set",
-      "description": "",
-      "page": "⚠️ Tooltip",
-      "properties": {
-        "Body#7038:10": {
-          "type": "TEXT",
-          "default": "Body line text lorem ipsum dolor sit amet, consectetur"
-        }
-      },
-      "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Components",
-      "category": "Overlays",
-      "categorySlug": "overlays",
-      "group": "Tooltip",
-      "status": "warn",
-      "variants": {
-        "Type": [
-          "Default"
         ]
       }
     },
@@ -414,6 +358,32 @@
         ]
       }
     },
+    "tooltip": {
+      "name": "⚠️ Tooltip",
+      "key": "558adad968a5b5e1e3714307fb19de73d1ac6d21",
+      "nodeId": "7038:351",
+      "importMethod": "set",
+      "description": "Flex width with maximum width of 320px.",
+      "page": "⚠️ Tooltip",
+      "properties": {
+        "Body#7038:10": {
+          "type": "TEXT",
+          "default": "Body line text lorem ipsum dolor sit amet, consectetur"
+        }
+      },
+      "nestedComponents": [],
+      "documentationLinks": [],
+      "section": "Components",
+      "category": "Overlays",
+      "categorySlug": "overlays",
+      "group": "Tooltip",
+      "status": "warn",
+      "variants": {
+        "Type": [
+          "Default"
+        ]
+      }
+    },
     "checkbox-with-label": {
       "name": "Checkbox with label",
       "key": "f88de6fe161264680045b2b5ec77d311b1b3adb6",
@@ -440,30 +410,6 @@
           "Focus",
           "Pressed",
           "Disabled"
-        ]
-      }
-    },
-    "link": {
-      "name": "Link",
-      "key": "433bc17e08514c14ee821f2b03421bad865e0a0e",
-      "nodeId": "8346:6897",
-      "importMethod": "set",
-      "description": "A Link visually represents clickable text or elements that navigate users to other pages, sections, or resources. It appears colored to indicate interactivity and follows accessibility and design standards for clarity and usability.\n\nUsed for navigation to a different page, an external URL, or to trigger a secondary action within a sentence. Not to be used for primary form submissions.",
-      "page": "✅ Link",
-      "properties": {},
-      "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Components",
-      "category": "Action",
-      "categorySlug": "action",
-      "group": "Link",
-      "variants": {
-        "State": [
-          "Disabled",
-          "Pressed",
-          "Focused",
-          "Hovered",
-          "Enabled"
         ]
       }
     },
@@ -1560,105 +1506,6 @@
         ]
       }
     },
-    "table": {
-      "name": "✍️ Table",
-      "key": "62d235b35d44ddafd58cb1a060107b4f69ab234e",
-      "nodeId": "15295:14902",
-      "importMethod": "set",
-      "description": "Use for large datasets requiring comparison, sorting, and filtering. Supports complex rows with multi-type data (text, badges, actions).\n\n\"If data is null, display the 'Empty State' illustration variant with a 'Create New' call to action.\"",
-      "page": "✍️ Table",
-      "properties": {},
-      "nestedComponents": [
-        {
-          "slug": "view-table",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "filter",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "add",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "chevron-sort",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "checkmark-outline",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "edit",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "trash",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "dots",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "arrow-down",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "chevron-left",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "arrow",
-          "role": null,
-          "source": "child-instance"
-        }
-      ],
-      "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "categorySlug": "data-display",
-      "group": "Table",
-      "status": "in-progress",
-      "variants": {
-        "Built type": [
-          "By columns",
-          "By rows"
-        ]
-      }
-    },
-    "error-state": {
-      "name": "Error state",
-      "key": "a219aa99ab9712f911f391af8dd623c18b281ccb",
-      "nodeId": "13087:34544",
-      "importMethod": "set",
-      "description": "A placeholder shown when a container has an error. Must include an illustration, a clear title, and a \"Call to Action\" button to help the user get started.",
-      "page": "✅ Empty state",
-      "properties": {},
-      "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Components",
-      "category": "Feedback",
-      "categorySlug": "feedback",
-      "group": "Empty state",
-      "variants": {
-        "Size": [
-          "Large",
-          "Medium"
-        ]
-      }
-    },
     "loader": {
       "name": "Loader",
       "key": "0cf73cc20fd0120418e60d904cff641ff38f4840",
@@ -1893,73 +1740,6 @@
         ]
       }
     },
-    "drawer-side-panel": {
-      "name": "Drawer, side panel",
-      "key": "3fe66a28fd56e3dbfd87a6f6be08df327bda27bf",
-      "nodeId": "14294:5758",
-      "importMethod": "set",
-      "description": "A container that slides from right side of the screen. Use for secondary tasks that require high focus but need to maintain the context of the main page.",
-      "page": "✅ Drawer (Side panel)",
-      "properties": {
-        "Show Back#14294:18": {
-          "type": "BOOLEAN",
-          "default": true
-        }
-      },
-      "nestedComponents": [
-        {
-          "slug": "chevron-left",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "arrow-down",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "view-details",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "close",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "home",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "info",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "favorite",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "integer-type",
-          "role": null,
-          "source": "child-instance"
-        }
-      ],
-      "documentationLinks": [],
-      "section": "Components",
-      "category": "Overlays",
-      "categorySlug": "overlays",
-      "group": "Drawer (Side panel)",
-      "variants": {
-        "App": [
-          "Studio",
-          "Explorer"
-        ]
-      }
-    },
     "rich-text": {
       "name": "Rich text",
       "key": "e904c7b5c3ef6d223d9743546484e5a99b7a7808",
@@ -2169,7 +1949,7 @@
           "Hover",
           "Focus",
           "Pressed",
-          "Selected",
+          "Expanded",
           "Disabled",
           "Loading"
         ]
@@ -2254,44 +2034,6 @@
           "Focus",
           "Pressed",
           "Selected"
-        ]
-      }
-    },
-    "collapse-accordion": {
-      "name": "✍️ Collapse-accordion",
-      "key": "8253d19d70a3b835653049d90b4fdf97b26a31c8",
-      "nodeId": "8292:80",
-      "importMethod": "set",
-      "description": "Use to hide/show secondary information to reduce vertical clutter. Best for FAQs or detailed settings sections.",
-      "page": "✍️ Collapse (Accordion)",
-      "properties": {
-        "Slot#15956:0": {
-          "type": "SLOT",
-          "default": {
-            "guid": {
-              "sessionID": -1,
-              "localID": -1
-            }
-          }
-        }
-      },
-      "nestedComponents": [
-        {
-          "slug": "arrow-down",
-          "role": null,
-          "source": "child-instance"
-        }
-      ],
-      "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "categorySlug": "data-display",
-      "group": "Collapse (Accordion)",
-      "status": "in-progress",
-      "variants": {
-        "State": [
-          "Collapsed",
-          "Expanede"
         ]
       }
     },
@@ -2602,6 +2344,278 @@
         ]
       }
     },
+    "line-graph": {
+      "name": "⛔️ Line graph",
+      "key": "e365ff8c88faf24f3cadf6166127e97dbc8771fb",
+      "nodeId": "15473:49490",
+      "importMethod": "set",
+      "description": "",
+      "page": "⛔️ WIP data visuzlization",
+      "properties": {},
+      "nestedComponents": [
+        {
+          "slug": "dots",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
+      "documentationLinks": [],
+      "section": "Components",
+      "category": "Data Display",
+      "categorySlug": "data-display",
+      "group": "WIP data visuzlization",
+      "status": "deprecated",
+      "variants": {
+        "Property 1": [
+          "Default"
+        ]
+      }
+    },
+    "tag-shared": {
+      "name": "✍️ Tag, Shared",
+      "key": "7a867b11eaec8c2cffd3a7cd21da62f66516e771",
+      "nodeId": "13812:22307",
+      "importMethod": "set",
+      "description": "Use for indicating something is recently updated. Can be interactive (removable) or static metadata.",
+      "page": "✍️ Tag (Identification key)",
+      "properties": {},
+      "nestedComponents": [],
+      "documentationLinks": [],
+      "section": "Components",
+      "category": "Data Display",
+      "categorySlug": "data-display",
+      "group": "Tag (Identification key)",
+      "status": "in-progress",
+      "variants": {
+        "Property 1": [
+          "Default"
+        ]
+      }
+    },
+    "confirmation": {
+      "name": "Confirmation",
+      "key": "41a7ce5d67baa4a49843fc0768bee6df42f945a7",
+      "nodeId": "13871:32310",
+      "importMethod": "set",
+      "description": "A placeholder shown when success. Must include an illustration, a clear title, and a \"Call to Action\" button to help the user get started.",
+      "page": "✅ Empty state",
+      "properties": {},
+      "nestedComponents": [],
+      "documentationLinks": [],
+      "section": "Components",
+      "category": "Feedback",
+      "categorySlug": "feedback",
+      "group": "Empty state",
+      "variants": {
+        "Size": [
+          "Large"
+        ]
+      }
+    },
+    "glossary-item-hierarchy-diagram": {
+      "name": "Glossary item hierarchy diagram",
+      "key": "ccb3fbc9c238527e5fa4998e8fd6ae9b5c31b7da",
+      "nodeId": "14747:30242",
+      "importMethod": "set",
+      "description": "",
+      "page": "✅ Glossary item hierarchy diagram",
+      "properties": {},
+      "nestedComponents": [
+        {
+          "slug": "list-bullets",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-to-fit",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-reset",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-in",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zoom-out",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
+      "documentationLinks": [],
+      "section": "Components",
+      "category": "Data Display",
+      "categorySlug": "data-display",
+      "group": "Glossary item hierarchy diagram",
+      "variants": {
+        "Type": [
+          "Default"
+        ]
+      }
+    },
+    "drawer-side-panel": {
+      "name": "Drawer, side panel",
+      "key": "3fe66a28fd56e3dbfd87a6f6be08df327bda27bf",
+      "nodeId": "14294:5758",
+      "importMethod": "set",
+      "description": "A container that slides from right side of the screen. Use for secondary tasks that require high focus but need to maintain the context of the main page.",
+      "page": "✅ Drawer (Side panel)",
+      "properties": {
+        "Show Back#14294:18": {
+          "type": "BOOLEAN",
+          "default": true
+        }
+      },
+      "nestedComponents": [
+        {
+          "slug": "chevron-left",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "view-details",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "close",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "home",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "info",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "favorite",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "integer-type",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
+      "documentationLinks": [],
+      "section": "Components",
+      "category": "Overlays",
+      "categorySlug": "overlays",
+      "group": "Drawer (Side panel)",
+      "variants": {
+        "App": [
+          "Studio",
+          "Explorer"
+        ]
+      }
+    },
+    "collapse-accordion": {
+      "name": "✍️ Collapse-accordion",
+      "key": "8253d19d70a3b835653049d90b4fdf97b26a31c8",
+      "nodeId": "8292:80",
+      "importMethod": "set",
+      "description": "Use to hide/show secondary information to reduce vertical clutter. Best for FAQs or detailed settings sections.",
+      "page": "✍️ Collapse (Accordion)",
+      "properties": {
+        "Slot#15956:0": {
+          "type": "SLOT",
+          "default": {
+            "guid": {
+              "sessionID": -1,
+              "localID": -1
+            }
+          }
+        }
+      },
+      "nestedComponents": [
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
+      "documentationLinks": [],
+      "section": "Components",
+      "category": "Data Display",
+      "categorySlug": "data-display",
+      "group": "Collapse (Accordion)",
+      "status": "in-progress",
+      "variants": {
+        "State": [
+          "Collapsed",
+          "Expanede"
+        ]
+      }
+    },
+    "link": {
+      "name": "Link",
+      "key": "433bc17e08514c14ee821f2b03421bad865e0a0e",
+      "nodeId": "8346:6897",
+      "importMethod": "set",
+      "description": "A Link visually represents clickable text or elements that navigate users to other pages, sections, or resources. It appears colored to indicate interactivity and follows accessibility and design standards for clarity and usability.\n\nUsed for navigation to a different page, an external URL, or to trigger a secondary action within a sentence. Not to be used for primary form submissions.",
+      "page": "✅ Link",
+      "properties": {},
+      "nestedComponents": [],
+      "documentationLinks": [],
+      "section": "Components",
+      "category": "Action",
+      "categorySlug": "action",
+      "group": "Link",
+      "variants": {
+        "State": [
+          "Default",
+          "Hover",
+          "Focus",
+          "Pressed",
+          "Expanded",
+          "Visited",
+          "Disabled"
+        ]
+      }
+    },
+    "bar-graph": {
+      "name": "⛔️ Bar graph",
+      "key": "6ea07622a616f54b591da8eb26515332b9d02c31",
+      "nodeId": "15473:49489",
+      "importMethod": "set",
+      "description": "",
+      "page": "⛔️ WIP data visuzlization",
+      "properties": {},
+      "nestedComponents": [
+        {
+          "slug": "dots",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
+      "documentationLinks": [],
+      "section": "Components",
+      "category": "Data Display",
+      "categorySlug": "data-display",
+      "group": "WIP data visuzlization",
+      "status": "deprecated",
+      "variants": {
+        "Property 1": [
+          "Default"
+        ]
+      }
+    },
     "lineage-individual-node": {
       "name": "Lineage individual node",
       "key": "5904351595c9b5b263bb5891bd1ed038fbaff636",
@@ -2658,64 +2672,67 @@
         ]
       }
     },
-    "bar-graph": {
-      "name": "⛔️ Bar graph",
-      "key": "6ea07622a616f54b591da8eb26515332b9d02c31",
-      "nodeId": "15473:49489",
+    "table": {
+      "name": "✍️ Table",
+      "key": "62d235b35d44ddafd58cb1a060107b4f69ab234e",
+      "nodeId": "15295:14902",
       "importMethod": "set",
-      "description": "",
-      "page": "⛔️ WIP data visuzlization",
+      "description": "Use for large datasets requiring comparison, sorting, and filtering. Supports complex rows with multi-type data (text, badges, actions).\n\n\"If data is null, display the 'Empty State' illustration variant with a 'Create New' call to action.\"",
+      "page": "✍️ Table",
       "properties": {},
       "nestedComponents": [
+        {
+          "slug": "view-table",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "filter",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "chevron-sort",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "checkmark-outline",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "edit",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "trash",
+          "role": null,
+          "source": "child-instance"
+        },
         {
           "slug": "dots",
           "role": null,
           "source": "child-instance"
-        }
-      ],
-      "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "categorySlug": "data-display",
-      "group": "WIP data visuzlization",
-      "status": "deprecated",
-      "variants": {
-        "Property 1": [
-          "Default"
-        ]
-      }
-    },
-    "glossary-item-hierarchy-diagram": {
-      "name": "Glossary item hierarchy diagram",
-      "key": "ccb3fbc9c238527e5fa4998e8fd6ae9b5c31b7da",
-      "nodeId": "14747:30242",
-      "importMethod": "set",
-      "description": "",
-      "page": "✅ Glossary item hierarchy diagram",
-      "properties": {},
-      "nestedComponents": [
+        },
         {
-          "slug": "list-bullets",
+          "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
         },
         {
-          "slug": "zoom-to-fit",
+          "slug": "chevron-left",
           "role": null,
           "source": "child-instance"
         },
         {
-          "slug": "zoom-reset",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "zoom-in",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "zoom-out",
+          "slug": "arrow",
           "role": null,
           "source": "child-instance"
         }
@@ -2724,57 +2741,41 @@
       "section": "Components",
       "category": "Data Display",
       "categorySlug": "data-display",
-      "group": "Glossary item hierarchy diagram",
+      "group": "Table",
+      "status": "in-progress",
       "variants": {
-        "Type": [
-          "Default"
+        "Built type": [
+          "By columns",
+          "By rows"
         ]
       }
     },
-    "line-graph": {
-      "name": "⛔️ Line graph",
-      "key": "e365ff8c88faf24f3cadf6166127e97dbc8771fb",
-      "nodeId": "15473:49490",
+    "avatar": {
+      "name": "Avatar",
+      "key": "67e11f5d63bbe3cb24cae7d38ab5e90ee506d266",
+      "nodeId": "7384:14212",
       "importMethod": "set",
-      "description": "",
-      "page": "⛔️ WIP data visuzlization",
-      "properties": {},
-      "nestedComponents": [
-        {
-          "slug": "dots",
-          "role": null,
-          "source": "child-instance"
-        }
-      ],
-      "documentationLinks": [],
-      "section": "Components",
-      "category": "Data Display",
-      "categorySlug": "data-display",
-      "group": "WIP data visuzlization",
-      "status": "deprecated",
-      "variants": {
-        "Property 1": [
-          "Default"
-        ]
-      }
-    },
-    "tag-shared": {
-      "name": "✍️ Tag, Shared",
-      "key": "7a867b11eaec8c2cffd3a7cd21da62f66516e771",
-      "nodeId": "13812:22307",
-      "importMethod": "set",
-      "description": "Use for indicating something is recently updated. Can be interactive (removable) or static metadata.",
-      "page": "✍️ Tag (Identification key)",
+      "description": "Visual representation of a user or entity. Use \"Image\" variant if a photo exists, or \"Initials\" as a fallback.",
+      "page": "✅ Avatar",
       "properties": {},
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Components",
       "category": "Data Display",
       "categorySlug": "data-display",
-      "group": "Tag (Identification key)",
-      "status": "in-progress",
+      "group": "Avatar",
       "variants": {
-        "Property 1": [
+        "State": [
+          "Default",
+          "Hovered",
+          "Focused",
+          "Pressed",
+          "Disabled",
+          "Selected"
+        ],
+        "Type": [
+          "One group",
+          "Two groups",
           "Default"
         ]
       }
@@ -2879,6 +2880,27 @@
           "Warning",
           "Disabled",
           "Read-only"
+        ]
+      }
+    },
+    "error-state": {
+      "name": "Error state",
+      "key": "a219aa99ab9712f911f391af8dd623c18b281ccb",
+      "nodeId": "13087:34544",
+      "importMethod": "set",
+      "description": "A placeholder shown when a container has an error. Must include an illustration, a clear title, and a \"Call to Action\" button to help the user get started.",
+      "page": "✅ Empty state",
+      "properties": {},
+      "nestedComponents": [],
+      "documentationLinks": [],
+      "section": "Components",
+      "category": "Feedback",
+      "categorySlug": "feedback",
+      "group": "Empty state",
+      "variants": {
+        "Size": [
+          "Large",
+          "Medium"
         ]
       }
     },
@@ -3013,26 +3035,6 @@
           "Details page",
           "Explorer home",
           "Explorer detail"
-        ]
-      }
-    },
-    "confirmation": {
-      "name": "Confirmation",
-      "key": "41a7ce5d67baa4a49843fc0768bee6df42f945a7",
-      "nodeId": "13871:32310",
-      "importMethod": "set",
-      "description": "A placeholder shown when success. Must include an illustration, a clear title, and a \"Call to Action\" button to help the user get started.",
-      "page": "✅ Empty state",
-      "properties": {},
-      "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Components",
-      "category": "Feedback",
-      "categorySlug": "feedback",
-      "group": "Empty state",
-      "variants": {
-        "Size": [
-          "Large"
         ]
       }
     },
@@ -6576,32 +6578,6 @@
       "group": "Other",
       "status": "in-progress"
     },
-    "app-switcher-dropdown": {
-      "name": "App switcher dropdown",
-      "key": "09baf67bef9191d0b5303b52c1c3159eefba3843",
-      "nodeId": "9118:17666",
-      "importMethod": "single",
-      "description": "Menu: -4 Density \nMenus display a list of choices on a temporary surface. They appear when users interact with a button, action, or other control.\n\n🛠 Additional options \nMenu list item - can be edited by selecting individual list item and  selecting wether it is enabled, selected, and has a divider from the variant properties.",
-      "page": "✅ Global header",
-      "properties": {},
-      "nestedComponents": [
-        {
-          "slug": "settings",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "arrow-down",
-          "role": null,
-          "source": "child-instance"
-        }
-      ],
-      "documentationLinks": [],
-      "section": "Components",
-      "category": "Navigation",
-      "categorySlug": "navigation",
-      "group": "Global header"
-    },
     "help-circle": {
       "name": "help-circle",
       "key": "2e8edce02b9198b99fe770fab00b636fb20d2f48",
@@ -6684,37 +6660,6 @@
       "categorySlug": "icons",
       "group": "Common",
       "status": "in-progress"
-    },
-    "account-dropdown": {
-      "name": "Account dropdown",
-      "key": "487b25247d05a6f9d36a4c7b9f5177ca2017348e",
-      "nodeId": "9118:17382",
-      "importMethod": "single",
-      "description": "",
-      "page": "✅ Global header",
-      "properties": {},
-      "nestedComponents": [
-        {
-          "slug": "help-bubble",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "arrow-down",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "exit",
-          "role": null,
-          "source": "child-instance"
-        }
-      ],
-      "documentationLinks": [],
-      "section": "Components",
-      "category": "Navigation",
-      "categorySlug": "navigation",
-      "group": "Global header"
     },
     "favorite": {
       "name": "favorite",
@@ -6923,6 +6868,63 @@
       "categorySlug": "icons",
       "group": "Common",
       "status": "in-progress"
+    },
+    "app-switcher-dropdown": {
+      "name": "App switcher dropdown",
+      "key": "09baf67bef9191d0b5303b52c1c3159eefba3843",
+      "nodeId": "9118:17666",
+      "importMethod": "single",
+      "description": "Menu: -4 Density \nMenus display a list of choices on a temporary surface. They appear when users interact with a button, action, or other control.\n\n🛠 Additional options \nMenu list item - can be edited by selecting individual list item and  selecting wether it is enabled, selected, and has a divider from the variant properties.",
+      "page": "✅ Global header",
+      "properties": {},
+      "nestedComponents": [
+        {
+          "slug": "settings",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
+      "documentationLinks": [],
+      "section": "Components",
+      "category": "Navigation",
+      "categorySlug": "navigation",
+      "group": "Global header"
+    },
+    "account-dropdown": {
+      "name": "Account dropdown",
+      "key": "487b25247d05a6f9d36a4c7b9f5177ca2017348e",
+      "nodeId": "9118:17382",
+      "importMethod": "single",
+      "description": "",
+      "page": "✅ Global header",
+      "properties": {},
+      "nestedComponents": [
+        {
+          "slug": "help-bubble",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "exit",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
+      "documentationLinks": [],
+      "section": "Components",
+      "category": "Navigation",
+      "categorySlug": "navigation",
+      "group": "Global header"
     }
   }
 }
