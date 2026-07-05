@@ -51,8 +51,10 @@ function readJsonOrNull(p) {
   }
 }
 
-function writeJson(p, obj) {
-  fs.mkdirSync(path.dirname(p), { recursive: true });
+// Canonical dist serialization — the single shape both writeJson and the
+// byte-compare write gates below use, so "would this write change the file"
+// is answered against the exact bytes that would land.
+function serializeJson(obj) {
   // Inject _schema_version: 1 as first key if not already present (Q1 2026
   // ecosystem plan PR α: every dist artifact carries a schema version).
   var withVersion = obj;
@@ -64,7 +66,12 @@ function writeJson(p, obj) {
   ) {
     withVersion = Object.assign({ _schema_version: 1 }, obj);
   }
-  fs.writeFileSync(p, JSON.stringify(withVersion, null, 2) + "\n", "utf8");
+  return JSON.stringify(withVersion, null, 2) + "\n";
+}
+
+function writeJson(p, obj) {
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, serializeJson(obj), "utf8");
 }
 
 function todayIso() {
@@ -253,18 +260,28 @@ async function syncRegistry(opts, kitId) {
     before: before,
     after: after,
   });
-  // Skip the write when nothing meaningful changed AND the file already exists.
-  // Otherwise `lastSynced` timestamps drift every run and the GH workflow
-  // would open a no-op PR every night.
+  // Canonical write gate. When the entries are unchanged, carry the previous
+  // lastSynced forward so the timestamp never churns on a re-emit; then write
+  // ONLY when the canonical bytes differ from what is on disk. Three cases:
+  // unchanged + identical bytes → skip; unchanged + byte drift (the one-time
+  // key-order canonicalization migration) → write, timestamp preserved;
+  // entry changes → write with the fresh timestamp.
   var wrote = false;
-  if (verdict.category !== "unchanged" || !fs.existsSync(outputPath)) {
+  if (verdict.category === "unchanged" && beforeFile && beforeFile.lastSynced) {
+    after.lastSynced = beforeFile.lastSynced;
+  }
+  if (
+    !fs.existsSync(outputPath) ||
+    fs.readFileSync(outputPath, "utf8") !== serializeJson(after)
+  ) {
     writeJson(outputPath, after);
     wrote = true;
   }
 
   // Emit components/dist/categories.json alongside the registry for dsKit
-  // only. Always rewrite — small file; downstream consumers should never
-  // read a stale snapshot when registry data shifted.
+  // only. Content-compared: the artifact's generatedAt is preserved from the
+  // previous file when everything else is equal (generatedAt then means
+  // "last content change", and a no-op night stops rewriting the file).
   if (kitId === "dsKit" && documentChildren) {
     var categoriesTransformer = require("../transformers/transform-categories.js");
     var artifact = categoriesTransformer.buildCategoriesArtifact(after);
@@ -274,7 +291,28 @@ async function syncRegistry(opts, kitId) {
     var categoriesPath =
       opts.categoriesPath ||
       path.join(path.dirname(opts.outputDir), "categories.json");
-    writeJson(categoriesPath, artifact);
+    var prevCategories = readJsonOrNull(categoriesPath);
+    var categoriesContent = function (o) {
+      return JSON.stringify({
+        library: o.library,
+        categories: o.categories,
+        uncategorized: o.uncategorized,
+      });
+    };
+    if (
+      prevCategories &&
+      prevCategories.generatedAt &&
+      categoriesContent(prevCategories) === categoriesContent(artifact)
+    ) {
+      artifact.generatedAt = prevCategories.generatedAt;
+    }
+    if (
+      !fs.existsSync(categoriesPath) ||
+      fs.readFileSync(categoriesPath, "utf8") !== serializeJson(artifact)
+    ) {
+      writeJson(categoriesPath, artifact);
+      wrote = true;
+    }
   }
 
   return {
@@ -545,12 +583,40 @@ async function run(opts) {
                 " components",
             );
           }
+          if (r.pruned > 0) {
+            lines.push("- Pruned " + r.pruned + " stale media file(s).");
+          }
+          if (r.pruneRefused && r.pruneRefused.length > 0) {
+            r.pruneRefused.forEach(function (p) {
+              // Cap the slug list — a library-wide refusal can span 80+ slugs
+              // and the PR body line should stay readable.
+              var shown = p.slugs.slice(0, 10).join(", ");
+              var more =
+                p.slugs.length > 10
+                  ? ", +" + (p.slugs.length - 10) + " more"
+                  : "";
+              lines.push(
+                "- ⚠️ REFUSED mass zero-count prune for role '" +
+                  p.role +
+                  "' — " +
+                  p.slugs.length +
+                  " slugs would lose every capture (sub-section rename suspected), files preserved: " +
+                  shown +
+                  more,
+              );
+            });
+          }
           return {
             kind: "media-preview",
             category: cat,
             captured: r.captured,
             missing: r.missing,
             skipped: r.skipped,
+            pruneRefused: r.pruneRefused,
+            pruned: r.pruned,
+            // Deletions are content changes too — a prune-only night must
+            // still open a PR or the deletion is silently re-done forever.
+            wrote: r.captured.length > 0 || r.pruned > 0,
             fileLabel: "media-preview",
             verdict: {
               category: cat,
@@ -635,6 +701,7 @@ async function run(opts) {
             captured: r.captured,
             missing: r.missing,
             skipped: r.skipped,
+            wrote: r.captured.length > 0,
             fileLabel: "media-default",
             verdict: {
               category: cat,
@@ -642,6 +709,42 @@ async function run(opts) {
             },
           };
         });
+    });
+  }
+
+  // media-index: re-derive components/dist/media/_index.json inside the SAME
+  // sync run whenever a media phase ran. Previously the sync wrote media
+  // without the sidecar and relied on guidelines-derive's auto-commit to heal
+  // it afterwards — stacking a second version bump per sync (the phantom
+  // untagged versions, e.g. 0.34.66-67). writeMediaIndex is already
+  // byte-compare-gated, so a no-op night writes nothing here.
+  if (
+    phase === "media-preview" ||
+    phase === "media-default" ||
+    phase === "all"
+  ) {
+    await runWithGuard("media-index", function () {
+      var mediaOutputDir =
+        opts.mediaOutputDir ||
+        path.join(pluginDir, "components", "dist", "media");
+      // Addressed by the media dir itself — no repo-root shape inference, so
+      // a custom mediaOutputDir can never index a different tree.
+      var writeMediaIndexAt =
+        require("../components/derive-media-index").writeMediaIndexAt;
+      var r = writeMediaIndexAt(mediaOutputDir);
+      var cat = r.wrote ? "additive" : "unchanged";
+      return {
+        kind: "media-index",
+        category: cat,
+        wrote: r.wrote === true,
+        fileLabel: "media/_index.json",
+        verdict: {
+          category: cat,
+          changelog: r.wrote
+            ? "- Regenerated media/_index.json (" + r.slugCount + " slugs)."
+            : "_(no changes)_",
+        },
+      };
     });
   }
 
@@ -697,14 +800,18 @@ async function run(opts) {
           // derives `curatedSlugs` itself for the resilience guard (a dangling
           // curated slug warns+skips rather than failing the whole sync), so we
           // don't forward it here.
-          deriveIconsMod.deriveAndWrite({
+          var derived = deriveIconsMod.deriveAndWrite({
             pluginDir: pluginDir,
             registry: dsKit,
             iconGroups: orchOpts.iconGroups,
           });
-          var cat = r.exported.length > 0 ? "additive" : "unchanged";
+          // Additive only when icon bytes actually changed (auto/degraded/
+          // icons.json). `exported` lists ALL clean icons every run, so using
+          // it as the verdict made every nightly sync additive by construction.
+          var iconsWrote = r.wrote === true || derived.wrote === true;
+          var cat = iconsWrote ? "additive" : "unchanged";
           var lines = [];
-          if (r.exported.length > 0) {
+          if (iconsWrote && r.exported.length > 0) {
             lines.push(
               "- Exported icon SVG for " + r.exported.length + " UI icons",
             );
@@ -726,6 +833,7 @@ async function run(opts) {
             category: cat,
             exported: r.exported,
             degraded: r.degraded,
+            wrote: iconsWrote,
             fileLabel: "icons",
             verdict: {
               category: cat,
@@ -737,8 +845,27 @@ async function run(opts) {
   }
 
   var category = aggregateVerdict(results, errors);
+  // TAG-GAP rule: consumers vendor by TAG RANGE, so ANY vendorable content
+  // that reaches disk must reach a version/tag — and the workflow only opens
+  // a PR for additive/breaking verdicts. A byte-level write with an
+  // entry-level "unchanged" verdict (e.g. the one-time key-order
+  // canonicalization migration, or a timestamp-preserving rewrite) therefore
+  // escalates to additive; a night with zero writes stays unchanged and
+  // produces no PR, no bump, no tag — a true no-op.
+  var anyWrote = results.some(function (r) {
+    return r && r.wrote === true;
+  });
+  var maintenanceOnly = false;
+  if (category === "unchanged" && anyWrote) {
+    category = "additive";
+    maintenanceOnly = true;
+  }
   var exitCode = exitCodeFor(category);
   var changelog = buildChangelog(date, category, results, errors);
+  if (maintenanceOnly) {
+    changelog +=
+      "\n_Byte-level maintenance writes only (canonicalization / ordering migration); no entry-level registry changes._\n";
+  }
 
   // Per-day release notes
   fs.mkdirSync(releaseNotesDir, { recursive: true });
@@ -769,6 +896,8 @@ async function run(opts) {
   var bumpedFrom = null;
   var bumpedTo = null;
   var pluginJsonPath = opts.pluginJsonPath || null;
+  // (anyWrote already escalated unchanged→additive above, so this condition
+  // now also covers byte-level-only maintenance writes.)
   if (
     pluginJsonPath &&
     (category === "additive" || category === "breaking") &&
@@ -784,6 +913,8 @@ async function run(opts) {
       JSON.stringify(plugin, null, 2) + "\n",
       "utf8",
     );
+    // Keep package-lock.json's version fields in lockstep (see stampLockfile).
+    bumpVersion.stampLockfile(path.dirname(pluginJsonPath), bumpedTo);
   }
 
   // Also bump paths-manifest.json#knowledge_version if a manifest path is

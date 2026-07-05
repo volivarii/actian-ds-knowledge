@@ -412,6 +412,24 @@ test("idempotent: second run does not rewrite when bytes match", async function 
   assert.equal(stat1.mtimeMs, stat2.mtimeMs, "stable bytes → no rewrite");
 });
 
+test("captured counts only real writes: second identical run reports zero captured", async function () {
+  var dir = tmpdir();
+  var r1 = await syncMedia.run({
+    registry: registry,
+    outputDir: dir,
+    rest: mockRest(),
+  });
+  assert.ok(r1.captured.length > 0, "first run captures");
+  var r2 = await syncMedia.run({
+    registry: registry,
+    outputDir: dir,
+    rest: mockRest(),
+  });
+  // Byte-identical night: nothing was written, so nothing was "captured" —
+  // this is what stops the phase from inflating every night to additive.
+  assert.deepEqual(r2.captured, []);
+});
+
 test("page-name lookup tolerates leading/trailing whitespace on Figma side", async function () {
   // Real-world quirk (2026-05-19): designers pad Figma page names with
   // leading whitespace for visual sorting in the pages panel (e.g.
@@ -791,11 +809,14 @@ test("prune: all role files removed when role yields 0 frames (fully removed)", 
     },
   };
 
-  await syncMedia.run({
+  var zeroResult = await syncMedia.run({
     registry: partsReg,
     outputDir: dir,
     rest: noPartsRest,
   });
+  // Deletions are real content changes — they must be reported so the sync
+  // commits them (a prune-only night must not strand deletions uncommitted).
+  assert.equal(zeroResult.pruned, 3);
 
   // All stale parts-*.webp must be deleted (role fully removed).
   assert.ok(
@@ -815,6 +836,232 @@ test("prune: all role files removed when role yields 0 frames (fully removed)", 
     fs.existsSync(path.join(slugDir, "preview.webp")),
     "preview.webp must NOT be pruned (capture:first)",
   );
+});
+
+test("prune guard: zero-count prune spanning many slugs is refused (section-rename protection)", async function () {
+  var dir = tmpdir();
+  // 5 slugs, each with an existing parts capture from prior syncs.
+  var slugs = ["w1", "w2", "w3", "w4", "w5"];
+  slugs.forEach(function (s) {
+    var d = path.join(dir, s);
+    fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(d, "parts-0.webp"), "stale");
+  });
+  // Every page still resolves (Preview present) but the "Parts" sub-section
+  // is absent EVERYWHERE — the signature of a library-wide section rename
+  // outside the alias list, not five simultaneous legitimate removals.
+  var comps = {};
+  var pages = slugs.map(function (s, i) {
+    comps[s] = { name: s, nodeId: "n:" + i, page: "Page" + i };
+    return {
+      id: "p:" + i,
+      type: "CANVAS",
+      name: "Page" + i,
+      children: [
+        {
+          id: "dg:" + i,
+          type: "FRAME",
+          name: "Design guidelines",
+          children: [
+            {
+              id: "ss:pv" + i,
+              type: "FRAME",
+              name: "Preview",
+              children: [{ id: "vis:" + i, type: "FRAME", name: "Overview" }],
+            },
+          ],
+        },
+      ],
+    };
+  });
+  var guardReg = { fileKey: "FILEKEY", components: comps };
+  var guardTree = {
+    document: { id: "0:0", type: "DOCUMENT", children: pages },
+  };
+  var guardRest = {
+    getFile: function () {
+      return Promise.resolve(guardTree);
+    },
+    getNodes: function (fileKey, ids) {
+      var byId = {};
+      guardTree.document.children.forEach(function (p) {
+        byId[p.id] = { document: p };
+      });
+      var resp = { nodes: {} };
+      ids.forEach(function (id) {
+        if (byId[id]) resp.nodes[id] = byId[id];
+      });
+      return Promise.resolve(resp);
+    },
+    getImages: function (fileKey, ids) {
+      var images = {};
+      ids.forEach(function (id) {
+        images[id] = "https://signed/" + id + ".png";
+      });
+      return Promise.resolve({ images: images });
+    },
+    fetchBinary: function () {
+      return Promise.resolve(REAL_PNG);
+    },
+  };
+
+  var result = await syncMedia.run({
+    registry: guardReg,
+    outputDir: dir,
+    rest: guardRest,
+  });
+
+  // Every slug's parts capture SURVIVES — a mass zero-count prune is refused.
+  slugs.forEach(function (s) {
+    assert.ok(
+      fs.existsSync(path.join(dir, s, "parts-0.webp")),
+      s + "/parts-0.webp must survive a refused mass prune",
+    );
+  });
+  // The refusal is surfaced so the sync changelog can warn about it.
+  assert.ok(
+    Array.isArray(result.pruneRefused),
+    "run() must report pruneRefused",
+  );
+  assert.equal(result.pruneRefused.length, 1);
+  assert.equal(result.pruneRefused[0].role, "parts");
+  assert.deepEqual(result.pruneRefused[0].slugs.sort(), slugs);
+});
+
+test("prune guard: refusal also fires on the zero-pending early return (wrapper rename)", async function () {
+  var dir = tmpdir();
+  // 5 slugs with existing parts captures; pages resolve but the whole
+  // "Design guidelines" wrapper is gone (outer-wrapper rename) → zero
+  // pending entries → the early-return path must still refuse the prune.
+  var slugs = ["w1", "w2", "w3", "w4", "w5"];
+  slugs.forEach(function (s) {
+    var d = path.join(dir, s);
+    fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(d, "parts-0.webp"), "stale");
+  });
+  var comps = {};
+  var pages = slugs.map(function (s, i) {
+    comps[s] = { name: s, nodeId: "n:" + i, page: "Page" + i };
+    return { id: "p:" + i, type: "CANVAS", name: "Page" + i, children: [] };
+  });
+  var reg = { fileKey: "FILEKEY", components: comps };
+  var tree = { document: { id: "0:0", type: "DOCUMENT", children: pages } };
+  var restStub = {
+    getFile: function () {
+      return Promise.resolve(tree);
+    },
+    getNodes: function (fileKey, ids) {
+      var byId = {};
+      tree.document.children.forEach(function (p) {
+        byId[p.id] = { document: p };
+      });
+      var resp = { nodes: {} };
+      ids.forEach(function (id) {
+        if (byId[id]) resp.nodes[id] = byId[id];
+      });
+      return Promise.resolve(resp);
+    },
+    getImages: function () {
+      return Promise.resolve({ images: {} });
+    },
+    fetchBinary: function () {
+      return Promise.resolve(REAL_PNG);
+    },
+  };
+
+  var result = await syncMedia.run({
+    registry: reg,
+    outputDir: dir,
+    rest: restStub,
+  });
+
+  assert.equal(result.captured.length, 0);
+  slugs.forEach(function (s) {
+    assert.ok(
+      fs.existsSync(path.join(dir, s, "parts-0.webp")),
+      s + "/parts-0.webp must survive the early-return prune",
+    );
+  });
+  assert.ok(Array.isArray(result.pruneRefused));
+  assert.equal(result.pruneRefused.length, 1);
+  assert.equal(result.pruneRefused[0].role, "parts");
+});
+
+test("prune guard boundary: exactly 3 zero-count slugs still prune (threshold is > 3)", async function () {
+  var dir = tmpdir();
+  var slugs = ["w1", "w2", "w3"];
+  slugs.forEach(function (s) {
+    var d = path.join(dir, s);
+    fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(d, "parts-0.webp"), "stale");
+  });
+  var comps = {};
+  var pages = slugs.map(function (s, i) {
+    comps[s] = { name: s, nodeId: "n:" + i, page: "Page" + i };
+    return {
+      id: "p:" + i,
+      type: "CANVAS",
+      name: "Page" + i,
+      children: [
+        {
+          id: "dg:" + i,
+          type: "FRAME",
+          name: "Design guidelines",
+          children: [
+            {
+              id: "ss:pv" + i,
+              type: "FRAME",
+              name: "Preview",
+              children: [{ id: "vis:" + i, type: "FRAME", name: "Overview" }],
+            },
+          ],
+        },
+      ],
+    };
+  });
+  var reg = { fileKey: "FILEKEY", components: comps };
+  var tree = { document: { id: "0:0", type: "DOCUMENT", children: pages } };
+  var restStub = {
+    getFile: function () {
+      return Promise.resolve(tree);
+    },
+    getNodes: function (fileKey, ids) {
+      var byId = {};
+      tree.document.children.forEach(function (p) {
+        byId[p.id] = { document: p };
+      });
+      var resp = { nodes: {} };
+      ids.forEach(function (id) {
+        if (byId[id]) resp.nodes[id] = byId[id];
+      });
+      return Promise.resolve(resp);
+    },
+    getImages: function (fileKey, ids) {
+      var images = {};
+      ids.forEach(function (id) {
+        images[id] = "https://signed/" + id + ".png";
+      });
+      return Promise.resolve({ images: images });
+    },
+    fetchBinary: function () {
+      return Promise.resolve(REAL_PNG);
+    },
+  };
+
+  var result = await syncMedia.run({
+    registry: reg,
+    outputDir: dir,
+    rest: restStub,
+  });
+
+  // at the threshold (3, not more) the prune is a legitimate removal
+  slugs.forEach(function (s) {
+    assert.ok(
+      !fs.existsSync(path.join(dir, s, "parts-0.webp")),
+      s + "/parts-0.webp must be pruned at the threshold",
+    );
+  });
+  assert.equal((result.pruneRefused || []).length, 0);
 });
 
 test("pruneLegacyPng: pre-WebP .png files are removed on sync", async function () {

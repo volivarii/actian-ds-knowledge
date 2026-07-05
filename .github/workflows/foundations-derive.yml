@@ -34,6 +34,13 @@ on:
       - 'tokens/src/**'
       - 'scripts/tokens/**'
 
+# Serialize runs per branch: concurrent auto-commit pushes to the same PR
+# head race each other (lost push = red required check). Queue, never cancel:
+# cancelling mid-push could strand a half-committed dist.
+concurrency:
+  group: foundations-derive-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   derive:
     name: Derive foundations JSONs
@@ -105,14 +112,20 @@ jobs:
         run: |
           node scripts/lib/bump-version.js package.json patch
 
+      # Skip on fork PRs — GITHUB_TOKEN can't push to forks.
       - name: Commit derived JSONs back to PR
-        if: steps.diff.outputs.changed == 'true'
+        if: steps.diff.outputs.changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add foundations/ tokens/ package.json paths-manifest.json
+          git add foundations/ tokens/ package.json paths-manifest.json package-lock.json
           git commit -m "chore(foundations): regenerate foundations + token JSONs from src + bump patch"
-          git push
+          # Race-safe push: another derive workflow may have pushed to this
+          # branch since checkout (concurrent auto-commits) — rebase and retry
+          # once instead of failing the required check on a lost race.
+          # --autostash: npm install rewrites the stale tracked package-lock.json
+          # in every run, and a dirty tree makes a bare rebase refuse to start.
+          git push || (git pull --rebase --autostash && git push)
 
       - name: Post semantic-diff comment
         if: steps.diff.outputs.changed == 'true'

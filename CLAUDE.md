@@ -52,7 +52,7 @@ Workflow files in `.github/workflows/` are the source of truth — list here is 
 - **`tag-on-merge.yml`** — On push to `main`, reads `package.json#version`, creates a `v$VERSION` git tag if not already present. Downstream consumers' `vendor-snapshot.cjs --range` resolves against these tags.
 - **`llms-txt.yml`** — Regenerates the root `llms.txt` index when knowledge content changes.
 
-Recurring gotcha: `guidelines-derive`'s auto-commit uses `GITHUB_TOKEN`, which can't trigger further workflows. After it auto-bumps + commits, an empty commit (from a real user/App push) may be needed to re-run the required checks on the new HEAD. Long-term fix tracked separately (switch to App-token push).
+Auto-commit re-trigger: every derive/validate workflow that commits back to a PR pushes with the `actian-ds-bot` App token, so the required checks re-run on the new HEAD automatically. The old GITHUB_TOKEN gotcha (checks stuck pending after an auto-bump, needing an empty commit) only remains on fork PRs, where the App secret is not exposed and the push step is skipped.
 
 ## Federated consumers
 
@@ -64,6 +64,27 @@ Plugin (`volivarii/Actian-DS-Claude-plugin`) vendors a pinned snapshot of this r
 - Don't add new top-level domains without updating `CONTRIBUTING.md`, `llms.txt`, and the README content table.
 - Don't rename a top-level domain without checking `MIGRATIONS.md` Rule 1 (parallel change) — there are downstream consumers (plugin's hardcoded vendor paths, future docs site URLs).
 - Don't commit specs / audits / planning docs from `docs/superpowers/` (gitignored, working artifacts only) per `feedback_no_commit_specs`.
+
+## Changelog & PR doc hygiene (ecosystem-wide ground rule)
+
+On every **notable** PR (new capability, schema/contract change, breaking sync, anything a consumer
+must know; not routine automated patch or sync bumps), update the docs the change touches, in the
+same PR:
+
+1. root [`CHANGELOG.md`](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com) + SemVer): add
+   the entry under `## [Unreleased]`, link the PR, promote to a versioned section at release.
+2. [`README.md`](README.md) if the change alters what it states (counts, capabilities, structure).
+3. any other relevant docs the change touches (`paths-manifest.json`, `llms.txt`, guidelines,
+   `CONTRIBUTING.md`).
+4. a plain-language summary into `actian-ds-ecosystem` (its bundle, `confluence/`, combined changelog),
+   per the standing ecosystem-sync rule.
+
+Never hand-edit version fields (CI owns them). This is an **ecosystem-wide** rule: all four DS repos
+(`actian-ds-knowledge`, `actian-design-system-plugin`, `actian-ds-docs`, `actian-ds-ecosystem`) follow
+it, and `actian-ds-ecosystem` additionally combines the three consumers' notable entries. The global
+cross-repo copy of this rule lives in the shared-brain memory `feedback_changelog_discipline` (it
+auto-loads in every repo's Claude context); this section is the authoritative checked-in copy for
+this repo.
 
 ## Roles
 

@@ -348,12 +348,14 @@ async function run(opts) {
 
   if (pending.length === 0) {
     // Still need to prune stale files even when there is nothing new to write.
-    pruneStaleCaptures(opts.outputDir, countMap);
-    pruneLegacyPng(opts.outputDir);
+    var earlyPrune = pruneStaleCaptures(opts.outputDir, countMap);
+    var earlyLegacy = pruneLegacyPng(opts.outputDir);
     return {
       captured: [],
       missing: aggregateMissing(missingPairs).sort(),
       skipped: skippedSlugs,
+      pruneRefused: earlyPrune.refused,
+      pruned: earlyPrune.deleted + earlyLegacy,
     };
   }
 
@@ -400,23 +402,28 @@ async function run(opts) {
     }
     var filename = mediaFilename(p.role, p.index);
     var outPath = path.join(opts.outputDir, p.slug, filename);
-    writeIfChanged(outPath, bytes);
     // Captured key: slug/role for first, slug/role-N for multi. Derived
     // from mediaFilename so the filename contract is defined in one place.
-    var basename = filename.slice(0, -MEDIA_EXT.length);
-    var capturedKey = p.slug + "/" + basename;
-    captured.push(capturedKey);
+    // Only a REAL write counts as captured — a byte-identical re-render is
+    // not a change, and reporting it as one inflated every night's verdict
+    // to additive (nightly no-op PRs + version bumps).
+    if (writeIfChanged(outPath, bytes)) {
+      var basename = filename.slice(0, -MEDIA_EXT.length);
+      captured.push(p.slug + "/" + basename);
+    }
   }
 
   // Step 7: prune stale multi-image files from processed slug dirs.
   // Must run after writes so surviving files are already in place.
-  pruneStaleCaptures(opts.outputDir, countMap);
-  pruneLegacyPng(opts.outputDir);
+  var prune = pruneStaleCaptures(opts.outputDir, countMap);
+  var legacyPruned = pruneLegacyPng(opts.outputDir);
 
   return {
     captured: captured.sort(),
     missing: aggregateMissing(missingPairs).sort(),
     skipped: skippedSlugs,
+    pruneRefused: prune.refused,
+    pruned: prune.deleted + legacyPruned,
   };
 }
 
@@ -424,18 +431,75 @@ async function run(opts) {
 // delete any <role>-<n>.webp where n >= N (the count of frames captured this
 // run). N = 0 means the role was fully absent — all its files are removed.
 // capture:"first" roles (like "preview") are single-file and not pruned.
+//
+// Mass-prune guard: a role resolving to ZERO frames on MANY slugs at once is
+// the signature of a library-wide sub-section rename outside the alias list
+// (finder broken), not of many simultaneous legitimate removals. Deleting on
+// that signal would wipe every <role>-*.webp across the library inside an
+// auto-merged PR. When more than MAX_ZERO_PRUNE_SLUGS slugs would lose their
+// ENTIRE role in one run, the zero-count prune for that role is refused
+// (files preserved, refusal returned so the sync changelog can warn).
+// Shrink prunes (N > 0) are unaffected. A deliberate library-wide role
+// retirement must be executed manually (or by raising the constant).
+var MAX_ZERO_PRUNE_SLUGS = 3;
+
 function pruneStaleCaptures(outputDir, countMap) {
+  var refused = [];
+  var deleted = 0;
   var multiRoles = Object.keys(ROLE_FINDERS).filter(function (role) {
     return ROLE_FINDERS[role].capture === "all";
   });
-  if (multiRoles.length === 0) return;
+  if (multiRoles.length === 0) return { refused: refused, deleted: deleted };
 
+  // Pass 1: per role, which slugs would lose their ENTIRE capture set (N=0
+  // with existing files on disk)?
+  var zeroBySlugs = {};
+  multiRoles.forEach(function (role) {
+    zeroBySlugs[role] = [];
+  });
+  Object.keys(countMap).forEach(function (slug) {
+    var slugDir = path.join(outputDir, slug);
+    if (!fs.existsSync(slugDir)) return;
+    var entries;
+    try {
+      entries = fs.readdirSync(slugDir);
+    } catch (_) {
+      return;
+    }
+    multiRoles.forEach(function (role) {
+      if ((countMap[slug][role] || 0) !== 0) return;
+      var prefix = role + "-";
+      var hasFiles = entries.some(function (file) {
+        return file.startsWith(prefix) && file.endsWith(MEDIA_EXT);
+      });
+      if (hasFiles) zeroBySlugs[role].push(slug);
+    });
+  });
+  var refusedRoles = {};
+  multiRoles.forEach(function (role) {
+    if (zeroBySlugs[role].length > MAX_ZERO_PRUNE_SLUGS) {
+      refusedRoles[role] = true;
+      refused.push({ role: role, slugs: zeroBySlugs[role] });
+      console.warn(
+        "[media-preview] REFUSED zero-count prune for role '" +
+          role +
+          "': " +
+          zeroBySlugs[role].length +
+          " slugs would lose every " +
+          role +
+          "-*.webp (sub-section rename suspected). Files preserved.",
+      );
+    }
+  });
+
+  // Pass 2: delete, honoring the refusals.
   Object.keys(countMap).forEach(function (slug) {
     var slugDir = path.join(outputDir, slug);
     if (!fs.existsSync(slugDir)) return;
     var roleCounts = countMap[slug];
     multiRoles.forEach(function (role) {
       var n = roleCounts[role] || 0;
+      if (n === 0 && refusedRoles[role]) return;
       var entries;
       try {
         entries = fs.readdirSync(slugDir);
@@ -452,6 +516,7 @@ function pruneStaleCaptures(outputDir, countMap) {
         if (idx >= n) {
           try {
             fs.unlinkSync(path.join(slugDir, file));
+            deleted++;
           } catch (_) {
             // Best-effort; ignore if already gone.
           }
@@ -459,6 +524,7 @@ function pruneStaleCaptures(outputDir, countMap) {
       });
     });
   });
+  return { refused: refused, deleted: deleted };
 }
 
 // pruneLegacyPng — one-time migration cleanup: delete any *.png left under
@@ -466,11 +532,12 @@ function pruneStaleCaptures(outputDir, countMap) {
 // preview.png are not covered by pruneStaleCaptures, so this sweeps every
 // slug dir. Idempotent — a no-op once the tree is fully WebP.
 function pruneLegacyPng(outputDir) {
+  var deleted = 0;
   var slugs;
   try {
     slugs = fs.readdirSync(outputDir, { withFileTypes: true });
   } catch (_) {
-    return;
+    return deleted;
   }
   slugs.forEach(function (slugEnt) {
     if (!slugEnt.isDirectory()) return;
@@ -485,11 +552,13 @@ function pruneLegacyPng(outputDir) {
       if (!file.endsWith(".png")) return;
       try {
         fs.unlinkSync(path.join(slugDir, file));
+        deleted++;
       } catch (_) {
         // Best-effort; ignore if already gone.
       }
     });
   });
+  return deleted;
 }
 
 function allPairs(slugList, roleList) {

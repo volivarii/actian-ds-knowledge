@@ -15,6 +15,13 @@ name: Validate manifest
 on:
   pull_request:
 
+# Serialize runs per branch: concurrent auto-commit pushes to the same PR
+# head race each other (lost push = red required check). Queue, never cancel:
+# cancelling mid-push could strand a half-committed dist.
+concurrency:
+  group: validate-manifest-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   validate:
     name: Validate manifest schema + coverage
@@ -88,7 +95,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add paths-manifest.json
           git commit -m "chore(version): stamp knowledge_version from package.json"
-          git push
+          # Race-safe push: another derive workflow may have pushed to this
+          # branch since checkout (concurrent auto-commits) — rebase and retry
+          # once instead of failing the required check on a lost race.
+          # --autostash: npm install rewrites the stale tracked package-lock.json
+          # in every run, and a dirty tree makes a bare rebase refuse to start.
+          git push || (git pull --rebase --autostash && git push)
 
       - name: Validate manifest
         run: node scripts/validate-manifest.js
@@ -146,4 +158,35 @@ jobs:
             echo "::error::tokens/token-reference.md is stale — run 'npm run render:tokens' and commit."
             git --no-pager diff -- tokens/token-reference.md
             exit 1
+          fi
+
+      # TAG-GAP visibility (REPORT-ONLY; the hard version-bump gate remains
+      # paused by decision): consumers vendor by tag range, so a merge that
+      # changes vendorable dist/manifest content without a version bump is
+      # invisible to them until some later PR bumps (bit twice: #333/#335).
+      # The sync bumps itself now; this flags the remaining human-PR case.
+      # May warn transiently mid-derive-cascade before a derive workflow
+      # auto-bumps — that is fine, it never fails the check.
+      - name: TAG-GAP notice — vendorable content vs version bump (report-only)
+        if: always()
+        run: |
+          git fetch origin "${{ github.base_ref }}" --quiet || true
+          BASE="origin/${{ github.base_ref }}"
+          CHANGED=$(git diff --name-only "$BASE"...HEAD -- \
+            'components/dist/**' 'tokens/**' 'foundations/dist/**' \
+            'content/dist/**' 'accessibility/dist/**' 'app-context/dist/**' \
+            'graph/dist/**' 'paths-manifest.json' 2>/dev/null | head -50) || true
+          [ -z "$CHANGED" ] && exit 0
+          BASE_V=$(git show "$BASE:package.json" 2>/dev/null | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).version)}catch(e){console.log('')}})")
+          HEAD_V=$(node -e "console.log(require('./package.json').version)")
+          if [ -n "$BASE_V" ] && [ "$BASE_V" = "$HEAD_V" ]; then
+            {
+              echo "### ⚠️ TAG-GAP notice (report-only)"
+              echo ""
+              echo "This PR changes vendorable content without a version bump. Tag-range consumers (plugin/docs vendor pulls) will not see the change until a later bump. Changed vendorable files:"
+              echo '```'
+              echo "$CHANGED"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "TAG-GAP notice: vendorable content changed without a version bump (see job summary)."
           fi

@@ -132,8 +132,12 @@ async function run(opts) {
       bytes = await encodeWhiteWebp(png);
       bufferCache[nodeId] = bytes;
     }
-    writeIfChanged(path.join(opts.outputDir, slug, "default.webp"), bytes);
-    captured.push(slug + "/default");
+    // Only a REAL write counts as captured (byte-identical re-render ≠ change).
+    if (
+      writeIfChanged(path.join(opts.outputDir, slug, "default.webp"), bytes)
+    ) {
+      captured.push(slug + "/default");
+    }
   }
 
   return {

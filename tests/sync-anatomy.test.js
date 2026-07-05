@@ -106,6 +106,13 @@ test("syncAnatomy skips icons + normalizes the default variant of a set", async 
   assert.equal(written.count, 1); // button only (icon skipped)
   // icon was skipped AND its stale file cleaned
   assert.equal(fs.existsSync(path.join(anatomyDir, "add.json")), false);
+  // an icon-transition prune is a real deletion — review-required + visible
+  // (pins the intended escalation for real recategorizations, e.g. input→icon)
+  assert.equal(written.verdict.category, "breaking");
+  assert.match(
+    written.verdict.changelog,
+    /Deleted 1 stale anatomy file\(s\): add/,
+  );
   // button anatomy is the DEFAULT VARIANT (a real row), not the variant grid
   var btn = JSON.parse(
     fs.readFileSync(path.join(anatomyDir, "button.json"), "utf8"),
@@ -349,6 +356,416 @@ test("syncAnatomy resolves a nested icon instance via the key path (node id abse
     // variant + instance + label all normalized → ratio 1.0 (was 0.67 before the fix)
     assert.equal(btn.quality.ratio, 1);
   })();
+});
+
+test("syncAnatomy captures per-variant appearance for a COMPONENT_SET", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: { banner: { nodeId: "1:1", category: "Feedback" } },
+    }),
+  );
+  function variantComp(name, color) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      fills: [{ type: "SOLID", color: color }],
+      children: [],
+    };
+  }
+  var setDoc = {
+    type: "COMPONENT_SET",
+    name: "Banner",
+    children: [
+      variantComp("Type=Default", { r: 1, g: 1, b: 1, a: 1 }),
+      variantComp("Type=Danger", { r: 0.863, g: 0.208, b: 0.078, a: 1 }),
+    ],
+  };
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({ nodes: { "1:1": { document: setDoc } } });
+    },
+  };
+  var written = {};
+  await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: function (p, o) {
+        written[path.basename(p)] = o;
+      },
+      syncedAt: "2026-07-03",
+    },
+    "dsKit",
+  );
+  var banner = written["banner.json"];
+  assert.deepEqual(banner.variantDefaults, { Type: "Default" });
+  assert.deepEqual(banner.root.appearance.variants, [
+    { prop: "Type", values: ["Danger"], background: "#dc3514" },
+  ]);
+});
+
+// --- prune guard + failed-slug visibility ---
+// A transient Figma miss (payload absent) or a per-slug normalization failure
+// must never let pruneStaleAnatomy delete the slug's existing file, and must be
+// visible in the changelog the sync PR renders. Deleting a file (slug genuinely
+// gone from the registry) is consumer-visible → escalates the phase to breaking.
+
+function wave1ComponentDoc(name) {
+  return {
+    type: "COMPONENT",
+    name: name,
+    layoutMode: "HORIZONTAL",
+    itemSpacing: 8,
+    children: [{ type: "TEXT", name: "Label", characters: "Go" }],
+  };
+}
+
+test("a slug with a missing node payload is reported failed and its file survives the prune", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  // pre-existing good data from a prior sync
+  writeJsonReal(path.join(anatomyDir, "card.json"), {
+    slug: "card",
+    prior: true,
+  });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        button: { nodeId: "1:1", category: "Action" },
+        card: { nodeId: "2:2", category: "Data Display" },
+      },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      // transient hiccup: card's subtree is missing from the response
+      return Promise.resolve({
+        nodes: { "1:1": { document: wave1ComponentDoc("Button") } },
+      });
+    },
+  };
+  var written = await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-07-05",
+    },
+    "dsKit",
+  );
+  assert.equal(written.count, 1);
+  // the miss is RECORDED, not silent
+  assert.ok(written.failed, "missing payload must be recorded in failed");
+  assert.equal(written.failed.length, 1);
+  assert.equal(written.failed[0].slug, "card");
+  // and visible in the changelog the PR body renders
+  assert.match(written.verdict.changelog, /card/);
+  assert.match(written.verdict.changelog, /preserved/i);
+  // the existing file SURVIVES the prune (was: silently deleted)
+  assert.equal(fs.existsSync(path.join(anatomyDir, "card.json")), true);
+  // a recorded failure with the file preserved is not a deletion — stays additive
+  assert.equal(written.verdict.category, "additive");
+});
+
+test("a slug whose per-slug write throws keeps its existing file and is reported failed", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  writeJsonReal(path.join(anatomyDir, "card.json"), {
+    slug: "card",
+    prior: true,
+  });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        button: { nodeId: "1:1", category: "Action" },
+        card: { nodeId: "2:2", category: "Data Display" },
+      },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: {
+          "1:1": { document: wave1ComponentDoc("Button") },
+          "2:2": { document: wave1ComponentDoc("Card") },
+        },
+      });
+    },
+  };
+  var failingWriteJson = function (p, o) {
+    if (path.basename(p) === "card.json") throw new Error("disk full");
+    writeJsonReal(p, o);
+  };
+  var written = await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: failingWriteJson,
+      syncedAt: "2026-07-05",
+    },
+    "dsKit",
+  );
+  assert.equal(written.count, 1);
+  assert.ok(written.failed);
+  assert.equal(written.failed[0].slug, "card");
+  assert.match(written.verdict.changelog, /card/);
+  // prior card.json untouched by the prune
+  assert.equal(fs.existsSync(path.join(anatomyDir, "card.json")), true);
+});
+
+test("a full transient outage preserves the bundle from disk (no bundle wipe)", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  // prior sync state: two good per-slug files
+  writeJsonReal(path.join(anatomyDir, "button.json"), {
+    slug: "button",
+    prior: true,
+  });
+  writeJsonReal(path.join(anatomyDir, "card.json"), {
+    slug: "card",
+    prior: true,
+  });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        button: { nodeId: "1:1", category: "Action" },
+        card: { nodeId: "2:2", category: "Data Display" },
+      },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({ nodes: {} }); // total outage
+    },
+  };
+  var written = await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-07-05",
+    },
+    "dsKit",
+  );
+  assert.equal(written.count, 0);
+  assert.equal(written.failed.length, 2);
+  // the bundle is NOT wiped — failed slugs are seeded from the existing dist
+  var bundle = JSON.parse(
+    fs.readFileSync(path.join(anatomyDir, "..", "anatomy.bundle.json"), "utf8"),
+  );
+  assert.equal(bundle.components.button.prior, true);
+  assert.equal(bundle.components.card.prior, true);
+});
+
+test("a partially-failed sync keeps the failed slug's prior entry in the bundle", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  writeJsonReal(path.join(anatomyDir, "card.json"), {
+    slug: "card",
+    prior: true,
+  });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        button: { nodeId: "1:1", category: "Action" },
+        card: { nodeId: "2:2", category: "Data Display" },
+      },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: { "1:1": { document: wave1ComponentDoc("Button") } },
+      });
+    },
+  };
+  await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-07-05",
+    },
+    "dsKit",
+  );
+  var bundle = JSON.parse(
+    fs.readFileSync(path.join(anatomyDir, "..", "anatomy.bundle.json"), "utf8"),
+  );
+  // fresh slug is fresh, failed slug is the preserved prior entry
+  assert.equal(bundle.components.button.slug, "button");
+  assert.equal(bundle.components.button.prior, undefined);
+  assert.equal(bundle.components.card.prior, true);
+});
+
+test("pruning a genuinely-removed slug escalates the phase verdict to breaking", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  // a slug that no longer exists in the registry — its file is legitimately stale
+  writeJsonReal(path.join(anatomyDir, "gone.json"), { slug: "gone" });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: { button: { nodeId: "1:1", category: "Action" } },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: { "1:1": { document: wave1ComponentDoc("Button") } },
+      });
+    },
+  };
+  var written = await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-07-05",
+    },
+    "dsKit",
+  );
+  assert.equal(fs.existsSync(path.join(anatomyDir, "gone.json")), false);
+  // deletion is consumer-visible → the phase must demand review
+  assert.equal(written.verdict.category, "breaking");
+  assert.match(written.verdict.changelog, /gone/);
+  assert.match(written.verdict.changelog, /deleted/i);
+});
+
+test("a second identical sync writes nothing and reports unchanged (no synced_at churn)", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: { button: { nodeId: "1:1", category: "Action" } },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: { "1:1": { document: wave1ComponentDoc("Button") } },
+      });
+    },
+  };
+  var writes = [];
+  var countingWrite = function (p, o) {
+    writes.push(path.basename(p));
+    writeJsonReal(p, o);
+  };
+  var optsFor = function (syncedAt) {
+    return {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: countingWrite,
+      syncedAt: syncedAt,
+    };
+  };
+  var r1 = await syncAnatomy(optsFor("2026-07-05T01:00:00Z"), "dsKit");
+  assert.equal(r1.verdict.category, "additive");
+  assert.ok(writes.length >= 2); // button.json + bundle
+  var syncedAt1 = JSON.parse(
+    fs.readFileSync(path.join(anatomyDir, "button.json"), "utf8"),
+  ).synced_at;
+
+  writes.length = 0;
+  // Next night: identical Figma data, NEW syncedAt stamp.
+  var r2 = await syncAnatomy(optsFor("2026-07-06T01:00:00Z"), "dsKit");
+  assert.deepEqual(writes, [], "no-op night must write zero files");
+  assert.equal(r2.verdict.category, "unchanged");
+  assert.ok(!r2.wrote, "no-op night must not flag wrote");
+  var syncedAt2 = JSON.parse(
+    fs.readFileSync(path.join(anatomyDir, "button.json"), "utf8"),
+  ).synced_at;
+  // synced_at now means "last content change", not "last run".
+  assert.equal(syncedAt2, syncedAt1);
+});
+
+test("bundle components are emitted in sorted slug order", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  // registry key order deliberately NOT sorted (pre-migration on-disk state)
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        zeta: { nodeId: "1:1", category: "Action" },
+        alpha: { nodeId: "2:2", category: "Action" },
+      },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: {
+          "1:1": { document: wave1ComponentDoc("Zeta") },
+          "2:2": { document: wave1ComponentDoc("Alpha") },
+        },
+      });
+    },
+  };
+  await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-07-05",
+    },
+    "dsKit",
+  );
+  var bundle = JSON.parse(
+    fs.readFileSync(path.join(anatomyDir, "..", "anatomy.bundle.json"), "utf8"),
+  );
+  assert.deepEqual(Object.keys(bundle.components), ["alpha", "zeta"]);
 });
 
 test("syncAnatomy resolves token refs when getLocalVariables is available", async function () {
