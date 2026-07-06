@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Knowledge Graph JSON-LD view (derived)",
+  "type": "object",
+  "required": ["@context", "_meta", "@graph"],
+  "properties": {
+    "@context": { "type": "object" },
+    "_meta": {
+      "type": "object",
+      "required": ["auto_generated", "generator", "do_not_edit"],
+      "additionalProperties": true
+    },
+    "@graph": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["@id", "@type"],
+            "properties": {
+              "@id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+:[A-Za-z0-9/_-]+$"
+              },
+              "@type": {
+                "enum": [
+                  "Component",
+                  "Category",
+                  "A11yCriterion",
+                  "FoundationSection",
+                  "MotionPattern",
+                  "ContentTopic"
+                ]
+              }
+            },
+            "additionalProperties": true
+          },
+          {
+            "type": "object",
+            "required": ["@type", "edgeType", "source", "target"],
+            "properties": {
+              "@type": { "const": "Edge" },
+              "edgeType": { "type": "string" },
+              "source": { "type": "string" },
+              "target": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": true
+}
