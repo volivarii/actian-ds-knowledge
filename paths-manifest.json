@@ -5,21 +5,9 @@
   "manifest_schema_version": "v1",
   "knowledge_version": "0.34.77",
   "_zones": {
-    "knowledge": [
-      "accessibility",
-      "components",
-      "content",
-      "foundations"
-    ],
-    "contract": [
-      "graph"
-    ],
-    "metadata": [
-      "appContext",
-      "appContextBundle",
-      "appContextSrc",
-      "tokens"
-    ],
+    "knowledge": ["accessibility", "components", "content", "foundations"],
+    "contract": ["graph"],
+    "metadata": ["appContext", "appContextBundle", "appContextSrc", "tokens"],
     "_pendingEviction": []
   },
   "paths": {
@@ -682,6 +670,19 @@
       "origin": "ci",
       "generator": "scripts/graph/validate-graph.js",
       "description": "Derived graph quality/health report: per-dimension metrics — coverage (authored transversal refs that became edges), integrity violation counts, connectivity/orphan counts — each tagged with a severity tier (violation/warning/info). Emitted by validate-graph.js; timestamp injected by CI at publish. Trendable graph-health signal."
+    },
+    "graph.context": {
+      "path": "graph/context.jsonld",
+      "type": "json",
+      "origin": "human",
+      "description": "Hand-authored JSON-LD @context for the knowledge graph: maps node-id prefixes, node/edge type terms, and field terms to IRIs (reusing schema.org/SKOS/PROV; actian-ds: for DS-specific concepts). Governs graph/dist/graph.jsonld. Keep in sync with graph/vocabulary.json."
+    },
+    "graph.jsonld": {
+      "path": "graph/dist/graph.jsonld",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/graph/derive-graph.js",
+      "description": "Derived linked-data (JSON-LD) view of the knowledge graph: the same nodes + edges as graph.bundle, wrapped with graph/context.jsonld, node @types, and reified edges. Lossless. Additive sibling of graph/dist/graph.json (which stays canonical). Query-consumer-ready (queryable over the static file via a JSON-LD/SPARQL client when a reader exists)."
     },
     "tokens.css": {
       "path": "tokens/tokens.css",

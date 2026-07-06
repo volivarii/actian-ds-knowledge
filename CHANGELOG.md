@@ -19,6 +19,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- Knowledge graph now also emits a linked-data view, `graph/dist/graph.jsonld`, governed by a hand-authored `graph/context.jsonld`. It is a lossless, additive sibling of `graph/dist/graph.json` (which stays canonical): the same nodes and edges wrapped with a JSON-LD `@context` (reusing schema.org/SKOS/PROV, `actian-ds:` for DS-specific concepts), stable IRI identity, and reified edges. No consumer change required; the base JSON is unchanged. This is the keystone of the graph-as-spine direction.
 - **P2 name layer ACTIVATED: variable-id export populated.** `tokens/src/figma-variable-ids.json`
   is now populated (618 ids exported from the dskit file via `scripts/figma-plugin`), so the join
   resolves real published names: 74 color tokens (appearance `background`/`border`/`text`) and 44
