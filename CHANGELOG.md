@@ -19,6 +19,13 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **P2 name layer ACTIVATED: variable-id export populated.** `tokens/src/figma-variable-ids.json`
+  is now populated (618 ids exported from the dskit file via `scripts/figma-plugin`), so the join
+  resolves real published names: 74 color tokens (appearance `background`/`border`/`text`) and 44
+  length tokens (layout `gap`/`padding`). The next Figma sync emits these as `var(--zen-*, value)`
+  render facts on real anatomy — flipping the whole P2 name layer (colors + layout) from the
+  values-only no-op to live. Also fixes the `scripts/figma-plugin` export crash (`findAll` →
+  guarded manual tree-walk; a single unknown node type no longer aborts the export). ([#358])
 - **P2 name layer: token names ride the appearance capture.** The nightly sync now records the
   published `--zen-*` custom property each captured **color** appearance slot is bound to —
   `backgroundToken`, `border.colorToken`, `text.colorToken`, per variant — so consumers can emit
@@ -145,6 +152,7 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#358]: https://github.com/volivarii/actian-ds-knowledge/pull/358
 [#357]: https://github.com/volivarii/actian-ds-knowledge/pull/357
 [#356]: https://github.com/volivarii/actian-ds-knowledge/pull/356
 [#354]: https://github.com/volivarii/actian-ds-knowledge/pull/354
