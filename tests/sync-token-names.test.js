@@ -120,26 +120,25 @@ function maps() {
   });
 }
 
-test("color variables land in colorNameById and varNameById", function () {
+test("published semantic color variables land in colorNameById and varNameById", function () {
   var m = maps();
-  assert.equal(m.colorNameById["VariableID:1:1"], "--zen-color-white");
-  assert.equal(m.varNameById["VariableID:1:1"], "--zen-color-white");
-  assert.equal(
-    m.colorNameById["VariableID:1:4"],
-    "--zen-color-icon-default",
-  );
-  assert.equal(
-    m.colorNameById["VariableID:1:8"],
-    "--zen-color-bg-selected",
-  );
+  assert.equal(m.colorNameById["VariableID:1:4"], "--zen-color-icon-default");
+  assert.equal(m.varNameById["VariableID:1:4"], "--zen-color-icon-default");
+  assert.equal(m.colorNameById["VariableID:1:8"], "--zen-color-bg-selected");
 });
 
-test("primitive palette path drops the 'primitive' segment", function () {
+test("no segment guessing: a primitive palette carries no name even when the dropped-segment var is published", function () {
+  // white -> color.primitive.white, royal-blue/500 -> color.primitive.royal-blue.500.
+  // The fixture css DOES publish the segment-dropped forms (--zen-color-white,
+  // --zen-color-royal-blue-500), yet the join must NOT reach them: only the
+  // full --zen-color-primitive-* form qualifies, and it is unpublished, so
+  // primitives resolve to value-only. Guessing the dropped form is exactly what
+  // mislabeled the 32px height scale as the 8px --zen-size-* scale in prod.
   var m = maps();
-  assert.equal(
-    m.colorNameById["VariableID:1:7"],
-    "--zen-color-royal-blue-500",
-  );
+  assert.equal(m.varNameById["VariableID:1:1"], undefined); // white
+  assert.equal(m.colorNameById["VariableID:1:1"], undefined);
+  assert.equal(m.varNameById["VariableID:1:7"], undefined); // royal-blue/500
+  assert.equal(m.colorNameById["VariableID:1:7"], undefined);
 });
 
 test("length variables land in lengthNameById, not colorNameById", function () {
@@ -172,12 +171,108 @@ test("missing or stub inputs yield empty maps, never a throw", function () {
   [
     {},
     { idsExport: null, bindingsRaw: null, tokensCssText: null },
-    { idsExport: { ids: {} }, bindingsRaw: BINDINGS_RAW, tokensCssText: TOKENS_CSS },
-    { idsExport: { ids: null }, bindingsRaw: { variables: "bogus" }, tokensCssText: 7 },
+    {
+      idsExport: { ids: {} },
+      bindingsRaw: BINDINGS_RAW,
+      tokensCssText: TOKENS_CSS,
+    },
+    {
+      idsExport: { ids: null },
+      bindingsRaw: { variables: "bogus" },
+      tokensCssText: 7,
+    },
   ].forEach(function (input) {
     var m = T.buildTokenNameMaps(input);
     assert.deepEqual(m.varNameById, {});
     assert.deepEqual(m.colorNameById, {});
     assert.deepEqual(m.lengthNameById, {});
+  });
+});
+
+// ─── Real-data invariants (not frozen snapshots) ────────────────────────────
+// The synthetic fixtures above hand-author tokens.css; these run the join over
+// the REAL committed bindings + tokens.css so a regression that only shows up
+// against generator output cannot ship green.
+var fs = require("node:fs");
+var path = require("node:path");
+var REPO_ROOT = path.join(__dirname, "..");
+
+function realMapsForAllKeys() {
+  var bindingsRaw = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, "tokens", "src", "figma-bindings-raw.json"),
+      "utf8",
+    ),
+  );
+  var tokensCssText = fs.readFileSync(
+    path.join(REPO_ROOT, "tokens", "tokens.css"),
+    "utf8",
+  );
+  var vars = bindingsRaw.variables || [];
+  // Exercise EVERY real variable by mapping a synthetic id -> its stable key.
+  var ids = {};
+  vars.forEach(function (v, i) {
+    if (v && v.key) ids["VID:" + i] = { key: v.key };
+  });
+  return {
+    vars: vars,
+    maps: T.buildTokenNameMaps({
+      idsExport: { ids: ids },
+      bindingsRaw: bindingsRaw,
+      tokensCssText: tokensCssText,
+    }),
+  };
+}
+
+test("real bindings + tokens.css: the 'Height' scale never collapses into the --zen-size-* scale", function () {
+  // Data-derived invariant: size-height-* (32/40/48/56px) must NEVER resolve
+  // to the unrelated --zen-size-* scale (8/16/24/32px). Direct regression guard
+  // for the removed structural-segment reduction, which mislabeled all four.
+  var r = realMapsForAllKeys();
+  var sizeScale = /^--zen-size-(2xs|xs|sm|md|lg|xl)$/;
+  var violations = [];
+  r.vars.forEach(function (v, i) {
+    if (!v || typeof v.name !== "string") return;
+    var isHeight =
+      v.variableCollectionName === "Height" || /^size-height-/.test(v.name);
+    if (!isHeight) return;
+    var name = r.maps.varNameById["VID:" + i];
+    if (name && sizeScale.test(name)) violations.push(v.name + " -> " + name);
+  });
+  assert.deepEqual(violations, []);
+});
+
+test("real bindings + tokens.css: every ridden name is a published --zen-* var (no guessed names)", function () {
+  // The join's core contract on real data: any name it emits exists verbatim
+  // in tokens.css. Robust whether the id export is empty or populated.
+  var r = realMapsForAllKeys();
+  var defined = T.__parseDefinedVars(
+    fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8"),
+  );
+  [r.maps.varNameById, r.maps.colorNameById, r.maps.lengthNameById].forEach(
+    function (map) {
+      Object.keys(map).forEach(function (id) {
+        assert.ok(
+          map[id] in defined,
+          map[id] + " is not a published --zen-* custom property",
+        );
+      });
+    },
+  );
+});
+
+test("loadTokenNameMaps reads the committed artifacts without throwing (production entry point)", function () {
+  // Covers the disk-backed wrapper the sync actually calls. With the committed
+  // empty id-export stub it returns empty maps (today's values-only capture);
+  // once populated it must still only ever yield valid --zen-* names.
+  var m = T.loadTokenNameMaps(REPO_ROOT);
+  var defined = T.__parseDefinedVars(
+    fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8"),
+  );
+  [m.varNameById, m.colorNameById, m.lengthNameById].forEach(function (map) {
+    assert.equal(typeof map, "object");
+    Object.keys(map).forEach(function (id) {
+      assert.ok(map[id] in defined);
+    });
   });
 });

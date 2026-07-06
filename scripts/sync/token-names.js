@@ -57,21 +57,16 @@ function curateP2SemanticColors(raw) {
   return map;
 }
 
-// DTCG path -> --zen-* candidates, mirroring emit-css naming mechanically:
-// join with dashes; some structural segments are dropped by the emitter
-// ("primitive" palettes publish as --zen-color-<palette>-<shade>), so offer
-// both forms and let the existence gate pick. A path that matches nothing
-// published simply carries no name.
-var STRUCTURAL_SEGMENTS = { primitive: true, height: true };
-
+// DTCG path -> the single published --zen-* candidate, mirroring emit-css
+// naming mechanically: join the path segments with dashes. NO structural
+// segment dropping. A dropped-segment guess produced ONLY wrong names in
+// production (size.height.<k> -> --zen-size-<k>, an unrelated 8/16/24/32px
+// scale, NOT the 32/40/48/56px height scale) and ZERO correct ones — exactly
+// the name-guessing this module exists to forbid, and the color-vs-length
+// type gate cannot catch it because both scales are lengths. A path whose
+// full --zen name is not published simply carries no name (value-only).
 function pathToVarCandidates(tokenPath) {
-  var parts = String(tokenPath).split(".");
-  var cands = ["--zen-" + parts.join("-")];
-  var reduced = parts.filter(function (p, i) {
-    return !(i === 1 && STRUCTURAL_SEGMENTS[p]);
-  });
-  if (reduced.length !== parts.length) cands.push("--zen-" + reduced.join("-"));
-  return cands;
+  return ["--zen-" + String(tokenPath).split(".").join("-")];
 }
 
 function buildKeyToPath(bindingsRaw) {

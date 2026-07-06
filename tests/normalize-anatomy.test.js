@@ -824,11 +824,13 @@ test("resolveAppearance records backgroundToken from the TOP VISIBLE paint's bou
   assert.equal(a.backgroundToken, "--zen-color-bg-selected");
 });
 
-test("resolveAppearance records border.colorToken and radiusToken", function () {
+test("resolveAppearance records border.colorToken from the stroke's bound variable", function () {
   var node = {
     type: "FRAME",
     strokes: [{ type: "SOLID", color: { r: 0, g: 0, b: 0, a: 1 } }],
     strokeWeight: 1,
+    // A bound cornerRadius is deliberately NOT captured as a token: the REST
+    // corner-radius bound-variable shape is unverified, so radiusToken waits.
     cornerRadius: 6,
     boundVariables: {
       strokes: [{ type: "VARIABLE_ALIAS", id: "VariableID:9:3" }],
@@ -837,7 +839,7 @@ test("resolveAppearance records border.colorToken and radiusToken", function () 
   };
   var a = N.resolveAppearance(node, P2_CTX);
   assert.equal(a.border.colorToken, "--zen-color-primary-500");
-  assert.equal(a.radiusToken, "--zen-border-radius-sm");
+  assert.equal(a.radiusToken, undefined);
 });
 
 test("resolveAppearance records text.colorToken on TEXT nodes", function () {

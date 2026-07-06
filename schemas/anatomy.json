@@ -252,13 +252,6 @@
               "description": "Resolved corner radius (uniform or 4-value).",
               "examples": ["4px", "4px 4px 0px 0px"]
             },
-            "radiusToken": {
-              "type": "string",
-              "minLength": 1,
-              "pattern": "^--",
-              "description": "Published --zen-* custom property the (uniform) corner radius is bound to (P2 name layer). Consumers emit var(<radiusToken>, <radius>).",
-              "examples": ["--zen-border-radius-sm"]
-            },
             "text": {
               "description": "Resolved text properties (color, size, weight, line height, letter spacing).",
               "examples": [
@@ -313,11 +306,6 @@
                     "type": ["string", "null"],
                     "description": "Delta radius (null = removed).",
                     "examples": ["4px", null]
-                  },
-                  "radiusToken": {
-                    "type": ["string", "null"],
-                    "description": "Delta radius token binding (P2 name layer; null = the base binding is removed for these values).",
-                    "examples": ["--zen-border-radius-sm", null]
                   },
                   "border": {
                     "description": "Delta border (null = removed).",

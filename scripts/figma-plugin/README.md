@@ -24,3 +24,11 @@ needs re-running when NEW variables start being used (a binding whose id is
 missing from the export simply captures value-only, never a wrong name).
 Deleting a variable in Figma likewise degrades that binding to value-only on
 the next sync — nothing breaks.
+
+One case where the id can change without a "new variable" showing up: the kit
+consumes **subscribed** (remote library) variables, and a local reference id
+for a subscribed variable can shift if that library is re-published and
+re-linked. The failure mode is still safe (the stale id just misses → the
+affected slots go value-only, never wrong), but if names silently stop riding
+for a component after a token-library update, re-run the export — that is the
+fix, and the only symptom is missing names, never wrong ones.

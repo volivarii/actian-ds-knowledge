@@ -177,7 +177,6 @@ test("schema accepts P2 token names on appearance and variant deltas", function 
         background: "#ffffff",
         backgroundToken: "--zen-color-bg-default",
         radius: "4px",
-        radiusToken: "--zen-border-radius-xs",
         border: {
           color: "#e1e1e6",
           colorToken: "--zen-color-primary-500",

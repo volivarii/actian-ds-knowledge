@@ -847,7 +847,10 @@ test("syncAnatomy feeds P2 token-name maps into appearance capture (opts.tokenNa
               layoutMode: "HORIZONTAL",
               itemSpacing: 8,
               fills: [
-                { type: "SOLID", color: { r: 0.059, g: 0.373, b: 0.863, a: 1 } },
+                {
+                  type: "SOLID",
+                  color: { r: 0.059, g: 0.373, b: 0.863, a: 1 },
+                },
               ],
               boundVariables: {
                 fills: [{ type: "VARIABLE_ALIAS", id: "VariableID:5:5" }],
@@ -874,7 +877,6 @@ test("syncAnatomy feeds P2 token-name maps into appearance capture (opts.tokenNa
       tokenNameMaps: {
         varNameById: { "VariableID:5:6": "--zen-spacing-xs" },
         colorNameById: { "VariableID:5:5": "--zen-color-bg-emphasis" },
-        lengthNameById: {},
       },
     },
     "dsKit",

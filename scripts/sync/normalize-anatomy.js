@@ -240,17 +240,14 @@ function resolveAppearance(node, ctx) {
     a.border = border;
   }
   var radius = cornerRadiusCss(node);
-  if (radius) {
-    a.radius = radius;
-    // A bound cornerRadius is a single uniform binding; per-corner radii have
-    // no single token, so the token rides only next to a captured value.
-    var rTok = tokenForBound(
-      node.boundVariables,
-      "cornerRadius",
-      ctx && ctx.lengthNameById,
-    );
-    if (rTok) a.radiusToken = rTok;
-  }
+  // radiusToken (P2 length-token binding on the corner radius) is intentionally
+  // NOT captured yet: Figma's REST boundVariables key for a bound corner radius
+  // is not the scalar `cornerRadius` this pipeline reads, and the correct shape
+  // is not verifiable from the public REST spec. Deferred to the first real
+  // sync that carries a populated variable-id export, so the shape can be
+  // confirmed against a live payload (the P1A REST-field-name lesson). The
+  // radius VALUE still rides; only its token name waits.
+  if (radius) a.radius = radius;
   return Object.keys(a).length ? a : null;
 }
 
@@ -502,7 +499,6 @@ function buildAnatomyFile(rootNode, opts) {
     keyToSlug: opts.keyToSlug || {},
     varNameById: opts.varNameById || {},
     colorNameById: opts.colorNameById || {},
-    lengthNameById: opts.lengthNameById || {},
     total: 0,
     normalized: 0,
     degraded: [],
@@ -547,7 +543,6 @@ function buildAnatomyFile(rootNode, opts) {
         keyToSlug: ctx.keyToSlug,
         varNameById: ctx.varNameById,
         colorNameById: ctx.colorNameById,
-        lengthNameById: ctx.lengthNameById,
         total: 0,
         normalized: 0,
         degraded: [],
@@ -624,25 +619,20 @@ function diffAppearance(base, variant) {
   base = base || {};
   variant = variant || {};
   var diff = {};
-  [
-    "background",
-    "backgroundToken",
-    "radius",
-    "radiusToken",
-    "border",
-    "text",
-  ].forEach(function (k) {
-    var bv = base[k],
-      vv = variant[k];
-    // Both bv and vv are resolveAppearance output, whose keys are always
-    // inserted in the same fixed order, so JSON.stringify is a valid,
-    // order-stable deep-equal check here (not a general-purpose one).
-    var sameJson =
-      JSON.stringify(bv === undefined ? null : bv) ===
-      JSON.stringify(vv === undefined ? null : vv);
-    if (sameJson) return;
-    diff[k] = vv === undefined ? null : vv; // null = removed relative to base
-  });
+  ["background", "backgroundToken", "radius", "border", "text"].forEach(
+    function (k) {
+      var bv = base[k],
+        vv = variant[k];
+      // Both bv and vv are resolveAppearance output, whose keys are always
+      // inserted in the same fixed order, so JSON.stringify is a valid,
+      // order-stable deep-equal check here (not a general-purpose one).
+      var sameJson =
+        JSON.stringify(bv === undefined ? null : bv) ===
+        JSON.stringify(vv === undefined ? null : vv);
+      if (sameJson) return;
+      diff[k] = vv === undefined ? null : vv; // null = removed relative to base
+    },
+  );
   return Object.keys(diff).length ? diff : null;
 }
 

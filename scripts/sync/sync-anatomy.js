@@ -184,8 +184,12 @@ async function syncAnatomy(opts, kit) {
   // available, win over the export-derived ones.
   var nameMaps = opts.tokenNameMaps || TokenNames.loadTokenNameMaps(REPO_ROOT);
   varNameById = Object.assign({}, nameMaps.varNameById, varNameById);
+  // Only the COLOR token map is consumed by the appearance capture today
+  // (background/border/text). The length map (nameMaps.lengthNameById) is
+  // computed and kept by token-names for the deferred radius binding, but is
+  // not plumbed here until the REST corner-radius bound-variable shape is
+  // verified against a real sync payload.
   var colorNameById = nameMaps.colorNameById || {};
-  var lengthNameById = nameMaps.lengthNameById || {};
 
   var comps = registry.components || {};
   // v2 (B): skip icons — they have no layout anatomy.
@@ -247,7 +251,6 @@ async function syncAnatomy(opts, kit) {
         componentIdToKey: componentIdToKey,
         varNameById: varNameById,
         colorNameById: colorNameById,
-        lengthNameById: lengthNameById,
         variants: variants,
         defaultVariantName: picked.variant,
       });

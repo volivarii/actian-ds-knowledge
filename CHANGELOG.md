@@ -20,17 +20,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 - **P2 name layer: token names ride the appearance capture.** The nightly sync now records the
-  published `--zen-*` custom property each captured appearance slot is bound to — `backgroundToken`,
-  `radiusToken`, `border.colorToken`, `text.colorToken`, per variant — so consumers can emit
+  published `--zen-*` custom property each captured **color** appearance slot is bound to —
+  `backgroundToken`, `border.colorToken`, `text.colorToken`, per variant — so consumers can emit
   `var(--zen-color-bg-selected, #f3f5f9)`: the value guarantees fidelity, the name enables theming.
   The join is key-based end to end (REST `boundVariables.id` → the committed
   `tokens/src/figma-variable-ids.json` export → `figma-bindings-raw.json` stable keys → a name that
-  must exist in `tokens.css` with a slot-compatible value), so a name is never guessed from a Figma
-  variable name — any miss captures value-only. The id→key export comes from a new minimal Figma
+  must exist in `tokens.css` with a slot-compatible value) and does **no** name guessing: the
+  published name is the full DTCG path, never a segment-dropped approximation, so a name is never
+  fabricated — any miss captures value-only. The id→key export comes from a new minimal Figma
   plugin (`scripts/figma-plugin/`, manual run); until it is populated the sync behaves exactly as
   today. The same map feeds the previously dead `varNameById` path, so layout gap/padding token refs
-  light up too. Anatomy schema gains the optional token fields (additive; existing dist stays
-  valid). ([#356])
+  light up too. Anatomy schema gains the optional token fields (additive; existing dist stays valid).
+  Corner-radius token binding (`radiusToken`) is intentionally deferred: the REST `boundVariables`
+  key for a bound corner radius is not verifiable from the public spec, so it waits for a real sync
+  payload to confirm the shape rather than ship an unverified assumption (the radius VALUE still
+  rides). ([#356])
 - **Per-variant icon capture in the anatomy sync.** A variant that swaps an instance's referenced
   component (tag-status swapping its per-status icon) is now captured as a `slug` field on the
   variant delta in `appearance.variants`, so consumers can render each variant's own glyph instead
