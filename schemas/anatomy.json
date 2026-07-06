@@ -181,7 +181,7 @@
         "kind": { "enum": ["container", "text", "instance", "icon", "vector"] },
         "id": {
           "type": "string",
-          "description": "Figma node id (join key for the token-bindings sidecar).",
+          "description": "Figma node id (stable identity for the anatomy node).",
           "examples": ["14783:7564"]
         },
         "slug": {
