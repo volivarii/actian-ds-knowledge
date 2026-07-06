@@ -267,6 +267,56 @@ test("schema rejects a non-string slug in a variant delta", function () {
   assert.equal(v(doc), false);
 });
 
+test("schema accepts layout gapToken + paddingTokens (P2 layout name layer)", function () {
+  var v = makeValidator();
+  var doc = {
+    _schema_version: 1,
+    slug: "button",
+    kit: "dskit",
+    quality: { nodesTotal: 1, nodesNormalized: 1, ratio: 1, degraded: [] },
+    root: {
+      name: "Button",
+      kind: "container",
+      layout: {
+        axis: "row",
+        gap: "8px",
+        gapToken: "--zen-spacing-xs",
+        padding: { top: "16px", right: "16px", bottom: "16px", left: "16px" },
+        paddingTokens: { left: "--zen-spacing-sm", right: "--zen-spacing-sm" },
+        align: { main: "start", cross: "center" },
+        sizing: { h: "hug", v: "hug" },
+      },
+    },
+  };
+  assert.ok(v(doc), JSON.stringify(v.errors));
+});
+
+test("schema rejects a bare-name (non---) or non-string layout gapToken", function () {
+  var v = makeValidator();
+  function withGapToken(tok) {
+    return {
+      _schema_version: 1,
+      slug: "button",
+      kit: "dskit",
+      quality: { nodesTotal: 1, nodesNormalized: 1, ratio: 1, degraded: [] },
+      root: {
+        name: "Button",
+        kind: "container",
+        layout: {
+          axis: "row",
+          gap: "8px",
+          gapToken: tok,
+          padding: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
+          align: { main: "start", cross: "start" },
+          sizing: { h: "hug", v: "hug" },
+        },
+      },
+    };
+  }
+  assert.equal(v(withGapToken("zen-spacing-xs")), false); // must start with --
+  assert.equal(v(withGapToken(8)), false); // must be a string
+});
+
 test("schema rejects a variant entry missing prop/values", function () {
   var v = makeValidator();
   var doc = {

@@ -98,6 +98,44 @@ test("normalizeLayout returns null when layoutMode is NONE", function () {
   assert.equal(N.normalizeLayout({ layoutMode: "NONE" }, {}), null);
 });
 
+test("buildAnatomyFile: lengthNameById reaches a recursed CHILD node's layout", function () {
+  // The ctx must carry lengthNameById into child resolution, not just the root,
+  // or nested auto-layout containers would silently miss their spacing tokens.
+  var node = {
+    type: "COMPONENT",
+    name: "Card",
+    layoutMode: "VERTICAL",
+    itemSpacing: 0,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    children: [
+      {
+        type: "FRAME",
+        name: "Row",
+        layoutMode: "HORIZONTAL",
+        itemSpacing: 8,
+        paddingTop: 0,
+        paddingRight: 0,
+        paddingBottom: 0,
+        paddingLeft: 0,
+        boundVariables: { itemSpacing: { id: "L1" } },
+        children: [],
+      },
+    ],
+  };
+  var out = N.buildAnatomyFile(node, {
+    slug: "card",
+    kit: "dskit",
+    syncedAt: "t",
+    source: {},
+    lengthNameById: { L1: "--zen-spacing-xs" },
+  });
+  assert.equal(out.root.children[0].layout.gap, "8px");
+  assert.equal(out.root.children[0].layout.gapToken, "--zen-spacing-xs");
+});
+
 test("collectTokenRefs gathers fills/strokes/radius bindings, deduped", function () {
   var node = {
     boundVariables: {
