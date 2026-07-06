@@ -10,6 +10,11 @@
       "description": "The JSON-LD context, inlined from graph/context.jsonld (or a reference to it). Maps node-id prefixes, node/edge type terms, and field terms to IRIs.",
       "examples": [{ "actian-ds": "https://actian.com/ds/vocab#" }]
     },
+    "_schema_version": {
+      "type": "number",
+      "description": "The graph.json schema generation this view derives from, carried through from graph/dist/graph.json so the derived view is self-describing.",
+      "examples": [2]
+    },
     "_meta": {
       "type": "object",
       "required": ["auto_generated", "generator", "do_not_edit"],

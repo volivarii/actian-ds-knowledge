@@ -25,19 +25,45 @@ function toJsonLd(graph, contextDoc) {
     if (!term) throw new Error("to-jsonld: unknown node type '" + n.type + "'");
     var o = { "@id": n.id, "@type": term };
     Object.keys(n).forEach(function (k) {
-      if (k !== "id" && k !== "type") o[k] = n[k];
+      // The reserved output keys are set above; exclude the source names they
+      // derive from AND their @-spellings so a same-named source field can
+      // never clobber the computed @id/@type.
+      if (k !== "id" && k !== "type" && k !== "@id" && k !== "@type")
+        o[k] = n[k];
     });
     return o;
   });
   var edges = graph.edges.map(function (e) {
-    var o = { "@type": "Edge", edgeType: e.type, source: e.source, target: e.target };
+    var o = {
+      "@type": "Edge",
+      edgeType: e.type,
+      source: e.source,
+      target: e.target,
+    };
     Object.keys(e).forEach(function (k) {
-      if (k !== "type" && k !== "source" && k !== "target") o[k] = e[k];
+      // Keep the reified @type/edgeType/source/target; a source field named
+      // edgeType or @type must not overwrite them.
+      if (
+        k !== "type" &&
+        k !== "source" &&
+        k !== "target" &&
+        k !== "@type" &&
+        k !== "edgeType"
+      )
+        o[k] = e[k];
     });
     return o;
   });
-  var context = contextDoc && contextDoc["@context"] ? contextDoc["@context"] : contextDoc;
-  return { "@context": context, "_meta": graph._meta, "@graph": nodes.concat(edges) };
+  var context =
+    contextDoc && contextDoc["@context"] ? contextDoc["@context"] : contextDoc;
+  // Carry _schema_version through so the derived view is self-describing about
+  // which graph.json generation it conforms to (mirrors graph.json's envelope).
+  return {
+    "@context": context,
+    _schema_version: graph._schema_version,
+    _meta: graph._meta,
+    "@graph": nodes.concat(edges),
+  };
 }
 
 module.exports = { toJsonLd: toJsonLd, NODE_TYPE: NODE_TYPE };

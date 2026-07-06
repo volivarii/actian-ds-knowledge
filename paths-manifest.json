@@ -682,7 +682,7 @@
       "type": "json",
       "origin": "ci",
       "generator": "scripts/graph/derive-graph.js",
-      "description": "Derived linked-data (JSON-LD) view of the knowledge graph: the same nodes + edges as graph.bundle, wrapped with graph/context.jsonld, node @types, and reified edges. Lossless. Additive sibling of graph/dist/graph.json (which stays canonical). Query-consumer-ready (queryable over the static file via a JSON-LD/SPARQL client when a reader exists)."
+      "description": "Derived linked-data (JSON-LD) view of the knowledge graph: the same nodes + edges as graph.bundle, wrapped with graph/context.jsonld, node @types, and reified edges. Structurally lossless (every node and edge field is carried through). Additive sibling of graph/dist/graph.json (which stays canonical). A JSON-LD 1.1 document ready for a linked-data reader; full RDF/SPARQL round-tripping (a stable IRI base plus source-file provenance as dereferenceable IRIs) is deferred until the IRI base domain is chosen (spec open decision)."
     },
     "tokens.css": {
       "path": "tokens/tokens.css",
