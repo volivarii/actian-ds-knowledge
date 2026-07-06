@@ -35,6 +35,16 @@ Each entry links its pull request. Dates are the merge date (UTC).
   key for a bound corner radius is not verifiable from the public spec, so it waits for a real sync
   payload to confirm the shape rather than ship an unverified assumption (the radius VALUE still
   rides). ([#356])
+- **P2 name layer: layout spacing tokens (gap/padding).** The anatomy `layout` now records the
+  published `--zen-*` length token each spacing slot is bound to alongside its px value:
+  `layout.gapToken` (beside `layout.gap`) and `layout.paddingTokens` (per bound side, beside
+  `layout.padding`), so consumers can emit `gap:var(--zen-spacing-xs, 8px)`. Length-gated (a spacing
+  slot only ever carries a length-valued token, mirroring the color gate). This also **fixes a latent
+  bare-name hazard**: `spacingValue` previously returned the token *name in place of* the px value
+  when a variable resolved, which would have written a bare `--zen-*` name into `layout.gap`/`padding`
+  (invalid CSS) the moment the variable-id export populated `varNameById`. Layout values are now
+  always px, with the token riding in parallel. Additive schema (`gapToken`/`paddingTokens` optional;
+  existing dist stays valid); no-op while the export is empty. ([#357])
 - **Per-variant icon capture in the anatomy sync.** A variant that swaps an instance's referenced
   component (tag-status swapping its per-status icon) is now captured as a `slug` field on the
   variant delta in `appearance.variants`, so consumers can render each variant's own glyph instead
@@ -135,6 +145,7 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#357]: https://github.com/volivarii/actian-ds-knowledge/pull/357
 [#356]: https://github.com/volivarii/actian-ds-knowledge/pull/356
 [#354]: https://github.com/volivarii/actian-ds-knowledge/pull/354
 [#351]: https://github.com/volivarii/actian-ds-knowledge/pull/351

@@ -16,7 +16,7 @@ test("classifyKind maps Figma types", function () {
   assert.equal(N.classifyKind({ type: "COMPONENT" }), "container");
 });
 
-test("normalizeLayout maps enums + resolves spacing tokens", function () {
+test("normalizeLayout maps enums + captures spacing VALUE with a length-gated token beside it", function () {
   var node = {
     layoutMode: "HORIZONTAL",
     itemSpacing: 8,
@@ -30,12 +30,68 @@ test("normalizeLayout maps enums + resolves spacing tokens", function () {
     layoutSizingVertical: "HUG",
     boundVariables: { itemSpacing: { id: "V1" } },
   };
+  // Second arg is the LENGTH name map (length-valued --zen-* tokens only).
   var out = N.normalizeLayout(node, { V1: "--zen-spacing-100" });
   assert.equal(out.axis, "row");
-  assert.equal(out.gap, "--zen-spacing-100");
+  assert.equal(out.gap, "8px"); // VALUE, never the bare name (invalid CSS)
+  assert.equal(out.gapToken, "--zen-spacing-100"); // token rides in parallel
   assert.equal(out.padding.left, "16px");
   assert.deepEqual(out.align, { main: "center", cross: "center" });
   assert.deepEqual(out.sizing, { h: "hug", v: "hug" });
+});
+
+test("normalizeLayout captures per-side paddingTokens for bound sides only", function () {
+  var node = {
+    layoutMode: "HORIZONTAL",
+    itemSpacing: 0,
+    paddingTop: 16,
+    paddingRight: 8,
+    paddingBottom: 16,
+    paddingLeft: 8,
+    boundVariables: {
+      paddingRight: { id: "P1" },
+      paddingLeft: { id: "P1" },
+    },
+  };
+  var out = N.normalizeLayout(node, { P1: "--zen-spacing-sm" });
+  assert.equal(out.padding.left, "8px");
+  assert.deepEqual(out.paddingTokens, {
+    right: "--zen-spacing-sm",
+    left: "--zen-spacing-sm",
+  });
+  assert.equal(out.gapToken, undefined); // gap unbound
+});
+
+test("normalizeLayout: an unbound layout carries no token keys (value-only, byte-identical to today)", function () {
+  var node = {
+    layoutMode: "VERTICAL",
+    itemSpacing: 4,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+  };
+  var out = N.normalizeLayout(node, {});
+  assert.equal(out.gap, "4px");
+  assert.equal(out.gapToken, undefined);
+  assert.equal(out.paddingTokens, undefined);
+});
+
+test("normalizeLayout length-gate: a spacing id absent from the length map does not ride (value-only)", function () {
+  // e.g. the bound id resolves only as a color name, never a spacing token —
+  // the length gate keeps it out, exactly like the appearance color gate.
+  var node = {
+    layoutMode: "HORIZONTAL",
+    itemSpacing: 8,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    boundVariables: { itemSpacing: { id: "COLOR1" } },
+  };
+  var out = N.normalizeLayout(node, { LEN1: "--zen-spacing-sm" }); // COLOR1 absent
+  assert.equal(out.gap, "8px");
+  assert.equal(out.gapToken, undefined);
 });
 
 test("normalizeLayout returns null when layoutMode is NONE", function () {
@@ -445,8 +501,9 @@ test("resolveAppearance uses per-side stroke weight when scalar strokeWeight abs
 });
 
 test("spacingValue rounds the px path to 3 decimals", function () {
+  // Value-only now (token capture is a separate length-gated lookup).
   assert.equal(
-    N.__spacingValue({ paddingLeft: 15.99949999999998 }, "paddingLeft", {}),
+    N.__spacingValue({ paddingLeft: 15.99949999999998 }, "paddingLeft"),
     "15.999px",
   );
 });
