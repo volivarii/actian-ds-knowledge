@@ -436,7 +436,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:23:02+02:00"
+      "updated_at": "2026-07-05T20:42:11+02:00"
     },
     "button": {
       "_schema_version": 1,
@@ -758,7 +758,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:23:02+02:00"
+      "updated_at": "2026-07-05T20:42:11+02:00"
     },
     "calendar": {
       "_schema_version": 1,
@@ -1075,7 +1075,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:23:02+02:00"
+      "updated_at": "2026-07-05T20:42:11+02:00"
     },
     "chat-with-ai-steward": {
       "_schema_version": 1,
@@ -1920,7 +1920,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:23:02+02:00"
+      "updated_at": "2026-07-05T20:42:11+02:00"
     },
     "checkbox-with-label": {
       "_schema_version": 1,
@@ -2546,7 +2546,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:23:02+02:00",
+      "updated_at": "2026-07-05T20:42:11+02:00",
       "_alias_of": "checkbox"
     },
     "collapse-accordion": {
@@ -3612,7 +3612,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:23:02+02:00"
+      "updated_at": "2026-07-05T20:42:11+02:00"
     },
     "global-toast": {
       "_schema_version": 1,
@@ -5316,7 +5316,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:23:02+02:00"
+      "updated_at": "2026-07-05T20:42:11+02:00"
     },
     "popover": {
       "_schema_version": 1,
@@ -7233,7 +7233,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:23:02+02:00"
+      "updated_at": "2026-07-05T20:42:11+02:00"
     },
     "spinner": {
       "_schema_version": 1,
@@ -8115,7 +8115,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:23:02+02:00"
+      "updated_at": "2026-07-05T20:42:11+02:00"
     },
     "tag": {
       "_schema_version": 1,
@@ -9008,7 +9008,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:23:02+02:00"
+      "updated_at": "2026-07-05T20:42:11+02:00"
     },
     "toggle": {
       "_schema_version": 1,
