@@ -93,6 +93,9 @@ Each entry links its pull request. Dates are the merge date (UTC).
   nine components now bind `color-text-default`. Consumers emitting
   `var(--zen-color-text-link-default)` must migrate to `var(--zen-color-text-primary)` before
   vendoring a snapshot with this change. ([#341])
+- Retired the harvest token-bindings sidecars (`components/dist/token-bindings/`), their generator
+  (`harvest-token-bindings.js`), lib, schema, and tests. Superseded by the P2 name layer plus the
+  appearance path; the plugin-side consumer (path-b) was retired first, so no reader remains.
 
 ### Fixed
 - **Anatomy prune guard.** A transient per-slug Figma fetch miss or normalization failure no longer
