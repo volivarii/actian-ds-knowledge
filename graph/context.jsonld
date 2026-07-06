@@ -1,0 +1,39 @@
+{
+  "@context": {
+    "@version": 1.1,
+
+    "actian-ds": "https://ds.actian.com/ns#",
+    "schema": "https://schema.org/",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "dcterms": "http://purl.org/dc/terms/",
+
+    "component": "https://ds.actian.com/id/component/",
+    "category": "https://ds.actian.com/id/category/",
+    "a11y": "https://ds.actian.com/id/a11y/",
+    "foundation": "https://ds.actian.com/id/foundation/",
+    "motion": "https://ds.actian.com/id/motion/",
+    "content": "https://ds.actian.com/id/content/",
+
+    "Component": "actian-ds:Component",
+    "Category": "actian-ds:Category",
+    "A11yCriterion": "actian-ds:A11yCriterion",
+    "FoundationSection": "actian-ds:FoundationSection",
+    "MotionPattern": "actian-ds:MotionPattern",
+    "ContentTopic": "actian-ds:ContentTopic",
+    "Edge": "actian-ds:Edge",
+
+    "title": "schema:name",
+    "wcag": "actian-ds:wcagSuccessCriterion",
+    "edgeType": "actian-ds:edgeType",
+    "source": { "@id": "actian-ds:source", "@type": "@id" },
+    "target": { "@id": "actian-ds:target", "@type": "@id" },
+    "scope": "actian-ds:scope",
+    "confidence": "actian-ds:confidence",
+    "note": "skos:note",
+    "provenance": "actian-ds:provenance",
+    "source_file": { "@id": "prov:wasDerivedFrom", "@type": "@id" },
+    "deriver": "prov:wasGeneratedBy",
+    "method": "actian-ds:method"
+  }
+}

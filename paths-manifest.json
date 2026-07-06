@@ -3,7 +3,7 @@
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.34.77",
+  "knowledge_version": "0.34.78",
   "_zones": {
     "knowledge": [
       "accessibility",
@@ -675,6 +675,19 @@
       "origin": "ci",
       "generator": "scripts/graph/derive-graph.js",
       "description": "Derived knowledge graph: typed nodes (component/category/a11y_criterion/foundation_section/motion_pattern/content_topic) + typed edges (in_category, a11y_ref, motion_ref, foundations_ref, related, narrower). Transversal refs are category-mediated. Consumed by future graph viz + AI agents."
+    },
+    "graph.context": {
+      "path": "graph/context.jsonld",
+      "type": "json",
+      "origin": "human",
+      "description": "Hand-authored JSON-LD @context for the knowledge graph: maps node-id prefixes, node/edge type terms, and field terms to IRIs (reusing schema.org/SKOS/PROV; actian-ds: for DS-specific concepts). Governs graph/dist/graph.jsonld. Keep in sync with graph/vocabulary.json."
+    },
+    "graph.jsonld": {
+      "path": "graph/dist/graph.jsonld",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/graph/derive-graph.js",
+      "description": "Derived linked-data (JSON-LD) view of the knowledge graph: the same nodes + edges as graph.bundle, wrapped with graph/context.jsonld, node @types, and reified edges. Structurally lossless (every node and edge field is carried through). Additive sibling of graph/dist/graph.json (which stays canonical). A JSON-LD 1.1 document ready for a linked-data reader; full RDF/SPARQL round-tripping (a stable IRI base plus source-file provenance as dereferenceable IRIs) is deferred until the IRI base domain is chosen (spec open decision)."
     },
     "graph.quality-report": {
       "path": "graph/dist/quality-report.json",
