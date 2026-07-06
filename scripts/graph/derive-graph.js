@@ -4,6 +4,7 @@ var fs = require("node:fs");
 var path = require("node:path");
 var M = require("../lib/graph/model.js");
 var refKinds = require("../lib/graph/ref-kinds.js");
+var toJsonLd = require("../lib/graph/to-jsonld.js").toJsonLd;
 var categoriesParser = require("../lib/frontmatter");
 
 var ROOT = path.resolve(__dirname, "..", "..");
@@ -350,6 +351,15 @@ function derive() {
       " nodes, " +
       out.edges.length +
       " edges → graph/dist/graph.json",
+  );
+  var ctx = readJSON("graph/context.jsonld");
+  var ld = toJsonLd(out, ctx);
+  var ldPath = path.join(ROOT, "graph", "dist", "graph.jsonld");
+  fs.writeFileSync(ldPath, M.stableStringify(ld), "utf8");
+  console.log(
+    "derive-graph: wrote " +
+      ld["@graph"].length +
+      " @graph entries → graph/dist/graph.jsonld",
   );
   return out;
 }
