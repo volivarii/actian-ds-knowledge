@@ -24,19 +24,46 @@ function collectAliasIds(value, out) {
   for (var k in value) collectAliasIds(value[k], out);
 }
 
+// Collect boundVariables from a page's whole subtree with a GUARDED manual
+// walk (iterative, so a deep tree can't overflow the stack). We deliberately
+// do NOT use node.findAll: it resolves every node's public type internally, and
+// Figma throws "Internal Figma error: Unknown node type ... in
+// getPublicNodeType" if the file contains a single node type this API version
+// can't classify (a widget, section, or newer node) — aborting the WHOLE
+// export. Reading boundVariables/children directly avoids that type resolution;
+// the per-node try/catch skips only the one unreadable node (or its subtree),
+// never the export.
+function collectPageBoundVars(page, out) {
+  var stack = [page];
+  while (stack.length) {
+    var node = stack.pop();
+    if (!node) continue;
+    try {
+      if (node.boundVariables) collectAliasIds(node.boundVariables, out);
+    } catch (e) {
+      // this node's boundVariables are unreadable — skip it, keep walking
+    }
+    var kids = null;
+    try {
+      kids = node.children;
+    } catch (e) {
+      kids = null; // unreadable container — skip its subtree, not the page
+    }
+    if (kids && kids.length) {
+      for (var i = 0; i < kids.length; i++) stack.push(kids[i]);
+    }
+  }
+}
+
 async function run() {
   await figma.loadAllPagesAsync();
   var idSet = {};
   var pages = figma.root.children;
   for (var p = 0; p < pages.length; p++) {
-    var nodes = pages[p].findAll(function () {
-      return true;
-    });
-    for (var n = 0; n < nodes.length; n++) {
-      var node = nodes[n];
-      if ("boundVariables" in node && node.boundVariables) {
-        collectAliasIds(node.boundVariables, idSet);
-      }
+    try {
+      collectPageBoundVars(pages[p], idSet);
+    } catch (e) {
+      // a whole page is unreadable — skip it, still export every other page
     }
   }
 
