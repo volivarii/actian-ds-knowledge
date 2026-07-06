@@ -3,6 +3,9 @@
 var fs = require("node:fs");
 var path = require("node:path");
 var { buildAnatomyFile } = require("./normalize-anatomy");
+var TokenNames = require("./token-names");
+
+var REPO_ROOT = path.join(__dirname, "..", "..");
 
 // Resolve the Figma file key the SAME way syncRegistry does: opts.keys[kitId].
 // Production .figma-keys.json maps kit id → file-key STRING (e.g. {dsKit: "abc"});
@@ -173,6 +176,20 @@ async function syncAnatomy(opts, kit) {
   // Key map (registry-wide) for the instance key fallback — see keyToSlugMap.
   var keyToSlug = keyToSlugMap(registry);
   var varNameById = await varNameByIdFor(rest, fileKey);
+  // P2 name layer: the REST variables endpoint is tier-gated (varNameByIdFor
+  // returns {} on Pro), so the published --zen-* names come from the
+  // committed plugin export + bindings via token-names (empty maps until the
+  // export is populated — values-only capture, today's behavior).
+  // opts.tokenNameMaps is a test seam; the REST-derived names, if ever
+  // available, win over the export-derived ones.
+  var nameMaps = opts.tokenNameMaps || TokenNames.loadTokenNameMaps(REPO_ROOT);
+  varNameById = Object.assign({}, nameMaps.varNameById, varNameById);
+  // Only the COLOR token map is consumed by the appearance capture today
+  // (background/border/text). The length map (nameMaps.lengthNameById) is
+  // computed and kept by token-names for the deferred radius binding, but is
+  // not plumbed here until the REST corner-radius bound-variable shape is
+  // verified against a real sync payload.
+  var colorNameById = nameMaps.colorNameById || {};
 
   var comps = registry.components || {};
   // v2 (B): skip icons — they have no layout anatomy.
@@ -233,6 +250,7 @@ async function syncAnatomy(opts, kit) {
         keyToSlug: keyToSlug,
         componentIdToKey: componentIdToKey,
         varNameById: varNameById,
+        colorNameById: colorNameById,
         variants: variants,
         defaultVariantName: picked.variant,
       });

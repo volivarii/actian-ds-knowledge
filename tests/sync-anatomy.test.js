@@ -822,3 +822,69 @@ test("syncAnatomy resolves token refs when getLocalVariables is available", asyn
   );
   assert.equal(file.root.layout.gap, "--spacing-100");
 });
+
+test("syncAnatomy feeds P2 token-name maps into appearance capture (opts.tokenNameMaps)", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: { button: { nodeId: "1:1" } },
+    }),
+  );
+  var fakeRest = {
+    // No getLocalVariables: the tier-gated REST path stays dead; names come
+    // from the committed export via the token-names maps.
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: {
+          "1:1": {
+            document: {
+              type: "COMPONENT",
+              name: "Button",
+              layoutMode: "HORIZONTAL",
+              itemSpacing: 8,
+              fills: [
+                {
+                  type: "SOLID",
+                  color: { r: 0.059, g: 0.373, b: 0.863, a: 1 },
+                },
+              ],
+              boundVariables: {
+                fills: [{ type: "VARIABLE_ALIAS", id: "VariableID:5:5" }],
+                itemSpacing: { id: "VariableID:5:6" },
+              },
+              children: [],
+            },
+          },
+        },
+      });
+    },
+  };
+  var written = await syncAnatomy(
+    {
+      rest: fakeRest,
+      registriesDir: registriesDir,
+      anatomyDir: anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: function (p, o) {
+        fs.mkdirSync(path.dirname(p), { recursive: true });
+        fs.writeFileSync(p, JSON.stringify(o));
+      },
+      syncedAt: "2026-07-06",
+      tokenNameMaps: {
+        varNameById: { "VariableID:5:6": "--zen-spacing-xs" },
+        colorNameById: { "VariableID:5:5": "--zen-color-bg-emphasis" },
+      },
+    },
+    "dsKit",
+  );
+  assert.equal(written.count, 1);
+  var file = JSON.parse(
+    fs.readFileSync(path.join(anatomyDir, "button.json"), "utf8"),
+  );
+  assert.equal(file.root.appearance.backgroundToken, "--zen-color-bg-emphasis");
+  assert.equal(file.root.layout.gap, "--zen-spacing-xs");
+});

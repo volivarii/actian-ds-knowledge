@@ -795,6 +795,162 @@ test("collectDeltas merges a slug swap with a paint delta on the same instance",
   ]);
 });
 
+// ─── P2 name layer: per-slot token names from boundVariables ────────────────
+var P2_CTX = {
+  colorNameById: {
+    "VariableID:9:1": "--zen-color-bg-selected",
+    "VariableID:9:2": "--zen-color-text-secondary",
+    "VariableID:9:3": "--zen-color-primary-500",
+  },
+  lengthNameById: { "VariableID:9:4": "--zen-border-radius-sm" },
+};
+
+test("resolveAppearance records backgroundToken from the TOP VISIBLE paint's bound variable", function () {
+  var node = {
+    type: "FRAME",
+    fills: [
+      { type: "SOLID", visible: false, color: { r: 1, g: 0, b: 0, a: 1 } },
+      { type: "SOLID", color: { r: 0.953, g: 0.961, b: 0.976, a: 1 } },
+    ],
+    boundVariables: {
+      fills: [
+        { type: "VARIABLE_ALIAS", id: "VariableID:9:3" },
+        { type: "VARIABLE_ALIAS", id: "VariableID:9:1" },
+      ],
+    },
+  };
+  var a = N.resolveAppearance(node, P2_CTX);
+  // index 1 is the top visible paint; its alias (9:1), NOT the hidden fill's (9:3).
+  assert.equal(a.backgroundToken, "--zen-color-bg-selected");
+});
+
+test("resolveAppearance records border.colorToken from the stroke's bound variable", function () {
+  var node = {
+    type: "FRAME",
+    strokes: [{ type: "SOLID", color: { r: 0, g: 0, b: 0, a: 1 } }],
+    strokeWeight: 1,
+    // A bound cornerRadius is deliberately NOT captured as a token: the REST
+    // corner-radius bound-variable shape is unverified, so radiusToken waits.
+    cornerRadius: 6,
+    boundVariables: {
+      strokes: [{ type: "VARIABLE_ALIAS", id: "VariableID:9:3" }],
+      cornerRadius: { type: "VARIABLE_ALIAS", id: "VariableID:9:4" },
+    },
+  };
+  var a = N.resolveAppearance(node, P2_CTX);
+  assert.equal(a.border.colorToken, "--zen-color-primary-500");
+  assert.equal(a.radiusToken, undefined);
+});
+
+test("resolveAppearance records text.colorToken on TEXT nodes", function () {
+  var node = {
+    type: "TEXT",
+    fills: [{ type: "SOLID", color: { r: 0.25, g: 0.25, b: 0.29, a: 1 } }],
+    style: { fontSize: 12 },
+    boundVariables: {
+      fills: [{ type: "VARIABLE_ALIAS", id: "VariableID:9:2" }],
+    },
+  };
+  var a = N.resolveAppearance(node, P2_CTX);
+  assert.equal(a.text.colorToken, "--zen-color-text-secondary");
+});
+
+test("a color slot never binds a non-color variable (type gate)", function () {
+  var node = {
+    type: "FRAME",
+    fills: [{ type: "SOLID", color: { r: 1, g: 1, b: 1, a: 1 } }],
+    boundVariables: {
+      fills: [{ type: "VARIABLE_ALIAS", id: "VariableID:9:4" }], // a LENGTH var
+    },
+  };
+  var a = N.resolveAppearance(node, P2_CTX);
+  assert.equal(a.background, "#ffffff");
+  assert.equal(a.backgroundToken, undefined);
+});
+
+test("no token maps in ctx -> byte-identical appearance (values only)", function () {
+  var node = {
+    type: "FRAME",
+    fills: [{ type: "SOLID", color: { r: 1, g: 1, b: 1, a: 1 } }],
+    boundVariables: {
+      fills: [{ type: "VARIABLE_ALIAS", id: "VariableID:9:1" }],
+    },
+  };
+  assert.deepEqual(N.resolveAppearance(node, {}), { background: "#ffffff" });
+});
+
+test("no token rides without its captured value (non-solid fill carries no backgroundToken)", function () {
+  var node = {
+    type: "FRAME",
+    fills: [{ type: "GRADIENT_LINEAR" }],
+    boundVariables: {
+      fills: [{ type: "VARIABLE_ALIAS", id: "VariableID:9:1" }],
+    },
+  };
+  var ctx = Object.assign({ degraded: [] }, P2_CTX);
+  var a = N.resolveAppearance(node, ctx);
+  assert.equal(a, null);
+});
+
+test("diffAppearance separates deltas that differ only by token binding", function () {
+  var d = N.diffAppearance(
+    { background: "#ffffff", backgroundToken: "--zen-color-white" },
+    { background: "#ffffff" },
+  );
+  assert.deepEqual(d, { backgroundToken: null });
+});
+
+test("buildAnatomyFile carries token names into per-variant deltas", function () {
+  var mk = function (name, hex, aliasId) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      fills: [{ type: "SOLID", color: hex }],
+      boundVariables: {
+        fills: [{ type: "VARIABLE_ALIAS", id: aliasId }],
+      },
+      children: [],
+    };
+  };
+  var out = N.buildAnatomyFile(
+    mk("Type=Default", { r: 1, g: 1, b: 1, a: 1 }, "VariableID:9:1"),
+    {
+      slug: "banner",
+      kit: "dskit",
+      syncedAt: "2026-07-06",
+      source: {},
+      colorNameById: {
+        "VariableID:9:1": "--zen-color-bg-default",
+        "VariableID:9:2": "--zen-color-bg-selected",
+      },
+      variants: [
+        mk("Type=Default", { r: 1, g: 1, b: 1, a: 1 }, "VariableID:9:1"),
+        mk(
+          "Type=Selected",
+          { r: 0.953, g: 0.961, b: 0.976, a: 1 },
+          "VariableID:9:2",
+        ),
+      ],
+      defaultVariantName: "Type=Default",
+    },
+  );
+  assert.equal(out.root.appearance.backgroundToken, "--zen-color-bg-default");
+  assert.deepEqual(out.root.appearance.variants, [
+    {
+      prop: "Type",
+      values: ["Selected"],
+      background: "#f3f5f9",
+      backgroundToken: "--zen-color-bg-selected",
+    },
+  ]);
+});
+
 test("buildAnatomyFile captures per-variant icon slug swaps grouped across values", function () {
   var mk = function (name, iconId) {
     return {

@@ -163,6 +163,68 @@ test("schema accepts per-variant appearance + variantDefaults + quality extras",
   assert.ok(v(doc), JSON.stringify(v.errors));
 });
 
+test("schema accepts P2 token names on appearance and variant deltas", function () {
+  var v = makeValidator();
+  var doc = {
+    _schema_version: 1,
+    slug: "banner",
+    kit: "dskit",
+    quality: { nodesTotal: 1, nodesNormalized: 1, ratio: 1, degraded: [] },
+    root: {
+      name: "Banner",
+      kind: "container",
+      appearance: {
+        background: "#ffffff",
+        backgroundToken: "--zen-color-bg-default",
+        radius: "4px",
+        border: {
+          color: "#e1e1e6",
+          colorToken: "--zen-color-primary-500",
+          width: "1px",
+        },
+        variants: [
+          {
+            prop: "Type",
+            values: ["Selected"],
+            background: "#f3f5f9",
+            backgroundToken: "--zen-color-bg-selected",
+          },
+        ],
+      },
+      children: [
+        {
+          name: "Label",
+          kind: "text",
+          text: "x",
+          appearance: {
+            text: {
+              color: "#40404a",
+              colorToken: "--zen-color-text-secondary",
+            },
+          },
+        },
+      ],
+    },
+  };
+  assert.ok(v(doc), JSON.stringify(v.errors));
+});
+
+test("schema rejects a non-string backgroundToken on base appearance", function () {
+  var v = makeValidator();
+  var doc = {
+    _schema_version: 1,
+    slug: "banner",
+    kit: "dskit",
+    quality: { nodesTotal: 1, nodesNormalized: 1, ratio: 1, degraded: [] },
+    root: {
+      name: "Banner",
+      kind: "container",
+      appearance: { background: "#ffffff", backgroundToken: 7 },
+    },
+  };
+  assert.equal(v(doc), false);
+});
+
 test("schema accepts a variant delta carrying an icon slug swap", function () {
   var v = makeValidator();
   var doc = {
