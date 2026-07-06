@@ -257,24 +257,40 @@ function tokenForBound(boundVariables, field, varNameById) {
   return null;
 }
 
-function spacingValue(node, field, varNameById) {
-  var tok = tokenForBound(node.boundVariables, field, varNameById);
-  if (tok) return tok;
+// The px VALUE of a spacing field. P2: a captured value never carries a token
+// inline any more (a bare token name in a layout value is invalid CSS); the
+// published --zen-* name rides beside it as gap/paddingTokens (see below).
+function spacingValue(node, field) {
   var n = typeof node[field] === "number" ? node[field] : 0;
   return round3(n) + "px";
 }
 
-function normalizeLayout(node, varNameById) {
+// The published --zen-* LENGTH token a spacing field is bound to, or null.
+// Length-gated (lengthNameById), mirroring the appearance color gate: a spacing
+// slot can only carry a length-valued token name, never a color's.
+function spacingToken(node, field, lengthNameById) {
+  return tokenForBound(node.boundVariables, field, lengthNameById);
+}
+
+var PADDING_SIDES = ["top", "right", "bottom", "left"];
+var PADDING_FIELD = {
+  top: "paddingTop",
+  right: "paddingRight",
+  bottom: "paddingBottom",
+  left: "paddingLeft",
+};
+
+function normalizeLayout(node, lengthNameById) {
   if (node.layoutMode !== "HORIZONTAL" && node.layoutMode !== "VERTICAL")
     return null;
-  return {
+  var out = {
     axis: AXIS[node.layoutMode],
-    gap: spacingValue(node, "itemSpacing", varNameById),
+    gap: spacingValue(node, "itemSpacing"),
     padding: {
-      top: spacingValue(node, "paddingTop", varNameById),
-      right: spacingValue(node, "paddingRight", varNameById),
-      bottom: spacingValue(node, "paddingBottom", varNameById),
-      left: spacingValue(node, "paddingLeft", varNameById),
+      top: spacingValue(node, "paddingTop"),
+      right: spacingValue(node, "paddingRight"),
+      bottom: spacingValue(node, "paddingBottom"),
+      left: spacingValue(node, "paddingLeft"),
     },
     align: {
       main: MAIN_ALIGN[node.primaryAxisAlignItems || "MIN"] || "start",
@@ -285,6 +301,22 @@ function normalizeLayout(node, varNameById) {
       v: SIZING[node.layoutSizingVertical] || "fixed",
     },
   };
+  // Tokens ride ONLY beside their captured value, and only when the binding
+  // survives the length gate. Absent everywhere -> value-only, byte-identical
+  // to pre-P2 (and to today, while the id export is empty).
+  var gapTok = spacingToken(node, "itemSpacing", lengthNameById);
+  if (gapTok) out.gapToken = gapTok;
+  var paddingTokens = null;
+  for (var i = 0; i < PADDING_SIDES.length; i++) {
+    var side = PADDING_SIDES[i];
+    var tok = spacingToken(node, PADDING_FIELD[side], lengthNameById);
+    if (tok) {
+      if (!paddingTokens) paddingTokens = {};
+      paddingTokens[side] = tok;
+    }
+  }
+  if (paddingTokens) out.paddingTokens = paddingTokens;
+  return out;
 }
 
 function collectTokenRefs(node, varNameById) {
@@ -381,7 +413,7 @@ function normalizeNode(node, ctx) {
   }
 
   if (kind === "container") {
-    var layout = normalizeLayout(node, ctx.varNameById);
+    var layout = normalizeLayout(node, ctx.lengthNameById);
     // filter null/undefined entries defensively — a malformed child must not throw.
     var children = (Array.isArray(node.children) ? node.children : []).filter(
       Boolean,
@@ -499,6 +531,7 @@ function buildAnatomyFile(rootNode, opts) {
     keyToSlug: opts.keyToSlug || {},
     varNameById: opts.varNameById || {},
     colorNameById: opts.colorNameById || {},
+    lengthNameById: opts.lengthNameById || {},
     total: 0,
     normalized: 0,
     degraded: [],
@@ -543,6 +576,7 @@ function buildAnatomyFile(rootNode, opts) {
         keyToSlug: ctx.keyToSlug,
         varNameById: ctx.varNameById,
         colorNameById: ctx.colorNameById,
+        lengthNameById: ctx.lengthNameById,
         total: 0,
         normalized: 0,
         degraded: [],

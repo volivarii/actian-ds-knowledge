@@ -820,7 +820,12 @@ test("syncAnatomy resolves token refs when getLocalVariables is available", asyn
   var file = JSON.parse(
     fs.readFileSync(path.join(anatomyDir, "button.json"), "utf8"),
   );
-  assert.equal(file.root.layout.gap, "--spacing-100");
+  // Layout spacing is captured as a VALUE; a typed gapToken rides only from the
+  // length-gated P2 join (lengthNameById), NOT from raw REST getLocalVariables
+  // names (which are un-typed) — the same reason appearance colors use the
+  // gated colorNameById, not the REST varNameById. So no bare name in gap.
+  assert.equal(file.root.layout.gap, "8px");
+  assert.equal(file.root.layout.gapToken, undefined);
 });
 
 test("syncAnatomy feeds P2 token-name maps into appearance capture (opts.tokenNameMaps)", async function () {
@@ -877,6 +882,7 @@ test("syncAnatomy feeds P2 token-name maps into appearance capture (opts.tokenNa
       tokenNameMaps: {
         varNameById: { "VariableID:5:6": "--zen-spacing-xs" },
         colorNameById: { "VariableID:5:5": "--zen-color-bg-emphasis" },
+        lengthNameById: { "VariableID:5:6": "--zen-spacing-xs" },
       },
     },
     "dsKit",
@@ -886,5 +892,9 @@ test("syncAnatomy feeds P2 token-name maps into appearance capture (opts.tokenNa
     fs.readFileSync(path.join(anatomyDir, "button.json"), "utf8"),
   );
   assert.equal(file.root.appearance.backgroundToken, "--zen-color-bg-emphasis");
-  assert.equal(file.root.layout.gap, "--zen-spacing-xs");
+  // Layout spacing: VALUE with the length-gated token beside it (never a bare
+  // name in gap). The token rides from lengthNameById, like appearance colors
+  // ride from colorNameById.
+  assert.equal(file.root.layout.gap, "8px");
+  assert.equal(file.root.layout.gapToken, "--zen-spacing-xs");
 });
