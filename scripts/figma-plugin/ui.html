@@ -1,0 +1,25 @@
+<!doctype html>
+<style>
+  body { font: 12px/1.5 -apple-system, system-ui, sans-serif; margin: 12px; }
+  textarea { width: 100%; height: 320px; font: 11px/1.4 ui-monospace, monospace; box-sizing: border-box; }
+  button { margin-top: 8px; padding: 6px 14px; }
+  #status { margin-left: 8px; color: #098900; }
+</style>
+<p><strong>Zen Variable Id Export</strong> — copy the JSON below and paste it over
+<code>tokens/src/figma-variable-ids.json</code> in actian-ds-knowledge, then commit.</p>
+<textarea id="out" readonly>Collecting…</textarea>
+<div>
+  <button id="copy">Copy to clipboard</button><span id="status"></span>
+</div>
+<script>
+  var out = document.getElementById("out");
+  onmessage = function (event) {
+    var msg = event.data.pluginMessage;
+    if (msg && msg.type === "export") out.value = msg.json;
+  };
+  document.getElementById("copy").onclick = function () {
+    out.select();
+    document.execCommand("copy");
+    document.getElementById("status").textContent = "Copied.";
+  };
+</script>

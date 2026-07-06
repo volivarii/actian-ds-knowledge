@@ -74,13 +74,31 @@ function figmaColorToCss(color, opacity) {
 // (any type). A visible non-SOLID paint occludes any SOLID paint beneath it,
 // so callers must key off THIS (not a same-type-only scan) to avoid emitting
 // a color that Figma would not actually render.
-function topVisiblePaint(paints) {
-  if (!Array.isArray(paints)) return null;
+function topVisiblePaintIndex(paints) {
+  if (!Array.isArray(paints)) return -1;
   for (var i = paints.length - 1; i >= 0; i--) {
     var p = paints[i];
-    if (p && p.visible !== false) return p;
+    if (p && p.visible !== false) return i;
   }
-  return null;
+  return -1;
+}
+
+function topVisiblePaint(paints) {
+  var i = topVisiblePaintIndex(paints);
+  return i === -1 ? null : paints[i];
+}
+
+// P2 name layer: the bound variable for a paint slot lives in
+// node.boundVariables.<fills|strokes>[index], an array PARALLEL to the paint
+// array, so the alias must be read at the SAME index as the paint actually
+// captured (the top visible one) — never [0] blindly. Returns the published
+// --zen-* name from the given map, or null (id unbound, map absent, or the
+// variable didn't survive the token-names existence/type gate).
+function paintTokenAt(node, kind, index, map) {
+  if (index < 0 || !map) return null;
+  var bv = node.boundVariables && node.boundVariables[kind];
+  var b = Array.isArray(bv) ? bv[index] : null;
+  return b && b.id && map[b.id] ? map[b.id] : null;
 }
 
 // Thin wrapper over topVisiblePaint kept for its exported name and existing
@@ -167,9 +185,15 @@ function resolveAppearance(node, ctx) {
   }
   if (node.type === "TEXT") {
     var t = {};
-    var tf = topVisiblePaint(node.fills);
-    if (tf && tf.type === "SOLID" && tf.color)
+    var ti = topVisiblePaintIndex(node.fills);
+    var tf = ti === -1 ? null : node.fills[ti];
+    if (tf && tf.type === "SOLID" && tf.color) {
       t.color = figmaColorToCss(tf.color, paintAlpha(tf));
+      // Token names only ride alongside a captured value (a name without its
+      // value fallback would reintroduce the washout class).
+      var tTok = paintTokenAt(node, "fills", ti, ctx && ctx.colorNameById);
+      if (tTok) t.colorToken = tTok;
+    }
     var st = node.style || {};
     if (typeof st.fontSize === "number") t.size = round3(st.fontSize) + "px";
     if (typeof st.fontWeight === "number") t.weight = st.fontWeight;
@@ -183,9 +207,12 @@ function resolveAppearance(node, ctx) {
   // Key off the TOP visible paint of ANY type, not a same-type-only scan: a
   // visible non-SOLID paint occludes any SOLID paint beneath it, so scanning
   // past it for a SOLID would emit a color Figma never actually renders.
-  var fill = topVisiblePaint(node.fills);
+  var fi = topVisiblePaintIndex(node.fills);
+  var fill = fi === -1 ? null : node.fills[fi];
   if (fill && fill.type === "SOLID" && fill.color) {
     a.background = figmaColorToCss(fill.color, paintAlpha(fill));
+    var bgTok = paintTokenAt(node, "fills", fi, ctx && ctx.colorNameById);
+    if (bgTok) a.backgroundToken = bgTok;
   } else if (fill && fill.type === "SOLID" && ctx && ctx.degraded) {
     // SOLID paint present but missing .color -- malformed, not "non-solid";
     // keep the reason distinct so it does not read as self-contradictory.
@@ -199,9 +226,12 @@ function resolveAppearance(node, ctx) {
       reason: "non-solid-fill:" + fill.type,
     });
   }
-  var stroke = topVisiblePaint(node.strokes);
+  var si = topVisiblePaintIndex(node.strokes);
+  var stroke = si === -1 ? null : node.strokes[si];
   if (stroke && stroke.type === "SOLID" && stroke.color) {
     var border = { color: figmaColorToCss(stroke.color, paintAlpha(stroke)) };
+    var bTok = paintTokenAt(node, "strokes", si, ctx && ctx.colorNameById);
+    if (bTok) border.colorToken = bTok;
     var w =
       typeof node.strokeWeight === "number"
         ? node.strokeWeight
@@ -210,7 +240,17 @@ function resolveAppearance(node, ctx) {
     a.border = border;
   }
   var radius = cornerRadiusCss(node);
-  if (radius) a.radius = radius;
+  if (radius) {
+    a.radius = radius;
+    // A bound cornerRadius is a single uniform binding; per-corner radii have
+    // no single token, so the token rides only next to a captured value.
+    var rTok = tokenForBound(
+      node.boundVariables,
+      "cornerRadius",
+      ctx && ctx.lengthNameById,
+    );
+    if (rTok) a.radiusToken = rTok;
+  }
   return Object.keys(a).length ? a : null;
 }
 
@@ -461,6 +501,8 @@ function buildAnatomyFile(rootNode, opts) {
     componentIdToKey: opts.componentIdToKey || {},
     keyToSlug: opts.keyToSlug || {},
     varNameById: opts.varNameById || {},
+    colorNameById: opts.colorNameById || {},
+    lengthNameById: opts.lengthNameById || {},
     total: 0,
     normalized: 0,
     degraded: [],
@@ -504,6 +546,8 @@ function buildAnatomyFile(rootNode, opts) {
         componentIdToKey: ctx.componentIdToKey,
         keyToSlug: ctx.keyToSlug,
         varNameById: ctx.varNameById,
+        colorNameById: ctx.colorNameById,
+        lengthNameById: ctx.lengthNameById,
         total: 0,
         normalized: 0,
         degraded: [],
@@ -580,7 +624,14 @@ function diffAppearance(base, variant) {
   base = base || {};
   variant = variant || {};
   var diff = {};
-  ["background", "radius", "border", "text"].forEach(function (k) {
+  [
+    "background",
+    "backgroundToken",
+    "radius",
+    "radiusToken",
+    "border",
+    "text",
+  ].forEach(function (k) {
     var bv = base[k],
       vv = variant[k];
     // Both bv and vv are resolveAppearance output, whose keys are always

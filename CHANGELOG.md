@@ -19,6 +19,18 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **P2 name layer: token names ride the appearance capture.** The nightly sync now records the
+  published `--zen-*` custom property each captured appearance slot is bound to — `backgroundToken`,
+  `radiusToken`, `border.colorToken`, `text.colorToken`, per variant — so consumers can emit
+  `var(--zen-color-bg-selected, #f3f5f9)`: the value guarantees fidelity, the name enables theming.
+  The join is key-based end to end (REST `boundVariables.id` → the committed
+  `tokens/src/figma-variable-ids.json` export → `figma-bindings-raw.json` stable keys → a name that
+  must exist in `tokens.css` with a slot-compatible value), so a name is never guessed from a Figma
+  variable name — any miss captures value-only. The id→key export comes from a new minimal Figma
+  plugin (`scripts/figma-plugin/`, manual run); until it is populated the sync behaves exactly as
+  today. The same map feeds the previously dead `varNameById` path, so layout gap/padding token refs
+  light up too. Anatomy schema gains the optional token fields (additive; existing dist stays
+  valid). ([#356])
 - **Per-variant icon capture in the anatomy sync.** A variant that swaps an instance's referenced
   component (tag-status swapping its per-status icon) is now captured as a `slug` field on the
   variant delta in `appearance.variants`, so consumers can render each variant's own glyph instead
@@ -119,6 +131,7 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#356]: https://github.com/volivarii/actian-ds-knowledge/pull/356
 [#354]: https://github.com/volivarii/actian-ds-knowledge/pull/354
 [#351]: https://github.com/volivarii/actian-ds-knowledge/pull/351
 [#347]: https://github.com/volivarii/actian-ds-knowledge/pull/347
