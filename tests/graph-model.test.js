@@ -128,3 +128,30 @@ test("GraphBuilder dedups identical edges (type+source+target), first-wins", fun
   assert.equal(out.edges.length, 1);
   assert.equal(out.edges[0].note, "first");
 });
+
+test("GraphBuilder keeps edges that differ only by predicate (predicate is part of edge identity)", function () {
+  var g = new M.GraphBuilder();
+  // Same type/source/target, different predicate: both must survive (an entity
+  // pair can carry more than one authored relationship, e.g. hasInputs +
+  // hasOutputs). Sorted deterministically by predicate as the tiebreak.
+  g.addEdge({
+    source: "entity:data-process",
+    target: "entity:dataset",
+    type: "entity_related",
+    predicate: "hasOutputs",
+  });
+  g.addEdge({
+    source: "entity:data-process",
+    target: "entity:dataset",
+    type: "entity_related",
+    predicate: "hasInputs",
+  });
+  var out = g.build();
+  assert.equal(out.edges.length, 2);
+  assert.deepEqual(
+    out.edges.map(function (e) {
+      return e.predicate;
+    }),
+    ["hasInputs", "hasOutputs"],
+  );
+});

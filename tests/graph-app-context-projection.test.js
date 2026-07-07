@@ -83,3 +83,112 @@ test("derive(): emitted graph.json includes the app-context nodes (843 total)", 
     }),
   );
 });
+
+var V = require("../scripts/graph/validate-graph.js");
+var VOCAB = JSON.parse(
+  fs.readFileSync(path.join(ROOT, "graph/vocabulary.json"), "utf8"),
+);
+
+test("collectAppContext: edge counts (93 in_app / 42 entity_related / 17 term_about)", function () {
+  var edges = project().edges;
+  function n(type) {
+    return edges.filter(function (e) {
+      return e.type === type;
+    }).length;
+  }
+  assert.equal(n("in_app"), 93);
+  assert.equal(n("entity_related"), 42);
+  assert.equal(n("term_about"), 17);
+  assert.equal(edges.length, 152);
+});
+
+test("collectAppContext: in_app edges point entities/patterns to apps, asserted + provenance cites the dist", function () {
+  var inApp = project().edges.filter(function (e) {
+    return e.type === "in_app";
+  });
+  inApp.forEach(function (e) {
+    assert.ok(e.target.startsWith("app:"));
+    assert.ok(
+      e.source.startsWith("entity:") || e.source.startsWith("pattern:"),
+    );
+    assert.equal(e.confidence, "asserted");
+    assert.equal(e.provenance.source_file, "app-context/dist/app-context.json");
+    assert.equal(e.provenance.deriver, "derive-graph.js");
+  });
+  assert.ok(
+    inApp.some(function (e) {
+      return e.source === "entity:access-request" && e.target === "app:studio";
+    }),
+  );
+  assert.ok(
+    inApp.some(function (e) {
+      return (
+        e.source === "pattern:marketplace-browsing" &&
+        e.target === "app:explorer"
+      );
+    }),
+  );
+});
+
+test("collectAppContext: entity_related carries the predicate name; endpoints are entity->entity", function () {
+  var rel = project().edges.filter(function (e) {
+    return e.type === "entity_related";
+  });
+  rel.forEach(function (e) {
+    assert.ok(e.source.startsWith("entity:") && e.target.startsWith("entity:"));
+    assert.equal(typeof e.predicate, "string");
+    assert.equal(e.confidence, "asserted");
+    assert.equal(e.provenance.method, "entities.relationships");
+  });
+  var preds = new Set(
+    rel.map(function (e) {
+      return e.predicate;
+    }),
+  );
+  assert.equal(preds.size, 36);
+  assert.ok(
+    rel.some(function (e) {
+      return (
+        e.source === "entity:data-product" &&
+        e.predicate === "hasInputPorts" &&
+        e.target === "entity:input-port"
+      );
+    }),
+  );
+});
+
+test("collectAppContext: term_about bridges (11 entity + 3 app + 3 pattern), inferred", function () {
+  var ta = project().edges.filter(function (e) {
+    return e.type === "term_about";
+  });
+  assert.equal(ta.length, 17);
+  ta.forEach(function (e) {
+    assert.equal(e.confidence, "inferred");
+    assert.ok(e.source.startsWith("term:"));
+    assert.equal(e.provenance.source_file, "app-context/dist/app-context.json");
+    assert.equal(e.provenance.method, "term-slug-match");
+  });
+  assert.ok(
+    ta.some(function (e) {
+      return (
+        e.source === "term:data-product" && e.target === "entity:data-product"
+      );
+    }),
+  );
+  assert.ok(
+    ta.some(function (e) {
+      return e.source === "term:studio" && e.target === "app:studio";
+    }),
+  );
+  assert.ok(
+    ta.some(function (e) {
+      return e.source === "term:ask-ai" && e.target === "pattern:ask-ai";
+    }),
+  );
+});
+
+test("collectAppContext: the projected island has no dangling refs and no typed-edge violations", function () {
+  var r = V.analyze(project(), VOCAB);
+  assert.deepEqual(r.dangling, []);
+  assert.deepEqual(r.typeViolations, []);
+});

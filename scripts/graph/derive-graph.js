@@ -284,6 +284,69 @@ function collectAppContext(g, ac) {
     if (p.description) node.description = p.description;
     g.addNode(node);
   });
+
+  // --- Edges (after all nodes; term_about slug-match reads the node set) ---
+  function inAppEdges(map, sourceType) {
+    Object.keys(map).forEach(function (slug) {
+      var list = (map[slug] && map[slug].apps) || [];
+      list.forEach(function (appSlug) {
+        g.addEdge({
+          source: M.nodeId(sourceType, slug),
+          target: M.nodeId("app", appSlug),
+          type: "in_app",
+          confidence: "asserted",
+          provenance: {
+            source_file: APP_CONTEXT_SOURCE,
+            deriver: "derive-graph.js",
+            method:
+              sourceType === "app_entity" ? "entities.apps" : "patterns.apps",
+          },
+        });
+      });
+    });
+  }
+  inAppEdges(entities, "app_entity");
+  inAppEdges(patterns, "ux_pattern");
+
+  Object.keys(entities).forEach(function (slug) {
+    var rels = (entities[slug] && entities[slug].relationships) || {};
+    Object.keys(rels).forEach(function (predicate) {
+      g.addEdge({
+        source: M.nodeId("app_entity", slug),
+        target: M.nodeId("app_entity", rels[predicate]),
+        type: "entity_related",
+        predicate: predicate,
+        confidence: "asserted",
+        provenance: {
+          source_file: APP_CONTEXT_SOURCE,
+          deriver: "derive-graph.js",
+          method: "entities.relationships",
+        },
+      });
+    });
+  });
+
+  // term_about: a terminology key that exactly matches an existing entity/app/
+  // pattern slug bridges the term to that node (inferred, not authored). The
+  // key spaces are collision-free, so each matched term yields exactly one edge.
+  var TERM_TARGET_TYPES = ["app_entity", "app", "ux_pattern"];
+  Object.keys(terminology).forEach(function (key) {
+    TERM_TARGET_TYPES.forEach(function (tt) {
+      var targetId = M.nodeId(tt, key);
+      if (!g.hasNode(targetId)) return;
+      g.addEdge({
+        source: M.nodeId("terminology_term", key),
+        target: targetId,
+        type: "term_about",
+        confidence: "inferred",
+        provenance: {
+          source_file: APP_CONTEXT_SOURCE,
+          deriver: "derive-graph.js",
+          method: "term-slug-match",
+        },
+      });
+    });
+  });
 }
 function readContentEntries() {
   var dir = path.join(ROOT, "content", "src");

@@ -5295,6 +5295,510 @@
       }
     },
     {
+      "source": "entity:access-request",
+      "target": "entity:output-port",
+      "type": "entity_related",
+      "predicate": "targetsOutputPort",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:access-request",
+      "target": "entity:use-case",
+      "type": "entity_related",
+      "predicate": "requiresJustification",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:catalog-object",
+      "target": "entity:connection",
+      "type": "entity_related",
+      "predicate": "discoveredVia",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:catalog-object",
+      "target": "entity:discussion-thread",
+      "type": "entity_related",
+      "predicate": "hasDiscussionThreads",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:catalog-object",
+      "target": "entity:domain",
+      "type": "entity_related",
+      "predicate": "belongsTo",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:catalog-object",
+      "target": "entity:glossary-item",
+      "type": "entity_related",
+      "predicate": "hasGlossaryItems",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:catalog-object",
+      "target": "entity:governance-policy",
+      "type": "entity_related",
+      "predicate": "hasGovernancePolicies",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:catalog-object",
+      "target": "entity:lineage",
+      "type": "entity_related",
+      "predicate": "hasLineage",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:catalog-object",
+      "target": "entity:metadata",
+      "type": "entity_related",
+      "predicate": "hasMetadata",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:catalog-object",
+      "target": "entity:observability-signal",
+      "type": "entity_related",
+      "predicate": "hasObservabilitySignals",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:catalog-object",
+      "target": "entity:suggestion",
+      "type": "entity_related",
+      "predicate": "hasSuggestions",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:connection",
+      "target": "entity:catalog-object",
+      "type": "entity_related",
+      "predicate": "discoversCatalogObjects",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:contact",
+      "target": "entity:responsibility",
+      "type": "entity_related",
+      "predicate": "hasResponsibility",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:data-contract",
+      "target": "entity:output-port",
+      "type": "entity_related",
+      "predicate": "attachedTo",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:data-process",
+      "target": "entity:dataset",
+      "type": "entity_related",
+      "predicate": "hasInputs",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:data-process",
+      "target": "entity:dataset",
+      "type": "entity_related",
+      "predicate": "hasOutputs",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:data-process",
+      "target": "entity:lineage",
+      "type": "entity_related",
+      "predicate": "produces",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:data-product",
+      "target": "entity:dataset",
+      "type": "entity_related",
+      "predicate": "hasDatasets",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:data-product",
+      "target": "entity:input-port",
+      "type": "entity_related",
+      "predicate": "hasInputPorts",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:data-product",
+      "target": "entity:output-port",
+      "type": "entity_related",
+      "predicate": "hasOutputPorts",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:dataset",
+      "target": "entity:connection",
+      "type": "entity_related",
+      "predicate": "discoveredVia",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:dataset",
+      "target": "entity:field",
+      "type": "entity_related",
+      "predicate": "hasFields",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:dataset",
+      "target": "entity:output-port",
+      "type": "entity_related",
+      "predicate": "exposedVia",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:discussion-thread",
+      "target": "entity:catalog-object",
+      "type": "entity_related",
+      "predicate": "on",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:domain",
+      "target": "entity:catalog-object",
+      "type": "entity_related",
+      "predicate": "containsCatalogObjects",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:domain",
+      "target": "entity:glossary-item",
+      "type": "entity_related",
+      "predicate": "subtypeOf",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:field",
+      "target": "entity:dataset",
+      "type": "entity_related",
+      "predicate": "belongsTo",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:glossary-item",
+      "target": "entity:catalog-object",
+      "type": "entity_related",
+      "predicate": "linkedTo",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:glossary-item",
+      "target": "entity:glossary-item",
+      "type": "entity_related",
+      "predicate": "parentItem",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:governance-policy",
+      "target": "entity:catalog-object",
+      "type": "entity_related",
+      "predicate": "appliesTo",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:governance-policy",
+      "target": "entity:user-group",
+      "type": "entity_related",
+      "predicate": "assignedTo",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:observability-signal",
+      "target": "entity:catalog-object",
+      "type": "entity_related",
+      "predicate": "attachedTo",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:property",
+      "target": "entity:template",
+      "type": "entity_related",
+      "predicate": "partOf",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:responsibility",
+      "target": "entity:contact",
+      "type": "entity_related",
+      "predicate": "assignedTo",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:scanner",
+      "target": "entity:connection",
+      "type": "entity_related",
+      "predicate": "usesConnection",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:template",
+      "target": "entity:property",
+      "type": "entity_related",
+      "predicate": "contains",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:topic",
+      "target": "entity:catalog-object",
+      "type": "entity_related",
+      "predicate": "groups",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:use-case",
+      "target": "entity:access-request",
+      "type": "entity_related",
+      "predicate": "justifies",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:use-case",
+      "target": "entity:data-product",
+      "type": "entity_related",
+      "predicate": "relatesTo",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:user-group",
+      "target": "entity:governance-policy",
+      "type": "entity_related",
+      "predicate": "hasGovernancePolicies",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:visualization",
+      "target": "entity:connection",
+      "type": "entity_related",
+      "predicate": "discoveredVia",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
+      "source": "entity:visualization",
+      "target": "entity:dataset",
+      "type": "entity_related",
+      "predicate": "builtFrom",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.relationships"
+      }
+    },
+    {
       "source": "category:action",
       "target": "foundation:design-guidelines",
       "type": "foundations_ref",
@@ -5469,6 +5973,1029 @@
         "method": "foundations_refs.sectionRefs"
       },
       "note": "elevation, radius, and spacing tokens"
+    },
+    {
+      "source": "entity:access-request",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:access-request",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:api-key",
+      "target": "app:administration",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:catalog-object",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:catalog-object",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:connection",
+      "target": "app:administration",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:contact",
+      "target": "app:administration",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:contact",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:contact",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:custom-item",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:data-contract",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:data-process",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:data-process",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:data-product",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:data-product",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:dataset",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:dataset",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:discussion-thread",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:discussion-thread",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:domain",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:domain",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:field",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:field",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:glossary-item",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:glossary-item",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:governance-policy",
+      "target": "app:administration",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:governance-policy",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:input-port",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:lineage",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:lineage",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:metadata",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:metadata",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:observability-signal",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:observability-signal",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:output-port",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:property",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:responsibility",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:scanner",
+      "target": "app:administration",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:suggestion",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:template",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:topic",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:topic",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:use-case",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:use-case",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:user-group",
+      "target": "app:administration",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:visualization",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:visualization",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "entity:watchlist",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "entities.apps"
+      }
+    },
+    {
+      "source": "pattern:access-request-management",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:access-request-workflow",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:access-request-workflow",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:activity-timeline",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:ai-analyst-panel",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:analytics-dashboard",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:ask-ai",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:asset-detail-360",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:asset-detail-360",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:bulk-edit",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:data-profiling-sampling",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:data-steward-agent-panel",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:discussion-threads",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:discussion-threads",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:documentation-completion-dashboard",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:federated-catalog",
+      "target": "app:administration",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:federated-knowledge-graph",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:federated-knowledge-graph",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:filter-groups-form",
+      "target": "app:administration",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:import-wizard",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:interactive-graph",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:interactive-graph",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:lineage-graph",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:lineage-graph",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:marketplace-browsing",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:mcp-server",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:mcp-server",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:metamodel-designer",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:notification-system",
+      "target": "app:administration",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:notification-system",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:notification-system",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:right-sliding-drawer",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:right-sliding-drawer",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:search-filtered-table",
+      "target": "app:administration",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:search-filtered-table",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:search-filtered-table",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:smart-suggestions",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:smart-suggestions",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:suggestion-workflow",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:suggestion-workflow",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:table-with-tabs",
+      "target": "app:administration",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:table-with-tabs",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:template-builder",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:topic-browse",
+      "target": "app:explorer",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "source": "pattern:type-picker-grid",
+      "target": "app:studio",
+      "type": "in_app",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
     },
     {
       "source": "component:account-dropdown",
@@ -7718,6 +9245,193 @@
       "source": "content:wizards",
       "target": "component:stepper",
       "type": "related"
+    },
+    {
+      "source": "term:administration",
+      "target": "app:administration",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:ask-ai",
+      "target": "pattern:ask-ai",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:catalog-object",
+      "target": "entity:catalog-object",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:connection",
+      "target": "entity:connection",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:data-contract",
+      "target": "entity:data-contract",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:data-product",
+      "target": "entity:data-product",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:discussion-thread",
+      "target": "entity:discussion-thread",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:explorer",
+      "target": "app:explorer",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:federated-catalog",
+      "target": "pattern:federated-catalog",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:federated-knowledge-graph",
+      "target": "pattern:federated-knowledge-graph",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:input-port",
+      "target": "entity:input-port",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:output-port",
+      "target": "entity:output-port",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:scanner",
+      "target": "entity:scanner",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:studio",
+      "target": "app:studio",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:suggestion",
+      "target": "entity:suggestion",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:topic",
+      "target": "entity:topic",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
+    },
+    {
+      "source": "term:watchlist",
+      "target": "entity:watchlist",
+      "type": "term_about",
+      "confidence": "inferred",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "term-slug-match"
+      }
     }
   ]
 }

@@ -49,7 +49,17 @@ GraphBuilder.prototype.addNode = function (node) {
   return this;
 };
 GraphBuilder.prototype.addEdge = function (edge) {
-  var key = edge.type + "|" + edge.source + "|" + edge.target;
+  // predicate is part of edge identity: one source->target pair can carry more
+  // than one authored relationship (e.g. entity_related hasInputs + hasOutputs).
+  // Predicate-less edges get an empty suffix, so their dedup is unchanged.
+  var key =
+    edge.type +
+    "|" +
+    edge.source +
+    "|" +
+    edge.target +
+    "|" +
+    (edge.predicate || "");
   if (!this._edges.has(key)) this._edges.set(key, edge);
   return this;
 };
@@ -63,9 +73,12 @@ GraphBuilder.prototype.build = function () {
   var edges = Array.from(this._edges.values()).sort(function (a, b) {
     // Ordinal (not localeCompare) for cross-locale determinism, matching the node sort.
     // Sort key is unambiguous: type is a fixed enum (no spaces); ids are namespace:slug
-    // (slugify output never contains spaces).
-    var ka = a.type + " " + a.source + " " + a.target;
-    var kb = b.type + " " + b.source + " " + b.target;
+    // (slugify output never contains spaces). predicate is the deterministic tiebreak
+    // when a source->target pair carries multiple relationships (empty when absent).
+    var ka =
+      a.type + " " + a.source + " " + a.target + " " + (a.predicate || "");
+    var kb =
+      b.type + " " + b.source + " " + b.target + " " + (b.predicate || "");
     return ka < kb ? -1 : ka > kb ? 1 : 0;
   });
   return {
