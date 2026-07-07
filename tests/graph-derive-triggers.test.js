@@ -46,6 +46,7 @@ var REQUIRED_TRIGGER_PATHS = [
   "foundations/dist/foundations.bundle.json",
   "foundations/dist/tokens/motion.json",
   "content/src/**/*.md",
+  "app-context/dist/app-context.json",
 ];
 
 test("graph-derive PR triggers cover every graph data input", function () {
