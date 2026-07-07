@@ -150,7 +150,10 @@
               "motion_ref",
               "foundations_ref",
               "related",
-              "narrower"
+              "narrower",
+              "in_app",
+              "entity_related",
+              "term_about"
             ],
             "description": "Edge type discriminator. in_category: component→category membership. a11y_ref/motion_ref/foundations_ref: P8 transversal taxonomy cross-references. related: non-hierarchical association. narrower: SKOS-style broader/narrower hierarchy (foundation_section→foundation_section; non-transitive).",
             "examples": ["in_category", "a11y_ref"]
@@ -176,6 +179,11 @@
           "confidence": {
             "enum": ["asserted", "derived", "inferred", "candidate"],
             "description": "Trust level of the relationship. Deterministically derived refs are 'asserted'."
+          },
+          "predicate": {
+            "type": "string",
+            "description": "For entity_related edges: the authored relationship name from the app-context entity model (e.g. hasInputPorts, belongsTo). Keeps the controlled edge vocabulary small while preserving the specific relation.",
+            "examples": ["hasInputPorts", "belongsTo", "discoveredVia"]
           },
           "provenance": {
             "type": "object",

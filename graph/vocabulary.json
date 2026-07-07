@@ -76,6 +76,21 @@
       "source": ["foundation_section"],
       "target": ["foundation_section"],
       "description": "SKOS-style broader/narrower hierarchy (non-transitive; topical, NOT subclass or part-of). Was 'child' before this version."
+    },
+    "in_app": {
+      "source": ["app_entity", "ux_pattern"],
+      "target": ["app"],
+      "description": "A domain entity or UX pattern appears in / belongs to an app."
+    },
+    "entity_related": {
+      "source": ["app_entity"],
+      "target": ["app_entity"],
+      "description": "A directed relationship between two domain entities; the specific relation name rides the edge's 'predicate' field (36 distinct predicates share this one type)."
+    },
+    "term_about": {
+      "source": ["terminology_term"],
+      "target": ["app_entity", "app", "ux_pattern"],
+      "description": "A terminology term is about an entity/app/pattern, inferred where the term key exactly matches the node slug (confidence=inferred)."
     }
   }
 }
