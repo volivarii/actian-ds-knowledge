@@ -11,6 +11,11 @@ var PREFIX = {
   foundation_section: "foundation",
   motion_pattern: "motion",
   content_topic: "content",
+  // App-context island (Plan 2): apps, domain entities, terminology, UX patterns.
+  app: "app",
+  app_entity: "entity",
+  terminology_term: "term",
+  ux_pattern: "pattern",
 };
 
 function nodeId(type, slug) {

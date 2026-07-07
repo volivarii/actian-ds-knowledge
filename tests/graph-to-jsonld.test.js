@@ -138,3 +138,11 @@ test("throws when nodes/edges are not arrays", function () {
     toJsonLd({ _meta: {} }, CTX);
   }, /nodes\[\] and edges\[\]/);
 });
+
+test("NODE_TYPE maps the app-context node types", function () {
+  var { NODE_TYPE } = require("../scripts/lib/graph/to-jsonld.js");
+  assert.strictEqual(NODE_TYPE.app, "App");
+  assert.strictEqual(NODE_TYPE.app_entity, "DomainEntity");
+  assert.strictEqual(NODE_TYPE.terminology_term, "Term");
+  assert.strictEqual(NODE_TYPE.ux_pattern, "UXPattern");
+});

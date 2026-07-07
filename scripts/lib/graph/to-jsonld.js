@@ -14,6 +14,10 @@ var NODE_TYPE = {
   foundation_section: "FoundationSection",
   motion_pattern: "MotionPattern",
   content_topic: "ContentTopic",
+  app: "App",
+  app_entity: "DomainEntity",
+  terminology_term: "Term",
+  ux_pattern: "UXPattern",
 };
 
 function toJsonLd(graph, contextDoc) {

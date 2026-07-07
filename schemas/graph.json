@@ -70,7 +70,11 @@
               "a11y_criterion",
               "foundation_section",
               "motion_pattern",
-              "content_topic"
+              "content_topic",
+              "app",
+              "app_entity",
+              "terminology_term",
+              "ux_pattern"
             ],
             "description": "Node type discriminator. Determines which prefix is used in id and which edge types are meaningful.",
             "examples": ["component", "a11y_criterion"]
@@ -90,6 +94,24 @@
             "type": "string",
             "description": "Provenance marker for derived/structural nodes — e.g. 'figma-dskit' on category nodes (Figma-derived grouping, not team-canonical).",
             "examples": ["figma-dskit"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description/purpose for app-context nodes (app.purpose, app_entity.description, ux_pattern.description).",
+            "examples": [
+              "Data governance, catalog management, stewardship, lineage"
+            ]
+          },
+          "definition": {
+            "type": "string",
+            "description": "SKOS-style definition for terminology_term nodes: the canonical meaning of the term.",
+            "examples": ["Governance/catalog app"]
+          },
+          "hiddenLabels": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "SKOS hidden labels for terminology_term nodes: the discouraged / not-to-use alternatives for the preferred term.",
+            "examples": [["admin panel", "backend"]]
           }
         }
       }
