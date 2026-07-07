@@ -52,9 +52,9 @@ test("collectAppContext: terminology_term maps use->title, meaning->definition, 
     return n.id === "term:studio";
   });
   assert.equal(t.type, "terminology_term");
-  assert.equal(t.title, "Studio");
-  assert.equal(t.definition, "Governance/catalog app");
-  assert.deepEqual(t.hiddenLabels, ["admin panel", "backend"]);
+  assert.equal(t.title, AC.terminology.studio.use);
+  assert.equal(t.definition, AC.terminology.studio.meaning);
+  assert.deepEqual(t.hiddenLabels, AC.terminology.studio.notUse);
 });
 
 test("collectAppContext: ux_pattern node carries title<-label and description", function () {
@@ -206,8 +206,8 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   // terminology_term -> @type Term (context expands to skos:Concept), keeps definition + hiddenLabels
   var term = byId["term:studio"];
   assert.equal(term["@type"], "Term");
-  assert.equal(term.definition, "Governance/catalog app");
-  assert.deepEqual(term.hiddenLabels, ["admin panel", "backend"]);
+  assert.equal(term.definition, AC.terminology.studio.meaning);
+  assert.deepEqual(term.hiddenLabels, AC.terminology.studio.notUse);
 
   // app_entity -> DomainEntity; app -> App; ux_pattern -> UXPattern
   assert.equal(byId["entity:data-product"]["@type"], "DomainEntity");
@@ -231,4 +231,48 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   );
   assert.equal(ld["@graph"].length, g.nodes.length + g.edges.length);
   assert.equal(ld["@graph"].length, 843 + 652);
+});
+
+test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {
+  // Synthetic minimal records: the real dist populates every optional field, so
+  // this exercises the false branches the fixture data never hits. The contract
+  // (plan): description/definition/hiddenLabels are carried only when present.
+  var g = new M.GraphBuilder();
+  D.collectAppContext(g, {
+    apps: { bare: {} }, // no label, no purpose
+    entities: { lonely: {} }, // no label, no description, no apps/relationships
+    terminology: { plain: { use: "Plain" } }, // no meaning, no notUse
+    patterns: {},
+  });
+  var out = g.build();
+  var app = out.nodes.find(function (n) {
+    return n.id === "app:bare";
+  });
+  assert.equal(app.title, "bare"); // fell back to slug
+  assert.ok(!("description" in app)); // purpose absent -> omitted
+  var ent = out.nodes.find(function (n) {
+    return n.id === "entity:lonely";
+  });
+  assert.equal(ent.title, "lonely");
+  assert.ok(!("description" in ent));
+  var term = out.nodes.find(function (n) {
+    return n.id === "term:plain";
+  });
+  assert.ok(!("definition" in term)); // meaning absent -> omitted
+  assert.ok(!("hiddenLabels" in term)); // notUse absent -> omitted
+  // no apps/relationships anywhere -> no edges
+  assert.equal(out.edges.length, 0);
+});
+
+test("collectAppContext: empty / undefined input produces no nodes and does not throw", function () {
+  var g1 = new M.GraphBuilder();
+  assert.doesNotThrow(function () {
+    D.collectAppContext(g1, {});
+  });
+  assert.equal(g1.build().nodes.length, 0);
+  var g2 = new M.GraphBuilder();
+  assert.doesNotThrow(function () {
+    D.collectAppContext(g2, undefined);
+  });
+  assert.equal(g2.build().nodes.length, 0);
 });

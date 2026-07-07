@@ -55,7 +55,8 @@ test("vocabulary: every edge type references known node types", function () {
 });
 
 test("vocabulary: app-context edge types have the correct endpoint constraints", function () {
-  assert.deepEqual(vocab.edgeTypes.in_app.source.sort(), [
+  // Copy before sort: never mutate the shared module-scoped vocab fixture.
+  assert.deepEqual([...vocab.edgeTypes.in_app.source].sort(), [
     "app_entity",
     "ux_pattern",
   ]);
@@ -63,7 +64,7 @@ test("vocabulary: app-context edge types have the correct endpoint constraints",
   assert.deepEqual(vocab.edgeTypes.entity_related.source, ["app_entity"]);
   assert.deepEqual(vocab.edgeTypes.entity_related.target, ["app_entity"]);
   assert.deepEqual(vocab.edgeTypes.term_about.source, ["terminology_term"]);
-  assert.deepEqual(vocab.edgeTypes.term_about.target.sort(), [
+  assert.deepEqual([...vocab.edgeTypes.term_about.target].sort(), [
     "app",
     "app_entity",
     "ux_pattern",
