@@ -62,6 +62,10 @@ on:
       - 'foundations/dist/tokens/motion.json'
       # — content source (UX-pattern topics read directly from content/src)
       - 'content/src/**/*.md'
+      # app-context consolidated dist (apps/entities/terminology/patterns),
+      # derived + auto-committed by app-context-derive.yml. Source of the
+      # app-context island (collectAppContext in scripts/graph/derive-graph.js).
+      - 'app-context/dist/app-context.json'
       # — the derive itself + its libs + the validating schema
       - 'scripts/graph/**'
       - 'scripts/lib/graph/**'

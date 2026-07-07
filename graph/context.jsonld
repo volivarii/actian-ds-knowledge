@@ -14,6 +14,10 @@
     "foundation": "https://ds.actian.com/id/foundation/",
     "motion": "https://ds.actian.com/id/motion/",
     "content": "https://ds.actian.com/id/content/",
+    "app": "https://ds.actian.com/id/app/",
+    "entity": "https://ds.actian.com/id/entity/",
+    "term": "https://ds.actian.com/id/term/",
+    "pattern": "https://ds.actian.com/id/pattern/",
 
     "Component": "actian-ds:Component",
     "Category": "actian-ds:Category",
@@ -21,6 +25,10 @@
     "FoundationSection": "actian-ds:FoundationSection",
     "MotionPattern": "actian-ds:MotionPattern",
     "ContentTopic": "actian-ds:ContentTopic",
+    "App": "actian-ds:App",
+    "DomainEntity": "actian-ds:DomainEntity",
+    "UXPattern": "actian-ds:UXPattern",
+    "Term": "skos:Concept",
     "Edge": "actian-ds:Edge",
 
     "title": "schema:name",
@@ -34,6 +42,10 @@
     "provenance": "actian-ds:provenance",
     "source_file": { "@id": "prov:wasDerivedFrom", "@type": "@id" },
     "deriver": "prov:wasGeneratedBy",
-    "method": "actian-ds:method"
+    "method": "actian-ds:method",
+    "description": "schema:description",
+    "definition": "skos:definition",
+    "hiddenLabels": "skos:hiddenLabel",
+    "predicate": "actian-ds:predicate"
   }
 }

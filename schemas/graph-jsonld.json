@@ -61,7 +61,11 @@
                   "A11yCriterion",
                   "FoundationSection",
                   "MotionPattern",
-                  "ContentTopic"
+                  "ContentTopic",
+                  "DomainEntity",
+                  "Term",
+                  "App",
+                  "UXPattern"
                 ]
               }
             },

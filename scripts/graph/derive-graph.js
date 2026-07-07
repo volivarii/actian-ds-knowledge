@@ -226,6 +226,128 @@ function collectFoundationChildEdges(g, root) {
     }
   })(root);
 }
+// App-context projection ("the island"): apps, domain entities, terminology
+// terms, and UX patterns from app-context/dist/app-context.json become a
+// self-contained set of nodes + internal edges beside the DS component graph.
+// No authored data links app-context to components, so no component bridge is
+// emitted (spec Decision 1). Every edge cites the consolidated dist as its
+// provenance source_file (there is no per-record src pointer in the dist).
+var APP_CONTEXT_SOURCE = "app-context/dist/app-context.json";
+function collectAppContext(g, ac) {
+  var apps = (ac && ac.apps) || {};
+  var entities = (ac && ac.entities) || {};
+  var terminology = (ac && ac.terminology) || {};
+  var patterns = (ac && ac.patterns) || {};
+
+  // --- Nodes ---
+  Object.keys(apps).forEach(function (slug) {
+    var a = apps[slug] || {};
+    var node = {
+      id: M.nodeId("app", slug),
+      type: "app",
+      title: a.label || slug,
+    };
+    if (a.purpose) node.description = a.purpose;
+    g.addNode(node);
+  });
+  Object.keys(entities).forEach(function (slug) {
+    var e = entities[slug] || {};
+    var node = {
+      id: M.nodeId("app_entity", slug),
+      type: "app_entity",
+      title: e.label || slug,
+    };
+    if (e.description) node.description = e.description;
+    g.addNode(node);
+  });
+  Object.keys(terminology).forEach(function (key) {
+    var t = terminology[key] || {};
+    // terminology is keyed by slug; `use` is the preferred display term,
+    // `meaning` the definition, `notUse[]` the discouraged alternatives.
+    var node = {
+      id: M.nodeId("terminology_term", key),
+      type: "terminology_term",
+      title: t.use || key,
+    };
+    if (t.meaning) node.definition = t.meaning;
+    if (Array.isArray(t.notUse) && t.notUse.length)
+      node.hiddenLabels = t.notUse;
+    g.addNode(node);
+  });
+  Object.keys(patterns).forEach(function (slug) {
+    var p = patterns[slug] || {};
+    var node = {
+      id: M.nodeId("ux_pattern", slug),
+      type: "ux_pattern",
+      title: p.label || slug,
+    };
+    if (p.description) node.description = p.description;
+    g.addNode(node);
+  });
+
+  // --- Edges (after all nodes; term_about slug-match reads the node set) ---
+  function inAppEdges(map, sourceType) {
+    Object.keys(map).forEach(function (slug) {
+      var list = (map[slug] && map[slug].apps) || [];
+      list.forEach(function (appSlug) {
+        g.addEdge({
+          source: M.nodeId(sourceType, slug),
+          target: M.nodeId("app", appSlug),
+          type: "in_app",
+          confidence: "asserted",
+          provenance: {
+            source_file: APP_CONTEXT_SOURCE,
+            deriver: "derive-graph.js",
+            method:
+              sourceType === "app_entity" ? "entities.apps" : "patterns.apps",
+          },
+        });
+      });
+    });
+  }
+  inAppEdges(entities, "app_entity");
+  inAppEdges(patterns, "ux_pattern");
+
+  Object.keys(entities).forEach(function (slug) {
+    var rels = (entities[slug] && entities[slug].relationships) || {};
+    Object.keys(rels).forEach(function (predicate) {
+      g.addEdge({
+        source: M.nodeId("app_entity", slug),
+        target: M.nodeId("app_entity", rels[predicate]),
+        type: "entity_related",
+        predicate: predicate,
+        confidence: "asserted",
+        provenance: {
+          source_file: APP_CONTEXT_SOURCE,
+          deriver: "derive-graph.js",
+          method: "entities.relationships",
+        },
+      });
+    });
+  });
+
+  // term_about: a terminology key that exactly matches an existing entity/app/
+  // pattern slug bridges the term to that node (inferred, not authored). The
+  // key spaces are collision-free, so each matched term yields exactly one edge.
+  var TERM_TARGET_TYPES = ["app_entity", "app", "ux_pattern"];
+  Object.keys(terminology).forEach(function (key) {
+    TERM_TARGET_TYPES.forEach(function (tt) {
+      var targetId = M.nodeId(tt, key);
+      if (!g.hasNode(targetId)) return;
+      g.addEdge({
+        source: M.nodeId("terminology_term", key),
+        target: targetId,
+        type: "term_about",
+        confidence: "inferred",
+        provenance: {
+          source_file: APP_CONTEXT_SOURCE,
+          deriver: "derive-graph.js",
+          method: "term-slug-match",
+        },
+      });
+    });
+  });
+}
 function readContentEntries() {
   var dir = path.join(ROOT, "content", "src");
   if (!fs.existsSync(dir)) return [];
@@ -341,6 +463,9 @@ function derive() {
       bundleToTree(readJSON("foundations/dist/foundations.bundle.json")),
     );
   }
+  if (fs.existsSync(path.join(ROOT, "app-context/dist/app-context.json"))) {
+    collectAppContext(g, readJSON("app-context/dist/app-context.json"));
+  }
   var out = g.build();
   var outPath = path.join(ROOT, "graph", "dist", "graph.json");
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
@@ -385,6 +510,7 @@ module.exports = {
   readGuidelineDocs: readGuidelineDocs,
   collectRelated: collectRelated,
   collectFoundationChildEdges: collectFoundationChildEdges,
+  collectAppContext: collectAppContext,
   readJSON: readJSON,
   ROOT: ROOT,
 };

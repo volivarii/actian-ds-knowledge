@@ -674,7 +674,7 @@
       "type": "json",
       "origin": "ci",
       "generator": "scripts/graph/derive-graph.js",
-      "description": "Derived knowledge graph: typed nodes (component/category/a11y_criterion/foundation_section/motion_pattern/content_topic) + typed edges (in_category, a11y_ref, motion_ref, foundations_ref, related, narrower). Transversal refs are category-mediated. Consumed by future graph viz + AI agents."
+      "description": "Derived knowledge graph: typed nodes (component/category/a11y_criterion/foundation_section/motion_pattern/content_topic/app/app_entity/terminology_term/ux_pattern) + typed edges (in_category, a11y_ref, motion_ref, foundations_ref, related, narrower, in_app, entity_related, term_about). Transversal refs are category-mediated; app-context adds a product-domain island (apps, entities, terminology, UX patterns) linked by in_app / entity_related / term_about. Consumed by future graph viz + AI agents."
     },
     "graph.context": {
       "path": "graph/context.jsonld",
