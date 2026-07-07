@@ -263,8 +263,8 @@ Outlined focus rings must be applied with an offset on interactive elements. For
 
 | Token                           | Value  | Usage                                                             | Status      |
 | ------------------------------- | ------ | ----------------------------------------------------------------- | ----------- |
-| `--zen-size-trigger-min`        | `24px` | Minimum interactive target area for desktop (WCAG 2.5.5 Level AA) | 🟡 Proposed |
-| `--zen-size-trigger-min-mobile` | `44px` | Minimum interactive target area for mobile (WCAG 2.5.5 Level AA)  | 🟡 Proposed |
+| `--zen-size-trigger-min`        | `24px` | Minimum interactive target area for desktop (WCAG 2.5.8 Level AA) | 🟡 Proposed |
+| `--zen-size-trigger-min-mobile` | `44px` | Minimum interactive target area for mobile (WCAG 2.5.8 Level AA)  | 🟡 Proposed |
 
 ### 2.10 Icons
 
