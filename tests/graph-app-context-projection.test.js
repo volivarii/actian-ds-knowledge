@@ -192,3 +192,43 @@ test("collectAppContext: the projected island has no dangling refs and no typed-
   assert.deepEqual(r.dangling, []);
   assert.deepEqual(r.typeViolations, []);
 });
+
+test("app-context nodes + edges survive losslessly into graph.jsonld", function () {
+  D.derive();
+  var ld = JSON.parse(
+    fs.readFileSync(path.join(ROOT, "graph/dist/graph.jsonld"), "utf8"),
+  );
+  var byId = {};
+  ld["@graph"].forEach(function (o) {
+    if (o["@id"]) byId[o["@id"]] = o;
+  });
+
+  // terminology_term -> @type Term (context expands to skos:Concept), keeps definition + hiddenLabels
+  var term = byId["term:studio"];
+  assert.equal(term["@type"], "Term");
+  assert.equal(term.definition, "Governance/catalog app");
+  assert.deepEqual(term.hiddenLabels, ["admin panel", "backend"]);
+
+  // app_entity -> DomainEntity; app -> App; ux_pattern -> UXPattern
+  assert.equal(byId["entity:data-product"]["@type"], "DomainEntity");
+  assert.equal(byId["app:studio"]["@type"], "App");
+  assert.equal(byId["pattern:marketplace-browsing"]["@type"], "UXPattern");
+
+  // entity_related edges keep their predicate through reification
+  var rel = ld["@graph"].filter(function (o) {
+    return o["@type"] === "Edge" && o.edgeType === "entity_related";
+  });
+  assert.equal(rel.length, 42);
+  assert.ok(
+    rel.every(function (e) {
+      return typeof e.predicate === "string";
+    }),
+  );
+
+  // total @graph == nodes + edges of graph.json (lossless)
+  var g = JSON.parse(
+    fs.readFileSync(path.join(ROOT, "graph/dist/graph.json"), "utf8"),
+  );
+  assert.equal(ld["@graph"].length, g.nodes.length + g.edges.length);
+  assert.equal(ld["@graph"].length, 843 + 652);
+});
