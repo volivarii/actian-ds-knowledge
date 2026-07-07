@@ -75,5 +75,12 @@
     "value": 14,
     "timestamp": null,
     "severity": "info"
+  },
+  {
+    "dimension": "identity",
+    "metric": "slug_collisions",
+    "value": 22,
+    "timestamp": null,
+    "severity": "info"
   }
 ]
