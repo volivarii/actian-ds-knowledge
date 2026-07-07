@@ -26,11 +26,17 @@ function collectComponentsAndCategories(g, registries, categoryOverrides) {
     var comps = (reg && reg.components) || {};
     Object.keys(comps).forEach(function (slug) {
       var c = comps[slug];
-      g.addNode({
+      // Carry the stable, rename-proof Figma identifier beside the node as a
+      // queryable external id (the slug stays the node id). Optional: a future
+      // keyless registry entry degrades to omission, not error.
+      var node = {
         id: M.nodeId("component", slug),
         type: "component",
         title: c.name || slug,
-      });
+      };
+      if (c.key) node.figmaKey = c.key;
+      if (c.nodeId) node.figmaNodeId = c.nodeId;
+      g.addNode(node);
       var cat = c.category || overrides[slug] || null;
       if (cat) {
         // fmkit/metakit components carry no category; node-only, no edge — not

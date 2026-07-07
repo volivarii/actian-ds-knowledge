@@ -112,6 +112,16 @@
             "items": { "type": "string" },
             "description": "SKOS hidden labels for terminology_term nodes: the discouraged / not-to-use alternatives for the preferred term.",
             "examples": [["admin panel", "backend"]]
+          },
+          "figmaKey": {
+            "type": "string",
+            "description": "Stable Figma component key (rename-proof) carried as a queryable external identifier on component nodes. From the registry entry; slug remains the node id.",
+            "examples": ["487b25a1c0d3e4f5"]
+          },
+          "figmaNodeId": {
+            "type": "string",
+            "description": "Figma node id of the component's set-level frame, carried beside figmaKey.",
+            "examples": ["9118:17382"]
           }
         }
       }
