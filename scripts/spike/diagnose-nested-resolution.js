@@ -94,8 +94,79 @@ function aggregate(records) {
   };
 }
 
+var REPO_ROOT = path.join(__dirname, "..", "..");
+
+// Registry -> resolution maps + the non-icon set ids to fetch (mirrors
+// sync-anatomy: icons have no layout anatomy and are excluded).
+function buildMaps(registry) {
+  var comps = (registry && registry.components) || {};
+  var nodeIdToSlug = {};
+  var keyToSlug = {};
+  var ids = [];
+  Object.keys(comps).forEach(function (slug) {
+    var c = comps[slug] || {};
+    if (c.nodeId) nodeIdToSlug[c.nodeId] = slug;
+    if (c.key) keyToSlug[c.key] = slug;
+    if (c.category !== "Icons" && c.nodeId) ids.push(c.nodeId);
+  });
+  return { nodeIdToSlug: nodeIdToSlug, keyToSlug: keyToSlug, ids: ids };
+}
+
 async function main() {
-  throw new Error("main() implemented in Task 2");
+  var rest = require("../sync/figma-rest.js");
+  var keys = JSON.parse(process.env.FIGMA_KEYS_JSON || "{}");
+  var fileKeyRaw = keys.dsKit;
+  var fileKey =
+    typeof fileKeyRaw === "string"
+      ? fileKeyRaw
+      : fileKeyRaw && fileKeyRaw.fileKey;
+  if (!fileKey) throw new Error("no dsKit file key (set FIGMA_KEYS_JSON)");
+  var registry = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, "components/dist/registries/dskit.json"),
+      "utf8",
+    ),
+  );
+  var maps = buildMaps(registry);
+
+  var resp = await rest.getNodes(fileKey, maps.ids);
+  var nodes = (resp && resp.nodes) || {};
+  var entries = mergeComponentEntries(nodes);
+
+  var records = [];
+  maps.ids.forEach(function (nid) {
+    var doc = nodes[nid] && nodes[nid].document;
+    if (!doc) return;
+    collectInstances(doc).forEach(function (inst) {
+      records.push(
+        classifyInstance(inst, entries, maps.nodeIdToSlug, maps.keyToSlug),
+      );
+    });
+  });
+
+  var summary = aggregate(records);
+  var examples = records
+    .filter(function (r) {
+      return !r.resolvedToday && r.componentSetId;
+    })
+    .slice(0, 15);
+
+  var report = {
+    generatedAt: null,
+    summary: summary,
+    examples: examples,
+    records: records,
+  };
+  var outPath =
+    process.env.SPIKE_REPORT_PATH ||
+    path.join(REPO_ROOT, "nested-resolution-report.json");
+  fs.writeFileSync(outPath, JSON.stringify(report, null, 2) + "\n", "utf8");
+
+  console.log("=== nested-resolution spike summary ===");
+  Object.keys(summary).forEach(function (k) {
+    console.log(k + ": " + summary[k]);
+  });
+  console.log("report written to " + outPath);
 }
 
 if (require.main === module) {
@@ -110,4 +181,5 @@ module.exports = {
   collectInstances: collectInstances,
   classifyInstance: classifyInstance,
   aggregate: aggregate,
+  buildMaps: buildMaps,
 };

@@ -70,7 +70,9 @@ test("collectInstances: finds nested INSTANCE nodes recursively", function () {
 
 test("mergeComponentEntries: unions the per-subtree components dicts", function () {
   var nodes = {
-    "10:0": { components: { "99:2": { key: "kTAGY", componentSetId: "10:0" } } },
+    "10:0": {
+      components: { "99:2": { key: "kTAGY", componentSetId: "10:0" } },
+    },
     "20:0": { components: { "20:0": { key: "kARROW" } } },
   };
   var m = D.mergeComponentEntries(nodes);
@@ -111,4 +113,21 @@ test("aggregate: pctResolvableViaSetId is over the unresolved-today subset", fun
   assert.equal(s.unresolved, 2);
   assert.equal(s.unresolvedResolvableViaSetId, 1);
   assert.equal(s.pctResolvableViaSetId, 50); // 1 of 2 unresolved
+});
+
+test("buildMaps: nodeIdToSlug + keyToSlug + non-icon ids from a registry", function () {
+  var reg = {
+    components: {
+      "card-for-items": {
+        nodeId: "10:0",
+        key: "kCARD",
+        category: "Data Display",
+      },
+      "arrow-down": { nodeId: "20:0", key: "kARROW", category: "Icons" },
+    },
+  };
+  var m = D.buildMaps(reg);
+  assert.equal(m.nodeIdToSlug["10:0"], "card-for-items");
+  assert.equal(m.keyToSlug["kCARD"], "card-for-items");
+  assert.deepEqual(m.ids, ["10:0"]); // icons excluded from the fetch set
 });
