@@ -46,6 +46,8 @@
     "description": "schema:description",
     "definition": "skos:definition",
     "hiddenLabels": "skos:hiddenLabel",
-    "predicate": "actian-ds:predicate"
+    "predicate": "actian-ds:predicate",
+    "figmaKey": "actian-ds:figmaComponentKey",
+    "figmaNodeId": "actian-ds:figmaNodeId"
   }
 }

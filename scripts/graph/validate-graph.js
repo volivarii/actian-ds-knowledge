@@ -220,6 +220,29 @@ function main() {
   var r = analyze(graph, vocabulary);
   var coverage = coverageMod.computeCoverage(ROOT, graph);
   var qualityReport = buildQualityReport(r, coverage, schemaErrs.length);
+  // The slug-collisions count is a derive-time identity fact carried in the
+  // graph/dist/collisions.json sidecar; surface it here as an info metric
+  // (same 5-key shape as the connectivity metrics). Pushed in main(), not the
+  // pure buildQualityReport, so that function stays file-IO-free and testable.
+  var collisionsCount = 0;
+  try {
+    var col = JSON.parse(
+      fs.readFileSync(
+        path.join(ROOT, "graph", "dist", "collisions.json"),
+        "utf8",
+      ),
+    );
+    collisionsCount = (col.slug_collisions || []).length;
+  } catch (e) {
+    /* sidecar absent: report 0 */
+  }
+  qualityReport.push({
+    dimension: "identity",
+    metric: "slug_collisions",
+    value: collisionsCount,
+    timestamp: null,
+    severity: "info",
+  });
   fs.writeFileSync(
     path.join(ROOT, "graph", "dist", "quality-report.json"),
     JSON.stringify(qualityReport, null, 2) + "\n",

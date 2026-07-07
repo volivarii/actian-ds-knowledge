@@ -131,13 +131,13 @@ jobs:
       - name: Detect changes
         id: diff
         run: |
-          if git diff --quiet -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/graph.jsonld; then
+          if git diff --quiet -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/graph.jsonld graph/dist/collisions.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No graph changes after regeneration."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Graph changes detected:"
-            git diff --stat -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/graph.jsonld
+            git diff --stat -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/graph.jsonld graph/dist/collisions.json
           fi
 
       - name: Auto-bump package.json patch
@@ -152,7 +152,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add graph/dist/graph.json graph/dist/graph.jsonld graph/dist/quality-report.json package.json paths-manifest.json package-lock.json
+          git add graph/dist/graph.json graph/dist/graph.jsonld graph/dist/quality-report.json graph/dist/collisions.json package.json paths-manifest.json package-lock.json
           git commit -m "chore(graph): regenerate dist from substrate + bump patch"
           # Race-safe push: another derive workflow may have pushed to this
           # branch since checkout (concurrent auto-commits) — rebase and retry
