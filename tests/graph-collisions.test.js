@@ -13,7 +13,10 @@ function readJSON(rel) {
 // Pure detection over the registries (no shared-dist write).
 test("detectSlugCollisions: 22 cross-registry collisions with distinct keys", function () {
   var kits = ["dskit", "fmkit", "metakit"].map(function (k) {
-    return { kit: k, reg: readJSON("components/dist/registries/" + k + ".json") };
+    return {
+      kit: k,
+      reg: readJSON("components/dist/registries/" + k + ".json"),
+    };
   });
   var out = D.detectSlugCollisions(kits);
   assert.equal(out.slug_collisions.length, 22);
@@ -51,4 +54,22 @@ test("graph/dist/collisions.json: 22 entries + auto_generated _meta, schema-vali
   var schema = readJSON("schemas/collisions.json");
   var validate = new (Ajv.default || Ajv)({ strict: false }).compile(schema);
   assert.ok(validate(col), JSON.stringify(validate.errors));
+});
+
+// Freshness lock: the committed sidecar must equal a fresh detection over the
+// current registries. This is the one regression the graph drift guard cannot
+// catch on its own: if derive() stopped WRITING collisions.json, the committed
+// copy would silently go stale against the registries; this deepEqual catches
+// that divergence (and is isolation-safe: pure detection + read-only, no
+// derive() write to the shared dist).
+test("graph/dist/collisions.json matches a fresh detectSlugCollisions over the current registries (freshness lock)", function () {
+  var kits = ["dskit", "fmkit", "metakit"].map(function (k) {
+    return {
+      kit: k,
+      reg: readJSON("components/dist/registries/" + k + ".json"),
+    };
+  });
+  var fresh = D.detectSlugCollisions(kits).slug_collisions;
+  var committed = readJSON("graph/dist/collisions.json").slug_collisions;
+  assert.deepEqual(committed, fresh);
 });

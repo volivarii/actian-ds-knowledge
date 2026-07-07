@@ -23,7 +23,9 @@ test("collectComponentsAndCategories: component nodes carry figmaKey + figmaNode
   assert.ok(comps.length > 0);
   assert.ok(
     comps.every(function (n) {
-      return typeof n.figmaKey === "string" && typeof n.figmaNodeId === "string";
+      return (
+        typeof n.figmaKey === "string" && typeof n.figmaNodeId === "string"
+      );
     }),
   );
   var badge = out.nodes.find(function (n) {
@@ -31,6 +33,25 @@ test("collectComponentsAndCategories: component nodes carry figmaKey + figmaNode
   });
   assert.equal(badge.figmaKey, reg.components.badge.key);
   assert.equal(badge.figmaNodeId, reg.components.badge.nodeId);
+});
+
+// Spec 3.1: figmaKey/figmaNodeId are carried only when present, so a future
+// keyless registry entry degrades to omission (not an error). Real registries
+// are 100% keyed, so this fabricated entry is the only way to exercise the
+// omit branch. In-memory (no shared-dist write), isolation-safe.
+test("collectComponentsAndCategories: a keyless registry entry omits figmaKey/figmaNodeId (degrades, not errors)", function () {
+  var g = new M.GraphBuilder();
+  D.collectComponentsAndCategories(
+    g,
+    [{ components: { "no-key-comp": { name: "No Key" } } }],
+    { overrides: {} },
+  );
+  var n = g.build().nodes.find(function (x) {
+    return x.id === "component:no-key-comp";
+  });
+  assert.equal(n.figmaKey, undefined);
+  assert.equal(n.figmaNodeId, undefined);
+  assert.equal(n.title, "No Key");
 });
 
 // Committed artifact: the shipped graph.json carries the key on all 613
@@ -43,7 +64,9 @@ test("graph/dist/graph.json: 613 component nodes carry figmaKey; non-component n
   assert.equal(comps.length, 613);
   assert.ok(
     comps.every(function (n) {
-      return typeof n.figmaKey === "string" && typeof n.figmaNodeId === "string";
+      return (
+        typeof n.figmaKey === "string" && typeof n.figmaNodeId === "string"
+      );
     }),
   );
   var nonComp = g.nodes.filter(function (n) {
