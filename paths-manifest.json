@@ -5,9 +5,21 @@
   "manifest_schema_version": "v1",
   "knowledge_version": "0.34.78",
   "_zones": {
-    "knowledge": ["accessibility", "components", "content", "foundations"],
-    "contract": ["graph"],
-    "metadata": ["appContext", "appContextBundle", "appContextSrc", "tokens"],
+    "knowledge": [
+      "accessibility",
+      "components",
+      "content",
+      "foundations"
+    ],
+    "contract": [
+      "graph"
+    ],
+    "metadata": [
+      "appContext",
+      "appContextBundle",
+      "appContextSrc",
+      "tokens"
+    ],
     "_pendingEviction": []
   },
   "paths": {
