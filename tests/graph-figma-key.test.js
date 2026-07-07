@@ -4,37 +4,48 @@ var assert = require("node:assert/strict");
 var fs = require("node:fs");
 var path = require("node:path");
 var D = require("../scripts/graph/derive-graph.js");
+var M = require("../scripts/lib/graph/model.js");
 var ROOT = path.join(__dirname, "..");
+function readJSON(rel) {
+  return JSON.parse(fs.readFileSync(path.join(ROOT, rel), "utf8"));
+}
 
-test("derive(): component nodes carry figmaKey + figmaNodeId; other node types do not", function () {
-  D.derive();
-  var g = JSON.parse(
-    fs.readFileSync(path.join(ROOT, "graph/dist/graph.json"), "utf8"),
+// In-memory (no shared-dist write): the deriver attaches figmaKey/figmaNodeId
+// on component nodes, sourced from the registry entry.
+test("collectComponentsAndCategories: component nodes carry figmaKey + figmaNodeId from the registry", function () {
+  var reg = readJSON("components/dist/registries/dskit.json");
+  var g = new M.GraphBuilder();
+  D.collectComponentsAndCategories(g, [reg], { overrides: {} });
+  var out = g.build();
+  var comps = out.nodes.filter(function (n) {
+    return n.type === "component";
+  });
+  assert.ok(comps.length > 0);
+  assert.ok(
+    comps.every(function (n) {
+      return typeof n.figmaKey === "string" && typeof n.figmaNodeId === "string";
+    }),
   );
-  var reg = JSON.parse(
-    fs.readFileSync(
-      path.join(ROOT, "components/dist/registries/dskit.json"),
-      "utf8",
-    ),
-  );
+  var badge = out.nodes.find(function (n) {
+    return n.id === "component:badge";
+  });
+  assert.equal(badge.figmaKey, reg.components.badge.key);
+  assert.equal(badge.figmaNodeId, reg.components.badge.nodeId);
+});
+
+// Committed artifact: the shipped graph.json carries the key on all 613
+// component nodes and on no other node type.
+test("graph/dist/graph.json: 613 component nodes carry figmaKey; non-component nodes never do", function () {
+  var g = readJSON("graph/dist/graph.json");
   var comps = g.nodes.filter(function (n) {
     return n.type === "component";
   });
   assert.equal(comps.length, 613);
   assert.ok(
     comps.every(function (n) {
-      return (
-        typeof n.figmaKey === "string" && typeof n.figmaNodeId === "string"
-      );
+      return typeof n.figmaKey === "string" && typeof n.figmaNodeId === "string";
     }),
   );
-  // spot-check a known component equals its registry key/nodeId
-  var badge = g.nodes.find(function (n) {
-    return n.id === "component:badge";
-  });
-  assert.equal(badge.figmaKey, reg.components.badge.key);
-  assert.equal(badge.figmaNodeId, reg.components.badge.nodeId);
-  // non-component nodes never carry it
   var nonComp = g.nodes.filter(function (n) {
     return n.type !== "component";
   });
@@ -45,38 +56,34 @@ test("derive(): component nodes carry figmaKey + figmaNodeId; other node types d
   );
 });
 
-test("graph.jsonld carries figmaKey on component objects (queryable, lossless)", function () {
-  D.derive();
-  var ld = JSON.parse(
-    fs.readFileSync(path.join(ROOT, "graph/dist/graph.jsonld"), "utf8"),
-  );
+// Committed JSON-LD view carries the key on component objects, and the context
+// maps the terms (queryable/addressable, not an opaque blob).
+test("graph/dist/graph.jsonld carries figmaKey on component objects; context maps the terms", function () {
+  var ld = readJSON("graph/dist/graph.jsonld");
   var badge = ld["@graph"].find(function (o) {
     return o["@id"] === "component:badge";
   });
   assert.equal(badge["@type"], "Component");
   assert.equal(typeof badge.figmaKey, "string");
-  // context maps the term so it is addressable, not an opaque blob
-  var ctx = JSON.parse(
-    fs.readFileSync(path.join(ROOT, "graph/context.jsonld"), "utf8"),
-  )["@context"];
+  var ctx = readJSON("graph/context.jsonld")["@context"];
   assert.equal(ctx.figmaKey, "actian-ds:figmaComponentKey");
   assert.equal(ctx.figmaNodeId, "actian-ds:figmaNodeId");
 });
 
-test("quality-report.json reports the slug_collisions count", function () {
-  D.derive();
-  // process.execPath (not the local-only NODE_BIN env) so this runs on CI too.
-  require("node:child_process").execFileSync(
-    process.execPath,
-    ["scripts/graph/validate-graph.js"],
-    { cwd: ROOT },
-  );
-  var qr = JSON.parse(
-    fs.readFileSync(path.join(ROOT, "graph/dist/quality-report.json"), "utf8"),
-  );
+// The shipped quality-report surfaces the collisions count in the documented
+// 5-key metric shape.
+test("graph/dist/quality-report.json reports the slug_collisions count (=22)", function () {
+  var qr = readJSON("graph/dist/quality-report.json");
   var m = (Array.isArray(qr) ? qr : qr.metrics || []).find(function (x) {
     return x.metric === "slug_collisions";
   });
   assert.ok(m, "slug_collisions metric present");
   assert.equal(m.value, 22);
+  assert.deepEqual(Object.keys(m).sort(), [
+    "dimension",
+    "metric",
+    "severity",
+    "timestamp",
+    "value",
+  ]);
 });
