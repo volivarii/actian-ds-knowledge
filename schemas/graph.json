@@ -164,9 +164,10 @@
               "in_app",
               "entity_related",
               "term_about",
-              "composed_of"
+              "composed_of",
+              "uses_component"
             ],
-            "description": "Edge type discriminator. in_category: component→category membership. a11y_ref/motion_ref/foundations_ref: P8 transversal taxonomy cross-references. related: non-hierarchical association. narrower: SKOS-style broader/narrower hierarchy (foundation_section→foundation_section; non-transitive). in_app: app_entity/ux_pattern→app membership. entity_related: app_entity→app_entity (specific relation name in the predicate field). term_about: terminology_term→app_entity/app/ux_pattern (inferred term-to-node bridge). composed_of: component->component structural composition, projected from registry nestedComponents (parent source nests target child; icons included).",
+            "description": "Edge type discriminator. in_category: component→category membership. a11y_ref/motion_ref/foundations_ref: P8 transversal taxonomy cross-references. related: non-hierarchical association. narrower: SKOS-style broader/narrower hierarchy (foundation_section→foundation_section; non-transitive). in_app: app_entity/ux_pattern→app membership. entity_related: app_entity→app_entity (specific relation name in the predicate field). term_about: terminology_term→app_entity/app/ux_pattern (inferred term-to-node bridge). composed_of: component->component structural composition, projected from registry nestedComponents (parent source nests target child; icons included). uses_component: ux_pattern->component, projected from a pattern's authored components[] (the pattern composes that DS component).",
             "examples": ["in_category", "a11y_ref"]
           },
           "note": {

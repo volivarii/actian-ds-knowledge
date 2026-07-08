@@ -590,3 +590,47 @@ test("collectComponentComposition: a child slug that collides across kits binds 
   assert.ok(edge, "composition edge emitted for the fmkit parent");
   assert.equal(edge.target, "component:search"); // binds to the canonical (dskit-origin) node
 });
+
+test("collectPatternComponents: emits ux_pattern->component uses_component edges; drops unresolved; dedups; asserted+provenance", function () {
+  var registries = {
+    components: {
+      table: { name: "Table", category: "Data Display" },
+      tabs: { name: "Tabs", category: "Navigation" },
+    },
+  };
+  var ac = {
+    apps: { studio: { label: "Studio" } },
+    entities: {},
+    terminology: {},
+    patterns: {
+      "search-filtered-table": {
+        label: "Search-filtered table",
+        apps: ["studio"],
+        components: ["table", "tabs", "table", "ghost-x"],
+      },
+      "no-components": { label: "No components", apps: ["studio"] },
+    },
+  };
+  var G = require("../scripts/lib/graph/model.js").GraphBuilder;
+  var g = new G();
+  D.collectComponentsAndCategories(g, [registries]); // component nodes
+  D.collectAppContext(g, ac); // ux_pattern nodes
+  D.collectPatternComponents(g, ac);
+  var edges = g.build().edges.filter(function (e) {
+    return e.type === "uses_component";
+  });
+  assert.equal(edges.length, 2); // table (deduped), tabs; ghost-x dropped (no node); no-components emits none
+  edges.forEach(function (e) {
+    assert.ok(e.source === "pattern:search-filtered-table");
+    assert.ok(e.target === "component:table" || e.target === "component:tabs");
+    assert.equal(e.confidence, "asserted");
+    assert.equal(e.provenance.method, "patterns.components");
+    assert.equal(e.provenance.source_file, "app-context/dist/app-context.json");
+  });
+  assert.ok(
+    !edges.some(function (e) {
+      return e.target === "component:ghost-x";
+    }),
+    "unresolved dropped",
+  );
+});
