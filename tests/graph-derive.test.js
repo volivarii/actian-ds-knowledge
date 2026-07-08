@@ -552,3 +552,41 @@ test("collectComponentComposition: parent->child composed_of edges; dedups pairs
     assert.deepEqual(Object.keys(e).sort(), ["source", "target", "type"]);
   });
 });
+
+// Known slug-identity limitation: component nodes dedupe by slug first-wins
+// across kits, so a child slug present in >1 kit collapses to one node (the
+// first registry wins). A composition edge to such a slug binds to that
+// canonical node, not necessarily the parent's own kit. This is the documented
+// slug-collision behavior (graph/dist/collisions.json); slice-3 key identity
+// will disambiguate. This test locks the behavior so a future change is a
+// conscious one.
+test("collectComponentComposition: a child slug that collides across kits binds to the canonical first-wins node", function () {
+  var dskit = {
+    components: { search: { name: "Search (DS)", category: "Action" } },
+  };
+  var fmkit = {
+    components: {
+      "fm-search-input": {
+        name: "FM Search",
+        nestedComponents: [
+          { slug: "search", role: null, source: "child-instance" },
+        ],
+      },
+      search: { name: "Search (FM)" }, // same slug -> deduped away (dskit wins)
+    },
+  };
+  var G = require("../scripts/lib/graph/model.js").GraphBuilder;
+  var g = new G();
+  D.collectComponentsAndCategories(g, [dskit, fmkit]); // dskit first -> wins component:search
+  D.collectComponentComposition(g, [dskit, fmkit]);
+  var out = g.build();
+  var searchNode = out.nodes.find(function (n) {
+    return n.id === "component:search";
+  });
+  assert.equal(searchNode.title, "Search (DS)"); // first-wins: dskit's node is canonical
+  var edge = out.edges.find(function (e) {
+    return e.type === "composed_of" && e.source === "component:fm-search-input";
+  });
+  assert.ok(edge, "composition edge emitted for the fmkit parent");
+  assert.equal(edge.target, "component:search"); // binds to the canonical (dskit-origin) node
+});

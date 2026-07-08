@@ -74,8 +74,11 @@ function collectComponentsAndCategories(g, registries, categoryOverrides) {
 // Component composition: project each registry component's nestedComponents
 // (resolved within the same kit upstream) as directed composed_of edges
 // (parent -> child). Both endpoints must already be component nodes, so this
-// MUST run after collectComponentsAndCategories. Self-loops are skipped.
-// Unresolved / cross-kit refs are dropped (they have no node). Icons are
+// MUST run after collectComponentsAndCategories. Self-loops are skipped, and a
+// ref whose slug has no node at all is dropped. NOTE: component nodes dedupe by
+// slug first-wins across kits, so a child slug that collides across kits (see
+// graph/dist/collisions.json) binds to the winning kit's node, not necessarily
+// the parent's own kit; slice-3 key identity will disambiguate. Icons are
 // included on purpose: a "real composites only" view is a consumer filter on
 // the target's in_category:category:icons edge, not a derive-time exclusion.
 function collectComponentComposition(g, registries) {
@@ -91,7 +94,7 @@ function collectComponentComposition(g, registries) {
         if (!childSlug) return;
         var childId = M.nodeId("component", childSlug);
         if (childId === parentId) return; // self-loop guard
-        if (!g.hasNode(childId)) return; // endpoint guard (unresolved / cross-kit)
+        if (!g.hasNode(childId)) return; // endpoint guard: no node for this slug (collided cross-kit slugs bind to the first-wins node, see note above)
         g.addEdge({ source: parentId, target: childId, type: "composed_of" });
       });
     });
