@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "empty-state",
   "kit": "dskit",
-  "synced_at": "2026-07-06T13:21:40.803Z",
+  "synced_at": "2026-07-08T14:07:52.886Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "9230:22073",
@@ -10,8 +10,8 @@
   },
   "quality": {
     "nodesTotal": 8,
-    "nodesNormalized": 5,
-    "ratio": 0.63,
+    "nodesNormalized": 8,
+    "ratio": 1,
     "degraded": [],
     "structuralVariants": [
       {
@@ -55,7 +55,7 @@
       {
         "name": "Illustration",
         "kind": "instance",
-        "unresolved": true,
+        "slug": "illustration",
         "props": {
           "Type": "Empty state large"
         },
@@ -182,7 +182,7 @@
           {
             "name": "Button",
             "kind": "instance",
-            "unresolved": true,
+            "slug": "button",
             "props": {
               "Label": "Learn more",
               "Show label": true,
@@ -201,7 +201,7 @@
           {
             "name": "Button",
             "kind": "instance",
-            "unresolved": true,
+            "slug": "button",
             "props": {
               "Label": "Create policy",
               "Show label": true,

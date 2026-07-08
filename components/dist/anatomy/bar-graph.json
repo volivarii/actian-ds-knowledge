@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "bar-graph",
   "kit": "dskit",
-  "synced_at": "2026-07-06T13:21:40.803Z",
+  "synced_at": "2026-07-08T14:07:52.886Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "15473:49489",
@@ -10,8 +10,8 @@
   },
   "quality": {
     "nodesTotal": 62,
-    "nodesNormalized": 58,
-    "ratio": 0.94,
+    "nodesNormalized": 59,
+    "ratio": 0.95,
     "degraded": []
   },
   "root": {
@@ -113,7 +113,7 @@
           {
             "name": "Button",
             "kind": "instance",
-            "unresolved": true,
+            "slug": "button",
             "props": {
               "Show leading icon": true,
               "Show label": true,
