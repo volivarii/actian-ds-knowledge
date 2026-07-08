@@ -12069,6 +12069,11 @@
     },
     {
       "source": "content:forms",
+      "target": "component:segmented-control",
+      "type": "related"
+    },
+    {
+      "source": "content:forms",
       "target": "component:text-input",
       "type": "related"
     },
@@ -12104,7 +12109,17 @@
     },
     {
       "source": "content:notifications-and-messaging",
+      "target": "component:modal",
+      "type": "related"
+    },
+    {
+      "source": "content:notifications-and-messaging",
       "target": "component:notification",
+      "type": "related"
+    },
+    {
+      "source": "content:notifications-and-messaging",
+      "target": "component:notification-dropdown",
       "type": "related"
     },
     {
