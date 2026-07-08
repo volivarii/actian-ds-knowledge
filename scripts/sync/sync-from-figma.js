@@ -121,6 +121,51 @@ function excludeDeniedPages(registry, deniedPages) {
   return out;
 }
 
+var CATEGORY_MASS_LOSS_FLOOR = 10;
+
+// Count registry components per non-empty category.
+function categoryCounts(registry) {
+  var counts = {};
+  var comps = (registry && registry.components) || {};
+  Object.keys(comps).forEach(function (slug) {
+    var cat = comps[slug] && comps[slug].category;
+    if (!cat) return;
+    counts[cat] = (counts[cat] || 0) + 1;
+  });
+  return counts;
+}
+
+// Refuse to emit a category-gutted registry: if a category with >= FLOOR
+// members before drops to 0 after, throw. A thrown error inside a
+// runWithGuard-wrapped phase makes the sync verdict "error" (exit 2, no PR).
+// Intentional category removals are acknowledged via opts.allow.
+function assertNoCategoryMassLoss(before, after, opts) {
+  opts = opts || {};
+  var allow = opts.allow || [];
+  var b = categoryCounts(before);
+  var a = categoryCounts(after);
+  var lost = Object.keys(b).filter(function (cat) {
+    return (
+      b[cat] >= CATEGORY_MASS_LOSS_FLOOR &&
+      !(a[cat] > 0) &&
+      allow.indexOf(cat) < 0
+    );
+  });
+  if (lost.length) {
+    throw new Error(
+      "[sync] category mass-loss: " +
+        lost
+          .map(function (c) {
+            return c + " (" + b[c] + " -> 0)";
+          })
+          .join(", ") +
+        ". A Figma page rename likely stripped these categories. Add the page to " +
+        "components/src/category-page-overrides.json, or acknowledge an intentional " +
+        "removal via SYNC_ALLOW_CATEGORY_LOSS. Refusing to emit a category-gutted registry.",
+    );
+  }
+}
+
 // Fetch /nodes for many ids via the wrapper's batched getNodes. Returns a
 // map of nodeId → node payload. Internal batching keeps Figma's rate limit
 // happy — a single sync that needs 300+ nodes lands in ~6 batched calls
@@ -251,6 +296,16 @@ async function syncRegistry(opts, kitId) {
           " matched no components (possible Figma page rename).",
       );
     }
+  }
+
+  if (kitId === "dsKit") {
+    var allowedLoss = (process.env.SYNC_ALLOW_CATEGORY_LOSS || "")
+      .split(",")
+      .map(function (s) {
+        return s.trim();
+      })
+      .filter(Boolean);
+    assertNoCategoryMassLoss(before, after, { allow: allowedLoss });
   }
 
   // Meta Kit: preserve hand-curated `templates` section across resync (Task 2.3).
@@ -1030,4 +1085,6 @@ module.exports = {
   excludeDeniedPages: excludeDeniedPages,
   DENIED_PAGES: DENIED_PAGES,
   loadPageOverrides: loadPageOverrides,
+  categoryCounts: categoryCounts,
+  assertNoCategoryMassLoss: assertNoCategoryMassLoss,
 };
