@@ -273,3 +273,31 @@ test("mergeIconSources: union of disjoint slugs", () => {
 test("mergeIconSources: both empty → empty icons", () => {
   assert.deepEqual(mergeIconSources(null, null).icons, {});
 });
+
+test("resilience: mass category-loss throws instead of emitting a near-empty icons.json", () => {
+  const icons = {};
+  const comps = {};
+  for (let i = 0; i < 12; i++) {
+    icons["icon-" + i] = { viewBox: "0 0 24 24", body: "<path/>" };
+    comps["icon-" + i] = {
+      key: "k" + i,
+      nodeId: i + ":0",
+      category: "DS Icons",
+    };
+  }
+  const src2 = { _schema_version: 1, icons };
+  assert.throws(
+    () =>
+      deriveIcons(
+        src2,
+        { components: comps },
+        { Common: [] },
+        {
+          curatedSlugs: new Set(),
+          logger: { warn: () => {} },
+        },
+      ),
+    /mass category-loss/,
+    "12 of 12 skipped must fail loud in resilience mode",
+  );
+});
