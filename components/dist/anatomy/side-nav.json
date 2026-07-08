@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "side-nav",
   "kit": "dskit",
-  "synced_at": "2026-07-06T13:21:40.803Z",
+  "synced_at": "2026-07-08T14:07:52.886Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "13599:20120",
@@ -10,8 +10,8 @@
   },
   "quality": {
     "nodesTotal": 18,
-    "nodesNormalized": 7,
-    "ratio": 0.39,
+    "nodesNormalized": 8,
+    "ratio": 0.44,
     "degraded": [],
     "structuralVariants": [
       {
@@ -384,7 +384,7 @@
           {
             "name": "Button",
             "kind": "instance",
-            "unresolved": true,
+            "slug": "button",
             "props": {
               "Show leading icon": true,
               "Show label": true,

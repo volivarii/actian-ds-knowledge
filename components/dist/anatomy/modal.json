@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "modal",
   "kit": "dskit",
-  "synced_at": "2026-07-06T13:21:40.803Z",
+  "synced_at": "2026-07-08T14:07:52.886Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "14175:14426",
@@ -10,8 +10,8 @@
   },
   "quality": {
     "nodesTotal": 10,
-    "nodesNormalized": 5,
-    "ratio": 0.5,
+    "nodesNormalized": 10,
+    "ratio": 1,
     "degraded": [],
     "structuralVariants": [
       {
@@ -169,7 +169,7 @@
           {
             "name": "Button",
             "kind": "instance",
-            "unresolved": true,
+            "slug": "button",
             "props": {
               "Show leading icon": true,
               "Show label": true,
@@ -233,7 +233,7 @@
           {
             "name": "Rich text",
             "kind": "instance",
-            "unresolved": true,
+            "slug": "rich-text",
             "props": {
               "State": "Default"
             },
@@ -256,7 +256,7 @@
       {
         "name": "Button",
         "kind": "instance",
-        "unresolved": true,
+        "slug": "button",
         "props": {
           "Show leading icon": true,
           "Show label": true,
@@ -276,7 +276,8 @@
               "values": [
                 "450px confirm"
               ],
-              "radius": null
+              "radius": null,
+              "slug": "text-input"
             }
           ]
         }
@@ -334,7 +335,7 @@
           {
             "name": "Button",
             "kind": "instance",
-            "unresolved": true,
+            "slug": "button",
             "props": {
               "Show label": true,
               "Label": "Cancel",
@@ -357,7 +358,7 @@
           {
             "name": "Button",
             "kind": "instance",
-            "unresolved": true,
+            "slug": "button",
             "props": {
               "Label": "Confirm",
               "Show label": true,

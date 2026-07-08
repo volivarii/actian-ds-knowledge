@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "popover",
   "kit": "dskit",
-  "synced_at": "2026-07-06T13:21:40.803Z",
+  "synced_at": "2026-07-08T14:07:52.886Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "14294:7345",
@@ -10,8 +10,8 @@
   },
   "quality": {
     "nodesTotal": 65,
-    "nodesNormalized": 30,
-    "ratio": 0.46,
+    "nodesNormalized": 34,
+    "ratio": 0.52,
     "degraded": [],
     "structuralVariants": [
       {
@@ -1033,7 +1033,7 @@
                           {
                             "name": "Button",
                             "kind": "instance",
-                            "unresolved": true,
+                            "slug": "button",
                             "props": {
                               "Show leading icon": true,
                               "Show label": true,
@@ -1071,7 +1071,7 @@
                           {
                             "name": "Button",
                             "kind": "instance",
-                            "unresolved": true,
+                            "slug": "button",
                             "props": {
                               "Show leading icon": true,
                               "Show label": true,
@@ -1414,7 +1414,7 @@
           {
             "name": "✍️ Collapse-accordion",
             "kind": "instance",
-            "unresolved": true,
+            "slug": "collapse-accordion",
             "props": {
               "State": "Collapsed"
             },
@@ -1455,7 +1455,7 @@
           {
             "name": "Button",
             "kind": "instance",
-            "unresolved": true,
+            "slug": "button",
             "props": {
               "Show label": true,
               "Show trailing icon": false,

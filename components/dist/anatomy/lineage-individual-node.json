@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "lineage-individual-node",
   "kit": "dskit",
-  "synced_at": "2026-07-06T13:21:40.803Z",
+  "synced_at": "2026-07-08T14:07:52.886Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "14747:19902",
@@ -10,8 +10,8 @@
   },
   "quality": {
     "nodesTotal": 14,
-    "nodesNormalized": 8,
-    "ratio": 0.57,
+    "nodesNormalized": 11,
+    "ratio": 0.79,
     "degraded": [
       {
         "name": "Featured icon",
@@ -194,7 +194,11 @@
               {
                 "name": "Digram, Item types",
                 "kind": "instance",
-                "unresolved": true,
+                "slug": "digram-item-types",
+                "props": {
+                  "Item type": "Dataset",
+                  "Size": "Large"
+                },
                 "id": "14747:19908",
                 "appearance": {
                   "background": "#cfeafd",
@@ -365,7 +369,7 @@
               {
                 "name": "✍️ Tag, Default",
                 "kind": "instance",
-                "unresolved": true,
+                "slug": "tag-default",
                 "props": {
                   "Leading icon show": true,
                   "Trailing icon show": false,
@@ -426,7 +430,7 @@
               {
                 "name": "Button",
                 "kind": "instance",
-                "unresolved": true,
+                "slug": "button",
                 "props": {
                   "Show label": true,
                   "Show trailing icon": false,
