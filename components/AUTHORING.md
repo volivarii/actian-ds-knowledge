@@ -106,7 +106,10 @@ page rename that the override config does not yet cover), the sync fails loud
 `icons.json`. Fix the page category or add the page to
 `category-page-overrides.json` and re-run. An intentional category removal is
 acknowledged with the `SYNC_ALLOW_CATEGORY_LOSS` env var (comma-separated
-category names).
+category names). That env var only clears the registry-root guard; the
+`deriveIcons` icon tripwire has no env hatch, so an intentional removal of the
+`Icons` category also requires emptying `components/src/icons-svg.json` (which
+drops the icon skip-count to zero, so the tripwire passes).
 
 ### Why this isn't Figma's native Page Sections feature
 
