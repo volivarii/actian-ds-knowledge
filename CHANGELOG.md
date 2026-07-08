@@ -19,6 +19,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- Knowledge graph now models **component composition**: registry `nestedComponents` is projected as directed `composed_of` edges (component to component, parent as source, nested child as target), declared in `schemas/graph.json` and `graph/vocabulary.json` (`source: [component]`, `target: [component]`). 336 edges, taking the graph to 843 nodes / 988 edges. Icons are included on purpose (nearly every component nests them); a "real composites only" view is a one-hop consumer filter on the target's `in_category` edge, not a derive-time exclusion. A `composition_edges` count is surfaced in `quality-report.json`. Purely additive: no `context.jsonld`, manifest, or workflow change, existing nodes and edges unchanged, and the re-derive is byte-identical. Slice 2b of Phase 2 identity; endpoints resolve by slug (the graph's node identity), so a child slug that collides across kits binds to the first-wins node until slice-3 key identity disambiguates. ([#379])
 - Page-level category overrides (`components/src/category-page-overrides.json`)
   so churned/self-hosting icon page names (`DS Icons`, `DS Icons: replacement`)
   resolve to canonical categories, and staging pages are excluded from the sync. ([#375])
@@ -173,6 +174,7 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#379]: https://github.com/volivarii/actian-ds-knowledge/pull/379
 [#377]: https://github.com/volivarii/actian-ds-knowledge/pull/377
 [#375]: https://github.com/volivarii/actian-ds-knowledge/pull/375
 [#373]: https://github.com/volivarii/actian-ds-knowledge/pull/373

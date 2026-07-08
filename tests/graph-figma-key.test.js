@@ -110,3 +110,52 @@ test("graph/dist/quality-report.json reports the slug_collisions count (=22)", f
     "value",
   ]);
 });
+
+// Slice 2b: the shipped graph carries component->component composition edges
+// projected from registry nestedComponents, and they include real (non-icon)
+// composites, not just component->icon nesting.
+test("graph/dist/graph.json: composed_of edges are component->component, no self-loops, include non-icon composites", function () {
+  var g = readJSON("graph/dist/graph.json");
+  var comp = g.edges.filter(function (e) {
+    return e.type === "composed_of";
+  });
+  assert.ok(comp.length > 0, "composed_of edges present");
+  comp.forEach(function (e) {
+    assert.ok(
+      e.source.startsWith("component:") && e.target.startsWith("component:"),
+    );
+    assert.notEqual(e.source, e.target);
+    assert.deepEqual(Object.keys(e).sort(), ["source", "target", "type"]);
+  });
+  var iconTargets = new Set(
+    g.edges
+      .filter(function (e) {
+        return e.type === "in_category" && e.target === "category:icons";
+      })
+      .map(function (e) {
+        return e.source;
+      }),
+  );
+  assert.ok(
+    comp.some(function (e) {
+      return !iconTargets.has(e.target);
+    }),
+    "at least one non-icon composite present",
+  );
+});
+
+// The composition_edges metric in the shipped quality-report equals the actual
+// composed_of edge count in the shipped graph (freshness lock).
+test("graph/dist/quality-report.json: composition_edges count matches graph.json", function () {
+  var g = readJSON("graph/dist/graph.json");
+  var expected = g.edges.filter(function (e) {
+    return e.type === "composed_of";
+  }).length;
+  var qr = readJSON("graph/dist/quality-report.json");
+  var m = (Array.isArray(qr) ? qr : qr.metrics || []).find(function (x) {
+    return x.metric === "composition_edges";
+  });
+  assert.ok(m, "composition_edges metric present");
+  assert.equal(m.dimension, "connectivity");
+  assert.equal(m.value, expected);
+});
