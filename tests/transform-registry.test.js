@@ -223,3 +223,30 @@ test("pageOverrides: a malformed exclude (non-array) is tolerated, not a crash",
   var reg = T(input); // must not throw on the non-array exclude
   assert.equal(reg.components["add"].category, "Icons");
 });
+
+test("pageOverrides: resolves via the component's own page name when the canvas name diverges (plane-B fallback)", function () {
+  var input = {
+    library: "dsKit",
+    fileKey: "k",
+    componentSets: [],
+    componentSetNodes: {},
+    standalones: [
+      {
+        name: "add",
+        key: "kADD",
+        node_id: "1:1",
+        description: "",
+        // Pages panel canvas is "DS Icons", but the icon component reports "Icons".
+        containing_frame: { pageName: "✍️ Icons", name: "Actual icons" },
+      },
+    ],
+    standaloneNodes: { "1:1": { document: { type: "COMPONENT" } } },
+    documentChildren: [{ type: "CANVAS", name: "✍️ DS Icons" }],
+    pageOverrides: {
+      overrides: { Icons: "Icons", "DS Icons": "Icons" },
+      exclude: [],
+    },
+  };
+  var reg = T(input);
+  assert.equal(reg.components["add"].category, "Icons");
+});
