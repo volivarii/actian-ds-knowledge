@@ -125,3 +125,47 @@ test("populateNestedComponents: a nested instance unknown to both nodeId and the
   assert.ok(!slugs.includes(undefined)); // no junk entry emitted
   assert.ok(slugs.includes("tag-catalog") && slugs.includes("arrow-down")); // known ones still resolve
 });
+
+test("pageOverrides: an icon on a churned page gets the canonical category; a staging page is excluded", function () {
+  var input = {
+    library: "dsKit",
+    fileKey: "k",
+    componentSets: [],
+    componentSetNodes: {},
+    standalones: [
+      {
+        name: "add",
+        key: "kADD",
+        node_id: "1:1",
+        description: "",
+        containing_frame: { pageName: "✍️ DS Icons", name: "Actual icons" },
+      },
+      {
+        name: "wip-thing",
+        key: "kWIP",
+        node_id: "2:2",
+        description: "",
+        containing_frame: {
+          pageName: "✍️ DS Icons: replacement",
+          name: "Actual icons",
+        },
+      },
+    ],
+    standaloneNodes: {
+      "1:1": { document: { type: "COMPONENT" } },
+      "2:2": { document: { type: "COMPONENT" } },
+    },
+    documentChildren: [
+      { type: "CANVAS", name: "✍️ DS Icons" },
+      { type: "CANVAS", name: "✍️ DS Icons: replacement" },
+    ],
+    pageOverrides: {
+      overrides: { "DS Icons": "Icons" },
+      exclude: ["DS Icons: replacement"],
+    },
+  };
+  var reg = T(input);
+  assert.equal(reg.components["add"].category, "Icons");
+  assert.equal(reg.components["wip-thing"], undefined);
+  assert.equal(reg.componentCount, 1);
+});

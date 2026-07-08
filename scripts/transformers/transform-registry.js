@@ -205,6 +205,12 @@ function transformRegistry(input) {
   var standalones = input.standalones || [];
   var standaloneNodes = input.standaloneNodes || {};
   var documentChildren = input.documentChildren || null;
+  var pageOverridesCfg = input.pageOverrides || {};
+  var pageOverridesMap = pageOverridesCfg.overrides || {};
+  var excludeSet = {};
+  (pageOverridesCfg.exclude || []).forEach(function (name) {
+    excludeSet[name] = true;
+  });
   // Phase 5 (knowledge v0.11.0): `input.guidelinesSlugSet` was retired
   // along with the `guidelinesFile` registry field — consumers now resolve
   // per-component guideline docs by slug via the components.guidelineDoc
@@ -244,7 +250,7 @@ function transformRegistry(input) {
   // the caller wants them.
   var categoryMap = null;
   if (documentChildren) {
-    var inference = inferCategoryMap(documentChildren);
+    var inference = inferCategoryMap(documentChildren, pageOverridesMap);
     categoryMap = inference.map;
     if (typeof input.onWarnings === "function") {
       input.onWarnings(inference.warnings);
@@ -309,6 +315,7 @@ function transformRegistry(input) {
     var slug = slugify(meta.name);
     var lookup = lookupCategoryEntry(meta);
     collectComponentWarning(lookup, slug);
+    if (excludeSet[lookup.cleanPage]) return; // staging / not-ready page
     if (isOnCategoryHeaderPage(lookup)) return;
     var entry = buildEntry(
       meta,
@@ -330,6 +337,7 @@ function transformRegistry(input) {
     if (slug in registry.components) return;
     var lookup = lookupCategoryEntry(meta);
     collectComponentWarning(lookup, slug);
+    if (excludeSet[lookup.cleanPage]) return; // staging / not-ready page
     if (isOnCategoryHeaderPage(lookup)) return;
     var entry = buildEntry(
       meta,
