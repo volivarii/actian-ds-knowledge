@@ -84,6 +84,13 @@
     "severity": "info"
   },
   {
+    "dimension": "connectivity",
+    "metric": "pattern_component_edges",
+    "value": 90,
+    "timestamp": null,
+    "severity": "info"
+  },
+  {
     "dimension": "identity",
     "metric": "slug_collisions",
     "value": 22,

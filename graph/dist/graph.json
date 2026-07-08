@@ -12338,6 +12338,996 @@
         "deriver": "derive-graph.js",
         "method": "term-slug-match"
       }
+    },
+    {
+      "source": "pattern:access-request-management",
+      "target": "component:button",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:access-request-management",
+      "target": "component:table",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:access-request-management",
+      "target": "component:tabs",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:access-request-management",
+      "target": "component:tag-status",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:access-request-workflow",
+      "target": "component:button",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:access-request-workflow",
+      "target": "component:dropdown-select-default",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:access-request-workflow",
+      "target": "component:tag-status",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:access-request-workflow",
+      "target": "component:text-input",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:activity-timeline",
+      "target": "component:avatar",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:ai-analyst-panel",
+      "target": "component:chat-with-ai-steward",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:ai-analyst-panel",
+      "target": "component:drawer-side-panel",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:ai-analyst-panel",
+      "target": "component:text-input",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:analytics-dashboard",
+      "target": "component:bar-graph",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:analytics-dashboard",
+      "target": "component:card-for-items",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:analytics-dashboard",
+      "target": "component:line-graph",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:analytics-dashboard",
+      "target": "component:page-header",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:ask-ai",
+      "target": "component:chat-with-ai-steward",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:ask-ai",
+      "target": "component:search",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:asset-detail-360",
+      "target": "component:breadcrumbs",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:asset-detail-360",
+      "target": "component:page-header",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:asset-detail-360",
+      "target": "component:side-nav",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:asset-detail-360",
+      "target": "component:tabs",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:bulk-edit",
+      "target": "component:button",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:bulk-edit",
+      "target": "component:checkbox-with-label",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:bulk-edit",
+      "target": "component:modal",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:bulk-edit",
+      "target": "component:table",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:data-profiling-sampling",
+      "target": "component:bar-graph",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:data-profiling-sampling",
+      "target": "component:line-graph",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:data-profiling-sampling",
+      "target": "component:table",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:data-steward-agent-panel",
+      "target": "component:button",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:data-steward-agent-panel",
+      "target": "component:chat-with-ai-steward",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:data-steward-agent-panel",
+      "target": "component:confirmation",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:data-steward-agent-panel",
+      "target": "component:drawer-side-panel",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:discussion-threads",
+      "target": "component:avatar",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:discussion-threads",
+      "target": "component:button",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:discussion-threads",
+      "target": "component:rich-text",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:discussion-threads",
+      "target": "component:text-input",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:documentation-completion-dashboard",
+      "target": "component:card-for-items",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:documentation-completion-dashboard",
+      "target": "component:progress-bar-small",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:documentation-completion-dashboard",
+      "target": "component:table",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:federated-catalog",
+      "target": "component:search",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:federated-catalog",
+      "target": "component:search-filters",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:federated-catalog",
+      "target": "component:table",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:filter-groups-form",
+      "target": "component:button",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:filter-groups-form",
+      "target": "component:collapse-accordion",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:filter-groups-form",
+      "target": "component:page-header",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:filter-groups-form",
+      "target": "component:sticky-footer",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:filter-groups-form",
+      "target": "component:text-input",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:import-wizard",
+      "target": "component:button",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:import-wizard",
+      "target": "component:dropdown-select-default",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:import-wizard",
+      "target": "component:stepper",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:import-wizard",
+      "target": "component:text-input",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:interactive-graph",
+      "target": "component:lineage-connecting-line",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:interactive-graph",
+      "target": "component:lineage-grouped-node",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:interactive-graph",
+      "target": "component:lineage-individual-node",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:lineage-graph",
+      "target": "component:lineage-connecting-line",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:lineage-graph",
+      "target": "component:lineage-grouped-node",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:lineage-graph",
+      "target": "component:lineage-individual-node",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:marketplace-browsing",
+      "target": "component:card-for-items",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:marketplace-browsing",
+      "target": "component:global-header",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:marketplace-browsing",
+      "target": "component:search",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:marketplace-browsing",
+      "target": "component:search-filters",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:metamodel-designer",
+      "target": "component:button",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:metamodel-designer",
+      "target": "component:metamodel-widget",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:metamodel-designer",
+      "target": "component:text-input",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:notification-system",
+      "target": "component:global-header",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:notification-system",
+      "target": "component:notification",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:notification-system",
+      "target": "component:notification-dropdown",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:right-sliding-drawer",
+      "target": "component:button",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:right-sliding-drawer",
+      "target": "component:drawer-side-panel",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:search-filtered-table",
+      "target": "component:search",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:search-filtered-table",
+      "target": "component:search-filters",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:search-filtered-table",
+      "target": "component:table",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:smart-suggestions",
+      "target": "component:badge",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:smart-suggestions",
+      "target": "component:button",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:smart-suggestions",
+      "target": "component:tabs",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:suggestion-workflow",
+      "target": "component:button",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:suggestion-workflow",
+      "target": "component:confirmation",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:suggestion-workflow",
+      "target": "component:tag-status",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:suggestion-workflow",
+      "target": "component:text-input",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:table-with-tabs",
+      "target": "component:page-header",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:table-with-tabs",
+      "target": "component:table",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:table-with-tabs",
+      "target": "component:tabs",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:template-builder",
+      "target": "component:button",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:template-builder",
+      "target": "component:metamodel-widget",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:template-builder",
+      "target": "component:text-input",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:topic-browse",
+      "target": "component:card-for-items",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:topic-browse",
+      "target": "component:search",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:type-picker-grid",
+      "target": "component:card-for-items",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "source": "pattern:type-picker-grid",
+      "target": "component:modal",
+      "type": "uses_component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
     }
   ]
 }
