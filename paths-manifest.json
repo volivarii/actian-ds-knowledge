@@ -140,6 +140,12 @@
       "origin": "human",
       "description": "Curated slug -> category display-name overrides consumed by scripts/graph/derive-graph.js when a registry component carries no category (Figma frames on a category-header page). Registry wins when present; entries self-retire after the Figma page reorg + re-sync. Provenance manual-override."
     },
+    "components.categoryPageOverrides": {
+      "path": "components/src/category-page-overrides.json",
+      "type": "json",
+      "origin": "human",
+      "description": "Page clean-name -> canonical category overrides plus a staging-exclude list, consumed by scripts/transformers/transform-categories.js during the Figma sync when a page's own name does not encode its category (a WIP-renamed or self-hosting icons page). Applied first in inferCategoryMap; self-retiring after the Figma pages are reorganized and a re-sync restores the category. Provenance manual-override."
+    },
     "components.guidelineDoc.alert-banner": {
       "path": "components/dist/guidelines/alert-banner.json",
       "type": "json",
