@@ -88,8 +88,9 @@ function extractSectionName(rawMarker) {
     .join(" ");
 }
 
-function inferCategoryMap(documentChildren) {
+function inferCategoryMap(documentChildren, pageOverrides) {
   var map = {};
+  var overrides = pageOverrides || {};
   var warnings = [];
   var seenCategories = {};
   var inComponentsSection = false;
@@ -105,6 +106,25 @@ function inferCategoryMap(documentChildren) {
     var rawName = String(c.name == null ? "" : c.name);
     var trimmed = rawName.trim();
 
+    // First-checked, unconditional page-level override (components/src/
+    // category-page-overrides.json). Normalizes a churned/self-hosting page
+    // (e.g. "DS Icons" -> "Icons") to a canonical category regardless of
+    // section, order, or a missing category header. Both planes still join on
+    // the real page clean-name; only the category value is normalized.
+    var overrideParsed = statusParser.extractStatus(rawName);
+    if (
+      Object.prototype.hasOwnProperty.call(overrides, overrideParsed.cleanName)
+    ) {
+      var overrideCat = overrides[overrideParsed.cleanName];
+      map[overrideParsed.cleanName] = {
+        section: currentSection,
+        category: overrideCat,
+        status: overrideParsed.status,
+      };
+      seenCategories[overrideCat] = true;
+      continue;
+    }
+
     if (isTopLevelMarker(rawName)) {
       inComponentsSection = trimmed.indexOf("COMPONENTS") >= 0;
       currentSection = extractSectionName(trimmed);
@@ -117,12 +137,15 @@ function inferCategoryMap(documentChildren) {
       // `category` (= page clean-name) and a `section` (= top-level marker).
       // Previously category was always null for these — leaving 234 icons +
       // brand items uncategorized and unable to render in docs sidebar IA.
-      var parsedNon = statusParser.extractStatus(rawName);
-      map[parsedNon.cleanName || trimmed] = {
-        section: currentSection,
-        category: parsedNon.cleanName || trimmed,
-        status: parsedNon.status,
-      };
+      // Only add if currentSection is set (we've seen a top-level marker).
+      if (currentSection) {
+        var parsedNon = statusParser.extractStatus(rawName);
+        map[parsedNon.cleanName || trimmed] = {
+          section: currentSection,
+          category: parsedNon.cleanName || trimmed,
+          status: parsedNon.status,
+        };
+      }
       continue;
     }
 

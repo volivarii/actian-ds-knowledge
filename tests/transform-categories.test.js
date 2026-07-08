@@ -1828,3 +1828,25 @@ test("transform-registry — same-slug collision: header-page duplicate never cl
     "warning cites the category header page",
   );
 });
+
+test("transform-categories — page override maps a churned icon page clean-name to canonical category", function () {
+  var children = [
+    canvas("✍️ DS Icons"),
+    canvas("🧱 COMPONENTS"),
+    canvas("Feedback"),
+    canvas("     ✍️ Alert (banner)"),
+  ];
+  var overrides = { "DS Icons": "Icons", "Alert (banner)": "Feedback" };
+  var result = inferCategoryMap(children, overrides);
+
+  // Self-hosting icons page: override wins regardless of section/order.
+  assert.equal(result.map["DS Icons"].category, "Icons");
+  assert.equal(result.map["DS Icons"].status, "in-progress");
+
+  // A member-style page also resolvable via override (Alert banner casualty).
+  assert.equal(result.map["Alert (banner)"].category, "Feedback");
+
+  // No override arg -> unchanged behavior (backward compatible).
+  var plain = inferCategoryMap(children);
+  assert.equal(plain.map["DS Icons"], undefined);
+});

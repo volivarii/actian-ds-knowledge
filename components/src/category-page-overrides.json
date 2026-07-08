@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "description": "Page clean-name -> canonical category, applied first in inferCategoryMap. Patches the positional page-naming convention when a page's own name does not encode its category (a WIP-renamed or self-hosting icons page). Keys are clean-names (status emoji stripped) so they survive the emoji changing. `exclude` drops a page's components entirely (staging / not-ready). Self-retiring: delete an entry once Figma encodes the category natively and a re-sync restores it.",
+    "provenance": "manual-override",
+    "added": "2026-07-08",
+    "remove_when": "Figma re-encodes these pages so the sync attributes their category natively; a re-sync then restores it and the entry can be deleted."
+  },
+  "overrides": {
+    "DS Icons": "Icons",
+    "Alert (banner)": "Feedback"
+  },
+  "exclude": ["DS Icons: replacement"]
+}
