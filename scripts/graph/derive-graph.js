@@ -71,6 +71,33 @@ function collectComponentsAndCategories(g, registries, categoryOverrides) {
   });
 }
 
+// Component composition: project each registry component's nestedComponents
+// (resolved within the same kit upstream) as directed composed_of edges
+// (parent -> child). Both endpoints must already be component nodes, so this
+// MUST run after collectComponentsAndCategories. Self-loops are skipped.
+// Unresolved / cross-kit refs are dropped (they have no node). Icons are
+// included on purpose: a "real composites only" view is a consumer filter on
+// the target's in_category:category:icons edge, not a derive-time exclusion.
+function collectComponentComposition(g, registries) {
+  registries.forEach(function (reg) {
+    var comps = (reg && reg.components) || {};
+    Object.keys(comps).forEach(function (parentSlug) {
+      var parentId = M.nodeId("component", parentSlug);
+      if (!g.hasNode(parentId)) return;
+      var nested =
+        (comps[parentSlug] && comps[parentSlug].nestedComponents) || [];
+      nested.forEach(function (child) {
+        var childSlug = child && child.slug;
+        if (!childSlug) return;
+        var childId = M.nodeId("component", childSlug);
+        if (childId === parentId) return; // self-loop guard
+        if (!g.hasNode(childId)) return; // endpoint guard (unresolved / cross-kit)
+        g.addEdge({ source: parentId, target: childId, type: "composed_of" });
+      });
+    });
+  });
+}
+
 // Cross-registry slug collisions: a slug present in >1 registry with DISTINCT
 // keys is silently tie-broken (first-wins) into one graph node. Record the drop
 // (and the disambiguating keys) so the identity ambiguity is legible.
@@ -474,6 +501,7 @@ function derive() {
     return x.reg;
   });
   collectComponentsAndCategories(g, registries, readCategoryOverrides());
+  collectComponentComposition(g, registries);
   if (fs.existsSync(path.join(ROOT, "accessibility/dist/a11y-index.json"))) {
     collectA11yCriteria(g, readJSON("accessibility/dist/a11y-index.json"));
   }
@@ -564,6 +592,7 @@ module.exports = {
   derive: derive,
   bundleToTree: bundleToTree,
   collectComponentsAndCategories: collectComponentsAndCategories,
+  collectComponentComposition: collectComponentComposition,
   detectSlugCollisions: detectSlugCollisions,
   collectA11yCriteria: collectA11yCriteria,
   collectFoundationSections: collectFoundationSections,

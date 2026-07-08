@@ -230,7 +230,7 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
     fs.readFileSync(path.join(ROOT, "graph/dist/graph.json"), "utf8"),
   );
   assert.equal(ld["@graph"].length, g.nodes.length + g.edges.length);
-  assert.equal(ld["@graph"].length, 843 + 652);
+  assert.equal(ld["@graph"].length, 843 + 988);
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {
