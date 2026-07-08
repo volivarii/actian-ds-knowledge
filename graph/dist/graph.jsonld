@@ -13079,6 +13079,12 @@
       "@type": "Edge",
       "edgeType": "related",
       "source": "content:forms",
+      "target": "component:segmented-control"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "related",
+      "source": "content:forms",
       "target": "component:text-input"
     },
     {
@@ -13121,7 +13127,19 @@
       "@type": "Edge",
       "edgeType": "related",
       "source": "content:notifications-and-messaging",
+      "target": "component:modal"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "related",
+      "source": "content:notifications-and-messaging",
       "target": "component:notification"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "related",
+      "source": "content:notifications-and-messaging",
+      "target": "component:notification-dropdown"
     },
     {
       "@type": "Edge",
