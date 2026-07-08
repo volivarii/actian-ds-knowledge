@@ -30,16 +30,16 @@ function primaryGroup(iconGroups, slug) {
 // for stable, idempotent output.
 //
 // Slug validity is still the gate, but how a violation is handled depends on the
-// slug's provenance (opts.curatedSlugs — the set of slugs that came from the
-// hand-curated icons-svg.json):
-//   - A CURATED-only slug whose Figma component was renamed / removed /
-//     recategorized is a dangling override, not a pipeline bug. WARN + SKIP it
-//     (drop from output) so one stale icon can't fail the whole multi-domain
-//     sync. The fix is to remove it from components/src/icons-svg.json.
-//   - Any other invalid slug (auto-exported, i.e. registry-derived) is a genuine
-//     inconsistency → THROW, loud as before.
-// Without opts.curatedSlugs, every invalid slug throws (back-compat for the bare
-// deriveIcons(src, registry, iconGroups) call).
+// mode (opts.curatedSlugs, passed by the sync):
+//   - RESILIENCE MODE (curatedSlugs provided, i.e. the sync path): ANY invalid
+//     slug is a Figma-side change (rename / removal / recategorization), not a
+//     pipeline bug. WARN + SKIP it (drop from output) so one stale icon can't fail
+//     the whole multi-domain sync. Covers a dangling curated override AND an
+//     auto-exported slug the registry no longer categorizes as Icons; the warning
+//     distinguishes the two so the operator knows where to look.
+//   - STRICT MODE (no opts.curatedSlugs, the bare deriveIcons(src, registry,
+//     iconGroups) call): every invalid slug THROWS, loud, so direct callers/tests
+//     get strict validation.
 function deriveIcons(src, registry, iconGroups, opts) {
   opts = opts || {};
   const logger = opts.logger || console;
@@ -59,10 +59,20 @@ function deriveIcons(src, registry, iconGroups, opts) {
         ? `is category "${reg.category}", expected "Icons"`
         : null;
     if (problem) {
-      if (curatedSlugs && curatedSlugs.has(slug)) {
+      // Resilience mode (the sync passes curatedSlugs): an invalid slug is a
+      // Figma-side change (rename / removal / recategorization), not a pipeline
+      // bug, so WARN + SKIP it (drop from output) rather than fail the whole
+      // multi-domain sync. This holds for BOTH a dangling curated override and an
+      // auto-exported slug the registry no longer categorizes as Icons: one stray
+      // icon must never block unrelated anatomy/registry/token changes. The bare
+      // 3-arg call (no curatedSlugs) has no resilience mode and still throws, so
+      // direct callers/tests get loud validation.
+      if (curatedSlugs) {
+        const curatedFix = curatedSlugs.has(slug)
+          ? `Its Figma component was likely renamed/removed; remove it from components/src/icons-svg.json.`
+          : `Its Figma component was likely renamed/removed/recategorized; it returns automatically once Figma is corrected.`;
         logger.warn(
-          `icons-svg: skipping dangling curated slug "${slug}" — ${problem}. ` +
-            `Its Figma component was likely renamed/removed; remove it from components/src/icons-svg.json.`,
+          `icons-svg: skipping slug "${slug}": ${problem}. ` + curatedFix,
         );
         continue;
       }
