@@ -423,6 +423,49 @@ function collectAppContext(g, ac) {
     });
   });
 }
+
+// Pattern -> component bridge: authored `components` on a UX pattern (app-context
+// dist) become directed uses_component edges (pattern -> component). Separate from
+// collectAppContext on purpose, so the app-context isolation tests stay put; runs
+// after collectAppContext (ux_pattern nodes) and collectComponentsAndCategories
+// (component nodes). Unresolved / cross-kit slugs are dropped by the hasNode guard.
+function collectPatternComponents(g, ac) {
+  var patterns = (ac && ac.patterns) || {};
+  Object.keys(patterns).forEach(function (slug) {
+    var comps = (patterns[slug] && patterns[slug].components) || [];
+    if (!Array.isArray(comps) || comps.length === 0) return;
+    var sourceId = M.nodeId("ux_pattern", slug);
+    if (!g.hasNode(sourceId)) return;
+    comps.forEach(function (compSlug) {
+      if (!compSlug) return;
+      var targetId = M.nodeId("component", compSlug);
+      if (!g.hasNode(targetId)) {
+        // components[] is hand-authored (unlike machine-sourced composed_of), so
+        // a typo or display-name would otherwise vanish with no signal. Warn on
+        // the drop so an authoring mistake surfaces in the derive/sync log.
+        console.warn(
+          "derive-graph: ux_pattern '" +
+            slug +
+            "' components[] references unknown component '" +
+            compSlug +
+            "' (edge dropped; check the slug against the registry keys)",
+        );
+        return;
+      }
+      g.addEdge({
+        source: sourceId,
+        target: targetId,
+        type: "uses_component",
+        confidence: "asserted",
+        provenance: {
+          source_file: APP_CONTEXT_SOURCE,
+          deriver: "derive-graph.js",
+          method: "patterns.components",
+        },
+      });
+    });
+  });
+}
 function readContentEntries() {
   var dir = path.join(ROOT, "content", "src");
   if (!fs.existsSync(dir)) return [];
@@ -545,7 +588,9 @@ function derive() {
     );
   }
   if (fs.existsSync(path.join(ROOT, "app-context/dist/app-context.json"))) {
-    collectAppContext(g, readJSON("app-context/dist/app-context.json"));
+    var acData = readJSON("app-context/dist/app-context.json");
+    collectAppContext(g, acData);
+    collectPatternComponents(g, acData);
   }
   var out = g.build();
   var outPath = path.join(ROOT, "graph", "dist", "graph.json");
@@ -606,6 +651,7 @@ module.exports = {
   collectRelated: collectRelated,
   collectFoundationChildEdges: collectFoundationChildEdges,
   collectAppContext: collectAppContext,
+  collectPatternComponents: collectPatternComponents,
   readJSON: readJSON,
   ROOT: ROOT,
 };

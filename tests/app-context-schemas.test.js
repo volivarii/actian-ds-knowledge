@@ -192,3 +192,39 @@ test("schemas reject unknown fields (additionalProperties:false)", () => {
     assert.equal(v(rec), false, `${file} must reject unknown field`);
   }
 });
+
+test("app-context-pattern schema: accepts optional components[]; still rejects unknown keys", () => {
+  const schema = load("app-context-pattern.json");
+  const v = new Ajv().compile(schema);
+  assert.ok(
+    v({
+      _schema_version: 1,
+      slug: "x",
+      label: "X",
+      apps: ["studio"],
+      components: ["table", "tabs"],
+    }),
+    "pattern with components[] is valid",
+  );
+  assert.ok(
+    v({ _schema_version: 1, slug: "x", label: "X", apps: ["studio"] }),
+    "pattern without components[] is still valid (optional)",
+  );
+  assert.ok(
+    !v({
+      _schema_version: 1,
+      slug: "x",
+      label: "X",
+      apps: ["studio"],
+      bogus: 1,
+    }),
+    "unknown key still rejected",
+  );
+});
+
+test("app-context.json $defs.pattern: accepts optional components[]", () => {
+  const schema = load("app-context.json");
+  const pat = schema.$defs.pattern;
+  assert.ok(pat.properties.components, "$defs.pattern declares components");
+  assert.equal(pat.additionalProperties, false);
+});

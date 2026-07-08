@@ -159,3 +159,41 @@ test("graph/dist/quality-report.json: composition_edges count matches graph.json
   assert.equal(m.dimension, "connectivity");
   assert.equal(m.value, expected);
 });
+
+// Bridge: the shipped graph carries authored ux_pattern -> component edges.
+test("graph/dist/graph.json: uses_component edges are ux_pattern->component, asserted, with provenance", function () {
+  var g = readJSON("graph/dist/graph.json");
+  var u = g.edges.filter(function (e) {
+    return e.type === "uses_component";
+  });
+  assert.ok(u.length > 0, "uses_component edges present");
+  u.forEach(function (e) {
+    assert.ok(e.source.startsWith("pattern:"));
+    assert.ok(e.target.startsWith("component:"));
+    assert.equal(e.confidence, "asserted");
+    assert.equal(e.provenance.method, "patterns.components");
+  });
+  assert.ok(
+    u.some(function (e) {
+      return (
+        e.source === "pattern:search-filtered-table" &&
+        e.target === "component:table"
+      );
+    }),
+    "known mapping present",
+  );
+});
+
+test("graph/dist/quality-report.json: pattern_component_edges matches graph.json", function () {
+  var g = readJSON("graph/dist/graph.json");
+  var expected = g.edges.filter(function (e) {
+    return e.type === "uses_component";
+  }).length;
+  var qr = readJSON("graph/dist/quality-report.json");
+  var m = (Array.isArray(qr) ? qr : qr.metrics || []).find(function (x) {
+    return x.metric === "pattern_component_edges";
+  });
+  assert.ok(m, "pattern_component_edges metric present");
+  assert.equal(m.dimension, "connectivity");
+  assert.equal(m.value, expected);
+});

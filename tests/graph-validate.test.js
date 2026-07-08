@@ -395,3 +395,56 @@ test("buildQualityReport: surfaces a composition_edges connectivity count (defau
   });
   assert.equal(noField.value, 0);
 });
+
+test("analyze + buildQualityReport: pattern_component_edges counted and surfaced (default 0)", function () {
+  var vocab = {
+    edgeTypes: {
+      uses_component: { source: ["ux_pattern"], target: ["component"] },
+    },
+  };
+  var graph = {
+    nodes: [
+      { id: "pattern:x", type: "ux_pattern", title: "x" },
+      { id: "component:table", type: "component", title: "t" },
+    ],
+    edges: [
+      {
+        source: "pattern:x",
+        target: "component:table",
+        type: "uses_component",
+      },
+    ],
+  };
+  assert.equal(V.analyze(graph, vocab).patternComponentEdges, 1);
+  var base = {
+    dangling: [],
+    typeViolations: [],
+    coverage: {
+      categoriesWithoutA11y: [],
+      criteriaUnreferenced: [],
+      componentsWithoutCategory: [],
+    },
+    orphans: [],
+  };
+  var coverage = {
+    byKind: {
+      a11y_ref: { authored: 0, emitted: 0, ratio: 1 },
+      foundations_ref: { authored: 0, emitted: 0, ratio: 1 },
+      motion_ref: { authored: 0, emitted: 0, ratio: 1 },
+    },
+    overall: { authored: 0, emitted: 0, ratio: 1 },
+  };
+  var withCount = V.buildQualityReport(
+    Object.assign({}, base, { patternComponentEdges: 4 }),
+    coverage,
+    0,
+  ).find(function (e) {
+    return e.metric === "pattern_component_edges";
+  });
+  assert.equal(withCount.value, 4);
+  assert.equal(withCount.dimension, "connectivity");
+  var dflt = V.buildQualityReport(base, coverage, 0).find(function (e) {
+    return e.metric === "pattern_component_edges";
+  });
+  assert.equal(dflt.value, 0);
+});

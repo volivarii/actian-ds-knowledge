@@ -13398,6 +13398,1122 @@
         "deriver": "derive-graph.js",
         "method": "term-slug-match"
       }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:access-request-management",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:access-request-management",
+      "target": "component:table",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:access-request-management",
+      "target": "component:tabs",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:access-request-management",
+      "target": "component:tag-status",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:access-request-workflow",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:access-request-workflow",
+      "target": "component:dropdown-select-default",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:access-request-workflow",
+      "target": "component:tag-status",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:access-request-workflow",
+      "target": "component:text-input",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:activity-timeline",
+      "target": "component:avatar",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:ai-analyst-panel",
+      "target": "component:chat-with-ai-steward",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:ai-analyst-panel",
+      "target": "component:drawer-side-panel",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:ai-analyst-panel",
+      "target": "component:text-input",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:analytics-dashboard",
+      "target": "component:bar-graph",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:analytics-dashboard",
+      "target": "component:card-for-items",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:analytics-dashboard",
+      "target": "component:line-graph",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:analytics-dashboard",
+      "target": "component:page-header",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:ask-ai",
+      "target": "component:chat-with-ai-steward",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:ask-ai",
+      "target": "component:search",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:breadcrumbs",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:drawer-side-panel",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:page-header",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:side-nav",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:tabs",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:bulk-edit",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:bulk-edit",
+      "target": "component:checkbox-with-label",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:bulk-edit",
+      "target": "component:modal",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:bulk-edit",
+      "target": "component:table",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:data-profiling-sampling",
+      "target": "component:bar-graph",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:data-profiling-sampling",
+      "target": "component:line-graph",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:data-profiling-sampling",
+      "target": "component:table",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:data-steward-agent-panel",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:data-steward-agent-panel",
+      "target": "component:chat-with-ai-steward",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:data-steward-agent-panel",
+      "target": "component:confirmation",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:data-steward-agent-panel",
+      "target": "component:drawer-side-panel",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:discussion-threads",
+      "target": "component:avatar",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:discussion-threads",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:discussion-threads",
+      "target": "component:rich-text",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:discussion-threads",
+      "target": "component:text-input",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:documentation-completion-dashboard",
+      "target": "component:card-for-items",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:documentation-completion-dashboard",
+      "target": "component:progress-bar-small",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:documentation-completion-dashboard",
+      "target": "component:table",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:federated-catalog",
+      "target": "component:search",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:federated-catalog",
+      "target": "component:search-filters",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:federated-catalog",
+      "target": "component:table",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:filter-groups-form",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:filter-groups-form",
+      "target": "component:checkbox-with-label",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:filter-groups-form",
+      "target": "component:collapse-accordion",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:filter-groups-form",
+      "target": "component:page-header",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:filter-groups-form",
+      "target": "component:sticky-footer",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:filter-groups-form",
+      "target": "component:text-input",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:filter-groups-form",
+      "target": "component:toggle",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:import-wizard",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:import-wizard",
+      "target": "component:dropdown-select-default",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:import-wizard",
+      "target": "component:stepper",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:import-wizard",
+      "target": "component:text-input",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:interactive-graph",
+      "target": "component:lineage-connecting-line",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:interactive-graph",
+      "target": "component:lineage-grouped-node",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:interactive-graph",
+      "target": "component:lineage-individual-node",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:lineage-graph",
+      "target": "component:lineage-connecting-line",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:lineage-graph",
+      "target": "component:lineage-grouped-node",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:lineage-graph",
+      "target": "component:lineage-individual-node",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:marketplace-browsing",
+      "target": "component:card-for-items",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:marketplace-browsing",
+      "target": "component:global-header",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:marketplace-browsing",
+      "target": "component:search",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:marketplace-browsing",
+      "target": "component:search-filters",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:metamodel-designer",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:metamodel-designer",
+      "target": "component:metamodel-widget",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:metamodel-designer",
+      "target": "component:text-input",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:notification-system",
+      "target": "component:global-header",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:notification-system",
+      "target": "component:notification",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:notification-system",
+      "target": "component:notification-dropdown",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:right-sliding-drawer",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:right-sliding-drawer",
+      "target": "component:drawer-side-panel",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:search-filtered-table",
+      "target": "component:search",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:search-filtered-table",
+      "target": "component:search-filters",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:search-filtered-table",
+      "target": "component:table",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:smart-suggestions",
+      "target": "component:badge",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:smart-suggestions",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:smart-suggestions",
+      "target": "component:tabs",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:suggestion-workflow",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:suggestion-workflow",
+      "target": "component:confirmation",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:suggestion-workflow",
+      "target": "component:tag-status",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:suggestion-workflow",
+      "target": "component:text-input",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:table-with-tabs",
+      "target": "component:page-header",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:table-with-tabs",
+      "target": "component:table",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:table-with-tabs",
+      "target": "component:tabs",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:template-builder",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:template-builder",
+      "target": "component:metamodel-widget",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:template-builder",
+      "target": "component:text-input",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:topic-browse",
+      "target": "component:card-for-items",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:topic-browse",
+      "target": "component:search",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:type-picker-grid",
+      "target": "component:card-for-items",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:type-picker-grid",
+      "target": "component:modal",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
     }
   ]
 }
