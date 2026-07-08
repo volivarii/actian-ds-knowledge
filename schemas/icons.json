@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://actian-ds.example.com/schemas/icons.json",
   "title": "Derived icon geometry (dist)",
-  "description": "Schema for components/dist/icons/icons.json — the derived, vendored icon read-surface produced by scripts/icons/derive-icons-svg.js. Each icon carries geometry (viewBox, body) plus joined provenance (group, dsKey, nodeId). icons.minProperties:1 guards against an empty library shipping after a Figma category mass-loss.",
+  "description": "Schema for components/dist/icons/icons.json: the derived, vendored icon read-surface produced by scripts/icons/derive-icons-svg.js. Each icon carries geometry (viewBox, body) plus joined provenance (group, dsKey, nodeId). icons.minProperties:1 guards against an empty library shipping after a Figma category mass-loss.",
   "type": "object",
   "required": ["_schema_version", "icons"],
   "additionalProperties": false,
