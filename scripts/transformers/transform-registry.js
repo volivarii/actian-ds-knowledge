@@ -450,6 +450,15 @@ function populateNestedComponents(
     collectInstanceComponentIds(doc, componentIds);
     componentIds.forEach(function (cid) {
       var targetSlug = nodeIdToSlug[cid];
+      if (!targetSlug) {
+        // Tier 3 - componentSetId bridge (mirror of the anatomy normalizer): a
+        // nested composite instance's componentId is a variant inside a set;
+        // resolve through the fetched node's own components dict to the set's
+        // registry nodeId. Strict fallback: only when the direct nodeId misses.
+        var comps = node.components || {};
+        var setId = comps[cid] && comps[cid].componentSetId;
+        if (setId) targetSlug = nodeIdToSlug[setId];
+      }
       if (!targetSlug || targetSlug === slug) return;
       if (seen[targetSlug]) return;
       seen[targetSlug] = true;
@@ -471,3 +480,4 @@ module.exports._slugify = slugify;
 module.exports._splitVariantAndProperties = splitVariantAndProperties;
 module.exports._trimDescription = trimDescription;
 module.exports._buildEntry = buildEntry;
+module.exports._populateNestedComponents = populateNestedComponents;
