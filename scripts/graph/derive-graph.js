@@ -439,7 +439,19 @@ function collectPatternComponents(g, ac) {
     comps.forEach(function (compSlug) {
       if (!compSlug) return;
       var targetId = M.nodeId("component", compSlug);
-      if (!g.hasNode(targetId)) return; // drop unresolved / mistyped / cross-kit
+      if (!g.hasNode(targetId)) {
+        // components[] is hand-authored (unlike machine-sourced composed_of), so
+        // a typo or display-name would otherwise vanish with no signal. Warn on
+        // the drop so an authoring mistake surfaces in the derive/sync log.
+        console.warn(
+          "derive-graph: ux_pattern '" +
+            slug +
+            "' components[] references unknown component '" +
+            compSlug +
+            "' (edge dropped; check the slug against the registry keys)",
+        );
+        return;
+      }
       g.addEdge({
         source: sourceId,
         target: targetId,

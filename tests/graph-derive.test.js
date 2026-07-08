@@ -615,7 +615,16 @@ test("collectPatternComponents: emits ux_pattern->component uses_component edges
   var g = new G();
   D.collectComponentsAndCategories(g, [registries]); // component nodes
   D.collectAppContext(g, ac); // ux_pattern nodes
-  D.collectPatternComponents(g, ac);
+  var warns = [];
+  var origWarn = console.warn;
+  console.warn = function (m) {
+    warns.push(m);
+  };
+  try {
+    D.collectPatternComponents(g, ac);
+  } finally {
+    console.warn = origWarn;
+  }
   var edges = g.build().edges.filter(function (e) {
     return e.type === "uses_component";
   });
@@ -632,5 +641,11 @@ test("collectPatternComponents: emits ux_pattern->component uses_component edges
       return e.target === "component:ghost-x";
     }),
     "unresolved dropped",
+  );
+  assert.ok(
+    warns.some(function (w) {
+      return /ghost-x/.test(w);
+    }),
+    "warns on the unresolved authored slug (hand-authored loss surfaces)",
   );
 });
