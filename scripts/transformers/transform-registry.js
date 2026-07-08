@@ -179,8 +179,10 @@ function buildEntry(
     if (categoryEntry.section != null) {
       entry.section = categoryEntry.section;
     }
-    entry.category = categoryEntry.category;
-    entry.categorySlug = slugify(categoryEntry.category);
+    if (categoryEntry.category != null) {
+      entry.category = categoryEntry.category;
+      entry.categorySlug = slugify(categoryEntry.category);
+    }
     entry.group = deriveGroup(meta, categoryEntry.section, pageCleanName);
     // ζ.5 (2026-05-13): for icons, overwrite `group` with the semantic
     // label from icon-groups.json (and add `secondaryGroups` for icons

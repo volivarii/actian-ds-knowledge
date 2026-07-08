@@ -169,3 +169,30 @@ test("pageOverrides: an icon on a churned page gets the canonical category; a st
   assert.equal(reg.components["wip-thing"], undefined);
   assert.equal(reg.componentCount, 1);
 });
+
+test("buildEntry: a null-category map entry yields no categorySlug (no slugify(null))", function () {
+  var input = {
+    library: "dsKit",
+    fileKey: "k",
+    componentSets: [],
+    componentSetNodes: {},
+    standalones: [
+      {
+        name: "orphan",
+        key: "kORPH",
+        node_id: "9:9",
+        description: "",
+        containing_frame: { pageName: "     ✍️ Orphan", name: "Orphan" },
+      },
+    ],
+    standaloneNodes: { "9:9": { document: { type: "COMPONENT" } } },
+    documentChildren: [
+      { type: "CANVAS", name: "🧱 COMPONENTS" },
+      { type: "CANVAS", name: "     ✍️ Orphan" },
+    ],
+  };
+  var reg = T(input);
+  var e = reg.components["orphan"];
+  assert.equal(e.categorySlug, undefined, "no categorySlug for null category");
+  assert.equal(e.category, undefined, "no category key for null category");
+});
