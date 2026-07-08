@@ -39,7 +39,11 @@ function build() {
 
 test("populateNestedComponents: resolves a composite child via the componentSetId bridge", function () {
   var b = build();
-  T._populateNestedComponents(b.registry, b.componentSetNodes, b.standaloneNodes);
+  T._populateNestedComponents(
+    b.registry,
+    b.componentSetNodes,
+    b.standaloneNodes,
+  );
   var slugs = (b.registry.components["card-for-items"].nestedComponents || [])
     .map(function (n) {
       return n.slug;
@@ -50,24 +54,74 @@ test("populateNestedComponents: resolves a composite child via the componentSetI
 
 test("populateNestedComponents: the composite child carries source child-instance", function () {
   var b = build();
-  T._populateNestedComponents(b.registry, b.componentSetNodes, b.standaloneNodes);
-  var tag = (b.registry.components["card-for-items"].nestedComponents || []).find(
-    function (n) {
-      return n.slug === "tag-catalog";
-    },
+  T._populateNestedComponents(
+    b.registry,
+    b.componentSetNodes,
+    b.standaloneNodes,
   );
+  var tag = (
+    b.registry.components["card-for-items"].nestedComponents || []
+  ).find(function (n) {
+    return n.slug === "tag-catalog";
+  });
   assert.equal(tag.source, "child-instance");
 });
 
 test("populateNestedComponents: a private set (not a registry nodeId) is skipped; direct icon still resolves", function () {
   var b = build();
   b.componentSetNodes["10:0"].components["99:2"].componentSetId = "999:9"; // not a registry nodeId
-  T._populateNestedComponents(b.registry, b.componentSetNodes, b.standaloneNodes);
-  var slugs = (b.registry.components["card-for-items"].nestedComponents || []).map(
-    function (n) {
-      return n.slug;
-    },
+  T._populateNestedComponents(
+    b.registry,
+    b.componentSetNodes,
+    b.standaloneNodes,
   );
+  var slugs = (
+    b.registry.components["card-for-items"].nestedComponents || []
+  ).map(function (n) {
+    return n.slug;
+  });
   assert.ok(!slugs.includes("tag-catalog"));
   assert.ok(slugs.includes("arrow-down"));
+});
+
+test("populateNestedComponents: two variant instances of the same set collapse to one entry (bridge dedup)", function () {
+  var b = build();
+  // a second Tag variant instance (99:3) whose set is also 20:0 (tag-catalog)
+  b.componentSetNodes["10:0"].document.children[0].children.push({
+    type: "INSTANCE",
+    componentId: "99:3",
+  });
+  b.componentSetNodes["10:0"].components["99:3"] = { componentSetId: "20:0" };
+  T._populateNestedComponents(
+    b.registry,
+    b.componentSetNodes,
+    b.standaloneNodes,
+  );
+  var tags = (
+    b.registry.components["card-for-items"].nestedComponents || []
+  ).filter(function (n) {
+    return n.slug === "tag-catalog";
+  });
+  assert.equal(tags.length, 1); // both variants dedup to a single entry
+});
+
+test("populateNestedComponents: a nested instance unknown to both nodeId and the components dict stays unresolved (no crash, no junk)", function () {
+  var b = build();
+  // "zz" is in neither nodeIdToSlug nor the components dict
+  b.componentSetNodes["10:0"].document.children[0].children.push({
+    type: "INSTANCE",
+    componentId: "zz",
+  });
+  T._populateNestedComponents(
+    b.registry,
+    b.componentSetNodes,
+    b.standaloneNodes,
+  );
+  var slugs = (
+    b.registry.components["card-for-items"].nestedComponents || []
+  ).map(function (n) {
+    return n.slug;
+  });
+  assert.ok(!slugs.includes(undefined)); // no junk entry emitted
+  assert.ok(slugs.includes("tag-catalog") && slugs.includes("arrow-down")); // known ones still resolve
 });

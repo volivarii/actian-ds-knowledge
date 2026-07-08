@@ -263,11 +263,11 @@ test("mergeComponentIdToSetId merges componentSetId across node payloads", funct
     a: {
       components: {
         "99:2": { key: "kX", componentSetId: "20:0" },
-        "10:0": { key: "kY" }, // no componentSetId — skipped
+        "10:0": { key: "kY" }, // no componentSetId, skipped
       },
     },
     b: { components: { "99:3": { componentSetId: "30:0" } } },
-    c: {}, // no components — skipped
+    c: {}, // no components, skipped
   };
   assert.deepEqual(mergeComponentIdToSetId(nodes), {
     "99:2": "20:0",
@@ -373,6 +373,101 @@ test("syncAnatomy resolves a nested icon instance via the key path (node id abse
     assert.equal(icon.unresolved, undefined);
     // variant + instance + label all normalized → ratio 1.0 (was 0.67 before the fix)
     assert.equal(btn.quality.ratio, 1);
+  })();
+});
+
+test("syncAnatomy resolves a nested composite via the componentSetId bridge, incl. the per-variant (vctx) path", function () {
+  return (async function () {
+    var dir = tmpDir();
+    var registriesDir = path.join(dir, "registries");
+    var anatomyDir = path.join(dir, "anatomy");
+    fs.mkdirSync(registriesDir, { recursive: true });
+    // card is a structural set. icon-a / icon-b are the nested composite targets:
+    // the nested INSTANCEs (componentIds "aa"/"bb") are variant nodes whose set ids
+    // ("2:2"/"3:3") are icon-a/icon-b's registry nodeIds. Their componentIds are NOT
+    // registry nodeIds (Tier 1 misses) and their components-dict entries carry no key
+    // (Tier 2 misses), so only the Tier-3 componentSetId bridge can resolve them.
+    fs.writeFileSync(
+      path.join(registriesDir, "dskit.json"),
+      JSON.stringify({
+        components: {
+          card: {
+            nodeId: "1:1",
+            key: "K_CARD",
+            category: "Data Display",
+            importMethod: "set",
+          },
+          "icon-a": {
+            nodeId: "2:2",
+            key: "K_A",
+            category: "Icons",
+            importMethod: "single",
+          },
+          "icon-b": {
+            nodeId: "3:3",
+            key: "K_B",
+            category: "Icons",
+            importMethod: "single",
+          },
+        },
+      }),
+    );
+    function variant(name, cid) {
+      return {
+        type: "COMPONENT",
+        name: name,
+        layoutMode: "HORIZONTAL",
+        itemSpacing: 8,
+        children: [{ type: "INSTANCE", name: "glyph", componentId: cid }],
+      };
+    }
+    var fakeRest = {
+      getNodes: function () {
+        return Promise.resolve({
+          nodes: {
+            "1:1": {
+              components: {
+                aa: { componentSetId: "2:2" },
+                bb: { componentSetId: "3:3" },
+              },
+              document: {
+                type: "COMPONENT_SET",
+                name: "Card",
+                children: [
+                  variant("Type=Default", "aa"),
+                  variant("Type=Alt", "bb"),
+                ],
+              },
+            },
+          },
+        });
+      },
+    };
+    var written = await syncAnatomy(
+      {
+        rest: fakeRest,
+        registriesDir: registriesDir,
+        anatomyDir: anatomyDir,
+        keys: { dsKit: "F" },
+        writeJson: writeJsonReal,
+        syncedAt: "2026-06-14",
+      },
+      "dsKit",
+    );
+    assert.equal(written.count, 1); // card (icons skipped from fetch)
+    var card = JSON.parse(
+      fs.readFileSync(path.join(anatomyDir, "card.json"), "utf8"),
+    );
+    var glyph = card.root.children[0];
+    assert.equal(glyph.kind, "instance");
+    // Wiring: the default variant's nested composite resolved via Tier 3 through
+    // the full sync path (mergeComponentIdToSetId -> buildAnatomyFile -> normalizeNode).
+    assert.equal(glyph.slug, "icon-a");
+    // vctx: the Type=Alt variant's nested composite resolved via Tier 3 inside the
+    // isolated-variant context, captured as a per-variant slug swap.
+    assert.deepEqual(glyph.appearance.variants, [
+      { prop: "Type", values: ["Alt"], slug: "icon-b" },
+    ]);
   })();
 });
 

@@ -286,6 +286,21 @@ test("normalizeNode leaves a private set (not a registry nodeId) unresolved via 
   assert.equal(out.slug, undefined);
 });
 
+test("normalizeNode prefers the key path (Tier 2) over the componentSetId bridge (Tier 3)", function () {
+  var ctx = newCtx({
+    componentIdToKey: { "6001:1": "K" },
+    keyToSlug: { K: "from-key" },
+    nodeIdToSlug: { "20:0": "from-set" },
+    componentIdToSetId: { "6001:1": "20:0" }, // would give from-set via Tier 3
+  });
+  var out = N.normalizeNode(
+    { type: "INSTANCE", name: "X", componentId: "6001:1" },
+    ctx,
+  );
+  assert.equal(out.slug, "from-key"); // Tier 2 wins; Tier 3 not consulted
+  assert.equal(ctx.normalized, 1);
+});
+
 test("text node captures characters", function () {
   var ctx = newCtx();
   var out = N.normalizeNode(
