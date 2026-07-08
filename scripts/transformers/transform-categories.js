@@ -137,15 +137,12 @@ function inferCategoryMap(documentChildren, pageOverrides) {
       // `category` (= page clean-name) and a `section` (= top-level marker).
       // Previously category was always null for these — leaving 234 icons +
       // brand items uncategorized and unable to render in docs sidebar IA.
-      // Only add if currentSection is set (we've seen a top-level marker).
-      if (currentSection) {
-        var parsedNon = statusParser.extractStatus(rawName);
-        map[parsedNon.cleanName || trimmed] = {
-          section: currentSection,
-          category: parsedNon.cleanName || trimmed,
-          status: parsedNon.status,
-        };
-      }
+      var parsedNon = statusParser.extractStatus(rawName);
+      map[parsedNon.cleanName || trimmed] = {
+        section: currentSection,
+        category: parsedNon.cleanName || trimmed,
+        status: parsedNon.status,
+      };
       continue;
     }
 

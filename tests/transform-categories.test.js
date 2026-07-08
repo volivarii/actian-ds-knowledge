@@ -1846,7 +1846,9 @@ test("transform-categories — page override maps a churned icon page clean-name
   // A member-style page also resolvable via override (Alert banner casualty).
   assert.equal(result.map["Alert (banner)"].category, "Feedback");
 
-  // No override arg -> unchanged behavior (backward compatible).
+  // No override arg: the override does not fire, so the pre-existing ζ.2
+  // path self-categorizes the non-COMPONENTS page to its own clean-name.
+  // The override's job is to normalize that ("DS Icons") to "Icons".
   var plain = inferCategoryMap(children);
-  assert.equal(plain.map["DS Icons"], undefined);
+  assert.equal(plain.map["DS Icons"].category, "DS Icons");
 });
