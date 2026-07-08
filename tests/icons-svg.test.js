@@ -188,15 +188,55 @@ test("resilience: a category-recategorized CURATED slug is also warned + skipped
   assert.match(warnings[0], /category/);
 });
 
-test("resilience: still throws for a non-curated (auto-derived) invalid slug", () => {
+test("resilience: warns + skips a non-curated (auto-derived) invalid slug too, so a Figma recategorization cannot block the sync", () => {
+  const src2 = {
+    _schema_version: 1,
+    icons: {
+      real: { viewBox: "0 0 24 24", body: "<path/>" },
+      "auto-recategorized": { viewBox: "0 0 24 24", body: "<path/>" },
+    },
+  };
+  // "auto-recategorized" is in the registry but no longer category Icons, and is
+  // NOT in curatedSlugs. The old contract threw; the sync now warn-skips it so one
+  // stray recategorized icon cannot fail the whole multi-domain sync.
+  const reg2 = {
+    components: {
+      real: { key: "k", nodeId: "1:1", category: "Icons" },
+      "auto-recategorized": {
+        key: "k2",
+        nodeId: "2:2",
+        category: "Brand assets",
+      },
+    },
+  };
+  const warnings = [];
+  const dist = deriveIcons(
+    src2,
+    reg2,
+    { Common: ["real"] },
+    {
+      curatedSlugs: new Set(), // resilience mode: the sync always passes this
+      logger: { warn: (m) => warnings.push(m) },
+    },
+  );
+  assert.deepEqual(
+    Object.keys(dist.icons),
+    ["real"],
+    "auto-derived invalid slug dropped; valid icon retained",
+  );
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /auto-recategorized/);
+});
+
+test("strict mode (no curatedSlugs) still throws for any invalid slug; direct callers get loud validation", () => {
   const src2 = {
     _schema_version: 1,
     icons: { "auto-bug-xyz": { viewBox: "0 0 1 1", body: "<path/>" } },
   };
   assert.throws(
-    () => deriveIcons(src2, fakeReg, fakeGroups, { curatedSlugs: new Set() }),
+    () => deriveIcons(src2, fakeReg, fakeGroups),
     /not found in dskit registry/,
-    "an invalid slug NOT known to be curated is a real bug → throw",
+    "the bare 3-arg call has no resilience mode and validates strictly",
   );
 });
 
@@ -232,4 +272,32 @@ test("mergeIconSources: union of disjoint slugs", () => {
 
 test("mergeIconSources: both empty → empty icons", () => {
   assert.deepEqual(mergeIconSources(null, null).icons, {});
+});
+
+test("resilience: mass category-loss throws instead of emitting a near-empty icons.json", () => {
+  const icons = {};
+  const comps = {};
+  for (let i = 0; i < 12; i++) {
+    icons["icon-" + i] = { viewBox: "0 0 24 24", body: "<path/>" };
+    comps["icon-" + i] = {
+      key: "k" + i,
+      nodeId: i + ":0",
+      category: "DS Icons",
+    };
+  }
+  const src2 = { _schema_version: 1, icons };
+  assert.throws(
+    () =>
+      deriveIcons(
+        src2,
+        { components: comps },
+        { Common: [] },
+        {
+          curatedSlugs: new Set(),
+          logger: { warn: () => {} },
+        },
+      ),
+    /mass category-loss/,
+    "12 of 12 skipped must fail loud in resilience mode",
+  );
 });

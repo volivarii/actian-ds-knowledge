@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "lineage-grouped-node",
   "kit": "dskit",
-  "synced_at": "2026-07-06T13:21:40.803Z",
+  "synced_at": "2026-07-08T14:07:52.886Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "15634:17895",
@@ -10,8 +10,8 @@
   },
   "quality": {
     "nodesTotal": 7,
-    "nodesNormalized": 5,
-    "ratio": 0.71,
+    "nodesNormalized": 7,
+    "ratio": 1,
     "degraded": [],
     "structuralVariants": [
       {
@@ -124,7 +124,11 @@
               {
                 "name": "Digram, Item types",
                 "kind": "instance",
-                "unresolved": true,
+                "slug": "digram-item-types",
+                "props": {
+                  "Item type": "Category",
+                  "Size": "Large"
+                },
                 "id": "15634:17901",
                 "appearance": {
                   "background": "#ffdacf",
@@ -194,7 +198,7 @@
               {
                 "name": "Button",
                 "kind": "instance",
-                "unresolved": true,
+                "slug": "button",
                 "props": {
                   "Show label": true,
                   "Show trailing icon": true,

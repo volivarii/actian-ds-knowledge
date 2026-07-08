@@ -488,3 +488,105 @@ test("bundleToTree: reconstructs tree from bundle format; scoped sibling lookup 
     "design-guidelines/breakpoints/grid",
   ); // recurses
 });
+
+test("collectComponentComposition: parent->child composed_of edges; dedups pairs; skips self-loops; drops unresolved; keeps icon targets; only source/target/type", function () {
+  var registries = {
+    components: {
+      "alert-banner": {
+        name: "Alert-banner",
+        category: "Feedback",
+        nestedComponents: [
+          { slug: "button", role: null, source: "child-instance" },
+          { slug: "button", role: "action", source: "instance-swap" }, // same pair -> one edge
+          { slug: "close-icon", role: null, source: "child-instance" }, // icon target -> kept
+          { slug: "ghost", role: null, source: "child-instance" }, // no node -> dropped
+        ],
+      },
+      button: { name: "Button", category: "Action", nestedComponents: [] },
+      "close-icon": { name: "Close", category: "Icons", nestedComponents: [] },
+      "self-nest": {
+        name: "Self",
+        nestedComponents: [
+          { slug: "self-nest", role: null, source: "child-instance" },
+        ], // self-loop -> dropped
+      },
+    },
+  };
+  var G = require("../scripts/lib/graph/model.js").GraphBuilder;
+  var g = new G();
+  D.collectComponentsAndCategories(g, [registries]); // add all component nodes first
+  D.collectComponentComposition(g, [registries]);
+  var edges = g.build().edges.filter(function (e) {
+    return e.type === "composed_of";
+  });
+  assert.equal(edges.length, 2); // alert-banner->button (deduped), alert-banner->close-icon
+  assert.ok(
+    edges.some(function (e) {
+      return (
+        e.source === "component:alert-banner" && e.target === "component:button"
+      );
+    }),
+  );
+  assert.ok(
+    edges.some(function (e) {
+      return (
+        e.source === "component:alert-banner" &&
+        e.target === "component:close-icon"
+      );
+    }),
+    "icon target kept",
+  );
+  assert.ok(
+    !edges.some(function (e) {
+      return e.target === "component:ghost";
+    }),
+    "unresolved endpoint dropped",
+  );
+  assert.ok(
+    !edges.some(function (e) {
+      return e.source === "component:self-nest";
+    }),
+    "self-loop dropped",
+  );
+  edges.forEach(function (e) {
+    assert.deepEqual(Object.keys(e).sort(), ["source", "target", "type"]);
+  });
+});
+
+// Known slug-identity limitation: component nodes dedupe by slug first-wins
+// across kits, so a child slug present in >1 kit collapses to one node (the
+// first registry wins). A composition edge to such a slug binds to that
+// canonical node, not necessarily the parent's own kit. This is the documented
+// slug-collision behavior (graph/dist/collisions.json); slice-3 key identity
+// will disambiguate. This test locks the behavior so a future change is a
+// conscious one.
+test("collectComponentComposition: a child slug that collides across kits binds to the canonical first-wins node", function () {
+  var dskit = {
+    components: { search: { name: "Search (DS)", category: "Action" } },
+  };
+  var fmkit = {
+    components: {
+      "fm-search-input": {
+        name: "FM Search",
+        nestedComponents: [
+          { slug: "search", role: null, source: "child-instance" },
+        ],
+      },
+      search: { name: "Search (FM)" }, // same slug -> deduped away (dskit wins)
+    },
+  };
+  var G = require("../scripts/lib/graph/model.js").GraphBuilder;
+  var g = new G();
+  D.collectComponentsAndCategories(g, [dskit, fmkit]); // dskit first -> wins component:search
+  D.collectComponentComposition(g, [dskit, fmkit]);
+  var out = g.build();
+  var searchNode = out.nodes.find(function (n) {
+    return n.id === "component:search";
+  });
+  assert.equal(searchNode.title, "Search (DS)"); // first-wins: dskit's node is canonical
+  var edge = out.edges.find(function (e) {
+    return e.type === "composed_of" && e.source === "component:fm-search-input";
+  });
+  assert.ok(edge, "composition edge emitted for the fmkit parent");
+  assert.equal(edge.target, "component:search"); // binds to the canonical (dskit-origin) node
+});

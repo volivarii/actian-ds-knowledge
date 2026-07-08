@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "page-header",
   "kit": "dskit",
-  "synced_at": "2026-07-06T13:21:40.803Z",
+  "synced_at": "2026-07-08T14:07:52.886Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "12923:2794",
@@ -10,8 +10,8 @@
   },
   "quality": {
     "nodesTotal": 8,
-    "nodesNormalized": 5,
-    "ratio": 0.63,
+    "nodesNormalized": 8,
+    "ratio": 1,
     "degraded": [],
     "structuralVariants": [
       {
@@ -143,7 +143,7 @@
               {
                 "name": "Button",
                 "kind": "instance",
-                "unresolved": true,
+                "slug": "button",
                 "props": {
                   "Label": "Button",
                   "Show label": true,
@@ -162,7 +162,7 @@
               {
                 "name": "Button",
                 "kind": "instance",
-                "unresolved": true,
+                "slug": "button",
                 "props": {
                   "Show label": true,
                   "Label": "Button",
@@ -185,7 +185,7 @@
               {
                 "name": "Button",
                 "kind": "instance",
-                "unresolved": true,
+                "slug": "button",
                 "props": {
                   "Label": "Button",
                   "Show label": true,

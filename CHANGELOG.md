@@ -19,6 +19,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- Knowledge graph now models **component composition**: registry `nestedComponents` is projected as directed `composed_of` edges (component to component, parent as source, nested child as target), declared in `schemas/graph.json` and `graph/vocabulary.json` (`source: [component]`, `target: [component]`). 336 edges, taking the graph to 843 nodes / 988 edges. Icons are included on purpose (nearly every component nests them); a "real composites only" view is a one-hop consumer filter on the target's `in_category` edge, not a derive-time exclusion. A `composition_edges` count is surfaced in `quality-report.json`. Purely additive: no `context.jsonld`, manifest, or workflow change, existing nodes and edges unchanged, and the re-derive is byte-identical. Slice 2b of Phase 2 identity; endpoints resolve by slug (the graph's node identity), so a child slug that collides across kits binds to the first-wins node until slice-3 key identity disambiguates. ([#379])
+- Page-level category overrides (`components/src/category-page-overrides.json`)
+  so churned/self-hosting icon page names (`DS Icons`, `DS Icons: replacement`)
+  resolve to canonical categories, and staging pages are excluded from the sync. ([#375])
+- Mass category-loss tripwires: the sync now fails loud (exit 2, no PR) when a
+  category with 10+ members drops to zero or the icon library collapses, instead
+  of silently shipping an empty `icons.json`. Registry-root guard plus a
+  `deriveIcons` guard; `schemas/icons.json` also rejects an empty dist library. ([#375])
+- The Figma sync now resolves nested composite instances to their component via a componentSetId bridge. A nested instance's `componentId` points at a variant node inside a component set; when the direct node-id and key lookups miss, the sync now bridges through `components[componentId].componentSetId` to the registry's set-level `nodeId` (no extra API call), at both the anatomy normalizer (a new Tier 3 after node-id and key) and the registry `nestedComponents` builder. Strictly additive: it only resolves previously-unresolved instances and never changes an already-resolved slug, and private sub-components (whose set is not a published component) stay unresolved. A live spike measured that this resolves about 43% of currently-unresolved nested instances, essentially the whole "set is a published component" population. The effect on the dist (more resolved anatomy instances; composite children in `nestedComponents`) materializes on the next Figma sync. Second slice of Phase 2 identity; unblocks projecting component composition into the graph. ([#371])
 - Knowledge graph component nodes now carry the stable Figma `figmaKey` / `figmaNodeId` as queryable identifiers (mapped in the JSON-LD context to `actian-ds:figmaComponentKey` / `actian-ds:figmaNodeId`), so a component is addressable by its rename-proof Figma key rather than only its mutable slug. A new `graph/dist/collisions.json` sidecar records the 22 cross-registry slug collisions (a slug present in more than one kit with distinct keys), each with its candidate `{kit, key, nodeId}` and the kit the graph node resolved to, with a `slug_collisions` count in `quality-report.json`. Purely additive: the node id stays slug-derived, slug is unchanged, and every non-component node and every edge is byte-identical. First slice of Phase 2 identity (key as a carried join). ([#368])
 - Knowledge graph now projects the **app-context domain** (apps, domain entities, terminology, UX patterns) as an additive island. 4 new node types (`app`, `app_entity`, `terminology_term`, `ux_pattern`; 96 nodes) and 3 new edge types (`in_app`; `entity_related`, carrying the relationship name in a `predicate` field; `term_about`, inferred term-to-entity/app/pattern bridges where a terminology key matches a node slug; 152 edges) take the graph to 843 nodes / 652 edges. Terminology terms map to `skos:Concept` in the JSON-LD view, with `skos:definition` and `skos:hiddenLabel` (the discouraged alternatives). Edge identity now includes the `predicate` field so an entity pair can carry more than one relationship (e.g. `hasInputs` + `hasOutputs`); the 500 predicate-less existing edges stay byte-identical. Purely additive: the existing 747 nodes / 500 edges and the 6 existing node/edge types are unchanged, and `graph/dist/graph.json` stays canonical. No component bridge is emitted (no authored source links app-context to components). Realizes Plan 2 of the graph-as-spine direction. ([#364])
 - Knowledge graph now also emits a linked-data view, `graph/dist/graph.jsonld`, governed by a hand-authored `graph/context.jsonld`. It is a lossless, additive sibling of `graph/dist/graph.json` (which stays canonical): the same nodes and edges wrapped with a JSON-LD `@context` (reusing schema.org/SKOS/PROV, `actian-ds:` for DS-specific concepts), stable IRI identity, and reified edges. No consumer change required; the base JSON is unchanged. This is the keystone of the graph-as-spine direction. ([#361])
@@ -63,6 +72,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   consumers that ignore it behave as before. Real data lands on the next nightly sync. ([#354])
 
 ### Changed
+- **Breaking Figma sync (2026-07-08).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#378](https://github.com/volivarii/actian-ds-knowledge/pull/378))
 - **Canonical sync emit (wave 2).** The nightly sync can now tell "re-emitted" from "changed":
   registry components, categories, and the anatomy bundle are emitted in sorted key order (ends the
   ~97% move-noise in breaking-PR diffs); files are written only when canonical bytes differ;
@@ -101,6 +111,12 @@ Each entry links its pull request. Dates are the merge date (UTC).
   appearance path; the plugin-side consumer (path-b) was retired first, so no reader remains.
 
 ### Fixed
+- The Figma sync now resolves page-level category overrides on each component's own reported page name (`containing_frame.pageName`), not only the Pages-panel canvas name, so an override still applies when the two diverge (the icons page shows `DS Icons` in the panel while icon components report `Icons`). Unblocks the first post-#375 sync, which the mass-loss tripwire correctly halted with the icon category unrestored. ([#377])
+- `transform-registry` no longer emits `categorySlug: "null"` for a
+  null-category component (`slugify(null)` guard). ([#375])
+- Restored the `Icons` and `Alert (banner)` categories that a Figma page reorg
+  had stripped (root cause of the breaking sync PR #374). ([#375])
+- The Figma sync no longer hard-fails when a single icon is renamed, removed, or recategorized in Figma. The icons-svg derive previously warn-skipped only a dangling *curated* icon override; an auto-exported icon whose registry category drifted from "Icons" still threw and blocked the entire multi-domain sync (anatomy, registry, tokens, everything). It now warn-skips any invalid icon slug in the sync path (dropping it from `icons.json` with a provenance-tagged warning that says whether to fix Figma or the curated source), while the bare `deriveIcons` call stays strict for direct callers. One stray recategorized icon can no longer block unrelated content. ([#373])
 - **Anatomy prune guard.** A transient per-slug Figma fetch miss or normalization failure no longer
   lets the nightly sync delete that component's existing anatomy file or drop its entry from
   `anatomy.bundle.json` (failed slugs are re-seeded from the existing dist, so even a total outage
@@ -158,6 +174,11 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#379]: https://github.com/volivarii/actian-ds-knowledge/pull/379
+[#377]: https://github.com/volivarii/actian-ds-knowledge/pull/377
+[#375]: https://github.com/volivarii/actian-ds-knowledge/pull/375
+[#373]: https://github.com/volivarii/actian-ds-knowledge/pull/373
+[#371]: https://github.com/volivarii/actian-ds-knowledge/pull/371
 [#368]: https://github.com/volivarii/actian-ds-knowledge/pull/368
 [#364]: https://github.com/volivarii/actian-ds-knowledge/pull/364
 [#361]: https://github.com/volivarii/actian-ds-knowledge/pull/361

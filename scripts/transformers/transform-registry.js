@@ -179,8 +179,10 @@ function buildEntry(
     if (categoryEntry.section != null) {
       entry.section = categoryEntry.section;
     }
-    entry.category = categoryEntry.category;
-    entry.categorySlug = slugify(categoryEntry.category);
+    if (categoryEntry.category != null) {
+      entry.category = categoryEntry.category;
+      entry.categorySlug = slugify(categoryEntry.category);
+    }
     entry.group = deriveGroup(meta, categoryEntry.section, pageCleanName);
     // ζ.5 (2026-05-13): for icons, overwrite `group` with the semantic
     // label from icon-groups.json (and add `secondaryGroups` for icons
@@ -205,6 +207,21 @@ function transformRegistry(input) {
   var standalones = input.standalones || [];
   var standaloneNodes = input.standaloneNodes || {};
   var documentChildren = input.documentChildren || null;
+  var pageOverridesCfg = input.pageOverrides || {};
+  // Defensive: tolerate a malformed hand-authored config (wrong shapes) instead
+  // of throwing a low-level TypeError deep in the sync. A non-object `overrides`
+  // or a non-array `exclude` is treated as absent.
+  var pageOverridesMap =
+    pageOverridesCfg.overrides && typeof pageOverridesCfg.overrides === "object"
+      ? pageOverridesCfg.overrides
+      : {};
+  var excludeSet = {};
+  var excludeList = Array.isArray(pageOverridesCfg.exclude)
+    ? pageOverridesCfg.exclude
+    : [];
+  excludeList.forEach(function (name) {
+    excludeSet[name] = true;
+  });
   // Phase 5 (knowledge v0.11.0): `input.guidelinesSlugSet` was retired
   // along with the `guidelinesFile` registry field — consumers now resolve
   // per-component guideline docs by slug via the components.guidelineDoc
@@ -244,7 +261,7 @@ function transformRegistry(input) {
   // the caller wants them.
   var categoryMap = null;
   if (documentChildren) {
-    var inference = inferCategoryMap(documentChildren);
+    var inference = inferCategoryMap(documentChildren, pageOverridesMap);
     categoryMap = inference.map;
     if (typeof input.onWarnings === "function") {
       input.onWarnings(inference.warnings);
@@ -265,6 +282,24 @@ function transformRegistry(input) {
     var cleanPage = statusParser.extractStatus(pageName).cleanName;
     var entry =
       categoryMap && cleanPage ? categoryMap[cleanPage] || null : null;
+    // Plane-B override fallback: a page-level override normally fires in
+    // inferCategoryMap on the Pages-panel canvas name. But a component's own
+    // containing_frame.pageName can diverge from the canvas name (the icons
+    // page shows "DS Icons" in the panel while the icon components report
+    // "Icons"). When the canvas-side entry is missing, resolve the override
+    // directly from the component's clean page name so the join does not
+    // depend on the two names agreeing.
+    if (
+      !entry &&
+      cleanPage &&
+      Object.prototype.hasOwnProperty.call(pageOverridesMap, cleanPage)
+    ) {
+      entry = {
+        section: null,
+        category: pageOverridesMap[cleanPage],
+        status: null,
+      };
+    }
     return { entry: entry, cleanPage: cleanPage };
   }
 
@@ -309,6 +344,7 @@ function transformRegistry(input) {
     var slug = slugify(meta.name);
     var lookup = lookupCategoryEntry(meta);
     collectComponentWarning(lookup, slug);
+    if (excludeSet[lookup.cleanPage]) return; // staging / not-ready page
     if (isOnCategoryHeaderPage(lookup)) return;
     var entry = buildEntry(
       meta,
@@ -330,6 +366,7 @@ function transformRegistry(input) {
     if (slug in registry.components) return;
     var lookup = lookupCategoryEntry(meta);
     collectComponentWarning(lookup, slug);
+    if (excludeSet[lookup.cleanPage]) return; // staging / not-ready page
     if (isOnCategoryHeaderPage(lookup)) return;
     var entry = buildEntry(
       meta,
@@ -450,6 +487,15 @@ function populateNestedComponents(
     collectInstanceComponentIds(doc, componentIds);
     componentIds.forEach(function (cid) {
       var targetSlug = nodeIdToSlug[cid];
+      if (!targetSlug) {
+        // Tier 3 - componentSetId bridge (mirror of the anatomy normalizer): a
+        // nested composite instance's componentId is a variant inside a set;
+        // resolve through the fetched node's own components dict to the set's
+        // registry nodeId. Strict fallback: only when the direct nodeId misses.
+        var comps = node.components || {};
+        var setId = comps[cid] && comps[cid].componentSetId;
+        if (setId) targetSlug = nodeIdToSlug[setId];
+      }
       if (!targetSlug || targetSlug === slug) return;
       if (seen[targetSlug]) return;
       seen[targetSlug] = true;
@@ -471,3 +517,4 @@ module.exports._slugify = slugify;
 module.exports._splitVariantAndProperties = splitVariantAndProperties;
 module.exports._trimDescription = trimDescription;
 module.exports._buildEntry = buildEntry;
+module.exports._populateNestedComponents = populateNestedComponents;

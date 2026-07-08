@@ -12,6 +12,14 @@
       "reason": "multicolor"
     },
     {
+      "slug": "award-04",
+      "reason": "render-failed"
+    },
+    {
+      "slug": "book-bookmark",
+      "reason": "multicolor"
+    },
+    {
       "slug": "brightness-contrast",
       "reason": "render-failed"
     },
@@ -48,6 +56,10 @@
       "reason": "render-failed"
     },
     {
+      "slug": "help-laptop",
+      "reason": "render-failed"
+    },
+    {
       "slug": "history",
       "reason": "render-failed"
     },
@@ -72,6 +84,18 @@
       "reason": "render-failed"
     },
     {
+      "slug": "maximize",
+      "reason": "render-failed"
+    },
+    {
+      "slug": "minimize",
+      "reason": "render-failed"
+    },
+    {
+      "slug": "misuse-outline",
+      "reason": "render-failed"
+    },
+    {
       "slug": "pending",
       "reason": "render-failed"
     },
@@ -88,6 +112,10 @@
       "reason": "render-failed"
     },
     {
+      "slug": "tools",
+      "reason": "render-failed"
+    },
+    {
       "slug": "undo",
       "reason": "render-failed"
     },
@@ -96,7 +124,19 @@
       "reason": "render-failed"
     },
     {
+      "slug": "use-with-care",
+      "reason": "render-failed"
+    },
+    {
+      "slug": "user-lock",
+      "reason": "render-failed"
+    },
+    {
       "slug": "view-card",
+      "reason": "render-failed"
+    },
+    {
+      "slug": "view-table",
       "reason": "render-failed"
     }
   ]

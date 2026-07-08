@@ -6633,6 +6633,2022 @@
     },
     {
       "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:account-dropdown",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:account-dropdown",
+      "target": "component:avatar"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:account-dropdown",
+      "target": "component:exit"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:account-dropdown",
+      "target": "component:help-bubble"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:actian-data-observability",
+      "target": "component:actian-pyramid"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:alert-banner",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:alert-banner",
+      "target": "component:close"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:alert-banner",
+      "target": "component:error-filled"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:alert-banner",
+      "target": "component:info-filled"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:alert-banner",
+      "target": "component:success-filled"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:alert-banner",
+      "target": "component:warning-filled"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:app-switcher-dropdown",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:app-switcher-dropdown",
+      "target": "component:settings"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:app-switcher-dropdown",
+      "target": "component:zeenea-logo"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:bar-graph",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:bar-graph",
+      "target": "component:dots"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:breadcrumbs",
+      "target": "component:digram-item-types"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:breadcrumbs",
+      "target": "component:link"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:button",
+      "target": "component:spinner"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:calendar",
+      "target": "component:arrow"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:calendar",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:calendar",
+      "target": "component:chevron-left"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:calendar",
+      "target": "component:chevron-up"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:card-for-grouped-content",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:card-for-grouped-content",
+      "target": "component:help-circle"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:card-for-items",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:card-for-items",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:card-for-items",
+      "target": "component:digram-topic"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:card-for-items",
+      "target": "component:favorite"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:card-for-items",
+      "target": "component:tag-catalog"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:card-for-items",
+      "target": "component:tag-catalog-item-type"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:card-for-items",
+      "target": "component:tag-default"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:card-for-items",
+      "target": "component:tag-glossary-item-type"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:card-for-perimeter",
+      "target": "component:digram-item-types"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:card-for-perimeter",
+      "target": "component:progress-bar-small"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:chat-with-ai-steward",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:chat-with-ai-steward",
+      "target": "component:chevron-up"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:chat-with-ai-steward",
+      "target": "component:close"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:chat-with-ai-steward",
+      "target": "component:expand"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:checkbox-with-label",
+      "target": "component:digram-item-types"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:collapse-accordion",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:collapse-accordion",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:confirmation",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:confirmation",
+      "target": "component:illustration"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:avatar"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:chevron-left"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:close"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:dropdown-select-default"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:favorite"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:home"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:identification-key"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:info"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:integer-type"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:progress-bar-small"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:search"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:tabs"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:tag-catalog-item-type"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:tag-default"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:tag-interactive"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:drawer-side-panel",
+      "target": "component:view-details"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:dropdown-select-default",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:dropdown-select-default",
+      "target": "component:avatar"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:dropdown-select-default",
+      "target": "component:chevron-up"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:dropdown-select-default",
+      "target": "component:close"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:dropdown-select-default",
+      "target": "component:info"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:dropdown-select-default",
+      "target": "component:tag-interactive"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:empty-state",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:empty-state",
+      "target": "component:illustration"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:error-state",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:error-state",
+      "target": "component:illustration"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-app-header",
+      "target": "component:chevron-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-app-header",
+      "target": "component:fm-badge"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-app-header",
+      "target": "component:fm-button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-app-header",
+      "target": "component:fm-dropdown"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-app-header",
+      "target": "component:fm-icon-buttons"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-app-header",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-app-header",
+      "target": "component:fm-search-input"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-app-header",
+      "target": "component:fm-tab"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-app-header",
+      "target": "component:fm-tabs"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-app-header",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-app-header",
+      "target": "component:search"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-app-header",
+      "target": "component:view-grid"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-badge",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-banner",
+      "target": "component:check-circle"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-banner",
+      "target": "component:fm-button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-banner",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-button",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-checkbox",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-chip",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-date-input",
+      "target": "component:calendar"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-date-input",
+      "target": "component:chevron-left"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-date-input",
+      "target": "component:chevron-right"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-date-input",
+      "target": "component:fm-button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-date-input",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-date-input",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-dialog",
+      "target": "component:fm-button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-dialog",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-dropdown",
+      "target": "component:chevron-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-dropdown",
+      "target": "component:chevron-up"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-dropdown",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-dropdown",
+      "target": "component:fm-menu-item"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-icon-buttons",
+      "target": "component:plus-circle"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-menu",
+      "target": "component:fm-menu-item"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-multi-select-dropdown",
+      "target": "component:chevron-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-multi-select-dropdown",
+      "target": "component:chevron-up"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-multi-select-dropdown",
+      "target": "component:fm-checkbox"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-multi-select-dropdown",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-multi-select-dropdown",
+      "target": "component:fm-multi-select-menu-item"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-multi-select-dropdown",
+      "target": "component:fm-tag"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-multi-select-dropdown",
+      "target": "component:fm-user"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-multi-select-dropdown",
+      "target": "component:x"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-multi-select-menu-item",
+      "target": "component:fm-checkbox"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-multi-select-menu-item",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-multi-select-menu-item",
+      "target": "component:fm-user"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-nav-bar",
+      "target": "component:chevron-right"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-nav-bar",
+      "target": "component:fm-nav-item"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-nav-bar",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-nav-item",
+      "target": "component:chevron-right"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-nav-item",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-page-header",
+      "target": "component:fm-button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-page-header",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-placeholder",
+      "target": "component:fm-badge"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-placeholder",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-radio-button",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-rich-text-field",
+      "target": "component:block-quote"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-rich-text-field",
+      "target": "component:bold"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-rich-text-field",
+      "target": "component:bulleted-list"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-rich-text-field",
+      "target": "component:code"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-rich-text-field",
+      "target": "component:fm-button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-rich-text-field",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-rich-text-field",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-rich-text-field",
+      "target": "component:italic"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-rich-text-field",
+      "target": "component:numbered-list"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-rich-text-field",
+      "target": "component:paper-airplane"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-rich-text-field",
+      "target": "component:strikethrough"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-search-input",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-search-input",
+      "target": "component:search"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-tab",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-table-cell",
+      "target": "component:fm-button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-table-cell",
+      "target": "component:fm-tag"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-table-cell",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-table-example",
+      "target": "component:fm-button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-table-example",
+      "target": "component:fm-table-cell"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-table-example",
+      "target": "component:fm-tag"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-table-example",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-tabs",
+      "target": "component:fm-tab"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-tabs",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-tag",
+      "target": "component:icon-placeholder"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-text-area",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-text-input",
+      "target": "component:eye"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-text-input",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-toast",
+      "target": "component:check-circle"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:fm-user",
+      "target": "component:fm-input-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:global-header",
+      "target": "component:alert"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:global-header",
+      "target": "component:applications"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:global-header",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:global-header",
+      "target": "component:avatar"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:global-header",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:global-header",
+      "target": "component:close"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:global-header",
+      "target": "component:data-access-request"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:global-header",
+      "target": "component:info"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:global-header",
+      "target": "component:search"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:global-header",
+      "target": "component:zeenea-logo"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:glossary-item-hierarchy-diagram",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:glossary-item-hierarchy-diagram",
+      "target": "component:list-bullets"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:glossary-item-hierarchy-diagram",
+      "target": "component:zoom-in"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:glossary-item-hierarchy-diagram",
+      "target": "component:zoom-out"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:glossary-item-hierarchy-diagram",
+      "target": "component:zoom-reset"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:glossary-item-hierarchy-diagram",
+      "target": "component:zoom-to-fit"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:input-date",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:input-date",
+      "target": "component:error-filled"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:line-graph",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:line-graph",
+      "target": "component:dots"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-connecting-line",
+      "target": "component:tableau"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-grouped-node",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-grouped-node",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-grouped-node",
+      "target": "component:chevron-up"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-grouped-node",
+      "target": "component:digram-item-types"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-grouped-node",
+      "target": "component:lineage-individual-node"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-grouped-node",
+      "target": "component:powerbi"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-grouped-node",
+      "target": "component:tag-default"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-individual-node",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-individual-node",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-individual-node",
+      "target": "component:chevron-up"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-individual-node",
+      "target": "component:digram-item-types"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-individual-node",
+      "target": "component:identification-key"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-individual-node",
+      "target": "component:powerbi"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-individual-node",
+      "target": "component:tag-default"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:lineage-individual-node",
+      "target": "component:text-type"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:loader-with-logo",
+      "target": "component:actian-data-intelligence"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:loader-with-logo",
+      "target": "component:loader"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:loader-with-logo",
+      "target": "component:zeenea-logo"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:maintenance-state",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:maintenance-state",
+      "target": "component:illustration"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:meta-chrome-brief-card",
+      "target": "component:meta-chrome-brief-card-header"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:metamodel-widget",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:metamodel-widget",
+      "target": "component:digram-item-types"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:checkbox-with-label"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:close"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:digram-item-types"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:info"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:link-type"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:list-numbers"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:paragraph-justify"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:radio-button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:rich-text"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:task-list"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:task-list-multiple"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:text-file"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:text-input"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:modal",
+      "target": "component:toggle"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:notification",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:notification-dropdown",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:notification-dropdown",
+      "target": "component:checkmark-outline"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:page-header",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:page-header",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:page-header",
+      "target": "component:dots"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:page-header",
+      "target": "component:favorite"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:page-header",
+      "target": "component:open"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:page-header",
+      "target": "component:powerbi"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:page-header",
+      "target": "component:search"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:page-header",
+      "target": "component:suggestion"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:page-header",
+      "target": "component:tag-catalog"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:page-header",
+      "target": "component:tag-catalog-item-type"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:page-header",
+      "target": "component:tag-default"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:page-header",
+      "target": "component:zeenea-logo"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:avatar"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:checkmark-outline"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:chevron-sort"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:circle-dash"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:close"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:collapse-accordion"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:dots"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:edit"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:help-bubble"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:info"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:link"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:tag-status"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:trash"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:zoom-in"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:zoom-out"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:popover",
+      "target": "component:zoom-to-fit"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:radio-button",
+      "target": "component:digram-item-types"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search",
+      "target": "component:close"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-dropdown-menu",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-filters",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-filters",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-filters",
+      "target": "component:close"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-filters",
+      "target": "component:digram-item-types"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-filters",
+      "target": "component:info"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-filters",
+      "target": "component:search"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-filters",
+      "target": "component:tag-catalog-item-type"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-result-card",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-result-card",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-result-card",
+      "target": "component:favorite"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-result-card",
+      "target": "component:progress-bar-small"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-result-card",
+      "target": "component:tag-catalog"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-result-card",
+      "target": "component:tag-catalog-item-type"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-result-card",
+      "target": "component:tag-default"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-result-card",
+      "target": "component:tag-stage"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:segmented-control",
+      "target": "component:view-table"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:add"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:analytics"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:api-key"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:arrow"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:catalog-design"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:chevron-left"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:chevron-up"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:dashboard"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:data-access-request"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:database"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:directory"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:download"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:maintenance"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:scanner"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:security-services"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:shield-lock"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:side-nav",
+      "target": "component:user-group"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:sticky-footer",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:add"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:arrow"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:avatar"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:checkmark-outline"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:chevron-left"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:chevron-sort"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:dots"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:edit"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:filter"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:search"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:segmented-control"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:trash"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:table",
+      "target": "component:view-table"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tabs",
+      "target": "component:avatar"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tabs",
+      "target": "component:home"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-default",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-interactive",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-stage",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-status",
+      "target": "component:asleep"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-status",
+      "target": "component:calendar-2"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-status",
+      "target": "component:checkmark-outline"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-status",
+      "target": "component:circle-dash"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-status",
+      "target": "component:icon-query-queue"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-status",
+      "target": "component:misuse-outline"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-status",
+      "target": "component:pending"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-status",
+      "target": "component:spinner"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-status",
+      "target": "component:stop-outline"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-status",
+      "target": "component:tools"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:tag-status",
+      "target": "component:warning-alt"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:text-input",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:text-input",
+      "target": "component:close"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:text-input",
+      "target": "component:error-filled"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:text-input",
+      "target": "component:info"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:text-input",
+      "target": "component:simple-check"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:text-input",
+      "target": "component:warning-filled"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:toolbar",
+      "target": "component:button"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:toolbar",
+      "target": "component:filter"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:toolbar",
+      "target": "component:map"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:toolbar",
+      "target": "component:zoom-in"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:toolbar",
+      "target": "component:zoom-out"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:toolbar",
+      "target": "component:zoom-reset"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:toolbar",
+      "target": "component:zoom-to-fit"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:whats-new-dropdown",
+      "target": "component:arrow-down"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:whats-new-dropdown",
+      "target": "component:chevron-left"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:whats-new-dropdown",
+      "target": "component:link"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:whats-new-dropdown",
+      "target": "component:tag-default"
+    },
+    {
+      "@type": "Edge",
       "edgeType": "entity_related",
       "source": "entity:access-request",
       "target": "entity:output-port",

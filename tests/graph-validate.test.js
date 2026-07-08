@@ -337,3 +337,61 @@ test("emitted quality-report.json exists, is valid JSON, and matches the documen
     }),
   );
 });
+
+test("analyze: counts composed_of edges into compositionEdges", function () {
+  var vocab = {
+    edgeTypes: {
+      composed_of: { source: ["component"], target: ["component"] },
+    },
+  };
+  var graph = {
+    nodes: [
+      { id: "component:a", type: "component", title: "a" },
+      { id: "component:b", type: "component", title: "b" },
+      { id: "component:c", type: "component", title: "c" },
+    ],
+    edges: [
+      { source: "component:a", target: "component:b", type: "composed_of" },
+      { source: "component:a", target: "component:c", type: "composed_of" },
+    ],
+  };
+  assert.equal(V.analyze(graph, vocab).compositionEdges, 2);
+});
+
+test("buildQualityReport: surfaces a composition_edges connectivity count (defaults to 0)", function () {
+  var base = {
+    dangling: [],
+    typeViolations: [],
+    coverage: {
+      categoriesWithoutA11y: [],
+      criteriaUnreferenced: [],
+      componentsWithoutCategory: [],
+    },
+    orphans: [],
+  };
+  var coverage = {
+    byKind: {
+      a11y_ref: { authored: 0, emitted: 0, ratio: 1 },
+      foundations_ref: { authored: 0, emitted: 0, ratio: 1 },
+      motion_ref: { authored: 0, emitted: 0, ratio: 1 },
+    },
+    overall: { authored: 0, emitted: 0, ratio: 1 },
+  };
+  var withCount = V.buildQualityReport(
+    Object.assign({}, base, { compositionEdges: 7 }),
+    coverage,
+    0,
+  );
+  var m = withCount.find(function (e) {
+    return e.metric === "composition_edges";
+  });
+  assert.ok(m, "composition_edges present");
+  assert.equal(m.dimension, "connectivity");
+  assert.equal(m.value, 7);
+  assert.equal(m.severity, "info");
+  assert.equal(m.timestamp, null);
+  var noField = V.buildQualityReport(base, coverage, 0).find(function (e) {
+    return e.metric === "composition_edges";
+  });
+  assert.equal(noField.value, 0);
+});

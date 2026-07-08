@@ -26,6 +26,7 @@ function analyze(graph, vocabulary) {
     }),
   );
   var dangling = [];
+  var compositionEdges = 0;
   var endpointsSeen = new Set();
   var catsWithA11y = new Set();
   var a11yReferenced = new Set();
@@ -50,6 +51,7 @@ function analyze(graph, vocabulary) {
       a11yReferenced.add(e.target);
     }
     if (e.type === "in_category") componentsInCategory.add(e.source);
+    if (e.type === "composed_of") compositionEdges++;
   });
   var categoriesWithoutA11y = graph.nodes
     .filter(function (n) {
@@ -135,6 +137,7 @@ function analyze(graph, vocabulary) {
     },
     orphans: orphans,
     typeViolations: typeViolations,
+    compositionEdges: compositionEdges,
   };
 }
 
@@ -204,6 +207,12 @@ function buildQualityReport(analysis, coverage, schemaErrorCount) {
     "connectivity",
     "criteria_unreferenced",
     analysis.coverage.criteriaUnreferenced.length,
+    "info",
+  );
+  push(
+    "connectivity",
+    "composition_edges",
+    analysis.compositionEdges || 0,
     "info",
   );
   return out;

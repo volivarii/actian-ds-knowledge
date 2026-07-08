@@ -51,7 +51,7 @@
   {
     "dimension": "connectivity",
     "metric": "orphan_nodes",
-    "value": 322,
+    "value": 273,
     "timestamp": null,
     "severity": "info"
   },
@@ -73,6 +73,13 @@
     "dimension": "connectivity",
     "metric": "criteria_unreferenced",
     "value": 14,
+    "timestamp": null,
+    "severity": "info"
+  },
+  {
+    "dimension": "connectivity",
+    "metric": "composition_edges",
+    "value": 336,
     "timestamp": null,
     "severity": "info"
   },

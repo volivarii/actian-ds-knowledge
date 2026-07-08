@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "search-result-card",
   "kit": "dskit",
-  "synced_at": "2026-07-06T13:21:40.803Z",
+  "synced_at": "2026-07-08T14:07:52.886Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "12932:3259",
@@ -10,8 +10,8 @@
   },
   "quality": {
     "nodesTotal": 18,
-    "nodesNormalized": 13,
-    "ratio": 0.72,
+    "nodesNormalized": 17,
+    "ratio": 0.94,
     "degraded": [],
     "structuralVariants": [
       {
@@ -174,7 +174,7 @@
               {
                 "name": "✍️ Tag, Catalog item type",
                 "kind": "instance",
-                "unresolved": true,
+                "slug": "tag-catalog-item-type",
                 "props": {
                   "Show counter": false,
                   "Type": "Category"
@@ -232,7 +232,7 @@
           {
             "name": "✍️ Tag, Stage",
             "kind": "instance",
-            "unresolved": true,
+            "slug": "tag-stage",
             "props": {
               "Leading icon": true,
               "Trailing icon": false,
@@ -251,7 +251,7 @@
           {
             "name": "Button",
             "kind": "instance",
-            "unresolved": true,
+            "slug": "button",
             "props": {
               "Show leading icon": true,
               "Show label": true,
@@ -271,7 +271,8 @@
                   "values": [
                     "Studio"
                   ],
-                  "radius": null
+                  "radius": null,
+                  "slug": "progress-bar-small"
                 }
               ]
             }
@@ -328,7 +329,7 @@
               {
                 "name": "✍️ Tag, Catalog",
                 "kind": "instance",
-                "unresolved": true,
+                "slug": "tag-catalog",
                 "props": {
                   "Type": "Default"
                 },
@@ -472,7 +473,8 @@
                         "color": "#fff9e5",
                         "colorToken": "--zen-color-warning-25",
                         "width": "1px"
-                      }
+                      },
+                      "slug": "tag-default"
                     }
                   ]
                 }
