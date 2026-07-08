@@ -282,6 +282,24 @@ function transformRegistry(input) {
     var cleanPage = statusParser.extractStatus(pageName).cleanName;
     var entry =
       categoryMap && cleanPage ? categoryMap[cleanPage] || null : null;
+    // Plane-B override fallback: a page-level override normally fires in
+    // inferCategoryMap on the Pages-panel canvas name. But a component's own
+    // containing_frame.pageName can diverge from the canvas name (the icons
+    // page shows "DS Icons" in the panel while the icon components report
+    // "Icons"). When the canvas-side entry is missing, resolve the override
+    // directly from the component's clean page name so the join does not
+    // depend on the two names agreeing.
+    if (
+      !entry &&
+      cleanPage &&
+      Object.prototype.hasOwnProperty.call(pageOverridesMap, cleanPage)
+    ) {
+      entry = {
+        section: null,
+        category: pageOverridesMap[cleanPage],
+        status: null,
+      };
+    }
     return { entry: entry, cleanPage: cleanPage };
   }
 
