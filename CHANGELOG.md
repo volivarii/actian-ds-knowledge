@@ -109,6 +109,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   appearance path; the plugin-side consumer (path-b) was retired first, so no reader remains.
 
 ### Fixed
+- The Figma sync now resolves page-level category overrides on each component's own reported page name (`containing_frame.pageName`), not only the Pages-panel canvas name, so an override still applies when the two diverge (the icons page shows `DS Icons` in the panel while icon components report `Icons`). Unblocks the first post-#375 sync, which the mass-loss tripwire correctly halted with the icon category unrestored. ([#377])
 - `transform-registry` no longer emits `categorySlug: "null"` for a
   null-category component (`slugify(null)` guard). ([#375])
 - Restored the `Icons` and `Alert (banner)` categories that a Figma page reorg
@@ -171,6 +172,7 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#377]: https://github.com/volivarii/actian-ds-knowledge/pull/377
 [#375]: https://github.com/volivarii/actian-ds-knowledge/pull/375
 [#373]: https://github.com/volivarii/actian-ds-knowledge/pull/373
 [#371]: https://github.com/volivarii/actian-ds-knowledge/pull/371
