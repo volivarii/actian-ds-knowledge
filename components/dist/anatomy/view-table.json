@@ -1,0 +1,21 @@
+{
+  "_schema_version": 1,
+  "slug": "view-table",
+  "kit": "dskit",
+  "synced_at": "2026-07-08T09:23:58.517Z",
+  "source": {
+    "fileKey": "l8biHxfarNi1I2RMvVxVOK",
+    "nodeId": "7622:5374"
+  },
+  "quality": {
+    "nodesTotal": 1,
+    "nodesNormalized": 1,
+    "ratio": 1,
+    "degraded": []
+  },
+  "root": {
+    "name": "view-table",
+    "kind": "container",
+    "id": "7622:5374"
+  }
+}

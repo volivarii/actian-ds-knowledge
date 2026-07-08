@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "library": "ds",
   "fileKey": "l8biHxfarNi1I2RMvVxVOK",
-  "lastSynced": "2026-07-05T11:32:29.429Z",
+  "lastSynced": "2026-07-08T09:24:02.255Z",
   "componentCount": 320,
   "components": {
     "account-dropdown": {
@@ -14,6 +14,11 @@
       "page": "✅ Global header",
       "properties": {},
       "nestedComponents": [
+        {
+          "slug": "avatar",
+          "role": null,
+          "source": "child-instance"
+        },
         {
           "slug": "help-bubble",
           "role": null,
@@ -71,7 +76,13 @@
       "description": "",
       "page": "Product logos",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "actian-pyramid",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "section": "Brand Assets",
       "category": "Product logos",
@@ -118,15 +129,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "secondaryGroups": [
-        "Common"
-      ],
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "add-circle": {
       "name": "add-circle",
@@ -137,12 +140,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "adlsgen1": {
       "name": "adlsgen1",
@@ -153,12 +151,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "adobe-analytics": {
       "name": "adobe-analytics",
@@ -169,12 +162,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "ai": {
       "name": "ai",
@@ -185,12 +173,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Other",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "alert": {
       "name": "alert",
@@ -201,12 +184,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "alert-banner": {
       "name": "✍️ Alert-banner",
@@ -230,6 +208,11 @@
         }
       },
       "nestedComponents": [
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
         {
           "slug": "info-filled",
           "role": null,
@@ -257,11 +240,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Feedback",
-      "categorySlug": "feedback",
-      "group": "Alert (banner)",
-      "status": "in-progress",
       "variants": {
         "Type": [
           "Primary",
@@ -284,12 +262,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Status",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "alteryx": {
       "name": "alteryx",
@@ -300,12 +273,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "amazons3": {
       "name": "amazons3",
@@ -316,12 +284,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "analytics": {
       "name": "analytics",
@@ -332,12 +295,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "api": {
       "name": "api",
@@ -348,12 +306,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "api-key": {
       "name": "api-key",
@@ -364,12 +317,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "app-switcher-dropdown": {
       "name": "App switcher dropdown",
@@ -389,6 +337,11 @@
           "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
+        },
+        {
+          "slug": "zeenea-logo",
+          "role": null,
+          "source": "child-instance"
         }
       ],
       "documentationLinks": [],
@@ -406,12 +359,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "arrow": {
       "name": "arrow",
@@ -422,12 +370,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "arrow-alt": {
       "name": "arrow-alt",
@@ -438,12 +381,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "arrow-down": {
       "name": "arrow-down",
@@ -454,12 +392,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "asleep": {
       "name": "asleep",
@@ -470,12 +403,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Status",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "atlas": {
       "name": "atlas",
@@ -486,12 +414,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "attachments": {
       "name": "Attachments",
@@ -502,12 +425,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Other",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "avatar": {
       "name": "Avatar",
@@ -548,12 +466,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "award-04": {
       "name": "award-04",
@@ -564,12 +477,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "aws-glue-etl": {
       "name": "Aws-glue-etl",
@@ -580,12 +488,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "awsredshift": {
       "name": "awsredshift",
@@ -596,12 +499,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "azure": {
       "name": "Azure",
@@ -612,12 +510,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "azure-cosmosdb": {
       "name": "azure-cosmosdb",
@@ -628,12 +521,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "azure-datafactory": {
       "name": "azure-datafactory",
@@ -644,12 +532,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "azure-purview": {
       "name": "azure-purview",
@@ -660,12 +543,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "azure-synapse": {
       "name": "azure-synapse",
@@ -676,12 +554,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "back": {
       "name": "back",
@@ -692,12 +565,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "background-explore": {
       "name": "background-explore",
@@ -746,6 +614,11 @@
       "properties": {},
       "nestedComponents": [
         {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "dots",
           "role": null,
           "source": "child-instance"
@@ -772,12 +645,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "bin-type": {
       "name": "bin-type",
@@ -788,12 +656,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Field type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "book-bookmark": {
       "name": "book-bookmark",
@@ -804,15 +667,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "secondaryGroups": [
-        "Details"
-      ],
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "book-edit": {
       "name": "book-edit",
@@ -823,12 +678,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "boolean-type": {
       "name": "boolean-type",
@@ -839,12 +689,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Field type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "breadcrumbs": {
       "name": "Breadcrumbs",
@@ -854,7 +699,18 @@
       "description": "Use to show the user's current location within a hierarchical multi-level structure. Enables 1-click navigation back to parent pages.",
       "page": "✍️ Breadcrumbs",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "digram-item-types",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "link",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "section": "Components",
       "category": "Navigation",
@@ -876,12 +732,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "button": {
       "name": "Button",
@@ -916,7 +767,13 @@
           "default": true
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "spinner",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "section": "Components",
       "category": "Action",
@@ -1007,12 +864,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Status",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "card-for-grouped-content": {
       "name": "Card for grouped content",
@@ -1039,6 +891,11 @@
       "nestedComponents": [
         {
           "slug": "help-circle",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
           "role": null,
           "source": "child-instance"
         }
@@ -1069,7 +926,37 @@
       },
       "nestedComponents": [
         {
+          "slug": "tag-catalog-item-type",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-catalog",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-glossary-item-type",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "digram-topic",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "favorite",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-default",
           "role": null,
           "source": "child-instance"
         },
@@ -1109,7 +996,18 @@
       "description": "",
       "page": "✅ Card",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "digram-item-types",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "progress-bar-small",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "section": "Components",
       "category": "Data Display",
@@ -1130,12 +1028,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "catalog-design": {
       "name": "catalog-design",
@@ -1146,12 +1039,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "catalogs": {
       "name": "catalogs",
@@ -1162,12 +1050,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "chart-bar": {
       "name": "chart--bar",
@@ -1178,12 +1061,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Graph",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "chart-pie": {
       "name": "chart--pie",
@@ -1194,12 +1072,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Graph",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "chat-with-ai-steward": {
       "name": "Chat with AI Steward",
@@ -1210,6 +1083,11 @@
       "page": "✍️ Chat with AI Steward",
       "properties": {},
       "nestedComponents": [
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
         {
           "slug": "expand",
           "role": null,
@@ -1250,18 +1128,42 @@
       "importMethod": "set",
       "description": "Used for binary choices (on/off) or when a user can select multiple options from a list of related items.",
       "page": "✅ Checkbox",
-      "properties": {},
-      "nestedComponents": [],
+      "properties": {
+        "Show label#19716:0": {
+          "type": "BOOLEAN",
+          "default": true
+        },
+        "Show Digram#19716:16": {
+          "type": "BOOLEAN",
+          "default": false
+        },
+        "Show icon#19717:32": {
+          "type": "BOOLEAN",
+          "default": false
+        },
+        "Show Description#19748:66": {
+          "type": "BOOLEAN",
+          "default": false
+        }
+      },
+      "nestedComponents": [
+        {
+          "slug": "digram-item-types",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "section": "Components",
       "category": "Form (input & selection)",
       "categorySlug": "form-input-selection",
       "group": "Checkbox",
+      "status": "in-progress",
       "variants": {
-        "Selected": [
-          "Yes",
+        "Selection": [
+          "Unchecked",
           "Indeterminate",
-          "No"
+          "Checked"
         ],
         "State": [
           "Default",
@@ -1281,12 +1183,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Status",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "chevron-left": {
       "name": "chevron--left",
@@ -1297,12 +1194,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "chevron-sort": {
       "name": "chevron--sort",
@@ -1313,12 +1205,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "chevron-sort-down": {
       "name": "chevron--sort--down",
@@ -1329,12 +1216,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "chevron-sort-up": {
       "name": "chevron--sort--up",
@@ -1345,12 +1227,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "chevron-up": {
       "name": "chevron--up",
@@ -1361,12 +1238,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "circle-dash": {
       "name": "circle-dash",
@@ -1377,12 +1249,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Status",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "ckan": {
       "name": "ckan",
@@ -1393,12 +1260,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "close": {
       "name": "close",
@@ -1409,12 +1271,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "cloud-upload": {
       "name": "cloud--upload",
@@ -1425,12 +1282,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "cognos": {
       "name": "cognos",
@@ -1441,12 +1293,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "cognos-bi": {
       "name": "cognos-bi",
@@ -1457,12 +1304,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "collapse-accordion": {
       "name": "✍️ Collapse-accordion",
@@ -1483,6 +1325,11 @@
         }
       },
       "nestedComponents": [
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
         {
           "slug": "arrow-down",
           "role": null,
@@ -1531,7 +1378,18 @@
       "description": "A placeholder shown when success. Must include an illustration, a clear title, and a \"Call to Action\" button to help the user get started.",
       "page": "✅ Empty state",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "illustration",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "section": "Components",
       "category": "Feedback",
@@ -1552,12 +1410,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Graph",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "cosmosdb": {
       "name": "cosmosdb",
@@ -1568,12 +1421,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "couchbase": {
       "name": "couchbase",
@@ -1584,12 +1432,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "csv": {
       "name": "csv",
@@ -1600,12 +1443,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "csv-custom-item": {
       "name": "csv-custom-item",
@@ -1616,12 +1454,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "cursor-arrow": {
       "name": "cursor-arrow",
@@ -1632,12 +1465,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Cursor",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "cursor-hand": {
       "name": "cursor-hand",
@@ -1648,12 +1476,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Cursor",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "dashboard": {
       "name": "dashboard",
@@ -1664,12 +1487,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "data-access-request": {
       "name": "data-access-request",
@@ -1680,12 +1498,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "data-file-question": {
       "name": "data-file-question",
@@ -1696,12 +1509,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "data-intelligence-dev-logo": {
       "name": "Data Intelligence Dev Logo",
@@ -1734,12 +1542,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Details",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "data-product-output-port": {
       "name": "data-product-output-port",
@@ -1750,12 +1553,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Details",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "data-structured": {
       "name": "data--structured",
@@ -1766,12 +1564,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Field type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "database": {
       "name": "database",
@@ -1782,12 +1575,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "database-check": {
       "name": "database-check",
@@ -1798,12 +1586,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Details",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "databricks": {
       "name": "databricks",
@@ -1814,12 +1597,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "dataiku": {
       "name": "dataiku",
@@ -1830,12 +1608,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "dataset": {
       "name": "dataset",
@@ -1846,15 +1619,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "secondaryGroups": [
-        "Details"
-      ],
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "datasets": {
       "name": "Datasets",
@@ -1865,12 +1630,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Other",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "db2": {
       "name": "db2",
@@ -1881,12 +1641,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "db2-database-1": {
       "name": "db2--database 1",
@@ -1897,12 +1652,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "dbt": {
       "name": "dbt",
@@ -1913,12 +1663,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "denodo": {
       "name": "denodo",
@@ -1929,12 +1674,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "dictionnary": {
       "name": "dictionnary",
@@ -1945,12 +1685,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "digram-item-types": {
       "name": "Digram, Item types",
@@ -1966,7 +1701,43 @@
       "category": "Data Display",
       "categorySlug": "data-display",
       "group": "Digram",
-      "variants": {}
+      "variants": {
+        "Item type": [
+          "Dataset",
+          "Data process",
+          "Data product",
+          "Field",
+          "Output port",
+          "Use case",
+          "Visualization",
+          "Category",
+          "Custom 1",
+          "Custom 2",
+          "Custom 3",
+          "Custom 4",
+          "Custom 5",
+          "Custom 6",
+          "Custom 7",
+          "Custom 8",
+          "Custom 9",
+          "Custom 10",
+          "Custom 11",
+          "Custom 12",
+          "Custom 13",
+          "Custom 14",
+          "Custom 16",
+          "Glossary 1",
+          "Glossary 2",
+          "Glossary 3",
+          "Glossary 4",
+          "Glossary 5"
+        ],
+        "Size": [
+          "Small",
+          "Default",
+          "Large"
+        ]
+      }
     },
     "digram-topic": {
       "name": "Digram, Topic",
@@ -2006,15 +1777,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "secondaryGroups": [
-        "Common"
-      ],
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "disconnected": {
       "name": "disconnected",
@@ -2025,12 +1788,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Graph",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "discussion": {
       "name": "discussion",
@@ -2041,12 +1799,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Details",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "dots": {
       "name": "dots",
@@ -2057,12 +1810,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "download": {
       "name": "download",
@@ -2073,15 +1821,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "secondaryGroups": [
-        "Common"
-      ],
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "drag": {
       "name": "drag",
@@ -2092,12 +1832,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "drawer-side-panel": {
       "name": "Drawer, side panel",
@@ -2114,7 +1849,22 @@
       },
       "nestedComponents": [
         {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "chevron-left",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-catalog-item-type",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-default",
           "role": null,
           "source": "child-instance"
         },
@@ -2134,7 +1884,27 @@
           "source": "child-instance"
         },
         {
+          "slug": "progress-bar-small",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tabs",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "home",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "avatar",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "dropdown-select-default",
           "role": null,
           "source": "child-instance"
         },
@@ -2144,12 +1914,27 @@
           "source": "child-instance"
         },
         {
+          "slug": "tag-interactive",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "favorite",
           "role": null,
           "source": "child-instance"
         },
         {
+          "slug": "search",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "integer-type",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "identification-key",
           "role": null,
           "source": "child-instance"
         }
@@ -2215,6 +2000,16 @@
           "slug": "chevron-up",
           "role": null,
           "source": "child-instance"
+        },
+        {
+          "slug": "avatar",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-interactive",
+          "role": null,
+          "source": "child-instance"
         }
       ],
       "documentationLinks": [],
@@ -2248,12 +2043,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "elasticsearch": {
       "name": "elasticsearch",
@@ -2264,12 +2054,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "empty-state": {
       "name": "Empty state",
@@ -2316,7 +2101,18 @@
           "default": "10966:18012"
         }
       },
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "illustration",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "section": "Components",
       "category": "Feedback",
@@ -2339,12 +2135,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Message",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "error-state": {
       "name": "Error state",
@@ -2354,7 +2145,18 @@
       "description": "A placeholder shown when a container has an error. Must include an illustration, a clear title, and a \"Call to Action\" button to help the user get started.",
       "page": "✅ Empty state",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "illustration",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "section": "Components",
       "category": "Feedback",
@@ -2376,12 +2178,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "event-time-type": {
       "name": "event--time-type",
@@ -2392,12 +2189,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Field type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "exit": {
       "name": "exit",
@@ -2408,12 +2200,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "expand": {
       "name": "expand",
@@ -2424,12 +2211,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Cursor",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "exploration": {
       "name": "exploration",
@@ -2440,12 +2222,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Details",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "export": {
       "name": "export",
@@ -2456,15 +2233,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Graph",
-      "secondaryGroups": [
-        "Common"
-      ],
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "favorite": {
       "name": "favorite",
@@ -2475,12 +2244,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "favorite-filled": {
       "name": "favorite-filled",
@@ -2491,12 +2255,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "filter": {
       "name": "filter",
@@ -2507,12 +2266,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Graph",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "filter-text": {
       "name": "filter-text",
@@ -2523,12 +2277,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "float-type": {
       "name": "float-type",
@@ -2539,12 +2288,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Field type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "gcp": {
       "name": "GCP",
@@ -2555,12 +2299,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "gcpcloudstorage": {
       "name": "gcpcloudstorage",
@@ -2571,12 +2310,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "generic-jdbc": {
       "name": "generic-jdbc",
@@ -2587,12 +2321,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "geo-point-type": {
       "name": "geo-point-type",
@@ -2603,12 +2332,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Field type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "global-header": {
       "name": "Global header",
@@ -2620,6 +2344,16 @@
       "properties": {},
       "nestedComponents": [
         {
+          "slug": "zeenea-logo",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "alert",
           "role": null,
           "source": "child-instance"
@@ -2630,7 +2364,17 @@
           "source": "child-instance"
         },
         {
+          "slug": "avatar",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "search",
           "role": null,
           "source": "child-instance"
         },
@@ -2679,12 +2423,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "glossary-item-hierarchy-diagram": {
       "name": "Glossary item hierarchy diagram",
@@ -2695,6 +2434,11 @@
       "page": "✅ Glossary item hierarchy diagram",
       "properties": {},
       "nestedComponents": [
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
         {
           "slug": "list-bullets",
           "role": null,
@@ -2741,12 +2485,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "graph-merge": {
       "name": "graph-merge",
@@ -2757,12 +2496,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "greenplum": {
       "name": "greenplum",
@@ -2773,12 +2507,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "hbase": {
       "name": "hbase",
@@ -2789,12 +2518,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "hdfs": {
       "name": "hdfs",
@@ -2805,12 +2529,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "help-bubble": {
       "name": "help-bubble",
@@ -2821,12 +2540,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "help-circle": {
       "name": "help-circle",
@@ -2837,12 +2551,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "help-laptop": {
       "name": "help-laptop",
@@ -2853,12 +2562,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "history": {
       "name": "history",
@@ -2869,12 +2573,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "hive": {
       "name": "hive",
@@ -2885,12 +2584,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "home": {
       "name": "home",
@@ -2901,12 +2595,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Details",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "icon-query-queue": {
       "name": "Icon/query-queue",
@@ -2917,12 +2606,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Status",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "identification-key": {
       "name": "Identification key",
@@ -2980,12 +2664,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "impala": {
       "name": "impala",
@@ -2996,12 +2675,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "influxdb": {
       "name": "influxdb",
@@ -3012,12 +2686,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "info": {
       "name": "info",
@@ -3028,12 +2697,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "info-filled": {
       "name": "info-filled",
@@ -3044,12 +2708,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Message",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "informatica": {
       "name": "informatica",
@@ -3060,12 +2719,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "input": {
       "name": "input",
@@ -3076,12 +2730,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Other",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "input-date": {
       "name": "Input, date",
@@ -3109,6 +2758,11 @@
         }
       },
       "nestedComponents": [
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
         {
           "slug": "error-filled",
           "role": null,
@@ -3145,12 +2799,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Other",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "integer-type": {
       "name": "integer-type",
@@ -3161,12 +2810,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Field type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "jdbc": {
       "name": "jdbc",
@@ -3177,12 +2821,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "json": {
       "name": "json",
@@ -3193,12 +2832,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "kafka": {
       "name": "kafka",
@@ -3209,12 +2843,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "l-grid": {
       "name": "L grid",
@@ -3247,12 +2876,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "layers-front-curator-indicator": {
       "name": "layers-front (Curator indicator)",
@@ -3263,12 +2887,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "lifecycle-policy": {
       "name": "lifecycle-policy",
@@ -3279,12 +2898,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "line-graph": {
       "name": "⛔️ Line graph",
@@ -3295,6 +2909,11 @@
       "page": "⛔️ WIP data visuzlization",
       "properties": {},
       "nestedComponents": [
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
         {
           "slug": "dots",
           "role": null,
@@ -3322,12 +2941,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Details",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "lineage-connecting-line": {
       "name": "Lineage connecting line",
@@ -3378,7 +2992,27 @@
       "properties": {},
       "nestedComponents": [
         {
+          "slug": "digram-item-types",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "chevron-up",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "lineage-individual-node",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-default",
           "role": null,
           "source": "child-instance"
         },
@@ -3424,6 +3058,16 @@
       },
       "nestedComponents": [
         {
+          "slug": "digram-item-types",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-default",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "powerbi",
           "role": null,
           "source": "child-instance"
@@ -3434,12 +3078,22 @@
           "source": "child-instance"
         },
         {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "chevron-up",
           "role": null,
           "source": "child-instance"
         },
         {
           "slug": "text-type",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "identification-key",
           "role": null,
           "source": "child-instance"
         }
@@ -3500,12 +3154,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Property type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "list-bullets": {
       "name": "list-bullets",
@@ -3516,12 +3165,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "list-numbers": {
       "name": "list-numbers",
@@ -3532,12 +3176,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Property type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "loader": {
       "name": "Loader",
@@ -3569,7 +3208,23 @@
       "description": "Indicates a background process is active. Use loader with logo in transition between apps or logging in or out to reduce perceived wait time",
       "page": "✅ Loading (Loader, Spinner, Skeleton)",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "actian-data-intelligence",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "loader",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "zeenea-logo",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "section": "Components",
       "category": "Feedback",
@@ -3614,12 +3269,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "looker": {
       "name": "looker",
@@ -3630,12 +3280,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "m-grid": {
       "name": "M grid",
@@ -3667,12 +3312,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "maintenance": {
       "name": "maintenance",
@@ -3683,12 +3323,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "maintenance-state": {
       "name": "Maintenance state",
@@ -3698,7 +3333,18 @@
       "description": "A placeholder shown when maintenance. Must include an illustration, a clear title, and a \"Call to Action\" button to help the user get started.",
       "page": "✅ Empty state",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "illustration",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "section": "Components",
       "category": "Feedback",
@@ -3719,12 +3365,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Graph",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "mapr": {
       "name": "mapr",
@@ -3735,12 +3376,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "mariadb": {
       "name": "mariadb",
@@ -3751,12 +3387,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "matillion": {
       "name": "matillion",
@@ -3767,12 +3398,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "maximize": {
       "name": "maximize",
@@ -3783,12 +3409,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "menu": {
       "name": "menu",
@@ -3799,12 +3420,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "metamodel-widget": {
       "name": "Metamodel widget",
@@ -3820,6 +3436,11 @@
         }
       },
       "nestedComponents": [
+        {
+          "slug": "digram-item-types",
+          "role": null,
+          "source": "child-instance"
+        },
         {
           "slug": "arrow-down",
           "role": null,
@@ -3850,12 +3471,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "minimize": {
       "name": "minimize",
@@ -3866,15 +3482,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Cursor",
-      "secondaryGroups": [
-        "Common"
-      ],
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "misuse-outline": {
       "name": "misuse--outline",
@@ -3885,12 +3493,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Status",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "modal": {
       "name": "Modal",
@@ -3912,12 +3515,42 @@
       },
       "nestedComponents": [
         {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "close",
           "role": null,
           "source": "child-instance"
         },
         {
+          "slug": "rich-text",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "text-input",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "info",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "digram-item-types",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "checkbox-with-label",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "radio-button",
           "role": null,
           "source": "child-instance"
         },
@@ -3948,6 +3581,11 @@
         },
         {
           "slug": "task-list-multiple",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "toggle",
           "role": null,
           "source": "child-instance"
         }
@@ -3981,12 +3619,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "move": {
       "name": "move",
@@ -3997,12 +3630,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "ms-teams": {
       "name": "ms-teams",
@@ -4013,12 +3641,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "mysql": {
       "name": "mysql",
@@ -4029,12 +3652,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "netezza": {
       "name": "netezza",
@@ -4045,12 +3663,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "notification": {
       "name": "Notification",
@@ -4060,7 +3673,13 @@
       "description": "Small, temporary overlay that appears at the edge of the screen. Use for non-critical confirmations (e.g., \"Item saved\"). Automatically dismisses after 3–5 seconds.",
       "page": "✅ Notification (Toast)",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "section": "Components",
       "category": "Feedback",
@@ -4082,6 +3701,11 @@
       "page": "✅ Global header",
       "properties": {},
       "nestedComponents": [
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
         {
           "slug": "checkmark-outline",
           "role": null,
@@ -4109,12 +3733,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Field type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "open": {
       "name": "open",
@@ -4125,12 +3744,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "openapi": {
       "name": "openapi",
@@ -4141,12 +3755,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "opendatagouv": {
       "name": "opendatagouv",
@@ -4157,12 +3766,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "oracle": {
       "name": "oracle",
@@ -4173,12 +3777,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "orc": {
       "name": "orc",
@@ -4189,12 +3788,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "output": {
       "name": "output",
@@ -4205,12 +3799,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "page-header": {
       "name": "Page header",
@@ -4222,6 +3811,21 @@
       "properties": {},
       "nestedComponents": [
         {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "search",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-catalog-item-type",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "open",
           "role": null,
           "source": "child-instance"
@@ -4232,7 +3836,22 @@
           "source": "child-instance"
         },
         {
+          "slug": "zeenea-logo",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "favorite",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-catalog",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-default",
           "role": null,
           "source": "child-instance"
         },
@@ -4275,12 +3894,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "paragraph-justify": {
       "name": "paragraph-justify",
@@ -4291,12 +3905,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Property type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "parquet": {
       "name": "parquet",
@@ -4307,12 +3916,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "pending": {
       "name": "pending",
@@ -4323,12 +3927,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Status",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "pii": {
       "name": "pii",
@@ -4339,12 +3938,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "pin": {
       "name": "pin",
@@ -4355,12 +3949,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Details",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "popover": {
       "name": "⛔️ Popover",
@@ -4392,12 +3981,22 @@
           "source": "child-instance"
         },
         {
+          "slug": "avatar",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "zoom-out",
           "role": null,
           "source": "child-instance"
         },
         {
           "slug": "zoom-in",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
           "role": null,
           "source": "child-instance"
         },
@@ -4422,6 +4021,11 @@
           "source": "child-instance"
         },
         {
+          "slug": "tag-status",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "checkmark-outline",
           "role": null,
           "source": "child-instance"
@@ -4437,7 +4041,17 @@
           "source": "child-instance"
         },
         {
+          "slug": "collapse-accordion",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "link",
           "role": null,
           "source": "child-instance"
         }
@@ -4464,12 +4078,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "powerbi": {
       "name": "Powerbi",
@@ -4480,12 +4089,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "powerbireportserver": {
       "name": "powerbireportserver",
@@ -4496,12 +4100,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "process": {
       "name": "process",
@@ -4512,15 +4111,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Graph",
-      "secondaryGroups": [
-        "Details"
-      ],
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "process-csv": {
       "name": "process csv",
@@ -4531,12 +4122,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "progress-bar-small": {
       "name": "Progress bar small",
@@ -4573,12 +4159,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "radio-button": {
       "name": "Radio button",
@@ -4588,18 +4169,22 @@
       "description": "Used for mutually exclusive choices where the user must select exactly one option from a small list (2–5 items).",
       "page": "✅ Radio button",
       "properties": {
-        "Show Helper text#13981:32": {
+        "Show Digram#19748:82": {
           "type": "BOOLEAN",
-          "default": true
+          "default": false
         },
-        "Show Icon#14119:0": {
+        "Show Icon#19748:93": {
           "type": "BOOLEAN",
-          "default": true
+          "default": false
+        },
+        "Show Description#19748:104": {
+          "type": "BOOLEAN",
+          "default": false
         }
       },
       "nestedComponents": [
         {
-          "slug": "tableau",
+          "slug": "digram-item-types",
           "role": null,
           "source": "child-instance"
         }
@@ -4609,14 +4194,11 @@
       "category": "Form (input & selection)",
       "categorySlug": "form-input-selection",
       "group": "Radio button",
+      "status": "in-progress",
       "variants": {
-        "Format": [
-          "Default",
-          "Card format"
-        ],
-        "Selected": [
-          "No",
-          "Yes"
+        "Selection": [
+          "Unselected",
+          "Selected"
         ],
         "State": [
           "Default",
@@ -4636,12 +4218,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Details",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "relation-incoming": {
       "name": "relation_incoming",
@@ -4652,12 +4229,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "relation-outgoing": {
       "name": "relation_outgoing",
@@ -4668,12 +4240,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "rich-text": {
       "name": "Rich text",
@@ -4705,12 +4272,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "rotate-back": {
       "name": "rotate-back",
@@ -4721,12 +4283,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "s-grid": {
       "name": "S grid",
@@ -4757,12 +4314,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "safyr-dynamicsax": {
       "name": "safyr-dynamicsax",
@@ -4773,12 +4325,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "safyr-ebs": {
       "name": "safyr-ebs",
@@ -4789,12 +4336,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "safyr-jdedwards": {
       "name": "safyr-jdedwards",
@@ -4805,12 +4347,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "safyr-peoplesoft": {
       "name": "safyr-peoplesoft",
@@ -4821,12 +4358,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "safyr-salesforce": {
       "name": "safyr-salesforce",
@@ -4837,12 +4369,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "safyr-sap-bw": {
       "name": "safyr-sap-bw",
@@ -4853,12 +4380,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "safyr-siebel": {
       "name": "safyr-siebel",
@@ -4869,12 +4391,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "sas-database": {
       "name": "sas-database",
@@ -4885,12 +4402,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "scanner": {
       "name": "scanner",
@@ -4901,12 +4413,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "schema": {
       "name": "schema",
@@ -4917,12 +4424,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Details",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "scroll-bar": {
       "name": "Scroll bar",
@@ -4965,6 +4467,11 @@
         },
         {
           "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
           "role": null,
           "source": "child-instance"
         }
@@ -5034,12 +4541,32 @@
           "source": "child-instance"
         },
         {
+          "slug": "digram-item-types",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "info",
           "role": null,
           "source": "child-instance"
         },
         {
           "slug": "close",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "search",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-catalog-item-type",
           "role": null,
           "source": "child-instance"
         }
@@ -5066,12 +4593,42 @@
       "properties": {},
       "nestedComponents": [
         {
+          "slug": "tag-catalog-item-type",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-stage",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
         },
         {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "favorite",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-catalog",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "tag-default",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "progress-bar-small",
           "role": null,
           "source": "child-instance"
         }
@@ -5104,12 +4661,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "segmented-control": {
       "name": "Segmented control",
@@ -5146,12 +4698,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "settings": {
       "name": "settings",
@@ -5162,12 +4709,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "shield-lock": {
       "name": "shield-lock",
@@ -5178,12 +4720,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "side-nav": {
       "name": "✍️ Side nav",
@@ -5196,6 +4733,11 @@
       "nestedComponents": [
         {
           "slug": "dashboard",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
           "role": null,
           "source": "child-instance"
         },
@@ -5310,12 +4852,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "snowflake": {
       "name": "Snowflake",
@@ -5326,12 +4863,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "soda": {
       "name": "soda",
@@ -5342,12 +4874,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "sparkdb": {
       "name": "sparkdb",
@@ -5358,12 +4885,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "spinner": {
       "name": "Spinner",
@@ -5401,12 +4923,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "splunk": {
       "name": "splunk",
@@ -5417,12 +4934,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "sqlserver": {
       "name": "sqlserver",
@@ -5433,12 +4945,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "stepper": {
       "name": "Stepper",
@@ -5480,7 +4987,13 @@
       "description": "A persistent container at the bottom of the viewport used for high-priority global actions (e.g., Save, Cancel, Next) that must remain visible while scrolling.",
       "page": "✅ Sticky footer",
       "properties": {},
-      "nestedComponents": [],
+      "nestedComponents": [
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        }
+      ],
       "documentationLinks": [],
       "section": "Components",
       "category": "Action",
@@ -5501,12 +5014,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Status",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "success-filled": {
       "name": "success-filled",
@@ -5517,12 +5025,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Message",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "suggestion": {
       "name": "suggestion",
@@ -5533,12 +5036,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "sybaseiq": {
       "name": "sybaseiq",
@@ -5549,12 +5047,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "table": {
       "name": "✍️ Table",
@@ -5566,7 +5059,22 @@
       "properties": {},
       "nestedComponents": [
         {
+          "slug": "segmented-control",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "view-table",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "search",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
           "role": null,
           "source": "child-instance"
         },
@@ -5582,6 +5090,11 @@
         },
         {
           "slug": "chevron-sort",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "avatar",
           "role": null,
           "source": "child-instance"
         },
@@ -5643,12 +5156,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "tabs": {
       "name": "Tabs",
@@ -5666,6 +5174,11 @@
       "nestedComponents": [
         {
           "slug": "home",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "avatar",
           "role": null,
           "source": "child-instance"
         }
@@ -5955,6 +5468,11 @@
           "source": "child-instance"
         },
         {
+          "slug": "spinner",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "tools",
           "role": null,
           "source": "child-instance"
@@ -6021,12 +5539,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "talend": {
       "name": "talend",
@@ -6037,12 +5550,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "target-type": {
       "name": "target-type",
@@ -6053,12 +5561,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Field type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "task-list": {
       "name": "task-list",
@@ -6069,12 +5572,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Property type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "task-list-multiple": {
       "name": "task-list-multiple",
@@ -6085,12 +5583,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Property type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "task-list-settings": {
       "name": "task-list-settings",
@@ -6101,12 +5594,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "teradata": {
       "name": "teradata",
@@ -6117,12 +5605,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "text-file": {
       "name": "text-file",
@@ -6133,12 +5616,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Property type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "text-input": {
       "name": "Text input",
@@ -6209,6 +5687,11 @@
           "source": "child-instance"
         },
         {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "simple-check",
           "role": null,
           "source": "child-instance"
@@ -6229,6 +5712,7 @@
       "category": "Form (input & selection)",
       "categorySlug": "form-input-selection",
       "group": "Text input",
+      "status": "in-progress",
       "variants": {
         "States": [
           "Default",
@@ -6252,12 +5736,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Field type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "thoughtspot": {
       "name": "thoughtspot",
@@ -6268,12 +5747,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "thumbs-down": {
       "name": "thumbs-down",
@@ -6284,12 +5758,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "thumbs-up": {
       "name": "thumbs-up",
@@ -6300,12 +5769,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "tibco-datavirtualization": {
       "name": "tibco-datavirtualization",
@@ -6316,12 +5780,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "toggle": {
       "name": "Toggle",
@@ -6342,6 +5801,7 @@
       "category": "Form (input & selection)",
       "categorySlug": "form-input-selection",
       "group": "Toggle control",
+      "status": "in-progress",
       "variants": {
         "Toggle location": [
           "Left",
@@ -6374,6 +5834,11 @@
         }
       },
       "nestedComponents": [
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
         {
           "slug": "zoom-to-fit",
           "role": null,
@@ -6431,12 +5896,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Status",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "tooltip": {
       "name": "⚠️ Tooltip",
@@ -6473,12 +5933,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "undo": {
       "name": "undo",
@@ -6489,12 +5944,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "unknown-type": {
       "name": "unknown-type",
@@ -6505,12 +5955,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Field type",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "upload-file": {
       "name": "upload-file",
@@ -6521,12 +5966,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "use-with-care": {
       "name": "use-with-care",
@@ -6537,12 +5977,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "user-add": {
       "name": "user-add",
@@ -6553,12 +5988,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "user-group": {
       "name": "user-group",
@@ -6569,12 +5999,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "user-info": {
       "name": "user-info",
@@ -6585,12 +6010,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "user-lock": {
       "name": "user-lock",
@@ -6601,12 +6021,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "user-single": {
       "name": "user-single",
@@ -6617,12 +6032,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "view": {
       "name": "view",
@@ -6633,12 +6043,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Misc",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "view-card": {
       "name": "view-card",
@@ -6649,12 +6054,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "view-details": {
       "name": "view-details",
@@ -6665,12 +6065,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Navigation",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "view-table": {
       "name": "view-table",
@@ -6681,12 +6076,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Common",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "warning-alt": {
       "name": "warning--alt",
@@ -6697,12 +6087,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Status",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "warning-filled": {
       "name": "warning-filled",
@@ -6713,12 +6098,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Message",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "whats-new-dropdown": {
       "name": "Whats new dropdown",
@@ -6730,12 +6110,22 @@
       "properties": {},
       "nestedComponents": [
         {
+          "slug": "tag-default",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
         },
         {
           "slug": "chevron-left",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "link",
           "role": null,
           "source": "child-instance"
         }
@@ -6807,12 +6197,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Connector",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "xs-grid": {
       "name": "XS grid",
@@ -6871,12 +6256,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Graph",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "zoom-out": {
       "name": "zoom-out",
@@ -6887,12 +6267,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Graph",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "zoom-reset": {
       "name": "zoom-reset",
@@ -6903,12 +6278,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Graph",
-      "status": "in-progress"
+      "documentationLinks": []
     },
     "zoom-to-fit": {
       "name": "zoom-to-fit",
@@ -6919,12 +6289,7 @@
       "page": "✍️ Icons",
       "properties": {},
       "nestedComponents": [],
-      "documentationLinks": [],
-      "section": "Foundations",
-      "category": "Icons",
-      "categorySlug": "icons",
-      "group": "Graph",
-      "status": "in-progress"
+      "documentationLinks": []
     }
   }
 }

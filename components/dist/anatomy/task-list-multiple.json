@@ -1,0 +1,21 @@
+{
+  "_schema_version": 1,
+  "slug": "task-list-multiple",
+  "kit": "dskit",
+  "synced_at": "2026-07-08T09:23:58.517Z",
+  "source": {
+    "fileKey": "l8biHxfarNi1I2RMvVxVOK",
+    "nodeId": "8504:23376"
+  },
+  "quality": {
+    "nodesTotal": 1,
+    "nodesNormalized": 1,
+    "ratio": 1,
+    "degraded": []
+  },
+  "root": {
+    "name": "task-list-multiple",
+    "kind": "container",
+    "id": "8504:23376"
+  }
+}

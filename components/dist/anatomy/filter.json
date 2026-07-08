@@ -1,0 +1,54 @@
+{
+  "_schema_version": 1,
+  "slug": "filter",
+  "kit": "dskit",
+  "synced_at": "2026-07-08T09:23:58.517Z",
+  "source": {
+    "fileKey": "l8biHxfarNi1I2RMvVxVOK",
+    "nodeId": "14335:17202"
+  },
+  "quality": {
+    "nodesTotal": 3,
+    "nodesNormalized": 2,
+    "ratio": 0.67,
+    "degraded": [
+      {
+        "name": "filter",
+        "reason": "layoutMode:NONE"
+      }
+    ]
+  },
+  "root": {
+    "name": "filter",
+    "kind": "container",
+    "id": "14335:17202",
+    "normalizable": false,
+    "rawHint": {
+      "layoutMode": "NONE",
+      "x": 102,
+      "y": -88,
+      "constraints": {
+        "vertical": "TOP",
+        "horizontal": "LEFT"
+      }
+    },
+    "children": [
+      {
+        "name": "Vector",
+        "kind": "vector",
+        "id": "14335:17195",
+        "appearance": {
+          "background": "#000000"
+        }
+      },
+      {
+        "name": "Union",
+        "kind": "vector",
+        "id": "14335:17199",
+        "appearance": {
+          "background": "#333333"
+        }
+      }
+    ]
+  }
+}

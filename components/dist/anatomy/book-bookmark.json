@@ -1,0 +1,180 @@
+{
+  "_schema_version": 1,
+  "slug": "book-bookmark",
+  "kit": "dskit",
+  "synced_at": "2026-07-08T09:23:58.517Z",
+  "source": {
+    "fileKey": "l8biHxfarNi1I2RMvVxVOK",
+    "nodeId": "7378:5700"
+  },
+  "quality": {
+    "nodesTotal": 9,
+    "nodesNormalized": 6,
+    "ratio": 0.67,
+    "degraded": [
+      {
+        "name": "glossary",
+        "reason": "layoutMode:NONE"
+      },
+      {
+        "name": "SVG",
+        "reason": "layoutMode:NONE"
+      },
+      {
+        "name": "SVG",
+        "reason": "layoutMode:NONE"
+      }
+    ]
+  },
+  "root": {
+    "name": "glossary",
+    "kind": "container",
+    "id": "7378:5700",
+    "normalizable": false,
+    "rawHint": {
+      "layoutMode": "NONE",
+      "x": -1527,
+      "y": -312,
+      "constraints": {
+        "vertical": "TOP",
+        "horizontal": "LEFT"
+      }
+    },
+    "children": [
+      {
+        "name": "SVG",
+        "kind": "container",
+        "id": "14685:8367",
+        "normalizable": false,
+        "rawHint": {
+          "layoutMode": "NONE",
+          "x": -1525,
+          "y": -310,
+          "constraints": {
+            "vertical": "SCALE",
+            "horizontal": "SCALE"
+          }
+        },
+        "children": [
+          {
+            "name": "glossary",
+            "kind": "container",
+            "id": "19681:7825",
+            "layout": {
+              "axis": "row",
+              "gap": "0px",
+              "padding": {
+                "top": "0px",
+                "right": "0px",
+                "bottom": "0px",
+                "left": "0px"
+              },
+              "align": {
+                "main": "start",
+                "cross": "start"
+              },
+              "sizing": {
+                "h": "fixed",
+                "v": "fixed"
+              }
+            },
+            "children": [
+              {
+                "name": "SVG",
+                "kind": "container",
+                "id": "19681:7826",
+                "normalizable": false,
+                "rawHint": {
+                  "layoutMode": "NONE",
+                  "x": -1525.001953125,
+                  "y": -310.151123046875,
+                  "constraints": {
+                    "vertical": "TOP",
+                    "horizontal": "LEFT"
+                  }
+                },
+                "children": [
+                  {
+                    "name": "Vector",
+                    "kind": "vector",
+                    "tokenRefs": [
+                      "--zen-color-icon-default"
+                    ],
+                    "id": "19681:7827",
+                    "appearance": {
+                      "border": {
+                        "color": "#000000",
+                        "colorToken": "--zen-color-icon-default",
+                        "width": "1.25px"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Vector",
+                    "kind": "vector",
+                    "tokenRefs": [
+                      "--zen-color-icon-default"
+                    ],
+                    "id": "19681:7828",
+                    "appearance": {
+                      "border": {
+                        "color": "#000000",
+                        "colorToken": "--zen-color-icon-default",
+                        "width": "1.25px"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Vector",
+                    "kind": "vector",
+                    "tokenRefs": [
+                      "--zen-color-icon-default"
+                    ],
+                    "id": "19681:7829",
+                    "appearance": {
+                      "border": {
+                        "color": "#000000",
+                        "colorToken": "--zen-color-icon-default",
+                        "width": "1.25px"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Vector",
+                    "kind": "vector",
+                    "tokenRefs": [
+                      "--zen-color-icon-default"
+                    ],
+                    "id": "19681:7830",
+                    "appearance": {
+                      "border": {
+                        "color": "#000000",
+                        "colorToken": "--zen-color-icon-default",
+                        "width": "1.25px"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Vector",
+                    "kind": "vector",
+                    "tokenRefs": [
+                      "--zen-color-icon-default"
+                    ],
+                    "id": "19681:7831",
+                    "appearance": {
+                      "border": {
+                        "color": "#000000",
+                        "colorToken": "--zen-color-icon-default",
+                        "width": "1.25px"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
