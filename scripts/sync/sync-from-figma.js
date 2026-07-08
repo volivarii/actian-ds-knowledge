@@ -152,6 +152,14 @@ function loadIconGroups(iconGroupsPath) {
   return readJsonOrNull(iconGroupsPath);
 }
 
+// Load the page-level category override config (components/src/
+// category-page-overrides.json). Returns { overrides, exclude } or null.
+function loadPageOverrides(pluginDir) {
+  return readJsonOrNull(
+    path.join(pluginDir, "components", "src", "category-page-overrides.json"),
+  );
+}
+
 async function syncRegistry(opts, kitId) {
   var meta = KIT_MAP[kitId];
   var fileKey = opts.keys[kitId];
@@ -210,6 +218,7 @@ async function syncRegistry(opts, kitId) {
     standaloneNodes: standaloneNodes,
     documentChildren: documentChildren,
     iconGroups: opts.iconGroups || null,
+    pageOverrides: opts.pageOverrides || null,
     onWarnings: function (ws) {
       // transformRegistry can call onWarnings twice (category inference,
       // then component-on-category-page detection) — concat, don't clobber.
@@ -482,6 +491,7 @@ async function run(opts) {
   if (!iconGroups && opts.iconGroupsPath) {
     iconGroups = loadIconGroups(opts.iconGroupsPath);
   }
+  var pageOverrides = opts.pageOverrides || loadPageOverrides(pluginDir);
 
   var orchOpts = {
     rest: rest,
@@ -489,6 +499,7 @@ async function run(opts) {
     keys: keys,
     categoriesPath: opts.categoriesPath || null,
     iconGroups: iconGroups,
+    pageOverrides: pageOverrides,
   };
   orchOpts.writeJson = writeJson;
   orchOpts.registriesDir = outputDir;
@@ -1018,4 +1029,5 @@ module.exports = {
   parseArgs: parseArgs,
   excludeDeniedPages: excludeDeniedPages,
   DENIED_PAGES: DENIED_PAGES,
+  loadPageOverrides: loadPageOverrides,
 };
