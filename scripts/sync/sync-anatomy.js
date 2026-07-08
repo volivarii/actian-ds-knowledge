@@ -59,6 +59,23 @@ function mergeComponentIdToKey(nodes) {
   return map;
 }
 
+// Mirror of mergeComponentIdToKey on componentSetId: componentId -> its set's
+// node id. A variant instance's componentId maps to the COMPONENT_SET it belongs
+// to, whose id matches the registry component's set-level nodeId. Rides along in
+// the getNodes response; no extra API call.
+function mergeComponentIdToSetId(nodes) {
+  var map = {};
+  Object.keys(nodes || {}).forEach(function (id) {
+    var comps = nodes[id] && nodes[id].components;
+    if (!comps) return;
+    Object.keys(comps).forEach(function (cid) {
+      var s = comps[cid] && comps[cid].componentSetId;
+      if (s) map[cid] = s;
+    });
+  });
+  return map;
+}
+
 // Icons are vector wrappers with no layout structure and live in the curated icon
 // set — they don't belong in the anatomy (layout-structure) domain. (v2 quality)
 function isIconComponent(comp) {
@@ -207,6 +224,9 @@ async function syncAnatomy(opts, kit) {
   // componentId -> key for every component referenced in the fetched subtrees;
   // feeds the normalizer's key fallback. Rides along in the getNodes response.
   var componentIdToKey = mergeComponentIdToKey(nodes);
+  // componentId -> its COMPONENT_SET node id, for the Tier-3 resolution bridge
+  // (variant instance -> set nodeId -> registry slug). Same rides-along source.
+  var componentIdToSetId = mergeComponentIdToSetId(nodes);
 
   // Bundle is a slug→file MAP under a `components` envelope — keeps it off the top
   // level so writeJson's _schema_version injection never appears as a phantom slug.
@@ -250,6 +270,7 @@ async function syncAnatomy(opts, kit) {
         nodeIdToSlug: nodeIdToSlug,
         keyToSlug: keyToSlug,
         componentIdToKey: componentIdToKey,
+        componentIdToSetId: componentIdToSetId,
         varNameById: varNameById,
         colorNameById: colorNameById,
         lengthNameById: lengthNameById,
@@ -400,6 +421,7 @@ module.exports = {
   nodeIdToSlugMap,
   keyToSlugMap,
   mergeComponentIdToKey,
+  mergeComponentIdToSetId,
   fileKeyFor,
   isIconComponent,
   pickDefaultVariant,

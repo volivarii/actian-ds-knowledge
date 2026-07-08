@@ -387,6 +387,14 @@ function normalizeNode(node, ctx) {
       var key = ctx.componentIdToKey[node.componentId];
       if (key && ctx.keyToSlug) slug = ctx.keyToSlug[key];
     }
+    // Tier 3 - componentSetId bridge: a nested composite instance's componentId
+    // is a variant node inside a COMPONENT_SET; its set id maps to the registry
+    // set nodeId. Strict fallback: only reached when Tier 1 and Tier 2 miss, so
+    // it never overrides an already-resolved slug.
+    if (!slug && node.componentId && ctx.componentIdToSetId) {
+      var setId = ctx.componentIdToSetId[node.componentId];
+      if (setId && ctx.nodeIdToSlug) slug = ctx.nodeIdToSlug[setId];
+    }
     if (slug) {
       out.slug = slug;
       ctx.normalized++;
@@ -528,6 +536,7 @@ function buildAnatomyFile(rootNode, opts) {
   var ctx = {
     nodeIdToSlug: opts.nodeIdToSlug || {},
     componentIdToKey: opts.componentIdToKey || {},
+    componentIdToSetId: opts.componentIdToSetId || {},
     keyToSlug: opts.keyToSlug || {},
     varNameById: opts.varNameById || {},
     colorNameById: opts.colorNameById || {},
@@ -573,6 +582,7 @@ function buildAnatomyFile(rootNode, opts) {
       var vctx = {
         nodeIdToSlug: ctx.nodeIdToSlug,
         componentIdToKey: ctx.componentIdToKey,
+        componentIdToSetId: ctx.componentIdToSetId,
         keyToSlug: ctx.keyToSlug,
         varNameById: ctx.varNameById,
         colorNameById: ctx.colorNameById,
