@@ -421,12 +421,6 @@
       "provenance": "figma-dskit"
     },
     {
-      "@id": "category:icons",
-      "@type": "Category",
-      "title": "Icons",
-      "provenance": "figma-dskit"
-    },
-    {
       "@id": "category:illustrations-graphics",
       "@type": "Category",
       "title": "Illustrations & graphics",
@@ -8510,194 +8504,14 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:add",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:add-circle",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:adlsgen1",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:adobe-analytics",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:ai",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:alert",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:alert-banner",
-      "target": "category:feedback"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:alert-circle",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:alteryx",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:amazons3",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:analytics",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:api",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:api-key",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:app-switcher-dropdown",
       "target": "category:navigation"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:applications",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:arrow",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:arrow-alt",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:arrow-down",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:asleep",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:atlas",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:attachments",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:avatar",
       "target": "category:data-display"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:avro",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:award-04",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:aws-glue-etl",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:awsredshift",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:azure",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:azure-cosmosdb",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:azure-datafactory",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:azure-purview",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:azure-synapse",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:back",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -8720,44 +8534,8 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:bigquery",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:bin-type",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:book-bookmark",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:book-edit",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:boolean-type",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:breadcrumbs",
       "target": "category:navigation"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:brightness-contrast",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -8770,12 +8548,6 @@
       "edgeType": "in_category",
       "source": "component:calendar",
       "target": "category:action"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:calendar-2",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -8798,36 +8570,6 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:cassandra",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:catalog-design",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:catalogs",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:chart-bar",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:chart-pie",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:chat-with-ai-steward",
       "target": "category:overlays"
     },
@@ -8836,78 +8578,6 @@
       "edgeType": "in_category",
       "source": "component:checkbox-with-label",
       "target": "category:form-input-selection"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:checkmark-outline",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:chevron-left",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:chevron-sort",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:chevron-sort-down",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:chevron-sort-up",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:chevron-up",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:circle-dash",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:ckan",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:close",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:cloud-upload",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:cognos",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:cognos-bi",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -8930,152 +8600,8 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:connected",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:cosmosdb",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:couchbase",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:csv",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:csv-custom-item",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:cursor-arrow",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:cursor-hand",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:dashboard",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:data-access-request",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:data-file-question",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:data-intelligence-dev-logo",
       "target": "category:product-logos"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:data-model",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:data-product-output-port",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:data-structured",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:database",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:database-check",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:databricks",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:dataiku",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:dataset",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:datasets",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:db2",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:db2-database-1",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:dbt",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:denodo",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:dictionnary",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -9092,42 +8618,6 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:directory",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:disconnected",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:discussion",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:dots",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:download",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:drag",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:drawer-side-panel",
       "target": "category:overlays"
     },
@@ -9140,26 +8630,8 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:edit",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:elasticsearch",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:empty-state",
       "target": "category:feedback"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:error-filled",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -9170,182 +8642,14 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:erwin-data-modeler",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:event-time-type",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:exit",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:expand",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:exploration",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:export",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:favorite",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:favorite-filled",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:filter",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:filter-text",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:float-type",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:gcp",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:gcpcloudstorage",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:generic-jdbc",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:geo-point-type",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:global-header",
       "target": "category:navigation"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:glossary",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:glossary-item-hierarchy-diagram",
       "target": "category:data-display"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:google-cloud",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:graph-merge",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:greenplum",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:hbase",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:hdfs",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:help-bubble",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:help-circle",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:help-laptop",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:history",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:hive",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:home",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:icon-query-queue",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -9362,44 +8666,13 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:image",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:impala",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:influxdb",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:info",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:info-filled",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:informatica",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:input",
-      "target": "category:icons"
+      "target": "category:form-input-selection",
+      "provenance": {
+        "source_file": "components/src/category-overrides.json",
+        "deriver": "derive-graph.js",
+        "method": "collectComponentsAndCategories.override"
+      }
     },
     {
       "@type": "Edge",
@@ -9410,68 +8683,14 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:input-ports",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:integer-type",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:jdbc",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:json",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:kafka",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:l-grid",
       "target": "category:breakpoint-grid-structure"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:layers-front",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:layers-front-curator-indicator",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:lifecycle-policy",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:line-graph",
       "target": "category:data-display"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:lineage",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -9500,24 +8719,6 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:link-type",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:list-bullets",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:list-numbers",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:loader",
       "target": "category:feedback"
     },
@@ -9536,32 +8737,8 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:local-filesystem",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:looker",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:m-grid",
       "target": "category:breakpoint-grid-structure"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:mail",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:maintenance",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -9572,98 +8749,14 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:map",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:mapr",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:mariadb",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:matillion",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:maximize",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:menu",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:metamodel-widget",
       "target": "category:data-display"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:microstrategy",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:minimize",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:misuse-outline",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:modal",
       "target": "category:overlays"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:mongodb",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:move",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:ms-teams",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:mysql",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:netezza",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -9680,86 +8773,8 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:null-sign",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:open",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:openapi",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:opendatagouv",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:oracle",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:orc",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:output",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:page-header",
       "target": "category:data-display"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:palantir",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:paragraph-justify",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:parquet",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:pending",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:pii",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:pin",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -9770,44 +8785,8 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:postgresql",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:powerbi",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:powerbireportserver",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:process",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:process-csv",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:progress-bar-small",
       "target": "category:data-display"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:qlik-sense",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -9818,110 +8797,14 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:relation",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:relation-incoming",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:relation-outgoing",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:rich-text",
       "target": "category:form-input-selection"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:rocket-1",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:rotate-back",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:s-grid",
       "target": "category:breakpoint-grid-structure"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:safyr-dynamics365",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:safyr-dynamicsax",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:safyr-ebs",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:safyr-jdedwards",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:safyr-peoplesoft",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:safyr-salesforce",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:safyr-sap-bw",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:safyr-siebel",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:sas-database",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:scanner",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:schema",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -9956,32 +8839,8 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:security-services",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:segmented-control",
       "target": "category:data-display"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:server-search",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:settings",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:shield-lock",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -9992,50 +8851,8 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:simple-check",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:snowflake",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:soda",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:sparkdb",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:spinner",
       "target": "category:feedback"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:spline",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:splunk",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:sqlserver",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -10052,38 +8869,8 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:stop-outline",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:success-filled",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:suggestion",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:sybaseiq",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:table",
       "target": "category:data-display"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:tableau",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -10142,86 +8929,8 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:tags-add",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:talend",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:target-type",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:task-list",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:task-list-multiple",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:task-list-settings",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:teradata",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:text-file",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:text-input",
       "target": "category:form-input-selection"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:text-type",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:thoughtspot",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:thumbs-down",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:thumbs-up",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:tibco-datavirtualization",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -10238,110 +8947,8 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:tools",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:tooltip",
       "target": "category:overlays"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:trash",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:undo",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:unknown-type",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:upload-file",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:use-with-care",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:user-add",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:user-group",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:user-info",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:user-lock",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:user-single",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:view",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:view-card",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:view-details",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:view-table",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:warning-alt",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:warning-filled",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
@@ -10364,12 +8971,6 @@
     {
       "@type": "Edge",
       "edgeType": "in_category",
-      "source": "component:xml",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
       "source": "component:xs-grid",
       "target": "category:breakpoint-grid-structure"
     },
@@ -10378,30 +8979,6 @@
       "edgeType": "in_category",
       "source": "component:zeenea-logo",
       "target": "category:product-logos"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:zoom-in",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:zoom-out",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:zoom-reset",
-      "target": "category:icons"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "in_category",
-      "source": "component:zoom-to-fit",
-      "target": "category:icons"
     },
     {
       "@type": "Edge",
