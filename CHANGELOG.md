@@ -67,6 +67,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   consumers that ignore it behave as before. Real data lands on the next nightly sync. ([#354])
 
 ### Changed
+- **Breaking Figma sync (2026-07-08).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#374](https://github.com/volivarii/actian-ds-knowledge/pull/374))
 - **Canonical sync emit (wave 2).** The nightly sync can now tell "re-emitted" from "changed":
   registry components, categories, and the anatomy bundle are emitted in sorted key order (ends the
   ~97% move-noise in breaking-PR diffs); files are written only when canonical bytes differ;
