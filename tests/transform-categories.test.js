@@ -1852,3 +1852,17 @@ test("transform-categories — page override maps a churned icon page clean-name
   var plain = inferCategoryMap(children);
   assert.equal(plain.map["DS Icons"].category, "DS Icons");
 });
+
+test("transform-categories — an override key colliding with a category header does not hijack the header", function () {
+  var children = [
+    canvas("🧱 COMPONENTS"),
+    canvas("Feedback"),
+    canvas("     ✍️ Toast"),
+  ];
+  // A misconfigured override keyed on a real category-header name must NOT
+  // intercept the header (which would leave currentCategory unset and orphan
+  // the member pages below it).
+  var overrides = { Feedback: "Feedback" };
+  var result = inferCategoryMap(children, overrides);
+  assert.equal(result.map["Toast"].category, "Feedback");
+});

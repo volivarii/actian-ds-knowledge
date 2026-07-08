@@ -196,3 +196,30 @@ test("buildEntry: a null-category map entry yields no categorySlug (no slugify(n
   assert.equal(e.categorySlug, undefined, "no categorySlug for null category");
   assert.equal(e.category, undefined, "no category key for null category");
 });
+
+test("pageOverrides: a malformed exclude (non-array) is tolerated, not a crash", function () {
+  var input = {
+    library: "dsKit",
+    fileKey: "k",
+    componentSets: [],
+    componentSetNodes: {},
+    standalones: [
+      {
+        name: "add",
+        key: "kADD",
+        node_id: "1:1",
+        description: "",
+        containing_frame: { pageName: "✍️ DS Icons", name: "Actual icons" },
+      },
+    ],
+    standaloneNodes: { "1:1": { document: { type: "COMPONENT" } } },
+    documentChildren: [{ type: "CANVAS", name: "✍️ DS Icons" }],
+    // exclude authored as a string instead of an array (a plausible JSON slip)
+    pageOverrides: {
+      overrides: { "DS Icons": "Icons" },
+      exclude: "DS Icons: replacement",
+    },
+  };
+  var reg = T(input); // must not throw on the non-array exclude
+  assert.equal(reg.components["add"].category, "Icons");
+});

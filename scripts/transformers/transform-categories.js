@@ -110,9 +110,13 @@ function inferCategoryMap(documentChildren, pageOverrides) {
     // category-page-overrides.json). Normalizes a churned/self-hosting page
     // (e.g. "DS Icons" -> "Icons") to a canonical category regardless of
     // section, order, or a missing category header. Both planes still join on
-    // the real page clean-name; only the category value is normalized.
+    // the real page clean-name; only the category value is normalized. A key
+    // that collides with a real category-header name is skipped, so it never
+    // intercepts the header page (which would leave currentCategory unset and
+    // orphan that section's member pages).
     var overrideParsed = statusParser.extractStatus(rawName);
     if (
+      KNOWN_CATEGORIES.indexOf(overrideParsed.cleanName) < 0 &&
       Object.prototype.hasOwnProperty.call(overrides, overrideParsed.cleanName)
     ) {
       var overrideCat = overrides[overrideParsed.cleanName];

@@ -208,9 +208,18 @@ function transformRegistry(input) {
   var standaloneNodes = input.standaloneNodes || {};
   var documentChildren = input.documentChildren || null;
   var pageOverridesCfg = input.pageOverrides || {};
-  var pageOverridesMap = pageOverridesCfg.overrides || {};
+  // Defensive: tolerate a malformed hand-authored config (wrong shapes) instead
+  // of throwing a low-level TypeError deep in the sync. A non-object `overrides`
+  // or a non-array `exclude` is treated as absent.
+  var pageOverridesMap =
+    pageOverridesCfg.overrides && typeof pageOverridesCfg.overrides === "object"
+      ? pageOverridesCfg.overrides
+      : {};
   var excludeSet = {};
-  (pageOverridesCfg.exclude || []).forEach(function (name) {
+  var excludeList = Array.isArray(pageOverridesCfg.exclude)
+    ? pageOverridesCfg.exclude
+    : [];
+  excludeList.forEach(function (name) {
     excludeSet[name] = true;
   });
   // Phase 5 (knowledge v0.11.0): `input.guidelinesSlugSet` was retired
