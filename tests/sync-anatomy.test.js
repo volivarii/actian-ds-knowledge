@@ -11,6 +11,7 @@ var {
   pickDefaultVariant,
   keyToSlugMap,
   mergeComponentIdToKey,
+  mergeComponentIdToSetId,
 } = require("../scripts/sync/sync-anatomy");
 
 function tmpDir() {
@@ -254,6 +255,23 @@ test("mergeComponentIdToKey merges components dicts across node payloads", funct
     C1: "KA",
     C2: "KB",
     C3: "KC",
+  });
+});
+
+test("mergeComponentIdToSetId merges componentSetId across node payloads", function () {
+  var nodes = {
+    a: {
+      components: {
+        "99:2": { key: "kX", componentSetId: "20:0" },
+        "10:0": { key: "kY" }, // no componentSetId — skipped
+      },
+    },
+    b: { components: { "99:3": { componentSetId: "30:0" } } },
+    c: {}, // no components — skipped
+  };
+  assert.deepEqual(mergeComponentIdToSetId(nodes), {
+    "99:2": "20:0",
+    "99:3": "30:0",
   });
 });
 

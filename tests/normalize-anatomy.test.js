@@ -247,6 +247,45 @@ test("normalizeNode flags unresolved when both the node-id and key paths miss", 
   assert.equal(out.slug, undefined);
 });
 
+test("normalizeNode resolves a nested composite via the componentSetId bridge (Tier 3) when node-id and key miss", function () {
+  var ctx = newCtx({
+    nodeIdToSlug: { "20:0": "tag-catalog" }, // the SET's registry nodeId
+    componentIdToSetId: { "99:2": "20:0" }, // variant 99:2 -> set 20:0
+  });
+  var out = N.normalizeNode(
+    { type: "INSTANCE", name: "Tag", componentId: "99:2" },
+    ctx,
+  );
+  assert.equal(out.slug, "tag-catalog");
+  assert.equal(out.unresolved, undefined);
+  assert.equal(ctx.normalized, 1);
+});
+
+test("normalizeNode prefers node-id/key over the componentSetId bridge (Tier 3 is a strict fallback)", function () {
+  var ctx = newCtx({
+    nodeIdToSlug: { "7:7": "checkbox-with-label", "20:0": "tag-catalog" },
+    componentIdToSetId: { "7:7": "20:0" }, // would give tag-catalog via Tier 3
+  });
+  var out = N.normalizeNode(
+    { type: "INSTANCE", name: "Checkbox", componentId: "7:7" },
+    ctx,
+  );
+  assert.equal(out.slug, "checkbox-with-label"); // Tier 1 wins; Tier 3 not consulted
+});
+
+test("normalizeNode leaves a private set (not a registry nodeId) unresolved via Tier 3", function () {
+  var ctx = newCtx({
+    nodeIdToSlug: {}, // set 30:0 is not a registry component
+    componentIdToSetId: { "99:9": "30:0" },
+  });
+  var out = N.normalizeNode(
+    { type: "INSTANCE", name: ".private", componentId: "99:9" },
+    ctx,
+  );
+  assert.equal(out.unresolved, true);
+  assert.equal(out.slug, undefined);
+});
+
 test("text node captures characters", function () {
   var ctx = newCtx();
   var out = N.normalizeNode(
