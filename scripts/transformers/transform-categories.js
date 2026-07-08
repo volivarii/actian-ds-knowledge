@@ -88,8 +88,9 @@ function extractSectionName(rawMarker) {
     .join(" ");
 }
 
-function inferCategoryMap(documentChildren) {
+function inferCategoryMap(documentChildren, pageOverrides) {
   var map = {};
+  var overrides = pageOverrides || {};
   var warnings = [];
   var seenCategories = {};
   var inComponentsSection = false;
@@ -104,6 +105,29 @@ function inferCategoryMap(documentChildren) {
     if (!c || c.type !== "CANVAS") continue;
     var rawName = String(c.name == null ? "" : c.name);
     var trimmed = rawName.trim();
+
+    // First-checked, unconditional page-level override (components/src/
+    // category-page-overrides.json). Normalizes a churned/self-hosting page
+    // (e.g. "DS Icons" -> "Icons") to a canonical category regardless of
+    // section, order, or a missing category header. Both planes still join on
+    // the real page clean-name; only the category value is normalized. A key
+    // that collides with a real category-header name is skipped, so it never
+    // intercepts the header page (which would leave currentCategory unset and
+    // orphan that section's member pages).
+    var overrideParsed = statusParser.extractStatus(rawName);
+    if (
+      KNOWN_CATEGORIES.indexOf(overrideParsed.cleanName) < 0 &&
+      Object.prototype.hasOwnProperty.call(overrides, overrideParsed.cleanName)
+    ) {
+      var overrideCat = overrides[overrideParsed.cleanName];
+      map[overrideParsed.cleanName] = {
+        section: currentSection,
+        category: overrideCat,
+        status: overrideParsed.status,
+      };
+      seenCategories[overrideCat] = true;
+      continue;
+    }
 
     if (isTopLevelMarker(rawName)) {
       inComponentsSection = trimmed.indexOf("COMPONENTS") >= 0;

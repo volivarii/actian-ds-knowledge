@@ -1828,3 +1828,41 @@ test("transform-registry — same-slug collision: header-page duplicate never cl
     "warning cites the category header page",
   );
 });
+
+test("transform-categories — page override maps a churned icon page clean-name to canonical category", function () {
+  var children = [
+    canvas("✍️ DS Icons"),
+    canvas("🧱 COMPONENTS"),
+    canvas("Feedback"),
+    canvas("     ✍️ Alert (banner)"),
+  ];
+  var overrides = { "DS Icons": "Icons", "Alert (banner)": "Feedback" };
+  var result = inferCategoryMap(children, overrides);
+
+  // Self-hosting icons page: override wins regardless of section/order.
+  assert.equal(result.map["DS Icons"].category, "Icons");
+  assert.equal(result.map["DS Icons"].status, "in-progress");
+
+  // A member-style page also resolvable via override (Alert banner casualty).
+  assert.equal(result.map["Alert (banner)"].category, "Feedback");
+
+  // No override arg: the override does not fire, so the pre-existing ζ.2
+  // path self-categorizes the non-COMPONENTS page to its own clean-name.
+  // The override's job is to normalize that ("DS Icons") to "Icons".
+  var plain = inferCategoryMap(children);
+  assert.equal(plain.map["DS Icons"].category, "DS Icons");
+});
+
+test("transform-categories — an override key colliding with a category header does not hijack the header", function () {
+  var children = [
+    canvas("🧱 COMPONENTS"),
+    canvas("Feedback"),
+    canvas("     ✍️ Toast"),
+  ];
+  // A misconfigured override keyed on a real category-header name must NOT
+  // intercept the header (which would leave currentCategory unset and orphan
+  // the member pages below it).
+  var overrides = { Feedback: "Feedback" };
+  var result = inferCategoryMap(children, overrides);
+  assert.equal(result.map["Toast"].category, "Feedback");
+});

@@ -115,3 +115,16 @@ test("D3 — app-context rejects an entity missing the required relationships fi
     "entity missing relationships should reject",
   );
 });
+
+test("schemas/icons.json validates the dist components/dist/icons/icons.json (non-empty)", () => {
+  assert.equal(
+    validateFile("schemas/icons.json", "components/dist/icons/icons.json"),
+    true,
+  );
+});
+
+test("schemas/icons.json rejects an empty icon library (mass category-loss guard)", () => {
+  const { validate } = compileSchema("schemas/icons.json");
+  const empty = { _schema_version: 1, _meta: {}, icons: {} };
+  assert.equal(validate(empty), false, "empty icons must reject");
+});

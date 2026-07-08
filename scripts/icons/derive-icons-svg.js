@@ -86,6 +86,25 @@ function deriveIcons(src, registry, iconGroups, opts) {
       nodeId: reg.nodeId,
     };
   }
+  // Aggregate resilience bound: per-slug warn-skip absorbs a FEW stray icons
+  // (a rename / recategorization), but the whole library collapsing is a
+  // systemic Figma-side break, not a point failure. Refuse to emit a
+  // near-empty icons.json so a mass loss fails the sync loud (throw -> the
+  // icons phase records an error -> exit 2, no PR). Resilience mode only; the
+  // absolute floor keeps the tiny all-dangling cases (single/2-icon) resilient.
+  if (curatedSlugs) {
+    const total = Object.keys(src.icons).length;
+    const emitted = Object.keys(out.icons).length;
+    const skipped = total - emitted;
+    if (skipped >= 10 && emitted <= total * 0.5) {
+      throw new Error(
+        `icons-svg: mass category-loss - ${skipped}/${total} icons skipped ` +
+          `(only ${emitted} valid). Refusing to emit a near-empty icons.json; a Figma ` +
+          `page rename likely stripped category "Icons". Fix the icon page category ` +
+          `(components/src/category-page-overrides.json) and re-sync.`,
+      );
+    }
+  }
   return out;
 }
 
