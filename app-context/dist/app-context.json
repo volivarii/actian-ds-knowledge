@@ -1198,7 +1198,8 @@
         "tabs",
         "page-header",
         "breadcrumbs",
-        "side-nav"
+        "side-nav",
+        "drawer-side-panel"
       ],
       "description": "Every catalog object has a tabbed detail page with property panel/sidebar."
     },
@@ -1296,7 +1297,9 @@
         "text-input",
         "collapse-accordion",
         "sticky-footer",
-        "button"
+        "button",
+        "toggle",
+        "checkbox-with-label"
       ],
       "description": "Edit-group / permission / role configuration pattern. Page header + top inputs section + one or more collapsible filter-group sections, each containing label rows with toggle switches, plus optional slot cards for nested config (Checkbox + Toggle stacks). Sticky footer pinned at the bottom for save/cancel actions. Used when administrators configure access bundles or named groups with many fine-grained permissions."
     },

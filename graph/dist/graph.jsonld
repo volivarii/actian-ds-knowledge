@@ -13613,6 +13613,18 @@
       "@type": "Edge",
       "edgeType": "uses_component",
       "source": "pattern:asset-detail-360",
+      "target": "component:drawer-side-panel",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
       "target": "component:page-header",
       "confidence": "asserted",
       "provenance": {
@@ -13913,6 +13925,18 @@
       "@type": "Edge",
       "edgeType": "uses_component",
       "source": "pattern:filter-groups-form",
+      "target": "component:checkbox-with-label",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:filter-groups-form",
       "target": "component:collapse-accordion",
       "confidence": "asserted",
       "provenance": {
@@ -13950,6 +13974,18 @@
       "edgeType": "uses_component",
       "source": "pattern:filter-groups-form",
       "target": "component:text-input",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:filter-groups-form",
+      "target": "component:toggle",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",

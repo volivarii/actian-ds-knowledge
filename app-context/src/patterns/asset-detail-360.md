@@ -11,5 +11,6 @@ components:
   - page-header
   - breadcrumbs
   - side-nav
+  - drawer-side-panel
 ---
 Every catalog object has a tabbed detail page with property panel/sidebar.
