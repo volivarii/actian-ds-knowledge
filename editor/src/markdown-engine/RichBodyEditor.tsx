@@ -6,25 +6,43 @@ import {
   editorViewOptionsCtx,
 } from "@milkdown/core";
 import { listener, listenerCtx } from "@milkdown/plugin-listener";
+import { insert } from "@milkdown/utils";
 import { MilkdownProvider, Milkdown, useEditor } from "@milkdown/react";
 import { Flex, Button } from "@radix-ui/themes";
+import type { Octokit } from "@octokit/rest";
 import { CodeMirrorEditor } from "./CodeMirrorEditor";
 import { useMilkdownPresets } from "./milkdownPreset";
+import { setMediaPreviewSlug } from "./media/mediaNodeView";
+import { MediaPickerPopover } from "./MediaPickerPopover";
 
 function MilkdownBody({
   initialText,
   onChange,
   label,
+  componentSlug,
+  onReady,
 }: {
   initialText: string;
   onChange: (md: string) => void;
   label: string;
+  componentSlug?: string | null;
+  /** Exposes the live editor getter so the parent's <Media> picker can insert
+   *  the directive into the running ProseMirror doc. */
+  onReady?: (get: () => Editor | undefined) => void;
 }) {
-  useEditor(
+  // Prime the module-level preview slug BEFORE the editor mounts. The NodeView
+  // factory reads it lazily when each <Media> atom renders, and editor.create()
+  // is async (a regular effect kicks it off), so this effect — declared before
+  // useEditor — always resolves the slug in time for the first render.
+  React.useEffect(() => {
+    setMediaPreviewSlug(componentSlug ?? null);
+  }, [componentSlug]);
+
+  const { get } = useEditor(
     (root) =>
-      // Presets (commonmark + gfm) come from the shared milkdownPreset module
-      // so the live editor and the round-trip drift guards never diverge.
-      // listener is applied before the presets, as before.
+      // Presets (commonmark + gfm + media NodeView) come from the shared
+      // milkdownPreset module so the live editor and the round-trip drift
+      // guards never diverge. listener is applied before the presets, as before.
       useMilkdownPresets(
         Editor.make()
           .config((ctx) => {
@@ -57,6 +75,13 @@ function MilkdownBody({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
+  // Publish the getter once it's available. `get` is stable across renders
+  // (useEditor memoizes it), so this fires whenever onReady identity changes.
+  React.useEffect(() => {
+    onReady?.(get);
+  }, [get, onReady]);
+
   return <Milkdown />;
 }
 
@@ -64,23 +89,54 @@ export function RichBodyEditor({
   initialText,
   onChange,
   filename,
+  componentSlug,
+  octokit,
 }: {
   initialText: string;
   onChange: (md: string) => void;
   filename?: string;
+  /** Slug of the component being edited (e.g. `button`); enables <Media>
+   *  preview resolution + the insert picker. null/undefined outside components. */
+  componentSlug?: string | null;
+  /** Present only for component-guideline edits — powers the media picker. */
+  octokit?: Octokit;
 }) {
   const [mode, setMode] = React.useState<"rich" | "source">("rich");
   const [text, setText] = React.useState(initialText);
   const label = `Body editor${filename ? ` — ${filename}` : ""}`;
+  // Live editor getter, published by MilkdownBody once created, so the media
+  // picker can insert the directive into the running doc.
+  const getEditorRef = React.useRef<(() => Editor | undefined) | null>(null);
+  const handleReady = React.useCallback(
+    (get: () => Editor | undefined) => {
+      getEditorRef.current = get;
+    },
+    [],
+  );
 
   const handleChange = (md: string) => {
     setText(md);
     onChange(md);
   };
 
+  // Interim insertion affordance for rich mode. Task 2 folds media insertion
+  // into the full rich-mode toolbar and supersedes this minimal header row.
+  const showMediaPicker = mode === "rich" && !!octokit && !!componentSlug;
+
   return (
     <div>
-      <Flex justify="end" mb="1">
+      <Flex justify="between" align="center" mb="1" gap="2">
+        {showMediaPicker && octokit && componentSlug ? (
+          <MediaPickerPopover
+            octokit={octokit}
+            componentSlug={componentSlug}
+            onInsert={(snippet) =>
+              getEditorRef.current?.()?.action(insert(snippet))
+            }
+          />
+        ) : (
+          <span />
+        )}
         {/* Action-model toggle: the accessible name states the action this
             button performs (not a pressed state). A flipping label + aria-pressed
             would announce contradictory state, and aria-label also keeps the
@@ -104,6 +160,8 @@ export function RichBodyEditor({
             initialText={text}
             onChange={handleChange}
             label={label}
+            componentSlug={componentSlug}
+            onReady={handleReady}
           />
         </MilkdownProvider>
       ) : (

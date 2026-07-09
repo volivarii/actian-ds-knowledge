@@ -40,6 +40,14 @@ const RichBodyEditor = lazy(() =>
 
 const WIDGETS = { RefArray: RefArrayWidget, TagInput: TagInputWidget };
 
+/** Derive the component slug from a path under `components/src/<slug>/…`
+ *  (excluding the `categories` pseudo-slug), else null. Mirrors the derivation
+ *  in MarkdownEditScreen; drives <Media> preview + insertion in the rich editor. */
+function componentSlugFromPath(path: string): string | null {
+  const m = path.match(/^components\/src\/([^/]+)\//);
+  return m && m[1] && m[1] !== "categories" ? m[1] : null;
+}
+
 /** Pure: serialize form frontmatter + re-join the prose body into a file.
  *  Pass `flowAtDepth` to control inline-object depth (default 2 = flow at
  *  depth ≥ 2). Pass `null` for fully block-style output (no inline objects at
@@ -356,6 +364,8 @@ export function FrontmatterBodyEditScreen(props: Props) {
                       scheduleFlush(formData, t);
                     }}
                     filename={path.split("/").pop()}
+                    componentSlug={componentSlugFromPath(path)}
+                    octokit={octokit}
                   />
                 </Suspense>
               ) : (
