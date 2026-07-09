@@ -12,8 +12,14 @@ import type { RJSFSchema } from "@rjsf/utils";
 import { Box, Flex, Button, Text, Callout } from "@radix-ui/themes";
 import { RJSFForm } from "../form-engine/RJSFForm";
 import { frontmatterTemplates } from "../form-engine/templates";
-import { stringifyYaml } from "../form-engine/yamlSerializer";
-import { splitFrontmatter } from "../substrate/splitFrontmatter";
+import {
+  stringifyYaml,
+  assembleFrontmatterFilePreservingComments,
+} from "../form-engine/yamlSerializer";
+import {
+  splitFrontmatter,
+  routeNoFrontmatter,
+} from "../substrate/splitFrontmatter";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
 import { submissionCartSingleton } from "../drafts/store-instance";
@@ -66,12 +72,25 @@ interface Props {
    *  - `undefined` / omitted → defaults to 2 (flow-style at depth ≥ 2).
    *  - `null` → block-style only (no inline objects at any depth). */
   yamlFlowAtDepth?: number | null;
+  /** When true, serialize via the comment-preserving Document path so `#`
+   *  comments interleaved between data lines survive a form save. */
+  preserveComments?: boolean;
+  /** When true, frontmatter is OPTIONAL for this domain (prose: content +
+   *  foundations): a file with no `---` fence opens silently in the markdown
+   *  editor. When false/omitted (record domains), a missing fence keeps the
+   *  amber missing-frontmatter warning + raw fallback. */
+  frontmatterOptional?: boolean;
 }
 
 type Loaded =
   | { kind: "loading" }
   | { kind: "error"; message: string }
-  | { kind: "raw" } // frontmatter unparseable → fall back to raw editor
+  | { kind: "raw" } // frontmatter present but unparseable → raw editor + banner
+  // no `---` fence in an optional-frontmatter (prose) domain → markdown editor,
+  // NO banner. Carries the already-fetched blob so MarkdownEditScreen reuses it
+  // instead of a second network fetch.
+  | { kind: "no-frontmatter"; text: string; basedOnSha: string }
+  | { kind: "schema-error" } // frontmatter OK, schema fetch failed → raw editor + soft notice
   | {
       kind: "ready";
       schema: RJSFSchema;
@@ -82,8 +101,16 @@ type Loaded =
     };
 
 export function FrontmatterBodyEditScreen(props: Props) {
-  const { path, schemaKey, uiSchema, octokit, bodyless, yamlFlowAtDepth } =
-    props;
+  const {
+    path,
+    schemaKey,
+    uiSchema,
+    octokit,
+    bodyless,
+    yamlFlowAtDepth,
+    preserveComments,
+    frontmatterOptional,
+  } = props;
   const [state, setState] = useState<Loaded>({ kind: "loading" });
   const [formData, setFormData] = useState<unknown>(undefined);
   const [body, setBody] = useState<string>("");
@@ -103,13 +130,10 @@ export function FrontmatterBodyEditScreen(props: Props) {
     (async () => {
       setState({ kind: "loading" });
       try {
-        const schemaText = await getTextFile(
-          octokit,
-          `schemas/${schemaKey}.json`,
-        );
-        const schema = JSON.parse(schemaText) as RJSFSchema;
-
-        // Cart wins, then remote main, then a 404 → stub ("" → raw fallback).
+        // 1. Load the file FIRST. Cart wins, then remote main, then a 404 → stub
+        //    ("" → raw fallback). The schema is not fetched yet: a file with no
+        //    parseable frontmatter never needs it, and a transient schema-fetch
+        //    failure must not make a previously-openable file uneditable.
         const cartHit = submissionCartSingleton
           .list()
           .find((e) => e.path === path);
@@ -137,11 +161,40 @@ export function FrontmatterBodyEditScreen(props: Props) {
         }
         if (cancelled) return;
 
+        // 2. Classify BEFORE touching the schema. No parseable frontmatter →
+        //    raw editing without fetching the schema at all.
         const split = splitFrontmatter(text);
         if (split.data === null) {
-          setState({ kind: "raw" }); // missing/malformed frontmatter
+          // Route the no-parse case. A broken fence always warns ("raw"). A
+          // MISSING fence is silent ("no-frontmatter") only for prose domains
+          // where frontmatter is optional (content/foundations); record domains
+          // (app-context/categories/words-to-avoid) REQUIRE it, so a missing
+          // fence keeps the warning + raw fallback.
+          setState(
+            routeNoFrontmatter(text, frontmatterOptional === true) ===
+              "no-frontmatter"
+              ? { kind: "no-frontmatter", text, basedOnSha }
+              : { kind: "raw" },
+          );
           return;
         }
+
+        // 3. Frontmatter present → fetch the form schema. If that fails,
+        //    degrade to raw editing (the file is still editable) rather than
+        //    the hard red error that would strand it.
+        let schema: RJSFSchema;
+        try {
+          const schemaText = await getTextFile(
+            octokit,
+            `schemas/${schemaKey}.json`,
+          );
+          schema = JSON.parse(schemaText) as RJSFSchema;
+        } catch {
+          if (!cancelled) setState({ kind: "schema-error" });
+          return;
+        }
+        if (cancelled) return;
+
         setFormData(split.data);
         setBody(split.body);
         setState({
@@ -160,19 +213,27 @@ export function FrontmatterBodyEditScreen(props: Props) {
     return () => {
       cancelled = true;
     };
-  }, [path, schemaKey, octokit]);
+  }, [path, schemaKey, octokit, frontmatterOptional]);
 
   const flushToCart = useCallback(
     (fd: unknown, b: string) => {
       if (state.kind !== "ready") return;
-      // yamlFlowAtDepth prop: undefined → use default (2); null → block-style
-      // assembleFrontmatterFile accepts null for block-style; default arg is 2.
-      const content = assembleFrontmatterFile(
-        fd,
-        state.frontmatterText,
-        b,
-        yamlFlowAtDepth !== undefined ? yamlFlowAtDepth : 2,
-      );
+      // preserveComments (content/foundations): use the Document-merge path so
+      // `#` comments interleaved between data lines survive the save.
+      // Otherwise the flow-depth path: yamlFlowAtDepth undefined → default (2);
+      // null → block-style. assembleFrontmatterFile accepts null; default is 2.
+      const content = preserveComments
+        ? assembleFrontmatterFilePreservingComments(
+            fd,
+            state.frontmatterText,
+            b,
+          )
+        : assembleFrontmatterFile(
+            fd,
+            state.frontmatterText,
+            b,
+            yamlFlowAtDepth !== undefined ? yamlFlowAtDepth : 2,
+          );
       submissionCartSingleton.add({
         path,
         content,
@@ -180,7 +241,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
         addedAt: Date.now(),
       });
     },
-    [state, path, yamlFlowAtDepth],
+    [state, path, yamlFlowAtDepth, preserveComments],
   );
 
   const scheduleFlush = useCallback(
@@ -197,6 +258,40 @@ export function FrontmatterBodyEditScreen(props: Props) {
       <Callout.Root color="red">
         <Callout.Text>{state.message}</Callout.Text>
       </Callout.Root>
+    );
+  if (state.kind === "no-frontmatter")
+    return (
+      <MarkdownEditScreen
+        path={path}
+        octokit={octokit}
+        onOpenSettings={props.onOpenSettings}
+        onNavigate={props.onNavigate}
+        // Hand off the blob we already fetched so MarkdownEditScreen skips its
+        // own getContent. Only when we have a real base (empty sha ⇒ 404 stub /
+        // cart entry — let MarkdownEditScreen build its own stub / cart-win).
+        preloaded={
+          state.basedOnSha
+            ? { text: state.text, sha: state.basedOnSha }
+            : undefined
+        }
+      />
+    );
+  if (state.kind === "schema-error")
+    return (
+      <Box>
+        <Callout.Root color="gray" mb="2">
+          <Callout.Text>
+            Couldn't load this file's form schema — editing as raw text. Your
+            edits are still saved.
+          </Callout.Text>
+        </Callout.Root>
+        <MarkdownEditScreen
+          path={path}
+          octokit={octokit}
+          onOpenSettings={props.onOpenSettings}
+          onNavigate={props.onNavigate}
+        />
+      </Box>
     );
   if (state.kind === "raw")
     return (

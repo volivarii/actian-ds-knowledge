@@ -71,6 +71,13 @@ interface MarkdownEditScreenProps {
    *  NO LONGER drives any UI panel — activation is now explicit via the
    *  Outline pill (the v1.1 fix-up after the persistent-panel bug). */
   onFocusedSectionChange?: (section: FocusedSectionContext | null) => void;
+  /** Pre-fetched remote blob (text + sha) from a parent that already loaded
+   *  this path — e.g. FrontmatterBodyEditScreen's no-frontmatter fallback,
+   *  which must read+classify the file before it can decide to hand off here.
+   *  When provided, skip the redundant network getContent and seed the load
+   *  from it. Cart-wins + draft handling still run. `sha === ""` is treated as
+   *  a new-file stub (no remote base). Omit for a normal standalone fetch. */
+  preloaded?: { text: string; sha: string };
 }
 
 type LoadSource = "remote" | "cart" | "stub";
@@ -92,8 +99,13 @@ export function MarkdownEditScreen({
   onOpenSettings,
   onNavigate,
   onFocusedSectionChange,
+  preloaded,
 }: MarkdownEditScreenProps) {
   const [ghError, setGhError] = useState<string | null>(null);
+  // Mirror `preloaded` in a ref so the load effect can read it without adding
+  // it (a fresh object literal each render) to its [gh, path] deps and looping.
+  const preloadedRef = useRef(preloaded);
+  preloadedRef.current = preloaded;
   const [anchorPopover, setAnchorPopover] = useState<{
     slug: string;
     triggerEl: HTMLElement;
@@ -202,29 +214,38 @@ export function MarkdownEditScreen({
         let remoteText: string;
         let remoteSha: string;
         let source: LoadSource;
-        try {
-          const res = await gh.repos.getContent({
-            ...DEFAULT_COORDS,
-            path,
-            ref: "main",
-          });
-          if (
-            Array.isArray(res.data) ||
-            !("content" in res.data) ||
-            res.data.encoding !== "base64"
-          ) {
-            throw new Error(`unexpected response for ${path}`);
+        const preloadedBlob = preloadedRef.current;
+        if (preloadedBlob) {
+          // Reuse the blob a parent already fetched (avoids a second
+          // getContent round-trip). Empty sha ⇒ new-file stub, no remote base.
+          remoteText = preloadedBlob.text;
+          remoteSha = preloadedBlob.sha;
+          source = preloadedBlob.sha ? "remote" : "stub";
+        } else {
+          try {
+            const res = await gh.repos.getContent({
+              ...DEFAULT_COORDS,
+              path,
+              ref: "main",
+            });
+            if (
+              Array.isArray(res.data) ||
+              !("content" in res.data) ||
+              res.data.encoding !== "base64"
+            ) {
+              throw new Error(`unexpected response for ${path}`);
+            }
+            remoteText = decodeBase64Utf8(res.data.content);
+            remoteSha = res.data.sha;
+            source = "remote";
+          } catch (err) {
+            const status = (err as { status?: number }).status;
+            if (status !== 404) throw err;
+            // New file — pre-fill a stub so the canvas isn't blank.
+            remoteText = buildMarkdownStub(path);
+            remoteSha = "";
+            source = "stub";
           }
-          remoteText = decodeBase64Utf8(res.data.content);
-          remoteSha = res.data.sha;
-          source = "remote";
-        } catch (err) {
-          const status = (err as { status?: number }).status;
-          if (status !== 404) throw err;
-          // New file — pre-fill a stub so the canvas isn't blank.
-          remoteText = buildMarkdownStub(path);
-          remoteSha = "";
-          source = "stub";
         }
 
         setLoad({ kind: "ready", remoteText, remoteSha, source });

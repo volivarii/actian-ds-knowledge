@@ -19,6 +19,14 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Editor: frontmatter forms for content and foundations.** The knowledge editor now edits
+  `content/src/**` and `foundations/src/*.md` frontmatter through schema-driven forms, on a new
+  routing registry (`matchFrontmatterForm`) that replaces the hardcoded per-domain if-chain. Adds
+  `schemas/foundations.json` (`a11y_refs` / `motion_refs`) and wires `domains.json`
+  `foundations.frontmatterSchema`. Forms preserve interleaved authoring comments on save (only
+  changed keys are rewritten), open frontmatter-free files without a false parse-error, and keep the
+  missing-frontmatter warning for record domains that require it. Editor tooling only: no `dist/`,
+  contract, or consumer-facing change. ([#383])
 - **Knowledge graph: app-context to component bridge.** UX patterns now carry an authored `components` list (app-context pattern frontmatter), projected into the knowledge graph as directed `uses_component` edges (ux_pattern to component), so "what components realize this pattern" and "where is this component used" are graph-queryable. This connects the app-context island (#364) to the component graph. 93 edges across 28 patterns, taking the graph to 843 nodes / 1081 edges, with a `pattern_component_edges` count in `quality-report.json`. Purely additive: no `context.jsonld`, manifest, or workflow change, existing nodes and edges unchanged, and the re-derive is byte-identical. ([#381])
 - Knowledge graph now models **component composition**: registry `nestedComponents` is projected as directed `composed_of` edges (component to component, parent as source, nested child as target), declared in `schemas/graph.json` and `graph/vocabulary.json` (`source: [component]`, `target: [component]`). 336 edges, taking the graph to 843 nodes / 988 edges. Icons are included on purpose (nearly every component nests them); a "real composites only" view is a one-hop consumer filter on the target's `in_category` edge, not a derive-time exclusion. A `composition_edges` count is surfaced in `quality-report.json`. Purely additive: no `context.jsonld`, manifest, or workflow change, existing nodes and edges unchanged, and the re-derive is byte-identical. Slice 2b of Phase 2 identity; endpoints resolve by slug (the graph's node identity), so a child slug that collides across kits binds to the first-wins node until slice-3 key identity disambiguates. ([#379])
 - Page-level category overrides (`components/src/category-page-overrides.json`)
@@ -175,6 +183,7 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#383]: https://github.com/volivarii/actian-ds-knowledge/pull/383
 [#381]: https://github.com/volivarii/actian-ds-knowledge/pull/381
 [#379]: https://github.com/volivarii/actian-ds-knowledge/pull/379
 [#377]: https://github.com/volivarii/actian-ds-knowledge/pull/377
