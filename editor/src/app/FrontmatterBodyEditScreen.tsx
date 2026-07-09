@@ -82,6 +82,7 @@ type Loaded =
   | { kind: "error"; message: string }
   | { kind: "raw" } // frontmatter present but unparseable → raw editor + banner
   | { kind: "no-frontmatter" } // no `---` fence at all → raw editor, NO banner
+  | { kind: "schema-error" } // frontmatter OK, schema fetch failed → raw editor + soft notice
   | {
       kind: "ready";
       schema: RJSFSchema;
@@ -120,13 +121,10 @@ export function FrontmatterBodyEditScreen(props: Props) {
     (async () => {
       setState({ kind: "loading" });
       try {
-        const schemaText = await getTextFile(
-          octokit,
-          `schemas/${schemaKey}.json`,
-        );
-        const schema = JSON.parse(schemaText) as RJSFSchema;
-
-        // Cart wins, then remote main, then a 404 → stub ("" → raw fallback).
+        // 1. Load the file FIRST. Cart wins, then remote main, then a 404 → stub
+        //    ("" → raw fallback). The schema is not fetched yet: a file with no
+        //    parseable frontmatter never needs it, and a transient schema-fetch
+        //    failure must not make a previously-openable file uneditable.
         const cartHit = submissionCartSingleton
           .list()
           .find((e) => e.path === path);
@@ -154,6 +152,8 @@ export function FrontmatterBodyEditScreen(props: Props) {
         }
         if (cancelled) return;
 
+        // 2. Classify BEFORE touching the schema. No parseable frontmatter →
+        //    raw editing without fetching the schema at all.
         const split = splitFrontmatter(text);
         if (split.data === null) {
           // A file with NO fence is not malformed — edit it as plain markdown
@@ -165,6 +165,23 @@ export function FrontmatterBodyEditScreen(props: Props) {
           );
           return;
         }
+
+        // 3. Frontmatter present → fetch the form schema. If that fails,
+        //    degrade to raw editing (the file is still editable) rather than
+        //    the hard red error that would strand it.
+        let schema: RJSFSchema;
+        try {
+          const schemaText = await getTextFile(
+            octokit,
+            `schemas/${schemaKey}.json`,
+          );
+          schema = JSON.parse(schemaText) as RJSFSchema;
+        } catch {
+          if (!cancelled) setState({ kind: "schema-error" });
+          return;
+        }
+        if (cancelled) return;
+
         setFormData(split.data);
         setBody(split.body);
         setState({
@@ -237,6 +254,23 @@ export function FrontmatterBodyEditScreen(props: Props) {
         onOpenSettings={props.onOpenSettings}
         onNavigate={props.onNavigate}
       />
+    );
+  if (state.kind === "schema-error")
+    return (
+      <Box>
+        <Callout.Root color="gray" mb="2">
+          <Callout.Text>
+            Couldn't load this file's form schema — editing as raw text. Your
+            edits are still saved.
+          </Callout.Text>
+        </Callout.Root>
+        <MarkdownEditScreen
+          path={path}
+          octokit={octokit}
+          onOpenSettings={props.onOpenSettings}
+          onNavigate={props.onNavigate}
+        />
+      </Box>
     );
   if (state.kind === "raw")
     return (
