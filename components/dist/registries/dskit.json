@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "library": "ds",
   "fileKey": "l8biHxfarNi1I2RMvVxVOK",
-  "lastSynced": "2026-07-08T14:07:56.278Z",
+  "lastSynced": "2026-07-09T10:21:55.839Z",
   "componentCount": 320,
   "components": {
     "account-dropdown": {
@@ -6461,12 +6461,7 @@
       "importMethod": "set",
       "description": "Used for an immediate \"on/off\" state change that doesn't require a \"Submit\" button to take effect (e.g., System Settings).",
       "page": "✅ Toggle control",
-      "properties": {
-        "Show Helper text#13981:32": {
-          "type": "BOOLEAN",
-          "default": true
-        }
-      },
+      "properties": {},
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Components",
@@ -6475,13 +6470,13 @@
       "group": "Toggle control",
       "status": "in-progress",
       "variants": {
-        "Toggle location": [
-          "Left",
-          "Right"
+        "Switch location": [
+          "On left",
+          "On rihgt"
         ],
-        "Selected": [
-          "No",
-          "Yes"
+        "Selection": [
+          "Off",
+          "On"
         ],
         "State": [
           "Default",

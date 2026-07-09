@@ -5297,7 +5297,7 @@
       "_schema_version": 1,
       "slug": "checkbox-with-label",
       "kit": "dskit",
-      "synced_at": "2026-07-08T14:07:52.886Z",
+      "synced_at": "2026-07-09T10:21:40.799Z",
       "source": {
         "fileKey": "l8biHxfarNi1I2RMvVxVOK",
         "nodeId": "9478:17216",
@@ -5489,7 +5489,7 @@
                 },
                 "children": [
                   {
-                    "name": "Digram, Item types",
+                    "name": "Digram",
                     "kind": "instance",
                     "slug": "digram-item-types",
                     "props": {
@@ -5503,7 +5503,7 @@
                     }
                   },
                   {
-                    "name": "directory",
+                    "name": "Icon",
                     "kind": "instance",
                     "unresolved": true,
                     "id": "19748:36914"
@@ -5525,7 +5525,7 @@
                         "letterSpacing": "0.2px"
                       }
                     },
-                    "text": "Inline label for checkbox"
+                    "text": "Label"
                   }
                 ]
               },
@@ -5533,18 +5533,52 @@
                 "name": "Description",
                 "kind": "text",
                 "tokenRefs": [
-                  "--zen-color-text-default"
+                  "--zen-color-text-tertiary"
                 ],
                 "id": "19748:36342",
                 "appearance": {
                   "text": {
-                    "color": "#000000",
-                    "colorToken": "--zen-color-text-default",
-                    "size": "12px",
+                    "color": "#ffffff",
+                    "colorToken": "--zen-color-text-tertiary",
+                    "size": "14px",
                     "weight": 400,
-                    "lineHeight": "16px",
-                    "letterSpacing": "0.3px"
-                  }
+                    "lineHeight": "20px",
+                    "letterSpacing": "0.2px"
+                  },
+                  "variants": [
+                    {
+                      "prop": "Selection",
+                      "values": [
+                        "Checked",
+                        "Indeterminate"
+                      ],
+                      "text": {
+                        "color": "#50505d",
+                        "colorToken": "--zen-color-text-tertiary",
+                        "size": "14px",
+                        "weight": 400,
+                        "lineHeight": "20px",
+                        "letterSpacing": "0.2px"
+                      }
+                    },
+                    {
+                      "prop": "State",
+                      "values": [
+                        "Disabled",
+                        "Focus",
+                        "Hover",
+                        "Pressed"
+                      ],
+                      "text": {
+                        "color": "#50505d",
+                        "colorToken": "--zen-color-text-tertiary",
+                        "size": "14px",
+                        "weight": 400,
+                        "lineHeight": "20px",
+                        "letterSpacing": "0.2px"
+                      }
+                    }
+                  ]
                 },
                 "text": "Description"
               }
@@ -17778,31 +17812,23 @@
       "_schema_version": 1,
       "slug": "radio-button",
       "kit": "dskit",
-      "synced_at": "2026-07-08T14:07:52.886Z",
+      "synced_at": "2026-07-09T10:21:40.799Z",
       "source": {
         "fileKey": "l8biHxfarNi1I2RMvVxVOK",
         "nodeId": "9474:16884",
         "variant": "Selection=Unselected, State=Default"
       },
       "quality": {
-        "nodesTotal": 10,
+        "nodesTotal": 9,
         "nodesNormalized": 7,
-        "ratio": 0.7,
+        "ratio": 0.78,
         "degraded": [
           {
             "name": "Radio button",
             "reason": "layoutMode:NONE"
           },
           {
-            "name": ". Radio button",
-            "reason": "layoutMode:NONE"
-          },
-          {
             "name": "Radio button",
-            "reason": "layoutMode:NONE (variant Selection=Selected)"
-          },
-          {
-            "name": ". Radio button",
             "reason": "layoutMode:NONE (variant Selection=Selected)"
           },
           {
@@ -17810,15 +17836,7 @@
             "reason": "layoutMode:NONE (variant State=Hover)"
           },
           {
-            "name": ". Radio button",
-            "reason": "layoutMode:NONE (variant State=Hover)"
-          },
-          {
             "name": "Radio button",
-            "reason": "layoutMode:NONE (variant State=Focus)"
-          },
-          {
-            "name": ". Radio button",
             "reason": "layoutMode:NONE (variant State=Focus)"
           },
           {
@@ -17826,24 +17844,8 @@
             "reason": "layoutMode:NONE (variant State=Pressed)"
           },
           {
-            "name": ". Radio button",
-            "reason": "layoutMode:NONE (variant State=Pressed)"
-          },
-          {
             "name": "Radio button",
             "reason": "layoutMode:NONE (variant State=Disabled)"
-          },
-          {
-            "name": ". Radio button",
-            "reason": "layoutMode:NONE (variant State=Disabled)"
-          }
-        ],
-        "structuralVariants": [
-          {
-            "prop": "Selection",
-            "value": "Selected",
-            "path": "0.0",
-            "reason": "childCount:1!=2"
           }
         ]
       },
@@ -17909,8 +17911,8 @@
             "normalizable": false,
             "rawHint": {
               "layoutMode": "NONE",
-              "x": 4454,
-              "y": 1747,
+              "x": 4368,
+              "y": 425,
               "constraints": {
                 "vertical": "TOP",
                 "horizontal": "LEFT"
@@ -17918,61 +17920,52 @@
             },
             "children": [
               {
-                "name": ". Radio button",
-                "kind": "container",
-                "id": "19746:35780",
-                "normalizable": false,
-                "rawHint": {
-                  "layoutMode": "NONE",
-                  "x": 4458,
-                  "y": 1751,
-                  "constraints": {
-                    "vertical": "TOP",
-                    "horizontal": "LEFT"
-                  }
-                },
-                "children": [
-                  {
-                    "name": "Vector",
-                    "kind": "vector",
-                    "tokenRefs": [
-                      "--zen-color-icon-default"
-                    ],
-                    "id": "19746:35781",
-                    "appearance": {
-                      "background": "#000000",
-                      "backgroundToken": "--zen-color-icon-default",
-                      "variants": [
-                        {
-                          "prop": "State",
-                          "values": [
-                            "Disabled"
-                          ],
-                          "background": "#656574",
-                          "backgroundToken": "--zen-color-text-disabled"
-                        }
-                      ]
+                "name": "Vector",
+                "kind": "vector",
+                "tokenRefs": [
+                  "--zen-color-icon-default"
+                ],
+                "id": "19782:8508",
+                "appearance": {
+                  "background": "#000000",
+                  "backgroundToken": "--zen-color-icon-default",
+                  "variants": [
+                    {
+                      "prop": "Selection",
+                      "values": [
+                        "Selected"
+                      ],
+                      "background": "#0f5fdc",
+                      "backgroundToken": "--zen-color-icon-primary"
+                    },
+                    {
+                      "prop": "State",
+                      "values": [
+                        "Disabled"
+                      ],
+                      "background": "#7c7c8a",
+                      "backgroundToken": "--zen-color-icon-disabled"
                     }
-                  }
-                ]
+                  ]
+                }
               }
             ]
           },
           {
-            "name": "Text",
+            "name": "Content",
             "kind": "container",
-            "id": "19748:38328",
+            "id": "19803:30932",
             "layout": {
               "axis": "column",
               "gap": "2px",
               "padding": {
                 "top": "2px",
                 "right": "0px",
-                "bottom": "2px",
+                "bottom": "0px",
                 "left": "0px"
               },
               "align": {
-                "main": "start",
+                "main": "center",
                 "cross": "start"
               },
               "sizing": {
@@ -17982,9 +17975,9 @@
             },
             "children": [
               {
-                "name": "Label",
+                "name": "Label + Digram + Icon",
                 "kind": "container",
-                "id": "19748:38329",
+                "id": "19803:30214",
                 "layout": {
                   "axis": "row",
                   "gap": "4px",
@@ -18001,12 +17994,11 @@
                   "sizing": {
                     "h": "hug",
                     "v": "hug"
-                  },
-                  "gapToken": "--zen-spacing-2xs"
+                  }
                 },
                 "children": [
                   {
-                    "name": "Digram, Item types",
+                    "name": "Digram",
                     "kind": "instance",
                     "slug": "digram-item-types",
                     "props": {
@@ -18016,11 +18008,20 @@
                     "id": "19748:38330",
                     "appearance": {
                       "background": "#cfeafd",
-                      "radius": "4px"
+                      "radius": "4px",
+                      "variants": [
+                        {
+                          "prop": "State",
+                          "values": [
+                            "Disabled"
+                          ],
+                          "background": "rgba(207, 234, 253, 0.5)"
+                        }
+                      ]
                     }
                   },
                   {
-                    "name": "directory",
+                    "name": "Icon",
                     "kind": "instance",
                     "unresolved": true,
                     "id": "19748:38331"
@@ -18040,7 +18041,23 @@
                         "weight": 400,
                         "lineHeight": "20px",
                         "letterSpacing": "0.2px"
-                      }
+                      },
+                      "variants": [
+                        {
+                          "prop": "State",
+                          "values": [
+                            "Disabled"
+                          ],
+                          "text": {
+                            "color": "#656574",
+                            "colorToken": "--zen-color-text-disabled",
+                            "size": "14px",
+                            "weight": 400,
+                            "lineHeight": "20px",
+                            "letterSpacing": "0.2px"
+                          }
+                        }
+                      ]
                     },
                     "text": "Label"
                   }
@@ -18050,17 +18067,17 @@
                 "name": "Description",
                 "kind": "text",
                 "tokenRefs": [
-                  "--zen-color-text-default"
+                  "--zen-color-text-tertiary"
                 ],
-                "id": "19748:38333",
+                "id": "19797:27122",
                 "appearance": {
                   "text": {
-                    "color": "#000000",
-                    "colorToken": "--zen-color-text-default",
-                    "size": "12px",
+                    "color": "#50505d",
+                    "colorToken": "--zen-color-text-tertiary",
+                    "size": "14px",
                     "weight": 400,
-                    "lineHeight": "16px",
-                    "letterSpacing": "0.3px"
+                    "lineHeight": "20px",
+                    "letterSpacing": "0.2px"
                   }
                 },
                 "text": "Description"
@@ -26550,34 +26567,91 @@
       "_schema_version": 1,
       "slug": "toggle",
       "kit": "dskit",
-      "synced_at": "2026-07-06T13:21:40.803Z",
+      "synced_at": "2026-07-09T10:21:40.799Z",
       "source": {
         "fileKey": "l8biHxfarNi1I2RMvVxVOK",
         "nodeId": "14000:4395",
-        "variant": "Toggle location=Left, Selected=No, State=Default"
+        "variant": "Switch location=On left, Selection=Off, State=Default"
       },
       "quality": {
         "nodesTotal": 5,
-        "nodesNormalized": 4,
-        "ratio": 0.8,
-        "degraded": [],
-        "structuralVariants": [
+        "nodesNormalized": 3,
+        "ratio": 0.6,
+        "degraded": [
           {
-            "prop": "Toggle location",
-            "value": "Right",
-            "path": "0",
-            "reason": "kind:instance!=container"
+            "name": "Toggle switch",
+            "reason": "layoutMode:NONE"
           },
           {
-            "prop": "Toggle location",
-            "value": "Right",
+            "name": "Toggle base",
+            "reason": "layoutMode:NONE"
+          },
+          {
+            "name": "Toggle switch",
+            "reason": "layoutMode:NONE (variant Switch location=On rihgt)"
+          },
+          {
+            "name": "Toggle base",
+            "reason": "layoutMode:NONE (variant Switch location=On rihgt)"
+          },
+          {
+            "name": "Toggle switch",
+            "reason": "layoutMode:NONE (variant Selection=On)"
+          },
+          {
+            "name": "Toggle base",
+            "reason": "layoutMode:NONE (variant Selection=On)"
+          },
+          {
+            "name": "Toggle switch",
+            "reason": "layoutMode:NONE (variant State=Hover)"
+          },
+          {
+            "name": "Toggle base",
+            "reason": "layoutMode:NONE (variant State=Hover)"
+          },
+          {
+            "name": "Toggle switch",
+            "reason": "layoutMode:NONE (variant State=Focus)"
+          },
+          {
+            "name": "Toggle base",
+            "reason": "layoutMode:NONE (variant State=Focus)"
+          },
+          {
+            "name": "Toggle switch",
+            "reason": "layoutMode:NONE (variant State=Pressed)"
+          },
+          {
+            "name": "Toggle base",
+            "reason": "layoutMode:NONE (variant State=Pressed)"
+          },
+          {
+            "name": "Toggle switch",
+            "reason": "layoutMode:NONE (variant State=Disabled)"
+          },
+          {
+            "name": "Toggle base",
+            "reason": "layoutMode:NONE (variant State=Disabled)"
+          }
+        ],
+        "structuralVariants": [
+          {
+            "prop": "Switch location",
+            "value": "On rihgt",
+            "path": "0",
+            "reason": "kind:container!=text"
+          },
+          {
+            "prop": "Switch location",
+            "value": "On rihgt",
             "path": "1",
-            "reason": "kind:container!=instance"
+            "reason": "kind:text!=container"
           }
         ]
       },
       "root": {
-        "name": "Toggle location=Left, Selected=No, State=Default",
+        "name": "Switch location=On left, Selection=Off, State=Default",
         "kind": "container",
         "id": "14000:4396",
         "layout": {
@@ -26591,7 +26665,7 @@
           },
           "align": {
             "main": "start",
-            "cross": "start"
+            "cross": "center"
           },
           "sizing": {
             "h": "hug",
@@ -26601,14 +26675,9 @@
         },
         "children": [
           {
-            "name": ".Toggle switch",
-            "kind": "instance",
-            "unresolved": true,
-            "props": {
-              "Selected": "No",
-              "State": "Default"
-            },
-            "id": "14000:4398",
+            "name": "Toggle switch",
+            "kind": "container",
+            "id": "19805:31919",
             "appearance": {
               "radius": "4px",
               "variants": [
@@ -26639,139 +26708,154 @@
                   "background": "rgba(0, 0, 0, 0.1)"
                 }
               ]
-            }
-          },
-          {
-            "name": "Text",
-            "kind": "container",
-            "id": "14175:15648",
-            "layout": {
-              "axis": "column",
-              "gap": "4px",
-              "padding": {
-                "top": "2px",
-                "right": "0px",
-                "bottom": "0px",
-                "left": "0px"
-              },
-              "align": {
-                "main": "start",
-                "cross": "start"
-              },
-              "sizing": {
-                "h": "hug",
-                "v": "hug"
-              },
-              "gapToken": "--zen-spacing-2xs"
+            },
+            "normalizable": false,
+            "rawHint": {
+              "layoutMode": "NONE",
+              "x": 5971,
+              "y": 1008,
+              "constraints": {
+                "vertical": "TOP",
+                "horizontal": "LEFT"
+              }
             },
             "children": [
               {
-                "name": "Label",
-                "kind": "text",
+                "name": "Toggle base",
+                "kind": "container",
                 "tokenRefs": [
-                  "--zen-color-text-default"
+                  "--zen-color-icon-subtle"
                 ],
-                "id": "14000:4399",
+                "id": "19805:31920",
                 "appearance": {
+                  "background": "#5c5c6c",
+                  "backgroundToken": "--zen-color-icon-subtle",
+                  "radius": "9999px",
+                  "variants": [
+                    {
+                      "prop": "Selection",
+                      "values": [
+                        "On"
+                      ],
+                      "background": "#0f5fdc",
+                      "backgroundToken": "--zen-color-icon-primary"
+                    },
+                    {
+                      "prop": "State",
+                      "values": [
+                        "Disabled"
+                      ],
+                      "background": "#7c7c8a",
+                      "backgroundToken": "--zen-color-icon-disabled"
+                    }
+                  ]
+                },
+                "normalizable": false,
+                "rawHint": {
+                  "layoutMode": "NONE",
+                  "x": 5973,
+                  "y": 1012,
+                  "constraints": {
+                    "vertical": "TOP",
+                    "horizontal": "LEFT"
+                  }
+                },
+                "children": [
+                  {
+                    "name": "Toggle-Click",
+                    "kind": "vector",
+                    "tokenRefs": [
+                      "--zen-color-icon-reverse"
+                    ],
+                    "id": "19805:31921",
+                    "appearance": {
+                      "background": "#ffffff",
+                      "backgroundToken": "--zen-color-icon-reverse",
+                      "variants": [
+                        {
+                          "prop": "State",
+                          "values": [
+                            "Disabled"
+                          ],
+                          "background": "rgba(255, 255, 255, 0.5)"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Label",
+            "kind": "text",
+            "tokenRefs": [
+              "--zen-color-text-default"
+            ],
+            "id": "14000:4399",
+            "appearance": {
+              "text": {
+                "color": "#000000",
+                "colorToken": "--zen-color-text-default",
+                "size": "14px",
+                "weight": 400,
+                "lineHeight": "20px",
+                "letterSpacing": "0.2px"
+              },
+              "variants": [
+                {
+                  "prop": "Selection",
+                  "values": [
+                    "On"
+                  ],
                   "text": {
                     "color": "#000000",
                     "colorToken": "--zen-color-text-default",
                     "size": "14px",
                     "weight": 400,
-                    "lineHeight": "20px",
-                    "letterSpacing": "0.2px"
-                  },
-                  "variants": [
-                    {
-                      "prop": "Selected",
-                      "values": [
-                        "Yes"
-                      ],
-                      "text": {
-                        "color": "#000000",
-                        "colorToken": "--zen-color-text-default",
-                        "size": "14px",
-                        "weight": 400,
-                        "lineHeight": "18px",
-                        "letterSpacing": "0.14px"
-                      }
-                    },
-                    {
-                      "prop": "State",
-                      "values": [
-                        "Disabled"
-                      ],
-                      "text": {
-                        "color": "#7c7c8a",
-                        "colorToken": "--zen-color-text-placeholder-subtle",
-                        "size": "14px",
-                        "weight": 400,
-                        "lineHeight": "18px",
-                        "letterSpacing": "0.14px"
-                      }
-                    },
-                    {
-                      "prop": "State",
-                      "values": [
-                        "Focus",
-                        "Hover",
-                        "Pressed"
-                      ],
-                      "text": {
-                        "color": "#000000",
-                        "colorToken": "--zen-color-text-default",
-                        "size": "14px",
-                        "weight": 400,
-                        "lineHeight": "18px",
-                        "letterSpacing": "0.14px"
-                      }
-                    }
-                  ]
+                    "lineHeight": "18px",
+                    "letterSpacing": "0.14px"
+                  }
                 },
-                "text": "Label"
-              },
-              {
-                "name": "Helper text",
-                "kind": "text",
-                "tokenRefs": [
-                  "--zen-color-text-default"
-                ],
-                "id": "14000:4401",
-                "appearance": {
+                {
+                  "prop": "State",
+                  "values": [
+                    "Disabled"
+                  ],
+                  "text": {
+                    "color": "#7c7c8a",
+                    "colorToken": "--zen-color-text-placeholder-subtle",
+                    "size": "14px",
+                    "weight": 400,
+                    "lineHeight": "18px",
+                    "letterSpacing": "0.14px"
+                  }
+                },
+                {
+                  "prop": "State",
+                  "values": [
+                    "Focus",
+                    "Hover",
+                    "Pressed"
+                  ],
                   "text": {
                     "color": "#000000",
                     "colorToken": "--zen-color-text-default",
-                    "size": "12px",
+                    "size": "14px",
                     "weight": 400,
-                    "lineHeight": "16px",
-                    "letterSpacing": "0.3px"
-                  },
-                  "variants": [
-                    {
-                      "prop": "State",
-                      "values": [
-                        "Disabled"
-                      ],
-                      "text": {
-                        "color": "#7c7c8a",
-                        "colorToken": "--zen-color-text-placeholder-subtle",
-                        "size": "12px",
-                        "weight": 400,
-                        "lineHeight": "16px",
-                        "letterSpacing": "0.3px"
-                      }
-                    }
-                  ]
-                },
-                "text": "Helper text"
-              }
-            ]
+                    "lineHeight": "18px",
+                    "letterSpacing": "0.14px"
+                  }
+                }
+              ]
+            },
+            "text": "Label"
           }
         ]
       },
       "variantDefaults": {
-        "Toggle location": "Left",
-        "Selected": "No",
+        "Switch location": "On left",
+        "Selection": "Off",
         "State": "Default"
       }
     },
