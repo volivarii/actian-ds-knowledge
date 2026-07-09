@@ -13,8 +13,25 @@ export interface SplitFrontmatter {
 
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 
+/**
+ * Routing classifier for the frontmatter form screen. Distinguishes the two
+ * `data === null` cases so the UI can degrade gracefully:
+ *   - `"form"`          — a fenced block that parses to an object.
+ *   - `"no-frontmatter"`— no `---` fence at all (a plain markdown file; NOT an
+ *                         error — edit as raw markdown with no banner).
+ *   - `"malformed"`     — a `---` fence is present (leading whitespace tolerated)
+ *                         but the block did not parse; show the parse-error banner.
+ */
+export type FrontmatterClass = "form" | "no-frontmatter" | "malformed";
+
+export function classifyFrontmatter(text: string): FrontmatterClass {
+  if (splitFrontmatter(text).data !== null) return "form";
+  return text.trimStart().startsWith("---") ? "malformed" : "no-frontmatter";
+}
+
 export function splitFrontmatter(text: string): SplitFrontmatter {
-  if (!text.startsWith("---")) return { data: null, body: text, frontmatterText: null };
+  if (!text.startsWith("---"))
+    return { data: null, body: text, frontmatterText: null };
   const match = text.match(FRONTMATTER_RE);
   if (!match || match[1] === undefined) {
     return { data: null, body: text, frontmatterText: null };

@@ -16,7 +16,10 @@ import {
   stringifyYaml,
   assembleFrontmatterFilePreservingComments,
 } from "../form-engine/yamlSerializer";
-import { splitFrontmatter } from "../substrate/splitFrontmatter";
+import {
+  splitFrontmatter,
+  classifyFrontmatter,
+} from "../substrate/splitFrontmatter";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
 import { submissionCartSingleton } from "../drafts/store-instance";
@@ -77,7 +80,8 @@ interface Props {
 type Loaded =
   | { kind: "loading" }
   | { kind: "error"; message: string }
-  | { kind: "raw" } // frontmatter unparseable → fall back to raw editor
+  | { kind: "raw" } // frontmatter present but unparseable → raw editor + banner
+  | { kind: "no-frontmatter" } // no `---` fence at all → raw editor, NO banner
   | {
       kind: "ready";
       schema: RJSFSchema;
@@ -152,7 +156,13 @@ export function FrontmatterBodyEditScreen(props: Props) {
 
         const split = splitFrontmatter(text);
         if (split.data === null) {
-          setState({ kind: "raw" }); // missing/malformed frontmatter
+          // A file with NO fence is not malformed — edit it as plain markdown
+          // (no scary banner). Keep the banner only for a broken fence.
+          setState(
+            classifyFrontmatter(text) === "malformed"
+              ? { kind: "raw" }
+              : { kind: "no-frontmatter" },
+          );
           return;
         }
         setFormData(split.data);
@@ -218,6 +228,15 @@ export function FrontmatterBodyEditScreen(props: Props) {
       <Callout.Root color="red">
         <Callout.Text>{state.message}</Callout.Text>
       </Callout.Root>
+    );
+  if (state.kind === "no-frontmatter")
+    return (
+      <MarkdownEditScreen
+        path={path}
+        octokit={octokit}
+        onOpenSettings={props.onOpenSettings}
+        onNavigate={props.onNavigate}
+      />
     );
   if (state.kind === "raw")
     return (
