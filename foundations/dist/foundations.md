@@ -628,11 +628,11 @@ is two values. Default (un-suffixed) theme is Actian.
 
 #### Font Family
 
-| Token                    | Value           | Usage                       | Status     |
-| ------------------------ | --------------- | --------------------------- | ---------- |
-| `--zen-font-family-text` | `Roboto`        | Default — headings and body | 🟢 Shipped |
-| `--zen-font-family-brand` | `HCLTech Roobert`        | Brand accent font. Use sparingly for high-impact moments — landing/marketing pages (e.g. Explorer landing), hero and display headers, and occasional accent headings. Never for body copy, UI controls, or data. | 🟡 Proposed |
-| `--zen-font-family-mono` | `"Roboto Mono"` | Code and data               | 🟢 Shipped |
+| Token                     | Value             | Usage                                                                                                                                                                                                            | Status      |
+| ------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `--zen-font-family-text`  | `Roboto`          | Default — headings and body                                                                                                                                                                                      | 🟢 Shipped  |
+| `--zen-font-family-brand` | `HCLTech Roobert` | Brand accent font. Use sparingly for high-impact moments — landing/marketing pages (e.g. Explorer landing), hero and display headers, and occasional accent headings. Never for body copy, UI controls, or data. | 🟡 Proposed |
+| `--zen-font-family-mono`  | `"Roboto Mono"`   | Code and data                                                                                                                                                                                                    | 🟢 Shipped  |
 
 #### Font Weight
 
@@ -759,11 +759,11 @@ Outlined focus rings must be applied with an offset on interactive elements. For
 
 > Elevation must only be used to define layering between elements when required. Use drop shadows only — do not use bevels, borders, or opacity to depict layering.
 
-| Token             | Value                                       | Usage                                              | Status     |
-| ----------------- | ------------------------------------------- | -------------------------------------------------- | ---------- |
+| Token             | Value                                                                        | Usage                                              | Status     |
+| ----------------- | ---------------------------------------------------------------------------- | -------------------------------------------------- | ---------- |
 | `--zen-shadow-xs` | `0px 1px 3px 1px rgba(0, 0, 15, 0.06), 0px 1px 5px 0px rgba(0, 0, 18, 0.07)` | Dropdowns, elevated button (default), card hover   | 🟢 Shipped |
 | `--zen-shadow-sm` | `0px 1px 7px 3px rgba(0, 0, 20, 0.08), 0px 1px 3px 1px rgba(0, 0, 31, 0.12)` | App header, navigation menu, elevated button hover | 🟢 Shipped |
-| `--zen-shadow-md` | `0px 1px 3px 0px rgba(0, 0, 77, 0.3), 0px 4px 8px 3px rgba(0, 0, 38, 0.15)` | Notification message, snackbar                     | 🟢 Shipped |
+| `--zen-shadow-md` | `0px 1px 3px 0px rgba(0, 0, 77, 0.3), 0px 4px 8px 3px rgba(0, 0, 38, 0.15)`  | Notification message, snackbar                     | 🟢 Shipped |
 | `--zen-shadow-lg` | `0px 6px 10px 4px rgba(0, 0, 38, 0.15), 0px 2px 3px 0px rgba(0, 0, 77, 0.3)` | —                                                  | 🟢 Shipped |
 | `--zen-shadow-xl` | `0px 8px 12px 6px rgba(0, 0, 38, 0.15), 0px 4px 4px 0px rgba(0, 0, 77, 0.3)` | Dialogs, toasts, overview panel                    | 🟢 Shipped |
 
@@ -783,21 +783,21 @@ Outlined focus rings must be applied with an offset on interactive elements. For
 
 ### 2.8 Backgrounds
 
-| Token                     | Suggested Value                    | Usage                                | Status      |
-| ------------------------- | ---------------------------------- | ------------------------------------ | ----------- |
-| `--zen-color-bg-default`  | `--zen-color-white`                | Default page background              | 🟡 Proposed |
-| `--zen-color-bg-subtle`   | `--zen-color-neutral-25`           | Subtle section backgrounds, sidebars | 🟡 Proposed |
-| `--zen-color-bg-muted`    | `--zen-color-neutral-50`           | Cards, input fills, table rows       | 🟡 Proposed |
-| `--zen-color-bg-disabled` | `--zen-color-neutral-50`           | Disabled state backgrounds           | 🟡 Proposed |
-| `--zen-color-bg-selected` | `--zen-color-primary-25`           | Selected row or item background      | 🟡 Proposed |
-| `--zen-color-bg-overlay`  | `--zen-color-black` at 40% opacity | Modal/dialog backdrop                | 🟡 Proposed |
-| `--zen-color-bg-primary`  | `--zen-color-primary-500`          | CTA banners, primary filled areas    | 🟡 Proposed |
+| Token                     | Suggested Value                    | Usage                                               | Status      |
+| ------------------------- | ---------------------------------- | --------------------------------------------------- | ----------- |
+| `--zen-color-bg-default`  | `--zen-color-white`                | Default page background                             | 🟡 Proposed |
+| `--zen-color-bg-subtle`   | `--zen-color-neutral-25`           | Subtle section backgrounds, sidebars                | 🟡 Proposed |
+| `--zen-color-bg-muted`    | `--zen-color-neutral-50`           | Cards, input fills, table rows                      | 🟡 Proposed |
+| `--zen-color-bg-disabled` | `--zen-color-neutral-50`           | Disabled state backgrounds                          | 🟡 Proposed |
+| `--zen-color-bg-selected` | `--zen-color-primary-25`           | Selected row or item background                     | 🟡 Proposed |
+| `--zen-color-bg-overlay`  | `--zen-color-black` at 40% opacity | Modal/dialog backdrop                               | 🟡 Proposed |
+| `--zen-color-bg-primary`  | `--zen-color-primary-500`          | CTA banners, primary filled areas                   | 🟡 Proposed |
 | `--zen-color-bg-emphasis` | `--zen-color-primary-500`          | Consumer-facing alias of bg-primary; emphasis fills | 🟡 Proposed |
-| `--zen-color-bg-success`  | `--zen-color-success-25`           | Success alert backgrounds            | 🟡 Proposed |
-| `--zen-color-bg-warning`  | `--zen-color-warning-25`           | Warning alert backgrounds            | 🟡 Proposed |
-| `--zen-color-bg-error`    | `--zen-color-error-25`             | Error alert backgrounds              | 🟡 Proposed |
-| `--zen-color-bg-info`     | `--zen-color-primary-25`           | Info alert backgrounds               | 🟡 Proposed |
-| `--zen-color-bg-reverse`  | `--zen-color-black`                | Dark/inverted surface backgrounds    | 🟡 Proposed |
+| `--zen-color-bg-success`  | `--zen-color-success-25`           | Success alert backgrounds                           | 🟡 Proposed |
+| `--zen-color-bg-warning`  | `--zen-color-warning-25`           | Warning alert backgrounds                           | 🟡 Proposed |
+| `--zen-color-bg-error`    | `--zen-color-error-25`             | Error alert backgrounds                             | 🟡 Proposed |
+| `--zen-color-bg-info`     | `--zen-color-primary-25`           | Info alert backgrounds                              | 🟡 Proposed |
+| `--zen-color-bg-reverse`  | `--zen-color-black`                | Dark/inverted surface backgrounds                   | 🟡 Proposed |
 
 ### 2.9 Heights and Trigger Areas
 
