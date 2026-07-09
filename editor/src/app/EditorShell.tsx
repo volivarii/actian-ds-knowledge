@@ -7,16 +7,8 @@ import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
-import {
-  isAppContextFile,
-  isCategoryFile,
-  isWordsToAvoidFile,
-} from "../lib/wysiwygPaths";
-import { categoryDefaultsUiSchema } from "../uiSchemas/categoryDefaults";
-import { appContextAppUiSchema } from "../uiSchemas/appContextApp";
-import { appContextEntityUiSchema } from "../uiSchemas/appContextEntity";
-import { appContextPatternUiSchema } from "../uiSchemas/appContextPattern";
-import { wordsToAvoidUiSchema } from "../uiSchemas/wordsToAvoid";
+import { isAppContextFile, isCategoryFile } from "../lib/wysiwygPaths";
+import { matchFrontmatterForm } from "../lib/frontmatterForms";
 import { RefusalBanner } from "./RefusalBanner";
 import { CoverageDashboard } from "./CoverageDashboard";
 import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
@@ -52,8 +44,9 @@ interface EditorShellProps {
  * files, and content files, excluding structural meta-files.
  *
  * NOTE: intentionally does NOT match content/src/writing/words-to-avoid.md
- * (which has a frontmatter form). EditorShell always checks `isWordsToAvoidFile`
- * BEFORE calling this function, so that file is never accidentally routed here.
+ * (which has a frontmatter form). EditorShell always checks the
+ * frontmatterForms registry (see `matchFrontmatterForm`) BEFORE calling this
+ * function, so that file is never accidentally routed here.
  */
 export function isPlainMarkdown(path: string): boolean {
   return (
@@ -74,34 +67,25 @@ export function isPlainMarkdown(path: string): boolean {
 // working; the canonical definitions live there to avoid a circular import.
 export { isAppContextFile, isCategoryFile };
 
+// Thin re-export kept for editor/tests/app/appContextRouting.test.ts (the
+// only external importer found by the Step 1 grep). The canonical routing
+// decisions now live in lib/frontmatterForms; this delegates to it and
+// narrows to the app-context shape that importer expects.
 export function appContextKindConfig(path: string): {
   schemaKey: string;
   uiSchema: UiSchema;
   bodyless: boolean;
   flowAtDepth: number | null;
 } | null {
-  if (/^app-context\/src\/apps\/[^/]+\.md$/.test(path))
-    return {
-      schemaKey: "app-context-app",
-      uiSchema: appContextAppUiSchema,
-      bodyless: false,
-      flowAtDepth: null,
-    };
-  if (/^app-context\/src\/entities\/[^/]+\.md$/.test(path))
-    return {
-      schemaKey: "app-context-entity",
-      uiSchema: appContextEntityUiSchema,
-      bodyless: false,
-      flowAtDepth: 2,
-    };
-  if (/^app-context\/src\/patterns\/[^/]+\.md$/.test(path))
-    return {
-      schemaKey: "app-context-pattern",
-      uiSchema: appContextPatternUiSchema,
-      bodyless: false,
-      flowAtDepth: 2,
-    };
-  return null;
+  if (!isAppContextFile(path)) return null;
+  const cfg = matchFrontmatterForm(path);
+  if (!cfg) return null;
+  return {
+    schemaKey: cfg.schemaKey,
+    uiSchema: cfg.uiSchema,
+    bodyless: cfg.bodyless ?? false,
+    flowAtDepth: cfg.flowAtDepth ?? null,
+  };
 }
 
 // Category files (components/src/categories/<slug>.md) route to the
@@ -192,6 +176,9 @@ export function EditorShell({
     </Box>
   ) : null;
 
+  const frontmatterForm =
+    activePath != null ? matchFrontmatterForm(activePath) : null;
+
   let pane: React.ReactNode;
   if (ghError) {
     pane = (
@@ -250,37 +237,14 @@ export function EditorShell({
         onNavigate={setActivePathSafe}
       />
     );
-  } else if (isAppContextFile(activePath)) {
-    const cfg = appContextKindConfig(activePath)!;
+  } else if (frontmatterForm) {
     pane = (
       <FrontmatterBodyEditScreen
         path={activePath}
-        schemaKey={cfg.schemaKey}
-        uiSchema={cfg.uiSchema}
-        bodyless={cfg.bodyless}
-        yamlFlowAtDepth={cfg.flowAtDepth}
-        octokit={gh}
-        onOpenSettings={onOpenSettings}
-        onNavigate={setActivePathSafe}
-      />
-    );
-  } else if (isCategoryFile(activePath)) {
-    pane = (
-      <FrontmatterBodyEditScreen
-        path={activePath}
-        schemaKey="category-defaults"
-        uiSchema={categoryDefaultsUiSchema}
-        octokit={gh}
-        onOpenSettings={onOpenSettings}
-        onNavigate={setActivePathSafe}
-      />
-    );
-  } else if (isWordsToAvoidFile(activePath)) {
-    pane = (
-      <FrontmatterBodyEditScreen
-        path={activePath}
-        schemaKey="content"
-        uiSchema={wordsToAvoidUiSchema}
+        schemaKey={frontmatterForm.schemaKey}
+        uiSchema={frontmatterForm.uiSchema}
+        bodyless={frontmatterForm.bodyless}
+        yamlFlowAtDepth={frontmatterForm.flowAtDepth}
         octokit={gh}
         onOpenSettings={onOpenSettings}
         onNavigate={setActivePathSafe}
