@@ -4,6 +4,7 @@ import { appContextEntityUiSchema } from "../uiSchemas/appContextEntity";
 import { appContextPatternUiSchema } from "../uiSchemas/appContextPattern";
 import { categoryDefaultsUiSchema } from "../uiSchemas/categoryDefaults";
 import { contentUiSchema } from "../uiSchemas/content";
+import { foundationsUiSchema } from "../uiSchemas/foundations";
 import { wordsToAvoidUiSchema } from "../uiSchemas/wordsToAvoid";
 import { isCategoryFile, isWordsToAvoidFile } from "./wysiwygPaths";
 
@@ -61,7 +62,13 @@ const REGISTRY: Entry[] = [
     schemaKey: "content",
     uiSchema: contentUiSchema,
   },
-  // Task 3 adds the foundations entry here.
+  {
+    match: (p) =>
+      /^foundations\/src\/[^/]+\.md$/.test(p) && !/AUTHORING\.md$/.test(p),
+    schemaKey: "foundations",
+    uiSchema: foundationsUiSchema,
+    flowAtDepth: null,
+  },
 ];
 
 export function matchFrontmatterForm(

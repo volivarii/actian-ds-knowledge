@@ -14,7 +14,7 @@
       "summary": "Foundations guidance — body parsed into a Pattern-H section tree; also emits a synthesized foundations.md concatenation (not byte-verbatim).",
       "src": "foundations/src/*.md",
       "generator": "scripts/foundations/derive-foundations.js",
-      "frontmatterSchema": null,
+      "frontmatterSchema": "schemas/foundations.json",
       "body": { "parse": "sections", "mirror": true, "field": null },
       "distShape": "pattern-H-tree",
       "wysiwyg": {

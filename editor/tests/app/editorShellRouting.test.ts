@@ -16,7 +16,14 @@ test("structural / meta content files are NOT routed to the markdown editor", ()
 
 test("existing plain-markdown routing is unchanged", () => {
   assert.equal(isPlainMarkdown("accessibility/src/intro.md"), true);
-  assert.equal(isPlainMarkdown("foundations/src/intro.md"), true);
+});
+
+test("foundations files now route to the foundations form, not plain markdown", () => {
+  assert.equal(isPlainMarkdown("foundations/src/intro.md"), false);
+  assert.equal(
+    matchFrontmatterForm("foundations/src/intro.md")?.schemaKey,
+    "foundations",
+  );
 });
 
 test("content/src/writing files now route to the generic content form, not plain markdown", () => {
