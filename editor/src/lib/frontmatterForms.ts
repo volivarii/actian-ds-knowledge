@@ -3,6 +3,7 @@ import { appContextAppUiSchema } from "../uiSchemas/appContextApp";
 import { appContextEntityUiSchema } from "../uiSchemas/appContextEntity";
 import { appContextPatternUiSchema } from "../uiSchemas/appContextPattern";
 import { categoryDefaultsUiSchema } from "../uiSchemas/categoryDefaults";
+import { contentUiSchema } from "../uiSchemas/content";
 import { wordsToAvoidUiSchema } from "../uiSchemas/wordsToAvoid";
 import { isCategoryFile, isWordsToAvoidFile } from "./wysiwygPaths";
 
@@ -53,7 +54,13 @@ const REGISTRY: Entry[] = [
     schemaKey: "content",
     uiSchema: wordsToAvoidUiSchema,
   },
-  // Task 2 adds the generic content entry here.
+  {
+    match: (p) =>
+      /^content\/src\/(writing|patterns|product)\/[^/]+\.md$/.test(p) &&
+      !/AUTHORING\.md$/.test(p),
+    schemaKey: "content",
+    uiSchema: contentUiSchema,
+  },
   // Task 3 adds the foundations entry here.
 ];
 
