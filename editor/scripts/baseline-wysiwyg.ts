@@ -1,6 +1,5 @@
 import "../tests/setup-happy-dom";
 import { readFileSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { roundTripMarkdown } from "../src/markdown-engine/milkdownPreset";
@@ -8,19 +7,20 @@ import {
   splitRawFrontmatter,
   joinRawFrontmatter,
 } from "../src/markdown-engine/rawFrontmatter";
+import safePathsJson from "../src/generated/wysiwyg-safe-paths.json";
 
-const require = createRequire(import.meta.url);
-const domains = require("../../domains.json");
-// Canonical listSafePaths logic lives in scripts/lib/wysiwyg-registry.js;
-// the editor gate (wysiwygPaths.ts) mirrors the same one-liner inline.
-const { listSafePaths } = require("../../scripts/lib/wysiwyg-registry.js");
+// The rich-safe SET is the CI-derived set produced by
+// scripts/gen-wysiwyg-safe-paths.ts (editor/src/generated/wysiwyg-safe-paths.json),
+// no longer a domains.json allowlist. This runner normalizes each of those files
+// on disk so a FIRST WYSIWYG save is a byte no-op (the round-trip may cosmetically
+// normalize a body: `*` bullets, escapes, empty table cells rendered as an em-dash).
 const REPO = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
   "..",
 );
 
-const safePaths: string[] = listSafePaths(domains);
+const safePaths: string[] = (safePathsJson as { paths: string[] }).paths;
 for (const rel of safePaths) {
   try {
     const abs = path.join(REPO, rel);

@@ -1,20 +1,33 @@
 name: Editor CI
 
-# CI lane for the actian-ds-knowledge/editor/ subtree (Knowledge Editor —
-# Phase 1+). Runs the editor's own test suite, typecheck, and production
-# build on every PR that touches editor/**. Without this lane the editor's
-# tests + build are CI-invisible — regressions only surface locally.
+# CI lane for the actian-ds-knowledge/editor/ subtree (Knowledge Editor,
+# Phase 1+). Runs the editor's own test suite, typecheck, production build, and
+# the WYSIWYG rich-safe-set drift check on every PR that touches editor/** (or a
+# source tree that feeds the generated safe set; see the paths filter below).
+# Without this lane the editor's tests + build are CI-invisible, and regressions
+# only surface locally.
 #
-# Lane is path-filtered (editor/** only) and not a required status check on
-# the repo, so it does not block PRs that don't touch editor/. The required
-# substrate gates (validate-manifest, schema-validation, etc.) remain
-# untouched.
+# Lane is not a required status check on the repo, so it does not block PRs it
+# does not run on. The required substrate gates (validate-manifest,
+# schema-validation, etc.) remain untouched.
 
 on:
   pull_request:
     paths:
       - 'editor/**'
       - '.github/workflows/editor-ci.yml'
+      # The generated rich-safe set (editor/src/generated/wysiwyg-safe-paths.json)
+      # is derived from the CONTENT of these source trees plus the registry +
+      # domains.json that drive classification. A PR that edits one of these and
+      # breaks a file's round-trip safety changes the correct generated set while
+      # touching no editor/ file, so list them here, or the drift check below
+      # would be vacuous (it would never fire on the PRs that can invalidate it).
+      - 'foundations/src/**'
+      - 'accessibility/src/**'
+      - 'content/src/**'
+      - 'components/src/**'
+      - 'domains.json'
+      - 'scripts/lib/wysiwyg-registry.js'
 
 jobs:
   build-and-test:
@@ -42,6 +55,15 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Check WYSIWYG rich-safe set is not stale
+        # Regenerate the CI-derived rich-safe set and fail on drift (do not
+        # auto-commit). The committed JSON is a build input the editor gate reads;
+        # it must match a fresh walk + round-trip of every editable file.
+        run: |
+          npm run gen:safe-paths
+          git diff --exit-code src/generated/wysiwyg-safe-paths.json \
+            || { echo "::error::wysiwyg-safe-paths.json is stale (run 'npm run gen:safe-paths' and commit it)."; exit 1; }
 
       - name: Production build
         run: npm run build

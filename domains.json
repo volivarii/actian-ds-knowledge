@@ -18,15 +18,6 @@
       "body": { "parse": "sections", "mirror": true, "field": null },
       "distShape": "pattern-H-tree",
       "wysiwyg": {
-        "safePaths": [
-          "foundations/src/color-primitives.md",
-          "foundations/src/design-guidelines.md",
-          "foundations/src/intro.md",
-          "foundations/src/handoff-protocol.md",
-          "foundations/src/related-guidelines.md",
-          "foundations/src/table-of-contents.md",
-          "foundations/src/tokens.md"
-        ],
         "distEquivalence": {
           "engine": "section-dist",
           "sourceRel": "foundations/src/",
@@ -42,21 +33,6 @@
       "body": { "parse": "sections", "mirror": false, "field": null },
       "distShape": "pattern-H-tree",
       "wysiwyg": {
-        "safePaths": [
-          "accessibility/src/aria-labels.md",
-          "accessibility/src/color-contrast.md",
-          "accessibility/src/components.md",
-          "accessibility/src/designer-handoff-checklist.md",
-          "accessibility/src/error-prevention.md",
-          "accessibility/src/focus-keyboard.md",
-          "accessibility/src/intro.md",
-          "accessibility/src/motion.md",
-          "accessibility/src/principles.md",
-          "accessibility/src/reading-order-landmarks.md",
-          "accessibility/src/session-timeout-warnings.md",
-          "accessibility/src/touch-pointer.md",
-          "accessibility/src/typography.md"
-        ],
         "distEquivalence": {
           "engine": "section-dist",
           "sourceRel": "accessibility/src/",
@@ -72,55 +48,6 @@
       "body": { "parse": "sections", "mirror": true, "field": null },
       "distShape": "per-record+bundle",
       "wysiwyg": {
-        "safePaths": [
-          "components/src/alert-banner/content.md",
-          "components/src/badge/content.md",
-          "components/src/breadcrumbs/content.md",
-          "components/src/button/behavior.md",
-          "components/src/button/content.md",
-          "components/src/button/design.md",
-          "components/src/card/content.md",
-          "components/src/chat-with-ai-steward/content.md",
-          "components/src/chat-with-ai-steward/design.md",
-          "components/src/chat-with-ai-steward/usage.md",
-          "components/src/checkbox/content.md",
-          "components/src/combo-box/content.md",
-          "components/src/confirmation/content.md",
-          "components/src/drawer-side-panel/content.md",
-          "components/src/dropdown-select/content.md",
-          "components/src/empty-state/content.md",
-          "components/src/error-state/content.md",
-          "components/src/filters/content.md",
-          "components/src/global-header/content.md",
-          "components/src/global-toast/content.md",
-          "components/src/inline-toast/content.md",
-          "components/src/link/content.md",
-          "components/src/loader-with-logo/content.md",
-          "components/src/loader/content.md",
-          "components/src/loading-skeleton/content.md",
-          "components/src/maintenance-state/content.md",
-          "components/src/modal/content.md",
-          "components/src/multi-select/content.md",
-          "components/src/notification-dropdown/content.md",
-          "components/src/notification/content.md",
-          "components/src/popover/content.md",
-          "components/src/progress-bar-small/content.md",
-          "components/src/search/content.md",
-          "components/src/side-nav/content.md",
-          "components/src/spinner/content.md",
-          "components/src/stepper/content.md",
-          "components/src/sticky-footer/content.md",
-          "components/src/success-state/content.md",
-          "components/src/table/content.md",
-          "components/src/tabs/content.md",
-          "components/src/tag/content.md",
-          "components/src/text-input/content.md",
-          "components/src/text-input/design.md",
-          "components/src/toggle-control/content.md",
-          "components/src/tooltip/content.md",
-          "components/src/upload-file/content.md",
-          "components/src/whats-new/content.md"
-        ],
         "distEquivalence": {
           "engine": "guideline-sections"
         }
@@ -156,26 +83,7 @@
       "generator": "scripts/content/derive-content.js",
       "frontmatterSchema": "schemas/content.json",
       "body": { "parse": "none", "mirror": true, "field": null },
-      "distShape": "single-object",
-      "wysiwyg": {
-        "safePaths": [
-          "content/src/global-guidelines.md",
-          "content/src/format-spec.md",
-          "content/src/product/lineage-specific-ui.md",
-          "content/src/product/object-preview-panels.md",
-          "content/src/product/related-content-panels.md",
-          "content/src/writing/abbreviations-and-articles.md",
-          "content/src/writing/acronyms.md",
-          "content/src/writing/capitalization.md",
-          "content/src/writing/grid-and-spacing.md",
-          "content/src/writing/numerical-formatting.md",
-          "content/src/writing/plurals.md",
-          "content/src/writing/prepositions.md",
-          "content/src/writing/punctuation.md",
-          "content/src/writing/voice-and-tone.md",
-          "content/src/writing/writing-style.md"
-        ]
-      }
+      "distShape": "single-object"
     },
     "content/patterns": {
       "summary": "Content pattern files — parsed into sections and fanned out (appended) into component guideline records.",
@@ -183,19 +91,7 @@
       "generator": "scripts/content/fanout-patterns.js",
       "frontmatterSchema": "schemas/content.json",
       "body": { "parse": "sections", "mirror": false, "field": null },
-      "distShape": "embedded",
-      "wysiwyg": {
-        "safePaths": [
-          "content/src/patterns/empty-and-system-states.md",
-          "content/src/patterns/forms.md",
-          "content/src/patterns/icons.md",
-          "content/src/patterns/loading-and-progress.md",
-          "content/src/patterns/notifications-and-messaging.md",
-          "content/src/patterns/onboarding.md",
-          "content/src/patterns/validation-messages.md",
-          "content/src/patterns/wizards.md"
-        ]
-      }
+      "distShape": "embedded"
     },
     "graph": {
       "summary": "Knowledge graph — derived from dist artifacts (+ content/src frontmatter for related-component edges); reads no prose body.",
