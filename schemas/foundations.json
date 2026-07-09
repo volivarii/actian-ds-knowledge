@@ -9,6 +9,12 @@
     "a11y_refs": {
       "type": "array",
       "description": "Accessibility subsection references this foundation touches.",
+      "examples": [
+        [
+          { "ref": "color-contrast", "note": "semantic-over-primitive rule preserves contrast under theming" },
+          { "ref": "typography" }
+        ]
+      ],
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -17,11 +23,13 @@
           "ref": {
             "type": "string",
             "pattern": "^[a-z0-9-]+$",
-            "description": "Accessibility section slug (e.g. color-contrast, typography)."
+            "description": "Accessibility section slug (e.g. color-contrast, typography).",
+            "examples": ["color-contrast", "typography", "focus-keyboard"]
           },
           "note": {
             "type": "string",
-            "description": "Optional human note on why/where the reference applies."
+            "description": "Optional human note on why/where the reference applies.",
+            "examples": ["min-height and trigger-area tokens underpin hit-target sizing"]
           }
         }
       }
@@ -29,6 +37,12 @@
     "motion_refs": {
       "type": "array",
       "description": "Motion pattern references this foundation touches.",
+      "examples": [
+        [
+          { "ref": "drawer-open-close" },
+          { "ref": "state-transitions", "note": "token bands govern component motion" }
+        ]
+      ],
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -37,9 +51,14 @@
           "ref": {
             "type": "string",
             "pattern": "^[a-z0-9-]+$",
-            "description": "Motion pattern slug (e.g. drawer-open-close, success-toast)."
+            "description": "Motion pattern slug (e.g. drawer-open-close, success-toast).",
+            "examples": ["drawer-open-close", "success-toast", "state-transitions"]
           },
-          "note": { "type": "string", "description": "Optional human note." }
+          "note": {
+            "type": "string",
+            "description": "Optional human note.",
+            "examples": ["honors prefers-reduced-motion"]
+          }
         }
       }
     }
