@@ -44,7 +44,7 @@ interface EditorShellProps {
  * files, and root-level content files, excluding structural meta-files.
  *
  * NOTE: intentionally does NOT match content/src/{writing,patterns,product}/*.md
- * anymore — those are form-routed via the frontmatterForms registry (see
+ * anymore (those are form-routed via the frontmatterForms registry, see
  * `matchFrontmatterForm`, checked BEFORE this function is called). Root-level
  * content/src/*.md files (e.g. global-guidelines.md, format-spec.md) have no
  * dedicated form and still fall back to plain markdown here.

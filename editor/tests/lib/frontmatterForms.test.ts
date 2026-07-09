@@ -23,7 +23,10 @@ test("words-to-avoid routes to content schema with its own uiSchema", () => {
   const m = matchFrontmatterForm("content/src/writing/words-to-avoid.md");
   assert.equal(m?.schemaKey, "content");
   // its uiSchema shows the wordsToAvoid grid (distinct from the generic content form)
-  assert.ok(m?.uiSchema.wordsToAvoid);
+  assert.ok(
+    (m?.uiSchema.wordsToAvoid as { items?: unknown } | undefined)?.items,
+    "words-to-avoid must resolve to the grid uiSchema, not the generic hidden one",
+  );
 });
 
 test("a component body file does NOT match (routes elsewhere)", () => {

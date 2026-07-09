@@ -15,7 +15,10 @@ test("a content writing file routes to the generic content form", () => {
 
 test("words-to-avoid still wins over the generic content entry", () => {
   const m = matchFrontmatterForm("content/src/writing/words-to-avoid.md");
-  assert.ok(m?.uiSchema.wordsToAvoid); // specific entry matched first
+  assert.ok(
+    (m?.uiSchema.wordsToAvoid as { items?: unknown } | undefined)?.items,
+    "words-to-avoid must resolve to the grid uiSchema, not the generic hidden one",
+  );
 });
 
 test("hidden nav fields survive a form serialize round-trip", () => {
