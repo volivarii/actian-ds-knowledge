@@ -247,6 +247,7 @@ export function EditorShell({
         uiSchema={frontmatterForm.uiSchema}
         bodyless={frontmatterForm.bodyless}
         yamlFlowAtDepth={frontmatterForm.flowAtDepth}
+        preserveComments={frontmatterForm.preserveComments}
         octokit={gh}
         onOpenSettings={onOpenSettings}
         onNavigate={setActivePathSafe}

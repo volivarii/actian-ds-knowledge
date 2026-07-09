@@ -15,6 +15,12 @@ export interface FrontmatterFormConfig {
   bodyless?: boolean;
   /** YAML flow depth for serialization: undefined -> 2 (default), null -> block. */
   flowAtDepth?: number | null;
+  /** When true, re-serialize via the comment-preserving Document path so `#`
+   *  comments interleaved between data lines survive a form save. Set on the
+   *  generic content + foundations entries (whose source files carry such
+   *  comments); NOT on app-context/categories/words-to-avoid, whose byte-tested
+   *  serialization must not change. */
+  preserveComments?: boolean;
 }
 
 interface Entry extends FrontmatterFormConfig {
@@ -61,6 +67,7 @@ const REGISTRY: Entry[] = [
       !/AUTHORING\.md$/.test(p),
     schemaKey: "content",
     uiSchema: contentUiSchema,
+    preserveComments: true,
   },
   {
     match: (p) =>
@@ -68,6 +75,7 @@ const REGISTRY: Entry[] = [
     schemaKey: "foundations",
     uiSchema: foundationsUiSchema,
     flowAtDepth: null,
+    preserveComments: true,
   },
 ];
 

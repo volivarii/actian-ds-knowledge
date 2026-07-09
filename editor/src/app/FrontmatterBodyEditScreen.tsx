@@ -12,7 +12,10 @@ import type { RJSFSchema } from "@rjsf/utils";
 import { Box, Flex, Button, Text, Callout } from "@radix-ui/themes";
 import { RJSFForm } from "../form-engine/RJSFForm";
 import { frontmatterTemplates } from "../form-engine/templates";
-import { stringifyYaml } from "../form-engine/yamlSerializer";
+import {
+  stringifyYaml,
+  assembleFrontmatterFilePreservingComments,
+} from "../form-engine/yamlSerializer";
 import { splitFrontmatter } from "../substrate/splitFrontmatter";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
@@ -66,6 +69,9 @@ interface Props {
    *  - `undefined` / omitted → defaults to 2 (flow-style at depth ≥ 2).
    *  - `null` → block-style only (no inline objects at any depth). */
   yamlFlowAtDepth?: number | null;
+  /** When true, serialize via the comment-preserving Document path so `#`
+   *  comments interleaved between data lines survive a form save. */
+  preserveComments?: boolean;
 }
 
 type Loaded =
@@ -82,8 +88,15 @@ type Loaded =
     };
 
 export function FrontmatterBodyEditScreen(props: Props) {
-  const { path, schemaKey, uiSchema, octokit, bodyless, yamlFlowAtDepth } =
-    props;
+  const {
+    path,
+    schemaKey,
+    uiSchema,
+    octokit,
+    bodyless,
+    yamlFlowAtDepth,
+    preserveComments,
+  } = props;
   const [state, setState] = useState<Loaded>({ kind: "loading" });
   const [formData, setFormData] = useState<unknown>(undefined);
   const [body, setBody] = useState<string>("");
@@ -165,14 +178,22 @@ export function FrontmatterBodyEditScreen(props: Props) {
   const flushToCart = useCallback(
     (fd: unknown, b: string) => {
       if (state.kind !== "ready") return;
-      // yamlFlowAtDepth prop: undefined → use default (2); null → block-style
-      // assembleFrontmatterFile accepts null for block-style; default arg is 2.
-      const content = assembleFrontmatterFile(
-        fd,
-        state.frontmatterText,
-        b,
-        yamlFlowAtDepth !== undefined ? yamlFlowAtDepth : 2,
-      );
+      // preserveComments (content/foundations): use the Document-merge path so
+      // `#` comments interleaved between data lines survive the save.
+      // Otherwise the flow-depth path: yamlFlowAtDepth undefined → default (2);
+      // null → block-style. assembleFrontmatterFile accepts null; default is 2.
+      const content = preserveComments
+        ? assembleFrontmatterFilePreservingComments(
+            fd,
+            state.frontmatterText,
+            b,
+          )
+        : assembleFrontmatterFile(
+            fd,
+            state.frontmatterText,
+            b,
+            yamlFlowAtDepth !== undefined ? yamlFlowAtDepth : 2,
+          );
       submissionCartSingleton.add({
         path,
         content,
@@ -180,7 +201,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
         addedAt: Date.now(),
       });
     },
-    [state, path, yamlFlowAtDepth],
+    [state, path, yamlFlowAtDepth, preserveComments],
   );
 
   const scheduleFlush = useCallback(

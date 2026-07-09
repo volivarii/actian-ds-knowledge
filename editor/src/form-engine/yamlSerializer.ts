@@ -86,6 +86,56 @@ function markFlowAtDepth(
   }
 }
 
+/**
+ * Re-serialize form frontmatter into a full `---`-fenced file while preserving
+ * EVERY `#` comment in the original block — including comments interleaved
+ * BETWEEN data lines (which `stringifyYaml`'s `originalText` path drops, since
+ * it only keeps the leading header above the first data line).
+ *
+ * Approach: parse the original frontmatter into a `yaml` Document (which retains
+ * comments as node properties — an interleaved block attaches as `commentBefore`
+ * on the KEY node of the following pair), then merge the new form values into
+ * that Document with `doc.set(key, value)`. For an existing key, `doc.set` reuses
+ * the current pair's key node (keeping its `commentBefore`) and only replaces the
+ * value, so the comment survives. Keys present in the Document but absent from
+ * `formData` are deleted. Reformatted values may switch flow → block style; that
+ * is dist-safe (content-derive and foundations-derive both parse frontmatter
+ * semantically). COMMENTS are the invariant here, not flow style.
+ *
+ * When `frontmatterText` is null/empty (new file — nothing to preserve) this
+ * delegates to the plain `stringifyYaml` path.
+ */
+export function assembleFrontmatterFilePreservingComments(
+  formData: unknown,
+  frontmatterText: string | null,
+  body: string,
+): string {
+  let fm: string;
+  if (!frontmatterText) {
+    fm = stringifyYaml(formData);
+  } else {
+    const doc = yaml.parseDocument(frontmatterText);
+    const data = (formData ?? {}) as Record<string, unknown>;
+    const keys = Object.keys(data);
+    for (const key of keys) {
+      doc.set(key, data[key]);
+    }
+    // Drop keys the form removed (present in the parsed doc, absent from formData).
+    const existing =
+      doc.contents && "items" in doc.contents
+        ? (doc.contents.items as Array<{ key?: unknown }>)
+        : [];
+    const present = new Set(keys);
+    for (const pair of existing) {
+      const k = pair.key == null ? "" : String(pair.key);
+      if (!present.has(k)) doc.delete(k);
+    }
+    fm = doc.toString({ lineWidth: 0 });
+  }
+  const fenced = fm.endsWith("\n") ? fm : fm + "\n";
+  return `---\n${fenced}---\n${body.startsWith("\n") ? body : "\n" + body}`;
+}
+
 function extractLeadingHeader(text: string): string {
   const lines = text.split("\n");
   const out: string[] = [];
