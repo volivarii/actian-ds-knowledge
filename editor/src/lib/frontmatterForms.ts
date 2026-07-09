@@ -21,6 +21,12 @@ export interface FrontmatterFormConfig {
    *  comments); NOT on app-context/categories/words-to-avoid, whose byte-tested
    *  serialization must not change. */
   preserveComments?: boolean;
+  /** When true, frontmatter is OPTIONAL for this domain: a file with no `---`
+   *  fence is a valid plain-markdown file and opens silently (no banner). Set
+   *  on the prose domains (content + foundations). Record domains
+   *  (app-context/categories/words-to-avoid) OMIT it — a missing fence there is
+   *  an error and keeps the missing-frontmatter warning. */
+  frontmatterOptional?: boolean;
 }
 
 interface Entry extends FrontmatterFormConfig {
@@ -72,6 +78,7 @@ const REGISTRY: Entry[] = [
     schemaKey: "content",
     uiSchema: contentUiSchema,
     preserveComments: true,
+    frontmatterOptional: true,
   },
   {
     match: (p) =>
@@ -80,6 +87,7 @@ const REGISTRY: Entry[] = [
     uiSchema: foundationsUiSchema,
     flowAtDepth: null,
     preserveComments: true,
+    frontmatterOptional: true,
   },
 ];
 

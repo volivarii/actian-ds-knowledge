@@ -18,7 +18,7 @@ import {
 } from "../form-engine/yamlSerializer";
 import {
   splitFrontmatter,
-  classifyFrontmatter,
+  routeNoFrontmatter,
 } from "../substrate/splitFrontmatter";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
@@ -75,6 +75,11 @@ interface Props {
   /** When true, serialize via the comment-preserving Document path so `#`
    *  comments interleaved between data lines survive a form save. */
   preserveComments?: boolean;
+  /** When true, frontmatter is OPTIONAL for this domain (prose: content +
+   *  foundations): a file with no `---` fence opens silently in the markdown
+   *  editor. When false/omitted (record domains), a missing fence keeps the
+   *  amber missing-frontmatter warning + raw fallback. */
+  frontmatterOptional?: boolean;
 }
 
 type Loaded =
@@ -101,6 +106,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
     bodyless,
     yamlFlowAtDepth,
     preserveComments,
+    frontmatterOptional,
   } = props;
   const [state, setState] = useState<Loaded>({ kind: "loading" });
   const [formData, setFormData] = useState<unknown>(undefined);
@@ -156,13 +162,14 @@ export function FrontmatterBodyEditScreen(props: Props) {
         //    raw editing without fetching the schema at all.
         const split = splitFrontmatter(text);
         if (split.data === null) {
-          // A file with NO fence is not malformed — edit it as plain markdown
-          // (no scary banner). Keep the banner only for a broken fence.
-          setState(
-            classifyFrontmatter(text) === "malformed"
-              ? { kind: "raw" }
-              : { kind: "no-frontmatter" },
-          );
+          // Route the no-parse case. A broken fence always warns ("raw"). A
+          // MISSING fence is silent ("no-frontmatter") only for prose domains
+          // where frontmatter is optional (content/foundations); record domains
+          // (app-context/categories/words-to-avoid) REQUIRE it, so a missing
+          // fence keeps the warning + raw fallback.
+          setState({
+            kind: routeNoFrontmatter(text, frontmatterOptional === true),
+          });
           return;
         }
 
@@ -200,7 +207,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
     return () => {
       cancelled = true;
     };
-  }, [path, schemaKey, octokit]);
+  }, [path, schemaKey, octokit, frontmatterOptional]);
 
   const flushToCart = useCallback(
     (fd: unknown, b: string) => {

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   splitFrontmatter,
   classifyFrontmatter,
+  routeNoFrontmatter,
 } from "../../src/substrate/splitFrontmatter";
 
 test("splits a fenced file into data, body, frontmatterText", () => {
@@ -40,6 +41,24 @@ test("classifyFrontmatter: a file with NO fence is 'no-frontmatter'", () => {
   assert.equal(classifyFrontmatter(""), "no-frontmatter");
   // leading blank lines then prose (no fence) is still no-frontmatter
   assert.equal(classifyFrontmatter("\n\nProse only.\n"), "no-frontmatter");
+});
+
+test("routeNoFrontmatter: a no-fence file is silent for optional-frontmatter (prose) domains", () => {
+  const noFence = "# Just a heading\n\nProse.\n";
+  // content / foundations treat frontmatter as OPTIONAL → open silently.
+  assert.equal(routeNoFrontmatter(noFence, true), "no-frontmatter");
+});
+
+test("routeNoFrontmatter: a no-fence file WARNS for required-frontmatter (record) domains", () => {
+  const noFence = "# Just a heading\n\nProse.\n";
+  // app-context / categories / words-to-avoid REQUIRE frontmatter → warn + raw.
+  assert.equal(routeNoFrontmatter(noFence, false), "raw");
+});
+
+test("routeNoFrontmatter: a malformed fence always warns (both domain kinds)", () => {
+  const broken = "---\nslug: action\n: : bad\n---\nbody\n";
+  assert.equal(routeNoFrontmatter(broken, true), "raw");
+  assert.equal(routeNoFrontmatter(broken, false), "raw");
 });
 
 test("classifyFrontmatter: a broken fence is 'malformed'", () => {
