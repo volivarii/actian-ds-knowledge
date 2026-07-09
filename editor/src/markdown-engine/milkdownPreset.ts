@@ -61,6 +61,22 @@ function stripCodeSpans(markdown: string): string {
 }
 
 /**
+ * Thrown by assertGuardSafe when a markdown body fails the guard-safety
+ * contract: a non-idempotent round-trip, a Kramdown block IAL, or disallowed
+ * inline HTML. This is the discriminator classifiers use to tell "the guard
+ * rejected this file" (a normal, expected classification outcome) apart from
+ * any other error (a Milkdown crash, a bug elsewhere), which should propagate
+ * instead of being silently treated as "unsafe". Surface kept minimal: no
+ * extra fields beyond the inherited `message`.
+ */
+export class GuardViolationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GuardViolationError";
+  }
+}
+
+/**
  * The guard-safety contract shared by the round-trip drift tests (and, next,
  * the safe-paths generator): round-tripping a markdown body twice must be
  * idempotent, the result must contain no Kramdown block IAL, and it must
@@ -71,20 +87,24 @@ function stripCodeSpans(markdown: string): string {
  *
  * Returns the first round-trip output (rt1) on success, so a caller that
  * needs it afterward (for example, a dist-equivalence check keyed on the
- * round-tripped body) does not have to round-trip again. Throws an Error
- * naming which check failed on failure.
+ * round-tripped body) does not have to round-trip again. Throws a
+ * GuardViolationError naming which check failed on failure.
  */
 export async function assertGuardSafe(markdown: string): Promise<string> {
   const rt1 = await roundTripMarkdown(markdown);
   const rt2 = await roundTripMarkdown(rt1);
   if (rt2 !== rt1) {
-    throw new Error("round-trip must be idempotent (RT2 === RT1)");
+    throw new GuardViolationError(
+      "round-trip must be idempotent (RT2 === RT1)",
+    );
   }
   if (/\{:/.test(rt1)) {
-    throw new Error("no Kramdown block IAL allowed in round-tripped markdown");
+    throw new GuardViolationError(
+      "no Kramdown block IAL allowed in round-tripped markdown",
+    );
   }
   if (DISALLOWED_INLINE_HTML.test(stripCodeSpans(rt1))) {
-    throw new Error(
+    throw new GuardViolationError(
       "no inline HTML allowed except <br> and the <Media> directive",
     );
   }
