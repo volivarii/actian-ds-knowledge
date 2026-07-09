@@ -85,7 +85,9 @@ const REGISTRY: Entry[] = [
       /^foundations\/src\/[^/]+\.md$/.test(p) && !/AUTHORING\.md$/.test(p),
     schemaKey: "foundations",
     uiSchema: foundationsUiSchema,
-    flowAtDepth: null,
+    // No flowAtDepth: foundations serializes via the preserveComments Document
+    // path (below), which ignores flowAtDepth entirely. Leaving it would be
+    // dead config that misleads a reader into thinking it drives serialization.
     preserveComments: true,
     frontmatterOptional: true,
   },

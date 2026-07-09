@@ -86,7 +86,10 @@ type Loaded =
   | { kind: "loading" }
   | { kind: "error"; message: string }
   | { kind: "raw" } // frontmatter present but unparseable → raw editor + banner
-  | { kind: "no-frontmatter" } // no `---` fence at all → raw editor, NO banner
+  // no `---` fence in an optional-frontmatter (prose) domain → markdown editor,
+  // NO banner. Carries the already-fetched blob so MarkdownEditScreen reuses it
+  // instead of a second network fetch.
+  | { kind: "no-frontmatter"; text: string; basedOnSha: string }
   | { kind: "schema-error" } // frontmatter OK, schema fetch failed → raw editor + soft notice
   | {
       kind: "ready";
@@ -167,9 +170,12 @@ export function FrontmatterBodyEditScreen(props: Props) {
           // where frontmatter is optional (content/foundations); record domains
           // (app-context/categories/words-to-avoid) REQUIRE it, so a missing
           // fence keeps the warning + raw fallback.
-          setState({
-            kind: routeNoFrontmatter(text, frontmatterOptional === true),
-          });
+          setState(
+            routeNoFrontmatter(text, frontmatterOptional === true) ===
+              "no-frontmatter"
+              ? { kind: "no-frontmatter", text, basedOnSha }
+              : { kind: "raw" },
+          );
           return;
         }
 
@@ -260,6 +266,14 @@ export function FrontmatterBodyEditScreen(props: Props) {
         octokit={octokit}
         onOpenSettings={props.onOpenSettings}
         onNavigate={props.onNavigate}
+        // Hand off the blob we already fetched so MarkdownEditScreen skips its
+        // own getContent. Only when we have a real base (empty sha ⇒ 404 stub /
+        // cart entry — let MarkdownEditScreen build its own stub / cart-win).
+        preloaded={
+          state.basedOnSha
+            ? { text: state.text, sha: state.basedOnSha }
+            : undefined
+        }
       />
     );
   if (state.kind === "schema-error")

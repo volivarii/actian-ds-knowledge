@@ -19,10 +19,14 @@ const FM = [
 ].join("\n");
 const FILE = `---\n${FM}\n---\n\nBody prose here.\n`;
 
-test("foundations files route to the foundations form, block style", () => {
+test("foundations files route to the foundations form via the preserveComments path", () => {
   const m = matchFrontmatterForm("foundations/src/tokens.md");
   assert.equal(m?.schemaKey, "foundations");
-  assert.equal(m?.flowAtDepth, null);
+  // foundations serializes through the comment-preserving Document path (not
+  // flowAtDepth, which it no longer sets), and treats frontmatter as optional.
+  assert.equal(m?.preserveComments, true);
+  assert.equal(m?.frontmatterOptional, true);
+  assert.equal(m?.flowAtDepth, undefined);
 });
 
 test("block-style serialize is semantically identical (dist-safe)", () => {
