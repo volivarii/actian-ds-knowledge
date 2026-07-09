@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import { Box, Button, Callout, Flex, Tabs } from "@radix-ui/themes";
-import type { UiSchema } from "@rjsf/utils";
 import { createOctokit, MissingPATError } from "../core/octokit";
 import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
@@ -68,27 +67,6 @@ export function isPlainMarkdown(path: string): boolean {
 // Re-exported from lib/wysiwygPaths so existing importers (and tests) keep
 // working; the canonical definitions live there to avoid a circular import.
 export { isAppContextFile, isCategoryFile };
-
-// Thin re-export kept for editor/tests/app/appContextRouting.test.ts (the
-// only external importer found by the Step 1 grep). The canonical routing
-// decisions now live in lib/frontmatterForms; this delegates to it and
-// narrows to the app-context shape that importer expects.
-export function appContextKindConfig(path: string): {
-  schemaKey: string;
-  uiSchema: UiSchema;
-  bodyless: boolean;
-  flowAtDepth: number | null;
-} | null {
-  if (!isAppContextFile(path)) return null;
-  const cfg = matchFrontmatterForm(path);
-  if (!cfg) return null;
-  return {
-    schemaKey: cfg.schemaKey,
-    uiSchema: cfg.uiSchema,
-    bodyless: cfg.bodyless ?? false,
-    flowAtDepth: cfg.flowAtDepth ?? null,
-  };
-}
 
 // Category files (components/src/categories/<slug>.md) route to the
 // frontmatter form editor, not the raw markdown editor — so they are
