@@ -6,7 +6,6 @@ import {
   editorViewOptionsCtx,
 } from "@milkdown/core";
 import { listener, listenerCtx } from "@milkdown/plugin-listener";
-import { insert } from "@milkdown/utils";
 import { MilkdownProvider, Milkdown, useEditor } from "@milkdown/react";
 import { Flex, Button } from "@radix-ui/themes";
 import type { Octokit } from "@octokit/rest";
@@ -16,7 +15,7 @@ import {
   setMediaPreviewSlug,
   setMediaPreviewOctokit,
 } from "./media/mediaNodeView";
-import { MediaPickerPopover } from "./MediaPickerPopover";
+import { RichToolbar } from "./RichToolbar";
 
 function MilkdownBody({
   initialText,
@@ -24,7 +23,6 @@ function MilkdownBody({
   label,
   componentSlug,
   octokit,
-  onReady,
 }: {
   initialText: string;
   onChange: (md: string) => void;
@@ -33,9 +31,6 @@ function MilkdownBody({
   /** Present only for component-guideline edits (powers the <Media> preview
    *  fetch); undefined in the headless round-trip, which must fall to the chip. */
   octokit?: Octokit;
-  /** Exposes the live editor getter so the parent's <Media> picker can insert
-   *  the directive into the running ProseMirror doc. */
-  onReady?: (get: () => Editor | undefined) => void;
 }) {
   // Prime the module-level preview slug and octokit before the editor mounts.
   // The NodeView factory reads both lazily when each <Media> atom renders, and
@@ -46,7 +41,9 @@ function MilkdownBody({
     setMediaPreviewOctokit(octokit ?? null);
   }, [componentSlug, octokit]);
 
-  const { get } = useEditor(
+  // The editor is registered with the surrounding MilkdownProvider; RichToolbar
+  // reaches it via useInstance() to dispatch commands, so no getter is exposed.
+  useEditor(
     (root) =>
       // Presets (commonmark + gfm + media NodeView) come from the shared
       // milkdownPreset module so the live editor and the round-trip drift
@@ -84,12 +81,6 @@ function MilkdownBody({
     [],
   );
 
-  // Publish the getter once it's available. `get` is stable across renders
-  // (useEditor memoizes it), so this fires whenever onReady identity changes.
-  React.useEffect(() => {
-    onReady?.(get);
-  }, [get, onReady]);
-
   return <Milkdown />;
 }
 
@@ -112,36 +103,15 @@ export function RichBodyEditor({
   const [mode, setMode] = React.useState<"rich" | "source">("rich");
   const [text, setText] = React.useState(initialText);
   const label = `Body editor${filename ? ` — ${filename}` : ""}`;
-  // Live editor getter, published by MilkdownBody once created, so the media
-  // picker can insert the directive into the running doc.
-  const getEditorRef = React.useRef<(() => Editor | undefined) | null>(null);
-  const handleReady = React.useCallback((get: () => Editor | undefined) => {
-    getEditorRef.current = get;
-  }, []);
 
   const handleChange = (md: string) => {
     setText(md);
     onChange(md);
   };
 
-  // Interim insertion affordance for rich mode. Task 2 folds media insertion
-  // into the full rich-mode toolbar and supersedes this minimal header row.
-  const showMediaPicker = mode === "rich" && !!octokit && !!componentSlug;
-
   return (
     <div>
-      <Flex justify="between" align="center" mb="1" gap="2">
-        {showMediaPicker && octokit && componentSlug ? (
-          <MediaPickerPopover
-            octokit={octokit}
-            componentSlug={componentSlug}
-            onInsert={(snippet) =>
-              getEditorRef.current?.()?.action(insert(snippet))
-            }
-          />
-        ) : (
-          <span />
-        )}
+      <Flex justify="end" align="center" mb="1" gap="2">
         {/* Action-model toggle: the accessible name states the action this
             button performs (not a pressed state). A flipping label + aria-pressed
             would announce contradictory state, and aria-label also keeps the
@@ -160,14 +130,16 @@ export function RichBodyEditor({
         </Button>
       </Flex>
       {mode === "rich" ? (
+        // RichToolbar sits inside MilkdownProvider so its useInstance() resolves
+        // to this editor; it also hosts the <Media> picker (Insert group).
         <MilkdownProvider>
+          <RichToolbar octokit={octokit} componentSlug={componentSlug} />
           <MilkdownBody
             initialText={text}
             onChange={handleChange}
             label={label}
             componentSlug={componentSlug}
             octokit={octokit}
-            onReady={handleReady}
           />
         </MilkdownProvider>
       ) : (

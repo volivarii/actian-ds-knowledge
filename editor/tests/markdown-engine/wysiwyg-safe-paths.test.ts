@@ -56,10 +56,13 @@ for (const rel of SAFE_PATHS.filter((p) => existsSync(path.join(REPO, p)))) {
     //     not HTML — strip them before the scan so they can't false-positive.
     //   • <br> and the registered <Media> directive round-trip cleanly; the
     //     per-file idempotency + dist-equivalence asserts above/below still
-    //     guard them, so allowlist them here.
+    //     guard them, so allowlist them here. The `\s*` matches the spaced
+    //     `<br />` form Milkdown serializes for empty GFM table cells (the shape
+    //     the rich-mode insert-table / add-row / add-col tools produce); kept in
+    //     lockstep with rich-toolbar-commands.test.ts.
     const htmlScan = rt1.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
     assert.equal(
-      htmlScan.match(/<(?!br\b\/?>|Media\b)[A-Za-z]/g),
+      htmlScan.match(/<(?!br\b\s*\/?>|Media\b)[A-Za-z]/g),
       null,
       "no inline HTML except <br> and the <Media> directive (code spans ignored)",
     );
