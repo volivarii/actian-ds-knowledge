@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { roundTripMarkdown } from "../../src/markdown-engine/milkdownPreset";
+import { assertGuardSafe } from "../../src/markdown-engine/milkdownPreset";
 import { splitRawFrontmatter } from "../../src/markdown-engine/rawFrontmatter";
 
 const require = createRequire(import.meta.url);
@@ -47,25 +47,14 @@ for (const rel of SAFE_PATHS.filter((p) => existsSync(path.join(REPO, p)))) {
   test(`WYSIWYG dist-safe: ${rel}`, async () => {
     const text = readFileSync(path.join(REPO, rel), "utf8");
     const { body } = splitRawFrontmatter(text);
-    const rt1 = await roundTripMarkdown(body);
-    const rt2 = await roundTripMarkdown(rt1);
-    assert.equal(rt2, rt1, "round-trip must be idempotent (RT2 === RT1)");
-    assert.ok(!/\{:/.test(rt1), "no Kramdown IAL in round-tripped body");
-    // Fail-closed on raw inline HTML, with two principled exceptions:
-    //   • code spans / fenced blocks hold LITERAL text (e.g. `Source: <asset>`),
-    //     not HTML — strip them before the scan so they can't false-positive.
-    //   • <br> and the registered <Media> directive round-trip cleanly; the
-    //     per-file idempotency + dist-equivalence asserts above/below still
-    //     guard them, so allowlist them here. The `\s*` matches the spaced
-    //     `<br />` form Milkdown serializes for empty GFM table cells (the shape
-    //     the rich-mode insert-table / add-row / add-col tools produce); kept in
-    //     lockstep with rich-toolbar-commands.test.ts.
-    const htmlScan = rt1.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
-    assert.equal(
-      htmlScan.match(/<(?!br\b\s*\/?>|Media\b)[A-Za-z]/g),
-      null,
-      "no inline HTML except <br> and the <Media> directive (code spans ignored)",
-    );
+    // assertGuardSafe (milkdownPreset.ts) is the single source of truth for
+    // "guard-safe": idempotent round-trip, no Kramdown block IAL, and no
+    // inline HTML except <br> and the <Media> directive (code spans / fenced
+    // blocks are literal text, not HTML, and are stripped before that scan).
+    // Shared with rich-toolbar-commands.test.ts so the two guards can never
+    // drift apart. Throws with a message naming which check failed; returns
+    // rt1 for the dist-equivalence check below.
+    const rt1 = await assertGuardSafe(body);
     const want = deriveEquivalenceView(domains, rel, body);
     if (want !== null) {
       assert.deepEqual(

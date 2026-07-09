@@ -18,7 +18,7 @@ import { CellSelection } from "@milkdown/prose/tables";
 import type { Node as ProseNode } from "@milkdown/prose/model";
 import {
   useMilkdownPresets,
-  roundTripMarkdown,
+  assertGuardSafe,
 } from "../../src/markdown-engine/milkdownPreset";
 import {
   COMMANDS,
@@ -30,15 +30,11 @@ import {
 // then asserts each command's REAL serialized output is guard-safe. A hand
 // written sample constant would leave a mis-wired button or bad payload green;
 // driving the real command cannot.
-
-// The round-trip guard allows exactly two inline-HTML forms. `<br>`: Milkdown
-// serializes an empty GFM table cell as `<br />` (space and slash), which the
-// tools for insert-table / add-row / add-col all produce; it round-trips
-// idempotently. `<Media>`: the registered display-only directive. The `\s*`
-// (vs the older `\/?` only) makes the negative lookahead recognize the spaced
-// `<br />` the serializer actually emits — kept in lockstep with
-// wysiwyg-safe-paths.test.ts.
-const DISALLOWED_HTML = /<(?!br\b\s*\/?>|Media\b)[A-Za-z]/g;
+//
+// The guard-safety check itself (idempotent round-trip, no Kramdown block
+// IAL, no disallowed inline HTML) is the shared `assertGuardSafe` helper in
+// milkdownPreset.ts, so this test and wysiwyg-safe-paths.test.ts can never
+// drift apart on what "guard-safe" means.
 
 /** Position immediately before the first table *body* cell in the doc, or -1. */
 function findFirstBodyCellPos(doc: ProseNode): number {
@@ -104,20 +100,11 @@ for (const cmd of COMMANDS) {
       cmd.seed,
       `'${cmd.id}' command did not change the document (mis-wired button or bad payload)`,
     );
-    const rt1 = await roundTripMarkdown(md);
-    assert.equal(
-      await roundTripMarkdown(rt1),
-      rt1,
-      "round-trip must be idempotent (RT2 === RT1)",
-    );
-    assert.ok(!/\{:/.test(rt1), "no Kramdown block IAL");
-    // Code spans / fenced blocks hold literal text, not HTML — strip first.
-    const htmlScan = rt1.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
-    assert.equal(
-      htmlScan.match(DISALLOWED_HTML),
-      null,
-      "no inline HTML except <br> and the <Media> directive",
-    );
+    // assertGuardSafe throws with a message naming which check failed:
+    // idempotent round-trip, no Kramdown block IAL, no disallowed inline HTML
+    // (code spans / fenced blocks are literal text, not HTML, and are
+    // stripped before that scan).
+    await assertGuardSafe(md);
   });
 }
 

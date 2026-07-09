@@ -4,7 +4,10 @@ import assert from "node:assert/strict";
 import { Editor, rootCtx, defaultValueCtx } from "@milkdown/core";
 import { commonmark } from "@milkdown/preset-commonmark";
 import { getMarkdown } from "@milkdown/utils";
-import { roundTripMarkdown } from "../../src/markdown-engine/milkdownPreset";
+import {
+  roundTripMarkdown,
+  assertGuardSafe,
+} from "../../src/markdown-engine/milkdownPreset";
 
 // commonmark-ONLY round-trip = the A/B baseline. roundTripMarkdown adds gfm; a
 // test of gfm behavior is only non-vacuous if it asserts a difference gfm
@@ -125,4 +128,28 @@ test("gfm keeps a table-heavy heading + {#anchor} intact (vs commonmark) — dis
   );
   assert.match(gfmOut, /\{#aria-labels\}/, "{#anchor} preserved under gfm");
   assert.doesNotMatch(gfmOut, /\\#/, "no backslash-escaped hashes under gfm");
+});
+
+// Sanity check for the rich-toolbar-commands.test.ts / wysiwyg-safe-paths.test.ts
+// refactor onto this shared assertGuardSafe: confirm hoisting it did not
+// silently loosen what the guard accepts or rejects.
+test("assertGuardSafe rejects disallowed inline HTML and accepts <br> / <Media>", async () => {
+  await assert.rejects(
+    () => assertGuardSafe("Text with <div>x</div> inline.\n"),
+    /no inline HTML allowed/,
+    "a raw <div> must still be rejected",
+  );
+  await assert.rejects(
+    () => assertGuardSafe('Text with <br class="x"> inline.\n'),
+    /no inline HTML allowed/,
+    "a <br> carrying an attribute must still be rejected (not the exact allowed shape)",
+  );
+  await assert.doesNotReject(
+    () => assertGuardSafe("| A | B |\n| --- | --- |\n| c |  |\n"),
+    "the spaced <br /> Milkdown emits for an empty GFM table cell must still be accepted",
+  );
+  await assert.doesNotReject(
+    () => assertGuardSafe('Intro.\n\n<Media role="parts" />\n\nMore.\n'),
+    "the registered <Media> directive must still be accepted",
+  );
 });
