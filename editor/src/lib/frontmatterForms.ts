@@ -4,6 +4,7 @@ import { appContextEntityUiSchema } from "../uiSchemas/appContextEntity";
 import { appContextPatternUiSchema } from "../uiSchemas/appContextPattern";
 import { categoryDefaultsUiSchema } from "../uiSchemas/categoryDefaults";
 import { wordsToAvoidUiSchema } from "../uiSchemas/wordsToAvoid";
+import { isCategoryFile, isWordsToAvoidFile } from "./wysiwygPaths";
 
 export interface FrontmatterFormConfig {
   schemaKey: string;
@@ -43,14 +44,12 @@ const REGISTRY: Entry[] = [
     flowAtDepth: 2,
   },
   {
-    match: (p) =>
-      /^components\/src\/categories\/[^/]+\.md$/.test(p) &&
-      !/AUTHORING\.md$/.test(p),
+    match: (p) => isCategoryFile(p),
     schemaKey: "category-defaults",
     uiSchema: categoryDefaultsUiSchema,
   },
   {
-    match: (p) => p === "content/src/writing/words-to-avoid.md",
+    match: (p) => isWordsToAvoidFile(p),
     schemaKey: "content",
     uiSchema: wordsToAvoidUiSchema,
   },
