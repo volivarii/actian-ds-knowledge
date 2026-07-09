@@ -39,25 +39,20 @@ interface EditorShellProps {
 
 /**
  * True for source markdown files routed to MarkdownEditScreen (the raw CodeMirror
- * or WYSIWYG body editor). Matches accessibility, component domain files, and
- * root-level content files, excluding structural meta-files.
+ * or WYSIWYG body editor). Matches accessibility and component domain files,
+ * excluding structural meta-files.
  *
- * NOTE: intentionally does NOT match content/src/{writing,patterns,product}/*.md
- * or foundations/src/*.md anymore (those are form-routed via the
- * frontmatterForms registry, see `matchFrontmatterForm`, checked BEFORE this
- * function is called). Foundations files with no frontmatter still land in
- * MarkdownEditScreen, but via FrontmatterBodyEditScreen's raw fallback, not
- * through this function. Root-level content/src/*.md files (e.g.
- * global-guidelines.md, format-spec.md) have no dedicated form and still
- * fall back to plain markdown here.
+ * NOTE: intentionally does NOT match any content/src/**.md or foundations/src/*.md
+ * anymore — ALL of those are form-routed via the frontmatterForms registry (see
+ * `matchFrontmatterForm`, checked BEFORE this function). That now includes
+ * root-level content files (global-guidelines.md, format-spec.md); a form-routed
+ * file with no frontmatter still lands in MarkdownEditScreen, but via
+ * FrontmatterBodyEditScreen's no-frontmatter fallback, not through this function.
  */
 export function isPlainMarkdown(path: string): boolean {
   return (
     (/^accessibility\/src\/[^/]+\.md$/.test(path) ||
       /^components\/src\/(?!categories\/|AUTHORING\.md|EDITING-GUIDE\.md)[^/]+\/[^/]+\.md$/.test(
-        path,
-      ) ||
-      /^content\/src\/(?!AUTHORING\.md$|README\.md$|content-index\.md$)[^/]+\.md$/.test(
         path,
       )) &&
     !/AUTHORING\.md$/.test(path)

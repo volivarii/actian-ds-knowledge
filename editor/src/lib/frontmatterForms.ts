@@ -62,9 +62,13 @@ const REGISTRY: Entry[] = [
     uiSchema: wordsToAvoidUiSchema,
   },
   {
+    // Root-level content files (global-guidelines.md, format-spec.md, …) plus
+    // the writing/patterns/product subdirs. Excludes the structural files
+    // (AUTHORING, README, content-index — content-index keeps its own route).
+    // words-to-avoid.md is claimed by the earlier specific entry (first-match).
     match: (p) =>
-      /^content\/src\/(writing|patterns|product)\/[^/]+\.md$/.test(p) &&
-      !/AUTHORING\.md$/.test(p),
+      /^content\/src\/(?:(?:writing|patterns|product)\/)?[^/]+\.md$/.test(p) &&
+      !/(?:AUTHORING|README|content-index)\.md$/.test(p),
     schemaKey: "content",
     uiSchema: contentUiSchema,
     preserveComments: true,
