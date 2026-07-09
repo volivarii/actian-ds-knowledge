@@ -12,7 +12,10 @@ import { Flex, Button } from "@radix-ui/themes";
 import type { Octokit } from "@octokit/rest";
 import { CodeMirrorEditor } from "./CodeMirrorEditor";
 import { useMilkdownPresets } from "./milkdownPreset";
-import { setMediaPreviewSlug } from "./media/mediaNodeView";
+import {
+  setMediaPreviewSlug,
+  setMediaPreviewOctokit,
+} from "./media/mediaNodeView";
 import { MediaPickerPopover } from "./MediaPickerPopover";
 
 function MilkdownBody({
@@ -20,23 +23,28 @@ function MilkdownBody({
   onChange,
   label,
   componentSlug,
+  octokit,
   onReady,
 }: {
   initialText: string;
   onChange: (md: string) => void;
   label: string;
   componentSlug?: string | null;
+  /** Present only for component-guideline edits (powers the <Media> preview
+   *  fetch); undefined in the headless round-trip, which must fall to the chip. */
+  octokit?: Octokit;
   /** Exposes the live editor getter so the parent's <Media> picker can insert
    *  the directive into the running ProseMirror doc. */
   onReady?: (get: () => Editor | undefined) => void;
 }) {
-  // Prime the module-level preview slug BEFORE the editor mounts. The NodeView
-  // factory reads it lazily when each <Media> atom renders, and editor.create()
-  // is async (a regular effect kicks it off), so this effect — declared before
-  // useEditor — always resolves the slug in time for the first render.
+  // Prime the module-level preview slug and octokit before the editor mounts.
+  // The NodeView factory reads both lazily when each <Media> atom renders, and
+  // editor.create() is async (a regular effect kicks it off), so this effect,
+  // declared before useEditor, always resolves them in time for the first render.
   React.useEffect(() => {
     setMediaPreviewSlug(componentSlug ?? null);
-  }, [componentSlug]);
+    setMediaPreviewOctokit(octokit ?? null);
+  }, [componentSlug, octokit]);
 
   const { get } = useEditor(
     (root) =>
@@ -98,7 +106,7 @@ export function RichBodyEditor({
   /** Slug of the component being edited (e.g. `button`); enables <Media>
    *  preview resolution + the insert picker. null/undefined outside components. */
   componentSlug?: string | null;
-  /** Present only for component-guideline edits — powers the media picker. */
+  /** Present only for component-guideline edits (powers the media picker). */
   octokit?: Octokit;
 }) {
   const [mode, setMode] = React.useState<"rich" | "source">("rich");
@@ -107,12 +115,9 @@ export function RichBodyEditor({
   // Live editor getter, published by MilkdownBody once created, so the media
   // picker can insert the directive into the running doc.
   const getEditorRef = React.useRef<(() => Editor | undefined) | null>(null);
-  const handleReady = React.useCallback(
-    (get: () => Editor | undefined) => {
-      getEditorRef.current = get;
-    },
-    [],
-  );
+  const handleReady = React.useCallback((get: () => Editor | undefined) => {
+    getEditorRef.current = get;
+  }, []);
 
   const handleChange = (md: string) => {
     setText(md);
@@ -161,6 +166,7 @@ export function RichBodyEditor({
             onChange={handleChange}
             label={label}
             componentSlug={componentSlug}
+            octokit={octokit}
             onReady={handleReady}
           />
         </MilkdownProvider>

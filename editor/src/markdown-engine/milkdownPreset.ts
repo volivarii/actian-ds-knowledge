@@ -11,7 +11,7 @@ import { mediaNodeView } from "./media/mediaNodeView";
  * apply IDENTICAL parsing/serialization — they can never diverge.
  */
 export function useMilkdownPresets(editor: Editor): Editor {
-  // mediaNodeView is a display-only NodeView over the commonmark `html` atom —
+  // mediaNodeView is a display-only NodeView over the commonmark `html` atom:
   // it renders a preview chip for <Media …/> but never mutates the node, so
   // serialization (and the round-trip drift guards) stay byte-exact.
   return editor.use(commonmark).use(gfm).use(mediaNodeView);
