@@ -32,10 +32,35 @@ export interface RelationsPanelProps {
 const COLLAPSE_STORAGE_KEY = "relationsPanelCollapsed";
 
 /** Anchor slug for a heading, resolved through the same section walker the
- *  counts use, so outline pills and scoping agree with countsBySection. */
+ *  counts use, so outline pills and scoping agree with countsBySection.
+ *  H1 headings (and any heading preceding the first H2/H3) resolve to
+ *  null: SectionFocusTracker only tracks H2/H3 sections. */
 function anchorForHeading(text: string, h: Heading): string | null {
   const s = computeFocusedSection(text, h.line);
   return s?.anchor ?? null;
+}
+
+/** First heading in document order whose anchor is non-null, i.e. the
+ *  first H2/H3. Used as the Manage-connections fallback so an H1-first
+ *  document does not silently no-op on `headings[0]` resolving to null. */
+function firstScopableAnchor(text: string, headings: Heading[]): string | null {
+  for (const h of headings) {
+    const anchor = anchorForHeading(text, h);
+    if (anchor !== null) return anchor;
+  }
+  return null;
+}
+
+/** Wraps a click-equivalent action into a keydown handler so a clickable
+ *  div (role="button") also responds to Enter and Space, matching native
+ *  button semantics. */
+function onActivateKey(action: () => void) {
+  return (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      action();
+    }
+  };
 }
 
 export function RelationsPanel(props: RelationsPanelProps) {
@@ -95,10 +120,19 @@ export function RelationsPanel(props: RelationsPanelProps) {
               const anchor = anchorForHeading(props.text, h);
               const count = anchor ? (props.counts.get(anchor) ?? 0) : 0;
               const scoped = anchor !== null && anchor === scopedAnchor;
+              // H1 rows (and any heading before the first H2/H3) have no
+              // anchor to scope to: navigate only, leave scopedAnchor as
+              // it is instead of clearing an active scope.
+              const activate = () => {
+                props.onNavigate(h);
+                if (anchor !== null) setScopedAnchor(scoped ? null : anchor);
+              };
               return (
                 <Flex
                   key={`${h.line}:${i}`}
                   data-testid="outline-row"
+                  role="button"
+                  tabIndex={0}
                   align="center"
                   justify="between"
                   px="1"
@@ -108,10 +142,8 @@ export function RelationsPanel(props: RelationsPanelProps) {
                     background: scoped ? "var(--accent-3)" : undefined,
                     paddingLeft: (h.level - 1) * 10,
                   }}
-                  onClick={() => {
-                    props.onNavigate(h);
-                    setScopedAnchor(scoped ? null : anchor);
-                  }}
+                  onClick={activate}
+                  onKeyDown={onActivateKey(activate)}
                 >
                   <Text size="1" truncate>
                     {h.text}
@@ -148,12 +180,15 @@ export function RelationsPanel(props: RelationsPanelProps) {
             <Box
               key={`${r.fromPath}:${i}`}
               data-testid="incoming-row"
+              role="button"
+              tabIndex={0}
               px="1"
               style={{
                 cursor: "pointer",
                 borderLeft: "2px solid var(--gray-5)",
               }}
               onClick={() => props.onOpenFile(r.fromPath)}
+              onKeyDown={onActivateKey(() => props.onOpenFile(r.fromPath))}
             >
               {r.snippet && (
                 <Text as="div" size="1">
@@ -176,10 +211,7 @@ export function RelationsPanel(props: RelationsPanelProps) {
               data-testid="manage-connections"
               onClick={(e) => {
                 const anchor =
-                  scopedAnchor ??
-                  (headings[0]
-                    ? anchorForHeading(props.text, headings[0])
-                    : null);
+                  scopedAnchor ?? firstScopableAnchor(props.text, headings);
                 if (anchor) props.onManageConnections(anchor, e.currentTarget);
               }}
             >

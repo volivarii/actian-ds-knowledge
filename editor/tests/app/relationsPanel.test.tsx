@@ -11,6 +11,7 @@ import React from "react";
 import { RelationsPanel } from "../../src/app/RelationsPanel";
 import type { IncomingRef, Neighbor } from "../../src/lib/referenceIndex";
 import type { OutgoingConnection } from "../../src/substrate/refGraph";
+import type { Heading } from "../../src/lib/headingScan";
 
 afterEach(() => {
   cleanup();
@@ -22,6 +23,8 @@ afterEach(() => {
 });
 
 const TEXT = "## Usage {#usage}\n\nBody.\n\n## Style {#style}\n\nMore.\n";
+
+const H1_FIRST_TEXT = "# Title\n\n## Usage {#usage}\n\nBody.\n";
 
 const INCOMING: IncomingRef[] = [
   {
@@ -76,12 +79,17 @@ test("renders outline headings with count pills", () => {
 test("incoming rows show snippet and source file, click opens the file", () => {
   const { container, calls } = renderPanel();
   assert.ok(
-    container.textContent!.includes(
-      "Use a button when the action is primary.",
-    ),
+    container.textContent!.includes("Use a button when the action is primary."),
   );
   const row = container.querySelectorAll("[data-testid='incoming-row']")[0]!;
   fireEvent.click(row);
+  assert.ok(calls.includes("open:content/src/patterns/forms.md"));
+});
+
+test("incoming row responds to an Enter keydown the same as a click", () => {
+  const { container, calls } = renderPanel();
+  const row = container.querySelectorAll("[data-testid='incoming-row']")[0]!;
+  fireEvent.keyDown(row, { key: "Enter" });
   assert.ok(calls.includes("open:content/src/patterns/forms.md"));
 });
 
@@ -93,7 +101,10 @@ test("graph rows show edge-type badge and the baked-staleness label", () => {
 });
 
 test("clicking an outline row scopes incoming to that section", () => {
-  const { container } = renderPanel();
+  const navCalls: Heading[] = [];
+  const { container } = renderPanel({
+    onNavigate: (h) => navCalls.push(h),
+  });
   const styleRow = Array.from(
     container.querySelectorAll("[data-testid='outline-row']"),
   ).find((r) => r.textContent!.includes("Style"))!;
@@ -104,11 +115,62 @@ test("clicking an outline row scopes incoming to that section", () => {
       "Use a button when the action is primary.",
     ),
   );
+  assert.equal(navCalls.length, 1);
+  assert.equal(navCalls[0]!.text, "Style");
+});
+
+test("H1 outline row click navigates without touching section scoping; Manage falls back to the first H2/H3 anchor", () => {
+  const navCalls: Heading[] = [];
+  const manageCalls: string[] = [];
+  const { container } = render(
+    <Theme>
+      <RelationsPanel
+        text={H1_FIRST_TEXT}
+        file="components/src/button/content.md"
+        counts={new Map()}
+        incoming={INCOMING}
+        outgoing={[]}
+        graphNeighbors={[]}
+        onNavigate={(h) => navCalls.push(h)}
+        onOpenFile={() => {}}
+        onManageConnections={(anchor) => manageCalls.push(anchor)}
+      />
+    </Theme>,
+  );
+
+  const rows = () =>
+    Array.from(container.querySelectorAll("[data-testid='outline-row']"));
+  const titleRow = rows().find((r) => r.textContent!.includes("Title"))!;
+  const usageRow = rows().find((r) => r.textContent!.includes("Usage"))!;
+
+  // Scope to "usage" first, via a real H2 row.
+  fireEvent.click(usageRow);
+  assert.ok(container.textContent!.includes("Relations: usage"));
+
+  // Clicking the H1 row navigates, but H1 has no anchor, so scoping is
+  // left untouched (not cleared).
+  fireEvent.click(titleRow);
+  assert.equal(navCalls.length, 2);
+  assert.equal(navCalls[1]!.text, "Title");
+  assert.equal(navCalls[1]!.level, 1);
+  assert.ok(container.textContent!.includes("Relations: usage"));
+
+  // Unscope, then Manage falls back to the first H2/H3 heading's anchor
+  // ("usage"), not headings[0] (the H1, which resolves to a null anchor).
+  fireEvent.click(screen.getByText("All"));
+  fireEvent.click(screen.getByTestId("manage-connections"));
+  assert.equal(manageCalls.length, 1);
+  assert.equal(manageCalls[0], "usage");
 });
 
 test("outgoing rows show the domain badge and slug; broken refs (null domain) are flagged", () => {
   const outgoing: OutgoingConnection[] = [
-    { slug: "color-contrast", refType: "a11y_refs", note: null, domain: "accessibility" },
+    {
+      slug: "color-contrast",
+      refType: "a11y_refs",
+      note: null,
+      domain: "accessibility",
+    },
     { slug: "ghost-topic", refType: "motion_refs", note: null, domain: null },
   ];
   const { container } = renderPanel({ outgoing });
