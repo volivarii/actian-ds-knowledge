@@ -150,7 +150,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
     void loadAnchorIndex(octokit)
       .then(() => setAnchorIndexTick((t) => t + 1))
       .catch(() => {
-        /* swallow — incoming counts just won't fire */
+        /* swallow (incoming counts just won't fire) */
       });
   }, [octokit, path]);
 
@@ -170,7 +170,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
     [path, body, anchorIndexTick],
   );
 
-  // Open another file in the editor — reuses this screen's existing
+  // Open another file in the editor: reuses this screen's existing
   // navigation prop, the same way MarkdownEditScreen's handleOpenFile does.
   const handleOpenFile = useCallback(
     (p: string) => {

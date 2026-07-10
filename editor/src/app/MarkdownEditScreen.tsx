@@ -363,7 +363,7 @@ export function MarkdownEditScreen({
   );
 
   // RelationsPanel's Manage button hands back just the section anchor (it
-  // doesn't track heading level/line) — resolve the full FocusedSectionContext
+  // doesn't track heading level/line), so resolve the full FocusedSectionContext
   // the same way the old Outline pill did, then reuse the existing popover
   // entry point. Write-back (add/disconnect/repoint) stays reachable.
   const handleManageConnections = useCallback(
@@ -375,7 +375,7 @@ export function MarkdownEditScreen({
     [text, path, openConnectionsForSection],
   );
 
-  // Open another file in the editor — reuses the same navigate callback the
+  // Open another file in the editor: reuses the same navigate callback the
   // AnchorReferencesPopover and ConnectionsPopover already use.
   const handleOpenFile = useCallback(
     (p: string) => {
@@ -536,8 +536,8 @@ export function MarkdownEditScreen({
     : { frontmatterBlock: "", body: "" };
 
   // RelationsPanel's outline row click scrolls the active editor to that
-  // heading — mode-specific because rich mode has no CM6 view to dispatch
-  // a scroll effect against.
+  // heading (mode-specific, since rich mode has no CM6 view to dispatch
+  // a scroll effect against).
   function handleOutlineNavigate(heading: OutlineHeading) {
     if (wysiwyg) {
       scrollRichHeading(heading);
@@ -927,7 +927,7 @@ function firstH2Anchor(source: string): string | null {
   return null;
 }
 
-// Resolve a FocusedSectionContext for a given section anchor — the same
+// Resolve a FocusedSectionContext for a given section anchor: the same
 // derivation the old Outline pill used (computeFocusedSection at the
 // heading's own line), just entered from an anchor string instead of a
 // heading line, since RelationsPanel's Manage button only carries the

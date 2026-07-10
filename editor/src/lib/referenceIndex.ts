@@ -50,8 +50,9 @@ export function graphNeighborsForFile(path: string): Neighbor[] {
 
 /** Per-section connection counts: incoming per defining anchor, plus the
  *  file's outgoing count attached to the first H2 (P8 Option A v1).
- *  Behavior identical to the inline memo this hoists out of
- *  MarkdownEditScreen; its tests pin the parity. */
+ *  Matches the inline memo this hoists out of MarkdownEditScreen, except
+ *  this file's own references to an anchor are excluded (the same
+ *  self-exclusion incomingForFile applies); its tests pin the parity. */
 export function countsBySection(
   path: string,
   text: string,
