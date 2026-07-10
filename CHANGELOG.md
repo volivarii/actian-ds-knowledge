@@ -19,6 +19,11 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Editor: type `[[` to reference anything.** In the rich editor, `[[` opens a picker over the
+  knowledge graph's components plus the current document's sections; selecting inserts a plain
+  markdown link in the corpus's existing grammar (bare component slug, or `#anchor` for sections),
+  so every insertion round-trips byte-safely and feeds straight back into the relations panel's
+  index. Other node types join the picker once a body-link grammar for them is decided. ([#393])
 - **Editor: frontmatter collapses, prose gets the viewport.** In the frontmatter-form screens the
   form now starts collapsed behind a Frontmatter Show/Hide toggle (bodyless record files stay
   expanded, the form is their content) and the prose body editor grows from a fixed 320px box to
@@ -228,6 +233,7 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
 [#390]: https://github.com/volivarii/actian-ds-knowledge/pull/390
 [#389]: https://github.com/volivarii/actian-ds-knowledge/pull/389
 [#387]: https://github.com/volivarii/actian-ds-knowledge/pull/387

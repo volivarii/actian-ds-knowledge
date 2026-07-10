@@ -9,8 +9,22 @@ import {
 } from "@milkdown/core";
 import { getMarkdown } from "@milkdown/utils";
 import { TextSelection } from "@milkdown/prose/state";
-import { useMilkdownPresets } from "../../src/markdown-engine/milkdownPreset";
-import { insertReferenceLink } from "../../src/markdown-engine/referenceAutocomplete";
+import React from "react";
+import { Theme } from "@radix-ui/themes";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import {
+  useMilkdownPresets,
+  assertGuardSafe,
+} from "../../src/markdown-engine/milkdownPreset";
+import {
+  insertReferenceLink,
+  searchReferenceTargets,
+  type ReferenceTarget,
+  type ReferencePickerState,
+} from "../../src/markdown-engine/referenceAutocomplete";
+import { ReferencePicker } from "../../src/markdown-engine/ReferencePicker";
+import { scanFileForAnchors } from "../../src/lib/anchorIndex";
+import { snippetsForSlug } from "../../src/lib/snippetExtract";
 
 // CONTROLLER FINDING (reviewed High, empirically reproduced): insertReferenceLink
 // leaves the caret at the link's right edge with storedMarks === null. The
@@ -89,4 +103,169 @@ test("typed character after an inserted reference link stays outside the link", 
     /\[Buttonx\]/,
     `the typed "x" was absorbed INTO the link label, got: ${md}`,
   );
+});
+
+/** Same construction as insertLinkThenType above, but stops right after the
+ *  insert (no follow-up keystroke) and returns the serialized markdown: the
+ *  shape every CASES entry below checks against the corpus's link grammar. */
+async function insertAndSerialize(target: ReferenceTarget): Promise<string> {
+  const root = globalThis.document.createElement("div");
+  const editor = await useMilkdownPresets(
+    Editor.make().config((ctx) => {
+      ctx.set(rootCtx, root);
+      ctx.set(defaultValueCtx, "before \n");
+    }),
+  ).create();
+
+  editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx);
+    // Same stand-in trigger range as insertLinkThenType above ("re", the
+    // last two characters of "before"): insertReferenceLink only cares
+    // about the range bounds, not what currently occupies them.
+    const range = { from: 5, to: 7 };
+    view.dispatch(
+      view.state.tr.setSelection(
+        TextSelection.create(view.state.doc, range.to),
+      ),
+    );
+    insertReferenceLink(view, range, target);
+  });
+
+  const out = editor.action(getMarkdown());
+  await editor.destroy();
+  return out;
+}
+
+// PR-B grammar law (searchReferenceTargets' own comment in referenceIndex.ts):
+// only component nodes (bare-slug links) and the current file's section
+// anchors (#slug links) have an established body-link grammar. One case per
+// shape.
+const CASES = [
+  {
+    target: {
+      label: "Dropdown select",
+      kind: "component",
+      href: "dropdown-select",
+      detail: "dropdown-select",
+    },
+    expect: "[Dropdown select](dropdown-select)",
+  },
+  {
+    target: {
+      label: "Usage rules",
+      kind: "section",
+      href: "#usage-rules",
+      detail: "usage-rules",
+    },
+    expect: "[Usage rules](#usage-rules)",
+  },
+] as const;
+
+for (const { target, expect: expected } of CASES) {
+  test(`insertReferenceLink: a ${target.kind} target inserts "${expected}", round-trips guard-safe, and matches the grammar its own index scans for`, async () => {
+    const md = await insertAndSerialize(target);
+
+    assert.ok(
+      md.includes(expected),
+      `expected the serialized markdown to contain ${expected}, got: ${md}`,
+    );
+
+    // Guard-safety: the exact contract wysiwyg-safe-paths.test.ts enforces
+    // on every rich-safe file. Throws a GuardViolationError on failure,
+    // which fails this test.
+    await assertGuardSafe(md);
+
+    if (target.kind === "section") {
+      // Grammar invariant: a "#slug" link is exactly what anchorIndex's
+      // LINK_ANCHOR_RE scans for, so the inserted link is discoverable as a
+      // real reference the next time the index is built.
+      const { references } = scanFileForAnchors(md);
+      assert.ok(
+        references.includes(target.detail),
+        `expected scanFileForAnchors to capture "${target.detail}" as a reference, got: ${references.join(", ")}`,
+      );
+    } else {
+      // Grammar invariant: a bare-slug link is exactly what snippetExtract's
+      // occurrence regex looks for, so the relations panel can surface this
+      // paragraph as a contextual snippet.
+      const snippets = snippetsForSlug(md, target.href);
+      assert.equal(
+        snippets.length,
+        1,
+        `expected exactly one bare-slug snippet occurrence for "${target.href}", got ${snippets.length}`,
+      );
+    }
+  });
+}
+
+// Picker component: renders the REAL searchReferenceTargets results for a
+// query with a known top hit (no stubbed result data), and owns Enter/click
+// apply itself (see the capture-phase-listener header comment in
+// referenceAutocomplete.ts). happy-dom's coordsAtPos is not exercised here
+// (the stubbed state's rect is a plain literal, never derived from a live
+// view), so no real-coordinate assertions are made.
+test("ReferencePicker: renders the top component row with its badge and Enter calls apply with that target", () => {
+  cleanup();
+  const applied: { target: ReferenceTarget | null } = { target: null };
+  const state: ReferencePickerState = {
+    query: "but",
+    rect: { left: 0, bottom: 0 },
+    apply: (t) => {
+      applied.target = t;
+    },
+    close: () => {},
+  };
+
+  // React.createElement (not JSX): this file is .ts, not .tsx, matching
+  // the brief's file list exactly.
+  render(
+    React.createElement(
+      Theme,
+      null,
+      React.createElement(ReferencePicker, {
+        state,
+        currentBodyText: "",
+      }),
+    ),
+  );
+
+  const top = searchReferenceTargets("but", "")[0]!;
+  assert.ok(screen.getByText(top.label), "top result's label did not render");
+  assert.ok(
+    screen.getAllByText("component").length > 0,
+    "no component badge rendered",
+  );
+
+  fireEvent.keyDown(document, { key: "Enter" });
+  assert.equal(applied.target?.href, top.href);
+  cleanup();
+});
+
+test("ReferencePicker: clicking a row calls apply with that target", () => {
+  cleanup();
+  const applied: { target: ReferenceTarget | null } = { target: null };
+  const state: ReferencePickerState = {
+    query: "but",
+    rect: { left: 0, bottom: 0 },
+    apply: (t) => {
+      applied.target = t;
+    },
+    close: () => {},
+  };
+
+  render(
+    React.createElement(
+      Theme,
+      null,
+      React.createElement(ReferencePicker, {
+        state,
+        currentBodyText: "",
+      }),
+    ),
+  );
+
+  const top = searchReferenceTargets("but", "")[0]!;
+  fireEvent.mouseDown(screen.getByText(top.label));
+  assert.equal(applied.target?.href, top.href);
+  cleanup();
 });

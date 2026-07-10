@@ -198,3 +198,22 @@ test("searchReferenceTargets: empty query returns [] and limit caps results", ()
   assert.deepEqual(searchReferenceTargets("", ""), []);
   assert.ok(searchReferenceTargets("a", "", 3).length <= 3);
 });
+
+test("searchReferenceTargets: a section prefix match and a component substring match compete on the same query; the closer (prefix) match wins", () => {
+  // "table" prefix-matches the current file's "Table settings" heading
+  // (score 0) while ALSO substring-matching real component nodes in the
+  // baked graph (e.g. "device-tablet", score 3): real competition between
+  // both kinds on one query, not a single-result set.
+  const text = "## Table settings {#table-settings}\n\nBody.\n";
+  const out = searchReferenceTargets("table", text);
+  assert.ok(
+    out.some((t) => t.kind === "component"),
+    'expected at least one component to also match "table", got: ' +
+      JSON.stringify(out),
+  );
+  assert.ok(
+    out.length > 1,
+    "expected real competition, not a single-result set",
+  );
+  assert.equal(out[0]!.kind, "section");
+});
