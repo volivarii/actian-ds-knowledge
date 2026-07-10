@@ -10,6 +10,13 @@
 //               page + LLM-agent skills consume this). Component-scoped
 //               content lives per-component in
 //               components/dist/guidelines/<slug>.json `domains.content`.
+//   {writing,patterns,product}.md — per-bucket split views of the same
+//               global sections, so a consumer that needs only one family
+//               (e.g. writing rules) reads that file instead of the full
+//               concat. Root-level meta files (global-guidelines.md etc.)
+//               have no bucket and appear only in global.md. global.md is
+//               unchanged by the split (parallel change; see MIGRATIONS.md
+//               Rule 1).
 //
 // Phase 5 (knowledge v0.11.0): the transitional `content.md` full-concat
 // was retired. Consumers migrated to `global.md` + per-component
@@ -66,10 +73,15 @@ function resolveConfig(args) {
     : path.join(src, "content-index.md");
   var globalOut = path.join(ROOT, "content/dist/global.md");
   var wordsToAvoidOut = path.join(ROOT, "content/dist/words-to-avoid.json");
+  var bucketOuts = {};
+  CONTENT_SUB_BUCKETS.forEach(function (bucket) {
+    bucketOuts[bucket] = path.join(ROOT, "content/dist/" + bucket + ".md");
+  });
   return {
     src: src,
     index: indexArg,
     globalOut: globalOut,
+    bucketOuts: bucketOuts,
     wordsToAvoidOut: wordsToAvoidOut,
   };
 }
@@ -286,6 +298,7 @@ function resolveAllSections(config) {
       title: order[i].title,
       body: cleanSectionFile(resolved.file),
       scope: resolved.scope,
+      bucket: resolved.bucket,
     });
   }
   if (missing.length > 0) {
@@ -324,27 +337,35 @@ function assembleDoc(headerLines, sections) {
   return lines.join("\n");
 }
 
-// Global / cross-cutting topics only — the docs /content page consumes this.
-function buildGlobalOutput(config) {
-  var sections = resolveAllSections(config).filter(function (s) {
-    return s.scope === "global";
-  });
-  // STEP 4: the words-to-avoid table now lives in frontmatter; its prose-only
-  // body is mirrored as usual, then the table is re-rendered from the rules.
-  // Read lazily so buildGlobalOutput doesn't require words-to-avoid.md when
-  // no such section is present in the index.
-  sections = sections.map(function (s) {
+// STEP 4: the words-to-avoid table now lives in frontmatter; its prose-only
+// body is mirrored as usual, then the table is re-rendered from the rules.
+// Read lazily so callers don't require words-to-avoid.md when no such
+// section is present in their section list. Shared by the global concat and
+// the writing bucket split so the two can never render the table differently.
+function applyWordsToAvoidTable(sections, config) {
+  return sections.map(function (s) {
     if (s.slug !== "words-to-avoid") return s;
     return {
       slug: s.slug,
       title: s.title,
       scope: s.scope,
+      bucket: s.bucket,
       body:
         s.body +
         "\n\n" +
         renderWordsToAvoidSection(readWordsToAvoidRules(config)),
     };
   });
+}
+
+// Global / cross-cutting topics only — the docs /content page consumes this.
+function buildGlobalOutput(config) {
+  var sections = applyWordsToAvoidTable(
+    resolveAllSections(config).filter(function (s) {
+      return s.scope === "global";
+    }),
+    config,
+  );
   var header = [
     "# Content guidelines — global topics",
     "",
@@ -360,6 +381,51 @@ function buildGlobalOutput(config) {
       path.relative(ROOT, config.src) +
       "/{bucket}/{slug}.md` where bucket is one of writing, patterns, " +
       "product (plus `global-guidelines.md` at the root).",
+    "> **Authoring guide:** `" +
+      path.relative(ROOT, config.src) +
+      "/AUTHORING.md`",
+  ];
+  return assembleDoc(header, sections);
+}
+
+// One bucket's split view of the same global sections, in index order.
+// Root-level meta files (bucket null) are global.md-only by design: they are
+// cross-bucket ground rules, not members of any one family.
+function buildBucketOutput(config, bucket) {
+  if (CONTENT_SUB_BUCKETS.indexOf(bucket) === -1) {
+    throw new Error(
+      "unknown content bucket '" +
+        bucket +
+        "' (known: " +
+        CONTENT_SUB_BUCKETS.join(", ") +
+        ")",
+    );
+  }
+  var sections = applyWordsToAvoidTable(
+    resolveAllSections(config).filter(function (s) {
+      return s.scope === "global" && s.bucket === bucket;
+    }),
+    config,
+  );
+  var header = [
+    "# Content guidelines: " + bucket + " topics",
+    "",
+    "> **Auto-generated** by `scripts/content/derive-content.js`. Do not edit " +
+      "this file directly — edit the per-section source files.",
+    ">",
+    "> **Scope:** the `" +
+      bucket +
+      "` bucket of the global content guidelines, split out so a consumer " +
+      "that needs only this family reads only this file. The full " +
+      "cross-bucket document (including the root-level ground rules) is " +
+      "`content/dist/global.md`.",
+    "> **Sources** (" +
+      sections.length +
+      " sections): `" +
+      path.relative(ROOT, config.src) +
+      "/" +
+      bucket +
+      "/{slug}.md`.",
     "> **Authoring guide:** `" +
       path.relative(ROOT, config.src) +
       "/AUTHORING.md`",
@@ -395,6 +461,18 @@ function main(argv) {
       lineCount +
       " lines)",
   );
+
+  CONTENT_SUB_BUCKETS.forEach(function (bucket) {
+    var bucketOut = buildBucketOutput(config, bucket);
+    fs.writeFileSync(config.bucketOuts[bucket], bucketOut);
+    console.log(
+      "[derive-content] wrote " +
+        path.relative(ROOT, config.bucketOuts[bucket]) +
+        " (" +
+        bucketOut.split("\n").length +
+        " lines)",
+    );
+  });
 
   var wta = buildWordsToAvoid(config);
   fs.writeFileSync(config.wordsToAvoidOut, JSON.stringify(wta, null, 2) + "\n");
@@ -435,4 +513,5 @@ module.exports = {
   readSection: readSection,
   resolveAllSections: resolveAllSections,
   buildGlobalOutput: buildGlobalOutput,
+  buildBucketOutput: buildBucketOutput,
 };

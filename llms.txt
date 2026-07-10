@@ -14,6 +14,9 @@
 ## Content
 
 - [Content guidelines — global topics](content/dist/global.md): voice, tone, capitalization, words to avoid, UX-pattern topics
+- [Writing bucket](content/dist/writing.md): just the writing rules (voice, tone, capitalization, punctuation, words to avoid)
+- [Patterns bucket](content/dist/patterns.md): just the UX-pattern content topics (states, forms, notifications, validation, wizards)
+- [Product bucket](content/dist/product.md): just the Actian product-surface rules (lineage UI, preview panels)
 - [Per-component content guidelines](components/dist/guidelines/): each `<slug>.json` carries `domains.content` for component-scoped copy rules
 
 ## Accessibility

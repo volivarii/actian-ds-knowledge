@@ -613,6 +613,27 @@
       "generator": "scripts/content/derive-content.js",
       "description": "Global / cross-cutting content guidelines only (voice, tone, capitalization, words to avoid, UX-pattern topics, Actian product-surface rules) — auto-generated from content/src/{writing,patterns,product}/*.md plus root-level meta files. The docs /content page and the markdown-consuming plugin skills read this; component-scoped content guidance lives per-component in components/dist/guidelines/{slug}.json instead."
     },
+    "content.writingMd": {
+      "path": "content/dist/writing.md",
+      "type": "markdown",
+      "origin": "ci",
+      "generator": "scripts/content/derive-content.js",
+      "description": "The writing bucket of the global content guidelines, split out (voice, tone, capitalization, punctuation, words to avoid with the rendered Do/Don't table). Same sections as global.md's writing family, same index order; a consumer that needs only writing rules reads this instead of the full concat. Root-level ground rules (global-guidelines) stay in global.md only."
+    },
+    "content.patternsMd": {
+      "path": "content/dist/patterns.md",
+      "type": "markdown",
+      "origin": "ci",
+      "generator": "scripts/content/derive-content.js",
+      "description": "The patterns bucket of the global content guidelines, split out (UX-pattern content topics: empty/system states, forms, notifications, onboarding, validation, wizards). Same sections as global.md's patterns family, same index order. Note the same source sections also fan out per-component into components/dist/guidelines/{slug}.json."
+    },
+    "content.productMd": {
+      "path": "content/dist/product.md",
+      "type": "markdown",
+      "origin": "ci",
+      "generator": "scripts/content/derive-content.js",
+      "description": "The product bucket of the global content guidelines, split out (Actian product-surface rules: lineage UI, object preview panels, related-content panels). Same sections as global.md's product family, same index order."
+    },
     "content.wordsToAvoid": {
       "path": "content/dist/words-to-avoid.json",
       "type": "json",

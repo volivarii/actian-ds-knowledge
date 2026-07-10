@@ -1,8 +1,9 @@
-name: Derive content guidelines (global.md)
+name: Derive content guidelines (global.md + bucket splits)
 
 # Global / cross-cutting content guidelines auto-generated from the
 # per-section source files. Runs on PR events that touch the sources or
-# the generator; regenerates content/dist/global.md and commits it back
+# the generator; regenerates content/dist/global.md plus the per-bucket
+# split views (writing.md, patterns.md, product.md) and commits them back
 # to the PR branch.
 #
 # Phase 5 (knowledge v0.11.0): the transitional content/dist/content.md
@@ -68,7 +69,7 @@ jobs:
       - name: Install deps
         run: npm install --no-audit --no-fund
 
-      - name: Derive global.md
+      - name: Derive content dist (global.md + bucket splits)
         run: |
           node scripts/content/derive-content.js \
             --src content/src \
@@ -100,7 +101,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add content/dist/ package.json paths-manifest.json package-lock.json
-          git commit -m "chore(content): regenerate global.md + bump patch"
+          git commit -m "chore(content): regenerate content dist + bump patch"
           # Race-safe push: another derive workflow may have pushed to this
           # branch since checkout (concurrent auto-commits) — rebase and retry
           # once instead of failing the required check on a lost race.

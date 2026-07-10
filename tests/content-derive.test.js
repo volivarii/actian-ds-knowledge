@@ -224,6 +224,93 @@ test("derive-content — committed dist/global.md matches buildGlobalOutput", fu
   );
 });
 
+// ---- per-bucket split views (content-dist split slice) ----
+
+test("derive-content — buildBucketOutput rejects an unknown bucket", function () {
+  assert.throws(function () {
+    derive.buildBucketOutput(DEFAULT_CONFIG, "nope");
+  }, /unknown content bucket 'nope'/);
+});
+
+test("derive-content — each committed bucket dist matches buildBucketOutput", function () {
+  derive.CONTENT_SUB_BUCKETS.forEach(function (bucket) {
+    var onDisk = fs.readFileSync(DEFAULT_CONFIG.bucketOuts[bucket], "utf8");
+    assert.strictEqual(
+      onDisk,
+      derive.buildBucketOutput(DEFAULT_CONFIG, bucket),
+      "content/dist/" +
+        bucket +
+        ".md is stale — run `npm run derive:content` and commit",
+    );
+  });
+});
+
+test("derive-content — bucket outputs partition the bucketed global sections", function () {
+  var globalSections = derive
+    .resolveAllSections(DEFAULT_CONFIG)
+    .filter(function (s) {
+      return s.scope === "global";
+    });
+  var bucketed = globalSections.filter(function (s) {
+    return s.bucket !== null;
+  });
+  var rootLevel = globalSections.filter(function (s) {
+    return s.bucket === null;
+  });
+  assert.ok(bucketed.length > 0, "expected bucketed global sections");
+  assert.ok(
+    rootLevel.length > 0,
+    "expected root-level meta sections (global.md-only)",
+  );
+  derive.CONTENT_SUB_BUCKETS.forEach(function (bucket) {
+    var out = derive.buildBucketOutput(DEFAULT_CONFIG, bucket);
+    bucketed.forEach(function (s) {
+      // Membership by section BODY (what assembleDoc actually embeds):
+      // index titles don't reliably match section headings (some sections
+      // have no H1 of their own). An empty body (a frontmatter-only stub
+      // like loading-and-progress) is a substring of anything, so it can't
+      // carry a membership signal — skip it.
+      if (s.body.length === 0) return;
+      var inThisBucket = s.bucket === bucket;
+      assert.equal(
+        out.indexOf(s.body) !== -1,
+        inThisBucket,
+        "section '" +
+          s.slug +
+          "' (bucket " +
+          s.bucket +
+          ") must appear in " +
+          bucket +
+          ".md " +
+          (inThisBucket ? "exactly" : "never"),
+      );
+    });
+    // Root-level meta files are global.md-only by design.
+    rootLevel.forEach(function (s) {
+      if (s.body.length === 0) return;
+      assert.ok(
+        out.indexOf(s.body) === -1,
+        "root-level section '" +
+          s.slug +
+          "' must not appear in " +
+          bucket +
+          ".md",
+      );
+    });
+  });
+});
+
+test("derive-content — writing bucket re-renders the words-to-avoid table like global.md", function () {
+  var out = derive.buildBucketOutput(DEFAULT_CONFIG, "writing");
+  var expected = derive.renderWordsToAvoidSection(
+    derive.readWordsToAvoidRules(DEFAULT_CONFIG),
+  );
+  assert.ok(
+    out.indexOf(expected) !== -1,
+    "writing.md must carry the frontmatter-rendered Do/Don't table",
+  );
+});
+
 // Files in content/src/ that aren't section bodies. Kept in sync with
 // the manifest validator's EXCLUDED_FILES + the index's expected omissions.
 var NON_SECTION_FILES = new Set([
