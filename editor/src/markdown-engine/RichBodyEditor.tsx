@@ -41,6 +41,15 @@ function MilkdownBody({
     setMediaPreviewOctokit(octokit ?? null);
   }, [componentSlug, octokit]);
 
+  // The Milkdown listener is registered once at editor creation ([] deps),
+  // so it must read the CURRENT onChange through a ref: parents pass
+  // closures over changing state (e.g. the frontmatter block), and a
+  // mount-time capture silently re-joins stale state on later keystrokes.
+  const onChangeRef = React.useRef(onChange);
+  React.useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
   // The editor is registered with the surrounding MilkdownProvider; RichToolbar
   // reaches it via useInstance() to dispatch commands, so no getter is exposed.
   useEditor(
@@ -73,7 +82,9 @@ function MilkdownBody({
             // markdownUpdated callback receives (ctx, markdown, prevMarkdown)
             ctx
               .get(listenerCtx)
-              .markdownUpdated((_ctx, markdown) => onChange(markdown));
+              .markdownUpdated((_ctx, markdown) =>
+                onChangeRef.current(markdown),
+              );
           })
           .use(listener),
       ),
@@ -104,10 +115,27 @@ export function RichBodyEditor({
   const [text, setText] = React.useState(initialText);
   const label = `Body editor${filename ? ` — ${filename}` : ""}`;
 
-  const handleChange = (md: string) => {
+  // CodeMirrorEditor's own update listener is also registered once at
+  // mount ([] deps in CodeMirrorEditor.tsx), so it too holds whatever
+  // onChange identity it was given forever. handleChange was previously
+  // redefined fresh on every render (closing over the current onChange
+  // prop), which is exactly the shape that goes stale once captured: if
+  // this component re-renders with a new onChange (e.g. the caller's
+  // fmBlock changed) while the source-mode CodeMirrorEditor stays mounted,
+  // the next keystroke would call the OLD handleChange closure and re-join
+  // stale state, same as the Milkdown listener above. Keeping handleChange
+  // referentially stable and reading onChange through a ref fixes both the
+  // rich path (passed into MilkdownBody) and the source path (passed into
+  // CodeMirrorEditor) at once.
+  const onChangeRef = React.useRef(onChange);
+  React.useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  const handleChange = React.useCallback((md: string) => {
     setText(md);
-    onChange(md);
-  };
+    onChangeRef.current(md);
+  }, []);
 
   return (
     <div>
