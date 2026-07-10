@@ -152,9 +152,6 @@ export function HomeScreen({
               guidance
             </Badge>
           )}
-          <Badge variant="soft" color="gray" size="2">
-            updated at every merge
-          </Badge>
         </Flex>
       </Box>
 

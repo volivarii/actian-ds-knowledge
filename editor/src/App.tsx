@@ -15,6 +15,7 @@ import "./styles/dark-theme.css";
 import "./styles/base.css";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { EditorShell } from "./app/EditorShell";
+import { FreshnessChip } from "./app/FreshnessChip";
 import { SignInScreen } from "./app/SignInScreen";
 import { SaveStateIndicator } from "./app/SaveStateIndicator";
 import { SubmissionStaging } from "./app/SubmissionStaging";
@@ -228,6 +229,7 @@ export default function App() {
             <Heading size="4">Actian DS Knowledge Editor</Heading>
           </Flex>
           <Flex align="center" gap="3">
+            {headerOctokit && <FreshnessChip octokit={headerOctokit} />}
             <SaveStateIndicator state={saveState} />
             {headerOctokit && (
               <Button
