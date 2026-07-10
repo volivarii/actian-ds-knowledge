@@ -1,7 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setCachedIndexForTesting } from "../../src/lib/anchorIndex";
-import { incomingForFile, countsBySection } from "../../src/lib/referenceIndex";
+import {
+  incomingForFile,
+  countsBySection,
+  searchReferenceTargets,
+} from "../../src/lib/referenceIndex";
 
 const THIS_PATH = "foundations/src/tokens.md";
 const THIS_TEXT = "## Tokens {#token-basics}\n\nBody.\n";
@@ -138,4 +142,27 @@ test("countsBySection: a co-definer of the same slug still counts as incoming", 
   );
   assert.equal(counts.get("token-basics"), 1);
   setCachedIndexForTesting(null);
+});
+
+test("searchReferenceTargets: matches component nodes by title, prefix ranks before substring", () => {
+  const out = searchReferenceTargets("but", "");
+  assert.ok(out.length > 0);
+  assert.equal(out[0]!.kind, "component");
+  assert.ok(out[0]!.label.toLowerCase().startsWith("but")); // Button
+  assert.ok(
+    out.every((t) => t.kind !== "component" || !t.href.startsWith("#")),
+  );
+});
+
+test("searchReferenceTargets: current file's section anchors rank first on exact prefix and use #slug hrefs", () => {
+  const text = "## Usage rules {#usage-rules}\n\nBody.\n";
+  const out = searchReferenceTargets("usage", text);
+  const section = out.find((t) => t.kind === "section");
+  assert.ok(section);
+  assert.equal(section!.href, "#usage-rules");
+});
+
+test("searchReferenceTargets: empty query returns [] and limit caps results", () => {
+  assert.deepEqual(searchReferenceTargets("", ""), []);
+  assert.ok(searchReferenceTargets("a", "", 3).length <= 3);
 });
