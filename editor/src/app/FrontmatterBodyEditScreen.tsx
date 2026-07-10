@@ -158,6 +158,11 @@ export function FrontmatterBodyEditScreen(props: Props) {
       });
   }, [octokit, path]);
 
+  // Frontmatter form visibility: collapsed by default on body-carrying files
+  // (the prose editor is the main surface); expanded on bodyless record files
+  // whose form is the whole content.
+  const [fmCollapsed, setFmCollapsed] = useState<boolean>(!bodyless);
+
   // RelationsPanel's collapsed state is owned here (not by the panel
   // itself) so the expensive incoming/counts memos below can be gated to a
   // no-op instead of recomputing on every keystroke while their DOM stays
@@ -420,7 +425,25 @@ export function FrontmatterBodyEditScreen(props: Props) {
   return (
     <Box>
       <TierBanner path={path} />
+      {/* Frontmatter starts collapsed on body-carrying files so the prose
+          editor gets the viewport; bodyless record files (pure forms) start
+          expanded, since the form IS their content. */}
+      <Flex align="center" justify="between" mb="2">
+        <Text size="2" weight="bold">
+          Frontmatter
+        </Text>
+        <Button
+          type="button"
+          size="1"
+          variant="ghost"
+          aria-label="Toggle frontmatter form"
+          onClick={() => setFmCollapsed((c) => !c)}
+        >
+          {fmCollapsed ? "Show" : "Hide"}
+        </Button>
+      </Flex>
       <RJSFForm
+        className={"rjsf fm-form" + (fmCollapsed ? " fm-collapsed" : "")}
         schema={state.schema}
         uiSchema={uiSchema}
         formData={formData}
@@ -433,61 +456,66 @@ export function FrontmatterBodyEditScreen(props: Props) {
         onSubmit={(next) => flushToCart(next, bodyRef.current)}
         submitLabel="Add to batch"
       >
-        {!bodyless && (
-          <Box mt="4">
-            <Text size="2" weight="bold" as="div" mb="1">
-              Prose body
-            </Text>
-            <Box
-              style={{
-                height: 320,
-                border: "1px solid var(--gray-5)",
-                borderRadius: 6,
-              }}
-            >
-              {shouldUseWysiwyg(path) ? (
-                <Flex gap="2" height="100%">
-                  {relationsPanel}
-                  <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
-                    <Suspense
-                      fallback={
-                        <Box p="3" role="status">
-                          <Text size="1" color="gray">
-                            Loading rich editor…
-                          </Text>
-                        </Box>
-                      }
-                    >
-                      <RichBodyEditor
-                        key={path}
-                        initialText={body}
-                        onChange={(t) => {
-                          setBody(t);
-                          scheduleFlush(formData, t);
-                        }}
-                        filename={path.split("/").pop()}
-                        componentSlug={componentSlugFromPath(path)}
-                        octokit={octokit}
-                      />
-                    </Suspense>
-                  </Box>
-                </Flex>
-              ) : (
-                <CodeMirrorEditor
-                  key={path}
-                  initialText={body}
-                  onChange={(t) => {
-                    setBody(t);
-                    scheduleFlush(formDataRef.current, t);
-                  }}
-                />
-              )}
+        <div className="fm-form-children">
+          {!bodyless && (
+            <Box mt="4">
+              <Text size="2" weight="bold" as="div" mb="1">
+                Prose body
+              </Text>
+              <Box
+                style={{
+                  // Full-height prose editing: take the viewport minus the
+                  // chrome above/below (banner, collapsed frontmatter header,
+                  // submit row). Floor keeps it usable on short windows.
+                  height: "max(360px, calc(100vh - 240px))",
+                  border: "1px solid var(--gray-5)",
+                  borderRadius: 6,
+                }}
+              >
+                {shouldUseWysiwyg(path) ? (
+                  <Flex gap="2" height="100%">
+                    {relationsPanel}
+                    <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
+                      <Suspense
+                        fallback={
+                          <Box p="3" role="status">
+                            <Text size="1" color="gray">
+                              Loading rich editor…
+                            </Text>
+                          </Box>
+                        }
+                      >
+                        <RichBodyEditor
+                          key={path}
+                          initialText={body}
+                          onChange={(t) => {
+                            setBody(t);
+                            scheduleFlush(formData, t);
+                          }}
+                          filename={path.split("/").pop()}
+                          componentSlug={componentSlugFromPath(path)}
+                          octokit={octokit}
+                        />
+                      </Suspense>
+                    </Box>
+                  </Flex>
+                ) : (
+                  <CodeMirrorEditor
+                    key={path}
+                    initialText={body}
+                    onChange={(t) => {
+                      setBody(t);
+                      scheduleFlush(formDataRef.current, t);
+                    }}
+                  />
+                )}
+              </Box>
             </Box>
-          </Box>
-        )}
-        <Flex gap="2" mt="3">
-          <Button type="submit">Add to batch</Button>
-        </Flex>
+          )}
+          <Flex gap="2" mt="3">
+            <Button type="submit">Add to batch</Button>
+          </Flex>
+        </div>
       </RJSFForm>
     </Box>
   );

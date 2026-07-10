@@ -19,6 +19,12 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Editor: frontmatter collapses, prose gets the viewport.** In the frontmatter-form screens the
+  form now starts collapsed behind a Frontmatter Show/Hide toggle (bodyless record files stay
+  expanded, the form is their content) and the prose body editor grows from a fixed 320px box to
+  the full viewport height. Incoming-reference snippets in the relations panel are now extracted
+  from the referencing file's prose body only, so a reference living in frontmatter no longer
+  leaks raw YAML into the panel. ([#390])
 - **Editor: unified relations panel in the markdown editor's source and rich modes, and beside the
   rich body editor in the frontmatter-form screen.** A persistent side panel now shows the document
   outline with per-section connection counts and, below it, the file's relations in context:
@@ -222,6 +228,7 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#390]: https://github.com/volivarii/actian-ds-knowledge/pull/390
 [#389]: https://github.com/volivarii/actian-ds-knowledge/pull/389
 [#387]: https://github.com/volivarii/actian-ds-knowledge/pull/387
 [#385]: https://github.com/volivarii/actian-ds-knowledge/pull/385
