@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  gapCount,
   topGaps,
   usageGapCount,
   type AttentionItem,
@@ -72,6 +73,21 @@ test("topGaps ranks authored usage gaps first, then unstarted, then other author
     gaps.map((g: AttentionItem) => g.slug),
     ["button", "alert", "zeta"],
   );
+  // The band rides on each item — it is the single source of truth for
+  // both the ordering above and the action label the UI shows.
+  assert.deepEqual(
+    gaps.map((g) => g.band),
+    [0, 1, 2],
+  );
+});
+
+test("gapCount counts rows with any not-started domain, without sorting", () => {
+  const rows = [
+    row("button", "authored"), // fully covered
+    row("tabs", "authored", { usage: "not-started" }),
+    row("alert", "unstarted"),
+  ];
+  assert.equal(gapCount(rows), 2);
 });
 
 test("topGaps sorts alphabetically within a priority band and respects the limit", () => {

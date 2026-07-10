@@ -11,10 +11,15 @@
 
 import { DOMAINS, type CoverageRow, type Domain } from "./coverageLoader";
 
+/** Priority band — the single source of truth for both ranking AND the
+ *  action label shown on the row (keeps the two from drifting apart). */
+export type AttentionBand = 0 | 1 | 2;
+
 export interface AttentionItem {
   slug: string;
   component: string;
   origin: CoverageRow["origin"];
+  band: AttentionBand;
   /** Domains with status "not-started", in canonical DOMAINS order. */
   missing: Domain[];
   /** Navigation target — the component's authoring workspace. */
@@ -26,11 +31,17 @@ export function usageGapCount(rows: CoverageRow[]): number {
   return rows.filter((r) => r.domains.usage.status === "not-started").length;
 }
 
+/** Rows with at least one not-started domain — the needs-attention total,
+ *  without paying topGaps' sort. */
+export function gapCount(rows: CoverageRow[]): number {
+  return rows.filter((r) => missingDomains(r).length > 0).length;
+}
+
 function missingDomains(row: CoverageRow): Domain[] {
   return DOMAINS.filter((d) => row.domains[d].status === "not-started");
 }
 
-function band(row: CoverageRow, missing: Domain[]): number {
+function band(row: CoverageRow, missing: Domain[]): AttentionBand {
   if (row.origin === "authored" && missing.includes("usage")) return 0;
   if (row.origin === "unstarted") return 1;
   return 2;
@@ -40,16 +51,17 @@ export function topGaps(rows: CoverageRow[], limit: number): AttentionItem[] {
   return rows
     .map((row) => ({ row, missing: missingDomains(row) }))
     .filter(({ missing }) => missing.length > 0)
+    .map(({ row, missing }) => ({ row, missing, band: band(row, missing) }))
     .sort((a, b) => {
-      const byBand = band(a.row, a.missing) - band(b.row, b.missing);
-      if (byBand !== 0) return byBand;
+      if (a.band !== b.band) return a.band - b.band;
       return a.row.slug.localeCompare(b.row.slug);
     })
     .slice(0, limit)
-    .map(({ row, missing }) => ({
+    .map(({ row, missing, band }) => ({
       slug: row.slug,
       component: row.component,
       origin: row.origin,
+      band,
       missing,
       target: `workspace/${row.slug}`,
     }));

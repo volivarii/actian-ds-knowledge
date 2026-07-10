@@ -90,7 +90,7 @@ test("HomeScreen: hero, honest counts, and the needs-attention list ranked usage
 
   // Coverage-derived copy arrives after the fake fetch resolves.
   await waitFor(() =>
-    screen.getByText(/1 component has no usage guidance yet/i),
+    screen.getByText(/1 component still needs usage guidance/i),
   );
 
   // Tabs (usage not-started) outranks Button (only behavior/tokens missing).
@@ -105,6 +105,37 @@ test("HomeScreen: hero, honest counts, and the needs-attention list ranked usage
   });
   fireEvent.click(continueBtn);
   assert.deepEqual(opened, ["workspace/tabs", "workspace/button"]);
+});
+
+test("HomeScreen: zero gaps shows the all-covered state, not a zero count", async () => {
+  const COVERED = {
+    "components/src/button/_meta.yml": `
+component: "Button"
+category: action
+domains:
+  content: { status: approved }
+  usage: { status: approved }
+  design: { status: approved }
+  behavior: { status: approved }
+  tokens: { status: approved }
+`,
+  };
+  render(
+    wrap(
+      <HomeScreen
+        octokit={fakeGh({
+          dirs: [{ name: "button", type: "dir" as const }],
+          files: COVERED,
+        })}
+        onOpenFile={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() =>
+    screen.getByText(/Every component's usage guidance is underway/i),
+  );
+  screen.getByText(/Nothing is missing/i);
+  assert.equal(screen.queryByText(/0 components still need/i), null);
 });
 
 test("HomeScreen: Find a component opens the palette callback", async () => {

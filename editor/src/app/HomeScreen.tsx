@@ -9,9 +9,9 @@
 //   - honest status (real counts, gaps shown as a to-do list)
 //   - can't-break-anything messaging on the editing loop
 //
-// Graph counts come from the baked bundle (no fetch); coverage is fetched
-// once here and handed to CoverageDashboard via preloadedRows so the
-// Explore section doesn't re-fetch.
+// Graph counts come from the baked bundle (no fetch); coverage resolves
+// through the memoized loadCoverage, so this screen and the Explore
+// dashboards all share one fetch.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Octokit } from "@octokit/rest";
@@ -31,28 +31,32 @@ import {
   loadCoverage,
   summarize,
   type CoverageRow,
-  type Domain,
 } from "../lib/coverageLoader";
-import { topGaps, usageGapCount } from "../lib/needsAttention";
+import {
+  gapCount,
+  topGaps,
+  usageGapCount,
+  type AttentionBand,
+} from "../lib/needsAttention";
+import { DOMAIN_LABEL } from "../lib/workspaceState";
 import { graphNodes, graphEdges } from "../substrate/taxonomyAssets";
 import { CoverageDashboard } from "./CoverageDashboard";
 import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
 import { GraphHealthTab } from "./GraphHealthTab";
+
+export type ExploreTab = "coverage" | "accessibility" | "relationships";
 
 export interface HomeScreenProps {
   octokit: Octokit;
   onOpenFile: (path: string) => void;
   /** Opens the global command palette (owned by App). */
   onFindComponent?: () => void;
+  /** Optional controlled Explore-tab state (owned by EditorShell so the
+   *  chosen tab survives navigating into a file and back — the behavior
+   *  the old landing tabs had). Uncontrolled when omitted. */
+  exploreTab?: ExploreTab;
+  onExploreTabChange?: (tab: ExploreTab) => void;
 }
-
-const DOMAIN_LABEL: Record<Domain, string> = {
-  content: "Content",
-  usage: "Usage",
-  design: "Design",
-  behavior: "Behavior",
-  tokens: "Tokens",
-};
 
 const GAP_LIST_LIMIT = 8;
 
@@ -61,25 +65,27 @@ type CoverageState =
   | { kind: "ready"; rows: CoverageRow[] }
   | { kind: "error"; message: string };
 
-function gapActionLabel(item: {
-  origin: CoverageRow["origin"];
-  missing: Domain[];
-}): string {
-  if (item.origin === "unstarted") return "Start authoring";
-  if (item.missing.includes("usage")) return "Write usage guidance";
-  return "Continue authoring";
-}
+// Labels keyed by the ranking band itself (see needsAttention.band) so the
+// button copy can't drift from why the row ranked where it did.
+const BAND_ACTION_LABEL: Record<AttentionBand, string> = {
+  0: "Write usage guidance",
+  1: "Start authoring",
+  2: "Continue authoring",
+};
 
 export function HomeScreen({
   octokit,
   onOpenFile,
   onFindComponent,
+  exploreTab: exploreTabProp,
+  onExploreTabChange,
 }: HomeScreenProps) {
   const [coverage, setCoverage] = useState<CoverageState>({ kind: "loading" });
   const [howItWorksOpen, setHowItWorksOpen] = useState(false);
-  const [exploreTab, setExploreTab] = useState<
-    "coverage" | "accessibility" | "relationships"
-  >("coverage");
+  const [internalExploreTab, setInternalExploreTab] =
+    useState<ExploreTab>("coverage");
+  const exploreTab = exploreTabProp ?? internalExploreTab;
+  const setExploreTab = onExploreTabChange ?? setInternalExploreTab;
   const needsAttentionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -99,16 +105,19 @@ export function HomeScreen({
   }, [octokit]);
 
   const rows = coverage.kind === "ready" ? coverage.rows : null;
-  const counts = useMemo(() => (rows ? summarize(rows) : null), [rows]);
-  const gaps = useMemo(
-    () => (rows ? topGaps(rows, GAP_LIST_LIMIT) : []),
+  const derived = useMemo(
+    () =>
+      rows
+        ? {
+            counts: summarize(rows),
+            gaps: topGaps(rows, GAP_LIST_LIMIT),
+            usageGaps: usageGapCount(rows),
+            totalGaps: gapCount(rows),
+          }
+        : { counts: null, gaps: [], usageGaps: null, totalGaps: 0 },
     [rows],
   );
-  const usageGaps = rows ? usageGapCount(rows) : null;
-  const totalGaps = useMemo(
-    () => (rows ? topGaps(rows, rows.length).length : 0),
-    [rows],
-  );
+  const { counts, gaps, usageGaps, totalGaps } = derived;
 
   const scrollToNeedsAttention = () => {
     needsAttentionRef.current?.scrollIntoView({
@@ -159,8 +168,10 @@ export function HomeScreen({
             <Heading size="3">Write missing guidance</Heading>
             <Text size="2" color="gray" style={{ flexGrow: 1 }}>
               {usageGaps == null
-                ? "Some components still have no usage guidance. It is the most valuable thing to write."
-                : `${usageGaps} ${usageGaps === 1 ? "component has" : "components have"} no usage guidance yet. It is the most valuable thing to write.`}
+                ? "Some components still need usage guidance. It is the most valuable thing to write."
+                : usageGaps === 0
+                  ? "Every component's usage guidance is underway. See below for anything else that needs a hand."
+                  : `${usageGaps} ${usageGaps === 1 ? "component still needs" : "components still need"} usage guidance. It is the most valuable thing to write.`}
             </Text>
             <Box>
               <Button variant="solid" onClick={scrollToNeedsAttention}>
@@ -299,7 +310,7 @@ export function HomeScreen({
                     size="1"
                     onClick={() => onOpenFile(item.target)}
                   >
-                    {gapActionLabel(item)}
+                    {BAND_ACTION_LABEL[item.band]}
                   </Button>
                 </Flex>
               </Card>
@@ -323,9 +334,7 @@ export function HomeScreen({
       </Text>
       <Tabs.Root
         value={exploreTab}
-        onValueChange={(v) =>
-          setExploreTab(v as "coverage" | "accessibility" | "relationships")
-        }
+        onValueChange={(v) => setExploreTab(v as ExploreTab)}
       >
         <Tabs.List>
           <Tabs.Trigger value="coverage">Coverage</Tabs.Trigger>
@@ -333,28 +342,9 @@ export function HomeScreen({
           <Tabs.Trigger value="relationships">Relationships</Tabs.Trigger>
         </Tabs.List>
         <Tabs.Content value="coverage">
-          {/* Mount only once rows exist — otherwise the dashboard would
-              start its own duplicate coverage fetch alongside ours. */}
-          {coverage.kind === "ready" ? (
-            <CoverageDashboard
-              octokit={octokit}
-              onOpenFile={onOpenFile}
-              preloadedRows={coverage.rows}
-            />
-          ) : coverage.kind === "error" ? (
-            <Callout.Root color="amber" mt="3">
-              <Callout.Text>
-                Couldn&apos;t load the coverage table: {coverage.message}
-              </Callout.Text>
-            </Callout.Root>
-          ) : (
-            <Flex align="center" gap="2" py="4">
-              <Spinner />
-              <Text size="2" color="gray">
-                Loading coverage…
-              </Text>
-            </Flex>
-          )}
+          {/* Self-loads through the memoized loadCoverage — resolves from
+              the same cached promise as this screen's own fetch. */}
+          <CoverageDashboard octokit={octokit} onOpenFile={onOpenFile} />
         </Tabs.Content>
         <Tabs.Content value="accessibility">
           <A11yCoverageDashboard octokit={octokit} onOpenFile={onOpenFile} />

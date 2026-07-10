@@ -9,7 +9,7 @@ import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
 import { isAppContextFile, isCategoryFile } from "../lib/wysiwygPaths";
 import { matchFrontmatterForm } from "../lib/frontmatterForms";
 import { RefusalBanner } from "./RefusalBanner";
-import { HomeScreen } from "./HomeScreen";
+import { HomeScreen, type ExploreTab } from "./HomeScreen";
 import { AuthoringWorkspace } from "./AuthoringWorkspace";
 import { DraftInbox } from "./DraftInbox";
 import { draftStoreSingleton } from "../drafts/store-instance";
@@ -111,6 +111,10 @@ export function EditorShell({
     }
   }, [octokit]);
 
+  // Owned here (not in HomeScreen) so the chosen Explore tab survives
+  // navigating into a file and back — HomeScreen unmounts on every open.
+  const [exploreTab, setExploreTab] = useState<ExploreTab>("coverage");
+
   const [pendingPaths, setPendingPaths] = useState<Set<string>>(() =>
     draftStoreSingleton.allPaths(),
   );
@@ -167,6 +171,8 @@ export function EditorShell({
         octokit={gh}
         onOpenFile={setActivePathSafe}
         onFindComponent={onOpenPalette}
+        exploreTab={exploreTab}
+        onExploreTabChange={setExploreTab}
       />
     );
   } else if (activePath === "inbox") {
