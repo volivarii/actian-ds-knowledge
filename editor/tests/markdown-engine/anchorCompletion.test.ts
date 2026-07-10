@@ -23,6 +23,7 @@ function primeIndex(slugs: Record<string, { defs: string[]; refs: string[] }>) {
     entries,
     scannedAt: 0,
     scannedPaths: [],
+    texts: new Map(),
   });
 }
 

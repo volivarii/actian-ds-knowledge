@@ -19,6 +19,7 @@ function primeIndex(slug: string, refs: string[]) {
     ]),
     scannedAt: 0,
     scannedPaths: [],
+    texts: new Map(),
   });
 }
 

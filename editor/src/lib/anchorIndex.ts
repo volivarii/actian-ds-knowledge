@@ -28,6 +28,9 @@ export interface AnchorIndex {
   entries: Map<string, AnchorEntry>;
   scannedAt: number;
   scannedPaths: string[];
+  /** Raw text of every scanned file (cart overrides win). Feeds the
+   *  RelationsPanel's contextual snippets without a second fetch fan-out. */
+  texts: Map<string, string>;
 }
 
 /** Pure scanner — no I/O. Strips fenced code first to avoid false positives. */
@@ -84,6 +87,10 @@ export function listSlugs(): string[] {
   return Array.from(cached.entries.keys()).sort();
 }
 
+export function getCachedText(path: string): string | null {
+  return cached?.texts.get(path) ?? null;
+}
+
 /** Build (or rebuild) the index by fetching all eligible markdown files
  *  and substrate JSON files (for JSON-style "ref":"slug" references).
  *  Dedups concurrent non-forced calls via the in-flight promise. */
@@ -102,12 +109,14 @@ export async function loadAnchorIndex(
     const paths = [...mdPaths, ...jsonPaths];
     const cartOverrides = options.cartOverrides ?? new Map();
     const entries = new Map<string, AnchorEntry>();
+    const texts = new Map<string, string>();
 
     await Promise.all(
       paths.map(async (path) => {
         try {
           const text =
             cartOverrides.get(path) ?? (await getTextFile(octokit, path));
+          texts.set(path, text);
           const { defines, references } = scanFileForAnchors(text);
           for (const slug of defines) {
             const entry = ensureEntry(entries, slug);
@@ -131,6 +140,7 @@ export async function loadAnchorIndex(
       entries,
       scannedAt: Date.now(),
       scannedPaths: paths,
+      texts,
     };
     cached = result;
     return result;

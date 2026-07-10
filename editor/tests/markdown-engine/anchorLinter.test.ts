@@ -8,7 +8,12 @@ function primeIndex(slugs: Record<string, { defs: string[]; refs: string[] }>) {
   for (const [slug, v] of Object.entries(slugs)) {
     entries.set(slug, { slug, definedIn: v.defs, referencedBy: v.refs });
   }
-  setCachedIndexForTesting({ entries, scannedAt: 0, scannedPaths: [] });
+  setCachedIndexForTesting({
+    entries,
+    scannedAt: 0,
+    scannedPaths: [],
+    texts: new Map(),
+  });
 }
 
 test("computeRenameWarnings: no warning when slug matches the index", () => {
