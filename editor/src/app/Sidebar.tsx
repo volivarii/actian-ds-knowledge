@@ -93,6 +93,10 @@ const APP_CONTEXT_LABEL: Record<"apps" | "entities" | "patterns", string> = {
   patterns: "Features",
 };
 
+/** The Content parent's children, in display order — single source for the
+ *  parent's guard, count, and render map. */
+const CONTENT_GROUPS = ["writing", "patterns", "product"] as const;
+
 // Uppercase group label separating the sidebar's two dimensions.
 function DimensionHeader({ children }: { children: string }) {
   return (
@@ -847,16 +851,12 @@ export function Sidebar({
       {/* Content is a nested parent: one "Content" section whose children
           (Writing rules / Patterns / Product) are indented beneath it —
           Vincent's IA, 2026-07-11. */}
-      {[entries.writing, entries.patterns, entries.product].some(
-        (e) => e.length > 0,
-      ) && (
+      {CONTENT_GROUPS.some((g) => entries[g].length > 0) && (
         <Box>
           {sectionHeader(
             "content",
             "Content",
-            entries.writing.length +
-              entries.patterns.length +
-              entries.product.length,
+            CONTENT_GROUPS.reduce((n, g) => n + entries[g].length, 0),
             "list-content",
             null,
           )}
@@ -867,7 +867,7 @@ export function Sidebar({
               aria-labelledby="sidebar-section-content-header"
               pl="3"
             >
-              {(["writing", "patterns", "product"] as const).map((group) => {
+              {CONTENT_GROUPS.map((group) => {
                 const items = entries[group];
                 if (items.length === 0) return null;
                 const label = CONTENT_GROUP_LABEL[group];
