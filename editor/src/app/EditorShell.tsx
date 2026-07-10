@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Octokit } from "@octokit/rest";
-import { Box, Button, Callout, Flex, Tabs } from "@radix-ui/themes";
+import { Box, Button, Callout, Flex } from "@radix-ui/themes";
 import { createOctokit, MissingPATError } from "../core/octokit";
 import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
@@ -9,9 +9,7 @@ import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
 import { isAppContextFile, isCategoryFile } from "../lib/wysiwygPaths";
 import { matchFrontmatterForm } from "../lib/frontmatterForms";
 import { RefusalBanner } from "./RefusalBanner";
-import { CoverageDashboard } from "./CoverageDashboard";
-import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
-import { GraphHealthTab } from "./GraphHealthTab";
+import { HomeScreen } from "./HomeScreen";
 import { AuthoringWorkspace } from "./AuthoringWorkspace";
 import { DraftInbox } from "./DraftInbox";
 import { draftStoreSingleton } from "../drafts/store-instance";
@@ -35,6 +33,9 @@ interface EditorShellProps {
   /** Opens the SubmissionStaging dialog (owned by App). Used by the
    *  DraftInbox surface to offer a one-click escalation to submit. */
   onOpenStaging?: () => void;
+  /** Opens the global command palette (owned by App). Used by the
+   *  HomeScreen's "Find a component" action. */
+  onOpenPalette?: () => void;
 }
 
 /**
@@ -94,6 +95,7 @@ export function EditorShell({
   activePath = null,
   setActivePath,
   onOpenStaging,
+  onOpenPalette,
 }: EditorShellProps) {
   const setActivePathSafe = setActivePath ?? (() => {});
   const [ghError, setGhError] = useState<string | null>(null);
@@ -108,10 +110,6 @@ export function EditorShell({
       return null;
     }
   }, [octokit]);
-
-  const [landingTab, setLandingTab] = useState<
-    "domains" | "accessibility" | "relationships"
-  >("domains");
 
   const [pendingPaths, setPendingPaths] = useState<Set<string>>(() =>
     draftStoreSingleton.allPaths(),
@@ -165,27 +163,11 @@ export function EditorShell({
     pane = null;
   } else if (activePath == null) {
     pane = (
-      <Tabs.Root
-        value={landingTab}
-        onValueChange={(v) =>
-          setLandingTab(v as "domains" | "accessibility" | "relationships")
-        }
-      >
-        <Tabs.List>
-          <Tabs.Trigger value="domains">Domains</Tabs.Trigger>
-          <Tabs.Trigger value="accessibility">Accessibility</Tabs.Trigger>
-          <Tabs.Trigger value="relationships">Relationships</Tabs.Trigger>
-        </Tabs.List>
-        <Tabs.Content value="domains">
-          <CoverageDashboard octokit={gh} onOpenFile={setActivePathSafe} />
-        </Tabs.Content>
-        <Tabs.Content value="accessibility">
-          <A11yCoverageDashboard octokit={gh} onOpenFile={setActivePathSafe} />
-        </Tabs.Content>
-        <Tabs.Content value="relationships">
-          <GraphHealthTab onOpenFile={setActivePathSafe} />
-        </Tabs.Content>
-      </Tabs.Root>
+      <HomeScreen
+        octokit={gh}
+        onOpenFile={setActivePathSafe}
+        onFindComponent={onOpenPalette}
+      />
     );
   } else if (activePath === "inbox") {
     pane = (

@@ -46,6 +46,8 @@ import { useCart } from "../drafts/useCart";
 export interface CoverageDashboardProps {
   octokit: Octokit;
   onOpenFile: (path: string) => void;
+  /** Rows already fetched by a parent (HomeScreen) — skips the load. */
+  preloadedRows?: CoverageRow[];
 }
 
 const STATUS_COLOR: Record<Status, "gray" | "amber" | "blue" | "green"> = {
@@ -73,12 +75,17 @@ const DOMAIN_LABEL: Record<Domain, string> = {
 export function CoverageDashboard({
   octokit,
   onOpenFile,
+  preloadedRows,
 }: CoverageDashboardProps) {
   const [state, setState] = useState<
     | { kind: "loading" }
     | { kind: "ready"; rows: CoverageRow[] }
     | { kind: "error"; message: string }
-  >({ kind: "loading" });
+  >(() =>
+    preloadedRows
+      ? { kind: "ready", rows: preloadedRows }
+      : { kind: "loading" },
+  );
   const cartEntries = useCart(submissionCartSingleton);
   const cartedPaths = useMemo(
     () => new Set(cartEntries.map((e) => e.path)),
@@ -86,6 +93,12 @@ export function CoverageDashboard({
   );
 
   useEffect(() => {
+    // Parent-supplied rows keep this component fetch-free; stay in sync if
+    // the parent's load resolves after mount.
+    if (preloadedRows) {
+      setState({ kind: "ready", rows: preloadedRows });
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -99,7 +112,7 @@ export function CoverageDashboard({
     return () => {
       cancelled = true;
     };
-  }, [octokit]);
+  }, [octokit, preloadedRows]);
 
   const counts = useMemo(
     () => (state.kind === "ready" ? summarize(state.rows) : null),

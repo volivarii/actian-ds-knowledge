@@ -154,7 +154,7 @@ test("Sidebar: click dispatches onSelect with full path", async () => {
   assert.deepEqual(calls, ["foundations/src/color-primitives.md"]);
 });
 
-test("Sidebar: renders a Coverage entry at the top", async () => {
+test("Sidebar: renders a Home entry at the top", async () => {
   render(
     wrap(
       <Sidebar
@@ -165,11 +165,11 @@ test("Sidebar: renders a Coverage entry at the top", async () => {
       />,
     ),
   );
-  await waitFor(() => screen.getByText("Coverage"));
-  assert.ok(screen.getByText("Coverage"));
+  await waitFor(() => screen.getByText("Home"));
+  assert.ok(screen.getByText("Home"));
 });
 
-test("Sidebar: clicking Coverage calls onSelect with null", async () => {
+test("Sidebar: clicking Home calls onSelect with null", async () => {
   const calls: (string | null)[] = [];
   render(
     wrap(
@@ -181,8 +181,8 @@ test("Sidebar: clicking Coverage calls onSelect with null", async () => {
       />,
     ),
   );
-  await waitFor(() => screen.getByText("Coverage"));
-  fireEvent.click(screen.getByText("Coverage"));
+  await waitFor(() => screen.getByText("Home"));
+  fireEvent.click(screen.getByText("Home"));
   assert.deepEqual(calls, [null]);
 });
 

@@ -86,6 +86,7 @@ function GearIcon() {
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activePath, setActivePath] = useState<string | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [stagingOpen, setStagingOpen] = useState(false);
   const [submissionsOpen, setSubmissionsOpen] = useState(false);
   const [submissionRows, setSubmissionRows] = useState<SubmissionRow[]>([]);
@@ -131,8 +132,9 @@ export default function App() {
     const activeSlug = activeComponentSlug(activePath);
     const base: CommandItem[] = [
       {
-        id: "open-coverage",
-        label: "Open coverage dashboard",
+        id: "open-home",
+        label: "Go home",
+        hint: "start page, coverage + needs attention",
         group: "Navigate",
         run: () => setActivePath(null),
       },
@@ -294,6 +296,7 @@ export default function App() {
               activePath={activePath}
               setActivePath={setActivePath}
               onOpenStaging={() => setStagingOpen(true)}
+              onOpenPalette={() => setPaletteOpen(true)}
             />
           )}
         </Box>
@@ -315,7 +318,11 @@ export default function App() {
             onLoaded={setSubmissionRows}
           />
         )}
-        <CommandPalette commands={commands} />
+        <CommandPalette
+          commands={commands}
+          open={paletteOpen}
+          onOpenChange={setPaletteOpen}
+        />
       </Flex>
     </Theme>
   );
