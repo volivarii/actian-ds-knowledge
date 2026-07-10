@@ -33,15 +33,18 @@ import { $prose } from "@milkdown/utils";
 import { Plugin, PluginKey } from "@milkdown/prose/state";
 import type { EditorState } from "@milkdown/prose/state";
 import type { EditorView } from "@milkdown/prose/view";
-import {
-  searchReferenceTargets,
-  type ReferenceTarget,
-} from "../lib/referenceIndex";
+import { type ReferenceTarget } from "../lib/referenceIndex";
 
 export interface ReferencePickerState {
   query: string;
   /** Viewport coords for the popup anchor. */
   rect: { left: number; bottom: number };
+  /** The editor's contenteditable root. ReferencePicker uses this to scope
+   *  its document-level capture keydown listener: a keystroke whose target
+   *  is outside this element (e.g. a frontmatter form field, a RelationsPanel
+   *  row) must pass through untouched instead of being swallowed by an
+   *  abandoned picker. */
+  editorDom: Element;
   /** Replace the trigger range ("[[query") with the chosen target's link. */
   apply: (target: ReferenceTarget) => void;
   close: () => void;
@@ -88,9 +91,11 @@ export function insertReferenceLink(
 }
 
 /** `[[` then a query run: no `]` (a typed `]` abandons the trigger, like
- *  completing a real wiki link would), no nested `[`. Anchored at the end so
- *  only the run IMMEDIATELY before the caret triggers. */
-const TRIGGER_RE = /\[\[([^\][\n]*)$/;
+ *  completing a real wiki link would), no nested `[`, no `\0` (the sentinel
+ *  textBetween substitutes for an inline leaf atom, e.g. a <Media> chip, see
+ *  matchTrigger below). Anchored at the end so only the run IMMEDIATELY
+ *  before the caret triggers. */
+const TRIGGER_RE = /\[\[([^\][\n\0]*)$/;
 
 interface TriggerMatch {
   /** Doc position of the first `[` (start of the range to replace). */
@@ -101,8 +106,10 @@ interface TriggerMatch {
 }
 
 /** The `[[query` run ending exactly at the caret, or null. A pure function
- *  of the editor state, so open/filter/close all derive from re-running it. */
-function matchTrigger(state: EditorState): TriggerMatch | null {
+ *  of the editor state, so open/filter/close all derive from re-running it.
+ *  Exported for tests: the atom-exclusion regression drives a real editor
+ *  through this directly rather than the handler-emit side effect. */
+export function matchTrigger(state: EditorState): TriggerMatch | null {
   const { selection } = state;
   if (!selection.empty) return null;
   const { $from } = selection;
@@ -128,19 +135,40 @@ interface TriggerPluginState {
 
 const key = new PluginKey<TriggerPluginState>("actianReferenceAutocomplete");
 
+/** Test hook: read the plugin's own state (match + dismissedAt) without
+ *  reaching into module internals. Used by the dismiss-mapping regression
+ *  to observe suppression across a transaction it didn't dispatch itself. */
+export function getReferenceTriggerStateForTest(
+  state: EditorState,
+): TriggerPluginState | null {
+  return key.getState(state) ?? null;
+}
+
 /** Escape path: mark the current trigger dismissed (sticky until its `[[`
  *  run disappears). The picker clears itself via the close() that sent this. */
 function dismiss(view: EditorView, match: TriggerMatch): void {
   view.dispatch(view.state.tr.setMeta(key, { dismiss: match.from }));
 }
 
-function emitToHandler(view: EditorView, match: TriggerMatch): void {
+function computeRect(
+  view: EditorView,
+  pos: number,
+): { left: number; bottom: number } {
+  const coords = view.coordsAtPos(pos);
+  return { left: coords.left, bottom: coords.bottom };
+}
+
+function emitToHandler(
+  view: EditorView,
+  match: TriggerMatch,
+  rect: { left: number; bottom: number },
+): void {
   if (!currentHandler) return;
   const handler = currentHandler;
-  const coords = view.coordsAtPos(match.from);
   handler({
     query: match.query,
-    rect: { left: coords.left, bottom: coords.bottom },
+    rect,
+    editorDom: view.dom,
     apply: (target: ReferenceTarget) => {
       // Re-derive the range at apply time: the pick can land transactions
       // after this state was emitted, and a stale range would splice the
@@ -166,15 +194,44 @@ const triggerPlugin = new Plugin<TriggerPluginState>({
       if (typeof meta?.dismiss === "number") {
         return { match: null, dismissedAt: meta.dismiss };
       }
+      // prev.dismissedAt is a position from the OLD doc. A transaction that
+      // edits EARLIER in the doc shifts everything after it, so comparing it
+      // unmapped against match.from (derived from newState) would compare
+      // stale-old-doc coords against fresh-new-doc coords: an unrelated edit
+      // upstream of the trigger would silently drop the dismissal (the
+      // picker reopens) or, on other shapes, wrongly suppress a different
+      // run that happened to land on the old absolute position. Map it
+      // through this transaction's mapping first so the comparison stays in
+      // the same coordinate space as match.from.
+      const mappedDismissedAt =
+        prev.dismissedAt === null ? null : tr.mapping.map(prev.dismissedAt);
       const match = matchTrigger(newState);
       if (!match) return { match: null, dismissedAt: null };
-      if (prev.dismissedAt !== null && match.from === prev.dismissedAt) {
-        return { match: null, dismissedAt: prev.dismissedAt };
+      if (mappedDismissedAt !== null && match.from === mappedDismissedAt) {
+        return { match: null, dismissedAt: mappedDismissedAt };
       }
       return { match, dismissedAt: null };
     },
   },
-  view() {
+  view(initialView) {
+    // Cache the anchor rect per run (keyed by match.from) so repeated
+    // keystrokes that only change the query (not the trigger's start
+    // position) reuse the coordsAtPos call from when the run opened, instead
+    // of re-measuring layout on every character.
+    let cachedRect: {
+      from: number;
+      rect: { left: number; bottom: number };
+    } | null = null;
+    // A blur/focus-elsewhere (e.g. clicking into the frontmatter form or the
+    // RelationsPanel while a trigger is open) must close the picker even
+    // though PM state is unaffected: PM state is only doc/selection, it has
+    // no notion of DOM focus. Re-opening on refocus falls out naturally: a
+    // click back into the editor dispatches a selection transaction, which
+    // re-runs matchTrigger and re-emits via update() below.
+    const onFocusOut = () => {
+      currentHandler?.(null);
+    };
+    initialView.dom.addEventListener("focusout", onFocusOut);
     return {
       // The view hook (not apply) emits to the handler: it runs after the
       // EditorView has painted the new state, so coordsAtPos is valid here.
@@ -182,16 +239,24 @@ const triggerPlugin = new Plugin<TriggerPluginState>({
         const prev = key.getState(prevState)?.match ?? null;
         const next = key.getState(view.state)?.match ?? null;
         if (next) {
+          if (!prev || prev.from !== next.from) {
+            cachedRect = {
+              from: next.from,
+              rect: computeRect(view, next.from),
+            };
+          }
           // Open (prev null) or filter (query/position changed): re-emit so
           // the picker always sees the current query + caret coords.
           if (!prev || prev.from !== next.from || prev.query !== next.query) {
-            emitToHandler(view, next);
+            emitToHandler(view, next, cachedRect!.rect);
           }
         } else if (prev) {
           currentHandler?.(null);
+          cachedRect = null;
         }
       },
       destroy() {
+        initialView.dom.removeEventListener("focusout", onFocusOut);
         currentHandler?.(null);
       },
     };
@@ -201,5 +266,4 @@ const triggerPlugin = new Plugin<TriggerPluginState>({
 /** Milkdown plugin for the extra `.use()` in MilkdownBody. */
 export const referenceAutocompletePlugin = $prose(() => triggerPlugin);
 
-export { searchReferenceTargets };
 export type { ReferenceTarget };

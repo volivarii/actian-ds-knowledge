@@ -40,6 +40,12 @@ export function ReferencePicker({
   React.useEffect(() => {
     if (!state) return;
     const onKeyDown = (event: KeyboardEvent) => {
+      // Scope to the editor's own DOM: while a `[[` run sits abandoned (the
+      // user tabbed into a frontmatter field or a RelationsPanel row without
+      // closing it), this document-level capture listener must let the
+      // keystroke through untouched instead of swallowing Enter/arrows meant
+      // for whatever actually has focus.
+      if (!state.editorDom.contains(event.target as Node)) return;
       if (event.key === "Escape") {
         event.preventDefault();
         event.stopPropagation();

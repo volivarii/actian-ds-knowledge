@@ -8,7 +8,7 @@ import {
   editorViewCtx,
 } from "@milkdown/core";
 import { getMarkdown } from "@milkdown/utils";
-import { TextSelection } from "@milkdown/prose/state";
+import { TextSelection, Selection } from "@milkdown/prose/state";
 import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
@@ -18,10 +18,16 @@ import {
 } from "../../src/markdown-engine/milkdownPreset";
 import {
   insertReferenceLink,
-  searchReferenceTargets,
-  type ReferenceTarget,
+  matchTrigger,
+  getReferenceTriggerStateForTest,
+  referenceAutocompletePlugin,
+  setReferencePickerHandler,
   type ReferencePickerState,
 } from "../../src/markdown-engine/referenceAutocomplete";
+import {
+  searchReferenceTargets,
+  type ReferenceTarget,
+} from "../../src/lib/referenceIndex";
 import { ReferencePicker } from "../../src/markdown-engine/ReferencePicker";
 import { scanFileForAnchors } from "../../src/lib/anchorIndex";
 import { snippetsForSlug } from "../../src/lib/snippetExtract";
@@ -198,6 +204,140 @@ for (const { target, expect: expected } of CASES) {
   });
 }
 
+// FINDING 1 regression (Important, data loss): TRIGGER_RE's negated char
+// class must reject `\0`, the sentinel textBetween substitutes for an inline
+// leaf atom (e.g. a <Media> chip). Without it, a trigger run can span the
+// atom and apply()'s replaceWith deletes it. Drives a REAL editor (same
+// shared preset as the tests above, which registers mediaNodeView) through a
+// doc where a <Media> atom sits between the `[[` and the trailing query text.
+test("matchTrigger: a trigger run does not span an inline atom (e.g. a <Media> chip)", async () => {
+  const root = globalThis.document.createElement("div");
+  const editor = await useMilkdownPresets(
+    Editor.make().config((ctx) => {
+      ctx.set(rootCtx, root);
+      // Inline (not block) HTML: no blank line around the tag, so it parses
+      // as the same "html" inline-atom node media-roundtrip.test.ts exercises,
+      // sitting inside the SAME paragraph as the "[[" prefix and "bar" suffix.
+      ctx.set(defaultValueCtx, '[[foo<Media role="x" />bar\n');
+    }),
+  ).create();
+
+  editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx);
+    // Caret at the very end of the doc's only textblock, right after "bar".
+    const end = Selection.atEnd(view.state.doc);
+    view.dispatch(view.state.tr.setSelection(end));
+
+    const match = matchTrigger(view.state);
+    assert.equal(
+      match,
+      null,
+      `expected no trigger match spanning the inline atom, got: ${JSON.stringify(match)}`,
+    );
+  });
+
+  await editor.destroy();
+});
+
+// FINDING 2 regression (Important): a trigger dismissed via Escape stores
+// `dismissedAt` as an absolute position from the doc at dismiss time. A later
+// transaction that edits EARLIER in the doc shifts everything after it, so
+// the plugin must map `dismissedAt` through `tr.mapping` before comparing it
+// against the freshly-derived match. Uses the real close() path (the same one
+// Escape drives via ReferencePickerState), not the plugin's private `dismiss`
+// helper, to stay on the module's public surface.
+test("triggerPlugin: a dismissed trigger stays suppressed after an earlier edit shifts its position", async () => {
+  const root = globalThis.document.createElement("div");
+  const editor = await useMilkdownPresets(
+    Editor.make().config((ctx) => {
+      ctx.set(rootCtx, root);
+      ctx.set(defaultValueCtx, "before\n\n[[bar\n");
+    }),
+  )
+    .use(referenceAutocompletePlugin)
+    .create();
+
+  let latestState: ReferencePickerState | null = null;
+  setReferencePickerHandler((s) => {
+    latestState = s;
+  });
+
+  let originalFrom = -1;
+  editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx);
+    const end = Selection.atEnd(view.state.doc);
+    view.dispatch(view.state.tr.setSelection(end));
+
+    const live = matchTrigger(view.state);
+    assert.ok(live, "expected the [[bar run to open the picker");
+    originalFrom = live!.from;
+
+    assert.ok(latestState, "expected the handler to have been emitted to");
+    latestState!.close(); // Escape path: dismiss via the real public API.
+
+    const dismissed = getReferenceTriggerStateForTest(view.state);
+    assert.equal(dismissed?.match, null, "close() must suppress the match");
+    assert.equal(dismissed?.dismissedAt, originalFrom);
+
+    // Edit EARLIER in the doc (position 1, inside the first paragraph): this
+    // shifts every position after it, including the dismissed trigger, by 1.
+    view.dispatch(view.state.tr.insertText("X", 1));
+
+    const afterShift = getReferenceTriggerStateForTest(view.state);
+    assert.equal(
+      afterShift?.dismissedAt,
+      originalFrom + 1,
+      "dismissedAt must be re-mapped through the earlier edit's transaction",
+    );
+    assert.equal(
+      afterShift?.match,
+      null,
+      "the shifted run must remain suppressed, not reopen the picker",
+    );
+  });
+
+  setReferencePickerHandler(null);
+  await editor.destroy();
+});
+
+// FINDING 3(b) regression (Important, collision): the plugin must close the
+// picker when focus leaves the editor's DOM entirely (e.g. the user tabs into
+// a frontmatter field or a RelationsPanel row without dismissing the [[ run),
+// since PM's transaction-derived state has no notion of DOM focus on its own.
+test("triggerPlugin: focusout on the editor DOM closes the picker (emits null)", async () => {
+  const root = globalThis.document.createElement("div");
+  const editor = await useMilkdownPresets(
+    Editor.make().config((ctx) => {
+      ctx.set(rootCtx, root);
+      ctx.set(defaultValueCtx, "[[bar\n");
+    }),
+  )
+    .use(referenceAutocompletePlugin)
+    .create();
+
+  let latestState: ReferencePickerState | null | "unset" = "unset";
+  setReferencePickerHandler((s) => {
+    latestState = s;
+  });
+
+  editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx);
+    const end = Selection.atEnd(view.state.doc);
+    view.dispatch(view.state.tr.setSelection(end));
+  });
+  assert.notEqual(latestState, "unset", "expected the picker to open first");
+  assert.ok(latestState, "expected an open trigger before testing focusout");
+
+  editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx);
+    view.dom.dispatchEvent(new Event("focusout", { bubbles: true }));
+  });
+  assert.equal(latestState, null, "focusout must close the picker (emit null)");
+
+  setReferencePickerHandler(null);
+  await editor.destroy();
+});
+
 // Picker component: renders the REAL searchReferenceTargets results for a
 // query with a known top hit (no stubbed result data), and owns Enter/click
 // apply itself (see the capture-phase-listener header comment in
@@ -207,9 +347,15 @@ for (const { target, expect: expected } of CASES) {
 test("ReferencePicker: renders the top component row with its badge and Enter calls apply with that target", () => {
   cleanup();
   const applied: { target: ReferenceTarget | null } = { target: null };
+  // A real element standing in for the editor's contenteditable root: the
+  // capture-phase keydown handler now scopes to state.editorDom.contains(),
+  // so the test's synthetic Enter must originate from inside it (or a
+  // descendant) to be treated as "the picker is still relevant".
+  const editorDom = document.body.appendChild(document.createElement("div"));
   const state: ReferencePickerState = {
     query: "but",
     rect: { left: 0, bottom: 0 },
+    editorDom,
     apply: (t) => {
       applied.target = t;
     },
@@ -236,17 +382,20 @@ test("ReferencePicker: renders the top component row with its badge and Enter ca
     "no component badge rendered",
   );
 
-  fireEvent.keyDown(document, { key: "Enter" });
+  fireEvent.keyDown(editorDom, { key: "Enter" });
   assert.equal(applied.target?.href, top.href);
+  editorDom.remove();
   cleanup();
 });
 
 test("ReferencePicker: clicking a row calls apply with that target", () => {
   cleanup();
   const applied: { target: ReferenceTarget | null } = { target: null };
+  const editorDom = document.body.appendChild(document.createElement("div"));
   const state: ReferencePickerState = {
     query: "but",
     rect: { left: 0, bottom: 0 },
+    editorDom,
     apply: (t) => {
       applied.target = t;
     },
@@ -267,5 +416,57 @@ test("ReferencePicker: clicking a row calls apply with that target", () => {
   const top = searchReferenceTargets("but", "")[0]!;
   fireEvent.mouseDown(screen.getByText(top.label));
   assert.equal(applied.target?.href, top.href);
+  editorDom.remove();
+  cleanup();
+});
+
+test("ReferencePicker: a keydown whose target is outside editorDom is not consumed", () => {
+  cleanup();
+  const applied: { target: ReferenceTarget | null } = { target: null };
+  const closed: { called: boolean } = { called: false };
+  const editorDom = document.body.appendChild(document.createElement("div"));
+  const outside = document.body.appendChild(document.createElement("div"));
+  const state: ReferencePickerState = {
+    query: "but",
+    rect: { left: 0, bottom: 0 },
+    editorDom,
+    apply: (t) => {
+      applied.target = t;
+    },
+    close: () => {
+      closed.called = true;
+    },
+  };
+
+  render(
+    React.createElement(
+      Theme,
+      null,
+      React.createElement(ReferencePicker, {
+        state,
+        currentBodyText: "",
+      }),
+    ),
+  );
+
+  // Enter, Escape, and arrow keys all originate from an element the picker's
+  // editorDom does not contain (e.g. a frontmatter form field, or a
+  // RelationsPanel row): none of them should reach apply/close.
+  fireEvent.keyDown(outside, { key: "Enter" });
+  fireEvent.keyDown(outside, { key: "Escape" });
+  fireEvent.keyDown(outside, { key: "ArrowDown" });
+  assert.equal(
+    applied.target,
+    null,
+    "apply must not fire for an outside target",
+  );
+  assert.equal(
+    closed.called,
+    false,
+    "close must not fire for an outside target",
+  );
+
+  editorDom.remove();
+  outside.remove();
   cleanup();
 });
