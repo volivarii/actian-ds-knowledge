@@ -11,6 +11,7 @@ import { bakedGraphIndex, type Neighbor } from "../substrate/graphIndex";
 import { nodeIdForFile } from "../substrate/nodeIdForFile";
 import { extractAnchor } from "../app/SectionFocusTracker";
 import { scanHeadings, type Heading } from "./headingScan";
+import { graphNodes } from "../substrate/taxonomyAssets";
 import { splitRawFrontmatter } from "../markdown-engine/rawFrontmatter";
 
 export type { Neighbor };
@@ -123,4 +124,65 @@ export function countsBySection(
     counts.set(firstH2Anchor, (counts.get(firstH2Anchor) ?? 0) + outgoingCount);
   }
   return counts;
+}
+
+export interface ReferenceTarget {
+  /** Visible label = node title or heading text. */
+  label: string;
+  /** Badge: "component" | "section". */
+  kind: "component" | "section";
+  /** Ready-to-insert link destination: bare slug or "#slug". */
+  href: string;
+  /** Extra detail line (component category is NOT available on the node; use the slug). */
+  detail: string;
+}
+
+const COMPONENT_PREFIX = "component:";
+
+/** Picker feed for the [[ reference autocomplete. PR-B grammar law: only
+ *  component nodes (bare-slug links) and the CURRENT file's section anchors
+ *  (#slug links) have an established body-link grammar; other node types are
+ *  panel-only until a grammar decision lands. */
+export function searchReferenceTargets(
+  query: string,
+  currentText: string,
+  limit = 8,
+): ReferenceTarget[] {
+  const q = query.trim().toLowerCase();
+  if (q.length === 0) return [];
+  const scored: Array<{ t: ReferenceTarget; score: number }> = [];
+  for (const s of sectionAnchors(currentText)) {
+    if (s.anchor === null) continue;
+    const hay = s.heading.text.toLowerCase();
+    const score = hay.startsWith(q) ? 0 : hay.includes(q) ? 2 : -1;
+    if (score < 0) continue;
+    scored.push({
+      t: {
+        label: s.heading.text,
+        kind: "section",
+        href: "#" + s.anchor,
+        detail: s.anchor,
+      },
+      score,
+    });
+  }
+  for (const n of graphNodes) {
+    if (!n.id.startsWith(COMPONENT_PREFIX)) continue;
+    const slug = n.id.slice(COMPONENT_PREFIX.length);
+    const hay = (n.title + " " + slug).toLowerCase();
+    const score = n.title.toLowerCase().startsWith(q)
+      ? 1
+      : hay.includes(q)
+        ? 3
+        : -1;
+    if (score < 0) continue;
+    scored.push({
+      t: { label: n.title, kind: "component", href: slug, detail: slug },
+      score,
+    });
+  }
+  scored.sort(
+    (a, b) => a.score - b.score || a.t.label.localeCompare(b.t.label),
+  );
+  return scored.slice(0, limit).map((x) => x.t);
 }
