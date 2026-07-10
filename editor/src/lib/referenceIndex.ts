@@ -12,6 +12,7 @@ import { nodeIdForFile } from "../substrate/nodeIdForFile";
 import { extractAnchor } from "../app/SectionFocusTracker";
 import { scanHeadings, type Heading } from "./headingScan";
 import { graphNodes } from "../substrate/taxonomyAssets";
+import { splitRawFrontmatter } from "../markdown-engine/rawFrontmatter";
 
 export type { Neighbor };
 
@@ -69,7 +70,11 @@ export function incomingForFile(path: string, text: string): IncomingRef[] {
     for (const fromPath of findReferences(slug)) {
       if (fromPath === path) continue;
       const refText = getCachedText(fromPath);
-      const snippets = refText ? snippetsForSlug(refText, slug) : [];
+      // Snippets come from the referencing file's PROSE body: a reference
+      // living in its frontmatter (a11y_refs etc.) has no readable paragraph,
+      // and extracting from the raw file leaked YAML into the panel.
+      const refBody = refText ? splitRawFrontmatter(refText).body : null;
+      const snippets = refBody ? snippetsForSlug(refBody, slug) : [];
       if (snippets.length === 0) {
         out.push({ fromPath, slug, snippet: "" });
       } else {

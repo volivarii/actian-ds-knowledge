@@ -78,6 +78,9 @@ export interface RJSFFormProps {
   schema: RJSFSchema;
   uiSchema?: UiSchema;
   formData: unknown;
+  /** Extra class(es) on the rendered <form>. Callers that pass this should
+   *  include "rjsf" to keep RJSF's default hook class. */
+  className?: string;
   onChange: (next: unknown) => void;
   onSubmit?: (data: unknown) => void;
   disabled?: boolean;
@@ -104,6 +107,7 @@ export function RJSFForm({
   widgets,
   templates,
   formContext,
+  className,
 }: RJSFFormProps) {
   // Radix theme is the base; per-form templates/widgets override it.
   // ButtonTemplates merges one level deeper so a form can replace a single button.
@@ -122,6 +126,7 @@ export function RJSFForm({
 
   return (
     <Form
+      className={className}
       schema={schema}
       uiSchema={uiSchema}
       validator={validator}

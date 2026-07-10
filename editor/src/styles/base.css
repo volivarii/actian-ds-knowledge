@@ -341,3 +341,11 @@ body {
   padding: 16px;
   text-align: center;
 }
+
+/* Frontmatter form collapse (FrontmatterBodyEditScreen): the toggle adds
+   .fm-collapsed to the RJSF <form>; everything except our own children
+   wrapper (prose body + submit row) hides. Fields stay mounted so form
+   state and validation are untouched. */
+form.fm-form.fm-collapsed > *:not(.fm-form-children) {
+  display: none;
+}
