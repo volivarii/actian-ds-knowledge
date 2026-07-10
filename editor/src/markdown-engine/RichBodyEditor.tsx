@@ -15,6 +15,12 @@ import {
   setMediaPreviewSlug,
   setMediaPreviewOctokit,
 } from "./media/mediaNodeView";
+import {
+  referenceAutocompletePlugin,
+  setReferencePickerHandler,
+  type ReferencePickerState,
+} from "./referenceAutocomplete";
+import { ReferencePicker } from "./ReferencePicker";
 import { RichToolbar } from "./RichToolbar";
 
 function MilkdownBody({
@@ -23,6 +29,7 @@ function MilkdownBody({
   label,
   componentSlug,
   octokit,
+  currentBodyText,
 }: {
   initialText: string;
   onChange: (md: string) => void;
@@ -31,7 +38,21 @@ function MilkdownBody({
   /** Present only for component-guideline edits (powers the <Media> preview
    *  fetch); undefined in the headless round-trip, which must fall to the chip. */
   octokit?: Octokit;
+  /** Live body text for the [[ reference picker's searchReferenceTargets
+   *  call, threaded down from RichBodyEditor's `text` state, the same
+   *  freshness source the mode-toggle / source editor already share. */
+  currentBodyText: string;
 }) {
+  const [pickerState, setPickerState] =
+    React.useState<ReferencePickerState | null>(null);
+
+  // Register the picker handler once at mount (module-level setter, same
+  // pattern as setMediaPreviewSlug above); unregister on unmount so a
+  // destroyed editor's stale handler can never fire into unmounted state.
+  React.useEffect(() => {
+    setReferencePickerHandler(setPickerState);
+    return () => setReferencePickerHandler(null);
+  }, []);
   // Prime the module-level preview slug and octokit before the editor mounts.
   // The NodeView factory reads both lazily when each <Media> atom renders, and
   // editor.create() is async (a regular effect kicks it off), so this effect,
@@ -89,13 +110,23 @@ function MilkdownBody({
                 onChangeRef.current(markdown),
               );
           })
-          .use(listener),
+          .use(listener)
+          // Extra `.use()` addition, NOT a milkdownPreset.ts change: the
+          // round-trip guard stack (and its byte-exact serialization
+          // contract) is untouched by construction, since this plugin only
+          // ever inserts a plain link on explicit picker selection.
+          .use(referenceAutocompletePlugin),
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
-  return <Milkdown />;
+  return (
+    <>
+      <Milkdown />
+      <ReferencePicker state={pickerState} currentBodyText={currentBodyText} />
+    </>
+  );
 }
 
 export function RichBodyEditor({
@@ -171,6 +202,7 @@ export function RichBodyEditor({
             label={label}
             componentSlug={componentSlug}
             octokit={octokit}
+            currentBodyText={text}
           />
         </MilkdownProvider>
       ) : (
