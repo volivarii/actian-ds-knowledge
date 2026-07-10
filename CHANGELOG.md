@@ -19,6 +19,18 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Editor: unified relations panel in the markdown editor's source and rich modes, and beside the
+  rich body editor in the frontmatter-form screen.** A persistent side panel now shows the document
+  outline with per-section connection counts and, below it, the file's relations in context:
+  incoming references rendered as contextual snippets from the referencing paragraph, outgoing
+  links and frontmatter refs (with the existing add/disconnect/repoint flow reached from the
+  panel), and the typed knowledge-graph edges touching this file (composed_of, uses_component,
+  in_category, a11y_ref, with an "as of last merge" staleness label). Restores the relations
+  surface rich mode lacked and makes the cross-domain graph visible during authoring. Rich editing
+  is itself opt-in (the CI-derived safe set), and the frontmatter-form screen's non-WYSIWYG body
+  branch (plain CodeMirror) has no panel. Section connection counts also exclude a file's own
+  references to its own anchors (previously counted): a self-link no longer inflates a section's
+  pill. Editor tooling only: no dist, contract, or consumer-facing change. ([#389])
 - **Content dist split: per-bucket views beside the global concat.** `derive-content.js` now also
   emits `content/dist/writing.md`, `content/dist/patterns.md`, and `content/dist/product.md`: split
   views of the same global sections (index order preserved, words-to-avoid table rendered in the
@@ -210,6 +222,7 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#389]: https://github.com/volivarii/actian-ds-knowledge/pull/389
 [#387]: https://github.com/volivarii/actian-ds-knowledge/pull/387
 [#385]: https://github.com/volivarii/actian-ds-knowledge/pull/385
 [#383]: https://github.com/volivarii/actian-ds-knowledge/pull/383

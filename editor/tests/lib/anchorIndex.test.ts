@@ -7,6 +7,7 @@ import {
   findReferences,
   listSlugs,
   setCachedIndexForTesting,
+  getCachedText,
 } from "../../src/lib/anchorIndex";
 
 test("scanFileForAnchors: heading anchor", () => {
@@ -255,4 +256,19 @@ test("loadAnchorIndex: JSON substrate refs land in referencedBy", async () => {
   assert.deepEqual(findDefinitions("tokens"), [
     "foundations/src/color-primitives.md",
   ]);
+});
+
+test("loadAnchorIndex: only .md text is cached (FIX 5); a JSON referrer's raw text is not retained", async () => {
+  setCachedIndexForTesting(null);
+  const gh = fakeGhWithJson({
+    "foundations/src/color-primitives.md": "## Tokens {#tokens}\n",
+    "components/dist/guidelines/button.json":
+      '{"a11y_refs":[{"ref":"tokens","note":"contrast"}]}',
+  });
+  await loadAnchorIndex(gh, { force: true });
+  assert.equal(
+    getCachedText("foundations/src/color-primitives.md"),
+    "## Tokens {#tokens}\n",
+  );
+  assert.equal(getCachedText("components/dist/guidelines/button.json"), null);
 });

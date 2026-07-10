@@ -29,7 +29,10 @@ function deriveSlug(text: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function extractAnchor(headingText: string): string {
+// Exported so other single-pass heading scans (referenceIndex.ts's
+// sectionAnchors) can derive the identical anchor for a heading's raw title
+// without duplicating the explicit-vs-derived slug rule.
+export function extractAnchor(headingText: string): string {
   const m = headingText.match(TRAILING_ANCHOR_RE);
   if (m) return m[1] ?? "";
   return deriveSlug(headingText);

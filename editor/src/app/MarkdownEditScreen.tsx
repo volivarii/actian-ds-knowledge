@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Octokit } from "@octokit/rest";
-import type { EditorView } from "@codemirror/view";
+import { EditorView } from "@codemirror/view";
 import {
   AlertDialog,
   Box,
@@ -31,17 +31,31 @@ import {
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { RichBodyEditor } from "../markdown-engine/RichBodyEditor";
 import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
+import { applyExternalTextChange } from "../lib/applyExternalTextChange";
 import {
   splitRawFrontmatter,
   joinRawFrontmatter,
 } from "../markdown-engine/rawFrontmatter";
 import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
-import { Outline } from "./Outline";
+import {
+  RelationsPanel,
+  readRelationsPanelCollapsed,
+  writeRelationsPanelCollapsed,
+} from "./RelationsPanel";
 import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
 import { computeFocusedSection } from "./SectionFocusTracker";
+import {
+  countsBySection,
+  incomingForFile,
+  graphNeighborsForFile,
+} from "../lib/referenceIndex";
 import { ConnectionsPopover } from "./ConnectionsPopover";
 import type { FocusedSectionContext } from "./EditorShell";
+// Aliased: the local scope also has the Radix `Heading` component (JSX
+// heading element), so the headingScan type import needs a distinct name.
+import type { Heading as OutlineHeading } from "../lib/headingScan";
+import { scrollRichHeading } from "./richScroll";
 // NOTE: deep-imported (not via the substrate barrel) to keep the Node-only
 // loader (taxonomy.ts uses node:fs/promises, refGraph.ts uses node:path) out
 // of the browser bundle. Vite's tree-shaker can't see through the barrel's
@@ -314,6 +328,21 @@ export function MarkdownEditScreen({
     [text, taxonomy],
   );
 
+  // RelationsPanel's collapsed state is owned here (not by the panel
+  // itself) so the expensive incoming/counts memos below can be gated to a
+  // no-op instead of recomputing on every keystroke while their DOM stays
+  // hidden. Seeded from the same localStorage key the toggle writes to.
+  const [relationsCollapsed, setRelationsCollapsed] = useState<boolean>(() =>
+    readRelationsPanelCollapsed(),
+  );
+  const toggleRelationsCollapsed = useCallback(() => {
+    setRelationsCollapsed((c) => {
+      const next = !c;
+      writeRelationsPanelCollapsed(next);
+      return next;
+    });
+  }, []);
+
   // Per-section connection counts feed the Outline pills. Each H2/H3 in
   // the current file contributes:
   //   - OUTGOING (this section's own a11y_refs/motion_refs in frontmatter)
@@ -323,34 +352,25 @@ export function MarkdownEditScreen({
   //     loading (anchorIndexTick).
   // Pill displays the SUM so definition-only files (no frontmatter
   // outgoing, just incoming refs from consumers) still surface a count.
+  // Skipped while the panel is collapsed: its DOM is hidden either way.
   const connectionCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    const lines = text.split("\n");
-
-    // Walk every line; for each H2/H3 found, set its incoming count from
-    // anchorIndex. Use a Set so the same anchor isn't recounted when the
-    // walker returns it across multiple lines inside the same section.
-    const seenAnchors = new Set<string>();
-    let firstH2Anchor: string | null = null;
-    for (let i = 0; i < lines.length; i++) {
-      const s = computeFocusedSection(text, i);
-      if (!s || seenAnchors.has(s.anchor)) continue;
-      seenAnchors.add(s.anchor);
-      if (s.level === 2 && firstH2Anchor === null) firstH2Anchor = s.anchor;
-      // anchorIndexTick is only here to keep this memo dependent on the
-      // index becoming available — findReferences reads the module cache.
-      const incoming = findReferences(s.anchor).length;
-      if (incoming > 0) counts.set(s.anchor, incoming);
-    }
-
-    // P8 Option A: outgoing refs attach to the file's top H2.
-    if (firstH2Anchor && outgoing.length > 0) {
-      const existing = counts.get(firstH2Anchor) ?? 0;
-      counts.set(firstH2Anchor, existing + outgoing.length);
-    }
-    return counts;
+    return relationsCollapsed
+      ? new Map<string, number>()
+      : countsBySection(path, text, outgoing.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, outgoing, anchorIndexTick]);
+  }, [text, outgoing, anchorIndexTick, relationsCollapsed]);
+
+  // Incoming references + graph neighbors feed the RelationsPanel's
+  // contextual sections (below the outline pills). Incoming is skipped
+  // while collapsed; graphNeighbors is a baked path-keyed lookup and stays
+  // cheap enough to leave unconditional.
+  const incoming = useMemo(
+    () => (relationsCollapsed ? [] : incomingForFile(path, text)),
+    // anchorIndexTick refreshes when the index finishes loading.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [path, text, anchorIndexTick, relationsCollapsed],
+  );
+  const graphNeighbors = useMemo(() => graphNeighborsForFile(path), [path]);
 
   // Popover state — explicit, opens only on Outline pill click. The
   // anchorEl is the pill DOM node; Radix Popover.Anchor positions to it.
@@ -364,6 +384,28 @@ export function MarkdownEditScreen({
       setConnectionsPopover({ section, anchorEl });
     },
     [],
+  );
+
+  // RelationsPanel's Manage button hands back just the section anchor (it
+  // doesn't track heading level/line), so resolve the full FocusedSectionContext
+  // the same way the old Outline pill did, then reuse the existing popover
+  // entry point. Write-back (add/disconnect/repoint) stays reachable.
+  const handleManageConnections = useCallback(
+    (sectionAnchor: string, anchorEl: HTMLElement) => {
+      const section = sectionContextForAnchor(text, path, sectionAnchor);
+      if (!section) return;
+      openConnectionsForSection(section, anchorEl);
+    },
+    [text, path, openConnectionsForSection],
+  );
+
+  // Open another file in the editor: reuses the same navigate callback the
+  // AnchorReferencesPopover and ConnectionsPopover already use.
+  const handleOpenFile = useCallback(
+    (p: string) => {
+      onNavigate?.(p);
+    },
+    [onNavigate],
   );
 
   // Close the popover when the active file changes — the prior file's
@@ -516,6 +558,52 @@ export function MarkdownEditScreen({
   const { frontmatterBlock: fmBlock, body: richBody } = wysiwyg
     ? splitRawFrontmatter(text)
     : { frontmatterBlock: "", body: "" };
+
+  // RelationsPanel's outline row click scrolls the active editor to that
+  // heading (mode-specific, since rich mode has no CM6 view to dispatch
+  // a scroll effect against).
+  function handleOutlineNavigate(heading: OutlineHeading, index: number) {
+    if (wysiwyg) {
+      scrollRichHeading(heading, index);
+      return;
+    }
+    if (!view) return;
+    const pos = view.state.doc.line(heading.line + 1).from;
+    view.dispatch({
+      selection: { anchor: pos },
+      effects: EditorView.scrollIntoView(pos, { y: "start" }),
+    });
+    view.focus();
+  }
+
+  const relationsPanel = (
+    <Box
+      className="editor-outline-pane"
+      style={{
+        width: 260,
+        minWidth: 260,
+        flexShrink: 0,
+        border: "1px solid var(--gray-5)",
+        borderRadius: 6,
+        overflow: "hidden",
+      }}
+    >
+      <RelationsPanel
+        text={text}
+        file={path}
+        counts={connectionCounts}
+        incoming={incoming}
+        outgoing={outgoing}
+        graphNeighbors={graphNeighbors}
+        onNavigate={handleOutlineNavigate}
+        onOpenFile={handleOpenFile}
+        onManageConnections={handleManageConnections}
+        collapsed={relationsCollapsed}
+        onToggleCollapsed={toggleRelationsCollapsed}
+      />
+    </Box>
+  );
+
   return (
     <Flex direction="column" height="100%" gap="2">
       <TierBanner path={path} />
@@ -571,45 +659,30 @@ export function MarkdownEditScreen({
         </Box>
       )}
       {wysiwyg ? (
-        <Box
-          flexGrow="1"
-          minHeight="0"
-          style={{
-            border: "1px solid var(--gray-5)",
-            borderRadius: 6,
-            overflow: "auto",
-          }}
-        >
-          <RichBodyEditor
-            key={`${path}:${remountNonce}`}
-            initialText={richBody}
-            onChange={(b) => handleChange(joinRawFrontmatter(fmBlock, b))}
-            filename={path.split("/").pop()}
-            componentSlug={componentSlug}
-            octokit={gh ?? undefined}
-          />
-        </Box>
-      ) : (
         <Flex flexGrow="1" minHeight="0" gap="2">
+          {relationsPanel}
           <Box
-            className="editor-outline-pane"
+            flexGrow="1"
+            minHeight="0"
             style={{
-              width: 200,
-              minWidth: 200,
-              flexShrink: 0,
               border: "1px solid var(--gray-5)",
               borderRadius: 6,
-              overflow: "hidden",
+              overflow: "auto",
             }}
           >
-            <Outline
-              text={text}
-              view={view}
-              file={path}
-              connectionCounts={connectionCounts}
-              onOpenConnectionsForSection={openConnectionsForSection}
+            <RichBodyEditor
+              key={`${path}:${remountNonce}`}
+              initialText={richBody}
+              onChange={(b) => handleChange(joinRawFrontmatter(fmBlock, b))}
+              filename={path.split("/").pop()}
+              componentSlug={componentSlug}
+              octokit={gh ?? undefined}
             />
           </Box>
+        </Flex>
+      ) : (
+        <Flex flexGrow="1" minHeight="0" gap="2">
+          {relationsPanel}
           <Box
             flexGrow="1"
             flexShrink="1"
@@ -698,12 +771,9 @@ export function MarkdownEditScreen({
             }),
           )}
           taxonomy={taxonomy}
-          onTextChange={(next) => {
-            if (!view) return;
-            view.dispatch({
-              changes: { from: 0, to: view.state.doc.length, insert: next },
-            });
-          }}
+          onTextChange={(next) =>
+            applyExternalTextChange(view, next, handleChange)
+          }
           onClose={() => setConnectionsPopover(null)}
           onNavigate={onNavigate}
         />
@@ -879,6 +949,28 @@ function firstH2Anchor(source: string): string | null {
   for (let i = 0; i < lines.length; i++) {
     const s = computeFocusedSection(source, i);
     if (s && s.level === 2) return s.anchor;
+  }
+  return null;
+}
+
+// Resolve a FocusedSectionContext for a given section anchor: the same
+// derivation the old Outline pill used (computeFocusedSection at the
+// heading's own line), just entered from an anchor string instead of a
+// heading line, since RelationsPanel's Manage button only carries the
+// anchor. Returns null when the anchor doesn't resolve to any section
+// (should not happen in practice: the anchor always comes from a heading
+// RelationsPanel itself rendered from this same text).
+function sectionContextForAnchor(
+  source: string,
+  filePath: string,
+  anchor: string,
+): FocusedSectionContext | null {
+  const lines = source.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const s = computeFocusedSection(source, i);
+    if (s && s.anchor === anchor) {
+      return { file: filePath, anchor: s.anchor, level: s.level, line: s.line };
+    }
   }
   return null;
 }

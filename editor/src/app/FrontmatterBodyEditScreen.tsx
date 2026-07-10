@@ -3,6 +3,7 @@ import {
   lazy,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -28,6 +29,18 @@ import { TierBanner } from "./TierBanner";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { RefArrayWidget } from "../form-engine/widgets/RefArrayWidget";
 import { TagInputWidget } from "../form-engine/widgets/TagInputWidget";
+import {
+  RelationsPanel,
+  readRelationsPanelCollapsed,
+  writeRelationsPanelCollapsed,
+} from "./RelationsPanel";
+import { scrollRichHeading } from "./richScroll";
+import {
+  countsBySection,
+  incomingForFile,
+  graphNeighborsForFile,
+} from "../lib/referenceIndex";
+import { loadAnchorIndex } from "../lib/anchorIndex";
 
 // Lazy-loaded so the Milkdown/ProseMirror bundle (the largest editor dep) splits
 // into an async chunk fetched only when the WYSIWYG flag is on — it stays out of
@@ -132,6 +145,63 @@ export function FrontmatterBodyEditScreen(props: Props) {
   const bodyRef = useRef(body);
   bodyRef.current = body;
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Tick whenever anchorIndex finishes loading; drives recomputation of the
+  // incoming-refs counts + snippets that feed the RelationsPanel. Mirrors
+  // MarkdownEditScreen's anchorIndexTick pattern.
+  const [anchorIndexTick, setAnchorIndexTick] = useState(0);
+  useEffect(() => {
+    void loadAnchorIndex(octokit)
+      .then(() => setAnchorIndexTick((t) => t + 1))
+      .catch(() => {
+        /* swallow (incoming counts just won't fire) */
+      });
+  }, [octokit, path]);
+
+  // RelationsPanel's collapsed state is owned here (not by the panel
+  // itself) so the expensive incoming/counts memos below can be gated to a
+  // no-op instead of recomputing on every keystroke while their DOM stays
+  // hidden. Seeded from the same localStorage key the toggle writes to.
+  const [relationsCollapsed, setRelationsCollapsed] = useState<boolean>(() =>
+    readRelationsPanelCollapsed(),
+  );
+  const toggleRelationsCollapsed = useCallback(() => {
+    setRelationsCollapsed((c) => {
+      const next = !c;
+      writeRelationsPanelCollapsed(next);
+      return next;
+    });
+  }, []);
+
+  // RelationsPanel data for the prose body this screen edits. This screen's
+  // outgoing refs live in the FORM (a11y_refs/motion_refs fields), not the
+  // body, so outgoing stays empty and Manage is a no-op here (PR A).
+  // Incoming/counts are skipped while collapsed; graphNeighbors is a baked
+  // path-keyed lookup and stays cheap enough to leave unconditional.
+  const incoming = useMemo(
+    () => (relationsCollapsed ? [] : incomingForFile(path, body)),
+    // anchorIndexTick refreshes when the index finishes loading.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [path, body, anchorIndexTick, relationsCollapsed],
+  );
+  const graphNeighbors = useMemo(() => graphNeighborsForFile(path), [path]);
+  const counts = useMemo(
+    () =>
+      relationsCollapsed
+        ? new Map<string, number>()
+        : countsBySection(path, body, 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [path, body, anchorIndexTick, relationsCollapsed],
+  );
+
+  // Open another file in the editor: reuses this screen's existing
+  // navigation prop, the same way MarkdownEditScreen's handleOpenFile does.
+  const handleOpenFile = useCallback(
+    (p: string) => {
+      props.onNavigate?.(p);
+    },
+    [props.onNavigate],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -318,6 +388,35 @@ export function FrontmatterBodyEditScreen(props: Props) {
       </Box>
     );
 
+  const relationsPanel = (
+    <Box
+      className="editor-outline-pane"
+      style={{
+        width: 260,
+        minWidth: 260,
+        flexShrink: 0,
+        border: "1px solid var(--gray-5)",
+        borderRadius: 6,
+        overflow: "hidden",
+      }}
+    >
+      <RelationsPanel
+        text={body}
+        file={path}
+        counts={counts}
+        incoming={incoming}
+        outgoing={[]}
+        graphNeighbors={graphNeighbors}
+        onNavigate={scrollRichHeading}
+        onOpenFile={handleOpenFile}
+        // onManageConnections omitted: this screen's refs are edited in the
+        // form, not the body; the manage flow arrives with a later slice.
+        collapsed={relationsCollapsed}
+        onToggleCollapsed={toggleRelationsCollapsed}
+      />
+    </Box>
+  );
+
   return (
     <Box>
       <TierBanner path={path} />
@@ -347,27 +446,32 @@ export function FrontmatterBodyEditScreen(props: Props) {
               }}
             >
               {shouldUseWysiwyg(path) ? (
-                <Suspense
-                  fallback={
-                    <Box p="3" role="status">
-                      <Text size="1" color="gray">
-                        Loading rich editor…
-                      </Text>
-                    </Box>
-                  }
-                >
-                  <RichBodyEditor
-                    key={path}
-                    initialText={body}
-                    onChange={(t) => {
-                      setBody(t);
-                      scheduleFlush(formData, t);
-                    }}
-                    filename={path.split("/").pop()}
-                    componentSlug={componentSlugFromPath(path)}
-                    octokit={octokit}
-                  />
-                </Suspense>
+                <Flex gap="2" height="100%">
+                  {relationsPanel}
+                  <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
+                    <Suspense
+                      fallback={
+                        <Box p="3" role="status">
+                          <Text size="1" color="gray">
+                            Loading rich editor…
+                          </Text>
+                        </Box>
+                      }
+                    >
+                      <RichBodyEditor
+                        key={path}
+                        initialText={body}
+                        onChange={(t) => {
+                          setBody(t);
+                          scheduleFlush(formData, t);
+                        }}
+                        filename={path.split("/").pop()}
+                        componentSlug={componentSlugFromPath(path)}
+                        octokit={octokit}
+                      />
+                    </Suspense>
+                  </Box>
+                </Flex>
               ) : (
                 <CodeMirrorEditor
                   key={path}
