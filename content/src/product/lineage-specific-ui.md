@@ -1,7 +1,10 @@
 ---
 title: "Lineage-specific UI"
 nav_order: 18
+relatedComponents: []
+wordsToAvoid: []
 ---
+
 # Lineage-specific UI
 
 Lineage views display the origin, transformation history, and downstream dependencies of data assets. The UI uses graph-based visualizations with nodes and edges. Copy in this context must be precise and unambiguous to support data governance workflows.

@@ -6,8 +6,14 @@ label: Catalog Object
 properties:
   - name
   - description
-  - { name: type, type: enum, example: "Dataset, Visualization, Data Process, Custom Item, Glossary Item, Data Product" }
-  - { name: documentation completion, type: number, example: "percentage (0–100) from 4 criteria: description, contact, glossary link, properties filled" }
+  - name: type
+    type: enum
+    example: Dataset, Visualization, Data Process, Custom Item, Glossary Item, Data Product
+    states: []
+  - name: documentation completion
+    type: number
+    example: "percentage (0–100) from 4 criteria: description, contact, glossary link, properties filled"
+    states: []
   - owner
   - contacts
   - last modified
@@ -25,4 +31,5 @@ apps:
   - studio
   - explorer
 ---
+
 Any indexed item. Types: Dataset, Field, Visualization, Data Process, Data Product, Glossary Item, Custom Item

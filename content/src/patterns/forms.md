@@ -6,7 +6,9 @@ nav_order: 14
 # Skipped: search, search-dropdown-menu (search has its own pattern), and
 # calendar (date-picker is narrower). Jeff: edit/correct/extend.
 relatedComponents: [text-input, input-date, checkbox-with-label, radio-button, toggle, search-filters, segmented-control]
+wordsToAvoid: []
 ---
+
 # Forms
 
 Forms collect or update user data. Consistent structure, clear labels, and helpful guidance reduce friction and prevent errors.
