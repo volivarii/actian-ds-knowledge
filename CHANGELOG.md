@@ -30,7 +30,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   (5-minute TTL), so the home screen, the coverage table, and the accessibility
   dashboard share one GitHub crawl instead of each running their own. Sidebar
   entry renamed Coverage → Home. Editor tooling only: no dist, contract, or
-  consumer-facing change. ([#395])
+  consumer-facing change. ([#397])
 - **Editor: relations panel polish (cursor-follow outline, guided empty states,
   and the source-mode frontmatter editor).** The outline now highlights the section
   the cursor sits in (source mode and the frontmatter screen's CodeMirror body),
@@ -260,7 +260,7 @@ history and pull-request record.
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
 [#394]: https://github.com/volivarii/actian-ds-knowledge/pull/394
-[#395]: https://github.com/volivarii/actian-ds-knowledge/pull/395
+[#397]: https://github.com/volivarii/actian-ds-knowledge/pull/397
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
 [#390]: https://github.com/volivarii/actian-ds-knowledge/pull/390
 [#389]: https://github.com/volivarii/actian-ds-knowledge/pull/389
