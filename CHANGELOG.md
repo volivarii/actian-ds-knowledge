@@ -18,6 +18,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Changed
+- **Editor: the sidebar speaks author language and separates its two
+  dimensions.** The repo-shaped section names are gone: "Content —
+  Writing/Patterns/Product" is now "Writing rules", "Pattern copy", and
+  "Product copy", and "App context — Apps/Entities/Patterns" is now "Apps",
+  "Entities", and "UX patterns" (which also disambiguates the two unrelated
+  "Patterns" groups: the words used in patterns vs the patterns themselves).
+  The tree is also grouped into its two ontological dimensions: **Design
+  system** (foundations, accessibility, writing rules, pattern and product
+  copy, components — what the system prescribes) and **The products** (apps,
+  entities, UX patterns — what the system serves), reflecting how app-context
+  sits in the knowledge graph as a bridged domain rather than more DS content.
+  Labels and grouping only; no routing or data change. ([#398])
+
 ### Added
 - **Editor: a front door.** The editor's landing surface is now a home screen
   instead of a bare dashboard: what this place is in one sentence (and that
@@ -261,6 +275,7 @@ history and pull-request record.
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
 [#394]: https://github.com/volivarii/actian-ds-knowledge/pull/394
 [#397]: https://github.com/volivarii/actian-ds-knowledge/pull/397
+[#398]: https://github.com/volivarii/actian-ds-knowledge/pull/398
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
 [#390]: https://github.com/volivarii/actian-ds-knowledge/pull/390
 [#389]: https://github.com/volivarii/actian-ds-knowledge/pull/389

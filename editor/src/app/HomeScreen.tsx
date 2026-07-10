@@ -135,9 +135,9 @@ export function HomeScreen({
         </Heading>
         <Text size="3" color="gray" as="p" mb="3">
           Components and their guidance, writing rules, foundations,
-          accessibility, and the product context around them. Change anything:
-          your edit becomes a pull request that is checked and reviewed before
-          it ships, so you cannot break anything.
+          accessibility, and the products they serve. Change anything: your edit
+          becomes a pull request that is checked and reviewed before it ships,
+          so you cannot break anything.
         </Text>
         <Flex gap="2" wrap="wrap">
           <Badge variant="soft" color="gray" size="2">

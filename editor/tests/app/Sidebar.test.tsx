@@ -186,7 +186,7 @@ test("Sidebar: clicking Home calls onSelect with null", async () => {
   assert.deepEqual(calls, [null]);
 });
 
-test("Sidebar: renders Content — Patterns/Product/Writing entries (after expand)", async () => {
+test("Sidebar: renders Pattern copy/Product copy/Writing rules entries (after expand)", async () => {
   render(
     wrap(
       <Sidebar
@@ -197,13 +197,13 @@ test("Sidebar: renders Content — Patterns/Product/Writing entries (after expan
       />,
     ),
   );
-  await waitFor(() => screen.getByText("Content — Patterns"));
-  assert.ok(screen.getByText("Content — Patterns"));
-  assert.ok(screen.getByText("Content — Product"));
-  assert.ok(screen.getByText("Content — Writing"));
-  toggleSection("Content — Patterns");
-  toggleSection("Content — Product");
-  toggleSection("Content — Writing");
+  await waitFor(() => screen.getByText("Pattern copy"));
+  assert.ok(screen.getByText("Pattern copy"));
+  assert.ok(screen.getByText("Product copy"));
+  assert.ok(screen.getByText("Writing rules"));
+  toggleSection("Pattern copy");
+  toggleSection("Product copy");
+  toggleSection("Writing rules");
   assert.ok(screen.getByText("Forms"));
   assert.ok(screen.getByText("Onboarding"));
   assert.ok(screen.getByText("Lineage Specific Ui"));
@@ -223,8 +223,8 @@ test("Sidebar: clicking content/src entry dispatches full path", async () => {
       />,
     ),
   );
-  await waitFor(() => screen.getByText("Content — Patterns"));
-  toggleSection("Content — Patterns");
+  await waitFor(() => screen.getByText("Pattern copy"));
+  toggleSection("Pattern copy");
   fireEvent.click(screen.getByText("Forms"));
   assert.deepEqual(calls, ["content/src/patterns/forms.md"]);
 });
@@ -250,9 +250,9 @@ test("Sidebar: all sections collapsed by default", async () => {
   for (const label of [
     "Foundations",
     "Accessibility",
-    "Content — Patterns",
-    "Content — Product",
-    "Content — Writing",
+    "Pattern copy",
+    "Product copy",
+    "Writing rules",
     "Components",
   ]) {
     const header = screen.getByText(label).closest('[role="button"]')!;
@@ -262,6 +262,65 @@ test("Sidebar: all sections collapsed by default", async () => {
       `${label} should be collapsed by default`,
     );
   }
+});
+
+test("Sidebar: two dimension groups — Design system, then The products", async () => {
+  const withAppContext = {
+    ...LISTINGS,
+    "app-context/src/apps": [{ name: "studio.md", type: "file" as const }],
+    "app-context/src/entities": [
+      { name: "data-process.md", type: "file" as const },
+    ],
+    "app-context/src/patterns": [
+      { name: "catalog-browse.md", type: "file" as const },
+    ],
+  };
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(withAppContext)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Design system"));
+  // The app-context sections live under "The products", AFTER the design
+  // system sections (Components is the DS group's last section). Use
+  // document order between the actual nodes — a missing node fails
+  // loudly here, unlike textContent.indexOf (-1 compares as "before").
+  const follows = (a: Element, b: Element) =>
+    (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  assert.ok(
+    follows(screen.getByText("Components"), screen.getByText("The products")),
+    "Components (design system) should precede The products group",
+  );
+  assert.ok(
+    follows(screen.getByText("The products"), screen.getByText("UX patterns")),
+    "UX patterns should sit inside The products group",
+  );
+});
+
+test("Sidebar: dimension headers hide when their dimension is empty", async () => {
+  // App-context only — every design-system listing 404s/empties out.
+  const appContextOnly = {
+    "app-context/src/apps": [{ name: "studio.md", type: "file" as const }],
+    "app-context/src/entities": [],
+    "app-context/src/patterns": [],
+  };
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(appContextOnly)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("The products"));
+  assert.equal(screen.queryByText("Design system"), null);
 });
 
 test("Sidebar: Foundations section toggles", async () => {
@@ -379,9 +438,9 @@ test("Sidebar: hides empty content/src groups (e.g. 404 dirs)", async () => {
     ),
   );
   await waitFor(() => screen.getByText("Foundations"));
-  assert.equal(screen.queryByText("Content — Patterns"), null);
-  assert.equal(screen.queryByText("Content — Product"), null);
-  assert.equal(screen.queryByText("Content — Writing"), null);
+  assert.equal(screen.queryByText("Pattern copy"), null);
+  assert.equal(screen.queryByText("Product copy"), null);
+  assert.equal(screen.queryByText("Writing rules"), null);
 });
 
 test("Sidebar: shows draft-dot for paths in pendingPaths (when expanded)", async () => {
@@ -464,8 +523,8 @@ test("Sidebar — renders + Add section button on each curatable group header", 
   );
   await waitFor(() => screen.getByText("Foundations"));
 
-  // Foundations, Accessibility, Content — Patterns, Content — Product,
-  // Content — Writing all have an "Add * section" button.
+  // Foundations, Accessibility, Pattern copy, Product copy,
+  // Writing rules all have an "Add * section" button.
   const addButtons = screen.queryAllByRole("button", {
     name: /add .* section/i,
   });

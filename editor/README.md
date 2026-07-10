@@ -2,7 +2,7 @@
 
 > **Zone: Tooling.** This is build machinery (the knowledge Editor app), not consumed substrate. Consumers never read this folder. See [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
 
-Schema-driven editor for the `actian-ds-knowledge` substrate. Authors edit the canonical files (tokens, foundations, components, accessibility, app-context, icon-groups) through forms + rich-text + live preview, and the editor packages each change as a Pull Request against `main`.
+Schema-driven editor for the `actian-ds-knowledge` substrate. Authors edit the canonical files (tokens, foundations, components, accessibility, app-context, icon-groups) through forms + rich-text + live preview, and the editor packages each change as a Pull Request against `main`. In the UI the app-context domain surfaces under **The products** (Apps / Entities / UX patterns), separate from the **Design system** sections.
 
 Built as a static SPA, deployed from this repo's own GitHub Pages. Zero recurring cost, no third-party hosting.
 

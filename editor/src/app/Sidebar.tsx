@@ -76,6 +76,40 @@ const SECTION_KEYS: ReadonlyArray<SectionKey> = [
   "appContextPatterns",
 ];
 
+// Author-language section labels (editing-experience direction: plain
+// words a designer recognizes, never repo-shaped names). The two
+// "patterns" groups are deliberately disambiguated: content/src/patterns
+// holds the WORDS used in UX patterns, app-context/src/patterns holds the
+// patterns themselves.
+const CONTENT_GROUP_LABEL: Record<"patterns" | "product" | "writing", string> =
+  {
+    patterns: "Pattern copy",
+    product: "Product copy",
+    writing: "Writing rules",
+  };
+
+const APP_CONTEXT_LABEL: Record<"apps" | "entities" | "patterns", string> = {
+  apps: "Apps",
+  entities: "Entities",
+  patterns: "UX patterns",
+};
+
+// Uppercase group label separating the sidebar's two dimensions.
+function DimensionHeader({ children }: { children: string }) {
+  return (
+    <Box px="3" pt="3" pb="1">
+      <Text
+        size="1"
+        color="gray"
+        weight="medium"
+        style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}
+      >
+        {children}
+      </Text>
+    </Box>
+  );
+}
+
 const SECTION_STORAGE_KEY = "sidebar.section.collapsed.v1";
 
 function defaultCollapsed(): Record<SectionKey, boolean> {
@@ -737,6 +771,23 @@ export function Sidebar({
         )}
       </Flex>
 
+      {/* Two dimensions, one tree: what the design system PRESCRIBES
+          (foundations, components, writing rules, accessibility) vs what
+          the products ARE (apps, entities, UX patterns — the app-context
+          domain). Group headers make the ontology visible without adding
+          a nav surface or route. Both headers hide when their dimension
+          has no sections, matching the per-section empty guards. */}
+      {[
+        entries.foundations,
+        entries.accessibility,
+        entries.patterns,
+        entries.product,
+        entries.writing,
+        entries.components,
+      ].some((e) => e.length > 0) && (
+        <DimensionHeader>Design system</DimensionHeader>
+      )}
+
       {entries.foundations.length > 0 && (
         <Box>
           {sectionHeader(
@@ -852,7 +903,7 @@ export function Sidebar({
       {(["patterns", "product", "writing"] as const).map((group) => {
         const items = entries[group];
         if (items.length === 0) return null;
-        const label = `Content — ${group[0]!.toUpperCase()}${group.slice(1)}`;
+        const label = CONTENT_GROUP_LABEL[group];
         const collapsed = sectionCollapsed[group];
         const listId = `list-${group}`;
         return (
@@ -876,47 +927,6 @@ export function Sidebar({
                       {renderRow({
                         path: `content/src/${group}/${path}`,
                         domain: group,
-                        leftHandle: null,
-                      })}
-                    </li>
-                  ))}
-                </ul>
-              </Box>
-            )}
-          </Box>
-        );
-      })}
-
-      {(
-        [
-          ["appContextApps", "apps"],
-          ["appContextEntities", "entities"],
-          ["appContextPatterns", "patterns"],
-        ] as const
-      ).map(([entriesKey, kind]) => {
-        const items = entries[entriesKey];
-        if (items.length === 0) return null;
-        const label = `App context — ${kind[0]!.toUpperCase()}${kind.slice(1)}`;
-        const listId = `list-appcontext-${kind}`;
-        const collapsed = sectionCollapsed[entriesKey];
-        return (
-          <Box key={entriesKey}>
-            {sectionHeader(entriesKey, label, items.length, listId, null)}
-            {!collapsed && (
-              <Box
-                id={listId}
-                role="group"
-                aria-labelledby={`sidebar-section-${entriesKey}-header`}
-              >
-                <ul
-                  role="list"
-                  style={{ listStyle: "none", padding: 0, margin: 0 }}
-                >
-                  {items.map((file) => (
-                    <li key={file}>
-                      {renderRow({
-                        path: `app-context/src/${kind}/${file}`,
-                        domain: entriesKey,
                         leftHandle: null,
                       })}
                     </li>
@@ -976,6 +986,56 @@ export function Sidebar({
           )}
         </Box>
       )}
+
+      {[
+        entries.appContextApps,
+        entries.appContextEntities,
+        entries.appContextPatterns,
+      ].some((e) => e.length > 0) && (
+        <DimensionHeader>The products</DimensionHeader>
+      )}
+
+      {(
+        [
+          ["appContextApps", "apps"],
+          ["appContextEntities", "entities"],
+          ["appContextPatterns", "patterns"],
+        ] as const
+      ).map(([entriesKey, kind]) => {
+        const items = entries[entriesKey];
+        if (items.length === 0) return null;
+        const label = APP_CONTEXT_LABEL[kind];
+        const listId = `list-appcontext-${kind}`;
+        const collapsed = sectionCollapsed[entriesKey];
+        return (
+          <Box key={entriesKey}>
+            {sectionHeader(entriesKey, label, items.length, listId, null)}
+            {!collapsed && (
+              <Box
+                id={listId}
+                role="group"
+                aria-labelledby={`sidebar-section-${entriesKey}-header`}
+              >
+                <ul
+                  role="list"
+                  style={{ listStyle: "none", padding: 0, margin: 0 }}
+                >
+                  {items.map((file) => (
+                    <li key={file}>
+                      {renderRow({
+                        path: `app-context/src/${kind}/${file}`,
+                        domain: entriesKey,
+                        leftHandle: null,
+                      })}
+                    </li>
+                  ))}
+                </ul>
+              </Box>
+            )}
+          </Box>
+        );
+      })}
+
       {addDialog && (
         <AddSectionDialog
           open
