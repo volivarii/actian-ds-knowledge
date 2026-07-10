@@ -42,9 +42,12 @@ function MilkdownBody({
   }, [componentSlug, octokit]);
 
   // The Milkdown listener is registered once at editor creation ([] deps),
-  // so it must read the CURRENT onChange through a ref: parents pass
-  // closures over changing state (e.g. the frontmatter block), and a
-  // mount-time capture silently re-joins stale state on later keystrokes.
+  // so it reads onChange through a ref rather than closing over it directly.
+  // The current parent (RichBodyEditor's handleChange below) is already
+  // referentially stable, so this is defense-in-depth, not a live guard:
+  // it protects a future caller that passes an unstable onChange (e.g. a
+  // fresh closure over changing state) from silently re-joining stale
+  // state on later keystrokes.
   const onChangeRef = React.useRef(onChange);
   React.useEffect(() => {
     onChangeRef.current = onChange;

@@ -24,6 +24,17 @@ export interface AnchorEntry {
   referencedBy: string[];
 }
 
+/** Strip fenced code blocks from `text`, preserving line count (each fence
+ *  collapses to the same number of blank lines it spanned) so callers that
+ *  rely on line-accurate offsets into the ORIGINAL text still line up.
+ *  Exported so snippetExtract.ts's paragraph splitter reuses the identical
+ *  regex instead of carrying its own copy. */
+export function stripFencedCode(text: string): string {
+  return text.replace(FENCED_CODE_RE, (m) =>
+    "\n".repeat(m.split("\n").length - 1),
+  );
+}
+
 export interface AnchorIndex {
   entries: Map<string, AnchorEntry>;
   scannedAt: number;
@@ -38,9 +49,7 @@ export function scanFileForAnchors(text: string): {
   defines: string[];
   references: string[];
 } {
-  const stripped = text.replace(FENCED_CODE_RE, (m) =>
-    "\n".repeat(m.split("\n").length - 1),
-  );
+  const stripped = stripFencedCode(text);
   const defines: string[] = [];
   const references: string[] = [];
 
@@ -116,7 +125,11 @@ export async function loadAnchorIndex(
         try {
           const text =
             cartOverrides.get(path) ?? (await getTextFile(octokit, path));
-          texts.set(path, text);
+          // Only .md text is retained: JSON referrers still count as
+          // incoming (their defines/references are scanned below) and
+          // render as path-only rows, but their raw JSON never yields a
+          // readable snippet, so caching it just holds ~1MB dead weight.
+          if (path.endsWith(".md")) texts.set(path, text);
           const { defines, references } = scanFileForAnchors(text);
           for (const slug of defines) {
             const entry = ensureEntry(entries, slug);

@@ -2,7 +2,8 @@
 // verified research (Matuschak), a backlink is useful when it shows the
 // referencing PARAGRAPH, not just the source title.
 
-const FENCED_CODE_RE = /(?:```|~~~)[\s\S]*?(?:```|~~~)/g;
+import { stripFencedCode } from "./anchorIndex";
+
 const MAX_SNIPPET = 240;
 
 function escapeRe(s: string): string {
@@ -12,9 +13,7 @@ function escapeRe(s: string): string {
 /** All blank-line-delimited paragraphs of `text` (fenced code stripped),
  *  each with its raw block text preserved for matching. */
 function paragraphs(text: string): string[] {
-  const stripped = text.replace(FENCED_CODE_RE, (m) =>
-    "\n".repeat(m.split("\n").length - 1),
-  );
+  const stripped = stripFencedCode(text);
   return stripped
     .split(/\n\s*\n/)
     .map((p) => p.trim())
