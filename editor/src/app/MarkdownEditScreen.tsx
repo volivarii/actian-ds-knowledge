@@ -325,7 +325,7 @@ export function MarkdownEditScreen({
   // Pill displays the SUM so definition-only files (no frontmatter
   // outgoing, just incoming refs from consumers) still surface a count.
   const connectionCounts = useMemo(() => {
-    return countsBySection(text, outgoing.length);
+    return countsBySection(path, text, outgoing.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, outgoing, anchorIndexTick]);
 

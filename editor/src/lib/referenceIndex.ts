@@ -3,7 +3,6 @@
 // graph-side typed neighbors (baked at editor build; label as such in UI).
 import {
   getCachedText,
-  findDefinitions,
   findReferences,
   scanFileForAnchors,
 } from "./anchorIndex";
@@ -54,6 +53,7 @@ export function graphNeighborsForFile(path: string): Neighbor[] {
  *  Behavior identical to the inline memo this hoists out of
  *  MarkdownEditScreen; its tests pin the parity. */
 export function countsBySection(
+  path: string,
   text: string,
   outgoingCount: number,
 ): Map<string, number> {
@@ -66,14 +66,12 @@ export function countsBySection(
     if (!s || seenAnchors.has(s.anchor)) continue;
     seenAnchors.add(s.anchor);
     if (s.level === 2 && firstH2Anchor === null) firstH2Anchor = s.anchor;
-    // A path that both defines this anchor and appears in its referencedBy
-    // list (e.g. a self-link from within the same section) is not an
-    // incoming connection from another file, so it is excluded here, the
-    // same self-exclusion incomingForFile applies via `fromPath === path`.
-    const definers = new Set(findDefinitions(s.anchor));
-    const incoming = findReferences(s.anchor).filter(
-      (p) => !definers.has(p),
-    ).length;
+    // Excludes only this file's own references to the anchor (e.g. a
+    // self-link from within the same section), matching incomingForFile's
+    // `fromPath === path` self-exclusion. A different file that also
+    // defines the same globally-keyed slug (a co-definer) still counts as
+    // a genuine incoming reference.
+    const incoming = findReferences(s.anchor).filter((p) => p !== path).length;
     if (incoming > 0) counts.set(s.anchor, incoming);
   }
   if (firstH2Anchor && outgoingCount > 0) {

@@ -1,10 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setCachedIndexForTesting } from "../../src/lib/anchorIndex";
-import {
-  incomingForFile,
-  countsBySection,
-} from "../../src/lib/referenceIndex";
+import { incomingForFile, countsBySection } from "../../src/lib/referenceIndex";
 
 const THIS_PATH = "foundations/src/tokens.md";
 const THIS_TEXT = "## Tokens {#token-basics}\n\nBody.\n";
@@ -50,14 +47,39 @@ test("incomingForFile: empty when index not loaded", () => {
 
 test("countsBySection: incoming count lands on the defining section anchor", () => {
   seedIndex();
-  const counts = countsBySection(THIS_TEXT, 0);
+  const counts = countsBySection(THIS_PATH, THIS_TEXT, 0);
   assert.equal(counts.get("token-basics"), 1);
   setCachedIndexForTesting(null);
 });
 
 test("countsBySection: outgoing count attaches to the first H2 anchor", () => {
   seedIndex();
-  const counts = countsBySection(THIS_TEXT, 4);
+  const counts = countsBySection(THIS_PATH, THIS_TEXT, 4);
   assert.equal(counts.get("token-basics"), 1 + 4);
+  setCachedIndexForTesting(null);
+});
+
+test("countsBySection: a co-definer of the same slug still counts as incoming", () => {
+  setCachedIndexForTesting({
+    entries: new Map([
+      [
+        "token-basics",
+        {
+          slug: "token-basics",
+          definedIn: ["foundations/src/tokens.md", "foundations/src/other.md"],
+          referencedBy: ["foundations/src/other.md"],
+        },
+      ],
+    ]),
+    scannedAt: 0,
+    scannedPaths: [],
+    texts: new Map(),
+  });
+  const counts = countsBySection(
+    "foundations/src/tokens.md",
+    "## Tokens {#token-basics}\n\nBody.\n",
+    0,
+  );
+  assert.equal(counts.get("token-basics"), 1);
   setCachedIndexForTesting(null);
 });
