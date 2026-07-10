@@ -71,13 +71,19 @@ export function insertReferenceLink(
   const linkType = state.schema.marks.link;
   if (!linkType) return; // defensive: commonmark preset always registers it
   const mark = linkType.create({ href: target.href });
-  view.dispatch(
-    state.tr.replaceWith(
-      range.from,
-      range.to,
-      state.schema.text(target.label, [mark]),
-    ),
+  const tr = state.tr.replaceWith(
+    range.from,
+    range.to,
+    state.schema.text(target.label, [mark]),
   );
+  // The commonmark link mark is inclusive by default, so leaving storedMarks
+  // untouched (null) makes the NEXT typed character resolve its marks from
+  // the surrounding doc and get absorbed into the link (e.g. typing "x"
+  // right after "[Button](button)" would yield "[Buttonx](button)"). Set an
+  // EMPTY stored-marks array (not removeStoredMark, which is a no-op here
+  // since storedMarks is null) so the next keystroke stays OUTSIDE the link.
+  tr.setStoredMarks([]);
+  view.dispatch(tr);
   view.focus();
 }
 
