@@ -90,7 +90,7 @@ test("HomeScreen: hero, honest counts, and the needs-attention list ranked usage
 
   // Coverage-derived copy arrives after the fake fetch resolves.
   await waitFor(() =>
-    screen.getByText(/1 component still needs usage guidance/i),
+    screen.getByText(/1 started component still lacks usage guidance/i),
   );
 
   // Tabs (usage not-started) outranks Button (only behavior/tokens missing).
@@ -132,10 +132,10 @@ domains:
     ),
   );
   await waitFor(() =>
-    screen.getByText(/Every component's usage guidance is underway/i),
+    screen.getByText(/Every started component's usage guidance is underway/i),
   );
   screen.getByText(/Nothing is missing/i);
-  assert.equal(screen.queryByText(/0 components still need/i), null);
+  assert.equal(screen.queryByText(/0 started components/i), null);
 });
 
 test("HomeScreen: Find a component opens the palette callback", async () => {
@@ -170,6 +170,22 @@ test("HomeScreen: how-it-works discloses the three-step loop", async () => {
   screen.getByText(/The system does the rest/i);
   fireEvent.click(screen.getByRole("button", { name: /Hide the steps/i }));
   assert.equal(screen.queryByText(/A pull request opens/i), null);
+});
+
+test("HomeScreen: one h1, sections as h2 — a navigable heading outline", () => {
+  const { container } = render(
+    wrap(
+      <HomeScreen
+        octokit={fakeGh({ dirs: DIRS, files: FILES })}
+        onOpenFile={() => {}}
+      />,
+    ),
+  );
+  assert.equal(container.querySelectorAll("h1").length, 1);
+  const h2s = Array.from(container.querySelectorAll("h2")).map(
+    (el) => el.textContent,
+  );
+  assert.deepEqual(h2s, ["Start here", "Needs attention", "Explore the data"]);
 });
 
 test("HomeScreen: explore section carries the three data tabs", async () => {

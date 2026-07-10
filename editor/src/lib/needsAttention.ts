@@ -11,14 +11,14 @@
 
 import { DOMAINS, type CoverageRow, type Domain } from "./coverageLoader";
 
-/** Priority band — the single source of truth for both ranking AND the
- *  action label shown on the row (keeps the two from drifting apart). */
+/** Priority band. Rides each AttentionItem so UI copy keyed by it (an
+ *  exhaustive Record<AttentionBand, …> — see HomeScreen.BAND_ACTION_LABEL)
+ *  stays tied to the same classification that produced the ordering. */
 export type AttentionBand = 0 | 1 | 2;
 
 export interface AttentionItem {
   slug: string;
   component: string;
-  origin: CoverageRow["origin"];
   band: AttentionBand;
   /** Domains with status "not-started", in canonical DOMAINS order. */
   missing: Domain[];
@@ -26,9 +26,13 @@ export interface AttentionItem {
   target: string;
 }
 
-/** Rows whose usage guidance is not started, regardless of origin. */
-export function usageGapCount(rows: CoverageRow[]): number {
-  return rows.filter((r) => r.domains.usage.status === "not-started").length;
+/** Authored components (someone started them) whose usage guidance is not
+ *  started — the band-0 set, so the front door's headline number matches
+ *  the top of the needs-attention list it points at. */
+export function authoredUsageGapCount(rows: CoverageRow[]): number {
+  return rows.filter(
+    (r) => r.origin === "authored" && r.domains.usage.status === "not-started",
+  ).length;
 }
 
 /** Rows with at least one not-started domain — the needs-attention total,
@@ -49,9 +53,11 @@ function band(row: CoverageRow, missing: Domain[]): AttentionBand {
 
 export function topGaps(rows: CoverageRow[], limit: number): AttentionItem[] {
   return rows
-    .map((row) => ({ row, missing: missingDomains(row) }))
+    .map((row) => {
+      const missing = missingDomains(row);
+      return { row, missing, band: band(row, missing) };
+    })
     .filter(({ missing }) => missing.length > 0)
-    .map(({ row, missing }) => ({ row, missing, band: band(row, missing) }))
     .sort((a, b) => {
       if (a.band !== b.band) return a.band - b.band;
       return a.row.slug.localeCompare(b.row.slug);
@@ -60,7 +66,6 @@ export function topGaps(rows: CoverageRow[], limit: number): AttentionItem[] {
     .map(({ row, missing, band }) => ({
       slug: row.slug,
       component: row.component,
-      origin: row.origin,
       band,
       missing,
       target: `workspace/${row.slug}`,

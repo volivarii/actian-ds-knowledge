@@ -113,6 +113,9 @@ export function EditorShell({
 
   // Owned here (not in HomeScreen) so the chosen Explore tab survives
   // navigating into a file and back — HomeScreen unmounts on every open.
+  // Rule of thumb: navigation context (which data view) persists at this
+  // level; transient help state (the how-it-works disclosure) deliberately
+  // stays local to HomeScreen and resets.
   const [exploreTab, setExploreTab] = useState<ExploreTab>("coverage");
 
   const [pendingPaths, setPendingPaths] = useState<Set<string>>(() =>

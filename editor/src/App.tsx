@@ -33,6 +33,7 @@ import {
 import { createOctokit } from "./core/octokit";
 import { loadComponentSlugs } from "./lib/componentSlugs";
 import { loadAnchorIndex } from "./lib/anchorIndex";
+import { DOMAINS, DOMAIN_LABEL, type Domain } from "./lib/workspaceState";
 import {
   bootstrap as bootstrapAuth,
   getSession,
@@ -40,17 +41,6 @@ import {
   signInWithPAT,
   subscribe,
 } from "./auth";
-
-const DOMAINS = ["content", "usage", "design", "behavior", "tokens"] as const;
-type Domain = (typeof DOMAINS)[number];
-
-const DOMAIN_LABEL: Record<Domain, string> = {
-  content: "Content",
-  usage: "Usage",
-  design: "Design",
-  behavior: "Behavior",
-  tokens: "Tokens",
-};
 
 /** Pull `<slug>` from `workspace/<slug>` or `components/src/<slug>/<anything>`. */
 function activeComponentSlug(path: string | null): string | null {
@@ -293,6 +283,7 @@ export default function App() {
           ) : (
             <EditorShell
               onOpenSettings={() => setSettingsOpen(true)}
+              octokit={headerOctokit ?? undefined}
               activePath={activePath}
               setActivePath={setActivePath}
               onOpenStaging={() => setStagingOpen(true)}

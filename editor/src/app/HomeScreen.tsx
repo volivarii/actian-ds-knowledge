@@ -33,9 +33,9 @@ import {
   type CoverageRow,
 } from "../lib/coverageLoader";
 import {
+  authoredUsageGapCount,
   gapCount,
   topGaps,
-  usageGapCount,
   type AttentionBand,
 } from "../lib/needsAttention";
 import { DOMAIN_LABEL } from "../lib/workspaceState";
@@ -111,7 +111,7 @@ export function HomeScreen({
         ? {
             counts: summarize(rows),
             gaps: topGaps(rows, GAP_LIST_LIMIT),
-            usageGaps: usageGapCount(rows),
+            usageGaps: authoredUsageGapCount(rows),
             totalGaps: gapCount(rows),
           }
         : { counts: null, gaps: [], usageGaps: null, totalGaps: 0 },
@@ -130,7 +130,7 @@ export function HomeScreen({
     <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
       {/* ── Hero ───────────────────────────────────────────────────────── */}
       <Box mb="5" style={{ maxWidth: 680 }}>
-        <Heading size="7" mb="2">
+        <Heading as="h1" size="7" mb="2">
           Everything the design system knows, in one place you can edit.
         </Heading>
         <Text size="3" color="gray" as="p" mb="3">
@@ -159,19 +159,21 @@ export function HomeScreen({
       </Box>
 
       {/* ── Start here ─────────────────────────────────────────────────── */}
-      <Heading size="4" mb="3">
+      <Heading as="h2" size="4" mb="3">
         Start here
       </Heading>
       <Flex gap="3" mb="5" wrap="wrap">
         <Card style={{ flex: "1 1 260px" }}>
           <Flex direction="column" gap="2" height="100%">
-            <Heading size="3">Write missing guidance</Heading>
+            <Heading as="h3" size="3">
+              Write missing guidance
+            </Heading>
             <Text size="2" color="gray" style={{ flexGrow: 1 }}>
               {usageGaps == null
                 ? "Some components still need usage guidance. It is the most valuable thing to write."
                 : usageGaps === 0
-                  ? "Every component's usage guidance is underway. See below for anything else that needs a hand."
-                  : `${usageGaps} ${usageGaps === 1 ? "component still needs" : "components still need"} usage guidance. It is the most valuable thing to write.`}
+                  ? "Every started component's usage guidance is underway. See below for anything else that needs a hand."
+                  : `${usageGaps} started ${usageGaps === 1 ? "component still lacks" : "components still lack"} usage guidance. It is the most valuable thing to write.`}
             </Text>
             <Box>
               <Button variant="solid" onClick={scrollToNeedsAttention}>
@@ -182,7 +184,9 @@ export function HomeScreen({
         </Card>
         <Card style={{ flex: "1 1 260px" }}>
           <Flex direction="column" gap="2" height="100%">
-            <Heading size="3">Improve a component</Heading>
+            <Heading as="h3" size="3">
+              Improve a component
+            </Heading>
             <Text size="2" color="gray" style={{ flexGrow: 1 }}>
               Jump straight to any component and edit its guidance, words, or
               metadata.
@@ -200,7 +204,9 @@ export function HomeScreen({
         </Card>
         <Card style={{ flex: "1 1 260px" }}>
           <Flex direction="column" gap="2" height="100%">
-            <Heading size="3">How your edit ships</Heading>
+            <Heading as="h3" size="3">
+              How your edit ships
+            </Heading>
             <Text size="2" color="gray" style={{ flexGrow: 1 }}>
               See what happens between pressing Submit and your change going
               live.
@@ -259,7 +265,7 @@ export function HomeScreen({
 
       {/* ── Needs attention ────────────────────────────────────────────── */}
       <Box ref={needsAttentionRef} mb="5">
-        <Heading size="4" mb="1">
+        <Heading as="h2" size="4" mb="1">
           Needs attention
         </Heading>
         <Text size="2" color="gray" as="p" mb="3">
@@ -325,7 +331,7 @@ export function HomeScreen({
       </Box>
 
       {/* ── Explore the data (the absorbed landing tabs) ───────────────── */}
-      <Heading size="4" mb="1">
+      <Heading as="h2" size="4" mb="1">
         Explore the data
       </Heading>
       <Text size="2" color="gray" as="p" mb="3">
