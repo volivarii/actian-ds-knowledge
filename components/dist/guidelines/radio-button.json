@@ -14,7 +14,7 @@
     "content": {
       "status": "approved",
       "owner": "content-team",
-      "markdown": "# Radio button\n\nRadio buttons let users select exactly one option from a group. Use them when options are mutually exclusive and all choices should be visible at once.\n\n***\n\n## When to use\n\n- When users must choose exactly one option from a small set (2-6 options).\n- When the options are mutually exclusive.\n- When all options should be visible without interaction.\n- For larger or dynamic option sets, use a [dropdown select](dropdown-select) instead.\n\n## Style\n\n- Write labels as short noun phrases or adjectives, not full sentences.\n- Keep labels parallel in structure across the group.\n- Always include a group label that describes what is being selected.\n- Avoid labels like \"Option 1\" or \"Other\" without further context.\n\n## Behavior\n\n- One option in the group should be selected by default when a choice is required.\n- If no default is appropriate, leave all options unselected and require an explicit choice.\n- Clicking either the button or the label selects the option.\n\n## Do / Don't\n\n| Do | Don't |\n|---|---|\n| Daily / Weekly / Monthly | Every day / Once per week / Once per month |\n| Administrator / Editor / Viewer | The user is an administrator |\n| Select one | Choose from the following options below |",
+      "markdown": "# Radio button\n\nRadio buttons let users select exactly one option from a group. Use them when options are mutually exclusive and all choices should be visible at once.\n\n***\n\n## When to use\n\n* When users must choose exactly one option from a small set (2-6 options).\n\n* When the options are mutually exclusive.\n\n* When all options should be visible without interaction.\n\n* For larger or dynamic option sets, use a [dropdown select](dropdown-select) instead.\n\n## Style\n\n* Write labels as short noun phrases or adjectives, not full sentences.\n\n* Keep labels parallel in structure across the group.\n\n* Always include a group label that describes what is being selected.\n\n* Avoid labels like \"Option 1\" or \"Other\" without further context.\n\n## Behavior\n\n* One option in the group should be selected by default when a choice is required.\n\n* If no default is appropriate, leave all options unselected and require an explicit choice.\n\n* Clicking either the button or the label selects the option.\n\n## Do / Don't\n\n| Do                              | Don't                                      |\n| ------------------------------- | ------------------------------------------ |\n| Daily / Weekly / Monthly        | Every day / Once per week / Once per month |\n| Administrator / Editor / Viewer | The user is an administrator               |\n| Select one                      | Choose from the following options below    |",
       "sections": [
         {
           "heading": "",
@@ -608,5 +608,5 @@
       "status": "not-started"
     }
   },
-  "updated_at": "2026-06-25T12:05:17-07:00"
+  "updated_at": "2026-07-09T19:34:09+02:00"
 }

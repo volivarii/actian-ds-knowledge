@@ -585,6 +585,8 @@ export function MarkdownEditScreen({
             initialText={richBody}
             onChange={(b) => handleChange(joinRawFrontmatter(fmBlock, b))}
             filename={path.split("/").pop()}
+            componentSlug={componentSlug}
+            octokit={gh ?? undefined}
           />
         </Box>
       ) : (

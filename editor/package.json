@@ -12,6 +12,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "baseline:wysiwyg": "node --import tsx scripts/baseline-wysiwyg.ts",
+    "pregen:safe-paths": "test -d ../node_modules/marked || npm --prefix .. install --no-audit --no-fund",
+    "gen:safe-paths": "tsx scripts/gen-wysiwyg-safe-paths.ts",
     "pretest": "test -d ../node_modules/yaml || npm --prefix .. install --no-audit --no-fund",
     "test": "node --test --import tsx tests/**/*.test.ts tests/**/*.test.tsx"
   },
