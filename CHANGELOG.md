@@ -18,6 +18,16 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Added
+- **Editor: a live freshness chip.** The header now shows the knowledge version
+  and when the substrate last changed ("v0.34.83 · updated 3 h ago"), fetched
+  live from main (version from `package.json`, date from its last CI bump
+  commit) rather than baked at build time, since the editor SPA only redeploys
+  on editor changes. The chip stays silent rather than guessing when the probes
+  fail, and it replaces the hero's static "updated at every merge" badge with a
+  claim that proves itself. Answers the direction's "what's up to date"
+  question (flow 4). ([#399])
+
 ### Changed
 - **Editor: the sidebar speaks author language and separates its two
   dimensions.** The repo-shaped section names are gone: "Content —
@@ -276,6 +286,7 @@ history and pull-request record.
 [#394]: https://github.com/volivarii/actian-ds-knowledge/pull/394
 [#397]: https://github.com/volivarii/actian-ds-knowledge/pull/397
 [#398]: https://github.com/volivarii/actian-ds-knowledge/pull/398
+[#399]: https://github.com/volivarii/actian-ds-knowledge/pull/399
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
 [#390]: https://github.com/volivarii/actian-ds-knowledge/pull/390
 [#389]: https://github.com/volivarii/actian-ds-knowledge/pull/389
