@@ -938,7 +938,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-29T22:22:59+02:00"
+      "updated_at": "2026-07-09T19:34:09+02:00"
     },
     "card": {
       "_schema_version": 1,
@@ -2924,7 +2924,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-25T13:12:15-07:00"
+      "updated_at": "2026-07-09T19:34:09+02:00"
     },
     "combo-box": {
       "_schema_version": 1,
@@ -4702,7 +4702,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-29T22:22:59+02:00"
+      "updated_at": "2026-07-09T19:34:09+02:00"
     },
     "link": {
       "_schema_version": 1,
@@ -5950,7 +5950,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:42:11+02:00"
+      "updated_at": "2026-07-09T19:34:09+02:00"
     },
     "popover": {
       "_schema_version": 1,
@@ -6791,7 +6791,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-25T12:05:17-07:00"
+      "updated_at": "2026-07-09T19:34:09+02:00"
     },
     "rich-text": {
       "_schema_version": 1,
@@ -6875,7 +6875,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-25T13:12:15-07:00"
+      "updated_at": "2026-07-09T19:34:09+02:00"
     },
     "scroll-bar": {
       "_schema_version": 1,
@@ -6940,7 +6940,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-25T13:12:15-07:00"
+      "updated_at": "2026-07-09T19:34:09+02:00"
     },
     "search": {
       "_schema_version": 1,
@@ -7831,7 +7831,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-25T13:12:15-07:00"
+      "updated_at": "2026-07-09T19:34:09+02:00"
     },
     "segmented-control": {
       "_schema_version": 1,
@@ -8366,7 +8366,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-25T13:12:15-07:00"
+      "updated_at": "2026-07-09T19:34:09+02:00"
     },
     "side-nav": {
       "_schema_version": 1,
@@ -11083,7 +11083,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-29T22:22:59+02:00"
+      "updated_at": "2026-07-09T19:34:09+02:00"
     },
     "tooltip": {
       "_schema_version": 1,
