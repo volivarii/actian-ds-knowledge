@@ -59,6 +59,62 @@ test("countsBySection: outgoing count attaches to the first H2 anchor", () => {
   setCachedIndexForTesting(null);
 });
 
+test("incomingForFile + countsBySection: a DERIVED (no explicit {#anchor}) section slug still resolves incoming references", () => {
+  const path = "foundations/src/usage-guide.md";
+  // "## Usage" has no explicit {#usage} marker; the slug is derived.
+  const text = "## Usage\n\nBody.\n";
+  const referrer = "content/src/patterns/forms.md";
+  setCachedIndexForTesting({
+    entries: new Map([
+      ["usage", { slug: "usage", definedIn: [], referencedBy: [referrer] }],
+    ]),
+    scannedAt: 0,
+    scannedPaths: [path, referrer],
+    texts: new Map([
+      [
+        referrer,
+        "See [usage guidance](../foundations/usage-guide#usage) for details.",
+      ],
+    ]),
+  });
+
+  const incoming = incomingForFile(path, text);
+  assert.equal(incoming.length, 1);
+  assert.equal(incoming[0]!.fromPath, referrer);
+  assert.equal(incoming[0]!.slug, "usage");
+  assert.ok(incoming[0]!.snippet.includes("usage guidance"));
+
+  const counts = countsBySection(path, text, 0);
+  assert.equal(counts.get("usage"), 1);
+  setCachedIndexForTesting(null);
+});
+
+test('incomingForFile: a JSON referrer with no cached text (FIX 5: only .md text is cached) degrades to snippet: ""', () => {
+  setCachedIndexForTesting({
+    entries: new Map([
+      [
+        "token-basics",
+        {
+          slug: "token-basics",
+          definedIn: [THIS_PATH],
+          referencedBy: ["components/dist/guidelines/button.json"],
+        },
+      ],
+    ]),
+    scannedAt: 0,
+    scannedPaths: [THIS_PATH, "components/dist/guidelines/button.json"],
+    // Only the .md path's text is cached: mirrors loadAnchorIndex's
+    // texts.set gate (JSON substrate files still count as incoming but
+    // never yield a readable snippet).
+    texts: new Map([[THIS_PATH, THIS_TEXT]]),
+  });
+  const incoming = incomingForFile(THIS_PATH, THIS_TEXT);
+  assert.equal(incoming.length, 1);
+  assert.equal(incoming[0]!.fromPath, "components/dist/guidelines/button.json");
+  assert.equal(incoming[0]!.snippet, "");
+  setCachedIndexForTesting(null);
+});
+
 test("countsBySection: a co-definer of the same slug still counts as incoming", () => {
   setCachedIndexForTesting({
     entries: new Map([

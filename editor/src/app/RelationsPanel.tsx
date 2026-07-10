@@ -6,10 +6,14 @@
 // the frontmatter-form body view.
 import React, { useMemo, useState } from "react";
 import { Badge, Box, Button, Flex, Text } from "@radix-ui/themes";
-import { scanHeadings, type Heading } from "../lib/headingScan";
-import type { IncomingRef, Neighbor } from "../lib/referenceIndex";
+import type { Heading } from "../lib/headingScan";
+import {
+  sectionAnchors,
+  type IncomingRef,
+  type Neighbor,
+} from "../lib/referenceIndex";
 import type { OutgoingConnection } from "../substrate/refGraph";
-import { computeFocusedSection } from "./SectionFocusTracker";
+import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
 
 export interface RelationsPanelProps {
   text: string;
@@ -19,9 +23,11 @@ export interface RelationsPanelProps {
   incoming: IncomingRef[];
   outgoing: OutgoingConnection[];
   graphNeighbors: Neighbor[];
-  /** Scroll the editor to this heading. Mode-specific: CM6 line scroll in
-   *  source mode, DOM heading scroll in rich mode. */
-  onNavigate: (heading: Heading) => void;
+  /** Scroll the editor to this heading, at its index among the outline's
+   *  H1-H3 headings (index-based so duplicate heading text and inline
+   *  markdown in a heading don't break navigation). Mode-specific: CM6 line
+   *  scroll in source mode, DOM heading scroll (by index) in rich mode. */
+  onNavigate: (heading: Heading, index: number) => void;
   /** Open a file in the editor (incoming/graph row click-through). */
   onOpenFile: (path: string) => void;
   /** Open the connections manager (existing ConnectionsPopover flow) for
@@ -30,28 +36,36 @@ export interface RelationsPanelProps {
    *  frontmatter-form body view) omits it and the Manage button does not
    *  render, rather than rendering enabled with a no-op click. */
   onManageConnections?: (sectionAnchor: string, anchorEl: HTMLElement) => void;
+  /** Collapsed state is owned by the parent screen (MarkdownEditScreen /
+   *  FrontmatterBodyEditScreen) so it can gate the expensive incoming/counts
+   *  props (`collapsed ? [] : incomingForFile(...)`) rather than compute
+   *  them every keystroke only to hide the DOM that would show them. */
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }
 
 const COLLAPSE_STORAGE_KEY = "relationsPanelCollapsed";
 
-/** Anchor slug for a heading, resolved through the same section walker the
- *  counts use, so outline pills and scoping agree with countsBySection.
- *  H1 headings (and any heading preceding the first H2/H3) resolve to
- *  null: SectionFocusTracker only tracks H2/H3 sections. */
-function anchorForHeading(text: string, h: Heading): string | null {
-  const s = computeFocusedSection(text, h.line);
-  return s?.anchor ?? null;
+/** Read the persisted collapsed preference. Owned here (not by the panel's
+ *  own state) so the parents that now own `collapsed` can seed their
+ *  initial state from the same key the toggle writes to. */
+export function readRelationsPanelCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSE_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
-/** First heading in document order whose anchor is non-null, i.e. the
- *  first H2/H3. Used as the Manage-connections fallback so an H1-first
- *  document does not silently no-op on `headings[0]` resolving to null. */
-function firstScopableAnchor(text: string, headings: Heading[]): string | null {
-  for (const h of headings) {
-    const anchor = anchorForHeading(text, h);
-    if (anchor !== null) return anchor;
+/** Persist the collapsed preference. Failures (e.g. private-mode storage)
+ *  are swallowed: the caller's in-memory state still toggles for the
+ *  session. */
+export function writeRelationsPanelCollapsed(collapsed: boolean): void {
+  try {
+    localStorage.setItem(COLLAPSE_STORAGE_KEY, collapsed ? "1" : "0");
+  } catch {
+    /* storage unavailable: state still toggles for the session */
   }
-  return null;
 }
 
 /** Wraps a click-equivalent action into a keydown handler so a clickable
@@ -67,26 +81,12 @@ function onActivateKey(action: () => void) {
 }
 
 export function RelationsPanel(props: RelationsPanelProps) {
-  const headings = useMemo(() => scanHeadings(props.text), [props.text]);
+  const { collapsed, onToggleCollapsed } = props;
+  // One scanHeadings(text) pass (FIX 1): each entry carries its own
+  // resolved anchor, so neither the outline rows nor the Manage fallback
+  // re-run computeFocusedSection per heading per render.
+  const entries = useMemo(() => sectionAnchors(props.text), [props.text]);
   const [scopedAnchor, setScopedAnchor] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(COLLAPSE_STORAGE_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
-
-  const toggleCollapsed = () => {
-    setCollapsed((c) => {
-      try {
-        localStorage.setItem(COLLAPSE_STORAGE_KEY, c ? "0" : "1");
-      } catch {
-        /* storage unavailable: state still toggles for the session */
-      }
-      return !c;
-    });
-  };
 
   const visibleIncoming = scopedAnchor
     ? props.incoming.filter((r) => r.slug === scopedAnchor)
@@ -107,7 +107,7 @@ export function RelationsPanel(props: RelationsPanelProps) {
           size="1"
           variant="ghost"
           aria-label="Toggle relations panel"
-          onClick={toggleCollapsed}
+          onClick={onToggleCollapsed}
         >
           {collapsed ? "«" : "»"}
         </Button>
@@ -119,15 +119,14 @@ export function RelationsPanel(props: RelationsPanelProps) {
             Outline
           </Text>
           <Box>
-            {headings.map((h, i) => {
-              const anchor = anchorForHeading(props.text, h);
+            {entries.map(({ heading: h, anchor }, i) => {
               const count = anchor ? (props.counts.get(anchor) ?? 0) : 0;
               const scoped = anchor !== null && anchor === scopedAnchor;
               // H1 rows (and any heading before the first H2/H3) have no
               // anchor to scope to: navigate only, leave scopedAnchor as
               // it is instead of clearing an active scope.
               const activate = () => {
-                props.onNavigate(h);
+                props.onNavigate(h, i);
                 if (anchor !== null) setScopedAnchor(scoped ? null : anchor);
               };
               return (
@@ -152,7 +151,7 @@ export function RelationsPanel(props: RelationsPanelProps) {
                     {h.text}
                   </Text>
                   {count > 0 && (
-                    <Badge size="1" variant="soft">
+                    <Badge size="1" variant="soft" data-testid="outline-count">
                       {count}
                     </Badge>
                   )}
@@ -215,7 +214,9 @@ export function RelationsPanel(props: RelationsPanelProps) {
                 data-testid="manage-connections"
                 onClick={(e) => {
                   const anchor =
-                    scopedAnchor ?? firstScopableAnchor(props.text, headings);
+                    scopedAnchor ??
+                    entries.find((s) => s.anchor !== null)?.anchor ??
+                    null;
                   if (anchor)
                     props.onManageConnections!(anchor, e.currentTarget);
                 }}
@@ -242,17 +243,45 @@ export function RelationsPanel(props: RelationsPanelProps) {
           <Text size="1" color="gray" mt="1">
             Graph (as of last merge)
           </Text>
-          {props.graphNeighbors.map((n, i) => (
-            <Flex key={`${n.id}:${i}`} gap="1" align="center" px="1">
-              <Badge size="1" variant="soft">
-                {n.edgeType}
-              </Badge>
-              <Text size="1">{n.direction === "in" ? "←" : "→"}</Text>
-              <Text size="1" truncate>
-                {n.node?.title ?? n.id}
-              </Text>
-            </Flex>
-          ))}
+          {props.graphNeighbors.map((n, i) => {
+            // navTargetForNodeId is the same node-id -> activePath mapping
+            // NeighborhoodPanel already uses. Not every node type
+            // round-trips to an editable path (content, motion): those
+            // rows stay plain, non-interactive.
+            const target = navTargetForNodeId(n.id);
+            const row = (
+              <Flex gap="1" align="center" px="1">
+                <Badge size="1" variant="soft">
+                  {n.edgeType.replace(/_/g, " ")}
+                </Badge>
+                <Text size="1">{n.direction === "in" ? "←" : "→"}</Text>
+                <Text size="1" truncate>
+                  {n.node?.title ?? n.id}
+                </Text>
+              </Flex>
+            );
+            if (target === null) {
+              return (
+                <Box key={`${n.id}:${i}`} data-testid="graph-row">
+                  {row}
+                </Box>
+              );
+            }
+            const activate = () => props.onOpenFile(target);
+            return (
+              <Box
+                key={`${n.id}:${i}`}
+                data-testid="graph-row"
+                role="button"
+                tabIndex={0}
+                style={{ cursor: "pointer" }}
+                onClick={activate}
+                onKeyDown={onActivateKey(activate)}
+              >
+                {row}
+              </Box>
+            );
+          })}
         </>
       )}
     </Flex>

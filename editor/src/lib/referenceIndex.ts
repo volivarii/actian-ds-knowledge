@@ -9,7 +9,8 @@ import {
 import { snippetsForSlug } from "./snippetExtract";
 import { bakedGraphIndex, type Neighbor } from "../substrate/graphIndex";
 import { nodeIdForFile } from "../substrate/nodeIdForFile";
-import { computeFocusedSection } from "../app/SectionFocusTracker";
+import { extractAnchor } from "../app/SectionFocusTracker";
+import { scanHeadings, type Heading } from "./headingScan";
 
 export type { Neighbor };
 
@@ -19,13 +20,51 @@ export interface IncomingRef {
   snippet: string;
 }
 
+export interface SectionAnchor {
+  heading: Heading;
+  anchor: string | null;
+}
+
+// Matches the leading `#{1,3}` + whitespace headingScan/SectionFocusTracker
+// both strip before deriving the anchor. Applied only to a heading's own
+// line (O(1) per heading), not re-scanned across every line, so this stays
+// on the O(headings) side of the single scanHeadings(text) pass below.
+const LEADING_HASHES_RE = /^#+\s*/;
+
+/** Anchor for every H1-H3 heading in `text`, in ONE scanHeadings(text) pass
+ *  (O(headings), not O(lines) x O(headings) like re-deriving the section per
+ *  line). Mirrors computeFocusedSection's rule exactly: only H2/H3 headings
+ *  get an anchor (explicit `{#slug}` else derived via the shared
+ *  extractAnchor helper); H1 always resolves to null, matching
+ *  SectionFocusTracker's H2/H3-only heading list. */
+export function sectionAnchors(text: string): SectionAnchor[] {
+  const headings = scanHeadings(text);
+  const lines = text.split("\n");
+  return headings.map((heading) => {
+    if (heading.level === 1) return { heading, anchor: null };
+    const rawLine = lines[heading.line] ?? "";
+    const titleRaw = rawLine.replace(LEADING_HASHES_RE, "").trim();
+    return { heading, anchor: extractAnchor(titleRaw) };
+  });
+}
+
 /** Files that reference any anchor DEFINED in this file, with the
- *  referencing paragraph as a contextual snippet. Self-references and
- *  files whose text is not cached degrade gracefully (skipped / bare). */
+ *  referencing paragraph as a contextual snippet. The slug set is the union
+ *  of explicit {#anchor}/bold-paragraph definitions (scanFileForAnchors)
+ *  and DERIVED H2/H3 section anchors (sectionAnchors): a section without an
+ *  explicit anchor is still a valid reference target (its derived slug is
+ *  exactly what countsBySection scopes incoming rows to), so omitting it
+ *  here would show a pill count with an empty scoped Incoming list.
+ *  Self-references and files whose text is not cached degrade gracefully
+ *  (skipped / bare). */
 export function incomingForFile(path: string, text: string): IncomingRef[] {
   const out: IncomingRef[] = [];
   const { defines } = scanFileForAnchors(text);
-  for (const slug of new Set(defines)) {
+  const derivedAnchors = sectionAnchors(text)
+    .map((s) => s.anchor)
+    .filter((a): a is string => a !== null);
+  const slugs = new Set([...defines, ...derivedAnchors]);
+  for (const slug of slugs) {
     for (const fromPath of findReferences(slug)) {
       if (fromPath === path) continue;
       const refText = getCachedText(fromPath);
@@ -52,28 +91,28 @@ export function graphNeighborsForFile(path: string): Neighbor[] {
  *  file's outgoing count attached to the first H2 (P8 Option A v1).
  *  Matches the inline memo this hoists out of MarkdownEditScreen, except
  *  this file's own references to an anchor are excluded (the same
- *  self-exclusion incomingForFile applies); its tests pin the parity. */
+ *  self-exclusion incomingForFile applies); its tests pin the parity.
+ *  O(headings) via sectionAnchors' single scanHeadings pass, not the
+ *  O(lines) x per-line resection walk this used to run. */
 export function countsBySection(
   path: string,
   text: string,
   outgoingCount: number,
 ): Map<string, number> {
   const counts = new Map<string, number>();
-  const lines = text.split("\n");
   const seenAnchors = new Set<string>();
   let firstH2Anchor: string | null = null;
-  for (let i = 0; i < lines.length; i++) {
-    const s = computeFocusedSection(text, i);
-    if (!s || seenAnchors.has(s.anchor)) continue;
-    seenAnchors.add(s.anchor);
-    if (s.level === 2 && firstH2Anchor === null) firstH2Anchor = s.anchor;
+  for (const { heading, anchor } of sectionAnchors(text)) {
+    if (anchor === null || seenAnchors.has(anchor)) continue;
+    seenAnchors.add(anchor);
+    if (heading.level === 2 && firstH2Anchor === null) firstH2Anchor = anchor;
     // Excludes only this file's own references to the anchor (e.g. a
     // self-link from within the same section), matching incomingForFile's
     // `fromPath === path` self-exclusion. A different file that also
     // defines the same globally-keyed slug (a co-definer) still counts as
     // a genuine incoming reference.
-    const incoming = findReferences(s.anchor).filter((p) => p !== path).length;
-    if (incoming > 0) counts.set(s.anchor, incoming);
+    const incoming = findReferences(anchor).filter((p) => p !== path).length;
+    if (incoming > 0) counts.set(anchor, incoming);
   }
   if (firstH2Anchor && outgoingCount > 0) {
     counts.set(firstH2Anchor, (counts.get(firstH2Anchor) ?? 0) + outgoingCount);

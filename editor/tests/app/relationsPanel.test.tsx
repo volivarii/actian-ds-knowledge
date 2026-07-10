@@ -2,13 +2,20 @@
 // Tasks 5-6 mount in source mode, rich mode, and the frontmatter-form body
 // view. Tests target the component in isolation with fake props (the panel
 // never calls the reference/graph services itself, per the prop contract).
+// `collapsed` is a controlled prop owned by the parent screen (FIX 1): the
+// panel itself no longer reads/writes localStorage, so these tests drive
+// visibility via the prop and separately pin the exported storage util.
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import "../setup-dom";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 import React from "react";
-import { RelationsPanel } from "../../src/app/RelationsPanel";
+import {
+  RelationsPanel,
+  readRelationsPanelCollapsed,
+  writeRelationsPanelCollapsed,
+} from "../../src/app/RelationsPanel";
 import type { IncomingRef, Neighbor } from "../../src/lib/referenceIndex";
 import type { OutgoingConnection } from "../../src/substrate/refGraph";
 import type { Heading } from "../../src/lib/headingScan";
@@ -62,6 +69,8 @@ function renderPanel(
         onNavigate={() => calls.push("nav")}
         onOpenFile={(p) => calls.push("open:" + p)}
         onManageConnections={() => calls.push("manage")}
+        collapsed={false}
+        onToggleCollapsed={() => calls.push("toggle")}
         {...overrides}
       />
     </Theme>,
@@ -73,7 +82,12 @@ test("renders outline headings with count pills", () => {
   const { container } = renderPanel();
   assert.ok(container.textContent!.includes("Usage"));
   assert.ok(container.textContent!.includes("Style"));
-  assert.ok(container.textContent!.includes("3"));
+  const usageRow = Array.from(
+    container.querySelectorAll("[data-testid='outline-row']"),
+  ).find((r) => r.textContent!.includes("Usage"))!;
+  const badge = usageRow.querySelector("[data-testid='outline-count']");
+  assert.ok(badge);
+  assert.equal(badge!.textContent, "3");
 });
 
 test("incoming rows show snippet and source file, click opens the file", () => {
@@ -93,17 +107,49 @@ test("incoming row responds to an Enter keydown the same as a click", () => {
   assert.ok(calls.includes("open:content/src/patterns/forms.md"));
 });
 
-test("graph rows show edge-type badge and the baked-staleness label", () => {
+test("graph rows show a space-separated edge-type badge and the baked-staleness label", () => {
   const { container } = renderPanel();
-  assert.ok(container.textContent!.includes("in_category"));
+  assert.ok(container.textContent!.includes("in category"));
+  assert.ok(!container.textContent!.includes("in_category"));
   assert.ok(container.textContent!.includes("Action"));
   assert.ok(container.textContent!.toLowerCase().includes("as of last merge"));
 });
 
-test("clicking an outline row scopes incoming to that section", () => {
-  const navCalls: Heading[] = [];
+test("graph row navigates via onOpenFile when navTargetForNodeId resolves; a node type mapping to null stays non-interactive", () => {
+  const neighbors: Neighbor[] = [
+    {
+      id: "category:action",
+      node: { id: "category:action", type: "category", title: "Action" },
+      edgeType: "in_category",
+      note: null,
+      direction: "out",
+    },
+    {
+      id: "content:loading",
+      node: { id: "content:loading", type: "content", title: "Loading" },
+      edgeType: "uses_pattern",
+      note: null,
+      direction: "out",
+    },
+  ];
+  const { container, calls } = renderPanel({ graphNeighbors: neighbors });
+  const rows = Array.from(container.querySelectorAll("[data-testid='graph-row']"));
+  const categoryRow = rows.find((r) => r.textContent!.includes("Action"))!;
+  const contentRow = rows.find((r) => r.textContent!.includes("Loading"))!;
+
+  assert.equal(categoryRow.getAttribute("role"), "button");
+  fireEvent.click(categoryRow);
+  assert.ok(calls.includes("open:components/src/categories/action.md"));
+
+  assert.notEqual(contentRow.getAttribute("role"), "button");
+  fireEvent.click(contentRow);
+  assert.ok(!calls.some((c) => c.startsWith("open:") && c.includes("loading")));
+});
+
+test("clicking an outline row scopes incoming to that section, and passes its index", () => {
+  const navCalls: Array<{ heading: Heading; index: number }> = [];
   const { container } = renderPanel({
-    onNavigate: (h) => navCalls.push(h),
+    onNavigate: (heading, index) => navCalls.push({ heading, index }),
   });
   const styleRow = Array.from(
     container.querySelectorAll("[data-testid='outline-row']"),
@@ -116,11 +162,13 @@ test("clicking an outline row scopes incoming to that section", () => {
     ),
   );
   assert.equal(navCalls.length, 1);
-  assert.equal(navCalls[0]!.text, "Style");
+  assert.equal(navCalls[0]!.heading.text, "Style");
+  // "Style" is the second heading (index 1) in TEXT's outline.
+  assert.equal(navCalls[0]!.index, 1);
 });
 
 test("H1 outline row click navigates without touching section scoping; Manage falls back to the first H2/H3 anchor", () => {
-  const navCalls: Heading[] = [];
+  const navCalls: Array<{ heading: Heading; index: number }> = [];
   const manageCalls: string[] = [];
   const { container } = render(
     <Theme>
@@ -131,9 +179,11 @@ test("H1 outline row click navigates without touching section scoping; Manage fa
         incoming={INCOMING}
         outgoing={[]}
         graphNeighbors={[]}
-        onNavigate={(h) => navCalls.push(h)}
+        onNavigate={(heading, index) => navCalls.push({ heading, index })}
         onOpenFile={() => {}}
         onManageConnections={(anchor) => manageCalls.push(anchor)}
+        collapsed={false}
+        onToggleCollapsed={() => {}}
       />
     </Theme>,
   );
@@ -151,8 +201,10 @@ test("H1 outline row click navigates without touching section scoping; Manage fa
   // left untouched (not cleared).
   fireEvent.click(titleRow);
   assert.equal(navCalls.length, 2);
-  assert.equal(navCalls[1]!.text, "Title");
-  assert.equal(navCalls[1]!.level, 1);
+  assert.equal(navCalls[1]!.heading.text, "Title");
+  assert.equal(navCalls[1]!.heading.level, 1);
+  // "Title" is the first heading (index 0) in H1_FIRST_TEXT's outline.
+  assert.equal(navCalls[1]!.index, 0);
   assert.ok(container.textContent!.includes("Relations: usage"));
 
   // Unscope, then Manage falls back to the first H2/H3 heading's anchor
@@ -194,6 +246,8 @@ test("manage connections click passes the scoped (or first) section anchor and t
         onNavigate={() => {}}
         onOpenFile={() => {}}
         onManageConnections={(anchor, el) => calls.push({ anchor, el })}
+        collapsed={false}
+        onToggleCollapsed={() => {}}
       />
     </Theme>,
   );
@@ -215,31 +269,35 @@ test("Manage button is absent when onManageConnections is omitted", () => {
         graphNeighbors={[]}
         onNavigate={() => {}}
         onOpenFile={() => {}}
+        collapsed={false}
+        onToggleCollapsed={() => {}}
       />
     </Theme>,
   );
   assert.equal(screen.queryByTestId("manage-connections"), null);
 });
 
-test("collapse toggle hides the outline and contextual relations, keeps the header", () => {
-  const { container } = renderPanel();
-  assert.ok(container.textContent!.includes("Usage"));
+test("clicking the toggle button calls onToggleCollapsed (collapsed state is owned by the parent)", () => {
+  const { calls } = renderPanel();
   fireEvent.click(screen.getByLabelText("Toggle relations panel"));
+  assert.ok(calls.includes("toggle"));
+});
+
+test("collapsed=true hides the outline and contextual relations, keeps the header", () => {
+  const { container } = renderPanel({ collapsed: true });
+  assert.ok(container.textContent!.includes("Relations"));
   assert.ok(!container.textContent!.includes("Usage"));
   assert.ok(!container.textContent!.includes("Incoming"));
 });
 
-test("collapsed preference persists to localStorage and a fresh render starts collapsed", () => {
-  const { container } = renderPanel();
-  fireEvent.click(screen.getByLabelText("Toggle relations panel"));
+test("readRelationsPanelCollapsed / writeRelationsPanelCollapsed round-trip through localStorage", () => {
+  assert.equal(readRelationsPanelCollapsed(), false);
+  writeRelationsPanelCollapsed(true);
   assert.equal(localStorage.getItem("relationsPanelCollapsed"), "1");
-  assert.ok(!container.textContent!.includes("Usage"));
-
-  cleanup();
-
-  // Fresh mount: localStorage already says collapsed, so it starts collapsed.
-  const { container: container2 } = renderPanel();
-  assert.ok(!container2.textContent!.includes("Usage"));
+  assert.equal(readRelationsPanelCollapsed(), true);
+  writeRelationsPanelCollapsed(false);
+  assert.equal(localStorage.getItem("relationsPanelCollapsed"), "0");
+  assert.equal(readRelationsPanelCollapsed(), false);
 });
 
 test("outline renders nothing when text has no headings", () => {

@@ -38,7 +38,11 @@ import {
 } from "../markdown-engine/rawFrontmatter";
 import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
-import { RelationsPanel } from "./RelationsPanel";
+import {
+  RelationsPanel,
+  readRelationsPanelCollapsed,
+  writeRelationsPanelCollapsed,
+} from "./RelationsPanel";
 import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
 import { computeFocusedSection } from "./SectionFocusTracker";
 import {
@@ -324,6 +328,21 @@ export function MarkdownEditScreen({
     [text, taxonomy],
   );
 
+  // RelationsPanel's collapsed state is owned here (not by the panel
+  // itself) so the expensive incoming/counts memos below can be gated to a
+  // no-op instead of recomputing on every keystroke while their DOM stays
+  // hidden. Seeded from the same localStorage key the toggle writes to.
+  const [relationsCollapsed, setRelationsCollapsed] = useState<boolean>(() =>
+    readRelationsPanelCollapsed(),
+  );
+  const toggleRelationsCollapsed = useCallback(() => {
+    setRelationsCollapsed((c) => {
+      const next = !c;
+      writeRelationsPanelCollapsed(next);
+      return next;
+    });
+  }, []);
+
   // Per-section connection counts feed the Outline pills. Each H2/H3 in
   // the current file contributes:
   //   - OUTGOING (this section's own a11y_refs/motion_refs in frontmatter)
@@ -333,18 +352,23 @@ export function MarkdownEditScreen({
   //     loading (anchorIndexTick).
   // Pill displays the SUM so definition-only files (no frontmatter
   // outgoing, just incoming refs from consumers) still surface a count.
+  // Skipped while the panel is collapsed: its DOM is hidden either way.
   const connectionCounts = useMemo(() => {
-    return countsBySection(path, text, outgoing.length);
+    return relationsCollapsed
+      ? new Map<string, number>()
+      : countsBySection(path, text, outgoing.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, outgoing, anchorIndexTick]);
+  }, [text, outgoing, anchorIndexTick, relationsCollapsed]);
 
   // Incoming references + graph neighbors feed the RelationsPanel's
-  // contextual sections (below the outline pills).
+  // contextual sections (below the outline pills). Incoming is skipped
+  // while collapsed; graphNeighbors is a baked path-keyed lookup and stays
+  // cheap enough to leave unconditional.
   const incoming = useMemo(
-    () => incomingForFile(path, text),
+    () => (relationsCollapsed ? [] : incomingForFile(path, text)),
     // anchorIndexTick refreshes when the index finishes loading.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [path, text, anchorIndexTick],
+    [path, text, anchorIndexTick, relationsCollapsed],
   );
   const graphNeighbors = useMemo(() => graphNeighborsForFile(path), [path]);
 
@@ -538,9 +562,9 @@ export function MarkdownEditScreen({
   // RelationsPanel's outline row click scrolls the active editor to that
   // heading (mode-specific, since rich mode has no CM6 view to dispatch
   // a scroll effect against).
-  function handleOutlineNavigate(heading: OutlineHeading) {
+  function handleOutlineNavigate(heading: OutlineHeading, index: number) {
     if (wysiwyg) {
-      scrollRichHeading(heading);
+      scrollRichHeading(heading, index);
       return;
     }
     if (!view) return;
@@ -574,6 +598,8 @@ export function MarkdownEditScreen({
         onNavigate={handleOutlineNavigate}
         onOpenFile={handleOpenFile}
         onManageConnections={handleManageConnections}
+        collapsed={relationsCollapsed}
+        onToggleCollapsed={toggleRelationsCollapsed}
       />
     </Box>
   );
