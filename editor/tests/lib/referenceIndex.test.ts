@@ -40,6 +40,38 @@ test("incomingForFile: referencing files yield contextual snippets; self-referen
   setCachedIndexForTesting(null);
 });
 
+test("incomingForFile: snippets come from the referencer's body, never its frontmatter YAML", () => {
+  setCachedIndexForTesting({
+    entries: new Map([
+      [
+        "token-basics",
+        {
+          slug: "token-basics",
+          definedIn: ["foundations/src/tokens.md"],
+          referencedBy: ["components/src/categories/action.md"],
+        },
+      ],
+    ]),
+    scannedAt: 0,
+    scannedPaths: [],
+    texts: new Map([
+      [
+        "components/src/categories/action.md",
+        "---\na11y_refs:\n  requirementRefs:\n    - { ref: token-basics }\n---\n\nProse mentioning [token basics](../foundations/tokens#token-basics) here.\n",
+      ],
+    ]),
+  });
+  const incoming = incomingForFile(
+    "foundations/src/tokens.md",
+    "## Tokens {#token-basics}\n\nBody.\n",
+  );
+  const snippets = incoming.map((r) => r.snippet).filter((x) => x.length > 0);
+  assert.equal(snippets.length, 1);
+  assert.ok(snippets[0]!.includes("Prose mentioning"));
+  assert.ok(!snippets.some((x) => x.includes("a11y_refs")));
+  setCachedIndexForTesting(null);
+});
+
 test("incomingForFile: empty when index not loaded", () => {
   setCachedIndexForTesting(null);
   assert.deepEqual(incomingForFile(THIS_PATH, THIS_TEXT), []);
