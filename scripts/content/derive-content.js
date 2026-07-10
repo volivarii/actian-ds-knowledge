@@ -14,9 +14,10 @@
 //               global sections, so a consumer that needs only one family
 //               (e.g. writing rules) reads that file instead of the full
 //               concat. Root-level meta files (global-guidelines.md etc.)
-//               have no bucket and appear only in global.md. global.md is
-//               unchanged by the split (parallel change; see MIGRATIONS.md
-//               Rule 1).
+//               have no bucket and appear only in global.md. The split is a
+//               parallel change (MIGRATIONS.md Rule 1): global.md keeps its
+//               shape and consumers; only empty-body stub sections stopped
+//               being emitted (see withProse).
 //
 // Phase 5 (knowledge v0.11.0): the transitional `content.md` full-concat
 // was retired. Consumers migrated to `global.md` + per-component
@@ -38,6 +39,7 @@ var fs = require("fs");
 var path = require("path");
 
 var frontmatter = require("../lib/frontmatter");
+var writeAtomic = require("../lib/dist-io").writeAtomic;
 
 var ROOT = path.resolve(__dirname, "..", "..");
 
@@ -358,33 +360,60 @@ function applyWordsToAvoidTable(sections, config) {
   });
 }
 
+// A frontmatter-only stub (e.g. patterns/loading-and-progress.md, which
+// carries fan-out frontmatter but no prose yet) cleans to an empty body.
+// Emitting it produced a malformed empty `---` block in the doc, so drop
+// empty bodies before assembly. The stub stays in the index and keeps
+// feeding the guideline fan-out; it just contributes no concat block.
+function withProse(sections) {
+  return sections.filter(function (s) {
+    return s.body.length > 0;
+  });
+}
+
+// Header boilerplate shared verbatim by the global concat and every bucket
+// split, so the provenance framing can never drift between them. Callers
+// supply the title and the scope line(s); Sources/Authoring lines follow.
+function docHeader(config, title, scopeLines, sourcesGlob, sectionCount) {
+  return [title, ""]
+    .concat([
+      "> **Auto-generated** by `scripts/content/derive-content.js`. Do not edit " +
+        "this file directly — edit the per-section source files.",
+      ">",
+    ])
+    .concat(scopeLines)
+    .concat([
+      "> **Sources** (" + sectionCount + " sections): " + sourcesGlob,
+      "> **Authoring guide:** `" +
+        path.relative(ROOT, config.src) +
+        "/AUTHORING.md`",
+    ]);
+}
+
 // Global / cross-cutting topics only — the docs /content page consumes this.
 function buildGlobalOutput(config) {
-  var sections = applyWordsToAvoidTable(
-    resolveAllSections(config).filter(function (s) {
-      return s.scope === "global";
-    }),
-    config,
+  var sections = withProse(
+    applyWordsToAvoidTable(
+      resolveAllSections(config).filter(function (s) {
+        return s.scope === "global";
+      }),
+      config,
+    ),
   );
-  var header = [
+  var header = docHeader(
+    config,
     "# Content guidelines — global topics",
-    "",
-    "> **Auto-generated** by `scripts/content/derive-content.js`. Do not edit " +
-      "this file directly — edit the per-section source files.",
-    ">",
-    "> **Scope:** cross-cutting writing guidance (voice, tone, capitalization, " +
-      "words to avoid) and UX-pattern topics. Component-scoped content guidance " +
-      "lives per-component in `components/dist/guidelines/{slug}.json` instead.",
-    "> **Sources** (" +
-      sections.length +
-      " sections): `" +
+    [
+      "> **Scope:** cross-cutting writing guidance (voice, tone, capitalization, " +
+        "words to avoid) and UX-pattern topics. Component-scoped content guidance " +
+        "lives per-component in `components/dist/guidelines/{slug}.json` instead.",
+    ],
+    "`" +
       path.relative(ROOT, config.src) +
       "/{bucket}/{slug}.md` where bucket is one of writing, patterns, " +
       "product (plus `global-guidelines.md` at the root).",
-    "> **Authoring guide:** `" +
-      path.relative(ROOT, config.src) +
-      "/AUTHORING.md`",
-  ];
+    sections.length,
+  );
   return assembleDoc(header, sections);
 }
 
@@ -401,35 +430,42 @@ function buildBucketOutput(config, bucket) {
         ")",
     );
   }
-  var sections = applyWordsToAvoidTable(
-    resolveAllSections(config).filter(function (s) {
-      return s.scope === "global" && s.bucket === bucket;
-    }),
-    config,
+  var sections = withProse(
+    applyWordsToAvoidTable(
+      resolveAllSections(config).filter(function (s) {
+        return s.scope === "global" && s.bucket === bucket;
+      }),
+      config,
+    ),
   );
-  var header = [
+  // A bucket with zero prose sections is a config error (sources moved or a
+  // bucket added to CONTENT_SUB_BUCKETS before any source exists): fail loud
+  // instead of committing a header-only dist file that llms.txt and the
+  // manifest keep advertising.
+  if (sections.length === 0) {
+    throw new Error(
+      "bucket '" +
+        bucket +
+        "' resolved to zero prose sections — " +
+        "empty bucket dist files are not emitted; check content/src/" +
+        bucket +
+        "/ and content-index.md",
+    );
+  }
+  var header = docHeader(
+    config,
     "# Content guidelines: " + bucket + " topics",
-    "",
-    "> **Auto-generated** by `scripts/content/derive-content.js`. Do not edit " +
-      "this file directly — edit the per-section source files.",
-    ">",
-    "> **Scope:** the `" +
-      bucket +
-      "` bucket of the global content guidelines, split out so a consumer " +
-      "that needs only this family reads only this file. The full " +
-      "cross-bucket document (including the root-level ground rules) is " +
-      "`content/dist/global.md`.",
-    "> **Sources** (" +
-      sections.length +
-      " sections): `" +
-      path.relative(ROOT, config.src) +
-      "/" +
-      bucket +
-      "/{slug}.md`.",
-    "> **Authoring guide:** `" +
-      path.relative(ROOT, config.src) +
-      "/AUTHORING.md`",
-  ];
+    [
+      "> **Scope:** the `" +
+        bucket +
+        "` bucket of the global content guidelines, split out so a consumer " +
+        "that needs only this family reads only this file. The full " +
+        "cross-bucket document (including the root-level ground rules) is " +
+        "`content/dist/global.md`.",
+    ],
+    "`" + path.relative(ROOT, config.src) + "/" + bucket + "/{slug}.md`.",
+    sections.length,
+  );
   return assembleDoc(header, sections);
 }
 
@@ -447,8 +483,11 @@ function main(argv) {
   var outDir = path.dirname(config.globalOut);
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
+  // writeAtomic (temp + rename) for every dist write, matching the sibling
+  // derivers: a concurrent reader (parallel test process) must never see a
+  // half-written file.
   var globalOut = buildGlobalOutput(config);
-  fs.writeFileSync(config.globalOut, globalOut);
+  writeAtomic(config.globalOut, globalOut);
 
   var stats = fs.statSync(config.globalOut);
   var lineCount = fs.readFileSync(config.globalOut, "utf8").split("\n").length;
@@ -464,7 +503,7 @@ function main(argv) {
 
   CONTENT_SUB_BUCKETS.forEach(function (bucket) {
     var bucketOut = buildBucketOutput(config, bucket);
-    fs.writeFileSync(config.bucketOuts[bucket], bucketOut);
+    writeAtomic(config.bucketOuts[bucket], bucketOut);
     console.log(
       "[derive-content] wrote " +
         path.relative(ROOT, config.bucketOuts[bucket]) +
@@ -475,7 +514,7 @@ function main(argv) {
   });
 
   var wta = buildWordsToAvoid(config);
-  fs.writeFileSync(config.wordsToAvoidOut, JSON.stringify(wta, null, 2) + "\n");
+  writeAtomic(config.wordsToAvoidOut, JSON.stringify(wta, null, 2) + "\n");
   console.log(
     "[derive-content] wrote " +
       path.relative(ROOT, config.wordsToAvoidOut) +

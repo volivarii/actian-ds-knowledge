@@ -300,6 +300,46 @@ test("derive-content — bucket outputs partition the bucketed global sections",
   });
 });
 
+test("derive-content — empty-body sections are dropped (no malformed empty block)", function () {
+  // A frontmatter-only stub (patterns/loading-and-progress.md) used to emit
+  // a `---` / blank / `---` empty block. The generator now drops empty
+  // bodies, so no output may contain two separators with only blanks between.
+  var docs = [derive.buildGlobalOutput(DEFAULT_CONFIG)];
+  derive.CONTENT_SUB_BUCKETS.forEach(function (bucket) {
+    docs.push(derive.buildBucketOutput(DEFAULT_CONFIG, bucket));
+  });
+  docs.forEach(function (out) {
+    assert.ok(
+      !/\n---\n\n+---\n/.test(out),
+      "no empty section block (adjacent separators) allowed in any output",
+    );
+  });
+});
+
+test("derive-content — a bucket with zero prose sections fails loud", function () {
+  var os = require("node:os");
+  var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "content-split-"));
+  fs.mkdirSync(path.join(tmp, "writing"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, "content-index.md"),
+    '<a href="voice">Voice</a>\n',
+  );
+  fs.writeFileSync(path.join(tmp, "writing", "voice.md"), "# Voice\n\nBody.\n");
+  var config = derive.resolveConfig({
+    src: tmp,
+    index: path.join(tmp, "content-index.md"),
+  });
+  // The populated bucket builds; a bucket with no sections throws instead of
+  // producing a header-only dist file.
+  assert.ok(
+    derive.buildBucketOutput(config, "writing").indexOf("## Voice") !== -1,
+  );
+  assert.throws(function () {
+    derive.buildBucketOutput(config, "patterns");
+  }, /zero prose sections/);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
 test("derive-content — writing bucket re-renders the words-to-avoid table like global.md", function () {
   var out = derive.buildBucketOutput(DEFAULT_CONFIG, "writing");
   var expected = derive.renderWordsToAvoidSection(
