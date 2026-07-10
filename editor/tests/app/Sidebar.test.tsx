@@ -186,7 +186,7 @@ test("Sidebar: clicking Home calls onSelect with null", async () => {
   assert.deepEqual(calls, [null]);
 });
 
-test("Sidebar: renders Pattern copy/Product copy/Writing rules entries (after expand)", async () => {
+test("Sidebar: Content nests Writing rules/Patterns/Product children (after expand)", async () => {
   render(
     wrap(
       <Sidebar
@@ -197,12 +197,15 @@ test("Sidebar: renders Pattern copy/Product copy/Writing rules entries (after ex
       />,
     ),
   );
-  await waitFor(() => screen.getByText("Pattern copy"));
-  assert.ok(screen.getByText("Pattern copy"));
-  assert.ok(screen.getByText("Product copy"));
+  await waitFor(() => screen.getByText("Content"));
+  // Children hidden until the Content parent expands.
+  assert.equal(screen.queryByText("Writing rules"), null);
+  toggleSection("Content");
   assert.ok(screen.getByText("Writing rules"));
-  toggleSection("Pattern copy");
-  toggleSection("Product copy");
+  assert.ok(screen.getByText("Patterns"));
+  assert.ok(screen.getByText("Product"));
+  toggleSection("Patterns");
+  toggleSection("Product");
   toggleSection("Writing rules");
   assert.ok(screen.getByText("Forms"));
   assert.ok(screen.getByText("Onboarding"));
@@ -223,8 +226,9 @@ test("Sidebar: clicking content/src entry dispatches full path", async () => {
       />,
     ),
   );
-  await waitFor(() => screen.getByText("Pattern copy"));
-  toggleSection("Pattern copy");
+  await waitFor(() => screen.getByText("Content"));
+  toggleSection("Content");
+  toggleSection("Patterns");
   fireEvent.click(screen.getByText("Forms"));
   assert.deepEqual(calls, ["content/src/patterns/forms.md"]);
 });
@@ -246,13 +250,13 @@ test("Sidebar: all sections collapsed by default", async () => {
   assert.equal(screen.queryByText("Principles"), null);
   assert.equal(screen.queryByText("Forms"), null);
   assert.equal(screen.queryByText("Button"), null);
-  // All section headers report aria-expanded=false
+  // All section headers report aria-expanded=false (content children are
+  // hidden entirely until the Content parent expands)
+  assert.equal(screen.queryByText("Writing rules"), null);
   for (const label of [
     "Foundations",
+    "Content",
     "Accessibility",
-    "Pattern copy",
-    "Product copy",
-    "Writing rules",
     "Components",
   ]) {
     const header = screen.getByText(label).closest('[role="button"]')!;
@@ -264,7 +268,7 @@ test("Sidebar: all sections collapsed by default", async () => {
   }
 });
 
-test("Sidebar: two dimension groups — Design system, then The products", async () => {
+test("Sidebar: two dimension groups — Design system, then Application context", async () => {
   const withAppContext = {
     ...LISTINGS,
     "app-context/src/apps": [{ name: "studio.md", type: "file" as const }],
@@ -286,19 +290,25 @@ test("Sidebar: two dimension groups — Design system, then The products", async
     ),
   );
   await waitFor(() => screen.getByText("Design system"));
-  // The app-context sections live under "The products", AFTER the design
-  // system sections (Components is the DS group's last section). Use
-  // document order between the actual nodes — a missing node fails
+  // The app-context sections live under "Application context", AFTER the
+  // design system sections (Components is the DS group's last section).
+  // Use document order between the actual nodes — a missing node fails
   // loudly here, unlike textContent.indexOf (-1 compares as "before").
   const follows = (a: Element, b: Element) =>
     (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
   assert.ok(
-    follows(screen.getByText("Components"), screen.getByText("The products")),
-    "Components (design system) should precede The products group",
+    follows(
+      screen.getByText("Components"),
+      screen.getByText("Application context"),
+    ),
+    "Components (design system) should precede Application context",
   );
   assert.ok(
-    follows(screen.getByText("The products"), screen.getByText("UX patterns")),
-    "UX patterns should sit inside The products group",
+    follows(
+      screen.getByText("Application context"),
+      screen.getByText("Features"),
+    ),
+    "Features should sit inside Application context",
   );
 });
 
@@ -319,7 +329,7 @@ test("Sidebar: dimension headers hide when their dimension is empty", async () =
       />,
     ),
   );
-  await waitFor(() => screen.getByText("The products"));
+  await waitFor(() => screen.getByText("Application context"));
   assert.equal(screen.queryByText("Design system"), null);
 });
 
@@ -438,8 +448,10 @@ test("Sidebar: hides empty content/src groups (e.g. 404 dirs)", async () => {
     ),
   );
   await waitFor(() => screen.getByText("Foundations"));
-  assert.equal(screen.queryByText("Pattern copy"), null);
-  assert.equal(screen.queryByText("Product copy"), null);
+  // No content groups at all → the Content parent itself is hidden.
+  assert.equal(screen.queryByText("Content"), null);
+  assert.equal(screen.queryByText("Patterns"), null);
+  assert.equal(screen.queryByText("Product"), null);
   assert.equal(screen.queryByText("Writing rules"), null);
 });
 
@@ -522,9 +534,11 @@ test("Sidebar — renders + Add section button on each curatable group header", 
     ),
   );
   await waitFor(() => screen.getByText("Foundations"));
+  // Content children carry their own add buttons; expand the parent first.
+  toggleSection("Content");
 
-  // Foundations, Accessibility, Pattern copy, Product copy,
-  // Writing rules all have an "Add * section" button.
+  // Foundations, Accessibility, Writing rules, Patterns, Product all have
+  // an "Add * section" button.
   const addButtons = screen.queryAllByRole("button", {
     name: /add .* section/i,
   });
@@ -533,11 +547,16 @@ test("Sidebar — renders + Add section button on each curatable group header", 
     `expected ≥5 +Add buttons, got ${addButtons.length}`,
   );
 
-  // Components group does NOT get one (null onAdd)
+  // Components group does NOT get one (null onAdd), and neither does the
+  // Content parent (children own the add affordance).
   const componentsAdd = screen.queryByRole("button", {
     name: /add components section/i,
   });
   assert.equal(componentsAdd, null);
+  assert.equal(
+    screen.queryByRole("button", { name: /add content section/i }),
+    null,
+  );
 });
 
 test("Sidebar — renders a reorder grip on each foundations row", async () => {

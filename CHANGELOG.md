@@ -31,6 +31,16 @@ Each entry links its pull request. Dates are the merge date (UTC).
   "what's up to date" question (flow 4). ([#399])
 
 ### Changed
+- **Editor: sidebar IA refined to Vincent's structure.** The Design system
+  half now reads Foundations → **Content** (a nested parent holding Writing
+  rules, Patterns, and Product as indented children — the "copy"
+  disambiguators became unnecessary once the parent gives context) →
+  Accessibility → Components. The second dimension is renamed **Application
+  context**, holding **Products** (the apps), **Entities**, and **Features**
+  (the name matches what those files actually are: import-wizard,
+  lineage-graph, marketplace-browsing). The Content parent collapses as one
+  unit and carries the combined count; its children keep their own add and
+  collapse affordances. ([#400])
 - **Editor: the sidebar speaks author language and separates its two
   dimensions.** The repo-shaped section names are gone: "Content —
   Writing/Patterns/Product" is now "Writing rules", "Pattern copy", and
@@ -289,6 +299,7 @@ history and pull-request record.
 [#397]: https://github.com/volivarii/actian-ds-knowledge/pull/397
 [#398]: https://github.com/volivarii/actian-ds-knowledge/pull/398
 [#399]: https://github.com/volivarii/actian-ds-knowledge/pull/399
+[#400]: https://github.com/volivarii/actian-ds-knowledge/pull/400
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
 [#390]: https://github.com/volivarii/actian-ds-knowledge/pull/390
 [#389]: https://github.com/volivarii/actian-ds-knowledge/pull/389

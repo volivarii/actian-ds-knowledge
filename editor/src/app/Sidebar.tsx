@@ -53,20 +53,17 @@ interface GroupedEntries {
   appContextPatterns: string[];
 }
 
-type SectionKey =
-  | "foundations"
-  | "accessibility"
-  | "patterns"
-  | "product"
-  | "writing"
-  | "components"
-  | "appContextApps"
-  | "appContextEntities"
-  | "appContextPatterns";
+/** Keys that carry file listings in GroupedEntries. */
+type EntriesKey = keyof GroupedEntries;
+
+/** Keys that carry sidebar section state (collapse, headers). "content"
+ *  is a pure grouping parent — it has collapse state but no own files. */
+type SectionKey = EntriesKey | "content";
 
 const SECTION_KEYS: ReadonlyArray<SectionKey> = [
   "foundations",
   "accessibility",
+  "content",
   "patterns",
   "product",
   "writing",
@@ -77,21 +74,23 @@ const SECTION_KEYS: ReadonlyArray<SectionKey> = [
 ];
 
 // Author-language section labels (editing-experience direction: plain
-// words a designer recognizes, never repo-shaped names). The two
-// "patterns" groups are deliberately disambiguated: content/src/patterns
-// holds the WORDS used in UX patterns, app-context/src/patterns holds the
-// patterns themselves.
+// words a designer recognizes, never repo-shaped names). Vincent's IA
+// (2026-07-11): Content is a nested parent, so its children read plainly
+// ("Writing rules", "Patterns", "Product") without needing "copy"
+// disambiguators; the application-context trio is "Products / Entities /
+// Features" ("Features" matches what those files actually are:
+// import-wizard, lineage-graph, marketplace-browsing…).
 const CONTENT_GROUP_LABEL: Record<"patterns" | "product" | "writing", string> =
   {
-    patterns: "Pattern copy",
-    product: "Product copy",
+    patterns: "Patterns",
+    product: "Product",
     writing: "Writing rules",
   };
 
 const APP_CONTEXT_LABEL: Record<"apps" | "entities" | "patterns", string> = {
-  apps: "Apps",
+  apps: "Products",
   entities: "Entities",
-  patterns: "UX patterns",
+  patterns: "Features",
 };
 
 // Uppercase group label separating the sidebar's two dimensions.
@@ -119,6 +118,7 @@ function defaultCollapsed(): Record<SectionKey, boolean> {
   return {
     foundations: true,
     accessibility: true,
+    content: true,
     patterns: true,
     product: true,
     writing: true,
@@ -203,7 +203,7 @@ export function Sidebar({
     existingSlugs: string[];
   } | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{
-    domain: SectionKey;
+    domain: EntriesKey;
     slug: string;
     title: string;
     refCount: number;
@@ -302,7 +302,7 @@ export function Sidebar({
     // loop's `foundations/src/${name}` concatenation stays correct.
     setEntries((prev) => {
       if (!prev) return prev;
-      const domainKey = (ctx.subDir ?? ctx.domain) as SectionKey;
+      const domainKey = (ctx.subDir ?? ctx.domain) as EntriesKey;
       const list = prev[domainKey];
       const fileName = `${slug}.md`;
       if (list.includes(fileName)) return prev; // defensive
@@ -371,7 +371,7 @@ export function Sidebar({
     }
   }
 
-  async function openDeleteDialog(domain: SectionKey, slug: string) {
+  async function openDeleteDialog(domain: EntriesKey, slug: string) {
     // Open immediately in loading state so the click feels responsive.
     setDeleteDialog({
       domain,
@@ -635,7 +635,7 @@ export function Sidebar({
     leftHandle,
   }: {
     path: string;
-    domain: SectionKey;
+    domain: EntriesKey;
     leftHandle: React.ReactNode | null;
   }) {
     const slug = slugFromPath(path);
@@ -844,6 +844,75 @@ export function Sidebar({
         </Box>
       )}
 
+      {/* Content is a nested parent: one "Content" section whose children
+          (Writing rules / Patterns / Product) are indented beneath it —
+          Vincent's IA, 2026-07-11. */}
+      {[entries.writing, entries.patterns, entries.product].some(
+        (e) => e.length > 0,
+      ) && (
+        <Box>
+          {sectionHeader(
+            "content",
+            "Content",
+            entries.writing.length +
+              entries.patterns.length +
+              entries.product.length,
+            "list-content",
+            null,
+          )}
+          {!sectionCollapsed.content && (
+            <Box
+              id="list-content"
+              role="group"
+              aria-labelledby="sidebar-section-content-header"
+              pl="3"
+            >
+              {(["writing", "patterns", "product"] as const).map((group) => {
+                const items = entries[group];
+                if (items.length === 0) return null;
+                const label = CONTENT_GROUP_LABEL[group];
+                const collapsed = sectionCollapsed[group];
+                const listId = `list-${group}`;
+                return (
+                  <Box key={group}>
+                    {sectionHeader(group, label, items.length, listId, () => {
+                      const existingSlugs = items.map(slugFromPath);
+                      setAddDialog({
+                        domain: "content",
+                        subDir: group,
+                        existingSlugs,
+                      });
+                    })}
+                    {!collapsed && (
+                      <Box
+                        id={listId}
+                        role="group"
+                        aria-labelledby={`sidebar-section-${group}-header`}
+                      >
+                        <ul
+                          role="list"
+                          style={{ listStyle: "none", padding: 0, margin: 0 }}
+                        >
+                          {items.map((path) => (
+                            <li key={path}>
+                              {renderRow({
+                                path: `content/src/${group}/${path}`,
+                                domain: group,
+                                leftHandle: null,
+                              })}
+                            </li>
+                          ))}
+                        </ul>
+                      </Box>
+                    )}
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
+        </Box>
+      )}
+
       {entries.accessibility.length > 0 && (
         <Box>
           {sectionHeader(
@@ -900,44 +969,6 @@ export function Sidebar({
         </Box>
       )}
 
-      {(["patterns", "product", "writing"] as const).map((group) => {
-        const items = entries[group];
-        if (items.length === 0) return null;
-        const label = CONTENT_GROUP_LABEL[group];
-        const collapsed = sectionCollapsed[group];
-        const listId = `list-${group}`;
-        return (
-          <Box key={group}>
-            {sectionHeader(group, label, items.length, listId, () => {
-              const existingSlugs = items.map(slugFromPath);
-              setAddDialog({ domain: "content", subDir: group, existingSlugs });
-            })}
-            {!collapsed && (
-              <Box
-                id={listId}
-                role="group"
-                aria-labelledby={`sidebar-section-${group}-header`}
-              >
-                <ul
-                  role="list"
-                  style={{ listStyle: "none", padding: 0, margin: 0 }}
-                >
-                  {items.map((path) => (
-                    <li key={path}>
-                      {renderRow({
-                        path: `content/src/${group}/${path}`,
-                        domain: group,
-                        leftHandle: null,
-                      })}
-                    </li>
-                  ))}
-                </ul>
-              </Box>
-            )}
-          </Box>
-        );
-      })}
-
       {entries.components.length > 0 && (
         <Box>
           {sectionHeader(
@@ -992,7 +1023,7 @@ export function Sidebar({
         entries.appContextEntities,
         entries.appContextPatterns,
       ].some((e) => e.length > 0) && (
-        <DimensionHeader>The products</DimensionHeader>
+        <DimensionHeader>Application context</DimensionHeader>
       )}
 
       {(
