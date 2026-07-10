@@ -8,7 +8,7 @@
 | Avatar | approved | not started | inherited | inherited | not started |
 | Badges | approved | not started | inherited | inherited | approved |
 | Breadcrumbs | approved | not started | inherited | inherited | approved |
-| Buttons | approved | not started | draft | draft | approved |
+| Buttons | approved | draft | draft | draft | approved |
 | Calendar | approved | not started | inherited | inherited | not started |
 | Cards | approved | not started | inherited | inherited | approved |
 | Chat with AI Steward | draft | draft | draft | not started | not started |
@@ -64,7 +64,7 @@
 | Domain | Approved | Draft | Inherited | Not started | Absent |
 |---|---|---|---|---|---|
 | content | 53 | 1 | 0 | 0 | 0 |
-| usage | 0 | 1 | 0 | 53 | 0 |
+| usage | 0 | 2 | 0 | 52 | 0 |
 | design | 0 | 3 | 50 | 1 | 0 |
 | behavior | 0 | 1 | 51 | 2 | 0 |
 | tokens | 12 | 0 | 0 | 42 | 0 |
