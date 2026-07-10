@@ -31,7 +31,13 @@ export function snippetsForSlug(text: string, slug: string): string[] {
   // The three reference shapes anchorIndex scans, applied per paragraph:
   // link-to-anchor `](…#slug)`, yaml `{ref: slug}`, bare-slug link `](slug)`.
   const occurrence = new RegExp(
-    "\\]\\([^)]*#" + s + "\\)|\\{\\s*ref\\s*:\\s*" + s + "\\b|\\]\\(" + s + "\\)",
+    "\\]\\([^)]*#" +
+      s +
+      "\\)|\\{\\s*ref\\s*:\\s*" +
+      s +
+      "(?![\\w-])|\\]\\(" +
+      s +
+      "\\)",
   );
   const out: string[] = [];
   for (const p of paragraphs(text)) {
