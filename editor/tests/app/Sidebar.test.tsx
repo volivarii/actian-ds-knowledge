@@ -275,7 +275,7 @@ test("Sidebar: two dimension groups — Design system, then The products", async
       { name: "catalog-browse.md", type: "file" as const },
     ],
   };
-  const { container } = render(
+  render(
     wrap(
       <Sidebar
         octokit={fakeGh(withAppContext)}
@@ -286,18 +286,41 @@ test("Sidebar: two dimension groups — Design system, then The products", async
     ),
   );
   await waitFor(() => screen.getByText("Design system"));
-  screen.getByText("The products");
   // The app-context sections live under "The products", AFTER the design
-  // system sections (Components is the DS group's last section).
-  const text = container.textContent ?? "";
+  // system sections (Components is the DS group's last section). Use
+  // document order between the actual nodes — a missing node fails
+  // loudly here, unlike textContent.indexOf (-1 compares as "before").
+  const follows = (a: Element, b: Element) =>
+    (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
   assert.ok(
-    text.indexOf("Components") < text.indexOf("The products"),
+    follows(screen.getByText("Components"), screen.getByText("The products")),
     "Components (design system) should precede The products group",
   );
   assert.ok(
-    text.indexOf("The products") < text.indexOf("UX patterns"),
+    follows(screen.getByText("The products"), screen.getByText("UX patterns")),
     "UX patterns should sit inside The products group",
   );
+});
+
+test("Sidebar: dimension headers hide when their dimension is empty", async () => {
+  // App-context only — every design-system listing 404s/empties out.
+  const appContextOnly = {
+    "app-context/src/apps": [{ name: "studio.md", type: "file" as const }],
+    "app-context/src/entities": [],
+    "app-context/src/patterns": [],
+  };
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(appContextOnly)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("The products"));
+  assert.equal(screen.queryByText("Design system"), null);
 });
 
 test("Sidebar: Foundations section toggles", async () => {

@@ -94,6 +94,22 @@ const APP_CONTEXT_LABEL: Record<"apps" | "entities" | "patterns", string> = {
   patterns: "UX patterns",
 };
 
+// Uppercase group label separating the sidebar's two dimensions.
+function DimensionHeader({ children }: { children: string }) {
+  return (
+    <Box px="3" pt="3" pb="1">
+      <Text
+        size="1"
+        color="gray"
+        weight="medium"
+        style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}
+      >
+        {children}
+      </Text>
+    </Box>
+  );
+}
+
 const SECTION_STORAGE_KEY = "sidebar.section.collapsed.v1";
 
 function defaultCollapsed(): Record<SectionKey, boolean> {
@@ -759,17 +775,18 @@ export function Sidebar({
           (foundations, components, writing rules, accessibility) vs what
           the products ARE (apps, entities, UX patterns — the app-context
           domain). Group headers make the ontology visible without adding
-          a nav surface or route. */}
-      <Box px="3" pt="3" pb="1">
-        <Text
-          size="1"
-          color="gray"
-          weight="medium"
-          style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}
-        >
-          Design system
-        </Text>
-      </Box>
+          a nav surface or route. Both headers hide when their dimension
+          has no sections, matching the per-section empty guards. */}
+      {[
+        entries.foundations,
+        entries.accessibility,
+        entries.patterns,
+        entries.product,
+        entries.writing,
+        entries.components,
+      ].some((e) => e.length > 0) && (
+        <DimensionHeader>Design system</DimensionHeader>
+      )}
 
       {entries.foundations.length > 0 && (
         <Box>
@@ -970,20 +987,12 @@ export function Sidebar({
         </Box>
       )}
 
-      {entries.appContextApps.length +
-        entries.appContextEntities.length +
-        entries.appContextPatterns.length >
-        0 && (
-        <Box px="3" pt="3" pb="1">
-          <Text
-            size="1"
-            color="gray"
-            weight="medium"
-            style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}
-          >
-            The products
-          </Text>
-        </Box>
+      {[
+        entries.appContextApps,
+        entries.appContextEntities,
+        entries.appContextPatterns,
+      ].some((e) => e.length > 0) && (
+        <DimensionHeader>The products</DimensionHeader>
       )}
 
       {(
