@@ -17,13 +17,22 @@ function stableStringify(obj) {
   return JSON.stringify(obj, null, 2) + "\n";
 }
 
-// Write `contents` to `absPath`, creating parent dirs as needed.
+// Write `contents` to `absPath`, creating parent dirs as needed. Genuinely
+// atomic: writes a pid-suffixed temp file in the same directory, then
+// renameSync (atomic on POSIX same-filesystem), so a concurrent reader sees
+// either the old or the new complete file — never a truncated one. This
+// matters because `node --test tests/*.test.js` runs test files in parallel
+// processes, and some tests re-derive committed dist files in place while
+// other tests read them (e.g. graph derive() vs graph-coverage reading
+// graph/dist/graph.json — a bare writeFileSync's truncate window flaked CI).
 function writeAtomic(absPath, contents) {
   const fs = require("fs");
   const path = require("path");
   const dir = path.dirname(absPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(absPath, contents);
+  const tmp = absPath + "." + process.pid + ".tmp";
+  fs.writeFileSync(tmp, contents);
+  fs.renameSync(tmp, absPath);
 }
 
 module.exports = { stableStringify, writeAtomic };
