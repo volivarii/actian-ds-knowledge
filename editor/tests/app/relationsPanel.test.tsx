@@ -241,3 +241,25 @@ test("collapsed preference persists to localStorage and a fresh render starts co
   const { container: container2 } = renderPanel();
   assert.ok(!container2.textContent!.includes("Usage"));
 });
+
+test("outline renders nothing when text has no headings", () => {
+  const { container } = renderPanel({ text: "just prose, no headings" });
+  // Empty outline renders without crashing; no heading rows present.
+  assert.equal(
+    container.querySelectorAll("[data-testid='outline-row']").length,
+    0,
+  );
+});
+
+test("outline indentation: H2 deeper than H1, H3 deeper than H2", () => {
+  const md = "# Top\n## Section\n### Sub\n";
+  const { container } = renderPanel({ text: md });
+  const items = container.querySelectorAll("[data-testid='outline-row']");
+  assert.equal(items.length, 3);
+  const pads = Array.from(items).map((el) =>
+    parseFloat((el as HTMLElement).style.paddingLeft),
+  );
+  // H1 < H2 < H3 indent
+  assert.ok(pads[0]! < pads[1]!);
+  assert.ok(pads[1]! < pads[2]!);
+});
