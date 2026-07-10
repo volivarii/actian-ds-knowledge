@@ -31,6 +31,7 @@ import {
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { RichBodyEditor } from "../markdown-engine/RichBodyEditor";
 import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
+import { applyExternalTextChange } from "../lib/applyExternalTextChange";
 import {
   splitRawFrontmatter,
   joinRawFrontmatter,
@@ -744,12 +745,9 @@ export function MarkdownEditScreen({
             }),
           )}
           taxonomy={taxonomy}
-          onTextChange={(next) => {
-            if (!view) return;
-            view.dispatch({
-              changes: { from: 0, to: view.state.doc.length, insert: next },
-            });
-          }}
+          onTextChange={(next) =>
+            applyExternalTextChange(view, next, handleChange)
+          }
           onClose={() => setConnectionsPopover(null)}
           onNavigate={onNavigate}
         />
