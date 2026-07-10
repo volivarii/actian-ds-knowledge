@@ -224,6 +224,133 @@ test("derive-content — committed dist/global.md matches buildGlobalOutput", fu
   );
 });
 
+// ---- per-bucket split views (content-dist split slice) ----
+
+test("derive-content — buildBucketOutput rejects an unknown bucket", function () {
+  assert.throws(function () {
+    derive.buildBucketOutput(DEFAULT_CONFIG, "nope");
+  }, /unknown content bucket 'nope'/);
+});
+
+test("derive-content — each committed bucket dist matches buildBucketOutput", function () {
+  derive.CONTENT_SUB_BUCKETS.forEach(function (bucket) {
+    var onDisk = fs.readFileSync(DEFAULT_CONFIG.bucketOuts[bucket], "utf8");
+    assert.strictEqual(
+      onDisk,
+      derive.buildBucketOutput(DEFAULT_CONFIG, bucket),
+      "content/dist/" +
+        bucket +
+        ".md is stale — run `npm run derive:content` and commit",
+    );
+  });
+});
+
+test("derive-content — bucket outputs partition the bucketed global sections", function () {
+  var globalSections = derive
+    .resolveAllSections(DEFAULT_CONFIG)
+    .filter(function (s) {
+      return s.scope === "global";
+    });
+  var bucketed = globalSections.filter(function (s) {
+    return s.bucket !== null;
+  });
+  var rootLevel = globalSections.filter(function (s) {
+    return s.bucket === null;
+  });
+  assert.ok(bucketed.length > 0, "expected bucketed global sections");
+  assert.ok(
+    rootLevel.length > 0,
+    "expected root-level meta sections (global.md-only)",
+  );
+  derive.CONTENT_SUB_BUCKETS.forEach(function (bucket) {
+    var out = derive.buildBucketOutput(DEFAULT_CONFIG, bucket);
+    bucketed.forEach(function (s) {
+      // Membership by section BODY (what assembleDoc actually embeds):
+      // index titles don't reliably match section headings (some sections
+      // have no H1 of their own). An empty body (a frontmatter-only stub
+      // like loading-and-progress) is a substring of anything, so it can't
+      // carry a membership signal — skip it.
+      if (s.body.length === 0) return;
+      var inThisBucket = s.bucket === bucket;
+      assert.equal(
+        out.indexOf(s.body) !== -1,
+        inThisBucket,
+        "section '" +
+          s.slug +
+          "' (bucket " +
+          s.bucket +
+          ") must appear in " +
+          bucket +
+          ".md " +
+          (inThisBucket ? "exactly" : "never"),
+      );
+    });
+    // Root-level meta files are global.md-only by design.
+    rootLevel.forEach(function (s) {
+      if (s.body.length === 0) return;
+      assert.ok(
+        out.indexOf(s.body) === -1,
+        "root-level section '" +
+          s.slug +
+          "' must not appear in " +
+          bucket +
+          ".md",
+      );
+    });
+  });
+});
+
+test("derive-content — empty-body sections are dropped (no malformed empty block)", function () {
+  // A frontmatter-only stub (patterns/loading-and-progress.md) used to emit
+  // a `---` / blank / `---` empty block. The generator now drops empty
+  // bodies, so no output may contain two separators with only blanks between.
+  var docs = [derive.buildGlobalOutput(DEFAULT_CONFIG)];
+  derive.CONTENT_SUB_BUCKETS.forEach(function (bucket) {
+    docs.push(derive.buildBucketOutput(DEFAULT_CONFIG, bucket));
+  });
+  docs.forEach(function (out) {
+    assert.ok(
+      !/\n---\n\n+---\n/.test(out),
+      "no empty section block (adjacent separators) allowed in any output",
+    );
+  });
+});
+
+test("derive-content — a bucket with zero prose sections fails loud", function () {
+  var os = require("node:os");
+  var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "content-split-"));
+  fs.mkdirSync(path.join(tmp, "writing"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmp, "content-index.md"),
+    '<a href="voice">Voice</a>\n',
+  );
+  fs.writeFileSync(path.join(tmp, "writing", "voice.md"), "# Voice\n\nBody.\n");
+  var config = derive.resolveConfig({
+    src: tmp,
+    index: path.join(tmp, "content-index.md"),
+  });
+  // The populated bucket builds; a bucket with no sections throws instead of
+  // producing a header-only dist file.
+  assert.ok(
+    derive.buildBucketOutput(config, "writing").indexOf("## Voice") !== -1,
+  );
+  assert.throws(function () {
+    derive.buildBucketOutput(config, "patterns");
+  }, /zero prose sections/);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("derive-content — writing bucket re-renders the words-to-avoid table like global.md", function () {
+  var out = derive.buildBucketOutput(DEFAULT_CONFIG, "writing");
+  var expected = derive.renderWordsToAvoidSection(
+    derive.readWordsToAvoidRules(DEFAULT_CONFIG),
+  );
+  assert.ok(
+    out.indexOf(expected) !== -1,
+    "writing.md must carry the frontmatter-rendered Do/Don't table",
+  );
+});
+
 // Files in content/src/ that aren't section bodies. Kept in sync with
 // the manifest validator's EXCLUDED_FILES + the index's expected omissions.
 var NON_SECTION_FILES = new Set([

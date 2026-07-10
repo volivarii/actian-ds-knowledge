@@ -55,7 +55,7 @@ app-context/
 | Meta Kit `templates` block | `components/dist/registries/metakit.json` (ONLY this block — hand-curated; CI preserves across syncs) | Same workflow preserves the block |
 | Token value | `tokens/tokens.json` + matching CSS variable in `tokens/tokens.css` | `render-token-reference.js` regenerates `tokens/token-reference.md` |
 | Component content guidelines (UI copy rules) | `components/src/<slug>/content.md` — see `components/src/AUTHORING.md` | `guidelines-derive.yml` regenerates `components/dist/guidelines/<slug>.json` on PR |
-| Global / cross-cutting content guidelines (voice, tone, words to avoid, UX-pattern topics) | `content/src/{writing,patterns,product}/<slug>.md` — see `content/src/AUTHORING.md` and `content/src/content-index.md` | `content-derive.yml` regenerates `content/dist/global.md` on PR |
+| Global / cross-cutting content guidelines (voice, tone, words to avoid, UX-pattern topics) | `content/src/{writing,patterns,product}/<slug>.md` — see `content/src/AUTHORING.md` and `content/src/content-index.md` | `content-derive.yml` regenerates `content/dist/global.md` + the per-bucket splits (`writing.md`, `patterns.md`, `product.md`) on PR |
 | Accessibility guidance | `accessibility/src/<slug>.md` (per-section, ordered by `_order.json`) | `accessibility-derive.yml` regenerates `accessibility/dist/a11y-index.json` on PR |
 | App context / persona / terminology | `app-context/src/{apps,entities,patterns}/<slug>.md` + `app-context/src/terminology.yml` | `app-context-derive.yml` regenerates `app-context/dist/app-context.json` + `app-context/dist/app-context.bundle.json` on PR |
 
