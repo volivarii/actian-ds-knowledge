@@ -25,8 +25,11 @@ export interface RelationsPanelProps {
   /** Open a file in the editor (incoming/graph row click-through). */
   onOpenFile: (path: string) => void;
   /** Open the connections manager (existing ConnectionsPopover flow) for
-   *  a section, anchored to the given element. Write-back stays intact. */
-  onManageConnections: (sectionAnchor: string, anchorEl: HTMLElement) => void;
+   *  a section, anchored to the given element. Write-back stays intact.
+   *  Optional: a caller with no manage flow wired up yet (e.g. the
+   *  frontmatter-form body view) omits it and the Manage button does not
+   *  render, rather than rendering enabled with a no-op click. */
+  onManageConnections?: (sectionAnchor: string, anchorEl: HTMLElement) => void;
 }
 
 const COLLAPSE_STORAGE_KEY = "relationsPanelCollapsed";
@@ -205,18 +208,21 @@ export function RelationsPanel(props: RelationsPanelProps) {
             <Text size="1" color="gray">
               Outgoing ({props.outgoing.length})
             </Text>
-            <Button
-              size="1"
-              variant="ghost"
-              data-testid="manage-connections"
-              onClick={(e) => {
-                const anchor =
-                  scopedAnchor ?? firstScopableAnchor(props.text, headings);
-                if (anchor) props.onManageConnections(anchor, e.currentTarget);
-              }}
-            >
-              Manage
-            </Button>
+            {props.onManageConnections && (
+              <Button
+                size="1"
+                variant="ghost"
+                data-testid="manage-connections"
+                onClick={(e) => {
+                  const anchor =
+                    scopedAnchor ?? firstScopableAnchor(props.text, headings);
+                  if (anchor)
+                    props.onManageConnections!(anchor, e.currentTarget);
+                }}
+              >
+                Manage
+              </Button>
+            )}
           </Flex>
           {props.outgoing.map((c, i) => (
             <Box key={`${c.refType}:${c.slug}:${i}`} px="1">

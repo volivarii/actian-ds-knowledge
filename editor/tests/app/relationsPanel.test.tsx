@@ -203,6 +203,24 @@ test("manage connections click passes the scoped (or first) section anchor and t
   assert.ok(calls[0]!.el instanceof HTMLElement);
 });
 
+test("Manage button is absent when onManageConnections is omitted", () => {
+  render(
+    <Theme>
+      <RelationsPanel
+        text={TEXT}
+        file="components/src/button/content.md"
+        counts={new Map()}
+        incoming={[]}
+        outgoing={[]}
+        graphNeighbors={[]}
+        onNavigate={() => {}}
+        onOpenFile={() => {}}
+      />
+    </Theme>,
+  );
+  assert.equal(screen.queryByTestId("manage-connections"), null);
+});
+
 test("collapse toggle hides the outline and contextual relations, keeps the header", () => {
   const { container } = renderPanel();
   assert.ok(container.textContent!.includes("Usage"));

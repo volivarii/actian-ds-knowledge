@@ -385,7 +385,8 @@ export function FrontmatterBodyEditScreen(props: Props) {
         graphNeighbors={graphNeighbors}
         onNavigate={scrollRichHeading}
         onOpenFile={handleOpenFile}
-        onManageConnections={() => {}}
+        // onManageConnections omitted: this screen's refs are edited in the
+        // form, not the body; the manage flow arrives with a later slice.
       />
     </Box>
   );
