@@ -354,7 +354,7 @@ test("ReferencePicker: renders the top component row with its badge and Enter ca
   const editorDom = document.body.appendChild(document.createElement("div"));
   const state: ReferencePickerState = {
     query: "but",
-    rect: { left: 0, bottom: 0 },
+    rect: { left: 0, bottom: 0, top: 0 },
     editorDom,
     apply: (t) => {
       applied.target = t;
@@ -394,7 +394,7 @@ test("ReferencePicker: clicking a row calls apply with that target", () => {
   const editorDom = document.body.appendChild(document.createElement("div"));
   const state: ReferencePickerState = {
     query: "but",
-    rect: { left: 0, bottom: 0 },
+    rect: { left: 0, bottom: 0, top: 0 },
     editorDom,
     apply: (t) => {
       applied.target = t;
@@ -428,7 +428,7 @@ test("ReferencePicker: a keydown whose target is outside editorDom is not consum
   const outside = document.body.appendChild(document.createElement("div"));
   const state: ReferencePickerState = {
     query: "but",
-    rect: { left: 0, bottom: 0 },
+    rect: { left: 0, bottom: 0, top: 0 },
     editorDom,
     apply: (t) => {
       applied.target = t;

@@ -21,6 +21,7 @@ import {
   splitFrontmatter,
   routeNoFrontmatter,
 } from "../substrate/splitFrontmatter";
+import { EditorView } from "@codemirror/view";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
 import { submissionCartSingleton } from "../drafts/store-instance";
@@ -35,6 +36,8 @@ import {
   writeRelationsPanelCollapsed,
 } from "./RelationsPanel";
 import { scrollRichHeading } from "./richScroll";
+import { computeFocusedSection } from "./SectionFocusTracker";
+import type { Heading } from "../lib/headingScan";
 import {
   countsBySection,
   incomingForFile,
@@ -206,6 +209,35 @@ export function FrontmatterBodyEditScreen(props: Props) {
       props.onNavigate?.(p);
     },
     [props.onNavigate],
+  );
+
+  // The CodeMirror body view (non-WYSIWYG branch), captured so the relations
+  // outline can scroll it and so cursor moves can drive the active-section
+  // marker. The rich (Milkdown) branch has no CM view: it navigates the DOM
+  // via scrollRichHeading and emits no cursor line, so its active marker stays
+  // null until a rich-mode cursor observer lands (follow-up).
+  const [cmView, setCmView] = useState<EditorView | null>(null);
+  const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
+  const handleCursorLineChange = useCallback((line: number) => {
+    const section = computeFocusedSection(bodyRef.current, line);
+    setActiveAnchor(section ? section.anchor : null);
+  }, []);
+  // Reset the active marker when the file changes; the previous body's
+  // cursor-derived section no longer applies.
+  useEffect(() => {
+    setActiveAnchor(null);
+  }, [path]);
+  const cmNavigate = useCallback(
+    (heading: Heading) => {
+      if (!cmView) return;
+      const pos = cmView.state.doc.line(heading.line + 1).from;
+      cmView.dispatch({
+        selection: { anchor: pos },
+        effects: EditorView.scrollIntoView(pos, { y: "start" }),
+      });
+      cmView.focus();
+    },
+    [cmView],
   );
 
   useEffect(() => {
@@ -393,7 +425,14 @@ export function FrontmatterBodyEditScreen(props: Props) {
       </Box>
     );
 
-  const relationsPanel = (
+  // Mode-specific navigation: the rich branch scrolls the Milkdown DOM by
+  // heading index; the CodeMirror branch dispatches a CM scroll effect. Both
+  // reuse the same panel, so it takes the navigate handler and (cursor-derived)
+  // active anchor per mode.
+  const renderRelationsPanel = (
+    onNavigate: (heading: Heading, index: number) => void,
+    active: string | null,
+  ) => (
     <Box
       className="editor-outline-pane"
       style={{
@@ -412,12 +451,13 @@ export function FrontmatterBodyEditScreen(props: Props) {
         incoming={incoming}
         outgoing={[]}
         graphNeighbors={graphNeighbors}
-        onNavigate={scrollRichHeading}
+        onNavigate={onNavigate}
         onOpenFile={handleOpenFile}
         // onManageConnections omitted: this screen's refs are edited in the
         // form, not the body; the manage flow arrives with a later slice.
         collapsed={relationsCollapsed}
         onToggleCollapsed={toggleRelationsCollapsed}
+        activeAnchor={active}
       />
     </Box>
   );
@@ -474,7 +514,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
               >
                 {shouldUseWysiwyg(path) ? (
                   <Flex gap="2" height="100%">
-                    {relationsPanel}
+                    {renderRelationsPanel(scrollRichHeading, null)}
                     <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
                       <Suspense
                         fallback={
@@ -500,14 +540,21 @@ export function FrontmatterBodyEditScreen(props: Props) {
                     </Box>
                   </Flex>
                 ) : (
-                  <CodeMirrorEditor
-                    key={path}
-                    initialText={body}
-                    onChange={(t) => {
-                      setBody(t);
-                      scheduleFlush(formDataRef.current, t);
-                    }}
-                  />
+                  <Flex gap="2" height="100%">
+                    {renderRelationsPanel(cmNavigate, activeAnchor)}
+                    <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
+                      <CodeMirrorEditor
+                        key={path}
+                        initialText={body}
+                        onChange={(t) => {
+                          setBody(t);
+                          scheduleFlush(formDataRef.current, t);
+                        }}
+                        onReady={setCmView}
+                        onCursorLineChange={handleCursorLineChange}
+                      />
+                    </Box>
+                  </Flex>
                 )}
               </Box>
             </Box>

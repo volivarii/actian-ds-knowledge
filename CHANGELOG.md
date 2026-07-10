@@ -19,6 +19,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Editor: relations panel polish (cursor-follow outline, guided empty states,
+  and the source-mode frontmatter editor).** The outline now highlights the section
+  the cursor sits in (source mode and the frontmatter screen's CodeMirror body),
+  a passive follow marker distinct from the click-to-scope filter. Empty relation
+  groups render a plain-language affordance ("Nothing links here yet.", "No
+  references yet. Use Manage to add one.") instead of a bare "(0)", and the three
+  groups are relabeled to author-facing vocabulary: Referenced by (was Incoming),
+  References (was Outgoing), In the graph. The relations panel now also renders
+  beside the frontmatter-form screen's plain CodeMirror body, which previously had
+  no panel (only the WYSIWYG branch did). And the `[[` reference picker stays on
+  screen: its left edge is clamped near the right margin so a 320px card no longer
+  clips off-screen, and it flips above the caret when there is no room for its full
+  height below. Editor tooling only: no dist, contract, or consumer-facing change.
+  ([#394])
 - **Editor: type `[[` to reference anything.** In the rich editor, `[[` opens a picker over the
   knowledge graph's components plus the current document's sections; selecting inserts a plain
   markdown link in the corpus's existing grammar (bare component slug, or `#anchor` for sections),
@@ -233,6 +247,7 @@ history and pull-request record.
 [Unreleased]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.69...HEAD
 [0.34.69]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.68...v0.34.69
 [0.34.68]: https://github.com/volivarii/actian-ds-knowledge/compare/v0.34.65...v0.34.68
+[#394]: https://github.com/volivarii/actian-ds-knowledge/pull/394
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
 [#390]: https://github.com/volivarii/actian-ds-knowledge/pull/390
 [#389]: https://github.com/volivarii/actian-ds-knowledge/pull/389
