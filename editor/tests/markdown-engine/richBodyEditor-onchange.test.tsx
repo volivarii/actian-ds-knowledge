@@ -46,7 +46,7 @@ test("Milkdown listener reads the latest onChange after a prop-only re-render", 
     { timeout: 5000 },
   );
 
-  // Re-render with a NEW onChange identity but the SAME key/mount — this is
+  // Re-render with a NEW onChange identity but the SAME key/mount: this is
   // the exact shape of a MarkdownEditScreen re-render after fmBlock changes:
   // RichBodyEditor is not remounted (key is `${path}:${remountNonce}` and
   // neither changed), only the onChange prop's closure is new.
@@ -57,7 +57,7 @@ test("Milkdown listener reads the latest onChange after a prop-only re-render", 
   );
 
   // Drive one REAL editor mutation via the toolbar's actual Milkdown command
-  // (insertTableCommand), not a simulated call — this is what proves the
+  // (insertTableCommand), not a simulated call: this is what proves the
   // mount-time listener itself, not just a wrapper function, reads through.
   fireEvent.click(screen.getByRole("button", { name: /insert table/i }));
 
