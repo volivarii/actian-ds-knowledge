@@ -1,7 +1,7 @@
 // Command palette via cmdk — global Cmd-K / Ctrl-K.
 //
 // Initial command set:
-//   - Open coverage dashboard (= setActivePath(null))
+//   - Go home (= setActivePath(null) — the front-door HomeScreen)
 //   - Open file → typeahead over the small set of "known" doc paths
 //     (foundations + accessibility + per-component _meta/content/etc.)
 //     For V1 just exposes the file picker via the sidebar; future iteration

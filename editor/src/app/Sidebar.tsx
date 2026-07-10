@@ -705,9 +705,9 @@ export function Sidebar({
         onClick={() => onSelect(null)}
         aria-current={coverageActive ? "page" : undefined}
       >
-        <span aria-hidden="true">📊</span>
+        <span aria-hidden="true">🏠</span>
         <Text size="2" weight={coverageActive ? "bold" : "medium"}>
-          Coverage
+          Home
         </Text>
       </Flex>
       <Flex
