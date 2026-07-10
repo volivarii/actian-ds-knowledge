@@ -290,12 +290,14 @@
           {
             "name": "type",
             "type": "enum",
-            "example": "Dataset, Visualization, Data Process, Custom Item, Glossary Item, Data Product"
+            "example": "Dataset, Visualization, Data Process, Custom Item, Glossary Item, Data Product",
+            "states": []
           },
           {
             "name": "documentation completion",
             "type": "number",
-            "example": "percentage (0–100) from 4 criteria: description, contact, glossary link, properties filled"
+            "example": "percentage (0–100) from 4 criteria: description, contact, glossary link, properties filled",
+            "states": []
           },
           "owner",
           "contacts",
