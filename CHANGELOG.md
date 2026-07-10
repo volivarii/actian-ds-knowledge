@@ -20,13 +20,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 - **Editor: a live freshness chip.** The header now shows the knowledge version
-  and when the substrate last changed ("v0.34.83 · updated 3 h ago"), fetched
-  live from main (version from `package.json`, date from its last CI bump
-  commit) rather than baked at build time, since the editor SPA only redeploys
-  on editor changes. The chip stays silent rather than guessing when the probes
-  fail, and it replaces the hero's static "updated at every merge" badge with a
-  claim that proves itself. Answers the direction's "what's up to date"
-  question (flow 4). ([#399])
+  and when the substrate last changed ("v0.34.83 · updated 3h ago"), fetched
+  live from main rather than baked at build time, since the editor SPA only
+  redeploys on editor changes. The oracle is `paths-manifest.json`: it is
+  CI-stamped on every substrate change and never hand-edited, so editor-only
+  merges don't move the date and dependency edits can't fake a knowledge
+  change. The label re-derives every minute, the chip stays silent rather than
+  guessing when the probes fail, and it replaces the hero's static "updated at
+  every merge" badge with a claim that proves itself. Answers the direction's
+  "what's up to date" question (flow 4). ([#399])
 
 ### Changed
 - **Editor: the sidebar speaks author language and separates its two

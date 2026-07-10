@@ -2,81 +2,56 @@
 // when the substrate last changed.
 //
 // Why runtime-fetched, not baked: editor-deploy.yml only rebuilds the SPA
-// on editor/** changes, so a build-time snapshot of package.json#version
-// would silently go stale on every content merge. CI bumps
-// package.json#version in lockstep on every derive/sync, so its latest
-// commit date doubles as "when the substrate last changed".
+// on editor/** changes, so a build-time snapshot would silently go stale
+// on every content merge.
 //
-// Reuses fetchLatestCommit (sessionStorage, 5-min TTL) for the date and
-// memoizes the combined result per Octokit instance like loadCoverage.
+// Oracle: `paths-manifest.json`. Its `knowledge_version` is CI-stamped in
+// lockstep with package.json on every derive/sync and the file is never
+// hand-edited (write-protected in the editor), so its latest commit IS
+// the last substrate change. Deliberately NOT the latest commit on main:
+// editor-only merges (e.g. #394, #397) don't touch the manifest, and the
+// chip must not claim the knowledge changed when only the tooling did.
+// Deliberately NOT package.json: dependency edits touch that file without
+// any substrate change.
 
 import type { Octokit } from "@octokit/rest";
 import { getTextFile } from "../app/githubApi";
 import { fetchLatestCommit } from "./derivedFields";
+import { memoizeByInstance } from "./memoizeByInstance";
 
 export interface Freshness {
-  /** knowledge version from package.json, e.g. "0.34.83"; null if unreadable. */
+  /** knowledge_version from paths-manifest.json; null if unreadable. */
   version: string | null;
-  /** ISO timestamp of the last version-bump commit; null if unreadable. */
+  /** ISO timestamp of the manifest's last commit; null if unreadable. */
   updatedAt: string | null;
 }
 
-const FRESHNESS_TTL_MS = 5 * 60 * 1000;
-const freshnessCache = new WeakMap<
-  Octokit,
-  { at: number; promise: Promise<Freshness> }
->();
-
-export function loadFreshness(gh: Octokit): Promise<Freshness> {
-  const hit = freshnessCache.get(gh);
-  if (hit && Date.now() - hit.at < FRESHNESS_TTL_MS) return hit.promise;
-  const promise = fetchFreshness(gh);
-  freshnessCache.set(gh, { at: Date.now(), promise });
-  promise.then(
-    (f) => {
-      // Never pin a fully failed probe; retry on the next call.
-      if (
-        f.version == null &&
-        f.updatedAt == null &&
-        freshnessCache.get(gh)?.promise === promise
-      ) {
-        freshnessCache.delete(gh);
-      }
-    },
-    () => {
-      if (freshnessCache.get(gh)?.promise === promise) {
-        freshnessCache.delete(gh);
-      }
-    },
-  );
-  return promise;
-}
+const MANIFEST_PATH = "paths-manifest.json";
 
 async function fetchFreshness(gh: Octokit): Promise<Freshness> {
   const [version, commit] = await Promise.all([
-    getTextFile(gh, "package.json")
+    getTextFile(gh, MANIFEST_PATH)
       .then((text) => {
-        const parsed = JSON.parse(text) as { version?: unknown };
-        return typeof parsed.version === "string" ? parsed.version : null;
+        const parsed = JSON.parse(text) as { knowledge_version?: unknown };
+        return typeof parsed.knowledge_version === "string"
+          ? parsed.knowledge_version
+          : null;
       })
       .catch(() => null),
-    fetchLatestCommit(gh, "package.json").catch(() => null),
+    fetchLatestCommit(gh, MANIFEST_PATH).catch(() => null),
   ]);
-  return { version, updatedAt: commit?.date ?? null };
+  // `|| null`, not `?? null`: fetchLatestCommit yields date: "" for a
+  // commit missing both author and committer dates, and an empty string
+  // must not defeat the chip's null guards.
+  return { version, updatedAt: commit?.date || null };
 }
 
-/** "just now" / "12 min ago" / "3 h ago" / "2 d ago" / "2026-06-01".
- *  Takes `now` explicitly so tests stay deterministic. */
-export function formatAgo(nowMs: number, iso: string): string {
-  const then = Date.parse(iso);
-  if (Number.isNaN(then)) return "";
-  const deltaS = Math.max(0, Math.floor((nowMs - then) / 1000));
-  if (deltaS < 60) return "just now";
-  const deltaMin = Math.floor(deltaS / 60);
-  if (deltaMin < 60) return `${deltaMin} min ago`;
-  const deltaH = Math.floor(deltaMin / 60);
-  if (deltaH < 24) return `${deltaH} h ago`;
-  const deltaD = Math.floor(deltaH / 24);
-  if (deltaD < 14) return `${deltaD} d ago`;
-  return iso.slice(0, 10);
-}
+/** Memoized per Octokit instance; a half-failed probe (either field null)
+ *  is retryable rather than pinned for the TTL. */
+export const loadFreshness = memoizeByInstance<Octokit, Freshness>(
+  fetchFreshness,
+  {
+    ttlMs: 5 * 60 * 1000,
+    isRetryable: (f) => f.version == null || f.updatedAt == null,
+  },
+);

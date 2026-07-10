@@ -22,7 +22,7 @@ function fakeGh(opts: { version?: string; commitDate?: string }) {
         if (opts.version === undefined) throw new Error("boom");
         return {
           data: {
-            content: b64(JSON.stringify({ version: opts.version })),
+            content: b64(JSON.stringify({ knowledge_version: opts.version })),
             encoding: "base64",
           },
         };
@@ -52,7 +52,7 @@ test("FreshnessChip renders version + relative update time", async () => {
     </Theme>,
   );
   await waitFor(() => screen.getByText(/v0\.34\.83/));
-  screen.getByText(/updated 3 h ago/);
+  screen.getByText(/updated 3h ago/);
 });
 
 test("FreshnessChip renders nothing when both probes fail", async () => {

@@ -22,6 +22,7 @@ import type { Octokit } from "@octokit/rest";
 import { parse as parseYaml } from "yaml";
 import { listDirectories, getTextFile } from "../app/githubApi";
 import { domainFileName } from "./workspaceState";
+import { memoizeByInstance } from "./memoizeByInstance";
 import { EXCLUDED_CATEGORY_LABELS } from "../substrate/graphEligibility";
 
 export const DOMAINS = [
@@ -71,43 +72,21 @@ interface DskitEntry {
   group?: string;
 }
 
-// Module-level memo, keyed by Octokit instance (WeakMap keeps test fakes
-// isolated and drops the cache with the session's client). A full load is
-// ~30-90 GitHub API calls, and three surfaces share it (HomeScreen,
-// CoverageDashboard, A11yCoverageDashboard) — same pattern precedent as
-// categoriesLoader's 5-minute TTL. Coverage is merge-driven data, so the
-// TTL is the whole staleness story: no force/invalidation hook (a refresh
-// right after submitting would show nothing new — the PR isn't merged).
-// Rejections and EMPTY results are evicted: empty almost always means a
-// degraded crawl (rate limit, transient 404 swallowed by the per-file
-// fallbacks below), not a truly empty repo, and must not be pinned.
-const COVERAGE_TTL_MS = 5 * 60 * 1000;
-const coverageCache = new WeakMap<
-  Octokit,
-  { at: number; promise: Promise<CoverageRow[]> }
->();
-
-export function loadCoverage(gh: Octokit): Promise<CoverageRow[]> {
-  const hit = coverageCache.get(gh);
-  if (hit && Date.now() - hit.at < COVERAGE_TTL_MS) {
-    return hit.promise;
-  }
-  const promise = fetchCoverage(gh);
-  coverageCache.set(gh, { at: Date.now(), promise });
-  promise.then(
-    (rows) => {
-      if (rows.length === 0 && coverageCache.get(gh)?.promise === promise) {
-        coverageCache.delete(gh);
-      }
-    },
-    () => {
-      if (coverageCache.get(gh)?.promise === promise) {
-        coverageCache.delete(gh);
-      }
-    },
-  );
-  return promise;
-}
+// Memoized per Octokit instance. A full load is ~30-90 GitHub API calls,
+// and three surfaces share it (HomeScreen, CoverageDashboard,
+// A11yCoverageDashboard) — same TTL precedent as categoriesLoader.
+// Coverage is merge-driven data, so the TTL is the whole staleness story:
+// no force/invalidation hook (a refresh right after submitting would show
+// nothing new — the PR isn't merged). An EMPTY result is retryable: empty
+// almost always means a degraded crawl (rate limit, transient 404
+// swallowed by the per-file fallbacks below), not a truly empty repo.
+export const loadCoverage = memoizeByInstance<Octokit, CoverageRow[]>(
+  fetchCoverage,
+  {
+    ttlMs: 5 * 60 * 1000,
+    isRetryable: (rows) => rows.length === 0,
+  },
+);
 
 async function fetchCoverage(gh: Octokit): Promise<CoverageRow[]> {
   const [dirs, registry] = await Promise.all([
