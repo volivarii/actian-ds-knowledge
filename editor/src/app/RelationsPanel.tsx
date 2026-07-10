@@ -42,6 +42,12 @@ export interface RelationsPanelProps {
    *  them every keystroke only to hide the DOM that would show them. */
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  /** Section anchor the editor is currently focused on (cursor-derived in the
+   *  CodeMirror modes), highlighted in the outline as a passive follow marker.
+   *  Distinct from the click-driven `scopedAnchor` filter: `activeAnchor` never
+   *  scopes the Incoming list, it only shows the author where they are. Rich
+   *  mode has no cursor callback yet, so it passes null (no active marker). */
+  activeAnchor?: string | null;
 }
 
 const COLLAPSE_STORAGE_KEY = "relationsPanelCollapsed";
@@ -122,6 +128,8 @@ export function RelationsPanel(props: RelationsPanelProps) {
             {entries.map(({ heading: h, anchor }, i) => {
               const count = anchor ? (props.counts.get(anchor) ?? 0) : 0;
               const scoped = anchor !== null && anchor === scopedAnchor;
+              const active =
+                anchor !== null && anchor === (props.activeAnchor ?? null);
               // H1 rows (and any heading before the first H2/H3) have no
               // anchor to scope to: navigate only, leave scopedAnchor as
               // it is instead of clearing an active scope.
@@ -133,6 +141,7 @@ export function RelationsPanel(props: RelationsPanelProps) {
                 <Flex
                   key={`${h.line}:${i}`}
                   data-testid="outline-row"
+                  data-active={active ? "true" : undefined}
                   role="button"
                   tabIndex={0}
                   align="center"
@@ -142,6 +151,13 @@ export function RelationsPanel(props: RelationsPanelProps) {
                     cursor: "pointer",
                     borderRadius: 4,
                     background: scoped ? "var(--accent-3)" : undefined,
+                    // Passive cursor-follow marker: an accent left rule, with a
+                    // transparent rule as the baseline so activating a row never
+                    // shifts its text sideways.
+                    borderLeft: active
+                      ? "2px solid var(--accent-8)"
+                      : "2px solid transparent",
+                    fontWeight: active ? 600 : undefined,
                     paddingLeft: (h.level - 1) * 10,
                   }}
                   onClick={activate}
@@ -176,8 +192,15 @@ export function RelationsPanel(props: RelationsPanelProps) {
           </Flex>
 
           <Text size="1" color="gray">
-            Incoming ({visibleIncoming.length})
+            Referenced by ({visibleIncoming.length})
           </Text>
+          {visibleIncoming.length === 0 && (
+            <Text size="1" color="gray" data-testid="incoming-empty">
+              {scopedAnchor
+                ? "Nothing links to this section yet."
+                : "Nothing links here yet."}
+            </Text>
+          )}
           {visibleIncoming.map((r, i) => (
             <Box
               key={`${r.fromPath}:${i}`}
@@ -205,7 +228,7 @@ export function RelationsPanel(props: RelationsPanelProps) {
 
           <Flex align="center" justify="between">
             <Text size="1" color="gray">
-              Outgoing ({props.outgoing.length})
+              References ({props.outgoing.length})
             </Text>
             {props.onManageConnections && (
               <Button
@@ -225,6 +248,13 @@ export function RelationsPanel(props: RelationsPanelProps) {
               </Button>
             )}
           </Flex>
+          {props.outgoing.length === 0 && (
+            <Text size="1" color="gray" data-testid="outgoing-empty">
+              {props.onManageConnections
+                ? "No references yet. Use Manage to add one."
+                : "No references yet."}
+            </Text>
+          )}
           {props.outgoing.map((c, i) => (
             <Box key={`${c.refType}:${c.slug}:${i}`} px="1">
               <Text as="div" size="1" truncate>
@@ -241,8 +271,13 @@ export function RelationsPanel(props: RelationsPanelProps) {
           ))}
 
           <Text size="1" color="gray" mt="1">
-            Graph (as of last merge)
+            In the graph (as of last merge)
           </Text>
+          {props.graphNeighbors.length === 0 && (
+            <Text size="1" color="gray" data-testid="graph-empty">
+              No graph connections yet.
+            </Text>
+          )}
           {props.graphNeighbors.map((n, i) => {
             // navTargetForNodeId is the same node-id -> activePath mapping
             // NeighborhoodPanel already uses. Not every node type

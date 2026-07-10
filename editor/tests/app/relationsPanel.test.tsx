@@ -133,7 +133,9 @@ test("graph row navigates via onOpenFile when navTargetForNodeId resolves; a nod
     },
   ];
   const { container, calls } = renderPanel({ graphNeighbors: neighbors });
-  const rows = Array.from(container.querySelectorAll("[data-testid='graph-row']"));
+  const rows = Array.from(
+    container.querySelectorAll("[data-testid='graph-row']"),
+  );
   const categoryRow = rows.find((r) => r.textContent!.includes("Action"))!;
   const contentRow = rows.find((r) => r.textContent!.includes("Loading"))!;
 
@@ -320,4 +322,68 @@ test("outline indentation: H2 deeper than H1, H3 deeper than H2", () => {
   // H1 < H2 < H3 indent
   assert.ok(pads[0]! < pads[1]!);
   assert.ok(pads[1]! < pads[2]!);
+});
+
+test("activeAnchor marks the matching outline row (data-active) without scoping the incoming list", () => {
+  const { container } = renderPanel({ activeAnchor: "style" });
+  const rows = Array.from(
+    container.querySelectorAll("[data-testid='outline-row']"),
+  ) as HTMLElement[];
+  const styleRow = rows.find((r) => r.textContent!.includes("Style"))!;
+  const usageRow = rows.find((r) => r.textContent!.includes("Usage"))!;
+  assert.equal(styleRow.getAttribute("data-active"), "true");
+  assert.equal(usageRow.getAttribute("data-active"), null);
+  // Active is a passive marker: the "usage"-slugged incoming ref stays visible
+  // (activeAnchor never filters Incoming the way a clicked row does).
+  assert.ok(
+    container.textContent!.includes("Use a button when the action is primary."),
+  );
+});
+
+test("activeAnchor of null (rich mode) marks no outline row", () => {
+  const { container } = renderPanel({ activeAnchor: null });
+  const active = container.querySelectorAll("[data-active='true']");
+  assert.equal(active.length, 0);
+});
+
+test("empty Referenced-by / References / graph groups render a zero-count affordance", () => {
+  const { container } = renderPanel({
+    incoming: [],
+    outgoing: [],
+    graphNeighbors: [],
+  });
+  assert.ok(container.querySelector("[data-testid='incoming-empty']"));
+  assert.ok(container.querySelector("[data-testid='outgoing-empty']"));
+  assert.ok(container.querySelector("[data-testid='graph-empty']"));
+  // Outgoing empty text nudges toward the Manage flow when it is wired.
+  assert.ok(container.textContent!.includes("Manage"));
+});
+
+test("outgoing empty affordance omits the Manage nudge when onManageConnections is absent", () => {
+  const { container } = render(
+    <Theme>
+      <RelationsPanel
+        text={TEXT}
+        file="components/src/button/content.md"
+        counts={new Map()}
+        incoming={[]}
+        outgoing={[]}
+        graphNeighbors={[]}
+        onNavigate={() => {}}
+        onOpenFile={() => {}}
+        collapsed={false}
+        onToggleCollapsed={() => {}}
+      />
+    </Theme>,
+  );
+  const empty = container.querySelector("[data-testid='outgoing-empty']")!;
+  assert.equal(empty.textContent, "No references yet.");
+});
+
+test("relation group labels use author-facing vocabulary (Referenced by / References)", () => {
+  const { container } = renderPanel();
+  assert.ok(container.textContent!.includes("Referenced by"));
+  assert.ok(container.textContent!.includes("References"));
+  assert.ok(!container.textContent!.includes("Incoming"));
+  assert.ok(!container.textContent!.includes("Outgoing"));
 });

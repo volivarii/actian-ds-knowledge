@@ -78,15 +78,39 @@ export function ReferencePicker({
 
   if (!state) return null;
 
+  // Keep the caret-anchored popup inside the viewport. `position: fixed` means
+  // rect coords are viewport-relative, so we clamp the left edge (a `[[` typed
+  // near the right margin would otherwise push a 320px card off-screen) and flip
+  // the card above the caret when there isn't room for its full height below.
+  const WIDTH = 320;
+  const MAX_HEIGHT = 280;
+  const MARGIN = 8;
+  const viewportW =
+    typeof window !== "undefined" ? window.innerWidth : WIDTH + 2 * MARGIN;
+  const viewportH =
+    typeof window !== "undefined"
+      ? window.innerHeight
+      : MAX_HEIGHT + 2 * MARGIN;
+  const left = Math.max(
+    MARGIN,
+    Math.min(state.rect.left, viewportW - WIDTH - MARGIN),
+  );
+  const spaceBelow = viewportH - state.rect.bottom;
+  const openUp =
+    spaceBelow < MAX_HEIGHT + MARGIN && state.rect.top > spaceBelow;
+  const vertical: React.CSSProperties = openUp
+    ? { bottom: viewportH - state.rect.top + 4 }
+    : { top: state.rect.bottom + 4 };
+
   return (
     <Card
       size="1"
       style={{
         position: "fixed",
-        left: state.rect.left,
-        top: state.rect.bottom + 4,
-        width: 320,
-        maxHeight: 280,
+        left,
+        ...vertical,
+        width: WIDTH,
+        maxHeight: MAX_HEIGHT,
         overflow: "auto",
         zIndex: 1000,
       }}

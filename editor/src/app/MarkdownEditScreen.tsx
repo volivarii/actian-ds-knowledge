@@ -300,8 +300,10 @@ export function MarkdownEditScreen({
   }, [text]);
   const handleCursorLineChange = useCallback(
     (line: number) => {
-      if (!onFocusedSectionChange) return;
       const section = computeFocusedSection(textRef.current, line);
+      // Drive the outline's passive active-section highlight.
+      setActiveAnchor(section ? section.anchor : null);
+      if (!onFocusedSectionChange) return;
       const resolved: FocusedSectionContext | null = section
         ? { file: path, ...section }
         : null;
@@ -310,10 +312,11 @@ export function MarkdownEditScreen({
     [onFocusedSectionChange, path],
   );
 
-  // Reset analytics callback when the active file changes — the previous
-  // file's cursor-derived section no longer applies.
+  // Reset analytics callback + active marker when the active file changes —
+  // the previous file's cursor-derived section no longer applies.
   useEffect(() => {
     onFocusedSectionChange?.(null);
+    setActiveAnchor(null);
   }, [path, onFocusedSectionChange]);
 
   // Build the in-memory taxonomy once per mount. The static JSON imports
@@ -342,6 +345,11 @@ export function MarkdownEditScreen({
       return next;
     });
   }, []);
+
+  // Section the cursor is currently inside (source mode), passed to the
+  // RelationsPanel as a passive outline highlight. Rich mode emits no cursor
+  // line, so it renders with no active marker (see the panel prop below).
+  const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
 
   // Per-section connection counts feed the Outline pills. Each H2/H3 in
   // the current file contributes:
@@ -600,6 +608,7 @@ export function MarkdownEditScreen({
         onManageConnections={handleManageConnections}
         collapsed={relationsCollapsed}
         onToggleCollapsed={toggleRelationsCollapsed}
+        activeAnchor={wysiwyg ? null : activeAnchor}
       />
     </Box>
   );

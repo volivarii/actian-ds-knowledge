@@ -38,7 +38,7 @@ import { type ReferenceTarget } from "../lib/referenceIndex";
 export interface ReferencePickerState {
   query: string;
   /** Viewport coords for the popup anchor. */
-  rect: { left: number; bottom: number };
+  rect: { left: number; bottom: number; top: number };
   /** The editor's contenteditable root. ReferencePicker uses this to scope
    *  its document-level capture keydown listener: a keystroke whose target
    *  is outside this element (e.g. a frontmatter form field, a RelationsPanel
@@ -153,15 +153,15 @@ function dismiss(view: EditorView, match: TriggerMatch): void {
 function computeRect(
   view: EditorView,
   pos: number,
-): { left: number; bottom: number } {
+): { left: number; bottom: number; top: number } {
   const coords = view.coordsAtPos(pos);
-  return { left: coords.left, bottom: coords.bottom };
+  return { left: coords.left, bottom: coords.bottom, top: coords.top };
 }
 
 function emitToHandler(
   view: EditorView,
   match: TriggerMatch,
-  rect: { left: number; bottom: number },
+  rect: { left: number; bottom: number; top: number },
 ): void {
   if (!currentHandler) return;
   const handler = currentHandler;
@@ -220,7 +220,7 @@ const triggerPlugin = new Plugin<TriggerPluginState>({
     // of re-measuring layout on every character.
     let cachedRect: {
       from: number;
-      rect: { left: number; bottom: number };
+      rect: { left: number; bottom: number; top: number };
     } | null = null;
     // A blur/focus-elsewhere (e.g. clicking into the frontmatter form or the
     // RelationsPanel while a trigger is open) must close the picker even
