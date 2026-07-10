@@ -40,6 +40,7 @@ import { Preview } from "../markdown-engine/Preview";
 import { Outline } from "./Outline";
 import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
 import { computeFocusedSection } from "./SectionFocusTracker";
+import { countsBySection } from "../lib/referenceIndex";
 import { ConnectionsPopover } from "./ConnectionsPopover";
 import type { FocusedSectionContext } from "./EditorShell";
 // NOTE: deep-imported (not via the substrate barrel) to keep the Node-only
@@ -324,31 +325,7 @@ export function MarkdownEditScreen({
   // Pill displays the SUM so definition-only files (no frontmatter
   // outgoing, just incoming refs from consumers) still surface a count.
   const connectionCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    const lines = text.split("\n");
-
-    // Walk every line; for each H2/H3 found, set its incoming count from
-    // anchorIndex. Use a Set so the same anchor isn't recounted when the
-    // walker returns it across multiple lines inside the same section.
-    const seenAnchors = new Set<string>();
-    let firstH2Anchor: string | null = null;
-    for (let i = 0; i < lines.length; i++) {
-      const s = computeFocusedSection(text, i);
-      if (!s || seenAnchors.has(s.anchor)) continue;
-      seenAnchors.add(s.anchor);
-      if (s.level === 2 && firstH2Anchor === null) firstH2Anchor = s.anchor;
-      // anchorIndexTick is only here to keep this memo dependent on the
-      // index becoming available — findReferences reads the module cache.
-      const incoming = findReferences(s.anchor).length;
-      if (incoming > 0) counts.set(s.anchor, incoming);
-    }
-
-    // P8 Option A: outgoing refs attach to the file's top H2.
-    if (firstH2Anchor && outgoing.length > 0) {
-      const existing = counts.get(firstH2Anchor) ?? 0;
-      counts.set(firstH2Anchor, existing + outgoing.length);
-    }
-    return counts;
+    return countsBySection(text, outgoing.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, outgoing, anchorIndexTick]);
 
