@@ -12,6 +12,16 @@ export const appContextEntityUiSchema: UiSchema = {
     "_schema_version",
     "*",
   ],
+  "ui:options": {
+    groups: [
+      {
+        title: "Managed by the system",
+        fields: ["slug", "_schema_version"],
+        collapsed: true,
+        note: "Identity and format fields the system maintains — shown for reference, saved unchanged.",
+      },
+    ],
+  },
   _schema_version: { "ui:readonly": true },
   slug: { "ui:title": "Slug", "ui:readonly": true },
   label: { "ui:title": "Entity label" },

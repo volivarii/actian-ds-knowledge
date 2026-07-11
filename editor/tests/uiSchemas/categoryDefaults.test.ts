@@ -39,9 +39,11 @@ test("disabled arrays disable add/remove/reorder", () => {
 
 test("root options group the Figma-sourced fields under a synced section", () => {
   const opts = (ui as any)["ui:options"];
-  assert.deepEqual(opts.syncedFields, ["anatomy", "variants", "confidence"]);
-  assert.equal(opts.syncedTitle, "Synced from Figma");
-  assert.equal(typeof opts.syncedNote, "string");
+  const group = opts.groups[0];
+  assert.deepEqual(group.fields, ["anatomy", "variants", "confidence"]);
+  assert.equal(group.title, "Synced from Figma");
+  assert.equal(group.collapsed, true);
+  assert.equal(typeof group.note, "string");
 });
 
 test("editable fields lead the order; synced fields trail", () => {

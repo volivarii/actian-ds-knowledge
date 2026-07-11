@@ -1,19 +1,36 @@
 // Generic root ObjectFieldTemplate for frontmatter forms.
 //
-// Reads `ui:options.syncedFields` from the root uiSchema and tucks those
-// fields into a collapsed disclosure below the editable fields. The intent:
-// a category's `anatomy`/`variants`/`confidence` are sourced from Figma and
-// must not be hand-edited here — they are marked `ui:readonly` AND grouped
-// out of the way so authors focus on the prose/refs they own. The values
-// still round-trip via formData (RJSF keeps read-only field data).
+// Sanity-style field grouping (the verified remedy for "RJSF forms feel
+// complicated": NN/g progressive disclosure + collapsible fieldsets):
+// the root uiSchema may declare
 //
-// Generic by design (Slice 2 reuses the screen): with no `syncedFields`,
-// it falls back to a plain vertical stack. Non-root objects (array items,
-// nested maps) also fall back to a plain stack.
+//   "ui:options": {
+//     groups: [
+//       { title, fields: [...], collapsed?: boolean, note?: string },
+//     ],
+//   }
+//
+// Ungrouped fields lead (always visible, in ui:order). Each group renders
+// as a quietly-labeled section — the same uppercase wayfinding label the
+// _meta form and the sidebar dimension headers use — expanded by default,
+// or as a collapsed <details> disclosure when `collapsed: true` (the shape
+// for Figma-synced / system-managed fields authors shouldn't wade through).
+// Values in collapsed groups still round-trip via formData.
+//
+// Generic by design: with no `groups`, it falls back to a plain vertical
+// stack. Non-root objects (array items, nested maps) also fall back.
 import type { ObjectFieldTemplateProps } from "@rjsf/utils";
 import { Box, Text } from "@radix-ui/themes";
+import { EyebrowLabel } from "../../app/EyebrowLabel";
 
 type Properties = ObjectFieldTemplateProps["properties"];
+
+export interface FieldGroup {
+  title: string;
+  fields: string[];
+  collapsed?: boolean;
+  note?: string;
+}
 
 function Stack({ items }: { items: Properties }) {
   return (
@@ -25,18 +42,29 @@ function Stack({ items }: { items: Properties }) {
   );
 }
 
-export function FrontmatterObjectFieldTemplate(props: ObjectFieldTemplateProps) {
+function parseGroups(opts: Record<string, unknown>): FieldGroup[] {
+  if (!Array.isArray(opts.groups)) return [];
+  return (opts.groups as unknown[]).filter(
+    (g): g is FieldGroup =>
+      !!g &&
+      typeof g === "object" &&
+      typeof (g as FieldGroup).title === "string" &&
+      Array.isArray((g as FieldGroup).fields),
+  );
+}
+
+export function FrontmatterObjectFieldTemplate(
+  props: ObjectFieldTemplateProps,
+) {
   const { idSchema, properties, uiSchema } = props;
   const isRoot = idSchema?.$id === "root";
 
   const opts =
     (uiSchema?.["ui:options"] as Record<string, unknown> | undefined) ?? {};
-  const syncedNames = Array.isArray(opts.syncedFields)
-    ? (opts.syncedFields as string[])
-    : [];
+  const groups = parseGroups(opts);
 
-  // Non-root objects, or a root with nothing to tuck away → plain stack.
-  if (!isRoot || syncedNames.length === 0) {
+  // Non-root objects, or a root with no grouping → plain stack.
+  if (!isRoot || groups.length === 0) {
     return (
       <Box>
         <Stack items={properties} />
@@ -44,44 +72,63 @@ export function FrontmatterObjectFieldTemplate(props: ObjectFieldTemplateProps) 
     );
   }
 
-  const syncedTitle =
-    typeof opts.syncedTitle === "string" ? opts.syncedTitle : "Synced fields";
-  const syncedNote =
-    typeof opts.syncedNote === "string" ? opts.syncedNote : null;
+  const grouped = new Set(groups.flatMap((g) => g.fields));
+  // `properties` arrive already in ui:order order; preserve it everywhere.
+  const lead = properties.filter((p) => !grouped.has(p.name));
 
-  const synced = new Set(syncedNames);
-  // `properties` arrive already in ui:order order; preserve it for both groups.
-  const lead = properties.filter((p) => !synced.has(p.name));
-  const syncedProps = properties.filter((p) => synced.has(p.name));
+  // First group to name a field claims it — a field listed in two groups
+  // must not render twice (duplicate ids, two controls on one data path).
+  const claimed = new Set<string>();
 
   return (
     <Box>
       <Stack items={lead} />
-      {syncedProps.length > 0 ? (
-        <details
-          style={{
-            marginTop: "var(--space-4, 16px)",
-            border: "1px solid var(--gray-5)",
-            borderRadius: 6,
-            padding: "var(--space-3, 12px)",
-            background: "var(--gray-2)",
-          }}
-        >
-          <summary style={{ cursor: "pointer" }}>
-            <Text size="2" weight="bold">
-              {syncedTitle}
-            </Text>
-          </summary>
-          {syncedNote ? (
-            <Text as="div" size="1" color="gray" mt="1" mb="2">
-              {syncedNote}
-            </Text>
-          ) : null}
-          <Box mt="2">
-            <Stack items={syncedProps} />
+      {groups.map((group) => {
+        const members = properties.filter(
+          (p) => group.fields.includes(p.name) && !claimed.has(p.name),
+        );
+        members.forEach((p) => claimed.add(p.name));
+        if (members.length === 0) return null;
+        if (group.collapsed) {
+          return (
+            <details
+              key={group.title}
+              style={{
+                marginTop: "var(--space-4, 16px)",
+                border: "1px solid var(--gray-5)",
+                borderRadius: 6,
+                padding: "var(--space-3, 12px)",
+                background: "var(--gray-2)",
+              }}
+            >
+              <summary style={{ cursor: "pointer" }}>
+                <EyebrowLabel>{group.title}</EyebrowLabel>
+              </summary>
+              {group.note ? (
+                <Text as="div" size="1" color="gray" mt="1" mb="2">
+                  {group.note}
+                </Text>
+              ) : null}
+              <Box mt="2">
+                <Stack items={members} />
+              </Box>
+            </details>
+          );
+        }
+        return (
+          <Box key={group.title} mt="4">
+            <Box mb="2">
+              <EyebrowLabel>{group.title}</EyebrowLabel>
+              {group.note ? (
+                <Text as="div" size="1" color="gray" mt="1">
+                  {group.note}
+                </Text>
+              ) : null}
+            </Box>
+            <Stack items={members} />
           </Box>
-        </details>
-      ) : null}
+        );
+      })}
     </Box>
   );
 }

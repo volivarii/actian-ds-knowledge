@@ -21,10 +21,14 @@ export const categoryDefaultsUiSchema: UiSchema = {
     "*",
   ],
   "ui:options": {
-    syncedFields: ["anatomy", "variants", "confidence"],
-    syncedTitle: "Synced from Figma",
-    syncedNote:
-      "These fields are sourced from Figma and aren't edited here — they're shown for reference and saved unchanged.",
+    groups: [
+      {
+        title: "Synced from Figma",
+        fields: ["anatomy", "variants", "confidence"],
+        collapsed: true,
+        note: "These fields are sourced from Figma and aren't edited here — they're shown for reference and saved unchanged.",
+      },
+    ],
   },
   _schema_version: { "ui:readonly": true },
   slug: { "ui:title": "Slug", "ui:readonly": true },

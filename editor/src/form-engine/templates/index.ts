@@ -10,7 +10,7 @@ export const metaFormTemplates = {
 };
 
 /** Templates the frontmatter-body editor opts into. The root
- *  ObjectFieldTemplate groups `ui:options.syncedFields` into a collapsed,
+ *  ObjectFieldTemplate renders `ui:options.groups` fieldsets (expanded sections or collapsed disclosures);
  *  read-only disclosure (e.g. a category's Figma-sourced anatomy/variants). */
 export const frontmatterTemplates = {
   ObjectFieldTemplate: FrontmatterObjectFieldTemplate,

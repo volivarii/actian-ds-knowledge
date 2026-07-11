@@ -8,6 +8,12 @@
 import type { ReactNode } from "react";
 import type { ObjectFieldTemplateProps } from "@rjsf/utils";
 import { Box, Text } from "@radix-ui/themes";
+import { EyebrowLabel } from "../../app/EyebrowLabel";
+
+// NOTE: this template predates the generic `ui:options.groups` API in
+// FrontmatterObjectFieldTemplate and hardcodes its sections (it also needs
+// omit-domains + footer semantics the groups API doesn't model). If the
+// groups API grows those, fold this template onto it.
 
 const IDENTITY = ["component", "category", "section"];
 const RELATIONSHIPS = ["related", "a11y_refs", "examples"];
@@ -24,16 +30,9 @@ function Section({
 }) {
   return (
     <Box mb="5">
-      <Text
-        as="div"
-        size="1"
-        weight="bold"
-        color="gray"
-        mb="3"
-        style={{ letterSpacing: "0.05em", textTransform: "uppercase" }}
-      >
-        {title}
-      </Text>
+      <Box mb="3">
+        <EyebrowLabel>{title}</EyebrowLabel>
+      </Box>
       {children}
     </Box>
   );

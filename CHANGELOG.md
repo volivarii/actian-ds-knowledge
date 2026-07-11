@@ -19,6 +19,19 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Editor: calm frontmatter forms + the chrome wears the system's own
+  colors.** The frontmatter-form redo's presentation half (research-backed:
+  NN/g progressive disclosure, Sanity-style fieldsets): forms now support
+  named field groups — expanded groups render under the same quiet uppercase
+  label the meta form and sidebar use; system-managed groups collapse into a
+  disclosure — and schema descriptions moved from always-on gray paragraphs
+  to a keyboard-focusable info glyph beside each label (fields can opt back
+  in with `inlineDescription`). App-context and category forms regrouped
+  accordingly. Visually, the editor's solid accent now derives from the
+  design system's own interactive-blue tokens instead of generic Radix
+  indigo, and the Explore dashboards drop their dev jargon (no more
+  `_meta.yml` in author-facing copy) and join the page's heading outline.
+  ([#402])
 - **Editor: outgoing reference rows navigate.** In the relations panel, the
   "References" rows now open their target on click or Enter, the way incoming
   and graph rows already did: a component reference opens its authoring
@@ -307,6 +320,7 @@ history and pull-request record.
 [#399]: https://github.com/volivarii/actian-ds-knowledge/pull/399
 [#400]: https://github.com/volivarii/actian-ds-knowledge/pull/400
 [#401]: https://github.com/volivarii/actian-ds-knowledge/pull/401
+[#402]: https://github.com/volivarii/actian-ds-knowledge/pull/402
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
 [#390]: https://github.com/volivarii/actian-ds-knowledge/pull/390
 [#389]: https://github.com/volivarii/actian-ds-knowledge/pull/389

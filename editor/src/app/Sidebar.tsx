@@ -23,6 +23,7 @@ import { AddSectionDialog } from "./AddSectionDialog";
 import { appendSlug, moveSlug, removeSlug } from "../lib/orderManifest";
 import { buildMarkdownStub } from "../lib/markdownStubs";
 import { ReorderHandle } from "./ReorderHandle";
+import { EyebrowLabel } from "./EyebrowLabel";
 import { DeleteSectionDialog } from "./DeleteSectionDialog";
 import { findReferences, loadAnchorIndex } from "../lib/anchorIndex";
 
@@ -101,14 +102,7 @@ const CONTENT_GROUPS = ["writing", "patterns", "product"] as const;
 function DimensionHeader({ children }: { children: string }) {
   return (
     <Box px="3" pt="3" pb="1">
-      <Text
-        size="1"
-        color="gray"
-        weight="medium"
-        style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}
-      >
-        {children}
-      </Text>
+      <EyebrowLabel>{children}</EyebrowLabel>
     </Box>
   );
 }
