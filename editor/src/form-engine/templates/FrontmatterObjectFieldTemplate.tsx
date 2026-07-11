@@ -19,9 +19,9 @@
 //
 // Generic by design: with no `groups`, it falls back to a plain vertical
 // stack. Non-root objects (array items, nested maps) also fall back.
-import type { ReactNode } from "react";
 import type { ObjectFieldTemplateProps } from "@rjsf/utils";
 import { Box, Text } from "@radix-ui/themes";
+import { EyebrowLabel } from "../../app/EyebrowLabel";
 
 type Properties = ObjectFieldTemplateProps["properties"];
 
@@ -39,20 +39,6 @@ function Stack({ items }: { items: Properties }) {
         <Box key={p.name}>{p.content}</Box>
       ))}
     </>
-  );
-}
-
-function GroupLabel({ children }: { children: ReactNode }) {
-  return (
-    <Text
-      as="div"
-      size="1"
-      weight="bold"
-      color="gray"
-      style={{ letterSpacing: "0.05em", textTransform: "uppercase" }}
-    >
-      {children}
-    </Text>
   );
 }
 
@@ -90,13 +76,18 @@ export function FrontmatterObjectFieldTemplate(
   // `properties` arrive already in ui:order order; preserve it everywhere.
   const lead = properties.filter((p) => !grouped.has(p.name));
 
+  // First group to name a field claims it — a field listed in two groups
+  // must not render twice (duplicate ids, two controls on one data path).
+  const claimed = new Set<string>();
+
   return (
     <Box>
       <Stack items={lead} />
       {groups.map((group) => {
-        const members = properties.filter((p) =>
-          group.fields.includes(p.name),
+        const members = properties.filter(
+          (p) => group.fields.includes(p.name) && !claimed.has(p.name),
         );
+        members.forEach((p) => claimed.add(p.name));
         if (members.length === 0) return null;
         if (group.collapsed) {
           return (
@@ -111,7 +102,7 @@ export function FrontmatterObjectFieldTemplate(
               }}
             >
               <summary style={{ cursor: "pointer" }}>
-                <GroupLabel>{group.title}</GroupLabel>
+                <EyebrowLabel>{group.title}</EyebrowLabel>
               </summary>
               {group.note ? (
                 <Text as="div" size="1" color="gray" mt="1" mb="2">
@@ -127,7 +118,7 @@ export function FrontmatterObjectFieldTemplate(
         return (
           <Box key={group.title} mt="4">
             <Box mb="2">
-              <GroupLabel>{group.title}</GroupLabel>
+              <EyebrowLabel>{group.title}</EyebrowLabel>
               {group.note ? (
                 <Text as="div" size="1" color="gray" mt="1">
                   {group.note}

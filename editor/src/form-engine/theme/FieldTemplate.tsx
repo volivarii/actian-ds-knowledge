@@ -10,7 +10,8 @@
 // every schema property carries a `description` by repo convention, and
 // rendering them all inline made the forms read as a wall of gray. They
 // now live behind a keyboard-focusable info glyph next to the label
-// (hover or focus shows the text; the aria-label carries it for AT).
+// (hover or focus shows the text; the tooltip's aria-describedby carries
+// it for assistive tech).
 // A field can opt back into inline rendering with
 // `ui:options.inlineDescription: true` when the prompt is essential.
 import type { FieldTemplateProps } from "@rjsf/utils";
@@ -56,15 +57,47 @@ export function FieldTemplate(props: FieldTemplateProps) {
           </Text>
           {rawDescription && !inlineDescription ? (
             <Tooltip content={rawDescription}>
-              <Text
-                size="1"
-                color="gray"
+              {/* Focusable trigger with a generic name; the description
+                  itself reaches AT once via the tooltip's aria-describedby
+                  (not doubled into the label). SVG, not a unicode glyph —
+                  U+24D8 is font-dependent and renders as tofu/emoji on
+                  some stacks. */}
+              <span
+                role="img"
+                aria-label="About this field"
                 tabIndex={0}
-                aria-label={rawDescription}
-                style={{ cursor: "help", lineHeight: 1 }}
+                data-testid="field-description"
+                style={{
+                  cursor: "help",
+                  lineHeight: 0,
+                  color: "var(--gray-9)",
+                }}
               >
-                ⓘ
-              </Text>
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="8"
+                    cy="8"
+                    r="6.5"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                  />
+                  <rect
+                    x="7.3"
+                    y="6.8"
+                    width="1.4"
+                    height="4.4"
+                    rx="0.7"
+                    fill="currentColor"
+                  />
+                  <circle cx="8" cy="4.9" r="0.9" fill="currentColor" />
+                </svg>
+              </span>
             </Tooltip>
           ) : null}
         </Flex>

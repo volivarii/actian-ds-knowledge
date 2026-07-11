@@ -1,0 +1,15 @@
+/* Editor chrome accent — the DS's own interactive blue replaces the
+ * generic Radix indigo on the SOLID accent steps (the official minimal
+ * override path: steps 9/10 + alphas; soft steps 1-8 stay Radix indigo,
+ * a close blue family, so soft badges/buttons keep their tuned contrast).
+ *
+ * Deliberately NOT scoped to [data-theme="dark"]: the zen tokens it
+ * references already resolve per-theme (tokens.css light values,
+ * dark-theme.css dark overrides), so this mapping is theme-agnostic.
+ * The editor runs dark-only today (main.tsx forces data-theme="dark"). */
+.radix-themes {
+  --indigo-9: var(--zen-color-bg-emphasis, #0550dc);
+  --indigo-a9: var(--zen-color-bg-emphasis, #0550dc);
+  --indigo-10: var(--zen-color-primitive-blue-700, #00699f);
+  --indigo-a10: var(--zen-color-primitive-blue-700, #00699f);
+}

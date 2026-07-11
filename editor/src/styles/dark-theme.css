@@ -56,15 +56,3 @@
 
   /* Focus rings unchanged — brand-driven, work on both light & dark */
 }
-
-/* Editor chrome accent — the DS's own interactive blue replaces the
- * generic Radix indigo on the SOLID accent steps (the official minimal
- * override path: steps 9/10 + alphas; soft steps 1-8 stay Radix indigo,
- * a close blue family, so soft badges/buttons keep their tuned contrast).
- * Uses the zen token so the chrome follows the substrate's tokens. */
-.radix-themes {
-  --indigo-9: var(--zen-color-bg-emphasis, #0550dc);
-  --indigo-a9: var(--zen-color-bg-emphasis, #0550dc);
-  --indigo-10: var(--zen-color-primitive-blue-700, #00699f);
-  --indigo-a10: var(--zen-color-primitive-blue-700, #00699f);
-}

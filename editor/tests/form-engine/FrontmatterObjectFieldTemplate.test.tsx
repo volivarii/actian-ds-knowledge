@@ -207,10 +207,8 @@ test("field descriptions render as an info glyph, not an inline paragraph", () =
       />
     </Theme>,
   );
-  const glyph = container.querySelector(
-    '[aria-label="The human name authors see."]',
-  );
-  assert.ok(glyph, "info glyph carries the description");
+  const glyph = container.querySelector('[data-testid="field-description"]');
+  assert.ok(glyph, "info glyph renders for the description");
   assert.equal(glyph!.getAttribute("tabindex"), "0", "glyph is focusable");
   const inline = Array.from(container.querySelectorAll("div")).find(
     (d) =>

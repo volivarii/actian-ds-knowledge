@@ -26,9 +26,7 @@ test("scalar field shows its label and description", () => {
   );
   assert.ok(getByText("App label"), "label renders");
   // Descriptions are help-on-demand now: a focusable info glyph carries it.
-  const glyph = document.querySelector(
-    '[aria-label="Human-readable display name."]',
-  );
+  const glyph = document.querySelector('[data-testid="field-description"]');
   assert.ok(glyph, "description reachable via the info glyph");
   cleanup();
 });
