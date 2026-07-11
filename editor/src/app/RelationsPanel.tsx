@@ -13,7 +13,10 @@ import {
   type Neighbor,
 } from "../lib/referenceIndex";
 import type { OutgoingConnection } from "../substrate/refGraph";
-import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
+import {
+  navTargetForConnection,
+  navTargetForNodeId,
+} from "../substrate/navTargetForNodeId";
 
 export interface RelationsPanelProps {
   text: string;
@@ -255,8 +258,13 @@ export function RelationsPanel(props: RelationsPanelProps) {
                 : "No references yet."}
             </Text>
           )}
-          {props.outgoing.map((c, i) => (
-            <Box key={`${c.refType}:${c.slug}:${i}`} px="1">
+          {props.outgoing.map((c, i) => {
+            // Rows that resolve to an editable target navigate on click,
+            // matching the incoming and graph rows; broken refs and
+            // domains without a standalone file (motion, content) stay
+            // plain. Editing stays in the Manage popover.
+            const target = navTargetForConnection(c.domain, c.slug);
+            const row = (
               <Text as="div" size="1" truncate>
                 <Badge
                   size="1"
@@ -267,8 +275,34 @@ export function RelationsPanel(props: RelationsPanelProps) {
                 </Badge>{" "}
                 {c.slug}
               </Text>
-            </Box>
-          ))}
+            );
+            if (target === null) {
+              return (
+                <Box
+                  key={`${c.refType}:${c.slug}:${i}`}
+                  data-testid="outgoing-row"
+                  px="1"
+                >
+                  {row}
+                </Box>
+              );
+            }
+            const activate = () => props.onOpenFile(target);
+            return (
+              <Box
+                key={`${c.refType}:${c.slug}:${i}`}
+                data-testid="outgoing-row"
+                role="button"
+                tabIndex={0}
+                px="1"
+                style={{ cursor: "pointer" }}
+                onClick={activate}
+                onKeyDown={onActivateKey(activate)}
+              >
+                {row}
+              </Box>
+            );
+          })}
 
           <Text size="1" color="gray" mt="1">
             In the graph (as of last merge)

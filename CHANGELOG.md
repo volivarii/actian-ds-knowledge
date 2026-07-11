@@ -30,6 +30,17 @@ Each entry links its pull request. Dates are the merge date (UTC).
   every merge" badge with a claim that proves itself. Answers the direction's
   "what's up to date" question (flow 4). ([#399])
 
+### Added
+- **Editor: outgoing reference rows navigate.** In the relations panel, the
+  "References" rows now open their target on click or Enter, the way incoming
+  and graph rows already did: a component reference opens its authoring
+  workspace, an accessibility or foundations reference opens its source page.
+  Rows with nowhere to go (broken refs, motion and content references, which
+  have no standalone editable file) stay plain. Resolution reuses the same
+  node-id path mapping the graph rows use, so there is exactly one
+  place that decides where a reference leads. This closes the last recorded
+  gap in the editing-direction's "follow a connection" flow. ([#401])
+
 ### Changed
 - **Editor: sidebar IA refined to Vincent's structure.** The Design system
   half now reads Foundations → **Content** (a nested parent holding Writing
@@ -300,6 +311,7 @@ history and pull-request record.
 [#398]: https://github.com/volivarii/actian-ds-knowledge/pull/398
 [#399]: https://github.com/volivarii/actian-ds-knowledge/pull/399
 [#400]: https://github.com/volivarii/actian-ds-knowledge/pull/400
+[#401]: https://github.com/volivarii/actian-ds-knowledge/pull/401
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
 [#390]: https://github.com/volivarii/actian-ds-knowledge/pull/390
 [#389]: https://github.com/volivarii/actian-ds-knowledge/pull/389

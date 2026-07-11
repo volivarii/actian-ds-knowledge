@@ -234,6 +234,62 @@ test("outgoing rows show the domain badge and slug; broken refs (null domain) ar
   assert.ok(container.textContent!.includes("ghost-topic"));
 });
 
+test("outgoing rows navigate by domain: component → workspace, accessibility → src path; broken and motion stay plain", () => {
+  const outgoing: OutgoingConnection[] = [
+    {
+      slug: "tag",
+      refType: "relatedComponents",
+      note: null,
+      domain: "component",
+    },
+    {
+      slug: "color-contrast",
+      refType: "a11y_refs",
+      note: null,
+      domain: "accessibility",
+    },
+    { slug: "fade-in", refType: "motion_refs", note: null, domain: "motion" },
+    { slug: "ghost-topic", refType: "a11y_refs", note: null, domain: null },
+  ];
+  const { container, calls } = renderPanel({ outgoing });
+  const rows = Array.from(
+    container.querySelectorAll("[data-testid='outgoing-row']"),
+  );
+  assert.equal(rows.length, 4);
+
+  const rowFor = (slug: string) =>
+    rows.find((r) => r.textContent!.includes(slug))!;
+
+  fireEvent.click(rowFor("tag"));
+  fireEvent.click(rowFor("color-contrast"));
+  assert.deepEqual(calls, [
+    "open:workspace/tag",
+    "open:accessibility/src/color-contrast.md",
+  ]);
+
+  // motion and broken rows are non-interactive (no role, click is a no-op)
+  assert.equal(rowFor("fade-in").getAttribute("role"), null);
+  assert.equal(rowFor("ghost-topic").getAttribute("role"), null);
+  fireEvent.click(rowFor("fade-in"));
+  fireEvent.click(rowFor("ghost-topic"));
+  assert.equal(calls.length, 2);
+});
+
+test("outgoing row responds to Enter like a click", () => {
+  const outgoing: OutgoingConnection[] = [
+    {
+      slug: "tag",
+      refType: "relatedComponents",
+      note: null,
+      domain: "component",
+    },
+  ];
+  const { container, calls } = renderPanel({ outgoing });
+  const row = container.querySelector("[data-testid='outgoing-row']")!;
+  fireEvent.keyDown(row, { key: "Enter" });
+  assert.deepEqual(calls, ["open:workspace/tag"]);
+});
+
 test("manage connections click passes the scoped (or first) section anchor and the anchor element", () => {
   const calls: Array<{ anchor: string; el: HTMLElement }> = [];
   render(

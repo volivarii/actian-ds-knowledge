@@ -32,3 +32,23 @@ export function navTargetForNodeId(nodeId: string): string | null {
       return null;
   }
 }
+
+// Taxonomy domain (an OutgoingConnection's `domain`) → node-id prefix, so
+// outgoing reference rows resolve through the SAME path mapping above
+// instead of growing a second one. motion/content stay unmapped for the
+// same reasons they are null in navTargetForNodeId; a broken connection
+// (domain null) has nowhere to go by definition.
+const DOMAIN_TO_NODE_PREFIX: Record<string, string> = {
+  accessibility: "a11y",
+  foundations: "foundation",
+  component: "component",
+};
+
+export function navTargetForConnection(
+  domain: string | null,
+  slug: string,
+): string | null {
+  if (!domain || !slug) return null;
+  const prefix = DOMAIN_TO_NODE_PREFIX[domain];
+  return prefix ? navTargetForNodeId(`${prefix}:${slug}`) : null;
+}
