@@ -140,15 +140,14 @@ export function CoverageDashboard({
 
   return (
     <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <Heading size="5" mb="1">
+      <Heading as="h3" size="5" mb="1">
         Coverage
       </Heading>
       <Text size="2" color="gray" mb="3" as="p">
         {counts!.authored} authored · {counts!.unstarted} unstarted ·{" "}
-        {counts!.total} eligible DS Kit components (non-icon). Click a component
-        name to open its <code>_meta.yml</code>; click a status cell to edit
-        that domain; click <em>Start authoring</em> on an unstarted row to open
-        a pre-filled stub in the form editor.
+        {counts!.total} eligible components. Click a component name to open its
+        details, click a status cell to edit that guidance, or click{" "}
+        <em>Start authoring</em> on an unstarted row to begin.
       </Text>
 
       <Flex gap="3" wrap="wrap" mb="4">

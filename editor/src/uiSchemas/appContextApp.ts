@@ -5,10 +5,14 @@ import type { UiSchema } from "@rjsf/utils";
 export const appContextAppUiSchema: UiSchema = {
   "ui:order": ["label", "header", "sidebar", "slug", "_schema_version", "*"],
   "ui:options": {
-    syncedFields: ["header", "sidebar", "slug", "_schema_version"],
-    syncedTitle: "App settings",
-    syncedNote:
-      "Structured app settings — header variant and sidebar navigation. The app's description lives in the markdown body below.",
+    groups: [
+      {
+        title: "App settings",
+        fields: ["header", "sidebar", "slug", "_schema_version"],
+        collapsed: true,
+        note: "Structured app settings — header variant and sidebar navigation. The app's description lives in the markdown body below.",
+      },
+    ],
   },
   _schema_version: { "ui:readonly": true },
   slug: { "ui:title": "Slug", "ui:readonly": true },

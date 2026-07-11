@@ -40,7 +40,11 @@ const schema: RJSFSchema = {
       type: "object",
       title: "Confidence",
       properties: {
-        a11y: { type: "string", enum: ["low", "medium", "high"], title: "A11y" },
+        a11y: {
+          type: "string",
+          enum: ["low", "medium", "high"],
+          title: "A11y",
+        },
       },
     },
   },
@@ -49,9 +53,14 @@ const schema: RJSFSchema = {
 const uiSchema = {
   "ui:order": ["label", "anatomy", "variants", "confidence", "*"],
   "ui:options": {
-    syncedFields: ["anatomy", "variants", "confidence"],
-    syncedTitle: "Synced from Figma",
-    syncedNote: "Sourced from Figma — not edited here.",
+    groups: [
+      {
+        title: "Synced from Figma",
+        fields: ["anatomy", "variants", "confidence"],
+        collapsed: true,
+        note: "Sourced from Figma — not edited here.",
+      },
+    ],
   },
   anatomy: { "ui:disabled": true },
   variants: { "ui:disabled": true },
@@ -134,6 +143,109 @@ test("every control in the synced section is disabled (greyed-out)", () => {
   for (const t of typeable) {
     assert.equal(t.disabled, true, "no enabled text field leaks through");
   }
+  cleanup();
+});
+
+test("an expanded (non-collapsed) group renders a labeled section, not a disclosure", () => {
+  cleanup();
+  const expandedUi = {
+    "ui:order": ["label", "anatomy", "variants", "confidence", "*"],
+    "ui:options": {
+      groups: [
+        {
+          title: "Figma facts",
+          fields: ["anatomy", "variants", "confidence"],
+          note: "Grouped but visible.",
+        },
+      ],
+    },
+  };
+  const { container } = render(
+    <Theme>
+      <RJSFForm
+        schema={schema}
+        uiSchema={expandedUi}
+        templates={frontmatterTemplates}
+        formData={FORM_DATA}
+        onChange={() => {}}
+        onSubmit={() => {}}
+      />
+    </Theme>,
+  );
+  assert.equal(
+    container.querySelector("details"),
+    null,
+    "no disclosure for an expanded group",
+  );
+  assert.ok(screen.getByText("Figma facts"), "group label renders");
+  assert.ok(screen.getByText("Grouped but visible."), "group note renders");
+  assert.ok(screen.getAllByText("Anatomy").length > 0);
+  cleanup();
+});
+
+test("field descriptions render as an info glyph, not an inline paragraph", () => {
+  cleanup();
+  const describedSchema: RJSFSchema = {
+    type: "object",
+    properties: {
+      label: {
+        type: "string",
+        title: "Category label",
+        description: "The human name authors see.",
+      },
+    },
+  };
+  const { container } = render(
+    <Theme>
+      <RJSFForm
+        schema={describedSchema}
+        uiSchema={{}}
+        templates={frontmatterTemplates}
+        formData={{ label: "Action" }}
+        onChange={() => {}}
+        onSubmit={() => {}}
+      />
+    </Theme>,
+  );
+  const glyph = container.querySelector(
+    '[aria-label="The human name authors see."]',
+  );
+  assert.ok(glyph, "info glyph carries the description");
+  assert.equal(glyph!.getAttribute("tabindex"), "0", "glyph is focusable");
+  const inline = Array.from(container.querySelectorAll("div")).find(
+    (d) =>
+      d.textContent === "The human name authors see." &&
+      !d.hasAttribute("aria-label"),
+  );
+  assert.equal(inline, undefined, "no inline description paragraph");
+  cleanup();
+});
+
+test("ui:options.inlineDescription opts a field back into inline description", () => {
+  cleanup();
+  const describedSchema: RJSFSchema = {
+    type: "object",
+    properties: {
+      label: {
+        type: "string",
+        title: "Category label",
+        description: "Essential prompt.",
+      },
+    },
+  };
+  render(
+    <Theme>
+      <RJSFForm
+        schema={describedSchema}
+        uiSchema={{ label: { "ui:options": { inlineDescription: true } } }}
+        templates={frontmatterTemplates}
+        formData={{ label: "Action" }}
+        onChange={() => {}}
+        onSubmit={() => {}}
+      />
+    </Theme>,
+  );
+  assert.ok(screen.getByText("Essential prompt."), "inline description shows");
   cleanup();
 });
 

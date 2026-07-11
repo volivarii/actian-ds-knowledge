@@ -25,7 +25,11 @@ test("scalar field shows its label and description", () => {
     wrap(<RJSFForm schema={describedSchema} formData={{ label: "x" }} onChange={() => {}} />),
   );
   assert.ok(getByText("App label"), "label renders");
-  assert.ok(getByText("Human-readable display name."), "description renders");
+  // Descriptions are help-on-demand now: a focusable info glyph carries it.
+  const glyph = document.querySelector(
+    '[aria-label="Human-readable display name."]',
+  );
+  assert.ok(glyph, "description reachable via the info glyph");
   cleanup();
 });
 

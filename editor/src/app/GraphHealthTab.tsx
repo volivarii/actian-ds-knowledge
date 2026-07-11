@@ -89,7 +89,7 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
 
   return (
     <Box p="5" style={{ maxWidth: 1200, margin: "0 auto" }}>
-      <Heading size="5" mb="1">
+      <Heading as="h3" size="5" mb="1">
         Relationships
       </Heading>
       <Text size="2" color="gray" mb="4" as="p">
@@ -121,7 +121,7 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
       </Grid>
 
       {/* Coverage-by-kind */}
-      <Heading size="3" mb="2">
+      <Heading as="h4" size="3" mb="2">
         Coverage by kind
       </Heading>
       <Flex gap="3" wrap="wrap" mb="4">
@@ -136,7 +136,7 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
       <Grid columns={{ initial: "1", md: "2" }} gap="5">
         {/* LEFT: tables (the accessible primary) */}
         <Box>
-          <Heading size="3" mb="2">
+          <Heading as="h4" size="3" mb="2">
             Strongest hubs
           </Heading>
           <Table.Root variant="surface" size="1" mb="4">
@@ -187,7 +187,7 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
             </Table.Body>
           </Table.Root>
 
-          <Heading size="3" mb="1">
+          <Heading as="h4" size="3" mb="1">
             Orphans ({orphans.length})
           </Heading>
           <Text size="1" color="gray" as="p" mb="2">
@@ -239,7 +239,7 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
 
         {/* RIGHT: the explorer accent */}
         <Box>
-          <Heading size="3" mb="2">
+          <Heading as="h4" size="3" mb="2">
             Explore
           </Heading>
           <TextField.Root
