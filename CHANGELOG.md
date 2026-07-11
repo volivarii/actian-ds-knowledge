@@ -19,6 +19,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Editor: outgoing reference rows navigate.** In the relations panel, the
+  "References" rows now open their target on click or Enter, the way incoming
+  and graph rows already did: a component reference opens its authoring
+  workspace, an accessibility or foundations reference opens its source page.
+  Rows with nowhere to go (broken refs, motion and content references, which
+  have no standalone editable file) stay plain. Resolution reuses the same
+  node-id path mapping the graph rows use, so there is exactly one
+  place that decides where a reference leads. This closes the last recorded
+  gap in the editing-direction's "follow a connection" flow. ([#401])
 - **Editor: a live freshness chip.** The header now shows the knowledge version
   and when the substrate last changed ("v0.34.83 · updated 3h ago"), fetched
   live from main rather than baked at build time, since the editor SPA only
@@ -30,42 +39,6 @@ Each entry links its pull request. Dates are the merge date (UTC).
   every merge" badge with a claim that proves itself. Answers the direction's
   "what's up to date" question (flow 4). ([#399])
 
-### Added
-- **Editor: outgoing reference rows navigate.** In the relations panel, the
-  "References" rows now open their target on click or Enter, the way incoming
-  and graph rows already did: a component reference opens its authoring
-  workspace, an accessibility or foundations reference opens its source page.
-  Rows with nowhere to go (broken refs, motion and content references, which
-  have no standalone editable file) stay plain. Resolution reuses the same
-  node-id path mapping the graph rows use, so there is exactly one
-  place that decides where a reference leads. This closes the last recorded
-  gap in the editing-direction's "follow a connection" flow. ([#401])
-
-### Changed
-- **Editor: sidebar IA refined to Vincent's structure.** The Design system
-  half now reads Foundations → **Content** (a nested parent holding Writing
-  rules, Patterns, and Product as indented children — the "copy"
-  disambiguators became unnecessary once the parent gives context) →
-  Accessibility → Components. The second dimension is renamed **Application
-  context**, holding **Products** (the apps), **Entities**, and **Features**
-  (the name matches what those files actually are: import-wizard,
-  lineage-graph, marketplace-browsing). The Content parent collapses as one
-  unit and carries the combined count; its children keep their own add and
-  collapse affordances. ([#400])
-- **Editor: the sidebar speaks author language and separates its two
-  dimensions.** The repo-shaped section names are gone: "Content —
-  Writing/Patterns/Product" is now "Writing rules", "Pattern copy", and
-  "Product copy", and "App context — Apps/Entities/Patterns" is now "Apps",
-  "Entities", and "UX patterns" (which also disambiguates the two unrelated
-  "Patterns" groups: the words used in patterns vs the patterns themselves).
-  The tree is also grouped into its two ontological dimensions: **Design
-  system** (foundations, accessibility, writing rules, pattern and product
-  copy, components — what the system prescribes) and **The products** (apps,
-  entities, UX patterns — what the system serves), reflecting how app-context
-  sits in the knowledge graph as a bridged domain rather than more DS content.
-  Labels and grouping only; no routing or data change. ([#398])
-
-### Added
 - **Editor: a front door.** The editor's landing surface is now a home screen
   instead of a bare dashboard: what this place is in one sentence (and that
   every edit ships as a reviewed pull request, so you cannot break anything),
@@ -204,6 +177,28 @@ Each entry links its pull request. Dates are the merge date (UTC).
   consumers that ignore it behave as before. Real data lands on the next nightly sync. ([#354])
 
 ### Changed
+- **Editor: sidebar IA refined to Vincent's structure.** The Design system
+  half now reads Foundations → **Content** (a nested parent holding Writing
+  rules, Patterns, and Product as indented children — the "copy"
+  disambiguators became unnecessary once the parent gives context) →
+  Accessibility → Components. The second dimension is renamed **Application
+  context**, holding **Products** (the apps), **Entities**, and **Features**
+  (the name matches what those files actually are: import-wizard,
+  lineage-graph, marketplace-browsing). The Content parent collapses as one
+  unit and carries the combined count; its children keep their own add and
+  collapse affordances. ([#400])
+- **Editor: the sidebar speaks author language and separates its two
+  dimensions.** The repo-shaped section names are gone: "Content —
+  Writing/Patterns/Product" is now "Writing rules", "Pattern copy", and
+  "Product copy", and "App context — Apps/Entities/Patterns" is now "Apps",
+  "Entities", and "UX patterns" (which also disambiguates the two unrelated
+  "Patterns" groups: the words used in patterns vs the patterns themselves).
+  The tree is also grouped into its two ontological dimensions: **Design
+  system** (foundations, accessibility, writing rules, pattern and product
+  copy, components — what the system prescribes) and **The products** (apps,
+  entities, UX patterns — what the system serves), reflecting how app-context
+  sits in the knowledge graph as a bridged domain rather than more DS content.
+  Labels and grouping only; no routing or data change. ([#398])
 - **Breaking Figma sync (2026-07-08).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#378](https://github.com/volivarii/actian-ds-knowledge/pull/378))
 - **Canonical sync emit (wave 2).** The nightly sync can now tell "re-emitted" from "changed":
   registry components, categories, and the anatomy bundle are emitted in sorted key order (ends the

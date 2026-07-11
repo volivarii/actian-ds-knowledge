@@ -89,6 +89,40 @@ function onActivateKey(action: () => void) {
   };
 }
 
+/** Relation row that navigates (click/Enter/Space) when it has somewhere
+ *  to go, and stays a plain box otherwise. The single owner of the
+ *  interactive-row contract shared by incoming, outgoing, and graph rows. */
+function NavRow(props: {
+  target: string | null;
+  onOpen: (target: string) => void;
+  testid: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const { target } = props;
+  if (target === null) {
+    return (
+      <Box data-testid={props.testid} px="1" style={props.style}>
+        {props.children}
+      </Box>
+    );
+  }
+  const activate = () => props.onOpen(target);
+  return (
+    <Box
+      data-testid={props.testid}
+      role="button"
+      tabIndex={0}
+      px="1"
+      style={{ cursor: "pointer", ...props.style }}
+      onClick={activate}
+      onKeyDown={onActivateKey(activate)}
+    >
+      {props.children}
+    </Box>
+  );
+}
+
 export function RelationsPanel(props: RelationsPanelProps) {
   const { collapsed, onToggleCollapsed } = props;
   // One scanHeadings(text) pass (FIX 1): each entry carries its own
@@ -205,18 +239,12 @@ export function RelationsPanel(props: RelationsPanelProps) {
             </Text>
           )}
           {visibleIncoming.map((r, i) => (
-            <Box
+            <NavRow
               key={`${r.fromPath}:${i}`}
-              data-testid="incoming-row"
-              role="button"
-              tabIndex={0}
-              px="1"
-              style={{
-                cursor: "pointer",
-                borderLeft: "2px solid var(--gray-5)",
-              }}
-              onClick={() => props.onOpenFile(r.fromPath)}
-              onKeyDown={onActivateKey(() => props.onOpenFile(r.fromPath))}
+              testid="incoming-row"
+              target={r.fromPath}
+              onOpen={props.onOpenFile}
+              style={{ borderLeft: "2px solid var(--gray-5)" }}
             >
               {r.snippet && (
                 <Text as="div" size="1">
@@ -226,7 +254,7 @@ export function RelationsPanel(props: RelationsPanelProps) {
               <Text as="div" size="1" color="gray" truncate>
                 {r.fromPath}
               </Text>
-            </Box>
+            </NavRow>
           ))}
 
           <Flex align="center" justify="between">
@@ -258,13 +286,17 @@ export function RelationsPanel(props: RelationsPanelProps) {
                 : "No references yet."}
             </Text>
           )}
-          {props.outgoing.map((c, i) => {
-            // Rows that resolve to an editable target navigate on click,
-            // matching the incoming and graph rows; broken refs and
-            // domains without a standalone file (motion, content) stay
-            // plain. Editing stays in the Manage popover.
-            const target = navTargetForConnection(c.domain, c.slug);
-            const row = (
+          {props.outgoing.map((c, i) => (
+            // Rows that resolve to an editable target navigate, matching
+            // the incoming and graph rows; broken refs and domains without
+            // a standalone file (motion, content) stay plain. Editing
+            // stays in the Manage popover.
+            <NavRow
+              key={`${c.refType}:${c.slug}:${i}`}
+              testid="outgoing-row"
+              target={navTargetForConnection(c.domain, c.slug)}
+              onOpen={props.onOpenFile}
+            >
               <Text as="div" size="1" truncate>
                 <Badge
                   size="1"
@@ -275,34 +307,8 @@ export function RelationsPanel(props: RelationsPanelProps) {
                 </Badge>{" "}
                 {c.slug}
               </Text>
-            );
-            if (target === null) {
-              return (
-                <Box
-                  key={`${c.refType}:${c.slug}:${i}`}
-                  data-testid="outgoing-row"
-                  px="1"
-                >
-                  {row}
-                </Box>
-              );
-            }
-            const activate = () => props.onOpenFile(target);
-            return (
-              <Box
-                key={`${c.refType}:${c.slug}:${i}`}
-                data-testid="outgoing-row"
-                role="button"
-                tabIndex={0}
-                px="1"
-                style={{ cursor: "pointer" }}
-                onClick={activate}
-                onKeyDown={onActivateKey(activate)}
-              >
-                {row}
-              </Box>
-            );
-          })}
+            </NavRow>
+          ))}
 
           <Text size="1" color="gray" mt="1">
             In the graph (as of last merge)
@@ -312,14 +318,18 @@ export function RelationsPanel(props: RelationsPanelProps) {
               No graph connections yet.
             </Text>
           )}
-          {props.graphNeighbors.map((n, i) => {
+          {props.graphNeighbors.map((n, i) => (
             // navTargetForNodeId is the same node-id -> activePath mapping
             // NeighborhoodPanel already uses. Not every node type
             // round-trips to an editable path (content, motion): those
             // rows stay plain, non-interactive.
-            const target = navTargetForNodeId(n.id);
-            const row = (
-              <Flex gap="1" align="center" px="1">
+            <NavRow
+              key={`${n.id}:${i}`}
+              testid="graph-row"
+              target={navTargetForNodeId(n.id)}
+              onOpen={props.onOpenFile}
+            >
+              <Flex gap="1" align="center">
                 <Badge size="1" variant="soft">
                   {n.edgeType.replace(/_/g, " ")}
                 </Badge>
@@ -328,29 +338,8 @@ export function RelationsPanel(props: RelationsPanelProps) {
                   {n.node?.title ?? n.id}
                 </Text>
               </Flex>
-            );
-            if (target === null) {
-              return (
-                <Box key={`${n.id}:${i}`} data-testid="graph-row">
-                  {row}
-                </Box>
-              );
-            }
-            const activate = () => props.onOpenFile(target);
-            return (
-              <Box
-                key={`${n.id}:${i}`}
-                data-testid="graph-row"
-                role="button"
-                tabIndex={0}
-                style={{ cursor: "pointer" }}
-                onClick={activate}
-                onKeyDown={onActivateKey(activate)}
-              >
-                {row}
-              </Box>
-            );
-          })}
+            </NavRow>
+          ))}
         </>
       )}
     </Flex>

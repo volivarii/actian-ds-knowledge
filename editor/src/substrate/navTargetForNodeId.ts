@@ -13,6 +13,8 @@
 //                 recoverable from the id alone)
 //   motion:     → null  (no standalone editable file convention)
 // Unresolved ids degrade to read-only in the panel, mirroring nodeIdForFile.
+import type { Domain } from "./taxonomy";
+
 export function navTargetForNodeId(nodeId: string): string | null {
   const i = nodeId.indexOf(":");
   if (i < 0) return null;
@@ -37,15 +39,17 @@ export function navTargetForNodeId(nodeId: string): string | null {
 // outgoing reference rows resolve through the SAME path mapping above
 // instead of growing a second one. motion/content stay unmapped for the
 // same reasons they are null in navTargetForNodeId; a broken connection
-// (domain null) has nowhere to go by definition.
-const DOMAIN_TO_NODE_PREFIX: Record<string, string> = {
+// (domain null) has nowhere to go by definition. Keyed by the Domain
+// union so a renamed/added domain is a visible compile-site, not a row
+// that silently goes inert.
+const DOMAIN_TO_NODE_PREFIX: Partial<Record<Domain, string>> = {
   accessibility: "a11y",
   foundations: "foundation",
   component: "component",
 };
 
 export function navTargetForConnection(
-  domain: string | null,
+  domain: Domain | null,
   slug: string,
 ): string | null {
   if (!domain || !slug) return null;
