@@ -784,9 +784,14 @@ async function run(opts) {
   // it afterwards — stacking a second version bump per sync (the phantom
   // untagged versions, e.g. 0.34.66-67). writeMediaIndex is already
   // byte-compare-gated, so a no-op night writes nothing here.
+  // `media-index` is also addressable on its own. It makes no Figma calls (it is
+  // a pure re-derive of the media tree on disk), so running it standalone lets
+  // the phase gate be tested end-to-end, and lets an operator re-derive the
+  // index without a full nightly sync.
   if (
     phase === "media-preview" ||
     phase === "media-default" ||
+    phase === "media-index" ||
     phase === "all"
   ) {
     await runWithGuard("media-index", function () {
@@ -811,6 +816,7 @@ async function run(opts) {
         fileKind: "media",
         before: r.before || { media: {} },
         after: r.after || { media: {} },
+        beforeUnparseable: r.beforeUnparseable === true,
       });
       var lines = [];
       if (r.wrote) {

@@ -624,18 +624,48 @@ function classifyIcons(before, after, degraded) {
 // indistinguishable. A prune-only night reported "byte-level maintenance writes
 // only" on a pull request that had deleted images, and auto-merged. Same shape
 // as the icons bug that shipped 29 dead glyphs.
-function mediaRoles(side) {
+// Count the FRAMES in each role, not just the role name. A role's value is
+// either a single path (preview, default) or an ARRAY of paths (parts,
+// variations, spacing, behavior, layout).
+//
+// Keying on the role NAME alone would miss the loss that actually happens.
+// pruneStaleCaptures deletes every `<role>-<n>.webp` where n >= the new count,
+// and its mass-prune guard explicitly exempts shrinks. So a Variations board
+// going from 8 frames to 1 deletes 7 images while the role key survives, and a
+// name-only diff sees nothing at all. That is the common, unguarded case; a role
+// vanishing entirely is the rare, already-guarded one.
+function mediaCounts(side) {
   var out = {};
   var m = (side && side.media) || {};
   Object.keys(m).forEach(function (slug) {
-    out[slug] = Object.keys(m[slug] || {}).sort();
+    var roles = {};
+    Object.keys(m[slug] || {}).forEach(function (role) {
+      var v = m[slug][role];
+      roles[role] = Array.isArray(v) ? v.length : 1;
+    });
+    out[slug] = roles;
   });
   return out;
 }
 
-function classifyMedia(before, after) {
-  var b = mediaRoles(before);
-  var a = mediaRoles(after);
+function classifyMedia(before, after, opts) {
+  opts = opts || {};
+  var b = mediaCounts(before);
+  var a = mediaCounts(after);
+
+  // The prior index could not be read, so loss cannot be ruled out. Say so and
+  // demand review rather than guessing, and rather than bricking the pipeline.
+  if (opts.beforeUnparseable) {
+    return {
+      category: "breaking",
+      changelog:
+        "## Media index unreadable: BREAKING\n\n" +
+        "The previous `media/_index.json` could not be parsed, so this sync cannot\n" +
+        "tell whether any imagery was lost. The index has been rewritten from the\n" +
+        "media tree (self-healing), but a human needs to confirm nothing vanished.",
+      reasons: ["prior media index unreadable, loss cannot be ruled out"],
+    };
+  }
 
   var lostSlugs = Object.keys(b).filter(function (s) {
     return !a[s];
@@ -643,20 +673,36 @@ function classifyMedia(before, after) {
   var gainedSlugs = Object.keys(a).filter(function (s) {
     return !b[s];
   });
-  // A slug that survives but loses a ROLE (its Variations board, its Parts
-  // board) is still a loss: that imagery vanishes from the docs page.
+  // A slug that survives can still LOSE imagery: a role disappearing entirely,
+  // or a role keeping its name while shedding frames. Both vanish from the page.
   var lostRoles = [];
+  var gainedFrames = 0;
   Object.keys(b).forEach(function (s) {
     if (!a[s]) return;
-    b[s].forEach(function (role) {
-      if (a[s].indexOf(role) === -1) lostRoles.push(s + ":" + role);
+    Object.keys(b[s]).forEach(function (role) {
+      var had = b[s][role];
+      var has = Object.prototype.hasOwnProperty.call(a[s], role)
+        ? a[s][role]
+        : 0;
+      if (has === 0) {
+        lostRoles.push(s + ":" + role);
+      } else if (has < had) {
+        lostRoles.push(s + ":" + role + " (" + had + " -> " + has + " frames)");
+      } else if (has > had) {
+        gainedFrames++;
+      }
+    });
+    // A role appearing on an existing slug is new imagery, not a loss.
+    Object.keys(a[s]).forEach(function (role) {
+      if (!Object.prototype.hasOwnProperty.call(b[s], role)) gainedFrames++;
     });
   });
 
   if (
     lostSlugs.length === 0 &&
     gainedSlugs.length === 0 &&
-    lostRoles.length === 0
+    lostRoles.length === 0 &&
+    gainedFrames === 0
   ) {
     return {
       category: "unchanged",
@@ -696,8 +742,10 @@ function classifyMedia(before, after) {
     });
     lines.push("");
   }
-  if (gainedSlugs.length > 0) {
-    lines.push("## New media (" + gainedSlugs.length + ")");
+  if (gainedSlugs.length > 0 || gainedFrames > 0) {
+    lines.push(
+      "## New media (" + (gainedSlugs.length + gainedFrames) + ")",
+    );
     lines.push("");
     gainedSlugs.forEach(function (s) {
       lines.push("- `" + s + "`");
@@ -719,7 +767,8 @@ function classify(input) {
   if (fileKind === "styles") return classifyStyles(input.before, input.after);
   if (fileKind === "icons")
     return classifyIcons(input.before, input.after, input.degraded);
-  if (fileKind === "media") return classifyMedia(input.before, input.after);
+  if (fileKind === "media")
+    return classifyMedia(input.before, input.after, input);
   throw new Error("changelog-classifier: unknown fileKind '" + fileKind + "'");
 }
 

@@ -382,3 +382,43 @@ test("classifier(media): a swap (one slug in, one slug out) is still BREAKING", 
   assert.equal(res.category, "breaking", "a loss is a loss even when a gain masks the byte count");
   assert.equal(res.reasons.length, 1);
 });
+
+test("classifier(media): a role that SHRINKS its frame count is BREAKING (the common loss)", function () {
+  // pruneStaleCaptures deletes every `<role>-<n>.webp` where n >= the new count,
+  // and its mass-prune guard explicitly exempts shrinks. So a Variations board
+  // going 4 frames -> 1 silently deletes 3 images while the role KEY survives.
+  // A name-only diff sees nothing. This is the loss that actually happens.
+  var res = classifier({
+    fileKind: "media",
+    before: mediaIdx({ button: { variations: ["a", "b", "c", "d"] } }),
+    after: mediaIdx({ button: { variations: ["a"] } }),
+  });
+  assert.equal(res.category, "breaking", "3 deleted images must not auto-merge");
+  assert.match(res.reasons[0], /button:variations/);
+  assert.match(res.reasons[0], /4 -> 1/, "say how much was lost");
+});
+
+test("classifier(media): a role GROWING its frame count is additive", function () {
+  var res = classifier({
+    fileKind: "media",
+    before: mediaIdx({ button: { variations: ["a"] } }),
+    after: mediaIdx({ button: { variations: ["a", "b"] } }),
+  });
+  assert.equal(res.category, "additive");
+  assert.equal(res.reasons.length, 0);
+});
+
+test("classifier(media): an unreadable prior index is BREAKING, not a guess", function () {
+  // The index self-heals (it is rewritten from the media tree), but we cannot
+  // tell whether anything vanished, so a human confirms. Throwing instead would
+  // leave the corrupt file in place and kill every subsequent sync, which is the
+  // exact failure this whole change exists to prevent.
+  var res = classifier({
+    fileKind: "media",
+    before: null,
+    after: mediaIdx({ button: { preview: "a" } }),
+    beforeUnparseable: true,
+  });
+  assert.equal(res.category, "breaking");
+  assert.match(res.reasons[0], /unreadable/);
+});
