@@ -223,6 +223,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   consumers that ignore it behave as before. Real data lands on the next nightly sync. ([#354])
 
 ### Changed
+- **Breaking Figma sync (2026-07-12).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#408](https://github.com/volivarii/actian-ds-knowledge/pull/408))
 - **Editor: sidebar IA refined to Vincent's structure.** The Design system
   half now reads Foundations → **Content** (a nested parent holding Writing
   rules, Patterns, and Product as indented children — the "copy"
