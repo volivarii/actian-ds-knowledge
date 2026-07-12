@@ -11,7 +11,25 @@ test("loadPageOverrides reads the committed config with the icon + alert entries
   assert.ok(cfg, "config loaded");
   assert.equal(cfg.overrides["DS Icons"], "Icons");
   assert.equal(cfg.overrides["Alert (banner)"], "Feedback");
-  assert.ok(cfg.exclude.includes("DS Icons: replacement"));
+
+  // 'DS Icons: replacement' used to be EXCLUDED (added 2026-07-08, when it was a
+  // staging page). The 2026-07 icon rework then moved the real icon library onto
+  // it: 201 of the 237 registry icon components are main components on that page.
+  // Excluding it therefore deleted the entire Icons category (237 -> 0), the
+  // mass-loss tripwire correctly refused to publish a gutted registry, and the
+  // nightly Figma sync failed every night from 2026-07-10.
+  //
+  // It must resolve to the Icons category, and it must NOT be excluded. If a
+  // future change re-excludes it while the icons live there, the sync dies again.
+  assert.equal(
+    cfg.overrides["DS Icons: replacement"],
+    "Icons",
+    "the icon library lives on this page; it must resolve to a category",
+  );
+  assert.ok(
+    !cfg.exclude.includes("DS Icons: replacement"),
+    "excluding this page guts the entire Icons category and kills the nightly sync",
+  );
 });
 
 test("loadPageOverrides returns null when the config is absent", function () {

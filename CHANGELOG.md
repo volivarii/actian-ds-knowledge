@@ -300,6 +300,22 @@ Each entry links its pull request. Dates are the merge date (UTC).
   (the signature of a library-wide sub-section rename outside the alias list) is refused instead of
   deleting every `<role>-*.webp` across the library; the refusal is surfaced as a warning in the
   sync PR changelog. Single-slug removals and shrink prunes behave as before. ([#351])
+- **The nightly Figma sync has been dead since 2026-07-10, and the icon library is why.** The 2026-07
+  icon rework **moved the icons onto a different Figma page**: 201 of the 237 registry icon components
+  are now main components on `✍️ DS Icons: replacement`. That page was added to the `exclude` list in
+  `components/src/category-page-overrides.json` on 2026-07-08, back when it was a staging page. So the
+  sync was deleting the entire icon library: the `Icons` category went **237 to 0**.
+
+  The category mass-loss tripwire caught it every single time and refused to publish a gutted
+  registry, which is exactly its job. The result was a hard sync failure every night for three days,
+  and knowledge ingested nothing from Figma in that window. (The failure was reported: the
+  sync-failure issue opened on 2026-07-10 and commented each night. Nobody read it.)
+
+  The page now resolves to the `Icons` category instead of being excluded, and a test pins both halves
+  so it cannot be re-excluded while the icons live there. The icon-loss gate above is what makes this
+  safe to reconnect: whatever the reconnected sync finds, a lost glyph is now a breaking change with
+  every casualty named, rather than an auto-merge.
+
 - **Losing an icon is now a breaking sync.** The `icons` phase had no diff at all: its verdict was
   `iconsWrote ? "additive" : "unchanged"`, with no code path to `breaking`. When the Figma icon
   rework made glyphs stop rendering, the sync classified the loss as **additive**, applied the
