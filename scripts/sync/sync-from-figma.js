@@ -841,6 +841,25 @@ async function run(opts) {
         "icons-svg.json",
       );
       var curated = readJsonOrNull(curatedPath) || { icons: {} };
+      // Snapshot the DERIVED icon set before the phase overwrites it. This is
+      // what consumers actually resolve glyphs from, and the only way to see
+      // that an icon which used to resolve no longer does.
+      var iconsDistPath = path.join(
+        pluginDir,
+        "components",
+        "dist",
+        "icons",
+        "icons.json",
+      );
+      // NOT readJsonOrNull: that swallows a parse error into null, which here
+      // would degrade to an empty "before" set, make every icon look newly
+      // gained, and report ADDITIVE. A corrupt icons.json would therefore
+      // silently disable the very gate this phase exists to enforce. Absent is
+      // fine (first run); unparseable is not.
+      var iconsBefore = { icons: {} };
+      if (fs.existsSync(iconsDistPath)) {
+        iconsBefore = JSON.parse(fs.readFileSync(iconsDistPath, "utf8"));
+      }
       return syncIcons
         .run({
           registry: dsKit,
@@ -871,11 +890,24 @@ async function run(opts) {
             registry: dsKit,
             iconGroups: orchOpts.iconGroups,
           });
-          // Additive only when icon bytes actually changed (auto/degraded/
-          // icons.json). `exported` lists ALL clean icons every run, so using
-          // it as the verdict made every nightly sync additive by construction.
+          // Classify against the icon set consumers actually see. Losing a
+          // previously-clean glyph is BREAKING: that slug now resolves to
+          // nothing and every consumer renders an empty box.
+          //
+          // This used to be `iconsWrote ? "additive" : "unchanged"` with no
+          // diff at all. When the Figma icon rework made 28 glyphs stop
+          // rendering, the sync called it additive, auto-merged, and shipped
+          // the loss (#365 + #378, 2026-07-07/08). The degraded worklist below
+          // WAS printed in those PR bodies; nobody read it, because additive
+          // PRs auto-merge. The verdict is what gates the merge, so the verdict
+          // has to know.
           var iconsWrote = r.wrote === true || derived.wrote === true;
-          var cat = iconsWrote ? "additive" : "unchanged";
+          var verdict = classify({
+            fileKind: "icons",
+            before: iconsBefore,
+            after: derived.dist,
+            degraded: r.degraded,
+          });
           var lines = [];
           if (iconsWrote && r.exported.length > 0) {
             lines.push(
@@ -894,15 +926,29 @@ async function run(opts) {
                   .join(", "),
             );
           }
+          if (r.ghosts && r.ghosts.length > 0) {
+            lines.push(
+              "- ⚠️ **Stale registry**: " +
+                r.ghosts.length +
+                " component(s) advertised by Figma's published-library endpoint " +
+                "have no canvas node: " +
+                r.ghosts.join(", "),
+            );
+          }
+          if (verdict.changelog && verdict.category !== "unchanged") {
+            lines.push("");
+            lines.push(verdict.changelog);
+          }
           return {
             kind: "icons",
-            category: cat,
+            category: verdict.category,
             exported: r.exported,
             degraded: r.degraded,
             wrote: iconsWrote,
             fileLabel: "icons",
             verdict: {
-              category: cat,
+              category: verdict.category,
+              reasons: verdict.reasons,
               changelog: lines.length > 0 ? lines.join("\n") : "_(no changes)_",
             },
           };

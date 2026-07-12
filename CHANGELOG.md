@@ -300,6 +300,51 @@ Each entry links its pull request. Dates are the merge date (UTC).
   (the signature of a library-wide sub-section rename outside the alias list) is refused instead of
   deleting every `<role>-*.webp` across the library; the refusal is surfaced as a warning in the
   sync PR changelog. Single-slug removals and shrink prunes behave as before. ([#351])
+- **Losing an icon is now a breaking sync.** The `icons` phase had no diff at all: its verdict was
+  `iconsWrote ? "additive" : "unchanged"`, with no code path to `breaking`. When the Figma icon
+  rework made glyphs stop rendering, the sync classified the loss as **additive**, applied the
+  `auto-merge` label, and shipped it. That is how the icon set fell from **142 to 113** across two
+  syncs, unreviewed: 19 in [#365] (merged two minutes after opening) and 10 more in [#378]. Both PR
+  bodies printed the degraded worklist by name; nobody read them, because additive PRs auto-merge.
+  Of those 29 lost glyphs, 28 are ghosts (see below) and one (`book-bookmark`) was a genuine
+  `multicolor` rejection.
+
+  The sync now diffs the **derived** icon set (`components/dist/icons/icons.json`), which is what
+  consumers actually resolve glyphs from. An icon that resolved before and resolves to nothing now
+  is breaking: it blocks auto-merge, takes the `review-required` label, and the PR body names each
+  lost glyph with the reason it dropped out (`node-missing`, `render-failed`, `multicolor`,
+  `gradient-or-image-fill`). A redrawn glyph stays additive (it still resolves), and a brand-new
+  icon that lands degraded does not gate the sync (nothing regressed for consumers).
+- **Ghost components are detected, and verified rather than assumed.** The root defect behind the
+  icon loss: the registry is built from Figma's **published-library** endpoint
+  (`/v1/files/:key/components`), which keeps advertising a component after its canvas node has been
+  deleted. The registry therefore carries entries that resolve to nothing, and **the entry count
+  does not change** when it happens: it sat at exactly 237 icon components throughout, which is why
+  `classifyRegistry` reported "unchanged" every night while 28 glyphs died. A ghost is invisible to
+  a registry diff by construction.
+
+  `/v1/images` returns no URL for a node it will not render, and that alone cannot distinguish a
+  deleted node from a render failure. So the export now **probes `/v1/files/:key/nodes`** before
+  claiming a ghost: a node Figma has no record of is `node-missing` (**the registry is stale**, named
+  in the sync PR body and the console), while a node that exists but will not render stays
+  `render-failed`. A glyph that renders but is unusable stays `multicolor` / `gradient-or-image-fill`
+  (a drawing problem). Persistent ghosts are reported loudly but do **not** gate the sync, since a
+  standing Figma defect blocking every nightly run would only train us to ignore the gate; **only a
+  newly lost icon is breaking.**
+
+  Of the 28 ghosts, 22 are on the design team's own "REMOVED (28)" note in Figma (intentional
+  deletions). Six are not, and look like collateral from the icon rework: `expand`, `maximize`,
+  `minimize`, `misuse-outline`, `tools`, `view-table`. `misuse-outline` is the glyph inside Tag
+  Status's "Fail" variant, so a shipping DS component currently references an icon that no longer
+  exists. That is also why the plugin's vendor PRs have been red since 2026-07-07. Restoring the
+  glyphs is a Figma-side fix; this change only makes sure the next loss cannot ship in silence.
+- **`getImages()` no longer discards Figma's `err` field.** It returned `{ images: merged }`, so an
+  HTTP-200 response carrying an error contributed no URLs and was indistinguishable from a batch of
+  deleted nodes. It now returns `{ images, errors }` and the icon export **throws** rather than
+  recording an outage as icon loss. Note this is defence in depth, not the cause of the icon loss:
+  `request()` already threw on any non-2xx, so a render timeout (HTTP 400) always aborted the run.
+  The gap was only the 200-with-`err` shape, and it matters now that a URL-less node is treated as
+  evidence about the registry.
 
 ## [0.34.69] - 2026-07-03
 
@@ -354,6 +399,8 @@ history and pull-request record.
 [#400]: https://github.com/volivarii/actian-ds-knowledge/pull/400
 [#401]: https://github.com/volivarii/actian-ds-knowledge/pull/401
 [#402]: https://github.com/volivarii/actian-ds-knowledge/pull/402
+[#365]: https://github.com/volivarii/actian-ds-knowledge/pull/365
+[#378]: https://github.com/volivarii/actian-ds-knowledge/pull/378
 [#403]: https://github.com/volivarii/actian-ds-knowledge/pull/403
 [#404]: https://github.com/volivarii/actian-ds-knowledge/pull/404
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393

@@ -154,3 +154,104 @@ test("getImages with single id stays a single-batch call (no overhead)", async f
     rest._resetBaseUrl();
   }
 });
+
+// ---------------------------------------------------------------------------
+// The `errors` contract (2026-07-12).
+//
+// getImages used to return only `{images}`, dropping Figma's `err` field on the
+// floor. A batch that failed simply contributed no urls, which is
+// indistinguishable from "these nodes were deleted". The icons phase now treats
+// a url-less node as a possible ghost, so it MUST be able to tell an outage
+// apart from a deletion, or a bad night at Figma gets reported to a human as a
+// deleted component.
+//
+// This pins the PRODUCER side. The consumer (export-icons-svg) asserts against a
+// mock of getImages, so without this test getImages could silently stop
+// populating `errors` and every other test would still pass.
+// ---------------------------------------------------------------------------
+
+test("getImages surfaces Figma's err field instead of swallowing it", async function () {
+  var server = await startMock(function (req, res) {
+    res.writeHead(200, { "content-type": "application/json" });
+    // A 200 whose body carries an error: no urls, but NOT because the nodes
+    // are gone. request() only throws on non-2xx, so this shape would
+    // otherwise reach the caller as a silent empty result.
+    res.end(
+      JSON.stringify({ err: "Render timeout, try fewer images", images: {} }),
+    );
+  });
+  var port = server.address().port;
+  rest._setBaseUrl("http://127.0.0.1:" + port);
+  try {
+    var resp = await rest.getImages("FILEKEY", ["1:1", "1:2"], {
+      format: "svg",
+    });
+    assert.equal(Object.keys(resp.images).length, 0, "no urls came back");
+    assert.equal(resp.errors.length, 1, "the failure must be reported, not dropped");
+    assert.match(resp.errors[0].err, /Render timeout/);
+    assert.deepEqual(
+      resp.errors[0].ids,
+      ["1:1", "1:2"],
+      "the caller needs to know WHICH ids were affected",
+    );
+  } finally {
+    server.close();
+    rest._resetBaseUrl();
+  }
+});
+
+test("getImages reports errors per failing batch, and still returns the batches that worked", async function () {
+  var server = await startMock(function (req, res) {
+    var match = req.url.match(/ids=([^&]+)/);
+    var ids = match ? decodeURIComponent(match[1]).split(",") : [];
+    res.writeHead(200, { "content-type": "application/json" });
+    // Fail only the batch containing 1:3.
+    if (ids.indexOf("1:3") !== -1) {
+      res.end(JSON.stringify({ err: "Something went wrong", images: {} }));
+      return;
+    }
+    var images = {};
+    ids.forEach(function (id) {
+      images[id] = "https://signed/" + id + ".svg";
+    });
+    res.end(JSON.stringify({ err: null, images: images }));
+  });
+  var port = server.address().port;
+  rest._setBaseUrl("http://127.0.0.1:" + port);
+  try {
+    var resp = await rest.getImages("FILEKEY", ["1:1", "1:2", "1:3", "1:4"], {
+      format: "svg",
+      batchSize: 2,
+      concurrency: 1,
+    });
+    assert.equal(resp.errors.length, 1, "exactly the failing batch reports");
+    assert.deepEqual(resp.errors[0].ids, ["1:3", "1:4"]);
+    // The healthy batch still resolves: a partial outage must not look like
+    // total loss.
+    assert.equal(resp.images["1:1"], "https://signed/1:1.svg");
+    assert.equal(resp.images["1:2"], "https://signed/1:2.svg");
+  } finally {
+    server.close();
+    rest._resetBaseUrl();
+  }
+});
+
+test("getImages reports NO errors on a healthy response (err: null is not an error)", async function () {
+  var server = await startMock(function (req, res) {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ err: null, images: { "1:1": "https://x/a.svg" } }));
+  });
+  var port = server.address().port;
+  rest._setBaseUrl("http://127.0.0.1:" + port);
+  try {
+    var resp = await rest.getImages("FILEKEY", ["1:1"], { format: "svg" });
+    assert.deepEqual(
+      resp.errors,
+      [],
+      "err:null is Figma's SUCCESS shape; treating it as an error would fail every sync",
+    );
+  } finally {
+    server.close();
+    rest._resetBaseUrl();
+  }
+});

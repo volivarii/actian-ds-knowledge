@@ -5,6 +5,8 @@
 // at 0 0 48 48; curated set is 0 0 24 24), fills/strokes rewritten to
 // currentColor. Returns { ok:true, viewBox, body } or { ok:false, reason }.
 // reason ∈ { empty, render-failed, bad-viewbox, gradient-or-image-fill, multicolor }.
+// (export-icons-svg.js adds one more that this module never emits: `node-missing`,
+// meaning the registry advertises a component whose Figma node is gone.)
 
 const { optimize } = require("svgo");
 

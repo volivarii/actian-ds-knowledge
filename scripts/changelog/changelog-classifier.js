@@ -455,14 +455,172 @@ function classifyStyles(before, after) {
   return { category: category, changelog: lines.join("\n"), reasons: reasons };
 }
 
+// ---------- Icons kind ----------
+//
+// Diffs the DERIVED icon set (components/dist/icons/icons.json), which is what
+// consumers actually resolve glyphs from, not the raw Figma export.
+//
+// The gate that matters: an icon that WAS clean and is now gone. Consumers
+// (plugin renderers, docs) resolve that slug to nothing and render an empty
+// box, so it is a breaking change for them.
+//
+// This phase previously had no diff at all. Its verdict was
+// `iconsWrote ? "additive" : "unchanged"`. When the Figma icon rework made 28
+// glyphs stop rendering, the sync called the loss "additive", auto-merged, and
+// shipped it (syncs #365 + #378). The degraded worklist was printed in the PR
+// body and nobody read it, because additive PRs auto-merge.
+//
+// Deliberately NOT breaking:
+//   - a redrawn glyph (same slug, new body): still resolves, nothing breaks
+//   - a NEW icon that lands degraded: never resolved before, so nothing regressed
+function iconSlugs(side) {
+  return Object.keys((side && side.icons) || {});
+}
+
+function classifyIcons(before, after, degraded) {
+  var b = iconSlugs(before);
+  var a = iconSlugs(after);
+  var aSet = {};
+  a.forEach(function (s) {
+    aSet[s] = true;
+  });
+  var bSet = {};
+  b.forEach(function (s) {
+    bSet[s] = true;
+  });
+
+  // Why each icon dropped out, so the changelog explains itself.
+  var reasonBySlug = {};
+  (degraded || []).forEach(function (d) {
+    if (d && d.slug) reasonBySlug[d.slug] = d.reason || "unknown";
+  });
+
+  var lost = b.filter(function (s) {
+    return !aSet[s];
+  });
+  var gained = a.filter(function (s) {
+    return !bSet[s];
+  });
+
+  // "Redrawn" means the GLYPH changed. Compare only the drawing (viewBox +
+  // body), not the whole entry: an icon record also carries nodeId / group /
+  // dsKey, and a Figma re-parent or a group rename would otherwise be reported
+  // to a human as "this icon was redrawn", which is false.
+  var bodyChanged = b.filter(function (s) {
+    if (!aSet[s]) return false;
+    var bi = before.icons[s] || {};
+    var ai = after.icons[s] || {};
+    return bi.viewBox !== ai.viewBox || bi.body !== ai.body;
+  });
+
+  if (lost.length === 0 && gained.length === 0 && bodyChanged.length === 0) {
+    return {
+      category: "unchanged",
+      changelog: "_No icon changes._",
+      reasons: [],
+    };
+  }
+
+  var reasons = lost.map(function (s) {
+    var why = reasonBySlug[s];
+    return (
+      "lost icon '" +
+      s +
+      "'" +
+      (why ? " (" + why + ")" : " (no longer exported)")
+    );
+  });
+
+  // A ghost (node-missing) is a STALE REGISTRY, not a bad glyph: Figma's
+  // published-library endpoint still advertises a component whose canvas node
+  // was deleted. Call it out separately so it is not misread as a drawing
+  // problem, and so the fix ("retire it, or restore it in Figma") is obvious.
+  var ghosts = lost.filter(function (s) {
+    return reasonBySlug[s] === "node-missing";
+  });
+  var badGlyphs = lost.filter(function (s) {
+    return reasonBySlug[s] !== "node-missing";
+  });
+
+  var lines = [];
+  if (ghosts.length > 0) {
+    lines.push(
+      "## Stale registry: ghost components (" + ghosts.length + "): BREAKING",
+    );
+    lines.push("");
+    lines.push(
+      "Figma's published-library endpoint still advertises these components, but",
+    );
+    lines.push(
+      "their canvas nodes no longer exist, so they now render as nothing. The",
+    );
+    lines.push(
+      "registry entry COUNT does not change when this happens, which is exactly why",
+    );
+    lines.push("a registry diff cannot catch it.");
+    lines.push("");
+    lines.push(
+      "Each one is either an intentional deletion (retire it in every consumer) or",
+    );
+    lines.push("collateral damage from a rework (restore it in Figma).");
+    lines.push("");
+    ghosts.forEach(function (s) {
+      lines.push("- `" + s + "` (node no longer exists in Figma)");
+    });
+    lines.push("");
+  }
+  if (badGlyphs.length > 0) {
+    lines.push("## Lost icons (" + badGlyphs.length + "): BREAKING");
+    lines.push("");
+    lines.push(
+      "These slugs resolved to a glyph before this sync and now resolve to nothing.",
+    );
+    lines.push(
+      "Consumers render an empty box. Fix the glyph in Figma, or add a curated",
+    );
+    lines.push("override in `components/src/icons-svg.json`.");
+    lines.push("");
+    badGlyphs.forEach(function (s) {
+      var why = reasonBySlug[s];
+      lines.push("- `" + s + "`" + (why ? " (" + why + ")" : ""));
+    });
+    lines.push("");
+  }
+  if (gained.length > 0) {
+    lines.push("## New icons (" + gained.length + ")");
+    lines.push("");
+    gained.forEach(function (s) {
+      lines.push("- `" + s + "`");
+    });
+    lines.push("");
+  }
+  if (bodyChanged.length > 0) {
+    lines.push("## Redrawn icons (" + bodyChanged.length + ")");
+    lines.push("");
+    bodyChanged.forEach(function (s) {
+      lines.push("- `" + s + "`");
+    });
+    lines.push("");
+  }
+
+  return {
+    category: reasons.length > 0 ? "breaking" : "additive",
+    changelog: lines.join("\n"),
+    reasons: reasons,
+  };
+}
+
 function classify(input) {
   var fileKind = input.fileKind;
   if (fileKind === "registry")
     return classifyRegistry(input.before, input.after);
   if (fileKind === "styles") return classifyStyles(input.before, input.after);
+  if (fileKind === "icons")
+    return classifyIcons(input.before, input.after, input.degraded);
   throw new Error("changelog-classifier: unknown fileKind '" + fileKind + "'");
 }
 
 module.exports = classify;
 module.exports._diffRegistry = diffRegistry;
 module.exports._diffStylesArr = diffStylesArr;
+module.exports._classifyIcons = classifyIcons;

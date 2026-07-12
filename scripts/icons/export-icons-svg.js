@@ -4,8 +4,11 @@
 // group ≠ "Connector") from Figma, normalizes them, and writes:
 //   - autoOutPath      : components/src/icons-svg.auto.json  (clean set)
 //   - degradedOutPath  : components/dist/icons/icons.degraded.json (worklist)
-// Returns { exported:[slug], degraded:[{slug,reason}], skipped:Number }.
-// Thin glue over the tested figma-rest client + normalize-svg.
+// Returns { exported:[slug], degraded:[{slug,reason}], ghosts:[slug],
+//           skipped:Number, wrote:Boolean }.
+// `ghosts` are registry entries whose Figma node no longer exists (verified via
+// /v1/files/:key/nodes, not inferred). Thin glue over the tested figma-rest
+// client + normalize-svg.
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -38,16 +41,66 @@ async function run(opts) {
 
   const cleanIcons = {};
   const degraded = [];
+  // Ghosts: registry entries whose Figma node no longer exists. The registry is
+  // built from the PUBLISHED-LIBRARY endpoint (/v1/files/:key/components), which
+  // keeps advertising a component after its canvas node is deleted, so the
+  // registry can carry entries that resolve to nothing. A ghost means THE
+  // REGISTRY IS STALE, which is categorically different from "this glyph is
+  // multicolor". Lumping the two together is how 28 dead icons hid in a
+  // worklist while every registry diff reported "unchanged" (237 -> 237).
+  const ghosts = [];
 
   if (ids.length > 0) {
     const resp = await rest.getImages(fileKey, ids, { format: "svg" });
+
+    // A Figma API error must NEVER be recorded as icon loss. Without this, one
+    // failed batch marks its 10 nodes "missing", the breaking gate fires on a
+    // phantom regression, and a real glyph could get curated over. Fail loudly
+    // instead: a transient error is an error, not a design change.
+    const apiErrors = (resp && resp.errors) || [];
+    if (apiErrors.length > 0) {
+      throw new Error(
+        "[icons] Figma /v1/images returned errors; refusing to treat this as " +
+          "icon loss: " +
+          apiErrors
+            .map((e) => (e && e.err ? e.err : JSON.stringify(e)))
+            .join("; "),
+      );
+    }
+
     const images = (resp && resp.images) || {};
+
+    // A node with no image URL has two very different causes, and /v1/images
+    // cannot tell them apart:
+    //   - the node no longer exists (a GHOST: the registry is stale), or
+    //   - the node exists but Figma failed to render it.
+    // Only the first means the registry is lying, so ASK before claiming it.
+    // We probe /v1/files/:key/nodes for exactly the un-rendered ids (a small
+    // set), and Figma returns a null entry for a node that is gone.
+    //
+    // Without this probe the code would assert "this node no longer exists in
+    // Figma" on evidence that does not support it, and a plain render failure
+    // would be reported to a human as a deleted component.
+    const noUrlIds = ids.filter((id) => !images[id]);
+    const missingNodeIds = new Set();
+    if (noUrlIds.length > 0 && typeof rest.getNodes === "function") {
+      const nodesResp = await rest.getNodes(fileKey, noUrlIds);
+      const nodes = (nodesResp && nodesResp.nodes) || {};
+      for (const id of noUrlIds) {
+        if (!nodes[id] || !nodes[id].document) missingNodeIds.add(id);
+      }
+    }
+
     for (const id of ids) {
       const slug = idToSlug[id];
       const url = images[id];
       let result;
       if (!url) {
-        result = { ok: false, reason: "render-failed" };
+        result = missingNodeIds.has(id)
+          ? // Verified: Figma has no such node. The registry is stale.
+            { ok: false, reason: "node-missing", ghost: true }
+          : // The node is there; Figma just would not render it.
+            { ok: false, reason: "render-failed" };
       } else {
         try {
           const buf = await rest.fetchBinary(url);
@@ -58,11 +111,20 @@ async function run(opts) {
       }
       if (result.ok) {
         cleanIcons[slug] = { viewBox: result.viewBox, body: result.body };
-      } else if (!curatedSlugs.has(slug)) {
-        degraded.push({ slug, reason: result.reason });
+      } else {
+        // A curated override supplies the glyph, so this is not a degraded
+        // WORKLIST item: there is nothing for a designer to redraw.
+        if (!curatedSlugs.has(slug)) {
+          degraded.push({ slug, reason: result.reason });
+        }
+        // ...but a ghost is still a ghost. The registry entry is stale whether
+        // or not a hand-curated glyph happens to be masking it downstream, and
+        // that staleness is what a human needs to see.
+        if (result.ghost) ghosts.push(slug);
       }
     }
   }
+  ghosts.sort((a, b) => a.localeCompare(b));
 
   // Stable, sorted output for idempotent diffs.
   const sortedIcons = {};
@@ -85,6 +147,15 @@ async function run(opts) {
       skipped +
       (degraded.length ? " by-reason=" + JSON.stringify(reasonHist) : ""),
   );
+  if (ghosts.length > 0) {
+    console.warn(
+      "[icons] STALE REGISTRY: " +
+        ghosts.length +
+        " component(s) advertised by Figma's published-library endpoint no " +
+        "longer have a canvas node: " +
+        ghosts.join(", "),
+    );
+  }
 
   const auto = {
     _schema_version: 1,
@@ -118,7 +189,13 @@ async function run(opts) {
         "\n",
     ) || wrote;
 
-  return { exported: Object.keys(sortedIcons), degraded, skipped, wrote };
+  return {
+    exported: Object.keys(sortedIcons),
+    degraded,
+    ghosts,
+    skipped,
+    wrote,
+  };
 }
 
 // Byte-gated write — returns true only when the file content actually changed.

@@ -137,3 +137,140 @@ test("second identical run writes nothing (wrote=false) — no-op nights stay no
   assert.equal(r2.wrote, false, "byte-identical rerun must not report a write");
   assert.deepEqual(r2.exported, r1.exported, "exported list itself unchanged");
 });
+
+// ---------------------------------------------------------------------------
+// Ghost components (2026-07-12).
+//
+// The registry is built from Figma's PUBLISHED-LIBRARY endpoint
+// (/v1/files/:key/components), which keeps advertising a component after its
+// canvas node has been deleted. So the registry can hold entries whose nodeId
+// resolves to nothing: ghosts.
+//
+// /v1/images returns NO url for a ghost. That is categorically different from
+// "the glyph is messy" (multicolor / gradient): it means the REGISTRY IS STALE.
+// Lumping both into a `render-failed` worklist is how 28 dead icons hid in
+// plain sight while the registry count sat unchanged at 237 and every diff
+// said "unchanged".
+//
+// It is also different from a transient Figma API failure, which must NEVER be
+// recorded as icon loss. See the `err` test below.
+// ---------------------------------------------------------------------------
+
+// Figma returns no image URL for a node it will not render. That has TWO very
+// different causes and /v1/images cannot tell them apart:
+//   - the node is GONE      -> the registry is stale (a ghost)
+//   - the node is there but Figma failed to render it -> render-failed
+// So the exporter probes /v1/files/:key/nodes before claiming a ghost. These two
+// tests pin both branches: same getImages response, opposite getNodes answer,
+// opposite verdict. Without the probe the code would assert "this node no longer
+// exists in Figma" on evidence that cannot support it.
+function restWithMissingUrlFor(nodeId, nodeExists) {
+  return {
+    getImages: (fileKey, ids) =>
+      Promise.resolve({
+        images: Object.fromEntries(
+          ids.filter((id) => id !== nodeId).map((id) => [id, "url://" + id]),
+        ),
+      }),
+    getNodes: (fileKey, ids) =>
+      Promise.resolve({
+        nodes: Object.fromEntries(
+          ids.map((id) => [
+            id,
+            // Figma returns a null entry for a node that does not exist.
+            id === nodeId && !nodeExists ? null : { document: { id: id } },
+          ]),
+        ),
+      }),
+    fetchBinary: (url) =>
+      Promise.resolve(Buffer.from(SVG[url.replace("url://", "")], "utf8")),
+  };
+}
+
+test("node absent from /v1/nodes is a GHOST (stale registry), not a degraded glyph", async () => {
+  const dir = tmp();
+  const r = await run({
+    registry: REGISTRY,
+    iconGroups: ICON_GROUPS,
+    curatedSlugs: new Set(),
+    autoOutPath: path.join(dir, "icons-svg.auto.json"),
+    degradedOutPath: path.join(dir, "icons.degraded.json"),
+    rest: restWithMissingUrlFor("1:2", false),
+  });
+
+  assert.deepEqual(
+    r.ghosts,
+    ["twocolor"],
+    "a node Figma has no record of must surface as a ghost, named",
+  );
+  assert.deepEqual(
+    r.degraded,
+    [{ slug: "twocolor", reason: "node-missing" }],
+    "reason must say the NODE is gone, not that the glyph is bad",
+  );
+});
+
+test("node that EXISTS but will not render is render-failed, NOT a ghost", async () => {
+  const dir = tmp();
+  const r = await run({
+    registry: REGISTRY,
+    iconGroups: ICON_GROUPS,
+    curatedSlugs: new Set(),
+    autoOutPath: path.join(dir, "icons-svg.auto.json"),
+    degradedOutPath: path.join(dir, "icons.degraded.json"),
+    rest: restWithMissingUrlFor("1:2", true),
+  });
+
+  assert.deepEqual(
+    r.ghosts,
+    [],
+    "the node is still in the file, so the registry is NOT stale: claiming a ghost here would send someone hunting for a deletion that never happened",
+  );
+  assert.deepEqual(r.degraded, [{ slug: "twocolor", reason: "render-failed" }]);
+});
+
+test("a ghost is still reported even when a curated override masks it", async () => {
+  const dir = tmp();
+  const r = await run({
+    registry: REGISTRY,
+    iconGroups: ICON_GROUPS,
+    // twocolor is hand-curated, so the glyph still resolves downstream...
+    curatedSlugs: new Set(["twocolor"]),
+    autoOutPath: path.join(dir, "icons-svg.auto.json"),
+    degradedOutPath: path.join(dir, "icons.degraded.json"),
+    rest: restWithMissingUrlFor("1:2", false),
+  });
+
+  // ...but the REGISTRY is still stale, and that is what a human needs to see.
+  assert.deepEqual(r.ghosts, ["twocolor"]);
+  assert.deepEqual(
+    r.degraded,
+    [],
+    "a curated override means there is nothing for a designer to redraw, so it is not a worklist item",
+  );
+});
+
+test("a Figma API error is NEVER recorded as icon loss: it fails the run", async () => {
+  const dir = tmp();
+  const flakyRest = {
+    getImages: () =>
+      Promise.resolve({
+        images: {},
+        errors: [{ ids: ["1:1", "1:2"], err: "Render timeout" }],
+      }),
+    fetchBinary: () => Promise.reject(new Error("should not be reached")),
+  };
+  await assert.rejects(
+    () =>
+      run({
+        registry: REGISTRY,
+        iconGroups: ICON_GROUPS,
+        curatedSlugs: new Set(),
+        autoOutPath: path.join(dir, "icons-svg.auto.json"),
+        degradedOutPath: path.join(dir, "icons.degraded.json"),
+        rest: flakyRest,
+      }),
+    /Render timeout/,
+    "a transient API failure must abort, not silently mark every icon missing",
+  );
+});
