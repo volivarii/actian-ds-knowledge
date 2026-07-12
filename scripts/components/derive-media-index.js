@@ -125,12 +125,47 @@ function writeMediaIndexAt(mediaRoot) {
   var currentStr = fs.existsSync(indexPath)
     ? fs.readFileSync(indexPath, "utf8")
     : "";
+  // Return the PRIOR index, not just its bytes. buildMediaIndex is a pure
+  // directory listing with no memory, so without this the caller cannot tell 60
+  // slugs disappearing from 60 slugs appearing: both are simply "wrote: true".
+  // The sync's verdict needs the before-set to call a loss what it is.
+  //
+  // An unparseable prior index must NOT throw. Throwing would leave the corrupt
+  // file in place (the write is below), so every subsequent sync would die on it
+  // too, and the pipeline would stay dead until a human fixed it by hand. That is
+  // precisely the failure this whole change exists to prevent. Instead: rewrite
+  // the index from the media tree (self-healing) and tell the caller the before
+  // set is unknown, so it can escalate to a breaking verdict and get a human to
+  // confirm nothing vanished.
+  var before = null;
+  var beforeUnparseable = false;
+  if (currentStr) {
+    try {
+      before = JSON.parse(currentStr);
+    } catch (e) {
+      beforeUnparseable = true;
+    }
+  }
   var slugCount = Object.keys(index.media).length;
   if (currentStr === nextStr) {
-    return { wrote: false, path: indexPath, slugCount: slugCount };
+    return {
+      wrote: false,
+      path: indexPath,
+      slugCount: slugCount,
+      before: before,
+      after: index,
+      beforeUnparseable: beforeUnparseable,
+    };
   }
   fs.writeFileSync(indexPath, nextStr, "utf8");
-  return { wrote: true, path: indexPath, slugCount: slugCount };
+  return {
+    wrote: true,
+    path: indexPath,
+    slugCount: slugCount,
+    before: before,
+    after: index,
+    beforeUnparseable: beforeUnparseable,
+  };
 }
 
 module.exports = {

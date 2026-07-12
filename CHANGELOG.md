@@ -300,6 +300,37 @@ Each entry links its pull request. Dates are the merge date (UTC).
   (the signature of a library-wide sub-section rename outside the alias list) is refused instead of
   deleting every `<role>-*.webp` across the library; the refusal is surfaced as a warning in the
   sync PR changelog. Single-slug removals and shrink prunes behave as before. ([#351])
+- **Losing imagery is now a breaking sync too, and the remaining blind spots are named.** ([#409])
+  After the icon incident, every sync phase was audited against one question: *what does loss look like
+  here, and would we notice?* The icons bug was not a one-off. It was the house style: three phases
+  decided their verdict from "did I write any bytes" rather than from a diff, with **no code path to
+  `breaking`** at all.
+
+  `components/dist/media/_index.json` is the sidecar consumers actually resolve imagery through, and it
+  is a pure directory listing with **no memory**: 60 slugs disappearing and 60 appearing produced an
+  identical verdict. A prune-only night reported *"byte-level maintenance writes only"* on a pull
+  request that had deleted images, and auto-merged.
+
+  It is now classified, and classified at the **read surface**, which is the leverage: a loss from any
+  upstream media phase has to pass through this index to reach a consumer, so one gate covers the chain
+  without instrumenting each phase. Breaking now means a slug losing all its imagery, a slug losing a
+  role entirely, or **a role keeping its name while shedding frames**. That last one is the case that
+  actually happens: `pruneStaleCaptures` deletes every `<role>-<n>.webp` above the new count and its
+  mass-prune guard explicitly exempts shrinks, so a Variations board going from 8 frames to 1 silently
+  deleted 7 images while the role key survived.
+
+  An unreadable prior index is breaking too, rather than fatal: the index rewrites itself from the media
+  tree (self-healing) and asks a human to confirm nothing vanished. Throwing would have left the corrupt
+  file in place and killed every subsequent sync until someone fixed it by hand, which is exactly the
+  failure this change exists to prevent.
+
+  Known remaining blind spots, recorded rather than quietly carried: a category with fewer than 10
+  members can still vanish silently (`assertNoCategoryMassLoss` has a floor of 10, and `category` is not
+  a breaking reason); anatomy detects a **deleted file** but not a file rewritten with **less** in it;
+  and neither media phase has a sanity floor, so a component gutted in Figma can overwrite a good
+  capture with a near-blank image. That last one matters most: `default.webp` is the oracle for the
+  render-fidelity gate, so **a blank oracle would pass everything**.
+
 - **The nightly Figma sync has been dead since 2026-07-10, and the icon library is why.** The 2026-07
   icon rework **moved the icons onto a different Figma page**: 201 of the 237 registry icon components
   are now main components on `✍️ DS Icons: replacement`. That page was added to the `exclude` list in
@@ -417,6 +448,7 @@ history and pull-request record.
 [#402]: https://github.com/volivarii/actian-ds-knowledge/pull/402
 [#365]: https://github.com/volivarii/actian-ds-knowledge/pull/365
 [#378]: https://github.com/volivarii/actian-ds-knowledge/pull/378
+[#409]: https://github.com/volivarii/actian-ds-knowledge/pull/409
 [#403]: https://github.com/volivarii/actian-ds-knowledge/pull/403
 [#404]: https://github.com/volivarii/actian-ds-knowledge/pull/404
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
