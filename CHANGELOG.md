@@ -300,6 +300,25 @@ Each entry links its pull request. Dates are the merge date (UTC).
   (the signature of a library-wide sub-section rename outside the alias list) is refused instead of
   deleting every `<role>-*.webp` across the library; the refusal is surfaced as a warning in the
   sync PR changelog. Single-slug removals and shrink prunes behave as before. ([#351])
+- **Losing imagery is now a breaking sync too, and the remaining blind spots are named.** After the
+  icon incident, every sync phase was audited against one question: *what does loss look like here, and
+  would we notice?* Three phases carried the **literal same expression** that shipped 29 dead glyphs
+  (`captured.length > 0 ? "additive" : "unchanged"`, with no code path to `breaking`).
+
+  `components/dist/media/_index.json` is the sidecar consumers actually resolve imagery through, and it
+  is a pure directory listing with **no memory**: 60 slugs disappearing and 60 appearing produced an
+  identical verdict. A prune-only night reported *"byte-level maintenance writes only"* on a pull
+  request that had deleted images, and auto-merged. It is now classified: a slug losing all its
+  imagery, or a slug losing a single role (its Variations board, its Parts board), is **breaking** and
+  named. Classifying at the read surface catches loss from **any** upstream media phase.
+
+  Known remaining blind spots, recorded rather than quietly carried (see the audit in the PR):
+  a category with fewer than 10 members can still vanish silently (`assertNoCategoryMassLoss` has a
+  floor of 10, and `category` is not a breaking reason); anatomy detects a **deleted file** but not a
+  file rewritten with **less** in it; and neither media phase has a sanity floor, so a component gutted
+  in Figma can overwrite a good capture with a near-blank image. That last one matters most:
+  `default.webp` is the oracle for the render-fidelity gate, so a blank oracle would pass everything.
+
 - **The nightly Figma sync has been dead since 2026-07-10, and the icon library is why.** The 2026-07
   icon rework **moved the icons onto a different Figma page**: 201 of the 237 registry icon components
   are now main components on `✍️ DS Icons: replacement`. That page was added to the `exclude` list in

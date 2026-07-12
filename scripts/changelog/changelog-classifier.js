@@ -610,6 +610,108 @@ function classifyIcons(before, after, degraded) {
   };
 }
 
+// ---------- Media kind ----------
+//
+// Diffs components/dist/media/_index.json, the sidecar consumers actually
+// resolve imagery through (docs pages, plugin previews). Diffing HERE catches
+// loss from ANY upstream media phase: a prune in media-preview, a vanished
+// default capture, a whole slug disappearing. They all surface as the read
+// surface losing an entry.
+//
+// This phase used to have no diff at all. Its verdict was
+// `r.wrote ? "additive" : "unchanged"`, and buildMediaIndex is a pure directory
+// listing with no memory, so 60 slugs dropping out and 60 slugs appearing were
+// indistinguishable. A prune-only night reported "byte-level maintenance writes
+// only" on a pull request that had deleted images, and auto-merged. Same shape
+// as the icons bug that shipped 29 dead glyphs.
+function mediaRoles(side) {
+  var out = {};
+  var m = (side && side.media) || {};
+  Object.keys(m).forEach(function (slug) {
+    out[slug] = Object.keys(m[slug] || {}).sort();
+  });
+  return out;
+}
+
+function classifyMedia(before, after) {
+  var b = mediaRoles(before);
+  var a = mediaRoles(after);
+
+  var lostSlugs = Object.keys(b).filter(function (s) {
+    return !a[s];
+  });
+  var gainedSlugs = Object.keys(a).filter(function (s) {
+    return !b[s];
+  });
+  // A slug that survives but loses a ROLE (its Variations board, its Parts
+  // board) is still a loss: that imagery vanishes from the docs page.
+  var lostRoles = [];
+  Object.keys(b).forEach(function (s) {
+    if (!a[s]) return;
+    b[s].forEach(function (role) {
+      if (a[s].indexOf(role) === -1) lostRoles.push(s + ":" + role);
+    });
+  });
+
+  if (
+    lostSlugs.length === 0 &&
+    gainedSlugs.length === 0 &&
+    lostRoles.length === 0
+  ) {
+    return {
+      category: "unchanged",
+      changelog: "_No media entries added or removed._",
+      reasons: [],
+    };
+  }
+
+  var reasons = lostSlugs
+    .map(function (s) {
+      return "lost all media for '" + s + "'";
+    })
+    .concat(
+      lostRoles.map(function (sr) {
+        return "lost media role '" + sr + "'";
+      }),
+    );
+
+  var lines = [];
+  if (lostSlugs.length > 0 || lostRoles.length > 0) {
+    lines.push(
+      "## Lost media (" +
+        (lostSlugs.length + lostRoles.length) +
+        "): BREAKING",
+    );
+    lines.push("");
+    lines.push(
+      "Imagery that consumers resolved before this sync no longer resolves.",
+    );
+    lines.push("Docs pages and plugin previews lose these images.");
+    lines.push("");
+    lostSlugs.forEach(function (s) {
+      lines.push("- `" + s + "` (all roles)");
+    });
+    lostRoles.forEach(function (sr) {
+      lines.push("- `" + sr + "`");
+    });
+    lines.push("");
+  }
+  if (gainedSlugs.length > 0) {
+    lines.push("## New media (" + gainedSlugs.length + ")");
+    lines.push("");
+    gainedSlugs.forEach(function (s) {
+      lines.push("- `" + s + "`");
+    });
+    lines.push("");
+  }
+
+  return {
+    category: reasons.length > 0 ? "breaking" : "additive",
+    changelog: lines.join("\n"),
+    reasons: reasons,
+  };
+}
+
 function classify(input) {
   var fileKind = input.fileKind;
   if (fileKind === "registry")
@@ -617,6 +719,7 @@ function classify(input) {
   if (fileKind === "styles") return classifyStyles(input.before, input.after);
   if (fileKind === "icons")
     return classifyIcons(input.before, input.after, input.degraded);
+  if (fileKind === "media") return classifyMedia(input.before, input.after);
   throw new Error("changelog-classifier: unknown fileKind '" + fileKind + "'");
 }
 
@@ -624,3 +727,4 @@ module.exports = classify;
 module.exports._diffRegistry = diffRegistry;
 module.exports._diffStylesArr = diffStylesArr;
 module.exports._classifyIcons = classifyIcons;
+module.exports._classifyMedia = classifyMedia;

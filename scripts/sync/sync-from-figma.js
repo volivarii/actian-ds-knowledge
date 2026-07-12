@@ -798,17 +798,45 @@ async function run(opts) {
       var writeMediaIndexAt =
         require("../components/derive-media-index").writeMediaIndexAt;
       var r = writeMediaIndexAt(mediaOutputDir);
-      var cat = r.wrote ? "additive" : "unchanged";
+      // _index.json is the surface consumers actually resolve imagery through,
+      // so classifying HERE catches media loss from ANY upstream phase: a prune
+      // in media-preview, a vanished default capture, a whole slug going away.
+      //
+      // This used to be `r.wrote ? "additive" : "unchanged"`, with no path to
+      // breaking. Since the index is a pure directory listing with no memory,
+      // 60 slugs disappearing and 60 appearing produced the identical verdict,
+      // and a prune-only night auto-merged a PR that had deleted images. Same
+      // shape as the icons bug that shipped 29 dead glyphs.
+      var mediaVerdict = classify({
+        fileKind: "media",
+        before: r.before || { media: {} },
+        after: r.after || { media: {} },
+      });
+      var lines = [];
+      if (r.wrote) {
+        lines.push(
+          "- Regenerated media/_index.json (" + r.slugCount + " slugs).",
+        );
+      }
+      if (mediaVerdict.category !== "unchanged") {
+        lines.push("");
+        lines.push(mediaVerdict.changelog);
+      }
+      // The classifier only speaks about entries appearing and disappearing. A
+      // byte change with no entry change (a path string, a re-order) is still a
+      // real dist change and must stay tagged as additive, or the version bump
+      // never fires and consumers pin a version that does not contain it.
+      var mediaCat = mediaVerdict.category;
+      if (mediaCat === "unchanged" && r.wrote) mediaCat = "additive";
       return {
         kind: "media-index",
-        category: cat,
+        category: mediaCat,
         wrote: r.wrote === true,
         fileLabel: "media/_index.json",
         verdict: {
-          category: cat,
-          changelog: r.wrote
-            ? "- Regenerated media/_index.json (" + r.slugCount + " slugs)."
-            : "_(no changes)_",
+          category: mediaCat,
+          reasons: mediaVerdict.reasons,
+          changelog: lines.length > 0 ? lines.join("\n") : "_(no changes)_",
         },
       };
     });

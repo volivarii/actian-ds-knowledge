@@ -125,12 +125,40 @@ function writeMediaIndexAt(mediaRoot) {
   var currentStr = fs.existsSync(indexPath)
     ? fs.readFileSync(indexPath, "utf8")
     : "";
+  // Return the PRIOR index, not just its bytes. buildMediaIndex is a pure
+  // directory listing with no memory, so without this the caller cannot tell 60
+  // slugs disappearing from 60 slugs appearing: both are simply "wrote: true".
+  // The sync's verdict needs the before-set to call a loss what it is.
+  var before = null;
+  if (currentStr) {
+    try {
+      before = JSON.parse(currentStr);
+    } catch (e) {
+      // A corrupt index must not silently degrade to an empty "before", which
+      // would make every entry look newly gained and report the sync additive.
+      throw new Error(
+        "derive-media-index: " + indexPath + " is unparseable: " + e.message,
+      );
+    }
+  }
   var slugCount = Object.keys(index.media).length;
   if (currentStr === nextStr) {
-    return { wrote: false, path: indexPath, slugCount: slugCount };
+    return {
+      wrote: false,
+      path: indexPath,
+      slugCount: slugCount,
+      before: before,
+      after: index,
+    };
   }
   fs.writeFileSync(indexPath, nextStr, "utf8");
-  return { wrote: true, path: indexPath, slugCount: slugCount };
+  return {
+    wrote: true,
+    path: indexPath,
+    slugCount: slugCount,
+    before: before,
+    after: index,
+  };
 }
 
 module.exports = {
