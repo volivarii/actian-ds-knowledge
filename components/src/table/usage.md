@@ -3,7 +3,7 @@ title: "Table usage guidelines"
 ---
 ## When to use
 
-* Use a table for large sets of comparable records with shared attributes: datasets, connections, pipelines, catalog entries.
+* Use a table for large sets of comparable records with shared attributes: datasets, connections, data processes, catalog entries.
 
 * Use it when users need to sort, filter, or scan columns to compare values across many rows.
 

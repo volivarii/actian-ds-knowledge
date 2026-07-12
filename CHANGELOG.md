@@ -19,6 +19,22 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Usage guidelines: wave 2 completes the domain (38 remaining components).**
+  Every component now carries authored Usage guidance: the second wave covers
+  navigation and chrome (breadcrumbs, global header, side nav, toolbar,
+  sticky footer, link), the search flow (search, its dropdown menu, filters,
+  result card), the feedback and loading families (alert banner, notification
+  pair, confirmation, the state screens, all five loading indicators), the
+  remaining inputs (combo box, multi-select, calendar, date input, rich text,
+  upload file) and display containers (avatar, badge, popover, drawer,
+  stepper, accordion, scroll bar, segmented control, tag, what's new).
+  Same canonical shape and grounding as wave 1 ([#403]); boundary-heavy
+  families were authored together so every "use X instead" is symmetric
+  (the five-way loading boundary, the four-part search flow, toast vs
+  notification vs banner). Fifteen more component-level `a11y_refs` wired
+  (loading-patterns, alerts-toasts-banners, empty-states, forms,
+  dropdowns-menus-popovers), growing the graph to 1104 edges. Usage
+  coverage: 54/54. ([#TBD2])
 - **Usage guidelines: first authored wave (15 core components).** The Usage
   domain, until now "not started" across the board, gets its first real
   content: button, modal, text-input, dropdown-select, checkbox,

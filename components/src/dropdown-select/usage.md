@@ -15,7 +15,7 @@ title: "Dropdown / Select usage guidelines"
 
 * Don't hide two to five options behind a dropdown when they fit on screen: use a [radio button](radio-button) group so users can compare at a glance.
 
-* Don't make users scroll a very long list (countries, hundreds of datasets): use a [combo box](combo-box) so typing narrows the options.
+* Don't make users scroll a very long list (countries, long dataset lists): use a [combo box](combo-box) so typing narrows the options.
 
 * Don't use it as a form field that collects several values: use a [multi-select](multi-select). The Search/Multiple variant is for in-menu filter checkboxes, not multi-value input.
 

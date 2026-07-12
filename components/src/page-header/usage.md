@@ -21,7 +21,7 @@ title: "Page header usage guidelines"
 
 ## Variant selection
 
-* **Default:** list and index pages (connections, pipelines, datasets in Studio or Administration): title plus page-level create action.
+* **Default:** list and index pages (connections, datasets, data processes in Studio or Administration): title plus page-level create action.
 
 * **Details page:** a single entity's page: breadcrumbs, the entity name as title, and entity-level actions such as **Edit**.
 
@@ -33,7 +33,7 @@ title: "Page header usage guidelines"
 
 | Do | Don't |
 | --- | --- |
-| Title the page with the entity's exact name | Paraphrase or decorate the name (**Sales pipeline overview**) |
+| Title the page with the entity's exact name | Paraphrase or decorate the name (**Sales analytics overview**) |
 | Keep at most two primary actions in the header | Line up four buttons across the title row |
 | Use breadcrumbs on detail pages to show the path back | Rely on the browser back button as the only way up |
 | Use the same variant for every page of the same kind | Give two list pages different header layouts |
