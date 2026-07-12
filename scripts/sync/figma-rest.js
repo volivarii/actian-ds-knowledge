@@ -292,8 +292,8 @@ function getImages(fileKey, nodeIds, opts) {
   // Figma reports per-request render failures in an `err` field alongside
   // `images`. This used to be dropped on the floor: a batch that errored simply
   // contributed no urls, and the caller could not tell "Figma failed" apart from
-  // "this node does not exist". Callers need that distinction — one is a
-  // transient outage, the other is a stale registry — so surface it.
+  // "this node does not exist". Callers need that distinction, because one
+  // is a transient outage and the other is a stale registry. Surface it.
   var errors = [];
   var cursor = 0;
 

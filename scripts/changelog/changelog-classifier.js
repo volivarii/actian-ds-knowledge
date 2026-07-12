@@ -464,7 +464,7 @@ function classifyStyles(before, after) {
 // (plugin renderers, docs) resolve that slug to nothing and render an empty
 // box, so it is a breaking change for them.
 //
-// This phase previously had no diff at all — its verdict was
+// This phase previously had no diff at all. Its verdict was
 // `iconsWrote ? "additive" : "unchanged"`. When the Figma icon rework made 28
 // glyphs stop rendering, the sync called the loss "additive", auto-merged, and
 // shipped it (syncs #365 + #378). The degraded worklist was printed in the PR
@@ -502,9 +502,15 @@ function classifyIcons(before, after, degraded) {
     return !bSet[s];
   });
 
+  // "Redrawn" means the GLYPH changed. Compare only the drawing (viewBox +
+  // body), not the whole entry: an icon record also carries nodeId / group /
+  // dsKey, and a Figma re-parent or a group rename would otherwise be reported
+  // to a human as "this icon was redrawn", which is false.
   var bodyChanged = b.filter(function (s) {
     if (!aSet[s]) return false;
-    return JSON.stringify(before.icons[s]) !== JSON.stringify(after.icons[s]);
+    var bi = before.icons[s] || {};
+    var ai = after.icons[s] || {};
+    return bi.viewBox !== ai.viewBox || bi.body !== ai.body;
   });
 
   if (lost.length === 0 && gained.length === 0 && bodyChanged.length === 0) {
@@ -539,7 +545,7 @@ function classifyIcons(before, after, degraded) {
   var lines = [];
   if (ghosts.length > 0) {
     lines.push(
-      "## Stale registry: ghost components (" + ghosts.length + ") — BREAKING",
+      "## Stale registry: ghost components (" + ghosts.length + "): BREAKING",
     );
     lines.push("");
     lines.push(
@@ -564,7 +570,7 @@ function classifyIcons(before, after, degraded) {
     lines.push("");
   }
   if (badGlyphs.length > 0) {
-    lines.push("## Lost icons (" + badGlyphs.length + ") — BREAKING");
+    lines.push("## Lost icons (" + badGlyphs.length + "): BREAKING");
     lines.push("");
     lines.push(
       "These slugs resolved to a glyph before this sync and now resolve to nothing.",
@@ -576,7 +582,7 @@ function classifyIcons(before, after, degraded) {
     lines.push("");
     badGlyphs.forEach(function (s) {
       var why = reasonBySlug[s];
-      lines.push("- `" + s + "`" + (why ? " — " + why : ""));
+      lines.push("- `" + s + "`" + (why ? " (" + why + ")" : ""));
     });
     lines.push("");
   }

@@ -192,14 +192,13 @@ test("classifier — adding categorySlug to an entry is detected as additive (no
 });
 
 // ---------------------------------------------------------------------------
-// Icons kind — the gap that let 29 icons vanish into main unnoticed
+// Icons kind: the gap that let 29 icons vanish into main unnoticed
 // (syncs #365 + #378, 2026-07-07/08).
 //
 // The icons phase had NO removal detection at all: its verdict was literally
 // `iconsWrote ? "additive" : "unchanged"`. So when the Figma icon rework made
 // 28 glyphs stop rendering, the sync classified the loss as ADDITIVE, applied
 // the auto-merge label, and shipped it to main two minutes later. The plugin's
-// test suite was the only thing in the ecosystem that noticed.
 //
 // A previously-clean icon that is no longer in the derived set is a BREAKING
 // change for consumers: their rendered glyph silently becomes empty.
@@ -213,7 +212,7 @@ function iconSet(slugs) {
   return { _schema_version: 1, icons: icons };
 }
 
-test("classifier(icons) — losing a previously-clean icon is BREAKING, not additive", function () {
+test("classifier(icons): losing a previously-clean icon is BREAKING, not additive", function () {
   var res = classifier({
     fileKind: "icons",
     before: iconSet(["add", "chart-bar", "close"]),
@@ -231,7 +230,7 @@ test("classifier(icons) — losing a previously-clean icon is BREAKING, not addi
   assert.match(res.changelog, /render-failed/, "surface WHY it was lost");
 });
 
-test("classifier(icons) — the real #365 regression (19 clean icons degraded) classifies breaking", function () {
+test("classifier(icons): a multi-icon loss classifies breaking, one reason per lost glyph", function () {
   var before = iconSet(["add", "asleep", "chart-bar", "chart-pie", "expand", "mail"]);
   var after = iconSet(["add"]);
   var res = classifier({
@@ -250,7 +249,7 @@ test("classifier(icons) — the real #365 regression (19 clean icons degraded) c
   assert.equal(res.reasons.length, 5, "one reason per lost icon");
 });
 
-test("classifier(icons) — new icons only is additive", function () {
+test("classifier(icons): new icons only is additive", function () {
   var res = classifier({
     fileKind: "icons",
     before: iconSet(["add"]),
@@ -262,7 +261,7 @@ test("classifier(icons) — new icons only is additive", function () {
   assert.match(res.changelog, /sparkle/);
 });
 
-test("classifier(icons) — identical sets are unchanged (no-op nights stay no-op)", function () {
+test("classifier(icons): identical sets are unchanged (no-op nights stay no-op)", function () {
   var res = classifier({
     fileKind: "icons",
     before: iconSet(["add", "close"]),
@@ -273,15 +272,15 @@ test("classifier(icons) — identical sets are unchanged (no-op nights stay no-o
   assert.equal(res.reasons.length, 0);
 });
 
-test("classifier(icons) — a redrawn glyph (same slug, new body) is additive, not breaking", function () {
+test("classifier(icons): a redrawn glyph (same slug, new body) is additive, not breaking", function () {
   var before = iconSet(["add"]);
   var after = { _schema_version: 1, icons: { add: { viewBox: "0 0 24 24", body: "<path d=\"M1 1h2v2H1z\"/>" } } };
   var res = classifier({ fileKind: "icons", before: before, after: after, degraded: [] });
-  assert.equal(res.category, "additive", "the glyph still resolves — consumers do not break");
+  assert.equal(res.category, "additive", "the glyph still resolves, so consumers do not break");
   assert.equal(res.reasons.length, 0);
 });
 
-test("classifier(icons) — degraded icons that were NEVER clean do not block the sync", function () {
+test("classifier(icons): degraded icons that were NEVER clean do not block the sync", function () {
   // A brand-new icon that lands multicolor was never in `before`, so nothing
   // regressed for consumers. It belongs on the worklist, not in the gate.
   var res = classifier({
@@ -294,7 +293,7 @@ test("classifier(icons) — degraded icons that were NEVER clean do not block th
   assert.equal(res.reasons.length, 0);
 });
 
-test("classifier(icons) — a ghost (node-missing) is reported as a STALE REGISTRY, not a bad glyph", function () {
+test("classifier(icons): a ghost (node-missing) is reported as a STALE REGISTRY, not a bad glyph", function () {
   var res = classifier({
     fileKind: "icons",
     before: iconSet(["add", "misuse-outline", "attachments"]),

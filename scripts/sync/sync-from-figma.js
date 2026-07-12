@@ -851,7 +851,15 @@ async function run(opts) {
         "icons",
         "icons.json",
       );
-      var iconsBefore = readJsonOrNull(iconsDistPath) || { icons: {} };
+      // NOT readJsonOrNull: that swallows a parse error into null, which here
+      // would degrade to an empty "before" set, make every icon look newly
+      // gained, and report ADDITIVE. A corrupt icons.json would therefore
+      // silently disable the very gate this phase exists to enforce. Absent is
+      // fine (first run); unparseable is not.
+      var iconsBefore = { icons: {} };
+      if (fs.existsSync(iconsDistPath)) {
+        iconsBefore = JSON.parse(fs.readFileSync(iconsDistPath, "utf8"));
+      }
       return syncIcons
         .run({
           registry: dsKit,
