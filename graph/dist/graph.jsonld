@@ -6308,6 +6308,19 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
+      "source": "component:calendar",
+      "target": "a11y:forms",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/calendar/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
       "source": "component:chat-with-ai-steward",
       "target": "a11y:ai-output-suggestions",
       "scope": "component",
@@ -6413,6 +6426,19 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
+      "source": "component:error-state",
+      "target": "a11y:empty-states",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/error-state/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
       "source": "component:global-header",
       "target": "a11y:navigation",
       "scope": "component",
@@ -6426,12 +6452,103 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
+      "source": "component:input-date",
+      "target": "a11y:forms",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/input-date/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
+      "source": "component:loader",
+      "target": "a11y:loading-patterns",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/loader/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
+      "source": "component:loader-with-logo",
+      "target": "a11y:loading-patterns",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/loader-with-logo/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
+      "source": "component:loading-skeleton",
+      "target": "a11y:loading-patterns",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/loading-skeleton/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
+      "source": "component:maintenance-state",
+      "target": "a11y:empty-states",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/maintenance-state/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
       "source": "component:modal",
       "target": "a11y:modals",
       "scope": "component",
       "confidence": "asserted",
       "provenance": {
         "source_file": "components/src/modal/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
+      "source": "component:notification",
+      "target": "a11y:alerts-toasts-banners",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/notification/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
+      "source": "component:notification-dropdown",
+      "target": "a11y:alerts-toasts-banners",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/notification-dropdown/",
         "deriver": "derive-graph.js",
         "method": "meta.a11y_refs"
       }
@@ -6465,12 +6582,51 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
+      "source": "component:progress-bar-small",
+      "target": "a11y:loading-patterns",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/progress-bar-small/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
       "source": "component:radio-button",
       "target": "a11y:forms",
       "scope": "component",
       "confidence": "asserted",
       "provenance": {
         "source_file": "components/src/radio-button/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
+      "source": "component:rich-text",
+      "target": "a11y:forms",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/rich-text/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
+      "source": "component:scroll-bar",
+      "target": "a11y:truncation-overflow",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/scroll-bar/",
         "deriver": "derive-graph.js",
         "method": "meta.a11y_refs"
       }
@@ -6491,6 +6647,19 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
+      "source": "component:search-dropdown-menu",
+      "target": "a11y:dropdowns-menus-popovers",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/search-dropdown-menu/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
       "source": "component:search-filters",
       "target": "a11y:forms",
       "scope": "component",
@@ -6504,12 +6673,38 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
+      "source": "component:segmented-control",
+      "target": "a11y:tabs",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/segmented-control/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
       "source": "component:side-nav",
       "target": "a11y:navigation",
       "scope": "component",
       "confidence": "asserted",
       "provenance": {
         "source_file": "components/src/side-nav/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
+      "source": "component:spinner",
+      "target": "a11y:loading-patterns",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/spinner/",
         "deriver": "derive-graph.js",
         "method": "meta.a11y_refs"
       }
@@ -6634,12 +6829,38 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
+      "source": "component:toolbar",
+      "target": "a11y:buttons",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/toolbar/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
       "source": "component:tooltip",
       "target": "a11y:tooltips",
       "scope": "component",
       "confidence": "asserted",
       "provenance": {
         "source_file": "components/src/tooltip/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
+      "source": "component:upload-file",
+      "target": "a11y:forms",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/upload-file/",
         "deriver": "derive-graph.js",
         "method": "meta.a11y_refs"
       }
