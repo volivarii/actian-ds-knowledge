@@ -11,7 +11,7 @@ title: "Inline toast usage guidelines"
 
 ## When not to use
 
-* Don't use an inline toast for the result of a page-level or background action (import finished, pipeline run started): use a [global toast](global-toast) at the screen edge.
+* Don't use an inline toast for the result of a page-level or background action (import finished, scan started): use a [global toast](global-toast) at the screen edge.
 
 * Don't use an inline toast for an error the user must fix. Field errors belong to inline validation on the [text input](text-input) itself; section-level problems belong in an [alert banner](alert-banner).
 

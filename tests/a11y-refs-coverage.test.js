@@ -45,12 +45,7 @@ test("a11y intro states WCAG 2.2 AA as the target", () => {
 // have no documented component host yet. Allowlisted — neither required to be
 // referenced nor treated as a failure. Shrinks as these components are
 // authored. (designer-handoff-checklist is header-tier, handled by tier.)
-const KNOWN_GAP = new Set([
-  "loading-patterns",
-  "empty-states",
-  "drag-drop",
-  "ai-output-suggestions",
-]);
+const KNOWN_GAP = new Set(["drag-drop", "ai-output-suggestions"]);
 
 function indexBySlug() {
   return readJson("accessibility/dist/a11y-index.json").bySlug || {};
