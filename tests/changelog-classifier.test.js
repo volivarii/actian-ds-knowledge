@@ -190,3 +190,106 @@ test("classifier — adding categorySlug to an entry is detected as additive (no
     "no breaking reasons for an additive field",
   );
 });
+
+// ---------------------------------------------------------------------------
+// Icons kind — the gap that let 29 icons vanish into main unnoticed
+// (syncs #365 + #378, 2026-07-07/08).
+//
+// The icons phase had NO removal detection at all: its verdict was literally
+// `iconsWrote ? "additive" : "unchanged"`. So when the Figma icon rework made
+// 28 glyphs stop rendering, the sync classified the loss as ADDITIVE, applied
+// the auto-merge label, and shipped it to main two minutes later. The plugin's
+// test suite was the only thing in the ecosystem that noticed.
+//
+// A previously-clean icon that is no longer in the derived set is a BREAKING
+// change for consumers: their rendered glyph silently becomes empty.
+// ---------------------------------------------------------------------------
+
+function iconSet(slugs) {
+  var icons = {};
+  slugs.forEach(function (s) {
+    icons[s] = { viewBox: "0 0 24 24", body: "<path d=\"M0 0h24v24H0z\"/>" };
+  });
+  return { _schema_version: 1, icons: icons };
+}
+
+test("classifier(icons) — losing a previously-clean icon is BREAKING, not additive", function () {
+  var res = classifier({
+    fileKind: "icons",
+    before: iconSet(["add", "chart-bar", "close"]),
+    after: iconSet(["add", "close"]),
+    degraded: [{ slug: "chart-bar", reason: "render-failed" }],
+  });
+  assert.equal(res.category, "breaking", "a lost glyph must block auto-merge");
+  assert.ok(
+    res.reasons.some(function (r) {
+      return /chart-bar/.test(r);
+    }),
+    "the reason must name the lost icon, got: " + JSON.stringify(res.reasons),
+  );
+  assert.match(res.changelog, /chart-bar/);
+  assert.match(res.changelog, /render-failed/, "surface WHY it was lost");
+});
+
+test("classifier(icons) — the real #365 regression (19 clean icons degraded) classifies breaking", function () {
+  var before = iconSet(["add", "asleep", "chart-bar", "chart-pie", "expand", "mail"]);
+  var after = iconSet(["add"]);
+  var res = classifier({
+    fileKind: "icons",
+    before: before,
+    after: after,
+    degraded: [
+      { slug: "asleep", reason: "render-failed" },
+      { slug: "chart-bar", reason: "render-failed" },
+      { slug: "chart-pie", reason: "render-failed" },
+      { slug: "expand", reason: "render-failed" },
+      { slug: "mail", reason: "render-failed" },
+    ],
+  });
+  assert.equal(res.category, "breaking");
+  assert.equal(res.reasons.length, 5, "one reason per lost icon");
+});
+
+test("classifier(icons) — new icons only is additive", function () {
+  var res = classifier({
+    fileKind: "icons",
+    before: iconSet(["add"]),
+    after: iconSet(["add", "sparkle"]),
+    degraded: [],
+  });
+  assert.equal(res.category, "additive");
+  assert.equal(res.reasons.length, 0);
+  assert.match(res.changelog, /sparkle/);
+});
+
+test("classifier(icons) — identical sets are unchanged (no-op nights stay no-op)", function () {
+  var res = classifier({
+    fileKind: "icons",
+    before: iconSet(["add", "close"]),
+    after: iconSet(["add", "close"]),
+    degraded: [],
+  });
+  assert.equal(res.category, "unchanged");
+  assert.equal(res.reasons.length, 0);
+});
+
+test("classifier(icons) — a redrawn glyph (same slug, new body) is additive, not breaking", function () {
+  var before = iconSet(["add"]);
+  var after = { _schema_version: 1, icons: { add: { viewBox: "0 0 24 24", body: "<path d=\"M1 1h2v2H1z\"/>" } } };
+  var res = classifier({ fileKind: "icons", before: before, after: after, degraded: [] });
+  assert.equal(res.category, "additive", "the glyph still resolves — consumers do not break");
+  assert.equal(res.reasons.length, 0);
+});
+
+test("classifier(icons) — degraded icons that were NEVER clean do not block the sync", function () {
+  // A brand-new icon that lands multicolor was never in `before`, so nothing
+  // regressed for consumers. It belongs on the worklist, not in the gate.
+  var res = classifier({
+    fileKind: "icons",
+    before: iconSet(["add"]),
+    after: iconSet(["add"]),
+    degraded: [{ slug: "brand-new-multicolor-thing", reason: "multicolor" }],
+  });
+  assert.equal(res.category, "unchanged");
+  assert.equal(res.reasons.length, 0);
+});

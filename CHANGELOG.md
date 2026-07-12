@@ -18,6 +18,30 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Losing an icon is now a breaking sync.** The `icons` phase had no diff at all: its verdict was
+  `iconsWrote ? "additive" : "unchanged"`, with no code path to `breaking`. When the Figma icon
+  rework made glyphs stop rendering, the sync classified the loss as **additive**, applied the
+  `auto-merge` label, and shipped it. That is how the icon set fell from 142 to 113 across two
+  syncs, unreviewed: 19 icons in [#365](https://github.com/volivarii/actian-ds-knowledge/pull/365)
+  (merged two minutes after opening) and 10 more in
+  [#378](https://github.com/volivarii/actian-ds-knowledge/pull/378). Both PR bodies printed the
+  degraded worklist by name; nobody read them, because additive PRs auto-merge.
+
+  The sync now diffs the **derived** icon set (`components/dist/icons/icons.json`), which is what
+  consumers actually resolve glyphs from. An icon that resolved before and resolves to nothing now
+  is breaking: it blocks auto-merge, takes the `review-required` label, and the PR body names each
+  lost glyph with the reason it dropped out (`render-failed`, `multicolor`,
+  `gradient-or-image-fill`). A redrawn glyph stays additive (it still resolves), and a brand-new
+  icon that lands degraded does not gate the sync (nothing regressed for consumers). Replaying the
+  real #365 diff through the gate now yields `BREAKING, 19 reasons`.
+
+  Downstream effect of the original regression: the plugin's renderers resolve `misuse-outline` (the
+  Tag Status "Fail" glyph) to an empty box, which is why its vendor PRs have been red since
+  2026-07-07. Those glyphs return when the Figma icon rework restores them; this change only makes
+  sure the next loss cannot ship silently.
+
 ### Added
 - **Usage guidelines: wave 2 completes the domain (38 remaining components).**
   Every component now carries authored Usage guidance: the second wave covers
