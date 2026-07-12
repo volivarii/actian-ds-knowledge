@@ -6400,6 +6400,19 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
+      "source": "component:empty-state",
+      "target": "a11y:empty-states",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/empty-state/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
       "source": "component:global-header",
       "target": "a11y:navigation",
       "scope": "component",
@@ -6445,6 +6458,19 @@
       "confidence": "asserted",
       "provenance": {
         "source_file": "components/src/popover/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
+      "source": "component:radio-button",
+      "target": "a11y:forms",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/radio-button/",
         "deriver": "derive-graph.js",
         "method": "meta.a11y_refs"
       }
@@ -6601,6 +6627,19 @@
       "confidence": "asserted",
       "provenance": {
         "source_file": "components/src/toggle/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
+      "source": "component:tooltip",
+      "target": "a11y:tooltips",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/tooltip/",
         "deriver": "derive-graph.js",
         "method": "meta.a11y_refs"
       }

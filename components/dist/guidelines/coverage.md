@@ -8,35 +8,35 @@
 | Avatar | approved | not started | inherited | inherited | not started |
 | Badges | approved | not started | inherited | inherited | approved |
 | Breadcrumbs | approved | not started | inherited | inherited | approved |
-| Buttons | approved | not started | draft | draft | approved |
+| Buttons | approved | draft | draft | draft | approved |
 | Calendar | approved | not started | inherited | inherited | not started |
-| Cards | approved | not started | inherited | inherited | approved |
+| Cards | approved | draft | inherited | inherited | approved |
 | Chat with AI Steward | draft | draft | draft | not started | not started |
-| Checkboxes | approved | not started | inherited | inherited | approved |
+| Checkboxes | approved | draft | inherited | inherited | approved |
 | Collapse / accordion | approved | not started | inherited | inherited | not started |
 | Combo box | approved | not started | inherited | inherited | not started |
 | Confirmation | approved | not started | inherited | inherited | not started |
 | Drawer, side panel | approved | not started | inherited | inherited | not started |
-| Dropdown / Select | approved | not started | inherited | inherited | not started |
-| Empty state | approved | not started | inherited | inherited | not started |
+| Dropdown / Select | approved | draft | inherited | inherited | not started |
+| Empty state | approved | draft | inherited | inherited | not started |
 | Error state | approved | not started | inherited | inherited | not started |
 | Global header | approved | not started | inherited | inherited | approved |
-| Global toast | approved | not started | inherited | inherited | not started |
-| Inline toast | approved | not started | inherited | inherited | not started |
+| Global toast | approved | draft | inherited | inherited | not started |
+| Inline toast | approved | draft | inherited | inherited | not started |
 | Date input | approved | not started | inherited | inherited | not started |
 | Links | approved | not started | inherited | inherited | not started |
 | Loader | approved | not started | inherited | inherited | not started |
 | Loader with logo | approved | not started | inherited | inherited | not started |
 | Loading skeleton | approved | not started | inherited | inherited | not started |
 | Maintenance state | approved | not started | inherited | inherited | not started |
-| Modal | approved | not started | inherited | inherited | not started |
+| Modal | approved | draft | inherited | inherited | not started |
 | Multi-select | approved | not started | inherited | inherited | not started |
 | Notification | approved | not started | inherited | inherited | not started |
 | Notification dropdown | approved | not started | inherited | inherited | not started |
-| Page header | approved | not started | not started | not started | approved |
+| Page header | approved | draft | not started | not started | approved |
 | Popover | approved | not started | inherited | inherited | not started |
 | Progress bar | approved | not started | inherited | inherited | not started |
-| Radio button | approved | not started | inherited | inherited | not started |
+| Radio button | approved | draft | inherited | inherited | not started |
 | Rich text | approved | not started | inherited | inherited | not started |
 | Scroll bar | approved | not started | inherited | inherited | not started |
 | Search | approved | not started | inherited | inherited | approved |
@@ -49,13 +49,13 @@
 | Stepper | approved | not started | inherited | inherited | not started |
 | Sticky footer | approved | not started | inherited | inherited | not started |
 | Success state | approved | not started | inherited | inherited | not started |
-| Table | approved | not started | inherited | inherited | not started |
-| Tabs | approved | not started | inherited | inherited | approved |
+| Table | approved | draft | inherited | inherited | not started |
+| Tabs | approved | draft | inherited | inherited | approved |
 | Tags | approved | not started | inherited | inherited | approved |
-| Text input | approved | not started | draft | inherited | approved |
-| Toggle control | approved | not started | inherited | inherited | not started |
+| Text input | approved | draft | draft | inherited | approved |
+| Toggle control | approved | draft | inherited | inherited | not started |
 | Toolbar | approved | not started | inherited | inherited | not started |
-| Tooltip | approved | not started | inherited | inherited | not started |
+| Tooltip | approved | draft | inherited | inherited | not started |
 | Upload file | approved | not started | inherited | inherited | not started |
 | What's new | approved | not started | inherited | inherited | not started |
 
@@ -64,7 +64,7 @@
 | Domain | Approved | Draft | Inherited | Not started | Absent |
 |---|---|---|---|---|---|
 | content | 53 | 1 | 0 | 0 | 0 |
-| usage | 0 | 1 | 0 | 53 | 0 |
+| usage | 0 | 16 | 0 | 38 | 0 |
 | design | 0 | 3 | 50 | 1 | 0 |
 | behavior | 0 | 1 | 51 | 2 | 0 |
 | tokens | 12 | 0 | 0 | 42 | 0 |

@@ -661,7 +661,76 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use a button to trigger an action: submit a form, confirm a choice, start or cancel a process.\n\n* Use one filled (primary) button per view for the single most important action (for example **Create data product**, **Save changes**).\n\n* Use outlined (secondary) buttons for supporting actions that sit beside the primary (for example **Cancel**, **Back**, **Preview**).\n\n* Use ghost buttons for low-emphasis or repeated actions, such as row-level actions in a [table](table) or card footers.\n\n* Use icon-only buttons for compact, high-frequency actions whose icon is unambiguous; always pair them with a [tooltip](tooltip) that supplies the accessible name.\n\n## When not to use\n\n* Don't use a button to take the user somewhere: navigation is a [link](link). If activating it only changes location, it is not an action.\n\n* Don't use a button to switch between views of the same content: use [tabs](tabs) or a [segmented control](segmented-control).\n\n* Don't use a button for an immediate on/off state change: use a [toggle](toggle).\n\n* Don't line up more than three actions in a row: keep the two that matter and move the rest behind an actions menu (**Actions** or **More**, see [dropdown / select](dropdown-select)). A [page header](page-header) carries at most two.\n\n## Variant selection\n\n* **Filled (primary):** the one main action of the screen or modal.\n\n* **Outlined (secondary):** alternative actions displayed next to the primary.\n\n* **Ghost:** low-priority or repeated actions where visual noise must stay low (table rows, toolbars, card footers).\n\n* **Icon-only:** dense surfaces with well-known icons (edit, delete, refresh).\n\n* **Critical intent:** actions that destroy data or make a permanent change (for example **Delete dataset**). Pair with a [confirmation](confirmation) dialog (the 450px confirm [modal](modal)) when the loss is irreversible.\n\n* **Small size:** dense surfaces such as [table](table) rows and toolbars; use the default size everywhere else.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| One filled primary button per view | Two competing primary buttons side by side |\n| Confirm before a permanent destructive action | Delete data in a single click |\n| Give icon-only buttons a tooltip naming the action | Rely on the icon alone to convey the action |\n| Keep action placement consistent across similar screens | Reorder Cancel and Save from one modal to the next |\n\n> Label wording rules (sentence case, verb + object, no punctuation) live in the Content guidelines for buttons.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use a button to trigger an action: submit a form, confirm a choice, start or cancel a process.",
+                    "Use one filled (primary) button per view for the single most important action (for example **Create data product**, **Save changes**).",
+                    "Use outlined (secondary) buttons for supporting actions that sit beside the primary (for example **Cancel**, **Back**, **Preview**).",
+                    "Use ghost buttons for low-emphasis or repeated actions, such as row-level actions in a [table](table) or card footers.",
+                    "Use icon-only buttons for compact, high-frequency actions whose icon is unambiguous; always pair them with a [tooltip](tooltip) that supplies the accessible name."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use a button to take the user somewhere: navigation is a [link](link). If activating it only changes location, it is not an action.",
+                    "Don't use a button to switch between views of the same content: use [tabs](tabs) or a [segmented control](segmented-control).",
+                    "Don't use a button for an immediate on/off state change: use a [toggle](toggle).",
+                    "Don't line up more than three actions in a row: keep the two that matter and move the rest behind an actions menu (**Actions** or **More**, see [dropdown / select](dropdown-select)). A [page header](page-header) carries at most two."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "bullets": [
+                    "**Filled (primary):** the one main action of the screen or modal.",
+                    "**Outlined (secondary):** alternative actions displayed next to the primary.",
+                    "**Ghost:** low-priority or repeated actions where visual noise must stay low (table rows, toolbars, card footers).",
+                    "**Icon-only:** dense surfaces with well-known icons (edit, delete, refresh).",
+                    "**Critical intent:** actions that destroy data or make a permanent change (for example **Delete dataset**). Pair with a [confirmation](confirmation) dialog (the 450px confirm [modal](modal)) when the loss is irreversible.",
+                    "**Small size:** dense surfaces such as [table](table) rows and toolbars; use the default size everywhere else."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "One filled primary button per view",
+                  "dont": "Two competing primary buttons side by side"
+                },
+                {
+                  "do": "Confirm before a permanent destructive action",
+                  "dont": "Delete data in a single click"
+                },
+                {
+                  "do": "Give icon-only buttons a tooltip naming the action",
+                  "dont": "Rely on the icon alone to convey the action"
+                },
+                {
+                  "do": "Keep action placement consistent across similar screens",
+                  "dont": "Reorder Cancel and Save from one modal to the next"
+                },
+                {
+                  "note": "Label wording rules (sentence case, verb + object, no punctuation) live in the Content guidelines for buttons."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "draft",
@@ -843,7 +912,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:42:11+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "calendar": {
       "_schema_version": 1,
@@ -1073,7 +1142,83 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "This guideline covers the card family: card for items, card for grouped content, selectable cards, card for perimeter, view card, and [search result card](search-result-card).\n\n## When to use\n\n* Use a card grid for browseable items whose identity matters more than attribute comparison: data products, datasets, visualizations, glossary topics.\n\n* Use a card when each item needs a recognizable face: name, type, a couple of metadata lines, and a click target to its detail page.\n\n* Use a grouped-content card to frame a related block (a summary, a chart, a settings group) on a dashboard or detail page.\n\n* Use cards as gateways to collections, for example topic cards on the Explorer home.\n\n## When not to use\n\n* Don't use cards for large sets of comparable records that users sort and filter: use a [table](table).\n\n* Don't use a card for a lone block of text on a page: plain page content needs no frame.\n\n* Don't put primary page actions inside a card: page-level actions belong in the [page header](page-header).\n\n* Don't nest cards inside cards; use the grouped-content card's slot for inner content instead.\n\n## Variant selection\n\n* **Card for items:** clickable entities in a grid. Pick the type that matches the entity: **Catalog** for catalog assets, **Item** for generic items, **Glossary type** for glossary entries, **Topic** for curated groupings. Enable the AI-ready flag only when the platform has marked the asset AI ready.\n\n* **Card for grouped content:** a container with an optional header and a free slot; use it to frame dashboard widgets or detail-page sections, not to represent an entity.\n\n* **Selectable card:** options presented as rich cards at a decision point; selection follows [checkboxes](checkbox) (several) or [radio buttons](radio-button) (exactly one).\n\n* **Card for perimeter:** perimeter definitions in Explorer; do not reuse it for other entities.\n\n* **View card:** saved views; do not reuse it for other entities.\n\n* **Search result card:** search results only, with an Explorer and a Studio variant; never use it in ordinary grids.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Make the whole item card one click target to the detail page | Scatter separate links inside the card body |\n| Reveal contextual actions on focus as well as hover, or in an [actions menu](dropdown-select) | Stack persistent buttons on every card in a grid |\n| Keep every card in a grid the same kind and size | Mix item cards and grouped-content cards in one grid |\n| Show two or three metadata lines (type, owner, last modified) | Cram the full attribute set onto the card face |\n\n> Card title and description wording per sub-kind (item, selectable, topic) lives in the Content guidelines for cards.",
+          "sections": [
+            {
+              "heading": "",
+              "content": [
+                {
+                  "prose": "This guideline covers the card family: card for items, card for grouped content, selectable cards, card for perimeter, view card, and [search result card](search-result-card)."
+                }
+              ]
+            },
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use a card grid for browseable items whose identity matters more than attribute comparison: data products, datasets, visualizations, glossary topics.",
+                    "Use a card when each item needs a recognizable face: name, type, a couple of metadata lines, and a click target to its detail page.",
+                    "Use a grouped-content card to frame a related block (a summary, a chart, a settings group) on a dashboard or detail page.",
+                    "Use cards as gateways to collections, for example topic cards on the Explorer home."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use cards for large sets of comparable records that users sort and filter: use a [table](table).",
+                    "Don't use a card for a lone block of text on a page: plain page content needs no frame.",
+                    "Don't put primary page actions inside a card: page-level actions belong in the [page header](page-header).",
+                    "Don't nest cards inside cards; use the grouped-content card's slot for inner content instead."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "bullets": [
+                    "**Card for items:** clickable entities in a grid. Pick the type that matches the entity: **Catalog** for catalog assets, **Item** for generic items, **Glossary type** for glossary entries, **Topic** for curated groupings. Enable the AI-ready flag only when the platform has marked the asset AI ready.",
+                    "**Card for grouped content:** a container with an optional header and a free slot; use it to frame dashboard widgets or detail-page sections, not to represent an entity.",
+                    "**Selectable card:** options presented as rich cards at a decision point; selection follows [checkboxes](checkbox) (several) or [radio buttons](radio-button) (exactly one).",
+                    "**Card for perimeter:** perimeter definitions in Explorer; do not reuse it for other entities.",
+                    "**View card:** saved views; do not reuse it for other entities.",
+                    "**Search result card:** search results only, with an Explorer and a Studio variant; never use it in ordinary grids."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Make the whole item card one click target to the detail page",
+                  "dont": "Scatter separate links inside the card body"
+                },
+                {
+                  "do": "Reveal contextual actions on focus as well as hover, or in an [actions menu](dropdown-select)",
+                  "dont": "Stack persistent buttons on every card in a grid"
+                },
+                {
+                  "do": "Keep every card in a grid the same kind and size",
+                  "dont": "Mix item cards and grouped-content cards in one grid"
+                },
+                {
+                  "do": "Show two or three metadata lines (type, owner, last modified)",
+                  "dont": "Cram the full attribute set onto the card face"
+                },
+                {
+                  "note": "Card title and description wording per sub-kind (item, selectable, topic) lives in the Content guidelines for cards."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -1160,7 +1305,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:42:11+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "chat-with-ai-steward": {
       "_schema_version": 1,
@@ -2143,7 +2288,71 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use checkboxes when the user can pick several independent options from a group (for example filtering datasets by format, owner, and status at once).\n\n* Use a single checkbox for one standalone opt-in inside a form that submits, where nothing changes until save (for example **Enable notifications**, agreeing to terms).\n\n* Use checkboxes for bulk selection of rows in a [table](table), such as picking datasets to add to a data product.\n\n## When not to use\n\n* Don't use a checkbox for a setting that takes effect the moment it is clicked: use a [toggle](toggle).\n\n* Don't use checkboxes when exactly one option must be chosen: use a [radio button](radio-button) group.\n\n* Don't stack a checkbox group past roughly seven options: use a [multi-select](multi-select).\n\n## Variant selection\n\n* **Checked / unchecked:** the normal two-state choice; every checkbox the user interacts with resolves to one of these.\n\n* **Indeterminate:** only as a parent whose children are partially selected, such as the select-all header of a [table](table). It is never a third value the user picks directly.\n\n* **Card format:** options that need rich context (title, description, image), at a primary decision point such as choosing a template or a connection type (see [cards](card)).\n\n* **Group vs standalone:** group related checkboxes under one group label; a lone opt-in stands on its own with a clear action label.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Let form checkboxes wait for submit (filters and row selection act instantly) | Fire a save request on every tick |\n| Use indeterminate only for partial child selection | Offer indeterminate as a choosable state |\n| Keep every option in a group independent | Mix mutually exclusive options into one checkbox group |\n| Group related checkboxes under one group label | Scatter related options across the form |\n\n> Label wording rules (positive form, parallel structure) live in the Content guidelines for checkboxes.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use checkboxes when the user can pick several independent options from a group (for example filtering datasets by format, owner, and status at once).",
+                    "Use a single checkbox for one standalone opt-in inside a form that submits, where nothing changes until save (for example **Enable notifications**, agreeing to terms).",
+                    "Use checkboxes for bulk selection of rows in a [table](table), such as picking datasets to add to a data product."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use a checkbox for a setting that takes effect the moment it is clicked: use a [toggle](toggle).",
+                    "Don't use checkboxes when exactly one option must be chosen: use a [radio button](radio-button) group.",
+                    "Don't stack a checkbox group past roughly seven options: use a [multi-select](multi-select)."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "bullets": [
+                    "**Checked / unchecked:** the normal two-state choice; every checkbox the user interacts with resolves to one of these.",
+                    "**Indeterminate:** only as a parent whose children are partially selected, such as the select-all header of a [table](table). It is never a third value the user picks directly.",
+                    "**Card format:** options that need rich context (title, description, image), at a primary decision point such as choosing a template or a connection type (see [cards](card)).",
+                    "**Group vs standalone:** group related checkboxes under one group label; a lone opt-in stands on its own with a clear action label."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Let form checkboxes wait for submit (filters and row selection act instantly)",
+                  "dont": "Fire a save request on every tick"
+                },
+                {
+                  "do": "Use indeterminate only for partial child selection",
+                  "dont": "Offer indeterminate as a choosable state"
+                },
+                {
+                  "do": "Keep every option in a group independent",
+                  "dont": "Mix mutually exclusive options into one checkbox group"
+                },
+                {
+                  "do": "Group related checkboxes under one group label",
+                  "dont": "Scatter related options across the form"
+                },
+                {
+                  "note": "Label wording rules (positive form, parallel structure) live in the Content guidelines for checkboxes."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -2216,7 +2425,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:42:11+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "checkbox-with-label": {
       "_schema_version": 1,
@@ -2980,7 +3189,71 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use checkboxes when the user can pick several independent options from a group (for example filtering datasets by format, owner, and status at once).\n\n* Use a single checkbox for one standalone opt-in inside a form that submits, where nothing changes until save (for example **Enable notifications**, agreeing to terms).\n\n* Use checkboxes for bulk selection of rows in a [table](table), such as picking datasets to add to a data product.\n\n## When not to use\n\n* Don't use a checkbox for a setting that takes effect the moment it is clicked: use a [toggle](toggle).\n\n* Don't use checkboxes when exactly one option must be chosen: use a [radio button](radio-button) group.\n\n* Don't stack a checkbox group past roughly seven options: use a [multi-select](multi-select).\n\n## Variant selection\n\n* **Checked / unchecked:** the normal two-state choice; every checkbox the user interacts with resolves to one of these.\n\n* **Indeterminate:** only as a parent whose children are partially selected, such as the select-all header of a [table](table). It is never a third value the user picks directly.\n\n* **Card format:** options that need rich context (title, description, image), at a primary decision point such as choosing a template or a connection type (see [cards](card)).\n\n* **Group vs standalone:** group related checkboxes under one group label; a lone opt-in stands on its own with a clear action label.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Let form checkboxes wait for submit (filters and row selection act instantly) | Fire a save request on every tick |\n| Use indeterminate only for partial child selection | Offer indeterminate as a choosable state |\n| Keep every option in a group independent | Mix mutually exclusive options into one checkbox group |\n| Group related checkboxes under one group label | Scatter related options across the form |\n\n> Label wording rules (positive form, parallel structure) live in the Content guidelines for checkboxes.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use checkboxes when the user can pick several independent options from a group (for example filtering datasets by format, owner, and status at once).",
+                    "Use a single checkbox for one standalone opt-in inside a form that submits, where nothing changes until save (for example **Enable notifications**, agreeing to terms).",
+                    "Use checkboxes for bulk selection of rows in a [table](table), such as picking datasets to add to a data product."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use a checkbox for a setting that takes effect the moment it is clicked: use a [toggle](toggle).",
+                    "Don't use checkboxes when exactly one option must be chosen: use a [radio button](radio-button) group.",
+                    "Don't stack a checkbox group past roughly seven options: use a [multi-select](multi-select)."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "bullets": [
+                    "**Checked / unchecked:** the normal two-state choice; every checkbox the user interacts with resolves to one of these.",
+                    "**Indeterminate:** only as a parent whose children are partially selected, such as the select-all header of a [table](table). It is never a third value the user picks directly.",
+                    "**Card format:** options that need rich context (title, description, image), at a primary decision point such as choosing a template or a connection type (see [cards](card)).",
+                    "**Group vs standalone:** group related checkboxes under one group label; a lone opt-in stands on its own with a clear action label."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Let form checkboxes wait for submit (filters and row selection act instantly)",
+                  "dont": "Fire a save request on every tick"
+                },
+                {
+                  "do": "Use indeterminate only for partial child selection",
+                  "dont": "Offer indeterminate as a choosable state"
+                },
+                {
+                  "do": "Keep every option in a group independent",
+                  "dont": "Mix mutually exclusive options into one checkbox group"
+                },
+                {
+                  "do": "Group related checkboxes under one group label",
+                  "dont": "Scatter related options across the form"
+                },
+                {
+                  "note": "Label wording rules (positive form, parallel structure) live in the Content guidelines for checkboxes."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -3053,7 +3326,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:42:11+02:00",
+      "updated_at": "2026-07-12T02:30:46+02:00",
       "_alias_of": "checkbox"
     },
     "collapse-accordion": {
@@ -3637,7 +3910,73 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use a dropdown to select one item from a predefined list of roughly six or more options (for example **Connection type**, **Region**, **Glossary domain**).\n\n* Use it when space is limited and the alternatives don't need to stay visible: only the chosen value matters after selection.\n\n* Use it for filter controls above a [table](table) or catalog list, where several dropdowns sit side by side.\n\n* Use it as an actions menu: a button labeled with a clear action or noun (**Actions**, **More**) opening a short list of commands, for example overflow actions on a row or page.\n\n## When not to use\n\n* Don't hide two to five options behind a dropdown when they fit on screen: use a [radio button](radio-button) group so users can compare at a glance.\n\n* Don't make users scroll a very long list (countries, hundreds of datasets): use a [combo box](combo-box) so typing narrows the options.\n\n* Don't use it as a form field that collects several values: use a [multi-select](multi-select). The Search/Multiple variant is for in-menu filter checkboxes, not multi-value input.\n\n* Don't use it to switch views of the same content with immediate effect: use a [segmented control](segmented-control).\n\n## Variant selection\n\n* **Default:** single choice from a short, stable list; the standard form control.\n\n* **Search/Multiple:** lists too long to scan without an in-menu search field, or controls that allow more than one selection via checkboxes.\n\n* **With avatar:** choosing a person or account, for example assigning an owner or steward to a data product.\n\n* **Compact/Custom:** dense surfaces such as [table](table) toolbars and inline filters where the default height is too tall.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Sort options predictably (alphabetical, or most common first) | Order options in the sequence they were coded |\n| Preselect the most common value when one exists | Force a pick when almost everyone chooses the same value |\n| Show the selected value in the closed control | Keep showing **Select...** after a choice is made |\n| Keep option labels to a few words | Write full sentences as options |\n\n> Menu-item wording rules (verb + noun, sentence case) live in the Content guidelines for dropdowns.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use a dropdown to select one item from a predefined list of roughly six or more options (for example **Connection type**, **Region**, **Glossary domain**).",
+                    "Use it when space is limited and the alternatives don't need to stay visible: only the chosen value matters after selection.",
+                    "Use it for filter controls above a [table](table) or catalog list, where several dropdowns sit side by side.",
+                    "Use it as an actions menu: a button labeled with a clear action or noun (**Actions**, **More**) opening a short list of commands, for example overflow actions on a row or page."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't hide two to five options behind a dropdown when they fit on screen: use a [radio button](radio-button) group so users can compare at a glance.",
+                    "Don't make users scroll a very long list (countries, hundreds of datasets): use a [combo box](combo-box) so typing narrows the options.",
+                    "Don't use it as a form field that collects several values: use a [multi-select](multi-select). The Search/Multiple variant is for in-menu filter checkboxes, not multi-value input.",
+                    "Don't use it to switch views of the same content with immediate effect: use a [segmented control](segmented-control)."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "bullets": [
+                    "**Default:** single choice from a short, stable list; the standard form control.",
+                    "**Search/Multiple:** lists too long to scan without an in-menu search field, or controls that allow more than one selection via checkboxes.",
+                    "**With avatar:** choosing a person or account, for example assigning an owner or steward to a data product.",
+                    "**Compact/Custom:** dense surfaces such as [table](table) toolbars and inline filters where the default height is too tall."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Sort options predictably (alphabetical, or most common first)",
+                  "dont": "Order options in the sequence they were coded"
+                },
+                {
+                  "do": "Preselect the most common value when one exists",
+                  "dont": "Force a pick when almost everyone chooses the same value"
+                },
+                {
+                  "do": "Show the selected value in the closed control",
+                  "dont": "Keep showing **Select...** after a choice is made"
+                },
+                {
+                  "do": "Keep option labels to a few words",
+                  "dont": "Write full sentences as options"
+                },
+                {
+                  "note": "Menu-item wording rules (verb + noun, sentence case) live in the Content guidelines for dropdowns."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -3649,7 +3988,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-23T13:38:19+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "dropdown-select-default": {
       "_schema_version": 1,
@@ -3729,7 +4068,73 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use a dropdown to select one item from a predefined list of roughly six or more options (for example **Connection type**, **Region**, **Glossary domain**).\n\n* Use it when space is limited and the alternatives don't need to stay visible: only the chosen value matters after selection.\n\n* Use it for filter controls above a [table](table) or catalog list, where several dropdowns sit side by side.\n\n* Use it as an actions menu: a button labeled with a clear action or noun (**Actions**, **More**) opening a short list of commands, for example overflow actions on a row or page.\n\n## When not to use\n\n* Don't hide two to five options behind a dropdown when they fit on screen: use a [radio button](radio-button) group so users can compare at a glance.\n\n* Don't make users scroll a very long list (countries, hundreds of datasets): use a [combo box](combo-box) so typing narrows the options.\n\n* Don't use it as a form field that collects several values: use a [multi-select](multi-select). The Search/Multiple variant is for in-menu filter checkboxes, not multi-value input.\n\n* Don't use it to switch views of the same content with immediate effect: use a [segmented control](segmented-control).\n\n## Variant selection\n\n* **Default:** single choice from a short, stable list; the standard form control.\n\n* **Search/Multiple:** lists too long to scan without an in-menu search field, or controls that allow more than one selection via checkboxes.\n\n* **With avatar:** choosing a person or account, for example assigning an owner or steward to a data product.\n\n* **Compact/Custom:** dense surfaces such as [table](table) toolbars and inline filters where the default height is too tall.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Sort options predictably (alphabetical, or most common first) | Order options in the sequence they were coded |\n| Preselect the most common value when one exists | Force a pick when almost everyone chooses the same value |\n| Show the selected value in the closed control | Keep showing **Select...** after a choice is made |\n| Keep option labels to a few words | Write full sentences as options |\n\n> Menu-item wording rules (verb + noun, sentence case) live in the Content guidelines for dropdowns.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use a dropdown to select one item from a predefined list of roughly six or more options (for example **Connection type**, **Region**, **Glossary domain**).",
+                    "Use it when space is limited and the alternatives don't need to stay visible: only the chosen value matters after selection.",
+                    "Use it for filter controls above a [table](table) or catalog list, where several dropdowns sit side by side.",
+                    "Use it as an actions menu: a button labeled with a clear action or noun (**Actions**, **More**) opening a short list of commands, for example overflow actions on a row or page."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't hide two to five options behind a dropdown when they fit on screen: use a [radio button](radio-button) group so users can compare at a glance.",
+                    "Don't make users scroll a very long list (countries, hundreds of datasets): use a [combo box](combo-box) so typing narrows the options.",
+                    "Don't use it as a form field that collects several values: use a [multi-select](multi-select). The Search/Multiple variant is for in-menu filter checkboxes, not multi-value input.",
+                    "Don't use it to switch views of the same content with immediate effect: use a [segmented control](segmented-control)."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "bullets": [
+                    "**Default:** single choice from a short, stable list; the standard form control.",
+                    "**Search/Multiple:** lists too long to scan without an in-menu search field, or controls that allow more than one selection via checkboxes.",
+                    "**With avatar:** choosing a person or account, for example assigning an owner or steward to a data product.",
+                    "**Compact/Custom:** dense surfaces such as [table](table) toolbars and inline filters where the default height is too tall."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Sort options predictably (alphabetical, or most common first)",
+                  "dont": "Order options in the sequence they were coded"
+                },
+                {
+                  "do": "Preselect the most common value when one exists",
+                  "dont": "Force a pick when almost everyone chooses the same value"
+                },
+                {
+                  "do": "Show the selected value in the closed control",
+                  "dont": "Keep showing **Select...** after a choice is made"
+                },
+                {
+                  "do": "Keep option labels to a few words",
+                  "dont": "Write full sentences as options"
+                },
+                {
+                  "note": "Menu-item wording rules (verb + noun, sentence case) live in the Content guidelines for dropdowns."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -3741,7 +4146,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-23T13:38:19+02:00",
+      "updated_at": "2026-07-12T02:30:46+02:00",
       "_alias_of": "dropdown-select"
     },
     "empty-state": {
@@ -3754,7 +4159,12 @@
       "slug": "empty-state",
       "component": "Empty state",
       "meta": {
-        "category": "feedback"
+        "category": "feedback",
+        "a11y_refs": [
+          {
+            "ref": "empty-states"
+          }
+        ]
       },
       "domains": {
         "content": {
@@ -3850,7 +4260,74 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use an empty state when a container has no content yet: no datasets created, no connections configured, an empty glossary on first use.\n\n* Use it when a [search](search) or filter returns nothing, so the user knows the query worked but matched no items.\n\n* Compose it from an illustration (decorative for assistive tech), a clear title, a short explanation, and a way forward.\n\n* Give first-use containers a create call to action (**Create dataset**), including a [table](table) with no rows yet.\n\n* For empty search or filter results, drop the create action and offer query adjustment instead (clear filters, broaden the search). Inside a filtered [table](table), keep the table chrome and offer the clear-filters link there.\n\n## When not to use\n\n* Don't use an empty state when something failed. A request error, a broken connection, or a failed load is an [error state](error-state); masking a failure as \"no content\" hides the problem.\n\n* Don't use an empty state while content is on its way: use a [loading skeleton](loading-skeleton) until the response lands, then decide between content, empty, and error.\n\n* Don't use it for planned downtime or an unavailable service: use a [maintenance state](maintenance-state).\n\n* Don't use it to celebrate the end of a flow: a completed creation or setup journey ends on a [success state](success-state).\n\n## Variant selection\n\n* **Large:** a full page or the main content region owns the emptiness (first visit to Datasets in Studio, an empty catalog in Explorer).\n\n* **Medium:** a panel, section, or [table](table) body inside a page that otherwise has content (an empty tab on a data product's detail page).\n\n* **Small:** compact containers such as cards, side panels, or dropdown lists, where the illustration must not dwarf the widget.\n\n* Pick the size from the container, not from how important the message feels; a Large illustration inside a card overwhelms the page.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Give first-use emptiness a create CTA (**Add connection**) | Show \"No results.\" with no way forward |\n| Offer **Clear filters** when a search matches nothing | Push **Create dataset** at a user whose search found nothing |\n| Match size to the container (Small in a card) | Put a full-page Large empty state inside a panel |\n| Show an [error state](error-state) when the load failed | Pretend a failed request is an empty container |\n\n> Wording rules (instructive headline, one-sentence body, CTA phrasing) live in the Content guidelines for empty state.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use an empty state when a container has no content yet: no datasets created, no connections configured, an empty glossary on first use.",
+                    "Use it when a [search](search) or filter returns nothing, so the user knows the query worked but matched no items.",
+                    "Compose it from an illustration (decorative for assistive tech), a clear title, a short explanation, and a way forward.",
+                    "Give first-use containers a create call to action (**Create dataset**), including a [table](table) with no rows yet.",
+                    "For empty search or filter results, drop the create action and offer query adjustment instead (clear filters, broaden the search). Inside a filtered [table](table), keep the table chrome and offer the clear-filters link there."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use an empty state when something failed. A request error, a broken connection, or a failed load is an [error state](error-state); masking a failure as \"no content\" hides the problem.",
+                    "Don't use an empty state while content is on its way: use a [loading skeleton](loading-skeleton) until the response lands, then decide between content, empty, and error.",
+                    "Don't use it for planned downtime or an unavailable service: use a [maintenance state](maintenance-state).",
+                    "Don't use it to celebrate the end of a flow: a completed creation or setup journey ends on a [success state](success-state)."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "bullets": [
+                    "**Large:** a full page or the main content region owns the emptiness (first visit to Datasets in Studio, an empty catalog in Explorer).",
+                    "**Medium:** a panel, section, or [table](table) body inside a page that otherwise has content (an empty tab on a data product's detail page).",
+                    "**Small:** compact containers such as cards, side panels, or dropdown lists, where the illustration must not dwarf the widget.",
+                    "Pick the size from the container, not from how important the message feels; a Large illustration inside a card overwhelms the page."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Give first-use emptiness a create CTA (**Add connection**)",
+                  "dont": "Show \"No results.\" with no way forward"
+                },
+                {
+                  "do": "Offer **Clear filters** when a search matches nothing",
+                  "dont": "Push **Create dataset** at a user whose search found nothing"
+                },
+                {
+                  "do": "Match size to the container (Small in a card)",
+                  "dont": "Put a full-page Large empty state inside a panel"
+                },
+                {
+                  "do": "Show an [error state](error-state) when the load failed",
+                  "dont": "Pretend a failed request is an empty container"
+                },
+                {
+                  "note": "Wording rules (instructive headline, one-sentence body, CTA phrasing) live in the Content guidelines for empty state."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -3862,7 +4339,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-23T13:38:19+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "error-state": {
       "_schema_version": 1,
@@ -4131,7 +4608,12 @@
       "slug": "global-toast",
       "component": "Global toast",
       "meta": {
-        "category": "feedback"
+        "category": "feedback",
+        "a11y_refs": [
+          {
+            "ref": "alerts-toasts-banners"
+          }
+        ]
       },
       "domains": {
         "content": {
@@ -4201,7 +4683,75 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use a global toast to confirm the result of an async or background action: import finished, export ready, connection saved. It appears at a fixed screen edge, independent of what triggered it; plain confirmations dismiss themselves after a few seconds.\n\n* Use it when the user has moved on (or may move on) from where the action started: deleting a dataset from a list, publishing a data product, running a pipeline.\n\n* Use it for non-critical errors or warnings that do not block the user, ideally with a retry action (**Connection failed. Try again**). A toast that carries an action (**Undo**, **Try again**) must stay up until dismissed, never auto-dismiss.\n\n## When not to use\n\n* Don't use a toast for a message that must persist until the user deals with it: use an [alert banner](alert-banner) at the top of the page or section.\n\n* Don't use a toast for an error the user must act on. Blocking or actionable errors belong inline next to the control that caused them, or in an [alert banner](alert-banner).\n\n* Don't use a toast for feedback tied to a specific element on screen (a copied value, a field saved in place): use an [inline toast](inline-toast) anchored to that element.\n\n* Don't use a toast to ask anything. If the user must decide before continuing, use the 450px confirm [modal](modal).\n\n* Don't use a toast to close out a whole flow: a completed setup or creation journey ends on a [success state](success-state), not a passing message.\n\n## Variant selection\n\n* **Default:** confirmations and neutral notices (saved, exported, published). The variant for nearly every toast.\n\n* **Critical:** a failed background action worth the user's attention but not their immediate action (export failed, sync interrupted). Pair with a retry action where possible; if the failure blocks the user's current task, it is not a toast.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Keep the message to one short sentence | Explain the whole operation in the toast |\n| Offer **Undo** after a reversible delete | Interrupt quick reversible actions with a confirm modal |\n| Keep an actionable toast up until dismissed | Auto-dismiss a toast carrying **Undo** or **Retry** |\n| Queue toasts when several arrive | Pile every background job's toast down the screen edge |\n| Route actionable errors to inline validation or an [alert banner](alert-banner) | Announce a form error in a toast that vanishes before it is read |\n\n> Wording rules (one short sentence, undo phrasing, example messages) live in the Content guidelines for global toast.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use a global toast to confirm the result of an async or background action: import finished, export ready, connection saved. It appears at a fixed screen edge, independent of what triggered it; plain confirmations dismiss themselves after a few seconds.",
+                    "Use it when the user has moved on (or may move on) from where the action started: deleting a dataset from a list, publishing a data product, running a pipeline.",
+                    "Use it for non-critical errors or warnings that do not block the user, ideally with a retry action (**Connection failed. Try again**). A toast that carries an action (**Undo**, **Try again**) must stay up until dismissed, never auto-dismiss."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use a toast for a message that must persist until the user deals with it: use an [alert banner](alert-banner) at the top of the page or section.",
+                    "Don't use a toast for an error the user must act on. Blocking or actionable errors belong inline next to the control that caused them, or in an [alert banner](alert-banner).",
+                    "Don't use a toast for feedback tied to a specific element on screen (a copied value, a field saved in place): use an [inline toast](inline-toast) anchored to that element.",
+                    "Don't use a toast to ask anything. If the user must decide before continuing, use the 450px confirm [modal](modal).",
+                    "Don't use a toast to close out a whole flow: a completed setup or creation journey ends on a [success state](success-state), not a passing message."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "bullets": [
+                    "**Default:** confirmations and neutral notices (saved, exported, published). The variant for nearly every toast.",
+                    "**Critical:** a failed background action worth the user's attention but not their immediate action (export failed, sync interrupted). Pair with a retry action where possible; if the failure blocks the user's current task, it is not a toast."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Keep the message to one short sentence",
+                  "dont": "Explain the whole operation in the toast"
+                },
+                {
+                  "do": "Offer **Undo** after a reversible delete",
+                  "dont": "Interrupt quick reversible actions with a confirm modal"
+                },
+                {
+                  "do": "Keep an actionable toast up until dismissed",
+                  "dont": "Auto-dismiss a toast carrying **Undo** or **Retry**"
+                },
+                {
+                  "do": "Queue toasts when several arrive",
+                  "dont": "Pile every background job's toast down the screen edge"
+                },
+                {
+                  "do": "Route actionable errors to inline validation or an [alert banner](alert-banner)",
+                  "dont": "Announce a form error in a toast that vanishes before it is read"
+                },
+                {
+                  "note": "Wording rules (one short sentence, undo phrasing, example messages) live in the Content guidelines for global toast."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -4213,7 +4763,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-23T13:38:19+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "inline-toast": {
       "_schema_version": 1,
@@ -4304,7 +4854,74 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use an inline toast to confirm a localized micro-action, right where it happened: a value copied to the clipboard, a field saved in place, a tag added to an asset, a share link generated.\n\n* Use it when the user's eyes are already on the element the feedback concerns, inside a form, panel, or drawer. The message appears next to that element, not at the screen edge.\n\n* Use it for brief, non-blocking feedback that the user can safely miss: it confirms, it never asks.\n\n## When not to use\n\n* Don't use an inline toast for the result of a page-level or background action (import finished, pipeline run started): use a [global toast](global-toast) at the screen edge.\n\n* Don't use an inline toast for an error the user must fix. Field errors belong to inline validation on the [text input](text-input) itself; section-level problems belong in an [alert banner](alert-banner).\n\n* Don't use an inline toast for a message that must persist until acknowledged: use an [alert banner](alert-banner).\n\n* Don't stack inline toasts to narrate a multi-step operation; confirm the end result once with a [global toast](global-toast).\n\n## Variant selection\n\nInline toasts have no variants of their own; the choice is the intent.\n\n* **Success:** the default and by far the most common intent (**Copied**, **Saved**, **Tag added**).\n\n* **Info:** a neutral, transient notice tied to an element (for example a value refreshed in place).\n\n* **Warning:** a non-blocking caution the user can ignore (for example a value saved with a fallback). If the user must respond, leave the toast family.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Keep it under ten words (**Copied**, **Link created**) | Write a sentence explaining what copying means |\n| Anchor the toast to the element it confirms | Float a \"Saved\" message at the screen edge for one field |\n| Let it dismiss itself without user action | Add a close button to a two-word confirmation |\n| Use inline validation for field errors | Report a required-field error in a toast that fades away |\n\n> Wording rules (under ten words, past-tense confirmations, example messages) live in the Content guidelines for inline toast.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use an inline toast to confirm a localized micro-action, right where it happened: a value copied to the clipboard, a field saved in place, a tag added to an asset, a share link generated.",
+                    "Use it when the user's eyes are already on the element the feedback concerns, inside a form, panel, or drawer. The message appears next to that element, not at the screen edge.",
+                    "Use it for brief, non-blocking feedback that the user can safely miss: it confirms, it never asks."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use an inline toast for the result of a page-level or background action (import finished, pipeline run started): use a [global toast](global-toast) at the screen edge.",
+                    "Don't use an inline toast for an error the user must fix. Field errors belong to inline validation on the [text input](text-input) itself; section-level problems belong in an [alert banner](alert-banner).",
+                    "Don't use an inline toast for a message that must persist until acknowledged: use an [alert banner](alert-banner).",
+                    "Don't stack inline toasts to narrate a multi-step operation; confirm the end result once with a [global toast](global-toast)."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "prose": "Inline toasts have no variants of their own; the choice is the intent."
+                },
+                {
+                  "bullets": [
+                    "**Success:** the default and by far the most common intent (**Copied**, **Saved**, **Tag added**).",
+                    "**Info:** a neutral, transient notice tied to an element (for example a value refreshed in place).",
+                    "**Warning:** a non-blocking caution the user can ignore (for example a value saved with a fallback). If the user must respond, leave the toast family."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Keep it under ten words (**Copied**, **Link created**)",
+                  "dont": "Write a sentence explaining what copying means"
+                },
+                {
+                  "do": "Anchor the toast to the element it confirms",
+                  "dont": "Float a \"Saved\" message at the screen edge for one field"
+                },
+                {
+                  "do": "Let it dismiss itself without user action",
+                  "dont": "Add a close button to a two-word confirmation"
+                },
+                {
+                  "do": "Use inline validation for field errors",
+                  "dont": "Report a required-field error in a toast that fades away"
+                },
+                {
+                  "note": "Wording rules (under ten words, past-tense confirmations, example messages) live in the Content guidelines for inline toast."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -4316,7 +4933,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-23T13:38:19+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "input-date": {
       "_schema_version": 1,
@@ -5698,7 +6315,75 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use a modal for a \"stop and think\" moment: the user must complete or explicitly cancel the step before returning to the page.\n\n* Use it to confirm consequential actions, above all destructive ones (deleting a dataset, revoking a connection); see the [confirmation](confirmation) guidelines.\n\n* Use it for short, focused create or edit tasks (a handful of fields) that benefit from staying in the current context.\n\n* Use it when the underlying page state must not change while the user decides.\n\n## When not to use\n\n* Don't use a modal when the user needs to keep seeing or referencing the page behind: use a [drawer / side panel](drawer-side-panel).\n\n* Don't use a modal for a long form or a multi-step process: navigate to a dedicated page, with a [stepper](stepper) if the steps are linear.\n\n* Don't use a modal to announce a result: use a [global toast](global-toast) or [inline toast](inline-toast) after the action completes.\n\n* Don't open a modal from a modal. If a task spawns a second blocking step, the task is too big for a modal.\n\n* Don't open a modal without an explicit user action (never on page load). System-initiated warnings such as session expiry are the one exception.\n\n## Variant selection\n\n* **450px warning / confirm:** single-decision dialogs; one sentence of consequence plus two actions. The confirm variant is the standard companion of critical [buttons](button).\n\n* **700px create / setting:** short single-column forms, up to roughly six fields.\n\n* **900px create / edit:** richer forms that need breathing room or a second column.\n\n* **1200px:** exceptional, data-heavy tasks such as column mapping or selecting from large lists. If content pushes past this size, move to a dedicated page.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Keep one task per modal | Stack a second modal on top of the first |\n| Name the primary action after the task (**Create report**) | Label a task modal's primary action **OK** |\n| Land initial focus on the safe action in destructive confirms | Let a reflex Enter keypress delete data |\n| Warn before discarding unsaved input on dismiss | Silently drop what the user typed |\n| Pick the smallest size that fits the task | Default every dialog to 900px |",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use a modal for a \"stop and think\" moment: the user must complete or explicitly cancel the step before returning to the page.",
+                    "Use it to confirm consequential actions, above all destructive ones (deleting a dataset, revoking a connection); see the [confirmation](confirmation) guidelines.",
+                    "Use it for short, focused create or edit tasks (a handful of fields) that benefit from staying in the current context.",
+                    "Use it when the underlying page state must not change while the user decides."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use a modal when the user needs to keep seeing or referencing the page behind: use a [drawer / side panel](drawer-side-panel).",
+                    "Don't use a modal for a long form or a multi-step process: navigate to a dedicated page, with a [stepper](stepper) if the steps are linear.",
+                    "Don't use a modal to announce a result: use a [global toast](global-toast) or [inline toast](inline-toast) after the action completes.",
+                    "Don't open a modal from a modal. If a task spawns a second blocking step, the task is too big for a modal.",
+                    "Don't open a modal without an explicit user action (never on page load). System-initiated warnings such as session expiry are the one exception."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "bullets": [
+                    "**450px warning / confirm:** single-decision dialogs; one sentence of consequence plus two actions. The confirm variant is the standard companion of critical [buttons](button).",
+                    "**700px create / setting:** short single-column forms, up to roughly six fields.",
+                    "**900px create / edit:** richer forms that need breathing room or a second column.",
+                    "**1200px:** exceptional, data-heavy tasks such as column mapping or selecting from large lists. If content pushes past this size, move to a dedicated page."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Keep one task per modal",
+                  "dont": "Stack a second modal on top of the first"
+                },
+                {
+                  "do": "Name the primary action after the task (**Create report**)",
+                  "dont": "Label a task modal's primary action **OK**"
+                },
+                {
+                  "do": "Land initial focus on the safe action in destructive confirms",
+                  "dont": "Let a reflex Enter keypress delete data"
+                },
+                {
+                  "do": "Warn before discarding unsaved input on dismiss",
+                  "dont": "Silently drop what the user typed"
+                },
+                {
+                  "do": "Pick the smallest size that fits the task",
+                  "dont": "Default every dialog to 900px"
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -5710,7 +6395,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-23T13:38:19+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "multi-select": {
       "_schema_version": 1,
@@ -6219,7 +6904,72 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use a page header at the top of every main content area to state where the user is: page title, optional [breadcrumbs](breadcrumbs), and the page's primary actions.\n\n* Use it to carry the one or two page-level actions (for example **New dataset** on a list page, **Edit** on a detail page).\n\n* Use it on detail pages to anchor identity: the entity's exact name plus breadcrumbs back up the hierarchy.\n\n## When not to use\n\n* Don't use a page header for suite-level chrome (product switcher, search, account): that is the [global header](global-header), which sits above it.\n\n* Don't use it inside [modals](modal), [drawers / side panels](drawer-side-panel), or nested sections: those surfaces have their own title patterns.\n\n* Don't use it as a section divider within a page: use plain headings.\n\n* Don't load it with more than two primary actions: move the rest into an actions menu ([dropdown / select](dropdown-select)).\n\n## Variant selection\n\n* **Default:** list and index pages (connections, pipelines, datasets in Studio or Administration): title plus page-level create action.\n\n* **Details page:** a single entity's page: breadcrumbs, the entity name as title, and entity-level actions such as **Edit**.\n\n* **Explorer home:** the Explorer landing page only; do not reuse it elsewhere.\n\n* **Explorer detail:** asset detail pages inside Explorer; pairs with Explorer's browsing chrome.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Title the page with the entity's exact name | Paraphrase or decorate the name (**Sales pipeline overview**) |\n| Keep at most two primary actions in the header | Line up four buttons across the title row |\n| Use breadcrumbs on detail pages to show the path back | Rely on the browser back button as the only way up |\n| Use the same variant for every page of the same kind | Give two list pages different header layouts |\n\n> Title and action label wording (sentence case, one or two words per action) lives in the Content guidelines for page headers.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use a page header at the top of every main content area to state where the user is: page title, optional [breadcrumbs](breadcrumbs), and the page's primary actions.",
+                    "Use it to carry the one or two page-level actions (for example **New dataset** on a list page, **Edit** on a detail page).",
+                    "Use it on detail pages to anchor identity: the entity's exact name plus breadcrumbs back up the hierarchy."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use a page header for suite-level chrome (product switcher, search, account): that is the [global header](global-header), which sits above it.",
+                    "Don't use it inside [modals](modal), [drawers / side panels](drawer-side-panel), or nested sections: those surfaces have their own title patterns.",
+                    "Don't use it as a section divider within a page: use plain headings.",
+                    "Don't load it with more than two primary actions: move the rest into an actions menu ([dropdown / select](dropdown-select))."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "bullets": [
+                    "**Default:** list and index pages (connections, pipelines, datasets in Studio or Administration): title plus page-level create action.",
+                    "**Details page:** a single entity's page: breadcrumbs, the entity name as title, and entity-level actions such as **Edit**.",
+                    "**Explorer home:** the Explorer landing page only; do not reuse it elsewhere.",
+                    "**Explorer detail:** asset detail pages inside Explorer; pairs with Explorer's browsing chrome."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Title the page with the entity's exact name",
+                  "dont": "Paraphrase or decorate the name (**Sales pipeline overview**)"
+                },
+                {
+                  "do": "Keep at most two primary actions in the header",
+                  "dont": "Line up four buttons across the title row"
+                },
+                {
+                  "do": "Use breadcrumbs on detail pages to show the path back",
+                  "dont": "Rely on the browser back button as the only way up"
+                },
+                {
+                  "do": "Use the same variant for every page of the same kind",
+                  "dont": "Give two list pages different header layouts"
+                },
+                {
+                  "note": "Title and action label wording (sentence case, one or two words per action) lives in the Content guidelines for page headers."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "not-started"
@@ -6289,7 +7039,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-10T13:07:46+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "popover": {
       "_schema_version": 1,
@@ -6530,7 +7280,12 @@
       "slug": "radio-button",
       "component": "Radio button",
       "meta": {
-        "category": "form-input-selection"
+        "category": "form-input-selection",
+        "a11y_refs": [
+          {
+            "ref": "forms"
+          }
+        ]
       },
       "domains": {
         "content": {
@@ -7231,7 +7986,74 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use radio buttons when the user must pick exactly one of 2-5 mutually exclusive options (for example a refresh schedule: **Daily**, **Weekly**, **Monthly**).\n\n* Use them when seeing all options at once helps the user compare before choosing (for example access levels on a connection).\n\n* Use them inside forms where the choice applies on submit, not the instant it is clicked.\n\n## When not to use\n\n* Don't use radio buttons for more than about five options, or for lists that grow dynamically: use a [dropdown / select](dropdown-select).\n\n* Don't use them to switch views of the same content with immediate effect: use a [segmented control](segmented-control).\n\n* Don't use them when several options can be selected together: use [checkboxes](checkbox).\n\n* Don't use a Yes/No radio pair for a single opt-in: use one [checkbox](checkbox), or a [toggle](toggle) if the change applies immediately.\n\n## Variant selection\n\nRadio buttons have no type or size variants; the choices are between group configurations.\n\n* **Preselected default:** when a choice is required and one option is clearly the safest or most common, select it by default.\n\n* **No default:** when the decision is consequential (for example picking a data product's visibility), leave all options unselected and require an explicit choice.\n\n* **Card format:** when each option needs a title, description, or image, use the card format as a radio group (see [cards](card)).\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Show every option; radio groups never scroll | Stack ten radio options in a column |\n| Keep one group per decision | Let two decisions share a single group |\n| Preselect the most common option when it is safe | Preselect a destructive or irreversible option |\n| Use radios only for real alternative values | Use two radios for a plain on/off setting |\n\n> Label wording rules (short noun phrases, parallel structure, group labels) live in the Content guidelines for radio buttons.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use radio buttons when the user must pick exactly one of 2-5 mutually exclusive options (for example a refresh schedule: **Daily**, **Weekly**, **Monthly**).",
+                    "Use them when seeing all options at once helps the user compare before choosing (for example access levels on a connection).",
+                    "Use them inside forms where the choice applies on submit, not the instant it is clicked."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use radio buttons for more than about five options, or for lists that grow dynamically: use a [dropdown / select](dropdown-select).",
+                    "Don't use them to switch views of the same content with immediate effect: use a [segmented control](segmented-control).",
+                    "Don't use them when several options can be selected together: use [checkboxes](checkbox).",
+                    "Don't use a Yes/No radio pair for a single opt-in: use one [checkbox](checkbox), or a [toggle](toggle) if the change applies immediately."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "prose": "Radio buttons have no type or size variants; the choices are between group configurations."
+                },
+                {
+                  "bullets": [
+                    "**Preselected default:** when a choice is required and one option is clearly the safest or most common, select it by default.",
+                    "**No default:** when the decision is consequential (for example picking a data product's visibility), leave all options unselected and require an explicit choice.",
+                    "**Card format:** when each option needs a title, description, or image, use the card format as a radio group (see [cards](card))."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Show every option; radio groups never scroll",
+                  "dont": "Stack ten radio options in a column"
+                },
+                {
+                  "do": "Keep one group per decision",
+                  "dont": "Let two decisions share a single group"
+                },
+                {
+                  "do": "Preselect the most common option when it is safe",
+                  "dont": "Preselect a destructive or irreversible option"
+                },
+                {
+                  "do": "Use radios only for real alternative values",
+                  "dont": "Use two radios for a plain on/off setting"
+                },
+                {
+                  "note": "Label wording rules (short noun phrases, parallel structure, group labels) live in the Content guidelines for radio buttons."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -7243,7 +8065,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-07-10T13:07:46+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "rich-text": {
       "_schema_version": 1,
@@ -9703,7 +10525,75 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use a table for large sets of comparable records with shared attributes: datasets, connections, pipelines, catalog entries.\n\n* Use it when users need to sort, filter, or scan columns to compare values across many rows.\n\n* Use it when rows carry row-level or bulk actions (edit, delete, export) that must stay reachable without leaving the view.\n\n* Use it for complex rows that mix value types: text, badges, counts, dates, and an actions column.\n\n## When not to use\n\n* Don't use a table for browseable items whose identity matters more than attribute comparison: use a [card](card) grid (for example data products on a dashboard).\n\n* Don't use a table to show a single item's attributes: use a definition list on the detail page or a [drawer / side panel](drawer-side-panel).\n\n* Don't reach for a table when a simple list carries the content: two columns of name plus one value rarely need sorting chrome.\n\n* Don't build search results as a generic table when scannability of matches matters: use the [search result card](search-result-card).\n\n## Variant selection\n\n* **Built type, by columns (default):** compose from column components when column formatting drives the layout: fixed widths, per-column alignment, one cell type per column.\n\n* **Built type, by rows:** compose from row components when row-level treatment matters most: selection, hover actions, row states.\n\n* **Empty data:** when the table has no rows yet, show the [empty state](empty-state) illustration with a create-new call to action (for example **Add connection**). Never render an empty grid.\n\n* **No results after filtering:** keep the table chrome, explain the empty result, and offer a clear-filters link; do not show the create-new [empty state](empty-state).\n\n* **Selection and bulk actions:** add the selection column only when bulk actions exist; otherwise leave it out to save width.\n\n* **Pagination:** paginate long lists; do not rely on an unbounded scroll for datasets users must audit completely.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Sort by last modified by default on catalog lists | Default to alphabetical when recency is what users seek |\n| Show the empty state with a create CTA when data is null | Leave a blank grid with no explanation |\n| Keep one cell type per column | Mix badges, prose, and numbers in the same column |\n| Add the selection column only when bulk actions exist | Show checkboxes that select nothing actionable |\n\n> Column header wording, cell formatting, and status vocabulary live in the Content guidelines for tables.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use a table for large sets of comparable records with shared attributes: datasets, connections, pipelines, catalog entries.",
+                    "Use it when users need to sort, filter, or scan columns to compare values across many rows.",
+                    "Use it when rows carry row-level or bulk actions (edit, delete, export) that must stay reachable without leaving the view.",
+                    "Use it for complex rows that mix value types: text, badges, counts, dates, and an actions column."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use a table for browseable items whose identity matters more than attribute comparison: use a [card](card) grid (for example data products on a dashboard).",
+                    "Don't use a table to show a single item's attributes: use a definition list on the detail page or a [drawer / side panel](drawer-side-panel).",
+                    "Don't reach for a table when a simple list carries the content: two columns of name plus one value rarely need sorting chrome.",
+                    "Don't build search results as a generic table when scannability of matches matters: use the [search result card](search-result-card)."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "bullets": [
+                    "**Built type, by columns (default):** compose from column components when column formatting drives the layout: fixed widths, per-column alignment, one cell type per column.",
+                    "**Built type, by rows:** compose from row components when row-level treatment matters most: selection, hover actions, row states.",
+                    "**Empty data:** when the table has no rows yet, show the [empty state](empty-state) illustration with a create-new call to action (for example **Add connection**). Never render an empty grid.",
+                    "**No results after filtering:** keep the table chrome, explain the empty result, and offer a clear-filters link; do not show the create-new [empty state](empty-state).",
+                    "**Selection and bulk actions:** add the selection column only when bulk actions exist; otherwise leave it out to save width.",
+                    "**Pagination:** paginate long lists; do not rely on an unbounded scroll for datasets users must audit completely."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Sort by last modified by default on catalog lists",
+                  "dont": "Default to alphabetical when recency is what users seek"
+                },
+                {
+                  "do": "Show the empty state with a create CTA when data is null",
+                  "dont": "Leave a blank grid with no explanation"
+                },
+                {
+                  "do": "Keep one cell type per column",
+                  "dont": "Mix badges, prose, and numbers in the same column"
+                },
+                {
+                  "do": "Add the selection column only when bulk actions exist",
+                  "dont": "Show checkboxes that select nothing actionable"
+                },
+                {
+                  "note": "Column header wording, cell formatting, and status vocabulary live in the Content guidelines for tables."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -9715,7 +10605,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-24T17:52:59+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "tabs": {
       "_schema_version": 1,
@@ -9773,7 +10663,75 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use tabs to switch between peer views of the same object or context, in place, without full navigation (for example **Overview**, **Lineage**, **Settings** on a dataset detail page).\n\n* Use them when the views are at the same level and the user moves between them repeatedly during one task.\n\n* Use them under a [page header](page-header) to structure a detail page whose content does not fit one scroll.\n\n## When not to use\n\n* Don't use tabs to navigate between different places in the app: use the [side nav](side-nav) or links. If the URL context changes meaningfully, it is navigation, not tabs.\n\n* Don't use tabs to filter or re-display the same content set: use a [segmented control](segmented-control) (for example switching a list between grid and table view).\n\n* Don't use tabs for sequential steps that must be completed in order: use a [stepper](stepper).\n\n* Don't nest tabs inside tabs. If a view needs its own sub-views, the page is carrying too much: split it.\n\n## Variant selection\n\nTabs have a single Default variant; the real choices are configuration.\n\n* **Number of tabs:** two to six. Beyond six, labels truncate and scanning breaks; regroup the content or promote it to navigation.\n\n* **First tab:** make it the summary view (**Overview**) and load it selected. Never land the user on an empty tab.\n\n* **Show avatar:** turn it on only when a tab represents a person or account.\n\n* **Tab order:** most-used view first, administrative or rarely used views (for example **Settings**) last. Keep the order identical across similar detail pages.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Keep the user on the same page when a tab is clicked | Trigger a full page navigation from a tab |\n| Preserve entered state when switching tabs | Discard a half-filled form because the user peeked at another tab |\n| Keep tab sets identical across entities of the same kind | Show Lineage on one dataset but not its sibling |\n| Land on a populated default tab | Open on an empty tab that needs setup first |\n\n> Tab label wording (short nouns, no verbs, sentence case) lives in the Content guidelines for tabs.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use tabs to switch between peer views of the same object or context, in place, without full navigation (for example **Overview**, **Lineage**, **Settings** on a dataset detail page).",
+                    "Use them when the views are at the same level and the user moves between them repeatedly during one task.",
+                    "Use them under a [page header](page-header) to structure a detail page whose content does not fit one scroll."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use tabs to navigate between different places in the app: use the [side nav](side-nav) or links. If the URL context changes meaningfully, it is navigation, not tabs.",
+                    "Don't use tabs to filter or re-display the same content set: use a [segmented control](segmented-control) (for example switching a list between grid and table view).",
+                    "Don't use tabs for sequential steps that must be completed in order: use a [stepper](stepper).",
+                    "Don't nest tabs inside tabs. If a view needs its own sub-views, the page is carrying too much: split it."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "prose": "Tabs have a single Default variant; the real choices are configuration."
+                },
+                {
+                  "bullets": [
+                    "**Number of tabs:** two to six. Beyond six, labels truncate and scanning breaks; regroup the content or promote it to navigation.",
+                    "**First tab:** make it the summary view (**Overview**) and load it selected. Never land the user on an empty tab.",
+                    "**Show avatar:** turn it on only when a tab represents a person or account.",
+                    "**Tab order:** most-used view first, administrative or rarely used views (for example **Settings**) last. Keep the order identical across similar detail pages."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Keep the user on the same page when a tab is clicked",
+                  "dont": "Trigger a full page navigation from a tab"
+                },
+                {
+                  "do": "Preserve entered state when switching tabs",
+                  "dont": "Discard a half-filled form because the user peeked at another tab"
+                },
+                {
+                  "do": "Keep tab sets identical across entities of the same kind",
+                  "dont": "Show Lineage on one dataset but not its sibling"
+                },
+                {
+                  "do": "Land on a populated default tab",
+                  "dont": "Open on an empty tab that needs setup first"
+                },
+                {
+                  "note": "Tab label wording (short nouns, no verbs, sentence case) lives in the Content guidelines for tabs."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -9847,7 +10805,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:42:11+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "tag": {
       "_schema_version": 1,
@@ -10835,7 +11793,76 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use a text input for a single-line freeform value that cannot be constrained to a fixed list: names, emails, hosts, ports (for example **Dataset name**, **Connection host**).\n\n* Use it when the user already knows the value and just needs to type it, rather than pick it from options.\n\n* Specify the input type when the value has a format (email, number, password) so validation and keyboards can assist.\n\n## When not to use\n\n* Don't use a text input when the value comes from a known list: use a [dropdown / select](dropdown-select), or a [combo box](combo-box) when the list is long and typing should narrow it.\n\n* Don't use it to query or filter the content of the page: use [search](search).\n\n* Don't use it for multi-line or formatted content such as data product descriptions: use [rich text](rich-text).\n\n* Don't use it for dates: use the [date input](input-date).\n\n* Don't ask for freeform text when a yes/no answer is enough: use a [checkbox](checkbox) or [toggle](toggle).\n\n## Variant selection\n\nText inputs have no type or size variants; the choices are between modes.\n\n* **Editable (default):** the normal case; pair with helper text when the field needs persistent instructions.\n\n* **Read-only:** a value the user can see and copy but not change in this context (for example a system-generated connection ID). Never use disabled for this.\n\n* **Disabled:** the field does not apply until another choice is made (for example a port field before a protocol is picked).\n\n* **With placeholder:** only to model a good example value; if the label is sufficient on its own, leave the field empty.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Validate on blur, then re-validate as the user fixes the value | Flash an error on every keystroke |\n| Match the field width to the expected value length | Stretch a port-number field across the page |\n| Use read-only for values users may copy but not edit | Disable a field just to display data |\n| Constrain known formats with the right input type | Accept any text into a numeric-only field |\n\n> Placeholder and label wording rules live in the Content guidelines for text inputs.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use a text input for a single-line freeform value that cannot be constrained to a fixed list: names, emails, hosts, ports (for example **Dataset name**, **Connection host**).",
+                    "Use it when the user already knows the value and just needs to type it, rather than pick it from options.",
+                    "Specify the input type when the value has a format (email, number, password) so validation and keyboards can assist."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use a text input when the value comes from a known list: use a [dropdown / select](dropdown-select), or a [combo box](combo-box) when the list is long and typing should narrow it.",
+                    "Don't use it to query or filter the content of the page: use [search](search).",
+                    "Don't use it for multi-line or formatted content such as data product descriptions: use [rich text](rich-text).",
+                    "Don't use it for dates: use the [date input](input-date).",
+                    "Don't ask for freeform text when a yes/no answer is enough: use a [checkbox](checkbox) or [toggle](toggle)."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "prose": "Text inputs have no type or size variants; the choices are between modes."
+                },
+                {
+                  "bullets": [
+                    "**Editable (default):** the normal case; pair with helper text when the field needs persistent instructions.",
+                    "**Read-only:** a value the user can see and copy but not change in this context (for example a system-generated connection ID). Never use disabled for this.",
+                    "**Disabled:** the field does not apply until another choice is made (for example a port field before a protocol is picked).",
+                    "**With placeholder:** only to model a good example value; if the label is sufficient on its own, leave the field empty."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Validate on blur, then re-validate as the user fixes the value",
+                  "dont": "Flash an error on every keystroke"
+                },
+                {
+                  "do": "Match the field width to the expected value length",
+                  "dont": "Stretch a port-number field across the page"
+                },
+                {
+                  "do": "Use read-only for values users may copy but not edit",
+                  "dont": "Disable a field just to display data"
+                },
+                {
+                  "do": "Constrain known formats with the right input type",
+                  "dont": "Accept any text into a numeric-only field"
+                },
+                {
+                  "note": "Placeholder and label wording rules live in the Content guidelines for text inputs."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "draft",
@@ -10951,7 +11978,7 @@
           ]
         }
       },
-      "updated_at": "2026-07-05T20:42:11+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "toggle": {
       "_schema_version": 1,
@@ -11654,7 +12681,70 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use a toggle for an on/off state change that applies the moment it is flipped, with no save step (for example **Auto-refresh** in Explorer, or a notification setting in Administration).\n\n* Use it in settings pages (Administration, user preferences) where each row is one independent setting saved instantly.\n\n* Use it to enable or disable a feature, permission, or schedule that has a clear on state and off state.\n\n## When not to use\n\n* Don't use a toggle inside a form that submits; if the change waits for a save action, use a [checkbox](checkbox).\n\n* Don't use a toggle to pick one of several exclusive options: use a [radio button](radio-button) group, or a [segmented control](segmented-control) for immediate view changes.\n\n* Don't use a toggle to trigger an action such as running a pipeline: use a [button](button).\n\n* Don't use a toggle when the off state is ambiguous; if users can't predict what off means, use a [radio button](radio-button) pair with explicit labels instead.\n\n## Variant selection\n\n* **Toggle location, left (the captured default):** the toggle leads its label; suits a single inline control in dense or embedded contexts.\n\n* **Toggle location, right:** label first with toggles aligned at the end of the row, keeping a settings column scannable. Pick one location per surface and keep it consistent.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Apply the change immediately when the toggle flips | Pair a toggle with a **Save** button |\n| Revert the toggle and explain if the change fails | Leave a toggle on after the request errored |\n| Use one toggle per independent setting | Use a toggle to choose between three modes |\n| Confirm first when flipping is destructive or affects others (disabling a shared connection) | Silently cut off every consumer of a pipeline |\n\n> Label wording rules (name the setting, never the state) live in the Content guidelines for toggle controls.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use a toggle for an on/off state change that applies the moment it is flipped, with no save step (for example **Auto-refresh** in Explorer, or a notification setting in Administration).",
+                    "Use it in settings pages (Administration, user preferences) where each row is one independent setting saved instantly.",
+                    "Use it to enable or disable a feature, permission, or schedule that has a clear on state and off state."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't use a toggle inside a form that submits; if the change waits for a save action, use a [checkbox](checkbox).",
+                    "Don't use a toggle to pick one of several exclusive options: use a [radio button](radio-button) group, or a [segmented control](segmented-control) for immediate view changes.",
+                    "Don't use a toggle to trigger an action such as running a pipeline: use a [button](button).",
+                    "Don't use a toggle when the off state is ambiguous; if users can't predict what off means, use a [radio button](radio-button) pair with explicit labels instead."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "bullets": [
+                    "**Toggle location, left (the captured default):** the toggle leads its label; suits a single inline control in dense or embedded contexts.",
+                    "**Toggle location, right:** label first with toggles aligned at the end of the row, keeping a settings column scannable. Pick one location per surface and keep it consistent."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Apply the change immediately when the toggle flips",
+                  "dont": "Pair a toggle with a **Save** button"
+                },
+                {
+                  "do": "Revert the toggle and explain if the change fails",
+                  "dont": "Leave a toggle on after the request errored"
+                },
+                {
+                  "do": "Use one toggle per independent setting",
+                  "dont": "Use a toggle to choose between three modes"
+                },
+                {
+                  "do": "Confirm first when flipping is destructive or affects others (disabling a shared connection)",
+                  "dont": "Silently cut off every consumer of a pipeline"
+                },
+                {
+                  "note": "Label wording rules (name the setting, never the state) live in the Content guidelines for toggle controls."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -11666,7 +12756,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-30T21:13:00+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "toolbar": {
       "_schema_version": 1,
@@ -11773,7 +12863,12 @@
       "slug": "tooltip",
       "component": "Tooltip",
       "meta": {
-        "category": "overlays"
+        "category": "overlays",
+        "a11y_refs": [
+          {
+            "ref": "tooltips"
+          }
+        ]
       },
       "domains": {
         "content": {
@@ -11816,7 +12911,74 @@
           ]
         },
         "usage": {
-          "status": "not-started"
+          "status": "draft",
+          "markdown": "## When to use\n\n* Use a tooltip to label icon-only controls: every icon-only [button](button) gets one, and the tooltip supplies its accessible name.\n\n* Use it for a short supplementary hint on hover or focus: what a control does, a keyboard shortcut, a spelled-out abbreviation.\n\n* Use it to expose the full value of truncated text, for example a clipped cell in a [table](table), provided the trigger itself is focusable so keyboard users can reach it.\n\n## When not to use\n\n* Don't put essential content in a tooltip: anything the user must know to proceed stays visible on the page. If they have to hover to understand the UI, the UI is broken.\n\n* Don't use a tooltip for rich or multi-sentence content, links, or actions: use a [popover](popover), which opens on click and can hold structure.\n\n* Don't use a tooltip for form-field guidance the user needs while typing: use persistent helper text under the field.\n\n* Don't attach tooltips to disabled controls as the only explanation; hover never fires on touch, and focus may not reach them. Explain the disabled state inline.\n\n## Variant selection\n\nTooltips have a single Default variant; the real choices are configuration.\n\n* **Body text:** a few words to one short sentence. The tooltip is flex width up to a 320px maximum; if the text wraps past two lines, move it to a [popover](popover) or inline help.\n\n* **Placement:** default to above the trigger; flip automatically near viewport edges so the tooltip is never clipped.\n\n* **Trigger:** hover and keyboard focus, never click. It must appear for keyboard users exactly as it does for mouse users.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Give every icon-only button a tooltip naming its action | Rely on the icon alone to convey meaning |\n| Keep the tooltip to one short sentence | Pack instructions and links into a 320px block |\n| Show the tooltip on keyboard focus as well as hover | Make the hint mouse-only |\n| Explain a disabled control with inline text | Hide the reason behind a hover on a disabled target |\n\n> Tooltip wording rules (no label repetition, one concise sentence) live in the Content guidelines for tooltips.",
+          "sections": [
+            {
+              "heading": "When to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Use a tooltip to label icon-only controls: every icon-only [button](button) gets one, and the tooltip supplies its accessible name.",
+                    "Use it for a short supplementary hint on hover or focus: what a control does, a keyboard shortcut, a spelled-out abbreviation.",
+                    "Use it to expose the full value of truncated text, for example a clipped cell in a [table](table), provided the trigger itself is focusable so keyboard users can reach it."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "When not to use",
+              "content": [
+                {
+                  "bullets": [
+                    "Don't put essential content in a tooltip: anything the user must know to proceed stays visible on the page. If they have to hover to understand the UI, the UI is broken.",
+                    "Don't use a tooltip for rich or multi-sentence content, links, or actions: use a [popover](popover), which opens on click and can hold structure.",
+                    "Don't use a tooltip for form-field guidance the user needs while typing: use persistent helper text under the field.",
+                    "Don't attach tooltips to disabled controls as the only explanation; hover never fires on touch, and focus may not reach them. Explain the disabled state inline."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Variant selection",
+              "content": [
+                {
+                  "prose": "Tooltips have a single Default variant; the real choices are configuration."
+                },
+                {
+                  "bullets": [
+                    "**Body text:** a few words to one short sentence. The tooltip is flex width up to a 320px maximum; if the text wraps past two lines, move it to a [popover](popover) or inline help.",
+                    "**Placement:** default to above the trigger; flip automatically near viewport edges so the tooltip is never clipped.",
+                    "**Trigger:** hover and keyboard focus, never click. It must appear for keyboard users exactly as it does for mouse users."
+                  ]
+                }
+              ]
+            },
+            {
+              "heading": "Do / Don't",
+              "content": [
+                {
+                  "do": "Give every icon-only button a tooltip naming its action",
+                  "dont": "Rely on the icon alone to convey meaning"
+                },
+                {
+                  "do": "Keep the tooltip to one short sentence",
+                  "dont": "Pack instructions and links into a 320px block"
+                },
+                {
+                  "do": "Show the tooltip on keyboard focus as well as hover",
+                  "dont": "Make the hint mouse-only"
+                },
+                {
+                  "do": "Explain a disabled control with inline text",
+                  "dont": "Hide the reason behind a hover on a disabled target"
+                },
+                {
+                  "note": "Tooltip wording rules (no label repetition, one concise sentence) live in the Content guidelines for tooltips."
+                }
+              ]
+            }
+          ]
         },
         "design": {
           "status": "inherited"
@@ -11828,7 +12990,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-06-23T13:38:19+02:00"
+      "updated_at": "2026-07-12T02:30:46+02:00"
     },
     "upload-file": {
       "_schema_version": 1,
