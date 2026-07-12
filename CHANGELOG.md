@@ -34,7 +34,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   notification vs banner). Fifteen more component-level `a11y_refs` wired
   (loading-patterns, alerts-toasts-banners, empty-states, forms,
   dropdowns-menus-popovers), growing the graph to 1104 edges. Usage
-  coverage: 54/54. ([#TBD2])
+  coverage: 54/54. ([#404])
 - **Usage guidelines: first authored wave (15 core components).** The Usage
   domain, until now "not started" across the board, gets its first real
   content: button, modal, text-input, dropdown-select, checkbox,
@@ -355,6 +355,7 @@ history and pull-request record.
 [#401]: https://github.com/volivarii/actian-ds-knowledge/pull/401
 [#402]: https://github.com/volivarii/actian-ds-knowledge/pull/402
 [#403]: https://github.com/volivarii/actian-ds-knowledge/pull/403
+[#404]: https://github.com/volivarii/actian-ds-knowledge/pull/404
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
 [#390]: https://github.com/volivarii/actian-ds-knowledge/pull/390
 [#389]: https://github.com/volivarii/actian-ds-knowledge/pull/389
