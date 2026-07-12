@@ -42,6 +42,33 @@ Each entry links its pull request. Dates are the merge date (UTC).
   2026-07-07. Those glyphs return when the Figma icon rework restores them; this change only makes
   sure the next loss cannot ship silently.
 
+- **Ghost components are now detected and named.** The root defect behind the icon loss: the registry
+  is built from Figma's **published-library** endpoint (`/v1/files/:key/components`), which keeps
+  advertising a component after its canvas node has been deleted. So the registry can carry entries
+  that resolve to nothing, and the **entry count does not change** when it happens: it sat at exactly
+  237 icon components throughout, which is why `classifyRegistry` reported "unchanged" every night
+  while 28 glyphs quietly died. A ghost is invisible to a registry diff by construction.
+
+  The icon export now separates the two failure modes it used to conflate. A node Figma will not
+  render is `node-missing` (**the registry is stale**), reported as a named "ghost components" section
+  in the sync PR body and in the console. A glyph that renders but is unusable stays `multicolor` /
+  `gradient-or-image-fill` (a drawing problem). Persistent ghosts are reported loudly but do **not**
+  gate the sync, since a standing Figma defect blocking every nightly run would just train everyone to
+  ignore the gate; only a *newly* lost icon is breaking.
+
+  Of the 28 ghosts found, 22 are on the design team's own "REMOVED (28)" note in Figma (intentional
+  deletions). Six are not, and appear to be collateral from the icon rework: `expand`, `maximize`,
+  `minimize`, `misuse-outline`, `tools`, `view-table`. `misuse-outline` is the glyph inside Tag
+  Status's "Fail" variant, so a shipping DS component currently references an icon that no longer
+  exists.
+
+- **A Figma API error can no longer be recorded as icon loss.** `getImages()` discarded Figma's `err`
+  field entirely (`return { images: merged }`), so a failed batch contributed no URLs and was
+  indistinguishable from ten deleted nodes. It now surfaces per-batch errors, and the icon export
+  **throws** rather than reporting a phantom regression. Without this, one transient render timeout
+  would have tripped the new breaking gate and could have led to curating over ten perfectly good
+  glyphs.
+
 ### Added
 - **Usage guidelines: wave 2 completes the domain (38 remaining components).**
   Every component now carries authored Usage guidance: the second wave covers

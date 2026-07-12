@@ -525,19 +525,56 @@ function classifyIcons(before, after, degraded) {
     );
   });
 
+  // A ghost (node-missing) is a STALE REGISTRY, not a bad glyph: Figma's
+  // published-library endpoint still advertises a component whose canvas node
+  // was deleted. Call it out separately so it is not misread as a drawing
+  // problem, and so the fix ("retire it, or restore it in Figma") is obvious.
+  var ghosts = lost.filter(function (s) {
+    return reasonBySlug[s] === "node-missing";
+  });
+  var badGlyphs = lost.filter(function (s) {
+    return reasonBySlug[s] !== "node-missing";
+  });
+
   var lines = [];
-  if (lost.length > 0) {
-    lines.push("## Lost icons (" + lost.length + ") — BREAKING");
+  if (ghosts.length > 0) {
+    lines.push(
+      "## Stale registry: ghost components (" + ghosts.length + ") — BREAKING",
+    );
+    lines.push("");
+    lines.push(
+      "Figma's published-library endpoint still advertises these components, but",
+    );
+    lines.push(
+      "their canvas nodes no longer exist, so they now render as nothing. The",
+    );
+    lines.push(
+      "registry entry COUNT does not change when this happens, which is exactly why",
+    );
+    lines.push("a registry diff cannot catch it.");
+    lines.push("");
+    lines.push(
+      "Each one is either an intentional deletion (retire it in every consumer) or",
+    );
+    lines.push("collateral damage from a rework (restore it in Figma).");
+    lines.push("");
+    ghosts.forEach(function (s) {
+      lines.push("- `" + s + "` (node no longer exists in Figma)");
+    });
+    lines.push("");
+  }
+  if (badGlyphs.length > 0) {
+    lines.push("## Lost icons (" + badGlyphs.length + ") — BREAKING");
     lines.push("");
     lines.push(
       "These slugs resolved to a glyph before this sync and now resolve to nothing.",
     );
     lines.push(
-      "Consumers render an empty box. Restore them in Figma, or add a curated",
+      "Consumers render an empty box. Fix the glyph in Figma, or add a curated",
     );
     lines.push("override in `components/src/icons-svg.json`.");
     lines.push("");
-    lost.forEach(function (s) {
+    badGlyphs.forEach(function (s) {
       var why = reasonBySlug[s];
       lines.push("- `" + s + "`" + (why ? " — " + why : ""));
     });

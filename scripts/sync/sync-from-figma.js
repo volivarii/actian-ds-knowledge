@@ -918,6 +918,15 @@ async function run(opts) {
                   .join(", "),
             );
           }
+          if (r.ghosts && r.ghosts.length > 0) {
+            lines.push(
+              "- ⚠️ **Stale registry**: " +
+                r.ghosts.length +
+                " component(s) advertised by Figma's published-library endpoint " +
+                "have no canvas node: " +
+                r.ghosts.join(", "),
+            );
+          }
           if (verdict.changelog && verdict.category !== "unchanged") {
             lines.push("");
             lines.push(verdict.changelog);

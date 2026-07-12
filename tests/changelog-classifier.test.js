@@ -293,3 +293,22 @@ test("classifier(icons) — degraded icons that were NEVER clean do not block th
   assert.equal(res.category, "unchanged");
   assert.equal(res.reasons.length, 0);
 });
+
+test("classifier(icons) — a ghost (node-missing) is reported as a STALE REGISTRY, not a bad glyph", function () {
+  var res = classifier({
+    fileKind: "icons",
+    before: iconSet(["add", "misuse-outline", "attachments"]),
+    after: iconSet(["add"]),
+    degraded: [
+      { slug: "misuse-outline", reason: "node-missing" },
+      { slug: "attachments", reason: "multicolor" },
+    ],
+  });
+  assert.equal(res.category, "breaking");
+  // The two failure modes must not be conflated: one means Figma deleted the
+  // node (registry is stale), the other means the drawing is not monochrome.
+  assert.match(res.changelog, /Stale registry: ghost components \(1\)/);
+  assert.match(res.changelog, /misuse-outline.*node no longer exists in Figma/);
+  assert.match(res.changelog, /Lost icons \(1\)/);
+  assert.match(res.changelog, /attachments.*multicolor/);
+});

@@ -289,13 +289,23 @@ function getImages(fileKey, nodeIds, opts) {
   // (deterministic in practice — Figma returns the same signedUrl shape
   // per id; the merge just covers theoretical retries).
   var merged = {};
+  // Figma reports per-request render failures in an `err` field alongside
+  // `images`. This used to be dropped on the floor: a batch that errored simply
+  // contributed no urls, and the caller could not tell "Figma failed" apart from
+  // "this node does not exist". Callers need that distinction — one is a
+  // transient outage, the other is a stale registry — so surface it.
+  var errors = [];
   var cursor = 0;
 
   function worker() {
     if (cursor >= batches.length) return Promise.resolve();
     var idx = cursor++;
-    return fetchBatch(batches[idx])
+    var batch = batches[idx];
+    return fetchBatch(batch)
       .then(function (resp) {
+        if (resp && resp.err) {
+          errors.push({ ids: batch.slice(), err: resp.err });
+        }
         var images = (resp && resp.images) || {};
         Object.keys(images).forEach(function (id) {
           merged[id] = images[id];
@@ -309,7 +319,7 @@ function getImages(fileKey, nodeIds, opts) {
     workers.push(worker());
   }
   return Promise.all(workers).then(function () {
-    return { images: merged };
+    return { images: merged, errors: errors };
   });
 }
 

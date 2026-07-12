@@ -38,16 +38,41 @@ async function run(opts) {
 
   const cleanIcons = {};
   const degraded = [];
+  // Ghosts: registry entries whose Figma node no longer exists. The registry is
+  // built from the PUBLISHED-LIBRARY endpoint (/v1/files/:key/components), which
+  // keeps advertising a component after its canvas node is deleted, so the
+  // registry can carry entries that resolve to nothing. A ghost means THE
+  // REGISTRY IS STALE, which is categorically different from "this glyph is
+  // multicolor". Lumping the two together is how 28 dead icons hid in a
+  // worklist while every registry diff reported "unchanged" (237 -> 237).
+  const ghosts = [];
 
   if (ids.length > 0) {
     const resp = await rest.getImages(fileKey, ids, { format: "svg" });
+
+    // A Figma API error must NEVER be recorded as icon loss. Without this, one
+    // failed batch marks its 10 nodes "missing", the breaking gate fires on a
+    // phantom regression, and a real glyph could get curated over. Fail loudly
+    // instead: a transient error is an error, not a design change.
+    const apiErrors = (resp && resp.errors) || [];
+    if (apiErrors.length > 0) {
+      throw new Error(
+        "[icons] Figma /v1/images returned errors; refusing to treat this as " +
+          "icon loss: " +
+          apiErrors
+            .map((e) => (e && e.err ? e.err : JSON.stringify(e)))
+            .join("; "),
+      );
+    }
+
     const images = (resp && resp.images) || {};
     for (const id of ids) {
       const slug = idToSlug[id];
       const url = images[id];
       let result;
       if (!url) {
-        result = { ok: false, reason: "render-failed" };
+        // Figma will not render this node: it is gone from the canvas.
+        result = { ok: false, reason: "node-missing", ghost: true };
       } else {
         try {
           const buf = await rest.fetchBinary(url);
@@ -60,9 +85,11 @@ async function run(opts) {
         cleanIcons[slug] = { viewBox: result.viewBox, body: result.body };
       } else if (!curatedSlugs.has(slug)) {
         degraded.push({ slug, reason: result.reason });
+        if (result.ghost) ghosts.push(slug);
       }
     }
   }
+  ghosts.sort((a, b) => a.localeCompare(b));
 
   // Stable, sorted output for idempotent diffs.
   const sortedIcons = {};
@@ -85,6 +112,15 @@ async function run(opts) {
       skipped +
       (degraded.length ? " by-reason=" + JSON.stringify(reasonHist) : ""),
   );
+  if (ghosts.length > 0) {
+    console.warn(
+      "[icons] STALE REGISTRY: " +
+        ghosts.length +
+        " component(s) advertised by Figma's published-library endpoint no " +
+        "longer have a canvas node: " +
+        ghosts.join(", "),
+    );
+  }
 
   const auto = {
     _schema_version: 1,
@@ -118,7 +154,13 @@ async function run(opts) {
         "\n",
     ) || wrote;
 
-  return { exported: Object.keys(sortedIcons), degraded, skipped, wrote };
+  return {
+    exported: Object.keys(sortedIcons),
+    degraded,
+    ghosts,
+    skipped,
+    wrote,
+  };
 }
 
 // Byte-gated write — returns true only when the file content actually changed.

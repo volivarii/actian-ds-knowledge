@@ -137,3 +137,80 @@ test("second identical run writes nothing (wrote=false) — no-op nights stay no
   assert.equal(r2.wrote, false, "byte-identical rerun must not report a write");
   assert.deepEqual(r2.exported, r1.exported, "exported list itself unchanged");
 });
+
+// ---------------------------------------------------------------------------
+// Ghost components (2026-07-12).
+//
+// The registry is built from Figma's PUBLISHED-LIBRARY endpoint
+// (/v1/files/:key/components), which keeps advertising a component after its
+// canvas node has been deleted. So the registry can hold entries whose nodeId
+// resolves to nothing: ghosts.
+//
+// /v1/images returns NO url for a ghost. That is categorically different from
+// "the glyph is messy" (multicolor / gradient): it means the REGISTRY IS STALE.
+// Lumping both into a `render-failed` worklist is how 28 dead icons hid in
+// plain sight while the registry count sat unchanged at 237 and every diff
+// said "unchanged".
+//
+// It is also different from a transient Figma API failure, which must NEVER be
+// recorded as icon loss — see the `err` test below.
+// ---------------------------------------------------------------------------
+
+test("a node Figma will not render is a GHOST (stale registry), not a degraded glyph", async () => {
+  const dir = tmp();
+  const ghostRest = {
+    // Figma omits the id entirely when the node no longer exists.
+    getImages: (fileKey, ids) =>
+      Promise.resolve({
+        images: Object.fromEntries(
+          ids.filter((id) => id !== "1:2").map((id) => [id, "url://" + id]),
+        ),
+      }),
+    fetchBinary: (url) =>
+      Promise.resolve(Buffer.from(SVG[url.replace("url://", "")], "utf8")),
+  };
+  const r = await run({
+    registry: REGISTRY,
+    iconGroups: ICON_GROUPS,
+    curatedSlugs: new Set(),
+    autoOutPath: path.join(dir, "icons-svg.auto.json"),
+    degradedOutPath: path.join(dir, "icons.degraded.json"),
+    rest: ghostRest,
+  });
+
+  assert.deepEqual(
+    r.ghosts,
+    ["twocolor"],
+    "the un-renderable node must surface as a ghost, named",
+  );
+  assert.deepEqual(
+    r.degraded,
+    [{ slug: "twocolor", reason: "node-missing" }],
+    "reason must say the NODE is gone, not that the glyph is bad",
+  );
+});
+
+test("a Figma API error is NEVER recorded as icon loss — it fails the run", async () => {
+  const dir = tmp();
+  const flakyRest = {
+    getImages: () =>
+      Promise.resolve({
+        images: {},
+        errors: [{ ids: ["1:1", "1:2"], err: "Render timeout" }],
+      }),
+    fetchBinary: () => Promise.reject(new Error("should not be reached")),
+  };
+  await assert.rejects(
+    () =>
+      run({
+        registry: REGISTRY,
+        iconGroups: ICON_GROUPS,
+        curatedSlugs: new Set(),
+        autoOutPath: path.join(dir, "icons-svg.auto.json"),
+        degradedOutPath: path.join(dir, "icons.degraded.json"),
+        rest: flakyRest,
+      }),
+    /Render timeout/,
+    "a transient API failure must abort, not silently mark every icon missing",
+  );
+});
