@@ -19,6 +19,23 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Usage guidelines: first authored wave (15 core components).** The Usage
+  domain, until now "not started" across the board, gets its first real
+  content: button, modal, text-input, dropdown-select, checkbox,
+  radio-button, toggle, table, tabs, card, tooltip, global-toast,
+  inline-toast, empty-state and page-header each gain a
+  `components/src/<slug>/usage.md` answering when to use, when to reach for
+  the alternative (slug-linked), and which variant fits which situation
+  (grounded in the synced registry's real variant axes and Figma-authored
+  descriptions). All files share one canonical section shape (When to use /
+  When not to use / Variant selection / Do-Don't), the de facto usage canon
+  for the remaining components. Statuses flipped to `draft` in each
+  component's `_meta.yml`; coverage.md reflects the wave after derive. A
+  five-lens review pass (grounding, consistency, pipeline, UX/a11y
+  correctness, voice) hardened the wave before merge; en route it wired the
+  four missing component-level `a11y_refs` (radio-button, tooltip,
+  global-toast, empty-state), adding three `a11y_ref` edges to the graph
+  (1084 to 1087). ([#TBD])
 - **Editor: calm frontmatter forms + the chrome wears the system's own
   colors.** The frontmatter-form redo's presentation half (research-backed:
   NN/g progressive disclosure, Sanity-style fieldsets): forms now support
