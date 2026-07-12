@@ -35,7 +35,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   correctness, voice) hardened the wave before merge; en route it wired the
   four missing component-level `a11y_refs` (radio-button, tooltip,
   global-toast, empty-state), adding three `a11y_ref` edges to the graph
-  (1084 to 1087). ([#TBD])
+  (1084 to 1087). ([#403])
 - **Editor: calm frontmatter forms + the chrome wears the system's own
   colors.** The frontmatter-form redo's presentation half (research-backed:
   NN/g progressive disclosure, Sanity-style fieldsets): forms now support
@@ -338,6 +338,7 @@ history and pull-request record.
 [#400]: https://github.com/volivarii/actian-ds-knowledge/pull/400
 [#401]: https://github.com/volivarii/actian-ds-knowledge/pull/401
 [#402]: https://github.com/volivarii/actian-ds-knowledge/pull/402
+[#403]: https://github.com/volivarii/actian-ds-knowledge/pull/403
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
 [#390]: https://github.com/volivarii/actian-ds-knowledge/pull/390
 [#389]: https://github.com/volivarii/actian-ds-knowledge/pull/389
