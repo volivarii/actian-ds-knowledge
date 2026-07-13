@@ -2,7 +2,11 @@
   "_schema_version": 1,
   "_meta": {
     "auto_generated": true,
-    "source": "components/src/icons-svg.json"
+    "source": "components/src/icons-svg.json",
+    "shadowed_by_component": [
+      "calendar",
+      "search"
+    ]
   },
   "icons": {
     "add": {

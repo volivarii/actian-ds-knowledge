@@ -59,7 +59,29 @@ function deriveIcons(src, registry, iconGroups, opts) {
     );
   const out = {
     _schema_version: 1,
-    _meta: { auto_generated: true, source: "components/src/icons-svg.json" },
+    _meta: {
+      auto_generated: true,
+      source: "components/src/icons-svg.json",
+      // Icon slugs that a NON-icon component also answers to (`calendar` is both
+      // a glyph and the Calendar component; `search` is both a glyph and the
+      // Search component). Legal, and the icons namespace is what makes it legal.
+      //
+      // But a consumer that resolves an icon BY SLUG cannot tell the two apart, and
+      // some of them resolve component references by slug too: a component's anatomy
+      // says global-header nests `search`, meaning the whole Search FIELD, and a
+      // renderer that checks the icon map first would draw a tiny magnifier where an
+      // entire input belongs.
+      //
+      // Anatomy slugs are resolved against `components`, and a shadowed icon is never
+      // in `components` — so for these slugs an anatomy reference ALWAYS means the
+      // component, never the glyph. Publishing the list lets a consumer honour that
+      // without having to load and reason about the registry itself (the plugin's
+      // appearance renderer also runs in a browser, where it has no registry at all).
+      //
+      // An EXPLICIT icon request (renderIcon("calendar")) is unaffected: the caller
+      // has already said which one it wants.
+      shadowed_by_component: [],
+    },
     icons: {},
   };
   // Absent from the icon namespace? Look it up in the flat component map before
@@ -103,7 +125,15 @@ function deriveIcons(src, registry, iconGroups, opts) {
       dsKey: reg.key,
       nodeId: reg.nodeId,
     };
+    // A NON-icon component answers to this slug too (Calendar to `calendar`,
+    // Search to `search`). See _meta.shadowed_by_component above for why a
+    // consumer needs to know.
+    const shadow = allComps[slug];
+    if (shadow && shadow.category !== "Icons") {
+      out._meta.shadowed_by_component.push(slug);
+    }
   }
+  out._meta.shadowed_by_component.sort();
   // Aggregate resilience bound: per-slug warn-skip absorbs a FEW stray icons
   // (a rename / recategorization), but the whole library collapsing is a
   // systemic Figma-side break, not a point failure. Refuse to emit a

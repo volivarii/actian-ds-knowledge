@@ -301,3 +301,60 @@ test("resilience: mass category-loss throws instead of emitting a near-empty ico
     "12 of 12 skipped must fail loud in resilience mode",
   );
 });
+
+// ---------------------------------------------------------------------------
+// shadowed_by_component. `calendar` is BOTH a glyph and the Calendar component;
+// `search` is BOTH a glyph and the Search component. The icons namespace makes
+// that legal — but a consumer resolving BY SLUG cannot tell them apart, and some
+// resolve component references by slug too: global-header's anatomy nests
+// `search`, meaning the whole Search FIELD, and a renderer that checks the icon
+// map first would draw a tiny magnifier where an entire input belongs.
+//
+// Anatomy slugs resolve against `components`, and a shadowed icon is never in
+// `components` — so for these slugs an anatomy reference ALWAYS means the
+// component. Publishing the list lets a consumer honour that without loading the
+// registry (the plugin's renderer also runs in a browser, with no registry at all).
+// ---------------------------------------------------------------------------
+test("shadowed_by_component: names icons whose slug a NON-icon component also owns", () => {
+  const reg = {
+    components: {
+      // The Calendar COMPONENT owns `calendar` in the flat map.
+      calendar: { key: "kc", nodeId: "8211:6664", category: "Action" },
+      // An ordinary icon that nothing shadows.
+      "simple-check": { key: "ks", nodeId: "7271:6256", category: "Icons" },
+    },
+    icons: {
+      // The calendar GLYPH lives here, safe from the component.
+      calendar: { key: "ki", nodeId: "7378:5041", category: "Icons" },
+      "simple-check": { key: "ks", nodeId: "7271:6256", category: "Icons" },
+    },
+  };
+  const src = {
+    _schema_version: 1,
+    icons: {
+      calendar: { viewBox: "0 0 24 24", body: "<path/>" },
+      "simple-check": { viewBox: "0 0 24 24", body: "<path/>" },
+    },
+  };
+  const dist = deriveIcons(src, reg, { Common: [] });
+
+  // The glyph is emitted — it is NOT dropped just because a component shares the name.
+  assert.ok(dist.icons.calendar, "the shadowed glyph must still ship");
+  assert.equal(dist.icons.calendar.nodeId, "7378:5041", "the ICON's node, not the component's");
+
+  // And the ambiguity is declared, so a slug-resolving consumer can honour it.
+  assert.deepEqual(dist._meta.shadowed_by_component, ["calendar"]);
+});
+
+test("shadowed_by_component: an unshadowed icon set declares nothing", () => {
+  const reg = {
+    components: { "simple-check": { key: "k", nodeId: "1:1", category: "Icons" } },
+    icons: { "simple-check": { key: "k", nodeId: "1:1", category: "Icons" } },
+  };
+  const src = {
+    _schema_version: 1,
+    icons: { "simple-check": { viewBox: "0 0 24 24", body: "<path/>" } },
+  };
+  const dist = deriveIcons(src, reg, { Common: [] });
+  assert.deepEqual(dist._meta.shadowed_by_component, []);
+});
