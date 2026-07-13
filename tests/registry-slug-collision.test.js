@@ -182,9 +182,113 @@ test("slug collision: two component SETS collide — the loss is named, and the 
 // split against the shapes the live sync actually produced.
 // ---------------------------------------------------------------------------
 
-test("severity: a component SET shadowing an icon is a LOSS (the real `calendar` / `search` case)", function () {
+// ---------------------------------------------------------------------------
+// THE ICON NAMESPACE. A design system may legitimately ship a `calendar` ICON and
+// a `Calendar` COMPONENT — and it does. They are different KINDS, and the sync can
+// tell which is which (an icon comes off an Icons page). Forcing them to share one
+// flat slug-keyed map means one has to lose, and the loser VANISHES.
+//
+// That is what ate the calendar and search glyphs. Renaming in Figma would only
+// postpone it: `link`, `table`, `settings` are all words an icon and a component
+// can reasonably both want. So icons get their own map, and the clash stops being
+// a clash.
+// ---------------------------------------------------------------------------
+
+test("icon namespace: an icon SURVIVES a component that owns its slug (the real `calendar` case)", function () {
   var warnings = [];
-  transformRegistry({
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test-key",
+    componentSets: [
+      {
+        name: "Calendar", // the Calendar COMPONENT
+        key: "k-calendar-component",
+        node_id: "8211:6664",
+        description: "",
+        containing_frame: { pageName: "✅ Calendar" },
+      },
+    ],
+    componentSetNodes: {
+      "8211:6664": { document: { componentPropertyDefinitions: {} } },
+    },
+    standalones: [
+      {
+        name: "calendar", // the calendar ICON — same word, different kind
+        key: "k-calendar-icon",
+        node_id: "7378:5041",
+        description: "",
+        containing_frame: { pageName: "✍️ DS Icons: replacement" },
+      },
+    ],
+    standaloneNodes: {
+      "7378:5041": { document: { componentPropertyDefinitions: {} } },
+    },
+    documentChildren: [
+      { type: "CANVAS", name: "🧱 COMPONENTS" },
+      { type: "CANVAS", name: "Action" },
+      { type: "CANVAS", name: "     ✅ Calendar" },
+      { type: "CANVAS", name: "Icons" },
+      { type: "CANVAS", name: "     ✍️ DS Icons: replacement" },
+    ],
+    onWarnings: function (ws) {
+      warnings = warnings.concat(ws || []);
+    },
+  });
+
+  // The component still owns the flat map — unchanged, so no consumer key moves.
+  assert.equal(registry.components["calendar"].name, "Calendar");
+  assert.equal(registry.components["calendar"].nodeId, "8211:6664");
+
+  // And the ICON is no longer lost. This is the whole point.
+  assert.ok(registry.icons["calendar"], "the calendar glyph must survive");
+  assert.equal(registry.icons["calendar"].nodeId, "7378:5041");
+  assert.equal(registry.icons["calendar"].category, "Icons");
+
+  // It is NOT a loss any more, so it must not shout like one — this would
+  // otherwise fire every night forever on calendar and search.
+  var hits = warnings.filter(function (w) {
+    return w.code === "SLUG_COLLISION_DROPPED";
+  });
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].severity, "namespaced", "resolved, not lost");
+});
+
+test("icon namespace: an icon whose name nothing takes lands in BOTH maps", function () {
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test-key",
+    componentSets: [],
+    componentSetNodes: {},
+    standalones: [
+      {
+        name: "simple-check",
+        key: "k-simple-check",
+        node_id: "7271:6256",
+        description: "",
+        containing_frame: { pageName: "✍️ DS Icons: replacement" },
+      },
+    ],
+    standaloneNodes: {
+      "7271:6256": { document: { componentPropertyDefinitions: {} } },
+    },
+    documentChildren: [
+      { type: "CANVAS", name: "🧱 COMPONENTS" },
+      { type: "CANVAS", name: "Icons" },
+      { type: "CANVAS", name: "     ✍️ DS Icons: replacement" },
+    ],
+  });
+  // Backwards compatible: an uncontested icon stays in `components` exactly as
+  // before, so nothing downstream that reads the flat map changes.
+  assert.ok(registry.components["simple-check"]);
+  assert.ok(registry.icons["simple-check"]);
+});
+
+// The namespace covers ICONS. A NON-icon standalone shadowed by a component set
+// is still a genuine loss — it has no other map to live in — so that alarm must
+// keep firing at full volume.
+test("severity: a component SET shadowing a NON-icon standalone is still a LOSS", function () {
+  var warnings = [];
+  var registry = transformRegistry({
     library: "ds",
     fileKey: "test-key",
     componentSets: [
@@ -201,32 +305,36 @@ test("severity: a component SET shadowing an icon is a LOSS (the real `calendar`
     },
     standalones: [
       {
-        name: "search", // the search ICON — a different thing entirely
-        key: "k-search-icon",
-        node_id: "7242:9340",
+        // A standalone that is NOT an icon (it sits on a component page, not an
+        // Icons page), so nothing rescues it from the flat map.
+        name: "Search",
+        key: "k-search-dupe",
+        node_id: "9:9",
         description: "",
-        containing_frame: { pageName: "✍️ DS Icons: replacement" },
+        containing_frame: { pageName: "✅ Sticky footer" },
       },
     ],
     standaloneNodes: {
-      "7242:9340": { document: { componentPropertyDefinitions: {} } },
+      "9:9": { document: { componentPropertyDefinitions: {} } },
     },
     documentChildren: [
       { type: "CANVAS", name: "🧱 COMPONENTS" },
       { type: "CANVAS", name: "Form (input & selection)" },
       { type: "CANVAS", name: "     ✅ Search" },
-      { type: "CANVAS", name: "Icons" },
-      { type: "CANVAS", name: "     ✍️ DS Icons: replacement" },
+      { type: "CANVAS", name: "Action" },
+      { type: "CANVAS", name: "     ✅ Sticky footer" },
     ],
     onWarnings: function (ws) {
       warnings = warnings.concat(ws || []);
     },
   });
+  // It is NOT an icon, so it is not in the icons namespace, so it is really gone.
+  assert.ok(!registry.icons["search"], "not an icon: no namespace rescues it");
   var hits = warnings.filter(function (w) {
     return w.code === "SLUG_COLLISION_DROPPED";
   });
   assert.equal(hits.length, 1);
-  assert.equal(hits[0].severity, "loss", "the DS loses its search glyph");
+  assert.equal(hits[0].severity, "loss", "a real loss must still shout");
   assert.equal(hits[0].keptImportMethod, "set");
   assert.equal(hits[0].droppedImportMethod, "single");
 });

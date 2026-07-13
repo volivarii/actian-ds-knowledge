@@ -133,6 +133,13 @@ function suppressDeniedPageCollisions(warnings, deniedPages) {
   var denied = deniedPages || [];
   return (warnings || []).filter(function (w) {
     if (!w || w.code !== "SLUG_COLLISION_DROPPED") return true;
+    // `namespaced` = an icon and a component share a name, and the icons namespace
+    // has already resolved it: the icon is in registry.icons, the component in
+    // registry.components, and NOTHING is lost. That is the system working, not an
+    // anomaly, and it would otherwise fire on `calendar` and `search` every single
+    // night forever. An alarm that shouts about a non-problem is how the section
+    // that catches a REAL loss gets scrolled past.
+    if (w.severity === "namespaced") return false;
     return !denied.some(function (p) {
       return p === w.droppedPage || p === w.droppedPageRaw;
     });

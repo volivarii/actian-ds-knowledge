@@ -18,6 +18,29 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Added
+- **Icons get their own namespace, so a component can never eat a glyph again.**
+  A design system may legitimately ship a `calendar` **icon** and a `Calendar`
+  **component** — and it does. They are different **kinds** of thing, and the sync
+  can tell which is which: an icon comes off an Icons page, so its category says
+  so. Forcing them to share one flat slug-keyed map meant one of them had to lose,
+  and the loser did not get renamed, it **vanished**. That is how the DS came to
+  ship with **no calendar glyph and no search glyph**.
+  Renaming the icons in Figma would only have postponed it: `link`, `table`,
+  `settings` are all words an icon and a component can reasonably both want, so the
+  clash recurs forever. The registry now carries an `icons` map alongside
+  `components`, keyed by the icon's own name, where nothing can take its slug. The
+  icon pipeline (`export-icons-svg`, `derive-icons-svg`) reads that map instead of
+  filtering `components` by category, and therefore stops losing icons to component
+  names.
+  **Purely additive**: `components` is unchanged (the component still wins that
+  map, so no consumer key moves, and every uncontested icon is still there too).
+  An icon/component name clash is consequently no longer reported as a loss — it is
+  `namespaced`, and reported not at all, because it is the system working rather
+  than an anomaly, and an alarm that shouts about a non-problem is how the section
+  that catches a **real** loss gets scrolled past. A non-icon losing a slug is
+  still a loss and still shouts. ([#418])
+
 ### Fixed
 - **A component that resolves to NO category is now named, instead of vanishing
   quietly.** A category-less component falls out of `categories.json`, the docs
@@ -561,3 +584,5 @@ history and pull-request record.
 [#340]: https://github.com/volivarii/actian-ds-knowledge/pull/340
 [#339]: https://github.com/volivarii/actian-ds-knowledge/pull/339
 [#338]: https://github.com/volivarii/actian-ds-knowledge/pull/338
+
+[#418]: https://github.com/volivarii/actian-ds-knowledge/pull/418

@@ -44,20 +44,38 @@ function deriveIcons(src, registry, iconGroups, opts) {
   opts = opts || {};
   const logger = opts.logger || console;
   const curatedSlugs = opts.curatedSlugs || null;
-  const comps = registry.components || {};
+  // Join against the ICON namespace, not the flat component map. An icon whose
+  // name a component already owns (`calendar` -> Calendar, `search` -> Search)
+  // never reaches `components` at all, so validating against it reported the icon
+  // as "not found in dskit registry" and dropped it — which is how the DS came to
+  // ship with no calendar and no search glyph. Fall back to the old filter for a
+  // registry synced before the icons map existed.
+  const comps =
+    registry.icons ||
+    Object.fromEntries(
+      Object.entries(registry.components || {}).filter(
+        ([, e]) => e.category === "Icons",
+      ),
+    );
   const out = {
     _schema_version: 1,
     _meta: { auto_generated: true, source: "components/src/icons-svg.json" },
     icons: {},
   };
+  // Absent from the icon namespace? Look it up in the flat component map before
+  // giving up, purely so the WARNING can name the cause. "recategorized to Brand
+  // assets" and "gone from Figma entirely" are different problems with different
+  // fixes, and an alarm that cannot tell them apart wastes the reader's time.
+  const allComps = registry.components || {};
   for (const slug of Object.keys(src.icons).sort()) {
     const geo = src.icons[slug];
     const reg = comps[slug];
-    const problem = !reg
-      ? "not found in dskit registry"
-      : reg.category !== "Icons"
-        ? `is category "${reg.category}", expected "Icons"`
-        : null;
+    const elsewhere = !reg ? allComps[slug] : null;
+    const problem = reg
+      ? null
+      : elsewhere && elsewhere.category !== "Icons"
+        ? `is category "${elsewhere.category}", expected "Icons"`
+        : "not found in dskit registry";
     if (problem) {
       // Resilience mode (the sync passes curatedSlugs): an invalid slug is a
       // Figma-side change (rename / removal / recategorization), not a pipeline

@@ -253,6 +253,26 @@ function transformRegistry(input) {
     lastSynced: lastSyncedIso,
     componentCount: 0,
     components: {},
+    // ICONS GET THEIR OWN NAMESPACE.
+    //
+    // A design system may legitimately ship a `calendar` ICON and a `Calendar`
+    // COMPONENT, and it does. They are different KINDS of thing, and the sync can
+    // tell which is which — an icon comes off an Icons page, so its category is
+    // "Icons". Forcing them to share one flat slug-keyed map means one of them has
+    // to lose, and the loser does not get renamed, it VANISHES.
+    //
+    // That is what ate the `calendar` icon and the `search` icon (2026-07-13): the
+    // Calendar and Search *components* own those slugs in `components`, so the
+    // icons were dropped and the DS shipped with neither glyph. Renaming in Figma
+    // would only postpone it — `link`, `table`, `settings` are all names an icon
+    // and a component can reasonably both want, so the clash recurs forever.
+    //
+    // So icons are ALSO collected here, keyed by their own name, where nothing can
+    // take their slug. `components` keeps its existing behaviour untouched (the
+    // component still wins that map, so no consumer key changes and this is purely
+    // additive); the icon pipeline reads THIS map instead of filtering `components`
+    // by category, and therefore stops losing icons to component names.
+    icons: {},
   };
 
   // Build category lookup once. The map is keyed by the component
@@ -399,13 +419,13 @@ function transformRegistry(input) {
   // Figma, and they let sync-from-figma suppress collisions on pages it drops
   // wholesale anyway (DENIED_PAGES) — those are not lost components, and alarming
   // about them would be a false alarm.
-  function collectSlugCollision(slug, dropped, kept) {
+  function collectSlugCollision(slug, dropped, kept, forcedSeverity) {
     var dedupeKey = "collision|" + slug + "|" + dropped.nodeId;
     if (seenComponentWarnings[dedupeKey]) return;
     seenComponentWarnings[dedupeKey] = true;
     componentWarnings.push({
       code: "SLUG_COLLISION_DROPPED",
-      severity: collisionSeverity(dropped, kept),
+      severity: forcedSeverity || collisionSeverity(dropped, kept),
       slug: slug,
       droppedName: dropped.name,
       droppedNodeId: dropped.nodeId,
@@ -467,29 +487,7 @@ function transformRegistry(input) {
     // collision, so these two gates must run before the collision check below.
     if (excludeSet[lookup.cleanPage]) return; // staging / not-ready page
     if (isOnCategoryHeaderPage(lookup)) return;
-    // Don't clobber a set entry on a name collision (sets win). The policy is
-    // fine; doing it SILENTLY was the bug. registry.components is keyed by slug,
-    // so the loser here does not just lose a name — it disappears from the design
-    // system entirely, with no error, no diff line, and nothing in the sync PR.
-    //
-    // That is how the `calendar` ICON vanished (2026-07-13): the Calendar
-    // *component* (a set, category Action) already owned the slug, so the icon
-    // standalone hit this return and was never published. It is almost certainly
-    // why the glyph was historically named `calendar-2` — the old name dodged
-    // this collision, and the 2026-07 rework renamed it onto it.
-    //
-    // Note the cross-registry collision detector (scripts/graph/derive-graph.js
-    // detectSlugCollisions) structurally CANNOT catch this: it reads the
-    // already-slug-keyed `components` map, by which point the loser is gone. So
-    // this is the only place the loss can be named. Warn, don't swallow.
-    if (slug in registry.components) {
-      collectSlugCollision(
-        slug,
-        metaSide(meta, lookup, "single"),
-        entrySide(registry.components[slug]),
-      );
-      return;
-    }
+
     var entry = buildEntry(
       meta,
       node,
@@ -498,6 +496,60 @@ function transformRegistry(input) {
       slug,
       iconGroupsLookup,
     );
+    // Type is inferable: an icon comes off an Icons page, so the category says so.
+    var isIcon = entry.category === "Icons";
+
+    // The icon namespace first. Nothing in `components` can take a slug here, so
+    // a `calendar` icon survives even though the `Calendar` component owns
+    // `components.calendar`. This is what stops the DS losing glyphs to component
+    // names, permanently — no Figma rename required, and no rename required the
+    // NEXT time an icon and a component reasonably want the same word.
+    if (isIcon) {
+      if (slug in registry.icons) {
+        // Two icons, one name: the same glyph published from two nodes (the icon
+        // masters live on two pages during the 2026-07 refactor). First wins; the
+        // slug still resolves, so nothing is lost. Reported as a duplicate.
+        collectSlugCollision(
+          slug,
+          metaSide(meta, lookup, "single"),
+          entrySide(registry.icons[slug]),
+        );
+      } else {
+        registry.icons[slug] = entry;
+      }
+    }
+
+    // Then the flat `components` map, whose behaviour is deliberately UNCHANGED:
+    // the component still wins, so no existing consumer key moves and this whole
+    // change stays additive. The difference is that the icon is no longer LOST
+    // when it loses here — it is already safe in `icons` above.
+    if (slug in registry.components) {
+      var holder = registry.components[slug];
+      var holderIsIcon = holder && holder.category === "Icons";
+      // An icon that lost the flat slug to a real component is NOT a loss any
+      // more; it is namespaced. Say that, rather than crying wolf: this fires on
+      // every sync forever (calendar, search, and whatever collides next), and an
+      // alarm that shouts "LOST" about something that is safe is how a real alarm
+      // becomes wallpaper.
+      if (isIcon && !holderIsIcon) {
+        collectSlugCollision(
+          slug,
+          metaSide(meta, lookup, "single"),
+          entrySide(holder),
+          "namespaced",
+        );
+        return;
+      }
+      // Icon-vs-icon was already reported above as a duplicate — don't double-warn.
+      if (!(isIcon && holderIsIcon)) {
+        collectSlugCollision(
+          slug,
+          metaSide(meta, lookup, "single"),
+          entrySide(holder),
+        );
+      }
+      return;
+    }
     registry.components[slug] = entry;
   });
 

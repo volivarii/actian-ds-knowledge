@@ -21,13 +21,23 @@ async function run(opts) {
   const curatedSlugs = opts.curatedSlugs || new Set();
   const rest = opts.rest;
   const fileKey = registry.fileKey;
-  const comps = registry.components || {};
+  // Icons live in their OWN namespace (registry.icons), where no component can
+  // take their slug. Reading `components` and filtering by category — which is
+  // what this used to do — silently loses every icon whose name a component
+  // already owns (`calendar` to Calendar, `search` to Search), because the icon
+  // never makes it into that map at all. Fall back to the old filter for a
+  // registry synced before the icons map existed.
+  const comps =
+    registry.icons ||
+    Object.fromEntries(
+      Object.entries(registry.components || {}).filter(
+        ([, e]) => e.category === "Icons",
+      ),
+    );
 
-  // Target = Icons-category, primary group ≠ Connector.
+  // Target = primary group ≠ Connector.
   const targets = Object.keys(comps).filter(
-    (slug) =>
-      comps[slug].category === "Icons" &&
-      primaryGroup(iconGroups, slug) !== "Connector",
+    (slug) => primaryGroup(iconGroups, slug) !== "Connector",
   );
   const skipped = Object.keys(comps).length - targets.length;
 
