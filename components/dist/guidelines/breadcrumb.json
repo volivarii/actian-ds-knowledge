@@ -1,0 +1,168 @@
+{
+  "_schema_version": 1,
+  "_meta": {
+    "auto_generated": true,
+    "source": "components/src/breadcrumb/",
+    "do_not_edit": "Edit the per-domain source files; CI regenerates this file."
+  },
+  "slug": "breadcrumb",
+  "component": "Breadcrumbs",
+  "meta": {
+    "category": "navigation",
+    "a11y_refs": [
+      {
+        "ref": "navigation"
+      }
+    ]
+  },
+  "domains": {
+    "content": {
+      "status": "approved",
+      "owner": "content-team",
+      "markdown": "# Breadcrumbs\n\nBreadcrumbs show the user's location within the product hierarchy and allow navigation back up the tree.\n\n***\n\n## Usage\n\nFollow the pattern: Main component / Sub component / Specific item or page name.\n\n## Style\n\n* Use the exact page or item name at each level.\n\n* Do not truncate unless space is severely limited.\n\n* The current page is not a link — it is plain text at the end of the breadcrumb trail.",
+      "sections": [
+        {
+          "heading": "",
+          "content": [
+            {
+              "prose": "Breadcrumbs show the user's location within the product hierarchy and allow navigation back up the tree."
+            }
+          ]
+        },
+        {
+          "heading": "Usage",
+          "content": [
+            {
+              "prose": "Follow the pattern: Main component / Sub component / Specific item or page name."
+            }
+          ]
+        },
+        {
+          "heading": "Style",
+          "content": [
+            {
+              "bullets": [
+                "Use the exact page or item name at each level.",
+                "Do not truncate unless space is severely limited.",
+                "The current page is not a link — it is plain text at the end of the breadcrumb trail."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "status": "draft",
+      "markdown": "## When to use\n\n* Use breadcrumbs to show where the user is in the product hierarchy and let them jump back up in one click (for example **Data products / Sales analytics / orders-raw**).\n\n* Use them in the [page header](page-header) of detail pages below a section root.\n\n* The deeper the nesting, the more the path matters (a dataset inside a data product, a field inside a dataset).\n\n## When not to use\n\n* Don't use breadcrumbs as the primary way to move between sections of the app: that is the [side nav](side-nav). Breadcrumbs only go up the current branch.\n\n* Don't treat them as a replacement for the browser back button: back retraces history, breadcrumbs climb the hierarchy. Both must work.\n\n* Don't show breadcrumbs on top-level list pages (connections, datasets): there is nothing above them, so a single-item trail is noise.\n\n* Don't use them to switch between peer views of the same entity: use [tabs](tabs).\n\n## Variant selection\n\nBreadcrumbs have a single Default variant; the choices are configuration.\n\n* **Trail depth:** show the full path from the section root to the current page. Two to four levels is typical; if trails regularly exceed that, the information architecture is too deep.\n\n* **Current page:** always the last item, rendered as plain text, never a link.\n\n* **Truncation:** keep full names; truncate an item only when space is severely limited, and truncate the middle levels before the current page.\n\n## Do / Don't\n\n| Do | Don't |\n| --- | --- |\n| Use the exact page or entity name at every level | Paraphrase or shorten names (**Analytics** for **Sales analytics**) |\n| Render the current page as plain text at the end | Make the current page a clickable link |\n| Match the trail to the hierarchy shown in the side nav | Build the trail from the user's browsing history |\n| Keep every parent level clickable | Include decorative, non-navigable levels |\n\n> Naming pattern and truncation wording (Main component / Sub component / Specific item) live in the Content guidelines for breadcrumbs.",
+      "sections": [
+        {
+          "heading": "When to use",
+          "content": [
+            {
+              "bullets": [
+                "Use breadcrumbs to show where the user is in the product hierarchy and let them jump back up in one click (for example **Data products / Sales analytics / orders-raw**).",
+                "Use them in the [page header](page-header) of detail pages below a section root.",
+                "The deeper the nesting, the more the path matters (a dataset inside a data product, a field inside a dataset)."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "When not to use",
+          "content": [
+            {
+              "bullets": [
+                "Don't use breadcrumbs as the primary way to move between sections of the app: that is the [side nav](side-nav). Breadcrumbs only go up the current branch.",
+                "Don't treat them as a replacement for the browser back button: back retraces history, breadcrumbs climb the hierarchy. Both must work.",
+                "Don't show breadcrumbs on top-level list pages (connections, datasets): there is nothing above them, so a single-item trail is noise.",
+                "Don't use them to switch between peer views of the same entity: use [tabs](tabs)."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Variant selection",
+          "content": [
+            {
+              "prose": "Breadcrumbs have a single Default variant; the choices are configuration."
+            },
+            {
+              "bullets": [
+                "**Trail depth:** show the full path from the section root to the current page. Two to four levels is typical; if trails regularly exceed that, the information architecture is too deep.",
+                "**Current page:** always the last item, rendered as plain text, never a link.",
+                "**Truncation:** keep full names; truncate an item only when space is severely limited, and truncate the middle levels before the current page."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Do / Don't",
+          "content": [
+            {
+              "do": "Use the exact page or entity name at every level",
+              "dont": "Paraphrase or shorten names (**Analytics** for **Sales analytics**)"
+            },
+            {
+              "do": "Render the current page as plain text at the end",
+              "dont": "Make the current page a clickable link"
+            },
+            {
+              "do": "Match the trail to the hierarchy shown in the side nav",
+              "dont": "Build the trail from the user's browsing history"
+            },
+            {
+              "do": "Keep every parent level clickable",
+              "dont": "Include decorative, non-navigable levels"
+            },
+            {
+              "note": "Naming pattern and truncation wording (Main component / Sub component / Specific item) live in the Content guidelines for breadcrumbs."
+            }
+          ]
+        }
+      ]
+    },
+    "design": {
+      "status": "inherited"
+    },
+    "behavior": {
+      "status": "inherited"
+    },
+    "tokens": {
+      "status": "approved",
+      "bindings": [
+        {
+          "token": "color-text-primary",
+          "context": "Breadcrumb link text"
+        },
+        {
+          "token": "color-text-default",
+          "context": "Current (last) crumb text and separator"
+        },
+        {
+          "token": "font-family-text",
+          "context": "Font family"
+        },
+        {
+          "token": "font-size-md",
+          "context": "Crumb font size"
+        },
+        {
+          "token": "font-weight-regular",
+          "context": "Link crumb font weight (body-standard)"
+        },
+        {
+          "token": "font-weight-medium",
+          "context": "Current crumb font weight (label-standard)"
+        },
+        {
+          "token": "font-lineheight-md",
+          "context": "Crumb line height"
+        },
+        {
+          "token": "font-letterspacing-wide-2",
+          "context": "Crumb letter spacing"
+        }
+      ]
+    }
+  }
+}

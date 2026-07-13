@@ -167,12 +167,12 @@
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'badge' component (content, usage, design, behavior, tokens — each optional)."
     },
-    "components.guidelineDoc.breadcrumbs": {
-      "path": "components/dist/guidelines/breadcrumbs.json",
+    "components.guidelineDoc.breadcrumb": {
+      "path": "components/dist/guidelines/breadcrumb.json",
       "type": "json",
       "origin": "ci",
       "generator": "scripts/components/derive-guidelines.js",
-      "description": "Merged multi-domain guideline object for the 'breadcrumbs' component (content, usage, design, behavior, tokens — each optional)."
+      "description": "Merged multi-domain guideline object for the 'breadcrumb' component (content, usage, design, behavior, tokens — each optional)."
     },
     "components.guidelineDoc.bundle": {
       "path": "components/dist/guidelines/guidelines.bundle.json",
