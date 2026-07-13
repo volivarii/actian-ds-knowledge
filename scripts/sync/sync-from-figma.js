@@ -121,6 +121,24 @@ function excludeDeniedPages(registry, deniedPages) {
   return out;
 }
 
+// A slug collision on a denied scratch page is NOT a lost component: those pages
+// are dropped wholesale by excludeDeniedPages, so the node was never going to
+// publish, and alarming about it would be a FALSE ALARM — worse than no alarm,
+// because it trains the reader to skim past the section that exists to catch a
+// real loss. transformRegistry cannot know DENIED_PAGES (a sync-level concept),
+// so it reports every collision honestly and the suppression happens here,
+// against the page the warning carries. Pure + exported so it is testable
+// without a Figma round-trip.
+function suppressDeniedPageCollisions(warnings, deniedPages) {
+  var denied = deniedPages || [];
+  return (warnings || []).filter(function (w) {
+    if (!w || w.code !== "SLUG_COLLISION_DROPPED") return true;
+    return !denied.some(function (p) {
+      return p === w.droppedPage || p === w.droppedPageRaw;
+    });
+  });
+}
+
 var CATEGORY_MASS_LOSS_FLOOR = 10;
 
 // Count registry components per non-empty category.
@@ -270,6 +288,11 @@ async function syncRegistry(opts, kitId) {
       categoryWarnings = categoryWarnings.concat(ws || []);
     },
   });
+
+  categoryWarnings = suppressDeniedPageCollisions(
+    categoryWarnings,
+    DENIED_PAGES,
+  );
 
   // Slug collisions drop a PUBLISHED component on the floor. Say it in the run
   // log too, not only in the PR body — a sync that is dispatched by hand (or
@@ -522,7 +545,11 @@ function buildChangelog(date, category, results, errors) {
             escapeBackticks(w.droppedName) +
             "** (`" +
             escapeBackticks(w.droppedNodeId) +
-            "`), kept **" +
+            "`" +
+            (w.droppedPageRaw
+              ? " on page `" + escapeBackticks(w.droppedPageRaw) + "`"
+              : "") +
+            "), kept **" +
             escapeBackticks(w.keptName || "?") +
             "** (`" +
             escapeBackticks(w.keptNodeId || "?") +
@@ -1229,6 +1256,7 @@ module.exports = {
   run: run,
   parseArgs: parseArgs,
   excludeDeniedPages: excludeDeniedPages,
+  suppressDeniedPageCollisions: suppressDeniedPageCollisions,
   DENIED_PAGES: DENIED_PAGES,
   loadPageOverrides: loadPageOverrides,
   categoryCounts: categoryCounts,
