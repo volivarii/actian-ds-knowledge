@@ -18,6 +18,29 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Fixed
+- **The sync no longer loses a published component in silence (slug collisions
+  are named).** `registry.components` is keyed by **slug**, and when a standalone
+  and a component set slugify to the same string the set wins and the standalone
+  is dropped. That policy is fine; doing it *silently* was the bug. The loser did
+  not lose a name, it **disappeared from the design system** — no error, no diff
+  line, nothing in the sync PR, nothing in the run log.
+  Nothing downstream could catch it either: `detectSlugCollisions` reads the
+  already-slug-keyed `components` map, so by the time it runs the loser is gone.
+  It can only ever see **cross-kit** collisions. The transform is the only place
+  the loss is knowable, so it now reports it.
+  This is what ate the **`calendar` icon**: the Calendar *component* (a set,
+  category Action) already owned the slug, and the 2026-07 icon rework renamed the
+  glyph from `calendar-2` straight onto that collision — which is almost certainly
+  why the old name existed. The plugin's `renderIcon("calendar-2")` (the
+  `input-date` calendar affordance) consequently had nothing to resolve, and it
+  read as "Figma deleted the icon" when Figma had done no such thing.
+  A collision now prints in the run log **and** gets its own 🚨 section in the sync
+  PR body, naming both sides with their node ids so the two nodes can be opened and
+  one renamed. Warn-loud rather than hard-fail: a hard fail would block every sync
+  until Figma is edited, which is the failure mode that already cost three days of
+  dead syncs. ([#412])
+
 ### Added
 - **Usage guidelines: wave 2 completes the domain (38 remaining components).**
   Every component now carries authored Usage guidance: the second wave covers
@@ -468,6 +491,7 @@ history and pull-request record.
 [#378]: https://github.com/volivarii/actian-ds-knowledge/pull/378
 [#409]: https://github.com/volivarii/actian-ds-knowledge/pull/409
 [#410]: https://github.com/volivarii/actian-ds-knowledge/pull/410
+[#412]: https://github.com/volivarii/actian-ds-knowledge/pull/412
 [#403]: https://github.com/volivarii/actian-ds-knowledge/pull/403
 [#404]: https://github.com/volivarii/actian-ds-knowledge/pull/404
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393

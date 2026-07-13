@@ -337,6 +337,53 @@ function transformRegistry(input) {
     });
   }
 
+  // A standalone lost the slug to a component set. It is being dropped from the
+  // registry entirely — say so by name, with both sides and their node ids, so a
+  // human can open the two nodes in Figma and rename one.
+  // Normalize the two shapes a collision side can arrive in: a raw Figma REST
+  // `meta` (not yet built) or an already-built registry `entry`.
+  function metaSide(meta, lookup) {
+    return {
+      name: meta.name,
+      nodeId: meta.node_id,
+      page: (lookup && lookup.cleanPage) || null,
+      pageRaw:
+        (meta.containing_frame && meta.containing_frame.pageName) || null,
+    };
+  }
+  function entrySide(entry) {
+    return {
+      name: (entry && entry.name) || null,
+      nodeId: (entry && entry.nodeId) || null,
+      page: null,
+      pageRaw: (entry && entry.page) || null,
+    };
+  }
+
+  // `dropped` is the side that DISAPPEARS from the registry, `kept` is the side
+  // that survives — which way round depends on the caller (a standalone loses to
+  // an existing entry; an existing entry loses to an overwriting set).
+  //
+  // droppedPage/droppedPageRaw do two jobs: they tell the reader where to go in
+  // Figma, and they let sync-from-figma suppress collisions on pages it drops
+  // wholesale anyway (DENIED_PAGES) — those are not lost components, and alarming
+  // about them would be a false alarm.
+  function collectSlugCollision(slug, dropped, kept) {
+    var dedupeKey = "collision|" + slug + "|" + dropped.nodeId;
+    if (seenComponentWarnings[dedupeKey]) return;
+    seenComponentWarnings[dedupeKey] = true;
+    componentWarnings.push({
+      code: "SLUG_COLLISION_DROPPED",
+      slug: slug,
+      droppedName: dropped.name,
+      droppedNodeId: dropped.nodeId,
+      droppedPage: dropped.page,
+      droppedPageRaw: dropped.pageRaw,
+      keptName: kept.name,
+      keptNodeId: kept.nodeId,
+    });
+  }
+
   // Component sets
   componentSets.forEach(function (meta) {
     if (isInternalName(meta.name)) return;
@@ -346,6 +393,21 @@ function transformRegistry(input) {
     collectComponentWarning(lookup, slug);
     if (excludeSet[lookup.cleanPage]) return; // staging / not-ready page
     if (isOnCategoryHeaderPage(lookup)) return;
+    // Set-vs-set collision. This loop has no guard — the assignment below simply
+    // overwrites — so two sets that slugify alike lose one of themselves just as
+    // silently as the standalone case, and it is the SAME bug class. Behaviour is
+    // deliberately left as-is (last write wins): flipping the winner would change
+    // registry contents, and a tripwire must not quietly rewrite the substrate it
+    // is watching. So: same loss, same alarm, zero behaviour change. The node
+    // being overwritten is the one that disappears, so it is the "dropped" one.
+    if (slug in registry.components) {
+      // The EXISTING entry is the one about to vanish under the assignment.
+      collectSlugCollision(
+        slug,
+        entrySide(registry.components[slug]),
+        metaSide(meta, lookup),
+      );
+    }
     var entry = buildEntry(
       meta,
       node,
@@ -362,12 +424,38 @@ function transformRegistry(input) {
     if (isInternalName(meta.name)) return;
     var node = standaloneNodes[meta.node_id];
     var slug = slugify(meta.name);
-    // Don't clobber a set entry on a name collision (sets win).
-    if (slug in registry.components) return;
     var lookup = lookupCategoryEntry(meta);
     collectComponentWarning(lookup, slug);
+    // POLICY DROPS FIRST. A component the publish gate or a staging page would
+    // have removed anyway is NOT a collision casualty, and reporting it as one
+    // would be a false alarm — which is worse than no alarm at all. Only a
+    // standalone that would OTHERWISE have been published can be "lost" to a
+    // collision, so these two gates must run before the collision check below.
     if (excludeSet[lookup.cleanPage]) return; // staging / not-ready page
     if (isOnCategoryHeaderPage(lookup)) return;
+    // Don't clobber a set entry on a name collision (sets win). The policy is
+    // fine; doing it SILENTLY was the bug. registry.components is keyed by slug,
+    // so the loser here does not just lose a name — it disappears from the design
+    // system entirely, with no error, no diff line, and nothing in the sync PR.
+    //
+    // That is how the `calendar` ICON vanished (2026-07-13): the Calendar
+    // *component* (a set, category Action) already owned the slug, so the icon
+    // standalone hit this return and was never published. It is almost certainly
+    // why the glyph was historically named `calendar-2` — the old name dodged
+    // this collision, and the 2026-07 rework renamed it onto it.
+    //
+    // Note the cross-registry collision detector (scripts/graph/derive-graph.js
+    // detectSlugCollisions) structurally CANNOT catch this: it reads the
+    // already-slug-keyed `components` map, by which point the loser is gone. So
+    // this is the only place the loss can be named. Warn, don't swallow.
+    if (slug in registry.components) {
+      collectSlugCollision(
+        slug,
+        metaSide(meta, lookup),
+        entrySide(registry.components[slug]),
+      );
+      return;
+    }
     var entry = buildEntry(
       meta,
       node,
