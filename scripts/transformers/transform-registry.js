@@ -501,6 +501,35 @@ function transformRegistry(input) {
     registry.components[slug] = entry;
   });
 
+  // A component that resolved to NO category falls out of everything downstream
+  // that keys off category — categories.json, the docs site's page tree, the
+  // graph's in_category edges — and it did so in TOTAL SILENCE. assertNoCategoryMassLoss
+  // only fires when a whole category is GUTTED (>= 10 members → 0), so exactly one
+  // component slipping out is invisible to it.
+  //
+  // That is what happened to `toggle` (2026-07-13). Its Figma page was renamed
+  // `Toggle control` → `Toggle` on the canvas, but the library was not republished,
+  // so the LIVE document tree (which drives category inference) said `Toggle` while
+  // the PUBLISHED component metadata (which carries each component's page name) still
+  // said `Toggle control`. The two never matched, toggle got no category, and the docs
+  // site stopped generating a page for it — with nothing anywhere saying so.
+  //
+  // Guarded on categoryMap: FM Kit and Meta Kit have no page-category structure at all
+  // (they never pass documentChildren), so every one of their components is legitimately
+  // category-less. Warning there would emit 315 lines of noise and bury the one that matters.
+  if (categoryMap) {
+    Object.keys(registry.components).forEach(function (slug) {
+      var entry = registry.components[slug];
+      if (!entry || entry.category != null) return;
+      componentWarnings.push({
+        code: "COMPONENT_WITHOUT_CATEGORY",
+        component: slug,
+        name: entry.name,
+        page: entry.page,
+      });
+    });
+  }
+
   if (componentWarnings.length > 0 && typeof input.onWarnings === "function") {
     input.onWarnings(componentWarnings);
   }

@@ -323,6 +323,24 @@ async function syncRegistry(opts, kitId) {
       );
     });
 
+  categoryWarnings
+    .filter(function (w) {
+      return w.code === "COMPONENT_WITHOUT_CATEGORY";
+    })
+    .forEach(function (w) {
+      console.warn(
+        "[sync] NO CATEGORY: '" +
+          w.component +
+          "' (" +
+          w.name +
+          ") on published page '" +
+          w.page +
+          "' matches no category. It falls out of categories.json, the docs page tree " +
+          "and the graph. Usual cause: the page was renamed on the canvas without " +
+          "republishing the library.",
+      );
+    });
+
   // Drop file-local scratch pages (e.g. "Local components") before classify +
   // write, so they leak into neither the registry nor the derived
   // categories.json. dsKit-only: the page-naming convention (and these scratch
@@ -593,8 +611,53 @@ function buildChangelog(date, category, results, errors) {
       lines.push("");
     }
     var drift = (r.categoryWarnings || []).filter(function (w) {
-      return w.code !== "SLUG_COLLISION_DROPPED";
+      return (
+        w.code !== "SLUG_COLLISION_DROPPED" &&
+        w.code !== "COMPONENT_WITHOUT_CATEGORY"
+      );
     });
+
+    // A component with no category falls out of categories.json, the docs page
+    // tree, and the graph's in_category edges — silently. Its own section, because
+    // "drift" undersells it: the component is effectively unpublished downstream.
+    var uncategorized = (r.categoryWarnings || []).filter(function (w) {
+      return w.code === "COMPONENT_WITHOUT_CATEGORY";
+    });
+    if (uncategorized.length > 0) {
+      lines.push(
+        "### 🚨 " +
+          uncategorized.length +
+          " component(s) resolved to NO category",
+      );
+      lines.push("");
+      lines.push(
+        "These are in the registry but belong to no category, so they fall out of " +
+          "`categories.json`, the docs site's page tree, and the graph's `in_category` " +
+          "edges. The docs site will not generate a page for them at all.",
+      );
+      lines.push("");
+      lines.push(
+        "**Most likely cause:** the component's Figma page was renamed or moved on the " +
+          "canvas, but the library was **not republished**. Category inference reads the " +
+          "LIVE document tree, while each component's page name comes from PUBLISHED " +
+          "metadata — rename without republish and the two stop matching, silently. " +
+          "Republish the library, or add the page to `components/src/category-page-overrides.json`.",
+      );
+      lines.push("");
+      uncategorized.forEach(function (w) {
+        lines.push(
+          "- ❌ `" +
+            escapeBackticks(w.component) +
+            "` (**" +
+            escapeBackticks(w.name || "?") +
+            "**) — published page `" +
+            escapeBackticks(w.page || "?") +
+            "` matches no category",
+        );
+      });
+      lines.push("");
+    }
+
     if (drift.length > 0) {
       lines.push("### Component category drift (warn-only)");
       drift.forEach(function (w) {
