@@ -1,6 +1,6 @@
 {
   "name": "actian-ds-knowledge",
-  "version": "0.34.95",
+  "version": "0.34.96",
   "private": true,
   "description": "Actian Design System knowledge layer — tokens, components, guidelines, foundations, content. Consumed by the Actian DS Claude plugin.",
   "scripts": {
