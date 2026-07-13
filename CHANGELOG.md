@@ -19,6 +19,25 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Fixed
+- **Slug collisions are split by severity, because most of them are not losses.**
+  The tripwire's first real run found **ten** collisions — and only **two** were
+  losses. Rendering them alike is exactly how a real alarm becomes wallpaper, so
+  they now report as two separate sections:
+  - 🚨 **LOST from the design system** — two *different* components want one slug,
+    so the loser disappears. Real, and there are two: **`calendar`** and
+    **`search`**. A component *set* (`Calendar`, `Search`) owns each slug, so the
+    **icon** of the same name is dropped and the DS has **no calendar or search
+    glyph at all**. That is why the plugin's `renderIcon("calendar-2")` had
+    nothing to resolve.
+  - ⚠️ **Duplicate master** — the *same* component published from two nodes
+    (`add`, `directory`, `export`, `glossary`, `logout`, `process`, `snowflake`).
+    The slug still resolves to the survivor, so **nothing is missing**. Expected
+    while the icon masters live on two pages during the 2026-07 refactor; Figma
+    hygiene, not data loss, and it must not shout like one.
+
+  Discriminator: same name **and** same `importMethod` means one component
+  published twice; anything else means two different components want one slug and
+  the loser is genuinely gone. ([#413])
 - **The sync no longer loses a published component in silence (slug collisions
   are named).** `registry.components` is keyed by **slug**, and when a standalone
   and a component set slugify to the same string the set wins and the standalone
@@ -492,6 +511,7 @@ history and pull-request record.
 [#409]: https://github.com/volivarii/actian-ds-knowledge/pull/409
 [#410]: https://github.com/volivarii/actian-ds-knowledge/pull/410
 [#412]: https://github.com/volivarii/actian-ds-knowledge/pull/412
+[#413]: https://github.com/volivarii/actian-ds-knowledge/pull/413
 [#403]: https://github.com/volivarii/actian-ds-knowledge/pull/403
 [#404]: https://github.com/volivarii/actian-ds-knowledge/pull/404
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393

@@ -342,10 +342,11 @@ function transformRegistry(input) {
   // human can open the two nodes in Figma and rename one.
   // Normalize the two shapes a collision side can arrive in: a raw Figma REST
   // `meta` (not yet built) or an already-built registry `entry`.
-  function metaSide(meta, lookup) {
+  function metaSide(meta, lookup, importMethod) {
     return {
       name: meta.name,
       nodeId: meta.node_id,
+      importMethod: importMethod,
       page: (lookup && lookup.cleanPage) || null,
       pageRaw:
         (meta.containing_frame && meta.containing_frame.pageName) || null,
@@ -355,9 +356,39 @@ function transformRegistry(input) {
     return {
       name: (entry && entry.name) || null,
       nodeId: (entry && entry.nodeId) || null,
+      importMethod: (entry && entry.importMethod) || null,
       page: null,
       pageRaw: (entry && entry.page) || null,
     };
+  }
+
+  // Not every collision is a loss, and treating them alike is how a real alarm
+  // becomes wallpaper. The first real run (2026-07-13) found TEN, of which only
+  // TWO were losses:
+  //
+  //   LOSS      the two sides are different things, and one of them is now gone
+  //             from the design system. `calendar` and `search`: a component SET
+  //             ("Calendar", "Search") owns the slug, so the ICON of the same
+  //             name is dropped and the DS has no calendar/search glyph at all.
+  //
+  //   DUPLICATE the same component published twice under one slug — during the
+  //             2026-07 icon refactor the masters live on TWO pages, so `add`,
+  //             `export`, `snowflake`… collide with themselves. The slug still
+  //             resolves to the surviving node, so NOTHING is lost. It is Figma
+  //             hygiene, not a data loss, and must not shout like one.
+  //
+  // Discriminator: same name AND same importMethod => the two nodes are the same
+  // component published twice. Anything else means two DIFFERENT components want
+  // one slug, and the loser is genuinely gone.
+  function collisionSeverity(dropped, kept) {
+    var sameName =
+      dropped.name != null &&
+      kept.name != null &&
+      String(dropped.name) === String(kept.name);
+    var sameKind =
+      dropped.importMethod != null &&
+      dropped.importMethod === kept.importMethod;
+    return sameName && sameKind ? "duplicate" : "loss";
   }
 
   // `dropped` is the side that DISAPPEARS from the registry, `kept` is the side
@@ -374,13 +405,16 @@ function transformRegistry(input) {
     seenComponentWarnings[dedupeKey] = true;
     componentWarnings.push({
       code: "SLUG_COLLISION_DROPPED",
+      severity: collisionSeverity(dropped, kept),
       slug: slug,
       droppedName: dropped.name,
       droppedNodeId: dropped.nodeId,
+      droppedImportMethod: dropped.importMethod,
       droppedPage: dropped.page,
       droppedPageRaw: dropped.pageRaw,
       keptName: kept.name,
       keptNodeId: kept.nodeId,
+      keptImportMethod: kept.importMethod,
     });
   }
 
@@ -405,7 +439,7 @@ function transformRegistry(input) {
       collectSlugCollision(
         slug,
         entrySide(registry.components[slug]),
-        metaSide(meta, lookup),
+        metaSide(meta, lookup, "set"),
       );
     }
     var entry = buildEntry(
@@ -451,7 +485,7 @@ function transformRegistry(input) {
     if (slug in registry.components) {
       collectSlugCollision(
         slug,
-        metaSide(meta, lookup),
+        metaSide(meta, lookup, "single"),
         entrySide(registry.components[slug]),
       );
       return;

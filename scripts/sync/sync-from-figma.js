@@ -304,7 +304,9 @@ async function syncRegistry(opts, kitId) {
     })
     .forEach(function (w) {
       console.warn(
-        "[sync] SLUG COLLISION on '" +
+        "[sync] SLUG COLLISION (" +
+          (w.severity === "duplicate" ? "duplicate master" : "LOST COMPONENT") +
+          ") on '" +
           w.slug +
           "': DROPPED '" +
           w.droppedName +
@@ -314,7 +316,10 @@ async function syncRegistry(opts, kitId) {
           w.keptName +
           "' (" +
           w.keptNodeId +
-          "). The dropped component is absent from the registry entirely.",
+          "). " +
+          (w.severity === "duplicate"
+            ? "Same component published twice; the slug still resolves, nothing is missing."
+            : "A DIFFERENT component owns the slug, so this one is absent from the design system."),
       );
     });
 
@@ -520,42 +525,71 @@ function buildChangelog(date, category, results, errors) {
     // silently does not. Nothing downstream can see the loss (the cross-registry
     // detector reads the already-deduped map), so this section is the only place
     // it is ever named.
-    var collisions = (r.categoryWarnings || []).filter(function (w) {
+    // Two severities, two sections. Rendering them alike is how a real alarm
+    // becomes wallpaper: the first real run found ten collisions, of which only
+    // TWO were losses. Burying those two under eight benign duplicates would
+    // train the reader to scroll past the section that exists to catch the two.
+    var allCollisions = (r.categoryWarnings || []).filter(function (w) {
       return w.code === "SLUG_COLLISION_DROPPED";
     });
-    if (collisions.length > 0) {
+    function renderCollision(w) {
+      lines.push(
+        "- `" +
+          escapeBackticks(w.slug) +
+          "` — dropped **" +
+          escapeBackticks(w.droppedName) +
+          "** (`" +
+          escapeBackticks(w.droppedNodeId) +
+          "`" +
+          (w.droppedPageRaw
+            ? " on page `" + escapeBackticks(w.droppedPageRaw) + "`"
+            : "") +
+          "), kept **" +
+          escapeBackticks(w.keptName || "?") +
+          "** (`" +
+          escapeBackticks(w.keptNodeId || "?") +
+          "`)",
+      );
+    }
+
+    var losses = allCollisions.filter(function (w) {
+      return w.severity !== "duplicate";
+    });
+    if (losses.length > 0) {
       lines.push(
         "### 🚨 Slug collision — " +
-          collisions.length +
-          " published component(s) DROPPED from the registry",
+          losses.length +
+          " component(s) LOST from the design system",
       );
       lines.push("");
       lines.push(
-        "These components exist and are published in Figma, but another component already " +
-          "owns their slug. `registry.components` is keyed by slug, so the loser is not " +
-          "renamed — it **disappears from the design system**. Rename one of the two nodes " +
-          "in Figma to publish both.",
+        "Two **different** components want one slug, and `registry.components` is keyed by " +
+          "slug — so the loser is not renamed, it **disappears**. It is published in Figma " +
+          "and absent from the design system. Rename one of the two nodes to publish both.",
       );
       lines.push("");
-      collisions.forEach(function (w) {
-        lines.push(
-          "- ❌ `" +
-            escapeBackticks(w.slug) +
-            "` — dropped **" +
-            escapeBackticks(w.droppedName) +
-            "** (`" +
-            escapeBackticks(w.droppedNodeId) +
-            "`" +
-            (w.droppedPageRaw
-              ? " on page `" + escapeBackticks(w.droppedPageRaw) + "`"
-              : "") +
-            "), kept **" +
-            escapeBackticks(w.keptName || "?") +
-            "** (`" +
-            escapeBackticks(w.keptNodeId || "?") +
-            "`)",
-        );
-      });
+      losses.forEach(renderCollision);
+      lines.push("");
+    }
+
+    var dupes = allCollisions.filter(function (w) {
+      return w.severity === "duplicate";
+    });
+    if (dupes.length > 0) {
+      lines.push(
+        "### ⚠️ Duplicate master — " +
+          dupes.length +
+          " slug(s) published from two nodes (nothing lost)",
+      );
+      lines.push("");
+      lines.push(
+        "The same component is published twice under one slug, so the slug still resolves " +
+          "to the surviving node and **nothing is missing from the design system**. Figma " +
+          "hygiene, not data loss: expected while the icon masters live on two pages during " +
+          "the refactor. Delete the stale duplicate to clear these.",
+      );
+      lines.push("");
+      dupes.forEach(renderCollision);
       lines.push("");
     }
     var drift = (r.categoryWarnings || []).filter(function (w) {
