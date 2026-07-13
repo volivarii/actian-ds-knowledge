@@ -66,12 +66,12 @@ test("collectAppContext: ux_pattern node carries title<-label and description", 
   assert.equal(p.description, AC.patterns["marketplace-browsing"].description);
 });
 
-test("derive(): emitted graph.json includes the app-context nodes (843 total)", function () {
+test("derive(): emitted graph.json includes the app-context nodes (814 total)", function () {
   D.derive();
   var g = JSON.parse(
     fs.readFileSync(path.join(ROOT, "graph/dist/graph.json"), "utf8"),
   );
-  assert.equal(g.nodes.length, 843);
+  assert.equal(g.nodes.length, 814);
   assert.ok(
     g.nodes.some(function (n) {
       return n.id === "app:studio";
@@ -230,7 +230,7 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
     fs.readFileSync(path.join(ROOT, "graph/dist/graph.json"), "utf8"),
   );
   assert.equal(ld["@graph"].length, g.nodes.length + g.edges.length);
-  assert.equal(ld["@graph"].length, 843 + 1104);
+  assert.equal(ld["@graph"].length, 814 + 1060);
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {

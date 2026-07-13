@@ -11,7 +11,7 @@ function readJSON(rel) {
 }
 
 // Pure detection over the registries (no shared-dist write).
-test("detectSlugCollisions: 22 cross-registry collisions with distinct keys", function () {
+test("detectSlugCollisions: 17 cross-registry collisions with distinct keys", function () {
   var kits = ["dskit", "fmkit", "metakit"].map(function (k) {
     return {
       kit: k,
@@ -19,7 +19,7 @@ test("detectSlugCollisions: 22 cross-registry collisions with distinct keys", fu
     };
   });
   var out = D.detectSlugCollisions(kits);
-  assert.equal(out.slug_collisions.length, 22);
+  assert.equal(out.slug_collisions.length, 17);
   out.slug_collisions.forEach(function (c) {
     assert.ok(c.candidates.length >= 2);
     assert.ok(
@@ -45,12 +45,12 @@ test("detectSlugCollisions: 22 cross-registry collisions with distinct keys", fu
   );
 });
 
-// Committed sidecar: 22 entries + auto_generated _meta, and it validates
+// Committed sidecar: 17 entries + auto_generated _meta, and it validates
 // against its schema.
-test("graph/dist/collisions.json: 22 entries + auto_generated _meta, schema-valid", function () {
+test("graph/dist/collisions.json: 17 entries + auto_generated _meta, schema-valid", function () {
   var col = readJSON("graph/dist/collisions.json");
   assert.equal(col._meta.auto_generated, true);
-  assert.equal(col.slug_collisions.length, 22);
+  assert.equal(col.slug_collisions.length, 17);
   var schema = readJSON("schemas/collisions.json");
   var validate = new (Ajv.default || Ajv)({ strict: false }).compile(schema);
   assert.ok(validate(col), JSON.stringify(validate.errors));

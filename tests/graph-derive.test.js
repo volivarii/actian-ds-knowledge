@@ -372,12 +372,9 @@ test("graph.json: component-scoped a11y_ref edges are present after derive", fun
   );
   assert.ok(
     compA11y.some(function (e) {
-      return (
-        e.source === "component:checkbox-with-label" &&
-        e.target === "a11y:forms"
-      );
+      return e.source === "component:checkbox" && e.target === "a11y:forms";
     }),
-    "expected component:checkbox-with-label -> a11y:forms",
+    "expected component:checkbox -> a11y:forms",
   );
 });
 

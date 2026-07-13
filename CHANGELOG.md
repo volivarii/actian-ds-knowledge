@@ -223,7 +223,24 @@ Each entry links its pull request. Dates are the merge date (UTC).
   consumers that ignore it behave as before. Real data lands on the next nightly sync. ([#354])
 
 ### Changed
-- **Breaking Figma sync (2026-07-12).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#408](https://github.com/volivarii/actian-ds-knowledge/pull/408))
+- **Breaking: two component slugs renamed to match Figma (`checkbox-with-label`
+  → `checkbox`, `breadcrumbs` → `breadcrumb`).** The 2026-07-12 Figma sync
+  ([#408]) renamed both published components. A registry slug is a cross-repo
+  contract, not a label: consumers resolve guidelines **by registry key**, so a
+  rename orphans the authored content and breaks every hardcoded reference. The
+  sync and the rename therefore land **together**, in one PR, so `main` never
+  carries a registry that disagrees with the guidelines it points at. On the
+  knowledge side: `components/src/breadcrumbs/` becomes
+  `components/src/breadcrumb/`; the `checkbox-with-label` → `checkbox` entry in
+  `registryAliases` is **deleted**, because this rename *is* the naming
+  convergence that alias existed to paper over; and eight curated
+  `icons-svg.json` overrides are dropped now that the icon rework deleted the
+  components behind them. The rework's dropped glyphs shrink the graph to 814
+  nodes / 1060 edges and the cross-registry slug-collision set to 17.
+  **Downstream consumers must follow**: the plugin still references
+  `checkbox-with-label` in its FM→DS map, its HTML renderer map, and its
+  authoring docs, and `actian-ds-docs` must delete the now-inverted `checkbox`
+  entry in `SLUG_ALIASES`. ([#408])
 - **Editor: sidebar IA refined to Vincent's structure.** The Design system
   half now reads Foundations → **Content** (a nested parent holding Writing
   rules, Patterns, and Product as indented children — the "copy"
