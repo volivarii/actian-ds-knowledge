@@ -19,6 +19,24 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Fixed
+- **A component that resolves to NO category is now named, instead of vanishing
+  quietly.** A category-less component falls out of `categories.json`, the docs
+  site's page tree, and the graph's `in_category` edges — the docs site does not
+  generate a page for it at all — and nothing said so.
+  `assertNoCategoryMassLoss` only fires when a whole category is **gutted**
+  (≥10 members → 0), so exactly one component slipping out was invisible to it.
+  That is what happened to **`toggle`**, the only category-less component of 286:
+  its Figma page was renamed `Toggle control` → `Toggle` on the canvas, but the
+  library was **not republished**. Category inference reads the **live** document
+  tree (which said `Toggle`) while each component's page name comes from
+  **published** metadata (which still said `Toggle control`), the two stopped
+  matching, and the category evaporated in silence. Downstream, the docs build
+  went red on an unresolvable `toggle-control` link with no hint as to why.
+  The sync now prints it and gives it its own section in the PR body, naming the
+  published page that failed to match and pointing at the likely cause. Scoped to
+  kits that actually infer categories: FM Kit and Meta Kit have no page-category
+  structure at all, so their 315 components are legitimately category-less and
+  warning there would bury the one that matters. ([#414])
 - **Slug collisions are split by severity, because most of them are not losses.**
   The tripwire's first real run found **ten** collisions — and only **two** were
   losses. Rendering them alike is exactly how a real alarm becomes wallpaper, so
@@ -512,6 +530,7 @@ history and pull-request record.
 [#410]: https://github.com/volivarii/actian-ds-knowledge/pull/410
 [#412]: https://github.com/volivarii/actian-ds-knowledge/pull/412
 [#413]: https://github.com/volivarii/actian-ds-knowledge/pull/413
+[#414]: https://github.com/volivarii/actian-ds-knowledge/pull/414
 [#403]: https://github.com/volivarii/actian-ds-knowledge/pull/403
 [#404]: https://github.com/volivarii/actian-ds-knowledge/pull/404
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
