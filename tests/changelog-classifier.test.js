@@ -311,3 +311,114 @@ test("classifier(icons): a ghost (node-missing) is reported as a STALE REGISTRY,
   assert.match(res.changelog, /Lost icons \(1\)/);
   assert.match(res.changelog, /attachments.*multicolor/);
 });
+
+// ---------------------------------------------------------------------------
+// Media kind. Three phases still carried the SAME expression that shipped 29
+// dead icons: `captured.length > 0 ? "additive" : "unchanged"`, with no code
+// path to breaking. media/_index.json is the surface consumers actually resolve
+// imagery through, so classifying it catches loss from ANY upstream media phase
+// (a prune in media-preview, a vanished default capture, a whole slug going).
+//
+// It is a pure directory listing with no memory, so before this, 60 slugs
+// disappearing and 60 appearing produced the identical verdict, and a
+// prune-only night auto-merged a pull request that had deleted images under the
+// message "byte-level maintenance writes only".
+// ---------------------------------------------------------------------------
+
+function mediaIdx(map) {
+  return { _schema_version: 1, media: map };
+}
+
+test("classifier(media): a slug losing ALL its imagery is BREAKING", function () {
+  var res = classifier({
+    fileKind: "media",
+    before: mediaIdx({ button: { preview: "a" }, tag: { preview: "b" } }),
+    after: mediaIdx({ button: { preview: "a" } }),
+  });
+  assert.equal(res.category, "breaking");
+  assert.match(res.reasons[0], /tag/);
+  assert.match(res.changelog, /Lost media/);
+});
+
+test("classifier(media): a slug losing ONE role (its Variations board) is BREAKING", function () {
+  // The docs page for this component silently loses its variations imagery.
+  var res = classifier({
+    fileKind: "media",
+    before: mediaIdx({ button: { preview: "a", variations: "v" } }),
+    after: mediaIdx({ button: { preview: "a" } }),
+  });
+  assert.equal(res.category, "breaking");
+  assert.match(res.reasons[0], /button:variations/);
+});
+
+test("classifier(media): new imagery only is additive", function () {
+  var res = classifier({
+    fileKind: "media",
+    before: mediaIdx({ button: { preview: "a" } }),
+    after: mediaIdx({ button: { preview: "a" }, tag: { preview: "b" } }),
+  });
+  assert.equal(res.category, "additive");
+  assert.equal(res.reasons.length, 0);
+  assert.match(res.changelog, /New media/);
+});
+
+test("classifier(media): identical index is unchanged (no-op nights stay no-op)", function () {
+  var res = classifier({
+    fileKind: "media",
+    before: mediaIdx({ button: { preview: "a", default: "d" } }),
+    after: mediaIdx({ button: { preview: "a", default: "d" } }),
+  });
+  assert.equal(res.category, "unchanged");
+});
+
+test("classifier(media): a swap (one slug in, one slug out) is still BREAKING", function () {
+  // The exact case a bare "did bytes change" check cannot see: the index is a
+  // directory listing, so a loss and a gain net out to "wrote: true".
+  var res = classifier({
+    fileKind: "media",
+    before: mediaIdx({ old: { preview: "a" } }),
+    after: mediaIdx({ new: { preview: "b" } }),
+  });
+  assert.equal(res.category, "breaking", "a loss is a loss even when a gain masks the byte count");
+  assert.equal(res.reasons.length, 1);
+});
+
+test("classifier(media): a role that SHRINKS its frame count is BREAKING (the common loss)", function () {
+  // pruneStaleCaptures deletes every `<role>-<n>.webp` where n >= the new count,
+  // and its mass-prune guard explicitly exempts shrinks. So a Variations board
+  // going 4 frames -> 1 silently deletes 3 images while the role KEY survives.
+  // A name-only diff sees nothing. This is the loss that actually happens.
+  var res = classifier({
+    fileKind: "media",
+    before: mediaIdx({ button: { variations: ["a", "b", "c", "d"] } }),
+    after: mediaIdx({ button: { variations: ["a"] } }),
+  });
+  assert.equal(res.category, "breaking", "3 deleted images must not auto-merge");
+  assert.match(res.reasons[0], /button:variations/);
+  assert.match(res.reasons[0], /4 -> 1/, "say how much was lost");
+});
+
+test("classifier(media): a role GROWING its frame count is additive", function () {
+  var res = classifier({
+    fileKind: "media",
+    before: mediaIdx({ button: { variations: ["a"] } }),
+    after: mediaIdx({ button: { variations: ["a", "b"] } }),
+  });
+  assert.equal(res.category, "additive");
+  assert.equal(res.reasons.length, 0);
+});
+
+test("classifier(media): an unreadable prior index is BREAKING, not a guess", function () {
+  // The index self-heals (it is rewritten from the media tree), but we cannot
+  // tell whether anything vanished, so a human confirms. Throwing instead would
+  // leave the corrupt file in place and kill every subsequent sync, which is the
+  // exact failure this whole change exists to prevent.
+  var res = classifier({
+    fileKind: "media",
+    before: null,
+    after: mediaIdx({ button: { preview: "a" } }),
+    beforeUnparseable: true,
+  });
+  assert.equal(res.category, "breaking");
+  assert.match(res.reasons[0], /unreadable/);
+});
