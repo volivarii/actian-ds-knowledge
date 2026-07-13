@@ -54,14 +54,14 @@ test("collectComponentsAndCategories: a keyless registry entry omits figmaKey/fi
   assert.equal(n.title, "No Key");
 });
 
-// Committed artifact: the shipped graph.json carries the key on all 584
+// Committed artifact: the shipped graph.json carries the key on all 585
 // component nodes and on no other node type.
-test("graph/dist/graph.json: 584 component nodes carry figmaKey; non-component nodes never do", function () {
+test("graph/dist/graph.json: 585 component nodes carry figmaKey; non-component nodes never do", function () {
   var g = readJSON("graph/dist/graph.json");
   var comps = g.nodes.filter(function (n) {
     return n.type === "component";
   });
-  assert.equal(comps.length, 584);
+  assert.equal(comps.length, 585);
   assert.ok(
     comps.every(function (n) {
       return (
