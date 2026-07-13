@@ -337,6 +337,23 @@ function transformRegistry(input) {
     });
   }
 
+  // A standalone lost the slug to a component set. It is being dropped from the
+  // registry entirely — say so by name, with both sides and their node ids, so a
+  // human can open the two nodes in Figma and rename one.
+  function collectSlugCollision(slug, droppedMeta, keptEntry) {
+    var dedupeKey = "collision|" + slug + "|" + droppedMeta.node_id;
+    if (seenComponentWarnings[dedupeKey]) return;
+    seenComponentWarnings[dedupeKey] = true;
+    componentWarnings.push({
+      code: "SLUG_COLLISION_DROPPED",
+      slug: slug,
+      droppedName: droppedMeta.name,
+      droppedNodeId: droppedMeta.node_id,
+      keptName: (keptEntry && keptEntry.name) || null,
+      keptNodeId: (keptEntry && keptEntry.nodeId) || null,
+    });
+  }
+
   // Component sets
   componentSets.forEach(function (meta) {
     if (isInternalName(meta.name)) return;
@@ -362,8 +379,25 @@ function transformRegistry(input) {
     if (isInternalName(meta.name)) return;
     var node = standaloneNodes[meta.node_id];
     var slug = slugify(meta.name);
-    // Don't clobber a set entry on a name collision (sets win).
-    if (slug in registry.components) return;
+    // Don't clobber a set entry on a name collision (sets win). The policy is
+    // fine; doing it SILENTLY was the bug. registry.components is keyed by slug,
+    // so the loser here does not just lose a name — it disappears from the design
+    // system entirely, with no error, no diff line, and nothing in the sync PR.
+    //
+    // That is how the `calendar` ICON vanished (2026-07-13): the Calendar
+    // *component* (a set, category Action) already owned the slug, so the icon
+    // standalone hit this return and was never published. It is almost certainly
+    // why the glyph was historically named `calendar-2` — the old name dodged
+    // this collision, and the 2026-07 rework renamed it onto it.
+    //
+    // Note the cross-registry collision detector (scripts/graph/derive-graph.js
+    // detectSlugCollisions) structurally CANNOT catch this: it reads the
+    // already-slug-keyed `components` map, by which point the loser is gone. So
+    // this is the only place the loss can be named. Warn, don't swallow.
+    if (slug in registry.components) {
+      collectSlugCollision(slug, meta, registry.components[slug]);
+      return;
+    }
     var lookup = lookupCategoryEntry(meta);
     collectComponentWarning(lookup, slug);
     if (excludeSet[lookup.cleanPage]) return; // staging / not-ready page

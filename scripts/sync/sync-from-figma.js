@@ -271,6 +271,30 @@ async function syncRegistry(opts, kitId) {
     },
   });
 
+  // Slug collisions drop a PUBLISHED component on the floor. Say it in the run
+  // log too, not only in the PR body — a sync that is dispatched by hand (or
+  // read in the Actions log) must not have to open a PR to learn it lost a
+  // component.
+  categoryWarnings
+    .filter(function (w) {
+      return w.code === "SLUG_COLLISION_DROPPED";
+    })
+    .forEach(function (w) {
+      console.warn(
+        "[sync] SLUG COLLISION on '" +
+          w.slug +
+          "': DROPPED '" +
+          w.droppedName +
+          "' (" +
+          w.droppedNodeId +
+          ") — slug already held by '" +
+          w.keptName +
+          "' (" +
+          w.keptNodeId +
+          "). The dropped component is absent from the registry entirely.",
+      );
+    });
+
   // Drop file-local scratch pages (e.g. "Local components") before classify +
   // write, so they leak into neither the registry nor the derived
   // categories.json. dsKit-only: the page-naming convention (and these scratch
@@ -468,9 +492,51 @@ function buildChangelog(date, category, results, errors) {
     lines.push("");
     lines.push(r.verdict.changelog || "_(empty)_");
     lines.push("");
-    if (r.categoryWarnings && r.categoryWarnings.length > 0) {
+    // Slug collisions get their own heading, ABOVE the warn-only drift block:
+    // this is not drift, it is a component that Figma publishes and the registry
+    // silently does not. Nothing downstream can see the loss (the cross-registry
+    // detector reads the already-deduped map), so this section is the only place
+    // it is ever named.
+    var collisions = (r.categoryWarnings || []).filter(function (w) {
+      return w.code === "SLUG_COLLISION_DROPPED";
+    });
+    if (collisions.length > 0) {
+      lines.push(
+        "### 🚨 Slug collision — " +
+          collisions.length +
+          " published component(s) DROPPED from the registry",
+      );
+      lines.push("");
+      lines.push(
+        "These components exist and are published in Figma, but another component already " +
+          "owns their slug. `registry.components` is keyed by slug, so the loser is not " +
+          "renamed — it **disappears from the design system**. Rename one of the two nodes " +
+          "in Figma to publish both.",
+      );
+      lines.push("");
+      collisions.forEach(function (w) {
+        lines.push(
+          "- ❌ `" +
+            escapeBackticks(w.slug) +
+            "` — dropped **" +
+            escapeBackticks(w.droppedName) +
+            "** (`" +
+            escapeBackticks(w.droppedNodeId) +
+            "`), kept **" +
+            escapeBackticks(w.keptName || "?") +
+            "** (`" +
+            escapeBackticks(w.keptNodeId || "?") +
+            "`)",
+        );
+      });
+      lines.push("");
+    }
+    var drift = (r.categoryWarnings || []).filter(function (w) {
+      return w.code !== "SLUG_COLLISION_DROPPED";
+    });
+    if (drift.length > 0) {
       lines.push("### Component category drift (warn-only)");
-      r.categoryWarnings.forEach(function (w) {
+      drift.forEach(function (w) {
         if (w.code === "UNKNOWN_CATEGORY") {
           var members = (w.members || []).map(function (m) {
             return "`" + escapeBackticks(m) + "`";
