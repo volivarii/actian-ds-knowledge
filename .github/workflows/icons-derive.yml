@@ -1,0 +1,112 @@
+name: Derive icons SVG from substrate
+
+# The missing seventh derive. foundations / accessibility / categories /
+# guidelines / content / app-context / graph each have a workflow that
+# regenerates their dist, BUMPS THE VERSION and commits back to the PR. Icons had
+# none — components/dist/icons/icons.json was only ever produced by the nightly
+# Figma sync.
+#
+# That is not a cosmetic gap. tag-on-merge.yml tags from package.json#version, and
+# consumers (the plugin, the docs site) vendor by TAG. So an icons change merged on
+# its own bumped nothing, tagged nothing, and could NEVER REACH A CONSUMER — it
+# just sat on main looking merged.
+#
+# It bit immediately: #420 declared `_meta.shadowed_by_component`, which the plugin
+# needs in order to not draw a magnifier where a search field belongs. It merged
+# clean, and the plugin still could not get it, because the newest tag predated it.
+#
+# Mirrors guidelines-derive.yml: derive -> detect change -> bump -> commit back with
+# the App token so the required checks re-run on the new HEAD.
+
+on:
+  pull_request:
+    paths:
+      # Curated SVG bodies + the semantic group mapping (the two authored inputs).
+      - 'components/src/icons-svg.json'
+      - 'components/src/icon-groups.json'
+      # The registry is the other half of the join: derive-icons-svg reads
+      # registry.icons for dsKey/nodeId and to validate each slug.
+      - 'components/dist/registries/dskit.json'
+      # The derive itself.
+      - 'scripts/icons/**'
+
+# Serialize per branch: concurrent auto-commit pushes to the same PR head race
+# each other (a lost push is a red required check). Queue, never cancel.
+concurrency:
+  group: icons-derive-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  derive:
+    name: Derive icons SVG
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # App token for the auto-commit below. A commit pushed with the default
+      # GITHUB_TOKEN cannot trigger further workflow runs, leaving the required
+      # checks with no status on the auto-commit's SHA and blocking merge. Skipped
+      # on fork PRs — the secret is not exposed there, and the commit step skips too.
+      - name: Generate App token
+        id: app-token
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Derive icons
+        run: npm run derive:icons
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet -- components/dist/icons/icons.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No icon changes after regeneration."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- components/dist/icons/icons.json
+          fi
+
+      - name: Auto-bump package.json patch
+        if: steps.diff.outputs.changed == 'true'
+        run: node scripts/lib/bump-version.js package.json patch
+
+      # Skip on fork PRs — GITHUB_TOKEN can't push to forks.
+      - name: Commit derived icons back to PR
+        if: steps.diff.outputs.changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/dist/icons/icons.json package.json paths-manifest.json package-lock.json
+          git commit -m "chore(icons): regenerate dist from substrate + bump patch"
+          # Race-safe: another derive may have pushed since checkout. --autostash
+          # because npm install rewrites the tracked package-lock.json every run.
+          git push || (git pull --rebase --autostash && git push)
+
+      - name: Summarize
+        if: always()
+        run: |
+          if [ "${{ steps.diff.outputs.changed }}" = "true" ]; then
+            echo "### Icons derive: regenerated + bumped" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Icons derive: no changes" >> "$GITHUB_STEP_SUMMARY"
+          fi
