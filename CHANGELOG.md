@@ -39,7 +39,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   `namespaced`, and reported not at all, because it is the system working rather
   than an anomaly, and an alarm that shouts about a non-problem is how the section
   that catches a **real** loss gets scrolled past. A non-icon losing a slug is
-  still a loss and still shouts. ([#417])
+  still a loss and still shouts. ([#418])
 
 ### Fixed
 - **A component that resolves to NO category is now named, instead of vanishing
@@ -585,4 +585,4 @@ history and pull-request record.
 [#339]: https://github.com/volivarii/actian-ds-knowledge/pull/339
 [#338]: https://github.com/volivarii/actian-ds-knowledge/pull/338
 
-[#417]: https://github.com/volivarii/actian-ds-knowledge/pull/417
+[#418]: https://github.com/volivarii/actian-ds-knowledge/pull/418
