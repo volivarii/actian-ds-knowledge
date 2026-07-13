@@ -240,7 +240,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   **Downstream consumers must follow**: the plugin still references
   `checkbox-with-label` in its FM→DS map, its HTML renderer map, and its
   authoring docs, and `actian-ds-docs` must delete the now-inverted `checkbox`
-  entry in `SLUG_ALIASES`. ([#408])
+  entry in `SLUG_ALIASES`. ([#410], superseding the sync-only [#408])
 - **Editor: sidebar IA refined to Vincent's structure.** The Design system
   half now reads Foundations → **Content** (a nested parent holding Writing
   rules, Patterns, and Product as indented children — the "copy"
@@ -467,6 +467,7 @@ history and pull-request record.
 [#365]: https://github.com/volivarii/actian-ds-knowledge/pull/365
 [#378]: https://github.com/volivarii/actian-ds-knowledge/pull/378
 [#409]: https://github.com/volivarii/actian-ds-knowledge/pull/409
+[#410]: https://github.com/volivarii/actian-ds-knowledge/pull/410
 [#403]: https://github.com/volivarii/actian-ds-knowledge/pull/403
 [#404]: https://github.com/volivarii/actian-ds-knowledge/pull/404
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
