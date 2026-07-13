@@ -39,7 +39,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   PR body, naming both sides with their node ids so the two nodes can be opened and
   one renamed. Warn-loud rather than hard-fail: a hard fail would block every sync
   until Figma is edited, which is the failure mode that already cost three days of
-  dead syncs. ([#411])
+  dead syncs. ([#412])
 
 ### Added
 - **Usage guidelines: wave 2 completes the domain (38 remaining components).**
@@ -491,7 +491,7 @@ history and pull-request record.
 [#378]: https://github.com/volivarii/actian-ds-knowledge/pull/378
 [#409]: https://github.com/volivarii/actian-ds-knowledge/pull/409
 [#410]: https://github.com/volivarii/actian-ds-knowledge/pull/410
-[#411]: https://github.com/volivarii/actian-ds-knowledge/pull/411
+[#412]: https://github.com/volivarii/actian-ds-knowledge/pull/412
 [#403]: https://github.com/volivarii/actian-ds-knowledge/pull/403
 [#404]: https://github.com/volivarii/actian-ds-knowledge/pull/404
 [#393]: https://github.com/volivarii/actian-ds-knowledge/pull/393
