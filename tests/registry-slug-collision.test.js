@@ -175,6 +175,115 @@ test("slug collision: two component SETS collide — the loss is named, and the 
 });
 
 // ---------------------------------------------------------------------------
+// SEVERITY. Not every collision is a loss, and rendering them alike is how a
+// real alarm becomes wallpaper. The first real run (2026-07-13) found TEN
+// collisions of which only TWO were losses — the other eight were the same icon
+// published from both icon pages during the refactor. These two tests pin that
+// split against the shapes the live sync actually produced.
+// ---------------------------------------------------------------------------
+
+test("severity: a component SET shadowing an icon is a LOSS (the real `calendar` / `search` case)", function () {
+  var warnings = [];
+  transformRegistry({
+    library: "ds",
+    fileKey: "test-key",
+    componentSets: [
+      {
+        name: "Search", // the Search COMPONENT
+        key: "k-search-component",
+        node_id: "8589:11055",
+        description: "",
+        containing_frame: { pageName: "✅ Search" },
+      },
+    ],
+    componentSetNodes: {
+      "8589:11055": { document: { componentPropertyDefinitions: {} } },
+    },
+    standalones: [
+      {
+        name: "search", // the search ICON — a different thing entirely
+        key: "k-search-icon",
+        node_id: "7242:9340",
+        description: "",
+        containing_frame: { pageName: "✍️ DS Icons: replacement" },
+      },
+    ],
+    standaloneNodes: {
+      "7242:9340": { document: { componentPropertyDefinitions: {} } },
+    },
+    documentChildren: [
+      { type: "CANVAS", name: "🧱 COMPONENTS" },
+      { type: "CANVAS", name: "Form (input & selection)" },
+      { type: "CANVAS", name: "     ✅ Search" },
+      { type: "CANVAS", name: "Icons" },
+      { type: "CANVAS", name: "     ✍️ DS Icons: replacement" },
+    ],
+    onWarnings: function (ws) {
+      warnings = warnings.concat(ws || []);
+    },
+  });
+  var hits = warnings.filter(function (w) {
+    return w.code === "SLUG_COLLISION_DROPPED";
+  });
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].severity, "loss", "the DS loses its search glyph");
+  assert.equal(hits[0].keptImportMethod, "set");
+  assert.equal(hits[0].droppedImportMethod, "single");
+});
+
+test("severity: the same icon published from two pages is a DUPLICATE, not a loss (the real `add` case)", function () {
+  var warnings = [];
+  var registry = transformRegistry({
+    library: "ds",
+    fileKey: "test-key",
+    componentSets: [],
+    componentSetNodes: {},
+    standalones: [
+      {
+        name: "add",
+        key: "k-add-old",
+        node_id: "7206:3772",
+        description: "",
+        containing_frame: { pageName: "✍️ DS Icons" },
+      },
+      {
+        // Same glyph, same name, other page — the refactor's two-page state.
+        name: "add",
+        key: "k-add-new",
+        node_id: "7378:3994",
+        description: "",
+        containing_frame: { pageName: "✍️ DS Icons: replacement" },
+      },
+    ],
+    standaloneNodes: {
+      "7206:3772": { document: { componentPropertyDefinitions: {} } },
+      "7378:3994": { document: { componentPropertyDefinitions: {} } },
+    },
+    documentChildren: [
+      { type: "CANVAS", name: "🧱 COMPONENTS" },
+      { type: "CANVAS", name: "Icons" },
+      { type: "CANVAS", name: "     ✍️ DS Icons" },
+      { type: "CANVAS", name: "     ✍️ DS Icons: replacement" },
+    ],
+    onWarnings: function (ws) {
+      warnings = warnings.concat(ws || []);
+    },
+  });
+  var hits = warnings.filter(function (w) {
+    return w.code === "SLUG_COLLISION_DROPPED";
+  });
+  assert.equal(hits.length, 1);
+  assert.equal(
+    hits[0].severity,
+    "duplicate",
+    "same component twice — nothing is lost",
+  );
+  // The point of calling it a duplicate: the slug STILL RESOLVES.
+  assert.ok(registry.components["add"], "the add glyph survives");
+  assert.equal(registry.components["add"].nodeId, "7206:3772");
+});
+
+// ---------------------------------------------------------------------------
 // FALSE-ALARM GUARDS. "A false alarm is worse than no alarm": an alarm that
 // fires on components that were never going to publish trains the reader to
 // skim past the section that exists to catch a real loss. A standalone is only
