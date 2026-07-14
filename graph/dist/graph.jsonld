@@ -8406,6 +8406,18 @@
       "@type": "Edge",
       "edgeType": "composed_of",
       "source": "component:search-result-card",
+      "target": "component:checkbox"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-result-card",
+      "target": "component:digram-item-types"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "composed_of",
+      "source": "component:search-result-card",
       "target": "component:favorite"
     },
     {
