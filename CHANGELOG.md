@@ -18,7 +18,64 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Fixed
+- **A test about app-context was pinned to the whole graph's size, so every Figma sync went red.**
+  `tests/graph-app-context-projection.test.js` asserted the **total** node and edge
+  counts (`g.nodes.length === 815`, `@graph.length === 815 + 1072`). Those totals move
+  whenever Figma changes a component, which has nothing to do with app-context. So a
+  routine sync turned a required check red and a human had to hand-restamp the constants
+  (see `test(graph): restamp the pinned counts`, pushed onto sync #415; sync #422 failed
+  the same way, on 2 legitimate `composed_of` edges after `search-result-card` gained a
+  nested checkbox).
+  This was worse than noise. An **additive** sync that trips it goes red, **fails to
+  auto-merge, and the vendor queue stalls with nobody told**, which is precisely the
+  silent-failure pattern the alarm was supposed to serve. An alarm that fires on the
+  system working normally is how the alarm that matters gets scrolled past.
+  The assertions now pin the **app-context island** (96 nodes, 245 edges), which is what
+  this test is actually about. The island is projected from authored app-context sources,
+  not from Figma, so it moves only when someone edits app-context, which is the change the
+  test exists to catch. The losslessness assertion beside it (`@graph.length === nodes +
+  edges`) is data-derived and already held at any graph size. Verified both ways: the
+  suite is green on `main` **and** on the #422 sync branch with no restamp, and adding a
+  single app-context term still fails the check by name.
+- **Ten components showed no guidance at all, and the plugin was inventing it for them.**
+  Consumers resolve a guideline by its **registry key**, not by the slug it was
+  authored under. The Card and Tag guidance is written as **family-level** documentation
+  (`"This guideline covers the tag family: default, status, stage, catalog, ..."`), but
+  only `tag-default` was ever bridged to the family doc. So `Tag, Status`, `Tag,
+  Interactive`, `Card for items` and 7 more resolved to **nothing**.
+  Two things followed from that, both silent. The docs site rendered those 10 component
+  pages with no guidance. Worse, the plugin's `component-brief` treats a missing guideline
+  as a cue to **generate replacement content inline** (`_source: "generated"`), so a
+  designer asking for a brief on *Card for items* got **LLM-improvised guidance** instead
+  of the approved document sitting one directory over, with no warning. Content silently
+  replaced by plausible fiction is worse than content missing.
+  Fixed by 10 `registryAliases` entries, which put ~1,300 words of already-approved
+  guidance onto 10 live pages and stop the fabrication. No content was written; it was
+  already there.
+
 ### Added
+- **A gate: authored guidance must actually reach a consumer.**
+  Nothing checked that a guideline's slug existed in the registry, so a document could be
+  authored, derived, bundled, advertised in `llms.txt`, and reported **`approved`** in
+  `coverage.md` while no consumer on earth could render it. That is how the above went
+  unseen: **coverage counted what was authored, not what reached a reader.**
+  `tests/guideline-reachability.test.js` now fails when an authored guideline is neither a
+  registry key nor the target of an alias. The **6** that genuinely reach nobody today are
+  named in it, each with a reason, so they are a reviewed list rather than a silence:
+  `combo-box` and `multi-select` (authored ahead of Figma on purpose), `global-toast` and
+  `inline-toast` (Figma ships no toast component), `success-state` (superseded by
+  `confirmation`), and **`upload-file`**, which needs a design decision.
+- **`upload-file` has approved guidance for a component that does not exist.**
+  Surfaced by the gate above. There is no **Upload file** component in DS Kit and there
+  never was: the `upload-file` key that sat in `dskit.json` until 2026-07-13 was an **icon
+  glyph** (page `✍️ Icons`), squatting the component slug under the old flat
+  icon-and-component namespace. The icon-namespace split (#418) moved icons out, and that
+  is what revealed the guidance had never had a component behind it. Only FM Kit (the
+  wireframe kit) has `upload` / `cloud-upload`. Unlike `combo-box` and `multi-select`,
+  which were authored ahead of Figma deliberately, this one looks accidental: its content
+  is marked `approved`. Either the component gets built in Figma, or the guidance is
+  retired. Not folded into #406, which is scoped to deleted **glyphs**.
 - **Icons get their own namespace, so a component can never eat a glyph again.**
   A design system may legitimately ship a `calendar` **icon** and a `Calendar`
   **component** — and it does. They are different **kinds** of thing, and the sync
