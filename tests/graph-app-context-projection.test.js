@@ -230,7 +230,12 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
     fs.readFileSync(path.join(ROOT, "graph/dist/graph.json"), "utf8"),
   );
   assert.equal(ld["@graph"].length, g.nodes.length + g.edges.length);
-  assert.equal(ld["@graph"].length, 815 + 1062);
+  // Absolute-size canary: it must move only for a reason someone can name.
+  // 1062 -> 1072 edges: the 10 card/tag family members added to
+  // paths-manifest.json#registryAliases each inherit their family's
+  // component-tier a11y_ref edge, so 10 components that previously carried no
+  // accessibility reference in the graph now carry one. Nodes are unchanged.
+  assert.equal(ld["@graph"].length, 815 + 1072);
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {
