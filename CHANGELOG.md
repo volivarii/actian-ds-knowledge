@@ -19,6 +19,25 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Fixed
+- **A test about app-context was pinned to the whole graph's size, so every Figma sync went red.**
+  `tests/graph-app-context-projection.test.js` asserted the **total** node and edge
+  counts (`g.nodes.length === 815`, `@graph.length === 815 + 1072`). Those totals move
+  whenever Figma changes a component, which has nothing to do with app-context. So a
+  routine sync turned a required check red and a human had to hand-restamp the constants
+  (see `test(graph): restamp the pinned counts`, pushed onto sync #415; sync #422 failed
+  the same way, on 2 legitimate `composed_of` edges after `search-result-card` gained a
+  nested checkbox).
+  This was worse than noise. An **additive** sync that trips it goes red, **fails to
+  auto-merge, and the vendor queue stalls with nobody told**, which is precisely the
+  silent-failure pattern the alarm was supposed to serve. An alarm that fires on the
+  system working normally is how the alarm that matters gets scrolled past.
+  The assertions now pin the **app-context island** (96 nodes, 245 edges), which is what
+  this test is actually about. The island is projected from authored app-context sources,
+  not from Figma, so it moves only when someone edits app-context, which is the change the
+  test exists to catch. The losslessness assertion beside it (`@graph.length === nodes +
+  edges`) is data-derived and already held at any graph size. Verified both ways: the
+  suite is green on `main` **and** on the #422 sync branch with no restamp, and adding a
+  single app-context term still fails the check by name.
 - **Ten components showed no guidance at all, and the plugin was inventing it for them.**
   Consumers resolve a guideline by its **registry key**, not by the slug it was
   authored under. The Card and Tag guidance is written as **family-level** documentation

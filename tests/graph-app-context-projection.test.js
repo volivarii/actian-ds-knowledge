@@ -66,12 +66,20 @@ test("collectAppContext: ux_pattern node carries title<-label and description", 
   assert.equal(p.description, AC.patterns["marketplace-browsing"].description);
 });
 
-test("derive(): emitted graph.json includes the app-context nodes (815 total)", function () {
+test("derive(): emitted graph.json includes the app-context nodes (96 island nodes)", function () {
   D.derive();
   var g = JSON.parse(
     fs.readFileSync(path.join(ROOT, "graph/dist/graph.json"), "utf8"),
   );
-  assert.equal(g.nodes.length, 815);
+  // Pinned the app-context island, not the whole graph. This asserted
+  // `g.nodes.length === 815` and so broke on any Figma sync that added or
+  // removed a component, which has nothing to do with app-context. See the
+  // long note in the losslessness test below.
+  var ISLAND_PREFIXES = ["app", "entity", "pattern", "term"];
+  var islandNodes = g.nodes.filter(function (n) {
+    return ISLAND_PREFIXES.indexOf(String(n.id).split(":")[0]) !== -1;
+  });
+  assert.equal(islandNodes.length, 96, "app-context island nodes");
   assert.ok(
     g.nodes.some(function (n) {
       return n.id === "app:studio";
@@ -225,17 +233,43 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
     }),
   );
 
-  // total @graph == nodes + edges of graph.json (lossless)
+  // total @graph == nodes + edges of graph.json (lossless). Data-derived: it
+  // holds at any graph size, so Figma churn cannot make it lie or nag.
   var g = JSON.parse(
     fs.readFileSync(path.join(ROOT, "graph/dist/graph.json"), "utf8"),
   );
   assert.equal(ld["@graph"].length, g.nodes.length + g.edges.length);
-  // Absolute-size canary: it must move only for a reason someone can name.
-  // 1062 -> 1072 edges: the 10 card/tag family members added to
-  // paths-manifest.json#registryAliases each inherit their family's
-  // component-tier a11y_ref edge, so 10 components that previously carried no
-  // accessibility reference in the graph now carry one. Nodes are unchanged.
-  assert.equal(ld["@graph"].length, 815 + 1072);
+
+  // Size canary, scoped to THIS TEST'S SUBJECT: the app-context island.
+  //
+  // It used to pin the WHOLE graph (`815 + 1072`), which was a false alarm
+  // generator. The total moves whenever Figma changes a component, so every
+  // sync that touched composition turned this test red and a human had to
+  // hand-restamp the constant (see "test(graph): restamp the pinned counts",
+  // pushed onto sync #415). That is worse than useless: an ADDITIVE sync goes
+  // red, fails to auto-merge, and the vendor queue stalls with nobody told,
+  // which is precisely the silent-failure pattern the alarm was meant to serve.
+  // A check that cries wolf on the system working normally teaches people to
+  // scroll past it.
+  //
+  // The island is the right thing to pin here. It is projected from authored
+  // app-context sources, NOT from Figma, so it does not move when a component
+  // gains a slot. It moves only when someone edits app-context, which is
+  // exactly the change this test exists to catch. Verified: the 2026-07-14
+  // sync added 2 `composed_of` edges (search-result-card now nests checkbox and
+  // digram-item-types) and left the island at 96/245 untouched.
+  var ISLAND_PREFIXES = ["app", "entity", "pattern", "term"];
+  var inIsland = function (id) {
+    return ISLAND_PREFIXES.indexOf(String(id).split(":")[0]) !== -1;
+  };
+  var islandNodes = g.nodes.filter(function (n) {
+    return inIsland(n.id);
+  });
+  var islandEdges = g.edges.filter(function (e) {
+    return inIsland(e.source) || inIsland(e.target);
+  });
+  assert.equal(islandNodes.length, 96, "app-context island nodes");
+  assert.equal(islandEdges.length, 245, "app-context island edges");
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {
