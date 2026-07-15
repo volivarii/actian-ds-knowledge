@@ -252,3 +252,36 @@ jobs:
             gh issue create --title "🔴 Figma sync is failing" --label sync-failure \
               --body "The nightly **Sync from Figma** workflow failed and will keep failing until fixed."$'\n\n'"$note"$'\n\n'"Common cause: a Figma component was renamed/removed so a curated override now dangles (e.g. an icon slug in \`components/src/icons-svg.json\`). The icons phase warn-skips dangling *curated* slugs; check the run log for the failing phase. This issue auto-closes when a sync next succeeds." || true
           fi
+
+      # Category drift is a GREEN outcome, not a failure: a Figma reorg
+      # re-bucketed components and the sync carried their last-known category
+      # forward instead of reding (see preserveKnownCategories). It still must
+      # reach a human, so mirror the sync-failure issue as a non-blocking,
+      # auto-closing `category-drift` issue driven by the drift count the sync
+      # writes to /tmp/sync-drift.txt. Skipped on an error verdict (the
+      # sync-failure issue owns that), and on a narrow-phase dispatch that never
+      # ran the registries phase (drift was not evaluated, so leave the issue be).
+      - name: Manage category-drift issue
+        if: steps.verdict.outputs.category != 'error' && (github.event.inputs.phase == 'registries' || (github.event.inputs.phase || 'all') == 'all')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        # Best-effort: a notification hiccup must never flip a good sync to failed.
+        run: |
+          DRIFT=0
+          [ -f /tmp/sync-drift.txt ] && DRIFT=$(tr -d '[:space:]' < /tmp/sync-drift.txt)
+          if [ "${DRIFT:-0}" -gt 0 ]; then
+            gh label create category-drift --color FBCA04 --description "Figma page attribution drifted; categories preserved" 2>/dev/null || true
+            note="Run: $RUN_URL"$'\n'"$DRIFT component(s) kept their last-known category this sync because Figma page attribution changed. The per-component list is in the sync run log (linked above), and in the sync PR body when this sync opened one. This is not a loss; it self-clears once the Figma file settles, or accept the moves in \`components/src/category-page-overrides.json\`."
+            existing=$(gh issue list --state open --label category-drift --json number --jq '.[0].number // empty' 2>/dev/null || true)
+            if [ -n "$existing" ]; then
+              gh issue comment "$existing" --body "Still drifting ($DRIFT). $note" || true
+            else
+              gh issue create --title "🛟 Figma category attribution is drifting" --label category-drift \
+                --body "The nightly sync is carrying components' last-known categories forward because the Figma file is being reorganized."$'\n\n'"$note"$'\n\n'"This issue auto-closes when a sync sees zero drift." || true
+            fi
+          else
+            for n in $(gh issue list --state open --label category-drift --json number --jq '.[].number' 2>/dev/null || true); do
+              gh issue close "$n" --comment "✅ No category drift this sync. $RUN_URL" || true
+            done
+          fi
