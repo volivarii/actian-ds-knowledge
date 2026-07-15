@@ -19,6 +19,23 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Fixed
+- **A Figma reorg that re-bucketed components red the nightly sync every night, though nothing was lost.**
+  Component categories are inferred each night from the Figma Pages panel (a Title-Case header page sets
+  the category for the member pages beneath it), so while the file is being reorganized a still-published
+  component comes back with its category dropped to null or re-derived to a non-category (its own page
+  name). The mass-loss tripwire, keyed on a category COUNT hitting zero, then refused to emit the registry
+  (Feedback 11 to 0, Data Display 31 to 0, Form 11 to 0 on 2026-07-15, issue #425), so an additive sync
+  could not auto-merge and the vendor queue stalled. But those 53 components were still published in
+  Figma; they had only moved pages.
+  Two changes let the sync ride the churn. `preserveKnownCategories` carries a survivor's last-known
+  category (and its `section`/`group`/`status`) forward, matched by its stable Figma identity, whenever
+  this sync fails to attribute a valid one, so it keeps its place in `categories.json`, the docs page
+  tree, and the graph instead of falling out. And the mass-loss tripwire is now REMOVAL-based: a category
+  counts as a loss only when its members are genuinely ABSENT by identity, not when they were re-bucketed,
+  so a page rename can no longer red the nightly. Both self-retire once the file settles (a stable file
+  produces zero drift), and every preserved component is named in the sync run log (and the PR body when a
+  sync opens one) and raised as a non-blocking, auto-closing `category-drift` issue so a reshuffle still
+  reaches a human. (#426)
 - **A test about app-context was pinned to the whole graph's size, so every Figma sync went red.**
   `tests/graph-app-context-projection.test.js` asserted the **total** node and edge
   counts (`g.nodes.length === 815`, `@graph.length === 815 + 1072`). Those totals move

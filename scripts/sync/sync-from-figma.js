@@ -148,6 +148,17 @@ function suppressDeniedPageCollisions(warnings, deniedPages) {
 
 var CATEGORY_MASS_LOSS_FLOOR = 10;
 
+// Stable identity for a registry component, most-durable-first. `key` is the
+// rename-proof Figma component key (#368); `nodeId` also survives a page move;
+// the registry slug is the last resort. This is what lets a genuine removal be
+// told apart from a component that merely moved pages during a Figma reorg.
+// Every real DS Kit component carries a unique `key` and `nodeId`, so the slug
+// fallback only serves synthetic/test fixtures; if keyless+nodeId-less
+// components ever ship, the slug fallback could collide across before/after.
+function identityOf(slug, comp) {
+  return (comp && (comp.key || comp.nodeId)) || slug;
+}
+
 // Count registry components per non-empty category.
 function categoryCounts(registry) {
   var counts = {};
@@ -160,20 +171,91 @@ function categoryCounts(registry) {
   return counts;
 }
 
-// Refuse to emit a category-gutted registry: if a category with >= FLOOR
-// members before drops to 0 after, throw. A thrown error inside a
-// runWithGuard-wrapped phase makes the sync verdict "error" (exit 2, no PR).
-// Intentional category removals are acknowledged via opts.allow.
+// Carry a component's last-known-good category forward when THIS sync failed to
+// attribute a valid one. Category is inferred from the Figma Pages panel (a
+// Title-Case header page sets the category for the members beneath it), so
+// during a reorg a still-published component can come back with its category
+// dropped to null or re-derived to a non-category (its own page name). Rather
+// than let it ship uncategorized (falling out of categories.json, the docs page
+// tree, and the graph) or red the whole sync, restore the category recorded for
+// the same component (matched by stable identity) in the previous dist.
+//
+// A well-formed category (truthy AND present in the previous dist's category
+// universe) is TRUSTED, so a deliberate move to another established category
+// flows straight through; only null / unknown buckets are restored. Pure apart
+// from mutating `after`'s components; returns the drift list for reporting.
+// Self-retiring: a stable file matches last-known-good, so nothing is restored
+// and the drift list comes back empty.
+function preserveKnownCategories(before, after) {
+  var beforeComps = (before && before.components) || {};
+  var afterComps = (after && after.components) || {};
+  var established = {};
+  var byIdentity = {};
+  Object.keys(beforeComps).forEach(function (slug) {
+    var c = beforeComps[slug];
+    if (c && c.category) established[c.category] = true;
+    byIdentity[identityOf(slug, c)] = c;
+  });
+  var drift = [];
+  Object.keys(afterComps).forEach(function (slug) {
+    var c = afterComps[slug];
+    if (!c) return;
+    if (c.category && established[c.category]) return; // well-formed, trust it
+    var twin = byIdentity[identityOf(slug, c)];
+    if (!twin || !twin.category) return; // genuinely new / never categorized
+    drift.push({
+      slug: slug,
+      name: c.name || null,
+      from: twin.category,
+      observed: c.category || null,
+      page: c.page || null,
+    });
+    // Reconcile the WHOLE page-attribution block to last-known-good, not just
+    // `category`. `section`, `group`, and `status` are derived from the same
+    // page position and ship in registry.json (the docs page tree groups on
+    // `section`/`group`; the badge reads `status`), so restoring `category`
+    // alone would leave an internally inconsistent entry that no schema gate
+    // catches. `page` is the component's own factual page and is left intact.
+    ["section", "category", "categorySlug", "group", "status"].forEach(
+      function (f) {
+        if (twin[f] != null) c[f] = twin[f];
+        else delete c[f];
+      },
+    );
+  });
+  return drift;
+}
+
+// Refuse to emit a registry that genuinely LOST components. A category counts
+// as a mass loss only when >= FLOOR of its previous members are ABSENT by
+// stable identity (removed from Figma), NOT when the category merely emptied
+// because a page rename re-bucketed present components elsewhere; that is a
+// reshuffle, which preserveKnownCategories above already repaired. A thrown
+// error inside a runWithGuard-wrapped phase makes the sync verdict "error"
+// (exit 2, no PR). Intentional removals are acknowledged via opts.allow.
 function assertNoCategoryMassLoss(before, after, opts) {
   opts = opts || {};
   var allow = opts.allow || [];
-  var b = categoryCounts(before);
-  var a = categoryCounts(after);
-  var lost = Object.keys(b).filter(function (cat) {
+  var beforeComps = (before && before.components) || {};
+  var afterComps = (after && after.components) || {};
+  var presentIds = {};
+  Object.keys(afterComps).forEach(function (slug) {
+    presentIds[identityOf(slug, afterComps[slug])] = true;
+  });
+  var beforeByCat = {};
+  var absentByCat = {};
+  Object.keys(beforeComps).forEach(function (slug) {
+    var c = beforeComps[slug];
+    var cat = c && c.category;
+    if (!cat) return;
+    beforeByCat[cat] = (beforeByCat[cat] || 0) + 1;
+    if (!presentIds[identityOf(slug, c)]) {
+      absentByCat[cat] = (absentByCat[cat] || 0) + 1;
+    }
+  });
+  var lost = Object.keys(absentByCat).filter(function (cat) {
     return (
-      b[cat] >= CATEGORY_MASS_LOSS_FLOOR &&
-      !(a[cat] > 0) &&
-      allow.indexOf(cat) < 0
+      absentByCat[cat] >= CATEGORY_MASS_LOSS_FLOOR && allow.indexOf(cat) < 0
     );
   });
   if (lost.length) {
@@ -181,12 +263,14 @@ function assertNoCategoryMassLoss(before, after, opts) {
       "[sync] category mass-loss: " +
         lost
           .map(function (c) {
-            return c + " (" + b[c] + " -> 0)";
+            return (
+              c + " (" + absentByCat[c] + " of " + beforeByCat[c] + " removed)"
+            );
           })
           .join(", ") +
-        ". A Figma page rename likely stripped these categories. Add the page to " +
-        "components/src/category-page-overrides.json, or acknowledge an intentional " +
-        "removal via SYNC_ALLOW_CATEGORY_LOSS. Refusing to emit a category-gutted registry.",
+        ". These components are ABSENT from the new sync (removed from Figma), not " +
+        "merely re-bucketed. If intentional, acknowledge via SYNC_ALLOW_CATEGORY_LOSS. " +
+        "Refusing to emit a registry that lost components.",
     );
   }
 }
@@ -330,24 +414,6 @@ async function syncRegistry(opts, kitId) {
       );
     });
 
-  categoryWarnings
-    .filter(function (w) {
-      return w.code === "COMPONENT_WITHOUT_CATEGORY";
-    })
-    .forEach(function (w) {
-      console.warn(
-        "[sync] NO CATEGORY: '" +
-          w.component +
-          "' (" +
-          w.name +
-          ") on published page '" +
-          w.page +
-          "' matches no category. It falls out of categories.json, the docs page tree " +
-          "and the graph. Usual cause: the page was renamed on the canvas without " +
-          "republishing the library.",
-      );
-    });
-
   // Drop file-local scratch pages (e.g. "Local components") before classify +
   // write, so they leak into neither the registry nor the derived
   // categories.json. dsKit-only: the page-naming convention (and these scratch
@@ -375,7 +441,67 @@ async function syncRegistry(opts, kitId) {
     }
   }
 
+  var categoryDrift = [];
   if (kitId === "dsKit") {
+    // Carry a survivor's last-known category forward when a Figma page rename
+    // dropped or garbled its attribution, BEFORE the mass-loss tripwire runs, so
+    // a reshuffling file keeps shipping instead of reding the nightly. Then drop
+    // the now-stale "resolved to NO category" warnings for the ones we repaired,
+    // so the run report names only components that are STILL uncategorized.
+    categoryDrift = preserveKnownCategories(before, after);
+    if (categoryDrift.length) {
+      var restored = {};
+      categoryDrift.forEach(function (d) {
+        restored[d.slug] = true;
+      });
+      categoryWarnings = categoryWarnings.filter(function (w) {
+        return !(
+          w.code === "COMPONENT_WITHOUT_CATEGORY" && restored[w.component]
+        );
+      });
+      console.warn(
+        "[sync] CATEGORY DRIFT: " +
+          categoryDrift.length +
+          " component(s) kept their last-known category because Figma page " +
+          "attribution changed. Review components/src/category-page-overrides.json " +
+          "or accept the new structure.",
+      );
+      categoryDrift.forEach(function (d) {
+        console.warn(
+          "  - " +
+            d.slug +
+            " -> " +
+            d.from +
+            " (Figma now reports " +
+            (d.observed == null ? "no category" : "'" + d.observed + "'") +
+            (d.page ? ", page '" + d.page + "'" : "") +
+            ")",
+        );
+      });
+    }
+
+    // Report components STILL uncategorized after preservation (genuinely new,
+    // no last-known category to restore). Emitted here, post-preserve, so a
+    // rescued component never prints the scary "falls out" line above its
+    // rescue line.
+    categoryWarnings
+      .filter(function (w) {
+        return w.code === "COMPONENT_WITHOUT_CATEGORY";
+      })
+      .forEach(function (w) {
+        console.warn(
+          "[sync] NO CATEGORY: '" +
+            w.component +
+            "' (" +
+            w.name +
+            ") on published page '" +
+            w.page +
+            "' matches no category. It falls out of categories.json, the docs page tree " +
+            "and the graph. Usual cause: the page was renamed on the canvas without " +
+            "republishing the library.",
+        );
+      });
+
     var allowedLoss = (process.env.SYNC_ALLOW_CATEGORY_LOSS || "")
       .split(",")
       .map(function (s) {
@@ -462,6 +588,7 @@ async function syncRegistry(opts, kitId) {
     verdict: verdict,
     wrote: wrote,
     categoryWarnings: categoryWarnings,
+    categoryDrift: categoryDrift,
   };
 }
 
@@ -660,6 +787,41 @@ function buildChangelog(date, category, results, errors) {
             "**) — published page `" +
             escapeBackticks(w.page || "?") +
             "` matches no category",
+        );
+      });
+      lines.push("");
+    }
+
+    var preserved = r.categoryDrift || [];
+    if (preserved.length > 0) {
+      lines.push(
+        "### 🛟 " +
+          preserved.length +
+          " component(s) kept a last-known category (Figma attribution drifted)",
+      );
+      lines.push("");
+      lines.push(
+        "A Figma reorg changed how these components are bucketed, so their category " +
+          "came back missing or unrecognized. Rather than let them fall out of " +
+          "`categories.json`, the docs page tree, and the graph, the sync carried each " +
+          "one's **last-known category** (and its section/group/status) forward, matched " +
+          "by stable Figma identity. Nothing is lost, and this self-clears once the file " +
+          "settles. If a move is intentional, accept it in " +
+          "`components/src/category-page-overrides.json`.",
+      );
+      lines.push("");
+      preserved.forEach(function (d) {
+        lines.push(
+          "- `" +
+            escapeBackticks(d.slug) +
+            "` kept **" +
+            escapeBackticks(d.from) +
+            "** (Figma now reports " +
+            (d.observed == null
+              ? "no category"
+              : "`" + escapeBackticks(d.observed) + "`") +
+            (d.page ? " on page `" + escapeBackticks(d.page) + "`" : "") +
+            ")",
         );
       });
       lines.push("");
@@ -1227,6 +1389,18 @@ async function run(opts) {
     changelog,
     "utf8",
   );
+  // Category-drift handoff: how many components kept a last-known category
+  // because Figma page attribution churned. The workflow raises/auto-resolves
+  // a non-blocking `category-drift` issue from this count, so a reshuffle
+  // reaches a human without reding the sync.
+  var driftCount = results.reduce(function (n, r) {
+    return n + ((r && r.categoryDrift && r.categoryDrift.length) || 0);
+  }, 0);
+  fs.writeFileSync(
+    path.join(artifactsDir, "sync-drift.txt"),
+    driftCount + "\n",
+    "utf8",
+  );
 
   // Auto-bump plugin.json patch when generated data actually changed.
   // Cowork (cloud) re-pulls plugin per session and reads from the bumped
@@ -1364,5 +1538,6 @@ module.exports = {
   DENIED_PAGES: DENIED_PAGES,
   loadPageOverrides: loadPageOverrides,
   categoryCounts: categoryCounts,
+  preserveKnownCategories: preserveKnownCategories,
   assertNoCategoryMassLoss: assertNoCategoryMassLoss,
 };
