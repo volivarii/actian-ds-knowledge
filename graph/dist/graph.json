@@ -7699,6 +7699,11 @@
     },
     {
       "source": "component:modal",
+      "target": "component:arrow-down",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:modal",
       "target": "component:button",
       "type": "composed_of"
     },
@@ -8230,6 +8235,11 @@
     {
       "source": "component:tag-status",
       "target": "component:spinner",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:text-input",
+      "target": "component:arrow-down",
       "type": "composed_of"
     },
     {

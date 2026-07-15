@@ -7255,7 +7255,7 @@
       "_schema_version": 1,
       "slug": "digram-item-types",
       "kit": "dskit",
-      "synced_at": "2026-07-14T09:01:55.070Z",
+      "synced_at": "2026-07-15T12:44:12.117Z",
       "source": {
         "fileKey": "l8biHxfarNi1I2RMvVxVOK",
         "nodeId": "14007:23209",
@@ -7378,18 +7378,30 @@
             {
               "prop": "Item type",
               "values": [
-                "Glossary 2",
-                "Glossary 5"
+                "Glossary 2"
               ],
               "background": "#ffebce"
             },
             {
               "prop": "Item type",
               "values": [
-                "Glossary 3",
+                "Glossary 3"
+              ],
+              "background": "#fffbef"
+            },
+            {
+              "prop": "Item type",
+              "values": [
                 "Glossary 4"
               ],
-              "background": "#fff4ec"
+              "background": "#feeddc"
+            },
+            {
+              "prop": "Item type",
+              "values": [
+                "Glossary 5"
+              ],
+              "background": "#fff5d5"
             },
             {
               "prop": "Item type",
@@ -15604,65 +15616,35 @@
       "_schema_version": 1,
       "slug": "modal",
       "kit": "dskit",
-      "synced_at": "2026-07-12T20:29:04.398Z",
+      "synced_at": "2026-07-15T12:44:12.117Z",
       "source": {
         "fileKey": "l8biHxfarNi1I2RMvVxVOK",
         "nodeId": "14175:14426",
         "variant": "Size & Type=1200px, Dev status=🟢 Ready"
       },
       "quality": {
-        "nodesTotal": 10,
-        "nodesNormalized": 10,
+        "nodesTotal": 9,
+        "nodesNormalized": 9,
         "ratio": 1,
         "degraded": [],
         "structuralVariants": [
           {
             "prop": "Size & Type",
             "value": "450px confirm",
-            "path": "0",
-            "reason": "kind:container!=text"
-          },
-          {
-            "prop": "Size & Type",
-            "value": "450px confirm",
-            "path": "1",
-            "reason": "kind:container!=text"
+            "path": "",
+            "reason": "childCount:3!=5"
           },
           {
             "prop": "Size & Type",
             "value": "450px warning",
-            "path": "0",
-            "reason": "kind:container!=text"
-          },
-          {
-            "prop": "Size & Type",
-            "value": "450px warning",
-            "path": "1",
-            "reason": "kind:container!=text"
-          },
-          {
-            "prop": "Size & Type",
-            "value": "450px warning",
-            "path": "2",
-            "reason": "kind:instance!=text"
+            "path": "",
+            "reason": "childCount:3!=5"
           },
           {
             "prop": "Size & Type",
             "value": "700px create",
             "path": "1",
             "reason": "childCount:1!=5"
-          },
-          {
-            "prop": "Size & Type",
-            "value": "700px create",
-            "path": "2",
-            "reason": "kind:instance!=container"
-          },
-          {
-            "prop": "Size & Type",
-            "value": "700px create",
-            "path": "3",
-            "reason": "kind:container!=instance"
           },
           {
             "prop": "Size & Type",
@@ -15679,8 +15661,8 @@
           {
             "prop": "Size & Type",
             "value": "900px edit",
-            "path": "",
-            "reason": "childCount:4!=3"
+            "path": "1",
+            "reason": "childCount:1!=2"
           }
         ]
       },
@@ -15800,7 +15782,8 @@
                   "prop": "Size & Type",
                   "values": [
                     "700px setting",
-                    "900px create"
+                    "900px create",
+                    "900px edit"
                   ],
                   "background": null
                 }
@@ -15840,49 +15823,20 @@
                   "State": "Default"
                 },
                 "tokenRefs": [
-                  "--zen-border-default"
+                  "--zen-border-subtle"
                 ],
                 "id": "14226:20669",
                 "appearance": {
                   "background": "#ffffff",
                   "border": {
-                    "color": "#c7c7ce",
-                    "colorToken": "--zen-border-default",
+                    "color": "#e1e1e6",
+                    "colorToken": "--zen-border-subtle",
                     "width": "1px"
                   },
                   "radius": "6px"
                 }
               }
             ]
-          },
-          {
-            "name": "Button",
-            "kind": "instance",
-            "slug": "button",
-            "props": {
-              "Show leading icon": true,
-              "Show label": true,
-              "Show trailing icon": true,
-              "Label": "Button",
-              "Intent": "Default",
-              "Emphasis": "Icon-only",
-              "Size": "Small",
-              "State": "Default"
-            },
-            "id": "14226:20350",
-            "appearance": {
-              "radius": "9999px",
-              "variants": [
-                {
-                  "prop": "Size & Type",
-                  "values": [
-                    "450px confirm"
-                  ],
-                  "radius": null,
-                  "slug": "text-input"
-                }
-              ]
-            }
           },
           {
             "name": "Footer",
@@ -15896,17 +15850,7 @@
                 "color": "#c7c7ce",
                 "colorToken": "--zen-border-default",
                 "width": "1px"
-              },
-              "variants": [
-                {
-                  "prop": "Size & Type",
-                  "values": [
-                    "450px confirm",
-                    "450px warning"
-                  ],
-                  "border": null
-                }
-              ]
+              }
             },
             "layout": {
               "axis": "row",
@@ -15978,17 +15922,7 @@
                 "appearance": {
                   "background": "#0f5fdc",
                   "backgroundToken": "--zen-color-bg-primary",
-                  "radius": "9999px",
-                  "variants": [
-                    {
-                      "prop": "Size & Type",
-                      "values": [
-                        "450px warning"
-                      ],
-                      "background": "#c12c11",
-                      "backgroundToken": "--zen-color-icon-error"
-                    }
-                  ]
+                  "radius": "9999px"
                 }
               }
             ]
@@ -26913,7 +26847,7 @@
       "_schema_version": 1,
       "slug": "text-input",
       "kit": "dskit",
-      "synced_at": "2026-07-14T09:01:55.070Z",
+      "synced_at": "2026-07-15T12:44:12.117Z",
       "source": {
         "fileKey": "l8biHxfarNi1I2RMvVxVOK",
         "nodeId": "7238:2487",
@@ -27140,6 +27074,9 @@
                 "kind": "instance",
                 "unresolved": true,
                 "props": {
+                  "Show buttons": true,
+                  "Show delete icon": false,
+                  "Show trailing icon": false,
                   "State": "Default"
                 },
                 "tokenRefs": [
