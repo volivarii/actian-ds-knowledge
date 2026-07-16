@@ -79,7 +79,10 @@ function firstPara(text) {
 function dedupe(arr) {
   var seen = {};
   return arr.filter(function (x) {
-    var k = x.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    var k = x
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
     if (seen[k]) return false;
     seen[k] = 1;
     return true;
@@ -91,7 +94,10 @@ function dedupe(arr) {
 function categoryBody(category) {
   if (!category) return "";
   try {
-    var raw = fs.readFileSync(path.join(CATEGORIES_DIR, category + ".md"), "utf8");
+    var raw = fs.readFileSync(
+      path.join(CATEGORIES_DIR, category + ".md"),
+      "utf8",
+    );
     var parts = raw.split(/\n---\n/);
     var body = parts.length > 1 ? parts.slice(1).join("\n---\n") : raw;
     return clean(body);
@@ -104,7 +110,8 @@ function usageNote(doc, opts) {
   opts = opts || {};
   var include = opts.strict ? STRICT : opts.include || PERMISSIVE;
   var D = doc.domains || {};
-  var category = (doc.meta && doc.meta.category) || (doc._meta && doc._meta.category);
+  var category =
+    (doc.meta && doc.meta.category) || (doc._meta && doc._meta.category);
 
   var ok = function (name) {
     var dom = D[name] || {};
@@ -112,7 +119,8 @@ function usageNote(doc, opts) {
   };
   var isInherited = function (name) {
     return (
-      (D[name] || {}).status === "inherited" && include.indexOf("inherited") >= 0
+      (D[name] || {}).status === "inherited" &&
+      include.indexOf("inherited") >= 0
     );
   };
   var draftUsed = [];
@@ -202,7 +210,8 @@ function usageNote(doc, opts) {
   }
 
   var caveats = [];
-  if (draftUsed.length) caveats.push("DRAFT (" + dedupe(draftUsed).join(", ") + ")");
+  if (draftUsed.length)
+    caveats.push("DRAFT (" + dedupe(draftUsed).join(", ") + ")");
   if (inheritedUsed.length) {
     caveats.push(
       "INHERITED from category (" + dedupe(inheritedUsed).join(", ") + ")",
@@ -213,15 +222,64 @@ function usageNote(doc, opts) {
   }
   if (caveats.length) {
     out.push(
-      "\n> Note: includes guidance not yet ratified: " + caveats.join("; ") + ".",
+      "\n> Note: includes guidance not yet ratified: " +
+        caveats.join("; ") +
+        ".",
     );
   }
 
   return out.join("\n");
 }
 
+// A note is worth emitting only when it has at least one section beyond the title.
+function hasBody(note) {
+  return /\n## /.test(note);
+}
+
+function deriveAll(opts) {
+  var out = {};
+  fs.readdirSync(GUIDELINES_DIR)
+    .filter(function (f) {
+      return f.endsWith(".json");
+    })
+    .sort()
+    .forEach(function (f) {
+      var slug = path.basename(f, ".json");
+      var doc;
+      try {
+        doc = JSON.parse(fs.readFileSync(path.join(GUIDELINES_DIR, f), "utf8"));
+      } catch (e) {
+        process.stderr.write("skip " + slug + " (unreadable guideline)\n");
+        return;
+      }
+      var note = usageNote(doc, opts);
+      if (hasBody(note)) out[slug] = note;
+    });
+  return out;
+}
+
+if (require.main === module) {
+  var strict = process.argv.indexOf("--strict") >= 0;
+  var all = deriveAll({ strict: strict });
+  var outDir = path.join(
+    REPO_ROOT,
+    "components",
+    "render",
+    "dist",
+    "usage-notes",
+  );
+  fs.mkdirSync(outDir, { recursive: true });
+  Object.keys(all).forEach(function (slug) {
+    fs.writeFileSync(path.join(outDir, slug + ".md"), all[slug] + "\n");
+  });
+  process.stdout.write(
+    "wrote " + Object.keys(all).length + " usage note(s) -> " + outDir + "\n",
+  );
+}
+
 module.exports = {
   usageNote: usageNote,
+  deriveAll: deriveAll,
   clean: clean,
   sections: sections,
   categoryBody: categoryBody,

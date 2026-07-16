@@ -3,12 +3,18 @@ var test = require("node:test");
 var assert = require("node:assert/strict");
 var path = require("node:path");
 var fs = require("node:fs");
-var { usageNote } = require("../../scripts/render/derive-usage-notes.js");
+var {
+  usageNote,
+  deriveAll,
+} = require("../../scripts/render/derive-usage-notes.js");
 
 function guideline(slug) {
   return JSON.parse(
     fs.readFileSync(
-      path.resolve(__dirname, "../../components/dist/guidelines/" + slug + ".json"),
+      path.resolve(
+        __dirname,
+        "../../components/dist/guidelines/" + slug + ".json",
+      ),
       "utf8",
     ),
   );
@@ -22,7 +28,10 @@ test("usageNote: approved-only draws only approved domains", function () {
     note.indexOf("When not to use") < 0,
     "no draft 'when not to use' under strict",
   );
-  assert.ok(note.indexOf("> Note:") < 0, "no disclosure when only approved used");
+  assert.ok(
+    note.indexOf("> Note:") < 0,
+    "no disclosure when only approved used",
+  );
 });
 
 test("usageNote: permissive adds draft guidance and a disclosure", function () {
@@ -56,4 +65,16 @@ test("usageNote: no em-dash or en-dash in the generated framing", function () {
     framing.indexOf("—") < 0 && framing.indexOf("–") < 0,
     "framing has no em/en dash",
   );
+});
+
+test("deriveAll: emits a note for a component with prose, omits one without", function () {
+  var all = deriveAll();
+  assert.ok(
+    all.button && all.button.indexOf("When to use") >= 0,
+    "button note present",
+  );
+  // A note is only emitted when there is real guidance; every emitted value has a section.
+  Object.keys(all).forEach(function (slug) {
+    assert.match(all[slug], /\n## /, slug + " note has at least one section");
+  });
 });
