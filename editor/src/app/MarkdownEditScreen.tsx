@@ -38,6 +38,13 @@ import {
 } from "../markdown-engine/rawFrontmatter";
 import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
+import { installCrossSurfaceHighlight } from "../lib/crossSurfaceHighlight";
+import { installRefHoverCard } from "../lib/refHoverCard";
+import { useAttachController } from "../lib/attachController";
+import { layoutNeighborhood } from "../substrate/neighborhoodLayout";
+import { nodeIdForFile } from "../substrate/nodeIdForFile";
+import { bakedGraphIndex } from "../substrate/graphIndex";
+import { mapNodeNavTarget } from "../substrate/navTargetForNodeId";
 import {
   RelationsPanel,
   readRelationsPanelCollapsed,
@@ -119,6 +126,40 @@ export function MarkdownEditScreen({
   // Mirror `preloaded` in a ref so the load effect can read it without adding
   // it (a fresh object literal each render) to its [gh, path] deps and looping.
   const preloadedRef = useRef(preloaded);
+
+  // Coordinated highlight: hovering an inline typed link lights the matching
+  // relations-rail row (and vice versa). Delegated on the screen root, so it
+  // covers the editor pane, the preview, and the rail as they re-render.
+  // Callback ref (not useEffect+useRef): the root mounts behind a loading gate
+  // (Spinner until the fetch resolves), so an effect with [] deps would capture
+  // a null ref and never re-run. This installs on attach and tears down on
+  // detach, surviving the Spinner->ready transition and file-switch remounts.
+  const attachHighlightRoot = useAttachController((root) => {
+    const highlight = installCrossSurfaceHighlight(root);
+    const hoverCard = installRefHoverCard(root);
+    return () => {
+      highlight();
+      hoverCard();
+    };
+  });
+
+  // The current file's graph node (if any), and its neighborhood laid out
+  // compact for the rail map beside the note. Map nodes carry data-ref, so the
+  // map joins the cross-surface highlight. Undefined when the file has no graph
+  // node. currentNodeId also guards the map's own "you are here" node from
+  // navigating away (mapNodeNavTarget below).
+  const currentNodeId = useMemo(() => nodeIdForFile(path), [path]);
+  const neighborhoodLayout = useMemo(
+    () =>
+      currentNodeId
+        ? layoutNeighborhood(currentNodeId, bakedGraphIndex(), {
+            depth: 1,
+            width: 236,
+            height: 200,
+          })
+        : undefined,
+    [currentNodeId],
+  );
   preloadedRef.current = preloaded;
   const [anchorPopover, setAnchorPopover] = useState<{
     slug: string;
@@ -609,12 +650,17 @@ export function MarkdownEditScreen({
         collapsed={relationsCollapsed}
         onToggleCollapsed={toggleRelationsCollapsed}
         activeAnchor={wysiwyg ? null : activeAnchor}
+        neighborhoodLayout={neighborhoodLayout}
+        onFocusNode={(id) => {
+          const target = mapNodeNavTarget(id, currentNodeId);
+          if (target) handleOpenFile(target);
+        }}
       />
     </Box>
   );
 
   return (
-    <Flex direction="column" height="100%" gap="2">
+    <Flex ref={attachHighlightRoot} direction="column" height="100%" gap="2">
       <TierBanner path={path} />
       <Flex align="center" justify="between" gap="2" wrap="wrap">
         <Heading size="3">{path}</Heading>

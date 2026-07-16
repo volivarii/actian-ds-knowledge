@@ -446,3 +446,32 @@ test("Enter on a node still calls onFocusNode with its id", () => {
   assert.equal(calls.length, 1, "onFocusNode should have been called once");
   cleanup();
 });
+
+test("each node carries data-ref (its slug) so the map joins the cross-surface highlight", () => {
+  const { container } = renderView();
+  const nodeGs = getNodeGs(container);
+  const focus = nodeGs.find((g) =>
+    g.getAttribute("aria-label")?.includes("Button"),
+  )!;
+  // component:button -> data-ref "button", matching the inline link + rail row
+  assert.equal(focus.getAttribute("data-ref"), "button");
+  const contrast = nodeGs.find((g) =>
+    g.getAttribute("aria-label")?.includes("Contrast"),
+  )!;
+  assert.equal(contrast.getAttribute("data-ref"), "contrast");
+});
+
+test("compact mode hides the filter toolbar but still renders the graph", () => {
+  const { container } = render(
+    <Theme>
+      <GraphView layout={layout} compact />
+    </Theme>,
+  );
+  assert.equal(
+    container.querySelector('[role="toolbar"]'),
+    null,
+    "no filter toolbar in compact mode",
+  );
+  assert.ok(container.querySelector("svg"), "svg still renders");
+  cleanup();
+});

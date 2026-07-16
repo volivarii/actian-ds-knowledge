@@ -17,6 +17,11 @@ import {
   navTargetForConnection,
   navTargetForNodeId,
 } from "../substrate/navTargetForNodeId";
+import { relationTypeColor } from "../lib/relationTypes";
+import { groupGraphNeighbors } from "../lib/relationGroups";
+import { GraphView } from "./GraphView";
+import type { Layout } from "../substrate/neighborhoodLayout";
+import { slugOfNodeId } from "../substrate/nodeSlug";
 
 export interface RelationsPanelProps {
   text: string;
@@ -51,6 +56,13 @@ export interface RelationsPanelProps {
    *  scopes the Incoming list, it only shows the author where they are. Rich
    *  mode has no cursor callback yet, so it passes null (no active marker). */
   activeAnchor?: string | null;
+  /** The current file's neighborhood, laid out for a compact map beside the
+   *  note. When provided, the panel renders it; its nodes carry data-ref, so
+   *  the map joins the cross-surface highlight. Optional: callers with no graph
+   *  node for the file (or the frontmatter-form body view) omit it. */
+  neighborhoodLayout?: Layout;
+  /** Re-root/open a node from the map. */
+  onFocusNode?: (id: string) => void;
 }
 
 const COLLAPSE_STORAGE_KEY = "relationsPanelCollapsed";
@@ -96,13 +108,25 @@ function NavRow(props: {
   target: string | null;
   onOpen: (target: string) => void;
   testid: string;
+  /** Node type of the row's subject, surfaced as data-node-type so the row can
+   *  carry a typed dot and join the cross-surface highlight. */
+  nodeType?: string;
+  /** Referenced slug, surfaced as data-ref so an inline link with the same
+   *  slug highlights this row together (installCrossSurfaceHighlight). */
+  refSlug?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
 }) {
   const { target } = props;
   if (target === null) {
     return (
-      <Box data-testid={props.testid} px="1" style={props.style}>
+      <Box
+        data-testid={props.testid}
+        data-node-type={props.nodeType}
+        data-ref={props.refSlug}
+        px="1"
+        style={props.style}
+      >
         {props.children}
       </Box>
     );
@@ -111,6 +135,8 @@ function NavRow(props: {
   return (
     <Box
       data-testid={props.testid}
+      data-node-type={props.nodeType}
+      data-ref={props.refSlug}
       role="button"
       tabIndex={0}
       px="1"
@@ -129,6 +155,10 @@ export function RelationsPanel(props: RelationsPanelProps) {
   // resolved anchor, so neither the outline rows nor the Manage fallback
   // re-run computeFocusedSection per heading per render.
   const entries = useMemo(() => sectionAnchors(props.text), [props.text]);
+  const graphGroups = useMemo(
+    () => groupGraphNeighbors(props.graphNeighbors),
+    [props.graphNeighbors],
+  );
   const [scopedAnchor, setScopedAnchor] = useState<string | null>(null);
 
   const visibleIncoming = scopedAnchor
@@ -310,36 +340,85 @@ export function RelationsPanel(props: RelationsPanelProps) {
             </NavRow>
           ))}
 
-          <Text size="1" color="gray" mt="1">
-            In the graph (as of last merge)
-          </Text>
+          <Flex align="center" justify="between" mt="1">
+            <Text size="1" weight="bold" color="gray">
+              In the graph
+            </Text>
+            {/* Honest freshness: graph edges are baked at the last merge, not
+                live like the anchor-derived Referenced-by list above. */}
+            <Text size="1" color="gray">
+              as of last merge
+            </Text>
+          </Flex>
           {props.graphNeighbors.length === 0 && (
             <Text size="1" color="gray" data-testid="graph-empty">
               No graph connections yet.
             </Text>
           )}
-          {props.graphNeighbors.map((n, i) => (
-            // navTargetForNodeId is the same node-id -> activePath mapping
-            // NeighborhoodPanel already uses. Not every node type
-            // round-trips to an editable path (content, motion): those
-            // rows stay plain, non-interactive.
-            <NavRow
-              key={`${n.id}:${i}`}
-              testid="graph-row"
-              target={navTargetForNodeId(n.id)}
-              onOpen={props.onOpenFile}
-            >
-              <Flex gap="1" align="center">
-                <Badge size="1" variant="soft">
-                  {n.edgeType.replace(/_/g, " ")}
-                </Badge>
-                <Text size="1">{n.direction === "in" ? "←" : "→"}</Text>
-                <Text size="1" truncate>
-                  {n.node?.title ?? n.id}
-                </Text>
-              </Flex>
-            </NavRow>
+          {/* Grouped by human relationship (Appears in / Used in patterns /
+              Contains / ...) instead of a flat list of raw edge-type badges.
+              Each row carries a typed dot + its node type so a relationship
+              reads by kind at a glance and can join the cross-surface
+              highlight in a later slice. */}
+          {graphGroups.map((group) => (
+            <Box key={group.label} mt="1">
+              <Text size="1" color="gray" data-testid="graph-group-label">
+                {group.label}
+              </Text>
+              {group.items.map((n, i) => (
+                // navTargetForNodeId is the same node-id -> activePath mapping
+                // NeighborhoodPanel already uses. Not every node type
+                // round-trips to an editable path (content, motion): those
+                // rows stay plain, non-interactive.
+                <NavRow
+                  key={`${group.label}:${n.id}:${i}`}
+                  testid="graph-row"
+                  nodeType={n.node?.type ?? "unknown"}
+                  refSlug={slugOfNodeId(n.id)}
+                  target={navTargetForNodeId(n.id)}
+                  onOpen={props.onOpenFile}
+                >
+                  <Flex gap="2" align="center">
+                    <span
+                      data-testid="reldot"
+                      aria-hidden
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: 999,
+                        background: relationTypeColor(
+                          n.node?.type ?? "unknown",
+                        ),
+                        flex: "none",
+                      }}
+                    />
+                    <Text size="1" truncate>
+                      {n.node?.title ?? n.id}
+                    </Text>
+                  </Flex>
+                </NavRow>
+              ))}
+            </Box>
           ))}
+
+          {props.neighborhoodLayout && (
+            <Box mt="3">
+              <Text size="1" weight="bold" color="gray">
+                Neighborhood
+              </Text>
+              <Box mt="1">
+                {/* key on the file so the map remounts per file: its roving
+                    tabindex resets to the focus node instead of carrying a
+                    stale active index into the next file's map. */}
+                <GraphView
+                  key={props.file}
+                  layout={props.neighborhoodLayout}
+                  compact
+                  onFocusNode={props.onFocusNode}
+                />
+              </Box>
+            </Box>
+          )}
         </>
       )}
     </Flex>

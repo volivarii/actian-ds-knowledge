@@ -8,28 +8,21 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { Badge, Box, Button, Flex } from "@radix-ui/themes";
 import type { Layout, PlacedNode } from "../substrate/neighborhoodLayout";
+import {
+  NODE_TYPE_COLOR,
+  NODE_TYPE_LABEL,
+  relationTypeColor,
+  relationTypeLabel,
+} from "../lib/relationTypes";
+import { slugOfNodeId } from "../substrate/nodeSlug";
+
+// Re-exported so existing importers (GraphHealthTab) keep resolving these from
+// GraphView; the canonical definitions now live in the shared relationTypes
+// module so the graph map, the relations rail, and inline chips share one
+// typed-color language.
+export { NODE_TYPE_COLOR, NODE_TYPE_LABEL };
 
 const MAX_LABEL_LEN = 18;
-
-export const NODE_TYPE_COLOR: Record<string, string> = {
-  component: "var(--indigo-9)",
-  category: "var(--gray-8)",
-  a11y_criterion: "var(--grass-9)",
-  foundation_section: "var(--amber-9)",
-  motion_pattern: "var(--purple-9)",
-  content_topic: "var(--cyan-9)",
-  unknown: "var(--gray-6)",
-};
-
-export const NODE_TYPE_LABEL: Record<string, string> = {
-  component: "Component",
-  category: "Category",
-  a11y_criterion: "Accessibility criterion",
-  foundation_section: "Foundation",
-  motion_pattern: "Motion pattern",
-  content_topic: "Content topic",
-  unknown: "Node",
-};
 
 export const EDGE_TYPE_LABEL: Record<string, string> = {
   a11y_ref: "Accessibility",
@@ -41,10 +34,10 @@ export const EDGE_TYPE_LABEL: Record<string, string> = {
 };
 
 function typeColor(t: string): string {
-  return NODE_TYPE_COLOR[t] ?? NODE_TYPE_COLOR.unknown!;
+  return relationTypeColor(t);
 }
 function typeLabel(t: string): string {
-  return NODE_TYPE_LABEL[t] ?? NODE_TYPE_LABEL.unknown!;
+  return relationTypeLabel(t);
 }
 function edgeLabel(t: string): string {
   return EDGE_TYPE_LABEL[t] ?? "Related";
@@ -54,9 +47,17 @@ export interface GraphViewProps {
   layout: Layout;
   onFocusNode?: (id: string) => void;
   onReset?: () => void;
+  /** Compact placements (the relations rail beside the note) hide the filter
+   *  toolbar and render just the graph. */
+  compact?: boolean;
 }
 
-export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
+export function GraphView({
+  layout,
+  onFocusNode,
+  onReset,
+  compact,
+}: GraphViewProps) {
   // ── Node-type filter ────────────────────────────────────────────────────
   const presentTypes = useMemo(
     () => [...new Set(layout.nodes.map((n) => n.type))].sort(),
@@ -186,78 +187,34 @@ export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
 
   return (
     <Box>
-      {/* Legend = filter. Color + label, so color is not the sole channel. */}
-      <Flex
-        gap="2"
-        wrap="wrap"
-        mb="2"
-        align="center"
-        role="toolbar"
-        aria-label="Graph view controls"
-      >
-        {/* Node-type toggles */}
+      {/* Legend = filter. Color + label, so color is not the sole channel.
+          Hidden in compact placements (the rail map), which have no room. */}
+      {!compact && (
         <Flex
           gap="2"
           wrap="wrap"
+          mb="2"
           align="center"
-          role="group"
-          aria-label="Filter by node type"
+          role="toolbar"
+          aria-label="Graph view controls"
         >
-          {presentTypes.map((t) => {
-            const off = hiddenNodeTypes.has(t);
-            return (
-              <button
-                key={t}
-                type="button"
-                aria-pressed={!off}
-                aria-label={`Toggle ${typeLabel(t)}`}
-                onClick={() => toggleNodeType(t)}
-                style={{
-                  background: "none",
-                  border: 0,
-                  padding: 0,
-                  cursor: "pointer",
-                }}
-              >
-                <Badge variant={off ? "outline" : "soft"} color="gray">
-                  <span
-                    aria-hidden
-                    style={{
-                      display: "inline-block",
-                      width: 8,
-                      height: 8,
-                      borderRadius: 8,
-                      background: typeColor(t),
-                      marginRight: 6,
-                      opacity: off ? 0.3 : 1,
-                    }}
-                  />
-                  {typeLabel(t)}
-                </Badge>
-              </button>
-            );
-          })}
-        </Flex>
-
-        {/* Edge-type toggles */}
-        {presentEdgeTypes.length > 0 && (
+          {/* Node-type toggles */}
           <Flex
             gap="2"
             wrap="wrap"
             align="center"
             role="group"
-            aria-label="Filter by relationship type"
+            aria-label="Filter by node type"
           >
-            {presentEdgeTypes.map((t) => {
-              const off = hiddenEdgeTypes.has(t);
-              const label = edgeLabel(t);
+            {presentTypes.map((t) => {
+              const off = hiddenNodeTypes.has(t);
               return (
                 <button
                   key={t}
                   type="button"
                   aria-pressed={!off}
-                  aria-label={`Toggle ${label} relationships`}
-                  onClick={() => toggleEdgeType(t)}
+                  aria-label={`Toggle ${typeLabel(t)}`}
+                  onClick={() => toggleNodeType(t)}
                   style={{
                     background: "none",
                     border: 0,
@@ -266,23 +223,70 @@ export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
                   }}
                 >
                   <Badge variant={off ? "outline" : "soft"} color="gray">
-                    {label}
+                    <span
+                      aria-hidden
+                      style={{
+                        display: "inline-block",
+                        width: 8,
+                        height: 8,
+                        borderRadius: 8,
+                        background: typeColor(t),
+                        marginRight: 6,
+                        opacity: off ? 0.3 : 1,
+                      }}
+                    />
+                    {typeLabel(t)}
                   </Badge>
                 </button>
               );
             })}
           </Flex>
-        )}
 
-        <Button
-          size="1"
-          variant="soft"
-          aria-label="Reset graph view"
-          onClick={handleReset}
-        >
-          Reset view
-        </Button>
-      </Flex>
+          {/* Edge-type toggles */}
+          {presentEdgeTypes.length > 0 && (
+            <Flex
+              gap="2"
+              wrap="wrap"
+              align="center"
+              role="group"
+              aria-label="Filter by relationship type"
+            >
+              {presentEdgeTypes.map((t) => {
+                const off = hiddenEdgeTypes.has(t);
+                const label = edgeLabel(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-pressed={!off}
+                    aria-label={`Toggle ${label} relationships`}
+                    onClick={() => toggleEdgeType(t)}
+                    style={{
+                      background: "none",
+                      border: 0,
+                      padding: 0,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Badge variant={off ? "outline" : "soft"} color="gray">
+                      {label}
+                    </Badge>
+                  </button>
+                );
+              })}
+            </Flex>
+          )}
+
+          <Button
+            size="1"
+            variant="soft"
+            aria-label="Reset graph view"
+            onClick={handleReset}
+          >
+            Reset view
+          </Button>
+        </Flex>
+      )}
 
       <svg
         width={layout.width}
@@ -355,6 +359,7 @@ function GraphNode({
       ref={nodeRef}
       role="button"
       tabIndex={tabIndex}
+      data-ref={slugOfNodeId(node.id)}
       aria-label={`${node.title}, ${typeLabel(node.type)}, ${node.degree} connections`}
       style={{ cursor: onFocusNode ? "pointer" : "default" }}
       onClick={onClick}

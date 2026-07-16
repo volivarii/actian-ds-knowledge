@@ -349,3 +349,59 @@ body {
 form.fm-form.fm-collapsed > *:not(.fm-form-children) {
   display: none;
 }
+
+/* Cross-surface relation highlight (crossSurfaceHighlight): hovering or
+   focusing an inline typed link (.md-ref) or a relations-rail row lights every
+   element sharing its data-ref. The accent alpha reads on both themes and
+   layers over the element's own background without hiding its text. */
+.rel-hot {
+  background-color: var(--accent-a4);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px var(--accent-a6);
+}
+/* Inline typed reference: no underline (the color dot marks it), and a pointer
+   only when it resolves to a real target. */
+.md-ref {
+  text-decoration: none;
+}
+
+/* Inline reference hover-preview card (refHoverCard): a floating card with the
+   target's type badge, title, and graph context. Appended to <body>, absolutely
+   positioned by the controller; non-interactive (a tooltip). */
+.ref-hover-card {
+  position: absolute;
+  z-index: 50;
+  max-width: 264px;
+  padding: 10px 12px;
+  background: var(--color-panel-solid);
+  border: 1px solid var(--gray-6);
+  border-radius: 10px;
+  box-shadow: var(--shadow-4);
+  pointer-events: none;
+}
+.ref-card-type {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-11);
+}
+.ref-card-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+.ref-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 3px;
+  color: var(--gray-12);
+}
+.ref-card-context {
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--gray-11);
+}
