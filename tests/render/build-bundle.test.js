@@ -78,3 +78,26 @@ test("buildBundle: the Button card embeds a Usage section, marker + render intac
   assert.match(btn, /When to use/, "usage content present");
   assert.ok(!/\ssrc=|\shref=|@import/.test(btn), "still self-contained");
 });
+
+test("buildBundle: component cards are reconstructed from the shared css + fragment", function () {
+  var dir = freshDir();
+  var written = buildBundle(dir);
+  var btnRel = findCard(written, "button");
+  var btn = fs.readFileSync(path.join(dir, btnRel), "utf8");
+  // The reconstructed card inlines the shared stylesheet and the fragment markup.
+  var D = require("../../scripts/render/derive-canonical.js");
+  var out = D.deriveCanonical(
+    path.resolve(__dirname, "../../components/render/src"),
+  );
+  assert.ok(btn.indexOf(out.css) >= 0, "card inlines the shared render.css");
+  assert.ok(
+    btn.indexOf(out.fragments.button.trim().slice(0, 40)) >= 0,
+    "card carries the button fragment",
+  );
+  assert.match(
+    btn,
+    /body\{margin:0;padding:24px;background:#fff\}/,
+    "card re-adds the seed's page chrome",
+  );
+  assert.ok(!/\ssrc=|\shref=|@import/.test(btn), "still self-contained");
+});

@@ -297,6 +297,33 @@ function embedUsage(renderHtml, noteMd) {
   return renderHtml.replace("</body>", section + "</body>");
 }
 
+// The standalone-preview page chrome the seeds carried in a second <style> block
+// (identical across all 35 seeds). render.css deliberately excludes it, because
+// consumers embed render.css into their own page and must not inherit this body
+// framing. The standalone card re-adds it so the @dsCard preview matches the seed.
+var CARD_PAGE_CSS = "body{margin:0;padding:24px;background:#fff}";
+
+// Reconstruct a self-contained @dsCard document from the shared stylesheet and a
+// component fragment. This is the on-demand projection of the dedup dist: Claude
+// Design needs standalone files, so the bundle re-inlines render.css plus the card
+// page chrome per card.
+function selfContainedCard(css, fragment, group) {
+  return (
+    '<!-- @dsCard group="' +
+    group +
+    '" -->\n' +
+    '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    "<style>" +
+    css +
+    "\n" +
+    CARD_PAGE_CSS +
+    "</style></head><body>" +
+    fragment +
+    "</body></html>"
+  );
+}
+
 function buildBundle(outDir, opts) {
   opts = opts || {};
   var srcDir =
@@ -318,11 +345,16 @@ function buildBundle(outDir, opts) {
     } catch (e) {
       note = ""; // a rendered component with no guideline doc simply ships without a note
     }
+    var card = selfContainedCard(
+      canonical.css,
+      canonical.fragments[r.slug],
+      r.group,
+    );
     written.push(
       writeFile(
         outDir,
         path.join(r.group, r.slug + ".html"),
-        embedUsage(canonical.renders[r.slug], note),
+        embedUsage(card, note),
       ),
     );
   });
