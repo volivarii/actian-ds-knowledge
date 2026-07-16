@@ -905,14 +905,14 @@
     "components.render.fragments": {
       "dir": "components/render/dist/fragments",
       "pattern": "{slug}.html",
-      "type": "html",
+      "type": "text",
       "origin": "ci",
       "description": "Per-component markup fragments, combined with components/render/dist/render.css by consumers."
     },
     "components.render.src": {
       "dir": "components/render/src",
       "pattern": "{slug}.html",
-      "type": "html",
+      "type": "text",
       "origin": "ci",
       "description": "Captured self-contained seed renders (the derive input). A capture intermediate, excluded from the vendor snapshot."
     },
