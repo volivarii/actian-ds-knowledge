@@ -364,3 +364,44 @@ form.fm-form.fm-collapsed > *:not(.fm-form-children) {
 .md-ref {
   text-decoration: none;
 }
+
+/* Inline reference hover-preview card (refHoverCard): a floating card with the
+   target's type badge, title, and graph context. Appended to <body>, absolutely
+   positioned by the controller; non-interactive (a tooltip). */
+.ref-hover-card {
+  position: absolute;
+  z-index: 50;
+  max-width: 264px;
+  padding: 10px 12px;
+  background: var(--color-panel-solid);
+  border: 1px solid var(--gray-6);
+  border-radius: 10px;
+  box-shadow: var(--shadow-4);
+  pointer-events: none;
+}
+.ref-card-type {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-11);
+}
+.ref-card-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+.ref-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 3px;
+  color: var(--gray-12);
+}
+.ref-card-context {
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--gray-11);
+}
