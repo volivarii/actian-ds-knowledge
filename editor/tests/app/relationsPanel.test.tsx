@@ -505,3 +505,20 @@ test("relation group labels use author-facing vocabulary (Referenced by / Refere
   assert.ok(!container.textContent!.includes("Incoming"));
   assert.ok(!container.textContent!.includes("Outgoing"));
 });
+
+test("graph rows expose data-ref (the node slug) so an inline link can highlight the matching row", () => {
+  const neighbors: Neighbor[] = [
+    {
+      id: "component:table",
+      node: { id: "component:table", type: "component", title: "Table" },
+      edgeType: "composed_of",
+      note: null,
+      direction: "in",
+    },
+  ];
+  const { container } = renderPanel({ graphNeighbors: neighbors });
+  const row = container.querySelector("[data-testid='graph-row']")!;
+  // data-ref is the slug after the node-id prefix, matching the inline link's
+  // data-ref (resolveReference returns the bare component slug).
+  assert.equal(row.getAttribute("data-ref"), "table");
+});
