@@ -78,3 +78,45 @@ test("deriveCanonical: manifest validates against schemas/canonical-render.json"
   var ok = validate(out.manifest);
   assert.ok(ok, JSON.stringify(validate.errors));
 });
+
+test("deriveCanonical: a slug with no COMPONENT_META gets a registry-derived CEM", function () {
+  var D = require("../../scripts/render/derive-canonical.js");
+  // Build a tiny src dir with a toggle seed captured offline, or reuse a committed seed.
+  var out = D.deriveCanonical(SRC); // SRC now contains multiple seeds after Task 4 generation
+  var decl = out.cem.modules
+    .flatMap(function (m) {
+      return m.declarations || [];
+    })
+    .find(function (d) {
+      return d.tagName === "zen-toggle";
+    });
+  assert.ok(decl, "zen-toggle declaration present");
+  assert.ok(
+    (decl.attributes || []).length >= 1,
+    "attributes derived from the registry",
+  );
+});
+
+test("deriveCanonical: dual-kit slug takes its variant axes from dskit, not an empty fmkit stand-in", function () {
+  // calendar / search / table also exist in fmkit with EMPTY variants. The
+  // registry merge must be ds-first-wins (matching the plugin's findComponent),
+  // or these components derive a zero-attribute CEM while their rendered card
+  // still shows the real dskit variants.
+  var out = D.deriveCanonical(SRC);
+  var decl = out.cem.modules
+    .flatMap(function (m) {
+      return m.declarations || [];
+    })
+    .find(function (d) {
+      return d.tagName === "zen-calendar";
+    });
+  assert.ok(decl, "zen-calendar declaration present");
+  var names = (decl.attributes || []).map(function (a) {
+    return a.name;
+  });
+  assert.ok(
+    names.indexOf("type") >= 0 && names.indexOf("selection") >= 0,
+    "calendar CEM carries dskit's Type + Selection axes, got: " +
+      JSON.stringify(names),
+  );
+});

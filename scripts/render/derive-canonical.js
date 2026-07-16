@@ -33,6 +33,7 @@ var CEM_SCHEMA = require(
 var MANIFEST_SCHEMA_VERSION = "1.0.0";
 var CEM_SCHEMA_VERSION = "1.0.0";
 var DIST_DIR_REL = "components/render/dist";
+var REPO_ROOT = path.resolve(__dirname, "..", "..");
 
 // Per-component CEM contract. Slice 1 hand-authors Button; slice 2 derives this
 // from the appearance + registry facts. cssSelector names the base class prefix
@@ -176,25 +177,84 @@ function validateSeed(slug, html) {
   return group;
 }
 
+// Read + merge the component registries (ds -> meta -> fm). Slugs not hand-
+// authored in COMPONENT_META fall back to these facts: variants become
+// attributes, description is passed through. Missing/unreadable registry
+// files are tolerated (merged stays partial) so a derive never throws on a
+// registry-plumbing problem, only on a genuinely missing CEM contract.
+// FIRST hit wins (a slug's first-seen kit is authoritative), mirroring the
+// plugin's ds-first findComponent. This matters for the few render slugs
+// (calendar, search, table) that also exist as empty-variant stand-ins in
+// fmkit: dskit carries their real variant axes, so a later, emptier kit must
+// not clobber them into a zero-attribute CEM.
+function readRegistries() {
+  var dir = path.join(REPO_ROOT, "components", "dist", "registries");
+  var merged = {};
+  ["dskit.json", "metakit.json", "fmkit.json"].forEach(function (f) {
+    try {
+      var reg = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+      var comps = reg.components || {};
+      Object.keys(comps).forEach(function (slug) {
+        if (!(slug in merged)) merged[slug] = comps[slug];
+      });
+    } catch (e) {}
+  });
+  return merged;
+}
+var REGISTRY = null;
+function registryEntry(slug) {
+  if (!REGISTRY) REGISTRY = readRegistries();
+  return REGISTRY[slug] || null;
+}
+
+// slug -> PascalCase, e.g. "tag-default" -> "TagDefault".
+function pascal(slug) {
+  return slug.replace(/(^|[-_])([a-z0-9])/g, function (_, __, ch) {
+    return ch.toUpperCase();
+  });
+}
+
 function buildDeclaration(slug, html) {
   var meta = COMPONENT_META[slug];
-  if (!meta) {
-    throw new Error(slug + ": no CEM metadata (add it to COMPONENT_META)");
-  }
   var style = extractStyle(html);
-  var cssProps = consumedVars(style, meta.cssSelector).map(function (name) {
+  if (meta) {
+    var cssProps = consumedVars(style, meta.cssSelector).map(function (name) {
+      return { name: name };
+    });
+    return {
+      kind: "class",
+      customElement: true,
+      name: meta.className,
+      tagName: meta.tagName,
+      description: meta.description,
+      attributes: meta.attributes,
+      slots: meta.slots,
+      cssParts: meta.cssParts,
+      cssProperties: cssProps,
+    };
+  }
+  // Registry-derived fallback: no hand-authored contract yet for this slug, so
+  // derive attributes from the registry's variant axes instead of throwing.
+  var entry = registryEntry(slug);
+  var variants = (entry && entry.variants) || {};
+  var attributes = Object.keys(variants).map(function (axis) {
+    return {
+      name: axis.toLowerCase(),
+      type: { text: (variants[axis] || []).join(" | ") },
+    };
+  });
+  var cssProps2 = consumedVars(style, "ds-" + slug).map(function (name) {
     return { name: name };
   });
   return {
     kind: "class",
     customElement: true,
-    name: meta.className,
-    tagName: meta.tagName,
-    description: meta.description,
-    attributes: meta.attributes,
-    slots: meta.slots,
-    cssParts: meta.cssParts,
-    cssProperties: cssProps,
+    name: pascal(slug),
+    tagName: "zen-" + slug,
+    description: (entry && entry.description) || pascal(slug) + " component.",
+    attributes: attributes,
+    cssParts: [],
+    cssProperties: cssProps2,
   };
 }
 

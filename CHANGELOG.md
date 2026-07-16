@@ -19,6 +19,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **The canonical render library now covers 35 components (North Star Step A).** The plugin's
+  capture-seed was generalized from Button to all 35 components the plugin renders: each component's
+  variant matrix is derived from its registry variant axes (primary axis, capped, plus a disabled
+  state), grouped by DS category, and `derive-canonical` now derives each component's Custom Elements
+  Manifest from the registry (tag `zen-<slug>`, attributes from the variant axes) when there is no
+  hand-authored override. The DesignSync bundle is now 38 cards: 35 component cards across 6 categories
+  (Action, Data Display, Feedback, Form, Navigation, Overlays), each with its render matrix + usage
+  section, plus the 3 foundations cards. Button keeps a curated Intent x Emphasis override. dist stays
+  uncommitted; shipping to consumers is a later slice.
 - **Per-component usage notes, derived from the guideline domains (North Star slice 2).**
   `scripts/render/derive-usage-notes.js` composes a concise, honest usage note per component
   (`usageNote(doc, opts)`): it dedupes the "When to use" / "When not to use" bullets, pulls "Style",
