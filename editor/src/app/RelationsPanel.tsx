@@ -19,6 +19,8 @@ import {
 } from "../substrate/navTargetForNodeId";
 import { relationTypeColor } from "../lib/relationTypes";
 import { groupGraphNeighbors } from "../lib/relationGroups";
+import { GraphView } from "./GraphView";
+import type { Layout } from "../substrate/neighborhoodLayout";
 
 export interface RelationsPanelProps {
   text: string;
@@ -53,6 +55,13 @@ export interface RelationsPanelProps {
    *  scopes the Incoming list, it only shows the author where they are. Rich
    *  mode has no cursor callback yet, so it passes null (no active marker). */
   activeAnchor?: string | null;
+  /** The current file's neighborhood, laid out for a compact map beside the
+   *  note. When provided, the panel renders it; its nodes carry data-ref, so
+   *  the map joins the cross-surface highlight. Optional: callers with no graph
+   *  node for the file (or the frontmatter-form body view) omit it. */
+  neighborhoodLayout?: Layout;
+  /** Re-root/open a node from the map. */
+  onFocusNode?: (id: string) => void;
 }
 
 const COLLAPSE_STORAGE_KEY = "relationsPanelCollapsed";
@@ -397,6 +406,21 @@ export function RelationsPanel(props: RelationsPanelProps) {
               ))}
             </Box>
           ))}
+
+          {props.neighborhoodLayout && (
+            <Box mt="3">
+              <Text size="1" weight="bold" color="gray">
+                Neighborhood
+              </Text>
+              <Box mt="1">
+                <GraphView
+                  layout={props.neighborhoodLayout}
+                  compact
+                  onFocusNode={props.onFocusNode}
+                />
+              </Box>
+            </Box>
+          )}
         </>
       )}
     </Flex>

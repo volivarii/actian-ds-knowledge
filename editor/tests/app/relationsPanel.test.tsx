@@ -19,6 +19,8 @@ import {
 import type { IncomingRef, Neighbor } from "../../src/lib/referenceIndex";
 import type { OutgoingConnection } from "../../src/substrate/refGraph";
 import type { Heading } from "../../src/lib/headingScan";
+import { layoutNeighborhood } from "../../src/substrate/neighborhoodLayout";
+import { buildGraphIndex } from "../../src/substrate/graphIndex";
 
 afterEach(() => {
   cleanup();
@@ -521,4 +523,38 @@ test("graph rows expose data-ref (the node slug) so an inline link can highlight
   // data-ref is the slug after the node-id prefix, matching the inline link's
   // data-ref (resolveReference returns the bare component slug).
   assert.equal(row.getAttribute("data-ref"), "table");
+});
+
+test("renders a compact neighborhood map with data-ref nodes when a layout is provided; none otherwise", () => {
+  const index = buildGraphIndex({
+    nodes: [
+      { id: "component:button", type: "component", title: "Button" },
+      { id: "component:table", type: "component", title: "Table" },
+    ],
+    edges: [
+      {
+        source: "component:table",
+        target: "component:button",
+        type: "composed_of",
+      },
+    ],
+  });
+  const layout = layoutNeighborhood("component:button", index, { depth: 1 });
+
+  const withMap = renderPanel({ neighborhoodLayout: layout });
+  assert.ok(withMap.container.querySelector("svg"), "the map renders");
+  assert.equal(
+    withMap.container.querySelector('[role="toolbar"]'),
+    null,
+    "compact map hides the filter toolbar",
+  );
+  const nodes = withMap.container.querySelectorAll(
+    "svg [role='button'][data-ref]",
+  );
+  assert.ok(nodes.length >= 1, "map nodes carry data-ref for the highlight");
+  cleanup();
+
+  // Without a layout, no map is shown.
+  const noMap = renderPanel();
+  assert.equal(noMap.container.querySelector("svg"), null);
 });
