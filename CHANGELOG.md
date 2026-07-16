@@ -20,6 +20,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 - **New `components/render/` domain: the canonical component render, seeded on Button (North Star slice 1).**
+  ([#430](https://github.com/volivarii/actian-ds-knowledge/pull/430))
   The substrate now owns a self-contained, token-bound HTML render per component plus its standards
   contract. Slice 1 proves the chain end to end on Button:
   - `components/render/src/button.html` seeds the canonical render (the Button variant matrix, Intent x
