@@ -165,24 +165,12 @@ function walkDir(relDir) {
   return results;
 }
 
-// Domains that live in the working tree but are NOT yet part of the declared
-// distributable manifest surface, so the orphan guard must not flag them.
-// components/render/ is the canonical component render library (North Star slice
-// 1): the seed src is tracked because a CI test reads it, but the domain is not
-// declared distributable until slice 1b adds its vendor include + CI derive
-// workflow, which also adds proper manifest coverage and removes this skip.
-var ORPHAN_SKIP_PREFIXES = [path.join("components", "render") + path.sep];
-
 function validateNoOrphans(manifest) {
   var errors = [];
   var covered = gatherCoveredFiles(manifest);
   for (var i = 0; i < CONTENT_DIRS.length; i++) {
     var files = walkDir(CONTENT_DIRS[i]);
     for (var j = 0; j < files.length; j++) {
-      var skip = ORPHAN_SKIP_PREFIXES.some(function (p) {
-        return files[j].indexOf(p) === 0;
-      });
-      if (skip) continue;
       if (!covered.has(files[j])) {
         errors.push("orphan file (not covered by manifest): " + files[j]);
       }

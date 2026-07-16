@@ -22,6 +22,11 @@
       "description": "File name of the Custom Elements Manifest emitted alongside the renders in the same dist directory.",
       "examples": ["custom-elements.json"]
     },
+    "css": {
+      "type": "string",
+      "description": "File name of the shared stylesheet inlined once and combined with each fragment.",
+      "examples": ["render.css"]
+    },
     "renders": {
       "type": "array",
       "description": "One entry per canonical component render present in the dist directory.",
@@ -31,7 +36,7 @@
             "slug": "button",
             "tagName": "zen-button",
             "group": "Components",
-            "file": "button.html",
+            "fragment": "fragments/button.html",
             "tokensConsumed": 19
           }
         ]
@@ -39,7 +44,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["slug", "tagName", "group", "file"],
+        "required": ["slug", "tagName", "group", "fragment"],
         "properties": {
           "slug": {
             "type": "string",
@@ -57,10 +62,10 @@
             "description": "The DesignSync @dsCard group the render belongs to, taken from the seed's marker comment.",
             "examples": ["Components"]
           },
-          "file": {
+          "fragment": {
             "type": "string",
-            "description": "File name of the self-contained render document in the dist directory.",
-            "examples": ["button.html"]
+            "description": "Path (relative to the dist directory) of the component's markup fragment, combined with the shared css by consumers.",
+            "examples": ["fragments/button.html"]
           },
           "tokensConsumed": {
             "type": "integer",

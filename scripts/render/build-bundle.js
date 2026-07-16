@@ -297,6 +297,30 @@ function embedUsage(renderHtml, noteMd) {
   return renderHtml.replace("</body>", section + "</body>");
 }
 
+// Reconstruct a self-contained @dsCard document from the shared stylesheet, the
+// page chrome, and a component fragment. This is the on-demand projection of the
+// dedup dist: Claude Design needs standalone files, so the bundle re-inlines
+// render.css plus the page chrome per card. Both come from the derive (pageCss is
+// the seeds' second <style> block, guarded there), so nothing is hardcoded here.
+// render.css deliberately excludes the page chrome, because consumers embed
+// render.css into their own page and must not inherit this body framing.
+function selfContainedCard(css, pageCss, fragment, group) {
+  return (
+    '<!-- @dsCard group="' +
+    group +
+    '" -->\n' +
+    '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    "<style>" +
+    css +
+    "\n" +
+    pageCss +
+    "</style></head><body>" +
+    fragment +
+    "</body></html>"
+  );
+}
+
 function buildBundle(outDir, opts) {
   opts = opts || {};
   var srcDir =
@@ -318,11 +342,17 @@ function buildBundle(outDir, opts) {
     } catch (e) {
       note = ""; // a rendered component with no guideline doc simply ships without a note
     }
+    var card = selfContainedCard(
+      canonical.css,
+      canonical.pageCss,
+      canonical.fragments[r.slug],
+      r.group,
+    );
     written.push(
       writeFile(
         outDir,
         path.join(r.group, r.slug + ".html"),
-        embedUsage(canonical.renders[r.slug], note),
+        embedUsage(card, note),
       ),
     );
   });

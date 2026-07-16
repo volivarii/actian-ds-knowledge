@@ -1,0 +1,4 @@
+{
+  "_comment": "Repo-relative sub-paths the plugin vendor must NOT copy, even though their top-level dir is included. These are heavy capture intermediates with no consumer. Paths use forward slashes and match a directory or file exactly.",
+  "exclude": ["components/render/src"]
+}

@@ -120,3 +120,68 @@ test("deriveCanonical: dual-kit slug takes its variant axes from dskit, not an e
       JSON.stringify(names),
   );
 });
+
+test("deriveCanonical: splits seeds into one shared css + per-slug fragments", function () {
+  var out = D.deriveCanonical(SRC);
+  // One shared stylesheet, non-trivial.
+  assert.ok(
+    typeof out.css === "string" && out.css.length > 100000,
+    "css captured",
+  );
+  // A fragment per render, markup only (no <style>).
+  var slugs = out.manifest.renders.map(function (r) {
+    return r.slug;
+  });
+  assert.ok(slugs.indexOf("button") >= 0, "button present");
+  slugs.forEach(function (slug) {
+    var frag = out.fragments[slug];
+    assert.ok(typeof frag === "string", slug + " has a fragment");
+    assert.ok(!/<style/i.test(frag), slug + " fragment carries no <style>");
+  });
+  // The button fragment still carries its render markup.
+  assert.match(
+    out.fragments.button,
+    /ds-button--primary/,
+    "button markup in fragment",
+  );
+  // Manifest points at the fragment file, and names the shared css.
+  assert.equal(out.manifest.css, "render.css");
+  var btn = out.manifest.renders.find(function (r) {
+    return r.slug === "button";
+  });
+  assert.equal(btn.fragment, "fragments/button.html");
+});
+
+test("deriveCanonical: render.css is the shared block, identical to a seed's style", function () {
+  var fs = require("node:fs");
+  var path = require("node:path");
+  var out = D.deriveCanonical(SRC);
+  var seed = fs.readFileSync(path.join(SRC, "button.html"), "utf8");
+  var seedStyle = /<style[^>]*>([\s\S]*?)<\/style>/i.exec(seed)[1];
+  assert.equal(
+    out.css,
+    seedStyle,
+    "css equals the seed's inlined stylesheet byte-for-byte",
+  );
+});
+
+test("deriveCanonical: captures the page chrome (block 1) as a guarded pageCss", function () {
+  var fs = require("node:fs");
+  var path = require("node:path");
+  var out = D.deriveCanonical(SRC);
+  // pageCss is the seeds' SECOND <style> block, sourced by build-bundle instead
+  // of a hardcoded copy, and guarded identical across seeds by the derive.
+  assert.match(
+    out.pageCss,
+    /body\s*\{[^}]*margin[^}]*\}/,
+    "pageCss carries the standalone-card body chrome",
+  );
+  var seed = fs.readFileSync(path.join(SRC, "button.html"), "utf8");
+  var blocks = seed.match(/<style[^>]*>[\s\S]*?<\/style>/gi) || [];
+  var secondInner = /<style[^>]*>([\s\S]*?)<\/style>/i.exec(blocks[1])[1];
+  assert.equal(
+    out.pageCss,
+    secondInner,
+    "pageCss equals the seed's second style block",
+  );
+});

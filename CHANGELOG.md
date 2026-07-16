@@ -19,6 +19,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **The canonical render now ships to consumers, deduplicated (North Star slice 1b).** ([#438](https://github.com/volivarii/actian-ds-knowledge/pull/438))
+  `components/render/dist/` is committed and vendorable: one shared `render.css` (inlined once) plus
+  a thin `fragments/<slug>.html` per component, alongside the Custom Elements Manifest, the render
+  index, the per-component usage notes, and the portable `tokens/dist/tokens.dtcg.json`. The 35
+  self-contained seeds compressed from ~15 MB to a ~1 MB dedup dist because every seed inlined the
+  same 431 KB stylesheet. `build-bundle.js` reconstructs the self-contained Claude Design `@dsCard`
+  cards on demand from the shared css plus each fragment. The `validate-manifest.js` orphan-skip for
+  `components/render/` is retired now that the domain is declared.
+- **The substrate can now declare vendor exclusions for heavy build intermediates.** ([#438](https://github.com/volivarii/actian-ds-knowledge/pull/438)) A new
+  `vendor-exclude.json` at the repo root lists repo-relative sub-paths a consumer's vendor must skip
+  even when their top-level directory is included, and the shared vendor client
+  (`clients/vendor-snapshot.js`) honors it. The repo declares `components/render/src` (the 15 MB
+  captured seed renders, a capture intermediate), so only the ~1 MB deduplicated render dist reaches
+  the plugin, not the seeds.
 - **Editor: inline reference hover-preview card (and a fix that revives the
   cross-surface highlight).**
   ([#437](https://github.com/volivarii/actian-ds-knowledge/pull/437))
