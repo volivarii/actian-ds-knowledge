@@ -43,3 +43,28 @@ test("installs when the target mounts behind a loading gate, and tears down on u
   assert.equal(teardowns, 1, "tears down on unmount");
   cleanup();
 });
+
+test("re-installs across a ready -> loading -> ready cycle (file switch), no leak", () => {
+  const installs: HTMLElement[] = [];
+  let teardowns = 0;
+  const p = (ready: boolean) => (
+    <Harness
+      ready={ready}
+      onInstall={(n) => installs.push(n)}
+      onTeardown={() => teardowns++}
+    />
+  );
+
+  const { rerender, unmount } = render(p(true));
+  assert.equal(installs.length, 1, "installed on the first ready root");
+
+  rerender(p(false)); // file switch flips back to the loading gate
+  assert.equal(teardowns, 1, "torn down when the root detaches");
+
+  rerender(p(true)); // the new file's root mounts
+  assert.equal(installs.length, 2, "re-installed on the new root");
+
+  unmount();
+  assert.equal(teardowns, 2, "final teardown on unmount, no double/none");
+  cleanup();
+});
