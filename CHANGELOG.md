@@ -19,6 +19,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Editor: relations read as typed, human-labeled links, not raw edge keys.**
+  ([#433](https://github.com/volivarii/actian-ds-knowledge/pull/433))
+  The relations panel's graph section no longer shows a flat list of internal edge-type badges
+  (`composed_of`, `uses_component`, `in_category`). Neighbors are grouped under author vocabulary
+  (Appears in, Used in patterns, Contains, Category, Meets accessibility criterion), ordered so a
+  component's own facets come before the large incoming crowds, and each row carries a color dot
+  typed by node kind from a new shared palette (`relationTypes`) that the graph map consumes too.
+  The honest "as of last merge" note stays. Editor tooling only: no `dist/`, schema, or contract
+  change, so the version lockstep is untouched.
 - **The canonical render library now covers 35 components (North Star Step A).** The plugin's
   capture-seed was generalized from Button to all 35 components the plugin renders: each component's
   variant matrix is derived from its registry variant axes (primary axis, capped, plus a disabled
