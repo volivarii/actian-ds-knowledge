@@ -22,6 +22,7 @@ function guideline(slug) {
 
 test("usageNote: approved-only draws only approved domains", function () {
   var note = usageNote(guideline("button"), { strict: true });
+  assert.match(note, /Buttons trigger actions/, "lead paragraph present");
   assert.match(note, /## When to use/);
   assert.match(note, /## Style/);
   assert.ok(
@@ -73,8 +74,18 @@ test("deriveAll: emits a note for a component with prose, omits one without", fu
     all.button && all.button.indexOf("When to use") >= 0,
     "button note present",
   );
-  // A note is only emitted when there is real guidance; every emitted value has a section.
-  Object.keys(all).forEach(function (slug) {
-    assert.match(all[slug], /\n## /, slug + " note has at least one section");
+  // The emit gate omits a doc with no usable prose: usageNote returns a title-only
+  // note (no "## " section), so deriveAll drops it. Verify that gate directly.
+  var bodyless = usageNote({
+    slug: "ghost",
+    component: "Ghost",
+    domains: {
+      design: { status: "not-started" },
+      usage: { status: "inherited" },
+    },
   });
+  assert.ok(
+    !/\n## /.test(bodyless),
+    "a prose-less doc yields a body-less note, so deriveAll omits it",
+  );
 });

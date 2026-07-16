@@ -1,5 +1,5 @@
 "use strict";
-// derive-usage-notes.js — derive a concise, honest usage note per component from
+// derive-usage-notes.js: derive a concise, honest usage note per component from
 // the guideline domains. Consumer-agnostic markdown: Claude Design embeds it in
 // the card, and the plugin/docs consume the same file. This is the guidance tier
 // of the North Star (slice 2). Delivery to Claude Design's native notes field is
@@ -140,7 +140,10 @@ function usageNote(doc, opts) {
 
   if (ok("content")) {
     var c = sections(D.content.markdown);
-    intro = firstPara(c._intro);
+    // The content domain opens with an H1 title, so its lead paragraph lands under
+    // that heading, not before it (_intro stays empty). Take the first prose
+    // paragraph of the cleaned content body with heading lines stripped.
+    intro = firstPara(clean(D.content.markdown).replace(/^#.*$/gm, ""));
     whenTo = whenTo.concat(bullets(c["when to use"]));
     style = style.concat(bullets(c["style"]));
     markStatus("content");
@@ -157,7 +160,7 @@ function usageNote(doc, opts) {
     markStatus("design");
   }
   if (ok("behavior")) {
-    behavior = firstPara(D.behavior.markdown.replace(/^#.*$/m, ""));
+    behavior = firstPara(clean(D.behavior.markdown).replace(/^#.*$/gm, ""));
     markStatus("behavior");
   }
 
@@ -240,7 +243,8 @@ function deriveAll(opts) {
   var out = {};
   fs.readdirSync(GUIDELINES_DIR)
     .filter(function (f) {
-      return f.endsWith(".json");
+      // Per-component docs only; skip the guidelines.bundle.json roll-up.
+      return f.endsWith(".json") && !f.endsWith(".bundle.json");
     })
     .sort()
     .forEach(function (f) {
