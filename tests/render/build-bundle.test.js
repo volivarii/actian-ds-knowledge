@@ -10,11 +10,25 @@ function freshDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "bundle-"));
 }
 
-test("buildBundle: emits Components + foundations @dsCard files", function () {
+// Component cards are grouped by DS category, so a card lands under its category
+// directory (button under "Action"), not a fixed "Components". Find it by name.
+function findCard(written, slug) {
+  return written.find(function (r) {
+    return new RegExp("(^|[/\\\\])" + slug + "\\.html$").test(r);
+  });
+}
+
+test("buildBundle: emits a component card + foundations @dsCard files", function () {
   var dir = freshDir();
-  buildBundle(dir);
-  var btn = fs.readFileSync(path.join(dir, "Components/button.html"), "utf8");
-  assert.match(btn.split("\n")[0], /@dsCard group="Components"/);
+  var written = buildBundle(dir);
+  var btnRel = findCard(written, "button");
+  assert.ok(btnRel, "a button component card was written");
+  var btn = fs.readFileSync(path.join(dir, btnRel), "utf8");
+  assert.match(
+    btn.split("\n")[0],
+    /@dsCard group="[^"]+"/,
+    "card carries a group marker",
+  );
   var colors = fs.readFileSync(path.join(dir, "Colors/palette.html"), "utf8");
   assert.match(colors.split("\n")[0], /@dsCard group="Colors"/);
 });
@@ -41,15 +55,24 @@ test("buildBundle: every card is self-contained and token-grounded", function ()
   });
   // The Colors card shows a real resolved brand color, not an unresolved alias.
   var colors = fs.readFileSync(path.join(dir, "Colors/palette.html"), "utf8");
-  assert.ok(!/\{[a-z0-9.-]+\}/i.test(colors), "no unresolved {alias} in swatches");
+  assert.ok(
+    !/\{[a-z0-9.-]+\}/i.test(colors),
+    "no unresolved {alias} in swatches",
+  );
   assert.match(colors, /#0F5FDC/i, "brand primary hex present");
 });
 
 test("buildBundle: the Button card embeds a Usage section, marker + render intact", function () {
   var dir = freshDir();
-  buildBundle(dir);
-  var btn = fs.readFileSync(path.join(dir, "Components/button.html"), "utf8");
-  assert.match(btn.split("\n")[0], /@dsCard group="Components"/, "marker still first line");
+  var written = buildBundle(dir);
+  var btnRel = findCard(written, "button");
+  assert.ok(btnRel, "a button component card was written");
+  var btn = fs.readFileSync(path.join(dir, btnRel), "utf8");
+  assert.match(
+    btn.split("\n")[0],
+    /@dsCard group="[^"]+"/,
+    "marker still first line",
+  );
   assert.match(btn, /ds-button--primary/, "render still present");
   assert.match(btn, /class="ds-usage"/, "usage section embedded");
   assert.match(btn, /When to use/, "usage content present");
