@@ -19,6 +19,14 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Editor: a compact neighborhood map beside the note.**
+  ([#436](https://github.com/volivarii/actian-ds-knowledge/pull/436))
+  The relations rail now shows a compact typed graph of the current file's
+  neighborhood (when the file resolves to a graph node). Its nodes carry
+  `data-ref`, so the map joins the coordinated highlight: hovering a typed inline
+  link, a rail row, or a map node lights the other two. Clicking a neighbor opens
+  it; the "you are here" node is inert. Editor tooling only, view-only: no
+  `dist`/schema/contract change, so the version lockstep is untouched.
 - **Editor: coordinated cross-surface relation highlight.**
   ([#435](https://github.com/volivarii/actian-ds-knowledge/pull/435))
   Hovering or keyboard-focusing an inline typed link now lights the matching
