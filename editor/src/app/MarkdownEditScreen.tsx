@@ -39,6 +39,7 @@ import {
 import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
 import { installCrossSurfaceHighlight } from "../lib/crossSurfaceHighlight";
+import { installRefHoverCard } from "../lib/refHoverCard";
 import { layoutNeighborhood } from "../substrate/neighborhoodLayout";
 import { nodeIdForFile } from "../substrate/nodeIdForFile";
 import { bakedGraphIndex } from "../substrate/graphIndex";
@@ -132,7 +133,12 @@ export function MarkdownEditScreen({
   useEffect(() => {
     const root = highlightRootRef.current;
     if (!root) return;
-    return installCrossSurfaceHighlight(root);
+    const highlight = installCrossSurfaceHighlight(root);
+    const hoverCard = installRefHoverCard(root);
+    return () => {
+      highlight();
+      hoverCard();
+    };
   }, []);
 
   // The current file's graph node (if any), and its neighborhood laid out
