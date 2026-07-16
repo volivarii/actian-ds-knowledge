@@ -27,6 +27,12 @@ Each entry links its pull request. Dates are the merge date (UTC).
   same 431 KB stylesheet. `build-bundle.js` reconstructs the self-contained Claude Design `@dsCard`
   cards on demand from the shared css plus each fragment. The `validate-manifest.js` orphan-skip for
   `components/render/` is retired now that the domain is declared.
+- **The substrate can now declare vendor exclusions for heavy build intermediates.** A new
+  `vendor-exclude.json` at the repo root lists repo-relative sub-paths a consumer's vendor must skip
+  even when their top-level directory is included, and the shared vendor client
+  (`clients/vendor-snapshot.js`) honors it. The repo declares `components/render/src` (the 15 MB
+  captured seed renders, a capture intermediate), so only the ~1 MB deduplicated render dist reaches
+  the plugin, not the seeds.
 - **The canonical render library now covers 35 components (North Star Step A).** The plugin's
   capture-seed was generalized from Button to all 35 components the plugin renders: each component's
   variant matrix is derived from its registry variant axes (primary axis, capped, plus a disabled
