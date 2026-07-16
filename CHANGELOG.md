@@ -19,6 +19,14 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **The canonical render now ships to consumers, deduplicated (North Star slice 1b).**
+  `components/render/dist/` is committed and vendorable: one shared `render.css` (inlined once) plus
+  a thin `fragments/<slug>.html` per component, alongside the Custom Elements Manifest, the render
+  index, the per-component usage notes, and the portable `tokens/dist/tokens.dtcg.json`. The 35
+  self-contained seeds compressed from ~15 MB to a ~1 MB dedup dist because every seed inlined the
+  same 431 KB stylesheet. `build-bundle.js` reconstructs the self-contained Claude Design `@dsCard`
+  cards on demand from the shared css plus each fragment. The `validate-manifest.js` orphan-skip for
+  `components/render/` is retired now that the domain is declared.
 - **The canonical render library now covers 35 components (North Star Step A).** The plugin's
   capture-seed was generalized from Button to all 35 components the plugin renders: each component's
   variant matrix is derived from its registry variant axes (primary axis, capped, plus a disabled

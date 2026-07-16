@@ -34,13 +34,7 @@ release-notes/sync-*.md
 # orphan guard reds (a stray `git add tokens/` once swept it into PR #320).
 tokens/src/figma-export/
 
-# Canonical render dist: slice 1 runs scripts/render/derive-canonical.js LOCALLY
-# to prove the chain, but the dist is a build output and must stay untracked
-# (pre-committing dist kills the CI version bump). Slice 1b adds the CI
-# render-derive workflow + bump wiring that ships it, and removes this ignore.
-components/render/dist/
-
-# Portable DTCG token export: slice 1 runs scripts/render/derive-dtcg.js locally
-# to feed the bundle; the dist is a build output and stays untracked until the
-# slice 1b CI derive ships it.
-tokens/dist/
+# Canonical render: the deduplicated dist (render.css + fragments + contract) is
+# committed and vendored. Only the self-contained @dsCard bundle projection is a
+# local, on-demand build output (Claude Design derives it at /design-sync time).
+components/render/dist/bundle/
