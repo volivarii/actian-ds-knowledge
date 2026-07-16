@@ -17,6 +17,8 @@ var path = require("node:path");
 
 var deriveCanonical = require("./derive-canonical.js").deriveCanonical;
 var deriveFromFile = require("./derive-dtcg.js").deriveFromFile;
+var usageNote = require("./derive-usage-notes.js").usageNote;
+var GUIDELINES_DIR = require("./derive-usage-notes.js").GUIDELINES_DIR;
 
 var REPO_ROOT = path.resolve(__dirname, "..", "..");
 
@@ -223,6 +225,78 @@ function writeFile(outDir, rel, contents) {
   return rel;
 }
 
+// Minimal, note-shaped markdown to HTML: #/## headings, - bullets, > blockquote,
+// **bold**, paragraphs. Escapes text first (reusing esc), then re-applies bold.
+function noteToHtml(md) {
+  var lines = String(md).split("\n");
+  var html = [];
+  var inList = false;
+  var closeList = function () {
+    if (inList) {
+      html.push("</ul>");
+      inList = false;
+    }
+  };
+  var inline = function (t) {
+    return esc(t).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  };
+  lines.forEach(function (raw) {
+    var line = raw.replace(/\s+$/, "");
+    if (!line.trim()) {
+      closeList();
+      return;
+    }
+    var h1 = /^#\s+(.*)/.exec(line);
+    var h2 = /^##\s+(.*)/.exec(line);
+    var li = /^[-*]\s+(.*)/.exec(line);
+    var bq = /^>\s+(.*)/.exec(line);
+    if (h2) {
+      closeList();
+      html.push("<h4>" + inline(h2[1]) + "</h4>");
+    } else if (h1) {
+      closeList();
+      html.push("<h3>" + inline(h1[1]) + "</h3>");
+    } else if (li) {
+      if (!inList) {
+        html.push("<ul>");
+        inList = true;
+      }
+      html.push("<li>" + inline(li[1]) + "</li>");
+    } else if (bq) {
+      closeList();
+      html.push("<blockquote>" + inline(bq[1]) + "</blockquote>");
+    } else {
+      closeList();
+      html.push("<p>" + inline(line) + "</p>");
+    }
+  });
+  closeList();
+  return html.join("");
+}
+
+var USAGE_CSS =
+  ".ds-usage{max-width:640px;margin:32px 24px 0;padding-top:24px;" +
+  "border-top:1px solid rgba(0,0,0,.12);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#111}" +
+  ".ds-usage h3{font-size:15px;margin:0 0 12px}" +
+  ".ds-usage h4{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin:18px 0 6px}" +
+  ".ds-usage ul{margin:0;padding-left:20px}.ds-usage li{margin:4px 0;font-size:13px;line-height:1.5}" +
+  ".ds-usage p{font-size:13px;line-height:1.5;margin:8px 0}" +
+  ".ds-usage blockquote{margin:16px 0 0;padding:8px 12px;background:#f6f7f9;border-radius:6px;" +
+  "font-size:12px;color:#555}";
+
+// Inject the note (as HTML) plus its scoped CSS before </body> of a render doc.
+function embedUsage(renderHtml, noteMd) {
+  if (!noteMd) return renderHtml;
+  var section =
+    "<style>" +
+    USAGE_CSS +
+    "</style>" +
+    '<section class="ds-usage">' +
+    noteToHtml(noteMd) +
+    "</section>";
+  return renderHtml.replace("</body>", section + "</body>");
+}
+
 function buildBundle(outDir, opts) {
   opts = opts || {};
   var srcDir =
@@ -235,11 +309,20 @@ function buildBundle(outDir, opts) {
   var written = [];
 
   canonical.manifest.renders.forEach(function (r) {
+    var note = "";
+    try {
+      var doc = JSON.parse(
+        fs.readFileSync(path.join(GUIDELINES_DIR, r.slug + ".json"), "utf8"),
+      );
+      note = usageNote(doc);
+    } catch (e) {
+      note = ""; // a rendered component with no guideline doc simply ships without a note
+    }
     written.push(
       writeFile(
         outDir,
         path.join(r.group, r.slug + ".html"),
-        canonical.renders[r.slug],
+        embedUsage(canonical.renders[r.slug], note),
       ),
     );
   });
