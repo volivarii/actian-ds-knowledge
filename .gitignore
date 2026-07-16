@@ -39,3 +39,8 @@ tokens/src/figma-export/
 # (pre-committing dist kills the CI version bump). Slice 1b adds the CI
 # render-derive workflow + bump wiring that ships it, and removes this ignore.
 components/render/dist/
+
+# Portable DTCG token export: slice 1 runs scripts/render/derive-dtcg.js locally
+# to feed the bundle; the dist is a build output and stays untracked until the
+# slice 1b CI derive ships it.
+tokens/dist/
