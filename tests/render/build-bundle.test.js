@@ -99,5 +99,12 @@ test("buildBundle: component cards are reconstructed from the shared css + fragm
     /body\{margin:0;padding:24px;background:#fff\}/,
     "card re-adds the seed's page chrome",
   );
+  // The raw seed's <head> has no viewport meta (only selfContainedCard adds one),
+  // so this fails if the loop reverts to embedUsage(canonical.renders[r.slug], note).
+  assert.match(
+    btn,
+    /<meta name="viewport" content="width=device-width, initial-scale=1">/,
+    "card uses the reconstructed head, not the raw seed",
+  );
   assert.ok(!/\ssrc=|\shref=|@import/.test(btn), "still self-contained");
 });
