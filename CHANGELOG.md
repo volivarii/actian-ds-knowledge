@@ -19,6 +19,16 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Editor: inline reference hover-preview card (and a fix that revives the
+  cross-surface highlight).**
+  ([#437](https://github.com/volivarii/actian-ds-knowledge/pull/437))
+  Hovering an inline typed link now shows a card with the target's type badge,
+  cleaned title, and graph context (its category + how many components use it),
+  replacing the bare type tooltip, in both the preview and rich mode. The review
+  also caught that the controllers (this card and the #435 highlight) were
+  installed from a `useEffect([])` reading a ref on a root that renders only
+  after a loading spinner, so they never activated in the app; a callback ref
+  fixes both. Editor tooling only, view-only: no `dist`/schema/contract change.
 - **Editor: a compact neighborhood map beside the note.**
   ([#436](https://github.com/volivarii/actian-ds-knowledge/pull/436))
   The relations rail now shows a compact typed graph of the current file's
