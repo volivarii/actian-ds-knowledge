@@ -164,3 +164,24 @@ test("deriveCanonical: render.css is the shared block, identical to a seed's sty
     "css equals the seed's inlined stylesheet byte-for-byte",
   );
 });
+
+test("deriveCanonical: captures the page chrome (block 1) as a guarded pageCss", function () {
+  var fs = require("node:fs");
+  var path = require("node:path");
+  var out = D.deriveCanonical(SRC);
+  // pageCss is the seeds' SECOND <style> block, sourced by build-bundle instead
+  // of a hardcoded copy, and guarded identical across seeds by the derive.
+  assert.match(
+    out.pageCss,
+    /body\s*\{[^}]*margin[^}]*\}/,
+    "pageCss carries the standalone-card body chrome",
+  );
+  var seed = fs.readFileSync(path.join(SRC, "button.html"), "utf8");
+  var blocks = seed.match(/<style[^>]*>[\s\S]*?<\/style>/gi) || [];
+  var secondInner = /<style[^>]*>([\s\S]*?)<\/style>/i.exec(blocks[1])[1];
+  assert.equal(
+    out.pageCss,
+    secondInner,
+    "pageCss equals the seed's second style block",
+  );
+});

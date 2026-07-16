@@ -121,6 +121,19 @@ function bodyInner(html) {
   return m[1];
 }
 
+// The standalone-preview page chrome: the SECOND <style> block every seed
+// carries (e.g. "body{margin:0;padding:24px;background:#fff}"). It is not part of
+// the component contract, so render.css excludes it, but the standalone @dsCard
+// projection needs it. Captured here so build-bundle sources it from the seeds
+// instead of hardcoding a copy that could drift; guarded identical across seeds.
+function pageStyle(html) {
+  var re = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+  var blocks = [];
+  var m;
+  while ((m = re.exec(html)) !== null) blocks.push(m[1]);
+  return blocks.length > 1 ? blocks[1] : "";
+}
+
 // Distinct --zen-* custom properties REFERENCED via var(...) anywhere in the text.
 function referencedVars(text) {
   var set = new Set();
@@ -290,6 +303,7 @@ function deriveCanonical(srcDir) {
 
   var renders = {};
   var css = null;
+  var pageCss = null;
   var fragments = {};
   var modules = [];
   var renderIndex = [];
@@ -313,6 +327,20 @@ function deriveCanonical(srcDir) {
           css.length +
           " chars); the dedup assumes " +
           "one shared inlined stylesheet across all seeds",
+      );
+    }
+    // Guard the page chrome the same way: the standalone card re-adds it, so a
+    // seed whose chrome diverges must fail loudly, not ship stale chrome.
+    var seedPageCss = pageStyle(html);
+    if (pageCss === null) pageCss = seedPageCss;
+    else if (seedPageCss !== pageCss) {
+      throw new Error(
+        slug +
+          ": page chrome differs from the shared card page style (" +
+          seedPageCss.length +
+          " vs " +
+          pageCss.length +
+          " chars); the standalone card projection assumes one shared chrome",
       );
     }
     fragments[slug] = bodyInner(html);
@@ -353,6 +381,7 @@ function deriveCanonical(srcDir) {
   return {
     renders: renders,
     css: css,
+    pageCss: pageCss,
     fragments: fragments,
     cem: cem,
     manifest: manifest,

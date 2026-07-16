@@ -297,17 +297,14 @@ function embedUsage(renderHtml, noteMd) {
   return renderHtml.replace("</body>", section + "</body>");
 }
 
-// The standalone-preview page chrome the seeds carried in a second <style> block
-// (identical across all 35 seeds). render.css deliberately excludes it, because
-// consumers embed render.css into their own page and must not inherit this body
-// framing. The standalone card re-adds it so the @dsCard preview matches the seed.
-var CARD_PAGE_CSS = "body{margin:0;padding:24px;background:#fff}";
-
-// Reconstruct a self-contained @dsCard document from the shared stylesheet and a
-// component fragment. This is the on-demand projection of the dedup dist: Claude
-// Design needs standalone files, so the bundle re-inlines render.css plus the card
-// page chrome per card.
-function selfContainedCard(css, fragment, group) {
+// Reconstruct a self-contained @dsCard document from the shared stylesheet, the
+// page chrome, and a component fragment. This is the on-demand projection of the
+// dedup dist: Claude Design needs standalone files, so the bundle re-inlines
+// render.css plus the page chrome per card. Both come from the derive (pageCss is
+// the seeds' second <style> block, guarded there), so nothing is hardcoded here.
+// render.css deliberately excludes the page chrome, because consumers embed
+// render.css into their own page and must not inherit this body framing.
+function selfContainedCard(css, pageCss, fragment, group) {
   return (
     '<!-- @dsCard group="' +
     group +
@@ -317,7 +314,7 @@ function selfContainedCard(css, fragment, group) {
     "<style>" +
     css +
     "\n" +
-    CARD_PAGE_CSS +
+    pageCss +
     "</style></head><body>" +
     fragment +
     "</body></html>"
@@ -347,6 +344,7 @@ function buildBundle(outDir, opts) {
     }
     var card = selfContainedCard(
       canonical.css,
+      canonical.pageCss,
       canonical.fragments[r.slug],
       r.group,
     );
