@@ -8124,12 +8124,6 @@
       "@type": "Edge",
       "edgeType": "composed_of",
       "source": "component:modal",
-      "target": "component:text-input"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "composed_of",
-      "source": "component:modal",
       "target": "component:toggle"
     },
     {

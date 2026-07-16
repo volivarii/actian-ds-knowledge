@@ -7764,11 +7764,6 @@
     },
     {
       "source": "component:modal",
-      "target": "component:text-input",
-      "type": "composed_of"
-    },
-    {
-      "source": "component:modal",
       "target": "component:toggle",
       "type": "composed_of"
     },
