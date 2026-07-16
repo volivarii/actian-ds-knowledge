@@ -38,7 +38,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
       # App token for the auto-commit push below. A commit pushed with the
       # default GITHUB_TOKEN cannot trigger further workflow runs, leaving the
