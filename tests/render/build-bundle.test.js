@@ -44,3 +44,14 @@ test("buildBundle: every card is self-contained and token-grounded", function ()
   assert.ok(!/\{[a-z0-9.-]+\}/i.test(colors), "no unresolved {alias} in swatches");
   assert.match(colors, /#0F5FDC/i, "brand primary hex present");
 });
+
+test("buildBundle: the Button card embeds a Usage section, marker + render intact", function () {
+  var dir = freshDir();
+  buildBundle(dir);
+  var btn = fs.readFileSync(path.join(dir, "Components/button.html"), "utf8");
+  assert.match(btn.split("\n")[0], /@dsCard group="Components"/, "marker still first line");
+  assert.match(btn, /ds-button--primary/, "render still present");
+  assert.match(btn, /class="ds-usage"/, "usage section embedded");
+  assert.match(btn, /When to use/, "usage content present");
+  assert.ok(!/\ssrc=|\shref=|@import/.test(btn), "still self-contained");
+});
