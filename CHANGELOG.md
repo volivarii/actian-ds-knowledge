@@ -19,6 +19,16 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Per-component usage notes, derived from the guideline domains (North Star slice 2).**
+  `scripts/render/derive-usage-notes.js` composes a concise, honest usage note per component
+  (`usageNote(doc, opts)`): it dedupes the "When to use" / "When not to use" bullets, pulls "Style",
+  resolves `inherited` domains from the component's category-defaults, and footers a disclosure naming
+  any draft/inherited/synthesized source used. `deriveAll` writes `components/render/dist/usage-notes/<slug>.md`
+  for every component with guideline prose (65 today). The note is consumer-agnostic markdown: the
+  DesignSync bundle embeds it as a "Usage" section on each rendered component card (Button today), and the
+  plugin and docs can consume the same file. Permissive by default (approved plus draft, inherited,
+  synthesized); an off-by-default `--strict` flag restricts to approved-only (a future gate). dist stays
+  uncommitted; shipping is slice 2b.
 - **New `components/render/` domain: the canonical component render, seeded on Button (North Star slice 1).**
   ([#430](https://github.com/volivarii/actian-ds-knowledge/pull/430))
   The substrate now owns a self-contained, token-bound HTML render per component plus its standards
@@ -43,6 +53,11 @@ Each entry links its pull request. Dates are the merge date (UTC).
   slice 1b.
 
 ### Fixed
+- **The test glob skipped `tests/render/`, so the render tests never gated CI.** `npm test` ran
+  `node --test tests/*.test.js`, which matches only the top level of `tests/`, so the slice-1 and slice-2
+  render tests under `tests/render/` never ran in CI (they merged green because CI never executed them).
+  Switched to the recursive `find | xargs` form the plugin repo already uses; CI now runs 1100 tests
+  (was 1082), including the 18 render tests.
 - **A Figma reorg that re-bucketed components red the nightly sync every night, though nothing was lost.**
   Component categories are inferred each night from the Figma Pages panel (a Title-Case header page sets
   the category for the member pages beneath it), so while the file is being reorganized a still-published
