@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "text-input",
   "kit": "dskit",
-  "synced_at": "2026-07-14T09:01:55.070Z",
+  "synced_at": "2026-07-15T12:44:12.117Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "7238:2487",
@@ -229,6 +229,9 @@
             "kind": "instance",
             "unresolved": true,
             "props": {
+              "Show buttons": true,
+              "Show delete icon": false,
+              "Show trailing icon": false,
               "State": "Default"
             },
             "tokenRefs": [
