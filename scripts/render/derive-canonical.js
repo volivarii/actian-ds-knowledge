@@ -182,13 +182,21 @@ function validateSeed(slug, html) {
 // attributes, description is passed through. Missing/unreadable registry
 // files are tolerated (merged stays partial) so a derive never throws on a
 // registry-plumbing problem, only on a genuinely missing CEM contract.
+// FIRST hit wins (a slug's first-seen kit is authoritative), mirroring the
+// plugin's ds-first findComponent. This matters for the few render slugs
+// (calendar, search, table) that also exist as empty-variant stand-ins in
+// fmkit: dskit carries their real variant axes, so a later, emptier kit must
+// not clobber them into a zero-attribute CEM.
 function readRegistries() {
   var dir = path.join(REPO_ROOT, "components", "dist", "registries");
   var merged = {};
   ["dskit.json", "metakit.json", "fmkit.json"].forEach(function (f) {
     try {
       var reg = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
-      Object.assign(merged, reg.components || {});
+      var comps = reg.components || {};
+      Object.keys(comps).forEach(function (slug) {
+        if (!(slug in merged)) merged[slug] = comps[slug];
+      });
     } catch (e) {}
   });
   return merged;

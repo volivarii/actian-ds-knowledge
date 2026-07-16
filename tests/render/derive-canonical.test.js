@@ -96,3 +96,27 @@ test("deriveCanonical: a slug with no COMPONENT_META gets a registry-derived CEM
     "attributes derived from the registry",
   );
 });
+
+test("deriveCanonical: dual-kit slug takes its variant axes from dskit, not an empty fmkit stand-in", function () {
+  // calendar / search / table also exist in fmkit with EMPTY variants. The
+  // registry merge must be ds-first-wins (matching the plugin's findComponent),
+  // or these components derive a zero-attribute CEM while their rendered card
+  // still shows the real dskit variants.
+  var out = D.deriveCanonical(SRC);
+  var decl = out.cem.modules
+    .flatMap(function (m) {
+      return m.declarations || [];
+    })
+    .find(function (d) {
+      return d.tagName === "zen-calendar";
+    });
+  assert.ok(decl, "zen-calendar declaration present");
+  var names = (decl.attributes || []).map(function (a) {
+    return a.name;
+  });
+  assert.ok(
+    names.indexOf("type") >= 0 && names.indexOf("selection") >= 0,
+    "calendar CEM carries dskit's Type + Selection axes, got: " +
+      JSON.stringify(names),
+  );
+});
