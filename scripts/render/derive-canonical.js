@@ -9,10 +9,13 @@
 // real derive-from-facts; the CEM emit + validation here stays the same, only its
 // input source swaps (CEM is the source-swap bridge).
 //
-// deriveCanonical(srcDir) returns { renders, cem, manifest }:
-//   renders  — { slug: html } the validated seed documents, passed through.
-//   cem      — a Custom Elements Manifest (validated against the official schema).
-//   manifest — the render index (validated against schemas/canonical-render.json).
+// deriveCanonical(srcDir) returns { renders, css, fragments, cem, manifest }:
+//   renders: { slug: html }, the validated seed documents, passed through.
+//   css: the shared stylesheet, deduped once across every seed (byte-identical
+//     guard, throws if a seed's inlined style diverges).
+//   fragments: { slug: html }, each seed's <body> inner markup, no <style>.
+//   cem: a Custom Elements Manifest (validated against the official schema).
+//   manifest: the render index (validated against schemas/canonical-render.json).
 
 var fs = require("node:fs");
 var path = require("node:path");
@@ -97,6 +100,25 @@ function extractStyle(html) {
   var m;
   while ((m = re.exec(html)) !== null) out.push(m[1]);
   return stripComments(out.join("\n"));
+}
+
+// Raw <style> block content, verbatim (NOT comment-stripped like extractStyle),
+// so render.css is byte-faithful. The seeds share one inlined stylesheet: the
+// FIRST <style> block in the document (the ~421 KB design-system stylesheet).
+// A second, tiny <style> block follows it in every seed (page-framing chrome
+// the capture harness adds, e.g. "body{margin:...}") but is not part of the
+// component's contract, so only the first block is captured here.
+function rawStyle(html) {
+  var m = /<style[^>]*>([\s\S]*?)<\/style>/i.exec(html);
+  return m ? m[1] : "";
+}
+
+// The <body> inner markup: the component render itself, with no <style>. This is
+// the shippable fragment consumers embed alongside the shared render.css.
+function bodyInner(html) {
+  var m = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(html);
+  if (!m) throw new Error("no <body> found in seed");
+  return m[1];
 }
 
 // Distinct --zen-* custom properties REFERENCED via var(...) anywhere in the text.
@@ -267,6 +289,8 @@ function deriveCanonical(srcDir) {
     .sort();
 
   var renders = {};
+  var css = null;
+  var fragments = {};
   var modules = [];
   var renderIndex = [];
 
@@ -275,17 +299,34 @@ function deriveCanonical(srcDir) {
     var html = fs.readFileSync(path.join(srcDir, file), "utf8");
     var group = validateSeed(slug, html);
     renders[slug] = html;
+    // Dedup: buildLeafHtml inlines the whole stylesheet, so every seed carries
+    // the same block byte-for-byte. Capture it once; fail loudly if a seed
+    // diverges, because the dedup relies on one shared stylesheet.
+    var seedCss = rawStyle(html);
+    if (css === null) css = seedCss;
+    else if (seedCss !== css) {
+      throw new Error(
+        slug +
+          ": stylesheet differs from the shared render.css (" +
+          seedCss.length +
+          " vs " +
+          css.length +
+          " chars); the dedup assumes " +
+          "one shared inlined stylesheet across all seeds",
+      );
+    }
+    fragments[slug] = bodyInner(html);
     var decl = buildDeclaration(slug, html);
     modules.push({
       kind: "javascript-module",
-      path: DIST_DIR_REL + "/" + file,
+      path: DIST_DIR_REL + "/fragments/" + slug + ".html",
       declarations: [decl],
     });
     renderIndex.push({
       slug: slug,
       tagName: decl.tagName,
       group: group,
-      file: file,
+      fragment: "fragments/" + slug + ".html",
       tokensConsumed: decl.cssProperties.length,
     });
   });
@@ -305,10 +346,17 @@ function deriveCanonical(srcDir) {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
     generatedBy: "scripts/render/derive-canonical.js",
     cem: "custom-elements.json",
+    css: "render.css",
     renders: renderIndex,
   };
 
-  return { renders: renders, cem: cem, manifest: manifest };
+  return {
+    renders: renders,
+    css: css,
+    fragments: fragments,
+    cem: cem,
+    manifest: manifest,
+  };
 }
 
 // CLI: write the validated renders + CEM + manifest into components/render/dist/.
@@ -316,9 +364,13 @@ function deriveCanonical(srcDir) {
 // committed (the CI derive workflow that ships it to consumers is slice 1b).
 function writeDist(srcDir, distDir) {
   var out = deriveCanonical(srcDir);
-  fs.mkdirSync(distDir, { recursive: true });
-  Object.keys(out.renders).forEach(function (slug) {
-    fs.writeFileSync(path.join(distDir, slug + ".html"), out.renders[slug]);
+  fs.mkdirSync(path.join(distDir, "fragments"), { recursive: true });
+  fs.writeFileSync(path.join(distDir, "render.css"), out.css);
+  Object.keys(out.fragments).forEach(function (slug) {
+    fs.writeFileSync(
+      path.join(distDir, "fragments", slug + ".html"),
+      out.fragments[slug],
+    );
   });
   fs.writeFileSync(
     path.join(distDir, "custom-elements.json"),
