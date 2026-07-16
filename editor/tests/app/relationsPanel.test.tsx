@@ -107,12 +107,18 @@ test("incoming row responds to an Enter keydown the same as a click", () => {
   assert.ok(calls.includes("open:content/src/patterns/forms.md"));
 });
 
-test("graph rows show a space-separated edge-type badge and the baked-staleness label", () => {
+test("graph section reads as a human relationship group and keeps the honest staleness note", () => {
   const { container } = renderPanel();
-  assert.ok(container.textContent!.includes("in category"));
-  assert.ok(!container.textContent!.includes("in_category"));
-  assert.ok(container.textContent!.includes("Action"));
-  assert.ok(container.textContent!.toLowerCase().includes("as of last merge"));
+  const txt = container.textContent!;
+  // in_category-out now reads as the human group "Category", not a raw badge
+  assert.ok(txt.includes("Category"), "shows the Category group label");
+  assert.ok(!txt.includes("in_category"), "raw edge key must not leak");
+  assert.ok(!txt.includes("in category"), "spaced edge key is gone too");
+  assert.ok(txt.includes("Action"), "neighbour title still shown");
+  assert.ok(
+    txt.toLowerCase().includes("as of last merge"),
+    "honest baked-staleness note stays",
+  );
 });
 
 test("graph row navigates via onOpenFile when navTargetForNodeId resolves; a node type mapping to null stays non-interactive", () => {
@@ -146,6 +152,62 @@ test("graph row navigates via onOpenFile when navTargetForNodeId resolves; a nod
   assert.notEqual(contentRow.getAttribute("role"), "button");
   fireEvent.click(contentRow);
   assert.ok(!calls.some((c) => c.startsWith("open:") && c.includes("loading")));
+});
+
+test("graph neighbours group under human relationship labels with a typed dot per row, no raw edge keys", () => {
+  const neighbors: Neighbor[] = [
+    {
+      id: "category:action",
+      node: { id: "category:action", type: "category", title: "Action" },
+      edgeType: "in_category",
+      note: null,
+      direction: "out",
+    },
+    {
+      id: "component:modal",
+      node: { id: "component:modal", type: "component", title: "Modal" },
+      edgeType: "composed_of",
+      note: null,
+      direction: "in",
+    },
+    {
+      id: "pattern:import-wizard",
+      node: {
+        id: "pattern:import-wizard",
+        type: "ux_pattern",
+        title: "Import wizard",
+      },
+      edgeType: "uses_component",
+      note: null,
+      direction: "in",
+    },
+  ];
+  const { container } = renderPanel({ graphNeighbors: neighbors });
+  const txt = container.textContent!;
+  // human group labels
+  assert.ok(txt.includes("Category"), "shows Category group");
+  assert.ok(txt.includes("Appears in"), "shows Appears in group");
+  assert.ok(txt.includes("Used in patterns"), "shows Used in patterns group");
+  // neighbour titles
+  assert.ok(txt.includes("Action") && txt.includes("Modal"));
+  assert.ok(txt.includes("Import wizard"));
+  // internal edge keys never leak
+  for (const banned of ["in_category", "composed_of", "uses_component"]) {
+    assert.ok(!txt.includes(banned), `graph section leaked "${banned}"`);
+  }
+  // each row carries its node type + a typed dot (coordinated-highlight ready)
+  const rows = Array.from(
+    container.querySelectorAll("[data-testid='graph-row']"),
+  );
+  assert.equal(rows.length, 3);
+  assert.ok(
+    rows.every((r) => r.getAttribute("data-node-type")),
+    "every graph row exposes its node type",
+  );
+  assert.ok(
+    rows.every((r) => r.querySelector("[data-testid='reldot']")),
+    "every graph row has a typed dot",
+  );
 });
 
 test("clicking an outline row scopes incoming to that section, and passes its index", () => {
