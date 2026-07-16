@@ -38,6 +38,7 @@ import {
 } from "../markdown-engine/rawFrontmatter";
 import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
+import { installCrossSurfaceHighlight } from "../lib/crossSurfaceHighlight";
 import {
   RelationsPanel,
   readRelationsPanelCollapsed,
@@ -119,6 +120,16 @@ export function MarkdownEditScreen({
   // Mirror `preloaded` in a ref so the load effect can read it without adding
   // it (a fresh object literal each render) to its [gh, path] deps and looping.
   const preloadedRef = useRef(preloaded);
+
+  // Coordinated highlight: hovering an inline typed link lights the matching
+  // relations-rail row (and vice versa). Delegated on the screen root, so it
+  // covers the editor pane, the preview, and the rail as they re-render.
+  const highlightRootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = highlightRootRef.current;
+    if (!root) return;
+    return installCrossSurfaceHighlight(root);
+  }, []);
   preloadedRef.current = preloaded;
   const [anchorPopover, setAnchorPopover] = useState<{
     slug: string;
@@ -614,7 +625,7 @@ export function MarkdownEditScreen({
   );
 
   return (
-    <Flex direction="column" height="100%" gap="2">
+    <Flex ref={highlightRootRef} direction="column" height="100%" gap="2">
       <TierBanner path={path} />
       <Flex align="center" justify="between" gap="2" wrap="wrap">
         <Heading size="3">{path}</Heading>

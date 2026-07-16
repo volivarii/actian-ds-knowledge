@@ -349,3 +349,18 @@ body {
 form.fm-form.fm-collapsed > *:not(.fm-form-children) {
   display: none;
 }
+
+/* Cross-surface relation highlight (crossSurfaceHighlight): hovering or
+   focusing an inline typed link (.md-ref) or a relations-rail row lights every
+   element sharing its data-ref. The accent alpha reads on both themes and
+   layers over the element's own background without hiding its text. */
+.rel-hot {
+  background-color: var(--accent-a4);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px var(--accent-a6);
+}
+/* Inline typed reference: no underline (the color dot marks it), and a pointer
+   only when it resolves to a real target. */
+.md-ref {
+  text-decoration: none;
+}

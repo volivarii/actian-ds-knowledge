@@ -91,6 +91,13 @@ function onActivateKey(action: () => void) {
   };
 }
 
+/** The bare slug of a graph node id (`component:table` -> `table`), matching
+ *  the data-ref an inline typed link carries, so the two highlight together. */
+function slugOfNodeId(id: string): string {
+  const i = id.indexOf(":");
+  return i === -1 ? id : id.slice(i + 1);
+}
+
 /** Relation row that navigates (click/Enter/Space) when it has somewhere
  *  to go, and stays a plain box otherwise. The single owner of the
  *  interactive-row contract shared by incoming, outgoing, and graph rows. */
@@ -99,8 +106,11 @@ function NavRow(props: {
   onOpen: (target: string) => void;
   testid: string;
   /** Node type of the row's subject, surfaced as data-node-type so the row can
-   *  carry a typed dot and (later) join the cross-surface highlight. */
+   *  carry a typed dot and join the cross-surface highlight. */
   nodeType?: string;
+  /** Referenced slug, surfaced as data-ref so an inline link with the same
+   *  slug highlights this row together (installCrossSurfaceHighlight). */
+  refSlug?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
 }) {
@@ -110,6 +120,7 @@ function NavRow(props: {
       <Box
         data-testid={props.testid}
         data-node-type={props.nodeType}
+        data-ref={props.refSlug}
         px="1"
         style={props.style}
       >
@@ -122,6 +133,7 @@ function NavRow(props: {
     <Box
       data-testid={props.testid}
       data-node-type={props.nodeType}
+      data-ref={props.refSlug}
       role="button"
       tabIndex={0}
       px="1"
@@ -359,6 +371,7 @@ export function RelationsPanel(props: RelationsPanelProps) {
                   key={`${group.label}:${n.id}:${i}`}
                   testid="graph-row"
                   nodeType={n.node?.type ?? "unknown"}
+                  refSlug={slugOfNodeId(n.id)}
                   target={navTargetForNodeId(n.id)}
                   onOpen={props.onOpenFile}
                 >
