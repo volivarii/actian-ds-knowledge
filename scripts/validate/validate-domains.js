@@ -17,7 +17,10 @@ const {
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 
 // derive:* targets that are infra, not authorable-knowledge body domains.
-const INFRA_DERIVES = new Set(["icons", "vendor-include"]);
+// render derives the canonical component render dist (HTML + CEM + DTCG +
+// usage-notes) from captured seeds and tokens, a build pipeline like icons, not
+// an authored MD body domain, so it carries no domains.json unit.
+const INFRA_DERIVES = new Set(["icons", "vendor-include", "render"]);
 
 // Literal prefix of a glob (up to first `*` or `{`), trailing slash trimmed.
 // NOTE: the referential check below only asserts this LITERAL PREFIX exists —
