@@ -39,6 +39,10 @@ import {
 import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
 import { installCrossSurfaceHighlight } from "../lib/crossSurfaceHighlight";
+import { layoutNeighborhood } from "../substrate/neighborhoodLayout";
+import { nodeIdForFile } from "../substrate/nodeIdForFile";
+import { bakedGraphIndex } from "../substrate/graphIndex";
+import { mapNodeNavTarget } from "../substrate/navTargetForNodeId";
 import {
   RelationsPanel,
   readRelationsPanelCollapsed,
@@ -130,6 +134,24 @@ export function MarkdownEditScreen({
     if (!root) return;
     return installCrossSurfaceHighlight(root);
   }, []);
+
+  // The current file's graph node (if any), and its neighborhood laid out
+  // compact for the rail map beside the note. Map nodes carry data-ref, so the
+  // map joins the cross-surface highlight. Undefined when the file has no graph
+  // node. currentNodeId also guards the map's own "you are here" node from
+  // navigating away (mapNodeNavTarget below).
+  const currentNodeId = useMemo(() => nodeIdForFile(path), [path]);
+  const neighborhoodLayout = useMemo(
+    () =>
+      currentNodeId
+        ? layoutNeighborhood(currentNodeId, bakedGraphIndex(), {
+            depth: 1,
+            width: 236,
+            height: 200,
+          })
+        : undefined,
+    [currentNodeId],
+  );
   preloadedRef.current = preloaded;
   const [anchorPopover, setAnchorPopover] = useState<{
     slug: string;
@@ -620,6 +642,11 @@ export function MarkdownEditScreen({
         collapsed={relationsCollapsed}
         onToggleCollapsed={toggleRelationsCollapsed}
         activeAnchor={wysiwyg ? null : activeAnchor}
+        neighborhoodLayout={neighborhoodLayout}
+        onFocusNode={(id) => {
+          const target = mapNodeNavTarget(id, currentNodeId);
+          if (target) handleOpenFile(target);
+        }}
       />
     </Box>
   );

@@ -35,6 +35,21 @@ export function navTargetForNodeId(nodeId: string): string | null {
   }
 }
 
+/** Nav target for activating a node in the compact rail map, but null for the
+ *  map's OWN focus node — the file already open — so activating "you are here"
+ *  is a no-op instead of ejecting the author elsewhere. Without this guard a
+ *  component's focus node resolves to `workspace/<slug>` (a different screen
+ *  than the markdown file being edited), so clicking the center node, or just
+ *  pressing Enter on it since it is the default keyboard focus, would navigate
+ *  away on the first interaction. */
+export function mapNodeNavTarget(
+  nodeId: string,
+  focusNodeId: string | null,
+): string | null {
+  if (focusNodeId !== null && nodeId === focusNodeId) return null;
+  return navTargetForNodeId(nodeId);
+}
+
 // Taxonomy domain (an OutgoingConnection's `domain`) → node-id prefix, so
 // outgoing reference rows resolve through the SAME path mapping above
 // instead of growing a second one. motion/content stay unmapped for the

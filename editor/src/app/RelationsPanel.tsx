@@ -19,6 +19,9 @@ import {
 } from "../substrate/navTargetForNodeId";
 import { relationTypeColor } from "../lib/relationTypes";
 import { groupGraphNeighbors } from "../lib/relationGroups";
+import { GraphView } from "./GraphView";
+import type { Layout } from "../substrate/neighborhoodLayout";
+import { slugOfNodeId } from "../substrate/nodeSlug";
 
 export interface RelationsPanelProps {
   text: string;
@@ -53,6 +56,13 @@ export interface RelationsPanelProps {
    *  scopes the Incoming list, it only shows the author where they are. Rich
    *  mode has no cursor callback yet, so it passes null (no active marker). */
   activeAnchor?: string | null;
+  /** The current file's neighborhood, laid out for a compact map beside the
+   *  note. When provided, the panel renders it; its nodes carry data-ref, so
+   *  the map joins the cross-surface highlight. Optional: callers with no graph
+   *  node for the file (or the frontmatter-form body view) omit it. */
+  neighborhoodLayout?: Layout;
+  /** Re-root/open a node from the map. */
+  onFocusNode?: (id: string) => void;
 }
 
 const COLLAPSE_STORAGE_KEY = "relationsPanelCollapsed";
@@ -89,13 +99,6 @@ function onActivateKey(action: () => void) {
       action();
     }
   };
-}
-
-/** The bare slug of a graph node id (`component:table` -> `table`), matching
- *  the data-ref an inline typed link carries, so the two highlight together. */
-function slugOfNodeId(id: string): string {
-  const i = id.indexOf(":");
-  return i === -1 ? id : id.slice(i + 1);
 }
 
 /** Relation row that navigates (click/Enter/Space) when it has somewhere
@@ -397,6 +400,25 @@ export function RelationsPanel(props: RelationsPanelProps) {
               ))}
             </Box>
           ))}
+
+          {props.neighborhoodLayout && (
+            <Box mt="3">
+              <Text size="1" weight="bold" color="gray">
+                Neighborhood
+              </Text>
+              <Box mt="1">
+                {/* key on the file so the map remounts per file: its roving
+                    tabindex resets to the focus node instead of carrying a
+                    stale active index into the next file's map. */}
+                <GraphView
+                  key={props.file}
+                  layout={props.neighborhoodLayout}
+                  compact
+                  onFocusNode={props.onFocusNode}
+                />
+              </Box>
+            </Box>
+          )}
         </>
       )}
     </Flex>

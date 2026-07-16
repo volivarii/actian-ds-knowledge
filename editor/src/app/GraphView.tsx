@@ -14,6 +14,7 @@ import {
   relationTypeColor,
   relationTypeLabel,
 } from "../lib/relationTypes";
+import { slugOfNodeId } from "../substrate/nodeSlug";
 
 // Re-exported so existing importers (GraphHealthTab) keep resolving these from
 // GraphView; the canonical definitions now live in the shared relationTypes
@@ -46,9 +47,17 @@ export interface GraphViewProps {
   layout: Layout;
   onFocusNode?: (id: string) => void;
   onReset?: () => void;
+  /** Compact placements (the relations rail beside the note) hide the filter
+   *  toolbar and render just the graph. */
+  compact?: boolean;
 }
 
-export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
+export function GraphView({
+  layout,
+  onFocusNode,
+  onReset,
+  compact,
+}: GraphViewProps) {
   // ── Node-type filter ────────────────────────────────────────────────────
   const presentTypes = useMemo(
     () => [...new Set(layout.nodes.map((n) => n.type))].sort(),
@@ -178,78 +187,34 @@ export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
 
   return (
     <Box>
-      {/* Legend = filter. Color + label, so color is not the sole channel. */}
-      <Flex
-        gap="2"
-        wrap="wrap"
-        mb="2"
-        align="center"
-        role="toolbar"
-        aria-label="Graph view controls"
-      >
-        {/* Node-type toggles */}
+      {/* Legend = filter. Color + label, so color is not the sole channel.
+          Hidden in compact placements (the rail map), which have no room. */}
+      {!compact && (
         <Flex
           gap="2"
           wrap="wrap"
+          mb="2"
           align="center"
-          role="group"
-          aria-label="Filter by node type"
+          role="toolbar"
+          aria-label="Graph view controls"
         >
-          {presentTypes.map((t) => {
-            const off = hiddenNodeTypes.has(t);
-            return (
-              <button
-                key={t}
-                type="button"
-                aria-pressed={!off}
-                aria-label={`Toggle ${typeLabel(t)}`}
-                onClick={() => toggleNodeType(t)}
-                style={{
-                  background: "none",
-                  border: 0,
-                  padding: 0,
-                  cursor: "pointer",
-                }}
-              >
-                <Badge variant={off ? "outline" : "soft"} color="gray">
-                  <span
-                    aria-hidden
-                    style={{
-                      display: "inline-block",
-                      width: 8,
-                      height: 8,
-                      borderRadius: 8,
-                      background: typeColor(t),
-                      marginRight: 6,
-                      opacity: off ? 0.3 : 1,
-                    }}
-                  />
-                  {typeLabel(t)}
-                </Badge>
-              </button>
-            );
-          })}
-        </Flex>
-
-        {/* Edge-type toggles */}
-        {presentEdgeTypes.length > 0 && (
+          {/* Node-type toggles */}
           <Flex
             gap="2"
             wrap="wrap"
             align="center"
             role="group"
-            aria-label="Filter by relationship type"
+            aria-label="Filter by node type"
           >
-            {presentEdgeTypes.map((t) => {
-              const off = hiddenEdgeTypes.has(t);
-              const label = edgeLabel(t);
+            {presentTypes.map((t) => {
+              const off = hiddenNodeTypes.has(t);
               return (
                 <button
                   key={t}
                   type="button"
                   aria-pressed={!off}
-                  aria-label={`Toggle ${label} relationships`}
-                  onClick={() => toggleEdgeType(t)}
+                  aria-label={`Toggle ${typeLabel(t)}`}
+                  onClick={() => toggleNodeType(t)}
                   style={{
                     background: "none",
                     border: 0,
@@ -258,23 +223,70 @@ export function GraphView({ layout, onFocusNode, onReset }: GraphViewProps) {
                   }}
                 >
                   <Badge variant={off ? "outline" : "soft"} color="gray">
-                    {label}
+                    <span
+                      aria-hidden
+                      style={{
+                        display: "inline-block",
+                        width: 8,
+                        height: 8,
+                        borderRadius: 8,
+                        background: typeColor(t),
+                        marginRight: 6,
+                        opacity: off ? 0.3 : 1,
+                      }}
+                    />
+                    {typeLabel(t)}
                   </Badge>
                 </button>
               );
             })}
           </Flex>
-        )}
 
-        <Button
-          size="1"
-          variant="soft"
-          aria-label="Reset graph view"
-          onClick={handleReset}
-        >
-          Reset view
-        </Button>
-      </Flex>
+          {/* Edge-type toggles */}
+          {presentEdgeTypes.length > 0 && (
+            <Flex
+              gap="2"
+              wrap="wrap"
+              align="center"
+              role="group"
+              aria-label="Filter by relationship type"
+            >
+              {presentEdgeTypes.map((t) => {
+                const off = hiddenEdgeTypes.has(t);
+                const label = edgeLabel(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-pressed={!off}
+                    aria-label={`Toggle ${label} relationships`}
+                    onClick={() => toggleEdgeType(t)}
+                    style={{
+                      background: "none",
+                      border: 0,
+                      padding: 0,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Badge variant={off ? "outline" : "soft"} color="gray">
+                      {label}
+                    </Badge>
+                  </button>
+                );
+              })}
+            </Flex>
+          )}
+
+          <Button
+            size="1"
+            variant="soft"
+            aria-label="Reset graph view"
+            onClick={handleReset}
+          >
+            Reset view
+          </Button>
+        </Flex>
+      )}
 
       <svg
         width={layout.width}
@@ -347,6 +359,7 @@ function GraphNode({
       ref={nodeRef}
       role="button"
       tabIndex={tabIndex}
+      data-ref={slugOfNodeId(node.id)}
       aria-label={`${node.title}, ${typeLabel(node.type)}, ${node.degree} connections`}
       style={{ cursor: onFocusNode ? "pointer" : "default" }}
       onClick={onClick}

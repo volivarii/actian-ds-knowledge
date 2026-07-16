@@ -1,7 +1,23 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { navTargetForNodeId } from "../../src/substrate/navTargetForNodeId";
+import {
+  navTargetForNodeId,
+  mapNodeNavTarget,
+} from "../../src/substrate/navTargetForNodeId";
 import { candidateNodeIdForFile } from "../../src/substrate/nodeIdForFile";
+
+test("mapNodeNavTarget: the map's own focus node is a no-op (no self-eject); neighbours and unknown-focus resolve normally", () => {
+  // Activating the file's own node must NOT navigate (it would eject a
+  // component file to its workspace/<slug>, a different screen).
+  assert.equal(mapNodeNavTarget("component:button", "component:button"), null);
+  // A neighbour resolves through the normal mapping.
+  assert.equal(
+    mapNodeNavTarget("component:table", "component:button"),
+    "workspace/table",
+  );
+  // No known focus (file has no graph node) → normal resolution.
+  assert.equal(mapNodeNavTarget("component:button", null), "workspace/button");
+});
 
 test("component → its Authoring Workspace (not a raw file path)", () => {
   assert.equal(navTargetForNodeId("component:button"), "workspace/button");
