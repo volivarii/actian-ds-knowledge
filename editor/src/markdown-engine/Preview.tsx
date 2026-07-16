@@ -13,6 +13,47 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import { splitFrontmatter } from "../substrate/splitFrontmatter";
+import { relationTypeColor, relationTypeLabel } from "../lib/relationTypes";
+import { resolveReference } from "../lib/resolveReference";
+
+// Inline links that resolve to a substrate node render as a typed reference: a
+// color dot by node kind plus a tooltip naming the type, with the author's link
+// text preserved. Unresolved hrefs (external URLs, paths, in-doc anchors,
+// unknown slugs) fall through to a plain link, honestly undressed. data-ref /
+// data-node-type expose the relation for the cross-surface highlight a later
+// slice wires up.
+function MdLink(
+  props: React.ComponentPropsWithoutRef<"a"> & { node?: unknown },
+) {
+  const { href, children } = props;
+  const ref = href ? resolveReference(href) : null;
+  if (!ref) {
+    return <a href={href}>{children}</a>;
+  }
+  return (
+    <a
+      href={href}
+      className="md-ref"
+      data-ref={ref.slug}
+      data-node-type={ref.type}
+      title={relationTypeLabel(ref.type)}
+    >
+      <span
+        className="md-ref-dot"
+        aria-hidden
+        style={{
+          display: "inline-block",
+          width: 7,
+          height: 7,
+          borderRadius: 999,
+          background: relationTypeColor(ref.type),
+          marginRight: 4,
+        }}
+      />
+      {children}
+    </a>
+  );
+}
 
 export interface PreviewProps {
   text: string;
@@ -61,7 +102,11 @@ export function Preview({ text }: PreviewProps) {
   return (
     <div className="md-prose">
       {data && <FrontmatterTable data={data} />}
-      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeSlug]}
+        components={{ a: MdLink }}
+      >
         {body}
       </ReactMarkdown>
     </div>

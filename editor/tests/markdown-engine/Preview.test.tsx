@@ -39,3 +39,36 @@ test("Preview: empty text renders empty", () => {
   assert.equal(container.children.length, 1);
   assert.equal(container.firstElementChild?.children.length, 0);
 });
+
+test("Preview: a link to a real component becomes a typed reference with a dot; other links stay plain", () => {
+  const { container } = render(
+    <Preview
+      text={
+        "See [table](table), an [external](https://example.com) site, and [dropdown](dropdown-select)."
+      }
+    />,
+  );
+  const links = Array.from(container.querySelectorAll("a"));
+
+  const tableLink = links.find((a) => a.textContent?.includes("table"))!;
+  assert.equal(tableLink.getAttribute("data-node-type"), "component");
+  assert.equal(tableLink.getAttribute("data-ref"), "table");
+  assert.equal(tableLink.getAttribute("href"), "table");
+  // author's label is preserved as the visible text
+  assert.ok(tableLink.textContent!.includes("table"));
+  // typed dot present, and the tooltip names the type in words (not color-only)
+  assert.ok(tableLink.querySelector(".md-ref-dot"));
+  assert.equal(tableLink.getAttribute("title"), "Component");
+
+  // external URL: plain link, no typed treatment
+  const extLink = links.find(
+    (a) => a.getAttribute("href") === "https://example.com",
+  )!;
+  assert.equal(extLink.getAttribute("data-node-type"), null);
+  assert.equal(extLink.querySelector(".md-ref-dot"), null);
+
+  // unresolved slug (no such component node): plain link, honestly undressed
+  const dropdownLink = links.find((a) => a.textContent?.includes("dropdown"))!;
+  assert.equal(dropdownLink.getAttribute("data-node-type"), null);
+  assert.equal(dropdownLink.querySelector(".md-ref-dot"), null);
+});

@@ -19,6 +19,16 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Editor: inline links to a component render as typed references.**
+  ([#434](https://github.com/volivarii/actian-ds-knowledge/pull/434))
+  A markdown link whose href resolves to a real component node now shows a color
+  dot by node kind (from the shared `relationTypes` palette) plus a tooltip
+  naming the type, instead of a cryptic bare slug, in both the preview
+  (react-markdown) and Milkdown rich mode (a view-only ProseMirror decoration).
+  Resolution is honest: external URLs, paths, in-doc anchors, and slugs with no
+  matching component stay plain links. The rich-mode decoration never edits the
+  doc, so serialization and its round-trip guards are untouched. Editor tooling
+  only: no `dist`/schema/contract change, so the version lockstep is untouched.
 - **Editor: relations read as typed, human-labeled links, not raw edge keys.**
   ([#433](https://github.com/volivarii/actian-ds-knowledge/pull/433))
   The relations panel's graph section no longer shows a flat list of internal edge-type badges
