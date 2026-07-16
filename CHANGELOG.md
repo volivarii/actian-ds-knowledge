@@ -18,6 +18,29 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Added
+- **New `components/render/` domain: the canonical component render, seeded on Button (North Star slice 1).**
+  The substrate now owns a self-contained, token-bound HTML render per component plus its standards
+  contract. Slice 1 proves the chain end to end on Button:
+  - `components/render/src/button.html` seeds the canonical render (the Button variant matrix, Intent x
+    Emphasis plus a disabled state, captured from the plugin's hand-authored renderer). This is a SEED;
+    slice 2 replaces it with a real derive from the appearance facts.
+  - `scripts/render/derive-canonical.js` validates each seed (first-line `@dsCard` marker,
+    self-contained, every referenced `--zen-*` token defined) and emits a Custom Elements Manifest
+    (tag `zen-button`; attributes intent/emphasis/size/disabled; cssParts label/icon; cssProperties
+    scraped from the button's own rules, its real 19-token surface). The emitted CEM is validated
+    against the official Custom Elements Manifest schema, vendored at `components/render/schema/`.
+  - `scripts/render/derive-dtcg.js` emits a portable DTCG token export (`tokens/dist/tokens.dtcg.json`)
+    by cleaning repo-internal provenance and Figma variable keys from the already-DTCG `tokens.json`.
+  - `scripts/render/build-bundle.js` composes the DesignSync `@dsCard` bundle (Components render plus
+    Colors/Type/Spacing foundations cards from the resolved tokens).
+  - New schema `schemas/canonical-render.json` (the render dist manifest envelope).
+
+  Slice 1 runs the derive LOCALLY to prove the chain; `dist/` stays uncommitted and the domain is not
+  yet part of the declared distributable surface (`scripts/validate-manifest.js` skips it in the orphan
+  guard). The CI render-derive workflow, vendor include, and version bump that ship it to consumers are
+  slice 1b.
+
 ### Fixed
 - **A Figma reorg that re-bucketed components red the nightly sync every night, though nothing was lost.**
   Component categories are inferred each night from the Figma Pages panel (a Title-Case header page sets
