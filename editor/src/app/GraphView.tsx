@@ -8,28 +8,20 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { Badge, Box, Button, Flex } from "@radix-ui/themes";
 import type { Layout, PlacedNode } from "../substrate/neighborhoodLayout";
+import {
+  NODE_TYPE_COLOR,
+  NODE_TYPE_LABEL,
+  relationTypeColor,
+  relationTypeLabel,
+} from "../lib/relationTypes";
+
+// Re-exported so existing importers (GraphHealthTab) keep resolving these from
+// GraphView; the canonical definitions now live in the shared relationTypes
+// module so the graph map, the relations rail, and inline chips share one
+// typed-color language.
+export { NODE_TYPE_COLOR, NODE_TYPE_LABEL };
 
 const MAX_LABEL_LEN = 18;
-
-export const NODE_TYPE_COLOR: Record<string, string> = {
-  component: "var(--indigo-9)",
-  category: "var(--gray-8)",
-  a11y_criterion: "var(--grass-9)",
-  foundation_section: "var(--amber-9)",
-  motion_pattern: "var(--purple-9)",
-  content_topic: "var(--cyan-9)",
-  unknown: "var(--gray-6)",
-};
-
-export const NODE_TYPE_LABEL: Record<string, string> = {
-  component: "Component",
-  category: "Category",
-  a11y_criterion: "Accessibility criterion",
-  foundation_section: "Foundation",
-  motion_pattern: "Motion pattern",
-  content_topic: "Content topic",
-  unknown: "Node",
-};
 
 export const EDGE_TYPE_LABEL: Record<string, string> = {
   a11y_ref: "Accessibility",
@@ -41,10 +33,10 @@ export const EDGE_TYPE_LABEL: Record<string, string> = {
 };
 
 function typeColor(t: string): string {
-  return NODE_TYPE_COLOR[t] ?? NODE_TYPE_COLOR.unknown!;
+  return relationTypeColor(t);
 }
 function typeLabel(t: string): string {
-  return NODE_TYPE_LABEL[t] ?? NODE_TYPE_LABEL.unknown!;
+  return relationTypeLabel(t);
 }
 function edgeLabel(t: string): string {
   return EDGE_TYPE_LABEL[t] ?? "Related";
