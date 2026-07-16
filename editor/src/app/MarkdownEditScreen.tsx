@@ -40,6 +40,7 @@ import { Toolbar } from "../markdown-engine/Toolbar";
 import { Preview } from "../markdown-engine/Preview";
 import { installCrossSurfaceHighlight } from "../lib/crossSurfaceHighlight";
 import { installRefHoverCard } from "../lib/refHoverCard";
+import { useAttachController } from "../lib/attachController";
 import { layoutNeighborhood } from "../substrate/neighborhoodLayout";
 import { nodeIdForFile } from "../substrate/nodeIdForFile";
 import { bakedGraphIndex } from "../substrate/graphIndex";
@@ -129,17 +130,18 @@ export function MarkdownEditScreen({
   // Coordinated highlight: hovering an inline typed link lights the matching
   // relations-rail row (and vice versa). Delegated on the screen root, so it
   // covers the editor pane, the preview, and the rail as they re-render.
-  const highlightRootRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const root = highlightRootRef.current;
-    if (!root) return;
+  // Callback ref (not useEffect+useRef): the root mounts behind a loading gate
+  // (Spinner until the fetch resolves), so an effect with [] deps would capture
+  // a null ref and never re-run. This installs on attach and tears down on
+  // detach, surviving the Spinner->ready transition and file-switch remounts.
+  const attachHighlightRoot = useAttachController((root) => {
     const highlight = installCrossSurfaceHighlight(root);
     const hoverCard = installRefHoverCard(root);
     return () => {
       highlight();
       hoverCard();
     };
-  }, []);
+  });
 
   // The current file's graph node (if any), and its neighborhood laid out
   // compact for the rail map beside the note. Map nodes carry data-ref, so the
@@ -658,7 +660,7 @@ export function MarkdownEditScreen({
   );
 
   return (
-    <Flex ref={highlightRootRef} direction="column" height="100%" gap="2">
+    <Flex ref={attachHighlightRoot} direction="column" height="100%" gap="2">
       <TierBanner path={path} />
       <Flex align="center" justify="between" gap="2" wrap="wrap">
         <Heading size="3">{path}</Heading>
