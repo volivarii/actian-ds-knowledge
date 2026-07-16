@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "library": "ds",
   "fileKey": "l8biHxfarNi1I2RMvVxVOK",
-  "lastSynced": "2026-07-15T12:44:32.704Z",
+  "lastSynced": "2026-07-16T09:10:31.458Z",
   "componentCount": 287,
   "components": {
     "account-dropdown": {
@@ -1007,10 +1007,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Action",
-      "categorySlug": "action",
-      "group": "Calendar",
       "variants": {
         "Type": [
           "Single date select",
@@ -1023,7 +1019,11 @@
           "Range",
           "Year"
         ]
-      }
+      },
+      "section": "Components",
+      "category": "Action",
+      "categorySlug": "action",
+      "group": "Calendar"
     },
     "card-for-grouped-content": {
       "name": "Card for grouped content",
@@ -1305,6 +1305,7 @@
       "category": "Form (input & selection)",
       "categorySlug": "form-input-selection",
       "group": "Checkbox",
+      "status": "in-progress",
       "variants": {
         "Selection": [
           "Unchecked",
@@ -1318,8 +1319,7 @@
           "Pressed",
           "Disabled"
         ]
-      },
-      "status": "in-progress"
+      }
     },
     "checkbox-card": {
       "name": "Checkbox card",
@@ -1363,6 +1363,7 @@
       "category": "Form (input & selection)",
       "categorySlug": "form-input-selection",
       "group": "Checkbox",
+      "status": "in-progress",
       "variants": {
         "Selection": [
           "Unselected",
@@ -1375,8 +1376,7 @@
           "Pressed",
           "Disabled"
         ]
-      },
-      "status": "in-progress"
+      }
     },
     "chevron-left": {
       "name": "chevron--left",
@@ -3220,10 +3220,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Action",
-      "categorySlug": "action",
-      "group": "Calendar",
       "variants": {
         "Type": [
           "Single date",
@@ -3238,7 +3234,11 @@
           "Fille",
           "Activ"
         ]
-      }
+      },
+      "section": "Components",
+      "category": "Action",
+      "categorySlug": "action",
+      "group": "Calendar"
     },
     "input-ports": {
       "name": "Input-ports",
@@ -4009,11 +4009,6 @@
           "source": "child-instance"
         },
         {
-          "slug": "text-input",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
           "slug": "info",
           "role": null,
           "source": "child-instance"
@@ -4761,10 +4756,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Form (input & selection)",
-      "categorySlug": "form-input-selection",
-      "group": "Radio button",
       "variants": {
         "Selection": [
           "Unselected",
@@ -4778,6 +4769,10 @@
           "Disabled"
         ]
       },
+      "section": "Components",
+      "category": "Form (input & selection)",
+      "categorySlug": "form-input-selection",
+      "group": "Radio button",
       "status": "in-progress"
     },
     "radio-button-card": {
@@ -4809,10 +4804,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Form (input & selection)",
-      "categorySlug": "form-input-selection",
-      "group": "Radio button",
       "variants": {
         "Selection": [
           "Unselected",
@@ -4826,6 +4817,10 @@
           "Disabled"
         ]
       },
+      "section": "Components",
+      "category": "Form (input & selection)",
+      "categorySlug": "form-input-selection",
+      "group": "Radio button",
       "status": "in-progress"
     },
     "relation": {
@@ -4886,16 +4881,16 @@
       "properties": {},
       "nestedComponents": [],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Form (input & selection)",
-      "categorySlug": "form-input-selection",
-      "group": "Rich text",
       "variants": {
         "State": [
           "Expanded",
           "Default"
         ]
-      }
+      },
+      "section": "Components",
+      "category": "Form (input & selection)",
+      "categorySlug": "form-input-selection",
+      "group": "Rich text"
     },
     "rotate-back": {
       "name": "rotate-back",
@@ -5160,10 +5155,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Form (input & selection)",
-      "categorySlug": "form-input-selection",
-      "group": "Search",
       "variants": {
         "Type": [
           "Explorer home",
@@ -5178,7 +5169,11 @@
           "Dsiabled",
           "Default"
         ]
-      }
+      },
+      "section": "Components",
+      "category": "Form (input & selection)",
+      "categorySlug": "form-input-selection",
+      "group": "Search"
     },
     "search-dropdown-menu": {
       "name": "Search dropdown menu",
@@ -5196,10 +5191,6 @@
         }
       ],
       "documentationLinks": [],
-      "section": "Components",
-      "category": "Form (input & selection)",
-      "categorySlug": "form-input-selection",
-      "group": "Search",
       "variants": {
         "Type": [
           "No result",
@@ -5207,7 +5198,11 @@
           "After typed",
           "Explorer home"
         ]
-      }
+      },
+      "section": "Components",
+      "category": "Form (input & selection)",
+      "categorySlug": "form-input-selection",
+      "group": "Search"
     },
     "search-filters": {
       "name": "Search filters",
@@ -6346,62 +6341,17 @@
       "description": "Used for single-line alphanumeric data entry (e.g., Name, Email, Phone). Specify the \"type\" attribute if applicable.",
       "page": "✍️ Text input",
       "properties": {
-        "Helper#458:9": {
+        "Show label group#20405:23": {
           "type": "BOOLEAN",
           "default": true
         },
-        "Label#458:13": {
+        "Show helper text#20405:35": {
           "type": "BOOLEAN",
           "default": true
         },
-        "Info icon#7242:0": {
+        "Show buttons#20405:47": {
           "type": "BOOLEAN",
           "default": true
-        },
-        "* (Asterisk)#7242:142": {
-          "type": "BOOLEAN",
-          "default": true
-        },
-        "Description#7242:164": {
-          "type": "BOOLEAN",
-          "default": true
-        },
-        "Delete icon#9482:0": {
-          "type": "BOOLEAN",
-          "default": false
-        },
-        "Label text#9633:0": {
-          "type": "TEXT",
-          "default": "Label"
-        },
-        "Description text#9633:17": {
-          "type": "TEXT",
-          "default": "A description helps users to define and understand the purpose of the input."
-        },
-        "Placeholder text#9633:34": {
-          "type": "TEXT",
-          "default": "Placeholder text"
-        },
-        "Helper text#9633:51": {
-          "type": "TEXT",
-          "default": "Helper text goes here"
-        },
-        "Input text#9633:68": {
-          "type": "TEXT",
-          "default": "Entered value"
-        },
-        "Textfield buttons#14241:0": {
-          "type": "BOOLEAN",
-          "default": true
-        },
-        "Slot for input/selection#20272:10": {
-          "type": "SLOT",
-          "default": {
-            "guid": {
-              "sessionID": -1,
-              "localID": -1
-            }
-          }
         }
       },
       "nestedComponents": [
@@ -6421,22 +6371,22 @@
           "source": "child-instance"
         },
         {
-          "slug": "button",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "simple-check",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
           "slug": "error-filled",
           "role": null,
           "source": "child-instance"
         },
         {
           "slug": "warning-filled",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "simple-check",
           "role": null,
           "source": "child-instance"
         }
@@ -6446,20 +6396,20 @@
       "category": "Form (input & selection)",
       "categorySlug": "form-input-selection",
       "group": "Text input",
+      "status": "in-progress",
       "variants": {
         "States": [
           "Default",
+          "Warning",
           "Hover",
           "Focus",
           "Active",
           "Filled",
           "Error",
-          "Warning",
           "Disabled",
           "Read-only"
         ]
-      },
-      "status": "in-progress"
+      }
     },
     "text-type": {
       "name": "text-type",
@@ -6555,6 +6505,7 @@
       "category": "Form (input & selection)",
       "categorySlug": "form-input-selection",
       "group": "Toggle",
+      "status": "in-progress",
       "variants": {
         "Toggle position": [
           "On right (default)",
@@ -6571,8 +6522,7 @@
           "Pressed",
           "Disabled"
         ]
-      },
-      "status": "in-progress"
+      }
     },
     "toolbar": {
       "name": "Toolbar",

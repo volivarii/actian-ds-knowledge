@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "radio-button-card",
   "kit": "dskit",
-  "synced_at": "2026-07-12T20:29:04.398Z",
+  "synced_at": "2026-07-16T09:10:11.260Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "19746:36001",
@@ -155,7 +155,7 @@
             "rawHint": {
               "layoutMode": "NONE",
               "x": 4380,
-              "y": 916,
+              "y": 1038,
               "constraints": {
                 "vertical": "TOP",
                 "horizontal": "LEFT"
@@ -256,7 +256,7 @@
                 }
               ]
             },
-            "text": "Label"
+            "text": "Option label"
           }
         ]
       },
