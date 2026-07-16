@@ -19,6 +19,14 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **Editor: coordinated cross-surface relation highlight.**
+  ([#435](https://github.com/volivarii/actian-ds-knowledge/pull/435))
+  Hovering or keyboard-focusing an inline typed link now lights the matching
+  relations-rail row, and vice versa: a delegated controller on the edit-screen
+  root toggles a highlight class on every element sharing a `data-ref` (the
+  bare component slug both ends now expose). Completes the inline-reference arc.
+  Editor tooling only, view-only: no `dist`/schema/contract change, so the
+  version lockstep is untouched.
 - **Editor: inline links to a component render as typed references.**
   ([#434](https://github.com/volivarii/actian-ds-knowledge/pull/434))
   A markdown link whose href resolves to a real component node now shows a color
