@@ -14,6 +14,7 @@ import {
   relationTypeColor,
   relationTypeLabel,
 } from "../lib/relationTypes";
+import { slugOfNodeId } from "../substrate/nodeSlug";
 
 // Re-exported so existing importers (GraphHealthTab) keep resolving these from
 // GraphView; the canonical definitions now live in the shared relationTypes
@@ -40,13 +41,6 @@ function typeLabel(t: string): string {
 }
 function edgeLabel(t: string): string {
   return EDGE_TYPE_LABEL[t] ?? "Related";
-}
-
-/** Bare slug of a graph node id (`component:button` -> `button`), matching the
- *  data-ref an inline link / rail row carries, so all three highlight together. */
-function slugOfNodeId(id: string): string {
-  const i = id.indexOf(":");
-  return i === -1 ? id : id.slice(i + 1);
 }
 
 export interface GraphViewProps {

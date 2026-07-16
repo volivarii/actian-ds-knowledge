@@ -21,6 +21,7 @@ import { relationTypeColor } from "../lib/relationTypes";
 import { groupGraphNeighbors } from "../lib/relationGroups";
 import { GraphView } from "./GraphView";
 import type { Layout } from "../substrate/neighborhoodLayout";
+import { slugOfNodeId } from "../substrate/nodeSlug";
 
 export interface RelationsPanelProps {
   text: string;
@@ -98,13 +99,6 @@ function onActivateKey(action: () => void) {
       action();
     }
   };
-}
-
-/** The bare slug of a graph node id (`component:table` -> `table`), matching
- *  the data-ref an inline typed link carries, so the two highlight together. */
-function slugOfNodeId(id: string): string {
-  const i = id.indexOf(":");
-  return i === -1 ? id : id.slice(i + 1);
 }
 
 /** Relation row that navigates (click/Enter/Space) when it has somewhere
@@ -413,7 +407,11 @@ export function RelationsPanel(props: RelationsPanelProps) {
                 Neighborhood
               </Text>
               <Box mt="1">
+                {/* key on the file so the map remounts per file: its roving
+                    tabindex resets to the focus node instead of carrying a
+                    stale active index into the next file's map. */}
                 <GraphView
+                  key={props.file}
                   layout={props.neighborhoodLayout}
                   compact
                   onFocusNode={props.onFocusNode}

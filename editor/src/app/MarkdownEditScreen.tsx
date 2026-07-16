@@ -42,7 +42,7 @@ import { installCrossSurfaceHighlight } from "../lib/crossSurfaceHighlight";
 import { layoutNeighborhood } from "../substrate/neighborhoodLayout";
 import { nodeIdForFile } from "../substrate/nodeIdForFile";
 import { bakedGraphIndex } from "../substrate/graphIndex";
-import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
+import { mapNodeNavTarget } from "../substrate/navTargetForNodeId";
 import {
   RelationsPanel,
   readRelationsPanelCollapsed,
@@ -135,19 +135,23 @@ export function MarkdownEditScreen({
     return installCrossSurfaceHighlight(root);
   }, []);
 
-  // The current file's neighborhood, laid out compact for the rail map beside
-  // the note. Its nodes carry data-ref, so the map joins the cross-surface
-  // highlight. Undefined when the file has no graph node.
-  const neighborhoodLayout = useMemo(() => {
-    const id = nodeIdForFile(path);
-    return id
-      ? layoutNeighborhood(id, bakedGraphIndex(), {
-          depth: 1,
-          width: 236,
-          height: 200,
-        })
-      : undefined;
-  }, [path]);
+  // The current file's graph node (if any), and its neighborhood laid out
+  // compact for the rail map beside the note. Map nodes carry data-ref, so the
+  // map joins the cross-surface highlight. Undefined when the file has no graph
+  // node. currentNodeId also guards the map's own "you are here" node from
+  // navigating away (mapNodeNavTarget below).
+  const currentNodeId = useMemo(() => nodeIdForFile(path), [path]);
+  const neighborhoodLayout = useMemo(
+    () =>
+      currentNodeId
+        ? layoutNeighborhood(currentNodeId, bakedGraphIndex(), {
+            depth: 1,
+            width: 236,
+            height: 200,
+          })
+        : undefined,
+    [currentNodeId],
+  );
   preloadedRef.current = preloaded;
   const [anchorPopover, setAnchorPopover] = useState<{
     slug: string;
@@ -640,7 +644,7 @@ export function MarkdownEditScreen({
         activeAnchor={wysiwyg ? null : activeAnchor}
         neighborhoodLayout={neighborhoodLayout}
         onFocusNode={(id) => {
-          const target = navTargetForNodeId(id);
+          const target = mapNodeNavTarget(id, currentNodeId);
           if (target) handleOpenFile(target);
         }}
       />
