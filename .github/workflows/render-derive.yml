@@ -1,0 +1,115 @@
+name: Derive canonical render dist from components/render/src/
+
+# Federation Phase 1.2 style CI, following foundations-derive.yml's pattern.
+# Runs on PR events that touch the render source, schema, derive scripts,
+# paths-manifest.json, or the token source. Regenerates the canonical render
+# dist (components/render/dist) and the DTCG token snapshot (tokens/dist),
+# then pushes them back to the PR branch. Authors never need a local
+# toolchain to keep the dist fresh; CI handles the rerun.
+#
+# Required repo setting (already enabled for sync-from-figma workflow):
+#   Settings -> Actions -> General -> Workflow permissions -> Allow GH Actions
+#     to create and approve pull requests
+#
+# The auto-commit pushes with the actian-ds-bot App token (vars.BOT_APP_ID +
+# secrets.BOT_APP_PRIVATE_KEY) so it re-triggers the required checks on the
+# new HEAD SHA, which a GITHUB_TOKEN push cannot do. Shared with
+# foundations-derive.yml and guidelines-derive.yml.
+
+on:
+  pull_request:
+    paths:
+      - 'components/render/src/**'
+      - 'components/render/schema/**'
+      - 'scripts/render/**'
+      - 'paths-manifest.json'
+      - 'tokens/tokens.json'
+
+# Serialize runs per branch: concurrent auto-commit pushes to the same PR
+# head race each other (lost push = red required check). Queue, never cancel:
+# cancelling mid-push could strand a half-committed dist.
+concurrency:
+  group: render-derive-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  derive:
+    name: Derive canonical render dist
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # App token for the auto-commit push below. A commit pushed with the
+      # default GITHUB_TOKEN cannot trigger further workflow runs, leaving the
+      # required checks with no status on the auto-commit's SHA and blocking
+      # merge. Skipped on fork PRs, BOT_APP_PRIVATE_KEY is not exposed to
+      # them; checkout then falls back to github.token.
+      - name: Generate App token
+        id: app-token
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Derive the canonical render dist
+        run: npm run derive:render
+
+      - name: Run tests against regenerated output
+        run: npm test
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet -- components/render/dist/ tokens/dist/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- components/render/dist/ tokens/dist/
+          fi
+
+      - name: Auto-bump package.json patch
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          node scripts/lib/bump-version.js package.json patch
+
+      # Skip on fork PRs, GITHUB_TOKEN can't push to forks.
+      - name: Commit derived render dist back to PR
+        if: steps.diff.outputs.changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/render/dist/ tokens/dist/ package.json paths-manifest.json package-lock.json
+          git commit -m "chore(render): regenerate canonical render dist from src + bump patch"
+          # Race-safe push: another derive workflow may have pushed to this
+          # branch since checkout (concurrent auto-commits), rebase and retry
+          # once instead of failing the required check on a lost race.
+          # --autostash: npm install rewrites the stale tracked package-lock.json
+          # in every run, and a dirty tree makes a bare rebase refuse to start.
+          git push || (git pull --rebase --autostash && git push)
+
+      - name: Summarize
+        if: always()
+        run: |
+          if [ "${{ steps.diff.outputs.changed }}" = "true" ]; then
+            echo "### Render derive: regenerated" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Render derive: no changes" >> "$GITHUB_STEP_SUMMARY"
+          fi
