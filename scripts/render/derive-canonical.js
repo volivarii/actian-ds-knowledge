@@ -364,6 +364,35 @@ function deriveCanonical(srcDir) {
     });
   });
 
+  // Phase 0 (renderer relocation): the shared render.css base is now sourced from
+  // the relocated styling assets in components/render/renderer/, not from a seed's
+  // inlined <style>. The seeds' deduped stylesheet (css above) is kept as a loud
+  // cross-check: if the assets and the frozen seeds ever diverge, the derive FAILS
+  // rather than shipping a mismatch (a real drift signal, not something to tolerate).
+  // Order matches the render read path: tokens, then fonts, then ds-base.
+  var assetBase =
+    fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8") +
+    "\n" +
+    fs.readFileSync(
+      path.join(REPO_ROOT, "components", "render", "renderer", "ds-fonts.css"),
+      "utf8",
+    ) +
+    "\n" +
+    fs.readFileSync(
+      path.join(REPO_ROOT, "components", "render", "renderer", "ds-base.css"),
+      "utf8",
+    );
+  if (assetBase !== css) {
+    throw new Error(
+      "render.css base derived from components/render/renderer/ (" +
+        assetBase.length +
+        " chars) diverges from the deduped seed stylesheet (" +
+        (css === null ? "none" : css.length) +
+        " chars); the styling assets and the frozen seeds have drifted",
+    );
+  }
+  css = assetBase; // the relocated assets are now the source of truth
+
   // Slice 2: for slugs with a template, replace the captured fragment with a
   // derive-from-facts and append the derived per-variant CSS to the shared sheet.
   var tokenMap = loadTokenMap(css);

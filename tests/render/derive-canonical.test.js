@@ -205,3 +205,37 @@ test("deriveCanonical: templated slugs are derived, others captured", function (
   assert.match(out.css, /\.ds-tag--pink\{/);
   assert.match(out.css, /ds-checkbox--indeterminate .ds-checkbox__box\{/);
 });
+
+test("deriveCanonical: render.css base is derived from the relocated ds-base assets, equals the seed stylesheet", function () {
+  // Phase 0 (renderer relocation): the shared render.css base is now sourced from
+  // components/render/renderer/{ds-fonts,ds-base}.css (+ tokens.css), not from a
+  // seed's inlined <style>. The two are byte-identical by construction (the seeds
+  // were captured from the same ds-base.css), so this asserts the derived base
+  // equals concat(tokens, fonts, ds-base) in the render read path's order.
+  var fs = require("node:fs");
+  var path = require("node:path");
+  var out = D.deriveCanonical(SRC);
+  var marker = "\n\n/* ===== derived-from-facts (slice 2) ===== */";
+  var base =
+    out.css.indexOf(marker) >= 0
+      ? out.css.slice(0, out.css.indexOf(marker))
+      : out.css;
+  var root = path.resolve(__dirname, "../..");
+  var expect =
+    fs.readFileSync(path.join(root, "tokens/tokens.css"), "utf8") +
+    "\n" +
+    fs.readFileSync(
+      path.join(root, "components/render/renderer/ds-fonts.css"),
+      "utf8",
+    ) +
+    "\n" +
+    fs.readFileSync(
+      path.join(root, "components/render/renderer/ds-base.css"),
+      "utf8",
+    );
+  assert.equal(
+    base,
+    expect,
+    "render.css base equals concat(tokens, fonts, ds-base)",
+  );
+});
