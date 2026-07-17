@@ -83,3 +83,23 @@ test("toggle derives a real On state, not the Selected==='Yes' bug", function ()
     "the Disabled cell emits is-disabled",
   );
 });
+
+test("tag-default renders every registry color, not the 5-cell generic cap", function () {
+  var html = R.deriveFragment("tag-default");
+  [
+    "pink",
+    "purple",
+    "indigo",
+    "yellow",
+    "lime",
+    "teal",
+    "orange",
+    "gray",
+  ].forEach(function (c) {
+    assert.match(
+      html,
+      new RegExp("ds-tag--" + c + "\\b"),
+      "tag color " + c + " is rendered",
+    );
+  });
+});
