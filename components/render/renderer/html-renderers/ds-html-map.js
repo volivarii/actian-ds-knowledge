@@ -334,7 +334,14 @@
 
         case "checkbox": {
           var cbCls = "ds-checkbox";
-          if (v.Selected === "Yes") cbCls += " ds-checkbox--checked";
+          var cbGlyph = renderIcon("simple-check");
+          if (v.Selection === "Checked") {
+            cbCls += " ds-checkbox--checked";
+          } else if (v.Selection === "Indeterminate") {
+            cbCls += " ds-checkbox--indeterminate";
+            cbGlyph =
+              '<svg class="ds-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="2" rx="1" fill="currentColor"/></svg>';
+          }
           if (v.State === "Disabled") cbCls += " is-disabled";
           var cbLabel = esc(props.Label || "Label");
           return (
@@ -342,7 +349,7 @@
             cbCls +
             '"><span class="ds-checkbox__box">' +
             '<span class="ds-checkbox__check">' +
-            renderIcon("simple-check") +
+            cbGlyph +
             "</span>" +
             '</span><span class="ds-checkbox__label">' +
             cbLabel +
@@ -417,6 +424,7 @@
               renderIcon("directory") +
               "</span>";
           }
+          if (v.Color) tagCls += " ds-tag--" + v.Color.toLowerCase();
           var _styleMap =
             (typeof window !== "undefined" && window.__dsVariantStyles) ||
             _serverVariantStyleMap ||
