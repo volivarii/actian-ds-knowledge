@@ -16,8 +16,13 @@ function buildContactSheet(outPath) {
   var canonical = deriveCanonical(
     path.join(REPO, "components", "render", "src"),
   );
+  // The renderer-relocation slice retired the source:"derived" templates, so the
+  // sign-off set is now a fixed list of the slugs whose rendering this slice
+  // changed (tag-default colors; checkbox/radio/toggle state). Each renders
+  // through the generic renderer and is shown beside its Figma media oracle.
+  var SIGN_OFF_SLUGS = ["tag-default", "checkbox", "radio-button", "toggle"];
   var derived = canonical.manifest.renders.filter(function (r) {
-    return r.source === "derived";
+    return SIGN_OFF_SLUGS.indexOf(r.slug) >= 0;
   });
   var sections = derived
     .map(function (r) {

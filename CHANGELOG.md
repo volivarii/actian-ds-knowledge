@@ -19,6 +19,24 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Changed
+- **Render: the whole 35-slug canonical render gallery now derives from the relocated generic renderer, not from frozen seeds (renderer-relocation phase 1b-beta).** ([#444](https://github.com/volivarii/actian-ds-knowledge/pull/444))
+  The derive is wired straight to `deriveFragment`, so every slug renders through the one
+  relocated renderer instead of passing through captured seeds. Fixed radio-button and toggle to
+  emit their real `Selection` state; both carried the same `Selected === "Yes"` bug that checkbox
+  had before phase 1b-alpha. tag-default now renders every registry color through the generic
+  renderer via a matrix override, so all eight color variants render correctly without a
+  dedicated template. The two slice-2 templates (tag-default, checkbox) are retired
+  (`TEMPLATES = {}`), while the `TEMPLATES[slug]` escape-hatch hook itself stays in place for a
+  future case that needs it. The transient render.css tag/checkbox CSS duplication is gone; that
+  styling now lives once, in `ds-base.css`. Manifest `source` gains `"rendered"` (generic
+  renderer) alongside `"derived"` (escape-hatch, currently unused) and `"captured"` (legacy). The
+  fidelity gate (`fidelityCheck`) is retained for a future escape-hatch template render; with no
+  slug currently stamped `source: "derived"`, its appendix check is a no-op today, while
+  `checkBaseCssRules` keeps validating the ds-base.css tag/checkbox rules against facts. The
+  contact-sheet sign-off page now iterates a fixed list of the four slugs this slice improved
+  (tag-default, checkbox, radio-button, toggle) instead of filtering on `source: "derived"`.
+  Known follow-up: the toggle case still references a dead `v["Toggle location"]` axis (the real
+  axis is `Toggle position`); inert in the gallery today, to fix later.
 - **Render: tag-default and checkbox now render correctly in the generic renderer, not only via the slice-2 template override (renderer-relocation phase 1b-alpha).** ([#443](https://github.com/volivarii/actian-ds-knowledge/pull/443))
   `ds-base.css` gains the `.ds-tag--<color>` color variants (value-first from the appearance
   facts) and the `.ds-checkbox--indeterminate` rule; `ds-html-map` emits the tag color class and
