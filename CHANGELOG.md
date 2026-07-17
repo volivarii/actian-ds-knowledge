@@ -19,7 +19,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Changed
-- **Render: the DS component renderer now lives in knowledge (renderer-relocation phase 1a).** (_PR link at open_)
+- **Render: the DS component renderer now lives in knowledge (renderer-relocation phase 1a).** ([#442](https://github.com/volivarii/actian-ds-knowledge/pull/442))
   The plugin's fact-driven renderer (`ds-html-map` plus the appearance/anatomy interpreters) is
   copied into `components/render/renderer/`, structure-preserving, with its `lib/paths` coupling
   severed by dependency injection (anatomy loaders and an icon map are injected from knowledge's
