@@ -95,11 +95,21 @@
       })()) ||
     {};
 
+  // Relocation phase 1: knowledge has no lib/paths, so the module-level dsIcons
+  // resolves to {}. An injected icon map (setIcons) takes precedence, mirroring
+  // setAnatomyDocMap/setVariantStyleMap. Callers MUST reset with setIcons(null)
+  // after rendering to avoid cross-render state leak.
+  var injectedIcons = null;
+  function setIcons(map) {
+    injectedIcons = map || null;
+  }
+
   // renderIcon(slug, {rotate}) -> bare <svg> carrying the ds-icon base class
   // (plus ds-icon--rotN when rotated). Unknown slug -> '' (never throws; the
   // orphan-ref gate prevents shipping one).
   function renderIcon(slug, opts) {
-    var icon = dsIcons && dsIcons[slug];
+    var source = injectedIcons || dsIcons;
+    var icon = source && source[slug];
     if (!icon || !icon.viewBox || !icon.body) return "";
     var iconCls = "ds-icon";
     if (opts && opts.rotate) iconCls += " ds-icon--rot" + opts.rotate;
@@ -1777,6 +1787,7 @@
   exports.setAnatomyDocMap = setAnatomyDocMap;
   exports.setVariantStyleMap = setVariantStyleMap;
   exports.renderIcon = renderIcon;
+  exports.setIcons = setIcons;
   exports.esc = esc;
   exports.parseVariant = parseVariant;
   exports.normalizeProps = normalizeProps;

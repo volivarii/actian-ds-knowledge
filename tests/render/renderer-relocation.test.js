@@ -53,3 +53,19 @@ test("anatomy loader is honored when injected (no PATHS fallback needed)", funct
     "injected loader wins, no filesystem/PATHS touched",
   );
 });
+
+test("ds-html-map renderIcon uses an injected icon map", function () {
+  var M = require("../../components/render/renderer/html-renderers/ds-html-map.js");
+  assert.equal(typeof M.setIcons, "function", "setIcons seam present");
+  M.setIcons({
+    "chevron-down": { viewBox: "0 0 24 24", body: '<path d="M1 1"/>' },
+  });
+  var html = M.renderIcon("chevron-down");
+  assert.match(
+    html,
+    /<svg[^>]*viewBox="0 0 24 24"/,
+    "emits the injected geometry",
+  );
+  assert.match(html, /M1 1/, "emits the injected body");
+  M.setIcons(null); // reset module state (leak discipline, like setAnatomyDocMap)
+});
