@@ -37,14 +37,15 @@
             "tagName": "zen-button",
             "group": "Components",
             "fragment": "fragments/button.html",
-            "tokensConsumed": 19
+            "tokensConsumed": 19,
+            "source": "captured"
           }
         ]
       ],
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["slug", "tagName", "group", "fragment"],
+        "required": ["slug", "tagName", "group", "fragment", "source"],
         "properties": {
           "slug": {
             "type": "string",
@@ -71,6 +72,12 @@
             "type": "integer",
             "description": "Count of distinct --zen-* design tokens the component's own CSS rules consume, mirrored in the component's CEM cssProperties.",
             "examples": [19]
+          },
+          "source": {
+            "type": "string",
+            "enum": ["derived", "captured"],
+            "description": "How this render was produced: 'derived' from the resolved-appearance facts via a template, or 'captured' verbatim from the plugin seed (migration pending).",
+            "examples": ["derived"]
           }
         }
       }

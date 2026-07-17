@@ -385,4 +385,5 @@ module.exports = {
   buildBundle: buildBundle,
   resolveValue: resolveValue,
   collectLeaves: collectLeaves,
+  selfContainedCard: selfContainedCard,
 };

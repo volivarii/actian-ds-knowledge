@@ -18,7 +18,28 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Changed
+- **Render: tag-default and checkbox are now derived from the resolved-appearance facts, not
+  captured verbatim (North Star slice 2).** ([#440](https://github.com/volivarii/actian-ds-knowledge/pull/440))
+  A per-component template layer (`scripts/render/templates/`) generates these two renders from
+  `components/dist/anatomy/<slug>.json` instead of passing through the plugin's captured seed.
+  tag-default's eight color variants and checkbox's four states (including a new `--indeterminate`
+  treatment that `render.css` previously lacked) now render correctly, where the capture had lost
+  the tag colors (every tag rendered gray) and collapsed every checkbox to an empty box. Each render
+  is stamped `source: "derived" | "captured"` in the manifest (2 derived, 33 captured today), so the
+  honest split is visible rather than hidden behind a "renders clean" count. Token binding is
+  value-first: a `var(--token)` is emitted only when the token round-trips to the fact's resolved
+  value, which caught four stale tag background-token attributions that resolved to near-gray
+  neutrals.
+
 ### Added
+- **A two-tooth render fidelity gate (North Star slice 2).** ([#440](https://github.com/volivarii/actian-ds-knowledge/pull/440))
+  `scripts/render/fidelity-check.js` is a data-invariant CI check, chained into `derive:render`: for
+  every `derived` render, each emitted color must equal a resolved-appearance fact and each emitted
+  token must round-trip to a fact value, or the derive fails. `scripts/render/build-contact-sheet.js`
+  generates an HTML contact sheet placing each derived card beside its Figma `media/<slug>/*.webp`
+  oracle for human sign-off. The manifest schema (`schemas/canonical-render.json`) gains a `source`
+  property.
 - **The canonical render now ships to consumers, deduplicated (North Star slice 1b).** ([#438](https://github.com/volivarii/actian-ds-knowledge/pull/438))
   `components/render/dist/` is committed and vendorable: one shared `render.css` (inlined once) plus
   a thin `fragments/<slug>.html` per component, alongside the Custom Elements Manifest, the render
