@@ -69,3 +69,15 @@ test("ds-html-map renderIcon uses an injected icon map", function () {
   assert.match(html, /M1 1/, "emits the injected body");
   M.setIcons(null); // reset module state (leak discipline, like setAnatomyDocMap)
 });
+
+test("loadAnatomy degrades to null with no loader and no lib/paths", function () {
+  // The DI premise made evidence, not just inspection: with no injected loader
+  // and no lib/paths in knowledge, the severed default reader must return null
+  // (an honest "no anatomy"), never throw.
+  var AR = require("../../components/render/renderer/anatomy-render.js");
+  assert.equal(
+    AR.loadAnatomy("nonexistent-slug"),
+    null,
+    "null PATHS + no loader returns null, never throws",
+  );
+});
