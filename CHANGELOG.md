@@ -487,6 +487,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   consumers that ignore it behave as before. Real data lands on the next nightly sync. ([#354])
 
 ### Changed
+- **Breaking Figma sync (2026-07-17).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#439](https://github.com/volivarii/actian-ds-knowledge/pull/439))
 - **Breaking Figma sync (2026-07-14).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#422](https://github.com/volivarii/actian-ds-knowledge/pull/422))
 - **Breaking: two component slugs renamed to match Figma (`checkbox-with-label`
   → `checkbox`, `breadcrumbs` → `breadcrumb`).** The 2026-07-12 Figma sync
