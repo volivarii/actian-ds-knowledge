@@ -33,10 +33,15 @@ var CEM_SCHEMA = require(
   ),
 );
 
+var TEMPLATES = require("./templates/index.js").TEMPLATES;
+var readAppearance = require("./derive-appearance.js").readAppearance;
+var loadTokenMap = require("./derive-appearance.js").loadTokenMap;
+
 var MANIFEST_SCHEMA_VERSION = "1.0.0";
 var CEM_SCHEMA_VERSION = "1.0.0";
 var DIST_DIR_REL = "components/render/dist";
 var REPO_ROOT = path.resolve(__dirname, "..", "..");
+var ANATOMY_DIR = path.join(REPO_ROOT, "components", "dist", "anatomy");
 
 // Per-component CEM contract. Slice 1 hand-authors Button; slice 2 derives this
 // from the appearance + registry facts. cssSelector names the base class prefix
@@ -358,6 +363,34 @@ function deriveCanonical(srcDir) {
       tokensConsumed: decl.cssProperties.length,
     });
   });
+
+  // Slice 2: for slugs with a template, replace the captured fragment with a
+  // derive-from-facts and append the derived per-variant CSS to the shared sheet.
+  var tokenMap = loadTokenMap(css);
+  var derivedCss = [];
+  var sourceBySlug = {};
+  renderIndex.forEach(function (r) {
+    if (TEMPLATES[r.slug]) {
+      var facts = readAppearance(r.slug, ANATOMY_DIR);
+      var templateOut = TEMPLATES[r.slug](facts, { tokenMap: tokenMap });
+      fragments[r.slug] = templateOut.fragment;
+      if (templateOut.css) {
+        derivedCss.push(
+          "/* " + r.slug + " (derived-from-facts) */\n" + templateOut.css,
+        );
+      }
+      sourceBySlug[r.slug] = "derived";
+    } else {
+      sourceBySlug[r.slug] = "captured";
+    }
+    r.source = sourceBySlug[r.slug];
+  });
+  if (derivedCss.length) {
+    css =
+      css +
+      "\n\n/* ===== derived-from-facts (slice 2) ===== */\n" +
+      derivedCss.join("\n");
+  }
 
   var cem = { schemaVersion: CEM_SCHEMA_VERSION, modules: modules };
 

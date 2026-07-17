@@ -158,10 +158,14 @@ test("deriveCanonical: render.css is the shared block, identical to a seed's sty
   var out = D.deriveCanonical(SRC);
   var seed = fs.readFileSync(path.join(SRC, "button.html"), "utf8");
   var seedStyle = /<style[^>]*>([\s\S]*?)<\/style>/i.exec(seed)[1];
+  // Slice 2 appends a derived-from-facts appendix (see the "templated slugs are
+  // derived" test below) after the captured base, so the captured base itself
+  // must still be byte-for-byte identical to the seed's inlined stylesheet, as
+  // a verbatim PREFIX of the combined css.
   assert.equal(
-    out.css,
+    out.css.slice(0, seedStyle.length),
     seedStyle,
-    "css equals the seed's inlined stylesheet byte-for-byte",
+    "css's captured base equals the seed's inlined stylesheet byte-for-byte",
   );
 });
 
@@ -184,4 +188,20 @@ test("deriveCanonical: captures the page chrome (block 1) as a guarded pageCss",
     secondInner,
     "pageCss equals the seed's second style block",
   );
+});
+
+test("deriveCanonical: templated slugs are derived, others captured", function () {
+  var out = D.deriveCanonical(SRC);
+  var bySlug = {};
+  out.manifest.renders.forEach(function (r) {
+    bySlug[r.slug] = r;
+  });
+  assert.equal(bySlug["tag-default"].source, "derived");
+  assert.equal(bySlug["checkbox"].source, "derived");
+  assert.equal(bySlug["button"].source, "captured");
+  // derived fragment + css present
+  assert.match(out.fragments["tag-default"], /ds-tag ds-tag--pink/);
+  assert.match(out.fragments["checkbox"], /ds-checkbox--indeterminate/);
+  assert.match(out.css, /\.ds-tag--pink\{/);
+  assert.match(out.css, /ds-checkbox--indeterminate .ds-checkbox__box\{/);
 });
