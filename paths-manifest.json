@@ -911,10 +911,11 @@
     },
     "components.render.renderer": {
       "dir": "components/render/renderer",
-      "pattern": "{slug}.css",
-      "type": "css",
+      "pattern": "{name}",
+      "recursive": true,
+      "type": "text",
       "origin": "human",
-      "description": "The relocated styling source of truth for the canonical render: ds-base.css (the leaf component styling and --zen token surface) and ds-fonts.css (the offline font embeds). The shared components/render/dist/render.css is DERIVED from these (see components.render.css), guarded byte-identical against the seed stylesheet. Knowledge owns them; the plugin vendors them back (renderer-relocation phase 0)."
+      "description": "The relocated renderer: the fact-driven DS component renderer JS (ds-html-map + appearance/anatomy interpreters, structure-preserving under html-renderers/), its styling source (ds-base.css, ds-fonts.css), and default-props.json. Knowledge owns the one renderer; the plugin vendors it back (renderer-relocation phase 1). render.css derives from the .css members; the gallery derives by running the .js over each component's variant matrix."
     },
     "components.render.src": {
       "dir": "components/render/src",
