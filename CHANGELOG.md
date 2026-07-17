@@ -19,6 +19,14 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Changed
+- **Render: the DS component renderer now lives in knowledge (renderer-relocation phase 1a).** (_PR link at open_)
+  The plugin's fact-driven renderer (`ds-html-map` plus the appearance/anatomy interpreters) is
+  copied into `components/render/renderer/`, structure-preserving, with its `lib/paths` coupling
+  severed by dependency injection (anatomy loaders and an icon map are injected from knowledge's
+  local facts). A new `scripts/render/derive-from-renderer.js` runs the relocated renderer over a
+  component's variant matrix and reproduces the frozen seed byte-for-byte, proving knowledge can
+  derive its gallery instead of reading captured seeds. The plugin's own renderer is untouched (it
+  vendors knowledge's copy back in a later phase); the captured seeds stay as the byte-diff oracle.
 - **Render: knowledge now owns `ds-base.css` (the leaf styling source), and `render.css`
   derives from it (renderer-relocation phase 0).** ([#441](https://github.com/volivarii/actian-ds-knowledge/pull/441))
   The shared stylesheet was previously a concatenated snapshot of the plugin's `ds-base.css`
