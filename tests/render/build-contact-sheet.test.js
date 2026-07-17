@@ -17,3 +17,7 @@ test("buildContactSheet: emits a page covering the derived slugs + their oracles
   assert.match(html, /data:image\/webp;base64,/); // at least one oracle embedded (checkbox has media)
   fs.unlinkSync(out);
 });
+
+test("oracleImg: returns null (does not throw) for a slug with no media", function () {
+  assert.equal(C.oracleImg("definitely-missing-slug-xyz", "preview"), null);
+});
