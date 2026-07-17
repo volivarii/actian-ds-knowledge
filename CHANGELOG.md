@@ -19,6 +19,17 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Changed
+- **Render: knowledge now owns `ds-base.css` (the leaf styling source), and `render.css`
+  derives from it (renderer-relocation phase 0).** ([#441](https://github.com/volivarii/actian-ds-knowledge/pull/441))
+  The shared stylesheet was previously a concatenated snapshot of the plugin's `ds-base.css`
+  baked into the frozen seeds; it is now built from
+  `components/render/renderer/{ds-base,ds-fonts}.css` directly (as `tokens.css` + `ds-fonts.css`
+  + `ds-base.css`, the render read path's order), guarded byte-identical against the deduped seed
+  stylesheet so a drift between the assets and the seeds fails the derive loudly. The assets are
+  exposed as the `components.render.renderer` manifest collection, so they are covered and travel
+  with the render surface into the vendor snapshot; the plugin will vendor them back and drop its
+  own copies. First step of moving the one renderer into the substrate so there is a single owner
+  instead of two divergent renderers.
 - **Render: tag-default and checkbox are now derived from the resolved-appearance facts, not
   captured verbatim (North Star slice 2).** ([#440](https://github.com/volivarii/actian-ds-knowledge/pull/440))
   A per-component template layer (`scripts/render/templates/`) generates these two renders from
