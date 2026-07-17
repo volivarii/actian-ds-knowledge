@@ -19,6 +19,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Changed
+- **Render: tag-default and checkbox now render correctly in the generic renderer, not only via the slice-2 template override (renderer-relocation phase 1b-alpha).** (_PR link at open_)
+  `ds-base.css` gains the `.ds-tag--<color>` color variants (value-first from the appearance
+  facts) and the `.ds-checkbox--indeterminate` rule; `ds-html-map` emits the tag color class and
+  the checkbox `Selection`-based state classes (Checked/Indeterminate/Disabled) with the right
+  glyph. The fidelity gate now also verifies the ds-base.css tag/checkbox colors trace to facts.
+  The phase-0 byte-identity guard relaxes to a prefix check (the seed stylesheet stays a verbatim
+  prefix of the asset base; the fix only appends). Proven via deriveFragment; the derive still
+  ships tag/checkbox through the slice-2 templates until phase 1b-beta wires the derive to the
+  renderer and retires them.
 - **Render: the DS component renderer now lives in knowledge (renderer-relocation phase 1a).** ([#442](https://github.com/volivarii/actian-ds-knowledge/pull/442))
   The plugin's fact-driven renderer (`ds-html-map` plus the appearance/anatomy interpreters) is
   copied into `components/render/renderer/`, structure-preserving, with its `lib/paths` coupling

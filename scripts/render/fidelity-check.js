@@ -29,6 +29,46 @@ function slugCss(css, slug) {
   return m ? m[1] : "";
 }
 
+// The shared per-rule fact-color invariant: every hex literal a rule emits
+// must match a resolved appearance fact color, and every var(--zen-token) it
+// emits must be defined AND round-trip to a fact color. `label` prefixes each
+// violation message (a slug for the derived-appendix caller, a scope name
+// like "ds-base.css" for the base-css caller) so violations stay attributable
+// to their source regardless of which caller found them.
+function checkRuleBody(label, selector, body, factSet, tokenMap, violations) {
+  // hex literals emitted must be a fact value
+  (body.match(/#[0-9a-fA-F]{3,8}/g) || []).forEach(function (hex) {
+    if (!factSet.has(hex.toLowerCase()))
+      violations.push(
+        label +
+          " " +
+          selector +
+          ": emitted color " +
+          hex +
+          " matches no appearance fact",
+      );
+  });
+  // tokens emitted must be defined + round-trip to a fact value
+  (body.match(/var\((--zen-[a-z0-9-]+)\)/g) || []).forEach(function (v) {
+    var tok = v.slice(4, -1);
+    if (!tokenMap[tok])
+      violations.push(
+        label + " " + selector + ": token " + tok + " is undefined",
+      );
+    else if (!factSet.has(tokenMap[tok].toLowerCase()))
+      violations.push(
+        label +
+          " " +
+          selector +
+          ": token " +
+          tok +
+          "=" +
+          tokenMap[tok] +
+          " does not round-trip to a fact",
+      );
+  });
+}
+
 // Scope: this gate validates the colors in the derived-from-facts CSS
 // appendix only. Inline colors in the fragment markup are out of scope.
 function fidelityCheck(canonical, ctx) {
@@ -57,53 +97,80 @@ function fidelityCheck(canonical, ctx) {
     var m;
     while ((m = ruleRe.exec(block)) !== null) {
       var selector = m[1].trim();
-      var body = m[2];
-      // hex literals emitted must be a fact value
-      (body.match(/#[0-9a-fA-F]{3,8}/g) || []).forEach(function (hex) {
-        if (!ok.has(hex.toLowerCase()))
-          violations.push(
-            r.slug +
-              " " +
-              selector +
-              ": emitted color " +
-              hex +
-              " matches no appearance fact",
-          );
-      });
-      // tokens emitted must be defined + round-trip to a fact value
-      (body.match(/var\((--zen-[a-z0-9-]+)\)/g) || []).forEach(function (v) {
-        var tok = v.slice(4, -1);
-        if (!tokenMap[tok])
-          violations.push(
-            r.slug + " " + selector + ": token " + tok + " is undefined",
-          );
-        else if (!ok.has(tokenMap[tok].toLowerCase()))
-          violations.push(
-            r.slug +
-              " " +
-              selector +
-              ": token " +
-              tok +
-              "=" +
-              tokenMap[tok] +
-              " does not round-trip to a fact",
-          );
-      });
+      checkRuleBody(r.slug, selector, m[2], ok, tokenMap, violations);
     }
   });
   return violations;
 }
 
+// Slice 2 folded the tag color variants + the checkbox indeterminate rule
+// into the shared ds-base.css asset (renderer relocation phase 1b-alpha),
+// outside the derived-from-facts appendix `fidelityCheck` scans above. This
+// verifies THOSE rules against the same fact-color invariant, extracted by
+// selector (robust to ds-base.css's comment headers moving or changing).
+// `cssText` is ds-base.css's content and `facts` maps a fact-source name
+// (e.g. "tag-default", "checkbox") to its readAppearance() result, so the
+// caller controls which anatomy facts each selector group is checked
+// against.
+function checkBaseCssRules(cssText, facts, tokenMap) {
+  var violations = [];
+  var tagFacts = factColors(facts["tag-default"]);
+  var re = /\.ds-tag--[a-z0-9]+\s*\{([^}]*)\}/g;
+  var m;
+  while ((m = re.exec(cssText)) !== null) {
+    var selector = m[0].slice(0, m[0].indexOf("{")).trim();
+    checkRuleBody(
+      "ds-base.css",
+      selector,
+      m[1],
+      tagFacts,
+      tokenMap,
+      violations,
+    );
+  }
+  var cbFacts = factColors(facts["checkbox"]);
+  var cre = /\.ds-checkbox--indeterminate[^{]*\{([^}]*)\}/g;
+  while ((m = cre.exec(cssText)) !== null) {
+    var cbSelector = m[0].slice(0, m[0].indexOf("{")).trim();
+    checkRuleBody(
+      "ds-base.css",
+      cbSelector,
+      m[1],
+      cbFacts,
+      tokenMap,
+      violations,
+    );
+  }
+  return violations;
+}
+
 if (require.main === module) {
+  var fs = require("node:fs");
   var path = require("node:path");
   var D = require("./derive-canonical.js");
   var A = require("./derive-appearance.js");
   var root = path.resolve(__dirname, "..", "..");
+  var anatomyDir = path.join(root, "components", "dist", "anatomy");
   var out = D.deriveCanonical(path.join(root, "components", "render", "src"));
+  var tokenMap = A.loadTokenMap(out.css);
   var v = fidelityCheck(out, {
-    anatomyDir: path.join(root, "components", "dist", "anatomy"),
-    tokenMap: A.loadTokenMap(out.css),
+    anatomyDir: anatomyDir,
+    tokenMap: tokenMap,
   });
+  var dsBaseCss = fs.readFileSync(
+    path.join(root, "components", "render", "renderer", "ds-base.css"),
+    "utf8",
+  );
+  v = v.concat(
+    checkBaseCssRules(
+      dsBaseCss,
+      {
+        "tag-default": A.readAppearance("tag-default", anatomyDir),
+        checkbox: A.readAppearance("checkbox", anatomyDir),
+      },
+      tokenMap,
+    ),
+  );
   if (v.length) {
     process.stderr.write(
       "FIDELITY VIOLATIONS:\n" +
@@ -123,4 +190,5 @@ module.exports = {
   fidelityCheck: fidelityCheck,
   factColors: factColors,
   slugCss: slugCss,
+  checkBaseCssRules: checkBaseCssRules,
 };
