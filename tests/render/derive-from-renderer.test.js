@@ -57,3 +57,29 @@ test("deriveFragment(checkbox) emits distinct classes + glyphs per Selection sta
   );
   assert.match(derived, /is-disabled/);
 });
+
+var R = require("../../scripts/render/derive-from-renderer.js");
+
+test("radio-button derives a real Selected state, not the Selected==='Yes' bug", function () {
+  var html = R.deriveFragment("radio-button");
+  assert.match(
+    html,
+    /ds-radio--checked/,
+    "the Selected cell emits ds-radio--checked",
+  );
+  assert.match(
+    html,
+    /ds-radio\b[^"]*\bis-disabled/,
+    "the Disabled cell emits is-disabled",
+  );
+});
+
+test("toggle derives a real On state, not the Selected==='Yes' bug", function () {
+  var html = R.deriveFragment("toggle");
+  assert.match(html, /ds-toggle--on/, "the On cell emits ds-toggle--on");
+  assert.match(
+    html,
+    /ds-toggle\b[^"]*\bis-disabled/,
+    "the Disabled cell emits is-disabled",
+  );
+});
