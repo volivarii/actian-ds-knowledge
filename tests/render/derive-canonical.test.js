@@ -158,10 +158,11 @@ test("deriveCanonical: render.css is the shared block, identical to a seed's sty
   var out = D.deriveCanonical(SRC);
   var seed = fs.readFileSync(path.join(SRC, "button.html"), "utf8");
   var seedStyle = /<style[^>]*>([\s\S]*?)<\/style>/i.exec(seed)[1];
-  // Slice 2 appends a derived-from-facts appendix (see the "templated slugs are
-  // derived" test below) after the captured base, so the captured base itself
-  // must still be byte-for-byte identical to the seed's inlined stylesheet, as
-  // a verbatim PREFIX of the combined css.
+  // Slice 2 used to append a derived-from-facts appendix after the captured
+  // base (retired in renderer relocation phase 1b-beta, see the "templates
+  // retired" test below), so the captured base itself must still be
+  // byte-for-byte identical to the seed's inlined stylesheet, as a verbatim
+  // PREFIX of the combined css.
   assert.equal(
     out.css.slice(0, seedStyle.length),
     seedStyle,
@@ -190,20 +191,24 @@ test("deriveCanonical: captures the page chrome (block 1) as a guarded pageCss",
   );
 });
 
-test("deriveCanonical: templated slugs are derived, others rendered", function () {
+test('deriveCanonical: templates retired, no render is source "derived"', function () {
+  // Renderer relocation phase 1b-beta emptied TEMPLATES, so the
+  // TEMPLATES[slug] override loop in derive-canonical.js never fires (the
+  // loop itself is retained as the escape hatch, see the "templates
+  // retired" test below for the tag-default/checkbox specifics).
   var out = D.deriveCanonical(SRC);
+  assert.equal(
+    out.manifest.renders.some(function (r) {
+      return r.source === "derived";
+    }),
+    false,
+    'no render carries source "derived" now that TEMPLATES is empty',
+  );
   var bySlug = {};
   out.manifest.renders.forEach(function (r) {
     bySlug[r.slug] = r;
   });
-  assert.equal(bySlug["tag-default"].source, "derived");
-  assert.equal(bySlug["checkbox"].source, "derived");
   assert.equal(bySlug["button"].source, "rendered");
-  // derived fragment + css present
-  assert.match(out.fragments["tag-default"], /ds-tag ds-tag--pink/);
-  assert.match(out.fragments["checkbox"], /ds-checkbox--indeterminate/);
-  assert.match(out.css, /\.ds-tag--pink\{/);
-  assert.match(out.css, /ds-checkbox--indeterminate .ds-checkbox__box\{/);
 });
 
 test("deriveCanonical: render.css base is derived from the relocated ds-base assets, the seed stylesheet is a verbatim prefix of it", function () {
@@ -266,6 +271,37 @@ test("ds-base.css carries the tag color variants and checkbox indeterminate rule
     base,
     /\.ds-checkbox--indeterminate\b/,
     "checkbox indeterminate rule present",
+  );
+});
+
+test("templates retired: tag/checkbox derive through the generic renderer, no derived appendix", function () {
+  var path = require("node:path");
+  var { deriveCanonical } = require("../../scripts/render/derive-canonical.js");
+  var {
+    deriveFragment,
+  } = require("../../scripts/render/derive-from-renderer.js");
+  var out = deriveCanonical(
+    path.resolve(__dirname, "../../components/render/src"),
+  );
+  ["tag-default", "checkbox"].forEach(function (slug) {
+    var r = out.manifest.renders.find(function (x) {
+      return x.slug === slug;
+    });
+    assert.strictEqual(
+      r.source,
+      "rendered",
+      slug + " now renders through the generic renderer",
+    );
+    assert.strictEqual(
+      out.fragments[slug],
+      deriveFragment(slug),
+      slug + " fragment is the renderer output",
+    );
+  });
+  assert.doesNotMatch(
+    out.css,
+    /derived-from-facts \(slice 2\)/,
+    "no transient derived CSS appendix remains",
   );
 });
 
