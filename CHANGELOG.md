@@ -20,7 +20,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 - **Render: knowledge now owns `ds-base.css` (the leaf styling source), and `render.css`
-  derives from it (renderer-relocation phase 0).** (_PR link at open_)
+  derives from it (renderer-relocation phase 0).** ([#441](https://github.com/volivarii/actian-ds-knowledge/pull/441))
   The shared stylesheet was previously a concatenated snapshot of the plugin's `ds-base.css`
   baked into the frozen seeds; it is now built from
   `components/render/renderer/{ds-base,ds-fonts}.css` directly (as `tokens.css` + `ds-fonts.css`
