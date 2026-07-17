@@ -26,6 +26,11 @@ var STALE = {
   toolbar: "seed icon geometry predates a later icons.json sync",
 };
 
+// Stale slugs whose drift has a concrete, assertable marker in the current
+// derive. text-input's label changed Hover->Warning (#439); popover/toolbar are
+// icon-geometry drift, harder to pin, so they stay diff-only.
+var STALE_MARKERS = { "text-input": /Warning/ };
+
 function seedBody(slug) {
   var html = fs.readFileSync(path.join(SRC, slug + ".html"), "utf8");
   var m = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(html);
@@ -42,6 +47,9 @@ test("all 35 slugs classify as byte-identical, improved, or stale (no surprise d
       assert.match(derived, IMPROVED[slug], slug + ": improvement marker missing");
     } else if (slug in STALE) {
       assert.notStrictEqual(derived, seed, slug + ": expected stale seed to differ (" + STALE[slug] + ")");
+      if (STALE_MARKERS[slug]) {
+        assert.match(derived, STALE_MARKERS[slug], slug + ": expected stale-cause marker in the current derive");
+      }
     } else {
       assert.strictEqual(derived, seed, slug + ": derived fragment drifted from its seed unexpectedly (add to IMPROVED or STALE with a cause, or fix the renderer)");
     }
@@ -51,4 +59,5 @@ test("all 35 slugs classify as byte-identical, improved, or stale (no surprise d
 test("the classification sets cover exactly the known non-identical slugs", function () {
   assert.strictEqual(Object.keys(IMPROVED).length, 4);
   assert.strictEqual(Object.keys(STALE).length, 3);
+  assert.strictEqual(RENDER_SLUGS.length, 35);
 });
