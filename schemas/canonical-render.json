@@ -45,7 +45,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["slug", "tagName", "group", "fragment"],
+        "required": ["slug", "tagName", "group", "fragment", "source"],
         "properties": {
           "slug": {
             "type": "string",

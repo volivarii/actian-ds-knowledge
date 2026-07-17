@@ -29,6 +29,8 @@ function slugCss(css, slug) {
   return m ? m[1] : "";
 }
 
+// Scope: this gate validates the colors in the derived-from-facts CSS
+// appendix only. Inline colors in the fragment markup are out of scope.
 function fidelityCheck(canonical, ctx) {
   var violations = [];
   var tokenMap = ctx.tokenMap || {};
@@ -37,6 +39,16 @@ function fidelityCheck(canonical, ctx) {
     var facts = readAppearance(r.slug, ctx.anatomyDir);
     var ok = factColors(facts);
     var block = slugCss(canonical.css, r.slug);
+    // A derived render whose block is empty (or missing entirely) is a render
+    // the gate cannot verify ANYTHING about -- that must red, not pass
+    // silently, or a stripped/never-generated appendix would ship unnoticed.
+    if (!block || !block.trim()) {
+      violations.push(
+        r.slug +
+          ': marked source:"derived" but has no derived-from-facts CSS block to verify (the fidelity gate cannot check it)',
+      );
+      return;
+    }
     // Walk rule-by-rule (not the whole block at once) so a violation can name
     // the selector it came from (e.g. ".ds-tag--pink") -- the appearance facts
     // carry only resolved color values, never variant names, so the selector
