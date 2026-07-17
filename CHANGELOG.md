@@ -20,7 +20,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 - **Render: tag-default and checkbox are now derived from the resolved-appearance facts, not
-  captured verbatim (North Star slice 2).** (_PR link added at open_)
+  captured verbatim (North Star slice 2).** ([#440](https://github.com/volivarii/actian-ds-knowledge/pull/440))
   A per-component template layer (`scripts/render/templates/`) generates these two renders from
   `components/dist/anatomy/<slug>.json` instead of passing through the plugin's captured seed.
   tag-default's eight color variants and checkbox's four states (including a new `--indeterminate`
@@ -33,7 +33,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   neutrals.
 
 ### Added
-- **A two-tooth render fidelity gate (North Star slice 2).** (_PR link added at open_)
+- **A two-tooth render fidelity gate (North Star slice 2).** ([#440](https://github.com/volivarii/actian-ds-knowledge/pull/440))
   `scripts/render/fidelity-check.js` is a data-invariant CI check, chained into `derive:render`: for
   every `derived` render, each emitted color must equal a resolved-appearance fact and each emitted
   token must round-trip to a fact value, or the derive fails. `scripts/render/build-contact-sheet.js`
