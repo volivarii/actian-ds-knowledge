@@ -2713,6 +2713,53 @@
   border-bottom-right-radius: var(--zen-border-radius-xs);
 }
 
+/* ============ Tag (color variants, derived from facts) ============ */
+/* Renderer relocation phase 1b-alpha: these bind var(--token) only where the
+ * token round-trips to the appearance fact resolved value; otherwise the
+ * literal value ships (value-first, see scripts/render/derive-appearance.js
+ * bindColor). Derived from components/dist/anatomy/tag-default.json. */
+.ds-tag--gray {
+  background: #f7fdff;
+  border-color: #dde6ec;
+}
+.ds-tag--indigo {
+  background: #edf6ff;
+  border-color: var(--zen-color-primary-50);
+}
+.ds-tag--lime {
+  background: #f0ffec;
+  border-color: var(--zen-color-success-50);
+}
+.ds-tag--orange {
+  background: #fff4ec;
+  border-color: var(--zen-color-error-50);
+}
+.ds-tag--pink {
+  background: #fff5f6;
+  border-color: #ffd6d8;
+}
+.ds-tag--purple {
+  background: #fff9ff;
+  border-color: #f2e6f8;
+}
+.ds-tag--teal {
+  background: #ecffff;
+  border-color: #d0efed;
+}
+.ds-tag--yellow {
+  background: #fff9e5;
+  border-color: var(--zen-color-warning-100);
+}
+
+/* ============ Checkbox (indeterminate state) ============ */
+.ds-checkbox--indeterminate .ds-checkbox__box {
+  background: var(--zen-color-icon-primary);
+  border-color: var(--zen-color-icon-primary);
+}
+.ds-checkbox--indeterminate .ds-checkbox__check {
+  display: block;
+}
+
 
 /* ===== derived-from-facts (slice 2) ===== */
 /* checkbox (derived-from-facts) */

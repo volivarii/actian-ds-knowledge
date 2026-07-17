@@ -37,3 +37,23 @@ test("deriveFragment(button) is byte-identical to the button seed's body inner",
     },
   );
 });
+
+// tag-default and checkbox are the derive-from-facts slugs (North Star slice
+// 2): their markup INTENTIONALLY diverges from the degraded seed (colored tag
+// classes; real checkbox state classes + glyphs), so they are asserted
+// positively rather than pinned to seed byte-identity.
+test("deriveFragment(tag-default) colors each cell via ds-tag--<color>", function () {
+  var derived = D.deriveFragment("tag-default");
+  assert.match(derived, /ds-tag--pink/);
+});
+
+test("deriveFragment(checkbox) emits distinct classes + glyphs per Selection state", function () {
+  var derived = D.deriveFragment("checkbox");
+  assert.match(derived, /ds-checkbox--checked/);
+  assert.match(derived, /ds-checkbox--indeterminate/);
+  assert.match(
+    derived,
+    /<rect x="5" y="11" width="14" height="2" rx="1" fill="currentColor"\/>/,
+  );
+  assert.match(derived, /is-disabled/);
+});

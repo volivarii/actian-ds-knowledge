@@ -206,12 +206,15 @@ test("deriveCanonical: templated slugs are derived, others captured", function (
   assert.match(out.css, /ds-checkbox--indeterminate .ds-checkbox__box\{/);
 });
 
-test("deriveCanonical: render.css base is derived from the relocated ds-base assets, equals the seed stylesheet", function () {
+test("deriveCanonical: render.css base is derived from the relocated ds-base assets, the seed stylesheet is a verbatim prefix of it", function () {
   // Phase 0 (renderer relocation): the shared render.css base is now sourced from
   // components/render/renderer/{ds-fonts,ds-base}.css (+ tokens.css), not from a
-  // seed's inlined <style>. The two are byte-identical by construction (the seeds
-  // were captured from the same ds-base.css), so this asserts the derived base
-  // equals concat(tokens, fonts, ds-base) in the render read path's order.
+  // seed's inlined <style>. Phase 1b-alpha appends tag color variants + the
+  // checkbox indeterminate rule to the END of ds-base.css, rules the frozen
+  // seeds predate and so do not carry. So the derived base (concat(tokens,
+  // fonts, ds-base) in the render read path's order) is no longer byte-equal
+  // to the seed stylesheet, but the seed stylesheet must still be a verbatim
+  // PREFIX of it (the pre-existing bytes are untouched, only appended to).
   var fs = require("node:fs");
   var path = require("node:path");
   var out = D.deriveCanonical(SRC);
@@ -237,5 +240,31 @@ test("deriveCanonical: render.css base is derived from the relocated ds-base ass
     base,
     expect,
     "render.css base equals concat(tokens, fonts, ds-base)",
+  );
+  var seed = fs.readFileSync(path.join(SRC, "button.html"), "utf8");
+  var seedStyle = /<style[^>]*>([\s\S]*?)<\/style>/i.exec(seed)[1];
+  assert.equal(
+    base.indexOf(seedStyle),
+    0,
+    "the seed stylesheet is a verbatim prefix of the asset-derived base",
+  );
+  assert.ok(
+    base.length > seedStyle.length,
+    "the asset-derived base carries the appended phase-1b rules the seed predates",
+  );
+});
+
+test("ds-base.css carries the tag color variants and checkbox indeterminate rule", function () {
+  var fs = require("node:fs");
+  var path = require("node:path");
+  var base = fs.readFileSync(
+    path.resolve(__dirname, "../../components/render/renderer/ds-base.css"),
+    "utf8",
+  );
+  assert.match(base, /\.ds-tag--pink\s*\{/, "tag pink variant rule present");
+  assert.match(
+    base,
+    /\.ds-checkbox--indeterminate\b/,
+    "checkbox indeterminate rule present",
   );
 });
