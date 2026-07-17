@@ -909,6 +909,13 @@
       "origin": "ci",
       "description": "Per-component markup fragments, combined with components/render/dist/render.css by consumers."
     },
+    "components.render.renderer": {
+      "dir": "components/render/renderer",
+      "pattern": "{slug}.css",
+      "type": "css",
+      "origin": "human",
+      "description": "The relocated styling source of truth for the canonical render: ds-base.css (the leaf component styling and --zen token surface) and ds-fonts.css (the offline font embeds). The shared components/render/dist/render.css is DERIVED from these (see components.render.css), guarded byte-identical against the seed stylesheet. Knowledge owns them; the plugin vendors them back (renderer-relocation phase 0)."
+    },
     "components.render.src": {
       "dir": "components/render/src",
       "pattern": "{slug}.html",
