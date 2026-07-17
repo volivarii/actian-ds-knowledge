@@ -382,16 +382,24 @@ function deriveCanonical(srcDir) {
       path.join(REPO_ROOT, "components", "render", "renderer", "ds-base.css"),
       "utf8",
     );
-  if (assetBase !== css) {
+  // Phase 1b-alpha: ds-base.css legitimately gains rules the frozen seeds do not
+  // carry (tag color variants + checkbox indeterminate), appended at the END of
+  // the file. So the guard relaxes from byte-equality to a PREFIX check: the
+  // deduped seed stylesheet must still be a verbatim prefix of the asset base,
+  // which still catches an accidental mid-file drift while permitting the
+  // intended, purely-appended additions.
+  if (assetBase.indexOf(css) !== 0) {
     throw new Error(
-      "render.css base derived from components/render/renderer/ (" +
+      "the deduped seed stylesheet is no longer a verbatim prefix of the asset base " +
+        "(" +
+        css.length +
+        " vs " +
         assetBase.length +
-        " chars) diverges from the deduped seed stylesheet (" +
-        (css === null ? "none" : css.length) +
-        " chars); the styling assets and the frozen seeds have drifted",
+        " chars); ds-base.css drifted mid-file " +
+        "rather than only appending the phase-1b tag/checkbox rules",
     );
   }
-  css = assetBase; // the relocated assets are now the source of truth
+  css = assetBase; // the assets (ds-base + the appended tag/checkbox rules) are the source of truth
 
   // Slice 2: for slugs with a template, replace the captured fragment with a
   // derive-from-facts and append the derived per-variant CSS to the shared sheet.
