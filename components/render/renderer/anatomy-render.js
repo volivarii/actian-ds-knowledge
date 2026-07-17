@@ -12,7 +12,16 @@
 // layer instead, so path b had no remaining production caller.
 var fs = require("fs");
 var path = require("path");
-var PATHS = require(path.join(__dirname, "..", "lib", "paths.js"));
+// Relocation phase 1: lib/paths lives only in the plugin. In knowledge the fact
+// loader is injected, so a missing lib/paths must degrade to null rather than throw
+// at load. The default anatomy readers below are already wrapped in try/catch, so a
+// null PATHS there yields null (an honest "no anatomy"), never a crash.
+var PATHS = null;
+try {
+  PATHS = require(path.join(__dirname, "..", "lib", "paths.js"));
+} catch (e) {
+  PATHS = null;
+}
 
 function loadAnatomy(slug, loader) {
   if (typeof loader === "function") return loader(slug);
