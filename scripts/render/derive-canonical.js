@@ -13,7 +13,8 @@
 //   renders: { slug: html }, the validated seed documents, passed through.
 //   css: the shared stylesheet, deduped once across every seed (byte-identical
 //     guard, throws if a seed's inlined style diverges).
-//   fragments: { slug: html }, each seed's <body> inner markup, no <style>.
+//   fragments: { slug: html }, each slug's markup from the relocated renderer
+//     (deriveFragment), no <style>, except a TEMPLATES[slug] override.
 //   cem: a Custom Elements Manifest (validated against the official schema).
 //   manifest: the render index (validated against schemas/canonical-render.json).
 
@@ -36,6 +37,7 @@ var CEM_SCHEMA = require(
 var TEMPLATES = require("./templates/index.js").TEMPLATES;
 var readAppearance = require("./derive-appearance.js").readAppearance;
 var loadTokenMap = require("./derive-appearance.js").loadTokenMap;
+var deriveFragment = require("./derive-from-renderer.js").deriveFragment;
 
 var MANIFEST_SCHEMA_VERSION = "1.0.0";
 var CEM_SCHEMA_VERSION = "1.0.0";
@@ -116,14 +118,6 @@ function extractStyle(html) {
 function rawStyle(html) {
   var m = /<style[^>]*>([\s\S]*?)<\/style>/i.exec(html);
   return m ? m[1] : "";
-}
-
-// The <body> inner markup: the component render itself, with no <style>. This is
-// the shippable fragment consumers embed alongside the shared render.css.
-function bodyInner(html) {
-  var m = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(html);
-  if (!m) throw new Error("no <body> found in seed");
-  return m[1];
 }
 
 // The standalone-preview page chrome: the SECOND <style> block every seed
@@ -348,7 +342,7 @@ function deriveCanonical(srcDir) {
           " chars); the standalone card projection assumes one shared chrome",
       );
     }
-    fragments[slug] = bodyInner(html);
+    fragments[slug] = deriveFragment(slug);
     var decl = buildDeclaration(slug, html);
     modules.push({
       kind: "javascript-module",
@@ -418,7 +412,7 @@ function deriveCanonical(srcDir) {
       }
       sourceBySlug[r.slug] = "derived";
     } else {
-      sourceBySlug[r.slug] = "captured";
+      sourceBySlug[r.slug] = "rendered";
     }
     r.source = sourceBySlug[r.slug];
   });

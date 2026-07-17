@@ -190,7 +190,7 @@ test("deriveCanonical: captures the page chrome (block 1) as a guarded pageCss",
   );
 });
 
-test("deriveCanonical: templated slugs are derived, others captured", function () {
+test("deriveCanonical: templated slugs are derived, others rendered", function () {
   var out = D.deriveCanonical(SRC);
   var bySlug = {};
   out.manifest.renders.forEach(function (r) {
@@ -198,7 +198,7 @@ test("deriveCanonical: templated slugs are derived, others captured", function (
   });
   assert.equal(bySlug["tag-default"].source, "derived");
   assert.equal(bySlug["checkbox"].source, "derived");
-  assert.equal(bySlug["button"].source, "captured");
+  assert.equal(bySlug["button"].source, "rendered");
   // derived fragment + css present
   assert.match(out.fragments["tag-default"], /ds-tag ds-tag--pink/);
   assert.match(out.fragments["checkbox"], /ds-checkbox--indeterminate/);
@@ -267,4 +267,22 @@ test("ds-base.css carries the tag color variants and checkbox indeterminate rule
     /\.ds-checkbox--indeterminate\b/,
     "checkbox indeterminate rule present",
   );
+});
+
+test("derive-canonical sources fragments from the renderer and labels them rendered", function () {
+  var path = require("node:path");
+  var { deriveCanonical } = require("../../scripts/render/derive-canonical.js");
+  var {
+    deriveFragment,
+  } = require("../../scripts/render/derive-from-renderer.js");
+  var srcDir = path.resolve(__dirname, "../../components/render/src");
+  var out = deriveCanonical(srcDir);
+  // A byte-identical slug: dist fragment equals the renderer output.
+  assert.strictEqual(out.fragments["button"], deriveFragment("button"));
+  // A stale slug: dist fragment now reflects current facts, not the frozen seed.
+  assert.strictEqual(out.fragments["text-input"], deriveFragment("text-input"));
+  var badge = out.manifest.renders.find(function (r) {
+    return r.slug === "badge";
+  });
+  assert.strictEqual(badge.source, "rendered");
 });
