@@ -1,8 +1,9 @@
 name: Derive canonical render dist from components/render/src/
 
 # Federation Phase 1.2 style CI, following foundations-derive.yml's pattern.
-# Runs on PR events that touch the render source, schema, derive scripts,
-# paths-manifest.json, or the token source. Regenerates the canonical render
+# Runs on PR events that touch the render source, the relocated renderer
+# (components/render/renderer/), schema, derive scripts, paths-manifest.json,
+# or the token source. Regenerates the canonical render
 # dist (components/render/dist) and the DTCG token snapshot (tokens/dist),
 # then pushes them back to the PR branch. Authors never need a local
 # toolchain to keep the dist fresh; CI handles the rerun.
@@ -20,6 +21,7 @@ on:
   pull_request:
     paths:
       - 'components/render/src/**'
+      - 'components/render/renderer/**'
       - 'components/render/schema/**'
       - 'scripts/render/**'
       - 'paths-manifest.json'

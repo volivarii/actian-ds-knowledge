@@ -35,8 +35,14 @@ Each entry links its pull request. Dates are the merge date (UTC).
   `checkBaseCssRules` keeps validating the ds-base.css tag/checkbox rules against facts. The
   contact-sheet sign-off page now iterates a fixed list of the four slugs this slice improved
   (tag-default, checkbox, radio-button, toggle) instead of filtering on `source: "derived"`.
-  Known follow-up: the toggle case still references a dead `v["Toggle location"]` axis (the real
-  axis is `Toggle position`); inert in the gallery today, to fix later.
+  `render-derive.yml` now also triggers on `components/render/renderer/**`, since the committed
+  render dist derives from the relocated renderer and a renderer-only change must regenerate it
+  too. Known follow-up: the toggle case still references a dead `v["Toggle location"]` axis (the
+  real axis is `Toggle position`); inert in the gallery today, to fix later. Same shape in the
+  radio-button case: a dead `v.Format === "Card format"` check, since card format is a separate
+  Figma component rather than a variant axis on radio-button, also inert today. Also open:
+  `checkBaseCssRules` fact-verifies the tag and checkbox color rules but does not yet cover the
+  newly live `.ds-radio--checked` / `.ds-toggle--on` colors, a coverage asymmetry to close later.
 - **Render: tag-default and checkbox now render correctly in the generic renderer, not only via the slice-2 template override (renderer-relocation phase 1b-alpha).** ([#443](https://github.com/volivarii/actian-ds-knowledge/pull/443))
   `ds-base.css` gains the `.ds-tag--<color>` color variants (value-first from the appearance
   facts) and the `.ds-checkbox--indeterminate` rule; `ds-html-map` emits the tag color class and

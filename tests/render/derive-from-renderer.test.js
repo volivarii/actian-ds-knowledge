@@ -9,8 +9,8 @@ var SRC_DIR = path.join(ROOT, "components", "render", "src");
 
 var D = require("../../scripts/render/derive-from-renderer.js");
 
-// The seed's <body> inner markup: the same extraction derive-canonical.js uses
-// (bodyInner), reproduced here so this test does not depend on that module.
+// The seed's <body> inner markup, extracted locally so this test does not
+// depend on scripts/render/derive-canonical.js.
 function seedBodyInner(slug) {
   var html = fs.readFileSync(path.join(SRC_DIR, slug + ".html"), "utf8");
   var m = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(html);
