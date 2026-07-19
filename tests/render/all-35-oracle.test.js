@@ -4,7 +4,9 @@ var assert = require("node:assert");
 var fs = require("node:fs");
 var path = require("node:path");
 var { RENDER_SLUGS } = require("../../components/render/renderer/matrix.js");
-var { deriveFragment } = require("../../scripts/render/derive-from-renderer.js");
+var {
+  deriveFragment,
+} = require("../../scripts/render/derive-from-renderer.js");
 
 var SRC = path.resolve(__dirname, "../../components/render/src");
 
@@ -20,16 +22,18 @@ var IMPROVED = {
 
 // Slugs whose seed is stale because a Figma sync changed facts AFTER capture.
 // The derive reflects CURRENT facts, so it legitimately differs. Cause named.
+// (text-input was here until the 2026-07-19 sync reordered its States axis back,
+// undoing the #439 change, so its derive matches the seed again and it is now in
+// the byte-identical set below.)
 var STALE = {
-  "text-input": "seed label 'Hover' predates sync #439 (now 'Warning')",
   popover: "seed icon geometry predates a later icons.json sync",
   toolbar: "seed icon geometry predates a later icons.json sync",
 };
 
-// Stale slugs whose drift has a concrete, assertable marker in the current
-// derive. text-input's label changed Hover->Warning (#439); popover/toolbar are
-// icon-geometry drift, harder to pin, so they stay diff-only.
-var STALE_MARKERS = { "text-input": /Warning/ };
+// A stale slug MAY carry a concrete marker string to assert in the current derive
+// (kept as an extension hook, like TEMPLATES). None of the current stale slugs
+// have one: popover/toolbar are icon-geometry drift, harder to pin, diff-only.
+var STALE_MARKERS = {};
 
 function seedBody(slug) {
   var html = fs.readFileSync(path.join(SRC, slug + ".html"), "utf8");
@@ -43,21 +47,42 @@ test("all 35 slugs classify as byte-identical, improved, or stale (no surprise d
     var derived = deriveFragment(slug);
     var seed = seedBody(slug);
     if (slug in IMPROVED) {
-      assert.notStrictEqual(derived, seed, slug + ": expected improved output to differ from the degraded seed");
-      assert.match(derived, IMPROVED[slug], slug + ": improvement marker missing");
+      assert.notStrictEqual(
+        derived,
+        seed,
+        slug + ": expected improved output to differ from the degraded seed",
+      );
+      assert.match(
+        derived,
+        IMPROVED[slug],
+        slug + ": improvement marker missing",
+      );
     } else if (slug in STALE) {
-      assert.notStrictEqual(derived, seed, slug + ": expected stale seed to differ (" + STALE[slug] + ")");
+      assert.notStrictEqual(
+        derived,
+        seed,
+        slug + ": expected stale seed to differ (" + STALE[slug] + ")",
+      );
       if (STALE_MARKERS[slug]) {
-        assert.match(derived, STALE_MARKERS[slug], slug + ": expected stale-cause marker in the current derive");
+        assert.match(
+          derived,
+          STALE_MARKERS[slug],
+          slug + ": expected stale-cause marker in the current derive",
+        );
       }
     } else {
-      assert.strictEqual(derived, seed, slug + ": derived fragment drifted from its seed unexpectedly (add to IMPROVED or STALE with a cause, or fix the renderer)");
+      assert.strictEqual(
+        derived,
+        seed,
+        slug +
+          ": derived fragment drifted from its seed unexpectedly (add to IMPROVED or STALE with a cause, or fix the renderer)",
+      );
     }
   });
 });
 
 test("the classification sets cover exactly the known non-identical slugs", function () {
   assert.strictEqual(Object.keys(IMPROVED).length, 4);
-  assert.strictEqual(Object.keys(STALE).length, 3);
+  assert.strictEqual(Object.keys(STALE).length, 2);
   assert.strictEqual(RENDER_SLUGS.length, 35);
 });
