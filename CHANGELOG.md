@@ -19,6 +19,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Changed
+- **Breaking Figma sync (2026-07-19).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#446](https://github.com/volivarii/actian-ds-knowledge/pull/446))
 - **Render: tag-default and checkbox now render correctly in the generic renderer, not only via the slice-2 template override (renderer-relocation phase 1b-alpha).** ([#443](https://github.com/volivarii/actian-ds-knowledge/pull/443))
   `ds-base.css` gains the `.ds-tag--<color>` color variants (value-first from the appearance
   facts) and the `.ds-checkbox--indeterminate` rule; `ds-html-map` emits the tag color class and
