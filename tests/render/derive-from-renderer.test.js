@@ -9,8 +9,8 @@ var SRC_DIR = path.join(ROOT, "components", "render", "src");
 
 var D = require("../../scripts/render/derive-from-renderer.js");
 
-// The seed's <body> inner markup: the same extraction derive-canonical.js uses
-// (bodyInner), reproduced here so this test does not depend on that module.
+// The seed's <body> inner markup, extracted locally so this test does not
+// depend on scripts/render/derive-canonical.js.
 function seedBodyInner(slug) {
   var html = fs.readFileSync(path.join(SRC_DIR, slug + ".html"), "utf8");
   var m = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(html);
@@ -56,4 +56,50 @@ test("deriveFragment(checkbox) emits distinct classes + glyphs per Selection sta
     /<rect x="5" y="11" width="14" height="2" rx="1" fill="currentColor"\/>/,
   );
   assert.match(derived, /is-disabled/);
+});
+
+var R = require("../../scripts/render/derive-from-renderer.js");
+
+test("radio-button derives a real Selected state, not the Selected==='Yes' bug", function () {
+  var html = R.deriveFragment("radio-button");
+  assert.match(
+    html,
+    /ds-radio--checked/,
+    "the Selected cell emits ds-radio--checked",
+  );
+  assert.match(
+    html,
+    /ds-radio\b[^"]*\bis-disabled/,
+    "the Disabled cell emits is-disabled",
+  );
+});
+
+test("toggle derives a real On state, not the Selected==='Yes' bug", function () {
+  var html = R.deriveFragment("toggle");
+  assert.match(html, /ds-toggle--on/, "the On cell emits ds-toggle--on");
+  assert.match(
+    html,
+    /ds-toggle\b[^"]*\bis-disabled/,
+    "the Disabled cell emits is-disabled",
+  );
+});
+
+test("tag-default renders every registry color, not the 5-cell generic cap", function () {
+  var html = R.deriveFragment("tag-default");
+  [
+    "pink",
+    "purple",
+    "indigo",
+    "yellow",
+    "lime",
+    "teal",
+    "orange",
+    "gray",
+  ].forEach(function (c) {
+    assert.match(
+      html,
+      new RegExp("ds-tag--" + c + "\\b"),
+      "tag color " + c + " is rendered",
+    );
+  });
 });

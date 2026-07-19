@@ -16,10 +16,15 @@ function buildContactSheet(outPath) {
   var canonical = deriveCanonical(
     path.join(REPO, "components", "render", "src"),
   );
-  var derived = canonical.manifest.renders.filter(function (r) {
-    return r.source === "derived";
+  // The renderer-relocation slice retired the source:"derived" templates, so the
+  // sign-off set is now a fixed list of the slugs whose rendering this slice
+  // changed (tag-default colors; checkbox/radio/toggle state). Each renders
+  // through the generic renderer and is shown beside its Figma media oracle.
+  var SIGN_OFF_SLUGS = ["tag-default", "checkbox", "radio-button", "toggle"];
+  var signOff = canonical.manifest.renders.filter(function (r) {
+    return SIGN_OFF_SLUGS.indexOf(r.slug) >= 0;
   });
-  var sections = derived
+  var sections = signOff
     .map(function (r) {
       var card = selfContainedCard(
         canonical.css,
@@ -58,7 +63,7 @@ function buildContactSheet(outPath) {
     "</body>";
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, page);
-  return derived.map(function (r) {
+  return signOff.map(function (r) {
     return r.slug;
   });
 }
@@ -76,7 +81,7 @@ if (require.main === module) {
     );
   var slugs = buildContactSheet(out);
   process.stdout.write(
-    "contact sheet -> " + out + " (" + slugs.length + " derived slugs)\n",
+    "contact sheet -> " + out + " (" + slugs.length + " sign-off slugs)\n",
   );
 }
 

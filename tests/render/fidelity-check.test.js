@@ -18,38 +18,38 @@ test("fidelityCheck: real derive has no violations", function () {
 });
 
 test("fidelityCheck: a wrong derived color is caught", function () {
-  var out = D.deriveCanonical(SRC);
-  var tokenMap = A.loadTokenMap(out.css);
-  // corrupt a derived tag color to a value no fact carries
-  out.css = out.css.replace(
-    /\.ds-tag--pink\{background:#[0-9a-fA-F]+/,
-    ".ds-tag--pink{background:#000000",
-  );
-  var v = F.fidelityCheck(out, { anatomyDir: ANATOMY, tokenMap: tokenMap });
+  // fidelityCheck is retained for a future escape-hatch template, but no real
+  // slug is templated now, so construct the source:"derived" canonical inline.
+  // #000000 is not a tag-default appearance fact color, so the gate must name it.
+  var canonical = {
+    css: "/* tag-default (derived-from-facts) */\n.ds-tag--pink{background:#000000}\n",
+    manifest: { renders: [{ slug: "tag-default", source: "derived" }] },
+  };
+  var v = F.fidelityCheck(canonical, { anatomyDir: ANATOMY, tokenMap: {} });
   assert.ok(
     v.some(function (m) {
       return /tag-default/.test(m) && /pink/.test(m);
     }),
-    "violation names the bad color",
+    "violation names the bad color, got: " + JSON.stringify(v),
   );
 });
 
 test("fidelityCheck: an empty derived CSS block cannot pass silently", function () {
-  var out = D.deriveCanonical(SRC);
-  var tokenMap = A.loadTokenMap(out.css);
-  // Strip checkbox's entire derived-from-facts appendix block (marker + body)
-  // while leaving its manifest entry stamped source:"derived" -- the gate has
-  // nothing left to verify and must NOT pass silently.
-  var re =
-    /\/\* checkbox \(derived-from-facts\) \*\/[\s\S]*?(?=\/\* [a-z-]+ \(derived-from-facts\)|$)/;
-  assert.match(out.css, re, "checkbox derived block present before stripping");
-  out.css = out.css.replace(re, "");
-  var v = F.fidelityCheck(out, { anatomyDir: ANATOMY, tokenMap: tokenMap });
+  // A render stamped source:"derived" with no derived-from-facts block to verify
+  // must red, not pass silently.
+  var canonical = {
+    css: "",
+    manifest: { renders: [{ slug: "tag-default", source: "derived" }] },
+  };
+  var v = F.fidelityCheck(canonical, { anatomyDir: ANATOMY, tokenMap: {} });
   assert.ok(
     v.some(function (m) {
-      return /^checkbox:/.test(m) && /no derived-from-facts CSS block/.test(m);
+      return (
+        /^tag-default:/.test(m) && /no derived-from-facts CSS block/.test(m)
+      );
     }),
-    "violation names checkbox and the missing block, got: " + JSON.stringify(v),
+    "violation names tag-default and the missing block, got: " +
+      JSON.stringify(v),
   );
 });
 
