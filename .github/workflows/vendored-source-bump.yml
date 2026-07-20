@@ -15,7 +15,17 @@ name: Bump on vendored-source change
 #              clients/resolve-paths.js verbatim)
 #   schemas/   the JSON Schemas consumers validate against
 #
-# Both are listed in vendor-include.json, so both are shipped. But a PR that
+# Phase 2 of the renderer relocation added a third such directory:
+#
+#   components/render/renderer/   the renderer JS modules the plugin
+#              requires directly. Unlike clients/ and schemas/, this one
+#              DOES have a derive (render-derive.yml), but that derive
+#              bumps only on a DIST change. A renderer-only source change
+#              that is inert by design, such as an injection seam with no
+#              caller yet, produces no dist diff, so render-derive.yml
+#              never sees it and never bumps either.
+#
+# All three are listed in vendor-include.json, so all three are shipped. But a PR that
 # touches only these never bumped, never tagged, and therefore never reached
 # a single consumer. Historically such changes shipped only by riding along
 # on an unrelated bump, which is luck, not a pipeline. #448 (a real
@@ -34,6 +44,7 @@ on:
     paths:
       - 'clients/**'
       - 'schemas/**'
+      - 'components/render/renderer/**'
 
 # Serialize per branch: concurrent auto-commit pushes to the same PR head race
 # each other (lost push = red required check). Queue, never cancel.
