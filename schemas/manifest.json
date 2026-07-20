@@ -172,6 +172,11 @@
           "description": "Whether to recurse into subdirectories when enumerating. Default false.",
           "examples": [true, false]
         },
+        "resolvable": {
+          "type": "boolean",
+          "description": "Set false to declare that this collection's pattern describes the layout for enumeration but cannot address a single member, so clients/resolve-paths.js will not resolve it. Required on any collection whose pattern is neither {name} nor a pattern containing {slug}; validate-manifest.js fails otherwise, so an unresolvable pattern can no longer merge silently and fail at first call. Omit (the default, true) for a normal resolvable collection.",
+          "examples": [false]
+        },
         "type": {
           "enum": ["markdown", "json", "css", "yaml", "text", "binary"],
           "description": "Member file format.",

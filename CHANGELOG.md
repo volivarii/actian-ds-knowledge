@@ -19,6 +19,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **`validate-manifest` now rejects a collection pattern that cannot resolve, so the mistake fails at PR time instead of at first call.** (_PR link added at open_)
+  Only two `pattern` shapes resolve: one containing `{slug}`, or exactly `{name}`. Anything else
+  describes the layout for enumeration and must now declare `"resolvable": false`. This is the
+  shift-left for the class of defect behind the `{name}` bug: an unresolvable pattern used to merge
+  green and lie dormant, because the resolver answered with a fabricated path or a `null` that read
+  as "not found". A realistic typo such as `{slugs}.json` is now a red check.
+  Applying the gate to the existing manifest found one collection worth **fixing** rather than
+  documenting: `components.icons.dist` declared `{name}.json`, which never resolved, so its
+  `icons.json` and `icons.degraded.json` were unreachable through the manifest. Its pattern is now
+  `{slug}.json` and both members resolve. `foundations.leaf` and `accessibility.leaf` are genuinely
+  descriptive (Pattern H nests arbitrarily deep, which no single pattern addresses) and are marked
+  `resolvable: false`, with a note that switching them to `{name}` would make them resolvable if a
+  consumer ever needs it. `clients/resolve-paths.js` reports a declared-descriptive collection as
+  such rather than repeating the "fix your pattern" advice.
 - **`vendored-source-bump.yml`: a change to `clients/` or `schemas/` now bumps the version, so it can reach consumers.** ([#449](https://github.com/volivarii/actian-ds-knowledge/pull/449))
   Consumers pull this repo **by tag**, and `tag-on-merge.yml` only emits a tag when
   `package.json#version` changes. Every bump lived inside a *derive* workflow, gated on whether the

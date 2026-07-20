@@ -273,3 +273,32 @@ test("every {slug} shape in the real manifest still resolves", function () {
   });
   assert.ok(checked >= 7, "expected several {slug} collections, saw " + checked);
 });
+
+test("a descriptive collection says so rather than blaming the pattern", function () {
+  var P = buildPathsFromManifest(
+    {
+      manifest_schema_version: "v1",
+      paths: {},
+      collections: {
+        leafy: {
+          dir: "some/dir",
+          pattern: "<topSlug>/.../<slug>.json",
+          resolvable: false,
+          recursive: true,
+          type: "json",
+          origin: "ci",
+          description: "d",
+        },
+      },
+    },
+    "/v",
+  );
+  // Regression guard for a var-hoisting shadow: the sub-directory walk inside
+  // the resolver declares `var entry`, which is function-scoped. Naming the
+  // collection parameter `entry` made it hoist over the parameter, so reading
+  // the flag threw "Cannot read properties of undefined" instead of producing
+  // this message. Asserting the message, not just that it throws, pins it.
+  assert.throws(function () {
+    P.leafy("anything");
+  }, /declared descriptive-only \(resolvable: false\)/);
+});
