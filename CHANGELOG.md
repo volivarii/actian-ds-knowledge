@@ -19,7 +19,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
-- **`validate-manifest` now rejects a collection pattern that cannot resolve, so the mistake fails at PR time instead of at first call.** (_PR link added at open_)
+- **`validate-manifest` now rejects a collection pattern that cannot resolve, so the mistake fails at PR time instead of at first call.** ([#450](https://github.com/volivarii/actian-ds-knowledge/pull/450))
   Only two `pattern` shapes resolve: one containing `{slug}`, or exactly `{name}`. Anything else
   describes the layout for enumeration and must now declare `"resolvable": false`. This is the
   shift-left for the class of defect behind the `{name}` bug: an unresolvable pattern used to merge
