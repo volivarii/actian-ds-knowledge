@@ -19,7 +19,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
-- **`vendored-source-bump.yml`: a change to `clients/` or `schemas/` now bumps the version, so it can reach consumers.** (_PR link added at open_)
+- **`vendored-source-bump.yml`: a change to `clients/` or `schemas/` now bumps the version, so it can reach consumers.** ([#449](https://github.com/volivarii/actian-ds-knowledge/pull/449))
   Consumers pull this repo **by tag**, and `tag-on-merge.yml` only emits a tag when
   `package.json#version` changes. Every bump lived inside a *derive* workflow, gated on whether the
   regenerated `dist/` changed. That covers `src/` to `dist/` domains, but not the two directories
