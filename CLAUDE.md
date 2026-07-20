@@ -27,6 +27,8 @@ Consumers reference logical names from `paths-manifest.json` at the repo root, n
 
 `paths-manifest.json#knowledge_version` is **derived** from `package.json#version` — stamped by CI (and `npm run sync:version`). Never edit it by hand; it follows `package.json#version` automatically (which CI bumps — see the "Contributing a change?" fast-path above).
 
+A collection's `pattern` is what `clients/resolve-paths.js` uses to turn a slug into a path, and only two shapes resolve: one containing `{slug}`, or exactly `{name}` (the caller supplies the whole path relative to `dir`). Any other shape describes the layout for enumeration and must declare `"resolvable": false`, or `validate-manifest` fails. That gate exists because an unresolvable pattern used to be silent, returning a fabricated path or a null that read as "not found", so the mistake surfaced only when some consumer eventually called it.
+
 Spec: `docs/superpowers/specs/2026-05-10-manifest-and-tag-pin-design.md` in the plugin repo (gitignored — ask the plugin lead if you need to read it).
 
 ## How CI runs

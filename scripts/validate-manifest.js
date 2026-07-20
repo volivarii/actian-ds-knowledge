@@ -8,6 +8,10 @@
 var fs = require("fs");
 var path = require("path");
 
+// Single-sourced from the canonical reader so this gate and the runtime can
+// never disagree about what a resolvable pattern is.
+var { isResolvablePattern } = require("../clients/resolve-paths.js");
+
 var REPO_ROOT = path.resolve(__dirname, "..");
 var MANIFEST_PATH = path.join(REPO_ROOT, "paths-manifest.json");
 
@@ -79,6 +83,42 @@ function validateSchema(manifest) {
     }
     if (!coll.description) {
       errors.push("collections." + collName + ": missing 'description'");
+    }
+
+    // Pattern resolvability. clients/resolve-paths.js can turn a slug into a
+    // path for exactly two shapes: a pattern containing {slug}, or exactly
+    // "{name}" (caller supplies the path relative to dir). Anything else
+    // describes the layout for enumeration and cannot address a member.
+    //
+    // Declaring an unresolvable pattern used to be SILENT: the resolver handed
+    // back a fabricated path or a null, and nothing failed until a consumer
+    // happened to call it. That is how components.render.renderer stayed broken
+    // through three renderer-relocation phases (#448). Descriptive collections
+    // must now opt out explicitly with `resolvable: false`, which turns the
+    // realistic future mistake (a typo like {slugs}.json) into a PR-time error
+    // instead of a dormant one.
+    if (coll.pattern) {
+      var resolves = isResolvablePattern(coll.pattern);
+      if (!resolves && coll.resolvable !== false) {
+        errors.push(
+          "collections." +
+            collName +
+            ": pattern '" +
+            coll.pattern +
+            "' cannot resolve a member (clients/resolve-paths.js resolves only " +
+            "a pattern containing {slug}, or exactly {name}). Fix the pattern, " +
+            "or set 'resolvable: false' if it is descriptive only.",
+        );
+      }
+      if (resolves && coll.resolvable === false) {
+        errors.push(
+          "collections." +
+            collName +
+            ": marked 'resolvable: false' but pattern '" +
+            coll.pattern +
+            "' does resolve. Drop the flag so consumers can use it.",
+        );
+      }
     }
   }
 
