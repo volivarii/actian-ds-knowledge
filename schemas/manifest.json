@@ -164,8 +164,8 @@
         },
         "pattern": {
           "type": "string",
-          "description": "Filename pattern with {slug} placeholders. Used by tooling to enumerate members.",
-          "examples": ["{slug}.json", "<topSlug>/.../<slug>.json"]
+          "description": "Filename pattern used by tooling to enumerate members, and by clients/resolve-paths.js to resolve one. Two resolvable forms: a {slug} pattern, where the resolver substitutes the slug and appends the rest (\"{slug}.json\"); or exactly \"{name}\", where the caller supplies the member's whole path relative to dir (\"ds-base.css\", \"html-renderers/ds-html-map.js\"). Any other form is descriptive only and does not resolve.",
+          "examples": ["{slug}.json", "{name}", "<topSlug>/.../<slug>.json"]
         },
         "recursive": {
           "type": "boolean",

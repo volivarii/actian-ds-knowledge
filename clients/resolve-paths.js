@@ -90,8 +90,72 @@ function buildPathsFromManifest(manifest, vendorRoot) {
     setNested(
       out,
       collName.split("."),
-      (function (collDir, pattern) {
+      // collName/coll are `var` loop bindings, so every value the closure needs
+      // is passed in as a parameter rather than captured: a captured binding
+      // would hold the LAST iteration's value for every collection.
+      (function (collDir, pattern, collRoot, name, declaredDir) {
         return function (slug) {
+          // A "{name}" collection addresses a member by its path RELATIVE to
+          // dir ("ds-base.css", "html-renderers/ds-html-map.js"): no extension
+          // to append, and with recursive:true no sub-dir walk, because the
+          // caller supplies the whole relative path. Handled before the {slug}
+          // branch, which would otherwise leave "{name}" unsubstituted and fall
+          // through to the "<slug>.md" walk, returning null for every input.
+          if (pattern === "{name}") {
+            if (typeof slug !== "string" || slug === "") {
+              throw new Error(
+                "resolve-paths.js: collection '" +
+                  name +
+                  "' needs a member name (a path relative to " +
+                  declaredDir +
+                  "), got " +
+                  JSON.stringify(slug),
+              );
+            }
+            // Lexical containment only: path.resolve does not follow symlinks,
+            // so this rejects "../" traversal, not a symlinked member. The
+            // collection is vendored content and names come from our own code,
+            // so that is the intended boundary.
+            var resolvedName = path.resolve(collRoot, slug);
+            if (
+              resolvedName === collRoot ||
+              resolvedName.indexOf(collRoot + path.sep) !== 0
+            ) {
+              throw new Error(
+                "resolve-paths.js: '" +
+                  slug +
+                  "' escapes the collection directory " +
+                  collDir,
+              );
+            }
+            return resolvedName;
+          }
+
+          // A pattern with no {slug} token cannot address a member: the
+          // substitution below is a no-op for it. Two such shapes exist in the
+          // manifest and BOTH used to fail silently, which is how the {name}
+          // bug above survived undetected for three phases:
+          //   "<topSlug>/.../<slug>.json"  angle brackets, so no braces remain
+          //     and the check below passed the pattern through VERBATIM,
+          //     handing back a literal ".../<topSlug>/.../<slug>.json".
+          //   "{name}.json"                braces remain, so it fell to the
+          //     "<slug>.md" walk and returned null for every input.
+          // These are descriptive patterns (they document the layout for
+          // enumeration) and are not resolvable. Fail loudly rather than
+          // returning a fabricated path or a null that reads as "not found".
+          if (pattern.indexOf("{slug}") === -1) {
+            throw new Error(
+              "resolve-paths.js: collection '" +
+                name +
+                "' declares pattern '" +
+                pattern +
+                "', which cannot address a member: it does not vary by slug. " +
+                "Such patterns document the layout for enumeration only. " +
+                "Resolvable forms: a pattern containing {slug}, or exactly " +
+                "{name} (caller supplies the path relative to dir).",
+            );
+          }
+
           // Substitute {slug}; if no other placeholders remain, join + return.
           var resolved = pattern.replace("{slug}", slug);
           if (!/\{[^}]+\}/.test(resolved)) {
@@ -115,7 +179,7 @@ function buildPathsFromManifest(manifest, vendorRoot) {
           }
           return null;
         };
-      })(dir, coll.pattern),
+      })(dir, coll.pattern, path.resolve(dir), collName, coll.dir),
     );
   }
 
