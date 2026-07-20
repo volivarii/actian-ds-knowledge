@@ -26,3 +26,5 @@ Four isolated units:
 UI schemas live in `src/uiSchemas/` — **never** in `schemas/`. Doctrine P3: the schemas are the published contract; presentation hints (labels, ordering, help text) belong to the consumer.
 
 See the design spec: `actian-design-system-plugin/plugins/actian-design-system/docs/superpowers/specs/2026-05-23-knowledge-editor-phase-1-design.md`
+
+New to the relations concept (links, frontmatter refs, the Graph tab)? Read [`../RELATIONS.md`](../RELATIONS.md) first.
