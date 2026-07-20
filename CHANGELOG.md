@@ -19,7 +19,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Removed
-- **The 35 frozen seed renders and the all-35 oracle** (renderer-relocation phase 3). (_PR link added at open_)
+- **The 35 frozen seed renders and the all-35 oracle** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
   `components/render/src/` (15 MB) is gone. The gallery derives entirely from the relocated renderer,
   so the seeds' only remaining jobs were mechanical: the slug list and the card group, both now
   sourced from `matrix.js` and verified equivalent before the switch, plus the page chrome and the
@@ -41,7 +41,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   ever had, and the file documents that the exclusion was deliberate rather than lost.
 
 ### Changed
-- **Three render gates that could not fail were made able to fail** (renderer-relocation phase 3). (_PR link added at open_)
+- **Three render gates that could not fail were made able to fail** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
   Deleting a frozen oracle is only safe if what remains actually bites, so three weak checks were
   repaired in the same change, all mutation-verified. `groupFor` in `matrix.js` ends in
   `|| "Components"` and so can never return a falsy value, which made invariant 5's truthiness
@@ -71,7 +71,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   unchanged.
 
 ### Added
-- **`appearance-render.js` gets the icon injection seam `ds-html-map.js` already had (`setIcons`, `setShadowedSlugs`)** (renderer-relocation phase 3). (_PR link added at open_)
+- **`appearance-render.js` gets the icon injection seam `ds-html-map.js` already had (`setIcons`, `setShadowedSlugs`)** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
   Phase 1a gave `ds-html-map.js` this seam and missed `appearance-render.js`, which resolves icons
   independently through the same dual-source idiom (a browser global, or a Node branch that requires
   the vendored `lib/paths`), wrapped in try/catch. `lib/paths` has no counterpart in a vendored
@@ -80,7 +80,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   slugs lost their glyph. `setIcons`/`setShadowedSlugs` mirror `ds-html-map.js`'s seam exactly;
   precedence is `opts` > injected > module default, so an explicit `opts.iconMap` or
   `opts.shadowedSlugs` (even an explicit `null`) still wins over an injected value.
-- **`vendored-source-bump.yml` now also bumps on a change to `components/render/renderer/`, so a renderer-only source change reaches consumers.** (_PR link added at open_)
+- **`vendored-source-bump.yml` now also bumps on a change to `components/render/renderer/`, so a renderer-only source change reaches consumers.** ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
   The renderer ships to consumers as source, same as `clients/` and `schemas/`, but
   `render-derive.yml` bumps only when the regenerated `dist/` actually changes. A renderer-only
   change that is inert by design, such as an injection seam with no caller yet, produces no dist
