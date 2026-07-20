@@ -131,6 +131,31 @@ function buildPathsFromManifest(manifest, vendorRoot) {
             return resolvedName;
           }
 
+          // A pattern with no {slug} token cannot address a member: the
+          // substitution below is a no-op for it. Two such shapes exist in the
+          // manifest and BOTH used to fail silently, which is how the {name}
+          // bug above survived undetected for three phases:
+          //   "<topSlug>/.../<slug>.json"  angle brackets, so no braces remain
+          //     and the check below passed the pattern through VERBATIM,
+          //     handing back a literal ".../<topSlug>/.../<slug>.json".
+          //   "{name}.json"                braces remain, so it fell to the
+          //     "<slug>.md" walk and returned null for every input.
+          // These are descriptive patterns (they document the layout for
+          // enumeration) and are not resolvable. Fail loudly rather than
+          // returning a fabricated path or a null that reads as "not found".
+          if (pattern.indexOf("{slug}") === -1) {
+            throw new Error(
+              "resolve-paths.js: collection '" +
+                name +
+                "' declares pattern '" +
+                pattern +
+                "', which cannot address a member: it does not vary by slug. " +
+                "Such patterns document the layout for enumeration only. " +
+                "Resolvable forms: a pattern containing {slug}, or exactly " +
+                "{name} (caller supplies the path relative to dir).",
+            );
+          }
+
           // Substitute {slug}; if no other placeholders remain, join + return.
           var resolved = pattern.replace("{slug}", slug);
           if (!/\{[^}]+\}/.test(resolved)) {

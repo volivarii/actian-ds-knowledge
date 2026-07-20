@@ -207,3 +207,69 @@ test("each collection closes over its OWN dir and name", function () {
     P.second("");
   }, /collection 'second'/);
 });
+
+// ---------------------------------------------------------------------------
+// Unresolvable patterns fail loudly
+// ---------------------------------------------------------------------------
+// A pattern with no {slug} token cannot address a member. Both shapes in the
+// manifest used to fail SILENTLY, which is the root cause that let the {name}
+// bug survive: one returned a fabricated literal path, the other returned null.
+
+function collWith(pattern) {
+  return buildPathsFromManifest(
+    {
+      manifest_schema_version: "v1",
+      paths: {},
+      collections: {
+        probe: {
+          dir: "some/dir",
+          pattern: pattern,
+          type: "json",
+          origin: "ci",
+          description: "d",
+        },
+      },
+    },
+    "/v",
+  );
+}
+
+test("a '<angle bracket>' pattern throws instead of returning a literal path", function () {
+  var P = collWith("<topSlug>/.../<slug>.json");
+  assert.throws(function () {
+    P.probe("anything");
+  }, /cannot address a member/);
+});
+
+test("a '{name}.json' pattern throws instead of returning null", function () {
+  var P = collWith("{name}.json");
+  assert.throws(function () {
+    P.probe("icons");
+  }, /cannot address a member/);
+});
+
+test("the diagnostic names the collection and its pattern", function () {
+  var P = collWith("<topSlug>/.../<slug>.json");
+  assert.throws(function () {
+    P.probe("x");
+  }, /collection 'probe'.*<topSlug>/s);
+});
+
+test("every {slug} shape in the real manifest still resolves", function () {
+  // Driven from the REAL manifest, not a hand-copied list, so a collection
+  // added later is covered automatically and this guard cannot drift.
+  var manifest = JSON.parse(
+    fs.readFileSync(path.join(__dirname, "..", "paths-manifest.json"), "utf8"),
+  );
+  var checked = 0;
+  Object.keys(manifest.collections).forEach(function (key) {
+    var pattern = manifest.collections[key].pattern;
+    if (pattern.indexOf("{slug}") === -1) return; // descriptive, covered above
+    checked++;
+    var P = collWith(pattern);
+    assert.doesNotThrow(function () {
+      P.probe("button");
+    }, "pattern " + pattern + " (" + key + ") must stay resolvable");
+  });
+  assert.ok(checked >= 7, "expected several {slug} collections, saw " + checked);
+});

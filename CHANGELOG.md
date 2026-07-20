@@ -29,6 +29,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
   renderer, so the defect was latent. Verified against the real manifest: all 11 renderer members
   now resolve to real files, and `{slug}` collections are unchanged. Traversal outside the
   collection directory throws rather than resolving.
+- **An unresolvable collection pattern now fails loudly instead of returning a fabricated path or a
+  null.** (_PR link added at open_)
+  This is the root cause behind the `{name}` bug above: the resolver silently mis-resolved any
+  pattern shape it did not recognize, so nothing ever surfaced. Two shapes in the manifest were
+  affected. `foundations.leaf` and `accessibility.leaf` declare `<topSlug>/.../<slug>.json`, whose
+  angle brackets meant no substitution happened and no braces remained, so the resolver returned
+  the pattern **verbatim**: a literal `<repo>/foundations/dist/<topSlug>/.../<slug>.json` for every
+  input. `components.icons.dist` declares `{name}.json`, which fell through to the `<slug>.md` walk
+  and returned `null` for every input. Both are descriptive patterns that document the layout for
+  enumeration and cannot address a member, so calling them now throws a diagnostic naming the
+  collection, its pattern, and the two resolvable forms. **No behavior change for any caller:**
+  neither repo has a single runtime call site for these three collections (grep confirms only
+  manifest declarations, docs, and a test asserting the entry exists), which is precisely why the
+  breakage went unnoticed.
 
 ### Changed
 - **Breaking Figma sync (2026-07-19).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#447](https://github.com/volivarii/actian-ds-knowledge/pull/447))
