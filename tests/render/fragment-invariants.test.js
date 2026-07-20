@@ -107,10 +107,13 @@ function splitCells(fragment) {
 }
 
 // Minimal HTML-escape, mirroring ds-html-map.js's esc() fallback (and
-// fm-html-map.js's esc(), which is byte-identical), so a cell.label
-// containing HTML-sensitive characters compares correctly against the
-// escaped caption text without reaching into the renderer's internals from
-// this gate.
+// fm-html-map.js's esc(), which is byte-identical). This is NOT kept
+// independent because esc() is unreachable from here: it is exported
+// (ds-html-map.js:1799, exports.esc = esc) and is exactly what the harness
+// calls at derive-from-renderer.js:60. It is kept independent for oracle
+// independence: importing esc() would make invariant 4 blind to a bug in
+// esc() itself, since the gate would then escape labels the same wrong way
+// the harness did, and a broken esc() would never surface as a mismatch.
 function escLabel(s) {
   return String(s)
     .replace(/&/g, "&amp;")
@@ -189,11 +192,32 @@ test("invariant 1: zero cells degrade to a graceful chip", function () {
 // graceful chip, so a cell that is ENTIRELY the chip (the full-degrade
 // mutation) has nothing real left and fails here too, not only under
 // invariants 1 and 3.
+//
+// Self-guarding: this is one of the two invariants left standing once the
+// all-35 oracle is deleted, so it cannot rely on invariant 4 (or invariant 6)
+// to catch a splitCells() that quietly returns zero cells. Before judging any
+// cell content, each slug's cell count is checked against
+// variantMatrix(slug).length; zero cells, or any mismatch, fails THIS
+// invariant directly instead of leaving forEach a no-op over an empty array.
 test("invariant 2: every cell renders real component markup", function () {
   var failures = [];
   RENDER_SLUGS.forEach(function (slug) {
     var fragment = deriveFragment(slug);
-    splitCells(fragment).forEach(function (cell, i) {
+    var cells = splitCells(fragment);
+    var expectedCount = variantMatrix(slug).length;
+    if (cells.length === 0 || cells.length !== expectedCount) {
+      failures.push(
+        slug +
+          ": " +
+          cells.length +
+          " cell(s) found by splitCells, expected " +
+          expectedCount +
+          " -- cannot judge cell content when the split did not find the " +
+          "expected cells",
+      );
+      return;
+    }
+    cells.forEach(function (cell, i) {
       var comp = stripGracefulChips(cell.component);
       if (!comp || !comp.trim()) {
         failures.push(slug + " cell " + i + ": empty component markup");
@@ -210,11 +234,32 @@ test("invariant 2: every cell renders real component markup", function () {
 // Invariant 3: every cell must emit a REAL ds- class, not just any ds-
 // prefixed string -- the graceful chip's own class is "ds-component", which
 // would satisfy a naive /\bds-/ check.
+//
+// Self-guarding for the same reason as invariant 2: it is one of the two
+// invariants left standing once the all-35 oracle is deleted, so it cannot
+// rely on a sibling test to catch a splitCells() that quietly returns zero
+// cells. Each slug's cell count is checked against variantMatrix(slug).length
+// before judging any class; zero cells, or any mismatch, fails THIS
+// invariant directly.
 test("invariant 3: every cell emits a real ds- class (not the graceful chip's own)", function () {
   var failures = [];
   RENDER_SLUGS.forEach(function (slug) {
     var fragment = deriveFragment(slug);
-    splitCells(fragment).forEach(function (cell, i) {
+    var cells = splitCells(fragment);
+    var expectedCount = variantMatrix(slug).length;
+    if (cells.length === 0 || cells.length !== expectedCount) {
+      failures.push(
+        slug +
+          ": " +
+          cells.length +
+          " cell(s) found by splitCells, expected " +
+          expectedCount +
+          " -- cannot judge cell classes when the split did not find the " +
+          "expected cells",
+      );
+      return;
+    }
+    cells.forEach(function (cell, i) {
       if (!REAL_DS_CLASS.test(cell.component)) {
         failures.push(slug + " cell " + i + ": no real ds- class found");
       }
