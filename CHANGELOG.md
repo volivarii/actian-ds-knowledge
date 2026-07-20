@@ -19,7 +19,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Fixed
-- **`clients/resolve-paths.js`: `{name}` collections now resolve instead of returning `null`.** (_PR link added at open_)
+- **`clients/resolve-paths.js`: `{name}` collections now resolve instead of returning `null`.** ([#448](https://github.com/volivarii/actian-ds-knowledge/pull/448))
   A `{name}` collection addresses a member by its path relative to the collection directory
   (`ds-base.css`, `html-renderers/ds-html-map.js`) rather than by a slug with an extension
   appended. The builder only ever substituted `{slug}`, so `{name}` survived, matched the
@@ -30,7 +30,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   now resolve to real files, and `{slug}` collections are unchanged. Traversal outside the
   collection directory throws rather than resolving.
 - **An unresolvable collection pattern now fails loudly instead of returning a fabricated path or a
-  null.** (_PR link added at open_)
+  null.** ([#448](https://github.com/volivarii/actian-ds-knowledge/pull/448))
   This is the root cause behind the `{name}` bug above: the resolver silently mis-resolved any
   pattern shape it did not recognize, so nothing ever surfaced. Two shapes in the manifest were
   affected. `foundations.leaf` and `accessibility.leaf` declare `<topSlug>/.../<slug>.json`, whose
