@@ -18,6 +18,41 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Removed
+- **The 35 frozen seed renders and the all-35 oracle** (renderer-relocation phase 3). (_PR link added at open_)
+  `components/render/src/` (15 MB) is gone. The gallery derives entirely from the relocated renderer,
+  so the seeds' only remaining jobs were mechanical: the slug list and the card group, both now
+  sourced from `matrix.js` and verified equivalent before the switch, plus the page chrome and the
+  CEM stylesheet scan, both measured dist-neutral. The all-35 oracle is replaced by
+  `tests/render/fragment-invariants.test.js`, which asserts fact-derived structural invariants
+  (every cell renders real component markup, no cell degrades to a graceful chip, every cell emits a
+  real `ds-` class, the cell count matches the matrix, the group resolves, the phase-1b fixes hold)
+  rather than comparing against a frozen capture.
+  **This ends the manual seed-reclassify step**: a breaking Figma sync that legitimately changed a
+  rendered slug used to red the oracle and need a human to reclassify the seed on the sync PR branch
+  (#447, and #445/#446 before it). The new gate cannot go stale on a sync.
+  Phase 0's byte-identity guard retires with them, for the same reason: it proved the relocated
+  assets matched the frozen capture, which is migration safety, and the migration completed and was
+  verified end-to-end at phase 2. The three phase-1a byte-identity tests in
+  `tests/render/derive-from-renderer.test.js` (button, badge, tag-interactive) retire on that same
+  argument; that file's positive marker assertions are untouched.
+  `vendor-exclude.json` keeps its declared seam with an empty list: the seeds were the only entry it
+  ever had, and the file documents that the exclusion was deliberate rather than lost.
+
+### Changed
+- **Two render gates that could not fail were made able to fail** (renderer-relocation phase 3). (_PR link added at open_)
+  Deleting a frozen oracle is only safe if what remains actually bites, so two weak checks were
+  repaired in the same change, both mutation-verified. `groupFor` in `matrix.js` ends in
+  `|| "Components"` and so can never return a falsy value, which made invariant 5's truthiness
+  assertion vacuous; it now fails any slug that lands on that last-resort fallback, meaning every
+  slug found a real registry category. This matters more without the seeds, whose `@dsCard` marker
+  was an independent second opinion on the group, and while [#428](https://github.com/volivarii/actian-ds-knowledge/issues/428)
+  tracks live category drift. Separately, the deleted `validateSeed` was the only thing asserting
+  that every `--zen-*` token a render references is actually defined; a test whose title already
+  claimed "all defined" only checked the `--zen-` prefix. That test now performs the real resolution
+  check over the derived output and reports every unresolved token by name (measured: 66 referenced,
+  231 defined, 0 unresolved).
+
 ### Added
 - **`validate-manifest` now rejects a collection pattern that cannot resolve, so the mistake fails at PR time instead of at first call.** ([#450](https://github.com/volivarii/actian-ds-knowledge/pull/450))
   Only two `pattern` shapes resolve: one containing `{slug}`, or exactly `{name}`. Anything else

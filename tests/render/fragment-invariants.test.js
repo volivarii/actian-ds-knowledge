@@ -136,16 +136,37 @@ test("invariant 8: RENDER_SLUGS carries all 35 built slugs", function () {
 
 // Invariant 5: cheap and independent of rendering, but it guards the bundle
 // placement every slug needs.
-test("invariant 5: every slug resolves a group", function () {
+//
+// This asserted only that groupFor(slug) was TRUTHY, which was vacuous:
+// groupFor in components/render/renderer/matrix.js ends in `|| "Components"`,
+// so it can never return falsy and the check could never fail. It now asserts
+// that no slug lands on that last-resort fallback, which is what "resolves a
+// group" was always meant to mean: the slug was actually found in a registry
+// and carries a real category.
+//
+// This matters more since the seeds retired. Their @dsCard marker was a frozen,
+// independent second opinion on each slug's group; with them gone the group is
+// sourced solely from the registry category, and open issue #428 is live
+// category drift. A slug dropping out of all three registries would otherwise
+// silently reclassify into "Components" with every gate green.
+var GROUP_FALLBACK = "Components";
+
+test("invariant 5: every slug resolves a real registry group, not the fallback", function () {
   var failures = [];
   RENDER_SLUGS.forEach(function (slug) {
-    if (!groupFor(slug)) failures.push(slug);
+    var group = groupFor(slug);
+    if (!group) {
+      failures.push(slug + ": no group at all");
+    } else if (group === GROUP_FALLBACK) {
+      failures.push(
+        slug +
+          ': fell back to "' +
+          GROUP_FALLBACK +
+          '" (missing from all three registries, or carrying neither category nor group)',
+      );
+    }
   });
-  assert.deepEqual(
-    failures,
-    [],
-    "slugs with no resolved group: " + JSON.stringify(failures),
-  );
+  assert.deepEqual(failures, [], failures.join("; "));
 });
 
 // Invariant 6: if the harness markup ever changes shape, the per-cell split

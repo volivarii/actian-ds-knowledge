@@ -151,7 +151,7 @@ if (require.main === module) {
   var A = require("./derive-appearance.js");
   var root = path.resolve(__dirname, "..", "..");
   var anatomyDir = path.join(root, "components", "dist", "anatomy");
-  var out = D.deriveCanonical(path.join(root, "components", "render", "src"));
+  var out = D.deriveCanonical();
   var tokenMap = A.loadTokenMap(out.css);
   var v = fidelityCheck(out, {
     anatomyDir: anatomyDir,

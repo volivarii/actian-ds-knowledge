@@ -918,13 +918,6 @@
       "origin": "human",
       "description": "The relocated renderer: the fact-driven DS component renderer JS (ds-html-map + appearance/anatomy interpreters, structure-preserving under html-renderers/), its styling source (ds-base.css, ds-fonts.css), and default-props.json. Knowledge owns the one renderer; the plugin vendors it back (renderer-relocation phase 1). render.css derives from the .css members; the gallery derives by running the .js over each component's variant matrix."
     },
-    "components.render.src": {
-      "dir": "components/render/src",
-      "pattern": "{slug}.html",
-      "type": "text",
-      "origin": "ci",
-      "description": "Captured self-contained seed renders (the derive input). A capture intermediate, excluded from the vendor snapshot."
-    },
     "components.render.usageNotes": {
       "dir": "components/render/dist/usage-notes",
       "pattern": "{slug}.md",

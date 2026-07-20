@@ -1,47 +1,22 @@
 "use strict";
 var test = require("node:test");
 var assert = require("node:assert/strict");
-var fs = require("node:fs");
-var path = require("node:path");
-
-var ROOT = path.resolve(__dirname, "..", "..");
-var SRC_DIR = path.join(ROOT, "components", "render", "src");
 
 var D = require("../../scripts/render/derive-from-renderer.js");
 
-// The seed's <body> inner markup, extracted locally so this test does not
-// depend on scripts/render/derive-canonical.js.
-function seedBodyInner(slug) {
-  var html = fs.readFileSync(path.join(SRC_DIR, slug + ".html"), "utf8");
-  var m = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(html);
-  if (!m) throw new Error("no <body> found in " + slug + " seed");
-  return m[1];
-}
-
-test("deriveFragment(button) is byte-identical to the button seed's body inner", function () {
-  var derived = D.deriveFragment("button");
-  var seeded = seedBodyInner("button");
-  assert.equal(derived, seeded);
-});
-
-// Two more BUILT slugs (not tag-default/checkbox, which are the known-buggy
-// derive-from-facts captures), scaling the byte-identity proof beyond the
-// simplest (icon-free) case.
-["badge", "tag-interactive"].forEach(function (slug) {
-  test(
-    "deriveFragment(" + slug + ") is byte-identical to its seed's body inner",
-    function () {
-      var derived = D.deriveFragment(slug);
-      var seeded = seedBodyInner(slug);
-      assert.equal(derived, seeded);
-    },
-  );
-});
-
-// tag-default and checkbox are the derive-from-facts slugs (North Star slice
-// 2): their markup INTENTIONALLY diverges from the degraded seed (colored tag
-// classes; real checkbox state classes + glyphs), so they are asserted
-// positively rather than pinned to seed byte-identity.
+// Phase 1a pinned deriveFragment("button"/"badge"/"tag-interactive") byte-for-byte
+// against the frozen captures in components/render/src/. Those three tests retired
+// with the seeds at renderer-relocation phase 3, for the same reason as the all-35
+// oracle: byte-identity against a historical capture proved the port from the plugin
+// preserved behavior, which is migration safety, and the migration completed and was
+// verified end-to-end at phase 2. Structural coverage for every slug now comes from
+// tests/render/fragment-invariants.test.js, which asserts fact-derived invariants
+// instead, so a legitimate Figma sync cannot make it stale.
+//
+// The tests below assert the renderer's output POSITIVELY, by marker, which is why
+// they survive the seeds: tag-default and checkbox are the derive-from-facts slugs
+// (North Star slice 2) whose markup INTENTIONALLY diverges from the degraded capture
+// (colored tag classes; real checkbox state classes + glyphs).
 test("deriveFragment(tag-default) colors each cell via ds-tag--<color>", function () {
   var derived = D.deriveFragment("tag-default");
   assert.match(derived, /ds-tag--pink/);

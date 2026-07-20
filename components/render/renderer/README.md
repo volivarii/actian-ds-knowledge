@@ -4,7 +4,7 @@ The relocated **DS component renderer**: the styling source of truth (phase 0) p
 fact-driven renderer JS (phase 1a). Knowledge owns these assets; the shared `render.css`
 and the derived gallery in `components/render/dist/` are DERIVED from them (see
 `scripts/render/derive-canonical.js` and `scripts/render/derive-from-renderer.js`), not
-hand-written and not a snapshot baked into the frozen seeds.
+hand-written and not a frozen snapshot.
 
 ## Styling source (phase 0)
 
@@ -12,9 +12,9 @@ hand-written and not a snapshot baked into the frozen seeds.
 - `ds-fonts.css`: the offline font embeds.
 
 `render.css` is built as `tokens/tokens.css` + `ds-fonts.css` + `ds-base.css`, in that
-order (the same order the render read path uses). The derive keeps a loud byte-identity
-cross-check against the deduped seed stylesheet: if these assets ever drift from the
-frozen seeds, the derive fails rather than shipping a mismatch.
+order (the same order the render read path uses). `tests/render/derive-canonical.test.js`
+pins that composition exactly, so the derive cannot quietly start sourcing its stylesheet
+from somewhere else.
 
 ## Renderer JS (phase 1a)
 
@@ -31,7 +31,8 @@ dependency injection:
   helper shared by the anatomy map and the html renderer.
 - `html-renderers/fm-html-map.js`: the Fat Marker wireframe renderer.
 - `matrix.js`: the variant-matrix logic (`variantMatrix`, `findComponent`, `groupFor`,
-  `RENDER_SLUGS`, `MATRIX_OVERRIDES`), ported from the plugin's seed-capture driver.
+  `RENDER_SLUGS`, `MATRIX_OVERRIDES`), ported from the plugin's capture driver. It is
+  also the authority on WHICH slugs the gallery covers and which group each lands in.
 - `default-props.json`: default prop values the matrix falls back to.
 
 These modules read facts (anatomy JSON, `icons.json`) via **injected** loaders and maps,
@@ -39,12 +40,24 @@ never via `lib/paths` (which lives only in the plugin): a missing `lib/paths` re
 degrades to `null` rather than throwing, and callers (knowledge's own derive scripts)
 inject loaders backed by knowledge's local `components/dist/` facts instead.
 `scripts/render/derive-from-renderer.js` is the reference caller: it injects an icon map
-via `setIcons` and runs `matrix.js` over a slug to reproduce that slug's frozen seed
-byte-for-byte, proving the ported renderer preserves the plugin's behavior exactly.
+via `setIcons` and runs `matrix.js` over a slug to produce that slug's fragment.
 
 Do **not** edit the generated `components/render/dist/`. Edit the source here.
 
-This is renderer-relocation phase 0 (styling) + phase 1a (the renderer JS, the matrix
-logic, and the byte-identity derive). A later phase scales the derive to all components,
-folds the tag/checkbox fixes into the generic renderer, and has the plugin vendor this
-renderer back instead of keeping its own copy.
+## How the output is guarded
+
+Phase 1a pinned the derive byte-for-byte against frozen captures in
+`components/render/src/`, which proved the port from the plugin preserved behavior
+exactly. Phase 3 retired those captures once the migration completed and was verified
+end-to-end at phase 2. Two gates replace them, both fact-derived, so a legitimate Figma
+sync can no longer make either stale:
+
+- `tests/render/fragment-invariants.test.js`: structural soundness per cell (every cell
+  renders real component markup, none degrades to the renderer's graceful chip, every
+  cell emits a real `ds-` class, cell counts and labels match the variant matrix, every
+  slug resolves a real registry group, the phase-1b fixes hold).
+- `scripts/render/fidelity-check.js`: color correctness against the appearance facts.
+
+This is renderer-relocation phase 0 (styling) + phase 1a (the renderer JS and the matrix
+logic) + phase 1b (the whole gallery deriving from this renderer) + phase 3 (the frozen
+captures retired). The plugin vendors this renderer back rather than keeping its own copy.

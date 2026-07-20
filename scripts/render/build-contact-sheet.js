@@ -13,9 +13,7 @@ function oracleImg(slug, name) {
 }
 
 function buildContactSheet(outPath) {
-  var canonical = deriveCanonical(
-    path.join(REPO, "components", "render", "src"),
-  );
+  var canonical = deriveCanonical();
   // The renderer-relocation slice retired the source:"derived" templates, so the
   // sign-off set is now a fixed list of the slugs whose rendering this slice
   // changed (tag-default colors; checkbox/radio/toggle state). Each renders

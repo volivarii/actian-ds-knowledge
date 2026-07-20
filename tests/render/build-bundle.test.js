@@ -86,9 +86,7 @@ test("buildBundle: component cards are reconstructed from the shared css + fragm
   var btn = fs.readFileSync(path.join(dir, btnRel), "utf8");
   // The reconstructed card inlines the shared stylesheet and the fragment markup.
   var D = require("../../scripts/render/derive-canonical.js");
-  var out = D.deriveCanonical(
-    path.resolve(__dirname, "../../components/render/src"),
-  );
+  var out = D.deriveCanonical();
   assert.ok(btn.indexOf(out.css) >= 0, "card inlines the shared render.css");
   assert.ok(
     btn.indexOf(out.fragments.button.trim().slice(0, 40)) >= 0,

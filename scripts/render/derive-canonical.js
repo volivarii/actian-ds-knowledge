@@ -199,11 +199,12 @@ function pascal(slug) {
 // inlined <style>, measured token-set-identical for all 35 slugs.
 function buildDeclaration(slug, styleText) {
   var meta = COMPONENT_META[slug];
-  var style = styleText;
   if (meta) {
-    var cssProps = consumedVars(style, meta.cssSelector).map(function (name) {
-      return { name: name };
-    });
+    var cssProps = consumedVars(styleText, meta.cssSelector).map(
+      function (name) {
+        return { name: name };
+      },
+    );
     return {
       kind: "class",
       customElement: true,
@@ -226,7 +227,7 @@ function buildDeclaration(slug, styleText) {
       type: { text: (variants[axis] || []).join(" | ") },
     };
   });
-  var cssProps2 = consumedVars(style, "ds-" + slug).map(function (name) {
+  var cssProps2 = consumedVars(styleText, "ds-" + slug).map(function (name) {
     return { name: name };
   });
   return {

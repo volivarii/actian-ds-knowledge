@@ -6,12 +6,11 @@ var path = require("node:path");
 var D = require("../../scripts/render/derive-canonical.js");
 var F = require("../../scripts/render/fidelity-check.js");
 var A = require("../../scripts/render/derive-appearance.js");
-var SRC = path.resolve(__dirname, "../../components/render/src");
 var ANATOMY = path.resolve(__dirname, "../../components/dist/anatomy");
 var REPO_ROOT = path.resolve(__dirname, "../..");
 
 test("fidelityCheck: real derive has no violations", function () {
-  var out = D.deriveCanonical(SRC);
+  var out = D.deriveCanonical();
   var tokenMap = A.loadTokenMap(out.css);
   var v = F.fidelityCheck(out, { anatomyDir: ANATOMY, tokenMap: tokenMap });
   assert.deepEqual(v, []);
