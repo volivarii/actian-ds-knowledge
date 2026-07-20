@@ -373,14 +373,20 @@ function updatePathsManifest(manifestPath, derived, sourceRel, opts) {
 
   // 7. Collection entry for the per-leaf tree (so consumers know the layout).
   if (!manifest.collections) manifest.collections = {};
+  // resolvable:false is REQUIRED here, not decorative: validate-manifest gates
+  // every collection whose pattern can address a member, and Pattern H nests
+  // arbitrarily deep, so no single pattern addresses one. This entry is fully
+  // regenerated on every derive, so the flag has to live in the generator; a
+  // hand-edit in paths-manifest.json is silently dropped on the next run.
   manifest.collections["foundations.leaf"] = {
     dir: "foundations/dist",
     pattern: "<topSlug>/.../<slug>.json",
     recursive: true,
+    resolvable: false,
     type: "json",
     origin: "ci",
     description:
-      "Per-leaf foundations JSONs in hierarchical Pattern H layout. Each leaf mirrors its MD heading path. Branch nodes carry an `_index.json` instead. Single roll-up at foundations.bundle. Recursive: any file under foundations/dist/ is covered by this collection.",
+      "Per-leaf foundations JSONs in hierarchical Pattern H layout. Each leaf mirrors its MD heading path. Branch nodes carry an `_index.json` instead. Single roll-up at foundations.bundle. Recursive: any file under foundations/dist/ is covered by this collection. Descriptive only (resolvable: false): the layout is arbitrarily deep, so no single pattern addresses a member. If a consumer ever needs path-addressed access, switch to pattern '{name}'.",
   };
 
   if (!opts.dryRun) {
