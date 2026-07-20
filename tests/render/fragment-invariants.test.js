@@ -37,6 +37,10 @@ var assert = require("node:assert/strict");
 
 var D = require("../../scripts/render/derive-from-renderer.js");
 var M = require("../../components/render/renderer/matrix.js");
+// Live renderer, required (not copied) so invariant 9 below can pin the
+// graceful-chip constants against actual renderer output rather than a
+// second remembered string.
+var dsHtmlMap = require("../../components/render/renderer/html-renderers/ds-html-map.js");
 
 var RENDER_SLUGS = M.RENDER_SLUGS;
 var variantMatrix = M.variantMatrix;
@@ -107,13 +111,13 @@ function splitCells(fragment) {
 }
 
 // Minimal HTML-escape, mirroring ds-html-map.js's esc() fallback (and
-// fm-html-map.js's esc(), which is byte-identical). This is NOT kept
-// independent because esc() is unreachable from here: it is exported
+// fm-html-map.js's esc(), which is byte-identical). Kept independent
+// deliberately, for oracle independence: esc() is exported
 // (ds-html-map.js:1799, exports.esc = esc) and is exactly what the harness
-// calls at derive-from-renderer.js:60. It is kept independent for oracle
-// independence: importing esc() would make invariant 4 blind to a bug in
-// esc() itself, since the gate would then escape labels the same wrong way
-// the harness did, and a broken esc() would never surface as a mismatch.
+// calls at derive-from-renderer.js:60, so it is reachable from here, but
+// importing it would make invariant 4 blind to a bug in esc() itself, since
+// the gate would then escape labels the same wrong way the harness did, and
+// a broken esc() would never surface as a mismatch.
 function escLabel(s) {
   return String(s)
     .replace(/&/g, "&amp;")
@@ -190,6 +194,59 @@ test("invariant 6: the harness shape is still what this gate assumes", function 
     "total cell-wrapper count across all 35 slugs is 0 -- the per-cell split " +
       "found nothing; either the harness markup changed or CELL_OPEN/CAPTION_OPEN " +
       "in this file are stale",
+  );
+});
+
+// Invariant 9: the same self-guarding principle invariant 6 already applies
+// to the harness constants (CELL_OPEN, CAPTION_OPEN), applied here to the
+// graceful-chip constants above (GRACEFUL_CHIP_MARKER, REAL_DS_CLASS,
+// CHIP_ELEMENT). All three are copied verbatim from gracefulChip() in
+// ds-html-map.js rather than imported, and until this test nothing pinned
+// them against the renderer's actual fallback markup: reshape
+// gracefulChip() to something like `<div class="ds-fallback-chip"
+// data-slug="...">...</div>` and every one of invariants 1, 2 and 3 passes
+// silently on a fully degraded cell -- the marker string stops matching, so
+// invariant 1 never sees a chip; CHIP_ELEMENT stops stripping it, so
+// invariant 2 counts the bare chip as real component markup; and a class
+// like "ds-fallback-chip" satisfies REAL_DS_CLASS's negative lookahead, so
+// invariant 3 reads it as a real ds- class.
+//
+// Pinned against LIVE renderer output rather than a second remembered
+// string, so a renderer change that breaks the pin fails here instead of
+// leaving invariants 1-3 silently blind. "no-such-slug-xyz" has no case in
+// the renderDSComponent switch and no anatomy doc, so it takes exactly the
+// fallback path a real degraded cell would.
+test("invariant 9: the graceful-chip constants still match the live renderer", function () {
+  var chip = dsHtmlMap.renderDSComponent({
+    dsSlug: "no-such-slug-xyz",
+    name: "no-such-slug-xyz",
+  });
+
+  assert.ok(
+    chip.indexOf(GRACEFUL_CHIP_MARKER) !== -1,
+    "GRACEFUL_CHIP_MARKER no longer matches the live graceful chip (" +
+      chip +
+      ") -- gracefulChip() in ds-html-map.js changed shape, and invariant 1 " +
+      "has silently stopped detecting a degraded cell",
+  );
+
+  var stripped = chip.replace(CHIP_ELEMENT, "");
+  assert.equal(
+    stripped,
+    "",
+    'CHIP_ELEMENT does not fully strip the live graceful chip (left over: "' +
+      stripped +
+      '") -- gracefulChip() in ds-html-map.js changed shape, and invariant 2 ' +
+      "would now count a bare chip as real component markup",
+  );
+
+  assert.equal(
+    REAL_DS_CLASS.test(chip),
+    false,
+    "REAL_DS_CLASS matches the live graceful chip's own markup -- " +
+      "gracefulChip() in ds-html-map.js changed shape (its class no longer " +
+      'reads as "ds-component"), and invariant 3 would now accept a ' +
+      "degraded cell as carrying a real ds- class",
   );
 });
 
