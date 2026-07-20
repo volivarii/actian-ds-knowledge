@@ -26,7 +26,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
   CEM stylesheet scan, both measured dist-neutral. The all-35 oracle is replaced by
   `tests/render/fragment-invariants.test.js`, which asserts fact-derived structural invariants
   (every cell renders real component markup, no cell degrades to a graceful chip, every cell emits a
-  real `ds-` class, the cell count matches the matrix, the group resolves, the phase-1b fixes hold)
+  real `ds-` class, the cell count matches the matrix, every slug resolves a real registry group
+  rather than silently falling back to `"Components"`, the phase-1b fixes hold)
   rather than comparing against a frozen capture.
   **This ends the manual seed-reclassify step**: a breaking Figma sync that legitimately changed a
   rendered slug used to red the oracle and need a human to reclassify the seed on the sync PR branch

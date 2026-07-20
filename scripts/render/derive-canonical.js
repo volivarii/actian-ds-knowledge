@@ -128,7 +128,8 @@ function definedVars(styleText) {
   var set = new Set();
   var re = /(--zen-[a-z0-9-]+)\s*:/gi;
   var m;
-  while ((m = re.exec(styleText)) !== null) set.add(m[1]);
+  var scan = stripComments(styleText);
+  while ((m = re.exec(scan)) !== null) set.add(m[1]);
   return set;
 }
 
