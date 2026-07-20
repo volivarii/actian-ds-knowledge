@@ -86,9 +86,7 @@ test("buildBundle: component cards are reconstructed from the shared css + fragm
   var btn = fs.readFileSync(path.join(dir, btnRel), "utf8");
   // The reconstructed card inlines the shared stylesheet and the fragment markup.
   var D = require("../../scripts/render/derive-canonical.js");
-  var out = D.deriveCanonical(
-    path.resolve(__dirname, "../../components/render/src"),
-  );
+  var out = D.deriveCanonical();
   assert.ok(btn.indexOf(out.css) >= 0, "card inlines the shared render.css");
   assert.ok(
     btn.indexOf(out.fragments.button.trim().slice(0, 40)) >= 0,
@@ -97,14 +95,16 @@ test("buildBundle: component cards are reconstructed from the shared css + fragm
   assert.match(
     btn,
     /body\{margin:0;padding:24px;background:#fff\}/,
-    "card re-adds the seed's page chrome",
+    "card re-adds the standalone-preview page chrome",
   );
-  // The raw seed's <head> has no viewport meta (only selfContainedCard adds one),
-  // so this fails if the loop reverts to embedUsage(canonical.renders[r.slug], note).
+  // selfContainedCard is what adds the viewport meta as part of building a full
+  // <head>; a bare fragment has none, so this fails if the loop ever starts
+  // embedding canonical.fragments[r.slug] directly instead of going through
+  // selfContainedCard.
   assert.match(
     btn,
     /<meta name="viewport" content="width=device-width, initial-scale=1">/,
-    "card uses the reconstructed head, not the raw seed",
+    "card uses the head built by selfContainedCard, not a bare fragment",
   );
   assert.ok(!/\ssrc=|\shref=|@import/.test(btn), "still self-contained");
 });

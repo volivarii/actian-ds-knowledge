@@ -301,7 +301,7 @@ function embedUsage(renderHtml, noteMd) {
 // page chrome, and a component fragment. This is the on-demand projection of the
 // dedup dist: Claude Design needs standalone files, so the bundle re-inlines
 // render.css plus the page chrome per card. Both come from the derive (pageCss is
-// the seeds' second <style> block, guarded there), so nothing is hardcoded here.
+// the derive's own PAGE_CSS constant), so nothing is hardcoded here.
 // render.css deliberately excludes the page chrome, because consumers embed
 // render.css into their own page and must not inherit this body framing.
 function selfContainedCard(css, pageCss, fragment, group) {
@@ -323,12 +323,10 @@ function selfContainedCard(css, pageCss, fragment, group) {
 
 function buildBundle(outDir, opts) {
   opts = opts || {};
-  var srcDir =
-    opts.srcDir || path.join(REPO_ROOT, "components", "render", "src");
   var tokensPath =
     opts.tokensPath || path.join(REPO_ROOT, "tokens", "tokens.json");
 
-  var canonical = deriveCanonical(srcDir);
+  var canonical = deriveCanonical();
   var dtcg = deriveFromFile(tokensPath);
   var written = [];
 

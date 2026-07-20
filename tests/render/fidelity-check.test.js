@@ -6,15 +6,32 @@ var path = require("node:path");
 var D = require("../../scripts/render/derive-canonical.js");
 var F = require("../../scripts/render/fidelity-check.js");
 var A = require("../../scripts/render/derive-appearance.js");
-var SRC = path.resolve(__dirname, "../../components/render/src");
 var ANATOMY = path.resolve(__dirname, "../../components/dist/anatomy");
 var REPO_ROOT = path.resolve(__dirname, "../..");
 
-test("fidelityCheck: real derive has no violations", function () {
-  var out = D.deriveCanonical(SRC);
-  var tokenMap = A.loadTokenMap(out.css);
-  var v = F.fidelityCheck(out, { anatomyDir: ANATOMY, tokenMap: tokenMap });
-  assert.deepEqual(v, []);
+test('fidelityCheck: the real derive has zero source:"derived" renders today, so the loop has nothing to examine', function () {
+  // TEMPLATES (templates/index.js) went empty in phase 1b-beta, so no slug in
+  // the real derive carries source:"derived" and fidelityCheck's loop body
+  // never runs. Asserting the real derive's violations deep-equal [] would
+  // read like a passing verification while actually exercising an
+  // unreachable code path: it would pass even if a real color/token
+  // regression landed, because nothing would be examined either way.
+  // Pinning the precondition instead makes that fact loud: the day a slug
+  // is templated again, derivedCount stops being 0, this assertion fails,
+  // and the failure message is the signal that the fidelity gate just went
+  // live and needs real coverage (see the sibling "a wrong derived color is
+  // caught" test below for how that coverage already works once it's live).
+  var out = D.deriveCanonical();
+  var derivedCount = (out.manifest.renders || []).filter(function (r) {
+    return r.source === "derived";
+  }).length;
+  assert.equal(
+    derivedCount,
+    0,
+    'a render now carries source:"derived", so fidelityCheck\'s loop is live ' +
+      "and this precondition test's job is done; replace it with real " +
+      "coverage of that render's derived-from-facts CSS",
+  );
 });
 
 test("fidelityCheck: a wrong derived color is caught", function () {

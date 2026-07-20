@@ -1,18 +1,20 @@
 "use strict";
 
 // derive-canonical.js — derive the canonical render dist + Custom Elements
-// Manifest from the seed renders in components/render/src/.
+// Manifest from the assets knowledge owns: the renderer, its stylesheets, and
+// the component registries.
 //
-// Slice 1 SEEDS the renders by capturing the plugin's hand-authored output (see
-// the plugin's scripts/render/capture-seed.js), so this derive validates each
-// seed and hand-maps the component contract. Slice 2 replaces the capture with a
-// real derive-from-facts; the CEM emit + validation here stays the same, only its
-// input source swaps (CEM is the source-swap bridge).
+// Renderer-relocation phase 3 severed the last read of the frozen seed renders
+// that used to live in components/render/src/. The slug list and each card's
+// group now come from the renderer's own matrix, the stylesheet from the
+// relocated styling assets, and every fragment from deriveFragment.
 //
-// deriveCanonical(srcDir) returns { renders, css, fragments, cem, manifest }:
-//   renders: { slug: html }, the validated seed documents, passed through.
-//   css: the shared stylesheet, deduped once across every seed (byte-identical
-//     guard, throws if a seed's inlined style diverges).
+// deriveCanonical() takes no argument and returns
+// { css, pageCss, fragments, cem, manifest }:
+//   css: the shared stylesheet, concat(tokens.css, ds-fonts.css, ds-base.css)
+//     in the order the render read path uses.
+//   pageCss: the standalone-preview page chrome build-bundle's @dsCard
+//     projection re-adds around a fragment (see PAGE_CSS).
 //   fragments: { slug: html }, each slug's markup from the relocated renderer
 //     (deriveFragment), no <style>, except a TEMPLATES[slug] override.
 //   cem: a Custom Elements Manifest (validated against the official schema).
@@ -38,12 +40,23 @@ var TEMPLATES = require("./templates/index.js").TEMPLATES;
 var readAppearance = require("./derive-appearance.js").readAppearance;
 var loadTokenMap = require("./derive-appearance.js").loadTokenMap;
 var deriveFragment = require("./derive-from-renderer.js").deriveFragment;
+var matrix = require("../../components/render/renderer/matrix.js");
+var RENDER_SLUGS = matrix.RENDER_SLUGS;
+var groupFor = matrix.groupFor;
 
 var MANIFEST_SCHEMA_VERSION = "1.0.0";
 var CEM_SCHEMA_VERSION = "1.0.0";
 var DIST_DIR_REL = "components/render/dist";
 var REPO_ROOT = path.resolve(__dirname, "..", "..");
 var ANATOMY_DIR = path.join(REPO_ROOT, "components", "dist", "anatomy");
+
+// The standalone-preview page chrome. build-bundle's @dsCard projection needs it,
+// and slice 1b moved ownership here so build-bundle would stop keeping a copy that
+// could drift. It came from the capture harness's second <style> block and was
+// guarded identical across all 35 seeds until they retired at phase 3, where it
+// was measured once more (35 of 35 identical) and lifted to this constant.
+// It is page framing, not part of any component's contract, so render.css excludes it.
+var PAGE_CSS = "body{margin:0;padding:24px;background:#fff}";
 
 // Per-component CEM contract. Slice 1 hand-authors Button; slice 2 derives this
 // from the appearance + registry facts. cssSelector names the base class prefix
@@ -100,39 +113,6 @@ function stripComments(text) {
   return text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/<!--[\s\S]*?-->/g, "");
 }
 
-// Join every <style> block's contents in a document (comments stripped).
-function extractStyle(html) {
-  var out = [];
-  var re = /<style[^>]*>([\s\S]*?)<\/style>/gi;
-  var m;
-  while ((m = re.exec(html)) !== null) out.push(m[1]);
-  return stripComments(out.join("\n"));
-}
-
-// Raw <style> block content, verbatim (NOT comment-stripped like extractStyle),
-// so render.css is byte-faithful. The seeds share one inlined stylesheet: the
-// FIRST <style> block in the document (the ~421 KB design-system stylesheet).
-// A second, tiny <style> block follows it in every seed (page-framing chrome
-// the capture harness adds, e.g. "body{margin:...}") but is not part of the
-// component's contract, so only the first block is captured here.
-function rawStyle(html) {
-  var m = /<style[^>]*>([\s\S]*?)<\/style>/i.exec(html);
-  return m ? m[1] : "";
-}
-
-// The standalone-preview page chrome: the SECOND <style> block every seed
-// carries (e.g. "body{margin:0;padding:24px;background:#fff}"). It is not part of
-// the component contract, so render.css excludes it, but the standalone @dsCard
-// projection needs it. Captured here so build-bundle sources it from the seeds
-// instead of hardcoding a copy that could drift; guarded identical across seeds.
-function pageStyle(html) {
-  var re = /<style[^>]*>([\s\S]*?)<\/style>/gi;
-  var blocks = [];
-  var m;
-  while ((m = re.exec(html)) !== null) blocks.push(m[1]);
-  return blocks.length > 1 ? blocks[1] : "";
-}
-
 // Distinct --zen-* custom properties REFERENCED via var(...) anywhere in the text.
 function referencedVars(text) {
   var set = new Set();
@@ -148,7 +128,8 @@ function definedVars(styleText) {
   var set = new Set();
   var re = /(--zen-[a-z0-9-]+)\s*:/gi;
   var m;
-  while ((m = re.exec(styleText)) !== null) set.add(m[1]);
+  var scan = stripComments(styleText);
+  while ((m = re.exec(scan)) !== null) set.add(m[1]);
   return set;
 }
 
@@ -175,40 +156,6 @@ function consumedVars(styleText, cssSelector) {
     while ((vm = vre.exec(body)) !== null) set.add(vm[1]);
   }
   return Array.from(set).sort();
-}
-
-// Read the @dsCard group from the seed's required first-line marker.
-function readGroup(html) {
-  var first = html.split("\n")[0];
-  var m = /^<!--\s*@dsCard\s+group="([^"]+)"\s*-->/.exec(first);
-  return m ? m[1] : null;
-}
-
-// Validate a seed is shippable: marker present, self-contained, every referenced
-// token defined in the inlined style. Throws with a specific message on failure,
-// so a broken seed reds the derive rather than shipping a blank render.
-function validateSeed(slug, html) {
-  var group = readGroup(html);
-  if (!group) {
-    throw new Error(slug + ": missing first-line @dsCard group marker");
-  }
-  if (/\ssrc=|\shref=|@import/.test(html)) {
-    throw new Error(slug + ": not self-contained (external reference found)");
-  }
-  var style = extractStyle(html);
-  var refs = referencedVars(html);
-  var defs = definedVars(style);
-  var unresolved = Array.from(refs).filter(function (n) {
-    return !defs.has(n);
-  });
-  if (unresolved.length) {
-    throw new Error(
-      slug +
-        ": unresolved token(s) not defined in the seed: " +
-        unresolved.join(", "),
-    );
-  }
-  return group;
 }
 
 // Read + merge the component registries (ds -> meta -> fm). Slugs not hand-
@@ -248,13 +195,17 @@ function pascal(slug) {
   });
 }
 
-function buildDeclaration(slug, html) {
+// styleText is the already-comment-stripped stylesheet the cssProperties scan
+// reads. Phase 3: it is the asset base plus the page chrome rather than a seed's
+// inlined <style>, measured token-set-identical for all 35 slugs.
+function buildDeclaration(slug, styleText) {
   var meta = COMPONENT_META[slug];
-  var style = extractStyle(html);
   if (meta) {
-    var cssProps = consumedVars(style, meta.cssSelector).map(function (name) {
-      return { name: name };
-    });
+    var cssProps = consumedVars(styleText, meta.cssSelector).map(
+      function (name) {
+        return { name: name };
+      },
+    );
     return {
       kind: "class",
       customElement: true,
@@ -277,7 +228,7 @@ function buildDeclaration(slug, html) {
       type: { text: (variants[axis] || []).join(" | ") },
     };
   });
-  var cssProps2 = consumedVars(style, "ds-" + slug).map(function (name) {
+  var cssProps2 = consumedVars(styleText, "ds-" + slug).map(function (name) {
     return { name: name };
   });
   return {
@@ -292,78 +243,17 @@ function buildDeclaration(slug, html) {
   };
 }
 
-function deriveCanonical(srcDir) {
-  var files = fs
-    .readdirSync(srcDir)
-    .filter(function (f) {
-      return f.endsWith(".html");
-    })
-    .sort();
-
-  var renders = {};
-  var css = null;
-  var pageCss = null;
-  var fragments = {};
-  var modules = [];
-  var renderIndex = [];
-
-  files.forEach(function (file) {
-    var slug = path.basename(file, ".html");
-    var html = fs.readFileSync(path.join(srcDir, file), "utf8");
-    var group = validateSeed(slug, html);
-    renders[slug] = html;
-    // Dedup: buildLeafHtml inlines the whole stylesheet, so every seed carries
-    // the same block byte-for-byte. Capture it once; fail loudly if a seed
-    // diverges, because the dedup relies on one shared stylesheet.
-    var seedCss = rawStyle(html);
-    if (css === null) css = seedCss;
-    else if (seedCss !== css) {
-      throw new Error(
-        slug +
-          ": stylesheet differs from the shared render.css (" +
-          seedCss.length +
-          " vs " +
-          css.length +
-          " chars); the dedup assumes " +
-          "one shared inlined stylesheet across all seeds",
-      );
-    }
-    // Guard the page chrome the same way: the standalone card re-adds it, so a
-    // seed whose chrome diverges must fail loudly, not ship stale chrome.
-    var seedPageCss = pageStyle(html);
-    if (pageCss === null) pageCss = seedPageCss;
-    else if (seedPageCss !== pageCss) {
-      throw new Error(
-        slug +
-          ": page chrome differs from the shared card page style (" +
-          seedPageCss.length +
-          " vs " +
-          pageCss.length +
-          " chars); the standalone card projection assumes one shared chrome",
-      );
-    }
-    fragments[slug] = deriveFragment(slug);
-    var decl = buildDeclaration(slug, html);
-    modules.push({
-      kind: "javascript-module",
-      path: DIST_DIR_REL + "/fragments/" + slug + ".html",
-      declarations: [decl],
-    });
-    renderIndex.push({
-      slug: slug,
-      tagName: decl.tagName,
-      group: group,
-      fragment: "fragments/" + slug + ".html",
-      tokensConsumed: decl.cssProperties.length,
-    });
-  });
-
-  // Phase 0 (renderer relocation): the shared render.css base is now sourced from
-  // the relocated styling assets in components/render/renderer/, not from a seed's
-  // inlined <style>. The seeds' deduped stylesheet (css above) is kept as a loud
-  // cross-check: if the assets and the frozen seeds ever diverge, the derive FAILS
-  // rather than shipping a mismatch (a real drift signal, not something to tolerate).
-  // Order matches the render read path: tokens, then fonts, then ds-base.
+// Phase 3: the slug list and group come from the renderer's own matrix, not
+// from a directory listing of frozen seeds. Verified equivalent before the
+// switch: same 35 slugs, and groupFor matched the seeds' @dsCard group marker
+// for all 35 with zero differences.
+function deriveCanonical() {
+  // render.css is built from the assets knowledge owns: tokens.css + ds-fonts.css
+  // + ds-base.css, in the order the render read path uses. Phase 0's byte-identity
+  // guard against the deduped seed stylesheet retired with the seeds at phase 3:
+  // its claim ("the relocated assets still match the frozen capture") was
+  // migration safety, and the migration completed and was verified end-to-end at
+  // phase 2.
   var assetBase =
     fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8") +
     "\n" +
@@ -376,24 +266,34 @@ function deriveCanonical(srcDir) {
       path.join(REPO_ROOT, "components", "render", "renderer", "ds-base.css"),
       "utf8",
     );
-  // Phase 1b-alpha: ds-base.css legitimately gains rules the frozen seeds do not
-  // carry (tag color variants + checkbox indeterminate), appended at the END of
-  // the file. So the guard relaxes from byte-equality to a PREFIX check: the
-  // deduped seed stylesheet must still be a verbatim prefix of the asset base,
-  // which still catches an accidental mid-file drift while permitting the
-  // intended, purely-appended additions.
-  if (assetBase.indexOf(css) !== 0) {
-    throw new Error(
-      "the deduped seed stylesheet is no longer a verbatim prefix of the asset base " +
-        "(" +
-        css.length +
-        " vs " +
-        assetBase.length +
-        " chars); ds-base.css drifted mid-file " +
-        "rather than only appending the phase-1b tag/checkbox rules",
-    );
-  }
-  css = assetBase; // the assets (ds-base + the appended tag/checkbox rules) are the source of truth
+  var css = assetBase;
+
+  // The stylesheet the CEM cssProperties scan reads, assembled to match what the
+  // seeds' extractStyle produced: every <style> block joined, then comments
+  // stripped. The seeds' first block is now the asset base, their second the page
+  // chrome. Measured dist-neutral: 0 of 35 slugs change their token set.
+  var cemStyle = stripComments(assetBase + "\n" + PAGE_CSS);
+
+  var fragments = {};
+  var modules = [];
+  var renderIndex = [];
+
+  RENDER_SLUGS.forEach(function (slug) {
+    fragments[slug] = deriveFragment(slug);
+    var decl = buildDeclaration(slug, cemStyle);
+    modules.push({
+      kind: "javascript-module",
+      path: DIST_DIR_REL + "/fragments/" + slug + ".html",
+      declarations: [decl],
+    });
+    renderIndex.push({
+      slug: slug,
+      tagName: decl.tagName,
+      group: groupFor(slug),
+      fragment: "fragments/" + slug + ".html",
+      tokensConsumed: decl.cssProperties.length,
+    });
+  });
 
   // Slice 2: for slugs with a template, replace the captured fragment with a
   // derive-from-facts and append the derived per-variant CSS to the shared sheet.
@@ -443,20 +343,19 @@ function deriveCanonical(srcDir) {
   };
 
   return {
-    renders: renders,
     css: css,
-    pageCss: pageCss,
+    pageCss: PAGE_CSS,
     fragments: fragments,
     cem: cem,
     manifest: manifest,
   };
 }
 
-// CLI: write the validated renders + CEM + manifest into components/render/dist/.
+// CLI: write the derived fragments + css + CEM + manifest into components/render/dist/.
 // dist is a build output: it is written locally to prove the chain but is never
 // committed (the CI derive workflow that ships it to consumers is slice 1b).
-function writeDist(srcDir, distDir) {
-  var out = deriveCanonical(srcDir);
+function writeDist(distDir) {
+  var out = deriveCanonical();
   fs.mkdirSync(path.join(distDir, "fragments"), { recursive: true });
   fs.writeFileSync(path.join(distDir, "render.css"), out.css);
   Object.keys(out.fragments).forEach(function (slug) {
@@ -478,9 +377,8 @@ function writeDist(srcDir, distDir) {
 
 if (require.main === module) {
   var repoRoot = path.resolve(__dirname, "..", "..");
-  var srcDir = path.join(repoRoot, "components", "render", "src");
   var distDir = path.join(repoRoot, "components", "render", "dist");
-  var out = writeDist(srcDir, distDir);
+  var out = writeDist(distDir);
   process.stdout.write(
     "derived " +
       out.manifest.renders.length +
@@ -498,7 +396,6 @@ if (require.main === module) {
 module.exports = {
   deriveCanonical: deriveCanonical,
   writeDist: writeDist,
-  extractStyle: extractStyle,
   referencedVars: referencedVars,
   definedVars: definedVars,
   consumedVars: consumedVars,

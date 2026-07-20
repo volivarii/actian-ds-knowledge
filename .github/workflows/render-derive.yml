@@ -1,7 +1,7 @@
-name: Derive canonical render dist from components/render/src/
+name: Derive canonical render dist from the relocated renderer
 
 # Federation Phase 1.2 style CI, following foundations-derive.yml's pattern.
-# Runs on PR events that touch the render source, the relocated renderer
+# Runs on PR events that touch the relocated renderer
 # (components/render/renderer/), schema, derive scripts, paths-manifest.json,
 # or the token source. Regenerates the canonical render
 # dist (components/render/dist) and the DTCG token snapshot (tokens/dist),
@@ -20,7 +20,6 @@ name: Derive canonical render dist from components/render/src/
 on:
   pull_request:
     paths:
-      - 'components/render/src/**'
       - 'components/render/renderer/**'
       - 'components/render/schema/**'
       - 'scripts/render/**'
@@ -98,7 +97,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add components/render/dist/ tokens/dist/ package.json paths-manifest.json package-lock.json
-          git commit -m "chore(render): regenerate canonical render dist from src + bump patch"
+          git commit -m "chore(render): regenerate canonical render dist from the renderer + bump patch"
           # Race-safe push: another derive workflow may have pushed to this
           # branch since checkout (concurrent auto-commits), rebase and retry
           # once instead of failing the required check on a lost race.

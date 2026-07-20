@@ -1,13 +1,16 @@
 "use strict";
 
 // derive-from-renderer.js: run the relocated renderer (components/render/renderer/)
-// over a component's variant matrix (matrix.js) and reproduce the fixed-slug
-// fragment the plugin's capture-seed.js used to write into components/render/src/.
+// over a component's variant matrix (matrix.js) and produce that slug's fragment.
+// This is the single source of every fragment in the canonical render dist.
 //
-// This module is the byte-identity oracle for renderer-relocation phase 1a: the
-// relocated renderer + matrix logic must reproduce a BUILT slug's frozen seed
-// EXACTLY (deriveFragment(slug) === the seed's <body> inner markup), proving the
-// port from the plugin faithfully preserves behavior.
+// It began as the byte-identity oracle for renderer-relocation phase 1a, pinned
+// against the frozen captures the plugin's capture-seed.js used to write into
+// components/render/src/, which proved the port from the plugin preserved
+// behavior exactly. Phase 3 retired those captures: the migration completed and
+// was verified end-to-end at phase 2, so this module is now simply the producer.
+// tests/render/fragment-invariants.test.js asserts its output is structurally
+// sound from facts rather than against a historical capture.
 //
 // The wrapper shape below (fidelity-root div + grid + per-cell wrapper + ready
 // signal) is reproduced verbatim from the plugin's render/capture-seed.js
@@ -62,8 +65,8 @@ function renderCell(slug, cell) {
   );
 }
 
-// Run the relocated renderer over a BUILT slug's variant matrix and reproduce
-// the frozen seed's <body> inner markup byte-for-byte.
+// Run the relocated renderer over a slug's variant matrix and produce the
+// fragment markup the canonical render dist ships for it.
 function deriveFragment(slug) {
   dsMap.setIcons(loadIconMap());
   try {

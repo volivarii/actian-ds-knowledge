@@ -71,6 +71,14 @@ function checkRuleBody(label, selector, body, factSet, tokenMap, violations) {
 
 // Scope: this gate validates the colors in the derived-from-facts CSS
 // appendix only. Inline colors in the fragment markup are out of scope.
+//
+// Current state: TEMPLATES (templates/index.js) is empty as of phase 1b-beta,
+// so no render carries source:"derived" and the loop below examines zero
+// renders on every call. That is expected, not a bug: the loop is inert
+// until a slug is templated again, at which point it starts actually
+// checking that render's derived-from-facts CSS against its facts. See
+// tests/render/fidelity-check.test.js for the test that pins this
+// precondition and the sibling test that proves the loop body itself works.
 function fidelityCheck(canonical, ctx) {
   var violations = [];
   var tokenMap = ctx.tokenMap || {};
@@ -151,8 +159,11 @@ if (require.main === module) {
   var A = require("./derive-appearance.js");
   var root = path.resolve(__dirname, "..", "..");
   var anatomyDir = path.join(root, "components", "dist", "anatomy");
-  var out = D.deriveCanonical(path.join(root, "components", "render", "src"));
+  var out = D.deriveCanonical();
   var tokenMap = A.loadTokenMap(out.css);
+  var derivedRenders = (out.manifest.renders || []).filter(function (r) {
+    return r.source === "derived";
+  });
   var v = fidelityCheck(out, {
     anatomyDir: anatomyDir,
     tokenMap: tokenMap,
@@ -183,7 +194,19 @@ if (require.main === module) {
     );
     process.exit(1);
   }
-  process.stdout.write("fidelity: OK (derived renders match facts)\n");
+  if (derivedRenders.length === 0) {
+    process.stdout.write(
+      "fidelity: OK, 0 derived renders examined (TEMPLATES is empty, so " +
+        "fidelityCheck had nothing to check; ds-base.css tag/checkbox rules " +
+        "verified separately, above)\n",
+    );
+  } else {
+    process.stdout.write(
+      "fidelity: OK (" +
+        derivedRenders.length +
+        " derived render(s) matched facts)\n",
+    );
+  }
 }
 
 module.exports = {
