@@ -25,12 +25,14 @@ name: Bump on vendored-source change
 #              caller yet, produces no dist diff, so render-derive.yml
 #              never sees it and never bumps either.
 #
-# All three are listed in vendor-include.json, so all three are shipped. But a PR that
-# touches only these never bumped, never tagged, and therefore never reached
-# a single consumer. Historically such changes shipped only by riding along
-# on an unrelated bump, which is luck, not a pipeline. #448 (a real
-# resolve-paths bug fix) merged to main and was reachable by nobody, which is
-# what surfaced this.
+# clients/ and schemas/ are listed in vendor-include.json in their own
+# right; components/render/renderer/ is covered only transitively, via
+# the components entry. All three ship either way, but a PR that
+# touches only these never bumped, never tagged, and therefore never
+# reached a single consumer. Historically such changes shipped only by
+# riding along on an unrelated bump, which is luck, not a pipeline.
+# #448 (a real resolve-paths bug fix) merged to main and was reachable
+# by nobody, which is what surfaced this.
 #
 # This workflow closes that hole: a change to vendored source bumps the patch
 # version, so tag-on-merge emits a tag and the nightly vendor cron can pull it.

@@ -24,7 +24,11 @@ dependency injection:
 - `html-renderers/ds-html-map.js`: the entry point, `renderDSComponent`, plus the
   injection seams `setIcons`, `setAnatomyDocMap`, and `setVariantStyleMap`.
 - `appearance-render.js` / `appearance-style.js`: the resolved-appearance interpreter
-  (facts to CSS declarations).
+  (facts to CSS declarations). `appearance-render.js` carries its own injection seams,
+  `setIcons` and `setShadowedSlugs` (phase 3): it resolves icons independently of
+  `ds-html-map.js`, through the same dual-source idiom, and a vendored layout has no
+  `lib/paths` for its Node branch to resolve, so without these seams a vendored consumer
+  silently rendered blank glyphs.
 - `anatomy-render.js` / `ds-anatomy-map.js`: anatomy loading, the ratio-floor gate, and
   the assemble-time `{slug -> anatomyDoc}` / variant-style maps.
 - `html-renderers/anatomy-variant-key.js`: the delegated-slug/variant composite-key

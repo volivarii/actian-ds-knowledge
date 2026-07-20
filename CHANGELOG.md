@@ -55,6 +55,22 @@ Each entry links its pull request. Dates are the merge date (UTC).
   231 defined, 0 unresolved).
 
 ### Added
+- **`appearance-render.js` gets the icon injection seam `ds-html-map.js` already had (`setIcons`, `setShadowedSlugs`)** (renderer-relocation phase 3). (_PR link added at open_)
+  Phase 1a gave `ds-html-map.js` this seam and missed `appearance-render.js`, which resolves icons
+  independently through the same dual-source idiom (a browser global, or a Node branch that requires
+  the vendored `lib/paths`), wrapped in try/catch. `lib/paths` has no counterpart in a vendored
+  layout, so that Node branch cannot resolve there, the catch swallows the failure, and a vendored
+  consumer silently rendered blank glyphs. Measured impact when unhandled: 2 of 51 anatomy-tier
+  slugs lost their glyph. `setIcons`/`setShadowedSlugs` mirror `ds-html-map.js`'s seam exactly;
+  precedence is `opts` > injected > module default, so an explicit `opts.iconMap` or
+  `opts.shadowedSlugs` (even an explicit `null`) still wins over an injected value.
+- **`vendored-source-bump.yml` now also bumps on a change to `components/render/renderer/`, so a renderer-only source change reaches consumers.** (_PR link added at open_)
+  The renderer ships to consumers as source, same as `clients/` and `schemas/`, but
+  `render-derive.yml` bumps only when the regenerated `dist/` actually changes. A renderer-only
+  change that is inert by design, such as an injection seam with no caller yet, produces no dist
+  diff, so `render-derive.yml` never sees it and never bumps. That is the same hole
+  `vendored-source-bump.yml` was created to close for `clients/` and `schemas/`, now closed for the
+  third directory phase 2 added to that same shipped-as-source class.
 - **`validate-manifest` now rejects a collection pattern that cannot resolve, so the mistake fails at PR time instead of at first call.** ([#450](https://github.com/volivarii/actian-ds-knowledge/pull/450))
   Only two `pattern` shapes resolve: one containing `{slug}`, or exactly `{name}`. Anything else
   describes the layout for enumeration and must now declare `"resolvable": false`. This is the

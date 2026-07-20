@@ -64,16 +64,58 @@ test("an explicit opts.iconMap still beats an injected map", function () {
   ar.setIcons({ probe: { viewBox: "0 0 1 1", body: "<path/>" } });
   try {
     var explicitGlyph = { viewBox: "0 0 9 9", body: '<path d="M9 9 L8 8"/>' };
-    var svg = ar.renderIconGlyph(
-      { slug: "probe" },
-      null,
-      { iconMap: { probe: explicitGlyph } },
-    );
+    var svg = ar.renderIconGlyph({ slug: "probe" }, null, {
+      iconMap: { probe: explicitGlyph },
+    });
     assert.ok(
       svg && /M9 9 L8 8/.test(svg),
       "an explicit opts.iconMap must win over the injected map",
     );
   } finally {
     ar.setIcons(null);
+  }
+});
+
+test("an explicit opts.iconMap of null still beats an injected map (hasOwnProperty, not truthiness)", function () {
+  // The precedence check is `Object.prototype.hasOwnProperty.call(opts,
+  // "iconMap")`, not `opts && opts.iconMap`, so a caller can force the
+  // "map absent" branch with an explicit `null` even while an injected map
+  // is live. A sloppier `opts && opts.iconMap` check would fall through to
+  // the injected map here instead, rendering the probe glyph. Both checks
+  // pass all the OTHER tests in this file, so only this assertion (and its
+  // shadowedSlugs twin below) actually defends the hasOwnProperty idiom.
+  ar.setIcons({ probe: { viewBox: "0 0 1 1", body: "<path/>" } });
+  try {
+    var svg = ar.renderIconGlyph({ slug: "probe" }, null, { iconMap: null });
+    assert.equal(
+      svg,
+      null,
+      "an explicit opts.iconMap: null must force the map-absent branch, " +
+        "even with an injected map live",
+    );
+  } finally {
+    ar.setIcons(null);
+  }
+});
+
+test("an explicit opts.shadowedSlugs of null still beats an injected list (hasOwnProperty, not truthiness)", function () {
+  // Same idiom, same mutation target, for shadowedSlugs: a caller-supplied
+  // `null` must force the "no shadowing" branch (glyph renders) even while
+  // an injected shadowed list would otherwise suppress it.
+  var glyph = { viewBox: "0 0 24 24", body: '<path d="M5 5 L6 6"/>' };
+  ar.setIcons({ shadowed: glyph });
+  ar.setShadowedSlugs(["shadowed"]);
+  try {
+    var svg = ar.renderIconGlyph({ slug: "shadowed" }, null, {
+      shadowedSlugs: null,
+    });
+    assert.ok(
+      svg && /M5 5 L6 6/.test(svg),
+      "an explicit opts.shadowedSlugs: null must force the no-shadowing " +
+        "branch, even with an injected shadowed list live",
+    );
+  } finally {
+    ar.setIcons(null);
+    ar.setShadowedSlugs(null);
   }
 });
