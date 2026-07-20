@@ -18,6 +18,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Added
+- **`vendored-source-bump.yml`: a change to `clients/` or `schemas/` now bumps the version, so it can reach consumers.** ([#449](https://github.com/volivarii/actian-ds-knowledge/pull/449))
+  Consumers pull this repo **by tag**, and `tag-on-merge.yml` only emits a tag when
+  `package.json#version` changes. Every bump lived inside a *derive* workflow, gated on whether the
+  regenerated `dist/` changed. That covers `src/` to `dist/` domains, but not the two directories
+  that ship to consumers as **source** and have no derive at all: `clients/` (the reference readers
+  consumers `require` directly, including the plugin's `scripts/lib/paths.js`) and `schemas/`. Both
+  are in `vendor-include.json`, so both are shipped, yet a PR touching only them never bumped,
+  never tagged, and reached nobody. Such changes had only ever shipped by riding along on an
+  unrelated bump, which is luck rather than a pipeline. Surfaced by [#448](https://github.com/volivarii/actian-ds-knowledge/pull/448), a real
+  `resolve-paths.js` fix that merged to `main` and was reachable by no consumer. The bump is
+  idempotent: it compares the version at the **merge base** rather than at `main` (which moves on
+  its own via nightly syncs) and stands down when the branch has already bumped, including via a
+  derive on the same PR.
+
 ### Fixed
 - **`clients/resolve-paths.js`: `{name}` collections now resolve instead of returning `null`.** ([#448](https://github.com/volivarii/actian-ds-knowledge/pull/448))
   A `{name}` collection addresses a member by its path relative to the collection directory

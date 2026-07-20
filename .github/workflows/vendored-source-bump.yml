@@ -1,0 +1,147 @@
+name: Bump on vendored-source change
+
+# Every consumer (plugin, docs, ecosystem) pulls this repo by TAG:
+# vendor-snapshot resolves a version range against the git tags that
+# tag-on-merge.yml emits, and tag-on-merge only fires when
+# package.json#version changes.
+#
+# Every other bump in this repo happens inside a DERIVE workflow, gated on
+# "did the regenerated dist actually change". That works for src -> dist
+# domains. It does NOT cover the directories that ship to consumers as
+# SOURCE and have no derive at all:
+#
+#   clients/   the reference readers consumers require directly
+#              (scripts/lib/paths.js in the plugin requires the vendored
+#              clients/resolve-paths.js verbatim)
+#   schemas/   the JSON Schemas consumers validate against
+#
+# Both are listed in vendor-include.json, so both are shipped. But a PR that
+# touches only these never bumped, never tagged, and therefore never reached
+# a single consumer. Historically such changes shipped only by riding along
+# on an unrelated bump, which is luck, not a pipeline. #448 (a real
+# resolve-paths bug fix) merged to main and was reachable by nobody, which is
+# what surfaced this.
+#
+# This workflow closes that hole: a change to vendored source bumps the patch
+# version, so tag-on-merge emits a tag and the nightly vendor cron can pull it.
+#
+# The auto-commit pushes with the actian-ds-bot App token (vars.BOT_APP_ID +
+# secrets.BOT_APP_PRIVATE_KEY) so it re-triggers the required checks on the
+# new HEAD SHA, which a GITHUB_TOKEN push cannot. Same pattern as the derives.
+
+on:
+  pull_request:
+    paths:
+      - 'clients/**'
+      - 'schemas/**'
+
+# Serialize per branch: concurrent auto-commit pushes to the same PR head race
+# each other (lost push = red required check). Queue, never cancel.
+concurrency:
+  group: vendored-source-bump-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    name: Bump version for vendored source
+    # Whole job is same-repo only. On a fork PR `origin` is the FORK, so the
+    # merge-base check below would compare against the fork's copy of main
+    # (possibly stale or divergent) and reach a conclusion about the wrong
+    # history, and the App token needed to push the bump is not exposed anyway.
+    # A fork PR touching vendored source needs a maintainer to land the bump.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Generate App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      # Idempotence. This workflow re-runs on every `synchronize`, so without a
+      # guard a PR with three pushes would bump three times.
+      #
+      # The signal is the MERGE BASE, not origin/main: main moves on its own
+      # (nightly syncs bump it constantly), so comparing against main's current
+      # version would read "already bumped" for any branch cut before a sync.
+      # Comparing against the merge base asks the only question that matters:
+      # has THIS branch already moved the version?
+      #
+      # This also de-duplicates against the derive workflows: if a PR touches
+      # clients/ AND foundations/src/, the foundations derive's bump is enough
+      # to cut a tag containing both, so this step correctly stands down.
+      - name: Check whether this branch already bumped
+        id: check
+        run: |
+          git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}"
+          MERGE_BASE=$(git merge-base FETCH_HEAD HEAD)
+          BASE_VERSION=$(git show "$MERGE_BASE:package.json" | jq -r .version)
+          HEAD_VERSION=$(jq -r .version package.json)
+          echo "merge-base $MERGE_BASE: $BASE_VERSION"
+          echo "PR head:      $HEAD_VERSION"
+          if [ -z "$BASE_VERSION" ] || [ "$BASE_VERSION" = "null" ]; then
+            echo "::error::could not read package.json#version at the merge base"
+            exit 1
+          fi
+          if [ "$BASE_VERSION" = "$HEAD_VERSION" ]; then
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+            echo "No bump on this branch yet, so bumping."
+          else
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "Already bumped on this branch ($BASE_VERSION -> $HEAD_VERSION), standing down."
+          fi
+
+      # Moves all three version-derived files in lockstep: package.json#version,
+      # paths-manifest.json#knowledge_version, package-lock.json.
+      - name: Bump patch version
+        if: steps.check.outputs.needed == 'true'
+        run: node scripts/lib/bump-version.js package.json patch
+
+      # Fast guard on the thing this workflow can actually break. The full suite
+      # re-runs anyway via validate-manifest.yml on the auto-commit's new SHA,
+      # so running it twice here would just add minutes.
+      - name: Verify the version lockstep holds
+        if: steps.check.outputs.needed == 'true'
+        run: node --test tests/manifest.test.js tests/bump-version.test.js
+
+      - name: Commit the bump back to the PR
+        if: steps.check.outputs.needed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json paths-manifest.json package-lock.json
+          git commit -m "chore(vendor): bump patch so the vendored-source change can be tagged"
+          # Race-safe for the common case: another derive workflow may have
+          # pushed to this branch since checkout, so rebase and retry once.
+          # KNOWN LIMIT: `concurrency` serialises this workflow per branch but
+          # NOT across workflows. If a derive bumps between the check above and
+          # this push, both commits touch the same version line and the rebase
+          # conflicts, reddening the check. Re-run it: the idempotence check
+          # then sees the branch already bumped and stands down. The derives
+          # share this race; it is the pattern's limit, not this workflow's.
+          git push || (git pull --rebase --autostash && git push)
+
+      - name: Summarize
+        if: always()
+        run: |
+          if [ "${{ steps.check.outputs.needed }}" = "true" ]; then
+            echo "### Bumped patch: vendored source changed, so a tag is needed to ship it" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### No bump: this branch already moved the version" >> "$GITHUB_STEP_SUMMARY"
+          fi
