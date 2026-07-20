@@ -50,7 +50,10 @@ Workflow files in `.github/workflows/` are the source of truth — list here is 
 
 **Release / housekeeping:**
 - **`tag-on-merge.yml`** — On push to `main`, reads `package.json#version`, creates a `v$VERSION` git tag if not already present. Downstream consumers' `vendor-snapshot.cjs --range` resolves against these tags.
+- **`vendored-source-bump.yml`** (PR event on `clients/**` + `schemas/**`): patch-bumps the version so `tag-on-merge` can emit a tag. These two directories ship to consumers as **source** and have no derive, so without this a change to them never bumped, never tagged, and reached no consumer. Idempotent: it compares the version at the **merge base** (not at `main`, which moves on its own) and stands down if this branch already bumped, including via a derive.
 - **`llms-txt.yml`** — Regenerates the root `llms.txt` index when knowledge content changes.
+
+🔑 **Consumers pull by TAG, so shipping anything requires a version bump.** Every bump lives in a derive workflow gated on "did the dist change", which covers `src/` → `dist/` domains only. If you add a new directory that ships to consumers as source (check `vendor-include.json`), it needs a bump trigger too, or its changes will be invisible downstream.
 
 Auto-commit re-trigger: every derive/validate workflow that commits back to a PR pushes with the `actian-ds-bot` App token, so the required checks re-run on the new HEAD automatically. The old GITHUB_TOKEN gotcha (checks stuck pending after an auto-bump, needing an empty commit) only remains on fork PRs, where the App secret is not exposed and the push step is skipped.
 
