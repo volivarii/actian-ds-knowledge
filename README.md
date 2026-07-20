@@ -16,6 +16,7 @@ without bending to any one of them.
 |---|---|
 | **Consume this** (build a reader, Storybook, AI surface) | [`CONSUMING.md`](CONSUMING.md) |
 | **Understand the layout** | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| **Understand links, connections & the knowledge graph** | [`RELATIONS.md`](RELATIONS.md) |
 | **Author content** | the `src/AUTHORING.md` in `foundations/`, `components/`, `content/`, `accessibility/` |
 | **See every artifact** | [`paths-manifest.json`](paths-manifest.json) — the contract, keyed + zoned |
 | **Check coverage / debt** | [`components/dist/guidelines/coverage.md`](components/dist/guidelines/coverage.md) |

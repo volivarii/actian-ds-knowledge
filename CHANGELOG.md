@@ -18,6 +18,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Added
+- **`RELATIONS.md`: an author-facing guide to links, connections, and the knowledge graph.** ([#452](https://github.com/volivarii/actian-ds-knowledge/pull/452))
+  The Editor surfaces three different ways to connect content in one sidebar, and they are easy to conflate.
+  The guide names them (inline links, typed frontmatter connections, and the CI-derived graph), explains that
+  backlinks and reverse edges are computed rather than authored, and walks Button through all three. It also
+  documents why the Graph group reads "as of last merge" while the other two rescan live. Reference tables for
+  the node and edge vocabularies are included, with counts marked as of writing. Linked from `README.md` and
+  `editor/README.md`.
+
 ### Removed
 - **The 35 frozen seed renders and the all-35 oracle** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
   `components/render/src/` (15 MB) is gone. The gallery derives entirely from the relocated renderer,
