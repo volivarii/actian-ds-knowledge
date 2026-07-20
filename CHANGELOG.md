@@ -41,9 +41,9 @@ Each entry links its pull request. Dates are the merge date (UTC).
   ever had, and the file documents that the exclusion was deliberate rather than lost.
 
 ### Changed
-- **Two render gates that could not fail were made able to fail** (renderer-relocation phase 3). (_PR link added at open_)
-  Deleting a frozen oracle is only safe if what remains actually bites, so two weak checks were
-  repaired in the same change, both mutation-verified. `groupFor` in `matrix.js` ends in
+- **Three render gates that could not fail were made able to fail** (renderer-relocation phase 3). (_PR link added at open_)
+  Deleting a frozen oracle is only safe if what remains actually bites, so three weak checks were
+  repaired in the same change, all mutation-verified. `groupFor` in `matrix.js` ends in
   `|| "Components"` and so can never return a falsy value, which made invariant 5's truthiness
   assertion vacuous; it now fails any slug that lands on that last-resort fallback, meaning every
   slug found a real registry category. This matters more without the seeds, whose `@dsCard` marker
@@ -58,6 +58,17 @@ Each entry links its pull request. Dates are the merge date (UTC).
   remains enforced, transitively over every fragment the derive produces, by the pre-existing "every
   card is self-contained and token-grounded" test in `tests/render/build-bundle.test.js`. Recorded
   here as a relocation note, not a new gate.
+  The third repaired check is `tests/render/fidelity-check.test.js`'s first test. `fidelityCheck`'s
+  loop only runs over renders carrying `source:"derived"`, and `TEMPLATES` emptied out in phase
+  1b-beta, so the loop has examined zero renders since then. The test asserted the real derive's
+  result deep-equals `[]`, which passed regardless of any actual color or token regression because
+  the code path it claimed to exercise was unreachable. It now asserts the real precondition
+  instead, that today's derive has zero `source:"derived"` renders, and is retitled to say so; the
+  day a slug is templated again this test fails and tells the reader the gate just went live and
+  needs real coverage. `npm run derive:render`'s CLI output now reports that zero renders were
+  examined instead of printing a clean result that implies renders were checked.
+  `checkBaseCssRules`, which is live today against ds-base.css's tag and checkbox rules, is
+  unchanged.
 
 ### Added
 - **`appearance-render.js` gets the icon injection seam `ds-html-map.js` already had (`setIcons`, `setShadowedSlugs`)** (renderer-relocation phase 3). (_PR link added at open_)
