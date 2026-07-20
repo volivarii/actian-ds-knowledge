@@ -19,7 +19,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
-- **`RELATIONS.md`: an author-facing guide to links, connections, and the knowledge graph.** (_PR link added at open_)
+- **`RELATIONS.md`: an author-facing guide to links, connections, and the knowledge graph.** ([#452](https://github.com/volivarii/actian-ds-knowledge/pull/452))
   The Editor surfaces three different ways to connect content in one sidebar, and they are easy to conflate.
   The guide names them (inline links, typed frontmatter connections, and the CI-derived graph), explains that
   backlinks and reverse edges are computed rather than authored, and walks Button through all three. It also
