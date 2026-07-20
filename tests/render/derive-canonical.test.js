@@ -6,14 +6,13 @@ var Ajv2020 = require("ajv/dist/2020");
 var addFormats = require("ajv-formats");
 var D = require("../../scripts/render/derive-canonical.js");
 
-var SRC = path.resolve(__dirname, "../../components/render/src");
+// The frozen seed renders. deriveCanonical no longer reads them (phase 3); only
+// the three tests below that assert a property OF the seeds still do, and they
+// retire together with the directory.
+var SEED_DIR = path.resolve(__dirname, "../../components/render/src");
 
 test("deriveCanonical: emits button render + a valid CEM declaration", function () {
-  var out = D.deriveCanonical(SRC);
-  assert.ok(
-    out.renders.button.indexOf("@dsCard") >= 0,
-    "render passed through with marker",
-  );
+  var out = D.deriveCanonical();
   assert.equal(out.cem.schemaVersion, "1.0.0");
   var decl = out.cem.modules
     .flatMap(function (m) {
@@ -38,7 +37,7 @@ test("deriveCanonical: emits button render + a valid CEM declaration", function 
 });
 
 test("deriveCanonical: cssProperties are the button's real consumed tokens, all defined", function () {
-  var out = D.deriveCanonical(SRC);
+  var out = D.deriveCanonical();
   var decl = out.cem.modules
     .flatMap(function (m) {
       return m.declarations || [];
@@ -70,7 +69,7 @@ test("deriveCanonical: cssProperties are the button's real consumed tokens, all 
 });
 
 test("deriveCanonical: manifest validates against schemas/canonical-render.json", function () {
-  var out = D.deriveCanonical(SRC);
+  var out = D.deriveCanonical();
   var schema = require("../../schemas/canonical-render.json");
   var ajv = new Ajv2020({ strict: false, allErrors: true });
   addFormats(ajv);
@@ -81,8 +80,7 @@ test("deriveCanonical: manifest validates against schemas/canonical-render.json"
 
 test("deriveCanonical: a slug with no COMPONENT_META gets a registry-derived CEM", function () {
   var D = require("../../scripts/render/derive-canonical.js");
-  // Build a tiny src dir with a toggle seed captured offline, or reuse a committed seed.
-  var out = D.deriveCanonical(SRC); // SRC now contains multiple seeds after Task 4 generation
+  var out = D.deriveCanonical();
   var decl = out.cem.modules
     .flatMap(function (m) {
       return m.declarations || [];
@@ -102,7 +100,7 @@ test("deriveCanonical: dual-kit slug takes its variant axes from dskit, not an e
   // registry merge must be ds-first-wins (matching the plugin's findComponent),
   // or these components derive a zero-attribute CEM while their rendered card
   // still shows the real dskit variants.
-  var out = D.deriveCanonical(SRC);
+  var out = D.deriveCanonical();
   var decl = out.cem.modules
     .flatMap(function (m) {
       return m.declarations || [];
@@ -122,7 +120,7 @@ test("deriveCanonical: dual-kit slug takes its variant axes from dskit, not an e
 });
 
 test("deriveCanonical: splits seeds into one shared css + per-slug fragments", function () {
-  var out = D.deriveCanonical(SRC);
+  var out = D.deriveCanonical();
   // One shared stylesheet, non-trivial.
   assert.ok(
     typeof out.css === "string" && out.css.length > 100000,
@@ -155,8 +153,8 @@ test("deriveCanonical: splits seeds into one shared css + per-slug fragments", f
 test("deriveCanonical: render.css is the shared block, identical to a seed's style", function () {
   var fs = require("node:fs");
   var path = require("node:path");
-  var out = D.deriveCanonical(SRC);
-  var seed = fs.readFileSync(path.join(SRC, "button.html"), "utf8");
+  var out = D.deriveCanonical();
+  var seed = fs.readFileSync(path.join(SEED_DIR, "button.html"), "utf8");
   var seedStyle = /<style[^>]*>([\s\S]*?)<\/style>/i.exec(seed)[1];
   // Slice 2 used to append a derived-from-facts appendix after the captured
   // base (retired in renderer relocation phase 1b-beta, see the "templates
@@ -173,15 +171,17 @@ test("deriveCanonical: render.css is the shared block, identical to a seed's sty
 test("deriveCanonical: captures the page chrome (block 1) as a guarded pageCss", function () {
   var fs = require("node:fs");
   var path = require("node:path");
-  var out = D.deriveCanonical(SRC);
-  // pageCss is the seeds' SECOND <style> block, sourced by build-bundle instead
-  // of a hardcoded copy, and guarded identical across seeds by the derive.
+  var out = D.deriveCanonical();
+  // pageCss is the PAGE_CSS constant the derive owns, sourced by build-bundle
+  // instead of a hardcoded copy of its own. Phase 3 lifted it to a constant after
+  // measuring it identical across all 35 seeds; this test pins it to the seed it
+  // came from for as long as the seeds exist.
   assert.match(
     out.pageCss,
     /body\s*\{[^}]*margin[^}]*\}/,
     "pageCss carries the standalone-card body chrome",
   );
-  var seed = fs.readFileSync(path.join(SRC, "button.html"), "utf8");
+  var seed = fs.readFileSync(path.join(SEED_DIR, "button.html"), "utf8");
   var blocks = seed.match(/<style[^>]*>[\s\S]*?<\/style>/gi) || [];
   var secondInner = /<style[^>]*>([\s\S]*?)<\/style>/i.exec(blocks[1])[1];
   assert.equal(
@@ -196,7 +196,7 @@ test('deriveCanonical: templates retired, no render is source "derived"', functi
   // TEMPLATES[slug] override loop in derive-canonical.js never fires (the
   // loop itself is retained as the escape hatch, see the "templates
   // retired" test below for the tag-default/checkbox specifics).
-  var out = D.deriveCanonical(SRC);
+  var out = D.deriveCanonical();
   assert.equal(
     out.manifest.renders.some(function (r) {
       return r.source === "derived";
@@ -222,7 +222,7 @@ test("deriveCanonical: render.css base is derived from the relocated ds-base ass
   // PREFIX of it (the pre-existing bytes are untouched, only appended to).
   var fs = require("node:fs");
   var path = require("node:path");
-  var out = D.deriveCanonical(SRC);
+  var out = D.deriveCanonical();
   var marker = "\n\n/* ===== derived-from-facts (slice 2) ===== */";
   var base =
     out.css.indexOf(marker) >= 0
@@ -246,7 +246,7 @@ test("deriveCanonical: render.css base is derived from the relocated ds-base ass
     expect,
     "render.css base equals concat(tokens, fonts, ds-base)",
   );
-  var seed = fs.readFileSync(path.join(SRC, "button.html"), "utf8");
+  var seed = fs.readFileSync(path.join(SEED_DIR, "button.html"), "utf8");
   var seedStyle = /<style[^>]*>([\s\S]*?)<\/style>/i.exec(seed)[1];
   assert.equal(
     base.indexOf(seedStyle),
@@ -275,14 +275,11 @@ test("ds-base.css carries the tag color variants and checkbox indeterminate rule
 });
 
 test("templates retired: tag/checkbox derive through the generic renderer, no derived appendix", function () {
-  var path = require("node:path");
   var { deriveCanonical } = require("../../scripts/render/derive-canonical.js");
   var {
     deriveFragment,
   } = require("../../scripts/render/derive-from-renderer.js");
-  var out = deriveCanonical(
-    path.resolve(__dirname, "../../components/render/src"),
-  );
+  var out = deriveCanonical();
   ["tag-default", "checkbox"].forEach(function (slug) {
     var r = out.manifest.renders.find(function (x) {
       return x.slug === slug;
@@ -306,13 +303,11 @@ test("templates retired: tag/checkbox derive through the generic renderer, no de
 });
 
 test("derive-canonical sources fragments from the renderer and labels them rendered", function () {
-  var path = require("node:path");
   var { deriveCanonical } = require("../../scripts/render/derive-canonical.js");
   var {
     deriveFragment,
   } = require("../../scripts/render/derive-from-renderer.js");
-  var srcDir = path.resolve(__dirname, "../../components/render/src");
-  var out = deriveCanonical(srcDir);
+  var out = deriveCanonical();
   // A byte-identical slug: dist fragment equals the renderer output.
   assert.strictEqual(out.fragments["button"], deriveFragment("button"));
   // A stale slug: dist fragment now reflects current facts, not the frozen seed.
