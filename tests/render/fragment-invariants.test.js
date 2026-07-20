@@ -64,8 +64,12 @@ var GRACEFUL_CHIP_MARKER = '<span class="ds-component" data-slug=';
 
 // A real ds- class, excluding the graceful chip's own "ds-component" class.
 // The negative lookahead is required: without it the chip satisfies this
-// check trivially, since "ds-component" itself starts with "ds-".
-var REAL_DS_CLASS = /class="[^"]*\bds-(?!component\b)/;
+// check trivially, since "ds-component" itself starts with "ds-". The
+// lookahead excludes the class TOKEN "ds-component" exactly (the class name
+// ends there, followed by a space, a quote, or the end of the class list),
+// not "\bcomponent\b", which also matches at a hyphen and would wrongly
+// exclude a legitimate compound class such as "ds-component-header".
+var REAL_DS_CLASS = /class="[^"]*\bds-(?!component(?:["\s]|$))/;
 
 // A complete graceful-chip element (open tag + escaped name + close tag),
 // verbatim from ds-html-map.js's gracefulChip(). Used to strip any embedded

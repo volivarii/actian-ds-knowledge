@@ -28,7 +28,11 @@ dependency injection:
   `setIcons` and `setShadowedSlugs` (phase 3): it resolves icons independently of
   `ds-html-map.js`, through the same dual-source idiom, and a vendored layout has no
   `lib/paths` for its Node branch to resolve, so without these seams a vendored consumer
-  silently rendered blank glyphs.
+  silently rendered blank glyphs. Both are module-level mutable state shared across
+  renders: callers MUST reset with `setIcons(null)` / `setShadowedSlugs(null)` after
+  rendering to avoid cross-render state leak, the same discipline `ds-html-map.js`'s
+  `setIcons`, `setAnatomyDocMap`, and `setVariantStyleMap` document at their own
+  definitions.
 - `anatomy-render.js` / `ds-anatomy-map.js`: anatomy loading, the ratio-floor gate, and
   the assemble-time `{slug -> anatomyDoc}` / variant-style maps.
 - `html-renderers/anatomy-variant-key.js`: the delegated-slug/variant composite-key

@@ -336,9 +336,13 @@ test("derive-canonical sources fragments from the renderer and labels them rende
     deriveFragment,
   } = require("../../scripts/render/derive-from-renderer.js");
   var out = deriveCanonical();
-  // A byte-identical slug: dist fragment equals the renderer output.
+  // Wiring check, not a comparison against a second source: both slugs below
+  // just confirm deriveCanonical() routes a slug's fragment through
+  // deriveFragment() (the renderer) rather than through anything else. The
+  // two assertions are not meaningfully different from each other; two slugs
+  // are asserted only to catch a per-slug wiring mistake a single slug could
+  // miss.
   assert.strictEqual(out.fragments["button"], deriveFragment("button"));
-  // A stale slug: dist fragment now reflects current facts, not the frozen seed.
   assert.strictEqual(out.fragments["text-input"], deriveFragment("text-input"));
   var badge = out.manifest.renders.find(function (r) {
     return r.slug === "badge";

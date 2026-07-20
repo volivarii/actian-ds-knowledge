@@ -53,6 +53,11 @@ Each entry links its pull request. Dates are the merge date (UTC).
   claimed "all defined" only checked the `--zen-` prefix. That test now performs the real resolution
   check over the derived output and reports every unresolved token by name (measured: 66 referenced,
   231 defined, 0 unresolved).
+  `validateSeed` enforced a third invariant this note did not originally mention: self-containment,
+  that no render carries an external `src=`, `href=`, or `@import`. That is not a coverage gap; it
+  remains enforced, transitively over every fragment the derive produces, by the pre-existing "every
+  card is self-contained and token-grounded" test in `tests/render/build-bundle.test.js`. Recorded
+  here as a relocation note, not a new gate.
 
 ### Added
 - **`appearance-render.js` gets the icon injection seam `ds-html-map.js` already had (`setIcons`, `setShadowedSlugs`)** (renderer-relocation phase 3). (_PR link added at open_)

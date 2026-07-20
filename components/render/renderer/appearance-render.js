@@ -64,6 +64,10 @@
   // Node branch walks to a lib/paths that has no counterpart there) and is
   // wrapped in try/catch, so without this a consumer silently renders blank
   // glyphs. ds-html-map got this seam at phase 1a; this module was missed.
+  // Callers MUST reset with setIcons(null) / setShadowedSlugs(null) after
+  // rendering to avoid cross-render state leak (module-level mutable state,
+  // shared across renders). See scripts/render/derive-from-renderer.js's
+  // deriveFragment for the setIcons(map) / finally { setIcons(null) } pattern.
   var injectedIcons = null;
   var injectedShadowed = null;
   function setIcons(map) {
