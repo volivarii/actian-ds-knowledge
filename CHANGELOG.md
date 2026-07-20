@@ -18,6 +18,18 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Fixed
+- **`clients/resolve-paths.js`: `{name}` collections now resolve instead of returning `null`.** (_PR link added at open_)
+  A `{name}` collection addresses a member by its path relative to the collection directory
+  (`ds-base.css`, `html-renderers/ds-html-map.js`) rather than by a slug with an extension
+  appended. The builder only ever substituted `{slug}`, so `{name}` survived, matched the
+  leftover-placeholder branch, and fell through to the recursive `<slug>.md` sub-directory walk:
+  **every** `components.render.renderer(...)` lookup returned `null`. The collection was declared
+  in renderer-relocation phase 0 but had no consumer until the plugin began requiring the vendored
+  renderer, so the defect was latent. Verified against the real manifest: all 11 renderer members
+  now resolve to real files, and `{slug}` collections are unchanged. Traversal outside the
+  collection directory throws rather than resolving.
+
 ### Changed
 - **Breaking Figma sync (2026-07-19).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#447](https://github.com/volivarii/actian-ds-knowledge/pull/447))
 - **Render: the whole 35-slug canonical render gallery now derives from the relocated generic renderer, not from frozen seeds (renderer-relocation phase 1b-beta).** ([#444](https://github.com/volivarii/actian-ds-knowledge/pull/444))
