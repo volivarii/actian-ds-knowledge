@@ -1,0 +1,103 @@
+name: Derive graphics SVG from substrate
+
+# Sibling of icons-derive.yml for the color-preserving artwork tier
+# (components/dist/graphics/graphics.json). Without this, a graphics change
+# merged on its own would bump nothing, tag nothing, and never reach a
+# consumer: tag-on-merge.yml tags from package.json#version, and consumers
+# vendor by TAG.
+#
+# Mirrors icons-derive.yml: derive -> detect change -> bump -> commit back
+# with the App token so the required checks re-run on the new HEAD.
+
+on:
+  pull_request:
+    paths:
+      # The curated artwork override (the authored input layered over the
+      # Figma auto-export).
+      - 'components/src/graphics-svg.json'
+      # The exporter, normalizer, and derive itself.
+      - 'scripts/graphics/**'
+      # dsKit hosts the artwork nodes the exporter reads by id; a registry
+      # refresh can change what the export resolves.
+      - 'components/dist/registries/dskit.json'
+
+# Serialize per branch: concurrent auto-commit pushes to the same PR head race
+# each other (a lost push is a red required check). Queue, never cancel.
+concurrency:
+  group: graphics-derive-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  derive:
+    name: Derive graphics SVG
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # App token for the auto-commit below. A commit pushed with the default
+      # GITHUB_TOKEN cannot trigger further workflow runs, leaving the required
+      # checks with no status on the auto-commit's SHA and blocking merge. Skipped
+      # on fork PRs, since the secret is not exposed there, and the commit step skips too.
+      - name: Generate App token
+        id: app-token
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Derive graphics
+        run: node scripts/graphics/derive-graphics-svg.js
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet -- components/dist/graphics/graphics.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No graphics changes after regeneration."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- components/dist/graphics/graphics.json
+          fi
+
+      - name: Auto-bump package.json patch
+        if: steps.diff.outputs.changed == 'true'
+        run: node scripts/lib/bump-version.js package.json patch
+
+      # Skip on fork PRs, since GITHUB_TOKEN can't push to forks.
+      - name: Commit derived graphics back to PR
+        if: steps.diff.outputs.changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/dist/graphics/graphics.json package.json paths-manifest.json package-lock.json
+          git commit -m "chore(graphics): regenerate dist from substrate + bump patch"
+          # Race-safe: another derive may have pushed since checkout. --autostash
+          # because npm install rewrites the tracked package-lock.json every run.
+          git push || (git pull --rebase --autostash && git push)
+
+      - name: Summarize
+        if: always()
+        run: |
+          if [ "${{ steps.diff.outputs.changed }}" = "true" ]; then
+            echo "### Graphics derive: regenerated + bumped" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Graphics derive: no changes" >> "$GITHUB_STEP_SUMMARY"
+          fi

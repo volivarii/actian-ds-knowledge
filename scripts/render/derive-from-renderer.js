@@ -31,6 +31,13 @@ var ICONS_PATH = path.join(
   "icons",
   "icons.json",
 );
+var GRAPHICS_PATH = path.join(
+  REPO_ROOT,
+  "components",
+  "dist",
+  "graphics",
+  "graphics.json",
+);
 
 // The plugin's render-leaf.js readySignalScript(), verbatim (fixed string, no
 // per-slug variation).
@@ -47,6 +54,21 @@ function loadIconMap() {
     _iconMap = require(ICONS_PATH).icons || {};
   }
   return _iconMap;
+}
+
+// Same lazy-load-and-cache shape as loadIconMap, but graphics.json is a newer
+// dist and may not exist yet on disk (or in an older checkout); absent -> {},
+// artwork simply doesn't render, no throw.
+var _graphicMap = null;
+function loadGraphicMap() {
+  if (_graphicMap === null) {
+    try {
+      _graphicMap = require(GRAPHICS_PATH).graphics || {};
+    } catch (e) {
+      _graphicMap = {};
+    }
+  }
+  return _graphicMap;
 }
 
 // capture-seed.js renderCell(slug, cell): one variant cell = the rendered
@@ -69,6 +91,7 @@ function renderCell(slug, cell) {
 // fragment markup the canonical render dist ships for it.
 function deriveFragment(slug) {
   dsMap.setIcons(loadIconMap());
+  dsMap.setGraphics(loadGraphicMap());
   try {
     var grid =
       '<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">' +
@@ -88,6 +111,7 @@ function deriveFragment(slug) {
     );
   } finally {
     dsMap.setIcons(null);
+    dsMap.setGraphics(null);
   }
 }
 
