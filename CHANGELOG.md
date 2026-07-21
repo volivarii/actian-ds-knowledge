@@ -20,7 +20,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
-- **The Fat Marker (fm) low-fidelity renderer is now an owned, tested tier, not an incidental dependency** (_PR link added at open_).
+- **The Fat Marker (fm) low-fidelity renderer is now an owned, tested tier, not an incidental dependency** ([#461](https://github.com/volivarii/actian-ds-knowledge/pull/461)).
   `html-renderers/fm-html-map.js` landed in knowledge during the ds-relocation (phase 1a, #442) only
   because `ds-html-map.js` borrows 3 generic helpers from it; nothing in knowledge exercised it on its
   own, and its styling source (`fm-base.css`) never made the move at all. This adds `fm-base.css`
@@ -28,7 +28,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   `renderFMComponent` renders real markup for a representative set of refs, including its
   never-throws graceful-chip fallback. See `components/render/renderer/README.md`.
 
-- **The Claude Design bundle now gives each card a real name and subtitle**, instead of Claude Design's Design System pane showing a bare file slug (_PR link added at open_).
+- **The Claude Design bundle now gives each card a real name and subtitle**, instead of Claude Design's Design System pane showing a bare file slug ([#460](https://github.com/volivarii/actian-ds-knowledge/pull/460)).
   `build-bundle.js`'s `buildBundle()` now returns `{ written, assets }`: `assets` is a `{name, path, group, subtitle}`
   entry per card, for `DesignSync`'s `register_assets` call. `name` comes from the guideline doc's `component`
   field (a humanized slug when a rendered component has none); `subtitle` is the usage note's first sentence,
