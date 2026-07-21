@@ -62,7 +62,7 @@ test("buildBundle: every card is self-contained and token-grounded", function ()
   assert.match(colors, /#0F5FDC/i, "brand primary hex present");
 });
 
-test("buildBundle: the Button card embeds a Usage section, marker + render intact", function () {
+test("buildBundle: the Button card is a clean render, marker intact, no embedded usage section", function () {
   var dir = freshDir();
   var written = buildBundle(dir);
   var btnRel = findCard(written, "button");
@@ -74,8 +74,12 @@ test("buildBundle: the Button card embeds a Usage section, marker + render intac
     "marker still first line",
   );
   assert.match(btn, /ds-button--primary/, "render still present");
-  assert.match(btn, /class="ds-usage"/, "usage section embedded");
-  assert.match(btn, /When to use/, "usage content present");
+  assert.ok(
+    !/class="ds-usage"/.test(btn),
+    "the card must not embed a usage section: the .prompt.md sibling is " +
+      "the one place the note ships, and the Add usage notes panel already " +
+      "surfaces it to a human, so embedding it too just duplicates it",
+  );
   assert.ok(!/\ssrc=|\shref=|@import/.test(btn), "still self-contained");
 });
 

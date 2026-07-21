@@ -19,10 +19,14 @@ e.g. `Action/button.html`), plus three foundations cards (`Colors/palette.html`,
 ## The `.prompt.md` sibling: usage notes reach Claude Design's own generation, not just a human reader
 
 Every card that has a guideline doc also gets a `<slug>.prompt.md` file written next to
-`<slug>.html` (e.g. `Action/button.prompt.md`), carrying the same content as the
-`<section class="ds-usage">` embedded in the card's HTML, as raw markdown. Content comes
-from `scripts/render/derive-usage-notes.js`, which is already fed by the real guideline
-domains (`components/dist/guidelines/<slug>.json`); nothing new to author.
+`<slug>.html` (e.g. `Action/button.prompt.md`), as raw markdown. Content comes from
+`scripts/render/derive-usage-notes.js`, which is already fed by the real guideline
+domains (`components/dist/guidelines/<slug>.json`); nothing new to author. This is the
+only place the note ships: the card's own HTML is a clean component render with no
+usage prose baked into the body. An earlier version of this pipeline also embedded the
+note as a visible `<section class="ds-usage">` inside the card; that was removed because
+it duplicated what Claude Design's own "Add usage notes" panel already surfaces to a
+human, and cluttered what should be a clean preview of the component.
 
 This was confirmed empirically, not from Claude Design documentation (none is public):
 the dogfood project already had two hand-pasted `.prompt.md` files (`button`, `calendar`)
