@@ -2,8 +2,11 @@
 // derive-usage-notes.js: derive a concise, honest usage note per component from
 // the guideline domains. Consumer-agnostic markdown: Claude Design embeds it in
 // the card, and the plugin/docs consume the same file. This is the guidance tier
-// of the North Star (slice 2). Delivery to Claude Design's native notes field is
-// not possible programmatically, so consumers embed or paste this markdown.
+// of the North Star (slice 2). build-bundle.js also writes this same markdown as
+// a "<slug>.prompt.md" sibling of "<slug>.html", which Claude Design reads as
+// that card's usage-notes/generation grounding (confirmed empirically: the
+// dogfood project's button and calendar cards each carry a hand-pasted
+// .prompt.md matching this generator's own output shape).
 
 var fs = require("node:fs");
 var path = require("node:path");

@@ -79,6 +79,33 @@ test("buildBundle: the Button card embeds a Usage section, marker + render intac
   assert.ok(!/\ssrc=|\shref=|@import/.test(btn), "still self-contained");
 });
 
+test("buildBundle: the Button card ships a .prompt.md sibling with the same note", function () {
+  var dir = freshDir();
+  var written = buildBundle(dir);
+  var btnRel = findCard(written, "button");
+  var promptRel = btnRel.replace(/\.html$/, ".prompt.md");
+  assert.ok(
+    written.indexOf(promptRel) >= 0,
+    "buildBundle must report the .prompt.md sibling in its written list",
+  );
+  var prompt = fs.readFileSync(path.join(dir, promptRel), "utf8");
+  assert.match(prompt, /^# .*: usage notes/, "raw markdown, note title first");
+  assert.match(prompt, /## When to use/, "usage content present");
+  assert.ok(
+    !/<[a-z][^>]*>/i.test(prompt),
+    "prompt.md is markdown, not the HTML-embedded ds-usage section",
+  );
+});
+
+test("buildBundle: foundations cards (no guideline doc) ship no .prompt.md", function () {
+  var dir = freshDir();
+  var written = buildBundle(dir);
+  var stray = written.filter(function (rel) {
+    return /\.prompt\.md$/.test(rel) && /^(Colors|Type|Spacing)[/\\]/.test(rel);
+  });
+  assert.equal(stray.length, 0, "foundations cards have no usage note to ship");
+});
+
 test("buildBundle: component cards are reconstructed from the shared css + fragment", function () {
   var dir = freshDir();
   var written = buildBundle(dir);
