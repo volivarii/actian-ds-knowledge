@@ -10,6 +10,12 @@ hand-written and not a frozen snapshot.
 
 - `ds-base.css`: the leaf component styling (the `.ds-*` rules, `--zen-*` token surface).
 - `ds-fonts.css`: the offline font embeds.
+- `fm-base.css`: the Fat Marker (fm) tier's styling source, self-contained (its own
+  `--fm-*` custom properties, no `@font-face`, no token-system coupling). Unlike
+  `ds-base.css`/`ds-fonts.css`, `render.css` does NOT derive from it: knowledge
+  carries it so the plugin can vendor it back for its own fm-tier consumption
+  (generate-flow's lo-fi preview, component briefs), not to build an fm gallery
+  here.
 
 `render.css` is built as `tokens/tokens.css` + `ds-fonts.css` + `ds-base.css`, in that
 order (the same order the render read path uses). `tests/render/derive-canonical.test.js`
