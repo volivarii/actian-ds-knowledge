@@ -19,7 +19,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
-- **The Claude Design bundle now ships each component's usage notes as a `.prompt.md` sibling of its render card** (_PR link added at open_).
+- **The Claude Design bundle now ships each component's usage notes as a `.prompt.md` sibling of its render card** ([#457](https://github.com/volivarii/actian-ds-knowledge/pull/457)).
   `scripts/render/build-bundle.js` writes `<slug>.prompt.md` next to `<slug>.html` for every rendered
   component with a guideline doc, using the same content as the card's embedded usage section
   (`scripts/render/derive-usage-notes.js`). Confirmed empirically against the live dogfood project
