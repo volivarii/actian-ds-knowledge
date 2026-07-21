@@ -43,7 +43,13 @@ dependency injection:
   the assemble-time `{slug -> anatomyDoc}` / variant-style maps.
 - `html-renderers/anatomy-variant-key.js`: the delegated-slug/variant composite-key
   helper shared by the anatomy map and the html renderer.
-- `html-renderers/fm-html-map.js`: the Fat Marker wireframe renderer.
+- `html-renderers/fm-html-map.js`: the Fat Marker wireframe renderer. Landed here
+  as a side effect of relocating `ds-html-map.js`, which borrows 3 generic helpers
+  from it via a guarded require, before fm-html-map.js was a tracked tier in its
+  own right. `tests/render/fm-html-map.test.js` now exercises `renderFMComponent` directly,
+  and `fm-base.css` (above) is its styling counterpart. Knowledge derives no fm
+  gallery from either; the plugin's generate-flow and component-brief renderers
+  are the real consumers, and vendor both back.
 - `matrix.js`: the variant-matrix logic (`variantMatrix`, `findComponent`, `groupFor`,
   `RENDER_SLUGS`, `MATRIX_OVERRIDES`), ported from the plugin's capture driver. It is
   also the authority on WHICH slugs the gallery covers and which group each lands in.
