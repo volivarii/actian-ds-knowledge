@@ -17,6 +17,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { validateGraphics } = require("../validate/validate-graphics.js");
 
 const ROOT = path.resolve(__dirname, "..", "..");
 const CURATED_SRC_REL = path.join("components", "src", "graphics-svg.json");
@@ -63,6 +64,21 @@ function deriveAndWrite(opts) {
 
   const merged = mergeGraphicsSources(auto, curated);
   const derived = deriveGraphics(merged);
+
+  // Semantic gate: schemas/graphics.json's body description promises an
+  // external resource reference is rejected "at derive time" -- this is
+  // where that promise is kept. A bad entry (e.g. an <image href="x.png">
+  // raster fallback) must never reach the dist read-surface, so refuse to
+  // write on a validation failure rather than silently shipping it.
+  const validation = validateGraphics(derived.graphics);
+  if (!validation.ok) {
+    throw new Error(
+      "graphics-svg: derive refused to write dist -- validateGraphics found " +
+        validation.errors.length +
+        " error(s):\n  " +
+        validation.errors.join("\n  "),
+    );
+  }
 
   const dist = {
     _schema_version: 1,
