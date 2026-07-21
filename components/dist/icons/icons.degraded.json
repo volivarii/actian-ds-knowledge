@@ -4,10 +4,6 @@
   },
   "degraded": [
     {
-      "slug": "attachments",
-      "reason": "multicolor"
-    },
-    {
       "slug": "cursor-arrow",
       "reason": "gradient-or-image-fill"
     },
@@ -16,16 +12,24 @@
       "reason": "gradient-or-image-fill"
     },
     {
+      "slug": "data-access-request",
+      "reason": "bad-viewbox"
+    },
+    {
       "slug": "datasets",
-      "reason": "multicolor"
+      "reason": "render-failed"
     },
     {
       "slug": "glossary",
-      "reason": "multicolor"
+      "reason": "render-failed"
     },
     {
-      "slug": "lifecycle-policy",
+      "slug": "input-ports",
       "reason": "gradient-or-image-fill"
+    },
+    {
+      "slug": "process",
+      "reason": "render-failed"
     }
   ]
 }
