@@ -12,7 +12,7 @@ var { optimize } = require("svgo");
 // SVGO cleanup for artwork: flatten transforms/groups, fix precision, drop
 // metadata + width/height. Keep viewBox (we read + assert it). Do NOT let
 // preset-default touch color at all, and keep strokes/fills SVGO would
-// otherwise call "useless" — this tier ships the paint verbatim.
+// otherwise call "useless"; this tier ships the paint verbatim.
 var SVGO_CONFIG = {
   multipass: true,
   plugins: [
@@ -24,6 +24,7 @@ var SVGO_CONFIG = {
           convertColors: false,
           mergePaths: false,
           removeUselessStrokeAndFill: false,
+          removeUnknownsAndDefaults: false,
         },
       },
     },
@@ -46,6 +47,7 @@ function normalizeGraphicSvg(rawSvg) {
   var vbMatch = /viewBox\s*=\s*["']([^"']+)["']/i.exec(rawSvg);
   if (!vbMatch) return { ok: false, reason: "bad-viewbox" };
   var viewBox = vbMatch[1].trim().replace(/\s+/g, " ");
+  if (viewBox === "") return { ok: false, reason: "bad-viewbox" };
 
   var optimized;
   try {
@@ -54,8 +56,11 @@ function normalizeGraphicSvg(rawSvg) {
     return { ok: false, reason: "render-failed" };
   }
 
-  // SVGO self-closes empty SVGs (<svg .../>) — detect and treat as empty.
-  var selfClose = optimized.match(/<svg\b[^>]*\/>/i);
+  // SVGO self-closes an empty root SVG (<svg .../>); detect that and treat it
+  // as empty. Anchored to the whole trimmed output so a nested, legitimately
+  // self-closed <svg/> child (for example a viewport marker) is not mistaken
+  // for an empty document.
+  var selfClose = /^\s*<svg\b[^>]*\/>\s*$/i.test(optimized.trim());
   if (selfClose) return { ok: false, reason: "empty" };
 
   var open = optimized.match(/<svg\b[^>]*>/i);
