@@ -19,6 +19,13 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **A graphics asset tier: `components/dist/graphics/graphics.json`** (_PR link added at open_).
+  A color-preserving sibling to `icons.json` for artwork (illustrations, product logos), derived from
+  Figma the same way glyphs are but keeping multicolor fills and gradients instead of rewriting to
+  currentColor. Its own namespace (never merged into icons, avoiding the calendar/search slug
+  collision), its own derive+bump workflow (or it would never tag and reach a consumer), and its own
+  schema and validator. Raster-backed artwork is flagged to a degraded worklist, not shipped. First
+  consumers wired in this release: empty-state gains its illustration and the app header gains its logo.
 - **`RELATIONS.md`: an author-facing guide to links, connections, and the knowledge graph.** ([#452](https://github.com/volivarii/actian-ds-knowledge/pull/452))
   The Editor surfaces three different ways to connect content in one sidebar, and they are easy to conflate.
   The guide names them (inline links, typed frontmatter connections, and the CI-derived graph), explains that

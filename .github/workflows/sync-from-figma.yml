@@ -44,6 +44,7 @@ on:
           - anatomy
           - media-default
           - icons
+          - graphics
 
 # A manual dispatch racing the nightly cron would fight over the same
 # sync/figma-<date> branch — serialize all sync runs.

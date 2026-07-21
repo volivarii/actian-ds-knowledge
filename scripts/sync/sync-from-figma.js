@@ -29,6 +29,8 @@ var syncMediaPreview = require("./sync-media-preview.js");
 var syncMediaDefault = require("./sync-media-default.js");
 var syncIcons = require("../icons/export-icons-svg.js");
 var deriveIconsMod = require("../icons/derive-icons-svg.js");
+var syncGraphics = require("../graphics/export-graphics-svg.js");
+var deriveGraphicsMod = require("../graphics/derive-graphics-svg.js");
 var { syncKnowledgeVersion } = require("../lib/sync-knowledge-version.js");
 
 var KIT_MAP = {
@@ -1342,6 +1344,87 @@ async function run(opts) {
             verdict: {
               category: verdict.category,
               reasons: verdict.reasons,
+              changelog: lines.length > 0 ? lines.join("\n") : "_(no changes)_",
+            },
+          };
+        });
+    });
+  }
+
+  // graphics: export the color-preserving artwork tier (illustrations, the
+  // pyramid mark, partner logos) via the curated slug->nodeId artworkMap
+  // (SLICE1_ARTWORK, since real artwork lives at specific variant/sub-nodes,
+  // not swept from a registry category, per docs/superpowers/graphics-slice1-
+  // findings.md), then re-derive components/dist/graphics/graphics.json
+  // (auto ⊕ curated override). No-op (not an error) when dskit.json isn't
+  // available yet, same guard shape as icons/media-default; the artwork
+  // map's node ids live on the dsKit file, so its fileKey is where the
+  // export reads from.
+  //
+  // Unlike icons, this phase does not classify a lost-vs-gained slug as
+  // breaking: changelog-classifier's classify() has no "graphics" fileKind
+  // (adding one is a shared-classifier change, out of scope for this
+  // wiring), and the design assigns loss protection to the derive-time
+  // fidelity gate instead (it asserts each wired consumer's rendered
+  // fragment actually embeds real artwork, so a broken export cannot
+  // silently regress a render to blank). The TAG-GAP escalation below still
+  // promotes any real write to "additive", so a change always reaches a
+  // version and a tag; this mirrors the simpler wrote-based verdict already
+  // used by the media-preview/media-default/anatomy phases above.
+  if (phase === "graphics" || phase === "all") {
+    await runWithGuard("graphics", function () {
+      var dsKitPath = path.join(outputDir, "dskit.json");
+      if (!fs.existsSync(dsKitPath)) {
+        return {
+          kind: "graphics",
+          category: "unchanged",
+          fileLabel: "graphics",
+          verdict: {
+            category: "unchanged",
+            changelog: "_(no dskit.json on disk yet)_",
+          },
+        };
+      }
+      var dsKit = JSON.parse(fs.readFileSync(dsKitPath, "utf8"));
+      return syncGraphics
+        .run({
+          fileKey: dsKit.fileKey,
+          artworkMap: syncGraphics.SLICE1_ARTWORK,
+          rest: rest,
+        })
+        .then(function (r) {
+          var derived = deriveGraphicsMod.deriveAndWrite({
+            pluginDir: pluginDir,
+          });
+          var graphicsWrote = r.wrote === true || derived.wrote === true;
+          var cat = graphicsWrote ? "additive" : "unchanged";
+          var lines = [];
+          if (r.exported.length > 0) {
+            lines.push(
+              "- Exported artwork SVG for " + r.exported.length + " graphics",
+            );
+          }
+          if (r.degraded.length > 0) {
+            lines.push(
+              "- Degraded worklist (" +
+                r.degraded.length +
+                "): " +
+                r.degraded
+                  .map(function (d) {
+                    return d.slug + " (" + d.reason + ")";
+                  })
+                  .join(", "),
+            );
+          }
+          return {
+            kind: "graphics",
+            category: cat,
+            exported: r.exported,
+            degraded: r.degraded,
+            wrote: graphicsWrote,
+            fileLabel: "graphics",
+            verdict: {
+              category: cat,
               changelog: lines.length > 0 ? lines.join("\n") : "_(no changes)_",
             },
           };
