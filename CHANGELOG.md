@@ -20,7 +20,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
-- **The Claude Design bundle no longer embeds a visible usage-notes section inside each rendered card** (_PR link added at open_).
+- **The Claude Design bundle now gives each card a real name and subtitle**, instead of Claude Design's Design System pane showing a bare file slug (_PR link added at open_).
+  `build-bundle.js`'s `buildBundle()` now returns `{ written, assets }`: `assets` is a `{name, path, group, subtitle}`
+  entry per card, for `DesignSync`'s `register_assets` call. `name` comes from the guideline doc's `component`
+  field (a humanized slug when a rendered component has none); `subtitle` is the usage note's first sentence,
+  capped short. Both derived, nothing new to author. Discovered while comparing our bundle's manifest against a
+  separate, richer Actian Claude Design export built through Claude Design's own generative code-authoring flow:
+  that project's cards carried `{name, subtitle, viewport}`, ours carried only `{path, group}`. See
+  `components/render/README.md`.
+- **The Claude Design bundle no longer embeds a visible usage-notes section inside each rendered card** ([#459](https://github.com/volivarii/actian-ds-knowledge/pull/459)).
   `build-bundle.js` used to append a `<section class="ds-usage">` rendering of the note into the card's
   own HTML body, on top of shipping the same content as a `.prompt.md` sibling (#457, below). That
   duplicated what Claude Design's own "Add usage notes" panel already surfaces to a human, and cluttered

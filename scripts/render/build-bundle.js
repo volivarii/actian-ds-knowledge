@@ -8,9 +8,12 @@
 //   Colors/palette.html     — a swatch grid of the resolved color tokens.
 //   Type/type.html          — the type scale and families.
 //   Spacing/spacing.html    — the spacing scale as labeled bars.
-// It returns the list of relative paths written. DesignSync compiles the markers
-// into _ds_manifest.json and reads the files from disk, so the bundle is exactly
-// this directory of grouped cards.
+// Returns { written, assets }: written is the list of relative paths written
+// (DesignSync compiles the @dsCard markers into _ds_manifest.json and reads the
+// files from disk, so the bundle is exactly this directory of grouped cards);
+// assets is the {name, path, group, subtitle} list for DesignSync's
+// register_assets call, which is the only way to give a card a human-readable
+// name and subtitle in Claude Design's own Design System pane.
 
 var fs = require("node:fs");
 var path = require("node:path");
@@ -89,6 +92,32 @@ var PAGE_CSS = [
   ".spec{margin:10px 0;color:#111}",
 ].join("");
 
+// A humanized fallback name for a component with no guideline doc to name it
+// (e.g. "app-switcher-dropdown" -> "App Switcher Dropdown").
+function titleCaseSlug(slug) {
+  return slug.replace(/(^|-)([a-z])/g, function (_, sep, c) {
+    return (sep ? " " : "") + c.toUpperCase();
+  });
+}
+
+// A short register_assets subtitle: the note's first sentence, capped so it
+// reads as a label rather than a paragraph. usageNote()'s own markdown shape
+// ("# <component>: usage notes\n\n<intro>...") is what this parses.
+function subtitleFromNote(note) {
+  if (!note) return "";
+  var m = /^# .*: usage notes\n\n([^\n]+)/.exec(note);
+  if (!m) return "";
+  var firstSentence = m[1].split(/(?<=\.)\s+/)[0];
+  return firstSentence.length <= 140
+    ? firstSentence
+    : firstSentence.slice(0, 137) + "...";
+}
+
+var COLORS_SUBTITLE =
+  "Actian Product Design System color tokens, resolved to their values.";
+var SPACING_SUBTITLE = "The spacing scale, each bar drawn at its token value.";
+var TYPE_SUBTITLE = "The type families, weights, and size scale.";
+
 function page(group, title, subtitle, body) {
   return (
     '<!-- @dsCard group="' +
@@ -142,12 +171,7 @@ function colorsCard(dtcg) {
       return "<h2>" + esc(g) + '</h2><div class="grid">' + swatches + "</div>";
     })
     .join("");
-  return page(
-    "Colors",
-    "Colors",
-    "Actian Product Design System color tokens, resolved to their values.",
-    sections,
-  );
+  return page("Colors", "Colors", COLORS_SUBTITLE, sections);
 }
 
 function spacingCard(dtcg) {
@@ -166,12 +190,7 @@ function spacingCard(dtcg) {
       );
     })
     .join("");
-  return page(
-    "Spacing",
-    "Spacing",
-    "The spacing scale, each bar drawn at its token value.",
-    rows,
-  );
+  return page("Spacing", "Spacing", SPACING_SUBTITLE, rows);
 }
 
 function typeCard(dtcg) {
@@ -210,12 +229,7 @@ function typeCard(dtcg) {
     esc(wtLine) +
     "</p><h2>Scale</h2>" +
     specimens;
-  return page(
-    "Type",
-    "Type",
-    "The type families, weights, and size scale.",
-    body,
-  );
+  return page("Type", "Type", TYPE_SUBTITLE, body);
 }
 
 function writeFile(outDir, rel, contents) {
@@ -257,24 +271,32 @@ function buildBundle(outDir, opts) {
   var canonical = deriveCanonical();
   var dtcg = deriveFromFile(tokensPath);
   var written = [];
+  // register_assets metadata (DesignSync's richer, "legacy" explicit path):
+  // {name, path, group, subtitle}. The @dsCard-marker auto-compile that builds
+  // _ds_manifest.json only carries {path, group}, so this is the one way to get
+  // a human-readable name and a one-line subtitle into Claude Design's own
+  // Design System pane instead of a bare slug.
+  var assets = [];
 
   canonical.manifest.renders.forEach(function (r) {
     var note = "";
+    var doc = null;
     try {
-      var doc = JSON.parse(
+      doc = JSON.parse(
         fs.readFileSync(path.join(GUIDELINES_DIR, r.slug + ".json"), "utf8"),
       );
       note = usageNote(doc);
     } catch (e) {
       note = ""; // a rendered component with no guideline doc simply ships without a note
     }
+    var htmlRel = path.join(r.group, r.slug + ".html");
     var card = selfContainedCard(
       canonical.css,
       canonical.pageCss,
       canonical.fragments[r.slug],
       r.group,
     );
-    written.push(writeFile(outDir, path.join(r.group, r.slug + ".html"), card));
+    written.push(writeFile(outDir, htmlRel, card));
     // Claude Design reads a "<slug>.prompt.md" file beside "<slug>.html" as that
     // card's usage-notes / generation grounding (verified against the dogfood
     // project: button.prompt.md and calendar.prompt.md already carried this exact
@@ -288,17 +310,41 @@ function buildBundle(outDir, opts) {
         writeFile(outDir, path.join(r.group, r.slug + ".prompt.md"), note),
       );
     }
+    assets.push({
+      name: (doc && doc.component) || titleCaseSlug(r.slug),
+      path: htmlRel,
+      group: r.group,
+      subtitle: subtitleFromNote(note),
+    });
   });
   written.push(
     writeFile(outDir, path.join("Colors", "palette.html"), colorsCard(dtcg)),
   );
+  assets.push({
+    name: "Colors",
+    path: path.join("Colors", "palette.html"),
+    group: "Colors",
+    subtitle: COLORS_SUBTITLE,
+  });
   written.push(
     writeFile(outDir, path.join("Type", "type.html"), typeCard(dtcg)),
   );
+  assets.push({
+    name: "Type",
+    path: path.join("Type", "type.html"),
+    group: "Type",
+    subtitle: TYPE_SUBTITLE,
+  });
   written.push(
     writeFile(outDir, path.join("Spacing", "spacing.html"), spacingCard(dtcg)),
   );
-  return written;
+  assets.push({
+    name: "Spacing",
+    path: path.join("Spacing", "spacing.html"),
+    group: "Spacing",
+    subtitle: SPACING_SUBTITLE,
+  });
+  return { written: written, assets: assets };
 }
 
 if (require.main === module) {
@@ -307,9 +353,9 @@ if (require.main === module) {
     outArgIdx >= 0 && process.argv[outArgIdx + 1]
       ? path.resolve(process.argv[outArgIdx + 1])
       : path.join(REPO_ROOT, "components", "render", "dist", "bundle");
-  var written = buildBundle(outDir);
+  var result = buildBundle(outDir);
   process.stdout.write("bundle -> " + outDir + "\n");
-  written.forEach(function (rel) {
+  result.written.forEach(function (rel) {
     process.stdout.write("  " + rel + "\n");
   });
 }
@@ -319,4 +365,6 @@ module.exports = {
   resolveValue: resolveValue,
   collectLeaves: collectLeaves,
   selfContainedCard: selfContainedCard,
+  titleCaseSlug: titleCaseSlug,
+  subtitleFromNote: subtitleFromNote,
 };

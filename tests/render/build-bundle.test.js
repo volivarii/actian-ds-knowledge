@@ -20,7 +20,7 @@ function findCard(written, slug) {
 
 test("buildBundle: emits a component card + foundations @dsCard files", function () {
   var dir = freshDir();
-  var written = buildBundle(dir);
+  var written = buildBundle(dir).written;
   var btnRel = findCard(written, "button");
   assert.ok(btnRel, "a button component card was written");
   var btn = fs.readFileSync(path.join(dir, btnRel), "utf8");
@@ -44,7 +44,7 @@ test("buildBundle: Type and Spacing foundations cards carry their markers", func
 
 test("buildBundle: every card is self-contained and token-grounded", function () {
   var dir = freshDir();
-  var written = buildBundle(dir);
+  var written = buildBundle(dir).written;
   assert.ok(written.length >= 4, "at least 4 cards written");
   written.forEach(function (rel) {
     var html = fs.readFileSync(path.join(dir, rel), "utf8");
@@ -64,7 +64,7 @@ test("buildBundle: every card is self-contained and token-grounded", function ()
 
 test("buildBundle: the Button card is a clean render, marker intact, no embedded usage section", function () {
   var dir = freshDir();
-  var written = buildBundle(dir);
+  var written = buildBundle(dir).written;
   var btnRel = findCard(written, "button");
   assert.ok(btnRel, "a button component card was written");
   var btn = fs.readFileSync(path.join(dir, btnRel), "utf8");
@@ -85,7 +85,7 @@ test("buildBundle: the Button card is a clean render, marker intact, no embedded
 
 test("buildBundle: the Button card ships a .prompt.md sibling with the same note", function () {
   var dir = freshDir();
-  var written = buildBundle(dir);
+  var written = buildBundle(dir).written;
   var btnRel = findCard(written, "button");
   var promptRel = btnRel.replace(/\.html$/, ".prompt.md");
   assert.ok(
@@ -103,16 +103,88 @@ test("buildBundle: the Button card ships a .prompt.md sibling with the same note
 
 test("buildBundle: foundations cards (no guideline doc) ship no .prompt.md", function () {
   var dir = freshDir();
-  var written = buildBundle(dir);
+  var written = buildBundle(dir).written;
   var stray = written.filter(function (rel) {
     return /\.prompt\.md$/.test(rel) && /^(Colors|Type|Spacing)[/\\]/.test(rel);
   });
   assert.equal(stray.length, 0, "foundations cards have no usage note to ship");
 });
 
+test("buildBundle: emits register_assets metadata with a name + subtitle per card", function () {
+  var dir = freshDir();
+  var result = buildBundle(dir);
+  var btn = result.assets.find(function (a) {
+    return a.path === findCard(result.written, "button");
+  });
+  assert.ok(btn, "no asset entry for the button card");
+  assert.equal(
+    btn.name,
+    "Buttons",
+    "name should come from the guideline doc's component field",
+  );
+  assert.equal(btn.group, "Action");
+  assert.ok(
+    btn.subtitle && btn.subtitle.length > 0 && btn.subtitle.length <= 140,
+    "subtitle should be a short, non-empty label: got " +
+      JSON.stringify(btn.subtitle),
+  );
+  assert.doesNotMatch(
+    btn.subtitle,
+    /\n/,
+    "subtitle must be a single line, not the whole note",
+  );
+
+  var colors = result.assets.find(function (a) {
+    return a.path === path.join("Colors", "palette.html");
+  });
+  assert.ok(colors, "no asset entry for the Colors foundations card");
+  assert.equal(colors.name, "Colors");
+  assert.equal(
+    colors.subtitle,
+    "Actian Product Design System color tokens, resolved to their values.",
+  );
+
+  assert.equal(
+    result.assets.length,
+    result.written.filter(function (rel) {
+      return /\.html$/.test(rel);
+    }).length,
+    "one asset entry per .html card, none for .prompt.md siblings",
+  );
+});
+
+test("buildBundle: a component with no guideline doc falls back to a humanized slug name", function () {
+  var dir = freshDir();
+  var result = buildBundle(dir);
+  var accountDropdown = result.assets.find(function (a) {
+    return a.path === findCard(result.written, "account-dropdown");
+  });
+  assert.ok(accountDropdown, "no asset entry for account-dropdown");
+  assert.equal(accountDropdown.name, "Account Dropdown");
+  assert.equal(
+    accountDropdown.subtitle,
+    "",
+    "no guideline doc means no note, so no subtitle to derive",
+  );
+});
+
+test("titleCaseSlug: humanizes a kebab-case slug", function () {
+  var { titleCaseSlug } = require("../../scripts/render/build-bundle.js");
+  assert.equal(titleCaseSlug("button"), "Button");
+  assert.equal(titleCaseSlug("app-switcher-dropdown"), "App Switcher Dropdown");
+});
+
+test("subtitleFromNote: takes the note's first sentence, empty for no note", function () {
+  var { subtitleFromNote } = require("../../scripts/render/build-bundle.js");
+  assert.equal(subtitleFromNote(""), "");
+  var note =
+    "# Widget: usage notes\n\nFirst sentence here. Second sentence here.\n\n## When to use\n- x";
+  assert.equal(subtitleFromNote(note), "First sentence here.");
+});
+
 test("buildBundle: component cards are reconstructed from the shared css + fragment", function () {
   var dir = freshDir();
-  var written = buildBundle(dir);
+  var written = buildBundle(dir).written;
   var btnRel = findCard(written, "button");
   var btn = fs.readFileSync(path.join(dir, btnRel), "utf8");
   // The reconstructed card inlines the shared stylesheet and the fragment markup.
