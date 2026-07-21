@@ -19,7 +19,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
-- **A graphics asset tier: `components/dist/graphics/graphics.json`** (_PR link added at open_).
+- **A graphics asset tier: `components/dist/graphics/graphics.json`** ([#454](https://github.com/volivarii/actian-ds-knowledge/pull/454)).
   A color-preserving sibling to `icons.json` for artwork (illustrations, product logos), derived from
   Figma the same way glyphs are but keeping multicolor fills and gradients instead of rewriting to
   currentColor. Its own namespace (never merged into icons, avoiding the calendar/search slug
