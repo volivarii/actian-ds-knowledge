@@ -19,6 +19,14 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+
+- **The Claude Design bundle no longer embeds a visible usage-notes section inside each rendered card** (_PR link added at open_).
+  `build-bundle.js` used to append a `<section class="ds-usage">` rendering of the note into the card's
+  own HTML body, on top of shipping the same content as a `.prompt.md` sibling (#457, below). That
+  duplicated what Claude Design's own "Add usage notes" panel already surfaces to a human, and cluttered
+  what should be a clean preview of the component. Removed `noteToHtml`/`USAGE_CSS`/`embedUsage`
+  entirely; the `.prompt.md` sibling is now the only place a usage note ships.
+
 - **The Claude Design bundle now ships each component's usage notes as a `.prompt.md` sibling of its render card** ([#457](https://github.com/volivarii/actian-ds-knowledge/pull/457)).
   `scripts/render/build-bundle.js` writes `<slug>.prompt.md` next to `<slug>.html` for every rendered
   component with a guideline doc, using the same content as the card's embedded usage section
