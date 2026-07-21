@@ -922,23 +922,39 @@
         }
 
         case "empty-state": {
-          var esHeadline = esc(props.Headline || "Nothing here yet");
-          var esBody = props.Body
-            ? '<p class="ds-empty-state__body">' + esc(props.Body) + "</p>"
-            : "";
-          var esCta = props.Cta
-            ? '<button class="ds-button ds-button--primary ds-empty-state__cta">' +
-              esc(props.Cta) +
-              "</button>"
-            : "";
+          var esIllus = renderGraphic(
+            props.Illustration || "illustration-empty-state",
+          );
+          var esTitle = esc(
+            props.Headline || props.Title || "No policies available",
+          );
+          var esBody = esc(
+            props.Body ||
+              "Create policies to define how your platform operates.",
+          );
+          var esPrimary = esc(props.Cta || props.Primary || "Create policy");
+          var esTertiary = esc(props.Secondary || "Learn more");
           return (
             '<div class="ds-empty-state">' +
+            (esIllus
+              ? '<div class="ds-empty-state__illustration">' +
+                esIllus +
+                "</div>"
+              : "") +
             '<p class="ds-empty-state__headline">' +
-            esHeadline +
+            esTitle +
             "</p>" +
+            '<p class="ds-empty-state__body">' +
             esBody +
-            esCta +
-            "</div>"
+            "</p>" +
+            '<div class="ds-empty-state__actions">' +
+            '<button class="ds-button ds-button--tertiary ds-empty-state__cta">' +
+            esTertiary +
+            "</button>" +
+            '<button class="ds-button ds-button--primary ds-empty-state__cta">' +
+            esPrimary +
+            "</button>" +
+            "</div></div>"
           );
         }
 
