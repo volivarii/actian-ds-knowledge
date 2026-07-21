@@ -544,7 +544,9 @@
           // Left brand block: logo mark + app name label.
           var brandBlock =
             '<div class="ds-header__brand">' +
-            '<span class="ds-header__logo" aria-hidden="true"></span>' +
+            '<span class="ds-header__logo" aria-hidden="true">' +
+            renderGraphic(props.Logo || "actian-pyramid") +
+            "</span>" +
             '<span class="ds-header__app">' +
             headerApp +
             "</span>" +
