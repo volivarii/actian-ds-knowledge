@@ -353,6 +353,16 @@ function buildBundle(outDir, opts) {
         embedUsage(card, note),
       ),
     );
+    // Claude Design reads a "<slug>.prompt.md" file beside "<slug>.html" as that
+    // card's usage-notes / generation grounding (verified against the dogfood
+    // project: button.prompt.md and calendar.prompt.md already carry this exact
+    // markdown, pasted by hand before this was wired). Same note as the embedded
+    // <section class="ds-usage">, written as raw markdown instead of HTML.
+    if (note) {
+      written.push(
+        writeFile(outDir, path.join(r.group, r.slug + ".prompt.md"), note),
+      );
+    }
   });
   written.push(
     writeFile(outDir, path.join("Colors", "palette.html"), colorsCard(dtcg)),

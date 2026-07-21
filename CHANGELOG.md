@@ -19,6 +19,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ## [Unreleased]
 
 ### Added
+- **The Claude Design bundle now ships each component's usage notes as a `.prompt.md` sibling of its render card** (_PR link added at open_).
+  `scripts/render/build-bundle.js` writes `<slug>.prompt.md` next to `<slug>.html` for every rendered
+  component with a guideline doc, using the same content as the card's embedded usage section
+  (`scripts/render/derive-usage-notes.js`). Confirmed empirically against the live dogfood project
+  that Claude Design reads this filename convention as generation grounding, not just human-facing
+  docs: two cards already carried hand-pasted `.prompt.md` files from an earlier session's manual use
+  of the "Add usage notes" UI, matching this generator's own output shape. Closes what was believed to
+  be a manual-paste-only gap; 33 of 35 rendered components now ship notes automatically (2 have no
+  guideline doc). See `components/render/README.md`.
 - **A graphics asset tier: `components/dist/graphics/graphics.json`** ([#454](https://github.com/volivarii/actian-ds-knowledge/pull/454)).
   A color-preserving sibling to `icons.json` for artwork (illustrations, product logos), derived from
   Figma the same way glyphs are but keeping multicolor fills and gradients instead of rewriting to
