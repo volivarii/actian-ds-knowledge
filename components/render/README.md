@@ -41,12 +41,30 @@ grounding for Claude Design's *own* AI-driven composition (steering it to use ea
 component per Actian's real "when to use" / "when not to use" / style rules), not only
 documentation for a human browsing the project.
 
+## `buildBundle()`'s return shape, and the `register_assets` name/subtitle enrichment
+
+`buildBundle(outDir)` returns `{ written, assets }`. `written` is the flat list of
+relative paths written (what `write_files` needs). `assets` is one entry per `.html`
+card, `{name, path, group, subtitle}`, for `DesignSync`'s `register_assets` call.
+
+The `@dsCard`-marker auto-compile that builds `_ds_manifest.json` only carries
+`{path, group}` per card, so a card shows up in Claude Design's Design System pane
+labeled by its bare slug. `register_assets` (marked "legacy" in the `DesignSync` tool
+description, since the marker auto-compile supersedes it for registration, but it is
+still live and is the only path that carries a name/subtitle) is how a card gets a
+human-readable name and a one-line subtitle instead. `name` comes from the guideline
+doc's `component` field (falling back to a humanized slug, e.g. `account-dropdown` ->
+`Account Dropdown`, for the few rendered components with no guideline doc); `subtitle`
+is the usage note's first sentence, capped to a short label. Both are derived, not
+separately authored: nothing new to keep in sync as guideline content changes.
+
 ## Pushing to Claude Design
 
-Via the `DesignSync` tool (`list_files` -> `finalize_plan` -> `write_files`),
-incrementally: write only the paths that changed, never delete or overwrite
-`templates/`, `_ds_manifest.json` (Claude Design compiles this itself from each card's
-`@dsCard` marker), or `_adherence.oxlintrc.json` (a Claude-Design-managed adherence-lint
-scaffold, currently empty; relevant once a real component/token registry exists to
-populate it). The live reference instance is the "Actian Product Design System
-(dogfood)" project.
+Via the `DesignSync` tool: `list_files` -> `finalize_plan` -> `write_files` ->
+`register_assets` (assets, using `buildBundle()`'s returned metadata). Incrementally:
+write only the paths that changed, never delete or overwrite `templates/`,
+`_ds_manifest.json` (Claude Design compiles this itself from each card's `@dsCard`
+marker, then layers `register_assets` metadata on top), or `_adherence.oxlintrc.json`
+(a Claude-Design-managed adherence-lint scaffold, currently empty; relevant once a real
+component/token registry exists to populate it). The live reference instance is the
+"Actian Product Design System (dogfood)" project.
