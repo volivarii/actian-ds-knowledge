@@ -519,7 +519,13 @@
   width: 121px; /* anatomy: logo ~121×32 (raw px) */
   height: 32px;
   border-radius: var(--zen-border-radius-sm); /* 6 */
-  background: var(--zen-color-bg-emphasis);
+  display: flex;
+  align-items: center;
+}
+.ds-header__logo svg {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
 }
 .ds-header__app {
   font-size: var(--zen-font-size-md); /* 14 */
