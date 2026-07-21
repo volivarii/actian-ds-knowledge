@@ -2237,6 +2237,17 @@
   transform: rotate(180deg);
 }
 
+/* ============ Graphic (color-preserving artwork from renderGraphic) ============ */
+/* Base rule for the class every renderGraphic() output carries. Artwork varies in
+ * aspect ratio per slug, unlike icons, so this is a safe generic default (contained,
+ * no overflow) rather than a fixed size; a consumer with its own layout needs
+ * (.ds-empty-state__illustration svg, .ds-header__logo svg) overrides it locally. */
+.ds-graphic {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 /* ============ Appearance (structural floor for non-override slugs) === */
 /* appearance-render.js (Phase 1B) interprets a component's vendored part-tree
    into structural HTML, VALUES-ONLY, for DS slugs with no hand-authored leaf,
