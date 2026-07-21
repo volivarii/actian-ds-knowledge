@@ -104,6 +104,28 @@
     injectedIcons = map || null;
   }
 
+  // Artwork tier (graphics.json) injection, mirroring the dsIcons seam above. The
+  // module-level default cannot resolve from a vendored layout, so a consumer
+  // injects the map (knowledge's derive, and the plugin via its accessor). A bare
+  // <svg class="ds-graphic"> so render.css can size it; unknown slug -> "" (never
+  // throws), same contract as renderIcon.
+  var injectedGraphics = null;
+  function setGraphics(map) {
+    injectedGraphics = map || null;
+  }
+  function renderGraphic(slug) {
+    var source = injectedGraphics || {};
+    var g = source && source[slug];
+    if (!g || !g.viewBox || !g.body) return "";
+    return (
+      '<svg class="ds-graphic" viewBox="' +
+      esc(g.viewBox) +
+      '" aria-hidden="true">' +
+      g.body +
+      "</svg>"
+    );
+  }
+
   // renderIcon(slug, {rotate}) -> bare <svg> carrying the ds-icon base class
   // (plus ds-icon--rotN when rotated). Unknown slug -> '' (never throws; the
   // orphan-ref gate prevents shipping one).
@@ -1796,6 +1818,8 @@
   exports.setVariantStyleMap = setVariantStyleMap;
   exports.renderIcon = renderIcon;
   exports.setIcons = setIcons;
+  exports.renderGraphic = renderGraphic;
+  exports.setGraphics = setGraphics;
   exports.esc = esc;
   exports.parseVariant = parseVariant;
   exports.normalizeProps = normalizeProps;
