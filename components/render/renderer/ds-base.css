@@ -3106,8 +3106,11 @@
  * Selected/Focus map to a visible modifier. The fidelity oracle only
  * captures App=Explorer/State=Default, so only that default is built with
  * full fidelity; Studio's structural swaps are out of scope (see the
- * renderer case comment). Eyebrow/stage/catalog tags and the glossary
- * item-type badge reuse EXISTING .ds-tag / .ds-tag-stage / .ds-tag--gray /
+ * renderer case comment) and App=Studio renders the base card with no root
+ * modifier -- there is no built CSS delta for it, so no --studio class is
+ * emitted (a modifier must carry a real visual delta, never a no-op
+ * namespace hook). Eyebrow/stage/catalog tags and the glossary item-type
+ * badge reuse EXISTING .ds-tag / .ds-tag-stage / .ds-tag--gray /
  * .ds-tag--catalog / .ds-item-type rules verbatim -- only the
  * ds-search-result-card* classes below are new. */
 .ds-search-result-card {
@@ -3130,13 +3133,6 @@
 .ds-search-result-card--focus {
   border-color: var(--zen-focus-ring-primary); /* captured #049b98 */
   border-width: 2px; /* captured Focus border width */
-}
-.ds-search-result-card--studio {
-  /* Namespace hook only: App=Studio's captured structural swaps (button ->
-   * progress-bar-small, digram -> tag-default) are intentionally not built
-   * for this leaf (see the renderer case comment) -- kept as a no-op marker
-   * so the CSS-coverage gate has an explicit rule for every emitted class,
-   * same pattern as .ds-tag--status above. */
 }
 .ds-search-result-card__header {
   display: flex;
@@ -3313,14 +3309,15 @@
  * comment) -- a floating menu overlay, structurally closer to
  * .ds-account-menu than .ds-popover. Root bg/radius/padding, heading
  * color/type, and item row padding/color/type are all captured verbatim
- * (quality.ratio 1). --after-typed is a namespace hook only: it IS the
- * captured anatomy default, so it carries no additional delta of its own.
- * --before-typed is also a namespace hook: same row-list shape, content
- * (heading label + items) differs via markup only, no captured structural
- * delta. --no-result and --explorer-home ARE real deltas: No result
- * collapses to a single centered text line (anatomy childCount 1, vs 5),
- * and Explorer home is a wider menu (anatomy childCount 6, an extra
- * section) -- both real, structurally-justified deltas, not decoration. */
+ * (quality.ratio 1). After typed IS the captured anatomy default and Before
+ * typed differs from it only via markup (heading label + items), no
+ * captured structural delta -- neither emits a root modifier class (a
+ * modifier must carry a real visual delta, never a no-op namespace hook;
+ * see the renderer case comment). --no-result and --explorer-home ARE real
+ * deltas and DO emit a modifier: No result collapses to a single centered
+ * text line (anatomy childCount 1, vs 5), and Explorer home is a wider menu
+ * (anatomy childCount 6, an extra section) -- both real, structurally-
+ * justified deltas, not decoration. */
 .ds-search-menu {
   display: flex;
   flex-direction: column;
@@ -3332,14 +3329,6 @@
   box-shadow: var(--zen-shadow-lg); /* borrowed elevation idiom, not captured */
   font-family: var(--zen-font-family-text);
   box-sizing: border-box;
-}
-.ds-search-menu--after-typed {
-  /* namespace hook only: this IS the captured anatomy default -- no
-   * additional visual delta beyond the base rule above. */
-}
-.ds-search-menu--before-typed {
-  /* namespace hook only: same row-list shape as after-typed; the "Recent"
-   * heading + suggestion content differs via markup, not CSS. */
 }
 .ds-search-menu--no-result {
   align-items: center;
@@ -3399,11 +3388,13 @@
  * (not captured; borrowed per the family-4 build note). Root bg/radius,
  * header padding/gap, __title, and __empty/__item/__detail text tokens are
  * all captured verbatim (the Empty variant is the anatomy's only capture).
- * --empty is a namespace hook only: it IS the captured default, so the base
- * rule already matches it -- no additional delta. --list and --drilldown
- * ARE real deltas: List needs a scrollable container once the item count
- * grows past a handful, and Drilldown widens the panel to fit the longer
- * detail paragraph plus the back affordance. */
+ * Empty IS the captured default, so the base rule already matches it -- no
+ * root modifier class is emitted for it (a modifier must carry a real
+ * visual delta, never a no-op namespace hook; see the renderer case
+ * comment). --list and --drilldown ARE real deltas and DO emit a modifier:
+ * List needs a scrollable container once the item count grows past a
+ * handful, and Drilldown widens the panel to fit the longer detail
+ * paragraph plus the back affordance. */
 .ds-whatsnew {
   display: flex;
   flex-direction: column;
@@ -3417,10 +3408,6 @@
   box-shadow: var(--zen-shadow-lg); /* borrowed elevation idiom, not captured */
   font-family: var(--zen-font-family-text);
   box-sizing: border-box;
-}
-.ds-whatsnew--empty {
-  /* namespace hook only: this IS the captured anatomy default -- no
-   * additional visual delta beyond the base rule above. */
 }
 .ds-whatsnew--list {
   max-height: 360px; /* real delta: constrains + scrolls once the release list grows long */

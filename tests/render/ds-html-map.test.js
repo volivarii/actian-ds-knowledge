@@ -1155,6 +1155,35 @@ test("search-result-card: State=Focus adds the --focus modifier (distinct from -
   );
 });
 
+test("search-result-card: App=Studio renders the base card with no --studio modifier", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Studio, State=Default",
+    props: { Title: "Studio Result" },
+  });
+  // Studio's structural swaps (button -> progress-bar-small, digram ->
+  // tag-default) are intentionally not built for this leaf -- there is no
+  // CSS delta, so App=Studio renders the BASE card with no root modifier
+  // (a modifier must carry a real visual delta, never a no-op namespace
+  // hook; see ds-base.css). This asserts it renders without error.
+  assert.match(
+    html,
+    /class="ds-search-result-card"/,
+    "carries only the base class",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-search-result-card--studio/,
+    "does not carry a no-op modifier class",
+  );
+  assert.match(
+    html,
+    /<span class="ds-search-result-card__title">Studio Result<\/span>/,
+    "renders Title in __title",
+  );
+});
+
 test("search-result-card: --selected and --focus modifiers actually differ from the base (no silent no-op)", function () {
   var css = require("node:fs").readFileSync(
     require("node:path").join(
@@ -1252,6 +1281,55 @@ test("search-dropdown-menu: base class + role present (After typed)", function (
   assert.match(html, /role="menu"/, "carries menu role");
 });
 
+test("search-dropdown-menu: Type=After typed renders the base class only (no-op modifier dropped), with item rows", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-dropdown-menu",
+    variant: "Type=After typed",
+    props: { Results: "orders,invoices" },
+  });
+  // After typed IS the captured anatomy default -- its CSS rule was a
+  // no-op, so it renders the BASE class with no --after-typed modifier
+  // (see ds-base.css); the variant is distinguished by its CONTENT
+  // (row list + "Suggestions" heading) instead.
+  assert.match(html, /class="ds-search-menu"/, "carries only the base class");
+  assert.doesNotMatch(
+    html,
+    /ds-search-menu--after-typed/,
+    "does not carry a no-op modifier class",
+  );
+  assert.match(
+    html,
+    /ds-search-menu__heading">Suggestions</,
+    "renders the Suggestions heading",
+  );
+  var itemMatches = html.match(/ds-search-menu__item\b/g) || [];
+  assert.equal(itemMatches.length, 2, "renders a row per result");
+});
+
+test("search-dropdown-menu: Type=Before typed renders the base class only (no-op modifier dropped), with the Recent heading", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-dropdown-menu",
+    variant: "Type=Before typed",
+    props: {},
+  });
+  // Before typed differs from After typed only in CONTENT (the "Recent"
+  // heading + which items render), never in CSS -- so it also renders the
+  // BASE class with no --before-typed modifier (see ds-base.css).
+  assert.match(html, /class="ds-search-menu"/, "carries only the base class");
+  assert.doesNotMatch(
+    html,
+    /ds-search-menu--before-typed/,
+    "does not carry a no-op modifier class",
+  );
+  assert.match(
+    html,
+    /ds-search-menu__heading">Recent</,
+    "renders the Recent heading",
+  );
+});
+
 test("search-dropdown-menu: Type=No result branches to the empty message, no item rows", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
@@ -1307,7 +1385,24 @@ test("whats-new-dropdown: Property 1=Empty and List branch to the right modifier
     variant: "Property 1=Empty",
     props: {},
   });
-  assert.match(htmlEmpty, /ds-whatsnew--empty/, "empty carries its modifier");
+  // Empty IS the captured anatomy default -- its CSS rule was a no-op, so
+  // it renders the BASE class with no --empty modifier (see ds-base.css);
+  // the variant is distinguished by its CONTENT instead.
+  assert.match(
+    htmlEmpty,
+    /class="ds-whatsnew"/,
+    "empty carries only the base class",
+  );
+  assert.doesNotMatch(
+    htmlEmpty,
+    /ds-whatsnew--empty/,
+    "empty does not carry a no-op modifier class",
+  );
+  assert.match(
+    htmlEmpty,
+    /ds-whatsnew__empty/,
+    "renders the empty content wrapper",
+  );
   assert.match(htmlEmpty, /No release updates/, "empty renders its body copy");
   assert.doesNotMatch(htmlEmpty, /ds-whatsnew__item/, "empty has no item rows");
 
@@ -1447,4 +1542,45 @@ test("drawer-side-panel: --explorer modifier rule actually differs from the base
     "",
     "--explorer must not be an empty no-op rule",
   );
+});
+
+test("no silent no-op modifiers remain among .ds-search-menu--*, .ds-whatsnew--*, .ds-search-result-card--* rules", function () {
+  // Guard for the uniform rule: a root modifier class is emitted only when
+  // it carries a real visual delta from its base. This audits every
+  // remaining rule in these three families and fails if any body is
+  // empty or comment-only (i.e. has no actual declaration) -- catching a
+  // future regression back to a namespace-hook no-op, the same class of
+  // bug fixed for --after-typed / --before-typed / whats-new --empty /
+  // search-result-card --studio.
+  var css = require("node:fs").readFileSync(
+    require("node:path").join(
+      __dirname,
+      "../../components/render/renderer/ds-base.css",
+    ),
+    "utf8",
+  );
+  var ruleRe =
+    /\.(ds-search-menu|ds-whatsnew|ds-search-result-card)--[a-z0-9-]+\s*\{([^}]*)\}/g;
+  var checked = [];
+  var match;
+  while ((match = ruleRe.exec(css)) !== null) {
+    var selector = match[0].slice(0, match[0].indexOf("{")).trim();
+    var body = match[2];
+    var bodyWithoutComments = body.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+    checked.push(selector);
+    assert.ok(
+      bodyWithoutComments.length > 0 && /:/.test(bodyWithoutComments),
+      selector +
+        " must contain at least one real CSS declaration, not just a comment",
+    );
+  }
+  assert.ok(
+    checked.length >= 4,
+    "audit found the expected modifier rules (--no-result, --explorer-home, --list, --drilldown, --selected, --focus, ...)",
+  );
+  // Sanity: the rules we expect to have been dropped are actually gone.
+  assert.doesNotMatch(css, /\.ds-search-menu--after-typed\s*\{/);
+  assert.doesNotMatch(css, /\.ds-search-menu--before-typed\s*\{/);
+  assert.doesNotMatch(css, /\.ds-whatsnew--empty\s*\{/);
+  assert.doesNotMatch(css, /\.ds-search-result-card--studio\s*\{/);
 });

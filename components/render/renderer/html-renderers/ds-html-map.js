@@ -2041,7 +2041,16 @@
           else if (sdmType === "Before typed") sdmMod = "before-typed";
           else if (sdmType === "Explorer home") sdmMod = "explorer-home";
           else sdmMod = "after-typed";
-          var sdmCls = "ds-search-menu ds-search-menu--" + sdmMod;
+          // Root modifier class is emitted ONLY for the two real CSS
+          // deltas (no-result collapses to a centered line; explorer-home
+          // widens the menu). after-typed IS the captured anatomy default
+          // and before-typed differs from it only via markup (heading text
+          // + row content) -- no CSS delta, so no modifier class (see
+          // ds-base.css). sdmMod still drives all content branching below.
+          var sdmCls =
+            sdmMod === "no-result" || sdmMod === "explorer-home"
+              ? "ds-search-menu ds-search-menu--" + sdmMod
+              : "ds-search-menu";
           var sdmBody;
           if (sdmMod === "no-result") {
             sdmBody =
@@ -2097,7 +2106,15 @@
             ? "drilldown"
             : String(wnRaw).toLowerCase();
           if (wnMode !== "drilldown" && wnMode !== "empty") wnMode = "list";
-          var wnCls = "ds-whatsnew ds-whatsnew--" + wnMode;
+          // Root modifier class is emitted only for modes with a real CSS
+          // delta (list scrolls past a handful of items; drilldown widens
+          // the panel). empty IS the captured anatomy default -- the base
+          // rule already matches it, so no modifier class (see
+          // ds-base.css). wnMode still drives all content branching below.
+          var wnCls =
+            wnMode === "empty"
+              ? "ds-whatsnew"
+              : "ds-whatsnew ds-whatsnew--" + wnMode;
           var wnBack =
             wnMode === "drilldown"
               ? '<button class="ds-whatsnew__back" type="button" aria-label="Back">' +
@@ -2769,15 +2786,15 @@
           // fidelity oracle only captures App=Explorer/State=Default, so
           // that default stays faithful; Studio's structural swaps (button
           // -> progress-bar-small, digram -> tag-default) are intentionally
-          // NOT built here, per the spec -- ds-search-result-card--studio
-          // is a deliberate no-op marker (see ds-base.css), same pattern as
-          // .ds-tag--status above. Inlines the eyebrow/stage/catalog tags
-          // and the glossary item-type badge reusing EXISTING shared
-          // classes (.ds-tag / .ds-tag-stage / .ds-tag--gray /
-          // .ds-tag--catalog / .ds-item-type) rather than recursing into
-          // renderDSComponent, same idiom as card-for-items.
+          // NOT built here, per the spec. App=Studio therefore renders the
+          // BASE card with no root modifier -- there is no built CSS delta
+          // for it, and a modifier class must not be emitted without one
+          // (no no-op namespace-hook markers; see ds-base.css). Inlines the
+          // eyebrow/stage/catalog tags and the glossary item-type badge
+          // reusing EXISTING shared classes (.ds-tag / .ds-tag-stage /
+          // .ds-tag--gray / .ds-tag--catalog / .ds-item-type) rather than
+          // recursing into renderDSComponent, same idiom as card-for-items.
           var srcCls = "ds-search-result-card";
-          if (v.App === "Studio") srcCls += " ds-search-result-card--studio";
           if (v.State === "Selected")
             srcCls += " ds-search-result-card--selected";
           if (v.State === "Focus") srcCls += " ds-search-result-card--focus";
