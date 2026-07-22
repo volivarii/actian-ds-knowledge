@@ -403,6 +403,30 @@
       "fragment": "fragments/tooltip.html",
       "tokensConsumed": 11,
       "source": "rendered"
+    },
+    {
+      "slug": "card-for-perimeter",
+      "tagName": "zen-card-for-perimeter",
+      "group": "Data Display",
+      "fragment": "fragments/card-for-perimeter.html",
+      "tokensConsumed": 0,
+      "source": "rendered"
+    },
+    {
+      "slug": "card-for-grouped-content",
+      "tagName": "zen-card-for-grouped-content",
+      "group": "Data Display",
+      "fragment": "fragments/card-for-grouped-content.html",
+      "tokensConsumed": 0,
+      "source": "rendered"
+    },
+    {
+      "slug": "search-result-card",
+      "tagName": "zen-search-result-card",
+      "group": "Data Display",
+      "fragment": "fragments/search-result-card.html",
+      "tokensConsumed": 20,
+      "source": "rendered"
     }
   ]
 }
