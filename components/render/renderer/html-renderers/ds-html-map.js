@@ -1778,6 +1778,42 @@
           );
         }
 
+        case "tag-status": {
+          // Status pill: identity axis Status has 11 values, but the
+          // captured anatomy groups them into 5 color families -- a per-value
+          // class would be dishonest (the anatomy itself groups them), so
+          // this looks the Status up in a family map and emits ONE grouped
+          // modifier class. Reuses base .ds-tag geometry verbatim (identical
+          // height/padding/radius/font/gap/text-color to tag-default); only
+          // the 5 family color rules are new (ds-base.css). Pure-CSS family
+          // approach (no __dsVariantStyles injection, unlike tag-default).
+          var TAG_STATUS_FAMILY = {
+            fail: "error",
+            loading: "info",
+            maintenance: "info",
+            queued: "info",
+            scheduled: "info",
+            offline: "neutral",
+            pending: "neutral",
+            sleeping: "neutral",
+            stopped: "neutral",
+            success: "success",
+            warning: "warning",
+          };
+          var tsStatus = v.Status || "Fail";
+          var tsFamily = TAG_STATUS_FAMILY[tsStatus.toLowerCase()] || "error";
+          // Loading's leading spinner icon is absent from graphics.json;
+          // renderIcon degrades gracefully to "" and is intentionally not
+          // attempted here (label-only, per the spec).
+          return (
+            '<span class="ds-tag ds-tag--status ds-tag--status-' +
+            tsFamily +
+            '">' +
+            esc(props.Label || tsStatus) +
+            "</span>"
+          );
+        }
+
         case "popover": {
           // Registry axis: Type = Interaction guide | Advanced search; prop
           // "Show info icon". A floating card: optional info icon + title +
@@ -2322,6 +2358,7 @@
     "tag-shared",
     "tag-catalog",
     "tag-stage",
+    "tag-status",
   ];
 
   exports.renderDSComponent = renderDSComponent;

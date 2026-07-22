@@ -2651,6 +2651,48 @@
 .ds-tag--teal .ds-tag-stage__dot {
   background: #00908e; /* no captured token */
 }
+/* tag-status: status pill, 11 Status values grouped into 5 color families
+ * by the captured anatomy itself (a per-value class would be dishonest).
+ * Reuses base .ds-tag geometry verbatim (same height/padding/radius/font/
+ * gap/text-color as tag-default); only the family fill/border pairs are
+ * new. .ds-tag--status is a no-op marker (kept so the CSS-coverage gate has
+ * an explicit rule for every emitted class). Value-first: several captured
+ * backgroundTokens do not round-trip against the frozen tokens.css snapshot
+ * (a known drift, see tag-glossary-item-type's warning-25 note), so those
+ * ship literal with a comment; borders that DO round-trip bind the token. */
+.ds-tag--status {
+}
+.ds-tag--status-error {
+  /* Fail. --zen-color-error-25 resolves to #f8f4f3 in tokens.css, not the
+   * captured #fff4ec -- literal. Border DOES round-trip (#ffdacf). */
+  background: #fff4ec;
+  border-color: var(--zen-color-error-50);
+}
+.ds-tag--status-info {
+  /* Loading, Maintenance, Queued, Scheduled. --zen-color-primary-25
+   * resolves to #f3f5f9 in tokens.css, not the captured #edf6ff (bg AND
+   * border share this value in the anatomy) -- both literal. */
+  background: #edf6ff;
+  border-color: #edf6ff;
+}
+.ds-tag--status-neutral {
+  /* Offline, Pending, Sleeping, Stopped. No captured backgroundToken for
+   * the fill. Border DOES round-trip (--zen-border-disabled = #c7c7ce). */
+  background: #e1e1e6;
+  border-color: var(--zen-border-disabled);
+}
+.ds-tag--status-success {
+  /* Success. --zen-color-success-25 resolves to #f3f6f3 in tokens.css, not
+   * the captured #f0ffec -- literal. Border DOES round-trip (#d3efcd). */
+  background: #f0ffec;
+  border-color: var(--zen-color-success-50);
+}
+.ds-tag--status-warning {
+  /* Warning. --zen-color-bg-warning resolves to #f7f4f2 in tokens.css, not
+   * the captured #fff9e5 -- literal. Border DOES round-trip (#ffebce). */
+  background: #fff9e5;
+  border-color: var(--zen-color-warning-50);
+}
 
 /* ============ Checkbox (indeterminate state) ============ */
 .ds-checkbox--indeterminate .ds-checkbox__box {

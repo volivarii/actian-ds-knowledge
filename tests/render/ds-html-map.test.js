@@ -758,3 +758,66 @@ test("tag-stage: escapes hostile Label", function () {
   assert.doesNotMatch(html, /<img src=x/, "no raw injection");
   assert.match(html, /&lt;img/, "label escaped");
 });
+
+test("tag-status: base + namespace present", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-status",
+    variant: "Status=Fail",
+    props: {},
+  });
+  assert.match(html, /class="[^"]*\bds-tag\b/, "carries the ds-tag class");
+  assert.match(
+    html,
+    /class="[^"]*\bds-tag--status\b/,
+    "carries the ds-tag--status namespace class",
+  );
+});
+
+test("tag-status: grouped family mapping from the anatomy", function () {
+  var DS = require(DS_PATH);
+  var successHtml = DS.renderDSComponent({
+    dsSlug: "tag-status",
+    variant: "Status=Success",
+    props: {},
+  });
+  assert.match(
+    successHtml,
+    /ds-tag--status-success/,
+    "Success maps to the success family",
+  );
+  assert.doesNotMatch(
+    successHtml,
+    /ds-tag--status-error/,
+    "Success does not carry the error family",
+  );
+
+  var maintHtml = DS.renderDSComponent({
+    dsSlug: "tag-status",
+    variant: "Status=Maintenance",
+    props: {},
+  });
+  assert.match(
+    maintHtml,
+    /ds-tag--status-info/,
+    "Maintenance maps to the grouped info family, not a per-value class",
+  );
+});
+
+test("tag-status: escapes hostile Label, falls back to Status when Label omitted", function () {
+  var DS = require(DS_PATH);
+  var hostile = DS.renderDSComponent({
+    dsSlug: "tag-status",
+    variant: "Status=Fail",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
+  assert.match(hostile, /&lt;img/, "label escaped");
+
+  var fallback = DS.renderDSComponent({
+    dsSlug: "tag-status",
+    variant: "Status=Warning",
+    props: {},
+  });
+  assert.match(fallback, />Warning</, "Label falls back to the Status value");
+});

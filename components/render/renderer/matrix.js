@@ -74,6 +74,7 @@ var RENDER_SLUGS = [
   "tag-interactive",
   "tag-shared",
   "tag-stage",
+  "tag-status",
   "text-input",
   "toggle",
   "toolbar",
@@ -210,6 +211,25 @@ var MATRIX_OVERRIDES = {
     "Gray",
   ].map(function (c) {
     return { label: c, variant: "Color=" + c, props: { Label: c } };
+  }),
+
+  // tag-status's Status axis has 11 values; the generic 5-cell cap would drop
+  // six. Every status is a distinct real-world state (not decorative), so
+  // show them all rather than an arbitrary subset.
+  "tag-status": [
+    "Fail",
+    "Warning",
+    "Loading",
+    "Maintenance",
+    "Scheduled",
+    "Queued",
+    "Stopped",
+    "Sleeping",
+    "Offline",
+    "Pending",
+    "Success",
+  ].map(function (s) {
+    return { label: s, variant: "Status=" + s, props: { Label: s } };
   }),
 
   // Same rationale as empty-state above: Size is the only (secondary) axis,
