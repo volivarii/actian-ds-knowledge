@@ -412,10 +412,14 @@ export function MarkdownEditScreen({
     };
   }, [renamePopover, gh, path]);
 
-  // Close the rename popover when the active file changes; its slug context
-  // no longer applies to the newly-opened file.
+  // Reset per-file rename state when the active file changes. The rename
+  // popover's slug context no longer applies; and cursorLine must drop back to
+  // 0 (the freshly remounted CodeMirror's caret starts at the document top),
+  // else the source Toolbar's "Rename anchor" button would evaluate the new
+  // file against the previous file's caret line and could target a stale slug.
   useEffect(() => {
     setRenamePopover(null);
+    setCursorLine(0);
   }, [path]);
 
   // Build the in-memory taxonomy once per mount. The static JSON imports
