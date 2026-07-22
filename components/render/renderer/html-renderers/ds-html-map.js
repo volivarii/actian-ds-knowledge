@@ -2469,6 +2469,29 @@
           );
         }
 
+        case "spinner": {
+          // Registry axes: Color mode = On light bg | On dark bg (identity);
+          // Complete = 25%|50%|75%|100% is the animation's own arc-fill
+          // cycle, not a chooseable variant (usage guideline), so it is
+          // ignored here. Near-clone of the "loader" case above with its own
+          // BEM prefix + a dark-bg color modifier.
+          var spDark = v["Color mode"] === "On dark bg";
+          var spCls = "ds-spinner" + (spDark ? " ds-spinner--on-dark" : "");
+          var spLabel = props.Label
+            ? '<span class="ds-spinner__label">' + esc(props.Label) + "</span>"
+            : "";
+          return (
+            '<div class="' +
+            spCls +
+            '" role="status" aria-live="polite" aria-label="' +
+            esc(props.Label || "Loading") +
+            '">' +
+            '<span class="ds-spinner__ring" aria-hidden="true"></span>' +
+            spLabel +
+            "</div>"
+          );
+        }
+
         case "calendar": {
           // Registry axes: Type = Single date select | Date | Month | Single;
           // Selection = Single | Range | Year. A static month grid
@@ -2977,6 +3000,8 @@
     "search-dropdown-menu",
     "whats-new-dropdown",
     "drawer-side-panel",
+    // Gray-box-to-zero, family 5 (primitives).
+    "spinner",
   ];
 
   exports.renderDSComponent = renderDSComponent;

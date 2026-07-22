@@ -2443,7 +2443,8 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ds-loader__spinner {
+  .ds-loader__spinner,
+  .ds-spinner__ring {
     animation: none;
   }
 }
@@ -3670,4 +3671,42 @@
   font-size: var(--zen-font-size-md); /* 14, captured */
   line-height: var(--zen-font-lineheight-md); /* 20, captured */
   letter-spacing: var(--zen-font-letterspacing-wide-2); /* 0.2, captured */
+}
+
+/* ============ Spinner (indeterminate ring + on-dark modifier), gray-box-to-zero family 5 ============ */
+/* Registry axis: Color mode = On light bg | On dark bg. Complete (25/50/75/
+ * 100%) is the animation's own arc-fill cycle, not a chooseable variant
+ * (usage guideline), so it is ignored by the renderer. Near-clone of
+ * .ds-loader's ring idiom with its own BEM prefix + a dark-bg color
+ * modifier. REUSES the existing @keyframes ds-spin and the
+ * prefers-reduced-motion guard above (extended to include
+ * .ds-spinner__ring) -- no duplicate keyframes. */
+.ds-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--zen-spacing-xs);
+  font-family: var(--zen-font-family-text);
+}
+.ds-spinner__ring {
+  width: 24px; /* raw px: spinner box, mirrors .ds-loader__spinner */
+  height: 24px;
+  flex: 0 0 auto;
+  border: 2px solid var(--zen-color-bg-muted); /* raw px: ring weight, captured Ellipse 8 #e1e1e6 */
+  border-top-color: var(
+    --zen-color-icon-primary
+  ); /* captured Ellipse 9-12 #0f5fdc */
+  border-radius: var(--zen-border-radius-full);
+  animation: ds-spin 800ms linear infinite;
+}
+.ds-spinner--on-dark .ds-spinner__ring {
+  border-color: var(
+    --zen-color-primary-300
+  ); /* captured Ellipse 8 On-dark track, #6296ef */
+  border-top-color: #fff; /* captured Ellipse 9-12 On-dark arc, #ffffff, no token */
+}
+.ds-spinner__label {
+  font-size: var(--zen-font-size-sm);
+  line-height: var(--zen-font-lineheight-sm);
+  letter-spacing: var(--zen-font-letterspacing-wide-3);
+  color: var(--zen-color-text-secondary);
 }

@@ -1584,3 +1584,75 @@ test("no silent no-op modifiers remain among .ds-search-menu--*, .ds-whatsnew--*
   assert.doesNotMatch(css, /\.ds-whatsnew--empty\s*\{/);
   assert.doesNotMatch(css, /\.ds-search-result-card--studio\s*\{/);
 });
+
+// ===================================================================== //
+// Gray-box-to-zero, family 5 (primitives): spinner, loading-skeleton,   //
+// scroll-bar, link, avatar, collapse-accordion.                         //
+// ===================================================================== //
+
+test("spinner: base structure, role=status, single ring", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "spinner",
+    variant: "Color mode=On light bg",
+    props: {},
+  });
+  assert.match(html, /class="ds-spinner"/, "carries the base class");
+  assert.match(html, /role="status"/, "carries status role");
+  assert.match(html, /aria-live="polite"/, "carries aria-live");
+  var ringMatches = html.match(/<span class="ds-spinner__ring"/g) || [];
+  assert.equal(ringMatches.length, 1, "exactly one ring element");
+});
+
+test("spinner: Color mode=On dark bg adds the modifier, light (default) does not", function () {
+  var DS = require(DS_PATH);
+  var htmlDark = DS.renderDSComponent({
+    dsSlug: "spinner",
+    variant: "Color mode=On dark bg",
+    props: {},
+  });
+  assert.match(htmlDark, /ds-spinner--on-dark/, "dark carries the modifier");
+
+  var htmlLight = DS.renderDSComponent({
+    dsSlug: "spinner",
+    variant: "Color mode=On light bg",
+    props: {},
+  });
+  assert.doesNotMatch(
+    htmlLight,
+    /ds-spinner--on-dark/,
+    "light does not carry the dark modifier",
+  );
+});
+
+test("spinner: escapes hostile Label; no Label omits the label span and defaults aria-label", function () {
+  var DS = require(DS_PATH);
+  var hostile = DS.renderDSComponent({
+    dsSlug: "spinner",
+    variant: "Color mode=On light bg",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
+  assert.match(
+    hostile,
+    /aria-label="&lt;img[^"]*"/,
+    "escaped payload appears in aria-label",
+  );
+  assert.match(
+    hostile,
+    /<span class="ds-spinner__label">&lt;img[^<]*<\/span>/,
+    "escaped payload appears in the label span",
+  );
+
+  var noLabel = DS.renderDSComponent({
+    dsSlug: "spinner",
+    variant: "Color mode=On light bg",
+    props: {},
+  });
+  assert.doesNotMatch(
+    noLabel,
+    /ds-spinner__label/,
+    "no Label prop means no label element",
+  );
+  assert.match(noLabel, /aria-label="Loading"/, "defaults aria-label");
+});

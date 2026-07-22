@@ -90,6 +90,8 @@ var RENDER_SLUGS = [
   // Gray-box-to-zero, family 4 (dropdowns / overlays).
   "whats-new-dropdown",
   "drawer-side-panel",
+  // Gray-box-to-zero, family 5 (primitives).
+  "spinner",
 ];
 
 // A render slug may live in any kit; search ds -> meta -> fm.
@@ -474,6 +476,25 @@ var MATRIX_OVERRIDES = {
       label: "Explorer",
       variant: "App=Explorer",
       props: { Name: "Financial Summary EY2024", Type: "Dataset" },
+    },
+  ],
+
+  // Complete (25/50/75/100%) has more values than Color mode, so the generic
+  // tie-break (most values wins) would pick Complete as primary -- but
+  // Complete is the ring animation's own arc-fill cycle, not a chooseable
+  // variant (usage guideline), and the case ignores it entirely. Curate the
+  // real identity axis (Color mode) instead so the gallery actually shows
+  // the on-dark modifier.
+  spinner: [
+    {
+      label: "On light bg",
+      variant: "Color mode=On light bg",
+      props: { Label: "Loading" },
+    },
+    {
+      label: "On dark bg",
+      variant: "Color mode=On dark bg",
+      props: { Label: "Loading" },
     },
   ],
 };
