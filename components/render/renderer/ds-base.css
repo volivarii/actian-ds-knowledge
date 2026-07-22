@@ -530,6 +530,62 @@
   box-sizing: border-box;
 }
 
+/* ============ Lineage individual node (lineage-individual-node) ============ */
+.ds-lineage-node {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--zen-spacing-2xs); /* 4 */
+  padding: var(--zen-spacing-2xs) var(--zen-spacing-xs); /* 4 8 */
+  border: 1px solid var(--zen-border-default);
+  border-radius: var(--zen-border-radius-sm); /* 6 */
+  background: var(--zen-color-bg-default);
+  box-sizing: border-box;
+  font-family: var(--zen-font-family-text);
+}
+.ds-lineage-node--sub {
+  margin-left: var(--zen-spacing-lg); /* 24, nested indent */
+}
+.ds-lineage-node--selected {
+  border-color: var(--zen-border-selected);
+  background: var(--zen-color-bg-selected);
+}
+.ds-lineage-node--disabled {
+  opacity: 0.5;
+}
+.ds-lineage-node__label {
+  font-size: var(--zen-font-size-md); /* 14 */
+  line-height: var(--zen-font-lineheight-md); /* 20 */
+  color: var(--zen-color-text-default);
+  white-space: nowrap;
+}
+.ds-lineage-node__source,
+.ds-lineage-node__key {
+  width: 14px; /* icon box geometry (raw px), matches .ds-tag__icon */
+  height: 14px;
+  display: inline-flex;
+  color: var(--zen-color-icon-default);
+}
+.ds-lineage-node__source svg,
+.ds-lineage-node__key svg {
+  width: 100%;
+  height: 100%;
+}
+.ds-lineage-node__expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--zen-color-icon-default);
+  cursor: pointer;
+}
+.ds-lineage-node--expanded .ds-lineage-node__expand svg {
+  transform: rotate(180deg);
+}
+
 /* ============ Global header (top app bar — chrome) ============ */
 /* Anatomy: 1440×64, flex space-between, padding 0 24px.              */
 /* Left = brand; Center = context + search; Right = actions cluster.  */

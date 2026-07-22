@@ -625,6 +625,56 @@
           );
         }
 
+        case "lineage-individual-node": {
+          var linCls = "ds-lineage-node";
+          if (v.Type === "Sub item") linCls += " ds-lineage-node--sub";
+          if (v.State === "Selected") linCls += " ds-lineage-node--selected";
+          if (v.State === "Disabled") linCls += " ds-lineage-node--disabled";
+          if (v.Fields === "Expanded") linCls += " ds-lineage-node--expanded";
+
+          var linItemType = v["Item type"] || "Category";
+          var linBadge =
+            '<span class="ds-item-type" style="' +
+            digramItemTypeStyle(linItemType) +
+            '">' +
+            esc(props["Item type initials"] || "") +
+            "</span>";
+
+          // powerbi/identification-key have no captured icon or graphic asset
+          // yet (components/dist/icons/icons.json / graphics/graphics.json);
+          // renderIcon degrades to "" for an unmapped slug, so these two
+          // spans simply don't render until the real assets land (a Figma
+          // export task tracked separately, not part of this component's
+          // own scope).
+          var linSourceIcon = renderIcon("powerbi");
+          var linKeyIcon = renderIcon("identification-key");
+          var linExpandIcon = renderIcon("chevron-up");
+
+          return (
+            '<div class="' +
+            linCls +
+            '">' +
+            linBadge +
+            '<span class="ds-lineage-node__label">' +
+            esc(props.Label || props.Title || "") +
+            "</span>" +
+            (linSourceIcon
+              ? '<span class="ds-lineage-node__source">' +
+                linSourceIcon +
+                "</span>"
+              : "") +
+            (linKeyIcon
+              ? '<span class="ds-lineage-node__key">' + linKeyIcon + "</span>"
+              : "") +
+            '<button class="ds-lineage-node__expand" aria-label="' +
+            (v.Fields === "Expanded" ? "Collapse" : "Expand") +
+            '">' +
+            linExpandIcon +
+            "</button>" +
+            "</div>"
+          );
+        }
+
         case "global-header": {
           // Top app bar (chrome) — real Studio header, authored from Figma anatomy.
           // anatomy: 1440×64, flex space-between, padding 0 24px.
@@ -1931,6 +1981,7 @@
     "calendar",
     "digram-item-types",
     "digram-topic",
+    "lineage-individual-node",
   ];
 
   exports.renderDSComponent = renderDSComponent;

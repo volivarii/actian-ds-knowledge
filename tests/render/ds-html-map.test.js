@@ -109,3 +109,78 @@ test("digram-topic: escapes hostile Initials", function () {
   assert.match(html, /&lt;svg/, "initials escaped");
   assert.doesNotMatch(html, /<svg onload/, "no raw injection");
 });
+
+test("lineage-individual-node: default state, renders label and badge", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "lineage-individual-node",
+    variant: "Type=Main item, State=Default, Fields=Collapsed",
+    props: { Label: "customer_orders", "Item type initials": "DS" },
+  });
+  assert.match(
+    html,
+    /class="ds-lineage-node"/,
+    "carries the base class, no modifiers",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-lineage-node--selected/,
+    "not selected by default",
+  );
+  assert.match(html, /class="ds-item-type"/, "inlines the item-type badge");
+  assert.match(html, />customer_orders</, "renders the label");
+});
+
+test("lineage-individual-node: State=Selected adds the selected modifier", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "lineage-individual-node",
+    variant: "Type=Main item, State=Selected, Fields=Collapsed",
+    props: { Label: "orders" },
+  });
+  assert.match(
+    html,
+    /ds-lineage-node ds-lineage-node--selected/,
+    "has the selected modifier",
+  );
+});
+
+test("lineage-individual-node: Type=Sub item adds the sub modifier", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "lineage-individual-node",
+    variant: "Type=Sub item, State=Default, Fields=Collapsed",
+    props: { Label: "order_id" },
+  });
+  assert.match(html, /ds-lineage-node--sub/, "has the sub modifier");
+});
+
+test("lineage-individual-node: missing powerbi/identification-key icons degrade to nothing", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "lineage-individual-node",
+    variant: "Type=Main item, State=Default, Fields=Collapsed",
+    props: { Label: "orders" },
+  });
+  assert.doesNotMatch(
+    html,
+    /ds-lineage-node__source/,
+    "no source wrapper span when powerbi icon is unmapped",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-lineage-node__key/,
+    "no key wrapper span when identification-key icon is unmapped",
+  );
+});
+
+test("lineage-individual-node: escapes a hostile Label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "lineage-individual-node",
+    variant: "Type=Main item, State=Default, Fields=Collapsed",
+    props: { Label: "<img src=x onerror=1>" },
+  });
+  assert.match(html, /&lt;img/, "label escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
