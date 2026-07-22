@@ -459,6 +459,54 @@
       "fragment": "fragments/drawer-side-panel.html",
       "tokensConsumed": 0,
       "source": "rendered"
+    },
+    {
+      "slug": "spinner",
+      "tagName": "zen-spinner",
+      "group": "Feedback",
+      "fragment": "fragments/spinner.html",
+      "tokensConsumed": 10,
+      "source": "rendered"
+    },
+    {
+      "slug": "loading-skeleton",
+      "tagName": "zen-loading-skeleton",
+      "group": "Feedback",
+      "fragment": "fragments/loading-skeleton.html",
+      "tokensConsumed": 5,
+      "source": "rendered"
+    },
+    {
+      "slug": "scroll-bar",
+      "tagName": "zen-scroll-bar",
+      "group": "Data Display",
+      "fragment": "fragments/scroll-bar.html",
+      "tokensConsumed": 3,
+      "source": "rendered"
+    },
+    {
+      "slug": "link",
+      "tagName": "zen-link",
+      "group": "Action",
+      "fragment": "fragments/link.html",
+      "tokensConsumed": 10,
+      "source": "rendered"
+    },
+    {
+      "slug": "avatar",
+      "tagName": "zen-avatar",
+      "group": "Data Display",
+      "fragment": "fragments/avatar.html",
+      "tokensConsumed": 15,
+      "source": "rendered"
+    },
+    {
+      "slug": "collapse-accordion",
+      "tagName": "zen-collapse-accordion",
+      "group": "Data Display",
+      "fragment": "fragments/collapse-accordion.html",
+      "tokensConsumed": 18,
+      "source": "rendered"
     }
   ]
 }
