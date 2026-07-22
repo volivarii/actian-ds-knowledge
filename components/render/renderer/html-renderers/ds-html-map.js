@@ -146,6 +146,55 @@
     );
   }
 
+  // Captured resolved-appearance colors for digram-item-types' 27 "Item type"
+  // values (components/dist/anatomy/digram-item-types.json, root.appearance.variants).
+  // Same species of problem as tag-default's per-Color palette: many color
+  // variants driven by design-tool facts, not a small fixed brand set, but
+  // simpler than tag-default's build-time variant-style-map injection (no
+  // theme-swap requirement here), so this is a plain lookup table instead of
+  // a new injection seam. Custom 1 and Custom 15 have no captured entry;
+  // DIGRAM_ITEM_TYPE_COLORS falls back to "Category" for any unmapped value.
+  var DIGRAM_ITEM_TYPE_COLORS = {
+    Category: "#ffdacf",
+    Field: "#d3efcd",
+    "Custom 10": "#d3efcd",
+    "Custom 11": "#f9ffea",
+    "Custom 12": "#e1eacb",
+    "Custom 13": "#e1eacb",
+    "Custom 14": "#e1eacb",
+    "Custom 16": "#e2e4dd",
+    "Custom 2": "#ffd6d8",
+    "Data process": "#ffd6d8",
+    "Custom 3": "#dde6ec",
+    "Custom 6": "#dde6ec",
+    "Output port": "#dde6ec",
+    "Custom 4": "#e1e5ff",
+    "Custom 5": "#cadcf7",
+    "Data product": "#cadcf7",
+    "Custom 7": "#d0efed",
+    "Custom 8": "#d0efed",
+    "Custom 9": "#d3e7e0",
+    Dataset: "#cfeafd",
+    "Glossary 1": "#fff9e5",
+    "Use case": "#fff9e5",
+    "Glossary 2": "#ffebce",
+    "Glossary 3": "#fffbef",
+    "Glossary 4": "#feeddc",
+    "Glossary 5": "#fff5d5",
+    Visualization: "#eed7ff",
+  };
+  var DIGRAM_ITEM_TYPE_TOKENS = {
+    Field: "--zen-color-success-50",
+  };
+  function digramItemTypeStyle(itemType) {
+    var bg =
+      DIGRAM_ITEM_TYPE_COLORS[itemType] || DIGRAM_ITEM_TYPE_COLORS.Category;
+    var token = DIGRAM_ITEM_TYPE_TOKENS[itemType];
+    return token
+      ? "background:var(" + token + ", " + bg + ")"
+      : "background:" + bg;
+  }
+
   // Inline icon glyphs (geometry in raw px — viewBox coords, not design tokens).
   // The button/input/checkbox/tag/card glyphs now come from renderIcon() (real
   // vendored DS icons, orphan-ref gated). The search magnifier stays hardcoded
@@ -522,6 +571,27 @@
             esc(props.Body || "") +
             "</p>" +
             "</div>"
+          );
+        }
+
+        case "digram-item-types": {
+          var itItemType = v["Item type"] || "Category";
+          var itCls = "ds-item-type";
+          // "Default" is the bare state (no modifier, matches ds-item-type's own
+          // size rule); only a non-default Size (e.g. "Small") adds a modifier
+          // class, mirroring the Size handling convention used elsewhere in this
+          // file (compare the button case's `v.Size === "Small"` check above).
+          if (v.Size && v.Size !== "Default") {
+            itCls += " ds-item-type--" + v.Size.toLowerCase();
+          }
+          return (
+            '<span class="' +
+            itCls +
+            '" style="' +
+            digramItemTypeStyle(itItemType) +
+            '">' +
+            esc(props.Initials || props.Label || "") +
+            "</span>"
           );
         }
 
@@ -1829,6 +1899,7 @@
     // Hi-Fi A1 (narrow) — degraded-slug overrides. Batch 3: feedback + date.
     "loader",
     "calendar",
+    "digram-item-types",
   ];
 
   exports.renderDSComponent = renderDSComponent;

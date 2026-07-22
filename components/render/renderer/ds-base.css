@@ -491,6 +491,28 @@
   align-self: flex-start;
 }
 
+/* ============ Item type badge (digram-item-types) ============ */
+.ds-item-type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--zen-size-lg); /* 24 */
+  height: var(--zen-size-lg); /* 24 */
+  padding: 0 var(--zen-spacing-2xs); /* 4 */
+  border-radius: var(--zen-border-radius-full);
+  color: var(--zen-color-text-default);
+  font-family: var(--zen-font-family-text);
+  font-size: var(--zen-font-size-sm); /* 12 */
+  line-height: var(--zen-font-lineheight-sm); /* 16 */
+  font-weight: var(--zen-font-weight-semibold);
+  box-sizing: border-box;
+}
+.ds-item-type--small {
+  min-width: var(--zen-size-md); /* 20 */
+  height: var(--zen-size-md);
+  font-size: var(--zen-font-size-xs);
+}
+
 /* ============ Global header (top app bar — chrome) ============ */
 /* Anatomy: 1440×64, flex space-between, padding 0 24px.              */
 /* Left = brand; Center = context + search; Right = actions cluster.  */
