@@ -14,6 +14,12 @@ function factColors(facts) {
     if (a.background) set.add(String(a.background).toLowerCase());
     if (a.border && a.border.color)
       set.add(String(a.border.color).toLowerCase());
+    // Text color is as legitimate a captured fact as background/border --
+    // gray-box-to-zero family 2 (tag-catalog) is the first ds-base.css rule
+    // to bind a text color, so this was never exercised before. Without it,
+    // a genuinely correct var(--zen-color-text-default) reads as a
+    // violation just because factColors() never looked at .text.color.
+    if (a.text && a.text.color) set.add(String(a.text.color).toLowerCase());
   });
   return set;
 }
@@ -122,7 +128,20 @@ function fidelityCheck(canonical, ctx) {
 // against.
 function checkBaseCssRules(cssText, facts, tokenMap) {
   var violations = [];
-  var tagFacts = factColors(facts["tag-default"]);
+  // The .ds-tag--<x> modifier namespace is no longer tag-default's Color
+  // axis alone: gray-box-to-zero family 2 added standalone .ds-tag--<x>
+  // rules for OTHER dedicated tag-family members (e.g. tag-catalog) that
+  // carry their own captured facts, not tag-default's. Union every
+  // tag-family fact set the caller provides (any key whose name starts with
+  // "tag") so a rule is checked against the acceptable palette across the
+  // whole family, not just tag-default's.
+  var tagFacts = new Set();
+  Object.keys(facts).forEach(function (key) {
+    if (key.indexOf("tag") !== 0) return;
+    factColors(facts[key]).forEach(function (c) {
+      tagFacts.add(c);
+    });
+  });
   var re = /\.ds-tag--[a-z0-9]+\s*\{([^}]*)\}/g;
   var m;
   while ((m = re.exec(cssText)) !== null) {
@@ -177,6 +196,8 @@ if (require.main === module) {
       dsBaseCss,
       {
         "tag-default": A.readAppearance("tag-default", anatomyDir),
+        "tag-catalog": A.readAppearance("tag-catalog", anatomyDir),
+        "tag-shared": A.readAppearance("tag-shared", anatomyDir),
         checkbox: A.readAppearance("checkbox", anatomyDir),
       },
       tokenMap,

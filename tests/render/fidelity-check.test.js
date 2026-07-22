@@ -83,6 +83,12 @@ test("checkBaseCssRules: the real ds-base.css tag/checkbox rules pass", function
   );
   var facts = {
     "tag-default": A.readAppearance("tag-default", ANATOMY),
+    // Gray-box-to-zero family 2: tag-catalog and tag-shared also emit
+    // standalone .ds-tag--<x> rules with their OWN captured facts (not
+    // tag-default's Color axis), so their facts must be in scope too or a
+    // genuinely correct color reads as a violation.
+    "tag-catalog": A.readAppearance("tag-catalog", ANATOMY),
+    "tag-shared": A.readAppearance("tag-shared", ANATOMY),
     checkbox: A.readAppearance("checkbox", ANATOMY),
   };
   var v = F.checkBaseCssRules(dsBaseCss, facts, tokenMap);
