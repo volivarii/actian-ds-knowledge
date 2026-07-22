@@ -195,6 +195,23 @@
       : "background:" + bg;
   }
 
+  // Captured resolved-appearance colors for digram-topic's 10 "Type" values
+  // (components/dist/anatomy/digram-topic.json, root.appearance + variants).
+  // "Light purple" is the variant default (no explicit variants entry; it's
+  // the root-level captured background).
+  var DIGRAM_TOPIC_COLORS = {
+    "Light purple": "#a17ab6",
+    "Dark blue": "#003786",
+    "Dark green": "#299315",
+    "Dark orange": "#b22700",
+    "Dark purple": "#8b00e8",
+    "Light blue": "#00b6e1",
+    "Light green": "#75b86b",
+    Orange: "#ef8d00",
+    Red: "#a82743",
+    Yellow: "#eabd34",
+  };
+
   // Inline icon glyphs (geometry in raw px — viewBox coords, not design tokens).
   // The button/input/checkbox/tag/card glyphs now come from renderIcon() (real
   // vendored DS icons, orphan-ref gated). The search magnifier stays hardcoded
@@ -589,6 +606,19 @@
             itCls +
             '" style="' +
             digramItemTypeStyle(itItemType) +
+            '">' +
+            esc(props.Initials || props.Label || "") +
+            "</span>"
+          );
+        }
+
+        case "digram-topic": {
+          var dtType = v.Type || "Light purple";
+          var dtBg =
+            DIGRAM_TOPIC_COLORS[dtType] || DIGRAM_TOPIC_COLORS["Light purple"];
+          return (
+            '<span class="ds-topic" style="background:' +
+            dtBg +
             '">' +
             esc(props.Initials || props.Label || "") +
             "</span>"
@@ -1900,6 +1930,7 @@
     "loader",
     "calendar",
     "digram-item-types",
+    "digram-topic",
   ];
 
   exports.renderDSComponent = renderDSComponent;
