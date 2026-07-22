@@ -114,6 +114,46 @@ test("checkBaseCssRules: the real ds-base.css tag/checkbox rules pass", function
   );
 });
 
+test("checkBaseCssRules: a fabricated modifier cannot pass by borrowing a sibling member's fact (per-owner, not union)", function () {
+  // tag-catalog's real anatomy legitimately captures #000000 as a text
+  // color (--zen-color-text-default). A prior version of checkBaseCssRules
+  // unioned every "tag*" fact set together before checking any rule, so a
+  // fabricated .ds-tag--bogus rule emitting #000000 would pass by borrowing
+  // tag-catalog's fact even though no fact source that actually owns the
+  // "bogus" modifier ever captured that value. This proves the per-owner
+  // fix: "bogus" has no registered tag-bogus fact source, so it falls back
+  // to tag-default -- whose Color axis never captured #000000 -- and must
+  // still be flagged, even though tag-catalog (a sibling entry in the SAME
+  // facts map) legitimately owns #000000.
+  var facts = {
+    "tag-default": A.readAppearance("tag-default", ANATOMY),
+    "tag-catalog": A.readAppearance("tag-catalog", ANATOMY),
+    checkbox: A.readAppearance("checkbox", ANATOMY),
+  };
+  var tokenMap = { "--zen-color-text-default": "#000000" };
+  var cssText =
+    ".ds-tag--bogus { background: #000000; }\n" +
+    ".ds-tag--catalog { color: var(--zen-color-text-default); }\n";
+  var v = F.checkBaseCssRules(cssText, facts, tokenMap);
+  assert.ok(
+    v.some(function (m) {
+      return /\.ds-tag--bogus/.test(m) && /#000000/.test(m);
+    }),
+    "a fabricated .ds-tag--bogus borrowing tag-catalog's #000000 text-color " +
+      "fact must still violate (checked against tag-default, which does not " +
+      "own #000000), got: " +
+      JSON.stringify(v),
+  );
+  assert.ok(
+    !v.some(function (m) {
+      return /\.ds-tag--catalog/.test(m);
+    }),
+    "legitimate .ds-tag--catalog color must pass (checked against its own " +
+      "owning fact source, tag-catalog), got: " +
+      JSON.stringify(v),
+  );
+});
+
 test("checkBaseCssRules: a planted bad tag rule is caught", function () {
   var tokenMap = A.loadTokenMap(
     fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8"),

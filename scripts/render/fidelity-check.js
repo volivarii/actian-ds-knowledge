@@ -128,29 +128,35 @@ function fidelityCheck(canonical, ctx) {
 // against.
 function checkBaseCssRules(cssText, facts, tokenMap) {
   var violations = [];
-  // The .ds-tag--<x> modifier namespace is no longer tag-default's Color
-  // axis alone: gray-box-to-zero family 2 added standalone .ds-tag--<x>
-  // rules for OTHER dedicated tag-family members (e.g. tag-catalog) that
-  // carry their own captured facts, not tag-default's. Union every
-  // tag-family fact set the caller provides (any key whose name starts with
-  // "tag") so a rule is checked against the acceptable palette across the
-  // whole family, not just tag-default's.
-  var tagFacts = new Set();
-  Object.keys(facts).forEach(function (key) {
-    if (key.indexOf("tag") !== 0) return;
-    factColors(facts[key]).forEach(function (c) {
-      tagFacts.add(c);
-    });
-  });
-  var re = /\.ds-tag--[a-z0-9]+\s*\{([^}]*)\}/g;
+  // Per-owner lookup, NOT a union. Gray-box-to-zero family 2 added
+  // standalone .ds-tag--<x> rules for OTHER dedicated tag-family members
+  // (e.g. tag-catalog, tag-shared) that carry their OWN captured facts,
+  // distinct from tag-default's Color axis. An earlier version unioned
+  // every "tag*" fact set the caller provided into one palette before
+  // checking any rule against it -- that let a FABRICATED modifier (e.g. an
+  // invented .ds-tag--bogus) pass by borrowing a sibling member's captured
+  // color (tag-catalog's legitimate #000000 text color is not evidence that
+  // some unrelated modifier's color is legitimate too). Union membership
+  // carries no provenance, so that check was gate-weakening. Each
+  // .ds-tag--<modifier> rule is now checked ONLY against the fact source
+  // that actually owns it: facts["tag-" + modifier] when the caller
+  // registered one (.ds-tag--catalog -> tag-catalog, .ds-tag--shared ->
+  // tag-shared), else facts["tag-default"], whose Color axis owns the plain
+  // color modifiers (.ds-tag--indigo, .ds-tag--gray, ...).
+  var re = /\.ds-tag--([a-z0-9]+)\s*\{([^}]*)\}/g;
   var m;
   while ((m = re.exec(cssText)) !== null) {
-    var selector = m[0].slice(0, m[0].indexOf("{")).trim();
+    var modifier = m[1];
+    var owner = facts["tag-" + modifier] ||
+      facts["tag-default"] || {
+        variants: [],
+        byNode: [],
+      };
     checkRuleBody(
       "ds-base.css",
-      selector,
-      m[1],
-      tagFacts,
+      ".ds-tag--" + modifier,
+      m[2],
+      factColors(owner),
       tokenMap,
       violations,
     );

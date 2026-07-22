@@ -759,6 +759,25 @@ test("tag-stage: escapes hostile Label", function () {
   assert.match(html, /&lt;img/, "label escaped");
 });
 
+test("tag-stage: clamps a hostile Color before it reaches the class attribute (XSS)", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-stage",
+    variant: 'Color="><script>alert(1)</script>',
+    props: { Label: "Raw" },
+  });
+  assert.doesNotMatch(
+    html,
+    /"><script/,
+    "no raw class-attribute breakout from an unclamped Color",
+  );
+  assert.match(
+    html,
+    /class="ds-tag ds-tag-stage"/,
+    "unknown Color appends no modifier -- renders the base pill safely",
+  );
+});
+
 test("tag-status: base + namespace present", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({

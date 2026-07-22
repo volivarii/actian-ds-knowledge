@@ -1763,8 +1763,26 @@
           // ANATOMY OVER PROSE: the registry lists "Trailing icon" default
           // false, but the captured default (Color=Gray) node includes the
           // arrow as its last child, so it is rendered unconditionally here.
+          // Clamp Color against the known set BEFORE it touches the class
+          // attribute -- v.Color is user-supplied flow-data (from
+          // parseVariant); an unclamped value would break out of the class
+          // attribute and inject markup (XSS), same discipline as
+          // error-state's Size clamp and tag-catalog-item-type's Type clamp
+          // above. Unknown/hostile values append NO modifier (renders the
+          // base pill safely) rather than falling back to a default color.
+          var TAG_STAGE_COLORS = {
+            indigo: 1,
+            lime: 1,
+            orange: 1,
+            yellow: 1,
+            pink: 1,
+            purple: 1,
+            teal: 1,
+            gray: 1,
+          };
+          var tsColor = v.Color ? String(v.Color).toLowerCase() : "";
           var tsCls = "ds-tag ds-tag-stage";
-          if (v.Color) tsCls += " ds-tag--" + v.Color.toLowerCase();
+          if (TAG_STAGE_COLORS[tsColor]) tsCls += " ds-tag--" + tsColor;
           return (
             '<span class="' +
             tsCls +
