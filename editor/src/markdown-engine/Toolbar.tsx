@@ -5,21 +5,14 @@ import { Button, Flex, Separator, Tooltip } from "@radix-ui/themes";
 import type { EditorView } from "@codemirror/view";
 import type { Octokit } from "@octokit/rest";
 import { MediaPickerPopover } from "./MediaPickerPopover";
+import { deriveUniqueSlug } from "./anchorSlug";
+import { scanFileForAnchors } from "../lib/anchorIndex";
 
 export interface ToolbarProps {
   view: EditorView;
   /** Present only when editing a component-guideline .md (enables media). */
   octokit?: Octokit;
   componentSlug?: string | null;
-}
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/--+/g, "-");
 }
 
 function wrapSelection(view: EditorView, prefix: string, suffix: string) {
@@ -57,13 +50,18 @@ function insertAnchor(view: EditorView) {
   const sel = view.state.selection.main;
   const line = view.state.doc.lineAt(sel.from);
   const text = line.text;
+  // Additive only: never touch a heading that already ends in an anchor.
+  if (/\{#[a-z][a-z0-9-]*\}\s*$/.test(text)) return;
+  const taken = new Set(scanFileForAnchors(view.state.doc.toString()).defines);
   const headingMatch = text.match(/^(#{1,6})\s+(.+)$/);
   if (headingMatch && headingMatch[2]) {
-    const slug = slugify(headingMatch[2]) || "anchor";
-    const insert = `  {#${slug}}`;
-    view.dispatch({ changes: { from: line.to, to: line.to, insert } });
+    const slug = deriveUniqueSlug(headingMatch[2], taken);
+    view.dispatch({
+      changes: { from: line.to, to: line.to, insert: `  {#${slug}}` },
+    });
   } else {
-    insertAtCursor(view, "{#anchor}");
+    const slug = deriveUniqueSlug("anchor", taken);
+    insertAtCursor(view, `{#${slug}}`);
   }
   view.focus();
 }

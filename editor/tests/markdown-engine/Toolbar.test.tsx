@@ -34,7 +34,11 @@ function stubView() {
 }
 
 function fakeGh() {
-  return { repos: { getContent: async () => ({ data: { content: "", encoding: "base64" } }) } } as any;
+  return {
+    repos: {
+      getContent: async () => ({ data: { content: "", encoding: "base64" } }),
+    },
+  } as any;
 }
 
 function wrap(node: React.ReactNode) {
@@ -109,6 +113,19 @@ test("Toolbar: anchor button on non-heading inserts {#anchor} at cursor", () => 
   cleanup();
 });
 
+test("Toolbar: anchor button derives a UNIQUE slug against existing anchors", () => {
+  const doc = "## Overview {#overview}\n\nprose\n\n## Overview";
+  const { view } = mountWithView(doc);
+  // Cursor on the second (unanchored) "## Overview" line.
+  const secondHeadingAt = doc.lastIndexOf("## Overview") + 5;
+  view.dispatch({
+    selection: { anchor: secondHeadingAt, head: secondHeadingAt },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /anchor/i }));
+  assert.match(view.state.doc.toString(), /## Overview {2}\{#overview-2\}$/);
+  cleanup();
+});
+
 test("Toolbar: code block inserts ``` fenced block at cursor", () => {
   const { view } = mountWithView("");
   view.dispatch({ selection: { anchor: 0, head: 0 } });
@@ -120,15 +137,22 @@ test("Toolbar: code block inserts ``` fenced block at cursor", () => {
 test("shows the media picker trigger in a component context", () => {
   cleanup();
   render(
-    wrap(<Toolbar view={stubView()} octokit={fakeGh()} componentSlug="button" />),
+    wrap(
+      <Toolbar view={stubView()} octokit={fakeGh()} componentSlug="button" />,
+    ),
   );
-  assert.ok(screen.queryByRole("button", { name: /insert media/i }), "media trigger present");
+  assert.ok(
+    screen.queryByRole("button", { name: /insert media/i }),
+    "media trigger present",
+  );
   cleanup();
 });
 
 test("hides the media trigger when there is no component slug", () => {
   cleanup();
-  render(wrap(<Toolbar view={stubView()} octokit={fakeGh()} componentSlug={null} />));
+  render(
+    wrap(<Toolbar view={stubView()} octokit={fakeGh()} componentSlug={null} />),
+  );
   assert.equal(
     screen.queryByRole("button", { name: /insert media/i }),
     null,
@@ -139,7 +163,14 @@ test("hides the media trigger when there is no component slug", () => {
 
 test("never renders the old free-text <Media src> button", () => {
   cleanup();
-  render(wrap(<Toolbar view={stubView()} octokit={fakeGh()} componentSlug="button" />));
-  assert.equal(screen.queryByRole("button", { name: /Insert Media component/i }), null);
+  render(
+    wrap(
+      <Toolbar view={stubView()} octokit={fakeGh()} componentSlug="button" />,
+    ),
+  );
+  assert.equal(
+    screen.queryByRole("button", { name: /Insert Media component/i }),
+    null,
+  );
   cleanup();
 });
