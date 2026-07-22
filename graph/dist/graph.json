@@ -6699,6 +6699,16 @@
     },
     {
       "source": "component:alert-banner",
+      "target": "component:add",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:alert-banner",
+      "target": "component:arrow-down",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:alert-banner",
       "target": "component:button",
       "type": "composed_of"
     },
@@ -6784,6 +6794,16 @@
     },
     {
       "source": "component:button",
+      "target": "component:add",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:button",
+      "target": "component:arrow-down",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:button",
       "target": "component:spinner",
       "type": "composed_of"
     },
@@ -6803,8 +6823,13 @@
       "type": "composed_of"
     },
     {
-      "source": "component:calendar",
-      "target": "component:chevron-up",
+      "source": "component:card-for-grouped-content",
+      "target": "component:add",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:card-for-grouped-content",
+      "target": "component:arrow-down",
       "type": "composed_of"
     },
     {
@@ -6904,6 +6929,16 @@
     },
     {
       "source": "component:confirmation",
+      "target": "component:add",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:confirmation",
+      "target": "component:arrow-down",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:confirmation",
       "target": "component:button",
       "type": "composed_of"
     },
@@ -6915,6 +6950,11 @@
     {
       "source": "component:drawer-side-panel",
       "target": "component:add",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:drawer-side-panel",
+      "target": "component:ai",
       "type": "composed_of"
     },
     {
@@ -7044,12 +7084,32 @@
     },
     {
       "source": "component:empty-state",
+      "target": "component:add",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:empty-state",
+      "target": "component:arrow-down",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:empty-state",
       "target": "component:button",
       "type": "composed_of"
     },
     {
       "source": "component:empty-state",
       "target": "component:illustration",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:error-state",
+      "target": "component:add",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:error-state",
+      "target": "component:arrow-down",
       "type": "composed_of"
     },
     {
@@ -7529,6 +7589,11 @@
     },
     {
       "source": "component:glossary-item-hierarchy-diagram",
+      "target": "component:arrow-down",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:glossary-item-hierarchy-diagram",
       "target": "component:button",
       "type": "composed_of"
     },
@@ -7584,6 +7649,11 @@
     },
     {
       "source": "component:lineage-grouped-node",
+      "target": "component:add",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:lineage-grouped-node",
       "target": "component:arrow-down",
       "type": "composed_of"
     },
@@ -7615,6 +7685,11 @@
     {
       "source": "component:lineage-grouped-node",
       "target": "component:tag-default",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:lineage-individual-node",
+      "target": "component:add",
       "type": "composed_of"
     },
     {
@@ -7674,6 +7749,16 @@
     },
     {
       "source": "component:maintenance-state",
+      "target": "component:add",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:maintenance-state",
+      "target": "component:arrow-down",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:maintenance-state",
       "target": "component:button",
       "type": "composed_of"
     },
@@ -7695,6 +7780,11 @@
     {
       "source": "component:metamodel-widget",
       "target": "component:digram-item-types",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:modal",
+      "target": "component:add",
       "type": "composed_of"
     },
     {
@@ -7769,7 +7859,27 @@
     },
     {
       "source": "component:notification",
+      "target": "component:add",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:notification",
+      "target": "component:arrow-down",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:notification",
       "target": "component:button",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:notification-dropdown",
+      "target": "component:add",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:notification-dropdown",
+      "target": "component:arrow-down",
       "type": "composed_of"
     },
     {
@@ -7840,6 +7950,11 @@
     {
       "source": "component:page-header",
       "target": "component:zeenea-logo",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:popover",
+      "target": "component:add",
       "type": "composed_of"
     },
     {
@@ -7930,6 +8045,11 @@
     {
       "source": "component:radio-button-card",
       "target": "component:radio-button",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:search",
+      "target": "component:ai",
       "type": "composed_of"
     },
     {
@@ -8104,7 +8224,22 @@
     },
     {
       "source": "component:sticky-footer",
+      "target": "component:add",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:sticky-footer",
+      "target": "component:arrow-down",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:sticky-footer",
       "target": "component:button",
+      "type": "composed_of"
+    },
+    {
+      "source": "component:table",
+      "target": "component:ai",
       "type": "composed_of"
     },
     {
