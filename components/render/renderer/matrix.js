@@ -89,6 +89,7 @@ var RENDER_SLUGS = [
   "search-result-card",
   // Gray-box-to-zero, family 4 (dropdowns / overlays).
   "whats-new-dropdown",
+  "drawer-side-panel",
 ];
 
 // A render slug may live in any kit; search ds -> meta -> fm.
@@ -457,6 +458,22 @@ var MATRIX_OVERRIDES = {
         Detail:
           "Added support for bulk dataset import. You can now import multiple datasets from a single CSV manifest.",
       },
+    },
+  ],
+
+  // App (Studio/Explorer) is the identity axis, but this leaf reads
+  // Name/Type/Show Back, not Label -- curate both cells so the gallery
+  // shows the faithful Studio default plus the minimal Explorer accent.
+  "drawer-side-panel": [
+    {
+      label: "Studio",
+      variant: "App=Studio",
+      props: { Name: "Financial Summary EY2024", Type: "Dataset" },
+    },
+    {
+      label: "Explorer",
+      variant: "App=Explorer",
+      props: { Name: "Financial Summary EY2024", Type: "Dataset" },
     },
   ],
 };

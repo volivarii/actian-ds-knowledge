@@ -1356,3 +1356,95 @@ test("whats-new-dropdown: escapes a hostile Title and a hostile Items entry", fu
   assert.match(html, /&lt;img/, "hostile text escaped");
   assert.doesNotMatch(html, /<img src=x/, "no raw injection");
 });
+
+test("drawer-side-panel: base class + role=dialog + aria-label present", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "drawer-side-panel",
+    variant: "App=Studio",
+    props: {},
+  });
+  assert.match(html, /class="ds-drawer"/, "carries the base class");
+  assert.match(html, /role="dialog"/, "carries dialog role");
+  assert.match(html, /aria-label="[^"]+"/, "carries an aria-label");
+});
+
+test("drawer-side-panel: hostile Name renders escaped inside __title", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "drawer-side-panel",
+    variant: "App=Studio",
+    props: { Name: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "hostile Name is escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+
+test("drawer-side-panel: App=Explorer adds the modifier, App=Studio (default) does not", function () {
+  var DS = require(DS_PATH);
+  var htmlExplorer = DS.renderDSComponent({
+    dsSlug: "drawer-side-panel",
+    variant: "App=Explorer",
+    props: {},
+  });
+  assert.match(
+    htmlExplorer,
+    /ds-drawer--explorer/,
+    "Explorer carries the modifier class",
+  );
+
+  var htmlStudio = DS.renderDSComponent({
+    dsSlug: "drawer-side-panel",
+    variant: "App=Studio",
+    props: {},
+  });
+  assert.doesNotMatch(
+    htmlStudio,
+    /ds-drawer--explorer/,
+    "Studio (default) does not carry the Explorer modifier",
+  );
+});
+
+test("drawer-side-panel: Show Back=false omits the back button; default renders it", function () {
+  var DS = require(DS_PATH);
+  var htmlDefault = DS.renderDSComponent({
+    dsSlug: "drawer-side-panel",
+    variant: "App=Studio",
+    props: {},
+  });
+  assert.match(
+    htmlDefault,
+    /ds-drawer__back/,
+    "back button renders by default",
+  );
+
+  var htmlNoBack = DS.renderDSComponent({
+    dsSlug: "drawer-side-panel",
+    variant: "App=Studio",
+    props: { "Show Back": false },
+  });
+  assert.doesNotMatch(
+    htmlNoBack,
+    /ds-drawer__back/,
+    "Show Back=false omits the back button",
+  );
+});
+
+test("drawer-side-panel: --explorer modifier rule actually differs from the base (no silent no-op)", function () {
+  var css = require("node:fs").readFileSync(
+    require("node:path").join(
+      __dirname,
+      "../../components/render/renderer/ds-base.css",
+    ),
+    "utf8",
+  );
+  var base = css.match(/\.ds-drawer\s*\{([^}]*)\}/);
+  var explorer = css.match(/\.ds-drawer--explorer\s*\{([^}]*)\}/);
+  assert.ok(base && explorer, "both rules exist");
+  assert.notEqual(base[1].trim(), "", "base rule is not empty");
+  assert.notEqual(
+    explorer[1].trim(),
+    "",
+    "--explorer must not be an empty no-op rule",
+  );
+});

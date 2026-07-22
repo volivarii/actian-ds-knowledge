@@ -3496,3 +3496,191 @@
   line-height: var(--zen-font-lineheight-md);
   letter-spacing: var(--zen-font-letterspacing-wide-2);
 }
+
+/* ============ Drawer, side panel (gray-box-to-zero family 4) ============ */
+/* Registry category: Overlays (group "Drawer (Side panel)") -- a sibling of
+ * .ds-modal/.ds-popover, NOT a dropdown, despite the family-4 assignment
+ * (see the renderer case comment). Mirrors .ds-modal's bordered-panel shell
+ * rather than the menu-overlay idiom used by the other 3 family-4 leaves.
+ * Root/header/title/tags/body/tabs geometry and text tokens are captured
+ * verbatim from the Studio anatomy (quality.ratio 1); only Explorer's
+ * chrome-accent modifier and the tab-strip/section copy are invented
+ * (registry exposes no content props for either -- see the case comment).
+ * The item-type badge (.ds-tag-catalog-item-type) and progress bar
+ * (.ds-progress*) reuse their EXISTING rules verbatim; only the classes
+ * below are new. */
+.ds-drawer {
+  display: flex;
+  flex-direction: column;
+  width: 420px; /* raw px: side-panel width -- anatomy sizing is fixed/fixed but captures no explicit px */
+  max-width: 100%;
+  background: var(--zen-color-bg-default); /* captured #ffffff */
+  border: 1px solid var(--zen-border-default); /* borrowed elevation idiom, mirrors .ds-modal; not captured */
+  border-radius: 0; /* captured: anatomy root carries no radius, unlike the family-4 menu overlays */
+  box-shadow: var(
+    --zen-shadow-xs
+  ); /* mirrors .ds-modal's elevation, not captured */
+  font-family: var(--zen-font-family-text);
+  box-sizing: border-box;
+}
+.ds-drawer--explorer {
+  /* Real, minimal delta per spec guidance: only Explorer's childCount deltas
+   * were captured (no structural detail), so this is a chrome accent only
+   * -- not invented structure. */
+  border-top: 3px solid var(--zen-color-primary-500);
+}
+.ds-drawer__header {
+  display: flex;
+  align-items: center;
+  gap: var(
+    --zen-spacing-xs
+  ); /* captured 8, the "Back + Tag + Name" cluster's gap */
+  padding: var(--zen-spacing-md); /* captured 16 */
+}
+.ds-drawer__back {
+  width: 32px; /* raw px: pill icon-button box */
+  height: 32px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 9999px; /* captured */
+  background: transparent;
+  color: var(--zen-color-icon-default);
+  cursor: pointer;
+}
+.ds-drawer__back svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+.ds-drawer__tags {
+  display: flex;
+  align-items: center;
+  gap: var(--zen-spacing-2xs); /* captured 4 */
+  flex: 0 0 auto;
+}
+.ds-drawer__tag-shared {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--zen-spacing-xs); /* mirrors the sibling catalog-item-type pill's padding, 0 8 */
+  height: 24px; /* mirrors sibling tag pill geometry */
+  border-radius: 4px; /* captured */
+  background: var(
+    --zen-color-primary-700
+  ); /* captured #00699f on THIS drawer's own instance -- distinct from the separate tag-shared slug's own captured facts (#cbe3ff), so not reused */
+  border: 1px solid var(--zen-color-primary-700);
+  color: #ffffff; /* no captured token; a solid-fill pill needs a light label for contrast */
+  font-size: var(--zen-font-size-sm); /* 12 */
+  line-height: var(--zen-font-lineheight-sm); /* 16 */
+  font-weight: var(--zen-font-weight-regular);
+  letter-spacing: var(--zen-font-letterspacing-wide-3); /* 0.3 */
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+.ds-drawer__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--zen-color-text-default); /* captured #000000 */
+  font-size: var(--zen-font-size-xl); /* 18, captured verbatim */
+  font-weight: var(--zen-font-weight-semibold); /* 600 */
+  line-height: var(--zen-font-lineheight-xl); /* 26, captured verbatim */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-drawer__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--zen-spacing-xs); /* captured 8 */
+  flex: 0 0 auto;
+}
+.ds-drawer__actions button {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 9999px; /* captured */
+  background: transparent;
+  color: var(--zen-color-icon-default);
+  cursor: pointer;
+}
+.ds-drawer__actions svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+.ds-drawer__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--zen-spacing-2xs); /* captured 4 */
+  padding: 0 var(--zen-spacing-md) var(--zen-spacing-md); /* captured 16; the header already carries the top inset */
+  color: var(--zen-color-text-default); /* captured #000000 */
+  font-size: var(--zen-font-size-md); /* 14, captured */
+  line-height: var(--zen-font-lineheight-md); /* 20, captured */
+  letter-spacing: var(--zen-font-letterspacing-wide-2); /* 0.2, captured */
+}
+.ds-drawer__body p {
+  margin: 0;
+}
+.ds-drawer__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--zen-spacing-xs);
+  padding-top: var(--zen-spacing-2xs);
+}
+.ds-drawer__meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--zen-spacing-3xs);
+  color: var(--zen-color-text-default); /* captured #000000 */
+  font-size: var(--zen-font-size-md); /* 14, captured */
+  line-height: var(--zen-font-lineheight-md); /* 20, captured */
+  letter-spacing: var(--zen-font-letterspacing-wide-2); /* 0.2, captured */
+}
+.ds-drawer__tabs {
+  display: flex;
+  gap: var(
+    --zen-spacing-md
+  ); /* not captured (nested Tabs instance is opaque) -- a comfortable default */
+  padding: 0 var(--zen-spacing-md);
+  border-bottom: 1px solid var(--zen-border-default); /* captured #dadada */
+}
+.ds-drawer__tab {
+  padding: var(--zen-spacing-xs) 0;
+  color: var(--zen-color-text-secondary);
+  font-size: var(--zen-font-size-md);
+  line-height: var(--zen-font-lineheight-md);
+  font-weight: var(--zen-font-weight-medium);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.ds-drawer__tab.is-active {
+  color: var(--zen-color-text-default);
+  border-bottom-color: var(--zen-color-primary-500);
+}
+.ds-drawer__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--zen-spacing-xs); /* captured ~8 */
+  padding: var(--zen-spacing-md); /* captured 16 */
+}
+.ds-drawer__section-title {
+  color: var(--zen-color-text-default); /* captured #000000 */
+  font-size: var(--zen-font-size-lg); /* 16, captured */
+  font-weight: var(--zen-font-weight-semibold); /* 600 */
+  line-height: var(--zen-font-lineheight-lg); /* 24, captured */
+}
+.ds-drawer__section-body {
+  color: var(--zen-color-text-default); /* captured #000000 */
+  font-size: var(--zen-font-size-md); /* 14, captured */
+  line-height: var(--zen-font-lineheight-md); /* 20, captured */
+  letter-spacing: var(--zen-font-letterspacing-wide-2); /* 0.2, captured */
+}

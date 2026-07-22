@@ -2150,6 +2150,155 @@
           );
         }
 
+        case "drawer-side-panel": {
+          // Registry axis: App = Studio | Explorer -- the only captured
+          // non-secondary axis. CORRECTS the pre-triage: this is an
+          // Overlays component (sibling of modal/popover), NOT a dropdown,
+          // despite the family-4 assignment; the originally-assigned
+          // "popover" reuse pattern is also refuted (popover is a tiny
+          // floating info card, not a fits-content detail panel). Mirror
+          // `modal` instead: same Overlays category, a bordered panel
+          // shell, role="dialog". Only the Studio anatomy tree was
+          // captured (quality.ratio 1); Explorer differences are recorded
+          // only as childCount deltas in structuralVariants, so the
+          // Explorer cell stays a MINIMAL chrome-accent modifier rather
+          // than invented structure (see the ds-base.css comment).
+          var drIsExplorer = v.App === "Explorer";
+          var drCls =
+            "ds-drawer" + (drIsExplorer ? " ds-drawer--explorer" : "");
+          var drName = esc(props.Name || "Name");
+
+          // "Show Back" is a default-TRUE registry boolean -> shown unless
+          // explicitly false (the file's default-true convention, cf.
+          // popover "Show info icon" / toolbar "Show View scale").
+          var drShowBack = props["Show Back"] !== false;
+          var drBack = drShowBack
+            ? '<button class="ds-drawer__back" type="button" aria-label="Back">' +
+              renderIcon("chevron-left") +
+              "</button>"
+            : "";
+
+          // Catalog-item-type badge: clamp Type against the known set
+          // before it touches the class attribute -- props.Type is
+          // user-supplied flow-data; an unclamped value would break out of
+          // the class attribute (XSS), same discipline as the
+          // tag-catalog-item-type case above. Reuses THAT case's EXISTING
+          // .ds-tag-catalog-item-type(--<slug>) classes verbatim (a static
+          // pill, not a recursive renderDSComponent call), same idiom as
+          // search-result-card's tag reuse.
+          var DR_TYPE_SLUGS = {
+            category: "category",
+            dataset: "dataset",
+            "data process": "data-process",
+            "data product": "data-product",
+            field: "field",
+            "output port": "output-port",
+            "use case": "use-case",
+            visualization: "visualization",
+          };
+          var drTypeRaw = props.Type || "Dataset";
+          var drTypeSlug =
+            DR_TYPE_SLUGS[String(drTypeRaw).toLowerCase()] || "dataset";
+          var drTags =
+            '<div class="ds-drawer__tags">' +
+            '<span class="ds-tag-catalog-item-type ds-tag-catalog-item-type--' +
+            drTypeSlug +
+            '"><span class="ds-tag-catalog-item-type__name">' +
+            esc(drTypeRaw) +
+            "</span></span>" +
+            '<span class="ds-drawer__tag-shared">Shared</span>' +
+            "</div>";
+
+          var drActions =
+            '<div class="ds-drawer__actions">' +
+            '<button type="button" aria-label="Add to favorites">' +
+            renderIcon("favorite") +
+            "</button>" +
+            '<button type="button" aria-label="Close">' +
+            renderIcon("close") +
+            "</button>" +
+            "</div>";
+
+          var drHeader =
+            '<div class="ds-drawer__header">' +
+            drBack +
+            drTags +
+            '<span class="ds-drawer__title">' +
+            drName +
+            "</span>" +
+            drActions +
+            "</div>";
+
+          // Body 1 + Body 2 merged (the anatomy splits identical metadata
+          // across two sibling containers): technical name,
+          // catalog/category/connection, and the Last updated / Fields /
+          // Completion meta row. The registry exposes no content props for
+          // these -- hardcoded faithful default copy from the captured
+          // Studio anatomy, same idiom as modal/card-for-grouped-content's
+          // default text. The progress bar reuses progress-bar-small's
+          // EXISTING .ds-progress/__track/__fill markup verbatim (already
+          // has ds-base.css rules) rather than recursing into
+          // renderDSComponent, same idiom as card-for-perimeter above.
+          var drBody =
+            '<div class="ds-drawer__body">' +
+            "<p>Technical name: able_agency</p>" +
+            "<p>Catalog: Finance / Category: 24/7 / Connection: Powerbi</p>" +
+            '<div class="ds-drawer__meta">' +
+            '<span class="ds-drawer__meta-item">Last updated<br>Dec 15, 2025</span>' +
+            '<span class="ds-drawer__meta-item">Fields<br>10 Fields</span>' +
+            '<span class="ds-drawer__meta-item">Completion' +
+            '<div class="ds-progress">' +
+            '<div class="ds-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">' +
+            '<span class="ds-progress__fill" style="width:50%"></span>' +
+            "</div></div>" +
+            "</span>" +
+            "</div>" +
+            "</div>";
+
+          // Static tab strip (do not recurse into the tabs component);
+          // registry exposes no tab-label content props, so hardcoded
+          // plausible defaults.
+          var drTabs =
+            '<div class="ds-drawer__tabs" role="tablist">' +
+            '<span class="ds-drawer__tab is-active" role="tab" aria-selected="true">Overview</span>' +
+            '<span class="ds-drawer__tab" role="tab" aria-selected="false">Lineage</span>' +
+            '<span class="ds-drawer__tab" role="tab" aria-selected="false">Quality</span>' +
+            "</div>";
+
+          // Body 3: three labeled sections captured in the Studio anatomy
+          // (Glossary items, Description, Source description). Registry
+          // exposes no content props -- hardcoded faithful default copy,
+          // same idiom as card-for-grouped-content's Body above. The
+          // glossary multi-select renders as a static, non-interactive
+          // placeholder (do not recurse into dropdown-select-default).
+          var drSections =
+            '<div class="ds-drawer__section">' +
+            '<div class="ds-drawer__section-title">Glossary items (2)</div>' +
+            '<div class="ds-drawer__section-body">Search or select glossary items</div>' +
+            "</div>" +
+            '<div class="ds-drawer__section">' +
+            '<div class="ds-drawer__section-title">Description</div>' +
+            '<div class="ds-drawer__section-body">A short description of this dataset, including its purpose and key characteristics.</div>' +
+            "</div>" +
+            '<div class="ds-drawer__section">' +
+            '<div class="ds-drawer__section-title">Source description</div>' +
+            '<div class="ds-drawer__section-body">A short description carried over from the source system.</div>' +
+            "</div>";
+
+          return (
+            '<div class="' +
+            drCls +
+            '" role="dialog" aria-label="' +
+            drName +
+            '">' +
+            drHeader +
+            drBody +
+            drTabs +
+            drSections +
+            "</div>"
+          );
+        }
+
         case "app-switcher-dropdown": {
           // No registry variants/props (single-import; nested settings /
           // arrow-down baked in). Render an app-switcher menu overlay: an app
@@ -2810,6 +2959,7 @@
     "notification-dropdown",
     "search-dropdown-menu",
     "whats-new-dropdown",
+    "drawer-side-panel",
   ];
 
   exports.renderDSComponent = renderDSComponent;
