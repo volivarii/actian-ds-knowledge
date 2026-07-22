@@ -184,3 +184,60 @@ test("lineage-individual-node: escapes a hostile Label", function () {
   assert.match(html, /&lt;img/, "label escaped");
   assert.doesNotMatch(html, /<img src=x/, "no raw injection");
 });
+
+test("lineage-grouped-node: default state, header only, no children shown", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "lineage-grouped-node",
+    variant: "State=Default",
+    props: { Label: "orders_pipeline" },
+  });
+  assert.match(html, /class="ds-lineage-group"/, "carries the base class");
+  assert.doesNotMatch(
+    html,
+    /ds-lineage-group--expanded/,
+    "not expanded by default",
+  );
+  assert.match(html, />orders_pipeline</, "renders the group label");
+  assert.doesNotMatch(
+    html,
+    /ds-lineage-group__children/,
+    "children hidden when not expanded",
+  );
+});
+
+test("lineage-grouped-node: State=Expanded shows the expanded modifier and a child row", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "lineage-grouped-node",
+    variant: "State=Expanded",
+    props: { Label: "orders_pipeline", "Child label": "raw_orders" },
+  });
+  assert.match(
+    html,
+    /ds-lineage-group ds-lineage-group--expanded/,
+    "has the expanded modifier",
+  );
+  assert.match(
+    html,
+    /ds-lineage-group__children/,
+    "children container present when expanded",
+  );
+  assert.match(
+    html,
+    /ds-lineage-node ds-lineage-group__child/,
+    "inlines a lineage-node-shaped child, not a recursive call",
+  );
+  assert.match(html, />raw_orders</, "renders the child label");
+});
+
+test("lineage-grouped-node: escapes a hostile Label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "lineage-grouped-node",
+    variant: "State=Default",
+    props: { Label: "<svg onload=1>" },
+  });
+  assert.match(html, /&lt;svg/, "label escaped");
+  assert.doesNotMatch(html, /<svg onload/, "no raw injection");
+});

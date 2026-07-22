@@ -675,6 +675,59 @@
           );
         }
 
+        case "lineage-grouped-node": {
+          var lgnCls = "ds-lineage-group";
+          if (v.State === "Expanded") lgnCls += " ds-lineage-group--expanded";
+
+          var lgnItemType = v["Item type"] || "Category";
+          var lgnBadge =
+            '<span class="ds-item-type" style="' +
+            digramItemTypeStyle(lgnItemType) +
+            '">' +
+            esc(props["Item type initials"] || "") +
+            "</span>";
+
+          // Inline lineage-individual-node's own markup for the one
+          // representative child row (don't recurse into
+          // renderDSComponent, matching card-for-items' precedent); real
+          // grouped children are assembled by the caller, this leaf just
+          // proves the group chrome renders.
+          var lgnChild =
+            '<div class="ds-lineage-node ds-lineage-group__child">' +
+            '<span class="ds-item-type" style="' +
+            digramItemTypeStyle(lgnItemType) +
+            '">' +
+            esc(props["Child initials"] || "") +
+            "</span>" +
+            '<span class="ds-lineage-node__label">' +
+            esc(props["Child label"] || "") +
+            "</span>" +
+            "</div>";
+
+          var lgnToggleIcon = renderIcon("chevron-up");
+
+          return (
+            '<div class="' +
+            lgnCls +
+            '">' +
+            '<div class="ds-lineage-group__header">' +
+            lgnBadge +
+            '<span class="ds-lineage-group__label">' +
+            esc(props.Label || props.Title || "") +
+            "</span>" +
+            '<button class="ds-lineage-group__toggle" aria-label="' +
+            (v.State === "Expanded" ? "Collapse group" : "Expand group") +
+            '">' +
+            lgnToggleIcon +
+            "</button>" +
+            "</div>" +
+            (v.State === "Expanded"
+              ? '<div class="ds-lineage-group__children">' + lgnChild + "</div>"
+              : "") +
+            "</div>"
+          );
+        }
+
         case "global-header": {
           // Top app bar (chrome) — real Studio header, authored from Figma anatomy.
           // anatomy: 1440×64, flex space-between, padding 0 24px.
@@ -1982,6 +2035,7 @@
     "digram-item-types",
     "digram-topic",
     "lineage-individual-node",
+    "lineage-grouped-node",
   ];
 
   exports.renderDSComponent = renderDSComponent;
