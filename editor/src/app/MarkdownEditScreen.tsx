@@ -81,6 +81,8 @@ import { loadAnchorIndex, findReferences } from "../lib/anchorIndex";
 import { computeRenameWarnings } from "../markdown-engine/anchorLinter";
 import { Badge } from "@radix-ui/themes";
 import { TierBanner } from "./TierBanner";
+import { DomainStatusControl } from "./DomainStatusControl";
+import { domainFileForPath } from "../lib/workspaceState";
 
 interface MarkdownEditScreenProps {
   path: string;
@@ -665,6 +667,22 @@ export function MarkdownEditScreen({
       <Flex align="center" justify="between" gap="2" wrap="wrap">
         <Heading size="3">{path}</Heading>
         <Flex gap="2" align="center">
+          {(() => {
+            const df = domainFileForPath(path);
+            // key by path so navigating between domain files fully remounts the
+            // control. MarkdownEditScreen is NOT remounted on navigation (same
+            // reason CodeMirrorEditor below is key'd), so without this a stale
+            // in-flight status write from the previous file would resolve on the
+            // still-mounted instance and clobber the new file's displayed status.
+            return df && gh ? (
+              <DomainStatusControl
+                key={path}
+                slug={df.slug}
+                domain={df.domain}
+                octokit={gh}
+              />
+            ) : null;
+          })()}
           {isNewFile && (
             <Badge color="amber" variant="soft">
               New file — not yet on remote
