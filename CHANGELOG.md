@@ -66,6 +66,13 @@ Each entry links its pull request. Dates are the merge date (UTC).
   documents why the Graph group reads "as of last merge" while the other two rescan live. Reference tables for
   the node and edge vocabularies are included, with counts marked as of writing. Linked from `README.md` and
   `editor/README.md`.
+- **`digram-item-types`, `digram-topic`, `lineage-individual-node`, `lineage-grouped-node`,
+  `metamodel-widget`, and `loader-with-logo` join the hand-authored render tier**, closing 6 of
+  the plugin's gray-box fallback slugs. Originally miscategorized as static "diagram/lineage
+  graphics" in the 2026-07-13 pictures-vs-components spec; direct inspection of each slug's
+  captured anatomy data found real State/Fields variant axes, nested interactive controls, and
+  data-driven text content in 5 of the 6, closer in kind to the existing hand-authored
+  components than to a static export. (_PR link added at open_)
 
 ### Removed
 - **The 35 frozen seed renders and the all-35 oracle** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
