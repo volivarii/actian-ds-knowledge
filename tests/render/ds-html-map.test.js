@@ -463,3 +463,86 @@ test("error-state: escapes hostile Title and clamps a hostile Size", function ()
     "unknown Size falls back to large, no modifier",
   );
 });
+
+test("maintenance-state: base structure, default headline and body", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "maintenance-state",
+    variant: "",
+    props: {},
+  });
+  assert.match(html, /class="ds-maintenance-state"/, "carries the base class");
+  assert.match(
+    html,
+    /class="ds-maintenance-state__headline"/,
+    "headline present",
+  );
+  assert.match(html, /class="ds-maintenance-state__body"/, "body present");
+  assert.match(
+    html,
+    />Scheduled maintenance in progress until 12:00 PM EST</,
+    "renders the default headline text",
+  );
+});
+
+test("maintenance-state: default illustration is the maintenance graphic", function () {
+  var DS = require(DS_PATH);
+  DS.setGraphics(
+    require("../../components/dist/graphics/graphics.json").graphics,
+  );
+  try {
+    var htmlDefault = DS.renderDSComponent({
+      dsSlug: "maintenance-state",
+      variant: "",
+      props: {},
+    });
+    var htmlErrorIllus = DS.renderDSComponent({
+      dsSlug: "error-state",
+      variant: "",
+      props: {},
+    });
+    assert.match(
+      htmlDefault,
+      /class="ds-graphic"/,
+      "renders a graphic by default",
+    );
+    // The maintenance and error illustrations are distinct assets in
+    // graphics.json; comparing the two renders' svg bodies proves the
+    // maintenance-specific fallback slug was actually selected, not merely
+    // that *some* graphic rendered.
+    assert.notEqual(
+      htmlDefault.match(/<svg class="ds-graphic"[^]*?<\/svg>/)[0],
+      htmlErrorIllus.match(/<svg class="ds-graphic"[^]*?<\/svg>/)[0],
+      "maintenance-state's illustration differs from error-state's",
+    );
+  } finally {
+    DS.setGraphics(null);
+  }
+});
+
+test("maintenance-state: escapes a hostile Headline", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "maintenance-state",
+    variant: "",
+    props: { Headline: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "headline escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+
+test("maintenance-state: renders both action buttons, tertiary before primary", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "maintenance-state",
+    variant: "",
+    props: {},
+  });
+  var tertiaryIdx = html.indexOf(
+    "ds-button--tertiary ds-maintenance-state__cta",
+  );
+  var primaryIdx = html.indexOf("ds-button--primary ds-maintenance-state__cta");
+  assert.ok(tertiaryIdx !== -1, "tertiary CTA present");
+  assert.ok(primaryIdx !== -1, "primary CTA present");
+  assert.ok(tertiaryIdx < primaryIdx, "tertiary CTA precedes primary CTA");
+});

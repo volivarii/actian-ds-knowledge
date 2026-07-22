@@ -52,6 +52,7 @@ var RENDER_SLUGS = [
   "lineage-individual-node",
   "loader",
   "loader-with-logo",
+  "maintenance-state",
   "metamodel-widget",
   "modal",
   "notification",
@@ -184,6 +185,21 @@ var MATRIX_OVERRIDES = {
       props: {
         Headline: "No policies available",
         Body: "Create policies to define how your platform operates.",
+        Cta: "Create policy",
+        Secondary: "Learn more",
+      },
+    },
+  ],
+
+  // Same rationale as empty-state above: Size is the only (secondary) axis,
+  // so curate one representative rich cell instead of the generic bare stub.
+  "maintenance-state": [
+    {
+      label: "Default",
+      variant: "Size=Large",
+      props: {
+        Headline: "Scheduled maintenance in progress until 12:00 PM EST",
+        Body: "Reports may be unavailable. Refresh or check back when the maintenance window is complete.",
         Cta: "Create policy",
         Secondary: "Learn more",
       },

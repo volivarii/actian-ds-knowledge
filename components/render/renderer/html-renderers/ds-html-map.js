@@ -2087,6 +2087,51 @@
           );
         }
 
+        case "maintenance-state": {
+          // Structural twin of empty-state (its captured anatomy page is
+          // literally "Empty state"); dedicated ds-maintenance-state__*
+          // classes rather than reusing .ds-empty-state* so the CEM derive
+          // has its own honest token surface for this slug. Only axis
+          // (Size=Large) is secondary, so there is no identity axis / no
+          // modifier class here.
+          var maintIllus = renderGraphic(
+            props.Illustration || "illustration-maintenance",
+          );
+          var maintHeadline = esc(
+            props.Headline ||
+              props.Title ||
+              "Scheduled maintenance in progress until 12:00 PM EST",
+          );
+          var maintBody = esc(
+            props.Body ||
+              "Reports may be unavailable. Refresh or check back when the maintenance window is complete.",
+          );
+          var maintPrimary = esc(props.Cta || props.Primary || "Create policy");
+          var maintTertiary = esc(props.Secondary || "Learn more");
+          return (
+            '<div class="ds-maintenance-state">' +
+            (maintIllus
+              ? '<div class="ds-maintenance-state__illustration">' +
+                maintIllus +
+                "</div>"
+              : "") +
+            '<p class="ds-maintenance-state__headline">' +
+            maintHeadline +
+            "</p>" +
+            '<p class="ds-maintenance-state__body">' +
+            maintBody +
+            "</p>" +
+            '<div class="ds-maintenance-state__actions">' +
+            '<button class="ds-button ds-button--tertiary ds-maintenance-state__cta">' +
+            maintTertiary +
+            "</button>" +
+            '<button class="ds-button ds-button--primary ds-maintenance-state__cta">' +
+            maintPrimary +
+            "</button>" +
+            "</div></div>"
+          );
+        }
+
         default: {
           // Phase 1B: PREFER rendering the component per-instance from its
           // captured appearance doc so the instance's own variant selects the
@@ -2172,6 +2217,7 @@
     "loader-with-logo",
     // Gray-box-to-zero, family 1 (feedback states).
     "error-state",
+    "maintenance-state",
   ];
 
   exports.renderDSComponent = renderDSComponent;
