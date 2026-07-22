@@ -1739,6 +1739,21 @@
           );
         }
 
+        case "tag-catalog": {
+          // Icon + label pill: single variant (Type=Default), so unlike
+          // tag-default the leading directory icon is ALWAYS rendered (not
+          // gated on a "Leading icon show" prop) and no per-Color style-map
+          // injection is needed -- one modifier class covers the fill/text.
+          return (
+            '<span class="ds-tag ds-tag--catalog">' +
+            '<span class="ds-tag__icon">' +
+            renderIcon("directory") +
+            "</span>" +
+            esc(props.Label || "Catalog") +
+            "</span>"
+          );
+        }
+
         case "popover": {
           // Registry axis: Type = Interaction guide | Advanced search; prop
           // "Show info icon". A floating card: optional info icon + title +
@@ -2281,6 +2296,7 @@
     "maintenance-state",
     // Gray-box-to-zero, family 2 (tag family).
     "tag-shared",
+    "tag-catalog",
   ];
 
   exports.renderDSComponent = renderDSComponent;

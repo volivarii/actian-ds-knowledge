@@ -69,6 +69,7 @@ var RENDER_SLUGS = [
   "sticky-footer",
   "table",
   "tabs",
+  "tag-catalog",
   "tag-default",
   "tag-interactive",
   "tag-shared",

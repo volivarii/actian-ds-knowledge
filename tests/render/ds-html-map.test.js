@@ -656,3 +656,54 @@ test("tag-shared: escapes hostile Label", function () {
   assert.doesNotMatch(html, /<script/, "no raw script injection");
   assert.match(html, /&lt;script&gt;/, "label escaped");
 });
+
+test("tag-catalog: base + modifier present", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-catalog",
+    variant: "Type=Default",
+    props: {},
+  });
+  assert.match(
+    html,
+    /class="ds-tag ds-tag--catalog"/,
+    "carries base + modifier",
+  );
+});
+
+test("tag-catalog: leading icon slot present and resolved", function () {
+  var DS = require(DS_PATH);
+  DS.setIcons(require("../../components/dist/icons/icons.json").icons);
+  try {
+    var html = DS.renderDSComponent({
+      dsSlug: "tag-catalog",
+      variant: "Type=Default",
+      props: {},
+    });
+    assert.match(
+      html,
+      /<span class="ds-tag__icon"><svg class="ds-icon"[^>]*>.+?<\/svg><\/span>/,
+      "ds-tag__icon wraps a non-empty svg (directory resolves)",
+    );
+  } finally {
+    DS.setIcons(null);
+  }
+});
+
+test("tag-catalog: default label, escapes hostile Label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-catalog",
+    variant: "Type=Default",
+    props: {},
+  });
+  assert.match(html, />Catalog</, "default label from anatomy");
+
+  var hostile = DS.renderDSComponent({
+    dsSlug: "tag-catalog",
+    variant: "Type=Default",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(hostile, /&lt;img/, "label escaped");
+  assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
+});

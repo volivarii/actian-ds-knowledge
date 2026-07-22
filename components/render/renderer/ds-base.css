@@ -2598,6 +2598,15 @@
   background: #cbe3ff;
   border-color: #cbe3ff;
 }
+/* tag-catalog: icon+label pill. Fill/border match .ds-tag--teal's hexes, but
+ * text is --zen-color-text-default (not base .ds-tag's tertiary), so it needs
+ * its own rule rather than reusing --teal. Base .ds-tag/.ds-tag__icon already
+ * supply geometry -- only fill/border/text are new here. */
+.ds-tag--catalog {
+  background: #ecffff;
+  border-color: #d0efed;
+  color: var(--zen-color-text-default);
+}
 
 /* ============ Checkbox (indeterminate state) ============ */
 .ds-checkbox--indeterminate .ds-checkbox__box {
