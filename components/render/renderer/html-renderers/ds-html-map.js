@@ -2001,7 +2001,7 @@
           // renderIcon degrades gracefully to "" and is intentionally not
           // attempted here (label-only, per the spec).
           return (
-            '<span class="ds-tag ds-tag--status ds-tag--status-' +
+            '<span class="ds-tag ds-tag--status-' +
             tsFamily +
             '">' +
             esc(props.Label || tsStatus) +
@@ -2173,7 +2173,7 @@
           } else {
             var ndList = parseItems(
               props.Items,
-              "New items inventoried from PowerBi Online V1 at 7/11/25, 12:42 AM.,New items inventoried from PowerBi Online V1 at 7/6/25 12:42 AM.,New items inventoried from PowerBi Online V1 at 7/3/25, 4:47 PM.",
+              "New items inventoried from PowerBi Online V1 at 7/11/25 12:42 AM.,New items inventoried from PowerBi Online V1 at 7/6/25 12:42 AM.,New items inventoried from PowerBi Online V1 at 7/3/25 4:47 PM.",
             )
               .map(function (label) {
                 return (

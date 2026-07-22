@@ -475,6 +475,20 @@ test("error-state: escapes hostile Title and clamps a hostile Size", function ()
   );
 });
 
+test("error-state: Size=Medium renders the ds-error-state--medium modifier", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "error-state",
+    variant: "Size=Medium",
+    props: {},
+  });
+  assert.match(
+    html,
+    /ds-error-state--medium/,
+    "a valid Size=Medium renders the modifier class",
+  );
+});
+
 test("maintenance-state: base structure, default headline and body", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
@@ -778,7 +792,7 @@ test("tag-stage: clamps a hostile Color before it reaches the class attribute (X
   );
 });
 
-test("tag-status: base + namespace present", function () {
+test("tag-status: base + family class present", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
     dsSlug: "tag-status",
@@ -788,8 +802,9 @@ test("tag-status: base + namespace present", function () {
   assert.match(html, /class="[^"]*\bds-tag\b/, "carries the ds-tag class");
   assert.match(
     html,
-    /class="[^"]*\bds-tag--status\b/,
-    "carries the ds-tag--status namespace class",
+    /class="[^"]*\bds-tag--status-error\b/,
+    "Fail carries the ds-tag--status-error family class (no bare " +
+      "ds-tag--status namespace class -- it was an empty no-op)",
   );
 });
 
@@ -1220,7 +1235,7 @@ test("search-result-card: --selected and --focus modifiers actually differ from 
 
 // ============ Gray-box-to-zero, family 4 (dropdowns / overlays) ============
 
-test("notification-dropdown: base class + role + item present (List)", function () {
+test("notification-dropdown: base class + role + exactly 3 item rows (List, default Items)", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
     dsSlug: "notification-dropdown",
@@ -1229,11 +1244,34 @@ test("notification-dropdown: base class + role + item present (List)", function 
   });
   assert.match(html, /class="ds-notification-menu"/, "carries the base class");
   assert.match(html, /role="menu"/, "carries menu role");
-  assert.match(
-    html,
-    /ds-notification-menu__item/,
-    "renders at least one item row",
+  // The default Items fallback embeds three comma-free timestamps
+  // ("7/11/25 12:42 AM.", "7/6/25 12:42 AM.", "7/3/25 4:47 PM.") -- a
+  // regression here (a comma reintroduced inside a timestamp) would split
+  // parseItems' comma-delimited list into 4 or 5 garbled rows instead of 3.
+  var itemMatches = html.match(/ds-notification-menu__item\b/g) || [];
+  assert.equal(
+    itemMatches.length,
+    3,
+    "renders exactly 3 item rows for the default Items, got: " +
+      itemMatches.length,
   );
+});
+
+test("notification-dropdown: custom Items renders exactly the given rows (proves Items is rendered, not dropped)", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "notification-dropdown",
+    variant: "Property 1=List",
+    props: { Items: "First alpha update,Second beta update" },
+  });
+  var itemMatches = html.match(/ds-notification-menu__item\b/g) || [];
+  assert.equal(
+    itemMatches.length,
+    2,
+    "renders exactly 2 item rows for the 2-entry Items prop",
+  );
+  assert.match(html, /First alpha update/, "renders the first label");
+  assert.match(html, /Second beta update/, "renders the second label");
 });
 
 test("notification-dropdown: Property 1=Empty swaps in the empty copy, no item rows", function () {
@@ -1256,18 +1294,42 @@ test("notification-dropdown: Property 1=Empty swaps in the empty copy, no item r
   );
 });
 
-test("notification-dropdown: escapes hostile Items and Header", function () {
+test("notification-dropdown: escapes hostile Items and Header (raw absent, escaped present)", function () {
   var DS = require(DS_PATH);
+  var hostileHeader = "<script>alert(1)</script>";
+  var hostileItems = "<script>alert(2)</script>";
   var html = DS.renderDSComponent({
     dsSlug: "notification-dropdown",
     variant: "Property 1=List",
     props: {
-      Header: "<script>alert(1)</script>",
-      Items: "<script>alert(2)</script>",
+      Header: hostileHeader,
+      Items: hostileItems,
     },
   });
-  assert.doesNotMatch(html, /<script>/, "no raw script tag");
-  assert.match(html, /&lt;script&gt;/, "hostile text is escaped");
+  // Distinguish "escaped" from "dropped": a naive fix that simply omitted
+  // the hostile props would also make the raw-payload assertions below
+  // pass, so also require the escaped form to be present.
+  assert.equal(
+    html.indexOf(hostileHeader),
+    -1,
+    "the raw Header payload is absent",
+  );
+  assert.equal(
+    html.indexOf(hostileItems),
+    -1,
+    "the raw Items payload is absent",
+  );
+  assert.doesNotMatch(html, /<script>/, "no raw script tag anywhere");
+  assert.match(
+    html,
+    /&lt;script&gt;alert\(1\)&lt;\/script&gt;/,
+    "Header's escaped form is present",
+  );
+  assert.match(
+    html,
+    /&lt;script&gt;alert\(2\)&lt;\/script&gt;/,
+    "Items' escaped form is present",
+  );
 });
 
 test("search-dropdown-menu: base class + role present (After typed)", function () {
@@ -1729,8 +1791,6 @@ test("loading-skeleton: has no text sink -- hostile Label never appears", functi
   assert.doesNotMatch(html, /onerror/, "hostile Label is never rendered");
 });
 
-
-
 test("scroll-bar: base structure, thumb child, role=scrollbar, vertical default", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
@@ -1813,7 +1873,6 @@ test("scroll-bar: clamps Position/Length to [0,100]", function () {
   assert.match(html, /height:0%/, "Length clamps up to 0");
 });
 
-
 test("link: base -- <a> tag, base class, escaped label text", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
@@ -1861,7 +1920,6 @@ test("link: escapes a hostile Label", function () {
   assert.match(html, /&lt;script&gt;/, "label escaped");
   assert.doesNotMatch(html, /<script>alert/, "no raw injection");
 });
-
 
 test("avatar: base class + initials slot, defaults to AV", function () {
   var DS = require(DS_PATH);
@@ -1927,7 +1985,6 @@ test("avatar: escapes hostile Initials", function () {
   assert.match(html, /&lt;img/, "initials escaped");
   assert.doesNotMatch(html, /<img src=x/, "no raw injection");
 });
-
 
 test("collapse-accordion: State=Collapsed renders Title, hides --expanded and __body", function () {
   var DS = require(DS_PATH);

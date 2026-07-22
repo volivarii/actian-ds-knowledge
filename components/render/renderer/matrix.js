@@ -409,7 +409,7 @@ var MATRIX_OVERRIDES = {
       props: {
         Header: "Notifications",
         Items:
-          "New items inventoried from PowerBi Online V1 at 7/11/25, 12:42 AM.,New items inventoried from PowerBi Online V1 at 7/6/25 12:42 AM.,New items inventoried from PowerBi Online V1 at 7/3/25, 4:47 PM.",
+          "New items inventoried from PowerBi Online V1 at 7/11/25 12:42 AM.,New items inventoried from PowerBi Online V1 at 7/6/25 12:42 AM.,New items inventoried from PowerBi Online V1 at 7/3/25 4:47 PM.",
       },
     },
     {

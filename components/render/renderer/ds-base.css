@@ -2662,13 +2662,12 @@
  * by the captured anatomy itself (a per-value class would be dishonest).
  * Reuses base .ds-tag geometry verbatim (same height/padding/radius/font/
  * gap/text-color as tag-default); only the family fill/border pairs are
- * new. .ds-tag--status is a no-op marker (kept so the CSS-coverage gate has
- * an explicit rule for every emitted class). Value-first: several captured
- * backgroundTokens do not round-trip against the frozen tokens.css snapshot
- * (a known drift, see tag-glossary-item-type's warning-25 note), so those
- * ship literal with a comment; borders that DO round-trip bind the token. */
-.ds-tag--status {
-}
+ * new. No bare .ds-tag--status namespace class -- each family rule below
+ * carries a real visual delta, same no-op-eradication pattern as families
+ * 4/5. Value-first: several captured backgroundTokens do not round-trip
+ * against the frozen tokens.css snapshot (a known drift, see
+ * tag-glossary-item-type's warning-25 note), so those ship literal with a
+ * comment; borders that DO round-trip bind the token. */
 .ds-tag--status-error {
   /* Fail. --zen-color-error-25 resolves to #f8f4f3 in tokens.css, not the
    * captured #fff4ec -- literal. Border DOES round-trip (#ffdacf). */
@@ -2991,7 +2990,7 @@
   color: #5f0c9e; /* no captured token */
 }
 
-/* ============ Card (for perimeter — badge + name/counter + progress), gray-box-to-zero family 3 ============ */
+/* ============ Card (for perimeter -- badge + name/counter + progress), gray-box-to-zero family 3 ============ */
 /* Single "Property 1=Default" variant -- no State/Size axis, no modifier
  * classes. Anatomy root captures background+radius ONLY (no border, no
  * shadow) -- honored verbatim, unlike .ds-card's bordered/shadowed shell.
@@ -3036,7 +3035,7 @@
   color: var(--zen-color-text-default);
 }
 
-/* ============ Card (for grouped content — header + divider + slot), gray-box-to-zero family 3 ============ */
+/* ============ Card (for grouped content -- header + divider + slot), gray-box-to-zero family 3 ============ */
 /* Single "Property 1=Default" variant -- no State/Size axis, no modifier
  * classes. bg/border/radius/shadow mirror .ds-card, but padding lives on
  * __header/__slot, NOT the root (the anatomy's Slot carries the padding,
