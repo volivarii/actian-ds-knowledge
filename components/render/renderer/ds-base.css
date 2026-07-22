@@ -2596,3 +2596,65 @@
 .ds-checkbox--indeterminate .ds-checkbox__check {
   display: block;
 }
+
+/* ============ Error state (feedback: recoverable error) ============ */
+/* Anatomy: centered column, illustration, title+body text block, tertiary +
+ * primary action row -- a structural twin of empty-state, with its own
+ * ds-error-state__* classes (never reuse .ds-empty-state* here: the
+ * canonical CEM derive scans .ds-<slug> per slug, so a shared prefix would
+ * leave error-state without an honest token surface). Size=Medium (secondary
+ * axis) shrinks title/body type. Body binds --zen-color-text-default (not
+ * -secondary; differs from empty-state per the captured anatomy). */
+.ds-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--zen-spacing-md);
+  font-family: var(--zen-font-family-text);
+}
+.ds-error-state__illustration {
+  max-width: 200px; /* raw px: sensible cap so the artwork doesn't dominate the card */
+  width: 100%;
+}
+.ds-error-state__illustration svg {
+  width: 100%;
+  height: auto;
+}
+.ds-error-state__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--zen-spacing-2xs);
+}
+.ds-error-state__title {
+  font-size: var(--zen-font-size-lg);
+  font-weight: var(--zen-font-weight-semibold);
+  color: var(--zen-color-text-default);
+  line-height: var(--zen-font-lineheight-md);
+  margin: 0;
+}
+.ds-error-state__body {
+  font-size: var(--zen-font-size-md);
+  font-weight: var(--zen-font-weight-regular);
+  color: var(--zen-color-text-default);
+  line-height: var(--zen-font-lineheight-lg);
+  max-width: 480px; /* raw px: readable line length cap, mirrors empty-state */
+  margin: 0;
+}
+.ds-error-state--medium .ds-error-state__title {
+  font-size: var(--zen-font-size-md);
+  line-height: var(--zen-font-lineheight-md);
+}
+.ds-error-state--medium .ds-error-state__body {
+  font-size: var(--zen-font-size-md);
+  line-height: var(--zen-font-lineheight-md);
+}
+.ds-error-state__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--zen-spacing-sm);
+}
+.ds-error-state__cta {
+  /* Extends .ds-button--primary/.ds-button--tertiary; no additional overrides needed */
+}

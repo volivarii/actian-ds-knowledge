@@ -2035,6 +2035,58 @@
           );
         }
 
+        case "error-state": {
+          // Registry variant axis: Size (secondary) = Large | Medium. Clamp
+          // BEFORE it touches the class attribute -- v.Size is user-supplied
+          // flow-data; an unclamped value would break out of the class
+          // attribute and inject markup (XSS). Unknown/crafted values fall
+          // back to "large" (no modifier), same discipline as the
+          // alert-banner case's Type clamp above.
+          var errSizeRaw = (v.Size || "Large").toLowerCase();
+          var errSize = { large: 1, medium: 1 }[errSizeRaw]
+            ? errSizeRaw
+            : "large";
+          var errCls =
+            "ds-error-state" +
+            (errSize === "medium" ? " ds-error-state--medium" : "");
+          var errIllus = renderGraphic(
+            props.Illustration || "illustration-error-state",
+          );
+          var errTitle = esc(props.Title || "Something went wrong");
+          var errBody = esc(
+            props.Body ||
+              "There was an error creating your item. Please try again in a moment.",
+          );
+          var errPrimary = esc(props.Primary || props.Cta || "Try again");
+          var errSecondary = esc(props.Secondary || "Go back");
+          return (
+            '<div class="' +
+            errCls +
+            '">' +
+            (errIllus
+              ? '<div class="ds-error-state__illustration">' +
+                errIllus +
+                "</div>"
+              : "") +
+            '<div class="ds-error-state__text">' +
+            '<p class="ds-error-state__title">' +
+            errTitle +
+            "</p>" +
+            '<p class="ds-error-state__body">' +
+            errBody +
+            "</p>" +
+            "</div>" +
+            '<div class="ds-error-state__actions">' +
+            '<button class="ds-button ds-button--tertiary ds-error-state__cta">' +
+            errSecondary +
+            "</button>" +
+            '<button class="ds-button ds-button--primary ds-error-state__cta">' +
+            errPrimary +
+            "</button>" +
+            "</div></div>"
+          );
+        }
+
         default: {
           // Phase 1B: PREFER rendering the component per-instance from its
           // captured appearance doc so the instance's own variant selects the
@@ -2118,6 +2170,8 @@
     "lineage-grouped-node",
     "metamodel-widget",
     "loader-with-logo",
+    // Gray-box-to-zero, family 1 (feedback states).
+    "error-state",
   ];
 
   exports.renderDSComponent = renderDSComponent;

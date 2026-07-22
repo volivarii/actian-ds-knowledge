@@ -45,6 +45,7 @@ var RENDER_SLUGS = [
   "digram-topic",
   "dropdown-select-default",
   "empty-state",
+  "error-state",
   "global-header",
   "input-date",
   "lineage-grouped-node",

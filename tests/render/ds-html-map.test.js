@@ -395,3 +395,71 @@ test("loader-with-logo: Label prop renders the loader label span", function () {
     DS.setGraphics(null);
   }
 });
+
+test("error-state: base class and default title", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "error-state",
+    variant: "",
+    props: {},
+  });
+  assert.match(html, /class="ds-error-state"/, "carries the base class");
+  assert.match(html, />Something went wrong</, "renders the default title");
+});
+
+test("error-state: illustration wired, default CTAs (Go back / Try again)", function () {
+  var DS = require(DS_PATH);
+  DS.setGraphics(
+    require("../../components/dist/graphics/graphics.json").graphics,
+  );
+  try {
+    var html = DS.renderDSComponent({
+      dsSlug: "error-state",
+      variant: "",
+      props: {},
+    });
+    assert.match(
+      html,
+      /ds-error-state__illustration/,
+      "illustration wrapper present",
+    );
+    assert.match(
+      html,
+      /class="ds-graphic"/,
+      "renderGraphic emits the shared ds-graphic svg class",
+    );
+    assert.match(
+      html,
+      /ds-button ds-button--tertiary ds-error-state__cta">Go back</,
+      "secondary CTA renders as a tertiary button",
+    );
+    assert.match(
+      html,
+      /ds-button ds-button--primary ds-error-state__cta">Try again</,
+      "primary CTA renders as a primary button",
+    );
+  } finally {
+    DS.setGraphics(null);
+  }
+});
+
+test("error-state: escapes hostile Title and clamps a hostile Size", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "error-state",
+    variant: 'Size="><script>alert(1)</script>',
+    props: { Title: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "title escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection from Title");
+  assert.match(
+    html,
+    /class="ds-error-state"/,
+    "class attribute not broken out of by a hostile Size",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-error-state--medium/,
+    "unknown Size falls back to large, no modifier",
+  );
+});
