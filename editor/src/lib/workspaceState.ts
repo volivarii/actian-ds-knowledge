@@ -417,6 +417,53 @@ export async function setDomainInherited(
   });
 }
 
+// Author flipped a domain's authored state between draft and approved from the
+// editor. Idempotent: a no-op when the domain already carries that status.
+// This is the SINGLE choke-point for the draft⇄approved transition — a future
+// permission/reviewer gate is added HERE and nowhere else. Byte-stable rewrite:
+// see promoteDomainToDraft for why we route through the form-engine serializer.
+export async function setDomainStatus(
+  gh: Octokit,
+  slug: string,
+  domain: Domain,
+  status: "draft" | "approved",
+  cart: SubmissionCart = submissionCartSingleton,
+): Promise<void> {
+  // Idempotent guard BEFORE staging: a redundant call must not stage the
+  // _meta.yml at all, or the cart would carry a diff-less entry that submits
+  // as a no-op file in the PR. readDeclaredStatus is a non-staging read.
+  if ((await readDeclaredStatus(gh, slug, domain, cart)) === status) return;
+  const metaPath = metaPathFor(slug);
+  const { content, basedOnSha } = await ensureMetaInCart(gh, slug, cart);
+  const parsed = safeParseMeta(content);
+  const domains = parsed.domains ?? {};
+  domains[domain] = { ...(domains[domain] ?? {}), status };
+  parsed.domains = domains;
+  cart.add({
+    path: metaPath,
+    content: stringifyYaml(parsed, { originalText: content, flowAtDepth: 2 }),
+    basedOnSha, // preserve the base ensureMetaInCart established
+    addedAt: Date.now(),
+  });
+}
+
+// Light read of a single domain's DECLARED status from _meta.yml (cart-wins →
+// remote). Returns the raw declared value ("draft" | "approved" | "inherited" |
+// "not-started") or undefined when absent. Cheaper than loadWorkspaceState
+// (no per-domain file probes, no commit fetches) — the status control only
+// needs this one field.
+export async function readDeclaredStatus(
+  gh: Octokit,
+  slug: string,
+  domain: Domain,
+  cart: SubmissionCart = submissionCartSingleton,
+): Promise<string | undefined> {
+  const metaPath = metaPathFor(slug);
+  const cartHit = cart.list().find((e) => e.path === metaPath);
+  const text = cartHit?.content ?? (await tryGetText(gh, metaPath)) ?? "";
+  return safeParseMeta(text).domains?.[domain]?.status;
+}
+
 // Pre-submit coupling validation — checks every _meta.yml in the cart
 // against the matching <domain>.md presence (cart or remote). Returns
 // human-readable mismatch messages; empty array = OK to submit.

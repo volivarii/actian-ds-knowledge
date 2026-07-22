@@ -5,7 +5,9 @@ import {
   domainFileName,
   domainPathFor,
   promoteDomainToDraft,
+  readDeclaredStatus,
   setDomainInherited,
+  setDomainStatus,
   validateCartCoupling,
 } from "../../src/lib/workspaceState";
 import { SubmissionCart } from "../../src/drafts/SubmissionCart";
@@ -215,5 +217,73 @@ test("domainFileForPath: rejects non-domain and out-of-scope paths", () => {
   assert.equal(
     domainFileForPath("components/src/button/nested/usage.md"),
     null,
+  );
+});
+
+test("setDomainStatus: promotes a domain to approved, flow-style + header preserved", async () => {
+  const gh = fakeGh({ "components/src/button/_meta.yml": META_WITH_HEADER });
+  const cart = new SubmissionCart(makeStorage());
+  await setDomainStatus(gh, "button", "usage", "approved", cart);
+  const out = cart
+    .list()
+    .find((e) => e.path === "components/src/button/_meta.yml")!.content;
+  assert.match(out, /^# yaml-language-server: \$schema=/);
+  assert.match(out, /usage: \{ status: approved \}/);
+  // Untouched domains keep their flow-style shape.
+  assert.match(out, /content: \{ status: approved, owner: content-team \}/);
+  // No block-nested domain values (the corruption shape the deriver rejects).
+  assert.doesNotMatch(out, /\n {4}status:/);
+  // The remote blob sha is preserved so detectStaleBase can catch a
+  // concurrent remote change instead of silently overwriting it.
+  const entry = cart
+    .list()
+    .find((e) => e.path === "components/src/button/_meta.yml")!;
+  assert.equal(entry.basedOnSha, "sha-components/src/button/_meta.yml");
+});
+
+test("setDomainStatus: demotes approved back to draft", async () => {
+  // content starts approved in META_WITH_HEADER; pull it back to draft.
+  const gh = fakeGh({ "components/src/button/_meta.yml": META_WITH_HEADER });
+  const cart = new SubmissionCart(makeStorage());
+  await setDomainStatus(gh, "button", "content", "draft", cart);
+  const out = cart
+    .list()
+    .find((e) => e.path === "components/src/button/_meta.yml")!.content;
+  // owner is preserved alongside the changed status.
+  assert.match(out, /content: \{ status: draft, owner: content-team \}/);
+});
+
+test("setDomainStatus: idempotent — no cart write when already at that status", async () => {
+  // content is already approved in META_WITH_HEADER.
+  const gh = fakeGh({ "components/src/button/_meta.yml": META_WITH_HEADER });
+  const cart = new SubmissionCart(makeStorage());
+  await setDomainStatus(gh, "button", "content", "approved", cart);
+  assert.equal(
+    cart.list().find((e) => e.path === "components/src/button/_meta.yml"),
+    undefined,
+    "no _meta.yml staged when the status is unchanged",
+  );
+});
+
+test("readDeclaredStatus: reads from remote when nothing is staged", async () => {
+  const gh = fakeGh({ "components/src/button/_meta.yml": META_WITH_HEADER });
+  const cart = new SubmissionCart(makeStorage());
+  assert.equal(
+    await readDeclaredStatus(gh, "button", "content", cart),
+    "approved",
+  );
+  assert.equal(
+    await readDeclaredStatus(gh, "button", "usage", cart),
+    "not-started",
+  );
+});
+
+test("readDeclaredStatus: cart wins over remote", async () => {
+  const gh = fakeGh({ "components/src/button/_meta.yml": META_WITH_HEADER });
+  const cart = new SubmissionCart(makeStorage());
+  await setDomainStatus(gh, "button", "usage", "approved", cart);
+  assert.equal(
+    await readDeclaredStatus(gh, "button", "usage", cart),
+    "approved",
   );
 });
