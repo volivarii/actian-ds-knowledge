@@ -7,6 +7,7 @@ import type { Octokit } from "@octokit/rest";
 import { MediaPickerPopover } from "./MediaPickerPopover";
 import { deriveUniqueSlug } from "./anchorSlug";
 import { scanAnchors } from "./anchorScan";
+import { scanHeadings } from "../lib/headingScan";
 
 export interface ToolbarProps {
   view: EditorView;
@@ -50,17 +51,20 @@ function insertAnchor(view: EditorView) {
   const sel = view.state.selection.main;
   const line = view.state.doc.lineAt(sel.from);
   const text = line.text;
-  // Heading anchors only (Slice 1), matching the rich-mode command. Inert on a
-  // non-heading line and on a heading that already ends in an anchor.
-  const headingMatch = text.match(/^(#{1,6})\s+(.+)$/);
-  if (!headingMatch || !headingMatch[2]) return;
+  // Additive only: never touch a heading that already ends in an anchor.
   if (/\{#[a-z][a-z0-9-]*\}\s*$/.test(text)) return;
+  // Only real section headings (H1-H3), resolved through the editor's canonical
+  // scanner, so a heading-shaped line inside a ``` fence or the YAML
+  // frontmatter is never mistaken for a heading (the naive line regex would
+  // corrupt those). This mirrors the rich command's structural heading check.
+  const fullText = view.state.doc.toString();
+  const heading = scanHeadings(fullText).find(
+    (h) => h.line === line.number - 1,
+  );
+  if (!heading) return;
   // scanAnchors is grammar-agnostic and strips fenced/inline code, so the
   // uniqueness set covers every real {#slug} in the file.
-  const slug = deriveUniqueSlug(
-    headingMatch[2],
-    scanAnchors(view.state.doc.toString()),
-  );
+  const slug = deriveUniqueSlug(heading.text, scanAnchors(fullText));
   view.dispatch({
     changes: { from: line.to, to: line.to, insert: ` {#${slug}}` },
   });

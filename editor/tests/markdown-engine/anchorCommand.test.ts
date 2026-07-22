@@ -56,6 +56,15 @@ test("addAnchorCommand: inert on an already-anchored heading", async () => {
 test("addAnchorCommand: adds a unique slug when the heading has none", async () => {
   // First heading is UNANCHORED; an existing {#overview} lives on another heading.
   // The command targets the first heading and must disambiguate to overview-2.
-  const md = await runAtFirstHeadingEnd("## Overview\n\n## Other {#overview}\n");
+  const md = await runAtFirstHeadingEnd(
+    "## Overview\n\n## Other {#overview}\n",
+  );
   assert.match(md, /## Overview \{#overview-2\}/); // single space, unique
+});
+
+test("addAnchorCommand: places the marker AFTER a trailing inline mark, not inside it", async () => {
+  // A heading ending in emphasis must not swallow the marker into the markup.
+  const md = await runAtFirstHeadingEnd("## Draft *notes*\n");
+  assert.match(md, /## Draft \*notes\* \{#draft-notes\}/);
+  assert.doesNotMatch(md, /\{#[a-z0-9-]+\}\*/); // never `{#...}*`
 });

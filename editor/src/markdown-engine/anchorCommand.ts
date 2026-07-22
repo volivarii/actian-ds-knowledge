@@ -27,9 +27,21 @@ export const addAnchorCommand = $command(
     const { $from } = state.selection;
     const parent = $from.parent;
     if (parent.type.name !== "heading") return false; // headings only
+    // Section headings only (H1-H3), matching the editor's outline model and
+    // the source toolbar's scanHeadings check.
+    const level = parent.attrs.level as number | undefined;
+    if (typeof level === "number" && level > 3) return false;
     if (TRAILING_ANCHOR_RE.test(parent.textContent)) return false; // additive only
-    const slug = deriveUniqueSlug(parent.textContent, docAnchorSlugs(state.doc));
-    if (dispatch) dispatch(state.tr.insertText(` {#${slug}}`, $from.end()));
+    const slug = deriveUniqueSlug(
+      parent.textContent,
+      docAnchorSlugs(state.doc),
+    );
+    // Insert an UNMARKED text node. tr.insertText would inherit a trailing
+    // inline mark (e.g. a heading ending in *emphasis*) and embed the marker
+    // inside the markup: `*draft {#slug}*` instead of `*draft* {#slug}`.
+    if (dispatch) {
+      dispatch(state.tr.insert($from.end(), state.schema.text(` {#${slug}}`)));
+    }
     return true;
   },
 );

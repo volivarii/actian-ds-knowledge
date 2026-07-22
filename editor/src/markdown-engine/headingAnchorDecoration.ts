@@ -14,8 +14,11 @@ export interface HeadingAnchorSpan {
   slug: string;
 }
 
-// Trailing " {#slug}" (with any leading whitespace) at the end of heading text.
-const TRAILING_ANCHOR_RE = /(\s*\{#([a-z][a-z0-9-]*)\})\s*$/;
+// Trailing " {#slug}" at the end of heading text, capturing any surrounding
+// whitespace INTO group 1 so its length matches the span reaching contentEnd
+// (trailing whitespace after the marker must be part of the hidden span, or the
+// backward-from-contentEnd position math shifts the span into the marker).
+const TRAILING_ANCHOR_RE = /(\s*\{#([a-z][a-z0-9-]*)\}\s*)$/;
 
 /** Pure: the trailing-anchor span of every heading that has one. `from` is the
  *  start of the raw ` {#slug}` marker, `to` the end of the heading content.

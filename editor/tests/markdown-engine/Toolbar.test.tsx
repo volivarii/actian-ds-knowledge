@@ -114,6 +114,17 @@ test("Toolbar: anchor button is inert on a non-heading line", () => {
   cleanup();
 });
 
+test("Toolbar: anchor button is inert on a heading-shaped line inside a code fence", () => {
+  const doc = "```\n## Not a heading\n```";
+  const { view } = mountWithView(doc);
+  const at = doc.indexOf("## Not a heading") + 3;
+  view.dispatch({ selection: { anchor: at, head: at } });
+  fireEvent.click(screen.getByRole("button", { name: /anchor/i }));
+  // A heading-shaped line inside a fence must NOT be anchored: doc unchanged.
+  assert.equal(view.state.doc.toString(), doc);
+  cleanup();
+});
+
 test("Toolbar: anchor button derives a UNIQUE slug against existing anchors", () => {
   const doc = "## Overview {#overview}\n\nprose\n\n## Overview";
   const { view } = mountWithView(doc);
