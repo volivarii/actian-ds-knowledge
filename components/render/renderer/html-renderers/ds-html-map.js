@@ -2404,6 +2404,39 @@
           );
         }
 
+        case "card-for-grouped-content": {
+          // Vertical card: header (title + optional info icon) + divider +
+          // a content slot. Single "Property 1=Default" variant (no State/
+          // Size axis) -- one static appearance, no modifier classes. The
+          // header's inner instance is unresolved in the captured anatomy
+          // and the slot is empty, so the placeholder body takes the same
+          // posture card-for-items takes for its placeholder title/body.
+          var cgcTitle = esc(props.Title || "Grouped content");
+          var cgcInfo =
+            props["Show info icon"] !== false
+              ? '<span class="ds-card-grouped__info">' +
+                renderIcon("info") +
+                "</span>"
+              : "";
+          var cgcBody = esc(props.Body || "");
+          return (
+            '<div class="ds-card-grouped">' +
+            '<div class="ds-card-grouped__header">' +
+            '<span class="ds-card-grouped__title">' +
+            cgcTitle +
+            "</span>" +
+            cgcInfo +
+            "</div>" +
+            '<div class="ds-card-grouped__divider"></div>' +
+            '<div class="ds-card-grouped__slot">' +
+            '<p class="ds-card-grouped__body">' +
+            cgcBody +
+            "</p>" +
+            "</div>" +
+            "</div>"
+          );
+        }
+
         default: {
           // Phase 1B: PREFER rendering the component per-instance from its
           // captured appearance doc so the instance's own variant selects the
@@ -2500,6 +2533,7 @@
     "tag-catalog-item-type",
     // Gray-box-to-zero, family 3 (card family).
     "card-for-perimeter",
+    "card-for-grouped-content",
   ];
 
   exports.renderDSComponent = renderDSComponent;

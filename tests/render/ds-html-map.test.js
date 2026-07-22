@@ -1020,3 +1020,78 @@ test("card-for-perimeter: Completeness clamps into the progress fill width", fun
     "Completeness drives the progress fill width",
   );
 });
+
+test("card-for-grouped-content: base class + structural divider present", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "card-for-grouped-content",
+    variant: "Property 1=Default",
+    props: { Title: "Grouped content", Body: "Body copy." },
+  });
+  assert.match(html, /class="ds-card-grouped"/, "carries the base class");
+  assert.match(
+    html,
+    /<div class="ds-card-grouped__divider"><\/div>/,
+    "the captured Divider is structural, not optional",
+  );
+});
+
+test("card-for-grouped-content: info-icon toggle + escapes hostile Title", function () {
+  var DS = require(DS_PATH);
+  var withIcon = DS.renderDSComponent({
+    dsSlug: "card-for-grouped-content",
+    variant: "Property 1=Default",
+    props: { Title: "Grouped content" },
+  });
+  assert.match(
+    withIcon,
+    /ds-card-grouped__info/,
+    "Show info icon defaults to shown",
+  );
+
+  var withoutIcon = DS.renderDSComponent({
+    dsSlug: "card-for-grouped-content",
+    variant: "Property 1=Default",
+    props: { Title: "Grouped content", "Show info icon": false },
+  });
+  assert.doesNotMatch(
+    withoutIcon,
+    /ds-card-grouped__info/,
+    "Show info icon:false omits the __info span",
+  );
+
+  var hostile = DS.renderDSComponent({
+    dsSlug: "card-for-grouped-content",
+    variant: "Property 1=Default",
+    props: { Title: "<img src=x onerror=1>" },
+  });
+  assert.match(hostile, /&lt;img/, "title escaped");
+  assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
+});
+
+test("card-for-grouped-content: divider color is token-bound, no hardcoded hex", function () {
+  var css = require("node:fs").readFileSync(
+    require("node:path").join(
+      __dirname,
+      "../../components/render/renderer/ds-base.css",
+    ),
+    "utf8",
+  );
+  var match = css.match(/\.ds-card-grouped__divider\s*\{([^}]*)\}/);
+  assert.ok(match, "the __divider rule exists");
+  // Strip comments before judging: documenting the captured hex in a
+  // trailing comment (the codebase's own round-trip-provenance convention,
+  // e.g. tag-status's per-family comments) is not the same as hardcoding it
+  // as the effective declaration VALUE, which is what this assertion guards.
+  var declOnly = match[1].replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.match(
+    declOnly,
+    /background:\s*var\(--zen-border-default\)/,
+    "background resolves to the captured token",
+  );
+  assert.doesNotMatch(
+    declOnly,
+    /#[0-9a-fA-F]{3,6}/,
+    "no hardcoded hex fallback as the declared value",
+  );
+});

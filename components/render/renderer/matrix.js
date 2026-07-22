@@ -83,6 +83,7 @@ var RENDER_SLUGS = [
   "tooltip",
   // Gray-box-to-zero, family 3 (card family).
   "card-for-perimeter",
+  "card-for-grouped-content",
 ];
 
 // A render slug may live in any kit; search ds -> meta -> fm.
@@ -325,6 +326,21 @@ var MATRIX_OVERRIDES = {
         Name: "Dataset",
         Counter: "23",
         Completeness: "50%",
+      },
+    },
+  ],
+
+  // Same rationale as card-for-perimeter above: Property 1 is single-valued
+  // ("Default"), so curate one representative rich cell (Title + Body)
+  // instead of the generic bare stub.
+  "card-for-grouped-content": [
+    {
+      label: "Default",
+      variant: "Property 1=Default",
+      props: {
+        Title: "Grouped content",
+        "Show info icon": true,
+        Body: "Group related fields, filters, or summary content under a single labeled section.",
       },
     },
   ],
