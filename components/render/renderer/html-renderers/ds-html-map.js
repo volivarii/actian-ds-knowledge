@@ -1835,6 +1835,44 @@
           );
         }
 
+        case "tag-catalog-item-type": {
+          // Dedicated block (NOT base .ds-tag): the anatomy has no border,
+          // unlike .ds-tag's 1px border -- reusing the base class would leak
+          // one. 8 colored type pills + an optional counter. Clamp the Type
+          // value against the known set BEFORE it touches the class
+          // attribute -- v.Type is user-supplied flow-data; an unclamped
+          // value would break out of the class attribute (XSS), same
+          // discipline as error-state's Size clamp above.
+          var TCIT_TYPE_SLUGS = {
+            category: "category",
+            dataset: "dataset",
+            "data process": "data-process",
+            "data product": "data-product",
+            field: "field",
+            "output port": "output-port",
+            "use case": "use-case",
+            visualization: "visualization",
+          };
+          var tcitTypeRaw = v.Type || "Category";
+          var tcitSlug =
+            TCIT_TYPE_SLUGS[tcitTypeRaw.toLowerCase()] || "category";
+          var tcitCounter = props["Show counter"]
+            ? '<span class="ds-tag-catalog-item-type__counter">' +
+              esc(props.Counter || "00") +
+              "</span>"
+            : "";
+          return (
+            '<span class="ds-tag-catalog-item-type ds-tag-catalog-item-type--' +
+            tcitSlug +
+            '">' +
+            '<span class="ds-tag-catalog-item-type__name">' +
+            esc(props.Label || tcitTypeRaw) +
+            "</span>" +
+            tcitCounter +
+            "</span>"
+          );
+        }
+
         case "popover": {
           // Registry axis: Type = Interaction guide | Advanced search; prop
           // "Show info icon". A floating card: optional info icon + title +
@@ -2381,6 +2419,7 @@
     "tag-stage",
     "tag-status",
     "tag-glossary-item-type",
+    "tag-catalog-item-type",
   ];
 
   exports.renderDSComponent = renderDSComponent;

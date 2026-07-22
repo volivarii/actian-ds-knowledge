@@ -876,3 +876,77 @@ test("tag-glossary-item-type: escapes hostile Label", function () {
   assert.match(html, /&lt;img/, "label escaped");
   assert.doesNotMatch(html, /<img src=x/, "no raw injection");
 });
+
+test("tag-catalog-item-type: base + default Category modifier + label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-catalog-item-type",
+    variant: "Type=Category",
+    props: { Label: "Category" },
+  });
+  assert.match(html, /ds-tag-catalog-item-type/, "carries the base class");
+  assert.match(
+    html,
+    /ds-tag-catalog-item-type--category/,
+    "carries the category modifier",
+  );
+  assert.match(html, />Category</, "renders the label");
+});
+
+test("tag-catalog-item-type: Type slugifies into the modifier class", function () {
+  var DS = require(DS_PATH);
+  var dataProcess = DS.renderDSComponent({
+    dsSlug: "tag-catalog-item-type",
+    variant: "Type=Data process",
+    props: {},
+  });
+  assert.match(
+    dataProcess,
+    /ds-tag-catalog-item-type--data-process/,
+    "Data process lowercases + hyphenates",
+  );
+
+  var useCase = DS.renderDSComponent({
+    dsSlug: "tag-catalog-item-type",
+    variant: "Type=Use case",
+    props: {},
+  });
+  assert.match(
+    useCase,
+    /ds-tag-catalog-item-type--use-case/,
+    "Use case lowercases + hyphenates",
+  );
+});
+
+test("tag-catalog-item-type: counter gating and escapes hostile Label", function () {
+  var DS = require(DS_PATH);
+  var withCounter = DS.renderDSComponent({
+    dsSlug: "tag-catalog-item-type",
+    variant: "Type=Category",
+    props: { "Show counter": true, Counter: "42" },
+  });
+  assert.match(
+    withCounter,
+    /<span class="ds-tag-catalog-item-type__counter">42<\/span>/,
+    "counter renders when Show counter is truthy",
+  );
+
+  var withoutCounter = DS.renderDSComponent({
+    dsSlug: "tag-catalog-item-type",
+    variant: "Type=Category",
+    props: {},
+  });
+  assert.doesNotMatch(
+    withoutCounter,
+    /ds-tag-catalog-item-type__counter/,
+    "no counter span when Show counter is absent/false",
+  );
+
+  var hostile = DS.renderDSComponent({
+    dsSlug: "tag-catalog-item-type",
+    variant: "Type=Category",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(hostile, /&lt;img/, "label escaped");
+  assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
+});

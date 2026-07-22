@@ -70,6 +70,7 @@ var RENDER_SLUGS = [
   "table",
   "tabs",
   "tag-catalog",
+  "tag-catalog-item-type",
   "tag-default",
   "tag-glossary-item-type",
   "tag-interactive",
@@ -243,6 +244,22 @@ var MATRIX_OVERRIDES = {
       props: { Label: "Glossary item", "Show Counter": true, Counter: "00" },
     },
   ],
+
+  // tag-catalog-item-type's Type axis has 8 values; the generic 5-cell cap
+  // would drop three. Type IS the component's identity (each value is a
+  // distinct colored pill), so show them all.
+  "tag-catalog-item-type": [
+    "Category",
+    "Dataset",
+    "Data process",
+    "Data product",
+    "Field",
+    "Output port",
+    "Use case",
+    "Visualization",
+  ].map(function (t) {
+    return { label: t, variant: "Type=" + t, props: { Label: t } };
+  }),
 
   // Same rationale as empty-state above: Size is the only (secondary) axis,
   // so curate one representative rich cell instead of the generic bare stub.
