@@ -3,6 +3,9 @@
 // (empty path before # only). Cross-file links ](path#oldSlug) are left alone,
 // and anything inside a fenced code block is untouched. Produces only standard
 // markers/links, so the round-trip drift guards are unaffected.
+import type { Octokit } from "@octokit/rest";
+import { loadAnchorIndex, findReferences } from "../lib/anchorIndex";
+
 const FENCE_SPLIT_RE = /(```[\s\S]*?```|~~~[\s\S]*?~~~)/g;
 
 function escapeSlug(s: string): string {
@@ -29,4 +32,23 @@ export function renameAnchorInText(
             .replace(sameFileLink, `](#${newSlug})`),
     )
     .join("");
+}
+
+/** Source (.md, non-dist) files that reference `oldSlug`, minus the current
+ *  file. The honest "these will not be auto-updated" disclosure list. */
+export async function crossFileReferrers(
+  octokit: Octokit,
+  oldSlug: string,
+  currentPath: string,
+): Promise<string[]> {
+  await loadAnchorIndex(octokit);
+  return findReferences(oldSlug)
+    .filter(
+      (p) =>
+        p !== currentPath &&
+        !p.startsWith("components/dist/") &&
+        !p.startsWith("foundations/dist/") &&
+        !p.startsWith("accessibility/dist/"),
+    )
+    .sort();
 }
