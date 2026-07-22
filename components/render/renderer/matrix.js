@@ -64,6 +64,7 @@ var RENDER_SLUGS = [
   "radio-button",
   "rich-text",
   "search",
+  "search-dropdown-menu",
   "segmented-control",
   "side-nav",
   "stepper",
@@ -405,6 +406,26 @@ var MATRIX_OVERRIDES = {
       label: "Empty",
       variant: "Property 1=Empty",
       props: { Header: "Notifications" },
+    },
+  ],
+
+  // Type (No result/Before typed/After typed/Explorer home) is the identity
+  // axis, but this leaf reads Heading/Results/Query, not Label -- curate 2
+  // representative cells (the captured After-typed default + No result,
+  // since that one swaps in an entirely different, text-only body).
+  "search-dropdown-menu": [
+    {
+      label: "After typed",
+      variant: "Type=After typed",
+      props: {
+        Heading: "Suggestions",
+        Results: "transmitting,transmitter,transmit,transparent",
+      },
+    },
+    {
+      label: "No result",
+      variant: "Type=No result",
+      props: { Query: "orders" },
     },
   ],
 };

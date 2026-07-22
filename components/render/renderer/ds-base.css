@@ -3306,3 +3306,88 @@
   letter-spacing: var(--zen-font-letterspacing-wide-2);
   text-align: center;
 }
+
+/* ============ Search dropdown menu (gray-box-to-zero family 4) ============ */
+/* Registry axis: Type = No result | Before typed | After typed | Explorer
+ * home. REFUTES the assigned "popover" reuse pattern (see the renderer case
+ * comment) -- a floating menu overlay, structurally closer to
+ * .ds-account-menu than .ds-popover. Root bg/radius/padding, heading
+ * color/type, and item row padding/color/type are all captured verbatim
+ * (quality.ratio 1). --after-typed is a namespace hook only: it IS the
+ * captured anatomy default, so it carries no additional delta of its own.
+ * --before-typed is also a namespace hook: same row-list shape, content
+ * (heading label + items) differs via markup only, no captured structural
+ * delta. --no-result and --explorer-home ARE real deltas: No result
+ * collapses to a single centered text line (anatomy childCount 1, vs 5),
+ * and Explorer home is a wider menu (anatomy childCount 6, an extra
+ * section) -- both real, structurally-justified deltas, not decoration. */
+.ds-search-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 280px; /* raw px: overlay width, borrowed from sibling overlays */
+  padding: var(--zen-spacing-2xs) 0; /* captured: 4px top/bottom, 0 left/right */
+  background: var(--zen-color-bg-default);
+  border: 1px solid var(--zen-border-default);
+  border-radius: var(--zen-border-radius-sm); /* captured 6px */
+  box-shadow: var(--zen-shadow-lg); /* borrowed elevation idiom, not captured */
+  font-family: var(--zen-font-family-text);
+  box-sizing: border-box;
+}
+.ds-search-menu--after-typed {
+  /* namespace hook only: this IS the captured anatomy default -- no
+   * additional visual delta beyond the base rule above. */
+}
+.ds-search-menu--before-typed {
+  /* namespace hook only: same row-list shape as after-typed; the "Recent"
+   * heading + suggestion content differs via markup, not CSS. */
+}
+.ds-search-menu--no-result {
+  align-items: center;
+  justify-content: center;
+  min-height: 64px; /* real delta: collapses to a single centered line */
+  padding: var(--zen-spacing-md);
+}
+.ds-search-menu--explorer-home {
+  min-width: 360px; /* real delta: anatomy captures an extra section (childCount 6) */
+}
+.ds-search-menu__group {
+  display: flex;
+  flex-direction: column;
+}
+.ds-search-menu__heading {
+  padding: var(--zen-spacing-2xs) var(--zen-spacing-xs); /* captured 4 8 */
+  color: var(--zen-color-text-secondary); /* captured #40404a */
+  font-size: var(--zen-font-size-sm); /* 12 */
+  line-height: var(--zen-font-lineheight-sm); /* 16 */
+  font-weight: var(--zen-font-weight-medium);
+  letter-spacing: var(--zen-font-letterspacing-wide-3); /* 0.3 */
+}
+.ds-search-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--zen-spacing-xs); /* 8, captured */
+  padding: 0 var(--zen-spacing-xs); /* captured 0 8 */
+}
+.ds-search-menu__thumb {
+  width: 20px; /* raw px: result thumbnail, no DS icon/graphic exists for the
+                  captured raster IMAGE fills -- neutral placeholder square,
+                  mirrors .ds-app-switcher__tile */
+  height: 20px;
+  flex: 0 0 auto;
+  background: var(--zen-color-bg-subtle);
+  border-radius: var(--zen-border-radius-xs); /* captured 4 */
+}
+.ds-search-menu__label {
+  color: var(--zen-color-text-default); /* captured #000000 */
+  font-size: var(--zen-font-size-md); /* 14 */
+  line-height: var(--zen-font-lineheight-md); /* 20 */
+  font-weight: var(--zen-font-weight-regular);
+  letter-spacing: var(--zen-font-letterspacing-wide-2); /* 0.2 */
+}
+.ds-search-menu__empty {
+  color: var(--zen-color-text-secondary);
+  font-size: var(--zen-font-size-md);
+  line-height: var(--zen-font-lineheight-md);
+  letter-spacing: var(--zen-font-letterspacing-wide-2);
+  text-align: center;
+}

@@ -1240,3 +1240,50 @@ test("notification-dropdown: escapes hostile Items and Header", function () {
   assert.doesNotMatch(html, /<script>/, "no raw script tag");
   assert.match(html, /&lt;script&gt;/, "hostile text is escaped");
 });
+
+test("search-dropdown-menu: base class + role present (After typed)", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-dropdown-menu",
+    variant: "Type=After typed",
+    props: {},
+  });
+  assert.match(html, /class="ds-search-menu/, "carries the base class");
+  assert.match(html, /role="menu"/, "carries menu role");
+});
+
+test("search-dropdown-menu: Type=No result branches to the empty message, no item rows", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-dropdown-menu",
+    variant: "Type=No result",
+    props: { Query: "orders" },
+  });
+  assert.match(
+    html,
+    /ds-search-menu--no-result/,
+    "carries the no-result modifier",
+  );
+  assert.match(html, /ds-search-menu__empty/, "carries the empty class");
+  assert.match(
+    html,
+    /No matches for &quot;orders&quot;/,
+    "renders the escaped query in the empty message",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-search-menu__item/,
+    "no result rows in the no-result variant",
+  );
+});
+
+test("search-dropdown-menu: escapes a hostile result label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-dropdown-menu",
+    variant: "Type=After typed",
+    props: { Results: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "hostile label escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});

@@ -2025,6 +2025,64 @@
           );
         }
 
+        case "search-dropdown-menu": {
+          // Registry axis: Type = No result | Before typed | After typed |
+          // Explorer home. REFUTES the assigned "popover" reuse pattern
+          // (popover is role=dialog: info-icon+title+body+arrow, which does
+          // not fit) -- this is a floating menu overlay, mirroring
+          // account-dropdown's header+row-list shape. Class root is
+          // ds-search-menu (NOT ds-search -- that is the separate `search`
+          // field case above; kept distinct). Compute the modifier class
+          // into a variable first (never inline a ternary in the class
+          // attribute -- see the segmented-control comment below).
+          var sdmType = v.Type || "After typed";
+          var sdmMod;
+          if (sdmType === "No result") sdmMod = "no-result";
+          else if (sdmType === "Before typed") sdmMod = "before-typed";
+          else if (sdmType === "Explorer home") sdmMod = "explorer-home";
+          else sdmMod = "after-typed";
+          var sdmCls = "ds-search-menu ds-search-menu--" + sdmMod;
+          var sdmBody;
+          if (sdmMod === "no-result") {
+            sdmBody =
+              '<div class="ds-search-menu__empty">No matches for &quot;' +
+              esc(props.Query || "orders") +
+              "&quot;</div>";
+          } else {
+            var sdmHeadingDefault =
+              sdmMod === "before-typed" ? "Recent" : "Suggestions";
+            var sdmHeading = esc(props.Heading || sdmHeadingDefault);
+            var sdmRows = parseItems(
+              props.Results || props.Items,
+              "transmitting,transmitter,transmit,transparent",
+            )
+              .map(function (label) {
+                return (
+                  '<div class="ds-search-menu__item" role="menuitem">' +
+                  '<span class="ds-search-menu__thumb" aria-hidden="true"></span>' +
+                  '<span class="ds-search-menu__label">' +
+                  esc(label) +
+                  "</span></div>"
+                );
+              })
+              .join("");
+            sdmBody =
+              '<div class="ds-search-menu__group">' +
+              '<div class="ds-search-menu__heading">' +
+              sdmHeading +
+              "</div>" +
+              sdmRows +
+              "</div>";
+          }
+          return (
+            '<div class="' +
+            sdmCls +
+            '" role="menu" aria-label="Search results">' +
+            sdmBody +
+            "</div>"
+          );
+        }
+
         case "app-switcher-dropdown": {
           // No registry variants/props (single-import; nested settings /
           // arrow-down baked in). Render an app-switcher menu overlay: an app
@@ -2683,6 +2741,7 @@
     "search-result-card",
     // Gray-box-to-zero, family 4 (dropdowns / overlays).
     "notification-dropdown",
+    "search-dropdown-menu",
   ];
 
   exports.renderDSComponent = renderDSComponent;
