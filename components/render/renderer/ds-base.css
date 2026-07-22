@@ -2611,6 +2611,11 @@
  * .ds-tag--<color> container rules above verbatim; only the dot/icon
  * descendants are new. Dot diameter (8px) is the one hand-chosen value --
  * anatomy captures radius=20px (pill/circle) but not the diameter itself. */
+.ds-tag-stage {
+  /* Namespace hook only: geometry/color come entirely from .ds-tag (base)
+   * and .ds-tag--<color> (container fill/border); scopes the dot/icon
+   * descendant selectors below without re-declaring any of that. */
+}
 .ds-tag-stage__dot {
   width: 8px; /* dot geometry (raw px), diameter not captured by anatomy */
   height: 8px;
