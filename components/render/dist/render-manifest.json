@@ -213,6 +213,14 @@
       "source": "rendered"
     },
     {
+      "slug": "notification-dropdown",
+      "tagName": "zen-notification-dropdown",
+      "group": "Navigation",
+      "fragment": "fragments/notification-dropdown.html",
+      "tokensConsumed": 0,
+      "source": "rendered"
+    },
+    {
       "slug": "page-header",
       "tagName": "zen-page-header",
       "group": "Data Display",
@@ -258,6 +266,14 @@
       "group": "Form (input & selection)",
       "fragment": "fragments/search.html",
       "tokensConsumed": 13,
+      "source": "rendered"
+    },
+    {
+      "slug": "search-dropdown-menu",
+      "tagName": "zen-search-dropdown-menu",
+      "group": "Form (input & selection)",
+      "fragment": "fragments/search-dropdown-menu.html",
+      "tokensConsumed": 0,
       "source": "rendered"
     },
     {
@@ -426,6 +442,22 @@
       "group": "Data Display",
       "fragment": "fragments/search-result-card.html",
       "tokensConsumed": 20,
+      "source": "rendered"
+    },
+    {
+      "slug": "whats-new-dropdown",
+      "tagName": "zen-whats-new-dropdown",
+      "group": "Navigation",
+      "fragment": "fragments/whats-new-dropdown.html",
+      "tokensConsumed": 0,
+      "source": "rendered"
+    },
+    {
+      "slug": "drawer-side-panel",
+      "tagName": "zen-drawer-side-panel",
+      "group": "Overlays",
+      "fragment": "fragments/drawer-side-panel.html",
+      "tokensConsumed": 0,
       "source": "rendered"
     }
   ]

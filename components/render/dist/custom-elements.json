@@ -1242,6 +1242,29 @@
     },
     {
       "kind": "javascript-module",
+      "path": "components/render/dist/fragments/notification-dropdown.html",
+      "declarations": [
+        {
+          "kind": "class",
+          "customElement": true,
+          "name": "NotificationDropdown",
+          "tagName": "zen-notification-dropdown",
+          "description": "NotificationDropdown component.",
+          "attributes": [
+            {
+              "name": "property 1",
+              "type": {
+                "text": "Empty | List"
+              }
+            }
+          ],
+          "cssParts": [],
+          "cssProperties": []
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "components/render/dist/fragments/page-header.html",
       "declarations": [
         {
@@ -1583,6 +1606,29 @@
               "name": "--zen-spacing-xs"
             }
           ]
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "components/render/dist/fragments/search-dropdown-menu.html",
+      "declarations": [
+        {
+          "kind": "class",
+          "customElement": true,
+          "name": "SearchDropdownMenu",
+          "tagName": "zen-search-dropdown-menu",
+          "description": "SearchDropdownMenu component.",
+          "attributes": [
+            {
+              "name": "type",
+              "type": {
+                "text": "No result | Before typed | After typed | Explorer home"
+              }
+            }
+          ],
+          "cssParts": [],
+          "cssProperties": []
         }
       ]
     },
@@ -2570,6 +2616,52 @@
               "name": "--zen-spacing-xs"
             }
           ]
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "components/render/dist/fragments/whats-new-dropdown.html",
+      "declarations": [
+        {
+          "kind": "class",
+          "customElement": true,
+          "name": "WhatsNewDropdown",
+          "tagName": "zen-whats-new-dropdown",
+          "description": "WhatsNewDropdown component.",
+          "attributes": [
+            {
+              "name": "property 1",
+              "type": {
+                "text": "Drilldown1 | Drilldown2 | Empty | List"
+              }
+            }
+          ],
+          "cssParts": [],
+          "cssProperties": []
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "components/render/dist/fragments/drawer-side-panel.html",
+      "declarations": [
+        {
+          "kind": "class",
+          "customElement": true,
+          "name": "DrawerSidePanel",
+          "tagName": "zen-drawer-side-panel",
+          "description": "A container that slides from right side of the screen. Use for secondary tasks that require high focus but need to maintain the context of the main page.",
+          "attributes": [
+            {
+              "name": "app",
+              "type": {
+                "text": "Studio | Explorer"
+              }
+            }
+          ],
+          "cssParts": [],
+          "cssProperties": []
         }
       ]
     }
