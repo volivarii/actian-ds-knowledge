@@ -3230,3 +3230,79 @@
   letter-spacing: var(--zen-font-letterspacing-wide-3); /* 0.3 */
   color: var(--zen-color-text-default);
 }
+
+/* ============ Notification dropdown (gray-box-to-zero family 4) ============ */
+/* Registry axis: Property 1 = Empty | List. Menu overlay mirroring
+ * .ds-account-menu's shell (border/shadow/radius elevation idiom, not
+ * captured by the anatomy -- borrowed from the sibling overlay per the
+ * family-4 build note). Root bg/radius/padding ARE captured (#ffffff, 4px,
+ * 4px top/bottom); item-row padding/gap and label color/type are also
+ * captured verbatim. --empty is a real delta, not a no-op: the Empty
+ * anatomy variant collapses to 3 nodes (vs List's 9), so the modifier
+ * centers a single short line in a compact box instead of a scrollable list. */
+.ds-notification-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 280px; /* raw px: overlay width, borrowed from sibling overlays */
+  padding: var(--zen-spacing-2xs) 0; /* captured: 4px top/bottom, 0 left/right */
+  background: var(--zen-color-bg-default);
+  border: 1px solid var(--zen-border-default);
+  border-radius: var(--zen-border-radius-xs); /* captured 4px */
+  box-shadow: var(--zen-shadow-lg); /* borrowed elevation idiom, not captured */
+  font-family: var(--zen-font-family-text);
+  box-sizing: border-box;
+}
+.ds-notification-menu--empty {
+  align-items: center;
+  justify-content: center;
+  min-height: 80px; /* real delta: Empty collapses to a single centered line */
+  padding: var(--zen-spacing-md);
+}
+.ds-notification-menu__header {
+  padding: var(--zen-spacing-xs) var(--zen-spacing-sm);
+  font-size: var(--zen-font-size-md);
+  font-weight: var(--zen-font-weight-medium);
+  line-height: var(--zen-font-lineheight-md);
+  letter-spacing: var(--zen-font-letterspacing-wide-2);
+  color: var(--zen-color-text-default);
+  border-bottom: 1px solid var(--zen-border-default);
+  margin-bottom: var(--zen-spacing-2xs);
+}
+.ds-notification-menu__items {
+  display: flex;
+  flex-direction: column;
+}
+.ds-notification-menu__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--zen-spacing-xs); /* 8, captured */
+  padding: var(--zen-spacing-xs) var(--zen-spacing-xs) var(--zen-spacing-xs)
+    32px; /* captured 8 8 8 32 */
+  border-radius: var(--zen-border-radius-xs); /* captured 4 */
+}
+.ds-notification-menu__icon {
+  width: 16px; /* raw px: leading icon box */
+  height: 16px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: var(--zen-color-icon-default);
+}
+.ds-notification-menu__icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.ds-notification-menu__label {
+  color: var(--zen-color-text-default); /* captured #000000 */
+  font-size: var(--zen-font-size-md); /* 14 */
+  line-height: var(--zen-font-lineheight-md); /* 20 */
+  font-weight: var(--zen-font-weight-regular);
+  letter-spacing: var(--zen-font-letterspacing-wide-2); /* 0.2 */
+}
+.ds-notification-menu__empty {
+  color: var(--zen-color-text-secondary);
+  font-size: var(--zen-font-size-md);
+  line-height: var(--zen-font-lineheight-md);
+  letter-spacing: var(--zen-font-letterspacing-wide-2);
+  text-align: center;
+}

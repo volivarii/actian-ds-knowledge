@@ -1976,6 +1976,55 @@
           );
         }
 
+        case "notification-dropdown": {
+          // Registry axis: Property 1 = Empty | List. Menu overlay mirroring
+          // account-dropdown: header + a mapped list of notification rows.
+          // Compute the modifier class into a variable first (never inline a
+          // ternary in the class attribute -- the css-staleness extractor
+          // mis-parses that, see the segmented-control comment below).
+          var ndIsEmpty = v["Property 1"] === "Empty";
+          var ndCls =
+            "ds-notification-menu" +
+            (ndIsEmpty ? " ds-notification-menu--empty" : "");
+          var ndHeader = esc(props.Header || "Notifications");
+          var ndBody;
+          if (ndIsEmpty) {
+            ndBody =
+              '<div class="ds-notification-menu__empty">' +
+              esc(props.Empty || "You're all caught up.") +
+              "</div>";
+          } else {
+            var ndList = parseItems(
+              props.Items,
+              "New items inventoried from PowerBi Online V1 at 7/11/25, 12:42 AM.,New items inventoried from PowerBi Online V1 at 7/6/25 12:42 AM.,New items inventoried from PowerBi Online V1 at 7/3/25, 4:47 PM.",
+            )
+              .map(function (label) {
+                return (
+                  '<span class="ds-notification-menu__item" role="menuitem">' +
+                  '<span class="ds-notification-menu__icon" aria-hidden="true">' +
+                  renderIcon("info-filled") +
+                  "</span>" +
+                  '<span class="ds-notification-menu__label">' +
+                  esc(label) +
+                  "</span></span>"
+                );
+              })
+              .join("");
+            ndBody =
+              '<div class="ds-notification-menu__items">' + ndList + "</div>";
+          }
+          return (
+            '<div class="' +
+            ndCls +
+            '" role="menu" aria-label="Notifications">' +
+            '<div class="ds-notification-menu__header">' +
+            ndHeader +
+            "</div>" +
+            ndBody +
+            "</div>"
+          );
+        }
+
         case "app-switcher-dropdown": {
           // No registry variants/props (single-import; nested settings /
           // arrow-down baked in). Render an app-switcher menu overlay: an app
@@ -2632,6 +2681,8 @@
     "card-for-perimeter",
     "card-for-grouped-content",
     "search-result-card",
+    // Gray-box-to-zero, family 4 (dropdowns / overlays).
+    "notification-dropdown",
   ];
 
   exports.renderDSComponent = renderDSComponent;

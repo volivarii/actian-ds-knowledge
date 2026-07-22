@@ -57,6 +57,7 @@ var RENDER_SLUGS = [
   "metamodel-widget",
   "modal",
   "notification",
+  "notification-dropdown",
   "page-header",
   "popover",
   "progress-bar-small",
@@ -383,6 +384,27 @@ var MATRIX_OVERRIDES = {
         "Featured property 2": "Source Application: App 120",
         "Glossary label": "Vehicle",
       },
+    },
+  ],
+
+  // Property 1 (Empty/List) is the identity axis, but this leaf reads
+  // Items/Header/Empty, not Label -- the generic derivation would render an
+  // all-default cell for each value. Curate both cells so the gallery shows
+  // the list AND the empty state.
+  "notification-dropdown": [
+    {
+      label: "List",
+      variant: "Property 1=List",
+      props: {
+        Header: "Notifications",
+        Items:
+          "New items inventoried from PowerBi Online V1 at 7/11/25, 12:42 AM.,New items inventoried from PowerBi Online V1 at 7/6/25 12:42 AM.,New items inventoried from PowerBi Online V1 at 7/3/25, 4:47 PM.",
+      },
+    },
+    {
+      label: "Empty",
+      variant: "Property 1=Empty",
+      props: { Header: "Notifications" },
     },
   ],
 };

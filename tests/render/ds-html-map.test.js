@@ -1188,3 +1188,55 @@ test("search-result-card: --selected and --focus modifiers actually differ from 
     "--focus carries the focus-ring token",
   );
 });
+
+// ============ Gray-box-to-zero, family 4 (dropdowns / overlays) ============
+
+test("notification-dropdown: base class + role + item present (List)", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "notification-dropdown",
+    variant: "Property 1=List",
+    props: {},
+  });
+  assert.match(html, /class="ds-notification-menu"/, "carries the base class");
+  assert.match(html, /role="menu"/, "carries menu role");
+  assert.match(
+    html,
+    /ds-notification-menu__item/,
+    "renders at least one item row",
+  );
+});
+
+test("notification-dropdown: Property 1=Empty swaps in the empty copy, no item rows", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "notification-dropdown",
+    variant: "Property 1=Empty",
+    props: {},
+  });
+  assert.match(
+    html,
+    /ds-notification-menu--empty/,
+    "carries the empty modifier class",
+  );
+  assert.match(html, /You're all caught up\./, "renders the empty copy");
+  assert.doesNotMatch(
+    html,
+    /ds-notification-menu__item/,
+    "no item rows in the empty variant",
+  );
+});
+
+test("notification-dropdown: escapes hostile Items and Header", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "notification-dropdown",
+    variant: "Property 1=List",
+    props: {
+      Header: "<script>alert(1)</script>",
+      Items: "<script>alert(2)</script>",
+    },
+  });
+  assert.doesNotMatch(html, /<script>/, "no raw script tag");
+  assert.match(html, /&lt;script&gt;/, "hostile text is escaped");
+});
