@@ -546,3 +546,65 @@ test("maintenance-state: renders both action buttons, tertiary before primary", 
   assert.ok(primaryIdx !== -1, "primary CTA present");
   assert.ok(tertiaryIdx < primaryIdx, "tertiary CTA precedes primary CTA");
 });
+
+test("confirmation: base class and illustration wired", function () {
+  var DS = require(DS_PATH);
+  DS.setGraphics(
+    require("../../components/dist/graphics/graphics.json").graphics,
+  );
+  try {
+    var html = DS.renderDSComponent({
+      dsSlug: "confirmation",
+      variant: "",
+      props: {},
+    });
+    assert.match(html, /class="ds-confirmation"/, "carries the base class");
+    assert.match(
+      html,
+      /<svg class="ds-graphic"/,
+      "renders a non-empty illustration svg",
+    );
+  } finally {
+    DS.setGraphics(null);
+  }
+});
+
+test("confirmation: both CTAs render with anatomy defaults", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "confirmation",
+    variant: "",
+    props: {},
+  });
+  assert.match(
+    html,
+    /<div class="ds-confirmation__actions">/,
+    "actions row present",
+  );
+  assert.match(
+    html,
+    /ds-button ds-button--tertiary ds-confirmation__cta">Learn more</,
+    "secondary CTA renders as a tertiary button with the anatomy default label",
+  );
+  assert.match(
+    html,
+    /ds-button ds-button--primary ds-confirmation__cta">Open the catalog</,
+    "primary CTA renders as a primary button with the anatomy default label",
+  );
+});
+
+test("confirmation: escapes hostile Title and Body", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "confirmation",
+    variant: "",
+    props: {
+      Title: "<img src=x onerror=alert(1)>",
+      Body: "<svg onload=alert(1)>",
+    },
+  });
+  assert.match(html, /&lt;img/, "title escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection from Title");
+  assert.match(html, /&lt;svg/, "body escaped");
+  assert.doesNotMatch(html, /<svg onload/, "no raw injection from Body");
+});

@@ -2132,6 +2132,51 @@
           );
         }
 
+        case "confirmation": {
+          // Content/anatomy divergence (see build notes): the guideline
+          // prose describes a destructive Delete/Cancel confirmation
+          // dialog, but the captured Figma anatomy for this slug is a
+          // SUCCESS-confirmation state (illustration Success + "Success!" +
+          // "Open the catalog" CTA, page "Empty state"). Built from the
+          // anatomy, not the modal prose. Structural twin of empty-state;
+          // dedicated ds-confirmation__* classes so the CEM derive has its
+          // own honest token surface for this slug.
+          var confIllus = renderGraphic(
+            props.Illustration || "illustration-success",
+          );
+          var confTitle = esc(props.Title || props.Headline || "Success!");
+          var confBody = esc(
+            props.Body ||
+              "The selected items will be imported into the catalog. You will be notified once the import is complete.",
+          );
+          var confPrimary = esc(
+            props.Cta || props.Primary || "Open the catalog",
+          );
+          var confSecondary = esc(props.Secondary || "Learn more");
+          return (
+            '<div class="ds-confirmation">' +
+            (confIllus
+              ? '<div class="ds-confirmation__illustration">' +
+                confIllus +
+                "</div>"
+              : "") +
+            '<p class="ds-confirmation__title">' +
+            confTitle +
+            "</p>" +
+            '<p class="ds-confirmation__body">' +
+            confBody +
+            "</p>" +
+            '<div class="ds-confirmation__actions">' +
+            '<button class="ds-button ds-button--tertiary ds-confirmation__cta">' +
+            confSecondary +
+            "</button>" +
+            '<button class="ds-button ds-button--primary ds-confirmation__cta">' +
+            confPrimary +
+            "</button>" +
+            "</div></div>"
+          );
+        }
+
         default: {
           // Phase 1B: PREFER rendering the component per-instance from its
           // captured appearance doc so the instance's own variant selects the
@@ -2216,6 +2261,7 @@
     "metamodel-widget",
     "loader-with-logo",
     // Gray-box-to-zero, family 1 (feedback states).
+    "confirmation",
     "error-state",
     "maintenance-state",
   ];

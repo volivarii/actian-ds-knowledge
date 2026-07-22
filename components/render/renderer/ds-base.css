@@ -2707,3 +2707,56 @@
 .ds-maintenance-state__cta {
   /* Extends .ds-button--primary/.ds-button--tertiary; no additional overrides needed */
 }
+
+/* ============ Confirmation (feedback: success confirmation) ============ */
+/* Anatomy divergence note: the content guideline describes a destructive
+ * Delete/Cancel confirmation dialog, but the captured Figma anatomy for
+ * this slug is a SUCCESS-confirmation state (page "Empty state"), so this
+ * is built as a structural twin of empty-state -- centered column,
+ * illustration, title, body, tertiary + primary action row. Dedicated
+ * ds-confirmation__* classes (not .ds-empty-state*) so the CEM derive has
+ * its own honest token surface. Only axis (Size=Large) is secondary; no
+ * modifier class needed. Body binds --zen-color-text-default (not
+ * -secondary), per the captured anatomy. */
+.ds-confirmation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--zen-spacing-md);
+  padding: 48px 32px; /* raw px: mirrors the empty-state large-variant anatomy */
+  font-family: var(--zen-font-family-text);
+}
+.ds-confirmation__illustration {
+  max-width: 200px; /* raw px: sensible cap so the artwork doesn't dominate the card */
+  width: 100%;
+}
+.ds-confirmation__illustration svg {
+  width: 100%;
+  height: auto;
+}
+.ds-confirmation__title {
+  font-size: var(--zen-font-size-lg);
+  font-weight: var(--zen-font-weight-semibold);
+  color: var(--zen-color-text-default);
+  line-height: var(--zen-font-lineheight-md);
+  margin: 0;
+}
+.ds-confirmation__body {
+  font-size: var(--zen-font-size-md);
+  font-weight: var(--zen-font-weight-regular);
+  color: var(--zen-color-text-default);
+  line-height: var(--zen-font-lineheight-lg);
+  max-width: 480px; /* raw px: readable line length cap, mirrors empty-state */
+  margin: 0;
+}
+.ds-confirmation__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--zen-spacing-sm);
+}
+.ds-confirmation__cta {
+  /* Extends .ds-button--primary/.ds-button--tertiary; no additional overrides needed */
+}

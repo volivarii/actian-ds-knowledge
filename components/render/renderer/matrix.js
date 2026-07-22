@@ -41,6 +41,7 @@ var RENDER_SLUGS = [
   "card-for-items",
   "chat-with-ai-steward",
   "checkbox",
+  "confirmation",
   "digram-item-types",
   "digram-topic",
   "dropdown-select-default",
@@ -201,6 +202,22 @@ var MATRIX_OVERRIDES = {
         Headline: "Scheduled maintenance in progress until 12:00 PM EST",
         Body: "Reports may be unavailable. Refresh or check back when the maintenance window is complete.",
         Cta: "Create policy",
+        Secondary: "Learn more",
+      },
+    },
+  ],
+
+  // Same rationale as empty-state/maintenance-state above: Size is the only
+  // (secondary) axis, so curate one representative rich cell (the captured
+  // success-confirmation anatomy) instead of the generic bare stub.
+  confirmation: [
+    {
+      label: "Default",
+      variant: "Size=Large",
+      props: {
+        Title: "Success!",
+        Body: "The selected items will be imported into the catalog. You will be notified once the import is complete.",
+        Cta: "Open the catalog",
         Secondary: "Learn more",
       },
     },
