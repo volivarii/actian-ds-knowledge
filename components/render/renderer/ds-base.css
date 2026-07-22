@@ -631,6 +631,9 @@
   gap: var(--zen-spacing-2xs); /* 4 */
   padding-left: var(--zen-spacing-md); /* 16, nested indent */
 }
+.ds-lineage-group__child {
+  align-self: flex-start; /* keep the inlined child row compact like a standalone lineage node, not stretched to the group column width */
+}
 
 /* ============ Metamodel widget (metamodel-widget) ============ */
 .ds-metamodel-widget {
