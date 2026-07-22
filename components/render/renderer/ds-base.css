@@ -632,6 +632,52 @@
   padding-left: var(--zen-spacing-md); /* 16, nested indent */
 }
 
+/* ============ Metamodel widget (metamodel-widget) ============ */
+.ds-metamodel-widget {
+  display: flex;
+  flex-direction: column;
+  gap: var(--zen-spacing-xs); /* 8 */
+  border: 1.5px solid; /* color set inline per Type, see metamodelBorderStyle */
+  border-radius: var(--zen-border-radius-sm); /* 6 */
+  padding: var(--zen-spacing-md); /* 16 */
+  background: #ffffff;
+  box-sizing: border-box;
+  font-family: var(--zen-font-family-text);
+}
+.ds-metamodel-widget__header {
+  display: flex;
+  align-items: center;
+  gap: var(--zen-spacing-2xs); /* 4 */
+}
+.ds-metamodel-widget__title {
+  font-size: var(--zen-font-size-md); /* 14 */
+  line-height: var(--zen-font-lineheight-md); /* 20 */
+  font-weight: var(--zen-font-weight-semibold);
+  color: var(--zen-color-text-default);
+}
+.ds-metamodel-widget__section {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--zen-spacing-2xs); /* 4 */
+}
+.ds-metamodel-widget__collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--zen-color-icon-default);
+  cursor: pointer;
+}
+.ds-metamodel-widget__section-body {
+  font-size: var(--zen-font-size-sm); /* 12 */
+  line-height: var(--zen-font-lineheight-sm); /* 16 */
+  color: var(--zen-color-text-tertiary);
+}
+
 /* ============ Global header (top app bar — chrome) ============ */
 /* Anatomy: 1440×64, flex space-between, padding 0 24px.              */
 /* Left = brand; Center = context + search; Right = actions cluster.  */

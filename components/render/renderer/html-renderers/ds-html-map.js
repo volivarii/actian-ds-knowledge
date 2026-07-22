@@ -212,6 +212,24 @@
     Yellow: "#eabd34",
   };
 
+  // Captured resolved-appearance border colors for metamodel-widget's 5 Type
+  // values (components/dist/anatomy/metamodel-widget.json, root.appearance +
+  // variants). Border width (1.5px) and radius (6px) are constant across every
+  // variant; only the color changes. "Dataset" is the variant default.
+  var METAMODEL_TYPE_BORDERS = {
+    Dataset: { color: "#0283be", token: "--zen-color-primary-500" },
+    "Business Term": { color: "#a76605", token: "--zen-color-warning-800" },
+    "Data Process": { color: "#a82743", token: null },
+    Field: { color: "#145f04", token: "--zen-color-success-800" },
+    Visualisation: { color: "#7900cb", token: null },
+  };
+  function metamodelBorderStyle(type) {
+    var b = METAMODEL_TYPE_BORDERS[type] || METAMODEL_TYPE_BORDERS.Dataset;
+    return b.token
+      ? "border-color:var(" + b.token + ", " + b.color + ")"
+      : "border-color:" + b.color;
+  }
+
   // Inline icon glyphs (geometry in raw px — viewBox coords, not design tokens).
   // The button/input/checkbox/tag/card glyphs now come from renderIcon() (real
   // vendored DS icons, orphan-ref gated). The search magnifier stays hardcoded
@@ -724,6 +742,40 @@
             (v.State === "Expanded"
               ? '<div class="ds-lineage-group__children">' + lgnChild + "</div>"
               : "") +
+            "</div>"
+          );
+        }
+
+        case "metamodel-widget": {
+          var mwType = v.Type || "Dataset";
+          var mwItemType = v["Item type"] || "Category";
+          var mwBadge =
+            '<span class="ds-item-type" style="' +
+            digramItemTypeStyle(mwItemType) +
+            '">' +
+            esc(props["Item type initials"] || "") +
+            "</span>";
+          var mwSection = props["Show Section"]
+            ? '<div class="ds-metamodel-widget__section">' +
+              '<button class="ds-metamodel-widget__collapse" aria-label="Collapse section">' +
+              renderIcon("arrow-down") +
+              "</button>" +
+              '<div class="ds-metamodel-widget__section-body">' +
+              esc(props["Section body"] || "") +
+              "</div>" +
+              "</div>"
+            : "";
+          return (
+            '<div class="ds-metamodel-widget" style="' +
+            metamodelBorderStyle(mwType) +
+            '">' +
+            '<div class="ds-metamodel-widget__header">' +
+            mwBadge +
+            '<span class="ds-metamodel-widget__title">' +
+            esc(props.Title || props.Label || "") +
+            "</span>" +
+            "</div>" +
+            mwSection +
             "</div>"
           );
         }
@@ -2036,6 +2088,7 @@
     "digram-topic",
     "lineage-individual-node",
     "lineage-grouped-node",
+    "metamodel-widget",
   ];
 
   exports.renderDSComponent = renderDSComponent;

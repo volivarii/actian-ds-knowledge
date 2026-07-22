@@ -241,3 +241,67 @@ test("lineage-grouped-node: escapes a hostile Label", function () {
   assert.match(html, /&lt;svg/, "label escaped");
   assert.doesNotMatch(html, /<svg onload/, "no raw injection");
 });
+
+test("metamodel-widget: default Type (Dataset) border color, Show Section off", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "metamodel-widget",
+    variant: "",
+    props: { Title: "customer" },
+  });
+  assert.match(
+    html,
+    /border-color:var\(--zen-color-primary-500, #0283be\)/,
+    "Dataset's captured border, with token",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-metamodel-widget__section"/,
+    "no section when Show Section is falsy",
+  );
+  assert.match(html, />customer</, "renders the title");
+});
+
+test("metamodel-widget: Type=Data Process has no captured token, bare hex", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "metamodel-widget",
+    variant: "Type=Data Process",
+    props: { Title: "etl_job" },
+  });
+  assert.match(
+    html,
+    /border-color:#a82743"/,
+    "Data Process' captured border, no token",
+  );
+});
+
+test("metamodel-widget: Show Section renders the collapsible section", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "metamodel-widget",
+    variant: "Type=Field",
+    props: {
+      Title: "email",
+      "Show Section": true,
+      "Section body": "Validated, unique",
+    },
+  });
+  assert.match(
+    html,
+    /ds-metamodel-widget__section"/,
+    "section renders when Show Section is truthy",
+  );
+  assert.match(html, />Validated, unique</, "renders the section body");
+});
+
+test("metamodel-widget: escapes a hostile Title", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "metamodel-widget",
+    variant: "",
+    props: { Title: "<img src=x onerror=1>" },
+  });
+  assert.match(html, /&lt;img/, "title escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
