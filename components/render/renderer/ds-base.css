@@ -3769,3 +3769,40 @@
     background-position: 150% 0;
   }
 }
+
+/* ============ Scroll bar (track + thumb rail), gray-box-to-zero family 5 ============ */
+/* Registry variants are a degenerate {"Property 1":["Default"]} placeholder
+ * -- no real identity axis. Orientation is a USAGE-doc concept (not a
+ * registry axis), exposed as a prop modifier defaulting vertical. Anatomy
+ * (ratio 0.5) captured only the thumb (--zen-color-icon-disabled, radius
+ * 4px); the track fill is an interpretation -- the anatomy container
+ * carries no background of its own. */
+.ds-scroll-bar {
+  position: relative;
+  width: 8px; /* raw px: rail thickness, not captured (container had no size) */
+  height: 120px; /* raw px: representative rail length, not captured */
+  border-radius: var(--zen-border-radius-full);
+  background: var(
+    --zen-color-bg-subtle
+  ); /* interpretation: anatomy captured no track fill */
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.ds-scroll-bar--horizontal {
+  width: 120px;
+  height: 8px;
+}
+.ds-scroll-bar__thumb {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  border-radius: var(
+    --zen-border-radius-full
+  ); /* captured 4px on the source node; full-radius matches the sibling .ds-progress__fill convention */
+  background: var(--zen-color-icon-disabled); /* captured #7c7c8a */
+}
+.ds-scroll-bar--horizontal .ds-scroll-bar__thumb {
+  width: auto;
+  height: 100%;
+}

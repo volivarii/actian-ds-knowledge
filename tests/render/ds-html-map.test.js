@@ -1729,3 +1729,87 @@ test("loading-skeleton: has no text sink -- hostile Label never appears", functi
   assert.doesNotMatch(html, /onerror/, "hostile Label is never rendered");
 });
 
+
+
+test("scroll-bar: base structure, thumb child, role=scrollbar, vertical default", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "scroll-bar",
+    variant: "Property 1=Default",
+    props: {},
+  });
+  assert.match(html, /class="ds-scroll-bar"/, "carries the base class");
+  assert.match(
+    html,
+    /<span class="ds-scroll-bar__thumb"/,
+    "renders the thumb child",
+  );
+  assert.match(html, /role="scrollbar"/, "carries scrollbar role");
+  assert.match(
+    html,
+    /aria-orientation="vertical"/,
+    "defaults to vertical orientation",
+  );
+});
+
+test("scroll-bar: Orientation=Horizontal adds the modifier + flips aria-orientation; default has neither", function () {
+  var DS = require(DS_PATH);
+  var htmlH = DS.renderDSComponent({
+    dsSlug: "scroll-bar",
+    variant: "Property 1=Default",
+    props: { Orientation: "Horizontal" },
+  });
+  assert.match(
+    htmlH,
+    /ds-scroll-bar--horizontal/,
+    "horizontal carries the modifier class",
+  );
+  assert.match(
+    htmlH,
+    /aria-orientation="horizontal"/,
+    "horizontal flips aria-orientation",
+  );
+
+  var htmlV = DS.renderDSComponent({
+    dsSlug: "scroll-bar",
+    variant: "Property 1=Default",
+    props: {},
+  });
+  assert.doesNotMatch(
+    htmlV,
+    /ds-scroll-bar--horizontal/,
+    "default does not carry the horizontal modifier",
+  );
+  assert.doesNotMatch(
+    htmlV,
+    /aria-orientation="horizontal"/,
+    "default does not report horizontal orientation",
+  );
+});
+
+test("scroll-bar: escapes a hostile Label into aria-label only", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "scroll-bar",
+    variant: "Property 1=Default",
+    props: { Label: '"><script>alert(1)</script>' },
+  });
+  assert.doesNotMatch(html, /<script>/, "no raw script tag");
+  assert.match(
+    html,
+    /aria-label="[^"]*&lt;script&gt;[^"]*"/,
+    "escaped payload appears only inside aria-label",
+  );
+});
+
+test("scroll-bar: clamps Position/Length to [0,100]", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "scroll-bar",
+    variant: "Property 1=Default",
+    props: { Position: "150", Length: "-5" },
+  });
+  assert.match(html, /top:100%/, "Position clamps down to 100");
+  assert.match(html, /height:0%/, "Length clamps up to 0");
+});
+

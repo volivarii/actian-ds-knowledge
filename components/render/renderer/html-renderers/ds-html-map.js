@@ -1685,6 +1685,63 @@
           );
         }
 
+        case "scroll-bar": {
+          // Registry variants are a degenerate {"Property 1":["Default"]}
+          // placeholder -- no real identity axis. Orientation is a USAGE-doc
+          // concept (not a registry axis), exposed as an optional prop
+          // modifier defaulting vertical. Position/Length are clamped to
+          // [0,100] with the same parse-and-clamp progress-bar-small uses.
+          // Label is an accessible name only -- guideline: "Scroll bars
+          // carry no copy" -- never rendered as visible text.
+          var sbHorizontal =
+            (props.Orientation || v.Orientation) === "Horizontal";
+          var sbCls =
+            "ds-scroll-bar" +
+            (sbHorizontal ? " ds-scroll-bar--horizontal" : "");
+
+          var sbPosRaw =
+            props.Position != null && props.Position !== ""
+              ? props.Position
+              : "0";
+          var sbPosNum = parseInt(
+            String(sbPosRaw || "0").replace(/[^0-9.-]/g, ""),
+            10,
+          );
+          if (isNaN(sbPosNum)) sbPosNum = 0;
+          if (sbPosNum < 0) sbPosNum = 0;
+          if (sbPosNum > 100) sbPosNum = 100;
+
+          var sbLenRaw =
+            props.Length != null && props.Length !== "" ? props.Length : "40";
+          var sbLenNum = parseInt(
+            String(sbLenRaw || "40").replace(/[^0-9.-]/g, ""),
+            10,
+          );
+          if (isNaN(sbLenNum)) sbLenNum = 40;
+          if (sbLenNum < 0) sbLenNum = 0;
+          if (sbLenNum > 100) sbLenNum = 100;
+
+          var sbStyle = sbHorizontal
+            ? "left:" + sbPosNum + "%;width:" + sbLenNum + "%"
+            : "top:" + sbPosNum + "%;height:" + sbLenNum + "%";
+
+          return (
+            '<div class="' +
+            sbCls +
+            '" role="scrollbar" aria-orientation="' +
+            (sbHorizontal ? "horizontal" : "vertical") +
+            '" aria-label="' +
+            esc(props.Label || "Scroll region") +
+            '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
+            sbPosNum +
+            '">' +
+            '<span class="ds-scroll-bar__thumb" style="' +
+            sbStyle +
+            '"></span>' +
+            "</div>"
+          );
+        }
+
         case "tag-interactive": {
           // Registry axis: State = Default | Hovered | Selected | Disabled | …
           // Anatomy: container[State]{ instance[Leading icon], text[Tag-Name],
@@ -3032,6 +3089,7 @@
     // Gray-box-to-zero, family 5 (primitives).
     "spinner",
     "loading-skeleton",
+    "scroll-bar",
   ];
 
   exports.renderDSComponent = renderDSComponent;

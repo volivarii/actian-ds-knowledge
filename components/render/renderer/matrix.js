@@ -93,6 +93,7 @@ var RENDER_SLUGS = [
   // Gray-box-to-zero, family 5 (primitives).
   "spinner",
   "loading-skeleton",
+  "scroll-bar",
 ];
 
 // A render slug may live in any kit; search ds -> meta -> fm.
@@ -496,6 +497,23 @@ var MATRIX_OVERRIDES = {
       label: "On dark bg",
       variant: "Color mode=On dark bg",
       props: { Label: "Loading" },
+    },
+  ],
+
+  // Property 1 is single-valued ("Default"); Orientation is a USAGE-doc
+  // concept driven entirely by a prop, not a registry axis, so the generic
+  // derivation would only ever show one (vertical) card. Curate both
+  // orientations so the gallery demonstrates the horizontal rail too.
+  "scroll-bar": [
+    {
+      label: "Vertical",
+      variant: "Property 1=Default",
+      props: { Label: "Content list" },
+    },
+    {
+      label: "Horizontal",
+      variant: "Property 1=Default",
+      props: { Label: "Content list", Orientation: "Horizontal" },
     },
   ],
 };
