@@ -24,7 +24,9 @@ import { anchorCompletionExtension } from "./anchorCompletion";
 export interface CodeMirrorEditorProps {
   initialText: string;
   onChange: (text: string) => void;
-  onReady?: (view: EditorView) => void;
+  /** Fires with the live view on mount and with `null` on unmount, so the
+   *  caller never holds a destroyed view (see the unmount cleanup). */
+  onReady?: (view: EditorView | null) => void;
   onAnchorClick?: (slug: string, target: HTMLElement) => void;
   /** Fires on every selection change with the cursor's 0-indexed line.
    *  Used by the SectionFocusTracker to derive the right-pane Section
@@ -157,6 +159,12 @@ export function CodeMirrorEditor({
     return () => {
       view.destroy();
       viewRef.current = null;
+      // Clear the parent's cached view: after this editor unmounts (e.g. a
+      // source -> rich switch with no MarkdownEditScreen remount), a stale
+      // truthy `view` would make applyExternalTextChange / onRestore dispatch
+      // into a destroyed instance and silently drop the change. Null means
+      // "no live source editor", which every consumer already guards on.
+      onReady?.(null);
     };
     // initialText intentionally NOT in deps — recreating the view on every
     // initialText prop change would destroy uncommitted local edits. Path

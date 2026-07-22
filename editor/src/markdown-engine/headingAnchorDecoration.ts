@@ -41,8 +41,11 @@ function makeChip(slug: string): HTMLElement {
   const el = globalThis.document.createElement("span");
   el.className = "md-anchor-chip";
   el.textContent = `⚓ ${slug}`; // anchor emoji + slug
-  el.setAttribute("title", `Section anchor: #${slug}`);
+  el.setAttribute("title", `Rename section anchor: #${slug}`);
   el.setAttribute("data-anchor-slug", slug);
+  // Signals the chip is actionable: a delegated click controller on the
+  // editor root (installAnchorChipRename) opens the rename popover.
+  el.style.cursor = "pointer";
   return el;
 }
 
