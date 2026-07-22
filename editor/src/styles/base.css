@@ -365,6 +365,26 @@ form.fm-form.fm-collapsed > *:not(.fm-form-children) {
   text-decoration: none;
 }
 
+/* Heading anchor chip (rich mode): the raw ` {#slug}` marker is hidden and a
+   quiet pill is shown in its place. View-only; the markdown is unchanged. */
+.md-anchor-raw {
+  display: none;
+}
+.md-anchor-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.4em;
+  padding: 0 0.45em;
+  border-radius: 999px;
+  font-size: 0.72em;
+  font-weight: 500;
+  line-height: 1.7;
+  color: var(--gray-11);
+  background: var(--gray-3);
+  vertical-align: middle;
+  user-select: none;
+}
+
 /* Inline reference hover-preview card (refHoverCard): a floating card with the
    target's type badge, title, and graph context. Appended to <body>, absolutely
    positioned by the controller; non-interactive (a tooltip). */
