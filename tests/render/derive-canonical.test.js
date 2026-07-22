@@ -4,6 +4,8 @@ var assert = require("node:assert/strict");
 var Ajv2020 = require("ajv/dist/2020");
 var addFormats = require("ajv-formats");
 var D = require("../../scripts/render/derive-canonical.js");
+var RENDER_SLUGS =
+  require("../../components/render/renderer/matrix.js").RENDER_SLUGS;
 
 test("deriveCanonical: emits a valid CEM declaration for button", function () {
   var out = D.deriveCanonical();
@@ -79,7 +81,7 @@ test("deriveCanonical: cssProperties are the button's real consumed tokens, all 
 // seeds: every --zen-* token a render REFERENCES must actually be DEFINED, or
 // the component paints a browser default and nothing reds. Nothing else asserted
 // this once validateSeed went, so it is restored here over the DERIVED output
-// (render.css plus all 35 fragments) rather than over a frozen capture.
+// (render.css plus all fragments) rather than over a frozen capture.
 //
 // Measured at restore: 66 tokens referenced, 231 defined, 0 unresolved. All 66
 // come from render.css; the fragments contribute 0 today, because the renderer
@@ -107,12 +109,19 @@ test("every --zen-* token referenced by render.css or any fragment resolves to a
 
   // Non-vacuity: if referencedVars or the derive ever returned nothing, the
   // resolution assertion below would pass over an empty set and this gate would
-  // silently stop protecting anything.
-  assert.equal(slugs.length, 35, "all 35 fragments were scanned");
+  // silently stop protecting anything. Tracks RENDER_SLUGS.length (rather than
+  // a hardcoded count) so a slug added to the render matrix is scanned
+  // automatically instead of quietly falling outside this gate.
+  assert.equal(
+    slugs.length,
+    RENDER_SLUGS.length,
+    "all " + RENDER_SLUGS.length + " fragments were scanned",
+  );
   assert.ok(
     referenced.size > 0,
-    "no --zen-* references found at all across render.css + 35 fragments; " +
-      "referencedVars or the derive is broken, not the tokens",
+    "no --zen-* references found at all across render.css + " +
+      RENDER_SLUGS.length +
+      " fragments; referencedVars or the derive is broken, not the tokens",
   );
   assert.ok(defined.size > 0, "no --zen-* definitions found in render.css");
 

@@ -85,6 +85,22 @@
       "source": "rendered"
     },
     {
+      "slug": "digram-item-types",
+      "tagName": "zen-digram-item-types",
+      "group": "Data Display",
+      "fragment": "fragments/digram-item-types.html",
+      "tokensConsumed": 0,
+      "source": "rendered"
+    },
+    {
+      "slug": "digram-topic",
+      "tagName": "zen-digram-topic",
+      "group": "Data Display",
+      "fragment": "fragments/digram-topic.html",
+      "tokensConsumed": 0,
+      "source": "rendered"
+    },
+    {
       "slug": "dropdown-select-default",
       "tagName": "zen-dropdown-select-default",
       "group": "Form (input & selection)",
@@ -117,11 +133,43 @@
       "source": "rendered"
     },
     {
+      "slug": "lineage-grouped-node",
+      "tagName": "zen-lineage-grouped-node",
+      "group": "Data Display",
+      "fragment": "fragments/lineage-grouped-node.html",
+      "tokensConsumed": 0,
+      "source": "rendered"
+    },
+    {
+      "slug": "lineage-individual-node",
+      "tagName": "zen-lineage-individual-node",
+      "group": "Data Display",
+      "fragment": "fragments/lineage-individual-node.html",
+      "tokensConsumed": 0,
+      "source": "rendered"
+    },
+    {
       "slug": "loader",
       "tagName": "zen-loader",
       "group": "Feedback",
       "fragment": "fragments/loader.html",
-      "tokensConsumed": 9,
+      "tokensConsumed": 10,
+      "source": "rendered"
+    },
+    {
+      "slug": "loader-with-logo",
+      "tagName": "zen-loader-with-logo",
+      "group": "Feedback",
+      "fragment": "fragments/loader-with-logo.html",
+      "tokensConsumed": 2,
+      "source": "rendered"
+    },
+    {
+      "slug": "metamodel-widget",
+      "tagName": "zen-metamodel-widget",
+      "group": "Data Display",
+      "fragment": "fragments/metamodel-widget.html",
+      "tokensConsumed": 12,
       "source": "rendered"
     },
     {

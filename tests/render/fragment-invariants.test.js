@@ -132,13 +132,23 @@ function escLabel(s) {
 
 // Invariant 8: a slug silently removed from (or added to) the matrix would
 // shrink or inflate coverage without reddening anything else in this file.
-test("invariant 8: RENDER_SLUGS carries all 35 built slugs", function () {
-  assert.equal(
-    RENDER_SLUGS.length,
-    35,
-    "RENDER_SLUGS.length is " +
+// A hand-authored case can land in ds-html-map.js's switch and BUILT_SLUGS
+// without ever being added to RENDER_SLUGS, which derive-canonical.js
+// iterates -- rendering for the plugin's live renderDSComponent but staying
+// absent from the canonical render library, with nothing else here reddening
+// (see the 6-slug drift this closed). Asserted as set equality, not a
+// hardcoded count, so it self-updates as slugs are added on either side.
+test("invariant 8: RENDER_SLUGS matches BUILT_SLUGS exactly", function () {
+  var render = RENDER_SLUGS.slice().sort();
+  var built = dsHtmlMap.BUILT_SLUGS.slice().sort();
+  assert.deepEqual(
+    render,
+    built,
+    "RENDER_SLUGS and BUILT_SLUGS drifted: a slug is in one but not the other. " +
+      "RENDER_SLUGS has " +
       RENDER_SLUGS.length +
-      ", expected 35 -- a slug was silently added to or removed from the matrix",
+      ", BUILT_SLUGS has " +
+      dsHtmlMap.BUILT_SLUGS.length,
   );
 });
 
@@ -195,7 +205,7 @@ test("invariant 6: the harness shape is still what this gate assumes", function 
   );
   assert.ok(
     totalCells > 0,
-    "total cell-wrapper count across all 35 slugs is 0 -- the per-cell split " +
+    "total cell-wrapper count across all render slugs is 0 -- the per-cell split " +
       "found nothing; either the harness markup changed or CELL_OPEN/CAPTION_OPEN " +
       "in this file are stale",
   );
