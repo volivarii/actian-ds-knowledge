@@ -94,6 +94,7 @@ var RENDER_SLUGS = [
   "spinner",
   "loading-skeleton",
   "scroll-bar",
+  "link",
 ];
 
 // A render slug may live in any kit; search ds -> meta -> fm.
@@ -514,6 +515,50 @@ var MATRIX_OVERRIDES = {
       label: "Horizontal",
       variant: "Property 1=Default",
       props: { Label: "Content list", Orientation: "Horizontal" },
+    },
+  ],
+
+  // State is link's only axis and is secondary (isSecondaryAxis), so the
+  // generic derivation's 5-cap + name-derived Label would drop Visited (a
+  // captured, token-driven color) and show the state name itself as the
+  // clickable text ("Hover", "Pressed", ...). Curate all 7 with one
+  // consistent, realistic label so the gallery reads as real link text
+  // and every captured/reasoned state modifier is visible.
+  link: [
+    {
+      label: "Default",
+      variant: "State=Default",
+      props: { Label: "View details" },
+    },
+    {
+      label: "Hover",
+      variant: "State=Hover",
+      props: { Label: "View details" },
+    },
+    {
+      label: "Focus",
+      variant: "State=Focus",
+      props: { Label: "View details" },
+    },
+    {
+      label: "Pressed",
+      variant: "State=Pressed",
+      props: { Label: "View details" },
+    },
+    {
+      label: "Expanded",
+      variant: "State=Expanded",
+      props: { Label: "View details" },
+    },
+    {
+      label: "Visited",
+      variant: "State=Visited",
+      props: { Label: "View details" },
+    },
+    {
+      label: "Disabled",
+      variant: "State=Disabled",
+      props: { Label: "View details" },
     },
   ],
 };

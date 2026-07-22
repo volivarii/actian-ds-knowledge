@@ -407,6 +407,33 @@
           );
         }
 
+        case "link": {
+          // Registry axis: State = Default | Hover | Focus | Pressed |
+          // Expanded | Visited | Disabled -- a secondary axis, link has no
+          // Intent/Emphasis/Type identity axis. Mirrors the button case's
+          // single-element structure with the element swapped to <a>; an
+          // <a> has no disabled attribute, so Disabled is conveyed via
+          // aria-disabled + the is-disabled class instead.
+          var lnkState = v.State || "Default";
+          var lnkDisabled = lnkState === "Disabled";
+          var lnkCls = "ds-link";
+          if (lnkState === "Visited") lnkCls += " ds-link--visited";
+          if (lnkState === "Hover") lnkCls += " ds-link--hover";
+          if (lnkState === "Focus") lnkCls += " ds-link--focus";
+          if (lnkState === "Pressed") lnkCls += " ds-link--pressed";
+          if (lnkState === "Expanded") lnkCls += " ds-link--expanded";
+          if (lnkDisabled) lnkCls += " is-disabled";
+          return (
+            '<a class="' +
+            lnkCls +
+            '" href="#"' +
+            (lnkDisabled ? ' aria-disabled="true"' : "") +
+            ">" +
+            esc(props.Label || "Link") +
+            "</a>"
+          );
+        }
+
         case "text-input": {
           var inLabel = esc(props.Label || "Label");
           var inPlaceholder = esc(
@@ -3090,6 +3117,7 @@
     "spinner",
     "loading-skeleton",
     "scroll-bar",
+    "link",
   ];
 
   exports.renderDSComponent = renderDSComponent;

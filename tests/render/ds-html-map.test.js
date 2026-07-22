@@ -1813,3 +1813,52 @@ test("scroll-bar: clamps Position/Length to [0,100]", function () {
   assert.match(html, /height:0%/, "Length clamps up to 0");
 });
 
+
+test("link: base -- <a> tag, base class, escaped label text", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "link",
+    variant: "State=Default",
+    props: { Label: "View details" },
+  });
+  assert.match(
+    html,
+    /<a class="ds-link"/,
+    "renders an <a> with the base class",
+  );
+  assert.match(html, />View details</, "renders the label text");
+});
+
+test("link: State=Disabled adds is-disabled + aria-disabled; State=Visited adds the modifier", function () {
+  var DS = require(DS_PATH);
+  var htmlDisabled = DS.renderDSComponent({
+    dsSlug: "link",
+    variant: "State=Disabled",
+    props: { Label: "View details" },
+  });
+  assert.match(htmlDisabled, /is-disabled/, "carries is-disabled");
+  assert.match(
+    htmlDisabled,
+    /aria-disabled="true"/,
+    "carries aria-disabled (an <a> has no disabled attribute)",
+  );
+
+  var htmlVisited = DS.renderDSComponent({
+    dsSlug: "link",
+    variant: "State=Visited",
+    props: { Label: "View details" },
+  });
+  assert.match(htmlVisited, /ds-link--visited/, "carries the visited modifier");
+});
+
+test("link: escapes a hostile Label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "link",
+    variant: "State=Default",
+    props: { Label: "<script>alert(1)</script>" },
+  });
+  assert.match(html, /&lt;script&gt;/, "label escaped");
+  assert.doesNotMatch(html, /<script>alert/, "no raw injection");
+});
+
