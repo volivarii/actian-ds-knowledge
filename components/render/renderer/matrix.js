@@ -96,6 +96,7 @@ var RENDER_SLUGS = [
   "scroll-bar",
   "link",
   "avatar",
+  "collapse-accordion",
 ];
 
 // A render slug may live in any kit; search ds -> meta -> fm.
@@ -585,6 +586,28 @@ var MATRIX_OVERRIDES = {
       label: "Disabled",
       variant: "Type=Default, State=Disabled",
       props: { Initials: "CF" },
+    },
+  ],
+
+  // State is a secondary axis (isSecondaryAxis), so the generic derivation
+  // would feed only props:{Label:"Collapsed"|"Expanede"} -- the case reads
+  // Title/Body, not Label, so both cards would render the same fallback
+  // title with no body. Curate two real cells (mirrors the empty-state
+  // override's rationale). The "Expanede" value is the literal registry
+  // typo -- see the case comment.
+  "collapse-accordion": [
+    {
+      label: "Collapsed",
+      variant: "State=Collapsed",
+      props: { Title: "Advanced settings" },
+    },
+    {
+      label: "Expanded",
+      variant: "State=Expanede",
+      props: {
+        Title: "Advanced settings",
+        Body: "Configure retention, encryption, and scheduling for this dataset.",
+      },
     },
   ],
 };

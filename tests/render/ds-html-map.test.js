@@ -1928,3 +1928,92 @@ test("avatar: escapes hostile Initials", function () {
   assert.doesNotMatch(html, /<img src=x/, "no raw injection");
 });
 
+
+test("collapse-accordion: State=Collapsed renders Title, hides --expanded and __body", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "collapse-accordion",
+    variant: "State=Collapsed",
+    props: { Title: "Advanced settings" },
+  });
+  assert.match(html, /class="ds-collapse-accordion"/, "carries the base class");
+  assert.match(
+    html,
+    /ds-collapse-accordion__title">Advanced settings/,
+    "renders the title",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-collapse-accordion--expanded/,
+    "collapsed does not carry the expanded modifier",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-collapse-accordion__body/,
+    "collapsed hides the body",
+  );
+});
+
+test('collapse-accordion: State="Expanede" (registry typo) matches -- expanded modifier + body render', function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "collapse-accordion",
+    variant: "State=Expanede",
+    props: { Title: "T", Body: "Hidden detail" },
+  });
+  assert.match(
+    html,
+    /ds-collapse-accordion--expanded/,
+    "the literal registry value 'Expanede' matches the expanded check",
+  );
+  assert.match(
+    html,
+    /ds-collapse-accordion__body">Hidden detail/,
+    "renders the body",
+  );
+});
+
+test("collapse-accordion: escapes a hostile Title", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "collapse-accordion",
+    variant: "State=Collapsed",
+    props: { Title: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "title escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+
+test("family 5: no silent no-op modifiers among the new primitive classes", function () {
+  // Same audit shape as the family-4 no-op guard above: a root/descendant
+  // modifier rule is real only when its body carries an actual declaration,
+  // not just a comment. Covers every --modifier / .is-* rule the six new
+  // primitives introduce.
+  var css = require("node:fs").readFileSync(
+    require("node:path").join(
+      __dirname,
+      "../../components/render/renderer/ds-base.css",
+    ),
+    "utf8",
+  );
+  var ruleRe =
+    /\.(ds-spinner|ds-loading-skeleton|ds-scroll-bar|ds-link|ds-avatar|ds-collapse-accordion)(--[a-z0-9-]+|\.is-[a-z0-9-]+)\s*(?:\.[a-zA-Z0-9_-]+\s*)?\{([^}]*)\}/g;
+  var checked = [];
+  var match;
+  while ((match = ruleRe.exec(css)) !== null) {
+    var selector = match[0].slice(0, match[0].indexOf("{")).trim();
+    var body = match[3];
+    var bodyWithoutComments = body.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+    checked.push(selector);
+    assert.ok(
+      bodyWithoutComments.length > 0 && /:/.test(bodyWithoutComments),
+      selector +
+        " must contain at least one real CSS declaration, not just a comment",
+    );
+  }
+  assert.ok(
+    checked.length >= 6,
+    "audit found modifier rules across the six new primitives, found: " +
+      JSON.stringify(checked),
+  );
+});

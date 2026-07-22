@@ -3905,3 +3905,64 @@
   font-size: var(--zen-font-size-sm);
   font-weight: var(--zen-font-weight-semibold);
 }
+
+/* ============ Collapse accordion (header + toggle + revealed body), gray-box-to-zero family 5 ============ */
+/* Registry variant State=[Collapsed, "Expanede"] -- see the case comment
+ * for the literal registry typo. Anatomy (ratio 1) captures the Collapsed
+ * root + header (title + a trailing icon-only round Button, represented
+ * here as the chevron toggle); the Expanded body geometry is NOT captured
+ * (structuralVariants childCount:1!=2), so .ds-collapse-accordion__body is
+ * approximated from .ds-stepper__body's text tokens. */
+.ds-collapse-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--zen-spacing-xs); /* captured header gap, 8 */
+  width: 320px; /* raw px: representative width (anatomy sizing.h fixed, no px captured) */
+  max-width: 100%;
+  padding: var(--zen-spacing-md); /* captured 16 */
+  background: var(--zen-color-bg-default); /* captured #ffffff */
+  border: 1px solid var(--zen-border-default); /* not captured; mirrors the sibling static-leaf convention (.ds-lineage-node) */
+  border-radius: var(--zen-border-radius-sm);
+  box-sizing: border-box;
+  font-family: var(--zen-font-family-text);
+}
+.ds-collapse-accordion--expanded {
+  border-color: var(
+    --zen-color-primary-500
+  ); /* real delta: accent border ties the revealed body to its header, not captured */
+}
+.ds-collapse-accordion__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* captured align.main: space-between */
+  gap: var(--zen-spacing-xs);
+}
+.ds-collapse-accordion__title {
+  font-size: var(--zen-font-size-lg); /* 16, captured */
+  font-weight: var(--zen-font-weight-semibold); /* 600, captured */
+  line-height: var(--zen-font-lineheight-lg); /* 24, captured */
+  letter-spacing: var(
+    --zen-font-letterspacing-wide-2
+  ); /* closest captured token (captured raw is 0.1px); same approximation .ds-stepper__title uses */
+  color: var(--zen-color-text-default); /* captured #000000 */
+}
+.ds-collapse-accordion__toggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; /* raw px: mirrors the captured icon-only Button's round chrome box */
+  height: 32px;
+  border-radius: var(
+    --zen-border-radius-full
+  ); /* captured on the header's Button instance */
+  color: var(--zen-color-icon-default);
+}
+.ds-collapse-accordion__body {
+  color: var(
+    --zen-color-text-secondary
+  ); /* not captured; mirrors .ds-stepper__body */
+  font-size: var(--zen-font-size-sm);
+  line-height: var(--zen-font-lineheight-sm);
+  letter-spacing: var(--zen-font-letterspacing-wide-3);
+}

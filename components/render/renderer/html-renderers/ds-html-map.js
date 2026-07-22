@@ -413,7 +413,11 @@
           // Intent/Emphasis/Type identity axis. Mirrors the button case's
           // single-element structure with the element swapped to <a>; an
           // <a> has no disabled attribute, so Disabled is conveyed via
-          // aria-disabled + the is-disabled class instead.
+          // aria-disabled + the is-disabled class instead. No href, mirroring
+          // the breadcrumb case's <a> convention: this is a documentation/
+          // gallery render, not a live nav, and an href would trip the
+          // bundle's self-contained-card check the same way an <img src=>
+          // or <link href=> would.
           var lnkState = v.State || "Default";
           var lnkDisabled = lnkState === "Disabled";
           var lnkCls = "ds-link";
@@ -426,7 +430,7 @@
           return (
             '<a class="' +
             lnkCls +
-            '" href="#"' +
+            '"' +
             (lnkDisabled ? ' aria-disabled="true"' : "") +
             ">" +
             esc(props.Label || "Link") +
@@ -1566,6 +1570,46 @@
             "</span>" +
             stepBody +
             "</span>" +
+            "</div>"
+          );
+        }
+
+        case "collapse-accordion": {
+          // Registry variant State=[Collapsed, "Expanede"] -- "Expanede" is
+          // a literal registry typo (misspelling of "Expanded"); match via
+          // a prefix test so both the typo and a future-fixed spelling
+          // resolve. State is a secondary axis (isSecondaryAxis in
+          // matrix.js), so MATRIX_OVERRIDES["collapse-accordion"] supplies
+          // real Title/Body -- the generic derivation would only ever feed
+          // props:{Label:"Collapsed"|"Expanede"}. Missing chevron-down
+          // glyph (dskit.icons has no down variant): the collapsed chevron
+          // is chevron-up rotated 180deg, mirroring the button case's
+          // trailing-icon idiom.
+          var accExpanded =
+            String(v.State || "")
+              .toLowerCase()
+              .indexOf("expan") === 0;
+          var accCls =
+            "ds-collapse-accordion" +
+            (accExpanded ? " ds-collapse-accordion--expanded" : "");
+          var accBody = accExpanded
+            ? '<div class="ds-collapse-accordion__body">' +
+              esc(props.Body || "") +
+              "</div>"
+            : "";
+          return (
+            '<div class="' +
+            accCls +
+            '">' +
+            '<div class="ds-collapse-accordion__header">' +
+            '<span class="ds-collapse-accordion__title">' +
+            esc(props.Title || "Advanced settings") +
+            "</span>" +
+            '<span class="ds-collapse-accordion__toggle" aria-hidden="true">' +
+            renderIcon("chevron-up", accExpanded ? {} : { rotate: 180 }) +
+            "</span>" +
+            "</div>" +
+            accBody +
             "</div>"
           );
         }
@@ -3168,6 +3212,7 @@
     "scroll-bar",
     "link",
     "avatar",
+    "collapse-accordion",
   ];
 
   exports.renderDSComponent = renderDSComponent;
