@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   renameAnchorInText,
   crossFileReferrers,
+  countSameFileLinks,
 } from "../../src/markdown-engine/anchorRename";
 import { setCachedIndexForTesting } from "../../src/lib/anchorIndex";
 
@@ -35,6 +36,50 @@ test("leaves markers and links inside fenced code untouched", () => {
 test("byte-stable when nothing matches", () => {
   const input = "## Other {#other}\n\nprose\n";
   assert.equal(renameAnchorInText(input, "a", "b"), input);
+});
+
+test("a longer outer fence wrapping a shorter inner example is untouched", () => {
+  // ```` (4 backticks) wraps a ``` example that itself contains {#a}; the inner
+  // ``` must NOT close the outer fence, so nothing inside is rewritten.
+  const input =
+    "## H {#a}\n\n````markdown\n## Inner {#a}\nsee [x](#a)\n```\n````\n\n[real](#a)\n";
+  const out = renameAnchorInText(input, "a", "b");
+  assert.match(out, /## H \{#b\}/); // real heading renamed
+  assert.match(out, /\[real\]\(#b\)/); // real link renamed
+  assert.match(out, /## Inner \{#a\}/); // inside outer fence untouched
+  assert.match(out, /see \[x\]\(#a\)/); // inside outer fence untouched
+});
+
+test("an unterminated fence protects everything after it", () => {
+  const input = "## H {#a}\n\n```\n## Example {#a}\nsee [x](#a)\n";
+  const out = renameAnchorInText(input, "a", "b");
+  assert.match(out, /## H \{#b\}/); // before the fence: renamed
+  assert.match(out, /## Example \{#a\}/); // after unclosed fence: untouched
+  assert.match(out, /see \[x\]\(#a\)/); // after unclosed fence: untouched
+});
+
+test("markers and links inside inline code are untouched", () => {
+  const input =
+    "## A {#a}\n\nUse `{#a}` and `[x](#a)` inline, but rename [real](#a).\n";
+  const out = renameAnchorInText(input, "a", "b");
+  assert.match(out, /## A \{#b\}/); // heading renamed
+  assert.match(out, /`\{#a\}`/); // inline code marker untouched
+  assert.match(out, /`\[x\]\(#a\)`/); // inline code link untouched
+  assert.match(out, /rename \[real\]\(#b\)/); // real prose link renamed
+});
+
+test("a $-bearing new slug is inserted literally (no replacement-pattern interpretation)", () => {
+  assert.equal(
+    renameAnchorInText("## A {#a}\n\n[x](#a)\n", "a", "x$&y"),
+    "## A {#x$&y}\n\n[x](#x$&y)\n",
+  );
+});
+
+test("countSameFileLinks: counts only live same-file links (fence + inline safe)", () => {
+  const input =
+    "## A {#a}\n\n[one](#a) and [two](#a).\n\n`[code](#a)` inline.\n\n```\n[fenced](#a)\n```\n\n[three](#a) and [cross](other#a).\n";
+  // one, two, three -> 3; the inline-code, fenced, and cross-file ones excluded.
+  assert.equal(countSameFileLinks(input, "a"), 3);
 });
 
 test("crossFileReferrers: source referrers minus self and dist", async () => {

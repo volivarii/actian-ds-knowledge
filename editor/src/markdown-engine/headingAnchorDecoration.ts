@@ -43,7 +43,7 @@ function makeChip(slug: string): HTMLElement {
   el.textContent = `⚓ ${slug}`; // anchor emoji + slug
   el.setAttribute("title", `Rename section anchor: #${slug}`);
   el.setAttribute("data-anchor-slug", slug);
-  // Signals the chip is actionable — a delegated click controller on the
+  // Signals the chip is actionable: a delegated click controller on the
   // editor root (installAnchorChipRename) opens the rename popover.
   el.style.cursor = "pointer";
   return el;

@@ -55,6 +55,7 @@ import { AnchorRenamePopover } from "./AnchorRenamePopover";
 import {
   renameAnchorInText,
   crossFileReferrers,
+  countSameFileLinks,
 } from "../markdown-engine/anchorRename";
 import { installAnchorChipRename } from "../lib/anchorChipRename";
 import { scanAnchors } from "../markdown-engine/anchorScan";
@@ -411,7 +412,7 @@ export function MarkdownEditScreen({
     };
   }, [renamePopover, gh, path]);
 
-  // Close the rename popover when the active file changes — its slug context
+  // Close the rename popover when the active file changes; its slug context
   // no longer applies to the newly-opened file.
   useEffect(() => {
     setRenamePopover(null);
@@ -916,9 +917,9 @@ export function MarkdownEditScreen({
           const otherSlugs = [...scanAnchors(text)].filter(
             (s) => s !== rp.slug,
           );
-          const sameFileCount = (
-            text.match(new RegExp(`\\]\\(#${rp.slug}\\)`, "g")) || []
-          ).length;
+          // Fence + inline-code safe, so it matches exactly what the rename
+          // rewrites (a naive text.match would overstate the count).
+          const sameFileCount = countSameFileLinks(text, rp.slug);
           return (
             <AnchorRenamePopover
               slug={rp.slug}
@@ -929,22 +930,15 @@ export function MarkdownEditScreen({
               onOpenChange={(o) => !o && setRenamePopover(null)}
               onRename={(next) => {
                 const renamed = renameAnchorInText(text, rp.slug, next);
-                setText(renamed);
-                // Re-seed RichBodyEditor (rich mode is uncontrolled, keyed by
-                // path:remountNonce — mirrors the draft-restore path).
+                // Route through the shared apply helper so BOTH surfaces
+                // persist: source mode dispatches into CM6 (its change listener
+                // re-runs setText + saveText), and rich mode (view === null)
+                // falls back to handleChange, which also runs setText + saveText
+                // so the rename is saved to the draft store, not silently lost.
+                applyExternalTextChange(view, renamed, handleChange);
+                // Rich mode is uncontrolled (keyed by path:remountNonce), so
+                // bump the nonce to re-seed it with the renamed body.
                 setRemountNonce((n) => n + 1);
-                if (view) {
-                  // Source mode: push into CM6 so the visible doc updates
-                  // without a remount (CodeMirror is keyed by path only); its
-                  // change listener re-runs setText + saveText.
-                  view.dispatch({
-                    changes: {
-                      from: 0,
-                      to: view.state.doc.length,
-                      insert: renamed,
-                    },
-                  });
-                }
                 setRenamePopover(null);
               }}
             />

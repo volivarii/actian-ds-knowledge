@@ -15,7 +15,7 @@ const SLUG_RE = /^[a-z][a-z0-9-]*$/;
 export interface AnchorRenamePopoverProps {
   /** The anchor being renamed. */
   slug: string;
-  /** Every OTHER anchor slug in this file — the new slug must not collide. */
+  /** Every OTHER anchor slug in this file; the new slug must not collide. */
   otherSlugs: string[];
   /** How many same-file `](#slug)` links will be auto-rewritten. */
   sameFileCount: number;
@@ -100,7 +100,7 @@ export function AnchorRenamePopover({
             <Callout.Root color="amber" size="1">
               <Callout.Text>
                 <Text as="div" size="1">
-                  {`${crossFileReferrers.length} other file${crossFileReferrers.length === 1 ? "" : "s"} reference this anchor and will not be auto-updated:`}
+                  {`${crossFileReferrers.length} other file${crossFileReferrers.length === 1 ? "" : "s"} reference${crossFileReferrers.length === 1 ? "s" : ""} this anchor and will not be auto-updated:`}
                 </Text>
                 <Box mt="1">
                   {crossFileReferrers.map((p) => (
