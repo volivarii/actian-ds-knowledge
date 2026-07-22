@@ -6,7 +6,7 @@ import type { EditorView } from "@codemirror/view";
 import type { Octokit } from "@octokit/rest";
 import { MediaPickerPopover } from "./MediaPickerPopover";
 import { deriveUniqueSlug } from "./anchorSlug";
-import { scanFileForAnchors } from "../lib/anchorIndex";
+import { scanAnchors } from "./anchorScan";
 
 export interface ToolbarProps {
   view: EditorView;
@@ -50,19 +50,20 @@ function insertAnchor(view: EditorView) {
   const sel = view.state.selection.main;
   const line = view.state.doc.lineAt(sel.from);
   const text = line.text;
-  // Additive only: never touch a heading that already ends in an anchor.
-  if (/\{#[a-z][a-z0-9-]*\}\s*$/.test(text)) return;
-  const taken = new Set(scanFileForAnchors(view.state.doc.toString()).defines);
+  // Heading anchors only (Slice 1), matching the rich-mode command. Inert on a
+  // non-heading line and on a heading that already ends in an anchor.
   const headingMatch = text.match(/^(#{1,6})\s+(.+)$/);
-  if (headingMatch && headingMatch[2]) {
-    const slug = deriveUniqueSlug(headingMatch[2], taken);
-    view.dispatch({
-      changes: { from: line.to, to: line.to, insert: `  {#${slug}}` },
-    });
-  } else {
-    const slug = deriveUniqueSlug("anchor", taken);
-    insertAtCursor(view, `{#${slug}}`);
-  }
+  if (!headingMatch || !headingMatch[2]) return;
+  if (/\{#[a-z][a-z0-9-]*\}\s*$/.test(text)) return;
+  // scanAnchors is grammar-agnostic and strips fenced/inline code, so the
+  // uniqueness set covers every real {#slug} in the file.
+  const slug = deriveUniqueSlug(
+    headingMatch[2],
+    scanAnchors(view.state.doc.toString()),
+  );
+  view.dispatch({
+    changes: { from: line.to, to: line.to, insert: ` {#${slug}}` },
+  });
   view.focus();
 }
 
@@ -203,7 +204,7 @@ export function Toolbar({ view, octokit, componentSlug }: ToolbarProps) {
             onInsert={(snippet) => insertAtCursor(view, snippet)}
           />
         )}
-        <Tooltip content="Insert {#anchor} on this line">
+        <Tooltip content="Add a section anchor to this heading">
           <Button
             size={BTN_SIZE}
             variant={BTN_VARIANT}

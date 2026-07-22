@@ -101,15 +101,16 @@ test("Toolbar: anchor button appends {#auto-slug} on heading line", () => {
   const { view } = mountWithView("## New Section");
   view.dispatch({ selection: { anchor: 14, head: 14 } });
   fireEvent.click(screen.getByRole("button", { name: /anchor/i }));
-  assert.equal(view.state.doc.toString(), "## New Section  {#new-section}");
+  assert.equal(view.state.doc.toString(), "## New Section {#new-section}");
   cleanup();
 });
 
-test("Toolbar: anchor button on non-heading inserts {#anchor} at cursor", () => {
+test("Toolbar: anchor button is inert on a non-heading line", () => {
   const { view } = mountWithView("plain text");
   view.dispatch({ selection: { anchor: 5, head: 5 } });
   fireEvent.click(screen.getByRole("button", { name: /anchor/i }));
-  assert.equal(view.state.doc.toString(), "plain{#anchor} text");
+  // Heading anchors only (Slice 1): a non-heading click is a no-op.
+  assert.equal(view.state.doc.toString(), "plain text");
   cleanup();
 });
 
@@ -122,7 +123,7 @@ test("Toolbar: anchor button derives a UNIQUE slug against existing anchors", ()
     selection: { anchor: secondHeadingAt, head: secondHeadingAt },
   });
   fireEvent.click(screen.getByRole("button", { name: /anchor/i }));
-  assert.match(view.state.doc.toString(), /## Overview {2}\{#overview-2\}$/);
+  assert.match(view.state.doc.toString(), /## Overview \{#overview-2\}$/);
   cleanup();
 });
 

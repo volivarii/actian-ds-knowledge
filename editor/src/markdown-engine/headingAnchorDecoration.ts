@@ -20,7 +20,7 @@ const TRAILING_ANCHOR_RE = /(\s*\{#([a-z][a-z0-9-]*)\})\s*$/;
 /** Pure: the trailing-anchor span of every heading that has one. `from` is the
  *  start of the raw ` {#slug}` marker, `to` the end of the heading content.
  *  Assumes a heading's text maps 1:1 to positions (no inline atom nodes before
- *  the marker) — true for normal anchored headings. Exported for tests. */
+ *  the marker), which holds for normal anchored headings. Exported for tests. */
 export function collectHeadingAnchors(doc: PMNode): HeadingAnchorSpan[] {
   const out: HeadingAnchorSpan[] = [];
   doc.descendants((node, pos) => {
