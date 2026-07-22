@@ -85,6 +85,14 @@
       "source": "rendered"
     },
     {
+      "slug": "confirmation",
+      "tagName": "zen-confirmation",
+      "group": "Feedback",
+      "fragment": "fragments/confirmation.html",
+      "tokensConsumed": 10,
+      "source": "rendered"
+    },
+    {
       "slug": "digram-item-types",
       "tagName": "zen-digram-item-types",
       "group": "Data Display",
@@ -114,6 +122,14 @@
       "group": "Feedback",
       "fragment": "fragments/empty-state.html",
       "tokensConsumed": 11,
+      "source": "rendered"
+    },
+    {
+      "slug": "error-state",
+      "tagName": "zen-error-state",
+      "group": "Feedback",
+      "fragment": "fragments/error-state.html",
+      "tokensConsumed": 13,
       "source": "rendered"
     },
     {
@@ -162,6 +178,14 @@
       "group": "Feedback",
       "fragment": "fragments/loader-with-logo.html",
       "tokensConsumed": 2,
+      "source": "rendered"
+    },
+    {
+      "slug": "maintenance-state",
+      "tagName": "zen-maintenance-state",
+      "group": "Feedback",
+      "fragment": "fragments/maintenance-state.html",
+      "tokensConsumed": 10,
       "source": "rendered"
     },
     {

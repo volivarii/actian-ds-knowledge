@@ -474,6 +474,60 @@
     },
     {
       "kind": "javascript-module",
+      "path": "components/render/dist/fragments/confirmation.html",
+      "declarations": [
+        {
+          "kind": "class",
+          "customElement": true,
+          "name": "Confirmation",
+          "tagName": "zen-confirmation",
+          "description": "A placeholder shown when success. Must include an illustration, a clear title, and a \"Call to Action\" button to help the user get started.",
+          "attributes": [
+            {
+              "name": "size",
+              "type": {
+                "text": "Large"
+              }
+            }
+          ],
+          "cssParts": [],
+          "cssProperties": [
+            {
+              "name": "--zen-color-text-default"
+            },
+            {
+              "name": "--zen-font-family-text"
+            },
+            {
+              "name": "--zen-font-lineheight-lg"
+            },
+            {
+              "name": "--zen-font-lineheight-md"
+            },
+            {
+              "name": "--zen-font-size-lg"
+            },
+            {
+              "name": "--zen-font-size-md"
+            },
+            {
+              "name": "--zen-font-weight-regular"
+            },
+            {
+              "name": "--zen-font-weight-semibold"
+            },
+            {
+              "name": "--zen-spacing-md"
+            },
+            {
+              "name": "--zen-spacing-sm"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "components/render/dist/fragments/digram-item-types.html",
       "declarations": [
         {
@@ -599,6 +653,69 @@
             },
             {
               "name": "--zen-font-weight-semibold"
+            },
+            {
+              "name": "--zen-spacing-md"
+            },
+            {
+              "name": "--zen-spacing-sm"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "components/render/dist/fragments/error-state.html",
+      "declarations": [
+        {
+          "kind": "class",
+          "customElement": true,
+          "name": "ErrorState",
+          "tagName": "zen-error-state",
+          "description": "A placeholder shown when a container has an error. Must include an illustration, a clear title, and a \"Call to Action\" button to help the user get started.",
+          "attributes": [
+            {
+              "name": "size",
+              "type": {
+                "text": "Large | Medium"
+              }
+            }
+          ],
+          "cssParts": [],
+          "cssProperties": [
+            {
+              "name": "--zen-color-text-default"
+            },
+            {
+              "name": "--zen-font-family-text"
+            },
+            {
+              "name": "--zen-font-lineheight-lg"
+            },
+            {
+              "name": "--zen-font-lineheight-md"
+            },
+            {
+              "name": "--zen-font-lineheight-xl"
+            },
+            {
+              "name": "--zen-font-size-lg"
+            },
+            {
+              "name": "--zen-font-size-md"
+            },
+            {
+              "name": "--zen-font-size-xl"
+            },
+            {
+              "name": "--zen-font-weight-regular"
+            },
+            {
+              "name": "--zen-font-weight-semibold"
+            },
+            {
+              "name": "--zen-spacing-2xs"
             },
             {
               "name": "--zen-spacing-md"
@@ -860,6 +977,60 @@
           "cssProperties": [
             {
               "name": "--zen-font-family-text"
+            },
+            {
+              "name": "--zen-spacing-sm"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "components/render/dist/fragments/maintenance-state.html",
+      "declarations": [
+        {
+          "kind": "class",
+          "customElement": true,
+          "name": "MaintenanceState",
+          "tagName": "zen-maintenance-state",
+          "description": "A placeholder shown when maintenance. Must include an illustration, a clear title, and a \"Call to Action\" button to help the user get started.",
+          "attributes": [
+            {
+              "name": "size",
+              "type": {
+                "text": "Large"
+              }
+            }
+          ],
+          "cssParts": [],
+          "cssProperties": [
+            {
+              "name": "--zen-color-text-default"
+            },
+            {
+              "name": "--zen-font-family-text"
+            },
+            {
+              "name": "--zen-font-lineheight-lg"
+            },
+            {
+              "name": "--zen-font-lineheight-md"
+            },
+            {
+              "name": "--zen-font-size-lg"
+            },
+            {
+              "name": "--zen-font-size-md"
+            },
+            {
+              "name": "--zen-font-weight-regular"
+            },
+            {
+              "name": "--zen-font-weight-semibold"
+            },
+            {
+              "name": "--zen-spacing-md"
             },
             {
               "name": "--zen-spacing-sm"
