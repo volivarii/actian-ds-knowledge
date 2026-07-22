@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "library": "ds",
   "fileKey": "l8biHxfarNi1I2RMvVxVOK",
-  "lastSynced": "2026-07-19T17:23:02.450Z",
+  "lastSynced": "2026-07-22T09:24:22.918Z",
   "componentCount": 287,
   "components": {
     "account-dropdown": {
@@ -231,6 +231,16 @@
       "nestedComponents": [
         {
           "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
         },
@@ -852,7 +862,7 @@
       "properties": {
         "Leading icon#724:0": {
           "type": "INSTANCE_SWAP",
-          "default": "17171:66073"
+          "default": "7206:3772"
         },
         "Label#724:10": {
           "type": "TEXT",
@@ -864,7 +874,7 @@
         },
         "Trailing icon#13805:43": {
           "type": "INSTANCE_SWAP",
-          "default": "17172:66154"
+          "default": "7207:2839"
         },
         "Show trailing icon#13807:82": {
           "type": "BOOLEAN",
@@ -876,6 +886,16 @@
         }
       },
       "nestedComponents": [
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
         {
           "slug": "spinner",
           "role": null,
@@ -937,11 +957,6 @@
           "slug": "arrow",
           "role": null,
           "source": "child-instance"
-        },
-        {
-          "slug": "chevron-up",
-          "role": null,
-          "source": "child-instance"
         }
       ],
       "documentationLinks": [],
@@ -993,6 +1008,16 @@
         },
         {
           "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
         }
@@ -1212,15 +1237,11 @@
           "type": "BOOLEAN",
           "default": true
         },
-        "Show Digram#19716:16": {
+        "Show glyph#19716:16": {
           "type": "BOOLEAN",
           "default": false
         },
-        "Show icon#19717:32": {
-          "type": "BOOLEAN",
-          "default": false
-        },
-        "Show Description#19748:66": {
+        "Show description#19748:66": {
           "type": "BOOLEAN",
           "default": false
         }
@@ -1478,6 +1499,16 @@
         },
         {
           "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
         }
@@ -2125,6 +2156,11 @@
           "source": "child-instance"
         },
         {
+          "slug": "ai",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "integer-type",
           "role": null,
           "source": "child-instance"
@@ -2318,6 +2354,16 @@
           "slug": "button",
           "role": null,
           "source": "child-instance"
+        },
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
         }
       ],
       "documentationLinks": [],
@@ -2363,6 +2409,16 @@
         },
         {
           "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
         }
@@ -2688,6 +2744,11 @@
         },
         {
           "slug": "list-bullets",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
         },
@@ -3263,6 +3324,16 @@
           "source": "child-instance"
         },
         {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "chevron-up",
           "role": null,
           "source": "child-instance"
@@ -3279,11 +3350,6 @@
         },
         {
           "slug": "powerbi",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
         }
@@ -3340,6 +3406,11 @@
         },
         {
           "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "add",
           "role": null,
           "source": "child-instance"
         },
@@ -3611,6 +3682,16 @@
           "slug": "button",
           "role": null,
           "source": "child-instance"
+        },
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
         }
       ],
       "documentationLinks": [],
@@ -3769,12 +3850,17 @@
           "source": "child-instance"
         },
         {
-          "slug": "info",
+          "slug": "add",
           "role": null,
           "source": "child-instance"
         },
         {
           "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "info",
           "role": null,
           "source": "child-instance"
         },
@@ -3927,6 +4013,16 @@
           "slug": "button",
           "role": null,
           "source": "child-instance"
+        },
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
         }
       ],
       "documentationLinks": [],
@@ -3952,6 +4048,16 @@
       "nestedComponents": [
         {
           "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
         }
@@ -4081,6 +4187,16 @@
           "source": "child-instance"
         },
         {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "search",
           "role": null,
           "source": "child-instance"
@@ -4122,16 +4238,6 @@
         },
         {
           "slug": "powerbi",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "arrow-down",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "add",
           "role": null,
           "source": "child-instance"
         },
@@ -4310,6 +4416,11 @@
           "source": "child-instance"
         },
         {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "link",
           "role": null,
           "source": "child-instance"
@@ -4449,15 +4560,11 @@
       "description": "Used for mutually exclusive choices where the user must select exactly one option from a short list (2–7 items).",
       "page": "✍️ Radio button",
       "properties": {
-        "Show Digram#19748:82": {
+        "Show glyph#19748:82": {
           "type": "BOOLEAN",
           "default": false
         },
-        "Show Icon#19748:93": {
-          "type": "BOOLEAN",
-          "default": false
-        },
-        "Show Description#19748:104": {
+        "Show description#19748:104": {
           "type": "BOOLEAN",
           "default": false
         }
@@ -4839,6 +4946,11 @@
         },
         {
           "slug": "button",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "ai",
           "role": null,
           "source": "child-instance"
         }
@@ -5365,6 +5477,16 @@
           "slug": "button",
           "role": null,
           "source": "child-instance"
+        },
+        {
+          "slug": "add",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
+          "role": null,
+          "source": "child-instance"
         }
       ],
       "documentationLinks": [],
@@ -5440,12 +5562,22 @@
           "source": "child-instance"
         },
         {
+          "slug": "ai",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
           "slug": "button",
           "role": null,
           "source": "child-instance"
         },
         {
           "slug": "filter",
+          "role": null,
+          "source": "child-instance"
+        },
+        {
+          "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
         },
@@ -5466,11 +5598,6 @@
         },
         {
           "slug": "dots",
-          "role": null,
-          "source": "child-instance"
-        },
-        {
-          "slug": "arrow-down",
           "role": null,
           "source": "child-instance"
         },

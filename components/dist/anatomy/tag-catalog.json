@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "tag-catalog",
   "kit": "dskit",
-  "synced_at": "2026-07-06T13:21:40.803Z",
+  "synced_at": "2026-07-22T09:24:08.141Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "13812:22309",
@@ -51,7 +51,7 @@
     },
     "children": [
       {
-        "name": "directory",
+        "name": "folder",
         "kind": "instance",
         "unresolved": true,
         "id": "11300:8565"

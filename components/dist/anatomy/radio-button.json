@@ -2,16 +2,16 @@
   "_schema_version": 1,
   "slug": "radio-button",
   "kit": "dskit",
-  "synced_at": "2026-07-19T17:22:47.008Z",
+  "synced_at": "2026-07-22T09:24:08.141Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "9474:16884",
     "variant": "Selection=Unselected, State=Default"
   },
   "quality": {
-    "nodesTotal": 9,
+    "nodesTotal": 8,
     "nodesNormalized": 7,
-    "ratio": 0.78,
+    "ratio": 0.88,
     "degraded": [
       {
         "name": "Radio button",
@@ -189,7 +189,7 @@
             },
             "children": [
               {
-                "name": "Digram",
+                "name": "Digram, icon, product logo",
                 "kind": "instance",
                 "slug": "digram-item-types",
                 "props": {
@@ -210,12 +210,6 @@
                     }
                   ]
                 }
-              },
-              {
-                "name": "Icon",
-                "kind": "instance",
-                "unresolved": true,
-                "id": "19748:38331"
               },
               {
                 "name": "Label",
