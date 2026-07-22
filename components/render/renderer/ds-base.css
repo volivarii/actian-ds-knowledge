@@ -2870,3 +2870,34 @@
 .ds-confirmation__cta {
   /* Extends .ds-button--primary/.ds-button--tertiary; no additional overrides needed */
 }
+
+/* ============ Tag glossary item type (gray-box-to-zero family 2) ============ */
+/* Dedicated block, NOT base .ds-tag: the anatomy has no border and a
+ * different radius (4px vs .ds-tag's 6px), so reusing the base class would
+ * leak an unwanted border. Single fixed variant; the only prop is the
+ * "Show Counter" boolean gating __counter. Value-first: --zen-color-warning-25
+ * does not round-trip against the frozen tokens.css snapshot (resolves to
+ * #f7f4f2, not the captured #fff9e5) but is bound per doctrine anyway (the
+ * hex is informational here, not a literal-vs-token choice). */
+.ds-tag-glossary-item-type {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--zen-spacing-xs); /* 8 */
+  padding: 0 var(--zen-spacing-xs); /* 0 8 */
+  border-radius: var(--zen-border-radius-xs); /* 4 */
+  background: var(--zen-color-warning-25);
+  height: var(--zen-size-lg); /* 24, inherited-from-sibling .ds-tag geometry */
+  font-family: var(--zen-font-family-text);
+  font-size: var(--zen-font-size-sm); /* 12 */
+  line-height: var(--zen-font-lineheight-sm); /* 16 */
+  font-weight: var(--zen-font-weight-regular);
+  letter-spacing: var(--zen-font-letterspacing-wide-3); /* 0.3 */
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+.ds-tag-glossary-item-type__label {
+  color: var(--zen-color-warning-900);
+}
+.ds-tag-glossary-item-type__counter {
+  color: var(--zen-color-text-default);
+}

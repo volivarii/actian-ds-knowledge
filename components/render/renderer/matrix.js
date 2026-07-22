@@ -71,6 +71,7 @@ var RENDER_SLUGS = [
   "tabs",
   "tag-catalog",
   "tag-default",
+  "tag-glossary-item-type",
   "tag-interactive",
   "tag-shared",
   "tag-stage",
@@ -231,6 +232,17 @@ var MATRIX_OVERRIDES = {
   ].map(function (s) {
     return { label: s, variant: "Status=" + s, props: { Label: s } };
   }),
+
+  // Property 1 is single-valued ("Default"), so the generic derivation would
+  // fall back to a single bare cell with no props and never show the
+  // "Show Counter" form. Curate one representative cell with the counter on.
+  "tag-glossary-item-type": [
+    {
+      label: "Default",
+      variant: "Property 1=Default",
+      props: { Label: "Glossary item", "Show Counter": true, Counter: "00" },
+    },
+  ],
 
   // Same rationale as empty-state above: Size is the only (secondary) axis,
   // so curate one representative rich cell instead of the generic bare stub.

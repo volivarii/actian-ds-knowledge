@@ -1814,6 +1814,27 @@
           );
         }
 
+        case "tag-glossary-item-type": {
+          // Dedicated block (NOT base .ds-tag): the anatomy has no border
+          // and a different radius (4px vs .ds-tag's 6px), so reusing the
+          // base class would leak an unwanted border. Single fixed variant
+          // (Property 1=Default) -- no modifier class, no style-map
+          // injection; the only variance is the "Show Counter" boolean.
+          var tgitCounter = props["Show Counter"]
+            ? '<span class="ds-tag-glossary-item-type__counter">' +
+              esc(props.Counter || "00") +
+              "</span>"
+            : "";
+          return (
+            '<span class="ds-tag-glossary-item-type">' +
+            '<span class="ds-tag-glossary-item-type__label">' +
+            esc(props.Label || "Glossary item") +
+            "</span>" +
+            tgitCounter +
+            "</span>"
+          );
+        }
+
         case "popover": {
           // Registry axis: Type = Interaction guide | Advanced search; prop
           // "Show info icon". A floating card: optional info icon + title +
@@ -2359,6 +2380,7 @@
     "tag-catalog",
     "tag-stage",
     "tag-status",
+    "tag-glossary-item-type",
   ];
 
   exports.renderDSComponent = renderDSComponent;

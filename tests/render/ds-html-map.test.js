@@ -821,3 +821,58 @@ test("tag-status: escapes hostile Label, falls back to Status when Label omitted
   });
   assert.match(fallback, />Warning</, "Label falls back to the Status value");
 });
+
+test("tag-glossary-item-type: base + label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-glossary-item-type",
+    variant: "Property 1=Default",
+    props: {},
+  });
+  assert.match(
+    html,
+    /class="ds-tag-glossary-item-type"/,
+    "carries the base class",
+  );
+  assert.match(
+    html,
+    /<span class="ds-tag-glossary-item-type__label">Glossary item<\/span>/,
+    "renders the __label span with the anatomy default text",
+  );
+});
+
+test("tag-glossary-item-type: counter toggle", function () {
+  var DS = require(DS_PATH);
+  var withCounter = DS.renderDSComponent({
+    dsSlug: "tag-glossary-item-type",
+    variant: "Property 1=Default",
+    props: { "Show Counter": true, Counter: "7" },
+  });
+  assert.match(
+    withCounter,
+    /<span class="ds-tag-glossary-item-type__counter">7<\/span>/,
+    "counter renders when Show Counter is truthy",
+  );
+
+  var withoutCounter = DS.renderDSComponent({
+    dsSlug: "tag-glossary-item-type",
+    variant: "Property 1=Default",
+    props: {},
+  });
+  assert.doesNotMatch(
+    withoutCounter,
+    /ds-tag-glossary-item-type__counter/,
+    "no counter span when Show Counter is absent/false",
+  );
+});
+
+test("tag-glossary-item-type: escapes hostile Label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-glossary-item-type",
+    variant: "Property 1=Default",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "label escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
