@@ -92,6 +92,7 @@ var RENDER_SLUGS = [
   "drawer-side-panel",
   // Gray-box-to-zero, family 5 (primitives).
   "spinner",
+  "loading-skeleton",
 ];
 
 // A render slug may live in any kit; search ds -> meta -> fm.

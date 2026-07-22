@@ -1656,3 +1656,76 @@ test("spinner: escapes hostile Label; no Label omits the label span and defaults
   );
   assert.match(noLabel, /aria-label="Loading"/, "defaults aria-label");
 });
+
+test("loading-skeleton: base + no-copy, role=status, blocks are empty and aria-hidden", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "loading-skeleton",
+    variant: "",
+    props: {},
+  });
+  assert.match(html, /class="ds-loading-skeleton"/, "carries the base class");
+  assert.match(html, /role="status"/, "carries status role");
+  assert.doesNotMatch(
+    html,
+    /Loading\.\.\./,
+    "no placeholder copy inside skeleton blocks",
+  );
+  var blockMatches =
+    html.match(
+      /<span class="ds-loading-skeleton__block[^"]*"[^>]*><\/span>/g,
+    ) || [];
+  assert.ok(blockMatches.length > 0, "renders at least one block");
+  blockMatches.forEach(function (m) {
+    assert.match(m, /aria-hidden="true"/, "every block is aria-hidden");
+  });
+});
+
+test("loading-skeleton: renders at least 3 block elements, each aria-hidden", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "loading-skeleton",
+    variant: "",
+    props: {},
+  });
+  var blockMatches = html.match(/ds-loading-skeleton__block/g) || [];
+  assert.ok(
+    blockMatches.length >= 3,
+    "at least 3 occurrences of ds-loading-skeleton__block",
+  );
+  var hiddenMatches = html.match(/aria-hidden="true"/g) || [];
+  assert.ok(hiddenMatches.length >= 3, "at least 3 aria-hidden blocks");
+});
+
+test("loading-skeleton: Transition=2 carries is-transition-2, default/1 does not", function () {
+  var DS = require(DS_PATH);
+  var htmlTwo = DS.renderDSComponent({
+    dsSlug: "loading-skeleton",
+    variant: "Transition=2",
+    props: {},
+  });
+  assert.match(htmlTwo, /is-transition-2/, "Transition=2 carries the modifier");
+
+  var htmlOne = DS.renderDSComponent({
+    dsSlug: "loading-skeleton",
+    variant: "Transition=1",
+    props: {},
+  });
+  assert.doesNotMatch(
+    htmlOne,
+    /is-transition-2/,
+    "Transition=1 (default) does not carry the modifier",
+  );
+});
+
+test("loading-skeleton: has no text sink -- hostile Label never appears", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "loading-skeleton",
+    variant: "",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.doesNotMatch(html, /<img/, "hostile Label is never rendered");
+  assert.doesNotMatch(html, /onerror/, "hostile Label is never rendered");
+});
+

@@ -2444,7 +2444,8 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .ds-loader__spinner,
-  .ds-spinner__ring {
+  .ds-spinner__ring,
+  .ds-loading-skeleton__block {
     animation: none;
   }
 }
@@ -3709,4 +3710,62 @@
   line-height: var(--zen-font-lineheight-sm);
   letter-spacing: var(--zen-font-letterspacing-wide-3);
   color: var(--zen-color-text-secondary);
+}
+
+/* ============ Loading skeleton (shimmering placeholder blocks), gray-box-to-zero family 5 ============ */
+/* Registry axis: Transition = 1 | 2 (a shimmer-fill animation frame, not a
+ * structural identity axis -- guideline: "no type or size variants").
+ * Anatomy (ratio 0.75) captured 3 layers: Union (the block shape fill,
+ * token --zen-border-subtle), Background (a Transition-driven wash --
+ * mapped here to the container, see the is-transition-2 rule below) and
+ * Lens (a degraded GRADIENT_LINEAR shimmer sweep with no captured stops --
+ * approximated as a translating highlight gradient). VISUAL-ONLY per
+ * guideline: no text/copy inside any block. */
+.ds-loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--zen-spacing-xs);
+  width: 240px; /* raw px: representative width, matches the .ds-progress track sibling convention */
+  padding: var(--zen-spacing-sm);
+  border-radius: var(--zen-border-radius-sm);
+  background: rgba(
+    225,
+    225,
+    230,
+    0.32
+  ); /* raw: captured "Background" node, Transition=1 default fill, no token */
+  box-sizing: border-box;
+  font-family: var(--zen-font-family-text);
+}
+.ds-loading-skeleton.is-transition-2 {
+  background: #f8f8f8; /* raw hex: captured "Background" node, Transition=2 fill, no token */
+}
+.ds-loading-skeleton__block {
+  display: block;
+  height: 12px; /* raw px: representative row height, not captured */
+  border-radius: var(--zen-border-radius-sm);
+  background-color: var(--zen-border-subtle); /* captured Union fill, #e1e1e6 */
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  ); /* raw: shimmer sweep, the Lens node was a degraded GRADIENT_LINEAR with no captured stops */
+  background-repeat: no-repeat;
+  background-size: 200% 100%;
+  animation: ds-skeleton-shimmer 1500ms ease-in-out infinite;
+}
+.ds-loading-skeleton__block--title {
+  height: 16px; /* raw px: taller row for the title/heading line */
+}
+.ds-loading-skeleton__block--short {
+  width: 60%; /* raw: representative shorter trailing row */
+}
+@keyframes ds-skeleton-shimmer {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 150% 0;
+  }
 }

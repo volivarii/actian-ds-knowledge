@@ -2492,6 +2492,35 @@
           );
         }
 
+        case "loading-skeleton": {
+          // Registry axis: Transition = 1 | 2 -- an animation/shimmer-fill
+          // frame, NOT a structural identity axis (guideline: "no type or
+          // size variants"). VISUAL-ONLY: guideline forbids any text/copy
+          // inside skeleton blocks, so every block is an empty aria-hidden
+          // span; the human-readable status lives only on the container's
+          // role/aria-busy/aria-label.
+          var lsTransition2 = String(v.Transition || "") === "2";
+          var lsCls =
+            "ds-loading-skeleton" + (lsTransition2 ? " is-transition-2" : "");
+          var lsBlock = function (extra) {
+            return (
+              '<span class="ds-loading-skeleton__block' +
+              (extra ? " " + extra : "") +
+              '" aria-hidden="true"></span>'
+            );
+          };
+          return (
+            '<div class="' +
+            lsCls +
+            '" role="status" aria-busy="true" aria-live="polite" aria-label="Loading">' +
+            lsBlock("ds-loading-skeleton__block--title") +
+            lsBlock() +
+            lsBlock() +
+            lsBlock("ds-loading-skeleton__block--short") +
+            "</div>"
+          );
+        }
+
         case "calendar": {
           // Registry axes: Type = Single date select | Date | Month | Single;
           // Selection = Single | Range | Year. A static month grid
@@ -3002,6 +3031,7 @@
     "drawer-side-panel",
     // Gray-box-to-zero, family 5 (primitives).
     "spinner",
+    "loading-skeleton",
   ];
 
   exports.renderDSComponent = renderDSComponent;
