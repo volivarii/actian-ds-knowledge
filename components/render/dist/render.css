@@ -2990,6 +2990,117 @@
   border-color: var(--zen-color-warning-100);
 }
 
+/* ============ Tag (gray-box-to-zero family 2) ============ */
+/* tag-shared: static solid pill. Anatomy carries no colorToken/backgroundToken
+ * for this fill (unlike the .ds-tag--<color> block above), so it ships as a
+ * literal hex, value-first. Border == fill on purpose: it reads as a solid
+ * pill with no visible outline, distinct from base .ds-tag's contrasting
+ * border. Text color/geometry inherit from base .ds-tag verbatim. */
+.ds-tag--shared {
+  background: #cbe3ff;
+  border-color: #cbe3ff;
+}
+/* tag-catalog: icon+label pill. Fill/border match .ds-tag--teal's hexes, but
+ * text is --zen-color-text-default (not base .ds-tag's tertiary), so it needs
+ * its own rule rather than reusing --teal. Base .ds-tag/.ds-tag__icon already
+ * supply geometry -- only fill/border/text are new here. */
+.ds-tag--catalog {
+  background: #ecffff;
+  border-color: #d0efed;
+  color: var(--zen-color-text-default);
+}
+/* tag-stage: colored dot + label + trailing arrow. Reuses the 8
+ * .ds-tag--<color> container rules above verbatim; only the dot/icon
+ * descendants are new. Dot diameter (8px) is the one hand-chosen value --
+ * anatomy captures radius=20px (pill/circle) but not the diameter itself. */
+.ds-tag-stage {
+  /* Namespace hook only: geometry/color come entirely from .ds-tag (base)
+   * and .ds-tag--<color> (container fill/border); scopes the dot/icon
+   * descendant selectors below without re-declaring any of that. */
+}
+.ds-tag-stage__dot {
+  width: 8px; /* dot geometry (raw px), diameter not captured by anatomy */
+  height: 8px;
+  border-radius: 20px; /* captured radius */
+  flex: 0 0 auto;
+  background: #547482; /* gray/default dot fill, no token captured */
+}
+.ds-tag-stage__icon {
+  width: 14px; /* icon box geometry (raw px), matches .ds-tag__icon */
+  height: 14px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: var(--zen-color-icon-default);
+}
+.ds-tag-stage__icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.ds-tag--indigo .ds-tag-stage__dot {
+  background: var(--zen-color-primary-600); /* #0053d7 */
+}
+.ds-tag--lime .ds-tag-stage__dot {
+  background: var(--zen-color-success-600); /* #098900 */
+}
+.ds-tag--orange .ds-tag-stage__dot {
+  background: var(--zen-color-error-800); /* #982a18 */
+}
+.ds-tag--yellow .ds-tag-stage__dot {
+  background: var(--zen-color-warning-800); /* #a76605 */
+}
+.ds-tag--pink .ds-tag-stage__dot {
+  background: #b1374d; /* no captured token */
+}
+.ds-tag--purple .ds-tag-stage__dot {
+  background: #7900cb; /* no captured token */
+}
+.ds-tag--teal .ds-tag-stage__dot {
+  background: #00908e; /* no captured token */
+}
+/* tag-status: status pill, 11 Status values grouped into 5 color families
+ * by the captured anatomy itself (a per-value class would be dishonest).
+ * Reuses base .ds-tag geometry verbatim (same height/padding/radius/font/
+ * gap/text-color as tag-default); only the family fill/border pairs are
+ * new. .ds-tag--status is a no-op marker (kept so the CSS-coverage gate has
+ * an explicit rule for every emitted class). Value-first: several captured
+ * backgroundTokens do not round-trip against the frozen tokens.css snapshot
+ * (a known drift, see tag-glossary-item-type's warning-25 note), so those
+ * ship literal with a comment; borders that DO round-trip bind the token. */
+.ds-tag--status {
+}
+.ds-tag--status-error {
+  /* Fail. --zen-color-error-25 resolves to #f8f4f3 in tokens.css, not the
+   * captured #fff4ec -- literal. Border DOES round-trip (#ffdacf). */
+  background: #fff4ec;
+  border-color: var(--zen-color-error-50);
+}
+.ds-tag--status-info {
+  /* Loading, Maintenance, Queued, Scheduled. --zen-color-primary-25
+   * resolves to #f3f5f9 in tokens.css, not the captured #edf6ff (bg AND
+   * border share this value in the anatomy) -- both literal. */
+  background: #edf6ff;
+  border-color: #edf6ff;
+}
+.ds-tag--status-neutral {
+  /* Offline, Pending, Sleeping, Stopped. No captured backgroundToken for
+   * the fill. Border DOES round-trip (--zen-border-disabled = #c7c7ce). */
+  background: #e1e1e6;
+  border-color: var(--zen-border-disabled);
+}
+.ds-tag--status-success {
+  /* Success. --zen-color-success-25 resolves to #f3f6f3 in tokens.css, not
+   * the captured #f0ffec -- literal. Border DOES round-trip (#d3efcd). */
+  background: #f0ffec;
+  border-color: var(--zen-color-success-50);
+}
+.ds-tag--status-warning {
+  /* Warning. --zen-color-bg-warning resolves to #f7f4f2 in tokens.css, not
+   * the captured #fff9e5 -- literal. Border DOES round-trip (#ffebce). */
+  background: #fff9e5;
+  border-color: var(--zen-color-warning-50);
+}
+
 /* ============ Checkbox (indeterminate state) ============ */
 .ds-checkbox--indeterminate .ds-checkbox__box {
   background: var(--zen-color-icon-primary);
@@ -3165,4 +3276,117 @@
 }
 .ds-confirmation__cta {
   /* Extends .ds-button--primary/.ds-button--tertiary; no additional overrides needed */
+}
+
+/* ============ Tag glossary item type (gray-box-to-zero family 2) ============ */
+/* Dedicated block, NOT base .ds-tag: the anatomy has no border and a
+ * different radius (4px vs .ds-tag's 6px), so reusing the base class would
+ * leak an unwanted border. Single fixed variant; the only prop is the
+ * "Show Counter" boolean gating __counter. Value-first: --zen-color-warning-25
+ * does not round-trip against the frozen tokens.css snapshot (resolves to
+ * #f7f4f2, not the captured #fff9e5) but is bound per doctrine anyway (the
+ * hex is informational here, not a literal-vs-token choice). */
+.ds-tag-glossary-item-type {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--zen-spacing-xs); /* 8 */
+  padding: 0 var(--zen-spacing-xs); /* 0 8 */
+  border-radius: var(--zen-border-radius-xs); /* 4 */
+  background: var(--zen-color-warning-25);
+  height: var(--zen-size-lg); /* 24, inherited-from-sibling .ds-tag geometry */
+  font-family: var(--zen-font-family-text);
+  font-size: var(--zen-font-size-sm); /* 12 */
+  line-height: var(--zen-font-lineheight-sm); /* 16 */
+  font-weight: var(--zen-font-weight-regular);
+  letter-spacing: var(--zen-font-letterspacing-wide-3); /* 0.3 */
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+.ds-tag-glossary-item-type__label {
+  color: var(--zen-color-warning-900);
+}
+.ds-tag-glossary-item-type__counter {
+  color: var(--zen-color-text-default);
+}
+
+/* ============ Tag catalog item type (gray-box-to-zero family 2) ============ */
+/* Dedicated block, NOT base .ds-tag: the anatomy has no border, unlike
+ * .ds-tag's 1px border -- reusing the base class would leak one. 8 colored
+ * type pills; each modifier sets the root fill, and a scoped descendant rule
+ * sets __name's text color (mirrors tag-stage's per-color dot-fill
+ * precedent). __counter's color is fixed regardless of type. Value-first:
+ * Category/Field/Use case's text/bg tokens round-trip against the frozen
+ * tokens.css :root snapshot and bind; Dataset's tokens do NOT round-trip
+ * (primary-50/-800 resolve to #cbe3ff/#033b92 there, not the captured
+ * #cfeafd/#00547d) and ship literal; the remaining four types (Data
+ * process/product, Output port, Visualization) have no captured token at
+ * all and ship literal. */
+.ds-tag-catalog-item-type {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--zen-spacing-xs); /* 8, captured gapToken */
+  padding: 0 var(--zen-spacing-xs); /* 0 8, captured paddingTokens */
+  border-radius: 4px; /* captured radius, no token */
+  height: 24px; /* inherited-from-sibling .ds-tag geometry (--zen-size-lg); not directly captured */
+  font-family: var(--zen-font-family-text);
+  font-size: var(--zen-font-size-sm); /* 12 */
+  line-height: var(--zen-font-lineheight-sm); /* 16 */
+  font-weight: var(--zen-font-weight-regular);
+  letter-spacing: var(--zen-font-letterspacing-wide-3); /* 0.3 */
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+.ds-tag-catalog-item-type__name {
+  display: inline-block;
+}
+.ds-tag-catalog-item-type__counter {
+  color: #000000; /* no token captured */
+}
+.ds-tag-catalog-item-type--category {
+  background: var(--zen-color-error-50);
+}
+.ds-tag-catalog-item-type--category .ds-tag-catalog-item-type__name {
+  color: var(--zen-color-error-800);
+}
+.ds-tag-catalog-item-type--dataset {
+  background: #cfeafd; /* --zen-color-primary-50 does not round-trip (:root resolves to #cbe3ff) */
+}
+.ds-tag-catalog-item-type--dataset .ds-tag-catalog-item-type__name {
+  color: #00547d; /* --zen-color-primary-800 does not round-trip (:root resolves to #033b92) */
+}
+.ds-tag-catalog-item-type--data-process {
+  background: #ffd6d8; /* no captured token */
+}
+.ds-tag-catalog-item-type--data-process .ds-tag-catalog-item-type__name {
+  color: #932139; /* no captured token */
+}
+.ds-tag-catalog-item-type--data-product {
+  background: #e1e1e6; /* no captured token */
+}
+.ds-tag-catalog-item-type--data-product .ds-tag-catalog-item-type__name {
+  color: #40404a; /* no captured token */
+}
+.ds-tag-catalog-item-type--field {
+  background: var(--zen-color-success-50);
+}
+.ds-tag-catalog-item-type--field .ds-tag-catalog-item-type__name {
+  color: var(--zen-color-success-800);
+}
+.ds-tag-catalog-item-type--output-port {
+  background: #dde6ec; /* no captured token */
+}
+.ds-tag-catalog-item-type--output-port .ds-tag-catalog-item-type__name {
+  color: #3c515a; /* no captured token */
+}
+.ds-tag-catalog-item-type--use-case {
+  background: #fff9e5; /* --zen-color-warning-25 does not round-trip (:root resolves to #f7f4f2) */
+}
+.ds-tag-catalog-item-type--use-case .ds-tag-catalog-item-type__name {
+  color: var(--zen-color-text-default);
+}
+.ds-tag-catalog-item-type--visualization {
+  background: #eed7ff; /* no captured token */
+}
+.ds-tag-catalog-item-type--visualization .ds-tag-catalog-item-type__name {
+  color: #5f0c9e; /* no captured token */
 }
