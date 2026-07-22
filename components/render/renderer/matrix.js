@@ -27,7 +27,7 @@ function readRegistry(kit) {
   return _cache[kit];
 }
 
-// The 35 render slugs are the `case "<slug>":` branches in
+// The render slugs are the `case "<slug>":` branches in
 // scripts/renderers/html-renderers/ds-html-map.js. This list drives the
 // --all CLI mode and is the seed set for the canonical render library bootstrap.
 var RENDER_SLUGS = [
@@ -41,11 +41,17 @@ var RENDER_SLUGS = [
   "card-for-items",
   "chat-with-ai-steward",
   "checkbox",
+  "digram-item-types",
+  "digram-topic",
   "dropdown-select-default",
   "empty-state",
   "global-header",
   "input-date",
+  "lineage-grouped-node",
+  "lineage-individual-node",
   "loader",
+  "loader-with-logo",
+  "metamodel-widget",
   "modal",
   "notification",
   "page-header",

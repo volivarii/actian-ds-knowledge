@@ -4,6 +4,8 @@ var assert = require("node:assert/strict");
 var Ajv2020 = require("ajv/dist/2020");
 var addFormats = require("ajv-formats");
 var D = require("../../scripts/render/derive-canonical.js");
+var RENDER_SLUGS =
+  require("../../components/render/renderer/matrix.js").RENDER_SLUGS;
 
 test("deriveCanonical: emits a valid CEM declaration for button", function () {
   var out = D.deriveCanonical();
@@ -79,7 +81,7 @@ test("deriveCanonical: cssProperties are the button's real consumed tokens, all 
 // seeds: every --zen-* token a render REFERENCES must actually be DEFINED, or
 // the component paints a browser default and nothing reds. Nothing else asserted
 // this once validateSeed went, so it is restored here over the DERIVED output
-// (render.css plus all 35 fragments) rather than over a frozen capture.
+// (render.css plus all fragments) rather than over a frozen capture.
 //
 // Measured at restore: 66 tokens referenced, 231 defined, 0 unresolved. All 66
 // come from render.css; the fragments contribute 0 today, because the renderer
@@ -107,12 +109,19 @@ test("every --zen-* token referenced by render.css or any fragment resolves to a
 
   // Non-vacuity: if referencedVars or the derive ever returned nothing, the
   // resolution assertion below would pass over an empty set and this gate would
-  // silently stop protecting anything.
-  assert.equal(slugs.length, 35, "all 35 fragments were scanned");
+  // silently stop protecting anything. Tracks RENDER_SLUGS.length (rather than
+  // a hardcoded count) so a slug added to the render matrix is scanned
+  // automatically instead of quietly falling outside this gate.
+  assert.equal(
+    slugs.length,
+    RENDER_SLUGS.length,
+    "all " + RENDER_SLUGS.length + " fragments were scanned",
+  );
   assert.ok(
     referenced.size > 0,
-    "no --zen-* references found at all across render.css + 35 fragments; " +
-      "referencedVars or the derive is broken, not the tokens",
+    "no --zen-* references found at all across render.css + " +
+      RENDER_SLUGS.length +
+      " fragments; referencedVars or the derive is broken, not the tokens",
   );
   assert.ok(defined.size > 0, "no --zen-* definitions found in render.css");
 
@@ -327,6 +336,81 @@ test("templates retired: tag/checkbox derive through the generic renderer, no de
     out.css,
     /derived-from-facts \(slice 2\)/,
     "no transient derived CSS appendix remains",
+  );
+});
+
+test("consumedVars: a selector does not absorb a sibling compound-name block's tokens", function () {
+  // Regression for the loader / loader-with-logo collision: .ds-foo's negative
+  // lookahead used to reject only a following letter/digit, so .ds-foo also
+  // matched .ds-foo-bar (a separate compound-name block) and absorbed its
+  // tokens. The BEM -- modifier and __ element forms must still match.
+  var styleText =
+    ".ds-foo { color: var(--zen-color-a); }\n" +
+    ".ds-foo-bar { color: var(--zen-color-b); }\n" +
+    ".ds-foo--mod { color: var(--zen-color-c); }\n" +
+    ".ds-foo__part { color: var(--zen-color-d); }\n";
+  var fooVars = D.consumedVars(styleText, "ds-foo");
+  assert.ok(
+    fooVars.indexOf("--zen-color-a") >= 0,
+    "still matches its own base rule",
+  );
+  assert.ok(
+    fooVars.indexOf("--zen-color-b") < 0,
+    ".ds-foo must not absorb .ds-foo-bar's token",
+  );
+  assert.ok(
+    fooVars.indexOf("--zen-color-c") >= 0,
+    "still matches its own -- modifier rule",
+  );
+  assert.ok(
+    fooVars.indexOf("--zen-color-d") >= 0,
+    "still matches its own __ element rule",
+  );
+
+  var fooBarVars = D.consumedVars(styleText, "ds-foo-bar");
+  assert.deepEqual(
+    fooBarVars,
+    ["--zen-color-b"],
+    ".ds-foo-bar keeps its own token, scanned as its own selector",
+  );
+});
+
+test("deriveCanonical: loader does not absorb loader-with-logo's tokens (prefix-pair isolation)", function () {
+  // loader / loader-with-logo is the real hyphen-prefix slug pair that exposed
+  // the collision: both are registry-derived (no COMPONENT_META entry), so
+  // their cssSelector falls back to "ds-" + slug, and .ds-loader used to also
+  // match .ds-loader-with-logo's rule.
+  var out = D.deriveCanonical();
+  var decls = out.cem.modules.flatMap(function (m) {
+    return m.declarations || [];
+  });
+  var loader = decls.find(function (d) {
+    return d.tagName === "zen-loader";
+  });
+  var loaderWithLogo = decls.find(function (d) {
+    return d.tagName === "zen-loader-with-logo";
+  });
+  assert.ok(loader, "zen-loader declaration present");
+  assert.ok(loaderWithLogo, "zen-loader-with-logo declaration present");
+
+  var loaderNames = (loader.cssProperties || []).map(function (p) {
+    return p.name;
+  });
+  var loaderWithLogoNames = (loaderWithLogo.cssProperties || []).map(
+    function (p) {
+      return p.name;
+    },
+  );
+  // loader-with-logo genuinely consumes this token: the assertion below is
+  // only meaningful if the fixture still exercises the collision surface.
+  assert.ok(
+    loaderWithLogoNames.indexOf("--zen-spacing-sm") >= 0,
+    "loader-with-logo still consumes its own --zen-spacing-sm (fixture sanity)",
+  );
+  assert.ok(
+    loaderNames.indexOf("--zen-spacing-sm") < 0,
+    "loader must not absorb loader-with-logo's --zen-spacing-sm: got " +
+      JSON.stringify(loaderNames),
   );
 });
 

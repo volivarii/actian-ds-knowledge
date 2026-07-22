@@ -146,6 +146,90 @@
     );
   }
 
+  // Captured resolved-appearance colors for digram-item-types' 27 "Item type"
+  // values (components/dist/anatomy/digram-item-types.json, root.appearance.variants).
+  // Same species of problem as tag-default's per-Color palette: many color
+  // variants driven by design-tool facts, not a small fixed brand set, but
+  // simpler than tag-default's build-time variant-style-map injection (no
+  // theme-swap requirement here), so this is a plain lookup table instead of
+  // a new injection seam. Custom 1 and Custom 15 have no captured entry;
+  // DIGRAM_ITEM_TYPE_COLORS falls back to "Category" for any unmapped value.
+  var DIGRAM_ITEM_TYPE_COLORS = {
+    Category: "#ffdacf",
+    Field: "#d3efcd",
+    "Custom 10": "#d3efcd",
+    "Custom 11": "#f9ffea",
+    "Custom 12": "#e1eacb",
+    "Custom 13": "#e1eacb",
+    "Custom 14": "#e1eacb",
+    "Custom 16": "#e2e4dd",
+    "Custom 2": "#ffd6d8",
+    "Data process": "#ffd6d8",
+    "Custom 3": "#dde6ec",
+    "Custom 6": "#dde6ec",
+    "Output port": "#dde6ec",
+    "Custom 4": "#e1e5ff",
+    "Custom 5": "#cadcf7",
+    "Data product": "#cadcf7",
+    "Custom 7": "#d0efed",
+    "Custom 8": "#d0efed",
+    "Custom 9": "#d3e7e0",
+    Dataset: "#cfeafd",
+    "Glossary 1": "#fff9e5",
+    "Use case": "#fff9e5",
+    "Glossary 2": "#ffebce",
+    "Glossary 3": "#fffbef",
+    "Glossary 4": "#feeddc",
+    "Glossary 5": "#fff5d5",
+    Visualization: "#eed7ff",
+  };
+  var DIGRAM_ITEM_TYPE_TOKENS = {
+    Field: "--zen-color-success-50",
+  };
+  function digramItemTypeStyle(itemType) {
+    var bg =
+      DIGRAM_ITEM_TYPE_COLORS[itemType] || DIGRAM_ITEM_TYPE_COLORS.Category;
+    var token = DIGRAM_ITEM_TYPE_TOKENS[itemType];
+    return token
+      ? "background:var(" + token + ", " + bg + ")"
+      : "background:" + bg;
+  }
+
+  // Captured resolved-appearance colors for digram-topic's 10 "Type" values
+  // (components/dist/anatomy/digram-topic.json, root.appearance + variants).
+  // "Light purple" is the variant default (no explicit variants entry; it's
+  // the root-level captured background).
+  var DIGRAM_TOPIC_COLORS = {
+    "Light purple": "#a17ab6",
+    "Dark blue": "#003786",
+    "Dark green": "#299315",
+    "Dark orange": "#b22700",
+    "Dark purple": "#8b00e8",
+    "Light blue": "#00b6e1",
+    "Light green": "#75b86b",
+    Orange: "#ef8d00",
+    Red: "#a82743",
+    Yellow: "#eabd34",
+  };
+
+  // Captured resolved-appearance border colors for metamodel-widget's 5 Type
+  // values (components/dist/anatomy/metamodel-widget.json, root.appearance +
+  // variants). Border width (1.5px) and radius (6px) are constant across every
+  // variant; only the color changes. "Dataset" is the variant default.
+  var METAMODEL_TYPE_BORDERS = {
+    Dataset: { color: "#0283be", token: "--zen-color-primary-500" },
+    "Business Term": { color: "#a76605", token: "--zen-color-warning-800" },
+    "Data Process": { color: "#a82743", token: null },
+    Field: { color: "#145f04", token: "--zen-color-success-800" },
+    Visualisation: { color: "#7900cb", token: null },
+  };
+  function metamodelBorderStyle(type) {
+    var b = METAMODEL_TYPE_BORDERS[type] || METAMODEL_TYPE_BORDERS.Dataset;
+    return b.token
+      ? "border-color:var(" + b.token + ", " + b.color + ")"
+      : "border-color:" + b.color;
+  }
+
   // Inline icon glyphs (geometry in raw px — viewBox coords, not design tokens).
   // The button/input/checkbox/tag/card glyphs now come from renderIcon() (real
   // vendored DS icons, orphan-ref gated). The search magnifier stays hardcoded
@@ -521,6 +605,205 @@
             '<p class="ds-card__body">' +
             esc(props.Body || "") +
             "</p>" +
+            "</div>"
+          );
+        }
+
+        case "digram-item-types": {
+          var itItemType = v["Item type"] || "Category";
+          var itCls = "ds-item-type";
+          // "Default" is the bare state (no modifier, matches ds-item-type's own
+          // size rule); only a non-default Size (e.g. "Small") adds a modifier
+          // class, mirroring the Size handling convention used elsewhere in this
+          // file (compare the button case's `v.Size === "Small"` check above).
+          if (v.Size && v.Size !== "Default") {
+            itCls += " ds-item-type--" + v.Size.toLowerCase();
+          }
+          return (
+            '<span class="' +
+            itCls +
+            '" style="' +
+            digramItemTypeStyle(itItemType) +
+            '">' +
+            esc(props.Initials || props.Label || "") +
+            "</span>"
+          );
+        }
+
+        case "digram-topic": {
+          var dtType = v.Type || "Light purple";
+          var dtBg =
+            DIGRAM_TOPIC_COLORS[dtType] || DIGRAM_TOPIC_COLORS["Light purple"];
+          return (
+            '<span class="ds-topic" style="background:' +
+            dtBg +
+            '">' +
+            esc(props.Initials || props.Label || "") +
+            "</span>"
+          );
+        }
+
+        case "lineage-individual-node": {
+          var linCls = "ds-lineage-node";
+          if (v.Type === "Sub item") linCls += " ds-lineage-node--sub";
+          if (v.State === "Selected") linCls += " ds-lineage-node--selected";
+          if (v.State === "Disabled") linCls += " ds-lineage-node--disabled";
+          if (v.Fields === "Expanded") linCls += " ds-lineage-node--expanded";
+
+          var linItemType = v["Item type"] || "Category";
+          var linBadge =
+            '<span class="ds-item-type" style="' +
+            digramItemTypeStyle(linItemType) +
+            '">' +
+            esc(props["Item type initials"] || "") +
+            "</span>";
+
+          // powerbi/identification-key have no captured icon or graphic asset
+          // yet (components/dist/icons/icons.json / graphics/graphics.json);
+          // renderIcon degrades to "" for an unmapped slug, so these two
+          // spans simply don't render until the real assets land (a Figma
+          // export task tracked separately, not part of this component's
+          // own scope).
+          var linSourceIcon = renderIcon("powerbi");
+          var linKeyIcon = renderIcon("identification-key");
+          var linExpandIcon = renderIcon("chevron-up");
+
+          return (
+            '<div class="' +
+            linCls +
+            '">' +
+            linBadge +
+            '<span class="ds-lineage-node__label">' +
+            esc(props.Label || props.Title || "") +
+            "</span>" +
+            (linSourceIcon
+              ? '<span class="ds-lineage-node__source">' +
+                linSourceIcon +
+                "</span>"
+              : "") +
+            (linKeyIcon
+              ? '<span class="ds-lineage-node__key">' + linKeyIcon + "</span>"
+              : "") +
+            '<button class="ds-lineage-node__expand" aria-label="' +
+            (v.Fields === "Expanded" ? "Collapse" : "Expand") +
+            '">' +
+            linExpandIcon +
+            "</button>" +
+            "</div>"
+          );
+        }
+
+        case "lineage-grouped-node": {
+          var lgnCls = "ds-lineage-group";
+          if (v.State === "Expanded") lgnCls += " ds-lineage-group--expanded";
+
+          var lgnItemType = v["Item type"] || "Category";
+          var lgnBadge =
+            '<span class="ds-item-type" style="' +
+            digramItemTypeStyle(lgnItemType) +
+            '">' +
+            esc(props["Item type initials"] || "") +
+            "</span>";
+
+          // Inline lineage-individual-node's own markup for the one
+          // representative child row (don't recurse into
+          // renderDSComponent, matching card-for-items' precedent); real
+          // grouped children are assembled by the caller, this leaf just
+          // proves the group chrome renders.
+          var lgnChild =
+            '<div class="ds-lineage-node ds-lineage-group__child">' +
+            '<span class="ds-item-type" style="' +
+            digramItemTypeStyle(lgnItemType) +
+            '">' +
+            esc(props["Child initials"] || "") +
+            "</span>" +
+            '<span class="ds-lineage-node__label">' +
+            esc(props["Child label"] || "") +
+            "</span>" +
+            "</div>";
+
+          var lgnToggleIcon = renderIcon("chevron-up");
+
+          return (
+            '<div class="' +
+            lgnCls +
+            '">' +
+            '<div class="ds-lineage-group__header">' +
+            lgnBadge +
+            '<span class="ds-lineage-group__label">' +
+            esc(props.Label || props.Title || "") +
+            "</span>" +
+            '<button class="ds-lineage-group__toggle" aria-label="' +
+            (v.State === "Expanded" ? "Collapse group" : "Expand group") +
+            '">' +
+            lgnToggleIcon +
+            "</button>" +
+            "</div>" +
+            (v.State === "Expanded"
+              ? '<div class="ds-lineage-group__children">' + lgnChild + "</div>"
+              : "") +
+            "</div>"
+          );
+        }
+
+        case "metamodel-widget": {
+          var mwType = v.Type || "Dataset";
+          var mwItemType = v["Item type"] || "Category";
+          var mwBadge =
+            '<span class="ds-item-type" style="' +
+            digramItemTypeStyle(mwItemType) +
+            '">' +
+            esc(props["Item type initials"] || "") +
+            "</span>";
+          var mwSection = props["Show Section"]
+            ? '<div class="ds-metamodel-widget__section">' +
+              '<button class="ds-metamodel-widget__collapse" aria-label="Collapse section">' +
+              renderIcon("arrow-down") +
+              "</button>" +
+              '<div class="ds-metamodel-widget__section-body">' +
+              esc(props["Section body"] || "") +
+              "</div>" +
+              "</div>"
+            : "";
+          return (
+            '<div class="ds-metamodel-widget" style="' +
+            metamodelBorderStyle(mwType) +
+            '">' +
+            '<div class="ds-metamodel-widget__header">' +
+            mwBadge +
+            '<span class="ds-metamodel-widget__title">' +
+            esc(props.Title || props.Label || "") +
+            "</span>" +
+            "</div>" +
+            mwSection +
+            "</div>"
+          );
+        }
+
+        case "loader-with-logo": {
+          var LOADER_WITH_LOGO_APPS = {
+            "Actian Data Intelligence": "loader-logo-adi",
+            Studio: "loader-logo-studio",
+            Explorer: "loader-logo-explorer",
+            Admin: "loader-logo-admin",
+          };
+          var lwlApp = v.App || "Actian Data Intelligence";
+          var lwlLogoSlug =
+            LOADER_WITH_LOGO_APPS[lwlApp] ||
+            LOADER_WITH_LOGO_APPS["Actian Data Intelligence"];
+          var lwlLogo = renderGraphic(lwlLogoSlug);
+          var lwlLabel = props.Label
+            ? '<span class="ds-loader__label">' + esc(props.Label) + "</span>"
+            : "";
+          return (
+            '<div class="ds-loader-with-logo" role="status" aria-live="polite" aria-label="' +
+            esc(props.Label || "Loading") +
+            '">' +
+            (lwlLogo
+              ? '<span class="ds-loader-with-logo__mark">' + lwlLogo + "</span>"
+              : "") +
+            '<span class="ds-loader__spinner" aria-hidden="true"></span>' +
+            lwlLabel +
             "</div>"
           );
         }
@@ -1829,6 +2112,12 @@
     // Hi-Fi A1 (narrow) — degraded-slug overrides. Batch 3: feedback + date.
     "loader",
     "calendar",
+    "digram-item-types",
+    "digram-topic",
+    "lineage-individual-node",
+    "lineage-grouped-node",
+    "metamodel-widget",
+    "loader-with-logo",
   ];
 
   exports.renderDSComponent = renderDSComponent;
