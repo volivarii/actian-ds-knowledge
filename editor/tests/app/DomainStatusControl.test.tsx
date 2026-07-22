@@ -1,5 +1,5 @@
 import "../setup-dom";
-import { test } from "node:test";
+import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { Theme } from "@radix-ui/themes";
 import React from "react";
@@ -51,8 +51,17 @@ function wrap(node: React.ReactNode) {
   return <Theme>{node}</Theme>;
 }
 
-test("DomainStatusControl: shows Draft + Mark approved, click stages approved", async () => {
+// afterEach(cleanup) unmounts the tree even if an assertion throws, so a leaked
+// mount can never keep the node event loop alive and hang `node --test`.
+beforeEach(() => {
   submissionCartSingleton.clear();
+  localStorage.clear();
+});
+afterEach(() => {
+  cleanup();
+});
+
+test("DomainStatusControl: shows Draft + Mark approved, click stages approved", async () => {
   const gh = fakeGh({ "components/src/button/_meta.yml": META_DRAFT });
   render(wrap(<DomainStatusControl slug="button" domain="usage" octokit={gh} />));
 
@@ -73,12 +82,9 @@ test("DomainStatusControl: shows Draft + Mark approved, click stages approved", 
   });
   // And the control now offers the reverse transition.
   assert.ok(await screen.findByRole("button", { name: /return to draft/i }));
-  cleanup();
-  submissionCartSingleton.clear();
 });
 
 test("DomainStatusControl: approved domain shows Approved + Return to draft", async () => {
-  submissionCartSingleton.clear();
   const gh = fakeGh({ "components/src/button/_meta.yml": META_DRAFT });
   // Stage content=approved first, then the control should read it back.
   const { setDomainStatus } = await import("../../src/lib/workspaceState");
@@ -86,6 +92,27 @@ test("DomainStatusControl: approved domain shows Approved + Return to draft", as
   render(wrap(<DomainStatusControl slug="button" domain="content" octokit={gh} />));
   assert.ok(await screen.findByRole("button", { name: /return to draft/i }));
   assert.ok(screen.getByText(/^Approved$/));
-  cleanup();
-  submissionCartSingleton.clear();
+});
+
+test("DomainStatusControl: re-reads status when the domain prop changes", async () => {
+  // Guards navigation-status-tracking cheaply (no heavy screen mount): the
+  // read effect must re-run on a domain change and reflect the new domain.
+  const meta = `# yaml-language-server: $schema=../../../schemas/guideline-meta.json
+component: "Buttons"
+domains:
+  usage: { status: draft }
+  design: { status: approved }
+`;
+  const gh = fakeGh({ "components/src/button/_meta.yml": meta });
+  const { rerender } = render(
+    wrap(<DomainStatusControl slug="button" domain="usage" octokit={gh} />),
+  );
+  // usage → draft.
+  assert.ok(await screen.findByRole("button", { name: /mark approved/i }));
+  // Change domain prop to design (approved).
+  rerender(
+    wrap(<DomainStatusControl slug="button" domain="design" octokit={gh} />),
+  );
+  assert.ok(await screen.findByRole("button", { name: /return to draft/i }));
+  assert.equal(screen.queryByRole("button", { name: /mark approved/i }), null);
 });
