@@ -305,3 +305,93 @@ test("metamodel-widget: escapes a hostile Title", function () {
   assert.match(html, /&lt;img/, "title escaped");
   assert.doesNotMatch(html, /<img src=x/, "no raw injection");
 });
+
+test("loader-with-logo: default App (Actian Data Intelligence), renders the logo mark and spinner", function () {
+  var DS = require(DS_PATH);
+  DS.setGraphics(
+    require("../../components/dist/graphics/graphics.json").graphics,
+  );
+  try {
+    var html = DS.renderDSComponent({
+      dsSlug: "loader-with-logo",
+      variant: "",
+      props: {},
+    });
+    assert.match(html, /class="ds-loader-with-logo"/, "carries the base class");
+    assert.match(html, /ds-loader-with-logo__mark/, "has a logo-mark wrapper");
+    assert.match(
+      html,
+      /class="ds-graphic"/,
+      "renderGraphic emits the shared ds-graphic svg class",
+    );
+    assert.match(
+      html,
+      /ds-loader__spinner/,
+      "still renders the spinner, composing with the existing loader chrome",
+    );
+  } finally {
+    DS.setGraphics(null);
+  }
+});
+
+test("loader-with-logo: App=Studio selects the Studio logo slug", function () {
+  var DS = require(DS_PATH);
+  DS.setGraphics(
+    require("../../components/dist/graphics/graphics.json").graphics,
+  );
+  try {
+    var html = DS.renderDSComponent({
+      dsSlug: "loader-with-logo",
+      variant: "App=Studio",
+      props: {},
+    });
+    // The two Studio-vs-ADI logo bodies differ (see the fetched asset data);
+    // asserting the Studio-specific top-level group id proves the right slug
+    // was selected, not just that *a* graphic rendered.
+    assert.match(
+      html,
+      /Actian Data Intelligence Studio/,
+      "renders the Studio-specific logo group",
+    );
+  } finally {
+    DS.setGraphics(null);
+  }
+});
+
+test("loader-with-logo: an unmapped App falls back to the default (Actian Data Intelligence) logo", function () {
+  var DS = require(DS_PATH);
+  DS.setGraphics(
+    require("../../components/dist/graphics/graphics.json").graphics,
+  );
+  try {
+    var html = DS.renderDSComponent({
+      dsSlug: "loader-with-logo",
+      variant: "App=Nonexistent App",
+      props: {},
+    });
+    assert.match(
+      html,
+      /class="ds-graphic"/,
+      "still renders a graphic (the default), not a blank mark",
+    );
+  } finally {
+    DS.setGraphics(null);
+  }
+});
+
+test("loader-with-logo: Label prop renders the loader label span", function () {
+  var DS = require(DS_PATH);
+  DS.setGraphics(
+    require("../../components/dist/graphics/graphics.json").graphics,
+  );
+  try {
+    var html = DS.renderDSComponent({
+      dsSlug: "loader-with-logo",
+      variant: "",
+      props: { Label: "Connecting" },
+    });
+    assert.match(html, /ds-loader__label">Connecting</, "renders the label");
+  } finally {
+    DS.setGraphics(null);
+  }
+});

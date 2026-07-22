@@ -31,6 +31,10 @@ const SLICE1_ARTWORK = {
   "actian-pyramid": "7764:7688",
   "zeenea-logo": "12770:6651",
   "actian-data-observability": "7764:7671",
+  "loader-logo-adi": "7764:7616",
+  "loader-logo-studio": "7973:4948",
+  "loader-logo-explorer": "7973:4896",
+  "loader-logo-admin": "7973:5050",
 };
 
 const AUTO_OUT_PATH = path.join(
@@ -158,11 +162,8 @@ async function run(opts) {
     wrote =
       writeIfChangedStr(
         DEGRADED_OUT_PATH,
-        JSON.stringify(
-          { _meta: { auto_generated: true }, degraded },
-          null,
-          2,
-        ) + "\n",
+        JSON.stringify({ _meta: { auto_generated: true }, degraded }, null, 2) +
+          "\n",
       ) || wrote;
   }
 

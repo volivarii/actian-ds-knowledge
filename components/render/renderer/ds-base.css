@@ -678,6 +678,23 @@
   color: var(--zen-color-text-tertiary);
 }
 
+/* ============ Loader with logo (loader-with-logo), composes .ds-loader ============ */
+.ds-loader-with-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--zen-spacing-sm); /* 12 */
+  font-family: var(--zen-font-family-text);
+}
+.ds-loader-with-logo__mark {
+  height: 24px; /* raw px: matches .ds-loader__spinner's box for visual balance */
+  display: inline-flex;
+  align-items: center;
+}
+.ds-loader-with-logo__mark svg {
+  height: 100%;
+  width: auto;
+}
+
 /* ============ Global header (top app bar — chrome) ============ */
 /* Anatomy: 1440×64, flex space-between, padding 0 24px.              */
 /* Left = brand; Center = context + search; Right = actions cluster.  */

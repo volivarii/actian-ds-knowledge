@@ -780,6 +780,34 @@
           );
         }
 
+        case "loader-with-logo": {
+          var LOADER_WITH_LOGO_APPS = {
+            "Actian Data Intelligence": "loader-logo-adi",
+            Studio: "loader-logo-studio",
+            Explorer: "loader-logo-explorer",
+            Admin: "loader-logo-admin",
+          };
+          var lwlApp = v.App || "Actian Data Intelligence";
+          var lwlLogoSlug =
+            LOADER_WITH_LOGO_APPS[lwlApp] ||
+            LOADER_WITH_LOGO_APPS["Actian Data Intelligence"];
+          var lwlLogo = renderGraphic(lwlLogoSlug);
+          var lwlLabel = props.Label
+            ? '<span class="ds-loader__label">' + esc(props.Label) + "</span>"
+            : "";
+          return (
+            '<div class="ds-loader-with-logo" role="status" aria-live="polite" aria-label="' +
+            esc(props.Label || "Loading") +
+            '">' +
+            (lwlLogo
+              ? '<span class="ds-loader-with-logo__mark">' + lwlLogo + "</span>"
+              : "") +
+            '<span class="ds-loader__spinner" aria-hidden="true"></span>' +
+            lwlLabel +
+            "</div>"
+          );
+        }
+
         case "global-header": {
           // Top app bar (chrome) — real Studio header, authored from Figma anatomy.
           // anatomy: 1440×64, flex space-between, padding 0 24px.
@@ -2089,6 +2117,7 @@
     "lineage-individual-node",
     "lineage-grouped-node",
     "metamodel-widget",
+    "loader-with-logo",
   ];
 
   exports.renderDSComponent = renderDSComponent;
