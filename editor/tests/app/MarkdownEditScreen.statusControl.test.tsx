@@ -22,7 +22,11 @@ function fakeGh(files: Record<string, string>) {
           throw err;
         }
         return {
-          data: { content: b64(content), encoding: "base64", sha: `sha-${path}` },
+          data: {
+            content: b64(content),
+            encoding: "base64",
+            sha: `sha-${path}`,
+          },
         };
       },
     },
@@ -65,7 +69,63 @@ test("MarkdownEditScreen: no status control for an accessibility file", async ()
     ),
   );
   // Wait for the file to load (header heading appears), then assert absence.
-  await waitFor(() => assert.ok(screen.getByText("accessibility/src/buttons.md")));
+  await waitFor(() =>
+    assert.ok(screen.getByText("accessibility/src/buttons.md")),
+  );
+  assert.equal(screen.queryByRole("button", { name: /mark approved/i }), null);
+  cleanup();
+  submissionCartSingleton.clear();
+});
+
+test("MarkdownEditScreen: status control tracks the current domain across navigation", async () => {
+  // All files cart-staged, so each loads synchronously with NO Spinner — the
+  // exact condition under which the header (and the status control) persists
+  // across navigation rather than remounting. The key={path} on the control
+  // must still make it reflect the newly-open file's status.
+  submissionCartSingleton.clear();
+  const meta = `# yaml-language-server: $schema=../../../schemas/guideline-meta.json
+component: "Buttons"
+domains:
+  usage: { status: draft }
+  design: { status: approved }
+`;
+  submissionCartSingleton.add({
+    path: "components/src/button/_meta.yml",
+    content: meta,
+    basedOnSha: "sha-meta",
+    addedAt: 1,
+  });
+  submissionCartSingleton.add({
+    path: "components/src/button/usage.md",
+    content: USAGE_MD,
+    basedOnSha: "sha-usage",
+    addedAt: 2,
+  });
+  submissionCartSingleton.add({
+    path: "components/src/button/design.md",
+    content: `---\ntitle: "Buttons design"\n---\n## Anatomy\n`,
+    basedOnSha: "sha-design",
+    addedAt: 3,
+  });
+  const gh = fakeGh({}); // cart wins; nothing needed on remote
+  const { rerender } = render(
+    wrap(
+      <MarkdownEditScreen path="components/src/button/usage.md" octokit={gh} />,
+    ),
+  );
+  // usage is draft.
+  assert.ok(await screen.findByRole("button", { name: /mark approved/i }));
+  // Navigate to design (approved) on the same, non-remounted screen instance.
+  rerender(
+    wrap(
+      <MarkdownEditScreen
+        path="components/src/button/design.md"
+        octokit={gh}
+      />,
+    ),
+  );
+  // The control must now reflect design's approved status, not usage's draft.
+  assert.ok(await screen.findByRole("button", { name: /return to draft/i }));
   assert.equal(screen.queryByRole("button", { name: /mark approved/i }), null);
   cleanup();
   submissionCartSingleton.clear();

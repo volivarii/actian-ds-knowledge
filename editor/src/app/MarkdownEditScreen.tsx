@@ -669,8 +669,14 @@ export function MarkdownEditScreen({
         <Flex gap="2" align="center">
           {(() => {
             const df = domainFileForPath(path);
+            // key by path so navigating between domain files fully remounts the
+            // control. MarkdownEditScreen is NOT remounted on navigation (same
+            // reason CodeMirrorEditor below is key'd), so without this a stale
+            // in-flight status write from the previous file would resolve on the
+            // still-mounted instance and clobber the new file's displayed status.
             return df && gh ? (
               <DomainStatusControl
+                key={path}
                 slug={df.slug}
                 domain={df.domain}
                 octokit={gh}
