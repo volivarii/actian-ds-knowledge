@@ -34,7 +34,11 @@ function stubView() {
 }
 
 function fakeGh() {
-  return { repos: { getContent: async () => ({ data: { content: "", encoding: "base64" } }) } } as any;
+  return {
+    repos: {
+      getContent: async () => ({ data: { content: "", encoding: "base64" } }),
+    },
+  } as any;
 }
 
 function wrap(node: React.ReactNode) {
@@ -97,15 +101,40 @@ test("Toolbar: anchor button appends {#auto-slug} on heading line", () => {
   const { view } = mountWithView("## New Section");
   view.dispatch({ selection: { anchor: 14, head: 14 } });
   fireEvent.click(screen.getByRole("button", { name: /anchor/i }));
-  assert.equal(view.state.doc.toString(), "## New Section  {#new-section}");
+  assert.equal(view.state.doc.toString(), "## New Section {#new-section}");
   cleanup();
 });
 
-test("Toolbar: anchor button on non-heading inserts {#anchor} at cursor", () => {
+test("Toolbar: anchor button is inert on a non-heading line", () => {
   const { view } = mountWithView("plain text");
   view.dispatch({ selection: { anchor: 5, head: 5 } });
   fireEvent.click(screen.getByRole("button", { name: /anchor/i }));
-  assert.equal(view.state.doc.toString(), "plain{#anchor} text");
+  // Heading anchors only (Slice 1): a non-heading click is a no-op.
+  assert.equal(view.state.doc.toString(), "plain text");
+  cleanup();
+});
+
+test("Toolbar: anchor button is inert on a heading-shaped line inside a code fence", () => {
+  const doc = "```\n## Not a heading\n```";
+  const { view } = mountWithView(doc);
+  const at = doc.indexOf("## Not a heading") + 3;
+  view.dispatch({ selection: { anchor: at, head: at } });
+  fireEvent.click(screen.getByRole("button", { name: /anchor/i }));
+  // A heading-shaped line inside a fence must NOT be anchored: doc unchanged.
+  assert.equal(view.state.doc.toString(), doc);
+  cleanup();
+});
+
+test("Toolbar: anchor button derives a UNIQUE slug against existing anchors", () => {
+  const doc = "## Overview {#overview}\n\nprose\n\n## Overview";
+  const { view } = mountWithView(doc);
+  // Cursor on the second (unanchored) "## Overview" line.
+  const secondHeadingAt = doc.lastIndexOf("## Overview") + 5;
+  view.dispatch({
+    selection: { anchor: secondHeadingAt, head: secondHeadingAt },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /anchor/i }));
+  assert.match(view.state.doc.toString(), /## Overview \{#overview-2\}$/);
   cleanup();
 });
 
@@ -120,15 +149,22 @@ test("Toolbar: code block inserts ``` fenced block at cursor", () => {
 test("shows the media picker trigger in a component context", () => {
   cleanup();
   render(
-    wrap(<Toolbar view={stubView()} octokit={fakeGh()} componentSlug="button" />),
+    wrap(
+      <Toolbar view={stubView()} octokit={fakeGh()} componentSlug="button" />,
+    ),
   );
-  assert.ok(screen.queryByRole("button", { name: /insert media/i }), "media trigger present");
+  assert.ok(
+    screen.queryByRole("button", { name: /insert media/i }),
+    "media trigger present",
+  );
   cleanup();
 });
 
 test("hides the media trigger when there is no component slug", () => {
   cleanup();
-  render(wrap(<Toolbar view={stubView()} octokit={fakeGh()} componentSlug={null} />));
+  render(
+    wrap(<Toolbar view={stubView()} octokit={fakeGh()} componentSlug={null} />),
+  );
   assert.equal(
     screen.queryByRole("button", { name: /insert media/i }),
     null,
@@ -139,7 +175,14 @@ test("hides the media trigger when there is no component slug", () => {
 
 test("never renders the old free-text <Media src> button", () => {
   cleanup();
-  render(wrap(<Toolbar view={stubView()} octokit={fakeGh()} componentSlug="button" />));
-  assert.equal(screen.queryByRole("button", { name: /Insert Media component/i }), null);
+  render(
+    wrap(
+      <Toolbar view={stubView()} octokit={fakeGh()} componentSlug="button" />,
+    ),
+  );
+  assert.equal(
+    screen.queryByRole("button", { name: /Insert Media component/i }),
+    null,
+  );
   cleanup();
 });

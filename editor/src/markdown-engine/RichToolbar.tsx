@@ -27,10 +27,11 @@ import {
   deleteSelectedCellsCommand,
 } from "@milkdown/preset-gfm";
 import { MediaPickerPopover } from "./MediaPickerPopover";
+import { addAnchorCommand } from "./anchorCommand";
 
 /** TEST-ONLY: the selection the guard test installs before running a command.
  *  The live toolbar always runs against the user's real selection. */
-export type ToolbarSeedSelection = "all" | "table-cell" | "cell";
+export type ToolbarSeedSelection = "all" | "table-cell" | "cell" | "heading";
 
 /** Button groups, rendered in this order and divided by a vertical separator. */
 export type ToolbarGroup = "block" | "inline" | "insert";
@@ -110,6 +111,15 @@ export const COMMANDS: readonly ToolbarCommand[] = [
     command: wrapInBlockquoteCommand,
     seed: "quote\n",
     select: "all",
+  },
+  {
+    id: "anchor",
+    glyph: "⚓",
+    ariaLabel: "Add section anchor",
+    group: "block",
+    command: addAnchorCommand,
+    seed: "## Heading\n",
+    select: "heading",
   },
   // Inline
   {

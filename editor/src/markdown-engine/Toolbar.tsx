@@ -5,21 +5,15 @@ import { Button, Flex, Separator, Tooltip } from "@radix-ui/themes";
 import type { EditorView } from "@codemirror/view";
 import type { Octokit } from "@octokit/rest";
 import { MediaPickerPopover } from "./MediaPickerPopover";
+import { deriveUniqueSlug } from "./anchorSlug";
+import { scanAnchors } from "./anchorScan";
+import { scanHeadings } from "../lib/headingScan";
 
 export interface ToolbarProps {
   view: EditorView;
   /** Present only when editing a component-guideline .md (enables media). */
   octokit?: Octokit;
   componentSlug?: string | null;
-}
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/--+/g, "-");
 }
 
 function wrapSelection(view: EditorView, prefix: string, suffix: string) {
@@ -57,14 +51,23 @@ function insertAnchor(view: EditorView) {
   const sel = view.state.selection.main;
   const line = view.state.doc.lineAt(sel.from);
   const text = line.text;
-  const headingMatch = text.match(/^(#{1,6})\s+(.+)$/);
-  if (headingMatch && headingMatch[2]) {
-    const slug = slugify(headingMatch[2]) || "anchor";
-    const insert = `  {#${slug}}`;
-    view.dispatch({ changes: { from: line.to, to: line.to, insert } });
-  } else {
-    insertAtCursor(view, "{#anchor}");
-  }
+  // Additive only: never touch a heading that already ends in an anchor.
+  if (/\{#[a-z][a-z0-9-]*\}\s*$/.test(text)) return;
+  // Only real section headings (H1-H3), resolved through the editor's canonical
+  // scanner, so a heading-shaped line inside a ``` fence or the YAML
+  // frontmatter is never mistaken for a heading (the naive line regex would
+  // corrupt those). This mirrors the rich command's structural heading check.
+  const fullText = view.state.doc.toString();
+  const heading = scanHeadings(fullText).find(
+    (h) => h.line === line.number - 1,
+  );
+  if (!heading) return;
+  // scanAnchors is grammar-agnostic and strips fenced/inline code, so the
+  // uniqueness set covers every real {#slug} in the file.
+  const slug = deriveUniqueSlug(heading.text, scanAnchors(fullText));
+  view.dispatch({
+    changes: { from: line.to, to: line.to, insert: ` {#${slug}}` },
+  });
   view.focus();
 }
 
@@ -205,7 +208,7 @@ export function Toolbar({ view, octokit, componentSlug }: ToolbarProps) {
             onInsert={(snippet) => insertAtCursor(view, snippet)}
           />
         )}
-        <Tooltip content="Insert {#anchor} on this line">
+        <Tooltip content="Add a section anchor to this heading">
           <Button
             size={BTN_SIZE}
             variant={BTN_VARIANT}

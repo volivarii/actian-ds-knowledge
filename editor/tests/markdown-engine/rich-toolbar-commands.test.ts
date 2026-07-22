@@ -59,6 +59,19 @@ function buildSelection(
 ): Selection {
   const { doc } = state;
   if (mode === "all") return new AllSelection(doc);
+  if (mode === "heading") {
+    // Cursor at the end of the first heading's text (the add-anchor command).
+    let hEnd = -1;
+    doc.descendants((node, p) => {
+      if (hEnd === -1 && node.type.name === "heading") {
+        hEnd = p + node.nodeSize - 1;
+        return false;
+      }
+      return true;
+    });
+    assert.notEqual(hEnd, -1, "heading seed must contain a heading");
+    return TextSelection.near(doc.resolve(hEnd), -1);
+  }
   const cellPos = findFirstBodyCellPos(doc);
   assert.notEqual(cellPos, -1, "table-context seed must contain a body cell");
   if (mode === "cell") return new CellSelection(doc.resolve(cellPos));

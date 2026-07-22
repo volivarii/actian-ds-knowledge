@@ -21,6 +21,7 @@ import {
   type ReferencePickerState,
 } from "./referenceAutocomplete";
 import { linkReferenceDecorationPlugin } from "./linkReferenceDecoration";
+import { headingAnchorDecorationPlugin } from "./headingAnchorDecoration";
 import { ReferencePicker } from "./ReferencePicker";
 import { RichToolbar } from "./RichToolbar";
 
@@ -120,7 +121,10 @@ function MilkdownBody({
           // View-only decorations for links that resolve to a component:
           // a typed dot + data hooks. Never edits the doc, so the same
           // serialization contract holds.
-          .use(linkReferenceDecorationPlugin),
+          .use(linkReferenceDecorationPlugin)
+          // View-only chip over a heading's trailing {#slug}: hides the raw
+          // marker, shows a pill. Never edits the doc, so serialization holds.
+          .use(headingAnchorDecorationPlugin),
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],

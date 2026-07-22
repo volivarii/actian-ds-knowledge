@@ -3,6 +3,7 @@ import { commonmark } from "@milkdown/preset-commonmark";
 import { gfm } from "@milkdown/preset-gfm";
 import { getMarkdown } from "@milkdown/utils";
 import { mediaNodeView } from "./media/mediaNodeView";
+import { addAnchorCommand } from "./anchorCommand";
 
 /**
  * The canonical Milkdown preset stack for the WYSIWYG body editor: CommonMark
@@ -14,7 +15,14 @@ export function useMilkdownPresets(editor: Editor): Editor {
   // mediaNodeView is a display-only NodeView over the commonmark `html` atom:
   // it renders a preview chip for <Media …/> but never mutates the node, so
   // serialization (and the round-trip drift guards) stay byte-exact.
-  return editor.use(commonmark).use(gfm).use(mediaNodeView);
+  // addAnchorCommand is a dispatchable toolbar command (appends a {#slug} to a
+  // heading); registering it here makes its key resolvable in both the live
+  // editor and the round-trip guard. It adds no schema, so serialization holds.
+  return editor
+    .use(commonmark)
+    .use(gfm)
+    .use(mediaNodeView)
+    .use(addAnchorCommand);
 }
 
 /**

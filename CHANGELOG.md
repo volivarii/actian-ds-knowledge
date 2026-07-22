@@ -20,6 +20,11 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **Anchor authoring helper in the editor.** Heading anchors (`{#slug}`) are now first-class: a
+  toolbar action derives a unique, leading-letter slug for you (both the source and rich editors), and
+  in the rich (WYSIWYG) editor a heading's anchor renders as a quiet chip instead of raw `{#slug}`
+  text. Additive only for now (create + display); safe rename/remove with in-repo reference rewriting
+  is the planned follow-up. Editor-only, version-neutral. ([#470](https://github.com/volivarii/actian-ds-knowledge/pull/470))
 - **In-editor domain status toggle.** A component's prose domain file (`content` / `usage` /
   `design` / `behavior`) now carries a `draft ⇄ approved` control in the Knowledge Editor header;
   clicking stages the `_meta.yml` `domains.<domain>.status` change into the submission cart and it
