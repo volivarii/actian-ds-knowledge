@@ -153,7 +153,7 @@
       "tagName": "zen-loader",
       "group": "Feedback",
       "fragment": "fragments/loader.html",
-      "tokensConsumed": 10,
+      "tokensConsumed": 9,
       "source": "rendered"
     },
     {

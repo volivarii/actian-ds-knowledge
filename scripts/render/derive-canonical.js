@@ -141,10 +141,15 @@ function definedVars(styleText) {
 // stylesheet. ds-base rules are flat, so a non-nested scan is exact here.
 function consumedVars(styleText, cssSelector) {
   var set = new Set();
-  // `.ds-button` as a class token: the dot-prefixed name not followed by another
-  // name char, so `.ds-button--primary`/`__icon`/`[disabled]` match but
-  // `.ds-buttonish` does not.
-  var selRe = new RegExp("\\." + cssSelector + "(?![a-z0-9])");
+  // `.ds-button` as a class token: the dot-prefixed name not followed by
+  // another name char, so `.ds-button--primary`/`__icon`/`[disabled]` match
+  // but `.ds-buttonish` does not. A single following hyphen is ALSO rejected
+  // (the second lookahead), because that is a separate compound-name block
+  // like `.ds-loader-with-logo`, not a modifier of `.ds-loader` -- without it
+  // `.ds-loader` absorbed `.ds-loader-with-logo`'s tokens. The BEM `--`
+  // modifier and `__` element forms still match, since two hyphens (or an
+  // underscore) fail the "single hyphen" lookahead.
+  var selRe = new RegExp("\\." + cssSelector + "(?![a-z0-9])(?!-(?!-))");
   var re = /([^{}]+)\{([^{}]*)\}/g;
   var m;
   while ((m = re.exec(styleText)) !== null) {

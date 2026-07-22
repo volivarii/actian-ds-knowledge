@@ -339,6 +339,81 @@ test("templates retired: tag/checkbox derive through the generic renderer, no de
   );
 });
 
+test("consumedVars: a selector does not absorb a sibling compound-name block's tokens", function () {
+  // Regression for the loader / loader-with-logo collision: .ds-foo's negative
+  // lookahead used to reject only a following letter/digit, so .ds-foo also
+  // matched .ds-foo-bar (a separate compound-name block) and absorbed its
+  // tokens. The BEM -- modifier and __ element forms must still match.
+  var styleText =
+    ".ds-foo { color: var(--zen-color-a); }\n" +
+    ".ds-foo-bar { color: var(--zen-color-b); }\n" +
+    ".ds-foo--mod { color: var(--zen-color-c); }\n" +
+    ".ds-foo__part { color: var(--zen-color-d); }\n";
+  var fooVars = D.consumedVars(styleText, "ds-foo");
+  assert.ok(
+    fooVars.indexOf("--zen-color-a") >= 0,
+    "still matches its own base rule",
+  );
+  assert.ok(
+    fooVars.indexOf("--zen-color-b") < 0,
+    ".ds-foo must not absorb .ds-foo-bar's token",
+  );
+  assert.ok(
+    fooVars.indexOf("--zen-color-c") >= 0,
+    "still matches its own -- modifier rule",
+  );
+  assert.ok(
+    fooVars.indexOf("--zen-color-d") >= 0,
+    "still matches its own __ element rule",
+  );
+
+  var fooBarVars = D.consumedVars(styleText, "ds-foo-bar");
+  assert.deepEqual(
+    fooBarVars,
+    ["--zen-color-b"],
+    ".ds-foo-bar keeps its own token, scanned as its own selector",
+  );
+});
+
+test("deriveCanonical: loader does not absorb loader-with-logo's tokens (prefix-pair isolation)", function () {
+  // loader / loader-with-logo is the real hyphen-prefix slug pair that exposed
+  // the collision: both are registry-derived (no COMPONENT_META entry), so
+  // their cssSelector falls back to "ds-" + slug, and .ds-loader used to also
+  // match .ds-loader-with-logo's rule.
+  var out = D.deriveCanonical();
+  var decls = out.cem.modules.flatMap(function (m) {
+    return m.declarations || [];
+  });
+  var loader = decls.find(function (d) {
+    return d.tagName === "zen-loader";
+  });
+  var loaderWithLogo = decls.find(function (d) {
+    return d.tagName === "zen-loader-with-logo";
+  });
+  assert.ok(loader, "zen-loader declaration present");
+  assert.ok(loaderWithLogo, "zen-loader-with-logo declaration present");
+
+  var loaderNames = (loader.cssProperties || []).map(function (p) {
+    return p.name;
+  });
+  var loaderWithLogoNames = (loaderWithLogo.cssProperties || []).map(
+    function (p) {
+      return p.name;
+    },
+  );
+  // loader-with-logo genuinely consumes this token: the assertion below is
+  // only meaningful if the fixture still exercises the collision surface.
+  assert.ok(
+    loaderWithLogoNames.indexOf("--zen-spacing-sm") >= 0,
+    "loader-with-logo still consumes its own --zen-spacing-sm (fixture sanity)",
+  );
+  assert.ok(
+    loaderNames.indexOf("--zen-spacing-sm") < 0,
+    "loader must not absorb loader-with-logo's --zen-spacing-sm: got " +
+      JSON.stringify(loaderNames),
+  );
+});
+
 test("derive-canonical sources fragments from the renderer and labels them rendered", function () {
   var { deriveCanonical } = require("../../scripts/render/derive-canonical.js");
   var {

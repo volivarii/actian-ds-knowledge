@@ -832,9 +832,6 @@
               "name": "--zen-font-size-sm"
             },
             {
-              "name": "--zen-spacing-sm"
-            },
-            {
               "name": "--zen-spacing-xs"
             }
           ]
