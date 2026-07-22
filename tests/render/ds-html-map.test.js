@@ -969,3 +969,54 @@ test("tag-catalog-item-type: counter gating and escapes hostile Label", function
   assert.match(hostile, /&lt;img/, "label escaped");
   assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
 });
+
+// ---- Gray-box-to-zero, family 3 (card family) ----
+
+test("card-for-perimeter: base class present", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "card-for-perimeter",
+    variant: "Property 1=Default",
+    props: {},
+  });
+  assert.match(html, /class="ds-card-perimeter"/, "carries the base class");
+});
+
+test("card-for-perimeter: badge color is data-derived (Dataset -> #cfeafd), not hand-guessed", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "card-for-perimeter",
+    variant: "Property 1=Default",
+    props: { "Item type": "Dataset", "Item type initials": "DS" },
+  });
+  assert.match(
+    html,
+    /<span class="ds-item-type" style="background:#cfeafd">DS<\/span>/,
+    "digramItemTypeStyle produces the captured Dataset color",
+  );
+});
+
+test("card-for-perimeter: escapes hostile Name", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "card-for-perimeter",
+    variant: "Property 1=Default",
+    props: { Name: "<script>alert(1)</script>" },
+  });
+  assert.match(html, /&lt;script&gt;/, "name escaped");
+  assert.doesNotMatch(html, /<script>alert/, "no raw injection");
+});
+
+test("card-for-perimeter: Completeness clamps into the progress fill width", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "card-for-perimeter",
+    variant: "Property 1=Default",
+    props: { Completeness: "75%" },
+  });
+  assert.match(
+    html,
+    /<span class="ds-progress__fill" style="width:75%"><\/span>/,
+    "Completeness drives the progress fill width",
+  );
+});

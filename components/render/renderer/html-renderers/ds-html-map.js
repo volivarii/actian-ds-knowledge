@@ -2344,6 +2344,66 @@
           );
         }
 
+        // ---- Gray-box-to-zero, family 3 (card family) ----
+
+        case "card-for-perimeter": {
+          // Horizontal row card: item-type badge + name/counter + inline
+          // progress bar. Single "Property 1=Default" variant (no State/Size
+          // axis) -- one static appearance, no modifier classes. Inlines the
+          // existing digram-item-types badge (via digramItemTypeStyle) and
+          // the progress-bar-small track/fill/percent markup verbatim
+          // (both already have ds-base.css rules) rather than recursing into
+          // renderDSComponent, same idiom as card-for-items. Anatomy
+          // captures background+radius only for the root -- no border/
+          // shadow -- so none is added here.
+          var cfpItemType = props["Item type"] || "Dataset";
+          var cfpInitials = esc(
+            props["Item type initials"] || props.Initials || props.Label || "",
+          );
+          var cfpName = esc(props.Name || "Dataset");
+          var cfpCounter = esc(props.Counter || "23");
+          // Same clamp-to-[0,100] discipline as the progress-bar-small case
+          // above: Completeness is user-supplied flow-data, parsed defensively.
+          var cfpPct = parseInt(
+            String(props.Completeness || "50").replace(/[^0-9.-]/g, ""),
+            10,
+          );
+          if (isNaN(cfpPct)) cfpPct = 0;
+          if (cfpPct < 0) cfpPct = 0;
+          if (cfpPct > 100) cfpPct = 100;
+          return (
+            '<div class="ds-card-perimeter">' +
+            '<span class="ds-item-type" style="' +
+            digramItemTypeStyle(cfpItemType) +
+            '">' +
+            cfpInitials +
+            "</span>" +
+            '<div class="ds-card-perimeter__body">' +
+            '<div class="ds-card-perimeter__header">' +
+            '<span class="ds-card-perimeter__name">' +
+            cfpName +
+            "</span>" +
+            '<span class="ds-card-perimeter__counter">' +
+            cfpCounter +
+            "</span>" +
+            "</div>" +
+            '<div class="ds-progress">' +
+            '<div class="ds-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
+            cfpPct +
+            '">' +
+            '<span class="ds-progress__fill" style="width:' +
+            cfpPct +
+            '%"></span>' +
+            "</div>" +
+            '<span class="ds-progress__percent">' +
+            cfpPct +
+            "%</span>" +
+            "</div>" +
+            "</div>" +
+            "</div>"
+          );
+        }
+
         default: {
           // Phase 1B: PREFER rendering the component per-instance from its
           // captured appearance doc so the instance's own variant selects the
@@ -2438,6 +2498,8 @@
     "tag-status",
     "tag-glossary-item-type",
     "tag-catalog-item-type",
+    // Gray-box-to-zero, family 3 (card family).
+    "card-for-perimeter",
   ];
 
   exports.renderDSComponent = renderDSComponent;

@@ -2988,3 +2988,48 @@
 .ds-tag-catalog-item-type--visualization .ds-tag-catalog-item-type__name {
   color: #5f0c9e; /* no captured token */
 }
+
+/* ============ Card (for perimeter — badge + name/counter + progress), gray-box-to-zero family 3 ============ */
+/* Single "Property 1=Default" variant -- no State/Size axis, no modifier
+ * classes. Anatomy root captures background+radius ONLY (no border, no
+ * shadow) -- honored verbatim, unlike .ds-card's bordered/shadowed shell.
+ * The item-type badge (.ds-item-type) and progress bar (.ds-progress*)
+ * reuse their existing rules verbatim; only the 5 classes below are new. */
+.ds-card-perimeter {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start; /* captured align: cross=start */
+  gap: var(--zen-spacing-xs); /* 8 */
+  padding: var(--zen-spacing-sm); /* 12 */
+  background: var(--zen-color-bg-default);
+  border-radius: var(--zen-border-radius-sm); /* 6 */
+  box-sizing: border-box;
+  font-family: var(--zen-font-family-text);
+}
+.ds-card-perimeter__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--zen-spacing-2xs); /* 4 */
+  flex: 1 1 0;
+  min-width: 0;
+}
+.ds-card-perimeter__header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--zen-spacing-xs); /* 8 */
+}
+.ds-card-perimeter__name {
+  font-size: var(--zen-font-size-md); /* 14 */
+  line-height: var(--zen-font-lineheight-md); /* 20 */
+  font-weight: var(--zen-font-weight-medium); /* 500 */
+  letter-spacing: var(--zen-font-letterspacing-wide-2); /* 0.2 */
+  color: var(--zen-color-text-default);
+}
+.ds-card-perimeter__counter {
+  font-size: var(--zen-font-size-md); /* 14 */
+  line-height: var(--zen-font-lineheight-md); /* 20 */
+  font-weight: var(--zen-font-weight-regular); /* 400 */
+  letter-spacing: var(--zen-font-letterspacing-wide-2); /* 0.2 */
+  color: var(--zen-color-text-default);
+}

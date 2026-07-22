@@ -81,6 +81,8 @@ var RENDER_SLUGS = [
   "toggle",
   "toolbar",
   "tooltip",
+  // Gray-box-to-zero, family 3 (card family).
+  "card-for-perimeter",
 ];
 
 // A render slug may live in any kit; search ds -> meta -> fm.
@@ -304,6 +306,25 @@ var MATRIX_OVERRIDES = {
         Body: "There was an error creating your item. Please try again in a moment.",
         Cta: "Try again",
         Secondary: "Go back",
+      },
+    },
+  ],
+
+  // Property 1 is single-valued ("Default"), so the generic derivation would
+  // fall back to a single bare cell with props:{Label:slug} -- the case
+  // reads Item type/Name/Counter/Completeness, not Label, so that stub would
+  // render an all-default card. Curate one representative rich cell instead
+  // (values mirror the captured anatomy sample).
+  "card-for-perimeter": [
+    {
+      label: "Default",
+      variant: "Property 1=Default",
+      props: {
+        "Item type": "Dataset",
+        "Item type initials": "DS",
+        Name: "Dataset",
+        Counter: "23",
+        Completeness: "50%",
       },
     },
   ],
