@@ -1724,6 +1724,21 @@
 
         // ---- Hi-Fi A1 (narrow) — degraded-slug overrides. Batch 1: overlays ----
 
+        // ---- Gray-box-to-zero, family 2 (tag family) ----
+
+        case "tag-shared": {
+          // Static solid pill: anatomy (Property 1=Default, the only value)
+          // has NO Color axis, NO icon child, and NO per-variant harvested
+          // style like tag-default's __dsVariantStyles injection -- a single
+          // fixed appearance, so a plain modifier class + one CSS rule is
+          // correct here (see ds-base.css .ds-tag--shared).
+          return (
+            '<span class="ds-tag ds-tag--shared">' +
+            esc(props.Label || "Shared") +
+            "</span>"
+          );
+        }
+
         case "popover": {
           // Registry axis: Type = Interaction guide | Advanced search; prop
           // "Show info icon". A floating card: optional info icon + title +
@@ -2264,6 +2279,8 @@
     "confirmation",
     "error-state",
     "maintenance-state",
+    // Gray-box-to-zero, family 2 (tag family).
+    "tag-shared",
   ];
 
   exports.renderDSComponent = renderDSComponent;

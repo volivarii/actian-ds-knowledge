@@ -2588,6 +2588,17 @@
   border-color: var(--zen-color-warning-100);
 }
 
+/* ============ Tag (gray-box-to-zero family 2) ============ */
+/* tag-shared: static solid pill. Anatomy carries no colorToken/backgroundToken
+ * for this fill (unlike the .ds-tag--<color> block above), so it ships as a
+ * literal hex, value-first. Border == fill on purpose: it reads as a solid
+ * pill with no visible outline, distinct from base .ds-tag's contrasting
+ * border. Text color/geometry inherit from base .ds-tag verbatim. */
+.ds-tag--shared {
+  background: #cbe3ff;
+  border-color: #cbe3ff;
+}
+
 /* ============ Checkbox (indeterminate state) ============ */
 .ds-checkbox--indeterminate .ds-checkbox__box {
   background: var(--zen-color-icon-primary);

@@ -619,3 +619,40 @@ test("confirmation: escapes hostile Title and Body", function () {
   assert.match(html, /&lt;svg/, "body escaped");
   assert.doesNotMatch(html, /<svg onload/, "no raw injection from Body");
 });
+
+// ---- Gray-box-to-zero, family 2 (tag family) ----
+
+test("tag-shared: base + modifier present, no color-modifier leak", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-shared",
+    variant: "",
+    props: {},
+  });
+  assert.match(
+    html,
+    /class="ds-tag ds-tag--shared"/,
+    "carries base + modifier",
+  );
+});
+
+test("tag-shared: default label is Shared", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-shared",
+    variant: "",
+    props: {},
+  });
+  assert.match(html, />Shared</, "renders the anatomy's fixed label");
+});
+
+test("tag-shared: escapes hostile Label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-shared",
+    variant: "",
+    props: { Label: "<script>alert(1)</script>" },
+  });
+  assert.doesNotMatch(html, /<script/, "no raw script injection");
+  assert.match(html, /&lt;script&gt;/, "label escaped");
+});

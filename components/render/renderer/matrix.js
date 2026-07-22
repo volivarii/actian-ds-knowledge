@@ -71,6 +71,7 @@ var RENDER_SLUGS = [
   "tabs",
   "tag-default",
   "tag-interactive",
+  "tag-shared",
   "text-input",
   "toggle",
   "toolbar",
