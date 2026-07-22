@@ -82,10 +82,7 @@ async function loadRegistryEntry(
 }
 
 export type WorkspaceDomainStatus =
-  | "not-started"
-  | "authored"
-  | "inherited"
-  | "approved";
+  "not-started" | "authored" | "inherited" | "approved";
 
 export interface WorkspaceDomain {
   domain: Domain;
@@ -130,6 +127,31 @@ export function domainFileName(domain: Domain): string {
 
 export function domainPathFor(slug: string, domain: Domain): string {
   return `components/src/${slug}/${domainFileName(domain)}`;
+}
+
+// The prose domains authored as `<domain>.md` (tokens is YAML-backed and not
+// editor-openable, so it is excluded from the in-editor status control).
+const PROSE_DOMAINS = new Set<Domain>([
+  "content",
+  "usage",
+  "design",
+  "behavior",
+]);
+
+// Map a file path to the component domain it authors, or null when the path is
+// not one of the four prose domain files. Doubles as the visibility guard for
+// the in-editor status control: null → no control. Rejects _meta.yml,
+// tokens.yml, categories/*, AUTHORING.md, accessibility/*, and nested paths.
+export function domainFileForPath(
+  path: string,
+): { slug: string; domain: Domain } | null {
+  const m = path.match(/^components\/src\/([^/]+)\/([^/]+)\.md$/);
+  if (!m) return null;
+  const slug = m[1]!;
+  const base = m[2]!;
+  if (slug === "categories") return null;
+  if (!PROSE_DOMAINS.has(base as Domain)) return null;
+  return { slug, domain: base as Domain };
 }
 
 interface ParsedMeta {

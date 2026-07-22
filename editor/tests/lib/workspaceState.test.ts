@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  domainFileForPath,
   domainFileName,
   domainPathFor,
   promoteDomainToDraft,
@@ -183,4 +184,36 @@ test("validateCartCoupling: approved tokens with neither tokens.yml on remote no
   assert.equal(mismatches[0]!.domain, "tokens");
   assert.equal(mismatches[0]!.kind, "declared-but-missing");
   assert.equal(mismatches[0]!.declaredStatus, "approved");
+});
+
+test("domainFileForPath: matches the four prose domain files", () => {
+  assert.deepEqual(domainFileForPath("components/src/button/usage.md"), {
+    slug: "button",
+    domain: "usage",
+  });
+  assert.deepEqual(domainFileForPath("components/src/text-input/content.md"), {
+    slug: "text-input",
+    domain: "content",
+  });
+  assert.deepEqual(domainFileForPath("components/src/tag/design.md"), {
+    slug: "tag",
+    domain: "design",
+  });
+  assert.deepEqual(domainFileForPath("components/src/modal/behavior.md"), {
+    slug: "modal",
+    domain: "behavior",
+  });
+});
+
+test("domainFileForPath: rejects non-domain and out-of-scope paths", () => {
+  assert.equal(domainFileForPath("components/src/button/_meta.yml"), null);
+  assert.equal(domainFileForPath("components/src/button/tokens.yml"), null);
+  assert.equal(domainFileForPath("components/src/button/AUTHORING.md"), null);
+  assert.equal(domainFileForPath("components/src/categories/action.md"), null);
+  assert.equal(domainFileForPath("accessibility/src/buttons.md"), null);
+  assert.equal(domainFileForPath("foundations/src/tokens.md"), null);
+  assert.equal(
+    domainFileForPath("components/src/button/nested/usage.md"),
+    null,
+  );
 });
