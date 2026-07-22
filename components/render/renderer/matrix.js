@@ -222,6 +222,22 @@ var MATRIX_OVERRIDES = {
       },
     },
   ],
+
+  // Same rationale as empty-state/maintenance-state/confirmation above: Size
+  // is the only (secondary) axis, so curate one representative rich cell
+  // instead of the generic bare stub.
+  "error-state": [
+    {
+      label: "Default",
+      variant: "Size=Large",
+      props: {
+        Title: "Something went wrong",
+        Body: "There was an error creating your item. Please try again in a moment.",
+        Cta: "Try again",
+        Secondary: "Go back",
+      },
+    },
+  ],
 };
 
 function variantMatrix(slug) {

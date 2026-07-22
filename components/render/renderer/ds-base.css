@@ -2604,7 +2604,11 @@
  * canonical CEM derive scans .ds-<slug> per slug, so a shared prefix would
  * leave error-state without an honest token surface). Size=Medium (secondary
  * axis) shrinks title/body type. Body binds --zen-color-text-default (not
- * -secondary; differs from empty-state per the captured anatomy). */
+ * -secondary; differs from empty-state per the captured anatomy). Unlike
+ * maintenance-state/confirmation, the captured anatomy here did not include
+ * root padding -- only column layout, center cross-align, gap, and
+ * text-align -- so .ds-error-state intentionally omits `padding` and
+ * `justify-content: center`; do not add them to "match" the siblings. */
 .ds-error-state {
   display: flex;
   flex-direction: column;
@@ -2627,17 +2631,17 @@
   gap: var(--zen-spacing-2xs);
 }
 .ds-error-state__title {
-  font-size: var(--zen-font-size-lg);
+  font-size: var(--zen-font-size-xl); /* anatomy Large: 18px */
   font-weight: var(--zen-font-weight-semibold);
   color: var(--zen-color-text-default);
-  line-height: var(--zen-font-lineheight-md);
+  line-height: var(--zen-font-lineheight-xl); /* anatomy Large: 26px */
   margin: 0;
 }
 .ds-error-state__body {
-  font-size: var(--zen-font-size-md);
+  font-size: var(--zen-font-size-lg); /* anatomy Large: 16px */
   font-weight: var(--zen-font-weight-regular);
   color: var(--zen-color-text-default);
-  line-height: var(--zen-font-lineheight-lg);
+  line-height: var(--zen-font-lineheight-lg); /* anatomy Large: 24px */
   max-width: 480px; /* raw px: readable line length cap, mirrors empty-state */
   margin: 0;
 }

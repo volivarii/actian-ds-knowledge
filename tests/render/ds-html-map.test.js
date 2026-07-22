@@ -428,6 +428,17 @@ test("error-state: illustration wired, default CTAs (Go back / Try again)", func
       /class="ds-graphic"/,
       "renderGraphic emits the shared ds-graphic svg class",
     );
+    // The generic ds-graphic class alone doesn't prove the RIGHT graphic was
+    // selected (graphics.json has 11 entries, several sharing a viewBox).
+    // "M187.136 160.462" is a coordinate from illustration-error-state's own
+    // path data, verified unique across every entry in graphics.json -- its
+    // presence proves the error-state-specific fallback slug was actually
+    // resolved, not merely that *some* graphic rendered.
+    assert.match(
+      html,
+      /M187\.136 160\.462/,
+      "renders the illustration-error-state graphic specifically",
+    );
     assert.match(
       html,
       /ds-button ds-button--tertiary ds-error-state__cta">Go back</,
