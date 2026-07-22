@@ -590,6 +590,55 @@
           );
         }
 
+        case "avatar": {
+          // Registry axes: Type = Default | One group | Two groups
+          // (identity); State is secondary (isSecondaryAxis) -- only
+          // State=Disabled is wired here (dims the initials), mirroring
+          // the badge case's leaf simplicity. Type=One group / Two groups
+          // stack circles with a +N overflow when Count>4 (guideline:
+          // "Collapse into +N when a group exceeds four avatars"); this
+          // geometry is hand-reasoned -- anatomy captured only the single-
+          // circle Default leaf (layoutMode NONE, and the group Types have
+          // no isolated variant at all).
+          var avType = v.Type || "Default";
+          var avDisabled = v.State === "Disabled";
+          var avInitials = esc(props.Initials || "AV");
+          var avSingleCls =
+            "ds-avatar" + (avDisabled ? " ds-avatar--disabled" : "");
+          var avSingleHtml =
+            '<span class="' +
+            avSingleCls +
+            '"><span class="ds-avatar__initials">' +
+            avInitials +
+            "</span></span>";
+
+          if (avType === "One group" || avType === "Two groups") {
+            var avCountNum = parseInt(
+              String(props.Count || "3").replace(/[^0-9-]/g, ""),
+              10,
+            );
+            if (isNaN(avCountNum) || avCountNum < 1) avCountNum = 3;
+            var avShown = avCountNum > 4 ? 4 : avCountNum;
+            var avChildren = "";
+            for (var avI = 0; avI < avShown; avI++) {
+              avChildren += avSingleHtml;
+            }
+            if (avCountNum > 4) {
+              avChildren +=
+                '<span class="ds-avatar ds-avatar__overflow">+' +
+                (avCountNum - 4) +
+                "</span>";
+            }
+            var avGroupHtml =
+              '<div class="ds-avatar-group">' + avChildren + "</div>";
+            return avType === "Two groups"
+              ? avGroupHtml + avGroupHtml
+              : avGroupHtml;
+          }
+
+          return avSingleHtml;
+        }
+
         case "search": {
           var searchCls = "ds-search";
           // Accept the kit's typo "Dsiabled" as well as the canonical spelling.
@@ -3118,6 +3167,7 @@
     "loading-skeleton",
     "scroll-bar",
     "link",
+    "avatar",
   ];
 
   exports.renderDSComponent = renderDSComponent;

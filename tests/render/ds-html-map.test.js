@@ -1862,3 +1862,69 @@ test("link: escapes a hostile Label", function () {
   assert.doesNotMatch(html, /<script>alert/, "no raw injection");
 });
 
+
+test("avatar: base class + initials slot, defaults to AV", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "avatar",
+    variant: "Type=Default",
+    props: { Initials: "CF" },
+  });
+  assert.match(html, /class="ds-avatar"/, "carries the base class");
+  assert.match(
+    html,
+    /<span class="ds-avatar__initials">CF<\/span>/,
+    "renders the initials",
+  );
+
+  var htmlDefault = DS.renderDSComponent({
+    dsSlug: "avatar",
+    variant: "Type=Default",
+    props: {},
+  });
+  assert.match(
+    htmlDefault,
+    /<span class="ds-avatar__initials">AV<\/span>/,
+    "defaults to AV when Initials is absent",
+  );
+});
+
+test("avatar: Type=One group emits a group wrapper with a +N overflow; State=Disabled dims", function () {
+  var DS = require(DS_PATH);
+  var htmlGroup = DS.renderDSComponent({
+    dsSlug: "avatar",
+    variant: "Type=One group",
+    props: { Initials: "CF", Count: "6" },
+  });
+  assert.match(htmlGroup, /ds-avatar-group/, "carries the group wrapper");
+  var childMatches = htmlGroup.match(/class="ds-avatar"/g) || [];
+  assert.ok(childMatches.length > 1, "more than one child avatar");
+  assert.match(
+    htmlGroup,
+    /ds-avatar__overflow">\+2</,
+    "shows +2 overflow for Count=6",
+  );
+
+  var htmlDisabled = DS.renderDSComponent({
+    dsSlug: "avatar",
+    variant: "Type=Default, State=Disabled",
+    props: { Initials: "CF" },
+  });
+  assert.match(
+    htmlDisabled,
+    /ds-avatar--disabled/,
+    "State=Disabled carries the modifier",
+  );
+});
+
+test("avatar: escapes hostile Initials", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "avatar",
+    variant: "Type=Default",
+    props: { Initials: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "initials escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+

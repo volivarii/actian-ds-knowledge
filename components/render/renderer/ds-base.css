@@ -3852,3 +3852,56 @@
   color: var(--zen-color-text-disabled); /* captured #656574 */
   cursor: not-allowed;
 }
+
+/* ============ Avatar (circular initials chip + group stacking), gray-box-to-zero family 5 ============ */
+/* Registry axes: Type = Default | One group | Two groups (identity); State
+ * is secondary (isSecondaryAxis) -- only State=Disabled is wired (dims the
+ * initials). Diameter was NOT captured: layoutMode NONE on every State
+ * variant, and Type=One group/Two groups have no isolated variant at all --
+ * 32px (--zen-size-xl) is a hand-reasoned default, modeled on the sibling
+ * .ds-item-type circular-chip idiom. Flagged here: raw px, not from
+ * anatomy. */
+.ds-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(
+    --zen-size-xl
+  ); /* raw px, not from anatomy: hand-reasoned 32px diameter */
+  height: var(--zen-size-xl); /* raw px, not from anatomy */
+  border-radius: var(--zen-border-radius-full); /* captured 9999px */
+  background: var(--zen-color-primary-25); /* captured #edf6ff */
+  box-sizing: border-box;
+  font-family: var(--zen-font-family-text);
+}
+.ds-avatar__initials {
+  color: var(--zen-color-text-default); /* captured #000000 */
+  font-size: var(--zen-font-size-md); /* 14, captured */
+  font-weight: var(--zen-font-weight-regular); /* 400, captured */
+  line-height: var(--zen-font-lineheight-md); /* 20, captured */
+  letter-spacing: var(--zen-font-letterspacing-wide-2); /* 0.2, captured */
+}
+.ds-avatar--disabled .ds-avatar__initials {
+  color: var(
+    --zen-color-text-disabled
+  ); /* captured Initial node's Disabled variant, #656574 */
+}
+.ds-avatar-group {
+  display: inline-flex;
+  align-items: center;
+}
+.ds-avatar-group .ds-avatar {
+  margin-left: -8px; /* raw px: overlap stacking, not captured (group geometry hand-reasoned) */
+  border: 2px solid var(--zen-color-bg-default); /* raw px: separates the overlapping circles */
+}
+.ds-avatar-group .ds-avatar:first-child {
+  margin-left: 0;
+}
+.ds-avatar__overflow {
+  background: var(
+    --zen-color-bg-muted
+  ); /* raw: distinguishes the +N chip from a real initials avatar, no captured fact for this state */
+  color: var(--zen-color-text-secondary);
+  font-size: var(--zen-font-size-sm);
+  font-weight: var(--zen-font-weight-semibold);
+}

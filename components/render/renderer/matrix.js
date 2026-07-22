@@ -95,6 +95,7 @@ var RENDER_SLUGS = [
   "loading-skeleton",
   "scroll-bar",
   "link",
+  "avatar",
 ];
 
 // A render slug may live in any kit; search ds -> meta -> fm.
@@ -559,6 +560,31 @@ var MATRIX_OVERRIDES = {
       label: "Disabled",
       variant: "State=Disabled",
       props: { Label: "View details" },
+    },
+  ],
+
+  // Type is the identity axis, but the generic derivation would feed
+  // props:{Label:<value>} which the case never reads (it reads
+  // Initials/Count) -- every card would silently fall back to the default
+  // "AV" initials and a Count of 3, never showing the +N overflow. Curate
+  // real initials + a Count>4 group so the overflow chip is visible, plus
+  // an explicit Disabled cell.
+  avatar: [
+    { label: "Default", variant: "Type=Default", props: { Initials: "CF" } },
+    {
+      label: "One group",
+      variant: "Type=One group",
+      props: { Initials: "CF", Count: "6" },
+    },
+    {
+      label: "Two groups",
+      variant: "Type=Two groups",
+      props: { Initials: "CF", Count: "3" },
+    },
+    {
+      label: "Disabled",
+      variant: "Type=Default, State=Disabled",
+      props: { Initials: "CF" },
     },
   ],
 };
