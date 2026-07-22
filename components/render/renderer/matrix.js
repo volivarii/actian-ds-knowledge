@@ -73,6 +73,7 @@ var RENDER_SLUGS = [
   "tag-default",
   "tag-interactive",
   "tag-shared",
+  "tag-stage",
   "text-input",
   "toggle",
   "toolbar",
@@ -193,6 +194,23 @@ var MATRIX_OVERRIDES = {
       },
     },
   ],
+
+  // tag-stage's Color axis has 8 values; the generic 5-cell cap would drop
+  // three. Color is the component's identity here (drives both the
+  // container bg/border via the existing .ds-tag--<color> rules and the dot
+  // fill via the new per-color descendant rules), so show them all.
+  "tag-stage": [
+    "Orange",
+    "Indigo",
+    "Purple",
+    "Lime",
+    "Teal",
+    "Yellow",
+    "Pink",
+    "Gray",
+  ].map(function (c) {
+    return { label: c, variant: "Color=" + c, props: { Label: c } };
+  }),
 
   // Same rationale as empty-state above: Size is the only (secondary) axis,
   // so curate one representative rich cell instead of the generic bare stub.

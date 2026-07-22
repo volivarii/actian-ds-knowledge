@@ -707,3 +707,54 @@ test("tag-catalog: default label, escapes hostile Label", function () {
   assert.match(hostile, /&lt;img/, "label escaped");
   assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
 });
+
+test("tag-stage: base structure, dot, label, trailing arrow icon", function () {
+  var DS = require(DS_PATH);
+  DS.setIcons(require("../../components/dist/icons/icons.json").icons);
+  try {
+    var html = DS.renderDSComponent({
+      dsSlug: "tag-stage",
+      variant: "Color=Gray",
+      props: { Label: "Raw" },
+    });
+    assert.match(
+      html,
+      /class="ds-tag ds-tag-stage ds-tag--gray"/,
+      "carries base + tag-stage + color modifier",
+    );
+    assert.match(
+      html,
+      /<span class="ds-tag-stage__dot"><\/span>/,
+      "renders the leading dot",
+    );
+    assert.match(html, />Raw</, "renders the label");
+    assert.match(
+      html,
+      /<span class="ds-tag-stage__icon"><svg class="ds-icon"[^>]*>.+?<\/svg><\/span>/,
+      "trailing icon resolves (arrow-down)",
+    );
+  } finally {
+    DS.setIcons(null);
+  }
+});
+
+test("tag-stage: Color=Indigo activates the indigo modifier", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-stage",
+    variant: "Color=Indigo",
+    props: { Label: "Building" },
+  });
+  assert.match(html, /ds-tag--indigo/, "root carries the indigo modifier");
+});
+
+test("tag-stage: escapes hostile Label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-stage",
+    variant: "Color=Gray",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+  assert.match(html, /&lt;img/, "label escaped");
+});

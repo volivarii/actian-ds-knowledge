@@ -1754,6 +1754,30 @@
           );
         }
 
+        case "tag-stage": {
+          // Colored dot + label + trailing arrow. Reuses the 8 existing
+          // .ds-tag--<color> container rules (ds-base.css ~2558) via the same
+          // v.Color -> ds-tag--<color> emit as tag-default; adds only the
+          // dot/icon descendants (ds-tag-stage__dot picks up its fill from a
+          // per-color descendant rule keyed off that same modifier class).
+          // ANATOMY OVER PROSE: the registry lists "Trailing icon" default
+          // false, but the captured default (Color=Gray) node includes the
+          // arrow as its last child, so it is rendered unconditionally here.
+          var tsCls = "ds-tag ds-tag-stage";
+          if (v.Color) tsCls += " ds-tag--" + v.Color.toLowerCase();
+          return (
+            '<span class="' +
+            tsCls +
+            '">' +
+            '<span class="ds-tag-stage__dot"></span>' +
+            esc(props.Label || "Stage") +
+            '<span class="ds-tag-stage__icon">' +
+            renderIcon("arrow-down") +
+            "</span>" +
+            "</span>"
+          );
+        }
+
         case "popover": {
           // Registry axis: Type = Interaction guide | Advanced search; prop
           // "Show info icon". A floating card: optional info icon + title +
@@ -2297,6 +2321,7 @@
     // Gray-box-to-zero, family 2 (tag family).
     "tag-shared",
     "tag-catalog",
+    "tag-stage",
   ];
 
   exports.renderDSComponent = renderDSComponent;
