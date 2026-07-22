@@ -1287,3 +1287,72 @@ test("search-dropdown-menu: escapes a hostile result label", function () {
   assert.match(html, /&lt;img/, "hostile label escaped");
   assert.doesNotMatch(html, /<img src=x/, "no raw injection");
 });
+
+test("whats-new-dropdown: base class + role + default title present", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "whats-new-dropdown",
+    variant: "",
+    props: {},
+  });
+  assert.match(html, /class="ds-whatsnew/, "carries the base class");
+  assert.match(html, /role="menu"/, "carries menu role");
+  assert.match(html, /What&#39;s new|What's new/, "renders the default title");
+});
+
+test("whats-new-dropdown: Property 1=Empty and List branch to the right modifier + body", function () {
+  var DS = require(DS_PATH);
+  var htmlEmpty = DS.renderDSComponent({
+    dsSlug: "whats-new-dropdown",
+    variant: "Property 1=Empty",
+    props: {},
+  });
+  assert.match(htmlEmpty, /ds-whatsnew--empty/, "empty carries its modifier");
+  assert.match(htmlEmpty, /No release updates/, "empty renders its body copy");
+  assert.doesNotMatch(htmlEmpty, /ds-whatsnew__item/, "empty has no item rows");
+
+  var htmlList = DS.renderDSComponent({
+    dsSlug: "whats-new-dropdown",
+    variant: "Property 1=List",
+    props: { Items: "A,B" },
+  });
+  assert.match(htmlList, /ds-whatsnew--list/, "list carries its modifier");
+  // Negative lookahead excludes the __items wrapper div (a substring match
+  // of __item), so this counts only the per-row __item elements.
+  var itemMatches = htmlList.match(/ds-whatsnew__item(?!s)/g) || [];
+  assert.equal(itemMatches.length, 2, "renders two item rows for A,B");
+  assert.doesNotMatch(
+    htmlList,
+    /ds-whatsnew__empty/,
+    "list does not carry the empty class",
+  );
+});
+
+test("whats-new-dropdown: Property 1=Drilldown1 normalizes to the drilldown modifier with a back affordance", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "whats-new-dropdown",
+    variant: "Property 1=Drilldown1",
+    props: {},
+  });
+  assert.match(
+    html,
+    /ds-whatsnew--drilldown/,
+    "Drilldown1 normalizes to the drilldown modifier",
+  );
+  assert.match(html, /ds-whatsnew__back/, "renders the back affordance");
+});
+
+test("whats-new-dropdown: escapes a hostile Title and a hostile Items entry", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "whats-new-dropdown",
+    variant: "Property 1=List",
+    props: {
+      Title: "<img src=x onerror=alert(1)>",
+      Items: "<img src=x onerror=alert(2)>",
+    },
+  });
+  assert.match(html, /&lt;img/, "hostile text escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});

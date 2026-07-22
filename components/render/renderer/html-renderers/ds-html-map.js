@@ -2083,6 +2083,73 @@
           );
         }
 
+        case "whats-new-dropdown": {
+          // Registry axis: Property 1 = Drilldown1 | Drilldown2 | Empty |
+          // List. Static menu-overlay leaf, same shape as account-dropdown
+          // / app-switcher-dropdown -- mirror those. The guideline collapses
+          // Drilldown1+Drilldown2 into one "Drilldown" concept, so
+          // normalize both onto a single wnMode before it ever touches the
+          // class attribute (never inline a ternary in the class attribute
+          // literal -- the css-staleness extractor mis-parses that, see the
+          // segmented-control comment below).
+          var wnRaw = v["Property 1"] || "List";
+          var wnMode = /^Drilldown/.test(wnRaw)
+            ? "drilldown"
+            : String(wnRaw).toLowerCase();
+          if (wnMode !== "drilldown" && wnMode !== "empty") wnMode = "list";
+          var wnCls = "ds-whatsnew ds-whatsnew--" + wnMode;
+          var wnBack =
+            wnMode === "drilldown"
+              ? '<button class="ds-whatsnew__back" type="button" aria-label="Back">' +
+                renderIcon("chevron-left") +
+                "</button>"
+              : "";
+          var wnHeader =
+            '<div class="ds-whatsnew__header">' +
+            wnBack +
+            '<span class="ds-whatsnew__title">' +
+            esc(props.Title || "What's new") +
+            "</span></div>";
+          var wnDefaultItems =
+            "Added support for bulk dataset import.,Fixed an issue where filters were not preserved on page reload.";
+          var wnBody;
+          if (wnMode === "list") {
+            var wnItems = parseItems(props.Items, wnDefaultItems)
+              .map(function (label) {
+                return (
+                  '<div class="ds-whatsnew__item" role="menuitem">' +
+                  esc(label) +
+                  "</div>"
+                );
+              })
+              .join("");
+            wnBody = '<div class="ds-whatsnew__items">' + wnItems + "</div>";
+          } else if (wnMode === "empty") {
+            wnBody =
+              '<div class="ds-whatsnew__empty">' +
+              esc(props.EmptyLabel || "No release updates") +
+              "</div>";
+          } else {
+            var wnFirstItem = parseItems(props.Items, wnDefaultItems)[0] || "";
+            wnBody =
+              '<div class="ds-whatsnew__detail">' +
+              esc(
+                props.Detail ||
+                  wnFirstItem ||
+                  "New items inventoried from PowerBI Online V1.",
+              ) +
+              "</div>";
+          }
+          return (
+            '<div class="' +
+            wnCls +
+            '" role="menu" aria-label="What\'s new">' +
+            wnHeader +
+            wnBody +
+            "</div>"
+          );
+        }
+
         case "app-switcher-dropdown": {
           // No registry variants/props (single-import; nested settings /
           // arrow-down baked in). Render an app-switcher menu overlay: an app
@@ -2742,6 +2809,7 @@
     // Gray-box-to-zero, family 4 (dropdowns / overlays).
     "notification-dropdown",
     "search-dropdown-menu",
+    "whats-new-dropdown",
   ];
 
   exports.renderDSComponent = renderDSComponent;

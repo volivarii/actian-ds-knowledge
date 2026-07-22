@@ -87,6 +87,8 @@ var RENDER_SLUGS = [
   "card-for-perimeter",
   "card-for-grouped-content",
   "search-result-card",
+  // Gray-box-to-zero, family 4 (dropdowns / overlays).
+  "whats-new-dropdown",
 ];
 
 // A render slug may live in any kit; search ds -> meta -> fm.
@@ -426,6 +428,35 @@ var MATRIX_OVERRIDES = {
       label: "No result",
       variant: "Type=No result",
       props: { Query: "orders" },
+    },
+  ],
+
+  // Property 1 (Drilldown1/Drilldown2/Empty/List) is the identity axis, but
+  // this leaf reads Title/Items/EmptyLabel/Detail, not Label -- curate 3
+  // cells (List, Empty, Drilldown) so the gallery shows every wnMode branch.
+  "whats-new-dropdown": [
+    {
+      label: "List",
+      variant: "Property 1=List",
+      props: {
+        Title: "What's new",
+        Items:
+          "Added support for bulk dataset import.,Fixed an issue where filters were not preserved on page reload.",
+      },
+    },
+    {
+      label: "Empty",
+      variant: "Property 1=Empty",
+      props: { Title: "What's new", EmptyLabel: "No release updates" },
+    },
+    {
+      label: "Drilldown",
+      variant: "Property 1=Drilldown1",
+      props: {
+        Title: "Bulk dataset import",
+        Detail:
+          "Added support for bulk dataset import. You can now import multiple datasets from a single CSV manifest.",
+      },
     },
   ],
 };

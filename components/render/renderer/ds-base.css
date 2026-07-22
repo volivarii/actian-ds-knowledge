@@ -3391,3 +3391,108 @@
   letter-spacing: var(--zen-font-letterspacing-wide-2);
   text-align: center;
 }
+
+/* ============ What's new dropdown (gray-box-to-zero family 4) ============ */
+/* Registry axis: Property 1 = Drilldown1 | Drilldown2 | Empty | List. Same
+ * static menu-overlay shape as account-dropdown/app-switcher-dropdown --
+ * shell mirrors .ds-account-menu's border/shadow/radius elevation idiom
+ * (not captured; borrowed per the family-4 build note). Root bg/radius,
+ * header padding/gap, __title, and __empty/__item/__detail text tokens are
+ * all captured verbatim (the Empty variant is the anatomy's only capture).
+ * --empty is a namespace hook only: it IS the captured default, so the base
+ * rule already matches it -- no additional delta. --list and --drilldown
+ * ARE real deltas: List needs a scrollable container once the item count
+ * grows past a handful, and Drilldown widens the panel to fit the longer
+ * detail paragraph plus the back affordance. */
+.ds-whatsnew {
+  display: flex;
+  flex-direction: column;
+  min-width: 240px; /* captured-adjacent: matches .ds-account-menu's overlay width */
+  padding: var(--zen-spacing-2xs); /* 4 */
+  background: var(--zen-color-bg-default); /* captured #ffffff */
+  border: 1px solid var(--zen-border-default);
+  border-radius: var(
+    --zen-border-radius-md
+  ); /* 8, matches .ds-account-menu's elevation idiom */
+  box-shadow: var(--zen-shadow-lg); /* borrowed elevation idiom, not captured */
+  font-family: var(--zen-font-family-text);
+  box-sizing: border-box;
+}
+.ds-whatsnew--empty {
+  /* namespace hook only: this IS the captured anatomy default -- no
+   * additional visual delta beyond the base rule above. */
+}
+.ds-whatsnew--list {
+  max-height: 360px; /* real delta: constrains + scrolls once the release list grows long */
+  overflow-y: auto;
+}
+.ds-whatsnew--drilldown {
+  min-width: 300px; /* real delta: the detail paragraph + back button need more room than the compact list/empty menu */
+}
+.ds-whatsnew__header {
+  display: flex;
+  align-items: center;
+  gap: var(--zen-spacing-xs); /* 8, captured */
+  padding: var(--zen-spacing-xs); /* 8, captured */
+  border-bottom: 1px solid var(--zen-border-default);
+  margin-bottom: var(--zen-spacing-2xs);
+}
+.ds-whatsnew__back {
+  width: 20px; /* raw px: back-affordance icon box */
+  height: 20px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--zen-color-icon-default);
+  cursor: pointer;
+}
+.ds-whatsnew__back svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.ds-whatsnew__title {
+  color: var(--zen-color-text-default); /* captured #000000 */
+  font-size: var(--zen-font-size-lg); /* 16, captured verbatim */
+  font-weight: var(--zen-font-weight-semibold); /* 600 */
+  line-height: var(--zen-font-lineheight-lg); /* 24, captured verbatim */
+  letter-spacing: var(
+    --zen-font-letterspacing-wide-1
+  ); /* 0.1px, captured verbatim */
+}
+.ds-whatsnew__items {
+  display: flex;
+  flex-direction: column;
+}
+.ds-whatsnew__item {
+  padding: var(
+    --zen-spacing-xs
+  ); /* 8, mirrors .ds-account-menu__item spacing */
+  border-radius: var(--zen-border-radius-xs);
+  color: var(--zen-color-text-secondary); /* captured #40404a */
+  font-size: var(--zen-font-size-md); /* 14, captured verbatim */
+  line-height: var(--zen-font-lineheight-md); /* 20, captured verbatim */
+  letter-spacing: var(
+    --zen-font-letterspacing-wide-2
+  ); /* 0.2px, captured verbatim */
+}
+.ds-whatsnew__empty {
+  padding: var(--zen-spacing-xs); /* captured 8 8 8 8 */
+  color: var(--zen-color-text-secondary); /* captured #40404a */
+  font-size: var(--zen-font-size-md); /* 14, captured verbatim */
+  line-height: var(--zen-font-lineheight-md); /* 20, captured verbatim */
+  letter-spacing: var(
+    --zen-font-letterspacing-wide-2
+  ); /* 0.2px, captured verbatim */
+}
+.ds-whatsnew__detail {
+  padding: var(--zen-spacing-xs);
+  color: var(--zen-color-text-secondary);
+  font-size: var(--zen-font-size-md);
+  line-height: var(--zen-font-lineheight-md);
+  letter-spacing: var(--zen-font-letterspacing-wide-2);
+}
