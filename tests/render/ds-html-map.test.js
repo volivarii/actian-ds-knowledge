@@ -1095,3 +1095,96 @@ test("card-for-grouped-content: divider color is token-bound, no hardcoded hex",
     "no hardcoded hex fallback as the declared value",
   );
 });
+
+test("search-result-card: base class present, Title renders in __title", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Explorer, State=Default",
+    props: { Title: "Financial Summary EY2024" },
+  });
+  assert.match(html, /class="ds-search-result-card"/, "carries the base class");
+  assert.match(
+    html,
+    /<span class="ds-search-result-card__title">Financial Summary EY2024<\/span>/,
+    "Title renders in __title",
+  );
+});
+
+test("search-result-card: State=Selected adds the --selected modifier", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Explorer, State=Selected",
+    props: {},
+  });
+  assert.match(
+    html,
+    /ds-search-result-card--selected/,
+    "State=Selected adds the modifier class",
+  );
+});
+
+test("search-result-card: escapes hostile Title", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Explorer, State=Default",
+    props: { Title: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "title escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+
+test("search-result-card: State=Focus adds the --focus modifier (distinct from --selected)", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Explorer, State=Focus",
+    props: {},
+  });
+  assert.match(
+    html,
+    /ds-search-result-card--focus/,
+    "State=Focus adds its own modifier class",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-search-result-card--selected/,
+    "Focus does not also carry the selected modifier",
+  );
+});
+
+test("search-result-card: --selected and --focus modifiers actually differ from the base (no silent no-op)", function () {
+  var css = require("node:fs").readFileSync(
+    require("node:path").join(
+      __dirname,
+      "../../components/render/renderer/ds-base.css",
+    ),
+    "utf8",
+  );
+  var base = css.match(/\.ds-search-result-card\s*\{([^}]*)\}/);
+  var selected = css.match(/\.ds-search-result-card--selected\s*\{([^}]*)\}/);
+  var focus = css.match(/\.ds-search-result-card--focus\s*\{([^}]*)\}/);
+  assert.ok(base && selected && focus, "all three rules exist");
+  assert.notEqual(
+    base[1].trim(),
+    selected[1].trim(),
+    "--selected must not just re-declare the base rule verbatim",
+  );
+  assert.notEqual(
+    base[1].trim(),
+    focus[1].trim(),
+    "--focus must not just re-declare the base rule verbatim",
+  );
+  assert.match(
+    selected[1],
+    /var\(--zen-border-selected\)/,
+    "--selected carries the border-selected token",
+  );
+  assert.match(
+    focus[1],
+    /var\(--zen-focus-ring-primary\)/,
+    "--focus carries the focus-ring token",
+  );
+});

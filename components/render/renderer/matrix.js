@@ -84,6 +84,7 @@ var RENDER_SLUGS = [
   // Gray-box-to-zero, family 3 (card family).
   "card-for-perimeter",
   "card-for-grouped-content",
+  "search-result-card",
 ];
 
 // A render slug may live in any kit; search ds -> meta -> fm.
@@ -341,6 +342,46 @@ var MATRIX_OVERRIDES = {
         Title: "Grouped content",
         "Show info icon": true,
         Body: "Group related fields, filters, or summary content under a single labeled section.",
+      },
+    },
+  ],
+
+  // App is the identity axis (Explorer/Studio), but this leaf reads its own
+  // Title/Type/Stage/Catalog/etc props, not Label -- the generic derivation
+  // would render an all-default card for each App value. Curate 2 cells
+  // instead, mirroring card-for-items' only-Selected-shown convention: the
+  // faithful default (App=Explorer, State=Default) plus State=Selected.
+  "search-result-card": [
+    {
+      label: "Default",
+      variant: "App=Explorer, State=Default",
+      props: {
+        Title: "Financial Summary EY2024",
+        "Tech name": "[Financial Summary EY2024]",
+        Type: "Category",
+        Stage: "Stage",
+        Catalog: "Catalog",
+        Description:
+          "A product is anything that can be offered to a market that might satisfy a want or need by potential customers.",
+        "Featured property 1": "Business Domain: IT",
+        "Featured property 2": "Source Application: App 120",
+        "Glossary label": "Vehicle",
+      },
+    },
+    {
+      label: "Selected",
+      variant: "App=Explorer, State=Selected",
+      props: {
+        Title: "Financial Summary EY2024",
+        "Tech name": "[Financial Summary EY2024]",
+        Type: "Category",
+        Stage: "Stage",
+        Catalog: "Catalog",
+        Description:
+          "A product is anything that can be offered to a market that might satisfy a want or need by potential customers.",
+        "Featured property 1": "Business Domain: IT",
+        "Featured property 2": "Source Application: App 120",
+        "Glossary label": "Vehicle",
       },
     },
   ],

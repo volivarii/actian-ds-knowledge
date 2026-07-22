@@ -2437,6 +2437,103 @@
           );
         }
 
+        case "search-result-card": {
+          // Rich result card. Identity axis App = Explorer (default) |
+          // Studio; State is a secondary axis, only Selected/Focus mapped
+          // to a visible modifier (Hover/Pressed are transient interaction
+          // states, not rendered statically -- same discipline as
+          // tag-interactive's Selected/Disabled-only handling above). The
+          // fidelity oracle only captures App=Explorer/State=Default, so
+          // that default stays faithful; Studio's structural swaps (button
+          // -> progress-bar-small, digram -> tag-default) are intentionally
+          // NOT built here, per the spec -- ds-search-result-card--studio
+          // is a deliberate no-op marker (see ds-base.css), same pattern as
+          // .ds-tag--status above. Inlines the eyebrow/stage/catalog tags
+          // and the glossary item-type badge reusing EXISTING shared
+          // classes (.ds-tag / .ds-tag-stage / .ds-tag--gray /
+          // .ds-tag--catalog / .ds-item-type) rather than recursing into
+          // renderDSComponent, same idiom as card-for-items.
+          var srcCls = "ds-search-result-card";
+          if (v.App === "Studio") srcCls += " ds-search-result-card--studio";
+          if (v.State === "Selected")
+            srcCls += " ds-search-result-card--selected";
+          if (v.State === "Focus") srcCls += " ds-search-result-card--focus";
+
+          var srcTitle = esc(props.Title || "Financial Summary EY2024");
+          var srcTech = esc(props["Tech name"] || "[Financial Summary EY2024]");
+          var srcType = esc(props.Type || "Category");
+          var srcStage = esc(props.Stage || "Stage");
+          var srcCatalog = esc(props.Catalog || "Catalog");
+          var srcDesc = esc(
+            props.Description ||
+              props.Body ||
+              "A product is anything that can be offered to a market that might satisfy a want or need by potential customers.",
+          );
+          var srcProp1 = esc(
+            props["Featured property 1"] || "Business Domain: IT",
+          );
+          var srcProp2 = esc(
+            props["Featured property 2"] || "Source Application: App 120",
+          );
+          var srcGlossaryLabel = esc(props["Glossary label"] || "Vehicle");
+          var srcGlossaryInitials = esc(props["Glossary initials"] || "VH");
+          // The captured anatomy's Glossary badge resolves to #fff9e5 --
+          // that is DIGRAM_ITEM_TYPE_COLORS["Glossary 1"] (also shared by
+          // "Use case"), NOT "Category" (#ffdacf); "Glossary 1" is the
+          // itemType that actually reproduces the captured color.
+          var srcGlossaryBadge = digramItemTypeStyle("Glossary 1");
+
+          return (
+            '<div class="' +
+            srcCls +
+            '">' +
+            '<div class="ds-search-result-card__header">' +
+            '<div class="ds-search-result-card__name">' +
+            '<span class="ds-tag ds-search-result-card__type">' +
+            srcType +
+            "</span>" +
+            '<span class="ds-search-result-card__title">' +
+            srcTitle +
+            "</span>" +
+            '<span class="ds-search-result-card__tech">' +
+            srcTech +
+            "</span>" +
+            "</div>" +
+            '<span class="ds-tag ds-tag-stage ds-tag--gray ds-search-result-card__stage">' +
+            '<span class="ds-tag-stage__dot"></span>' +
+            srcStage +
+            "</span>" +
+            "</div>" +
+            '<div class="ds-search-result-card__details">' +
+            '<span class="ds-tag ds-tag--catalog ds-search-result-card__catalog">' +
+            srcCatalog +
+            "</span>" +
+            '<p class="ds-search-result-card__desc">' +
+            srcDesc +
+            "</p>" +
+            '<div class="ds-search-result-card__props">' +
+            '<span class="ds-search-result-card__prop">' +
+            srcProp1 +
+            "</span>" +
+            '<span class="ds-search-result-card__prop">' +
+            srcProp2 +
+            "</span>" +
+            "</div>" +
+            '<div class="ds-search-result-card__glossary">' +
+            '<span class="ds-item-type" style="' +
+            srcGlossaryBadge +
+            '">' +
+            srcGlossaryInitials +
+            "</span>" +
+            '<span class="ds-search-result-card__glossary-label">' +
+            srcGlossaryLabel +
+            "</span>" +
+            "</div>" +
+            "</div>" +
+            "</div>"
+          );
+        }
+
         default: {
           // Phase 1B: PREFER rendering the component per-instance from its
           // captured appearance doc so the instance's own variant selects the
@@ -2534,6 +2631,7 @@
     // Gray-box-to-zero, family 3 (card family).
     "card-for-perimeter",
     "card-for-grouped-content",
+    "search-result-card",
   ];
 
   exports.renderDSComponent = renderDSComponent;
