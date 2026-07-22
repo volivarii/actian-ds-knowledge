@@ -90,6 +90,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   ever had, and the file documents that the exclusion was deliberate rather than lost.
 
 ### Changed
+- **Breaking Figma sync (2026-07-22).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#463](https://github.com/volivarii/actian-ds-knowledge/pull/463))
 - **Three render gates that could not fail were made able to fail** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
   Deleting a frozen oracle is only safe if what remains actually bites, so three weak checks were
   repaired in the same change, all mutation-verified. `groupFor` in `matrix.js` ends in
