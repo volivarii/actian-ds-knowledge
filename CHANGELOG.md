@@ -20,6 +20,12 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **In-editor domain status toggle.** A component's prose domain file (`content` / `usage` /
+  `design` / `behavior`) now carries a `draft ⇄ approved` control in the Knowledge Editor header;
+  clicking stages the `_meta.yml` `domains.<domain>.status` change into the submission cart and it
+  ships on the next PR (the merge is the approval). Self-serve for now, routed through a single
+  `setDomainStatus` choke-point so a future reviewer/permission gate slots in without a surface
+  change. Editor-only, version-neutral. ([#PR](https://github.com/volivarii/actian-ds-knowledge/pull/PR))
 - **The Fat Marker (fm) low-fidelity renderer is now an owned, tested tier, not an incidental dependency** ([#461](https://github.com/volivarii/actian-ds-knowledge/pull/461)).
   `html-renderers/fm-html-map.js` landed in knowledge during the ds-relocation (phase 1a, #442) only
   because `ds-html-map.js` borrows 3 generic helpers from it; nothing in knowledge exercised it on its
