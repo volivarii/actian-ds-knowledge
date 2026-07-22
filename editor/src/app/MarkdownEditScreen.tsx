@@ -51,6 +51,13 @@ import {
   writeRelationsPanelCollapsed,
 } from "./RelationsPanel";
 import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
+import { AnchorRenamePopover } from "./AnchorRenamePopover";
+import {
+  renameAnchorInText,
+  crossFileReferrers,
+} from "../markdown-engine/anchorRename";
+import { installAnchorChipRename } from "../lib/anchorChipRename";
+import { scanAnchors } from "../markdown-engine/anchorScan";
 import { computeFocusedSection } from "./SectionFocusTracker";
 import {
   countsBySection,
@@ -129,6 +136,20 @@ export function MarkdownEditScreen({
   // it (a fresh object literal each render) to its [gh, path] deps and looping.
   const preloadedRef = useRef(preloaded);
 
+  // Anchor-rename popover: opened by a rich-mode chip click (delegated
+  // controller below) or the source-mode "Rename anchor" toolbar button.
+  // Declared before attachHighlightRoot so its install closure can reference
+  // setRenamePopover. renameReferrers holds the cross-file disclosure list,
+  // fetched async while the popover is open.
+  const [renamePopover, setRenamePopover] = useState<{
+    slug: string;
+    triggerEl: HTMLElement;
+  } | null>(null);
+  const [renameReferrers, setRenameReferrers] = useState<string[]>([]);
+  // Caret's 0-indexed line, threaded to the source Toolbar so its "Rename
+  // anchor" button can enable itself on an anchored-heading line.
+  const [cursorLine, setCursorLine] = useState(0);
+
   // Coordinated highlight: hovering an inline typed link lights the matching
   // relations-rail row (and vice versa). Delegated on the screen root, so it
   // covers the editor pane, the preview, and the rail as they re-render.
@@ -139,9 +160,14 @@ export function MarkdownEditScreen({
   const attachHighlightRoot = useAttachController((root) => {
     const highlight = installCrossSurfaceHighlight(root);
     const hoverCard = installRefHoverCard(root);
+    // Rich-mode chip click -> open the rename popover anchored to the chip.
+    const chipRename = installAnchorChipRename(root, (slug, el) =>
+      setRenamePopover({ slug, triggerEl: el }),
+    );
     return () => {
       highlight();
       hoverCard();
+      chipRename();
     };
   });
 
@@ -343,6 +369,8 @@ export function MarkdownEditScreen({
   }, [text]);
   const handleCursorLineChange = useCallback(
     (line: number) => {
+      // Feeds the source Toolbar's "Rename anchor" enable check.
+      setCursorLine(line);
       const section = computeFocusedSection(textRef.current, line);
       // Drive the outline's passive active-section highlight.
       setActiveAnchor(section ? section.anchor : null);
@@ -361,6 +389,33 @@ export function MarkdownEditScreen({
     onFocusedSectionChange?.(null);
     setActiveAnchor(null);
   }, [path, onFocusedSectionChange]);
+
+  // While the rename popover is open, fetch the cross-file referrers (the
+  // honest "these will not be auto-updated" disclosure). Cancels on
+  // close/file-switch so a late resolve can't paint a stale list.
+  useEffect(() => {
+    if (!renamePopover || !gh) {
+      setRenameReferrers([]);
+      return;
+    }
+    let cancelled = false;
+    void crossFileReferrers(gh, renamePopover.slug, path)
+      .then((r) => {
+        if (!cancelled) setRenameReferrers(r);
+      })
+      .catch(() => {
+        if (!cancelled) setRenameReferrers([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [renamePopover, gh, path]);
+
+  // Close the rename popover when the active file changes — its slug context
+  // no longer applies to the newly-opened file.
+  useEffect(() => {
+    setRenamePopover(null);
+  }, [path]);
 
   // Build the in-memory taxonomy once per mount. The static JSON imports
   // are baked at build time (see substrate/taxonomyAssets.ts) so this is
@@ -727,6 +782,10 @@ export function MarkdownEditScreen({
               view={view}
               octokit={gh ?? undefined}
               componentSlug={componentSlug}
+              cursorLine={cursorLine}
+              onRenameAnchor={(slug, el) =>
+                setRenamePopover({ slug, triggerEl: el })
+              }
             />
           )}
         </Box>
@@ -851,6 +910,46 @@ export function MarkdownEditScreen({
           onNavigate={onNavigate}
         />
       )}
+      {renamePopover &&
+        (() => {
+          const rp = renamePopover;
+          const otherSlugs = [...scanAnchors(text)].filter(
+            (s) => s !== rp.slug,
+          );
+          const sameFileCount = (
+            text.match(new RegExp(`\\]\\(#${rp.slug}\\)`, "g")) || []
+          ).length;
+          return (
+            <AnchorRenamePopover
+              slug={rp.slug}
+              triggerEl={rp.triggerEl}
+              otherSlugs={otherSlugs}
+              sameFileCount={sameFileCount}
+              crossFileReferrers={renameReferrers}
+              onOpenChange={(o) => !o && setRenamePopover(null)}
+              onRename={(next) => {
+                const renamed = renameAnchorInText(text, rp.slug, next);
+                setText(renamed);
+                // Re-seed RichBodyEditor (rich mode is uncontrolled, keyed by
+                // path:remountNonce — mirrors the draft-restore path).
+                setRemountNonce((n) => n + 1);
+                if (view) {
+                  // Source mode: push into CM6 so the visible doc updates
+                  // without a remount (CodeMirror is keyed by path only); its
+                  // change listener re-runs setText + saveText.
+                  view.dispatch({
+                    changes: {
+                      from: 0,
+                      to: view.state.doc.length,
+                      insert: renamed,
+                    },
+                  });
+                }
+                setRenamePopover(null);
+              }}
+            />
+          );
+        })()}
       <Flex gap="2" justify="end" align="center" wrap="wrap">
         {prUrl && (
           <Text>

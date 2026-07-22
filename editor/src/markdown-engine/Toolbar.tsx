@@ -14,6 +14,27 @@ export interface ToolbarProps {
   /** Present only when editing a component-guideline .md (enables media). */
   octokit?: Octokit;
   componentSlug?: string | null;
+  /** The caret's 0-indexed line, threaded from MarkdownEditScreen so the
+   *  "Rename anchor" button can enable itself when the caret sits on an
+   *  anchored heading. Undefined until the first cursor movement. */
+  cursorLine?: number;
+  /** Opens the rename popover anchored to the button element. Absent when
+   *  the screen has no rename handler wired (e.g. isolated toolbar tests). */
+  onRenameAnchor?: (slug: string, el: HTMLElement) => void;
+}
+
+/** The anchor slug of a real structural heading on `line0` (0-indexed), or
+ *  null. The trailing-marker regex is the cheap gate; scanHeadings then
+ *  confirms the line is a genuine H1-H3 (not a fenced or frontmatter line
+ *  that merely ends in a `{#...}`), so the button never targets a non-heading
+ *  marker. Mirrors insertAnchor's structural-heading check. */
+function anchoredHeadingSlugAt(view: EditorView, line0: number): string | null {
+  const doc = view.state.doc;
+  if (line0 < 0 || line0 >= doc.lines) return null;
+  const m = /\{#([a-z][a-z0-9-]*)\}\s*$/.exec(doc.line(line0 + 1).text);
+  if (!m) return null;
+  const isHeading = scanHeadings(doc.toString()).some((h) => h.line === line0);
+  return isHeading ? m[1]! : null;
 }
 
 function wrapSelection(view: EditorView, prefix: string, suffix: string) {
@@ -84,7 +105,20 @@ function insertTable(view: EditorView) {
 const BTN_SIZE = "2" as const;
 const BTN_VARIANT = "soft" as const;
 
-export function Toolbar({ view, octokit, componentSlug }: ToolbarProps) {
+export function Toolbar({
+  view,
+  octokit,
+  componentSlug,
+  cursorLine,
+  onRenameAnchor,
+}: ToolbarProps) {
+  // Recomputed each render; the Toolbar re-renders on doc edits (setText) and
+  // on caret line changes (cursorLine prop), so the enabled state stays fresh
+  // for both. Null when the caret isn't on an anchored heading.
+  const renameSlug =
+    onRenameAnchor && cursorLine != null
+      ? anchoredHeadingSlugAt(view, cursorLine)
+      : null;
   return (
     <Flex className="md-toolbar" align="center" gap="3">
       {/* Group: Block-level */}
@@ -218,6 +252,27 @@ export function Toolbar({ view, octokit, componentSlug }: ToolbarProps) {
             {"{#…}"}
           </Button>
         </Tooltip>
+        {onRenameAnchor && (
+          <Tooltip
+            content={
+              renameSlug
+                ? `Rename the #${renameSlug} anchor and its same-file links`
+                : "Place the cursor on an anchored heading to rename its anchor"
+            }
+          >
+            <Button
+              size={BTN_SIZE}
+              variant={BTN_VARIANT}
+              aria-label="Rename anchor"
+              disabled={!renameSlug}
+              onClick={(e) => {
+                if (renameSlug) onRenameAnchor(renameSlug, e.currentTarget);
+              }}
+            >
+              {"↺#"}
+            </Button>
+          </Tooltip>
+        )}
       </Flex>
     </Flex>
   );

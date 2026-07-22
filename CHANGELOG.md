@@ -20,6 +20,12 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **Safe anchor rename in the editor.** Renaming a heading anchor (`{#slug}`) now updates the
+  same-file links that point at it and honestly discloses which other files reference it (rather than
+  silently breaking them). Click the anchor chip (rich) or the "Rename anchor" toolbar button
+  (source). Cross-file references are disclosed, not auto-rewritten (a slug is file-scoped and
+  substrate links are often logical), and the submit-time anchor-preservation check remains the safety
+  net. Editor-only, version-neutral. ([#471](https://github.com/volivarii/actian-ds-knowledge/pull/471))
 - **Anchor authoring helper in the editor.** Heading anchors (`{#slug}`) are now first-class: a
   toolbar action derives a unique, leading-letter slug for you (both the source and rich editors), and
   in the rich (WYSIWYG) editor a heading's anchor renders as a quiet chip instead of raw `{#slug}`
