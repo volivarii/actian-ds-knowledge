@@ -26,7 +26,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   is built from). The data was always there: application-context files were the one part of the
   substrate that never resolved to a node in the knowledge graph, so the relations panel sat empty on
   exactly the records whose purpose is expressing belonging. Editor-only, version-neutral.
-  ([#PR](https://github.com/volivarii/actian-ds-knowledge/pull/PR))
+  ([#479](https://github.com/volivarii/actian-ds-knowledge/pull/479))
 - **Create an entity or a feature in the editor, and join one that already exists.** The Entities and
   Features sections now carry their own "+", so an app team can bring the things their product works
   with and the things people do in it, not just the product itself. Because entity and feature names
