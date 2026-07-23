@@ -83,7 +83,7 @@ test("HomeScreen: hero, honest counts, and the needs-attention list ranked usage
     ),
   );
 
-  // Hero + coverage badge render synchronously (after fetch resolves).
+  // Hero heading renders synchronously, before the coverage fetch resolves.
   screen.getByText(/Browse and edit the design system/i);
 
   // Coverage-derived copy arrives after the fake fetch resolves.

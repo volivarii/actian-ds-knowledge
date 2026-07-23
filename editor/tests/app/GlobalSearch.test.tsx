@@ -13,13 +13,30 @@ const INDEX = buildSearchIndex(new Set(["button", "modal", "combo-box"]));
 function mount() {
   const calls: string[] = [];
   const runs: string[] = [];
-  const actions = [{ id: "home", label: "Go home", group: "Navigate", run: () => runs.push("home") }];
+  const actions = [
+    {
+      id: "home",
+      label: "Go home",
+      group: "Navigate",
+      run: () => runs.push("home"),
+    },
+  ];
   render(
     <Theme>
-      <GlobalSearch index={INDEX} actions={actions} onOpenFile={(p) => calls.push(p)} />
+      <GlobalSearch
+        index={INDEX}
+        actions={actions}
+        onOpenFile={(p) => calls.push(p)}
+      />
     </Theme>,
   );
-  return { calls, runs, input: screen.getByLabelText(/search the design system/i) as HTMLInputElement };
+  return {
+    calls,
+    runs,
+    input: screen.getByLabelText(
+      /search the design system/i,
+    ) as HTMLInputElement,
+  };
 }
 
 test("GlobalSearch: typing a component name opens it on mousedown", () => {
@@ -33,6 +50,13 @@ test("GlobalSearch: ArrowDown then Enter opens the first result", () => {
   const { calls, input } = mount();
   fireEvent.change(input, { target: { value: "modal" } });
   fireEvent.keyDown(input, { key: "ArrowDown" });
+  fireEvent.keyDown(input, { key: "Enter" });
+  assert.equal(calls[0], "workspace/modal");
+});
+
+test("GlobalSearch: bare Enter (no ArrowDown) falls through to the top hit", () => {
+  const { calls, input } = mount();
+  fireEvent.change(input, { target: { value: "modal" } });
   fireEvent.keyDown(input, { key: "Enter" });
   assert.equal(calls[0], "workspace/modal");
 });

@@ -118,7 +118,10 @@ export function GlobalSearch({
       setActive((a) => Math.max(a - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      runAt(active);
+      // active starts at -1 (nothing pre-selected, see the state comment
+      // above); fall through to the top hit so Enter opens a result even
+      // when the author never pressed ArrowDown first.
+      if (rows.length) runAt(active >= 0 ? active : 0);
     } else if (e.key === "Escape") {
       setOpen(false);
       (e.target as HTMLElement).blur();

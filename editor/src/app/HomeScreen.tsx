@@ -9,9 +9,9 @@
 //   - honest status (real counts, gaps shown as a to-do list)
 //   - can't-break-anything messaging on the editing loop
 //
-// Graph counts come from the baked bundle (no fetch); coverage resolves
-// through the memoized loadCoverage, so this screen and the Explore
-// dashboards all share one fetch.
+// Coverage (the hero's "N of M components have authored guidance" badge,
+// and the needs-attention list) resolves through the memoized loadCoverage,
+// so this screen and the Explore dashboards all share one fetch.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Octokit } from "@octokit/rest";

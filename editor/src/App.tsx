@@ -232,19 +232,8 @@ export default function App() {
         run: () => setActivePath(`components/src/${activeSlug}/_meta.yml`),
       });
     }
-    // Goto-by-slug — every known component as a navigable target. Many
-    // entries; cmdk's typeahead handles the filtering.
-    for (const slug of knownSlugs) {
-      base.push({
-        id: `goto-${slug}`,
-        label: `Go to ${slug}`,
-        hint: `workspace/${slug}`,
-        group: "Components",
-        run: () => setActivePath(`workspace/${slug}`),
-      });
-    }
     return base;
-  }, [activePath, cartEntries.length, knownSlugs]);
+  }, [activePath, cartEntries.length]);
   return (
     <Theme accentColor="indigo" radius="medium" appearance="dark">
       <Flex direction="column" style={{ height: "100vh", width: "100vw" }}>
@@ -264,7 +253,11 @@ export default function App() {
             />
             <Heading size="4">Actian DS Knowledge Editor</Heading>
           </Flex>
-          <Box flexGrow="1" style={{ maxWidth: 520, margin: "0 auto" }}>
+          {/* Spacer: flexGrow pins the right-side actions even when signed
+              out (no search rendered). GlobalSearch owns its own
+              maxWidth/margin centering, so this wrapper stays unstyled
+              rather than repeating them. */}
+          <Box flexGrow="1">
             {session && (
               <GlobalSearch
                 index={searchIndex}

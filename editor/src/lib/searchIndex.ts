@@ -6,12 +6,13 @@ import {
   graphNodes,
   foundationSections,
   componentNodes,
+  a11yIndex,
 } from "../substrate/taxonomyAssets";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
 import type { ContentFile } from "./contentFiles";
 
 export type SearchKind =
-  | "component" | "foundation" | "content" | "accessibility" | "app-context";
+  "component" | "foundation" | "content" | "accessibility" | "app-context";
 
 export interface SearchItem {
   title: string;
@@ -21,11 +22,30 @@ export interface SearchItem {
 }
 
 const KIND_ORDER: SearchKind[] = [
-  "component", "foundation", "content", "accessibility", "app-context",
+  "component",
+  "foundation",
+  "content",
+  "accessibility",
+  "app-context",
 ];
 const APP_SUB: Record<string, string> = {
-  app: "Product", entity: "Entity", pattern: "Feature",
+  app: "Product",
+  entity: "Entity",
+  pattern: "Feature",
 };
+
+// a11y-index.json sections carry a `tier`. Only "foundation" and "header"
+// tiers have a matching file under accessibility/src/<slug>.md, since the
+// "component-pattern" and "checklist" tiers are derived from component
+// guidelines and have no standalone src file, so a search result for them
+// would 404 on open. Confirmed against accessibility/src/ (12 files match
+// the 12 foundation+header slugs; the other 20 sections have no file).
+const FILE_BACKED_A11Y_TIERS = new Set(["foundation", "header"]);
+const fileBackedA11ySlugs = new Set(
+  a11yIndex.sections
+    .filter((s) => s.tier && FILE_BACKED_A11Y_TIERS.has(s.tier))
+    .map((s) => s.slug),
+);
 
 export function buildSearchIndex(
   authorable: ReadonlySet<string>,
@@ -57,11 +77,22 @@ export function buildSearchIndex(
     const slug = n.id.slice(i + 1);
     if (!slug || slug.includes("/")) continue;
     if (prefix === "a11y") {
+      if (!fileBackedA11ySlugs.has(slug)) continue;
       const path = navTargetForNodeId(n.id);
       if (path) items.push({ title: n.title, kind: "accessibility", path });
-    } else if (prefix === "app" || prefix === "entity" || prefix === "pattern") {
+    } else if (
+      prefix === "app" ||
+      prefix === "entity" ||
+      prefix === "pattern"
+    ) {
       const path = navTargetForNodeId(n.id);
-      if (path) items.push({ title: n.title, kind: "app-context", path, sub: APP_SUB[prefix] });
+      if (path)
+        items.push({
+          title: n.title,
+          kind: "app-context",
+          path,
+          sub: APP_SUB[prefix],
+        });
     }
   }
 

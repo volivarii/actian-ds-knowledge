@@ -63,3 +63,23 @@ test("searchCorpus: empty query returns nothing", () => {
     [],
   );
 });
+
+test("buildSearchIndex: a11y results are scoped to file-backed sections only", () => {
+  const idx = buildSearchIndex(AUTHORABLE, CONTENT);
+  const a11yPaths = idx
+    .filter((i) => i.kind === "accessibility")
+    .map((i) => i.path);
+  // "color-contrast" is a foundation-tier section with a real file at
+  // accessibility/src/color-contrast.md, so it must still surface.
+  assert.ok(
+    a11yPaths.includes("accessibility/src/color-contrast.md"),
+    "file-backed a11y section still appears",
+  );
+  // "forms" is a component-pattern-tier section derived from component
+  // guidelines with no standalone src file, so it must NOT surface as a
+  // dead accessibility result.
+  assert.ok(
+    !a11yPaths.includes("accessibility/src/forms.md"),
+    "known-dead a11y slug is excluded",
+  );
+});
