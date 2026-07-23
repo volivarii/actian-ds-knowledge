@@ -19,6 +19,7 @@ const RECORDS: ContextRecord[] = [
     label: "Dataset",
     path: "app-context/src/entities/dataset.md",
     usedBy: ["Explorer", "Studio"],
+    usedBySlugs: ["explorer", "studio"],
   },
   {
     kind: "entity",
@@ -26,6 +27,7 @@ const RECORDS: ContextRecord[] = [
     label: "Scanner",
     path: "app-context/src/entities/scanner.md",
     usedBy: [],
+    usedBySlugs: [],
   },
   {
     kind: "feature",
@@ -33,6 +35,7 @@ const RECORDS: ContextRecord[] = [
     label: "Lineage graph",
     path: "app-context/src/patterns/lineage-graph.md",
     usedBy: ["Studio"],
+    usedBySlugs: ["studio"],
   },
   {
     kind: "feature",
@@ -40,6 +43,7 @@ const RECORDS: ContextRecord[] = [
     label: "Import wizard",
     path: "app-context/src/patterns/import-wizard.md",
     usedBy: ["Studio"],
+    usedBySlugs: ["studio"],
   },
 ];
 

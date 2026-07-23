@@ -9,6 +9,7 @@ const DATASET: ContextRecord = {
   label: "Dataset",
   path: "app-context/src/entities/dataset.md",
   usedBy: ["Studio"],
+    usedBySlugs: ["studio"],
 };
 
 const DATASET_FILE = `---

@@ -80,9 +80,21 @@ export interface ContextRecordStubOptions {
   components?: string[];
 }
 
-/** `apps:`-style block sequence, or the key omitted entirely when empty. */
-function blockList(key: string, values: string[]): string[] {
-  if (values.length === 0) return [];
+/**
+ * A block sequence under `key`.
+ *
+ * `required` decides what an empty list means. `apps` is schema-required, so it
+ * is written as an empty flow list rather than dropped: omitting it would make
+ * the file fail validation, and a pure builder must not depend on a caller
+ * happening to guard its input. `components` is optional, so an empty one is
+ * left out rather than written as noise.
+ */
+function blockList(
+  key: string,
+  values: string[],
+  required = false,
+): string[] {
+  if (values.length === 0) return required ? [`${key}: []`] : [];
   return [`${key}:`, ...values.map((v) => `  - ${yamlScalar(v)}`)];
 }
 
@@ -106,7 +118,7 @@ function buildRecordStub(
     `slug: ${yamlScalar(opts.slug)}`,
     `label: ${yamlScalar(opts.label)}`,
     ...core,
-    ...blockList("apps", opts.apps),
+    ...blockList("apps", opts.apps, true),
     "---",
     "",
   ].join("\n");

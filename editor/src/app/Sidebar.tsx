@@ -33,11 +33,13 @@ import {
   listComponents,
   listContextRecords,
   listProducts,
+  type ContextRecord,
 } from "../lib/contextRecords";
 import { createProduct } from "../lib/createProduct";
 import {
   createContextRecord,
   joinExistingRecord,
+  pathForContextRecord,
   type ContextRecordKind,
   type ContextRecordDeps,
 } from "../lib/createContextRecord";
@@ -225,8 +227,35 @@ export function Sidebar({
   const [newRecordKind, setNewRecordKind] = useState<ContextRecordKind | null>(
     null,
   );
-  // Baked-graph reads, so they never change within a session.
-  const contextRecords = useMemo(() => listContextRecords(), []);
+  // The collision check reads from here, so it must include records this batch
+  // created: the baked graph only knows what has merged, and a check that
+  // cannot see the duplicates it just made is no check at all. Records staged
+  // in this session are folded in as `pending`, which the dialog reports
+  // honestly rather than inventing a merged product list for them.
+  const contextRecords = useMemo(() => {
+    const merged = listContextRecords();
+    const known = new Set(merged.map((r) => `${r.kind}:${r.slug}`));
+    const pending: ContextRecord[] = [];
+    for (const [kind, key] of [
+      ["entity", "appContextEntities"],
+      ["feature", "appContextPatterns"],
+    ] as const) {
+      for (const file of entries?.[key] ?? []) {
+        const slug = slugFromPath(file);
+        if (known.has(`${kind}:${slug}`)) continue;
+        pending.push({
+          kind,
+          slug,
+          label: humanizeSlug(slug),
+          path: pathForContextRecord(kind, slug),
+          usedBy: [],
+          usedBySlugs: [],
+          pending: true,
+        });
+      }
+    }
+    return [...merged, ...pending];
+  }, [entries?.appContextEntities, entries?.appContextPatterns]);
   const graphComponents = useMemo(() => listComponents(), []);
 
   // Products offered by the record dialogs come from the files the sidebar
@@ -445,7 +474,7 @@ export function Sidebar({
       return;
     }
 
-    const { path } = createContextRecord(
+    const { path, created } = createContextRecord(
       {
         kind: value.kind,
         slug: value.slug,
@@ -455,6 +484,17 @@ export function Sidebar({
       },
       deps,
     );
+
+    if (!created) {
+      // Something is already staged at that path. Staging over it would throw
+      // away whatever the author wrote into it, so open it instead.
+      window.alert(
+        `${value.label} is already in this batch, so it was left as it is. ` +
+          `Opening it now.`,
+      );
+      onSelect(path);
+      return;
+    }
 
     const entriesKey =
       value.kind === "entity" ? "appContextEntities" : "appContextPatterns";

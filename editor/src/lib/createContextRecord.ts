@@ -45,11 +45,30 @@ export interface ContextRecordDeps {
   stagedContent(path: string): { content: string; sha: string } | null;
 }
 
+export interface CreateRecordResult {
+  path: string;
+  /** False when the batch already holds a file at this path; nothing written. */
+  created: boolean;
+}
+
+/**
+ * Stages a brand new entity or feature.
+ *
+ * Refuses when the batch already carries a file at that path, and refuses HERE
+ * rather than trusting the dialog to have checked. The cart keeps one entry per
+ * path and a second add replaces the first, so staging blindly would overwrite
+ * whatever the author had already written into that record: not just its
+ * product list, but the description, properties and relationships they typed
+ * after creating it. Silent, schema-valid, and invisible in the resulting pull
+ * request, which is the worst shape a bug can take here.
+ */
 export function createContextRecord(
   value: CreateContextRecordValue,
   deps: ContextRecordDeps,
-): { path: string } {
+): CreateRecordResult {
   const path = pathForContextRecord(value.kind, value.slug);
+  if (deps.stagedContent(path) !== null) return { path, created: false };
+
   const opts = {
     slug: value.slug,
     label: value.label,
@@ -62,7 +81,7 @@ export function createContextRecord(
       value.kind === "entity" ? buildEntityStub(opts) : buildFeatureStub(opts),
     basedOnSha: "",
   });
-  return { path };
+  return { path, created: true };
 }
 
 export interface JoinResult {

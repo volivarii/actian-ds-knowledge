@@ -23,7 +23,11 @@ import {
 } from "@radix-ui/themes";
 import type { ContextRecord, GraphPick } from "../lib/contextRecords";
 import type { ContextRecordKind } from "../lib/createContextRecord";
-import { SLUG_RE, slugFromLabel } from "../lib/slugFromLabel";
+import {
+  SLUG_MAX_LENGTH,
+  isValidSlug,
+  slugFromLabel,
+} from "../lib/slugFromLabel";
 
 export interface NewContextRecordValue {
   mode: "create" | "join";
@@ -97,14 +101,17 @@ export function NewContextRecordDialog({
     if (!slugTouched) setSlug(slugFromLabel(label));
   }, [label, slugTouched]);
 
-  const ofKind = useMemo(
-    () => records.filter((r) => r.kind === kind),
-    [records, kind],
-  );
-  const existing = useMemo(
-    () => ofKind.find((r) => r.slug === slug),
-    [ofKind, slug],
-  );
+  // Matched across BOTH kinds on purpose. The namespace this dialog protects is
+  // one flat list, so an entity called Dataset and a feature called Dataset are
+  // the collision, not two unrelated records. Same kind can be joined; a
+  // different kind cannot (an entity does not become a feature), so that one is
+  // refused rather than offered.
+  const clash = useMemo(() => records.find((r) => r.slug === slug), [
+    records,
+    slug,
+  ]);
+  const existing = clash?.kind === kind ? clash : undefined;
+  const crossKind = clash && clash.kind !== kind ? clash : undefined;
 
   const visibleComponents = useMemo(() => {
     const needle = filter.trim().toLowerCase();
@@ -113,12 +120,15 @@ export function NewContextRecordDialog({
   }, [components, filter]);
 
   const trimmedLabel = label.trim();
-  const validShape = SLUG_RE.test(slug);
+  const validShape = isValidSlug(slug);
   const chosenApps = products
     .filter((p) => apps.has(p.slug))
     .map((p) => p.slug);
   const canSubmit =
-    trimmedLabel.length > 0 && validShape && chosenApps.length > 0;
+    trimmedLabel.length > 0 &&
+    validShape &&
+    chosenApps.length > 0 &&
+    !crossKind;
 
   function toggle(
     set: ReadonlySet<string>,
@@ -158,10 +168,22 @@ export function NewContextRecordDialog({
             </Text>
             {trimmedLabel.length > 0 && !validShape && (
               <Text as="p" size="1" color="red" mt="1">
-                Names must start with a letter.
+                {slug.length > SLUG_MAX_LENGTH
+                  ? `That name is too long: the filename must be ${SLUG_MAX_LENGTH} characters or fewer.`
+                  : "Names must start with a letter."}
               </Text>
             )}
           </Box>
+
+          {crossKind && (
+            <Callout.Root color="red" size="1" role="alert" data-testid="cross-kind">
+              <Callout.Text>
+                A {crossKind.kind === "entity" ? "entity" : "feature"} is
+                already called <strong>{crossKind.label}</strong>. Entities and
+                features share one set of names, so pick a different one.
+              </Callout.Text>
+            </Callout.Root>
+          )}
 
           {existing && (
             <Callout.Root
@@ -172,11 +194,20 @@ export function NewContextRecordDialog({
             >
               <Callout.Text>
                 <strong>{existing.label}</strong> already exists
-                {existing.usedBy.length > 0
-                  ? `, used by ${existing.usedBy.join(", ")}`
-                  : ", not used by any product yet"}
+                {existing.pending
+                  ? ", staged earlier in this batch"
+                  : existing.usedBy.length > 0
+                    ? `, used by ${existing.usedBy.join(", ")}`
+                    : ", not used by any product yet"}
                 . Names are shared across every product, so rather than making a
                 second one, add your product to the existing record.
+                {!existing.pending && (
+                  <>
+                    {" "}
+                    Its product list is shown as of the last merge, so anything
+                    staged in this batch may not appear yet.
+                  </>
+                )}
               </Callout.Text>
             </Callout.Root>
           )}
@@ -195,7 +226,7 @@ export function NewContextRecordDialog({
                       onCheckedChange={() => toggle(apps, setApps, p.slug)}
                     />
                     <Text size="2">{p.label}</Text>
-                    {existing?.usedBy.includes(p.label) && (
+                    {existing?.usedBySlugs.includes(p.slug) && (
                       <Badge size="1" variant="soft" color="gray">
                         already listed
                       </Badge>

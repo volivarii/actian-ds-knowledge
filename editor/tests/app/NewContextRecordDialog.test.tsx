@@ -19,6 +19,7 @@ const RECORDS: ContextRecord[] = [
     label: "Dataset",
     path: "app-context/src/entities/dataset.md",
     usedBy: ["Explorer", "Studio"],
+    usedBySlugs: ["explorer", "studio"],
   },
   {
     kind: "feature",
@@ -26,6 +27,7 @@ const RECORDS: ContextRecord[] = [
     label: "Lineage graph",
     path: "app-context/src/patterns/lineage-graph.md",
     usedBy: ["Studio"],
+    usedBySlugs: ["studio"],
   },
 ];
 
@@ -150,4 +152,82 @@ test("NewContextRecordDialog: a feature carries its picked components", () => {
 test("NewContextRecordDialog: with no products it says so instead of offering nothing", () => {
   const r = renderDialog({ products: [] });
   assert.ok(r.getByText(/No products yet/i));
+});
+
+// An entity and a feature cannot share a name: they are one namespace, and the
+// dialog exists to stop exactly this kind of quiet forking.
+test("NewContextRecordDialog: a name taken by the other kind is refused, not joined", () => {
+  const r = renderDialog({ kind: "feature" });
+  typeName(r, "Dataset");
+  const note = r.getByTestId("cross-kind").textContent ?? "";
+  assert.match(note, /entity is\s+already called/);
+  assert.match(note, /Dataset/);
+  assert.equal(r.queryByTestId("already-exists"), null);
+  assert.equal(r.queryByRole("button", { name: "Use the existing one" }), null);
+  fireEvent.click(r.getByRole("checkbox", { name: "Studio" }));
+  assert.equal(
+    (r.getByRole("button", { name: "New feature" }) as HTMLButtonElement)
+      .disabled,
+    true,
+    "a cross-kind clash must not be submittable",
+  );
+});
+
+test("NewContextRecordDialog: a record staged in this batch is reported honestly", () => {
+  const r = renderDialog({
+    records: [
+      {
+        kind: "entity",
+        slug: "widget",
+        label: "Widget",
+        path: "app-context/src/entities/widget.md",
+        usedBy: [],
+        usedBySlugs: [],
+        pending: true,
+      },
+    ],
+  });
+  typeName(r, "Widget");
+  const note = r.getByTestId("already-exists").textContent ?? "";
+  assert.match(note, /staged earlier in this batch/);
+  assert.doesNotMatch(note, /not used by any product yet/);
+  assert.doesNotMatch(note, /as of the last merge/);
+});
+
+test("NewContextRecordDialog: a merged record discloses that its product list may be stale", () => {
+  const r = renderDialog();
+  typeName(r, "Dataset");
+  assert.match(
+    r.getByTestId("already-exists").textContent ?? "",
+    /as of the last merge/,
+  );
+});
+
+// The badge steers which boxes get ticked, so it must match on the product's
+// slug: labels are display strings and two products could share one.
+test("NewContextRecordDialog: the already-listed badge matches on slug, not label", () => {
+  const r = renderDialog({
+    products: [
+      { slug: "studio", label: "Studio" },
+      { slug: "studio-next", label: "Studio" },
+    ],
+  });
+  typeName(r, "Dataset");
+  assert.equal(
+    r.getAllByText("already listed").length,
+    1,
+    "only the product actually listed should be badged",
+  );
+});
+
+test("NewContextRecordDialog: a name too long for the schema is refused", () => {
+  const r = renderDialog();
+  typeName(r, "a".repeat(61));
+  assert.ok(r.getByText(/61 characters|60 characters or fewer/i));
+  fireEvent.click(r.getByRole("checkbox", { name: "Studio" }));
+  assert.equal(
+    (r.getByRole("button", { name: "New entity" }) as HTMLButtonElement)
+      .disabled,
+    true,
+  );
 });

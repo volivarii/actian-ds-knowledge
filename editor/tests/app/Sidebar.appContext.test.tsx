@@ -320,3 +320,53 @@ test("Sidebar: naming an entity that exists joins it instead of forking it", asy
     "joining must not fork a second record",
   );
 });
+
+// The whole point of the collision check: it has to see the records this same
+// session created, or it cannot catch the duplicates it is itself producing.
+test("Sidebar: an entity created in this batch is found by the next collision check", async () => {
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGhWithFiles(APP_CONTEXT_LISTINGS)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Entities"));
+
+  // Create it once.
+  fireEvent.click(screen.getByRole("button", { name: "New entity" }));
+  fireEvent.change(await screen.findByLabelText("Name"), {
+    target: { value: "Fixture Thing" },
+  });
+  fireEvent.click(screen.getByRole("checkbox", { name: "Studio" }));
+  fireEvent.click(screen.getByRole("button", { name: "New entity" }));
+
+  const path = "app-context/src/entities/fixture-thing.md";
+  await waitFor(() => assert.ok(submissionCartSingleton.has(path)));
+  const first = submissionCartSingleton.list().find((e) => e.path === path);
+  assert.ok(first);
+
+  // Name it again: the dialog must now know it exists.
+  fireEvent.click(screen.getByRole("button", { name: "New entity" }));
+  fireEvent.change(await screen.findByLabelText("Name"), {
+    target: { value: "Fixture Thing" },
+  });
+  assert.match(
+    screen.getByTestId("already-exists").textContent ?? "",
+    /staged earlier in this batch/,
+  );
+  assert.equal(screen.queryByRole("button", { name: "New entity" }), null);
+
+  // And joining it must not replace what is already staged there.
+  fireEvent.click(screen.getByRole("checkbox", { name: "Data Connect" }));
+  fireEvent.click(screen.getByRole("button", { name: "Use the existing one" }));
+  await waitFor(() => {
+    const after = submissionCartSingleton.list().find((e) => e.path === path);
+    assert.ok(after);
+    assert.match(after.content, /- studio/);
+    assert.match(after.content, /- data-connect/);
+  });
+});

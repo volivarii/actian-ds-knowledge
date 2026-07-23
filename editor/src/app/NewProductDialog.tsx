@@ -21,7 +21,11 @@ import {
   TextField,
 } from "@radix-ui/themes";
 import type { ContextRecord } from "../lib/contextRecords";
-import { SLUG_RE, slugFromLabel } from "../lib/slugFromLabel";
+import {
+  SLUG_MAX_LENGTH,
+  isValidSlug,
+  slugFromLabel,
+} from "../lib/slugFromLabel";
 
 export interface NewProductValue {
   label: string;
@@ -105,7 +109,7 @@ export function NewProductDialog({
   const oneProduct = dependingProducts.length === 1;
 
   const trimmedLabel = label.trim();
-  const validShape = SLUG_RE.test(slug);
+  const validShape = isValidSlug(slug);
   const collides = existingSlugs.includes(slug);
   const canSubmit = trimmedLabel.length > 0 && validShape && !collides;
 
@@ -165,7 +169,9 @@ export function NewProductDialog({
                 <Text as="p" size="1" color="red" mt="1">
                   {slug.length === 0
                     ? "Filename must start with a lowercase letter."
-                    : "Lowercase letters, digits, and hyphens only."}
+                    : slug.length > SLUG_MAX_LENGTH
+                      ? `Filename must be ${SLUG_MAX_LENGTH} characters or fewer.`
+                      : "Lowercase letters, digits, and hyphens only."}
                 </Text>
               )}
               {collides && (

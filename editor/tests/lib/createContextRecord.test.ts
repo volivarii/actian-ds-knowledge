@@ -157,3 +157,27 @@ test("a staged edit in the batch wins over the remote as the base", async () => 
     /- studio\n {2}- explorer\n {2}- data-connect/,
   );
 });
+
+// Staging over a path the batch already holds would replace whatever the author
+// wrote into that record, silently and schema-valid.
+test("creating refuses to overwrite a record already staged in this batch", () => {
+  const authored = "---\nslug: dataset\nlabel: Dataset\napps:\n  - studio\n---\nReal prose the author wrote.\n";
+  const h = harness({}, { [PATH]: { content: authored, sha: "" } });
+  const result = createContextRecord(
+    { kind: "entity", slug: "dataset", label: "Dataset", apps: ["explorer"] },
+    h.deps,
+  );
+  assert.equal(result.created, false);
+  assert.equal(result.path, PATH);
+  assert.equal(h.staged.length, 0, "nothing may be written over it");
+});
+
+test("creating reports success when the path is free", () => {
+  const h = harness();
+  const result = createContextRecord(
+    { kind: "entity", slug: "fresh", label: "Fresh", apps: ["studio"] },
+    h.deps,
+  );
+  assert.equal(result.created, true);
+  assert.equal(h.staged.length, 1);
+});
