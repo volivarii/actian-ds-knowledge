@@ -254,10 +254,18 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   //
   // The island is the right thing to pin here. It is projected from authored
   // app-context sources, NOT from Figma, so it does not move when a component
-  // gains a slot. It moves only when someone edits app-context, which is
-  // exactly the change this test exists to catch. Verified: the 2026-07-14
-  // sync added 2 `composed_of` edges (search-result-card now nests checkbox and
-  // digram-item-types) and left the island at 96/245 untouched.
+  // gains a slot. It moves when someone edits app-context, OR when a component
+  // a pattern references leaves the registry so its pattern->component edge can
+  // no longer form -- both are changes this test exists to surface. Verified:
+  // the 2026-07-14 sync added 2 `composed_of` edges and left the island at
+  // 96/245. The 2026-07-23 breaking sync then dropped it to 96/242: three
+  // app-context patterns (marketplace-browsing, federated-catalog,
+  // search-filtered-table) reference `search-filters`, which left the registry
+  // that sync, so those three pattern->component edges no longer project. The
+  // references are kept on purpose (search-filters is guidance-only now, the
+  // same authored-without-a-registry-component state as combo-box/multi-select
+  // in guideline-reachability's UNREACHABLE list); if it is republished the
+  // edges return and this pin moves back up.
   var ISLAND_PREFIXES = ["app", "entity", "pattern", "term"];
   var inIsland = function (id) {
     return ISLAND_PREFIXES.indexOf(String(id).split(":")[0]) !== -1;
@@ -269,7 +277,7 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
     return inIsland(e.source) || inIsland(e.target);
   });
   assert.equal(islandNodes.length, 96, "app-context island nodes");
-  assert.equal(islandEdges.length, 245, "app-context island edges");
+  assert.equal(islandEdges.length, 242, "app-context island edges");
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {

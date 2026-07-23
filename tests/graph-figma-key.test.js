@@ -54,14 +54,14 @@ test("collectComponentsAndCategories: a keyless registry entry omits figmaKey/fi
   assert.equal(n.title, "No Key");
 });
 
-// Committed artifact: the shipped graph.json carries the key on all 585
+// Committed artifact: the shipped graph.json carries the key on all 614
 // component nodes and on no other node type.
-test("graph/dist/graph.json: 585 component nodes carry figmaKey; non-component nodes never do", function () {
+test("graph/dist/graph.json: 614 component nodes carry figmaKey; non-component nodes never do", function () {
   var g = readJSON("graph/dist/graph.json");
   var comps = g.nodes.filter(function (n) {
     return n.type === "component";
   });
-  assert.equal(comps.length, 585);
+  assert.equal(comps.length, 614);
   assert.ok(
     comps.every(function (n) {
       return (
@@ -95,13 +95,13 @@ test("graph/dist/graph.jsonld carries figmaKey on component objects; context map
 
 // The shipped quality-report surfaces the collisions count in the documented
 // 5-key metric shape.
-test("graph/dist/quality-report.json reports the slug_collisions count (=17)", function () {
+test("graph/dist/quality-report.json reports the slug_collisions count (=24)", function () {
   var qr = readJSON("graph/dist/quality-report.json");
   var m = (Array.isArray(qr) ? qr : qr.metrics || []).find(function (x) {
     return x.metric === "slug_collisions";
   });
   assert.ok(m, "slug_collisions metric present");
-  assert.equal(m.value, 17);
+  assert.equal(m.value, 24);
   assert.deepEqual(Object.keys(m).sort(), [
     "dimension",
     "metric",
