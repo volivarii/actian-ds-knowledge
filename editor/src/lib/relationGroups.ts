@@ -16,7 +16,7 @@ const GROUP_LABEL: Record<string, string> = {
   "in_category:in": "Components in this category",
   "composed_of:out": "Contains",
   "composed_of:in": "Appears in",
-  "uses_component:out": "Uses components",
+  "uses_component:out": "Built from these components",
   "uses_component:in": "Used in patterns",
   "a11y_ref:out": "Meets accessibility criterion",
   "a11y_ref:in": "Accessibility for",
@@ -34,8 +34,8 @@ const GROUP_LABEL: Record<string, string> = {
   "entity_related:in": "Related entities",
   "term_about:out": "Defines terms",
   "term_about:in": "Described by term",
-  "in_app:out": "In application",
-  "in_app:in": "Contains",
+  "in_app:out": "Part of these products",
+  "in_app:in": "In this product",
 };
 
 /** Human label for an edge type + direction. Unknown edges are humanised (no
@@ -57,16 +57,20 @@ export interface RelationGroup {
 
 // Author priority: what this node *is* and *has* (its own facets) before the
 // potentially large incoming crowds ("Appears in", "Used in patterns").
+//
+// Keyed by LABEL, not by edge type, so renaming a group's label without editing
+// this list silently unranks it and drops it to the tail among the genuinely
+// unknown edge types. Change the two together.
 const GROUP_ORDER = [
   "Category",
   "Contains",
-  "Uses components",
+  "Built from these components",
   "Uses patterns",
   "Uses motion",
   "Built on foundations",
   "Meets accessibility criterion",
   "Defines terms",
-  "In application",
+  "Part of these products",
   "Related",
   "Related entities",
   "Narrower topics",
@@ -76,6 +80,7 @@ const GROUP_ORDER = [
   "Motion for",
   "Accessibility for",
   "Appears in",
+  "In this product",
   "Used in patterns",
   "Used by patterns",
   "Components in this category",

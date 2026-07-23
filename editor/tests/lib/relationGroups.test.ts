@@ -101,3 +101,16 @@ test("groups are ordered by author priority: the component's own facets before i
     `Contains should precede Appears in, got ${labels.join(", ")}`,
   );
 });
+
+// Author language, and the two questions kept apart: what am I part of, and
+// what do I need. They are different edges and they read as different groups.
+test("application-context edges read as author-facing groups", () => {
+  // Only the edges this slice makes reachable are relabelled; uses_component:in
+  // already ships on component screens and keeps its wording.
+  assert.equal(relationGroupLabel("in_app", "out"), "Part of these products");
+  assert.equal(relationGroupLabel("in_app", "in"), "In this product");
+  assert.equal(
+    relationGroupLabel("uses_component", "out"),
+    "Built from these components",
+  );
+});
