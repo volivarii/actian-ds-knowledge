@@ -3285,15 +3285,15 @@
  * leak an unwanted border. Single fixed variant; the only prop is the
  * "Show Counter" boolean gating __counter. Value-first: --zen-color-warning-25
  * does not round-trip against the frozen tokens.css snapshot (resolves to
- * #f7f4f2, not the captured #fff9e5) but is bound per doctrine anyway (the
- * hex is informational here, not a literal-vs-token choice). */
+ * #f7f4f2, not the captured #fff9e5), so the literal ships instead, same
+ * pattern as the sibling .ds-tag-catalog-item-type--use-case rule below. */
 .ds-tag-glossary-item-type {
   display: inline-flex;
   align-items: center;
   gap: var(--zen-spacing-xs); /* 8 */
   padding: 0 var(--zen-spacing-xs); /* 0 8 */
   border-radius: var(--zen-border-radius-xs); /* 4 */
-  background: var(--zen-color-warning-25);
+  background: #fff9e5; /* --zen-color-warning-25 does not round-trip (:root resolves to #f7f4f2) */
   height: var(--zen-size-lg); /* 24, inherited-from-sibling .ds-tag geometry */
   font-family: var(--zen-font-family-text);
   font-size: var(--zen-font-size-sm); /* 12 */

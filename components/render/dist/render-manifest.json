@@ -353,7 +353,7 @@
       "tagName": "zen-tag-glossary-item-type",
       "group": "Data Display",
       "fragment": "fragments/tag-glossary-item-type.html",
-      "tokensConsumed": 11,
+      "tokensConsumed": 10,
       "source": "rendered"
     },
     {
