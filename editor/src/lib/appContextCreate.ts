@@ -11,7 +11,7 @@
 // quoted in the prose body can never be rewritten. Same class of trap as the
 // anchor rename's fences, avoided the cheap way.
 
-import { stringify as stringifyYaml } from "yaml";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 export interface AppStubOptions {
   slug: string;
@@ -142,6 +142,25 @@ export function buildFeatureStub(opts: ContextRecordStubOptions): string {
 }
 
 const FRONTMATTER_RE = /^(---\r?\n)([\s\S]*?)(\r?\n---)/;
+
+/**
+ * The product slugs a record declares, or an empty list when it declares none
+ * and when the frontmatter cannot be parsed. Used to describe a record that
+ * exists only as a staged file, which no merged graph can answer for.
+ */
+export function appsInRecord(text: string): string[] {
+  const m = FRONTMATTER_RE.exec(text);
+  if (!m) return [];
+  try {
+    const data = parseYaml(m[2]!) as { apps?: unknown } | null;
+    const apps = data?.apps;
+    return Array.isArray(apps)
+      ? apps.filter((a): a is string => typeof a === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Appends `appSlug` to the record's top-level `apps:` list.

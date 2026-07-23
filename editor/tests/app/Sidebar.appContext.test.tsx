@@ -370,3 +370,43 @@ test("Sidebar: an entity created in this batch is found by the next collision ch
     assert.match(after.content, /- data-connect/);
   });
 });
+
+// A staged record has no merged graph to answer for it, so it must report the
+// products it declares in its own file. Otherwise the badge omits the very
+// product that just created it.
+test("Sidebar: a record staged in this batch reports its own products", async () => {
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGhWithFiles(APP_CONTEXT_LISTINGS)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Entities"));
+  fireEvent.click(screen.getByRole("button", { name: "New entity" }));
+  fireEvent.change(await screen.findByLabelText("Name"), {
+    target: { value: "Fixture Thing" },
+  });
+  fireEvent.click(screen.getByRole("checkbox", { name: "Studio" }));
+  fireEvent.click(screen.getByRole("button", { name: "New entity" }));
+
+  await waitFor(() =>
+    assert.ok(
+      submissionCartSingleton.has("app-context/src/entities/fixture-thing.md"),
+    ),
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "New entity" }));
+  fireEvent.change(await screen.findByLabelText("Name"), {
+    target: { value: "Fixture Thing" },
+  });
+  await waitFor(() => screen.getByTestId("already-exists"));
+  assert.equal(
+    screen.getAllByText("already listed").length,
+    1,
+    "the product that created it must be shown as already listed",
+  );
+});

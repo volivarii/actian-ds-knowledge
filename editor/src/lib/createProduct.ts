@@ -27,6 +27,8 @@ export interface CreateProductDeps {
 
 export interface CreateProductResult {
   appPath: string;
+  /** False when the batch already holds a file at the product's path. */
+  created: boolean;
   /** Records this product was added to. */
   joined: string[];
   /** Records that already listed this product; nothing was staged for them. */
@@ -40,6 +42,22 @@ export async function createProduct(
   deps: CreateProductDeps,
 ): Promise<CreateProductResult> {
   const appPath = `app-context/src/apps/${value.slug}.md`;
+
+  // Refuse to stage over a product the batch already holds. The dialog's own
+  // collision list is seeded from the remote listing, so a product staged but
+  // not yet merged goes missing from it after a reload, and the cart replaces
+  // by path: staging again would silently discard the file the author had
+  // already written into. Same guard, same reason, as createContextRecord.
+  if (deps.stagedContent(appPath) !== null) {
+    return {
+      appPath,
+      created: false,
+      joined: [],
+      unchanged: [],
+      failed: [],
+    };
+  }
+
   deps.stage({
     path: appPath,
     content: buildAppStub({
@@ -52,6 +70,7 @@ export async function createProduct(
 
   const result: CreateProductResult = {
     appPath,
+    created: true,
     joined: [],
     unchanged: [],
     failed: [],

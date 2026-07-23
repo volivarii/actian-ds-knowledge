@@ -81,7 +81,6 @@ export function NewContextRecordDialog({
   const copy = KIND_COPY[kind];
   const [label, setLabel] = useState("");
   const [slug, setSlug] = useState("");
-  const [slugTouched, setSlugTouched] = useState(false);
   const [apps, setApps] = useState<ReadonlySet<string>>(new Set());
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const [filter, setFilter] = useState("");
@@ -90,16 +89,17 @@ export function NewContextRecordDialog({
     if (!open) {
       setLabel("");
       setSlug("");
-      setSlugTouched(false);
       setApps(new Set());
       setPicked(new Set());
       setFilter("");
     }
   }, [open]);
 
+  // The filename is always derived here: this dialog has no filename field, so
+  // there is no edited-slug state to preserve.
   useEffect(() => {
-    if (!slugTouched) setSlug(slugFromLabel(label));
-  }, [label, slugTouched]);
+    setSlug(slugFromLabel(label));
+  }, [label]);
 
   // Matched across BOTH kinds on purpose. The namespace this dialog protects is
   // one flat list, so an entity called Dataset and a feature called Dataset are
@@ -178,7 +178,7 @@ export function NewContextRecordDialog({
           {crossKind && (
             <Callout.Root color="red" size="1" role="alert" data-testid="cross-kind">
               <Callout.Text>
-                A {crossKind.kind === "entity" ? "entity" : "feature"} is
+                {crossKind.kind === "entity" ? "An entity" : "A feature"} is
                 already called <strong>{crossKind.label}</strong>. Entities and
                 features share one set of names, so pick a different one.
               </Callout.Text>

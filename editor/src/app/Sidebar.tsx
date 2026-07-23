@@ -36,6 +36,7 @@ import {
   type ContextRecord,
 } from "../lib/contextRecords";
 import { createProduct } from "../lib/createProduct";
+import { appsInRecord } from "../lib/appContextCreate";
 import {
   createContextRecord,
   joinExistingRecord,
@@ -227,37 +228,6 @@ export function Sidebar({
   const [newRecordKind, setNewRecordKind] = useState<ContextRecordKind | null>(
     null,
   );
-  // The collision check reads from here, so it must include records this batch
-  // created: the baked graph only knows what has merged, and a check that
-  // cannot see the duplicates it just made is no check at all. Records staged
-  // in this session are folded in as `pending`, which the dialog reports
-  // honestly rather than inventing a merged product list for them.
-  const contextRecords = useMemo(() => {
-    const merged = listContextRecords();
-    const known = new Set(merged.map((r) => `${r.kind}:${r.slug}`));
-    const pending: ContextRecord[] = [];
-    for (const [kind, key] of [
-      ["entity", "appContextEntities"],
-      ["feature", "appContextPatterns"],
-    ] as const) {
-      for (const file of entries?.[key] ?? []) {
-        const slug = slugFromPath(file);
-        if (known.has(`${kind}:${slug}`)) continue;
-        pending.push({
-          kind,
-          slug,
-          label: humanizeSlug(slug),
-          path: pathForContextRecord(kind, slug),
-          usedBy: [],
-          usedBySlugs: [],
-          pending: true,
-        });
-      }
-    }
-    return [...merged, ...pending];
-  }, [entries?.appContextEntities, entries?.appContextPatterns]);
-  const graphComponents = useMemo(() => listComponents(), []);
-
   // Products offered by the record dialogs come from the files the sidebar
   // lists, not from the graph alone, so a product created earlier in this same
   // batch can be picked before it has ever been merged. The graph supplies the
@@ -269,6 +239,48 @@ export function Sidebar({
       label: labelBySlug.get(slug) ?? humanizeSlug(slug),
     }));
   }, [entries?.appContextApps]);
+
+  // The collision check reads from here, so it must include records this batch
+  // created: the baked graph only knows what has merged, and a check that
+  // cannot see the duplicates it just made is no check at all. A staged record
+  // reports the products IT declares, read from the file itself, because no
+  // merged graph can answer for a file that has never merged.
+  const contextRecords = useMemo(() => {
+    const merged = listContextRecords();
+    const known = new Set(merged.map((r) => `${r.kind}:${r.slug}`));
+    const labelBySlug = new Map(products.map((p) => [p.slug, p.label]));
+    const pending: ContextRecord[] = [];
+    for (const [kind, key] of [
+      ["entity", "appContextEntities"],
+      ["feature", "appContextPatterns"],
+    ] as const) {
+      for (const file of entries?.[key] ?? []) {
+        const slug = slugFromPath(file);
+        if (known.has(`${kind}:${slug}`)) continue;
+        const path = pathForContextRecord(kind, slug);
+        const staged = cartEntries.find((e) => e.path === path && !e.deleted);
+        const appSlugs = staged ? appsInRecord(staged.content) : [];
+        pending.push({
+          kind,
+          slug,
+          label: humanizeSlug(slug),
+          path,
+          usedBy: appSlugs.map((s) => labelBySlug.get(s) ?? humanizeSlug(s)),
+          usedBySlugs: appSlugs,
+          pending: true,
+        });
+      }
+    }
+    return [...merged, ...pending].sort(
+      (a, b) => a.kind.localeCompare(b.kind) || a.label.localeCompare(b.label),
+    );
+  }, [
+    entries?.appContextEntities,
+    entries?.appContextPatterns,
+    cartEntries,
+    products,
+  ]);
+  const graphComponents = useMemo(() => listComponents(), []);
 
   // Each application-context section owns its own create affordance.
   const appContextAdd: Record<
@@ -424,6 +436,15 @@ export function Sidebar({
 
   async function handleCreateProduct(value: NewProductValue) {
     const result = await createProduct(value, contextCartDeps());
+
+    if (!result.created) {
+      window.alert(
+        `${value.label} is already in this batch, so it was left as it is. ` +
+          `Opening it now.`,
+      );
+      onSelect(result.appPath);
+      return;
+    }
 
     setEntries((prev) =>
       prev

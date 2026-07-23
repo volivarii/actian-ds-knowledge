@@ -1,7 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parse as parseYaml } from "yaml";
-import { buildAppStub, addAppToApps } from "../../src/lib/appContextCreate";
+import {
+  buildAppStub,
+  addAppToApps,
+  appsInRecord,
+} from "../../src/lib/appContextCreate";
 
 // ── buildAppStub ────────────────────────────────────────────────────────
 
@@ -208,4 +212,19 @@ test("appends to a zero-indent block list without breaking the sequence", () => 
   assert.ok(out !== null);
   const parsed = parseYaml(out.split(/^---$/m)[1] ?? "") as { apps: string[] };
   assert.deepEqual(parsed.apps, ["studio", "data-connect"]);
+});
+
+test("appsInRecord reads the products a record declares", () => {
+  assert.deepEqual(appsInRecord(ENTITY), ["studio", "explorer"]);
+  assert.deepEqual(
+    appsInRecord("---\nslug: x\napps: [studio]\n---\nbody\n"),
+    ["studio"],
+  );
+});
+
+test("appsInRecord answers empty rather than throwing on anything odd", () => {
+  assert.deepEqual(appsInRecord("no frontmatter here\n"), []);
+  assert.deepEqual(appsInRecord("---\nslug: x\n---\nbody\n"), []);
+  assert.deepEqual(appsInRecord("---\napps: not-a-list\n---\nbody\n"), []);
+  assert.deepEqual(appsInRecord("---\n\tbad: [yaml\n---\nbody\n"), []);
 });
