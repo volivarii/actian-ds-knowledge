@@ -26,3 +26,23 @@ test("nodeIdForFile returns the id only when it resolves to a real node", () => 
   assert.equal(nodeIdForFile("components/src/ghost/_meta.yml", ix), null);
   assert.equal(nodeIdForFile(undefined, ix), null);
 });
+
+// Without these the relations panel was blank on every product, entity and
+// feature: the records whose whole purpose is belonging were the only ones the
+// graph could not be asked about.
+test("app-context files resolve to their graph nodes", () => {
+  assert.equal(nodeIdForFile("app-context/src/apps/studio.md"), "app:studio");
+  assert.equal(
+    nodeIdForFile("app-context/src/entities/dataset.md"),
+    "entity:dataset",
+  );
+  assert.equal(
+    nodeIdForFile("app-context/src/patterns/lineage-graph.md"),
+    "pattern:lineage-graph",
+  );
+});
+
+test("an app-context file with no matching node degrades to null", () => {
+  assert.equal(nodeIdForFile("app-context/src/entities/not-a-record.md"), null);
+  assert.equal(nodeIdForFile("app-context/src/terminology.yml"), null);
+});

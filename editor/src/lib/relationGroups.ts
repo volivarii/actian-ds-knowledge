@@ -16,7 +16,7 @@ const GROUP_LABEL: Record<string, string> = {
   "in_category:in": "Components in this category",
   "composed_of:out": "Contains",
   "composed_of:in": "Appears in",
-  "uses_component:out": "Uses components",
+  "uses_component:out": "Built from these components",
   "uses_component:in": "Used in patterns",
   "a11y_ref:out": "Meets accessibility criterion",
   "a11y_ref:in": "Accessibility for",
@@ -34,8 +34,8 @@ const GROUP_LABEL: Record<string, string> = {
   "entity_related:in": "Related entities",
   "term_about:out": "Defines terms",
   "term_about:in": "Described by term",
-  "in_app:out": "In application",
-  "in_app:in": "Contains",
+  "in_app:out": "Part of these products",
+  "in_app:in": "In this product",
 };
 
 /** Human label for an edge type + direction. Unknown edges are humanised (no

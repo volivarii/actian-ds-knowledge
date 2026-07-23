@@ -21,6 +21,15 @@ export function candidateNodeIdForFile(filePath: string): string | null {
   if (m) return `foundation:${m[1]!}`;
   m = p.match(/^content\/src\/(?:.*\/)?([^/]+)\.md$/);
   if (m) return `content:${m[1]!}`;
+  // Application context. Without these three the relations panel was empty on
+  // every product, entity and feature: the files whose whole point is saying
+  // what belongs to what were the ones the graph could not be asked about.
+  m = p.match(/^app-context\/src\/apps\/([^/]+)\.md$/);
+  if (m) return `app:${m[1]!}`;
+  m = p.match(/^app-context\/src\/entities\/([^/]+)\.md$/);
+  if (m) return `entity:${m[1]!}`;
+  m = p.match(/^app-context\/src\/patterns\/([^/]+)\.md$/);
+  if (m) return `pattern:${m[1]!}`;
   return null;
 }
 
