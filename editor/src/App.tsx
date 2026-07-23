@@ -107,8 +107,8 @@ export default function App() {
       return null;
     }
   }, [session]);
-  // Lazy-load the known component slug set so Cmd-K can offer
-  // "Go to <slug>" without the user knowing exact spellings.
+  // Lazy-load the known component slug set; it scopes the header search
+  // index to the authorable components (buildSearchIndex's authorable set).
   const [knownSlugs, setKnownSlugs] = useState<string[]>([]);
   useEffect(() => {
     if (!headerOctokit) return;
