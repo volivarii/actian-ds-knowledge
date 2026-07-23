@@ -9,12 +9,12 @@ var C = require("../../scripts/render/build-contact-sheet.js");
 test("buildContactSheet: emits a page covering the four improved slugs + their oracles", function () {
   var out = path.join(os.tmpdir(), "contact-" + process.pid + ".html");
   var slugs = C.buildContactSheet(out);
-  ["tag-default", "checkbox", "radio-button", "toggle"].forEach(function (s) {
+  ["tag-default", "checkbox", "radio", "toggle"].forEach(function (s) {
     assert.ok(slugs.indexOf(s) >= 0, s + " is in the sign-off sheet");
   });
   var html = fs.readFileSync(out, "utf8");
   assert.match(html, /tag-default/);
-  assert.match(html, /radio-button/);
+  assert.match(html, /radio/);
   assert.match(html, /data:image\/webp;base64,/); // at least one oracle embedded
   fs.unlinkSync(out);
 });

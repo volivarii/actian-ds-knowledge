@@ -415,7 +415,7 @@ test("invariant 7: the phase-1b fixes stay fixed", function () {
   var MARKERS = {
     "tag-default": /ds-tag--/,
     checkbox: /ds-checkbox--(checked|indeterminate)/,
-    "radio-button": /ds-radio--checked/,
+    "radio": /ds-radio--checked/,
     toggle: /ds-toggle--on/,
   };
   var failures = [];

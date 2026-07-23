@@ -35,8 +35,8 @@ test("deriveFragment(checkbox) emits distinct classes + glyphs per Selection sta
 
 var R = require("../../scripts/render/derive-from-renderer.js");
 
-test("radio-button derives a real Selected state, not the Selected==='Yes' bug", function () {
-  var html = R.deriveFragment("radio-button");
+test("radio derives a real Selected state, not the Selected==='Yes' bug", function () {
+  var html = R.deriveFragment("radio");
   assert.match(
     html,
     /ds-radio--checked/,

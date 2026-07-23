@@ -558,7 +558,7 @@ Use card-format radio buttons instead of traditional radio buttons when each opt
 
 * The choice takes effect immediately, with no separate submit step.
 
-**Use a** **[radio button](#radio-button)** **group when:**
+**Use a** **[radio button](#radio)** **group when:**
 
 * The choice is part of a form and applies on submit.
 
