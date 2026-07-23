@@ -105,6 +105,10 @@ export function GlobalSearch({
       r.run();
       setOpen(false);
       setQuery("");
+      // Reset the highlight: clearing the query reshapes the row list, so a
+      // leftover index would point past the end and make the next bare Enter a
+      // silent no-op (rows[stale] is undefined).
+      setActive(-1);
     },
     [rows],
   );
@@ -115,7 +119,9 @@ export function GlobalSearch({
       setActive((a) => Math.min(a + 1, rows.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActive((a) => Math.max(a - 1, 0));
+      // Clamp the upper bound too (not just >= 0), so a stale index from a
+      // shrunken list still lands on a real row.
+      setActive((a) => Math.max(Math.min(a - 1, rows.length - 1), 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
       // active starts at -1 (nothing pre-selected, see the state comment

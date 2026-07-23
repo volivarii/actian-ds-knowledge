@@ -76,3 +76,20 @@ test("GlobalSearch: empty query shows Actions only, and rows never show a path",
   fireEvent.change(input, { target: { value: "button" } });
   assert.equal(screen.queryByText("workspace/button"), null);
 });
+
+test("GlobalSearch: after a selection, Enter on the reshown popover opens the top hit (no stale active index)", () => {
+  const { runs, input } = mount();
+  // A multi-row query, then move the highlight to index 1.
+  fireEvent.change(input, { target: { value: "o" } });
+  fireEvent.keyDown(input, { key: "ArrowDown" });
+  fireEvent.keyDown(input, { key: "ArrowDown" });
+  // Select via Enter: this clears the query and (the fix under test) resets
+  // active. Without the reset, active would stay at 1.
+  fireEvent.keyDown(input, { key: "Enter" });
+  // Reopen on the now-empty query (Actions only = one row). A leftover active
+  // of 1 would make the next Enter run rows[1] (undefined) and silently do
+  // nothing; the reset makes it fall through to the top hit.
+  fireEvent.focus(input);
+  fireEvent.keyDown(input, { key: "Enter" });
+  assert.deepEqual(runs, ["home"]);
+});
