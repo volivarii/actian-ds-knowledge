@@ -57,16 +57,20 @@ export interface RelationGroup {
 
 // Author priority: what this node *is* and *has* (its own facets) before the
 // potentially large incoming crowds ("Appears in", "Used in patterns").
+//
+// Keyed by LABEL, not by edge type, so renaming a group's label without editing
+// this list silently unranks it and drops it to the tail among the genuinely
+// unknown edge types. Change the two together.
 const GROUP_ORDER = [
   "Category",
   "Contains",
-  "Uses components",
+  "Built from these components",
   "Uses patterns",
   "Uses motion",
   "Built on foundations",
   "Meets accessibility criterion",
   "Defines terms",
-  "In application",
+  "Part of these products",
   "Related",
   "Related entities",
   "Narrower topics",
@@ -76,6 +80,7 @@ const GROUP_ORDER = [
   "Motion for",
   "Accessibility for",
   "Appears in",
+  "In this product",
   "Used in patterns",
   "Used by patterns",
   "Components in this category",

@@ -35,3 +35,16 @@ test("a feature separates what it is part of from what it is built from", () => 
 test("a record that belongs to no product simply has no belonging group", () => {
   assert.deepEqual(labels("app-context/src/entities/not-a-record.md"), []);
 });
+
+// The ranking list is keyed by label, so a relabel that forgets it drops these
+// groups to the tail among unknown edge types. Pin the order the panel promises.
+test("a feature's own facets rank ahead of the crowds that point at it", () => {
+  const order = groupGraphNeighbors(
+    graphNeighborsForFile("app-context/src/patterns/lineage-graph.md"),
+  ).map((g) => g.label);
+  assert.ok(
+    order.indexOf("Built from these components") <
+      order.indexOf("Part of these products"),
+    `expected own facets first, got ${order.join(", ")}`,
+  );
+});
