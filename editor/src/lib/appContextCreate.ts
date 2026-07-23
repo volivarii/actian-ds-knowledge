@@ -71,6 +71,64 @@ export function buildAppStub({
   ].join("\n");
 }
 
+export interface ContextRecordStubOptions {
+  slug: string;
+  label: string;
+  /** Product slugs this record belongs to. */
+  apps: string[];
+  /** Features only: the DS components the feature composes. */
+  components?: string[];
+}
+
+/** `apps:`-style block sequence, or the key omitted entirely when empty. */
+function blockList(key: string, values: string[]): string[] {
+  if (values.length === 0) return [];
+  return [`${key}:`, ...values.map((v) => `  - ${yamlScalar(v)}`)];
+}
+
+/**
+ * The starting file for a new entity or feature.
+ *
+ * The body ships EMPTY, and for these two kinds that matters even more than it
+ * does for a product: derive-app-context.js reads the whole body as the record's
+ * `description` (bodyField), so a placeholder sentence would not sit unused in a
+ * section, it would BE the description every consumer reads.
+ */
+function buildRecordStub(
+  schema: string,
+  opts: ContextRecordStubOptions,
+  core: string[],
+): string {
+  return [
+    "---",
+    `# yaml-language-server: $schema=../../../schemas/${schema}`,
+    "_schema_version: 1",
+    `slug: ${yamlScalar(opts.slug)}`,
+    `label: ${yamlScalar(opts.label)}`,
+    ...core,
+    ...blockList("apps", opts.apps),
+    "---",
+    "",
+  ].join("\n");
+}
+
+export function buildEntityStub(opts: ContextRecordStubOptions): string {
+  // properties and relationships are schema-required, so they are written empty
+  // rather than omitted; the author fills them in the record's own editor.
+  return buildRecordStub("app-context-entity.json", opts, [
+    "properties: []",
+    "relationships: {}",
+  ]);
+}
+
+export function buildFeatureStub(opts: ContextRecordStubOptions): string {
+  return buildRecordStub(
+    "app-context-pattern.json",
+    opts,
+    blockList("components", opts.components ?? []),
+  );
+}
+
 const FRONTMATTER_RE = /^(---\r?\n)([\s\S]*?)(\r?\n---)/;
 
 /**

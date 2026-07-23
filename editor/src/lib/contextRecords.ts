@@ -34,6 +34,28 @@ function slugOf(nodeId: string): string {
   return colon === -1 ? nodeId : nodeId.slice(colon + 1);
 }
 
+export interface GraphPick {
+  slug: string;
+  label: string;
+}
+
+/** Products as the last merged graph knows them; the caller merges in any
+ *  product created since (a just-staged one is not in the baked graph). */
+export function listProducts(): GraphPick[] {
+  return graphNodes
+    .filter((n) => n.type === "app")
+    .map((n) => ({ slug: slugOf(n.id), label: n.title }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+/** DS components a feature can declare it composes. */
+export function listComponents(): GraphPick[] {
+  return graphNodes
+    .filter((n) => n.type === "component")
+    .map((n) => ({ slug: slugOf(n.id), label: n.title }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
 export function listContextRecords(): ContextRecord[] {
   const index = bakedGraphIndex();
   const records: ContextRecord[] = [];

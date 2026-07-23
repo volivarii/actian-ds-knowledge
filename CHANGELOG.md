@@ -20,6 +20,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **Create an entity or a feature in the editor, and join one that already exists.** The Entities and
+  Features sections now carry their own "+", so an app team can bring the things their product works
+  with and the things people do in it, not just the product itself. Because entity and feature names
+  are a single flat namespace shared by every product, a name that is already taken is treated as the
+  normal case rather than an error: the dialog shows the record that exists and the products using
+  it, and offers to add your product to that record instead of forking a second one. A feature can
+  also declare the design-system components it is built from, which is the link between a product's
+  context and the shared core. Editor-only, version-neutral.
+  ([#PR](https://github.com/volivarii/actian-ds-knowledge/pull/PR))
 - **Create a product in the editor (application context).** The Products section now carries a
   "New product" affordance, so an app team can bring its own context into the knowledge layer instead
   of only editing what already exists. The dialog writes a schema-valid
