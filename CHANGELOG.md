@@ -28,7 +28,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   it, and offers to add your product to that record instead of forking a second one. A feature can
   also declare the design-system components it is built from, which is the link between a product's
   context and the shared core. Editor-only, version-neutral.
-  ([#PR](https://github.com/volivarii/actian-ds-knowledge/pull/PR))
+  ([#478](https://github.com/volivarii/actian-ds-knowledge/pull/478))
 - **Create a product in the editor (application context).** The Products section now carries a
   "New product" affordance, so an app team can bring its own context into the knowledge layer instead
   of only editing what already exists. The dialog writes a schema-valid
