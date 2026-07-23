@@ -429,7 +429,7 @@ function collectAppContext(g, ac) {
 // dist) become directed uses_component edges (pattern -> component). Separate from
 // collectAppContext on purpose, so the app-context isolation tests stay put; runs
 // after collectAppContext (ux_pattern nodes) and collectComponentsAndCategories
-// (component nodes). Unresolved / cross-kit slugs are dropped by the hasNode guard.
+// (component nodes). An unresolved slug is NOT dropped: it fails the derive (see below).
 function collectPatternComponents(g, ac) {
   var patterns = (ac && ac.patterns) || {};
   // Unresolved references are collected and thrown at the end rather than

@@ -660,6 +660,37 @@ test("collectPatternComponents: an unresolved reference fails the derive instead
   );
 });
 
+// Every offender in one message, not just the first: a fail-on-first would send
+// an author round the loop once per typo, and a refactor that moved the throw
+// inside the inner loop would otherwise pass unnoticed.
+test("collectPatternComponents: one failure lists every unresolved reference", function () {
+  var registries = { components: { table: { name: "Table", category: "Data Display" } } };
+  var ac = {
+    apps: { studio: { label: "Studio" } },
+    entities: {},
+    terminology: {},
+    patterns: {
+      a: { label: "A", apps: ["studio"], components: ["table", "ghost-one"] },
+      b: { label: "B", apps: ["studio"], components: ["ghost-two"] },
+    },
+  };
+  var G = require("../scripts/lib/graph/model.js").GraphBuilder;
+  var g = new G();
+  D.collectComponentsAndCategories(g, [registries]);
+  D.collectAppContext(g, ac);
+  assert.throws(
+    function () {
+      D.collectPatternComponents(g, ac);
+    },
+    function (err) {
+      assert.match(err.message, /ghost-one/);
+      assert.match(err.message, /ghost-two/, "the second offender must appear too");
+      assert.match(err.message, /^derive-graph: 2 /);
+      return true;
+    },
+  );
+});
+
 // The gate has to be able to see its subject: with every reference resolvable
 // it must stay silent, or it would just be an alarm that is always on.
 test("collectPatternComponents: resolvable references do not fail", function () {
