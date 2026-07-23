@@ -49,7 +49,8 @@ export type ExploreTab = "coverage" | "accessibility" | "relationships";
 export interface HomeScreenProps {
   octokit: Octokit;
   onOpenFile: (path: string) => void;
-  /** Opens the global command palette (owned by App). */
+  /** Focuses the header's GlobalSearch input (owned by App), wired through
+   *  EditorShell's onFocusSearch. */
   onFindComponent?: () => void;
   /** Optional controlled Explore-tab state (owned by EditorShell so the
    *  chosen tab survives navigating into a file and back — the behavior
