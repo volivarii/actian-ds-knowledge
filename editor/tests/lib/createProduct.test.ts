@@ -9,6 +9,7 @@ const DATASET: ContextRecord = {
   label: "Dataset",
   path: "app-context/src/entities/dataset.md",
   usedBy: ["Studio"],
+  usedBySlugs: ["studio"],
 };
 
 const DATASET_FILE = `---
@@ -131,4 +132,26 @@ test("an unreadable record fails alone; the product is still staged", async () =
 
   assert.equal(result.failed.length, 1);
   assert.ok(h.staged.some((s) => s.path === result.appPath));
+});
+
+// The sibling guard: the dialog's collision list is seeded from the remote
+// listing, so a product staged but not merged disappears from it after a
+// reload. Staging again would replace the file the author had written into.
+test("creating refuses to overwrite a product already staged in this batch", async () => {
+  const authored =
+    "---\nslug: data-connect\nlabel: Data Connect\n---\n\n## Purpose\n\nReal prose.\n";
+  const h = harness(
+    {},
+    { "app-context/src/apps/data-connect.md": { content: authored, sha: "" } },
+  );
+  const result = await createProduct({ ...VALUE, claim: [DATASET] }, h.deps);
+
+  assert.equal(result.created, false);
+  assert.equal(h.staged.length, 0, "neither the product nor its claims");
+});
+
+test("creating a product reports success when the path is free", async () => {
+  const h = harness({});
+  const result = await createProduct(VALUE, h.deps);
+  assert.equal(result.created, true);
 });

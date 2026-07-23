@@ -11,7 +11,7 @@
 // quoted in the prose body can never be rewritten. Same class of trap as the
 // anchor rename's fences, avoided the cheap way.
 
-import { stringify as stringifyYaml } from "yaml";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 export interface AppStubOptions {
   slug: string;
@@ -71,7 +71,96 @@ export function buildAppStub({
   ].join("\n");
 }
 
+export interface ContextRecordStubOptions {
+  slug: string;
+  label: string;
+  /** Product slugs this record belongs to. */
+  apps: string[];
+  /** Features only: the DS components the feature composes. */
+  components?: string[];
+}
+
+/**
+ * A block sequence under `key`.
+ *
+ * `required` decides what an empty list means. `apps` is schema-required, so it
+ * is written as an empty flow list rather than dropped: omitting it would make
+ * the file fail validation, and a pure builder must not depend on a caller
+ * happening to guard its input. `components` is optional, so an empty one is
+ * left out rather than written as noise.
+ */
+function blockList(
+  key: string,
+  values: string[],
+  required = false,
+): string[] {
+  if (values.length === 0) return required ? [`${key}: []`] : [];
+  return [`${key}:`, ...values.map((v) => `  - ${yamlScalar(v)}`)];
+}
+
+/**
+ * The starting file for a new entity or feature.
+ *
+ * The body ships EMPTY, and for these two kinds that matters even more than it
+ * does for a product: derive-app-context.js reads the whole body as the record's
+ * `description` (bodyField), so a placeholder sentence would not sit unused in a
+ * section, it would BE the description every consumer reads.
+ */
+function buildRecordStub(
+  schema: string,
+  opts: ContextRecordStubOptions,
+  core: string[],
+): string {
+  return [
+    "---",
+    `# yaml-language-server: $schema=../../../schemas/${schema}`,
+    "_schema_version: 1",
+    `slug: ${yamlScalar(opts.slug)}`,
+    `label: ${yamlScalar(opts.label)}`,
+    ...core,
+    ...blockList("apps", opts.apps, true),
+    "---",
+    "",
+  ].join("\n");
+}
+
+export function buildEntityStub(opts: ContextRecordStubOptions): string {
+  // properties and relationships are schema-required, so they are written empty
+  // rather than omitted; the author fills them in the record's own editor.
+  return buildRecordStub("app-context-entity.json", opts, [
+    "properties: []",
+    "relationships: {}",
+  ]);
+}
+
+export function buildFeatureStub(opts: ContextRecordStubOptions): string {
+  return buildRecordStub(
+    "app-context-pattern.json",
+    opts,
+    blockList("components", opts.components ?? []),
+  );
+}
+
 const FRONTMATTER_RE = /^(---\r?\n)([\s\S]*?)(\r?\n---)/;
+
+/**
+ * The product slugs a record declares, or an empty list when it declares none
+ * and when the frontmatter cannot be parsed. Used to describe a record that
+ * exists only as a staged file, which no merged graph can answer for.
+ */
+export function appsInRecord(text: string): string[] {
+  const m = FRONTMATTER_RE.exec(text);
+  if (!m) return [];
+  try {
+    const data = parseYaml(m[2]!) as { apps?: unknown } | null;
+    const apps = data?.apps;
+    return Array.isArray(apps)
+      ? apps.filter((a): a is string => typeof a === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Appends `appSlug` to the record's top-level `apps:` list.
