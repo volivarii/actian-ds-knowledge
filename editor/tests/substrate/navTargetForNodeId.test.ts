@@ -57,3 +57,31 @@ test("round-trips with candidateNodeIdForFile for file-backed prefixes", () => {
     assert.equal(candidateNodeIdForFile(target), id);
   }
 });
+
+test("navTargetForNodeId resolves app-context nodes to their src files", () => {
+  assert.equal(
+    navTargetForNodeId("app:studio"),
+    "app-context/src/apps/studio.md",
+  );
+  assert.equal(
+    navTargetForNodeId("entity:dataset"),
+    "app-context/src/entities/dataset.md",
+  );
+  assert.equal(
+    navTargetForNodeId("pattern:import-wizard"),
+    "app-context/src/patterns/import-wizard.md",
+  );
+});
+
+test("navTargetForNodeId keeps existing mappings (component -> workspace, content -> null)", () => {
+  assert.equal(navTargetForNodeId("component:button"), "workspace/button");
+  assert.equal(
+    navTargetForNodeId("foundation:color-primitives"),
+    "foundations/src/color-primitives.md",
+  );
+  assert.equal(
+    navTargetForNodeId("a11y:principles"),
+    "accessibility/src/principles.md",
+  );
+  assert.equal(navTargetForNodeId("content:forms"), null);
+});

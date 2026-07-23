@@ -20,6 +20,36 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **The editor can finally answer what belongs to which product.** Opening a product now shows the
+  entities and features that are part of it; opening an entity or a feature shows the products it
+  belongs to, kept separate from what it depends on (a feature lists the design-system components it
+  is built from). The data was always there: application-context files were the one part of the
+  substrate that never resolved to a node in the knowledge graph, so the relations panel sat empty on
+  exactly the records whose purpose is expressing belonging. Editor-only, version-neutral.
+  ([#479](https://github.com/volivarii/actian-ds-knowledge/pull/479))
+- **Create an entity or a feature in the editor, and join one that already exists.** The Entities and
+  Features sections now carry their own "+", so an app team can bring the things their product works
+  with and the things people do in it, not just the product itself. Because entity and feature names
+  are a single flat namespace shared by every product, a name that is already taken is treated as the
+  normal case rather than an error: the dialog shows the record that exists and the products using
+  it, and offers to add your product to that record instead of forking a second one. A feature can
+  also declare the design-system components it is built from, which is the link between a product's
+  context and the shared core. Editor-only, version-neutral.
+  ([#478](https://github.com/volivarii/actian-ds-knowledge/pull/478))
+- **Create a product in the editor (application context).** The Products section now carries a
+  "New product" affordance, so an app team can bring its own context into the knowledge layer instead
+  of only editing what already exists. The dialog writes a schema-valid
+  `app-context/src/apps/<slug>.md` and, for each existing feature or entity the product reuses,
+  appends the product to that record's `apps:` list in the same batch, so it all lands as one
+  reviewable pull request. Records other products already depend on are labelled as shared and named
+  in a disclosure before you confirm, because that write edits a file those products rely on. Records
+  that could not be joined are reported rather than dropped. Editor-only, version-neutral.
+  ([#477](https://github.com/volivarii/actian-ds-knowledge/pull/477))
+- **Cross-domain search in the editor header.** A single search in the top bar (also `Cmd/Ctrl-K`)
+  now spans components, foundations, content, accessibility, and the products, entities, and features
+  that use the system, with grouped, typed, author-language results that open the thing directly. It
+  replaces the thin command-palette modal (its actions moved into the same search). The home hero was
+  simplified. Editor-only, version-neutral. ([#476](https://github.com/volivarii/actian-ds-knowledge/pull/476))
 - **Gray-box to zero: 22 hand-authored render leaves across 5 component families** ([#472](https://github.com/volivarii/actian-ds-knowledge/pull/472)).
   Continues the #465 slice. Real DS-fidelity HTML render cases (in `ds-html-map.js` + `ds-base.css`) now
   exist for 22 curated components, wired into **both** the plugin renderer (`BUILT_SLUGS`) and the
@@ -173,6 +203,19 @@ Each entry links its pull request. Dates are the merge date (UTC).
   from the whole selector so a member-scoped hue (`.ds-tag-stage.ds-tag--lime`) is checked against
   that member's capture instead of `tag-default`'s. Mutation-verified both ways: a fabricated literal
   and a fabricated wrapped `var()` are each caught.
+- **`RENDER_SLUGS` is derived from the renderer's own switch instead of restating it.**
+  `matrix.js` already documented where the truth lived ("the render slugs are the `case "<slug>":`
+  branches in `ds-html-map.js`") and then listed all 63 by hand anyway, so adding or renaming a
+  component took three coordinated edits across two files. #465 shipped a slug that never reached the
+  canonical render library for exactly that reason: the case existed, `BUILT_SLUGS` listed it, and
+  this list did not. `matrix.js` is node-only, so it now parses the sibling source, and throws if it
+  finds no cases rather than letting an empty list silently skip every render.
+  `ds-html-map.js` keeps its `BUILT_SLUGS` literal because that module is browser-capable and cannot
+  read its own source, which leaves one hand-written list where there were two. Invariant 8 changes
+  meaning as a result: it used to compare two hand lists, so forgetting both passed silently, and it
+  now compares the derived set against `BUILT_SLUGS` and catches a case added without a matching
+  entry. Mutation-verified. **The regenerated canonical manifest is set-identical but reordered**,
+  because the derive sorts, so the output cannot shift depending on where a case is inserted.
 - **Three render gates that could not fail were made able to fail** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
   Deleting a frozen oracle is only safe if what remains actually bites, so three weak checks were
   repaired in the same change, all mutation-verified. `groupFor` in `matrix.js` ends in

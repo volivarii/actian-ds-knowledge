@@ -9,9 +9,9 @@
 //   - honest status (real counts, gaps shown as a to-do list)
 //   - can't-break-anything messaging on the editing loop
 //
-// Graph counts come from the baked bundle (no fetch); coverage resolves
-// through the memoized loadCoverage, so this screen and the Explore
-// dashboards all share one fetch.
+// Coverage (the hero's "N of M components have authored guidance" badge,
+// and the needs-attention list) resolves through the memoized loadCoverage,
+// so this screen and the Explore dashboards all share one fetch.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Octokit } from "@octokit/rest";
@@ -39,7 +39,6 @@ import {
   type AttentionBand,
 } from "../lib/needsAttention";
 import { DOMAIN_LABEL } from "../lib/workspaceState";
-import { graphNodes, graphEdges } from "../substrate/taxonomyAssets";
 import { CoverageDashboard } from "./CoverageDashboard";
 import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
 import { GraphHealthTab } from "./GraphHealthTab";
@@ -49,7 +48,8 @@ export type ExploreTab = "coverage" | "accessibility" | "relationships";
 export interface HomeScreenProps {
   octokit: Octokit;
   onOpenFile: (path: string) => void;
-  /** Opens the global command palette (owned by App). */
+  /** Focuses the header's GlobalSearch input (owned by App), wired through
+   *  EditorShell's onFocusSearch. */
   onFindComponent?: () => void;
   /** Optional controlled Explore-tab state (owned by EditorShell so the
    *  chosen tab survives navigating into a file and back — the behavior
@@ -131,28 +131,21 @@ export function HomeScreen({
       {/* ── Hero ───────────────────────────────────────────────────────── */}
       <Box mb="5" style={{ maxWidth: 680 }}>
         <Heading as="h1" size="7" mb="2">
-          Everything the design system knows, in one place you can edit.
+          Browse and edit the design system.
         </Heading>
         <Text size="3" color="gray" as="p" mb="3">
-          Components and their guidance, writing rules, foundations,
-          accessibility, and the products they serve. Change anything: your edit
-          becomes a pull request that is checked and reviewed before it ships,
-          so you cannot break anything.
+          Its components, guidance, foundations, accessibility, and the products
+          that use them. Every edit opens a pull request that is reviewed before
+          it ships.
         </Text>
-        <Flex gap="2" wrap="wrap">
-          <Badge variant="soft" color="gray" size="2">
-            {graphNodes.length} pieces of knowledge
-          </Badge>
-          <Badge variant="soft" color="gray" size="2">
-            {graphEdges.length} connections between them
-          </Badge>
-          {counts && (
+        {counts && (
+          <Flex gap="2" wrap="wrap">
             <Badge variant="soft" color="gray" size="2">
               {counts.authored} of {counts.total} components have authored
               guidance
             </Badge>
-          )}
-        </Flex>
+          </Flex>
+        )}
       </Box>
 
       {/* ── Start here ─────────────────────────────────────────────────── */}

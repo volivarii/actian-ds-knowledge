@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import { Badge, Box, Flex, Heading, Switch, Text } from "@radix-ui/themes";
 import {
@@ -15,11 +15,35 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { listDirectories, listFilesByGlob } from "./githubApi";
+import {
+  getTextFileWithSha,
+  listDirectories,
+  listFilesByGlob,
+} from "./githubApi";
 import { loadOrderManifest } from "../lib/orderManifestLoader";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 import { AddSectionDialog } from "./AddSectionDialog";
+import { NewProductDialog, type NewProductValue } from "./NewProductDialog";
+import {
+  NewContextRecordDialog,
+  type NewContextRecordValue,
+} from "./NewContextRecordDialog";
+import {
+  listComponents,
+  listContextRecords,
+  listProducts,
+  type ContextRecord,
+} from "../lib/contextRecords";
+import { createProduct } from "../lib/createProduct";
+import { appsInRecord } from "../lib/appContextCreate";
+import {
+  createContextRecord,
+  joinExistingRecord,
+  pathForContextRecord,
+  type ContextRecordKind,
+  type ContextRecordDeps,
+} from "../lib/createContextRecord";
 import { appendSlug, moveSlug, removeSlug } from "../lib/orderManifest";
 import { buildMarkdownStub } from "../lib/markdownStubs";
 import { ReorderHandle } from "./ReorderHandle";
@@ -200,6 +224,73 @@ export function Sidebar({
     subDir?: string;
     existingSlugs: string[];
   } | null>(null);
+  const [newProductOpen, setNewProductOpen] = useState(false);
+  const [newRecordKind, setNewRecordKind] = useState<ContextRecordKind | null>(
+    null,
+  );
+  // Products offered by the record dialogs come from the files the sidebar
+  // lists, not from the graph alone, so a product created earlier in this same
+  // batch can be picked before it has ever been merged. The graph supplies the
+  // label when it knows one.
+  const products = useMemo(() => {
+    const labelBySlug = new Map(listProducts().map((p) => [p.slug, p.label]));
+    return (entries?.appContextApps ?? []).map(slugFromPath).map((slug) => ({
+      slug,
+      label: labelBySlug.get(slug) ?? humanizeSlug(slug),
+    }));
+  }, [entries?.appContextApps]);
+
+  // The collision check reads from here, so it must include records this batch
+  // created: the baked graph only knows what has merged, and a check that
+  // cannot see the duplicates it just made is no check at all. A staged record
+  // reports the products IT declares, read from the file itself, because no
+  // merged graph can answer for a file that has never merged.
+  const contextRecords = useMemo(() => {
+    const merged = listContextRecords();
+    const known = new Set(merged.map((r) => `${r.kind}:${r.slug}`));
+    const labelBySlug = new Map(products.map((p) => [p.slug, p.label]));
+    const pending: ContextRecord[] = [];
+    for (const [kind, key] of [
+      ["entity", "appContextEntities"],
+      ["feature", "appContextPatterns"],
+    ] as const) {
+      for (const file of entries?.[key] ?? []) {
+        const slug = slugFromPath(file);
+        if (known.has(`${kind}:${slug}`)) continue;
+        const path = pathForContextRecord(kind, slug);
+        const staged = cartEntries.find((e) => e.path === path && !e.deleted);
+        const appSlugs = staged ? appsInRecord(staged.content) : [];
+        pending.push({
+          kind,
+          slug,
+          label: humanizeSlug(slug),
+          path,
+          usedBy: appSlugs.map((s) => labelBySlug.get(s) ?? humanizeSlug(s)),
+          usedBySlugs: appSlugs,
+          pending: true,
+        });
+      }
+    }
+    return [...merged, ...pending].sort(
+      (a, b) => a.kind.localeCompare(b.kind) || a.label.localeCompare(b.label),
+    );
+  }, [
+    entries?.appContextEntities,
+    entries?.appContextPatterns,
+    cartEntries,
+    products,
+  ]);
+  const graphComponents = useMemo(() => listComponents(), []);
+
+  // Each application-context section owns its own create affordance.
+  const appContextAdd: Record<
+    "apps" | "entities" | "patterns",
+    { label: string; open: () => void }
+  > = {
+    apps: { label: "New product", open: () => setNewProductOpen(true) },
+    entities: { label: "New entity", open: () => setNewRecordKind("entity") },
+    patterns: { label: "New feature", open: () => setNewRecordKind("feature") },
+  };
   const [deleteDialog, setDeleteDialog] = useState<{
     domain: EntriesKey;
     slug: string;
@@ -318,6 +409,127 @@ export function Sidebar({
     });
 
     onSelect(filePath);
+  }
+
+  /**
+   * Creates a product: stages the new app file, which the team owns outright,
+   * plus one edit per shared record it joins. Everything goes into the current
+   * batch so the whole thing is one reviewable pull request. Records that
+   * could not be joined are reported rather than dropped, since a record the
+   * editor failed to update is a record whose product list is now wrong.
+   */
+  /** Cart-backed IO shared by every app-context create and join helper. */
+  function contextCartDeps(): ContextRecordDeps {
+    return {
+      readFile: (path) => getTextFileWithSha(octokit, path),
+      stage: (entry) =>
+        submissionCartSingleton.add({ ...entry, addedAt: Date.now() }),
+      stagedContent: (path) => {
+        const pending = submissionCartSingleton
+          .list()
+          .find((e) => e.path === path);
+        if (!pending || pending.deleted) return null;
+        return { content: pending.content, sha: pending.basedOnSha };
+      },
+    };
+  }
+
+  async function handleCreateProduct(value: NewProductValue) {
+    const result = await createProduct(value, contextCartDeps());
+
+    if (!result.created) {
+      window.alert(
+        `${value.label} is already in this batch, so it was left as it is. ` +
+          `Opening it now.`,
+      );
+      onSelect(result.appPath);
+      return;
+    }
+
+    setEntries((prev) =>
+      prev
+        ? {
+            ...prev,
+            appContextApps: [
+              ...new Set([...prev.appContextApps, `${value.slug}.md`]),
+            ].sort(),
+          }
+        : prev,
+    );
+
+    if (result.failed.length > 0) {
+      const names = result.failed.map((f) => f.label).join(", ");
+      window.alert(
+        `${value.label} was created, but these could not be updated and still ` +
+          `do not list it: ${names}. Open each one and add ${value.label} to ` +
+          `its products.`,
+      );
+    }
+
+    onSelect(result.appPath);
+  }
+
+  /**
+   * Creates an entity or a feature, or joins the one that already carries that
+   * name. Joining is not a fallback: entity and feature names are one flat
+   * namespace across every product, so the record a team wants usually exists
+   * and belongs to someone else's product too, and a second file would split
+   * the vocabulary rather than share it.
+   */
+  async function handleCreateContextRecord(value: NewContextRecordValue) {
+    const deps = contextCartDeps();
+
+    if (value.mode === "join" && value.existing) {
+      const target = value.existing;
+      const result = await joinExistingRecord(
+        { path: target.path, label: target.label, apps: value.apps },
+        deps,
+      );
+      if (result.failed) {
+        window.alert(
+          `${target.label} could not be updated, so it still does not list ` +
+            `your product. Open it and add the product to its list.`,
+        );
+      }
+      onSelect(target.path);
+      return;
+    }
+
+    const { path, created } = createContextRecord(
+      {
+        kind: value.kind,
+        slug: value.slug,
+        label: value.label,
+        apps: value.apps,
+        components: value.components,
+      },
+      deps,
+    );
+
+    if (!created) {
+      // Something is already staged at that path. Staging over it would throw
+      // away whatever the author wrote into it, so open it instead.
+      window.alert(
+        `${value.label} is already in this batch, so it was left as it is. ` +
+          `Opening it now.`,
+      );
+      onSelect(path);
+      return;
+    }
+
+    const entriesKey =
+      value.kind === "entity" ? "appContextEntities" : "appContextPatterns";
+    setEntries((prev) =>
+      prev
+        ? {
+            ...prev,
+            [entriesKey]: [
+              ...new Set([...prev[entriesKey], `${value.slug}.md`]),
+            ].sort(),
+          }
+        : prev,
+    );
+    onSelect(path);
   }
 
   function handleReorderDrop(
@@ -547,6 +759,8 @@ export function Sidebar({
     count: number,
     listId: string,
     onAdd: (() => void) | null,
+    /** Overrides the add affordance's wording; sections default to "section". */
+    addLabel?: string,
   ) {
     const collapsed = sectionCollapsed[key];
     const headerId = `sidebar-section-${key}-header`;
@@ -596,7 +810,7 @@ export function Sidebar({
           {onAdd != null && (
             <button
               type="button"
-              aria-label={`Add ${label} section`}
+              aria-label={addLabel ?? `Add ${label} section`}
               onClick={(e) => {
                 e.stopPropagation();
                 onAdd();
@@ -612,7 +826,7 @@ export function Sidebar({
                 fontFamily: "inherit",
               }}
             >
-              + Add section
+              {addLabel ? `+ ${addLabel}` : "+ Add section"}
             </button>
           )}
           <Text size="1" color="gray">
@@ -773,8 +987,9 @@ export function Sidebar({
           (foundations, components, writing rules, accessibility) vs what
           the products ARE (apps, entities, UX patterns — the app-context
           domain). Group headers make the ontology visible without adding
-          a nav surface or route. Both headers hide when their dimension
-          has no sections, matching the per-section empty guards. */}
+          a nav surface or route. The design-system header hides when its
+          dimension has no sections, matching the per-section empty guards;
+          the application-context one always shows (see below). */}
       {[
         entries.foundations,
         entries.accessibility,
@@ -1012,13 +1227,9 @@ export function Sidebar({
         </Box>
       )}
 
-      {[
-        entries.appContextApps,
-        entries.appContextEntities,
-        entries.appContextPatterns,
-      ].some((e) => e.length > 0) && (
-        <DimensionHeader>Application context</DimensionHeader>
-      )}
+      {/* Always shown: Products carries the "+" that creates one, so an empty
+          application-context layer must still offer its own way in. */}
+      <DimensionHeader>Application context</DimensionHeader>
 
       {(
         [
@@ -1027,14 +1238,24 @@ export function Sidebar({
           ["appContextPatterns", "patterns"],
         ] as const
       ).map(([entriesKey, kind]) => {
+        // All three always render, empty or not: each one carries the "+" that
+        // creates its first record, so hiding an empty section would hide the
+        // only way in.
         const items = entries[entriesKey];
-        if (items.length === 0) return null;
         const label = APP_CONTEXT_LABEL[kind];
         const listId = `list-appcontext-${kind}`;
         const collapsed = sectionCollapsed[entriesKey];
+        const add = appContextAdd[kind];
         return (
           <Box key={entriesKey}>
-            {sectionHeader(entriesKey, label, items.length, listId, null)}
+            {sectionHeader(
+              entriesKey,
+              label,
+              items.length,
+              listId,
+              () => add.open(),
+              add.label,
+            )}
             {!collapsed && (
               <Box
                 id={listId}
@@ -1085,6 +1306,46 @@ export function Sidebar({
               console.error("Add section failed:", err);
               window.alert(
                 `Couldn't add section: ${err instanceof Error ? err.message : String(err)}`,
+              );
+            }
+          }}
+        />
+      )}
+      {newProductOpen && (
+        <NewProductDialog
+          open
+          existingSlugs={entries.appContextApps.map(slugFromPath)}
+          records={contextRecords}
+          onCancel={() => setNewProductOpen(false)}
+          onConfirm={async (value) => {
+            setNewProductOpen(false);
+            try {
+              await handleCreateProduct(value);
+            } catch (err) {
+              console.error("Create product failed:", err);
+              window.alert(
+                `Couldn't create the product: ${err instanceof Error ? err.message : String(err)}`,
+              );
+            }
+          }}
+        />
+      )}
+      {newRecordKind && (
+        <NewContextRecordDialog
+          open
+          kind={newRecordKind}
+          records={contextRecords}
+          products={products}
+          components={graphComponents}
+          onCancel={() => setNewRecordKind(null)}
+          onConfirm={async (value) => {
+            setNewRecordKind(null);
+            try {
+              await handleCreateContextRecord(value);
+            } catch (err) {
+              console.error("Create context record failed:", err);
+              window.alert(
+                `Couldn't save that: ${err instanceof Error ? err.message : String(err)}`,
               );
             }
           }}

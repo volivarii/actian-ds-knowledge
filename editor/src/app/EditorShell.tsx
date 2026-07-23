@@ -33,9 +33,9 @@ interface EditorShellProps {
   /** Opens the SubmissionStaging dialog (owned by App). Used by the
    *  DraftInbox surface to offer a one-click escalation to submit. */
   onOpenStaging?: () => void;
-  /** Opens the global command palette (owned by App). Used by the
+  /** Focuses the header's GlobalSearch input (owned by App). Used by the
    *  HomeScreen's "Find a component" action. */
-  onOpenPalette?: () => void;
+  onFocusSearch?: () => void;
 }
 
 /**
@@ -95,7 +95,7 @@ export function EditorShell({
   activePath = null,
   setActivePath,
   onOpenStaging,
-  onOpenPalette,
+  onFocusSearch,
 }: EditorShellProps) {
   const setActivePathSafe = setActivePath ?? (() => {});
   const [ghError, setGhError] = useState<string | null>(null);
@@ -173,7 +173,7 @@ export function EditorShell({
       <HomeScreen
         octokit={gh}
         onOpenFile={setActivePathSafe}
-        onFindComponent={onOpenPalette}
+        onFindComponent={onFocusSearch}
         exploreTab={exploreTab}
         onExploreTabChange={setExploreTab}
       />
