@@ -6665,6 +6665,19 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
+      "source": "component:radio",
+      "target": "a11y:forms",
+      "scope": "component",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "components/src/radio/",
+        "deriver": "derive-graph.js",
+        "method": "meta.a11y_refs"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "a11y_ref",
       "source": "component:rich-text",
       "target": "a11y:forms",
       "scope": "component",
@@ -13786,12 +13799,6 @@
       "edgeType": "related",
       "source": "content:forms",
       "target": "component:radio"
-    },
-    {
-      "@type": "Edge",
-      "edgeType": "related",
-      "source": "content:forms",
-      "target": "component:search-filters"
     },
     {
       "@type": "Edge",

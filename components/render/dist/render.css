@@ -2963,13 +2963,11 @@
  * literal value ships (value-first, see scripts/render/derive-appearance.js
  * bindColor). Derived from components/dist/anatomy/tag-default.json. */
 /* Fill only: the redesign removed the border from every hue (see .ds-tag).
- * Gray is no longer a tag-default Color value -- it survives here because
- * tag-stage's own default IS Gray (#e1e1e6) and search-result-card renders a
- * stage pill with it, so this rule is grounded in tag-stage's capture rather
- * than tag-default's. */
-.ds-tag--gray {
-  background: var(--zen-color-neutral-50); /* #e1e1e6 */
-}
+ * Gray deliberately has NO rule here. It is still a live tag-default Color
+ * (the registry lists it, and the capture is undegraded), but it now resolves
+ * to the same #dde6ec as Color=Default, which is why it carries no delta in
+ * the anatomy and why a dedicated rule would be a no-op. tag-stage's Gray is
+ * a different colour and gets its own scoped rule further down. */
 .ds-tag--indigo {
   background: #cfeafd;
 }
@@ -3041,6 +3039,9 @@
  * Lime and Orange no longer share a value, so the two rules below override
  * the shared .ds-tag--<hue> fill for stage pills only. The other five hues
  * still match tag-default exactly and are left to the shared rules. */
+.ds-tag-stage.ds-tag--gray {
+  background: var(--zen-color-neutral-50); /* #e1e1e6, not tag-default #dde6ec */
+}
 .ds-tag-stage.ds-tag--lime {
   background: var(
     --zen-color-success-50
@@ -3084,7 +3085,7 @@
  * against the frozen tokens.css snapshot, so each fill ships literal. */
 .ds-tag--status-error {
   /* Fail. Captured --zen-color-bg-error, which tokens.css resolves to
-   * #f7f4f2 rather than the captured #fff4ec -- literal. */
+   * #f8f4f3 rather than the captured #fff4ec -- literal. */
   background: #fff4ec;
 }
 .ds-tag--status-info {

@@ -68,6 +68,10 @@ test("collectComponentsAndCategories: category overrides apply only when the reg
   var overrideEdge = out.edges.find(function (e) {
     return (
       e.type === "in_category" &&
+      // Synthetic registry above, not the real one: this fixture defines its
+      // own "radio-button" entry, so the slug here is fixture data and is
+      // deliberately NOT swept along by the upstream radio-button -> radio
+      // rename. The sibling test that reads the REAL graph.json is.
       e.source === "component:radio-button" &&
       e.target === "category:form-input-selection"
     );
@@ -391,11 +395,11 @@ test("graph.json: category-override stopgap keeps in_category edges for category
     graph.edges.some(function (e) {
       return (
         e.type === "in_category" &&
-        e.source === "component:radio-button" &&
+        e.source === "component:radio" &&
         e.target === "category:form-input-selection"
       );
     }),
-    "expected component:radio-button -> category:form-input-selection via the curated override (components/src/category-overrides.json)",
+    "expected component:radio -> category:form-input-selection via the curated override (components/src/category-overrides.json)",
   );
 });
 

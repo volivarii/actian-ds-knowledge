@@ -190,9 +190,17 @@ function checkBaseCssRules(cssText, facts, tokenMap) {
   var re = /([^{}]*?)\.ds-tag--([a-z0-9-]+)\s*\{([^}]*)\}/g;
   var m;
   while ((m = re.exec(cssText)) !== null) {
-    var scope = m[1].split("}").pop();
+    // Strip comments and keep only the trailing selector fragment: [^{}]*?
+    // cannot cross a brace, so m[1] starts right after the previous rule's },
+    // which means it also sweeps up any comment block between the two rules.
+    // Left raw, a violation would print that whole comment as the selector.
+    var scope = m[1]
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .split("\n")
+      .pop()
+      .trim();
     var modifier = m[2];
-    var selector = (scope + ".ds-tag--" + modifier).trim();
+    var selector = scope + ".ds-tag--" + modifier;
     var owner = /\.ds-tag-stage\b/.test(scope)
       ? facts["tag-stage"] || resolveTagOwner(modifier, facts)
       : resolveTagOwner(modifier, facts);
@@ -251,12 +259,14 @@ if (require.main === module) {
         "tag-status": A.readAppearance("tag-status", anatomyDir),
         // Owner for rules scoped to .ds-tag-stage (see checkBaseCssRules).
         "tag-stage": A.readAppearance("tag-stage", anatomyDir),
-        // The Gray hue left tag-default in the 2026-07-23 redesign and now
-        // lives only as tag-stage's own default, so .ds-tag--gray's owning
-        // capture is tag-stage. Registered under the modifier key that
-        // resolveTagOwner looks up, rather than leaving it to fall back to
-        // tag-default, which no longer carries the colour at all.
-        "tag-gray": A.readAppearance("tag-stage", anatomyDir),
+        // Deliberately NO "tag-gray" entry. An earlier pass registered one
+        // pointing at tag-stage so a .ds-tag--gray rule carrying tag-stage's
+        // #e1e1e6 would pass, which made the gate agree with a wrong colour by
+        // construction instead of catching it. Gray is still a tag-default
+        // Color; it simply equals Color=Default now, so an unscoped
+        // .ds-tag--gray belongs to tag-default and the default fallback checks
+        // it correctly. tag-stage's own Gray is a scoped rule and routes via
+        // the selector.
         checkbox: A.readAppearance("checkbox", anatomyDir),
       },
       tokenMap,

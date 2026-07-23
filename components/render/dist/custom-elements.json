@@ -2276,6 +2276,9 @@
               "name": "--zen-color-icon-default"
             },
             {
+              "name": "--zen-color-neutral-50"
+            },
+            {
               "name": "--zen-color-success-50"
             },
             {

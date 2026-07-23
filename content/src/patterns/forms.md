@@ -5,7 +5,7 @@ nav_order: 14
 # category that benefit from form-level layout/labeling/copy guidance.
 # Skipped: search, search-dropdown-menu (search has its own pattern), and
 # calendar (date-picker is narrower). Jeff: edit/correct/extend.
-relatedComponents: [text-input, input-date, checkbox, radio, toggle, search-filters, segmented-control]
+relatedComponents: [text-input, input-date, checkbox, radio, toggle, segmented-control]
 ---
 # Forms
 
@@ -258,7 +258,7 @@ Use card-format radio buttons instead of traditional radio buttons when each opt
 
 * The choice takes effect immediately, with no separate submit step.
 
-**Use a** **[radio button](#radio)** **group when:**
+**Use a** **[radio button](#radio-button)** **group when:**
 
 * The choice is part of a form and applies on submit.
 

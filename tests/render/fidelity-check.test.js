@@ -37,9 +37,13 @@ test('fidelityCheck: the real derive has zero source:"derived" renders today, so
 test("fidelityCheck: a wrong derived color is caught", function () {
   // fidelityCheck is retained for a future escape-hatch template, but no real
   // slug is templated now, so construct the source:"derived" canonical inline.
-  // #000000 is not a tag-default appearance fact color, so the gate must name it.
+  // #123456 is not a tag-default appearance fact color, so the gate must name
+  // it. Deliberately fabricated rather than a real DS colour: this sentinel was
+  // #000000 until the 2026-07-23 capture made that a genuine tag-default fact
+  // (the label text), quietly turning the assertion into a no-op. A colour the
+  // palette can never adopt cannot go stale.
   var canonical = {
-    css: "/* tag-default (derived-from-facts) */\n.ds-tag--pink{background:#000000}\n",
+    css: "/* tag-default (derived-from-facts) */\n.ds-tag--pink{background:#123456}\n",
     manifest: { renders: [{ slug: "tag-default", source: "derived" }] },
   };
   var v = F.fidelityCheck(canonical, { anatomyDir: ANATOMY, tokenMap: {} });
@@ -94,6 +98,10 @@ test("checkBaseCssRules: the real ds-base.css tag/checkbox rules pass", function
     // the modifier regex to cross hyphens), so its fact source must be
     // registered here too, mirroring the CLI's require.main registration.
     "tag-status": A.readAppearance("tag-status", ANATOMY),
+    // tag-stage owns the .ds-tag-stage-scoped hue overrides (its Gray, Lime and
+    // Orange fills diverged from tag-default's in the 2026-07-23 redesign), so
+    // its facts must be in scope or those correct values read as violations.
+    "tag-stage": A.readAppearance("tag-stage", ANATOMY),
     checkbox: A.readAppearance("checkbox", ANATOMY),
   };
   var v = F.checkBaseCssRules(dsBaseCss, facts, tokenMap);
@@ -102,7 +110,7 @@ test("checkBaseCssRules: the real ds-base.css tag/checkbox rules pass", function
   // the gate catches it. Guards against a selector-regex regression that would
   // silently match nothing, making the pass above vacuous.
   var corrupted = dsBaseCss.replace(
-    "background: #fff5f6;",
+    "background: #ffd6d8;",
     "background: #123456;",
   );
   assert.notEqual(
@@ -130,31 +138,35 @@ test("checkBaseCssRules: a fabricated modifier cannot pass by borrowing a siblin
   // to tag-default -- whose Color axis never captured #000000 -- and must
   // still be flagged, even though tag-catalog (a sibling entry in the SAME
   // facts map) legitimately owns #000000.
+  // The borrowed value used to be tag-catalog's #000000 text colour, but the
+  // 2026-07-23 capture moved the tag label to #000000 too, so tag-default began
+  // owning it legitimately and this assertion stopped discriminating. #fff4ec
+  // belongs to exactly one owner in the family and the hue axis has no claim.
   var facts = {
     "tag-default": A.readAppearance("tag-default", ANATOMY),
-    "tag-catalog": A.readAppearance("tag-catalog", ANATOMY),
+    "tag-status": A.readAppearance("tag-status", ANATOMY),
     checkbox: A.readAppearance("checkbox", ANATOMY),
   };
-  var tokenMap = { "--zen-color-text-default": "#000000" };
+  var tokenMap = {};
   var cssText =
-    ".ds-tag--bogus { background: #000000; }\n" +
-    ".ds-tag--catalog { color: var(--zen-color-text-default); }\n";
+    ".ds-tag--bogus { background: #fff4ec; }\n" +
+    ".ds-tag--status-error { background: #fff4ec; }\n";
   var v = F.checkBaseCssRules(cssText, facts, tokenMap);
   assert.ok(
     v.some(function (m) {
-      return /\.ds-tag--bogus/.test(m) && /#000000/.test(m);
+      return /\.ds-tag--bogus/.test(m) && /#fff4ec/.test(m);
     }),
-    "a fabricated .ds-tag--bogus borrowing tag-catalog's #000000 text-color " +
-      "fact must still violate (checked against tag-default, which does not " +
-      "own #000000), got: " +
+    "a fabricated .ds-tag--bogus borrowing tag-status's #fff4ec Fail fill " +
+      "must still violate (checked against tag-default, which does not " +
+      "own #fff4ec), got: " +
       JSON.stringify(v),
   );
   assert.ok(
     !v.some(function (m) {
-      return /\.ds-tag--catalog/.test(m);
+      return /\.ds-tag--status-error/.test(m);
     }),
-    "legitimate .ds-tag--catalog color must pass (checked against its own " +
-      "owning fact source, tag-catalog), got: " +
+    "legitimate .ds-tag--status-error fill must pass (checked against its " +
+      "own owning fact source, tag-status), got: " +
       JSON.stringify(v),
   );
 });
@@ -211,6 +223,7 @@ test("checkBaseCssRules: the real .ds-tag--status-* family rules pass, and comme
     "tag-catalog": A.readAppearance("tag-catalog", ANATOMY),
     "tag-shared": A.readAppearance("tag-shared", ANATOMY),
     "tag-status": A.readAppearance("tag-status", ANATOMY),
+    "tag-stage": A.readAppearance("tag-stage", ANATOMY),
     checkbox: A.readAppearance("checkbox", ANATOMY),
   };
   var v = F.checkBaseCssRules(dsBaseCss, facts, tokenMap);

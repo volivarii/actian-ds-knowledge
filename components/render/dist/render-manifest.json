@@ -377,7 +377,7 @@
       "tagName": "zen-tag-stage",
       "group": "Data Display",
       "fragment": "fragments/tag-stage.html",
-      "tokensConsumed": 6,
+      "tokensConsumed": 7,
       "source": "rendered"
     },
     {

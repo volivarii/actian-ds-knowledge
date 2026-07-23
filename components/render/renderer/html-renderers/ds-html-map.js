@@ -1579,10 +1579,12 @@
           // resolve. State is a secondary axis (isSecondaryAxis in
           // matrix.js), so MATRIX_OVERRIDES["collapse-accordion"] supplies
           // real Title/Body -- the generic derivation would only ever feed
-          // props:{Label:"Collapsed"|"Expanede"}. Missing chevron-down
-          // glyph (dskit.icons has no down variant): the collapsed chevron
-          // is chevron-up rotated 180deg, mirroring the button case's
-          // trailing-icon idiom.
+          // props:{Label:"Collapsed"|"Expanede"}. The caret is arrow-down,
+          // which points down as drawn, so the EXPANDED state is the one
+          // that rotates 180deg. (Before the 2026-07-23 icon rework this was
+          // chevron-up with the rotation on the collapsed state; chevron-up
+          // was deleted upstream with no successor, and arrow-down is the
+          // same glyph pointing the other way.)
           var accExpanded =
             String(v.State || "")
               .toLowerCase()
