@@ -20,6 +20,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **Create a product in the editor (application context).** The Products section now carries a
+  "New product" affordance, so an app team can bring its own context into the knowledge layer instead
+  of only editing what already exists. The dialog writes a schema-valid
+  `app-context/src/apps/<slug>.md` and, for each existing feature or entity the product reuses,
+  appends the product to that record's `apps:` list in the same batch, so it all lands as one
+  reviewable pull request. Records other products already depend on are labelled as shared and named
+  in a disclosure before you confirm, because that write edits a file those products rely on. Records
+  that could not be joined are reported rather than dropped. Editor-only, version-neutral.
+  ([#477](https://github.com/volivarii/actian-ds-knowledge/pull/477))
 - **Cross-domain search in the editor header.** A single search in the top bar (also `Cmd/Ctrl-K`)
   now spans components, foundations, content, accessibility, and the products, entities, and features
   that use the system, with grouped, typed, author-language results that open the thing directly. It

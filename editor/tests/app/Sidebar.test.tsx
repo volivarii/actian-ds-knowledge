@@ -831,3 +831,186 @@ test("anchorIndex — findReferences returns empty array when cache is null (Iss
     "findReferences must return [] when cache is null (the silent-bypass risk that preload fixes)",
   );
 });
+
+// ---------------------------------------------------------------------------
+// Creating a product (application context)
+// ---------------------------------------------------------------------------
+
+const DATASET_PATH = "app-context/src/entities/dataset.md";
+const DATASET_FILE = `---
+_schema_version: 1
+slug: dataset
+label: Dataset
+apps:
+  - studio
+---
+A collection of records.
+`;
+
+const APP_CONTEXT_LISTINGS = {
+  ...LISTINGS,
+  "app-context/src/apps": [{ name: "studio.md", type: "file" as const }],
+  "app-context/src/entities": [{ name: "dataset.md", type: "file" as const }],
+  "app-context/src/patterns": [],
+};
+
+/** Directory listings plus one real file blob, for the claim round-trip. */
+function fakeGhWithFiles(
+  listings: Record<string, Array<{ name: string; type: "file" | "dir" }>>,
+  files: Record<string, string> = {},
+) {
+  return {
+    repos: {
+      getContent: async ({ path }: { path: string }) => {
+        if (path in files) {
+          return {
+            data: {
+              content: btoa(files[path]!),
+              encoding: "base64",
+              sha: `fake-sha-${path}`,
+            },
+          };
+        }
+        if (!(path in listings)) {
+          const err = new Error("not found") as Error & { status: number };
+          err.status = 404;
+          throw err;
+        }
+        return { data: listings[path] };
+      },
+    },
+  } as any;
+}
+
+test("Sidebar: Products carries a New product affordance", async () => {
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGhWithFiles(APP_CONTEXT_LISTINGS)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Products"));
+  assert.ok(screen.getByRole("button", { name: "New product" }));
+});
+
+// The affordance has to survive the empty state, or the one team that most
+// needs it (the first one, with nothing authored yet) cannot reach it.
+test("Sidebar: an empty application context still offers New product", async () => {
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGhWithFiles({
+          ...LISTINGS,
+          "app-context/src/apps": [],
+          "app-context/src/entities": [],
+          "app-context/src/patterns": [],
+        })}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Application context"));
+  assert.ok(screen.getByText("Products"));
+  assert.ok(screen.getByRole("button", { name: "New product" }));
+  assert.equal(screen.queryByText("Entities"), null);
+});
+
+test("Sidebar: creating a product stages the product file and the joined record", async () => {
+  submissionCartSingleton.clear();
+  const selected: (string | null)[] = [];
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGhWithFiles(APP_CONTEXT_LISTINGS, {
+          [DATASET_PATH]: DATASET_FILE,
+        })}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={(p) => selected.push(p)}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Products"));
+  fireEvent.click(screen.getByRole("button", { name: "New product" }));
+
+  fireEvent.change(await screen.findByLabelText("Product name"), {
+    target: { value: "Data Connect" },
+  });
+  fireEvent.click(screen.getByRole("checkbox", { name: /^Dataset/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Create product" }));
+
+  await waitFor(() =>
+    assert.ok(
+      submissionCartSingleton.has("app-context/src/apps/data-connect.md"),
+    ),
+  );
+  const cart = submissionCartSingleton.list();
+  const app = cart.find(
+    (e) => e.path === "app-context/src/apps/data-connect.md",
+  );
+  assert.ok(app);
+  assert.match(app.content, /^label: Data Connect$/m);
+  assert.equal(app.basedOnSha, "");
+
+  await waitFor(() => assert.ok(submissionCartSingleton.has(DATASET_PATH)));
+  const joined = submissionCartSingleton.list().find((e) => e.path === DATASET_PATH);
+  assert.ok(joined);
+  assert.match(joined.content, /^apps:\n {2}- studio\n {2}- data-connect$/m);
+  assert.equal(joined.basedOnSha, `fake-sha-${DATASET_PATH}`);
+
+  // The author lands in the product they just created.
+  assert.ok(selected.includes("app-context/src/apps/data-connect.md"));
+  submissionCartSingleton.clear();
+});
+
+// The failure path is the whole point of reporting instead of dropping: if a
+// claimed record cannot be joined, the author has to hear about it, and the
+// product itself must still be staged.
+test("Sidebar: a record that cannot be joined is reported, product still staged", async () => {
+  submissionCartSingleton.clear();
+  const alerts: string[] = [];
+  const originalAlert = window.alert;
+  window.alert = (msg?: unknown) => {
+    alerts.push(String(msg));
+  };
+  try {
+    render(
+      wrap(
+        <Sidebar
+          octokit={fakeGhWithFiles(APP_CONTEXT_LISTINGS, {
+            // No apps: key, so the join has nowhere to land.
+            [DATASET_PATH]: "---\nslug: dataset\n---\nProse.\n",
+          })}
+          pendingPaths={new Set()}
+          activePath={null}
+          onSelect={() => {}}
+        />,
+      ),
+    );
+    await waitFor(() => screen.getByText("Products"));
+    fireEvent.click(screen.getByRole("button", { name: "New product" }));
+    fireEvent.change(await screen.findByLabelText("Product name"), {
+      target: { value: "Data Connect" },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: /^Dataset/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Create product" }));
+
+    await waitFor(() => assert.equal(alerts.length, 1));
+    assert.match(alerts[0]!, /Dataset/);
+    assert.match(alerts[0]!, /Data Connect/);
+    assert.ok(
+      submissionCartSingleton.has("app-context/src/apps/data-connect.md"),
+      "the product must survive one failed join",
+    );
+    assert.equal(submissionCartSingleton.has(DATASET_PATH), false);
+  } finally {
+    window.alert = originalAlert;
+    submissionCartSingleton.clear();
+  }
+});
