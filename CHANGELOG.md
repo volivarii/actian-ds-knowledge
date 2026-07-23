@@ -18,6 +18,16 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Fixed
+
+- **A feature referencing a component that does not exist now fails the graph derive instead of
+  vanishing.** `components[]` on an application-context feature is hand-authored, and an unresolvable
+  slug used to be dropped behind a `console.warn`: the `uses_component` edge simply disappeared, and
+  the feature went on claiming a component it was not connected to, with nothing in CI to notice. It
+  is an error now, listing every offending reference at once. All 93 references resolve today, so
+  this fails only on real drift (a renamed or removed component, a typo, a display name used where a
+  slug belongs). ([#484](https://github.com/volivarii/actian-ds-knowledge/pull/484))
+
 ### Added
 
 - **The editor can finally answer what belongs to which product.** Opening a product now shows the

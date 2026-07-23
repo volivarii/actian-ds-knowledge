@@ -588,7 +588,7 @@ test("collectComponentComposition: a child slug that collides across kits binds 
   assert.equal(edge.target, "component:search"); // binds to the canonical (dskit-origin) node
 });
 
-test("collectPatternComponents: emits ux_pattern->component uses_component edges; drops unresolved; dedups; asserted+provenance", function () {
+test("collectPatternComponents: emits ux_pattern->component uses_component edges; dedups; asserted+provenance", function () {
   var registries = {
     components: {
       table: { name: "Table", category: "Data Display" },
@@ -603,7 +603,7 @@ test("collectPatternComponents: emits ux_pattern->component uses_component edges
       "search-filtered-table": {
         label: "Search-filtered table",
         apps: ["studio"],
-        components: ["table", "tabs", "table", "ghost-x"],
+        components: ["table", "tabs", "table"],
       },
       "no-components": { label: "No components", apps: ["studio"] },
     },
@@ -612,20 +612,11 @@ test("collectPatternComponents: emits ux_pattern->component uses_component edges
   var g = new G();
   D.collectComponentsAndCategories(g, [registries]); // component nodes
   D.collectAppContext(g, ac); // ux_pattern nodes
-  var warns = [];
-  var origWarn = console.warn;
-  console.warn = function (m) {
-    warns.push(m);
-  };
-  try {
-    D.collectPatternComponents(g, ac);
-  } finally {
-    console.warn = origWarn;
-  }
+  D.collectPatternComponents(g, ac);
   var edges = g.build().edges.filter(function (e) {
     return e.type === "uses_component";
   });
-  assert.equal(edges.length, 2); // table (deduped), tabs; ghost-x dropped (no node); no-components emits none
+  assert.equal(edges.length, 2); // table (deduped), tabs; no-components emits none
   edges.forEach(function (e) {
     assert.ok(e.source === "pattern:search-filtered-table");
     assert.ok(e.target === "component:table" || e.target === "component:tabs");
@@ -633,16 +624,94 @@ test("collectPatternComponents: emits ux_pattern->component uses_component edges
     assert.equal(e.provenance.method, "patterns.components");
     assert.equal(e.provenance.source_file, "app-context/dist/app-context.json");
   });
-  assert.ok(
-    !edges.some(function (e) {
-      return e.target === "component:ghost-x";
-    }),
-    "unresolved dropped",
+});
+
+// A reference that matches no component used to vanish behind a console.warn,
+// leaving the feature claiming a component it is not connected to. It is a
+// failure now: this is hand-authored, so a typo or a display name used in place
+// of a slug has to stop the derive rather than quietly shrink the graph.
+test("collectPatternComponents: an unresolved reference fails the derive instead of vanishing", function () {
+  var registries = { components: { table: { name: "Table", category: "Data Display" } } };
+  var ac = {
+    apps: { studio: { label: "Studio" } },
+    entities: {},
+    terminology: {},
+    patterns: {
+      "search-filtered-table": {
+        label: "Search-filtered table",
+        apps: ["studio"],
+        components: ["table", "ghost-x"],
+      },
+    },
+  };
+  var G = require("../scripts/lib/graph/model.js").GraphBuilder;
+  var g = new G();
+  D.collectComponentsAndCategories(g, [registries]);
+  D.collectAppContext(g, ac);
+  assert.throws(
+    function () {
+      D.collectPatternComponents(g, ac);
+    },
+    function (err) {
+      assert.match(err.message, /ghost-x/);
+      assert.match(err.message, /search-filtered-table/);
+      return true;
+    },
   );
-  assert.ok(
-    warns.some(function (w) {
-      return /ghost-x/.test(w);
-    }),
-    "warns on the unresolved authored slug (hand-authored loss surfaces)",
+});
+
+// Every offender in one message, not just the first: a fail-on-first would send
+// an author round the loop once per typo, and a refactor that moved the throw
+// inside the inner loop would otherwise pass unnoticed.
+test("collectPatternComponents: one failure lists every unresolved reference", function () {
+  var registries = { components: { table: { name: "Table", category: "Data Display" } } };
+  var ac = {
+    apps: { studio: { label: "Studio" } },
+    entities: {},
+    terminology: {},
+    patterns: {
+      a: { label: "A", apps: ["studio"], components: ["table", "ghost-one"] },
+      b: { label: "B", apps: ["studio"], components: ["ghost-two"] },
+    },
+  };
+  var G = require("../scripts/lib/graph/model.js").GraphBuilder;
+  var g = new G();
+  D.collectComponentsAndCategories(g, [registries]);
+  D.collectAppContext(g, ac);
+  assert.throws(
+    function () {
+      D.collectPatternComponents(g, ac);
+    },
+    function (err) {
+      assert.match(err.message, /ghost-one/);
+      assert.match(err.message, /ghost-two/, "the second offender must appear too");
+      assert.match(err.message, /^derive-graph: 2 /);
+      return true;
+    },
+  );
+});
+
+// The gate has to be able to see its subject: with every reference resolvable
+// it must stay silent, or it would just be an alarm that is always on.
+test("collectPatternComponents: resolvable references do not fail", function () {
+  var registries = { components: { table: { name: "Table", category: "Data Display" } } };
+  var ac = {
+    apps: { studio: { label: "Studio" } },
+    entities: {},
+    terminology: {},
+    patterns: {
+      p: { label: "P", apps: ["studio"], components: ["table"] },
+    },
+  };
+  var G = require("../scripts/lib/graph/model.js").GraphBuilder;
+  var g = new G();
+  D.collectComponentsAndCategories(g, [registries]);
+  D.collectAppContext(g, ac);
+  D.collectPatternComponents(g, ac);
+  assert.equal(
+    g.build().edges.filter(function (e) {
+      return e.type === "uses_component";
+    }).length,
+    1,
   );
 });
