@@ -397,12 +397,12 @@
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'progress-bar-small' component (content, usage, design, behavior, tokens — each optional)."
     },
-    "components.guidelineDoc.radio-button": {
-      "path": "components/dist/guidelines/radio-button.json",
+    "components.guidelineDoc.radio": {
+      "path": "components/dist/guidelines/radio.json",
       "type": "json",
       "origin": "ci",
       "generator": "scripts/components/derive-guidelines.js",
-      "description": "Merged multi-domain guideline object for the 'radio-button' component (content, usage, design, behavior, tokens — each optional)."
+      "description": "Merged multi-domain guideline object for the 'radio' component (content, usage, design, behavior, tokens — each optional)."
     },
     "components.guidelineDoc.rich-text": {
       "path": "components/dist/guidelines/rich-text.json",

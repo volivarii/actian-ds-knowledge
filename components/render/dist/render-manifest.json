@@ -245,11 +245,11 @@
       "source": "rendered"
     },
     {
-      "slug": "radio-button",
-      "tagName": "zen-radio-button",
+      "slug": "radio",
+      "tagName": "zen-radio",
       "group": "Form (input & selection)",
-      "fragment": "fragments/radio-button.html",
-      "tokensConsumed": 0,
+      "fragment": "fragments/radio.html",
+      "tokensConsumed": 20,
       "source": "rendered"
     },
     {

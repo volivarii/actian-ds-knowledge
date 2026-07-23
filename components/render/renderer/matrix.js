@@ -61,7 +61,7 @@ var RENDER_SLUGS = [
   "page-header",
   "popover",
   "progress-bar-small",
-  "radio-button",
+  "radio",
   "rich-text",
   "search",
   "search-dropdown-menu",
