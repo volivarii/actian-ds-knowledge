@@ -26,7 +26,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   the feature went on claiming a component it was not connected to, with nothing in CI to notice. It
   is an error now, listing every offending reference at once. All 93 references resolve today, so
   this fails only on real drift (a renamed or removed component, a typo, a display name used where a
-  slug belongs). ([#PR](https://github.com/volivarii/actian-ds-knowledge/pull/PR))
+  slug belongs). ([#484](https://github.com/volivarii/actian-ds-knowledge/pull/484))
 
 ### Added
 
