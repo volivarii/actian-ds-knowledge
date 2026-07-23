@@ -2273,19 +2273,22 @@
           "cssParts": [],
           "cssProperties": [
             {
-              "name": "--zen-color-error-800"
-            },
-            {
               "name": "--zen-color-icon-default"
             },
             {
-              "name": "--zen-color-primary-600"
+              "name": "--zen-color-success-50"
             },
             {
-              "name": "--zen-color-success-600"
+              "name": "--zen-color-success-700"
             },
             {
-              "name": "--zen-color-warning-800"
+              "name": "--zen-color-text-tertiary"
+            },
+            {
+              "name": "--zen-color-warning-50"
+            },
+            {
+              "name": "--zen-color-warning-700"
             }
           ]
         }

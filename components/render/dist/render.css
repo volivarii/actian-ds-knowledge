@@ -757,18 +757,21 @@
 }
 
 /* ============ Tag (default) ============ */
-/* Color variant axis renders the Default palette here; per-Color hue palette
- * (<hue>/25 bg + <hue>/50 border) is deferred. */
+/* Re-grounded against the 2026-07-23 capture, which carries a tag redesign:
+ * the old pale-fill-plus-tinted-border treatment became a single flat fill,
+ * and the fill IS the tint the border used to carry (Pink was bg #fff5f6 /
+ * border #ffd6d8, it is now bg #ffd6d8 with no border, and the same holds
+ * for every hue). So the base rule drops its border outright, and the label
+ * moves from text-tertiary to text-default. */
 .ds-tag {
   display: inline-flex;
   align-items: center;
   gap: var(--zen-spacing-2xs); /* 4 */
   height: var(--zen-size-lg); /* 24 */
   padding: 0 var(--zen-spacing-xs); /* 8 */
-  border: 1px solid var(--zen-border-default); /* border-width-md (1) */
   border-radius: var(--zen-border-radius-sm); /* 6 */
-  background: var(--zen-color-bg-subtle);
-  color: var(--zen-color-text-tertiary);
+  background: #dde6ec; /* Color=Default fill, no token captured */
+  color: var(--zen-color-text-default);
   font-family: var(--zen-font-family-text);
   font-size: var(--zen-font-size-sm); /* 12 */
   line-height: var(--zen-font-lineheight-sm); /* 16 */
@@ -2959,37 +2962,34 @@
  * token round-trips to the appearance fact resolved value; otherwise the
  * literal value ships (value-first, see scripts/render/derive-appearance.js
  * bindColor). Derived from components/dist/anatomy/tag-default.json. */
+/* Fill only: the redesign removed the border from every hue (see .ds-tag).
+ * Gray is no longer a tag-default Color value -- it survives here because
+ * tag-stage's own default IS Gray (#e1e1e6) and search-result-card renders a
+ * stage pill with it, so this rule is grounded in tag-stage's capture rather
+ * than tag-default's. */
 .ds-tag--gray {
-  background: #f7fdff;
-  border-color: #dde6ec;
+  background: var(--zen-color-neutral-50); /* #e1e1e6 */
 }
 .ds-tag--indigo {
-  background: #edf6ff;
-  border-color: var(--zen-color-primary-50);
+  background: #cfeafd;
 }
 .ds-tag--lime {
-  background: #f0ffec;
-  border-color: var(--zen-color-success-50);
+  background: #d3e7e0;
 }
 .ds-tag--orange {
-  background: #fff4ec;
-  border-color: var(--zen-color-error-50);
+  background: #ffd7ca;
 }
 .ds-tag--pink {
-  background: #fff5f6;
-  border-color: #ffd6d8;
+  background: #ffd6d8;
 }
 .ds-tag--purple {
-  background: #fff9ff;
-  border-color: #f2e6f8;
+  background: #f2e6f8;
 }
 .ds-tag--teal {
-  background: #ecffff;
-  border-color: #d0efed;
+  background: #d0efed;
 }
 .ds-tag--yellow {
-  background: #fff9e5;
-  border-color: var(--zen-color-warning-100);
+  background: #feeddc;
 }
 
 /* ============ Tag (gray-box-to-zero family 2) ============ */
@@ -2999,17 +2999,15 @@
  * pill with no visible outline, distinct from base .ds-tag's contrasting
  * border. Text color/geometry inherit from base .ds-tag verbatim. */
 .ds-tag--shared {
-  background: #cbe3ff;
-  border-color: #cbe3ff;
+  background: #dde6ec;
+  border: 1px solid #dde6ec;
 }
-/* tag-catalog: icon+label pill. Fill/border match .ds-tag--teal's hexes, but
- * text is --zen-color-text-default (not base .ds-tag's tertiary), so it needs
- * its own rule rather than reusing --teal. Base .ds-tag/.ds-tag__icon already
- * supply geometry -- only fill/border/text are new here. */
+/* tag-catalog: icon+label pill. Its fill now matches .ds-tag--teal exactly
+ * (#d0efed) and its label colour matches the re-grounded base, so only the
+ * fill is left to declare -- the border and the text-default override both
+ * became no-ops against the new capture and are gone. */
 .ds-tag--catalog {
-  background: #ecffff;
-  border-color: #d0efed;
-  color: var(--zen-color-text-default);
+  background: #d0efed;
 }
 /* tag-stage: colored dot + label + trailing arrow. Reuses the 8
  * .ds-tag--<color> container rules above verbatim; only the dot/icon
@@ -3025,7 +3023,7 @@
   height: 8px;
   border-radius: 20px; /* captured radius */
   flex: 0 0 auto;
-  background: #547482; /* gray/default dot fill, no token captured */
+  background: var(--zen-color-text-tertiary); /* #50505d, Gray/default dot */
 }
 .ds-tag-stage__icon {
   width: 14px; /* icon box geometry (raw px), matches .ds-tag__icon */
@@ -3039,67 +3037,70 @@
   height: 100%;
   display: block;
 }
+/* tag-stage's own hue fills diverged from tag-default's in this redesign:
+ * Lime and Orange no longer share a value, so the two rules below override
+ * the shared .ds-tag--<hue> fill for stage pills only. The other five hues
+ * still match tag-default exactly and are left to the shared rules. */
+.ds-tag-stage.ds-tag--lime {
+  background: var(
+    --zen-color-success-50
+  ); /* #d3efcd, not tag-default #d3e7e0 */
+}
+.ds-tag-stage.ds-tag--orange {
+  background: var(
+    --zen-color-warning-50
+  ); /* #ffebce, not tag-default #ffd7ca */
+}
 .ds-tag--indigo .ds-tag-stage__dot {
-  background: var(--zen-color-primary-600); /* #0053d7 */
+  background: #00699f; /* no captured token */
 }
 .ds-tag--lime .ds-tag-stage__dot {
-  background: var(--zen-color-success-600); /* #098900 */
+  background: var(--zen-color-success-700); /* #047800 */
 }
 .ds-tag--orange .ds-tag-stage__dot {
-  background: var(--zen-color-error-800); /* #982a18 */
+  background: var(--zen-color-warning-700); /* #d27b00 */
 }
 .ds-tag--yellow .ds-tag-stage__dot {
-  background: var(--zen-color-warning-800); /* #a76605 */
+  background: #b78a55; /* no captured token */
 }
 .ds-tag--pink .ds-tag-stage__dot {
-  background: #b1374d; /* no captured token */
+  background: #932139; /* no captured token */
 }
 .ds-tag--purple .ds-tag-stage__dot {
   background: #7900cb; /* no captured token */
 }
 .ds-tag--teal .ds-tag-stage__dot {
-  background: #00908e; /* no captured token */
+  background: #007e7b; /* no captured token */
 }
-/* tag-status: status pill, 11 Status values grouped into 5 color families
- * by the captured anatomy itself (a per-value class would be dishonest).
- * Reuses base .ds-tag geometry verbatim (same height/padding/radius/font/
- * gap/text-color as tag-default); only the family fill/border pairs are
- * new. No bare .ds-tag--status namespace class -- each family rule below
- * carries a real visual delta, same no-op-eradication pattern as families
- * 4/5. Value-first: several captured backgroundTokens do not round-trip
- * against the frozen tokens.css snapshot (a known drift, see
- * tag-glossary-item-type's warning-25 note), so those ship literal with a
- * comment; borders that DO round-trip bind the token. */
+/* tag-status: status pill. The 2026-07-23 capture cut the Status axis from
+ * 11 values in 5 colour families to 5 values in 4: Maintenance, Queued,
+ * Scheduled, Offline, Sleeping and Stopped are gone, Pending moved from the
+ * neutral group into info, and the neutral family has no fill left at all.
+ * The .ds-tag--status-neutral rule is therefore deleted rather than kept
+ * against a fabricated colour -- see the note on PR #475, this is an
+ * upstream API change that needs a call, not a silently-invented swatch.
+ * Borders are gone here too, in line with the rest of the family.
+ * Value-first: the captured backgroundTokens still do not round-trip
+ * against the frozen tokens.css snapshot, so each fill ships literal. */
 .ds-tag--status-error {
-  /* Fail. --zen-color-error-25 resolves to #f8f4f3 in tokens.css, not the
-   * captured #fff4ec -- literal. Border DOES round-trip (#ffdacf). */
+  /* Fail. Captured --zen-color-bg-error, which tokens.css resolves to
+   * #f7f4f2 rather than the captured #fff4ec -- literal. */
   background: #fff4ec;
-  border-color: var(--zen-color-error-50);
 }
 .ds-tag--status-info {
-  /* Loading, Maintenance, Queued, Scheduled. --zen-color-primary-25
-   * resolves to #f3f5f9 in tokens.css, not the captured #edf6ff (bg AND
-   * border share this value in the anatomy) -- both literal. */
-  background: #edf6ff;
-  border-color: #edf6ff;
-}
-.ds-tag--status-neutral {
-  /* Offline, Pending, Sleeping, Stopped. No captured backgroundToken for
-   * the fill. Border DOES round-trip (--zen-border-disabled = #c7c7ce). */
-  background: #e1e1e6;
-  border-color: var(--zen-border-disabled);
+  /* Loading, Pending. Captured --zen-color-bg-info, which tokens.css
+   * resolves elsewhere than the captured #f7fdff -- literal. */
+  background: #f7fdff;
 }
 .ds-tag--status-success {
-  /* Success. --zen-color-success-25 resolves to #f3f6f3 in tokens.css, not
-   * the captured #f0ffec -- literal. Border DOES round-trip (#d3efcd). */
+  /* Success. Captured --zen-color-bg-success, resolves elsewhere in
+   * tokens.css than the captured #f0ffec -- literal. */
   background: #f0ffec;
-  border-color: var(--zen-color-success-50);
 }
 .ds-tag--status-warning {
-  /* Warning. --zen-color-bg-warning resolves to #f7f4f2 in tokens.css, not
-   * the captured #fff9e5 -- literal. Border DOES round-trip (#ffebce). */
+  /* Warning. Captured --zen-color-bg-warning resolves to #f7f4f2 in
+   * tokens.css, not the captured #fff9e5 -- literal. */
   background: #fff9e5;
-  border-color: var(--zen-color-warning-50);
 }
 
 /* ============ Checkbox (indeterminate state) ============ */

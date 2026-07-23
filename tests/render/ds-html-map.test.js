@@ -826,15 +826,35 @@ test("tag-status: grouped family mapping from the anatomy", function () {
     "Success does not carry the error family",
   );
 
-  var maintHtml = DS.renderDSComponent({
+  var pendingHtml = DS.renderDSComponent({
+    dsSlug: "tag-status",
+    variant: "Status=Pending",
+    props: {},
+  });
+  assert.match(
+    pendingHtml,
+    /ds-tag--status-info/,
+    "Pending maps to the grouped info family, not a per-value class",
+  );
+
+  // The 2026-07-23 capture retired six Status values (Maintenance, Queued,
+  // Scheduled, Offline, Sleeping, Stopped) and the whole neutral family with
+  // them. A retired value must fall back to base .ds-tag rather than pick up
+  // some other family's colour, and specifically must not read as an error.
+  var retiredHtml = DS.renderDSComponent({
     dsSlug: "tag-status",
     variant: "Status=Maintenance",
     props: {},
   });
+  assert.doesNotMatch(
+    retiredHtml,
+    /ds-tag--status-/,
+    "a retired Status carries no family modifier at all",
+  );
   assert.match(
-    maintHtml,
-    /ds-tag--status-info/,
-    "Maintenance maps to the grouped info family, not a per-value class",
+    retiredHtml,
+    /class="ds-tag"/,
+    "a retired Status still renders as a base tag",
   );
 });
 

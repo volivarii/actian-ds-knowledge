@@ -13785,7 +13785,7 @@
       "@type": "Edge",
       "edgeType": "related",
       "source": "content:forms",
-      "target": "component:radio-button"
+      "target": "component:radio"
     },
     {
       "@type": "Edge",
@@ -13893,7 +13893,7 @@
       "@type": "Edge",
       "edgeType": "related",
       "source": "content:validation-messages",
-      "target": "component:radio-button"
+      "target": "component:radio"
     },
     {
       "@type": "Edge",

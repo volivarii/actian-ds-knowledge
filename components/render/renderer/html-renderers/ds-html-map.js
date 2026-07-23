@@ -557,9 +557,7 @@
           if (props["Leading icon show"]) {
             tagCls += " ds-tag--with-icon";
             tagIcon =
-              '<span class="ds-tag__icon">' +
-              renderIcon("catalog") +
-              "</span>";
+              '<span class="ds-tag__icon">' + renderIcon("catalog") + "</span>";
           }
           if (v.Color) tagCls += " ds-tag--" + v.Color.toLowerCase();
           var _styleMap =
@@ -1974,35 +1972,38 @@
         }
 
         case "tag-status": {
-          // Status pill: identity axis Status has 11 values, but the
-          // captured anatomy groups them into 5 color families -- a per-value
-          // class would be dishonest (the anatomy itself groups them), so
-          // this looks the Status up in a family map and emits ONE grouped
-          // modifier class. Reuses base .ds-tag geometry verbatim (identical
-          // height/padding/radius/font/gap/text-color to tag-default); only
-          // the 5 family color rules are new (ds-base.css). Pure-CSS family
-          // approach (no __dsVariantStyles injection, unlike tag-default).
+          // Status pill: the Status axis groups into colour families in the
+          // captured anatomy itself, so this looks Status up in a family map
+          // and emits ONE grouped modifier rather than a per-value class.
+          // Reuses base .ds-tag geometry verbatim; only the family fills are
+          // new (ds-base.css). Pure-CSS (no __dsVariantStyles injection).
+          //
+          // The 2026-07-23 capture cut the axis from 11 values in 5 families
+          // to 5 values in 4: Maintenance, Queued, Scheduled, Offline,
+          // Sleeping and Stopped no longer exist, Pending moved into info,
+          // and the neutral family lost its fill entirely.
+          //
+          // A Status this map does not know now renders with NO family
+          // modifier, falling back to base .ds-tag's own captured fill. That
+          // is deliberately not the old `|| "error"` default: painting a
+          // retired value red asserts a failure the DS never described,
+          // whereas the base fill is a real captured colour and reads as the
+          // neutral the retired family used to provide.
           var TAG_STATUS_FAMILY = {
             fail: "error",
             loading: "info",
-            maintenance: "info",
-            queued: "info",
-            scheduled: "info",
-            offline: "neutral",
-            pending: "neutral",
-            sleeping: "neutral",
-            stopped: "neutral",
+            pending: "info",
             success: "success",
             warning: "warning",
           };
           var tsStatus = v.Status || "Fail";
-          var tsFamily = TAG_STATUS_FAMILY[tsStatus.toLowerCase()] || "error";
+          var tsFamily = TAG_STATUS_FAMILY[tsStatus.toLowerCase()] || "";
           // Loading's leading spinner icon is absent from graphics.json;
           // renderIcon degrades gracefully to "" and is intentionally not
           // attempted here (label-only, per the spec).
           return (
-            '<span class="ds-tag ds-tag--status-' +
-            tsFamily +
+            '<span class="ds-tag' +
+            (tsFamily ? " ds-tag--status-" + tsFamily : "") +
             '">' +
             esc(props.Label || tsStatus) +
             "</span>"
