@@ -28,7 +28,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   reviewable pull request. Records other products already depend on are labelled as shared and named
   in a disclosure before you confirm, because that write edits a file those products rely on. Records
   that could not be joined are reported rather than dropped. Editor-only, version-neutral.
-  ([#PR](https://github.com/volivarii/actian-ds-knowledge/pull/PR))
+  ([#477](https://github.com/volivarii/actian-ds-knowledge/pull/477))
 - **Cross-domain search in the editor header.** A single search in the top bar (also `Cmd/Ctrl-K`)
   now spans components, foundations, content, accessibility, and the products, entities, and features
   that use the system, with grouped, typed, author-language results that open the thing directly. It
