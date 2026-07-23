@@ -89,6 +89,11 @@ test("checkBaseCssRules: the real ds-base.css tag/checkbox rules pass", function
     // genuinely correct color reads as a violation.
     "tag-catalog": A.readAppearance("tag-catalog", ANATOMY),
     "tag-shared": A.readAppearance("tag-shared", ANATOMY),
+    // tag-status: the grouped tag-status family (.ds-tag--status-error/
+    // -info/-neutral/-success/-warning) is now checked too (Fix B widened
+    // the modifier regex to cross hyphens), so its fact source must be
+    // registered here too, mirroring the CLI's require.main registration.
+    "tag-status": A.readAppearance("tag-status", ANATOMY),
     checkbox: A.readAppearance("checkbox", ANATOMY),
   };
   var v = F.checkBaseCssRules(dsBaseCss, facts, tokenMap);
@@ -151,6 +156,86 @@ test("checkBaseCssRules: a fabricated modifier cannot pass by borrowing a siblin
     "legitimate .ds-tag--catalog color must pass (checked against its own " +
       "owning fact source, tag-catalog), got: " +
       JSON.stringify(v),
+  );
+});
+
+test("checkBaseCssRules: a fabricated .ds-tag--status-error color is caught (hyphenated modifier is checked, not silently skipped)", function () {
+  // Regression coverage for the regex-width bug: the modifier char class used
+  // to be [a-z0-9]+, which cannot cross a hyphen, so the 5 real grouped
+  // tag-status rules (.ds-tag--status-error/-info/-neutral/-success/
+  // -warning) were silently never checked -- a fabricated #123456 in one of
+  // them produced 0 violations. This proves the widened [a-z0-9-]+ regex now
+  // captures the compound modifier AND resolveTagOwner resolves it to the
+  // tag-status fact source (not tag-default, which never captured any of
+  // these colors), so a planted bad color in the family is flagged.
+  var tokenMap = A.loadTokenMap(
+    fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8"),
+  );
+  var facts = {
+    "tag-default": A.readAppearance("tag-default", ANATOMY),
+    "tag-status": A.readAppearance("tag-status", ANATOMY),
+    checkbox: A.readAppearance("checkbox", ANATOMY),
+  };
+  // #123456 is not a tag-status appearance fact color (planted fixture).
+  var badCss = ".ds-tag--status-error{background:#123456}";
+  var v = F.checkBaseCssRules(badCss, facts, tokenMap);
+  assert.ok(
+    v.some(function (m) {
+      return (
+        /^ds-base\.css/.test(m) &&
+        /\.ds-tag--status-error/.test(m) &&
+        /#123456/.test(m)
+      );
+    }),
+    "violation names ds-base.css, the hyphenated selector, and the bad color, got: " +
+      JSON.stringify(v),
+  );
+});
+
+test("checkBaseCssRules: the real .ds-tag--status-* family rules pass, and comments inside the rule body are not mistaken for declarations", function () {
+  // The real .ds-tag--status-* rules (unlike the single-word rules above
+  // them) carry their value-first explanatory comment INSIDE the braces,
+  // and that comment text itself mentions hex codes (the non-round-tripping
+  // token's resolved value) that are NOT emitted declarations. Proves
+  // checkRuleBody strips comments before scanning, so those mentions do not
+  // read as false violations.
+  var dsBaseCss = fs.readFileSync(
+    path.join(REPO_ROOT, "components", "render", "renderer", "ds-base.css"),
+    "utf8",
+  );
+  var tokenMap = A.loadTokenMap(
+    fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8"),
+  );
+  var facts = {
+    "tag-default": A.readAppearance("tag-default", ANATOMY),
+    "tag-catalog": A.readAppearance("tag-catalog", ANATOMY),
+    "tag-shared": A.readAppearance("tag-shared", ANATOMY),
+    "tag-status": A.readAppearance("tag-status", ANATOMY),
+    checkbox: A.readAppearance("checkbox", ANATOMY),
+  };
+  var v = F.checkBaseCssRules(dsBaseCss, facts, tokenMap);
+  assert.deepEqual(v, []);
+});
+
+test("resolveTagOwner: compound modifier resolves by longest-registered-prefix, falls back to tag-default", function () {
+  var facts = {
+    "tag-default": { variants: [], byNode: [{ name: "default" }] },
+    "tag-status": { variants: [], byNode: [{ name: "status" }] },
+  };
+  assert.equal(
+    F.resolveTagOwner("status-error", facts).byNode[0].name,
+    "status",
+    "status-error strips to the registered tag-status prefix",
+  );
+  assert.equal(
+    F.resolveTagOwner("indigo", facts).byNode[0].name,
+    "default",
+    "a plain color modifier with no registered tag-indigo falls back to tag-default",
+  );
+  assert.equal(
+    F.resolveTagOwner("bogus-modifier", facts).byNode[0].name,
+    "default",
+    "an unregistered compound modifier falls back to tag-default at every prefix depth",
   );
 });
 

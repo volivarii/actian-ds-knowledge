@@ -42,6 +42,16 @@ function slugCss(css, slug) {
 // like "ds-base.css" for the base-css caller) so violations stay attributable
 // to their source regardless of which caller found them.
 function checkRuleBody(label, selector, body, factSet, tokenMap, violations) {
+  // Strip CSS comments before scanning. The grouped tag-status family (Fix
+  // B, gray-box-to-zero family 2 review pass) puts its value-first
+  // explanatory comments INSIDE the rule body (right after `{`), unlike the
+  // single-word .ds-tag--<x> rules above them whose comments sit above the
+  // selector -- so those comments' own hex mentions (e.g. "resolves to
+  // #f8f4f3 in tokens.css", documenting the token that does NOT round-trip)
+  // would otherwise be scanned as if they were emitted declarations and
+  // flagged as a false violation, even though the real background/
+  // border-color declarations round-trip cleanly.
+  body = body.replace(/\/\*[\s\S]*?\*\//g, "");
   // hex literals emitted must be a fact value
   (body.match(/#[0-9a-fA-F]{3,8}/g) || []).forEach(function (hex) {
     if (!factSet.has(hex.toLowerCase()))
@@ -117,6 +127,33 @@ function fidelityCheck(canonical, ctx) {
   return violations;
 }
 
+// Per-owner lookup, NOT a union, for a (possibly hyphenated) .ds-tag--<x>
+// modifier. Gray-box-to-zero family 2 added standalone .ds-tag--<x> rules
+// for OTHER dedicated tag-family members (e.g. tag-catalog, tag-shared,
+// tag-status) that carry their OWN captured facts, distinct from
+// tag-default's Color axis. An earlier version unioned every "tag*" fact set
+// the caller provided into one palette before checking any rule against it
+// -- that let a FABRICATED modifier (e.g. an invented .ds-tag--bogus) pass
+// by borrowing a sibling member's captured color (tag-catalog's legitimate
+// #000000 text color is not evidence that some unrelated modifier's color is
+// legitimate too). Union membership carries no provenance, so that check was
+// gate-weakening. Compound modifiers (e.g. "status-error", from the grouped
+// tag-status family) resolve by longest-registered-prefix: try
+// facts["tag-status-error"], then facts["tag-status"], stripping one
+// trailing hyphen-segment at a time, before falling back to
+// facts["tag-default"] -- whose Color axis owns the plain color modifiers
+// (.ds-tag--indigo, .ds-tag--gray, ...) and is also the fallback for any
+// modifier with no registered owner at any prefix depth (e.g. a fabricated
+// .ds-tag--bogus).
+function resolveTagOwner(modifier, facts) {
+  var segments = modifier.split("-");
+  for (var i = segments.length; i > 0; i--) {
+    var key = "tag-" + segments.slice(0, i).join("-");
+    if (facts[key]) return facts[key];
+  }
+  return facts["tag-default"] || { variants: [], byNode: [] };
+}
+
 // Slice 2 folded the tag color variants + the checkbox indeterminate rule
 // into the shared ds-base.css asset (renderer relocation phase 1b-alpha),
 // outside the derived-from-facts appendix `fidelityCheck` scans above. This
@@ -125,33 +162,17 @@ function fidelityCheck(canonical, ctx) {
 // `cssText` is ds-base.css's content and `facts` maps a fact-source name
 // (e.g. "tag-default", "checkbox") to its readAppearance() result, so the
 // caller controls which anatomy facts each selector group is checked
-// against.
+// against. The modifier char class includes `-` so compound modifiers (the
+// grouped tag-status family: status-error/-info/-neutral/-success/-warning)
+// are captured and checked, not silently skipped -- see resolveTagOwner
+// above for how a compound modifier finds its owning fact source.
 function checkBaseCssRules(cssText, facts, tokenMap) {
   var violations = [];
-  // Per-owner lookup, NOT a union. Gray-box-to-zero family 2 added
-  // standalone .ds-tag--<x> rules for OTHER dedicated tag-family members
-  // (e.g. tag-catalog, tag-shared) that carry their OWN captured facts,
-  // distinct from tag-default's Color axis. An earlier version unioned
-  // every "tag*" fact set the caller provided into one palette before
-  // checking any rule against it -- that let a FABRICATED modifier (e.g. an
-  // invented .ds-tag--bogus) pass by borrowing a sibling member's captured
-  // color (tag-catalog's legitimate #000000 text color is not evidence that
-  // some unrelated modifier's color is legitimate too). Union membership
-  // carries no provenance, so that check was gate-weakening. Each
-  // .ds-tag--<modifier> rule is now checked ONLY against the fact source
-  // that actually owns it: facts["tag-" + modifier] when the caller
-  // registered one (.ds-tag--catalog -> tag-catalog, .ds-tag--shared ->
-  // tag-shared), else facts["tag-default"], whose Color axis owns the plain
-  // color modifiers (.ds-tag--indigo, .ds-tag--gray, ...).
-  var re = /\.ds-tag--([a-z0-9]+)\s*\{([^}]*)\}/g;
+  var re = /\.ds-tag--([a-z0-9-]+)\s*\{([^}]*)\}/g;
   var m;
   while ((m = re.exec(cssText)) !== null) {
     var modifier = m[1];
-    var owner = facts["tag-" + modifier] ||
-      facts["tag-default"] || {
-        variants: [],
-        byNode: [],
-      };
+    var owner = resolveTagOwner(modifier, facts);
     checkRuleBody(
       "ds-base.css",
       ".ds-tag--" + modifier,
@@ -204,6 +225,7 @@ if (require.main === module) {
         "tag-default": A.readAppearance("tag-default", anatomyDir),
         "tag-catalog": A.readAppearance("tag-catalog", anatomyDir),
         "tag-shared": A.readAppearance("tag-shared", anatomyDir),
+        "tag-status": A.readAppearance("tag-status", anatomyDir),
         checkbox: A.readAppearance("checkbox", anatomyDir),
       },
       tokenMap,
@@ -241,4 +263,5 @@ module.exports = {
   factColors: factColors,
   slugCss: slugCss,
   checkBaseCssRules: checkBaseCssRules,
+  resolveTagOwner: resolveTagOwner,
 };
