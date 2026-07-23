@@ -83,10 +83,8 @@ test("HomeScreen: hero, honest counts, and the needs-attention list ranked usage
     ),
   );
 
-  // Hero + baked graph counts render synchronously (no fetch).
-  screen.getByText(/Everything the design system knows/i);
-  screen.getByText(/pieces of knowledge/i);
-  screen.getByText(/connections between them/i);
+  // Hero + coverage badge render synchronously (after fetch resolves).
+  screen.getByText(/Browse and edit the design system/i);
 
   // Coverage-derived copy arrives after the fake fetch resolves.
   await waitFor(() =>
