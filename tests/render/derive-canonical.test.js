@@ -414,6 +414,105 @@ test("deriveCanonical: loader does not absorb loader-with-logo's tokens (prefix-
   );
 });
 
+test("deriveCanonical/consumedVars: the 4 new gray-box-to-zero hyphen-prefix pairs do not cross-absorb tokens", function () {
+  // Generalizes the loader/loader-with-logo regression above to the 4 new
+  // hyphen-prefix pairs this PR relies on the same consumedVars guard for:
+  // notification/notification-dropdown, search/search-dropdown-menu,
+  // search/search-result-card, tag-catalog/tag-catalog-item-type.
+  var out = D.deriveCanonical();
+  var decls = out.cem.modules.flatMap(function (m) {
+    return m.declarations || [];
+  });
+  function namesFor(tagName) {
+    var d = decls.find(function (x) {
+      return x.tagName === tagName;
+    });
+    assert.ok(d, tagName + " declaration present");
+    return (d.cssProperties || []).map(function (p) {
+      return p.name;
+    });
+  }
+  // Mirrors deriveCanonical()'s own cemStyle construction (assetBase with
+  // comments stripped) so consumedVars() is exercised exactly as production
+  // calls it, not against raw text that could carry an incidental hex/token
+  // mention inside a comment.
+  var cemStyle = out.css
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/<!--[\s\S]*?-->/g, "");
+
+  // search / search-result-card: the textbook case, shaped exactly like
+  // loader/loader-with-logo -- both slugs' real CSS classes match their
+  // registered name (.ds-search, .ds-search-result-card) and both CEM
+  // declarations are genuinely non-empty, so this is checked purely via the
+  // real declarations, like the loader test above.
+  var searchNames = namesFor("zen-search");
+  var searchResultCardNames = namesFor("zen-search-result-card");
+  assert.ok(
+    searchResultCardNames.indexOf("--zen-border-selected") >= 0,
+    "search-result-card still consumes its own --zen-border-selected (fixture sanity)",
+  );
+  assert.ok(
+    searchNames.indexOf("--zen-border-selected") < 0,
+    "search must not absorb search-result-card's --zen-border-selected: got " +
+      JSON.stringify(searchNames),
+  );
+
+  // tag-catalog / tag-catalog-item-type: tag-catalog's real markup uses the
+  // BEM modifier .ds-tag--catalog, not .ds-tag-catalog, so its CEM
+  // declaration is genuinely empty regardless of this guard -- but its
+  // registry-fallback selector is still the literal string "ds-tag-catalog",
+  // which IS a hyphen-prefix of the real .ds-tag-catalog-item-type class. A
+  // regressed guard would make tag-catalog's declaration start absorbing
+  // tag-catalog-item-type's tokens (inflating it above zero), so the
+  // assertion is meaningful even though tag-catalog's own true count is 0.
+  var tagCatalogItemTypeNames = namesFor("zen-tag-catalog-item-type");
+  var tagCatalogNames = namesFor("zen-tag-catalog");
+  assert.ok(
+    tagCatalogItemTypeNames.indexOf("--zen-color-error-800") >= 0,
+    "tag-catalog-item-type still consumes its own --zen-color-error-800 (fixture sanity)",
+  );
+  assert.ok(
+    tagCatalogNames.indexOf("--zen-color-error-800") < 0,
+    "tag-catalog must not absorb tag-catalog-item-type's --zen-color-error-800: got " +
+      JSON.stringify(tagCatalogNames),
+  );
+
+  // notification / notification-dropdown and search / search-dropdown-menu:
+  // the SHORTER slug's real class always matches its registered name
+  // (.ds-notification, .ds-search), so the collision risk on THAT side is
+  // checked via its real CEM declaration, same as above. The LONGER slug's
+  // registered class does not equal ds-<slug> here either (notification-
+  // dropdown emits .ds-notification-menu, search-dropdown-menu emits
+  // .ds-search-menu -- a known CEM-derive undercount for BEM/renamed
+  // classes, tracked separately, not this guard), so its own CEM declaration
+  // is empty too and cannot serve as the "still consumes its own token"
+  // sanity check the way loader-with-logo's declaration does above. That
+  // sanity check is done directly against the real compound class instead,
+  // via the same consumedVars() the derive itself uses.
+  var notificationNames = namesFor("zen-notification");
+  var notificationMenuTokens = D.consumedVars(cemStyle, "ds-notification-menu");
+  assert.ok(
+    notificationMenuTokens.indexOf("--zen-shadow-lg") >= 0,
+    "the real .ds-notification-menu block still consumes --zen-shadow-lg (fixture sanity)",
+  );
+  assert.ok(
+    notificationNames.indexOf("--zen-shadow-lg") < 0,
+    "notification must not absorb .ds-notification-menu's --zen-shadow-lg: got " +
+      JSON.stringify(notificationNames),
+  );
+
+  var searchMenuTokens = D.consumedVars(cemStyle, "ds-search-menu");
+  assert.ok(
+    searchMenuTokens.indexOf("--zen-shadow-lg") >= 0,
+    "the real .ds-search-menu block still consumes --zen-shadow-lg (fixture sanity)",
+  );
+  assert.ok(
+    searchNames.indexOf("--zen-shadow-lg") < 0,
+    "search must not absorb .ds-search-menu's --zen-shadow-lg: got " +
+      JSON.stringify(searchNames),
+  );
+});
+
 test("derive-canonical sources fragments from the renderer and labels them rendered", function () {
   var { deriveCanonical } = require("../../scripts/render/derive-canonical.js");
   var {

@@ -395,3 +395,1682 @@ test("loader-with-logo: Label prop renders the loader label span", function () {
     DS.setGraphics(null);
   }
 });
+
+test("error-state: base class and default title", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "error-state",
+    variant: "",
+    props: {},
+  });
+  assert.match(html, /class="ds-error-state"/, "carries the base class");
+  assert.match(html, />Something went wrong</, "renders the default title");
+});
+
+test("error-state: illustration wired, default CTAs (Go back / Try again)", function () {
+  var DS = require(DS_PATH);
+  DS.setGraphics(
+    require("../../components/dist/graphics/graphics.json").graphics,
+  );
+  try {
+    var html = DS.renderDSComponent({
+      dsSlug: "error-state",
+      variant: "",
+      props: {},
+    });
+    assert.match(
+      html,
+      /ds-error-state__illustration/,
+      "illustration wrapper present",
+    );
+    assert.match(
+      html,
+      /class="ds-graphic"/,
+      "renderGraphic emits the shared ds-graphic svg class",
+    );
+    // The generic ds-graphic class alone doesn't prove the RIGHT graphic was
+    // selected (graphics.json has 11 entries, several sharing a viewBox).
+    // "M187.136 160.462" is a coordinate from illustration-error-state's own
+    // path data, verified unique across every entry in graphics.json -- its
+    // presence proves the error-state-specific fallback slug was actually
+    // resolved, not merely that *some* graphic rendered.
+    assert.match(
+      html,
+      /M187\.136 160\.462/,
+      "renders the illustration-error-state graphic specifically",
+    );
+    assert.match(
+      html,
+      /ds-button ds-button--tertiary ds-error-state__cta">Go back</,
+      "secondary CTA renders as a tertiary button",
+    );
+    assert.match(
+      html,
+      /ds-button ds-button--primary ds-error-state__cta">Try again</,
+      "primary CTA renders as a primary button",
+    );
+  } finally {
+    DS.setGraphics(null);
+  }
+});
+
+test("error-state: escapes hostile Title and clamps a hostile Size", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "error-state",
+    variant: 'Size="><script>alert(1)</script>',
+    props: { Title: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "title escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection from Title");
+  assert.match(
+    html,
+    /class="ds-error-state"/,
+    "class attribute not broken out of by a hostile Size",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-error-state--medium/,
+    "unknown Size falls back to large, no modifier",
+  );
+});
+
+test("error-state: Size=Medium renders the ds-error-state--medium modifier", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "error-state",
+    variant: "Size=Medium",
+    props: {},
+  });
+  assert.match(
+    html,
+    /ds-error-state--medium/,
+    "a valid Size=Medium renders the modifier class",
+  );
+});
+
+test("maintenance-state: base structure, default headline and body", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "maintenance-state",
+    variant: "",
+    props: {},
+  });
+  assert.match(html, /class="ds-maintenance-state"/, "carries the base class");
+  assert.match(
+    html,
+    /class="ds-maintenance-state__headline"/,
+    "headline present",
+  );
+  assert.match(html, /class="ds-maintenance-state__body"/, "body present");
+  assert.match(
+    html,
+    />Scheduled maintenance in progress until 12:00 PM EST</,
+    "renders the default headline text",
+  );
+});
+
+test("maintenance-state: default illustration is the maintenance graphic", function () {
+  var DS = require(DS_PATH);
+  DS.setGraphics(
+    require("../../components/dist/graphics/graphics.json").graphics,
+  );
+  try {
+    var htmlDefault = DS.renderDSComponent({
+      dsSlug: "maintenance-state",
+      variant: "",
+      props: {},
+    });
+    var htmlErrorIllus = DS.renderDSComponent({
+      dsSlug: "error-state",
+      variant: "",
+      props: {},
+    });
+    assert.match(
+      htmlDefault,
+      /class="ds-graphic"/,
+      "renders a graphic by default",
+    );
+    // The maintenance and error illustrations are distinct assets in
+    // graphics.json; comparing the two renders' svg bodies proves the
+    // maintenance-specific fallback slug was actually selected, not merely
+    // that *some* graphic rendered.
+    assert.notEqual(
+      htmlDefault.match(/<svg class="ds-graphic"[^]*?<\/svg>/)[0],
+      htmlErrorIllus.match(/<svg class="ds-graphic"[^]*?<\/svg>/)[0],
+      "maintenance-state's illustration differs from error-state's",
+    );
+  } finally {
+    DS.setGraphics(null);
+  }
+});
+
+test("maintenance-state: escapes a hostile Headline", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "maintenance-state",
+    variant: "",
+    props: { Headline: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "headline escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+
+test("maintenance-state: renders both action buttons, tertiary before primary", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "maintenance-state",
+    variant: "",
+    props: {},
+  });
+  var tertiaryIdx = html.indexOf(
+    "ds-button--tertiary ds-maintenance-state__cta",
+  );
+  var primaryIdx = html.indexOf("ds-button--primary ds-maintenance-state__cta");
+  assert.ok(tertiaryIdx !== -1, "tertiary CTA present");
+  assert.ok(primaryIdx !== -1, "primary CTA present");
+  assert.ok(tertiaryIdx < primaryIdx, "tertiary CTA precedes primary CTA");
+});
+
+test("confirmation: base class and illustration wired", function () {
+  var DS = require(DS_PATH);
+  DS.setGraphics(
+    require("../../components/dist/graphics/graphics.json").graphics,
+  );
+  try {
+    var html = DS.renderDSComponent({
+      dsSlug: "confirmation",
+      variant: "",
+      props: {},
+    });
+    assert.match(html, /class="ds-confirmation"/, "carries the base class");
+    assert.match(
+      html,
+      /<svg class="ds-graphic"/,
+      "renders a non-empty illustration svg",
+    );
+  } finally {
+    DS.setGraphics(null);
+  }
+});
+
+test("confirmation: both CTAs render with anatomy defaults", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "confirmation",
+    variant: "",
+    props: {},
+  });
+  assert.match(
+    html,
+    /<div class="ds-confirmation__actions">/,
+    "actions row present",
+  );
+  assert.match(
+    html,
+    /ds-button ds-button--tertiary ds-confirmation__cta">Learn more</,
+    "secondary CTA renders as a tertiary button with the anatomy default label",
+  );
+  assert.match(
+    html,
+    /ds-button ds-button--primary ds-confirmation__cta">Open the catalog</,
+    "primary CTA renders as a primary button with the anatomy default label",
+  );
+});
+
+test("confirmation: escapes hostile Title and Body", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "confirmation",
+    variant: "",
+    props: {
+      Title: "<img src=x onerror=alert(1)>",
+      Body: "<svg onload=alert(1)>",
+    },
+  });
+  assert.match(html, /&lt;img/, "title escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection from Title");
+  assert.match(html, /&lt;svg/, "body escaped");
+  assert.doesNotMatch(html, /<svg onload/, "no raw injection from Body");
+});
+
+// ---- Gray-box-to-zero, family 2 (tag family) ----
+
+test("tag-shared: base + modifier present, no color-modifier leak", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-shared",
+    variant: "",
+    props: {},
+  });
+  assert.match(
+    html,
+    /class="ds-tag ds-tag--shared"/,
+    "carries base + modifier",
+  );
+});
+
+test("tag-shared: default label is Shared", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-shared",
+    variant: "",
+    props: {},
+  });
+  assert.match(html, />Shared</, "renders the anatomy's fixed label");
+});
+
+test("tag-shared: escapes hostile Label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-shared",
+    variant: "",
+    props: { Label: "<script>alert(1)</script>" },
+  });
+  assert.doesNotMatch(html, /<script/, "no raw script injection");
+  assert.match(html, /&lt;script&gt;/, "label escaped");
+});
+
+test("tag-catalog: base + modifier present", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-catalog",
+    variant: "Type=Default",
+    props: {},
+  });
+  assert.match(
+    html,
+    /class="ds-tag ds-tag--catalog"/,
+    "carries base + modifier",
+  );
+});
+
+test("tag-catalog: leading icon slot present and resolved", function () {
+  var DS = require(DS_PATH);
+  DS.setIcons(require("../../components/dist/icons/icons.json").icons);
+  try {
+    var html = DS.renderDSComponent({
+      dsSlug: "tag-catalog",
+      variant: "Type=Default",
+      props: {},
+    });
+    assert.match(
+      html,
+      /<span class="ds-tag__icon"><svg class="ds-icon"[^>]*>.+?<\/svg><\/span>/,
+      "ds-tag__icon wraps a non-empty svg (directory resolves)",
+    );
+  } finally {
+    DS.setIcons(null);
+  }
+});
+
+test("tag-catalog: default label, escapes hostile Label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-catalog",
+    variant: "Type=Default",
+    props: {},
+  });
+  assert.match(html, />Catalog</, "default label from anatomy");
+
+  var hostile = DS.renderDSComponent({
+    dsSlug: "tag-catalog",
+    variant: "Type=Default",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(hostile, /&lt;img/, "label escaped");
+  assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
+});
+
+test("tag-stage: base structure, dot, label, trailing arrow icon", function () {
+  var DS = require(DS_PATH);
+  DS.setIcons(require("../../components/dist/icons/icons.json").icons);
+  try {
+    var html = DS.renderDSComponent({
+      dsSlug: "tag-stage",
+      variant: "Color=Gray",
+      props: { Label: "Raw" },
+    });
+    assert.match(
+      html,
+      /class="ds-tag ds-tag-stage ds-tag--gray"/,
+      "carries base + tag-stage + color modifier",
+    );
+    assert.match(
+      html,
+      /<span class="ds-tag-stage__dot"><\/span>/,
+      "renders the leading dot",
+    );
+    assert.match(html, />Raw</, "renders the label");
+    assert.match(
+      html,
+      /<span class="ds-tag-stage__icon"><svg class="ds-icon"[^>]*>.+?<\/svg><\/span>/,
+      "trailing icon resolves (arrow-down)",
+    );
+  } finally {
+    DS.setIcons(null);
+  }
+});
+
+test("tag-stage: Color=Indigo activates the indigo modifier", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-stage",
+    variant: "Color=Indigo",
+    props: { Label: "Building" },
+  });
+  assert.match(html, /ds-tag--indigo/, "root carries the indigo modifier");
+});
+
+test("tag-stage: escapes hostile Label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-stage",
+    variant: "Color=Gray",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+  assert.match(html, /&lt;img/, "label escaped");
+});
+
+test("tag-stage: clamps a hostile Color before it reaches the class attribute (XSS)", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-stage",
+    variant: 'Color="><script>alert(1)</script>',
+    props: { Label: "Raw" },
+  });
+  assert.doesNotMatch(
+    html,
+    /"><script/,
+    "no raw class-attribute breakout from an unclamped Color",
+  );
+  assert.match(
+    html,
+    /class="ds-tag ds-tag-stage"/,
+    "unknown Color appends no modifier -- renders the base pill safely",
+  );
+});
+
+test("tag-status: base + family class present", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-status",
+    variant: "Status=Fail",
+    props: {},
+  });
+  assert.match(html, /class="[^"]*\bds-tag\b/, "carries the ds-tag class");
+  assert.match(
+    html,
+    /class="[^"]*\bds-tag--status-error\b/,
+    "Fail carries the ds-tag--status-error family class (no bare " +
+      "ds-tag--status namespace class -- it was an empty no-op)",
+  );
+});
+
+test("tag-status: grouped family mapping from the anatomy", function () {
+  var DS = require(DS_PATH);
+  var successHtml = DS.renderDSComponent({
+    dsSlug: "tag-status",
+    variant: "Status=Success",
+    props: {},
+  });
+  assert.match(
+    successHtml,
+    /ds-tag--status-success/,
+    "Success maps to the success family",
+  );
+  assert.doesNotMatch(
+    successHtml,
+    /ds-tag--status-error/,
+    "Success does not carry the error family",
+  );
+
+  var maintHtml = DS.renderDSComponent({
+    dsSlug: "tag-status",
+    variant: "Status=Maintenance",
+    props: {},
+  });
+  assert.match(
+    maintHtml,
+    /ds-tag--status-info/,
+    "Maintenance maps to the grouped info family, not a per-value class",
+  );
+});
+
+test("tag-status: escapes hostile Label, falls back to Status when Label omitted", function () {
+  var DS = require(DS_PATH);
+  var hostile = DS.renderDSComponent({
+    dsSlug: "tag-status",
+    variant: "Status=Fail",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
+  assert.match(hostile, /&lt;img/, "label escaped");
+
+  var fallback = DS.renderDSComponent({
+    dsSlug: "tag-status",
+    variant: "Status=Warning",
+    props: {},
+  });
+  assert.match(fallback, />Warning</, "Label falls back to the Status value");
+});
+
+test("tag-glossary-item-type: base + label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-glossary-item-type",
+    variant: "Property 1=Default",
+    props: {},
+  });
+  assert.match(
+    html,
+    /class="ds-tag-glossary-item-type"/,
+    "carries the base class",
+  );
+  assert.match(
+    html,
+    /<span class="ds-tag-glossary-item-type__label">Glossary item<\/span>/,
+    "renders the __label span with the anatomy default text",
+  );
+});
+
+test("tag-glossary-item-type: counter toggle", function () {
+  var DS = require(DS_PATH);
+  var withCounter = DS.renderDSComponent({
+    dsSlug: "tag-glossary-item-type",
+    variant: "Property 1=Default",
+    props: { "Show Counter": true, Counter: "7" },
+  });
+  assert.match(
+    withCounter,
+    /<span class="ds-tag-glossary-item-type__counter">7<\/span>/,
+    "counter renders when Show Counter is truthy",
+  );
+
+  var withoutCounter = DS.renderDSComponent({
+    dsSlug: "tag-glossary-item-type",
+    variant: "Property 1=Default",
+    props: {},
+  });
+  assert.doesNotMatch(
+    withoutCounter,
+    /ds-tag-glossary-item-type__counter/,
+    "no counter span when Show Counter is absent/false",
+  );
+});
+
+test("tag-glossary-item-type: escapes hostile Label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-glossary-item-type",
+    variant: "Property 1=Default",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "label escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+
+test("tag-catalog-item-type: base + default Category modifier + label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-catalog-item-type",
+    variant: "Type=Category",
+    props: { Label: "Category" },
+  });
+  assert.match(html, /ds-tag-catalog-item-type/, "carries the base class");
+  assert.match(
+    html,
+    /ds-tag-catalog-item-type--category/,
+    "carries the category modifier",
+  );
+  assert.match(html, />Category</, "renders the label");
+});
+
+test("tag-catalog-item-type: Type slugifies into the modifier class", function () {
+  var DS = require(DS_PATH);
+  var dataProcess = DS.renderDSComponent({
+    dsSlug: "tag-catalog-item-type",
+    variant: "Type=Data process",
+    props: {},
+  });
+  assert.match(
+    dataProcess,
+    /ds-tag-catalog-item-type--data-process/,
+    "Data process lowercases + hyphenates",
+  );
+
+  var useCase = DS.renderDSComponent({
+    dsSlug: "tag-catalog-item-type",
+    variant: "Type=Use case",
+    props: {},
+  });
+  assert.match(
+    useCase,
+    /ds-tag-catalog-item-type--use-case/,
+    "Use case lowercases + hyphenates",
+  );
+});
+
+test("tag-catalog-item-type: counter gating and escapes hostile Label", function () {
+  var DS = require(DS_PATH);
+  var withCounter = DS.renderDSComponent({
+    dsSlug: "tag-catalog-item-type",
+    variant: "Type=Category",
+    props: { "Show counter": true, Counter: "42" },
+  });
+  assert.match(
+    withCounter,
+    /<span class="ds-tag-catalog-item-type__counter">42<\/span>/,
+    "counter renders when Show counter is truthy",
+  );
+
+  var withoutCounter = DS.renderDSComponent({
+    dsSlug: "tag-catalog-item-type",
+    variant: "Type=Category",
+    props: {},
+  });
+  assert.doesNotMatch(
+    withoutCounter,
+    /ds-tag-catalog-item-type__counter/,
+    "no counter span when Show counter is absent/false",
+  );
+
+  var hostile = DS.renderDSComponent({
+    dsSlug: "tag-catalog-item-type",
+    variant: "Type=Category",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(hostile, /&lt;img/, "label escaped");
+  assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
+});
+
+// ---- Gray-box-to-zero, family 3 (card family) ----
+
+test("card-for-perimeter: base class present", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "card-for-perimeter",
+    variant: "Property 1=Default",
+    props: {},
+  });
+  assert.match(html, /class="ds-card-perimeter"/, "carries the base class");
+});
+
+test("card-for-perimeter: badge color is data-derived (Dataset -> #cfeafd), not hand-guessed", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "card-for-perimeter",
+    variant: "Property 1=Default",
+    props: { "Item type": "Dataset", "Item type initials": "DS" },
+  });
+  assert.match(
+    html,
+    /<span class="ds-item-type" style="background:#cfeafd">DS<\/span>/,
+    "digramItemTypeStyle produces the captured Dataset color",
+  );
+});
+
+test("card-for-perimeter: escapes hostile Name", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "card-for-perimeter",
+    variant: "Property 1=Default",
+    props: { Name: "<script>alert(1)</script>" },
+  });
+  assert.match(html, /&lt;script&gt;/, "name escaped");
+  assert.doesNotMatch(html, /<script>alert/, "no raw injection");
+});
+
+test("card-for-perimeter: Completeness clamps into the progress fill width", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "card-for-perimeter",
+    variant: "Property 1=Default",
+    props: { Completeness: "75%" },
+  });
+  assert.match(
+    html,
+    /<span class="ds-progress__fill" style="width:75%"><\/span>/,
+    "Completeness drives the progress fill width",
+  );
+});
+
+test("card-for-grouped-content: base class + structural divider present", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "card-for-grouped-content",
+    variant: "Property 1=Default",
+    props: { Title: "Grouped content", Body: "Body copy." },
+  });
+  assert.match(html, /class="ds-card-grouped"/, "carries the base class");
+  assert.match(
+    html,
+    /<div class="ds-card-grouped__divider"><\/div>/,
+    "the captured Divider is structural, not optional",
+  );
+});
+
+test("card-for-grouped-content: info-icon toggle + escapes hostile Title", function () {
+  var DS = require(DS_PATH);
+  var withIcon = DS.renderDSComponent({
+    dsSlug: "card-for-grouped-content",
+    variant: "Property 1=Default",
+    props: { Title: "Grouped content" },
+  });
+  assert.match(
+    withIcon,
+    /ds-card-grouped__info/,
+    "Show info icon defaults to shown",
+  );
+
+  var withoutIcon = DS.renderDSComponent({
+    dsSlug: "card-for-grouped-content",
+    variant: "Property 1=Default",
+    props: { Title: "Grouped content", "Show info icon": false },
+  });
+  assert.doesNotMatch(
+    withoutIcon,
+    /ds-card-grouped__info/,
+    "Show info icon:false omits the __info span",
+  );
+
+  var hostile = DS.renderDSComponent({
+    dsSlug: "card-for-grouped-content",
+    variant: "Property 1=Default",
+    props: { Title: "<img src=x onerror=1>" },
+  });
+  assert.match(hostile, /&lt;img/, "title escaped");
+  assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
+});
+
+test("card-for-grouped-content: divider color is token-bound, no hardcoded hex", function () {
+  var css = require("node:fs").readFileSync(
+    require("node:path").join(
+      __dirname,
+      "../../components/render/renderer/ds-base.css",
+    ),
+    "utf8",
+  );
+  var match = css.match(/\.ds-card-grouped__divider\s*\{([^}]*)\}/);
+  assert.ok(match, "the __divider rule exists");
+  // Strip comments before judging: documenting the captured hex in a
+  // trailing comment (the codebase's own round-trip-provenance convention,
+  // e.g. tag-status's per-family comments) is not the same as hardcoding it
+  // as the effective declaration VALUE, which is what this assertion guards.
+  var declOnly = match[1].replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.match(
+    declOnly,
+    /background:\s*var\(--zen-border-default\)/,
+    "background resolves to the captured token",
+  );
+  assert.doesNotMatch(
+    declOnly,
+    /#[0-9a-fA-F]{3,6}/,
+    "no hardcoded hex fallback as the declared value",
+  );
+});
+
+test("search-result-card: base class present, Title renders in __title", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Explorer, State=Default",
+    props: { Title: "Financial Summary EY2024" },
+  });
+  assert.match(html, /class="ds-search-result-card"/, "carries the base class");
+  assert.match(
+    html,
+    /<span class="ds-search-result-card__title">Financial Summary EY2024<\/span>/,
+    "Title renders in __title",
+  );
+});
+
+test("search-result-card: State=Selected adds the --selected modifier", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Explorer, State=Selected",
+    props: {},
+  });
+  assert.match(
+    html,
+    /ds-search-result-card--selected/,
+    "State=Selected adds the modifier class",
+  );
+});
+
+test("search-result-card: escapes hostile Title", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Explorer, State=Default",
+    props: { Title: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "title escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+
+test("search-result-card: State=Focus adds the --focus modifier (distinct from --selected)", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Explorer, State=Focus",
+    props: {},
+  });
+  assert.match(
+    html,
+    /ds-search-result-card--focus/,
+    "State=Focus adds its own modifier class",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-search-result-card--selected/,
+    "Focus does not also carry the selected modifier",
+  );
+});
+
+test("search-result-card: App=Studio renders the base card with no --studio modifier", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Studio, State=Default",
+    props: { Title: "Studio Result" },
+  });
+  // Studio's structural swaps (button -> progress-bar-small, digram ->
+  // tag-default) are intentionally not built for this leaf -- there is no
+  // CSS delta, so App=Studio renders the BASE card with no root modifier
+  // (a modifier must carry a real visual delta, never a no-op namespace
+  // hook; see ds-base.css). This asserts it renders without error.
+  assert.match(
+    html,
+    /class="ds-search-result-card"/,
+    "carries only the base class",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-search-result-card--studio/,
+    "does not carry a no-op modifier class",
+  );
+  assert.match(
+    html,
+    /<span class="ds-search-result-card__title">Studio Result<\/span>/,
+    "renders Title in __title",
+  );
+});
+
+test("search-result-card: --selected and --focus modifiers actually differ from the base (no silent no-op)", function () {
+  var css = require("node:fs").readFileSync(
+    require("node:path").join(
+      __dirname,
+      "../../components/render/renderer/ds-base.css",
+    ),
+    "utf8",
+  );
+  var base = css.match(/\.ds-search-result-card\s*\{([^}]*)\}/);
+  var selected = css.match(/\.ds-search-result-card--selected\s*\{([^}]*)\}/);
+  var focus = css.match(/\.ds-search-result-card--focus\s*\{([^}]*)\}/);
+  assert.ok(base && selected && focus, "all three rules exist");
+  assert.notEqual(
+    base[1].trim(),
+    selected[1].trim(),
+    "--selected must not just re-declare the base rule verbatim",
+  );
+  assert.notEqual(
+    base[1].trim(),
+    focus[1].trim(),
+    "--focus must not just re-declare the base rule verbatim",
+  );
+  assert.match(
+    selected[1],
+    /var\(--zen-border-selected\)/,
+    "--selected carries the border-selected token",
+  );
+  assert.match(
+    focus[1],
+    /var\(--zen-focus-ring-primary\)/,
+    "--focus carries the focus-ring token",
+  );
+});
+
+// ============ Gray-box-to-zero, family 4 (dropdowns / overlays) ============
+
+test("notification-dropdown: base class + role + exactly 3 item rows (List, default Items)", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "notification-dropdown",
+    variant: "Property 1=List",
+    props: {},
+  });
+  assert.match(html, /class="ds-notification-menu"/, "carries the base class");
+  assert.match(html, /role="menu"/, "carries menu role");
+  // The default Items fallback embeds three comma-free timestamps
+  // ("7/11/25 12:42 AM.", "7/6/25 12:42 AM.", "7/3/25 4:47 PM.") -- a
+  // regression here (a comma reintroduced inside a timestamp) would split
+  // parseItems' comma-delimited list into 4 or 5 garbled rows instead of 3.
+  var itemMatches = html.match(/ds-notification-menu__item\b/g) || [];
+  assert.equal(
+    itemMatches.length,
+    3,
+    "renders exactly 3 item rows for the default Items, got: " +
+      itemMatches.length,
+  );
+});
+
+test("notification-dropdown: custom Items renders exactly the given rows (proves Items is rendered, not dropped)", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "notification-dropdown",
+    variant: "Property 1=List",
+    props: { Items: "First alpha update,Second beta update" },
+  });
+  var itemMatches = html.match(/ds-notification-menu__item\b/g) || [];
+  assert.equal(
+    itemMatches.length,
+    2,
+    "renders exactly 2 item rows for the 2-entry Items prop",
+  );
+  assert.match(html, /First alpha update/, "renders the first label");
+  assert.match(html, /Second beta update/, "renders the second label");
+});
+
+test("notification-dropdown: Property 1=Empty swaps in the empty copy, no item rows", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "notification-dropdown",
+    variant: "Property 1=Empty",
+    props: {},
+  });
+  assert.match(
+    html,
+    /ds-notification-menu--empty/,
+    "carries the empty modifier class",
+  );
+  assert.match(html, /You're all caught up\./, "renders the empty copy");
+  assert.doesNotMatch(
+    html,
+    /ds-notification-menu__item/,
+    "no item rows in the empty variant",
+  );
+});
+
+test("notification-dropdown: escapes hostile Items and Header (raw absent, escaped present)", function () {
+  var DS = require(DS_PATH);
+  var hostileHeader = "<script>alert(1)</script>";
+  var hostileItems = "<script>alert(2)</script>";
+  var html = DS.renderDSComponent({
+    dsSlug: "notification-dropdown",
+    variant: "Property 1=List",
+    props: {
+      Header: hostileHeader,
+      Items: hostileItems,
+    },
+  });
+  // Distinguish "escaped" from "dropped": a naive fix that simply omitted
+  // the hostile props would also make the raw-payload assertions below
+  // pass, so also require the escaped form to be present.
+  assert.equal(
+    html.indexOf(hostileHeader),
+    -1,
+    "the raw Header payload is absent",
+  );
+  assert.equal(
+    html.indexOf(hostileItems),
+    -1,
+    "the raw Items payload is absent",
+  );
+  assert.doesNotMatch(html, /<script>/, "no raw script tag anywhere");
+  assert.match(
+    html,
+    /&lt;script&gt;alert\(1\)&lt;\/script&gt;/,
+    "Header's escaped form is present",
+  );
+  assert.match(
+    html,
+    /&lt;script&gt;alert\(2\)&lt;\/script&gt;/,
+    "Items' escaped form is present",
+  );
+});
+
+test("search-dropdown-menu: base class + role present (After typed)", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-dropdown-menu",
+    variant: "Type=After typed",
+    props: {},
+  });
+  assert.match(html, /class="ds-search-menu/, "carries the base class");
+  assert.match(html, /role="menu"/, "carries menu role");
+});
+
+test("search-dropdown-menu: Type=After typed renders the base class only (no-op modifier dropped), with item rows", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-dropdown-menu",
+    variant: "Type=After typed",
+    props: { Results: "orders,invoices" },
+  });
+  // After typed IS the captured anatomy default -- its CSS rule was a
+  // no-op, so it renders the BASE class with no --after-typed modifier
+  // (see ds-base.css); the variant is distinguished by its CONTENT
+  // (row list + "Suggestions" heading) instead.
+  assert.match(html, /class="ds-search-menu"/, "carries only the base class");
+  assert.doesNotMatch(
+    html,
+    /ds-search-menu--after-typed/,
+    "does not carry a no-op modifier class",
+  );
+  assert.match(
+    html,
+    /ds-search-menu__heading">Suggestions</,
+    "renders the Suggestions heading",
+  );
+  var itemMatches = html.match(/ds-search-menu__item\b/g) || [];
+  assert.equal(itemMatches.length, 2, "renders a row per result");
+});
+
+test("search-dropdown-menu: Type=Before typed renders the base class only (no-op modifier dropped), with the Recent heading", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-dropdown-menu",
+    variant: "Type=Before typed",
+    props: {},
+  });
+  // Before typed differs from After typed only in CONTENT (the "Recent"
+  // heading + which items render), never in CSS -- so it also renders the
+  // BASE class with no --before-typed modifier (see ds-base.css).
+  assert.match(html, /class="ds-search-menu"/, "carries only the base class");
+  assert.doesNotMatch(
+    html,
+    /ds-search-menu--before-typed/,
+    "does not carry a no-op modifier class",
+  );
+  assert.match(
+    html,
+    /ds-search-menu__heading">Recent</,
+    "renders the Recent heading",
+  );
+});
+
+test("search-dropdown-menu: Type=No result branches to the empty message, no item rows", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-dropdown-menu",
+    variant: "Type=No result",
+    props: { Query: "orders" },
+  });
+  assert.match(
+    html,
+    /ds-search-menu--no-result/,
+    "carries the no-result modifier",
+  );
+  assert.match(html, /ds-search-menu__empty/, "carries the empty class");
+  assert.match(
+    html,
+    /No matches for &quot;orders&quot;/,
+    "renders the escaped query in the empty message",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-search-menu__item/,
+    "no result rows in the no-result variant",
+  );
+});
+
+test("search-dropdown-menu: escapes a hostile result label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-dropdown-menu",
+    variant: "Type=After typed",
+    props: { Results: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "hostile label escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+
+test("whats-new-dropdown: base class + role + default title present", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "whats-new-dropdown",
+    variant: "",
+    props: {},
+  });
+  assert.match(html, /class="ds-whatsnew/, "carries the base class");
+  assert.match(html, /role="menu"/, "carries menu role");
+  assert.match(html, /What&#39;s new|What's new/, "renders the default title");
+});
+
+test("whats-new-dropdown: Property 1=Empty and List branch to the right modifier + body", function () {
+  var DS = require(DS_PATH);
+  var htmlEmpty = DS.renderDSComponent({
+    dsSlug: "whats-new-dropdown",
+    variant: "Property 1=Empty",
+    props: {},
+  });
+  // Empty IS the captured anatomy default -- its CSS rule was a no-op, so
+  // it renders the BASE class with no --empty modifier (see ds-base.css);
+  // the variant is distinguished by its CONTENT instead.
+  assert.match(
+    htmlEmpty,
+    /class="ds-whatsnew"/,
+    "empty carries only the base class",
+  );
+  assert.doesNotMatch(
+    htmlEmpty,
+    /ds-whatsnew--empty/,
+    "empty does not carry a no-op modifier class",
+  );
+  assert.match(
+    htmlEmpty,
+    /ds-whatsnew__empty/,
+    "renders the empty content wrapper",
+  );
+  assert.match(htmlEmpty, /No release updates/, "empty renders its body copy");
+  assert.doesNotMatch(htmlEmpty, /ds-whatsnew__item/, "empty has no item rows");
+
+  var htmlList = DS.renderDSComponent({
+    dsSlug: "whats-new-dropdown",
+    variant: "Property 1=List",
+    props: { Items: "A,B" },
+  });
+  assert.match(htmlList, /ds-whatsnew--list/, "list carries its modifier");
+  // Negative lookahead excludes the __items wrapper div (a substring match
+  // of __item), so this counts only the per-row __item elements.
+  var itemMatches = htmlList.match(/ds-whatsnew__item(?!s)/g) || [];
+  assert.equal(itemMatches.length, 2, "renders two item rows for A,B");
+  assert.doesNotMatch(
+    htmlList,
+    /ds-whatsnew__empty/,
+    "list does not carry the empty class",
+  );
+});
+
+test("whats-new-dropdown: Property 1=Drilldown1 normalizes to the drilldown modifier with a back affordance", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "whats-new-dropdown",
+    variant: "Property 1=Drilldown1",
+    props: {},
+  });
+  assert.match(
+    html,
+    /ds-whatsnew--drilldown/,
+    "Drilldown1 normalizes to the drilldown modifier",
+  );
+  assert.match(html, /ds-whatsnew__back/, "renders the back affordance");
+});
+
+test("whats-new-dropdown: escapes a hostile Title and a hostile Items entry", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "whats-new-dropdown",
+    variant: "Property 1=List",
+    props: {
+      Title: "<img src=x onerror=alert(1)>",
+      Items: "<img src=x onerror=alert(2)>",
+    },
+  });
+  assert.match(html, /&lt;img/, "hostile text escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+
+test("drawer-side-panel: base class + role=dialog + aria-label present", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "drawer-side-panel",
+    variant: "App=Studio",
+    props: {},
+  });
+  assert.match(html, /class="ds-drawer"/, "carries the base class");
+  assert.match(html, /role="dialog"/, "carries dialog role");
+  assert.match(html, /aria-label="[^"]+"/, "carries an aria-label");
+});
+
+test("drawer-side-panel: hostile Name renders escaped inside __title", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "drawer-side-panel",
+    variant: "App=Studio",
+    props: { Name: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "hostile Name is escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+
+test("drawer-side-panel: App=Explorer adds the modifier, App=Studio (default) does not", function () {
+  var DS = require(DS_PATH);
+  var htmlExplorer = DS.renderDSComponent({
+    dsSlug: "drawer-side-panel",
+    variant: "App=Explorer",
+    props: {},
+  });
+  assert.match(
+    htmlExplorer,
+    /ds-drawer--explorer/,
+    "Explorer carries the modifier class",
+  );
+
+  var htmlStudio = DS.renderDSComponent({
+    dsSlug: "drawer-side-panel",
+    variant: "App=Studio",
+    props: {},
+  });
+  assert.doesNotMatch(
+    htmlStudio,
+    /ds-drawer--explorer/,
+    "Studio (default) does not carry the Explorer modifier",
+  );
+});
+
+test("drawer-side-panel: Show Back=false omits the back button; default renders it", function () {
+  var DS = require(DS_PATH);
+  var htmlDefault = DS.renderDSComponent({
+    dsSlug: "drawer-side-panel",
+    variant: "App=Studio",
+    props: {},
+  });
+  assert.match(
+    htmlDefault,
+    /ds-drawer__back/,
+    "back button renders by default",
+  );
+
+  var htmlNoBack = DS.renderDSComponent({
+    dsSlug: "drawer-side-panel",
+    variant: "App=Studio",
+    props: { "Show Back": false },
+  });
+  assert.doesNotMatch(
+    htmlNoBack,
+    /ds-drawer__back/,
+    "Show Back=false omits the back button",
+  );
+});
+
+test("drawer-side-panel: --explorer modifier rule actually differs from the base (no silent no-op)", function () {
+  var css = require("node:fs").readFileSync(
+    require("node:path").join(
+      __dirname,
+      "../../components/render/renderer/ds-base.css",
+    ),
+    "utf8",
+  );
+  var base = css.match(/\.ds-drawer\s*\{([^}]*)\}/);
+  var explorer = css.match(/\.ds-drawer--explorer\s*\{([^}]*)\}/);
+  assert.ok(base && explorer, "both rules exist");
+  assert.notEqual(base[1].trim(), "", "base rule is not empty");
+  assert.notEqual(
+    explorer[1].trim(),
+    "",
+    "--explorer must not be an empty no-op rule",
+  );
+});
+
+test("no silent no-op modifiers remain among .ds-search-menu--*, .ds-whatsnew--*, .ds-search-result-card--* rules", function () {
+  // Guard for the uniform rule: a root modifier class is emitted only when
+  // it carries a real visual delta from its base. This audits every
+  // remaining rule in these three families and fails if any body is
+  // empty or comment-only (i.e. has no actual declaration) -- catching a
+  // future regression back to a namespace-hook no-op, the same class of
+  // bug fixed for --after-typed / --before-typed / whats-new --empty /
+  // search-result-card --studio.
+  var css = require("node:fs").readFileSync(
+    require("node:path").join(
+      __dirname,
+      "../../components/render/renderer/ds-base.css",
+    ),
+    "utf8",
+  );
+  var ruleRe =
+    /\.(ds-search-menu|ds-whatsnew|ds-search-result-card)--[a-z0-9-]+\s*\{([^}]*)\}/g;
+  var checked = [];
+  var match;
+  while ((match = ruleRe.exec(css)) !== null) {
+    var selector = match[0].slice(0, match[0].indexOf("{")).trim();
+    var body = match[2];
+    var bodyWithoutComments = body.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+    checked.push(selector);
+    assert.ok(
+      bodyWithoutComments.length > 0 && /:/.test(bodyWithoutComments),
+      selector +
+        " must contain at least one real CSS declaration, not just a comment",
+    );
+  }
+  assert.ok(
+    checked.length >= 4,
+    "audit found the expected modifier rules (--no-result, --explorer-home, --list, --drilldown, --selected, --focus, ...)",
+  );
+  // Sanity: the rules we expect to have been dropped are actually gone.
+  assert.doesNotMatch(css, /\.ds-search-menu--after-typed\s*\{/);
+  assert.doesNotMatch(css, /\.ds-search-menu--before-typed\s*\{/);
+  assert.doesNotMatch(css, /\.ds-whatsnew--empty\s*\{/);
+  assert.doesNotMatch(css, /\.ds-search-result-card--studio\s*\{/);
+});
+
+// ===================================================================== //
+// Gray-box-to-zero, family 5 (primitives): spinner, loading-skeleton,   //
+// scroll-bar, link, avatar, collapse-accordion.                         //
+// ===================================================================== //
+
+test("spinner: base structure, role=status, single ring", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "spinner",
+    variant: "Color mode=On light bg",
+    props: {},
+  });
+  assert.match(html, /class="ds-spinner"/, "carries the base class");
+  assert.match(html, /role="status"/, "carries status role");
+  assert.match(html, /aria-live="polite"/, "carries aria-live");
+  var ringMatches = html.match(/<span class="ds-spinner__ring"/g) || [];
+  assert.equal(ringMatches.length, 1, "exactly one ring element");
+});
+
+test("spinner: Color mode=On dark bg adds the modifier, light (default) does not", function () {
+  var DS = require(DS_PATH);
+  var htmlDark = DS.renderDSComponent({
+    dsSlug: "spinner",
+    variant: "Color mode=On dark bg",
+    props: {},
+  });
+  assert.match(htmlDark, /ds-spinner--on-dark/, "dark carries the modifier");
+
+  var htmlLight = DS.renderDSComponent({
+    dsSlug: "spinner",
+    variant: "Color mode=On light bg",
+    props: {},
+  });
+  assert.doesNotMatch(
+    htmlLight,
+    /ds-spinner--on-dark/,
+    "light does not carry the dark modifier",
+  );
+});
+
+test("spinner: escapes hostile Label; no Label omits the label span and defaults aria-label", function () {
+  var DS = require(DS_PATH);
+  var hostile = DS.renderDSComponent({
+    dsSlug: "spinner",
+    variant: "Color mode=On light bg",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
+  assert.match(
+    hostile,
+    /aria-label="&lt;img[^"]*"/,
+    "escaped payload appears in aria-label",
+  );
+  assert.match(
+    hostile,
+    /<span class="ds-spinner__label">&lt;img[^<]*<\/span>/,
+    "escaped payload appears in the label span",
+  );
+
+  var noLabel = DS.renderDSComponent({
+    dsSlug: "spinner",
+    variant: "Color mode=On light bg",
+    props: {},
+  });
+  assert.doesNotMatch(
+    noLabel,
+    /ds-spinner__label/,
+    "no Label prop means no label element",
+  );
+  assert.match(noLabel, /aria-label="Loading"/, "defaults aria-label");
+});
+
+test("loading-skeleton: base + no-copy, role=status, blocks are empty and aria-hidden", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "loading-skeleton",
+    variant: "",
+    props: {},
+  });
+  assert.match(html, /class="ds-loading-skeleton"/, "carries the base class");
+  assert.match(html, /role="status"/, "carries status role");
+  assert.doesNotMatch(
+    html,
+    /Loading\.\.\./,
+    "no placeholder copy inside skeleton blocks",
+  );
+  var blockMatches =
+    html.match(
+      /<span class="ds-loading-skeleton__block[^"]*"[^>]*><\/span>/g,
+    ) || [];
+  assert.ok(blockMatches.length > 0, "renders at least one block");
+  blockMatches.forEach(function (m) {
+    assert.match(m, /aria-hidden="true"/, "every block is aria-hidden");
+  });
+});
+
+test("loading-skeleton: renders at least 3 block elements, each aria-hidden", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "loading-skeleton",
+    variant: "",
+    props: {},
+  });
+  var blockMatches = html.match(/ds-loading-skeleton__block/g) || [];
+  assert.ok(
+    blockMatches.length >= 3,
+    "at least 3 occurrences of ds-loading-skeleton__block",
+  );
+  var hiddenMatches = html.match(/aria-hidden="true"/g) || [];
+  assert.ok(hiddenMatches.length >= 3, "at least 3 aria-hidden blocks");
+});
+
+test("loading-skeleton: Transition=2 carries is-transition-2, default/1 does not", function () {
+  var DS = require(DS_PATH);
+  var htmlTwo = DS.renderDSComponent({
+    dsSlug: "loading-skeleton",
+    variant: "Transition=2",
+    props: {},
+  });
+  assert.match(htmlTwo, /is-transition-2/, "Transition=2 carries the modifier");
+
+  var htmlOne = DS.renderDSComponent({
+    dsSlug: "loading-skeleton",
+    variant: "Transition=1",
+    props: {},
+  });
+  assert.doesNotMatch(
+    htmlOne,
+    /is-transition-2/,
+    "Transition=1 (default) does not carry the modifier",
+  );
+});
+
+test("loading-skeleton: has no text sink -- hostile Label never appears", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "loading-skeleton",
+    variant: "",
+    props: { Label: "<img src=x onerror=alert(1)>" },
+  });
+  assert.doesNotMatch(html, /<img/, "hostile Label is never rendered");
+  assert.doesNotMatch(html, /onerror/, "hostile Label is never rendered");
+});
+
+test("scroll-bar: base structure, thumb child, role=scrollbar, vertical default", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "scroll-bar",
+    variant: "Property 1=Default",
+    props: {},
+  });
+  assert.match(html, /class="ds-scroll-bar"/, "carries the base class");
+  assert.match(
+    html,
+    /<span class="ds-scroll-bar__thumb"/,
+    "renders the thumb child",
+  );
+  assert.match(html, /role="scrollbar"/, "carries scrollbar role");
+  assert.match(
+    html,
+    /aria-orientation="vertical"/,
+    "defaults to vertical orientation",
+  );
+});
+
+test("scroll-bar: Orientation=Horizontal adds the modifier + flips aria-orientation; default has neither", function () {
+  var DS = require(DS_PATH);
+  var htmlH = DS.renderDSComponent({
+    dsSlug: "scroll-bar",
+    variant: "Property 1=Default",
+    props: { Orientation: "Horizontal" },
+  });
+  assert.match(
+    htmlH,
+    /ds-scroll-bar--horizontal/,
+    "horizontal carries the modifier class",
+  );
+  assert.match(
+    htmlH,
+    /aria-orientation="horizontal"/,
+    "horizontal flips aria-orientation",
+  );
+
+  var htmlV = DS.renderDSComponent({
+    dsSlug: "scroll-bar",
+    variant: "Property 1=Default",
+    props: {},
+  });
+  assert.doesNotMatch(
+    htmlV,
+    /ds-scroll-bar--horizontal/,
+    "default does not carry the horizontal modifier",
+  );
+  assert.doesNotMatch(
+    htmlV,
+    /aria-orientation="horizontal"/,
+    "default does not report horizontal orientation",
+  );
+});
+
+test("scroll-bar: escapes a hostile Label into aria-label only", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "scroll-bar",
+    variant: "Property 1=Default",
+    props: { Label: '"><script>alert(1)</script>' },
+  });
+  assert.doesNotMatch(html, /<script>/, "no raw script tag");
+  assert.match(
+    html,
+    /aria-label="[^"]*&lt;script&gt;[^"]*"/,
+    "escaped payload appears only inside aria-label",
+  );
+});
+
+test("scroll-bar: clamps Position/Length to [0,100]", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "scroll-bar",
+    variant: "Property 1=Default",
+    props: { Position: "150", Length: "-5" },
+  });
+  assert.match(html, /top:100%/, "Position clamps down to 100");
+  assert.match(html, /height:0%/, "Length clamps up to 0");
+});
+
+test("link: base -- <a> tag, base class, escaped label text", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "link",
+    variant: "State=Default",
+    props: { Label: "View details" },
+  });
+  assert.match(
+    html,
+    /<a class="ds-link"/,
+    "renders an <a> with the base class",
+  );
+  assert.match(html, />View details</, "renders the label text");
+});
+
+test("link: State=Disabled adds is-disabled + aria-disabled; State=Visited adds the modifier", function () {
+  var DS = require(DS_PATH);
+  var htmlDisabled = DS.renderDSComponent({
+    dsSlug: "link",
+    variant: "State=Disabled",
+    props: { Label: "View details" },
+  });
+  assert.match(htmlDisabled, /is-disabled/, "carries is-disabled");
+  assert.match(
+    htmlDisabled,
+    /aria-disabled="true"/,
+    "carries aria-disabled (an <a> has no disabled attribute)",
+  );
+
+  var htmlVisited = DS.renderDSComponent({
+    dsSlug: "link",
+    variant: "State=Visited",
+    props: { Label: "View details" },
+  });
+  assert.match(htmlVisited, /ds-link--visited/, "carries the visited modifier");
+});
+
+test("link: escapes a hostile Label", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "link",
+    variant: "State=Default",
+    props: { Label: "<script>alert(1)</script>" },
+  });
+  assert.match(html, /&lt;script&gt;/, "label escaped");
+  assert.doesNotMatch(html, /<script>alert/, "no raw injection");
+});
+
+test("avatar: base class + initials slot, defaults to AV", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "avatar",
+    variant: "Type=Default",
+    props: { Initials: "CF" },
+  });
+  assert.match(html, /class="ds-avatar"/, "carries the base class");
+  assert.match(
+    html,
+    /<span class="ds-avatar__initials">CF<\/span>/,
+    "renders the initials",
+  );
+
+  var htmlDefault = DS.renderDSComponent({
+    dsSlug: "avatar",
+    variant: "Type=Default",
+    props: {},
+  });
+  assert.match(
+    htmlDefault,
+    /<span class="ds-avatar__initials">AV<\/span>/,
+    "defaults to AV when Initials is absent",
+  );
+});
+
+test("avatar: Type=One group emits a group wrapper with a +N overflow; State=Disabled dims", function () {
+  var DS = require(DS_PATH);
+  var htmlGroup = DS.renderDSComponent({
+    dsSlug: "avatar",
+    variant: "Type=One group",
+    props: { Initials: "CF", Count: "6" },
+  });
+  assert.match(htmlGroup, /ds-avatar-group/, "carries the group wrapper");
+  var childMatches = htmlGroup.match(/class="ds-avatar"/g) || [];
+  assert.ok(childMatches.length > 1, "more than one child avatar");
+  assert.match(
+    htmlGroup,
+    /ds-avatar__overflow">\+2</,
+    "shows +2 overflow for Count=6",
+  );
+
+  var htmlDisabled = DS.renderDSComponent({
+    dsSlug: "avatar",
+    variant: "Type=Default, State=Disabled",
+    props: { Initials: "CF" },
+  });
+  assert.match(
+    htmlDisabled,
+    /ds-avatar--disabled/,
+    "State=Disabled carries the modifier",
+  );
+});
+
+test("avatar: escapes hostile Initials", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "avatar",
+    variant: "Type=Default",
+    props: { Initials: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "initials escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+
+test("collapse-accordion: State=Collapsed renders Title, hides --expanded and __body", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "collapse-accordion",
+    variant: "State=Collapsed",
+    props: { Title: "Advanced settings" },
+  });
+  assert.match(html, /class="ds-collapse-accordion"/, "carries the base class");
+  assert.match(
+    html,
+    /ds-collapse-accordion__title">Advanced settings/,
+    "renders the title",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-collapse-accordion--expanded/,
+    "collapsed does not carry the expanded modifier",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-collapse-accordion__body/,
+    "collapsed hides the body",
+  );
+});
+
+test('collapse-accordion: State="Expanede" (registry typo) matches -- expanded modifier + body render', function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "collapse-accordion",
+    variant: "State=Expanede",
+    props: { Title: "T", Body: "Hidden detail" },
+  });
+  assert.match(
+    html,
+    /ds-collapse-accordion--expanded/,
+    "the literal registry value 'Expanede' matches the expanded check",
+  );
+  assert.match(
+    html,
+    /ds-collapse-accordion__body">Hidden detail/,
+    "renders the body",
+  );
+});
+
+test("collapse-accordion: escapes a hostile Title", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "collapse-accordion",
+    variant: "State=Collapsed",
+    props: { Title: "<img src=x onerror=alert(1)>" },
+  });
+  assert.match(html, /&lt;img/, "title escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
+});
+
+test("family 5: no silent no-op modifiers among the new primitive classes", function () {
+  // Same audit shape as the family-4 no-op guard above: a root/descendant
+  // modifier rule is real only when its body carries an actual declaration,
+  // not just a comment. Covers every --modifier / .is-* rule the six new
+  // primitives introduce.
+  var css = require("node:fs").readFileSync(
+    require("node:path").join(
+      __dirname,
+      "../../components/render/renderer/ds-base.css",
+    ),
+    "utf8",
+  );
+  var ruleRe =
+    /\.(ds-spinner|ds-loading-skeleton|ds-scroll-bar|ds-link|ds-avatar|ds-collapse-accordion)(--[a-z0-9-]+|\.is-[a-z0-9-]+)\s*(?:\.[a-zA-Z0-9_-]+\s*)?\{([^}]*)\}/g;
+  var checked = [];
+  var match;
+  while ((match = ruleRe.exec(css)) !== null) {
+    var selector = match[0].slice(0, match[0].indexOf("{")).trim();
+    var body = match[3];
+    var bodyWithoutComments = body.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+    checked.push(selector);
+    assert.ok(
+      bodyWithoutComments.length > 0 && /:/.test(bodyWithoutComments),
+      selector +
+        " must contain at least one real CSS declaration, not just a comment",
+    );
+  }
+  assert.ok(
+    checked.length >= 6,
+    "audit found modifier rules across the six new primitives, found: " +
+      JSON.stringify(checked),
+  );
+});

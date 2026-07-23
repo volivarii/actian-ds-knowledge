@@ -20,6 +20,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **Gray-box to zero: 22 hand-authored render leaves across 5 component families** ([#472](https://github.com/volivarii/actian-ds-knowledge/pull/472)).
+  Continues the #465 slice. Real DS-fidelity HTML render cases (in `ds-html-map.js` + `ds-base.css`) now
+  exist for 22 curated components, wired into **both** the plugin renderer (`BUILT_SLUGS`) and the
+  canonical render library (`RENDER_SLUGS` in `matrix.js`), so they no longer render as gray placeholder
+  chips: feedback states (`error-state`, `maintenance-state`, `confirmation`); tags (`tag-shared`,
+  `tag-catalog`, `tag-stage`, `tag-status`, `tag-glossary-item-type`, `tag-catalog-item-type`); cards
+  (`card-for-perimeter`, `card-for-grouped-content`, `search-result-card`); dropdowns/overlays
+  (`notification-dropdown`, `search-dropdown-menu`, `whats-new-dropdown`, `drawer-side-panel`); primitives
+  (`spinner`, `loading-skeleton`, `scroll-bar`, `link`, `avatar`, `collapse-accordion`). `BUILT_SLUGS`
+  41 → 63. Colors and spacing are taken from captured Figma anatomy, with per-slug BEM classes and
+  `MATRIX_OVERRIDES` where the gallery would otherwise drop identity values. Nine further curated
+  gray-box slugs were triaged as not-yet-buildable and deferred with reasons (no registry entry or no
+  captured structure). Also scopes `scripts/render/fidelity-check.js`'s `checkBaseCssRules` to validate
+  each `.ds-tag--<modifier>` rule against only its owning fact source (not a union of all tag facts) and
+  harvests captured text colors, fixing a false positive without weakening the gate.
 - **Safe anchor rename in the editor.** Renaming a heading anchor (`{#slug}`) now updates the
   same-file links that point at it and honestly discloses which other files reference it (rather than
   silently breaking them). Click the anchor chip (rich) or the "Rename anchor" toolbar button
