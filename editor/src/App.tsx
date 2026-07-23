@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Box,
@@ -25,7 +25,8 @@ import {
   anyOpenFailing,
   type SubmissionRow,
 } from "./app/RecentSubmissions";
-import { CommandPalette, type CommandItem } from "./app/CommandPalette";
+import { type CommandItem } from "./app/CommandPalette";
+import { GlobalSearch } from "./app/GlobalSearch";
 import { useSaveState } from "./drafts/useSaveState";
 import { useCart } from "./drafts/useCart";
 import {
@@ -35,6 +36,8 @@ import {
 import { createOctokit } from "./core/octokit";
 import { loadComponentSlugs } from "./lib/componentSlugs";
 import { loadAnchorIndex } from "./lib/anchorIndex";
+import { buildSearchIndex } from "./lib/searchIndex";
+import { loadContentFiles, type ContentFile } from "./lib/contentFiles";
 import { DOMAINS, DOMAIN_LABEL, type Domain } from "./lib/workspaceState";
 import {
   bootstrap as bootstrapAuth,
@@ -78,7 +81,6 @@ function GearIcon() {
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activePath, setActivePath] = useState<string | null>(null);
-  const [paletteOpen, setPaletteOpen] = useState(false);
   const [stagingOpen, setStagingOpen] = useState(false);
   const [submissionsOpen, setSubmissionsOpen] = useState(false);
   const [submissionRows, setSubmissionRows] = useState<SubmissionRow[]>([]);
@@ -105,8 +107,8 @@ export default function App() {
       return null;
     }
   }, [session]);
-  // Lazy-load the known component slug set so Cmd-K can offer
-  // "Go to <slug>" without the user knowing exact spellings.
+  // Lazy-load the known component slug set; it scopes the header search
+  // index to the authorable components (buildSearchIndex's authorable set).
   const [knownSlugs, setKnownSlugs] = useState<string[]>([]);
   useEffect(() => {
     if (!headerOctokit) return;
@@ -119,6 +121,40 @@ export default function App() {
       cancelled = true;
     };
   }, [headerOctokit]);
+
+  // Content files (content/src/{writing,patterns,product}) for the header
+  // search's "Content" group: the graph's content:* nodes are derived and
+  // not directly openable, so search sources a real file listing instead.
+  const [contentFiles, setContentFiles] = useState<ContentFile[]>([]);
+  useEffect(() => {
+    if (!headerOctokit) return;
+    let cancelled = false;
+    void loadContentFiles(headerOctokit).then((f) => {
+      if (!cancelled) setContentFiles(f);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [headerOctokit]);
+
+  const searchIndex = useMemo(
+    () => buildSearchIndex(new Set(knownSlugs), contentFiles),
+    [knownSlugs, contentFiles],
+  );
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Cmd/Ctrl-K focuses the header search instead of opening a modal.
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    }
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const commands: CommandItem[] = useMemo(() => {
     const activeSlug = activeComponentSlug(activePath);
@@ -196,30 +232,18 @@ export default function App() {
         run: () => setActivePath(`components/src/${activeSlug}/_meta.yml`),
       });
     }
-    // Goto-by-slug — every known component as a navigable target. Many
-    // entries; cmdk's typeahead handles the filtering.
-    for (const slug of knownSlugs) {
-      base.push({
-        id: `goto-${slug}`,
-        label: `Go to ${slug}`,
-        hint: `workspace/${slug}`,
-        group: "Components",
-        run: () => setActivePath(`workspace/${slug}`),
-      });
-    }
     return base;
-  }, [activePath, cartEntries.length, knownSlugs]);
+  }, [activePath, cartEntries.length]);
   return (
     <Theme accentColor="indigo" radius="medium" appearance="dark">
       <Flex direction="column" style={{ height: "100vh", width: "100vw" }}>
         <Flex
-          justify="between"
           align="center"
           px="4"
           py="2"
           style={{ borderBottom: "1px solid var(--gray-5)", flexShrink: 0 }}
         >
-          <Flex align="center" gap="2">
+          <Flex align="center" gap="2" flexShrink="0">
             <img
               src="/actian-ds-knowledge/editor/favicon.svg"
               width="20"
@@ -229,7 +253,21 @@ export default function App() {
             />
             <Heading size="4">Actian DS Knowledge Editor</Heading>
           </Flex>
-          <Flex align="center" gap="3">
+          {/* Spacer: flexGrow pins the right-side actions even when signed
+              out (no search rendered). GlobalSearch owns its own
+              maxWidth/margin centering, so this wrapper stays unstyled
+              rather than repeating them. */}
+          <Box flexGrow="1">
+            {session && (
+              <GlobalSearch
+                index={searchIndex}
+                actions={commands}
+                onOpenFile={setActivePath}
+                inputRef={searchInputRef}
+              />
+            )}
+          </Box>
+          <Flex align="center" gap="3" flexShrink="0">
             {headerOctokit && <FreshnessChip octokit={headerOctokit} />}
             <SaveStateIndicator state={saveState} />
             {headerOctokit && (
@@ -290,7 +328,7 @@ export default function App() {
               activePath={activePath}
               setActivePath={setActivePath}
               onOpenStaging={() => setStagingOpen(true)}
-              onOpenPalette={() => setPaletteOpen(true)}
+              onFocusSearch={() => searchInputRef.current?.focus()}
             />
           )}
         </Box>
@@ -312,11 +350,6 @@ export default function App() {
             onLoaded={setSubmissionRows}
           />
         )}
-        <CommandPalette
-          commands={commands}
-          open={paletteOpen}
-          onOpenChange={setPaletteOpen}
-        />
       </Flex>
     </Theme>
   );

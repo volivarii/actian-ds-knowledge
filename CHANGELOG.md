@@ -20,6 +20,11 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **Cross-domain search in the editor header.** A single search in the top bar (also `Cmd/Ctrl-K`)
+  now spans components, foundations, content, accessibility, and the products, entities, and features
+  that use the system, with grouped, typed, author-language results that open the thing directly. It
+  replaces the thin command-palette modal (its actions moved into the same search). The home hero was
+  simplified. Editor-only, version-neutral. ([#476](https://github.com/volivarii/actian-ds-knowledge/pull/476))
 - **Gray-box to zero: 22 hand-authored render leaves across 5 component families** ([#472](https://github.com/volivarii/actian-ds-knowledge/pull/472)).
   Continues the #465 slice. Real DS-fidelity HTML render cases (in `ds-html-map.js` + `ds-base.css`) now
   exist for 22 curated components, wired into **both** the plugin renderer (`BUILT_SLUGS`) and the
