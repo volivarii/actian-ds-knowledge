@@ -171,6 +171,19 @@ Each entry links its pull request. Dates are the merge date (UTC).
   ever had, and the file documents that the exclusion was deliberate rather than lost.
 
 ### Changed
+- **`RENDER_SLUGS` is derived from the renderer's own switch instead of restating it.**
+  `matrix.js` already documented where the truth lived ("the render slugs are the `case "<slug>":`
+  branches in `ds-html-map.js`") and then listed all 63 by hand anyway, so adding or renaming a
+  component took three coordinated edits across two files. #465 shipped a slug that never reached the
+  canonical render library for exactly that reason: the case existed, `BUILT_SLUGS` listed it, and
+  this list did not. `matrix.js` is node-only, so it now parses the sibling source, and throws if it
+  finds no cases rather than letting an empty list silently skip every render.
+  `ds-html-map.js` keeps its `BUILT_SLUGS` literal because that module is browser-capable and cannot
+  read its own source, which leaves one hand-written list where there were two. Invariant 8 changes
+  meaning as a result: it used to compare two hand lists, so forgetting both passed silently, and it
+  now compares the derived set against `BUILT_SLUGS` and catches a case added without a matching
+  entry. Mutation-verified. **The regenerated canonical manifest is set-identical but reordered**,
+  because the derive sorts, so the output cannot shift depending on where a case is inserted.
 - **Three render gates that could not fail were made able to fail** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
   Deleting a frozen oracle is only safe if what remains actually bites, so three weak checks were
   repaired in the same change, all mutation-verified. `groupFor` in `matrix.js` ends in
