@@ -132,13 +132,20 @@ function escLabel(s) {
 
 // Invariant 8: a slug silently removed from (or added to) the matrix would
 // shrink or inflate coverage without reddening anything else in this file.
-// A hand-authored case can land in ds-html-map.js's switch and BUILT_SLUGS
-// without ever being added to RENDER_SLUGS, which derive-canonical.js
-// iterates -- rendering for the plugin's live renderDSComponent but staying
-// absent from the canonical render library, with nothing else here reddening
-// (see the 6-slug drift this closed). Asserted as set equality, not a
-// hardcoded count, so it self-updates as slugs are added on either side.
-test("invariant 8: RENDER_SLUGS matches BUILT_SLUGS exactly", function () {
+// RENDER_SLUGS is no longer a hand-written list: matrix.js derives it from
+// the `case "<slug>":` branches in ds-html-map.js, so the drift this test was
+// written for (a case + BUILT_SLUGS entry that never reached RENDER_SLUGS, and
+// so never reached the canonical render library -- the 6-slug #465 miss) can no
+// longer happen at all.
+//
+// The test is kept because it now checks something it could not check before.
+// It used to compare two hand-written lists, so forgetting BOTH passed
+// silently. It now compares the DERIVED set against ds-html-map's own
+// BUILT_SLUGS literal, which is still hand-written because that module is
+// browser-capable and cannot read its own source. So this catches the one
+// remaining failure mode: a case added to the switch without adding it to
+// BUILT_SLUGS, or a BUILT_SLUGS entry with no case behind it.
+test("invariant 8: BUILT_SLUGS matches the switch cases RENDER_SLUGS derives from", function () {
   var render = RENDER_SLUGS.slice().sort();
   var built = dsHtmlMap.BUILT_SLUGS.slice().sort();
   assert.deepEqual(
