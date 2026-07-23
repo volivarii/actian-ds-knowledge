@@ -9,6 +9,9 @@
 //   category:   → components/src/categories/<slug>.md
 //   a11y:       → accessibility/src/<slug>.md
 //   foundation: → foundations/src/<slug>.md
+//   app:        → app-context/src/apps/<slug>.md
+//   entity:     → app-context/src/entities/<slug>.md
+//   pattern:    → app-context/src/patterns/<slug>.md
 //   content:    → null  (the group dir patterns|product|writing is NOT
 //                 recoverable from the id alone)
 //   motion:     → null  (no standalone editable file convention)
@@ -30,6 +33,12 @@ export function navTargetForNodeId(nodeId: string): string | null {
       return `accessibility/src/${slug}.md`;
     case "foundation":
       return `foundations/src/${slug}.md`;
+    case "app":
+      return `app-context/src/apps/${slug}.md`;
+    case "entity":
+      return `app-context/src/entities/${slug}.md`;
+    case "pattern":
+      return `app-context/src/patterns/${slug}.md`;
     default:
       return null;
   }
