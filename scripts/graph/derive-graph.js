@@ -432,6 +432,15 @@ function collectAppContext(g, ac) {
 // (component nodes). Unresolved / cross-kit slugs are dropped by the hasNode guard.
 function collectPatternComponents(g, ac) {
   var patterns = (ac && ac.patterns) || {};
+  // Unresolved references are collected and thrown at the end rather than
+  // warned past. A warning in a derive log is not a signal anyone reads: the
+  // edge simply disappears, and the feature quietly claims to be built from one
+  // fewer component than its file says. Now that features are authorable in the
+  // editor and "Built from these components" is shown to authors, that silence
+  // is the expensive kind. Every reference resolves today, so this fails only
+  // on real drift (a renamed or removed component, a typo, a display name used
+  // where a slug belongs).
+  var unresolved = [];
   Object.keys(patterns).forEach(function (slug) {
     var comps = (patterns[slug] && patterns[slug].components) || [];
     if (!Array.isArray(comps) || comps.length === 0) return;
@@ -441,16 +450,7 @@ function collectPatternComponents(g, ac) {
       if (!compSlug) return;
       var targetId = M.nodeId("component", compSlug);
       if (!g.hasNode(targetId)) {
-        // components[] is hand-authored (unlike machine-sourced composed_of), so
-        // a typo or display-name would otherwise vanish with no signal. Warn on
-        // the drop so an authoring mistake surfaces in the derive/sync log.
-        console.warn(
-          "derive-graph: ux_pattern '" +
-            slug +
-            "' components[] references unknown component '" +
-            compSlug +
-            "' (edge dropped; check the slug against the registry keys)",
-        );
+        unresolved.push(slug + " -> " + compSlug);
         return;
       }
       g.addEdge({
@@ -466,6 +466,16 @@ function collectPatternComponents(g, ac) {
       });
     });
   });
+  if (unresolved.length > 0) {
+    throw new Error(
+      "derive-graph: " +
+        unresolved.length +
+        " app-context components[] reference(s) do not match a component in any" +
+        " registry, so their uses_component edges would be dropped silently:\n  " +
+        unresolved.join("\n  ") +
+        "\nCheck each slug against the registry keys, or remove the reference.",
+    );
+  }
 }
 function readContentEntries() {
   var dir = path.join(ROOT, "content", "src");
