@@ -2,14 +2,16 @@
 // product to records other products already depend on.
 //
 // Two pure text transforms, no IO:
-//   buildAppStub — the new app-context/src/apps/<slug>.md file
-//   addAppToApps — appends an app slug to an entity's or a feature's
+//   buildAppStub: the new app-context/src/apps/<slug>.md file
+//   addAppToApps: appends an app slug to an entity's or a feature's
 //                  frontmatter `apps:` list
 //
 // addAppToApps is frontmatter-scoped by construction: it splits the file at
 // the frontmatter fence and rewrites only that region, so an `apps:` block
 // quoted in the prose body can never be rewritten. Same class of trap as the
 // anchor rename's fences, avoided the cheap way.
+
+import { stringify as stringifyYaml } from "yaml";
 
 export interface AppStubOptions {
   slug: string;
@@ -18,11 +20,20 @@ export interface AppStubOptions {
   headerType?: string;
 }
 
-/** Plain enough to emit bare; anything else gets JSON-quoted (valid YAML). */
-const BARE_SCALAR_RE = /^[A-Za-z0-9][A-Za-z0-9 ._-]*$/;
-
+/**
+ * Emits a string as a YAML scalar, quoted whenever bare would not read back as
+ * that same string.
+ *
+ * Delegated to the YAML serializer rather than a character-class test, because
+ * the values that need quoting are not about which characters they contain: a
+ * product named "2026" reads back as a number, and slugs "true" / "null" read
+ * back as a boolean and a null. All three pass a kebab-case shape check, all
+ * three are reachable by typing a name into the dialog, and each one silently
+ * violates the schema's `"type": "string"` at submit time, far from the field
+ * that caused it.
+ */
 function yamlScalar(value: string): string {
-  return BARE_SCALAR_RE.test(value) ? value : JSON.stringify(value);
+  return stringifyYaml(value).trimEnd();
 }
 
 /**
@@ -44,7 +55,7 @@ export function buildAppStub({
     "---",
     "# yaml-language-server: $schema=../../../schemas/app-context-app.json",
     "_schema_version: 1",
-    `slug: ${slug}`,
+    `slug: ${yamlScalar(slug)}`,
     `label: ${yamlScalar(label)}`,
     "header:",
     `  type: ${yamlScalar(header)}`,
@@ -85,9 +96,12 @@ export function addAppToApps(text: string, appSlug: string): string | null {
   return open + next + close + text.slice(matched.length);
 }
 
-function appendToAppsBlock(frontmatter: string, appSlug: string): string | null {
+function appendToAppsBlock(
+  frontmatter: string,
+  appSlug: string,
+): string | null {
   const lines = frontmatter.split("\n");
-  // Column 0 only — a nested `apps:` (inside useCases, say) is a different key.
+  // Column 0 only. A nested `apps:` (inside useCases, say) is a different key.
   const keyLine = lines.findIndex((l) => /^apps:/.test(l));
   if (keyLine === -1) return null;
 
@@ -114,14 +128,18 @@ function appendToAppsBlock(frontmatter: string, appSlug: string): string | null 
   }
 
   // Anything other than a bare `apps:` or a flow sequence is a shape this
-  // transform does not understand — refuse rather than guess.
+  // transform does not understand, so refuse rather than guess.
   if (inlineValue !== "") return null;
 
   const items: string[] = [];
   let lastItem = keyLine;
   let indent = "  ";
   for (let i = keyLine + 1; i < lines.length; i++) {
-    const item = /^(\s+)-\s+(\S.*?)\s*$/.exec(lines[i]!);
+    // Zero indent is legal YAML for a sequence under a key, and matching it
+    // matters: treating `- studio` at column 0 as "no items" would append a
+    // two-space item below it and leave a list at two indents, which no longer
+    // parses as one sequence.
+    const item = /^(\s*)-\s+(\S.*?)\s*$/.exec(lines[i]!);
     if (!item) break;
     indent = item[1]!;
     items.push(item[2]!);

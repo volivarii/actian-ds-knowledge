@@ -882,7 +882,7 @@ function fakeGhWithFiles(
   } as any;
 }
 
-test("Sidebar — Products carries a New product affordance", async () => {
+test("Sidebar: Products carries a New product affordance", async () => {
   render(
     wrap(
       <Sidebar
@@ -899,7 +899,7 @@ test("Sidebar — Products carries a New product affordance", async () => {
 
 // The affordance has to survive the empty state, or the one team that most
 // needs it (the first one, with nothing authored yet) cannot reach it.
-test("Sidebar — an empty application context still offers New product", async () => {
+test("Sidebar: an empty application context still offers New product", async () => {
   render(
     wrap(
       <Sidebar
@@ -921,7 +921,7 @@ test("Sidebar — an empty application context still offers New product", async 
   assert.equal(screen.queryByText("Entities"), null);
 });
 
-test("Sidebar — creating a product stages the product file and the joined record", async () => {
+test("Sidebar: creating a product stages the product file and the joined record", async () => {
   submissionCartSingleton.clear();
   const selected: (string | null)[] = [];
   render(
@@ -967,4 +967,50 @@ test("Sidebar — creating a product stages the product file and the joined reco
   // The author lands in the product they just created.
   assert.ok(selected.includes("app-context/src/apps/data-connect.md"));
   submissionCartSingleton.clear();
+});
+
+// The failure path is the whole point of reporting instead of dropping: if a
+// claimed record cannot be joined, the author has to hear about it, and the
+// product itself must still be staged.
+test("Sidebar: a record that cannot be joined is reported, product still staged", async () => {
+  submissionCartSingleton.clear();
+  const alerts: string[] = [];
+  const originalAlert = window.alert;
+  window.alert = (msg?: unknown) => {
+    alerts.push(String(msg));
+  };
+  try {
+    render(
+      wrap(
+        <Sidebar
+          octokit={fakeGhWithFiles(APP_CONTEXT_LISTINGS, {
+            // No apps: key, so the join has nowhere to land.
+            [DATASET_PATH]: "---\nslug: dataset\n---\nProse.\n",
+          })}
+          pendingPaths={new Set()}
+          activePath={null}
+          onSelect={() => {}}
+        />,
+      ),
+    );
+    await waitFor(() => screen.getByText("Products"));
+    fireEvent.click(screen.getByRole("button", { name: "New product" }));
+    fireEvent.change(await screen.findByLabelText("Product name"), {
+      target: { value: "Data Connect" },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: /^Dataset/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Create product" }));
+
+    await waitFor(() => assert.equal(alerts.length, 1));
+    assert.match(alerts[0]!, /Dataset/);
+    assert.match(alerts[0]!, /Data Connect/);
+    assert.ok(
+      submissionCartSingleton.has("app-context/src/apps/data-connect.md"),
+      "the product must survive one failed join",
+    );
+    assert.equal(submissionCartSingleton.has(DATASET_PATH), false);
+  } finally {
+    window.alert = originalAlert;
+    submissionCartSingleton.clear();
+  }
 });

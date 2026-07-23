@@ -42,10 +42,13 @@ export function listContextRecords(): ContextRecord[] {
     const kind = KIND_BY_NODE_TYPE[node.type];
     if (!kind) continue;
     const slug = slugOf(node.id);
+    // Fall back to the slug when an edge points at an app node the graph does
+    // not carry a title for. Dropping it instead would quietly under-report who
+    // depends on this record, which is the one thing the disclosure must get
+    // right.
     const usedBy = index
       .neighbors(node.id, { edgeTypes: ["in_app"], direction: "out" })
-      .map((n) => n.node?.title)
-      .filter((title): title is string => Boolean(title))
+      .map((n) => n.node?.title || slugOf(n.id))
       .sort((a, b) => a.localeCompare(b));
     records.push({
       kind,

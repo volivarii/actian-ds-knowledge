@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { parse as parseYaml } from "yaml";
 import { buildAppStub, addAppToApps } from "../../src/lib/appContextCreate";
 
 // ── buildAppStub ────────────────────────────────────────────────────────
@@ -26,6 +27,40 @@ test("the header type can differ from the label", () => {
 test("a label needing YAML quoting is quoted", () => {
   const out = buildAppStub({ slug: "x", label: "Data: Connect" });
   assert.match(out, /^label: "Data: Connect"$/m);
+});
+
+// The schema types slug, label and header.type as strings. A bare YAML scalar
+// that happens to spell a boolean, a null, or a number reads back as that type
+// instead, which fails validation at submit time, far from the field that
+// caused it. Parse the emitted frontmatter and assert the types survive.
+for (const [name, opts] of [
+  ["a reserved-word slug", { slug: "true", label: "True" }],
+  ["a null-spelling slug", { slug: "null", label: "Null" }],
+  ["a numeric label", { slug: "codename", label: "2026" }],
+  ["a numeric header variant", { slug: "x", label: "X", headerType: "2026" }],
+] as const) {
+  test(`${name} stays a string when parsed back`, () => {
+    const out = buildAppStub(opts);
+    const frontmatter = out.split(/^---$/m)[1] ?? "";
+    const parsed = parseYaml(frontmatter) as {
+      slug: unknown;
+      label: unknown;
+      header: { type: unknown };
+    };
+    assert.equal(typeof parsed.slug, "string", "slug lost its type");
+    assert.equal(typeof parsed.label, "string", "label lost its type");
+    assert.equal(
+      typeof parsed.header.type,
+      "string",
+      "header.type lost its type",
+    );
+  });
+}
+
+test("a plain name still emits an unquoted scalar", () => {
+  const out = buildAppStub({ slug: "data-connect", label: "Data Connect" });
+  assert.match(out, /^slug: data-connect$/m);
+  assert.match(out, /^label: Data Connect$/m);
 });
 
 test("the stub carries the three canonical sections", () => {
@@ -81,7 +116,7 @@ Prose about datasets.
   );
 });
 
-test("is idempotent — an already-listed app returns the text byte-identical", () => {
+test("is idempotent: an already-listed app returns the text byte-identical", () => {
   assert.equal(addAppToApps(ENTITY, "studio"), ENTITY);
 });
 
@@ -139,11 +174,7 @@ Example frontmatter:
 `;
   const out = addAppToApps(src, "data-connect");
   assert.ok(out !== null);
-  assert.equal(
-    out.split(/^---$/m)[2],
-    src.split(/^---$/m)[2],
-    "body changed",
-  );
+  assert.equal(out.split(/^---$/m)[2], src.split(/^---$/m)[2], "body changed");
   assert.match(out, /^ {2}- data-connect$/m);
 });
 
@@ -169,4 +200,12 @@ test("returns null when the record has no apps key to join", () => {
 
 test("returns null when there is no frontmatter at all", () => {
   assert.equal(addAppToApps("just prose\n", "data-connect"), null);
+});
+
+test("appends to a zero-indent block list without breaking the sequence", () => {
+  const src = "---\nslug: x\napps:\n- studio\n---\nbody\n";
+  const out = addAppToApps(src, "data-connect");
+  assert.ok(out !== null);
+  const parsed = parseYaml(out.split(/^---$/m)[1] ?? "") as { apps: string[] };
+  assert.deepEqual(parsed.apps, ["studio", "data-connect"]);
 });

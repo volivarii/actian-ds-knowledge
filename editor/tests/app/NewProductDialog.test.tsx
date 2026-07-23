@@ -34,6 +34,13 @@ const RECORDS: ContextRecord[] = [
     path: "app-context/src/patterns/lineage-graph.md",
     usedBy: ["Studio"],
   },
+  {
+    kind: "feature",
+    slug: "import-wizard",
+    label: "Import wizard",
+    path: "app-context/src/patterns/import-wizard.md",
+    usedBy: ["Studio"],
+  },
 ];
 
 function renderDialog(
@@ -57,7 +64,7 @@ function typeName(r: ReturnType<typeof renderDialog>, value: string) {
   fireEvent.change(r.getByLabelText("Product name"), { target: { value } });
 }
 
-test("NewProductDialog — the name derives the filename and the header variant", () => {
+test("NewProductDialog: the name derives the filename and the header variant", () => {
   const r = renderDialog();
   typeName(r, "Data Connect");
   assert.equal(
@@ -74,7 +81,7 @@ test("NewProductDialog — the name derives the filename and the header variant"
   );
 });
 
-test("NewProductDialog — create stays disabled until the product has a name", () => {
+test("NewProductDialog: create stays disabled until the product has a name", () => {
   const r = renderDialog();
   const create = r.getByRole("button", { name: "Create product" });
   assert.equal((create as HTMLButtonElement).disabled, true);
@@ -82,7 +89,7 @@ test("NewProductDialog — create stays disabled until the product has a name", 
   assert.equal((create as HTMLButtonElement).disabled, false);
 });
 
-test("NewProductDialog — a filename that already exists is refused", () => {
+test("NewProductDialog: a filename that already exists is refused", () => {
   const r = renderDialog();
   typeName(r, "Studio");
   assert.ok(r.getByText(/product with that name already exists/i));
@@ -93,13 +100,13 @@ test("NewProductDialog — a filename that already exists is refused", () => {
   );
 });
 
-test("NewProductDialog — each record shows the products that depend on it", () => {
+test("NewProductDialog: each record shows the products that depend on it", () => {
   const r = renderDialog();
   assert.ok(r.getByText("used by Explorer, Studio"));
   assert.ok(r.getByText(/not used by any product yet/i));
 });
 
-test("NewProductDialog — claiming a shared record discloses the shared write", () => {
+test("NewProductDialog: claiming a shared record discloses the shared write", () => {
   const r = renderDialog();
   assert.equal(r.queryByTestId("shared-write-disclosure"), null);
   fireEvent.click(r.getByRole("checkbox", { name: /^Dataset/ }));
@@ -108,13 +115,13 @@ test("NewProductDialog — claiming a shared record discloses the shared write",
   assert.match(note.textContent ?? "", /Studio/);
 });
 
-test("NewProductDialog — claiming an unused record raises no shared-write note", () => {
+test("NewProductDialog: claiming an unused record raises no shared-write note", () => {
   const r = renderDialog();
   fireEvent.click(r.getByRole("checkbox", { name: /^Scanner/ }));
   assert.equal(r.queryByTestId("shared-write-disclosure"), null);
 });
 
-test("NewProductDialog — confirming returns the product and its claimed records", () => {
+test("NewProductDialog: confirming returns the product and its claimed records", () => {
   let got: NewProductValue | null = null;
   const r = renderDialog({
     onConfirm: (v) => {
@@ -137,11 +144,41 @@ test("NewProductDialog — confirming returns the product and its claimed record
   ]);
 });
 
-test("NewProductDialog — the filter narrows the record list", () => {
+test("NewProductDialog: the filter narrows the record list", () => {
   const r = renderDialog();
   fireEvent.change(r.getByLabelText("Filter features and entities"), {
     target: { value: "lineage" },
   });
   assert.ok(r.queryByRole("checkbox", { name: /^Lineage graph/ }));
   assert.equal(r.queryByRole("checkbox", { name: /^Dataset/ }), null);
+});
+
+// The record count and the product count diverge, and each half of the sentence
+// has to follow its own. Both shapes below used to render broken grammar and,
+// worse, a claim that every named product depended on every claimed record.
+test("NewProductDialog: one record used by two products reads correctly", () => {
+  const r = renderDialog();
+  fireEvent.click(r.getByRole("checkbox", { name: /^Dataset/ }));
+  const note = r.getByTestId("shared-write-disclosure").textContent ?? "";
+  assert.match(note, /1 of these is already used by other products/);
+  assert.match(note, /\(Explorer and Studio\)/);
+  assert.match(note, /edits that record/);
+  assert.match(note, /alongside those products/);
+});
+
+test("NewProductDialog: two records used by one product reads correctly", () => {
+  const r = renderDialog();
+  fireEvent.click(r.getByRole("checkbox", { name: /^Lineage graph/ }));
+  fireEvent.click(r.getByRole("checkbox", { name: /^Import wizard/ }));
+  const note = r.getByTestId("shared-write-disclosure").textContent ?? "";
+  assert.match(note, /2 of these are already used by another product/);
+  assert.match(note, /\(Studio\)/);
+  assert.match(note, /edits those records/);
+  assert.match(note, /alongside that product/);
+});
+
+test("NewProductDialog: an empty corpus says so instead of blaming the filter", () => {
+  const r = renderDialog({ records: [] });
+  assert.ok(r.getByText(/No features or entities have been authored yet/i));
+  assert.equal(r.queryByText(/Nothing matches that filter/i), null);
 });

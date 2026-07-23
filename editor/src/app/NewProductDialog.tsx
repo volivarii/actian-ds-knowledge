@@ -93,10 +93,16 @@ export function NewProductDialog({
     () => records.filter((r) => claimed.has(r.path)),
     [records, claimed],
   );
+  // Two counts, and they diverge: how many claimed records are shared, and how
+  // many distinct products depend on them. Each half of the disclosure has to
+  // be keyed to its own count, or the sentence tells the author something
+  // untrue about who is affected.
   const sharedClaims = claimedRecords.filter((r) => r.usedBy.length > 0);
-  const dependingProducts = joinProducts([
+  const dependingProducts = [
     ...new Set(sharedClaims.flatMap((r) => r.usedBy)),
-  ]);
+  ].sort((a, b) => a.localeCompare(b));
+  const oneRecord = sharedClaims.length === 1;
+  const oneProduct = dependingProducts.length === 1;
 
   const trimmedLabel = label.trim();
   const validShape = SLUG_RE.test(slug);
@@ -232,7 +238,9 @@ export function NewProductDialog({
                 ))}
                 {visible.length === 0 && (
                   <Text size="1" color="gray">
-                    Nothing matches that filter.
+                    {records.length === 0
+                      ? "No features or entities have been authored yet."
+                      : "Nothing matches that filter."}
                   </Text>
                 )}
               </Flex>
@@ -247,14 +255,14 @@ export function NewProductDialog({
               data-testid="shared-write-disclosure"
             >
               <Callout.Text>
-                {sharedClaims.length === 1
-                  ? "1 of these is shared. "
-                  : `${sharedClaims.length} of these are shared. `}
-                {dependingProducts} already{" "}
-                {sharedClaims.length === 1 ? "depends" : "depend"} on{" "}
-                {sharedClaims.length === 1 ? "it" : "them"}, so this pull
-                request edits files those products rely on and gets reviewed
-                with them.
+                {oneRecord
+                  ? "1 of these is already used by "
+                  : `${sharedClaims.length} of these are already used by `}
+                {oneProduct ? "another product" : "other products"} (
+                {joinProducts(dependingProducts)}). Creating this product edits{" "}
+                {oneRecord ? "that record" : "those records"} in the same pull
+                request, so the change is reviewed alongside{" "}
+                {oneProduct ? "that product" : "those products"}.
               </Callout.Text>
             </Callout.Root>
           )}
