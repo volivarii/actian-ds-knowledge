@@ -1,15 +1,6 @@
 import { useEffect, useState } from "react";
 import { Dialog, Flex, Text, TextField, Button } from "@radix-ui/themes";
-
-const SLUG_RE = /^[a-z][a-z0-9-]*$/;
-
-function deriveSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
-}
+import { SLUG_RE, slugFromLabel } from "../lib/slugFromLabel";
 
 // Humanizes a domain string that may contain a "/" separator.
 // e.g. "content/patterns" → "Content / Patterns", "foundations" → "Foundations"
@@ -51,7 +42,7 @@ export function AddSectionDialog({
   }, [open]);
 
   useEffect(() => {
-    if (!slugTouched) setSlug(deriveSlug(title));
+    if (!slugTouched) setSlug(slugFromLabel(title));
   }, [title, slugTouched]);
 
   const validShape = SLUG_RE.test(slug);

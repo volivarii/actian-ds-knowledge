@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import { Badge, Box, Flex, Heading, Switch, Text } from "@radix-ui/themes";
 import {
@@ -15,11 +15,18 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { listDirectories, listFilesByGlob } from "./githubApi";
+import {
+  getTextFileWithSha,
+  listDirectories,
+  listFilesByGlob,
+} from "./githubApi";
 import { loadOrderManifest } from "../lib/orderManifestLoader";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 import { AddSectionDialog } from "./AddSectionDialog";
+import { NewProductDialog, type NewProductValue } from "./NewProductDialog";
+import { listContextRecords } from "../lib/contextRecords";
+import { createProduct } from "../lib/createProduct";
 import { appendSlug, moveSlug, removeSlug } from "../lib/orderManifest";
 import { buildMarkdownStub } from "../lib/markdownStubs";
 import { ReorderHandle } from "./ReorderHandle";
@@ -200,6 +207,9 @@ export function Sidebar({
     subDir?: string;
     existingSlugs: string[];
   } | null>(null);
+  const [newProductOpen, setNewProductOpen] = useState(false);
+  // Baked-graph read, so it never changes within a session.
+  const contextRecords = useMemo(() => listContextRecords(), []);
   const [deleteDialog, setDeleteDialog] = useState<{
     domain: EntriesKey;
     slug: string;
@@ -318,6 +328,50 @@ export function Sidebar({
     });
 
     onSelect(filePath);
+  }
+
+  /**
+   * Creates a product: stages the new app file, which the team owns outright,
+   * plus one edit per shared record it joins. Everything goes into the current
+   * batch so the whole thing is one reviewable pull request. Records that
+   * could not be joined are reported rather than dropped, since a record the
+   * editor failed to update is a record whose product list is now wrong.
+   */
+  async function handleCreateProduct(value: NewProductValue) {
+    const result = await createProduct(value, {
+      readFile: (path) => getTextFileWithSha(octokit, path),
+      stage: (entry) =>
+        submissionCartSingleton.add({ ...entry, addedAt: Date.now() }),
+      stagedContent: (path) => {
+        const pending = submissionCartSingleton
+          .list()
+          .find((e) => e.path === path);
+        if (!pending || pending.deleted) return null;
+        return { content: pending.content, sha: pending.basedOnSha };
+      },
+    });
+
+    setEntries((prev) =>
+      prev
+        ? {
+            ...prev,
+            appContextApps: [
+              ...new Set([...prev.appContextApps, `${value.slug}.md`]),
+            ].sort(),
+          }
+        : prev,
+    );
+
+    if (result.failed.length > 0) {
+      const names = result.failed.map((f) => f.label).join(", ");
+      window.alert(
+        `${value.label} was created, but these could not be updated and still ` +
+          `do not list it: ${names}. Open each one and add ${value.label} to ` +
+          `its products.`,
+      );
+    }
+
+    onSelect(result.appPath);
   }
 
   function handleReorderDrop(
@@ -547,6 +601,8 @@ export function Sidebar({
     count: number,
     listId: string,
     onAdd: (() => void) | null,
+    /** Overrides the add affordance's wording; sections default to "section". */
+    addLabel?: string,
   ) {
     const collapsed = sectionCollapsed[key];
     const headerId = `sidebar-section-${key}-header`;
@@ -596,7 +652,7 @@ export function Sidebar({
           {onAdd != null && (
             <button
               type="button"
-              aria-label={`Add ${label} section`}
+              aria-label={addLabel ?? `Add ${label} section`}
               onClick={(e) => {
                 e.stopPropagation();
                 onAdd();
@@ -612,7 +668,7 @@ export function Sidebar({
                 fontFamily: "inherit",
               }}
             >
-              + Add section
+              {addLabel ? `+ ${addLabel}` : "+ Add section"}
             </button>
           )}
           <Text size="1" color="gray">
@@ -773,8 +829,9 @@ export function Sidebar({
           (foundations, components, writing rules, accessibility) vs what
           the products ARE (apps, entities, UX patterns — the app-context
           domain). Group headers make the ontology visible without adding
-          a nav surface or route. Both headers hide when their dimension
-          has no sections, matching the per-section empty guards. */}
+          a nav surface or route. The design-system header hides when its
+          dimension has no sections, matching the per-section empty guards;
+          the application-context one always shows (see below). */}
       {[
         entries.foundations,
         entries.accessibility,
@@ -1012,13 +1069,9 @@ export function Sidebar({
         </Box>
       )}
 
-      {[
-        entries.appContextApps,
-        entries.appContextEntities,
-        entries.appContextPatterns,
-      ].some((e) => e.length > 0) && (
-        <DimensionHeader>Application context</DimensionHeader>
-      )}
+      {/* Always shown: Products carries the "+" that creates one, so an empty
+          application-context layer must still offer its own way in. */}
+      <DimensionHeader>Application context</DimensionHeader>
 
       {(
         [
@@ -1028,13 +1081,20 @@ export function Sidebar({
         ] as const
       ).map(([entriesKey, kind]) => {
         const items = entries[entriesKey];
-        if (items.length === 0) return null;
+        if (items.length === 0 && kind !== "apps") return null;
         const label = APP_CONTEXT_LABEL[kind];
         const listId = `list-appcontext-${kind}`;
         const collapsed = sectionCollapsed[entriesKey];
         return (
           <Box key={entriesKey}>
-            {sectionHeader(entriesKey, label, items.length, listId, null)}
+            {sectionHeader(
+              entriesKey,
+              label,
+              items.length,
+              listId,
+              kind === "apps" ? () => setNewProductOpen(true) : null,
+              kind === "apps" ? "New product" : undefined,
+            )}
             {!collapsed && (
               <Box
                 id={listId}
@@ -1085,6 +1145,25 @@ export function Sidebar({
               console.error("Add section failed:", err);
               window.alert(
                 `Couldn't add section: ${err instanceof Error ? err.message : String(err)}`,
+              );
+            }
+          }}
+        />
+      )}
+      {newProductOpen && (
+        <NewProductDialog
+          open
+          existingSlugs={entries.appContextApps.map(slugFromPath)}
+          records={contextRecords}
+          onCancel={() => setNewProductOpen(false)}
+          onConfirm={async (value) => {
+            setNewProductOpen(false);
+            try {
+              await handleCreateProduct(value);
+            } catch (err) {
+              console.error("Create product failed:", err);
+              window.alert(
+                `Couldn't create the product: ${err instanceof Error ? err.message : String(err)}`,
               );
             }
           }}
