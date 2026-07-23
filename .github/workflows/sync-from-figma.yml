@@ -4,7 +4,9 @@ name: Sync from Figma
 # .github/workflows/sync-from-figma.yml. Runs the sync orchestrator at
 # scripts/sync/sync-from-figma.js to fetch DS Kit / FM Kit / Meta Kit registries
 # and DS Kit text+effect styles via Figma REST, classifies the diff, writes a
-# changelog. Additive diffs auto-merge; breaking diffs labeled `review-required`.
+# changelog. Additive diffs open a same-day auto-merging PR; breaking diffs open
+# (or re-edit) ONE rolling tracking issue for a human to follow through, never a
+# PR -- see the "Upsert breaking-sync tracking issue" step for why.
 #
 # Required repo secrets:
 #   FIGMA_PAT             — Figma Personal Access Token (Pro tier sufficient)
@@ -134,20 +136,28 @@ jobs:
           echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
           echo "Sync verdict: $VERDICT"
 
+      # Only ADDITIVE syncs open a PR, and it auto-merges the same day. Breaking
+      # syncs no longer open a PR at all -- see the tracking-issue step below.
+      # A breaking sync always needs human follow-through before it can merge
+      # (a slug rename, a re-grounding, a retired enum value; see #475), so a
+      # dated PR every night was a notification wearing a PR costume: they piled
+      # up, went stale against a moving main, and any follow-through on one
+      # branch was orphaned when the next night opened another. A rolling issue
+      # says the same thing once, without the stale-PR debris.
       - name: Open pull request
         id: cpr
-        if: steps.verdict.outputs.category == 'additive' || steps.verdict.outputs.category == 'breaking'
+        if: steps.verdict.outputs.category == 'additive'
         uses: peter-evans/create-pull-request@v7
         with:
           # App token (not default GITHUB_TOKEN) so the PR fires pull_request
           # workflows against its head SHA. Required for the ruleset's named
           # status checks (validate-manifest, validate-schemas, derive-*).
           token: ${{ steps.app-token.outputs.token }}
-          commit-message: "sync(figma): ${{ steps.verdict.outputs.category }} refresh ${{ steps.verdict.outputs.date }}"
-          title: "sync(figma): ${{ steps.verdict.outputs.category }} — ${{ steps.verdict.outputs.date }}"
+          commit-message: "sync(figma): additive refresh ${{ steps.verdict.outputs.date }}"
+          title: "sync(figma): additive — ${{ steps.verdict.outputs.date }}"
           body-path: /tmp/sync-changelog.md
           branch: "sync/figma-${{ steps.verdict.outputs.date }}"
-          labels: ${{ steps.verdict.outputs.category == 'additive' && 'sync,auto-merge' || 'sync,review-required' }}
+          labels: sync,auto-merge
           delete-branch: true
           add-paths: |
             components/**
@@ -164,40 +174,68 @@ jobs:
         run: |
           gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --squash --repo "${{ github.repository }}"
 
-      # Breaking syncs are notable changes — the repo's changelog rule
-      # (CLAUDE.md) applies to the bot too. Runs AFTER PR creation so the
-      # entry carries the real PR number; committed onto the sync branch.
-      # Additive nightly refreshes stay unlisted by design. Idempotent per
-      # PR number (safe on workflow retries).
-      - name: Record breaking sync in CHANGELOG
-        if: steps.verdict.outputs.category == 'breaking' && steps.cpr.outputs.pull-request-number
+      # A breaking sync opens (or updates) ONE rolling tracking issue instead of
+      # a PR. The same issue is edited every night it stays breaking, so the
+      # signal is said once and never accumulates. A human runs the sync into a
+      # branch and does the follow-through when ready -- which needs a local
+      # branch anyway -- then the CHANGELOG entry rides that human PR, the way
+      # every breaking-sync entry already does in practice (see #475). The
+      # registry regeneration this job produced is not pushed anywhere: it is
+      # reproduced by the human sync, which is where the follow-through lives.
+      - name: Upsert breaking-sync tracking issue
+        if: steps.verdict.outputs.category == 'breaking'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          DATE: ${{ steps.verdict.outputs.date }}
+          REPO: ${{ github.repository }}
         run: |
-          # The create-pull-request action committed the dist changes to the
-          # sync branch; discard local leftovers and board that branch.
-          # clean -fd: reset --hard leaves UNTRACKED files (new media/anatomy
-          # this sync created), and checkout refuses to overwrite them even
-          # when byte-identical. Ignored files (release-notes, .figma-keys,
-          # node_modules) are untouched without -x.
-          git reset --hard
-          git clean -fd
-          git fetch origin "sync/figma-${{ steps.verdict.outputs.date }}"
-          git checkout "sync/figma-${{ steps.verdict.outputs.date }}"
-          node scripts/sync/insert-sync-changelog.js \
-            --pr "${{ steps.cpr.outputs.pull-request-number }}" \
-            --date "${{ steps.verdict.outputs.date }}" \
-            --repo "${{ github.repository }}"
-          if git diff --quiet -- CHANGELOG.md; then
-            echo "No changelog change (already recorded)."
-            exit 0
+          set -euo pipefail
+          # Idempotent: the marker label must exist before create/edit can use it.
+          gh label create sync-breaking \
+            --repo "$REPO" \
+            --color B60205 \
+            --description "Rolling tracker: latest breaking Figma sync awaiting follow-through" \
+            2>/dev/null || true
+
+          TITLE="Breaking Figma sync — needs follow-through (latest: ${DATE})"
+          BODY_FILE=/tmp/breaking-issue-body.md
+          {
+            echo "**A breaking Figma sync landed and needs a human to carry it through.** A breaking"
+            echo "sync is never mergeable as-is: it typically renames a slug, retires a variant, or"
+            echo "re-grounds colours, each of which touches editable source the sync cannot edit for you."
+            echo ""
+            echo "This issue is the single rolling tracker. It is re-edited every night the sync stays"
+            echo "breaking, so it always reflects the **current** upstream state, not a pile of stale PRs."
+            echo ""
+            echo "### To handle it"
+            echo "1. \`git checkout -b sync/figma-${DATE} origin/main\`"
+            echo "2. Run the sync locally (\`node scripts/sync/sync-from-figma.js --phase all ...\`, or the"
+            echo "   \`workflow_dispatch\` on this workflow against your branch)."
+            echo "3. Follow the renames/re-groundings through editable source until the suite is green"
+            echo "   (renderer switch, \`components/src/\`, content patterns, manifest, tests)."
+            echo "4. Add the CHANGELOG entry describing the decisions, and open the PR yourself."
+            echo ""
+            echo "---"
+            echo ""
+            echo "_Latest diff summary (${DATE}):_"
+            echo ""
+            if [ -f /tmp/sync-changelog.md ]; then
+              cat /tmp/sync-changelog.md
+            else
+              echo "_(no diff summary emitted this run)_"
+            fi
+          } > "$BODY_FILE"
+
+          EXISTING=$(gh issue list --repo "$REPO" --label sync-breaking --state open \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue edit "$EXISTING" --repo "$REPO" --title "$TITLE" --body-file "$BODY_FILE"
+            echo "Updated rolling breaking-sync issue #${EXISTING}."
+          else
+            gh issue create --repo "$REPO" --label sync-breaking \
+              --title "$TITLE" --body-file "$BODY_FILE"
+            echo "Opened rolling breaking-sync issue."
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          git commit -m "docs(changelog): record breaking sync PR #${{ steps.cpr.outputs.pull-request-number }}"
-          git push "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" \
-            "HEAD:sync/figma-${{ steps.verdict.outputs.date }}"
 
       - name: Summarize
         if: always()
