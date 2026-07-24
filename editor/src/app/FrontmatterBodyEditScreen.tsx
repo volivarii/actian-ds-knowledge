@@ -161,7 +161,22 @@ export function FrontmatterBodyEditScreen(props: Props) {
   formDataRef.current = formData;
   const bodyRef = useRef(body);
   bodyRef.current = body;
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Keyed by path, not a single slot: scheduling a flush for one file must
+  // cancel only THAT file's own pending timer, never another file's. See
+  // scheduleFlush below for why a shared single slot silently dropped a
+  // foreign file's armed edit the moment the user typed anywhere else.
+  const debounceRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
+  // A debounced flush firing after this screen has been torn down entirely
+  // (not just navigated to another file — the same instance survives that,
+  // see scheduleFlush) would write to a cart nothing is left to read from.
+  useEffect(() => {
+    return () => {
+      for (const timer of debounceRef.current.values()) clearTimeout(timer);
+      debounceRef.current.clear();
+    };
+  }, []);
 
   // Tick whenever anchorIndex finishes loading; drives recomputation of the
   // incoming-refs counts + snippets that feed the RelationsPanel. Mirrors
@@ -353,11 +368,18 @@ export function FrontmatterBodyEditScreen(props: Props) {
       // `fd`) — see assembleYaml.ts. `fm` is a SNAPSHOT taken at the moment
       // this flush was scheduled (or at click time for the button), never a
       // live ref read here: a debounced flush can fire after the screen has
-      // navigated to a different file, and `state`/`path` above are already
-      // stale-checked by the `state.kind !== "ready"` guard above, but a ref
-      // read at flush time would silently pull in that OTHER file's live
+      // navigated to a different file. The `state.kind !== "ready"` guard
+      // above does NOT perform any staleness check of its own — it only
+      // rejects non-ready states. What actually makes a late flush stage
+      // under the RIGHT path with the RIGHT sha is that this function is a
+      // useCallback with `[state, path, ...]` in its deps: a pending timer
+      // was scheduled with a `flushToCart` closure created for file A, so it
+      // still closes over A's own `state`/`path` no matter what the screen
+      // has moved on to since. A ref read at flush time, by contrast, would
+      // silently pull in whatever file is CURRENTLY on screen's live
       // frontmatter text instead of the text that was on screen when this
-      // flush was armed. Otherwise, preserveComments (content/foundations):
+      // flush was armed — which is exactly why `fm` is an argument, not a
+      // ref read. Otherwise, preserveComments (content/foundations):
       // use the Document-merge path so `#` comments interleaved between data
       // lines survive the save. Otherwise the flow-depth path: yamlFlowAtDepth
       // undefined → default (2); null → block-style. assembleFrontmatterFile
@@ -389,17 +411,27 @@ export function FrontmatterBodyEditScreen(props: Props) {
 
   const scheduleFlush = useCallback(
     (fd: unknown, b: string, fm: string) => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
       // fd/b/fm are all snapshotted HERE, at schedule time — not re-read from
-      // any ref when the timer fires. A path change never cancels this timer
-      // (a user who edits and navigates away within the debounce window
-      // should still get their edit staged under the file they edited), so
-      // by the time it fires `path`/`state` may already describe a different
-      // file; only the closed-over snapshot can be trusted to describe the
-      // edit that armed it.
-      debounceRef.current = setTimeout(() => flushToCart(fd, b, fm), 1000);
+      // any ref when the timer fires. debounceRef is a Map keyed by path, so
+      // clearing "the" pending timer below only ever clears THIS path's own
+      // prior timer, never another file's: a user who edits file A and
+      // navigates to file B within the debounce window still gets A's edit
+      // staged under A even if they then edit B too — B's own scheduleFlush
+      // call only touches key B, leaving A's timer to fire on its own
+      // schedule with the snapshot it captured when it was armed. (A single
+      // shared slot could not make this distinction: any call anywhere would
+      // clear whatever timer happened to occupy the one slot, silently
+      // dropping a foreign file's armed edit.)
+      const key = path;
+      const pending = debounceRef.current.get(key);
+      if (pending) clearTimeout(pending);
+      const timer = setTimeout(() => {
+        debounceRef.current.delete(key);
+        flushToCart(fd, b, fm);
+      }, 1000);
+      debounceRef.current.set(key, timer);
     },
-    [flushToCart],
+    [path, flushToCart],
   );
 
   if (state.kind === "loading") return <Text>Loading…</Text>;
@@ -601,7 +633,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
           type="button"
           size="1"
           variant="ghost"
-          aria-label="Toggle frontmatter form"
+          aria-label="Toggle frontmatter"
           onClick={() => setFmCollapsed((c) => !c)}
         >
           {fmCollapsed ? "Show" : "Hide"}

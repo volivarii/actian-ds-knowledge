@@ -234,7 +234,7 @@ test("the collapse toggle actually hides and shows the YAML pane", async () => {
   // bodyless=false (the config for all three app-context entries) seeds
   // fmCollapsed to `!bodyless` = true, so the record opens collapsed.
   const toggle = screen.getByRole("button", {
-    name: "Toggle frontmatter form",
+    name: "Toggle frontmatter",
   });
   assert.equal(toggle.textContent, "Show", "label reads Show while hidden");
   assert.equal(
@@ -411,5 +411,83 @@ test("a debounced flush armed on file A survives a switch to file B and stages u
     stagedB,
     undefined,
     "B was never edited and has no armed timer, so it must not be staged",
+  );
+});
+
+// The test above proves A's ARMED-BUT-UNTOUCHED timer survives a switch to
+// B. It does not prove A's timer survives B *also* being edited. Before the
+// fix, debounceRef was a single shared slot: B's own onChange called
+// scheduleFlush, which unconditionally cleared "the" pending timer — A's,
+// since it was the only one — before arming B's. One keystroke in B silently
+// dropped A's armed edit. The fix keys debounceRef by path (a Map), so
+// scheduling B's flush clears only B's own prior entry and leaves A's alone.
+test("typing in file B while A's debounce is pending does not cancel A's timer", async () => {
+  const octokit = fakeOctokitTwoFiles();
+  const { rerender } = render(
+    <FrontmatterBodyEditScreen
+      path={PATH_A}
+      schemaKey="app-context-entity"
+      uiSchema={{}}
+      surface="yaml"
+      octokit={octokit}
+    />,
+  );
+  const hostA = await screen.findByTestId(
+    "yaml-frontmatter-editor",
+    {},
+    { timeout: 5000 },
+  );
+  const viewA = EditorView.findFromDOM(hostA);
+  assert.ok(viewA, "expected a live EditorView attached to file A's pane");
+
+  // Edit file A — arms A's debounce.
+  viewA!.dispatch({
+    changes: { from: viewA!.state.doc.length, insert: "\nnote: edited-a" },
+  });
+
+  // Navigate to file B within the debounce window (same component instance,
+  // no `key` on FrontmatterBodyEditScreen — matches EditorShell's real use).
+  rerender(
+    <FrontmatterBodyEditScreen
+      path={PATH_B}
+      schemaKey="app-context-entity"
+      uiSchema={{}}
+      surface="yaml"
+      octokit={octokit}
+    />,
+  );
+  const hostB = await screen.findByTestId(
+    "yaml-frontmatter-editor",
+    {},
+    { timeout: 5000 },
+  );
+  const viewB = EditorView.findFromDOM(hostB);
+  assert.ok(viewB, "expected a live EditorView attached to file B's pane");
+
+  // Edit file B too — this must NOT cancel A's still-pending timer.
+  viewB!.dispatch({
+    changes: { from: viewB!.state.doc.length, insert: "\nnote: edited-b" },
+  });
+
+  // Let both timers fire.
+  await new Promise((resolve) => setTimeout(resolve, 1100));
+
+  const stagedA = submissionCartSingleton.list().find((e) => e.path === PATH_A);
+  assert.ok(
+    stagedA,
+    "A's timer must have survived B's edit and staged on its own schedule",
+  );
+  assert.match(
+    stagedA!.content,
+    /note: edited-a/,
+    "A's cart entry must contain A's own edit",
+  );
+
+  const stagedB = submissionCartSingleton.list().find((e) => e.path === PATH_B);
+  assert.ok(stagedB, "B's own edit must also stage on its own timer");
+  assert.match(
+    stagedB!.content,
+    /note: edited-b/,
+    "B's cart entry must contain B's own edit",
   );
 });
