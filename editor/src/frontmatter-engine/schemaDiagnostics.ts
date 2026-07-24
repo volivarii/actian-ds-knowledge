@@ -17,14 +17,42 @@ export interface FrontmatterDiagnostic {
 // strict:false matches the RJSF validator the form used, so a schema that
 // validated before still validates now. allErrors surfaces every problem in
 // one pass instead of one per keystroke.
-const ajv = new Ajv2020({ strict: false, allErrors: true });
+//
+// addUsedSchema:false is load-bearing, not decorative: FrontmatterBodyEditScreen
+// re-parses the schema file with JSON.parse() on every load effect run, so the
+// second time a record with the same $id (e.g. the second app-context record
+// opened in a session) is edited, compile() below receives a NEW object that
+// happens to share that $id. Ajv's default addUsedSchema:true writes every
+// compiled schema into a process-global registry keyed by $id and throws
+// "schema with key or id ... already exists" on the second insert. Setting it
+// false keeps compile() purely local so re-parsed duplicates don't collide.
+const ajv = new Ajv2020({
+  strict: false,
+  allErrors: true,
+  addUsedSchema: false,
+});
 addFormats(ajv);
 
-const validators = new WeakMap<JsonSchema, ReturnType<typeof ajv.compile>>();
-function validatorFor(schema: JsonSchema) {
+// A schema Ajv can't compile (bad $ref, malformed keyword, ...) is a real
+// possibility here: schemas come from a file the author can hand-edit. We
+// cache the failure alongside successes so a broken schema doesn't re-throw
+// (and re-log) on every keystroke's linter() call.
+type CompileResult =
+  | { ok: true; validate: ReturnType<typeof ajv.compile> }
+  | { ok: false; message: string };
+
+const validators = new WeakMap<JsonSchema, CompileResult>();
+function validatorFor(schema: JsonSchema): CompileResult {
   let v = validators.get(schema);
   if (!v) {
-    v = ajv.compile(schema);
+    try {
+      v = { ok: true, validate: ajv.compile(schema) };
+    } catch (err) {
+      v = {
+        ok: false,
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
     validators.set(schema, v);
   }
   return v;
@@ -57,17 +85,33 @@ export function frontmatterDiagnostics(
     }));
   }
 
-  const data = doc.toJS();
-  const validate = validatorFor(schema);
-  if (validate(data)) return [];
-
   // A diagnostic with no locatable node (a root-level required-property
   // error names an object that IS present, just short a field, so there is
   // no node "for the missing thing" to point at) lands on the first line: a
   // "somewhere in this record" cue, honestly short of claiming a precision
-  // the data doesn't give us.
+  // the data doesn't give us. The same fallback also carries a compile
+  // failure below, since a broken schema has no node to blame either.
   const firstLineEnd = text.indexOf("\n") + 1 || text.length;
   const fallback = { from: 0, to: Math.min(firstLineEnd, text.length) };
+
+  const compiled = validatorFor(schema);
+  if (!compiled.ok) {
+    // Surface this instead of throwing: an uncompilable schema must be
+    // visible to the author (Task 6 wraps this in a linter() callback that
+    // can't handle an exception), not silently swallowed into no diagnostics.
+    return [
+      {
+        from: fallback.from,
+        to: fallback.to,
+        severity: "error" as const,
+        message: `schema error: ${compiled.message}`,
+      },
+    ];
+  }
+  const validate = compiled.validate;
+
+  const data = doc.toJS();
+  if (validate(data)) return [];
 
   return (validate.errors ?? []).map((err) => {
     const parts = pathParts(err.instancePath);
