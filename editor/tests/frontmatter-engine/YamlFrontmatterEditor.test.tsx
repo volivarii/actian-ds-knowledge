@@ -36,6 +36,13 @@ const ENTITY: JsonSchema = JSON.parse(
   ),
 ) as JsonSchema;
 
+const APP: JsonSchema = JSON.parse(
+  readFileSync(
+    new URL("../../../schemas/app-context-app.json", import.meta.url).pathname,
+    "utf8",
+  ),
+) as JsonSchema;
+
 test("renders the frontmatter text as editable content", async () => {
   render(
     <YamlFrontmatterEditor
@@ -49,7 +56,11 @@ test("renders the frontmatter text as editable content", async () => {
   assert.match(surface.textContent ?? "", /label: Dataset/);
 });
 
-test("labels the surface for assistive tech", async () => {
+// The label also has to say how to leave, per WCAG 2.1.2 (no keyboard trap):
+// Tab is bound to indentWithTab in this pane (see the mount effect below),
+// so a bare "Frontmatter YAML" label would leave a keyboard user stuck with
+// no stated way out.
+test("labels the surface for assistive tech, including how to leave it", async () => {
   render(
     <YamlFrontmatterEditor
       initialText="slug: x"
@@ -58,7 +69,61 @@ test("labels the surface for assistive tech", async () => {
     />,
   );
   const surface = await screen.findByRole("textbox", {}, { timeout: 5000 });
-  assert.equal(surface.getAttribute("aria-label"), "Frontmatter YAML");
+  assert.equal(
+    surface.getAttribute("aria-label"),
+    "Frontmatter YAML. Press Escape then Tab to leave this editor.",
+  );
+});
+
+test("mounts the dark theme facet so CM6 selects its dark base styles over light", async () => {
+  render(
+    <YamlFrontmatterEditor
+      initialText="slug: x"
+      schema={ENTITY}
+      onChange={() => {}}
+    />,
+  );
+  await screen.findByRole("textbox", {}, { timeout: 5000 });
+  const host = screen.getByTestId("yaml-frontmatter-editor");
+  const view = findView(host);
+  assert.equal(
+    view.state.facet(EditorView.darkTheme),
+    true,
+    "expected the dark theme facet so CM6 picks its dark base theme over light",
+  );
+});
+
+// The pane's own keymap binds indentWithTab (unlike the markdown body editor
+// — see the inverse assertion in CodeMirrorEditor.test.tsx), so Tab must
+// actually indent here, not just be a label claim.
+test("binds Tab to indent the current line", async () => {
+  render(
+    <YamlFrontmatterEditor
+      initialText="slug: x"
+      schema={ENTITY}
+      onChange={() => {}}
+    />,
+  );
+  await screen.findByRole("textbox", {}, { timeout: 5000 });
+  const host = screen.getByTestId("yaml-frontmatter-editor");
+  const view = findView(host);
+
+  view.dispatch({ selection: { anchor: 0 } });
+  const before = view.state.doc.toString();
+  view.contentDOM.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: "Tab",
+      code: "Tab",
+      keyCode: 9,
+      bubbles: true,
+      cancelable: true,
+    } as KeyboardEventInit),
+  );
+  assert.notEqual(
+    view.state.doc.toString(),
+    before,
+    "expected Tab to indent the current line",
+  );
 });
 
 // Neither test above exercises linting, completion, onChange-after-rerender,
@@ -203,6 +268,49 @@ test("mounts the hover extension: a nested key inside a properties[] item shows 
         cardText,
         /Field name as shown in the UI\./,
         "must show `type`'s own docs, not its sibling `name`'s",
+      );
+    },
+    { timeout: 3000 },
+  );
+});
+
+// A different collision than the properties[] one above: the app schema
+// defines "label" TWICE — once at the record root ("Human-readable display
+// name of the app…") and once nested at sidebar[].label ("Display text for
+// the sidebar navigation item."). A resolver bug that fell back to a
+// root/global lookup by key NAME (ignoring the block path) would still pass
+// every ENTITY-schema hover test above, since none of those fixtures reuse a
+// key name across nesting levels — this is the one fixture in this suite
+// that would actually catch it.
+test("mounts the hover extension: sidebar[].label shows the sidebar item's own documentation, not the root label's", async () => {
+  const text =
+    "label: Studio\nsidebar:\n  - label: Pipelines\n    id: pipelines";
+  render(
+    <YamlFrontmatterEditor
+      initialText={text}
+      schema={APP}
+      onChange={() => {}}
+    />,
+  );
+  await screen.findByRole("textbox", {}, { timeout: 5000 });
+  const host = screen.getByTestId("yaml-frontmatter-editor");
+  const view = findView(host);
+
+  // The SECOND "label" in the text — the nested sidebar item's, not the
+  // root record's own label on line 1.
+  const pos = text.indexOf("label: Pipelines") + 1;
+  activateHover(view, pos, 1);
+
+  await waitFor(
+    () => {
+      const card = host.querySelector(".cm-schema-hover");
+      assert.ok(card, "expected a hover card for sidebar[].label");
+      const cardText = card!.textContent ?? "";
+      assert.match(cardText, /Display text for the sidebar navigation item\./);
+      assert.doesNotMatch(
+        cardText,
+        /Human-readable display name of the app shown in navigation and documentation\./,
+        "must show sidebar[].label's own docs, not the root label's",
       );
     },
     { timeout: 3000 },

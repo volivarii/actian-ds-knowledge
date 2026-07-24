@@ -3,7 +3,7 @@ import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { render, cleanup } from "@testing-library/react";
 import React from "react";
-import type { EditorView } from "@codemirror/view";
+import { EditorView } from "@codemirror/view";
 import { CodeMirrorEditor } from "../../src/markdown-engine/CodeMirrorEditor";
 
 afterEach(() => {
@@ -29,4 +29,60 @@ test("CodeMirrorEditor: onReady fires with the view on mount and null on unmount
   unmount();
   assert.equal(calls.length, 2, "onReady fired again on unmount");
   assert.equal(calls[1], null, "unmount passed null (no stale view)");
+});
+
+test("mounts the dark theme facet so CM6 selects its dark base styles over light", () => {
+  let view: EditorView | null = null;
+  render(
+    <CodeMirrorEditor
+      initialText="# hi"
+      onChange={() => {}}
+      onReady={(v) => {
+        view = v;
+      }}
+    />,
+  );
+  assert.ok(view, "expected onReady to hand back a live view");
+  assert.equal(
+    (view as unknown as EditorView).state.facet(EditorView.darkTheme),
+    true,
+    "expected the dark theme facet so CM6 picks its dark base theme over light",
+  );
+});
+
+// The inverse of YamlFrontmatterEditor.test.tsx's "binds Tab to indent the
+// current line": this editor's keymap deliberately omits indentWithTab (see
+// CodeMirrorEditor.tsx) so keyboard users can tab OUT of the prose body.
+// Locks in the asymmetry between the two editors rather than leaving it
+// looking like an oversight — nothing else in this suite would notice if
+// indentWithTab were accidentally added here too.
+test("Tab does NOT indent the markdown body (unlike the YAML pane)", () => {
+  let view: EditorView | null = null;
+  render(
+    <CodeMirrorEditor
+      initialText="hello"
+      onChange={() => {}}
+      onReady={(v) => {
+        view = v;
+      }}
+    />,
+  );
+  assert.ok(view, "expected onReady to hand back a live view");
+  const liveView = view as unknown as EditorView;
+  liveView.dispatch({ selection: { anchor: 0 } });
+  const before = liveView.state.doc.toString();
+  liveView.contentDOM.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: "Tab",
+      code: "Tab",
+      keyCode: 9,
+      bubbles: true,
+      cancelable: true,
+    } as KeyboardEventInit),
+  );
+  assert.equal(
+    liveView.state.doc.toString(),
+    before,
+    "Tab must not indent the markdown body — CM6 leaves it unbound so keyboard users can tab out",
+  );
 });
