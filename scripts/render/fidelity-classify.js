@@ -65,16 +65,27 @@ function kindOf(prop) {
 // The compound selector a rule actually paints: the last one in the first
 // comma-separated alternative. A descendant selector's subject is its right
 // end, never its left.
+//
+// This reads the FIRST alternative only, which is exactly right for its one
+// caller, classifyAlternative below: that caller has already split a
+// possibly-grouped selector and hands this function one alternative at a
+// time, so "first" and "only" are the same thing there. It is exported and
+// any future caller passing a still-grouped, multi-alternative selector
+// would get only that selector's first alternative back, not a per-group
+// answer -- classifySelector below is the place that handles a group.
 function rightmost(selector) {
   var first = String(selector).split(",")[0].trim();
   var parts = first.split(/\s*>\s*|\s+/).filter(Boolean);
   return parts.length ? parts[parts.length - 1] : first;
 }
 
-// Bucket a rule by what it targets, relative to the prefix that owns it.
-function classifySelector(selector, prefix) {
-  if (STATE_RE.test(selector)) return { bucket: "state" };
-  var target = rightmost(selector);
+// Bucket ONE comma-free alternative by what it targets, relative to the
+// prefix that owns it. The body below is exactly what classifySelector used
+// to do directly on the whole (possibly grouped) selector; factored out so
+// classifySelector can run it per alternative instead.
+function classifyAlternative(alt, prefix) {
+  if (STATE_RE.test(alt)) return { bucket: "state" };
+  var target = rightmost(alt);
   if (new RegExp("\\." + prefix + "__").test(target))
     return { bucket: "element" };
   // A BEM element of ANY ds-* prefix is still an element, not this prefix's
@@ -85,6 +96,72 @@ function classifySelector(selector, prefix) {
   if (mod) return { bucket: "modifier", modifier: mod[1] };
   if (new RegExp("^\\." + prefix + "$").test(target)) return { bucket: "root" };
   return { bucket: "other" };
+}
+
+// Bucket a rule by what it targets, relative to the prefix that owns it.
+//
+// Final-review finding 1: this used to test STATE_RE against the WHOLE
+// comma-separated selector, while `rightmost` (and so the rest of this
+// function) read only the FIRST alternative. Grouping a genuinely
+// comparable selector with an unrelated alternative -- a trailing
+// `:hover`, a leading BEM-element sibling -- then flipped the WHOLE rule's
+// bucket to state/element and its wrong color silently stopped being
+// checked at all: `.ds-segmented { background: var(--zen-bad); }` reports a
+// mismatch, but `.ds-segmented, .ds-segmented:hover { background:
+// var(--zen-bad); }` used to report nothing wrong. A future engineer could
+// turn a red build green by refactoring a selector into a group with no
+// change to the color itself. Fixed by classifying every alternative on its
+// own (classifyAlternative above) and combining:
+//
+// - A single alternative keeps its own classification, unchanged.
+// - If exactly ONE distinct comparable subject (root, or one specific
+//   modifier value) appears among the alternatives, that IS what this
+//   declaration paints, regardless of what its sibling alternatives are: an
+//   extra `:hover` or unrelated element alternative only ADDS reach, it does
+//   not revoke the plain alternative's reach.
+// - If TWO OR MORE distinct comparable subjects appear (two different
+//   modifiers, two different prefixes' roots), there is no way to pick one
+//   without guessing which the capture should be compared against, so the
+//   whole group is unattributable ("other" -> selector-not-attributable).
+//   This is the conservative direction the rest of this file always takes:
+//   never invent a subject, never produce a false mismatch.
+// - If NO alternative is comparable and every alternative agrees on the same
+//   bucket (all state, or all element), that bucket is kept -- the real
+//   corpus's own grouped rules are exactly this shape
+//   (`.ds-lineage-node__source, .ds-lineage-node__key` is element+element;
+//   `.ds-calendar__day.is-selected, .ds-calendar__day.is-range-start, ...`
+//   is state+state+state) -- so their specific `reasons` entry
+//   (element-no-node-mapping / state-unreachable) is preserved rather than
+//   collapsing into the generic "other" just because the rule has more than
+//   one alternative. A genuine mix of non-comparable buckets is "other".
+function classifySelector(selector, prefix) {
+  var alts = String(selector)
+    .split(",")
+    .map(function (s) {
+      return s.trim();
+    })
+    .filter(Boolean);
+  if (alts.length === 0) return { bucket: "other" };
+  var classified = alts.map(function (alt) {
+    return classifyAlternative(alt, prefix);
+  });
+  if (classified.length === 1) return classified[0];
+
+  var comparable = {};
+  classified.forEach(function (c) {
+    if (c.bucket === "root" || c.bucket === "modifier") {
+      comparable[c.bucket + "|" + (c.modifier || "")] = c;
+    }
+  });
+  var comparableKeys = Object.keys(comparable);
+  if (comparableKeys.length === 1) return comparable[comparableKeys[0]];
+  if (comparableKeys.length > 1) return { bucket: "other" };
+
+  var firstBucket = classified[0].bucket;
+  var allSame = classified.every(function (c) {
+    return c.bucket === firstBucket;
+  });
+  return allSame ? classified[0] : { bucket: "other" };
 }
 
 function stripComments(s) {
@@ -300,6 +377,23 @@ function classifySlug(opts) {
   // remedy (task 6) resolved -- confirmed by trial: doing so against the
   // real corpus turns tag-stage's `mismatch 0, overridden 2` into
   // `mismatch 2, overridden 0`.
+  //
+  // Final-review finding 2, the failure mode this trade-off carries: prefix
+  // is excluded from the modifier key precisely BECAUSE tag-stage's two
+  // rules sit on the same element, so this is correct only as long as that
+  // precondition holds. Stated explicitly: for any slug owning more than one
+  // prefix, two modifier rules that restate the SAME modifier value under
+  // two different prefixes always collapse into one subject key here,
+  // whether or not the two classes actually land on the same element. If
+  // they were ever NOT on the same element, the loser would still resolve to
+  // `overridden` (and so drop out of every other bucket) and the winner
+  // would still read `verified`, even if the winner's color is wrong -- a
+  // false `verified`, not merely a lost row, and the worst outcome this gate
+  // exists to prevent. tests/render/css-owners.test.js pins the precondition
+  // (every such pair of classes must appear in the same `class="..."`
+  // attribute of the owning slug's fragment) so a future renderer change
+  // that separates them reds the build instead of silently producing a false
+  // verified.
   function subjectKey(c) {
     var mod = c.cls.modifier || "";
     var prefixPart = mod ? "" : c.rule.prefix + "|";

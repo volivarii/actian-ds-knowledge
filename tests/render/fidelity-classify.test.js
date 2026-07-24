@@ -772,3 +772,113 @@ test("classifySlug: the real tag-stage cross-prefix modifier override still reso
   assert.equal(r.overridden, 1);
   assert.equal(r.verified, 1);
 });
+
+// ---------------------------------------------------------------------------
+// Final-review finding 1: STATE_RE used to be tested against the WHOLE
+// comma-separated selector before any splitting, while rightmost (and
+// therefore classifySelector's bucket decision) read only the FIRST
+// alternative. That asymmetry meant a grouped selector could silence a real
+// defect: appending an unrelated alternative after a genuinely comparable
+// one made the WHOLE rule read as state/element, so its wrong color landed
+// in unverifiable instead of mismatch. A future engineer could turn a red
+// build green by refactoring a selector into a group, with no code change to
+// the color itself -- exactly the "make the red go away" path this gate
+// exists to close.
+//
+// Case B (reviewer-reproduced): a plain, comparable root selector with a
+// wrong color is caught. Grouping it with its own :hover alternative must
+// not change that: the root alternative is still genuinely reachable, a
+// trailing :hover alternative only ADDS reach, it does not revoke it.
+// ---------------------------------------------------------------------------
+
+test("classifySlug: Case B, a wrong color on a root selector survives being grouped with its own :hover alternative", function () {
+  var caught = C.classifySlug({
+    slug: "segmented-control",
+    prefixes: ["ds-segmented"],
+    css: ".ds-segmented { background: var(--zen-bad); }",
+    facts: FACTS_PLAIN,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(caught.mismatch, 1, "sanity: the ungrouped selector is caught");
+
+  var grouped = C.classifySlug({
+    slug: "segmented-control",
+    prefixes: ["ds-segmented"],
+    css: ".ds-segmented, .ds-segmented:hover { background: var(--zen-bad); }",
+    facts: FACTS_PLAIN,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(
+    grouped.mismatch,
+    1,
+    "the root alternative is still a comparable subject; grouping it with " +
+      ":hover must not silence its wrong color",
+  );
+  assert.equal(grouped.unverifiable, 0);
+});
+
+// Case C (reviewer-reproduced): the same wrong color, but the comparable
+// root alternative is now SECOND in the group, preceded by an unrelated BEM
+// element alternative. rightmost/classifySelector reading only the first
+// alternative bucketed the whole rule as "element" and the mismatch never
+// reached the report.
+test("classifySlug: Case C, a wrong color on a root selector survives being grouped after an unrelated element alternative", function () {
+  var r = C.classifySlug({
+    slug: "segmented-control",
+    prefixes: ["ds-segmented"],
+    css: ".ds-segmented__nothing, .ds-segmented { background: var(--zen-bad); }",
+    facts: FACTS_PLAIN,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(
+    r.mismatch,
+    1,
+    "the second alternative is still a comparable root subject; a leading " +
+      "unrelated element alternative must not silence its wrong color",
+  );
+  assert.equal(r.unverifiable, 0);
+});
+
+// Non-vacuity 1: two DIFFERENT comparable alternatives (two distinct
+// modifiers) cannot be resolved to one subject without guessing which one
+// the capture should be compared against. This must stay unverifiable
+// (selector-not-attributable), never a false verified and never a false
+// mismatch -- the fix must not overreach into inventing a subject where none
+// is confidently nameable.
+test("classifySlug: two DIFFERENT comparable alternatives in one group cannot be resolved to a single subject", function () {
+  var r = C.classifySlug({
+    slug: "widget",
+    prefixes: ["ds-widget"],
+    css: ".ds-widget--a, .ds-widget--b { background: var(--zen-bad); }",
+    facts: FACTS_PLAIN,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.mismatch, 0);
+  assert.equal(r.verified, 0);
+  assert.equal(r.reasons["selector-not-attributable"], 1);
+});
+
+// Non-vacuity 2: a group whose alternatives ALL land in the same
+// non-comparable bucket must keep that specific bucket (and its specific
+// `reasons` entry), not collapse into "other" just because it has more than
+// one alternative. This is the real corpus's own shape: ds-base.css's
+// `.ds-lineage-node__source, .ds-lineage-node__key` and
+// `.ds-calendar__day.is-selected, .ds-calendar__day.is-range-start, ...`
+// groups, both already element-only / state-only today.
+test("classifySlug: a group whose alternatives are all the same non-comparable bucket keeps that bucket, not other", function () {
+  var elementGroup = C.classifySelector(
+    ".ds-widget__a, .ds-widget__b",
+    "ds-widget",
+  );
+  assert.deepEqual(elementGroup, { bucket: "element" });
+
+  var stateGroup = C.classifySelector(
+    ".ds-widget:hover, .ds-widget:focus",
+    "ds-widget",
+  );
+  assert.deepEqual(stateGroup, { bucket: "state" });
+});

@@ -51,16 +51,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 - **Every canonical render is now actually checked, and the report says how much of it we can check
   at all.** The fidelity gate filtered renders on a `source: "derived"` marker that no render
   carries, so it examined zero of the 63 canonical component renders while printing a green
-  "fidelity: OK". It now classifies every color declaration in each render's owned CSS, 445 in
-  total, as verified, verified via token name, mismatch, unverifiable, or overridden against the
-  Figma appearance capture, and writes `components/render/dist/fidelity-report.json`. Two numbers
-  come out of it. Verified fidelity, currently 96.9%, means: of the colors the capture can speak to,
-  how many are right. Oracle coverage, currently 14.6%, means: how much of what the renders paint
-  the capture can speak to at all, with 37 of the 63 components entirely blind to it. Oracle coverage
-  is the number that matters here: it says the constraint on render quality is now the depth of the
-  Figma capture, not the renders, and it sizes that work per component. It is not a claim that the
-  design system is 96.9% correct. Mismatches now block the build; unverifiable never does, because
-  absence of a captured fact is not evidence of a wrong color.
+  "fidelity: OK". It now classifies every color declaration in each render's owned CSS against the
+  Figma appearance capture: 445 examined declarations land in verified, verified via token name,
+  mismatch, or unverifiable, and a further 2 are overridden by a later, more specific rule in the
+  same slug's own CSS and sit outside that examined set entirely, since an overridden declaration is
+  not paint. It writes `components/render/dist/fidelity-report.json`. Two numbers come out of it.
+  Verified fidelity, currently 96.9%, is the 63 declarations that matched the capture by a direct hex
+  comparison, as a share of the 65 declarations the capture could confirm one way or another (the
+  other 2 of those 65 verified via token name instead of a direct hex match, and are correct too,
+  just counted on their own line rather than folded into the headline number). Oracle coverage,
+  currently 14.6%, means: how much of what the renders paint the capture can speak to at all, with 37
+  of the 63 components entirely blind to it. Oracle coverage is the number that matters here: it says
+  the constraint on render quality is now the depth of the Figma capture, not the renders, and it
+  sizes that work per component. It is not a claim that the design system is 96.9% correct. Mismatches
+  now block the build; unverifiable never does, because absence of a captured fact is not evidence of
+  a wrong color.
   ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD))
 - **The editor can finally answer what belongs to which product.** Opening a product now shows the
   entities and features that are part of it; opening an entity or a feature shows the products it
