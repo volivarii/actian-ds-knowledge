@@ -353,7 +353,7 @@
       "tagName": "zen-segmented-control",
       "group": "Data Display",
       "fragment": "fragments/segmented-control.html",
-      "tokensConsumed": 15,
+      "tokensConsumed": 16,
       "source": "rendered"
     },
     {

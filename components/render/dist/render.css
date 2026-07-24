@@ -2736,7 +2736,9 @@
   color: var(--zen-color-text-secondary);
 }
 .ds-segmented__item.is-active {
-  background: var(--zen-color-bg-default);
+  /* Capture's selected sub-component paints #edf6ff, not the track's
+   * #ffffff -- same value avatar binds via --zen-color-primary-25. */
+  background: var(--zen-color-primary-25);
   color: var(--zen-color-text-default);
   box-shadow: var(--zen-shadow-sm);
 }

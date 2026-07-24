@@ -3037,6 +3037,9 @@
               "name": "--zen-color-bg-default"
             },
             {
+              "name": "--zen-color-primary-25"
+            },
+            {
               "name": "--zen-color-text-default"
             },
             {
