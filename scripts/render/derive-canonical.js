@@ -233,9 +233,22 @@ function buildDeclaration(slug, styleText) {
       type: { text: (variants[axis] || []).join(" | ") },
     };
   });
-  var cssProps2 = consumedVars(styleText, "ds-" + slug).map(function (name) {
-    return { name: name };
+  // Ownership is declared in matrix.js, not guessed. Guessing "ds-<slug>"
+  // silently produced an EMPTY token surface for the 27 slugs whose class
+  // differs (issue #474): schema-valid, and wrong. A slug owning more than one
+  // prefix (tag-stage: the shared ds-tag base plus its own ds-tag-stage rules)
+  // takes the union, sorted so the dist cannot shift with map order.
+  var owned = new Set();
+  matrix.ownedPrefixes(slug).forEach(function (prefix) {
+    consumedVars(styleText, prefix).forEach(function (name) {
+      owned.add(name);
+    });
   });
+  var cssProps2 = Array.from(owned)
+    .sort()
+    .map(function (name) {
+      return { name: name };
+    });
   return {
     kind: "class",
     customElement: true,

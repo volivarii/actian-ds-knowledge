@@ -72,10 +72,14 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
-/* Critical/destructive button. NOTE: approximate — bound to the canonical danger
- * token; the exact Figma critical-button tokens are to be measured in P1. */
+/* Critical/destructive button. The fill is no longer approximate: it is
+ * measured against the capture's Intent=Critical variant (see below). */
 .ds-button--critical {
-  background: var(--zen-color-text-error);
+  /* Capture's Intent=Critical variant is #c12c11 with backgroundToken null:
+   * Figma binds no variable to this fill, so token-name agreement cannot
+   * rescue it and the hex has to match. error-700 IS #c12c11, and a palette
+   * token is a more defensible binding for a fill than a TEXT token. */
+  background: var(--zen-color-error-700);
   color: var(--zen-color-text-reverse);
 }
 .ds-button--critical .ds-button__icon {
@@ -594,7 +598,10 @@
   border: 1px solid var(--zen-border-default);
   border-radius: var(--zen-border-radius-sm); /* 6 */
   padding: var(--zen-spacing-xs); /* 8 */
-  background: var(--zen-color-bg-subtle);
+  /* Capture (root "State=Default, Type=Main item", a neutral default) paints
+   * the group surface #ffffff, and the Figma render image shows a white card.
+   * bg-subtle (#f5f5f8) was a gray surface the component never had. */
+  background: var(--zen-color-bg-default);
   box-sizing: border-box;
   font-family: var(--zen-font-family-text);
 }
@@ -2306,7 +2313,10 @@
   align-items: stretch;
   padding: var(--zen-spacing-3xs);
   gap: var(--zen-spacing-3xs);
-  background: var(--zen-color-bg-subtle);
+  /* Capture (root "Type=Default", the neutral default of the only axis) paints
+   * the track #ffffff, same root whose border already verifies. bg-subtle was
+   * the iOS/Material "gray trough" idiom, not the captured component. */
+  background: var(--zen-color-bg-default);
   border: 1px solid var(--zen-border-default);
   border-radius: var(--zen-border-radius-sm);
   font-family: var(--zen-font-family-text);
@@ -2324,7 +2334,9 @@
   color: var(--zen-color-text-secondary);
 }
 .ds-segmented__item.is-active {
-  background: var(--zen-color-bg-default);
+  /* Capture's selected sub-component paints #edf6ff, not the track's
+   * #ffffff -- same value avatar binds via --zen-color-primary-25. */
+  background: var(--zen-color-primary-25);
   color: var(--zen-color-text-default);
   box-shadow: var(--zen-shadow-sm);
 }
@@ -2610,13 +2622,35 @@
   color: var(--zen-color-text-default);
 }
 /* tag-stage: colored dot + label + trailing arrow. Reuses the 8
- * .ds-tag--<color> container rules above verbatim; only the dot/icon
- * descendants are new. Dot diameter (8px) is the one hand-chosen value --
- * anatomy captures radius=20px (pill/circle) but not the diameter itself. */
+ * .ds-tag--<color> container rules above for 6 of its 8 colors; only the
+ * dot/icon descendants and the two overrides below are new. Dot diameter
+ * (8px) is the one hand-chosen value -- anatomy captures radius=20px
+ * (pill/circle) but not the diameter itself. */
 .ds-tag-stage {
-  /* Namespace hook only: geometry/color come entirely from .ds-tag (base)
-   * and .ds-tag--<color> (container fill/border); scopes the dot/icon
+  /* Namespace hook only: geometry/color come from .ds-tag (base) and
+   * .ds-tag--<color> (container fill/border), plus the .ds-tag-stage--<color>
+   * overrides below where tag-stage's own capture differs; scopes the dot/icon
    * descendant selectors below without re-declaring any of that. */
+}
+/* tag-stage's own Color scale, for the values where its capture disagrees with
+ * tag-default's. Figma publishes a Color axis on BOTH components and they
+ * agree on six of eight border tints; Orange and Yellow differ by one ramp
+ * step, in opposite directions:
+ *
+ *   tag-default  Orange -> error-50 #ffdacf   Yellow -> warning-100 #ffddb6
+ *   tag-stage    Orange -> error-100 #ffc1b3  Yellow -> warning-50  #ffebce
+ *
+ * Backgrounds and the other six borders are identical in both captures, so
+ * only these two declarations are restated. Editing the shared
+ * .ds-tag--orange / .ds-tag--yellow rules instead would fix tag-stage by
+ * breaking tag-default; these come after them in source order, at equal
+ * specificity, so the cascade gives tag-stage its own value while every other
+ * .ds-tag consumer keeps tag-default's. */
+.ds-tag-stage--orange {
+  border-color: var(--zen-color-error-100);
+}
+.ds-tag-stage--yellow {
+  border-color: var(--zen-color-warning-50);
 }
 .ds-tag-stage__dot {
   width: 8px; /* dot geometry (raw px), diameter not captured by anatomy */

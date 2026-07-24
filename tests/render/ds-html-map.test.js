@@ -731,10 +731,14 @@ test("tag-stage: base structure, dot, label, trailing arrow icon", function () {
       variant: "Color=Gray",
       props: { Label: "Raw" },
     });
+    // Both color modifiers: the shared .ds-tag--<color> carries the fill and
+    // the border tint the tag family agrees on, and the stage-scoped
+    // .ds-tag-stage--<color> is where tag-stage's own capture differs from
+    // tag-default's (Orange and Yellow borders today).
     assert.match(
       html,
-      /class="ds-tag ds-tag-stage ds-tag--gray"/,
-      "carries base + tag-stage + color modifier",
+      /class="ds-tag ds-tag-stage ds-tag--gray ds-tag-stage--gray"/,
+      "carries base + tag-stage + both color modifiers",
     );
     assert.match(
       html,

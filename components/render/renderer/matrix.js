@@ -41,11 +41,7 @@ function readRegistry(kit) {
 // source is safe here; ds-html-map.js itself is browser-capable and keeps its
 // own BUILT_SLUGS literal, which invariant 8 now checks AGAINST this derived
 // set rather than against a second hand-written list.
-var DS_MAP_PATH = path.resolve(
-  __dirname,
-  "html-renderers",
-  "ds-html-map.js",
-);
+var DS_MAP_PATH = path.resolve(__dirname, "html-renderers", "ds-html-map.js");
 function readRenderSlugs() {
   var src = fs.readFileSync(DS_MAP_PATH, "utf8");
   var out = [];
@@ -60,7 +56,7 @@ function readRenderSlugs() {
   }
   if (!out.length)
     throw new Error(
-      "matrix.js: no `case \"<slug>\":` branches found in " +
+      'matrix.js: no `case "<slug>":` branches found in ' +
         DS_MAP_PATH +
         " -- the render-slug derive found nothing, which would silently empty " +
         "RENDER_SLUGS and skip every render. Check the switch or this parser.",
@@ -68,6 +64,71 @@ function readRenderSlugs() {
   return out.sort();
 }
 var RENDER_SLUGS = readRenderSlugs();
+
+// Which CSS class prefixes each render slug owns in ds-base.css.
+//
+// Only the 28 slugs whose class is NOT `ds-<slug>` appear here; everything
+// else falls back to that default via ownedPrefixes() below. The map is the
+// TRUTH and the fragment is the drift detector, not the other way round:
+// tests/render/css-owners.test.js asserts every declared prefix is a class
+// the fragment actually emits and resolves to at least one ds-base.css rule,
+// so a render that renames its class reds the build instead of silently
+// losing its token surface and its fidelity check.
+//
+// Auto-deriving this from the fragment does NOT work, and `modal` is the
+// counterexample: its fragment root is `.ds-modal-backdrop` wrapping the real
+// component root `.ds-modal`, so "first ds-* class in document order" picks
+// the wrapper. ds-base.css carries rules for both. A pure derive would
+// attribute modal's 5 real rules to a 1-rule wrapper and report a plausible
+// wrong answer, which is exactly the failure class this work exists to end.
+// modal itself has no entry below: the plain ds-<slug> fallback already
+// resolves to the correct root class (ds-modal), so a hand-declared entry
+// here would only restate that default (which the redundancy test below
+// forbids). It is cited as the reason the map is hand-declared, not as a
+// slug that needs one of its own.
+//
+// `tag-stage` is the one slug owning two prefixes: it emits
+// `class="ds-tag ds-tag-stage ds-tag--orange ds-tag-stage--orange"`, so it
+// draws from the shared tag base AND its own stage rules -- the
+// `ds-tag-stage--<color>` modifier is what lets it override the shared
+// `ds-tag--<color>` border for itself alone. `.ds-tag` is also the one
+// prefix claimed by more than one slug (the five tag-family members), which
+// the fidelity classifier treats as a family scope rather than any single
+// member's.
+var CSS_OWNERS = {
+  "account-dropdown": ["ds-account-menu"],
+  "alert-banner": ["ds-alert"],
+  "app-switcher-dropdown": ["ds-app-switcher"],
+  breadcrumb: ["ds-breadcrumbs"],
+  "card-for-grouped-content": ["ds-card-grouped"],
+  "card-for-items": ["ds-card"],
+  "card-for-perimeter": ["ds-card-perimeter"],
+  "chat-with-ai-steward": ["ds-steward"],
+  "digram-item-types": ["ds-item-type"],
+  "digram-topic": ["ds-topic"],
+  "drawer-side-panel": ["ds-drawer"],
+  "dropdown-select-default": ["ds-dropdown-select"],
+  "global-header": ["ds-header"],
+  "lineage-grouped-node": ["ds-lineage-group"],
+  "lineage-individual-node": ["ds-lineage-node"],
+  "notification-dropdown": ["ds-notification-menu"],
+  "progress-bar-small": ["ds-progress"],
+  "radio-button": ["ds-radio"],
+  "search-dropdown-menu": ["ds-search-menu"],
+  "segmented-control": ["ds-segmented"],
+  "side-nav": ["ds-sidenav"],
+  "tag-catalog": ["ds-tag"],
+  "tag-default": ["ds-tag"],
+  "tag-shared": ["ds-tag"],
+  "tag-stage": ["ds-tag", "ds-tag-stage"],
+  "tag-status": ["ds-tag"],
+  "text-input": ["ds-field"],
+  "whats-new-dropdown": ["ds-whatsnew"],
+};
+
+function ownedPrefixes(slug) {
+  return CSS_OWNERS[slug] || ["ds-" + slug];
+}
 
 // A render slug may live in any kit; search ds -> meta -> fm.
 function findComponent(slug) {
@@ -661,4 +722,6 @@ module.exports = {
   groupFor: groupFor,
   RENDER_SLUGS: RENDER_SLUGS,
   MATRIX_OVERRIDES: MATRIX_OVERRIDES,
+  CSS_OWNERS: CSS_OWNERS,
+  ownedPrefixes: ownedPrefixes,
 };

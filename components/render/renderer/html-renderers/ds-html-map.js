@@ -1959,7 +1959,16 @@
           };
           var tsColor = v.Color ? String(v.Color).toLowerCase() : "";
           var tsCls = "ds-tag ds-tag-stage";
-          if (TAG_STAGE_COLORS[tsColor]) tsCls += " ds-tag--" + tsColor;
+          // Both modifiers, always: the shared .ds-tag--<color> carries the
+          // fill and the tint the two tag components agree on, and the
+          // stage-scoped .ds-tag-stage--<color> overrides it where tag-stage's
+          // own capture differs (Orange and Yellow borders today, ds-base.css).
+          // Emitted for every color rather than only the two that currently
+          // differ: a hand-kept list of "colors that need the override" is one
+          // more fact restated in a second place, and it would go stale the
+          // next time a capture moves.
+          if (TAG_STAGE_COLORS[tsColor])
+            tsCls += " ds-tag--" + tsColor + " ds-tag-stage--" + tsColor;
           return (
             '<span class="' +
             tsCls +
