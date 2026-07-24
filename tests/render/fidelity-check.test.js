@@ -462,14 +462,17 @@ test("fragmentClasses reads the full ds-* class tokens a fragment emits", functi
   );
 });
 
-test("filterCssForFragment drops a rule referencing any class the fragment does not emit, keeps rules whose classes are all emitted", function () {
+test("filterCssForFragment drops a rule referencing any class the fragment does not emit, keeps rules whose classes are all emitted (shared prefix)", function () {
   var css =
     ".ds-tag { color: red; }\n" +
     ".ds-tag--pink { color: pink; }\n" +
     ".ds-tag--catalog { color: blue; }\n" +
     ".ds-tag--indigo .ds-tag-stage__dot { color: green; }\n";
   var emitted = new Set(["ds-tag", "ds-tag--catalog", "ds-tag__icon"]);
-  var filtered = F.filterCssForFragment(css, emitted);
+  // ds-tag is a shared prefix (multiple owners), so the fragment-emitted-class
+  // test applies.
+  var shared = { "ds-tag": ["tag-catalog", "tag-default"] };
+  var filtered = F.filterCssForFragment(css, emitted, ["ds-tag"], shared);
   assert.match(filtered, /\.ds-tag\s*\{/);
   assert.match(filtered, /\.ds-tag--catalog\s*\{/);
   assert.doesNotMatch(
@@ -484,14 +487,72 @@ test("filterCssForFragment drops a rule referencing any class the fragment does 
   );
 });
 
-test("filterCssForFragment keeps a rule whose selector carries a pseudo-class, not a class token", function () {
+test("filterCssForFragment keeps a rule whose selector carries a pseudo-class, not a class token (shared prefix)", function () {
   // .ds-link:hover references only ds-link -- the pseudo-class is not itself
-  // a class token and must not cause a drop.
+  // a class token and must not cause a drop. ds-link is shared here so the
+  // fragment-emitted-class test is actually exercised.
   var css = ".ds-link:hover { color: blue; }\n.ds-link { color: black; }\n";
   var emitted = new Set(["ds-link"]);
-  var filtered = F.filterCssForFragment(css, emitted);
+  var shared = { "ds-link": ["a", "b"] };
+  var filtered = F.filterCssForFragment(css, emitted, ["ds-link"], shared);
   assert.match(filtered, /\.ds-link:hover/);
   assert.match(filtered, /\.ds-link\s*\{/);
+});
+
+// The narrowing this task makes: the fragment-emitted-class test must apply
+// ONLY when the rule's owning prefix is shared by more than one slug. A
+// single-owner prefix carries no cross-slug ambiguity, so its rules are the
+// component's own -- even a variant the curated fragment specimen never
+// happens to render -- and must be kept, not dropped.
+test("filterCssForFragment keeps a rule under a single-owner prefix even when the fragment never emits its class (this is the case that would fail against a universal filter)", function () {
+  var css =
+    ".ds-button { color: black; }\n" +
+    ".ds-button__icon { color: red; }\n" +
+    ".ds-button--small { color: blue; }\n";
+  // The fragment only ever emits the root class -- never the icon element or
+  // the --small modifier -- but ds-button has exactly one owner (button), so
+  // neither rule is ambiguous and both must survive the filter.
+  var emitted = new Set(["ds-button"]);
+  var shared = { "ds-button": ["button"] };
+  var filtered = F.filterCssForFragment(css, emitted, ["ds-button"], shared);
+  assert.match(
+    filtered,
+    /\.ds-button__icon\s*\{/,
+    "a single-owner prefix's own BEM element must be kept even when the " +
+      "fragment specimen never renders it",
+  );
+  assert.match(
+    filtered,
+    /\.ds-button--small\s*\{/,
+    "a single-owner prefix's own unrendered variant must be kept, not " +
+      "dropped as if it were a cross-slug misattribution",
+  );
+});
+
+// A prefix shared by more than one slug still filters normally alongside a
+// single-owner prefix in the same stylesheet -- the gate is per-rule, keyed
+// off each rule's OWN owning prefix, not an all-or-nothing switch for the
+// whole filter call.
+test("filterCssForFragment applies the fragment test to a shared prefix's rules while keeping a single-owner prefix's rules unconditionally, in the same call", function () {
+  var css =
+    ".ds-tag--pink { color: pink; }\n" + ".ds-button__icon { color: red; }\n";
+  var emitted = new Set([]);
+  var prefixes = ["ds-tag", "ds-button"];
+  var shared = {
+    "ds-tag": ["tag-catalog", "tag-default"],
+    "ds-button": ["button"],
+  };
+  var filtered = F.filterCssForFragment(css, emitted, prefixes, shared);
+  assert.doesNotMatch(
+    filtered,
+    /\.ds-tag--pink/,
+    "ds-tag is shared, so an unemitted class still drops its rule",
+  );
+  assert.match(
+    filtered,
+    /\.ds-button__icon/,
+    "ds-button has a single owner, so its rule survives regardless of emitted classes",
+  );
 });
 
 test("fragment-aware filtering: tag-catalog is charged only for the ds-base.css rules its fragment can trigger", function () {
@@ -500,7 +561,12 @@ test("fragment-aware filtering: tag-catalog is charged only for the ds-base.css 
     "utf8",
   );
   var emitted = F.fragmentClasses(html);
-  var filtered = F.filterCssForFragment(BASE_CSS, emitted);
+  var filtered = F.filterCssForFragment(
+    BASE_CSS,
+    emitted,
+    ["ds-tag"],
+    F.sharedPrefixMap(),
+  );
   var rules = CLASSIFY_MOD.ownedRules(filtered, ["ds-tag"]);
   var selectors = rules
     .map(function (r) {

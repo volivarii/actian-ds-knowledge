@@ -260,19 +260,41 @@ function selectorClassTokens(selector) {
   return out;
 }
 
-// Amendment 1: fragment-aware rule attribution. CSS_OWNERS assigns the
-// prefix ds-tag to five slugs, and .ds-tag* carries rules for every family
-// member's own modifiers and descendants (tag-stage's dot, the grouped
-// tag-status rules, every color modifier...), so without this filter a slug
-// like tag-catalog -- whose fragment only ever emits ds-tag, ds-tag--catalog,
-// and ds-tag__icon -- is charged for rules it can never actually trigger.
-// That over-charge is almost purely unverifiable, so it deflates oracle
-// coverage and would over-size the follow-on Figma capture programme.
+// The prefix (from `prefixes`, in order) that owns a rule's selector, or null
+// if none does. Same match rule ownedRules (fidelity-classify.js) uses, so
+// "the owning prefix" means the same thing in both places: a single trailing
+// hyphen is rejected, so `.ds-loader` does not absorb `.ds-loader-with-logo`.
+function owningPrefixOf(selector, prefixes) {
+  for (var i = 0; i < prefixes.length; i++) {
+    var selRe = new RegExp("\\." + prefixes[i] + "(?![a-z0-9])(?!-(?!-))");
+    if (selRe.test(selector)) return prefixes[i];
+  }
+  return null;
+}
+
+// Amendment 1, narrowed: fragment-aware rule attribution applies ONLY to a
+// rule whose owning prefix is claimed by more than one slug. CSS_OWNERS
+// assigns the prefix ds-tag to five slugs, and .ds-tag* carries rules for
+// every family member's own modifiers and descendants (tag-stage's dot, the
+// grouped tag-status rules, every color modifier...), so without this filter
+// a slug like tag-catalog -- whose fragment only ever emits ds-tag,
+// ds-tag--catalog, and ds-tag__icon -- is charged for rules it can never
+// actually trigger. That is a genuine cross-component attribution error, and
+// this filter fixes it.
 //
-// Drops a rule when ANY class token in its selector is absent from the
-// fragment's emitted set. A rule with no ds-* class token at all (should not
-// occur among ownedRules' candidates, but conservative here) is kept: an
-// empty token list vacuously passes.
+// A rule whose owning prefix has exactly one owner carries no such ambiguity
+// -- there is no other slug it could be misattributed to -- so it is kept
+// unconditionally, even when the fragment's own curated matrix cells never
+// happen to render it. A component's own unrendered variant (e.g. button's
+// --small size, or an icon slot the gallery specimen never fills) is real
+// paint the component can produce; it still needs a capture fact one day, and
+// dropping it from the denominator would hide that capture work rather than
+// size it.
+//
+// Drops a rule when its owning prefix is shared AND any class token in its
+// selector is absent from the fragment's emitted set. A rule with no ds-*
+// class token at all (should not occur among ownedRules' candidates, but
+// conservative here) is kept: an empty token list vacuously passes.
 //
 // Deliberately does NOT deduplicate declarations across slugs: two rules with
 // identical selector text can still be kept for two different slugs (e.g.
@@ -280,18 +302,25 @@ function selectorClassTokens(selector) {
 // emit the class -- each is then classified against ITS OWN capture, which is
 // how a real cross-capture contradiction (tag-default verifies, tag-stage
 // mismatches) stays visible instead of being silently collapsed.
-function filterCssForFragment(css, emitted) {
+function filterCssForFragment(css, emitted, prefixes, sharedPrefixes) {
+  var pfx = prefixes || [];
+  var shared = sharedPrefixes || {};
   var stripped = css.replace(/\/\*[\s\S]*?\*\//g, "");
   var out = [];
   var re = /([^{}]+)\{([^{}]*)\}/g;
   var m;
   while ((m = re.exec(stripped)) !== null) {
     var selector = m[1].trim();
-    var tokens = selectorClassTokens(selector);
-    var keep = tokens.every(function (t) {
-      return emitted.has(t);
-    });
-    if (keep) out.push(selector + " {" + m[2] + "}");
+    var owner = owningPrefixOf(selector, pfx);
+    var isShared = owner !== null && (shared[owner] || []).length > 1;
+    if (isShared) {
+      var tokens = selectorClassTokens(selector);
+      var keep = tokens.every(function (t) {
+        return emitted.has(t);
+      });
+      if (!keep) continue;
+    }
+    out.push(selector + " {" + m[2] + "}");
   }
   return out.join("\n");
 }
@@ -339,11 +368,12 @@ function runFidelityReport(ctx) {
         fragmentHtml = "";
       }
       var emitted = fragmentClasses(fragmentHtml);
-      var slugCss = filterCssForFragment(css, emitted);
+      var prefixes = MATRIX.ownedPrefixes(slug);
+      var slugCss = filterCssForFragment(css, emitted, prefixes, shared);
 
       var r = CLASSIFY.classifySlug({
         slug: slug,
-        prefixes: MATRIX.ownedPrefixes(slug),
+        prefixes: prefixes,
         css: slugCss,
         facts: facts,
         tokenMap: tokenMap,
