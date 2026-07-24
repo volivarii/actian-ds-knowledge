@@ -326,6 +326,34 @@ function filterCssForFragment(css, emitted, prefixes, sharedPrefixes) {
   return out.join("\n");
 }
 
+// The build-failure text for a non-empty mismatch list. Kept out of the CLI
+// block so its content is unit-testable: a message that tells a future
+// engineer the wrong thing is as much a defect as a wrong classification, and
+// there is no other way to assert on it.
+//
+// The two resolutions named here are the only two there are. An ignore list is
+// deliberately absent: an allowlist is a hand-maintained set of facts that
+// goes stale, which is the exact pattern this gate exists to end.
+function mismatchFailureMessage(mismatches) {
+  return (
+    "FIDELITY MISMATCHES (" +
+    mismatches.length +
+    "):\n" +
+    mismatches
+      .map(function (m) {
+        return "  " + m.message;
+      })
+      .join("\n") +
+    "\nEach one is a render painting a color its Figma capture contradicts.\n" +
+    "Fix the token binding in components/render/renderer/ds-base.css (bind a\n" +
+    "token, never a raw hex), or if the classifier is wrong, add a case to\n" +
+    "tests/render/fidelity-classify.test.js reproducing it and fix the rule in\n" +
+    "scripts/render/fidelity-classify.js.\n" +
+    "Adding an ignore list is NOT an option: an allowlist is a hand-maintained\n" +
+    "fact set that goes stale, which is the pattern this gate exists to end.\n"
+  );
+}
+
 // Walk every render slug and classify every color declaration it owns.
 //
 // This is the loop that replaces the inert `if (r.source !== "derived")
@@ -361,7 +389,7 @@ function runFidelityReport(ctx) {
   var mismatches = [];
   var reasons = {};
   var blind = [];
-  var totals = { verified: 0, mismatch: 0, unverifiable: 0 };
+  var totals = { verified: 0, mismatch: 0, unverifiable: 0, overridden: 0 };
 
   MATRIX.RENDER_SLUGS.slice()
     .sort()
@@ -409,12 +437,18 @@ function runFidelityReport(ctx) {
         verified: r.verified,
         mismatch: r.mismatch,
         unverifiable: r.unverifiable,
+        // Declarations another rule in the same slug's own CSS overrides, so
+        // they are not paint and are outside every other bucket. Reported
+        // rather than silently dropped: an unreported exclusion is the same
+        // laundering the rest of this report exists to end.
+        overridden: r.overridden,
         blind: isBlind,
       };
       if (isBlind) blind.push(slug);
       totals.verified += r.verified;
       totals.mismatch += r.mismatch;
       totals.unverifiable += r.unverifiable;
+      totals.overridden += r.overridden;
       Object.keys(r.reasons).forEach(function (k) {
         reasons[k] = (reasons[k] || 0) + r.reasons[k];
       });
@@ -525,6 +559,10 @@ if (require.main === module) {
       "  unverifiable: " +
       report.totals.unverifiable +
       "\n" +
+      "  overridden:   " +
+      report.totals.overridden +
+      " (a later rule in the same slug's CSS paints this subject instead, so " +
+      "the declaration is not paint and is outside the buckets above)\n" +
       "  blind slugs:  " +
       report.blind.length +
       " (zero verified and zero mismatch -- the capture can say nothing about " +
@@ -537,15 +575,7 @@ if (require.main === module) {
       "%  (how much of what we paint the capture can speak to)\n",
   );
   if (report.mismatches.length) {
-    process.stdout.write(
-      "  candidate mismatches (NOT blocking yet, see task 6):\n" +
-        report.mismatches
-          .map(function (m) {
-            return "    " + m.message;
-          })
-          .join("\n") +
-        "\n",
-    );
+    process.stderr.write(mismatchFailureMessage(report.mismatches));
   }
 
   if (v.length) {
@@ -558,8 +588,10 @@ if (require.main === module) {
           .join("\n") +
         "\n",
     );
-    process.exit(1);
   }
+  // Both failure classes are printed before either exits, so one run reports
+  // everything that is wrong rather than only the first kind encountered.
+  if (report.mismatches.length || v.length) process.exit(1);
   // Amendment 3: no unconditional "fidelity: OK" trailer here. The legacy
   // fidelityCheck/checkBaseCssRules violation reporting above still gates
   // ds-base.css tag/checkbox rules and still exits 1 on a real violation --
@@ -577,6 +609,7 @@ module.exports = {
   checkBaseCssRules: checkBaseCssRules,
   resolveTagOwner: resolveTagOwner,
   runFidelityReport: runFidelityReport,
+  mismatchFailureMessage: mismatchFailureMessage,
   sharedPrefixMap: sharedPrefixMap,
   fragmentClasses: fragmentClasses,
   filterCssForFragment: filterCssForFragment,

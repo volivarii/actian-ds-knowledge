@@ -460,6 +460,9 @@
               "name": "--zen-color-bg-emphasis"
             },
             {
+              "name": "--zen-color-error-700"
+            },
+            {
               "name": "--zen-color-icon-default"
             },
             {
@@ -1744,7 +1747,7 @@
               "name": "--zen-border-radius-sm"
             },
             {
-              "name": "--zen-color-bg-subtle"
+              "name": "--zen-color-bg-default"
             },
             {
               "name": "--zen-color-icon-default"
@@ -3034,9 +3037,6 @@
               "name": "--zen-color-bg-default"
             },
             {
-              "name": "--zen-color-bg-subtle"
-            },
-            {
               "name": "--zen-color-text-default"
             },
             {
@@ -3965,6 +3965,9 @@
             },
             {
               "name": "--zen-color-bg-subtle"
+            },
+            {
+              "name": "--zen-color-error-100"
             },
             {
               "name": "--zen-color-error-50"

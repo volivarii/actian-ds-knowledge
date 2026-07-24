@@ -302,6 +302,320 @@ test("classifySlug: a sharedPrefixes entry with exactly one owner is not shared"
   assert.equal(r.reasons["shared-base-no-single-subject"], undefined);
 });
 
+// ---------------------------------------------------------------------------
+// Task 6, classifier bug A: a capture root whose NAME encodes a non-Default
+// State is a capture of an INTERACTION state, not of the neutral default.
+// avatar's root is literally "State=Hovered, Type=Default", and it carries no
+// root-level variants[], so the existing root-is-variant-instance rule never
+// fired and an unmodified `.ds-avatar` base rule was compared against a HOVER
+// capture. That produced a mismatch for a defect that does not exist.
+// ---------------------------------------------------------------------------
+
+var FACTS_HOVER_ROOT = {
+  byNode: [
+    {
+      name: "State=Hovered, Type=Default",
+      appearance: { background: "#edf6ff" },
+    },
+  ],
+};
+
+test("classifySlug: a root rule against a non-Default State capture is unverifiable, not a mismatch", function () {
+  var r = C.classifySlug({
+    slug: "avatar",
+    prefixes: ["ds-avatar"],
+    css: ".ds-avatar { background: var(--zen-bad); }",
+    facts: FACTS_HOVER_ROOT,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.mismatch, 0);
+  assert.equal(r.verified, 0);
+  assert.equal(r.reasons["root-is-non-default-state"], 1);
+});
+
+// The over-fire guard, and the reason this rule reads the State VALUE rather
+// than merely the presence of a State axis. These three real root names must
+// keep being compared: suppressing them would silently delete the very
+// declarations that catch lineage-grouped-node's and segmented-control's real
+// defects, and button's Critical fill.
+test("classifySlug: a State=Default root is still a comparable subject (the rule must not over-fire)", function () {
+  [
+    "State=Default, Type=Main item",
+    "Type=Default",
+    "Intent=Default, Emphasis=Filled, Size=Default, State=Default",
+  ].forEach(function (rootName) {
+    var r = C.classifySlug({
+      slug: "widget",
+      prefixes: ["ds-widget"],
+      css: ".ds-widget { background: var(--zen-ok); }",
+      facts: {
+        byNode: [{ name: rootName, appearance: { background: "#ffffff" } }],
+      },
+      tokenMap: TOK,
+      sharedPrefixes: {},
+    });
+    assert.equal(
+      r.verified,
+      1,
+      rootName + " is a neutral default and must stay comparable",
+    );
+    assert.equal(r.reasons["root-is-non-default-state"], undefined);
+  });
+});
+
+// "States=Enabled" (input-date's real root name) is a DIFFERENT axis that
+// merely starts with the same five letters. Matching it would suppress a root
+// that is a perfectly good subject.
+test("rootIsNonDefaultState reads the State axis only, not an axis that starts like it", function () {
+  assert.equal(C.rootIsNonDefaultState("State=Hovered, Type=Default"), true);
+  assert.equal(C.rootIsNonDefaultState("State=Collapsed"), true);
+  assert.equal(C.rootIsNonDefaultState("State=Default, Type=Main item"), false);
+  assert.equal(
+    C.rootIsNonDefaultState("Type=Single date, States=Enabled"),
+    false,
+  );
+  assert.equal(
+    C.rootIsNonDefaultState("Selection=Unchecked, State=Default"),
+    false,
+  );
+  assert.equal(C.rootIsNonDefaultState(""), false);
+  assert.equal(C.rootIsNonDefaultState(null), false);
+});
+
+// ---------------------------------------------------------------------------
+// Task 6, classifier bug B: the captures record the Figma VARIABLE NAME beside
+// the resolved hex. When Figma names the same variable our CSS binds, both
+// sides agree on the semantic binding and a hex difference is a theme-mode
+// artifact (tokens.css defines each token under :root/actian, studio, and
+// explorer; loadTokenMap keeps the first) or a snapshot-vintage artifact.
+// global-header's root is literally "App type=Studio".
+// ---------------------------------------------------------------------------
+
+var TOK_THEMED = {
+  "--zen-border-default": "#c7c7ce", // the actian value loadTokenMap keeps
+  "--zen-other": "#123456",
+};
+
+test("classifySlug: a declaration binding the token the capture names verifies, even when the captured hex is another theme's value", function () {
+  var r = C.classifySlug({
+    slug: "global-header",
+    prefixes: ["ds-header"],
+    css: ".ds-header { border-bottom: 1px solid var(--zen-border-default); }",
+    facts: {
+      byNode: [
+        {
+          name: "App type=Studio, Breakpoints=XL",
+          appearance: {
+            border: { color: "#dadada", colorToken: "--zen-border-default" },
+          },
+        },
+      ],
+    },
+    tokenMap: TOK_THEMED,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.verified, 1);
+  assert.equal(r.mismatch, 0);
+});
+
+// Non-vacuity for the rule above: token-name agreement is agreement on a NAME,
+// not a blanket pass. Binding a DIFFERENT token than the capture names, with a
+// different value, is still exactly one mismatch.
+test("classifySlug: binding a different token than the capture names is still a mismatch", function () {
+  var r = C.classifySlug({
+    slug: "global-header",
+    prefixes: ["ds-header"],
+    css: ".ds-header { border-bottom: 1px solid var(--zen-other); }",
+    facts: {
+      byNode: [
+        {
+          name: "Breakpoints=XL",
+          appearance: {
+            border: { color: "#dadada", colorToken: "--zen-border-default" },
+          },
+        },
+      ],
+    },
+    tokenMap: TOK_THEMED,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.mismatch, 1);
+  assert.match(r.mismatches[0].message, /--zen-other/);
+});
+
+// And where the capture names NO token (button's Intent=Critical fill is a raw
+// hex in Figma), the hex comparison is all there is and must still decide.
+test("classifySlug: with no captured token name, a wrong hex is still a mismatch", function () {
+  var facts = {
+    byNode: [
+      {
+        name: "Intent=Default, State=Default",
+        appearance: {
+          background: "#0f5fdc",
+          variants: [
+            {
+              prop: "Intent",
+              values: ["Critical"],
+              background: "#c12c11",
+              backgroundToken: null,
+            },
+          ],
+        },
+      },
+    ],
+  };
+  var bad = C.classifySlug({
+    slug: "button",
+    prefixes: ["ds-button"],
+    css: ".ds-button--critical { background: var(--zen-bad); }",
+    facts: facts,
+    tokenMap: { "--zen-bad": "#dc3514", "--zen-crit": "#c12c11" },
+    sharedPrefixes: {},
+  });
+  assert.equal(bad.mismatch, 1);
+  var ok = C.classifySlug({
+    slug: "button",
+    prefixes: ["ds-button"],
+    css: ".ds-button--critical { background: var(--zen-crit); }",
+    facts: facts,
+    tokenMap: { "--zen-bad": "#dc3514", "--zen-crit": "#c12c11" },
+    sharedPrefixes: {},
+  });
+  assert.equal(ok.verified, 1);
+  assert.equal(ok.mismatch, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Task 6, cascade resolution. tag-stage shares the .ds-tag--<color> scale with
+// tag-default but its capture gives Orange and Yellow different borders, so it
+// carries its own .ds-tag-stage--<color> rules AFTER the shared ones. The
+// shared declaration is then not what tag-stage paints, and charging it for
+// one is reporting a defect the render never produces.
+// ---------------------------------------------------------------------------
+
+var FACTS_STAGE = {
+  byNode: [
+    {
+      name: "Color=Gray",
+      appearance: {
+        background: "#f7fdff",
+        variants: [
+          {
+            prop: "Color",
+            values: ["Orange"],
+            border: { color: "#ffc1b3", colorToken: "--zen-color-error-100" },
+          },
+        ],
+      },
+    },
+  ],
+};
+var TOK_TAG = {
+  "--zen-color-error-50": "#ffdacf",
+  "--zen-color-error-100": "#ffc1b3",
+};
+
+test("classifySlug: a later equal-specificity rule overrides the earlier one for the same property, and the loser is counted as overridden rather than as a mismatch", function () {
+  var r = C.classifySlug({
+    slug: "tag-stage",
+    prefixes: ["ds-tag", "ds-tag-stage"],
+    css:
+      ".ds-tag--orange { border-color: var(--zen-color-error-50); }\n" +
+      ".ds-tag-stage--orange { border-color: var(--zen-color-error-100); }\n",
+    facts: FACTS_STAGE,
+    tokenMap: TOK_TAG,
+    sharedPrefixes: { "ds-tag": ["tag-default", "tag-stage"] },
+  });
+  assert.equal(r.mismatch, 0);
+  assert.equal(r.verified, 1, "the winning declaration is still classified");
+  assert.equal(
+    r.overridden,
+    1,
+    "the overridden declaration is counted, not dropped silently",
+  );
+  assert.equal(
+    r.unverifiable,
+    0,
+    "an overridden declaration is not paint, so it is not unverifiable either",
+  );
+});
+
+// Non-vacuity: the winner is genuinely checked. A wrong value on the OVERRIDING
+// rule must still red, or the override resolution would be a way to launder a
+// defect past the gate.
+test("classifySlug: a wrong value on the overriding rule is still a mismatch", function () {
+  var r = C.classifySlug({
+    slug: "tag-stage",
+    prefixes: ["ds-tag", "ds-tag-stage"],
+    css:
+      ".ds-tag--orange { border-color: var(--zen-color-error-100); }\n" +
+      ".ds-tag-stage--orange { border-color: var(--zen-color-error-50); }\n",
+    facts: FACTS_STAGE,
+    tokenMap: TOK_TAG,
+    sharedPrefixes: { "ds-tag": ["tag-default", "tag-stage"] },
+  });
+  assert.equal(r.mismatch, 1);
+  assert.match(r.mismatches[0].selector, /ds-tag-stage--orange/);
+});
+
+// The key is the PROPERTY, not the fact kind. `.ds-notification` really does
+// set `border` and `border-left-color` on the same subject, and both paint:
+// the shorthand paints three sides the longhand never touches. Keying on the
+// kind ("border") collapsed them and silently deleted one from the count.
+test("classifySlug: a shorthand and a longhand on the same subject are both paint, not an override", function () {
+  var r = C.classifySlug({
+    slug: "notification",
+    prefixes: ["ds-notification"],
+    css: ".ds-notification { border: 1px solid var(--zen-ok); border-left-color: var(--zen-bad); }",
+    facts: {
+      byNode: [
+        {
+          name: "Type=Default",
+          appearance: { border: { color: "#ffffff" } },
+        },
+      ],
+    },
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.overridden, 0, "neither declaration overrides the other");
+  assert.equal(r.verified + r.mismatch, 2, "both declarations are classified");
+});
+
+// Specificity beats source order: an earlier, more specific rule wins over a
+// later, less specific one. Ordering by source position alone would pick the
+// wrong declaration here.
+test("classifySlug: a more specific earlier rule wins over a less specific later one", function () {
+  var r = C.classifySlug({
+    slug: "widget",
+    prefixes: ["ds-widget"],
+    css:
+      ".ds-scope .ds-widget--a { background: var(--zen-warn); }\n" +
+      ".ds-widget--a { background: var(--zen-wrong-warn); }\n",
+    facts: {
+      byNode: [
+        {
+          name: "Type=Base",
+          appearance: {
+            background: "#f7fdff",
+            variants: [{ prop: "Type", values: ["A"], background: "#fff9e5" }],
+          },
+        },
+      ],
+    },
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.overridden, 1);
+  assert.equal(
+    r.verified,
+    1,
+    "the more specific rule paints #fff9e5, which matches the captured variant",
+  );
+  assert.equal(r.mismatch, 0);
+});
+
 // ownedRules is exported and Tasks 5/6 will call it directly. A CSS comment
 // that mentions another component's class right before a rule must not steal
 // that rule's ownership -- reproduced against the real .ds-search-result-card

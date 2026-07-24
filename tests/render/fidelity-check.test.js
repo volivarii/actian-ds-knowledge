@@ -606,28 +606,75 @@ test("fragment-aware filtering: tag-catalog is charged only for the ds-base.css 
   );
 });
 
-// The brief evaluated and rejected de-duplicating declarations across slugs:
-// tag-default legitimately verifies the SAME .ds-tag--orange/--yellow
-// border-color rule that tag-stage's own capture disagrees with. Fragment
-// filtering must not collapse that real cross-capture contradiction.
-test("fragment-aware filtering does not deduplicate a rule across slugs: tag-default verifies while tag-stage's own capture disagrees on the identical rule", function () {
-  var report = runReport();
-  assert.ok(
-    report.bySlug["tag-default"].verified > 0,
-    "tag-default must still verify its owned color modifiers",
-  );
-  var stageMismatches = report.mismatches.filter(function (m) {
-    return m.slug === "tag-stage" && /orange|yellow/.test(m.selector);
+function runReportWithCss(css) {
+  return F.runFidelityReport({
+    anatomyDir: ANATOMY,
+    css: css,
+    tokenMap: TOKEN_MAP,
+    fragmentsDir: FRAGMENTS_DIR,
   });
+}
+
+function mismatchesFor(report, slug) {
+  return report.mismatches.filter(function (m) {
+    return m.slug === slug;
+  });
+}
+
+// The brief evaluated and rejected de-duplicating declarations across slugs: a
+// single shared .ds-tag--<color> rule is checked once per family member,
+// against THAT member's own capture, so a genuine cross-capture contradiction
+// stays visible instead of being collapsed. Task 6 resolved the one real
+// contradiction (tag-stage's Orange/Yellow borders, now carried by its own
+// .ds-tag-stage--<color> rules), so the property is proved by planting a value
+// that is wrong for BOTH captures and asserting BOTH slugs report it.
+test("fragment-aware filtering does not deduplicate a rule across slugs: one shared .ds-tag rule is charged to every family member that renders it", function () {
+  var target = "border-color: var(--zen-color-primary-50);";
+  assert.equal(
+    BASE_CSS.split(target).length - 1,
+    1,
+    "the shared .ds-tag--indigo border-color declaration was located exactly once",
+  );
+  // #123456 is not an appearance fact color of any tag family member.
+  var corrupted = BASE_CSS.replace(target, "border-color: #123456;");
+  var report = runReportWithCss(corrupted);
+  ["tag-default", "tag-stage"].forEach(function (slug) {
+    assert.ok(
+      mismatchesFor(report, slug).some(function (m) {
+        return /ds-tag--indigo/.test(m.selector) && /#123456/.test(m.message);
+      }),
+      slug +
+        " must be charged for the shared .ds-tag--indigo rule its fragment " +
+        "renders, got: " +
+        JSON.stringify(mismatchesFor(report, slug)),
+    );
+  });
+});
+
+// The other half of the same property: a rule scoped to ONE member's own
+// prefix belongs to that member alone. .ds-tag-stage--orange exists because
+// Figma gives tag-stage a different Orange border than tag-default, so
+// corrupting it must red tag-stage and leave tag-default untouched.
+test("a tag-stage-scoped color rule is charged to tag-stage alone, not to the shared tag family", function () {
+  var target = "border-color: var(--zen-color-error-100);";
+  assert.equal(
+    BASE_CSS.split(target).length - 1,
+    1,
+    "the .ds-tag-stage--orange border-color declaration was located exactly once",
+  );
+  var corrupted = BASE_CSS.replace(target, "border-color: #123456;");
+  var report = runReportWithCss(corrupted);
   assert.ok(
-    stageMismatches.length >= 2,
-    "tag-stage's orange/yellow border-color mismatches must stay visible even " +
-      "though tag-default verifies the identical CSS rule, got: " +
-      JSON.stringify(
-        report.mismatches.filter(function (m) {
-          return m.slug === "tag-stage";
-        }),
-      ),
+    mismatchesFor(report, "tag-stage").some(function (m) {
+      return /ds-tag-stage--orange/.test(m.selector);
+    }),
+    "tag-stage must be charged for its own scoped rule, got: " +
+      JSON.stringify(mismatchesFor(report, "tag-stage")),
+  );
+  assert.deepEqual(
+    mismatchesFor(report, "tag-default"),
+    [],
+    "tag-default must not be charged for a rule scoped to tag-stage's prefix",
   );
 });
 
@@ -705,7 +752,76 @@ test("the emitted report is stamped and deterministic", function () {
   });
 });
 
-test("CLI: fidelity-check.js prints the blind count and does not fail the build on mismatches", function () {
+// Task 6: the gate blocks. Every candidate mismatch was triaged (four real
+// token-binding defects in ds-base.css, two classifier bugs producing false
+// mismatches), so a mismatch from here on is a regression and must red.
+test("no unresolved fidelity mismatches remain", function () {
+  var report = runReport();
+  assert.deepEqual(
+    report.mismatches.map(function (m) {
+      return m.message;
+    }),
+    [],
+    "a render paints a color the capture contradicts",
+  );
+});
+
+// Non-vacuity for the assertion above. An empty mismatch list is only evidence
+// of correctness if the pipeline that produced it CAN produce a non-empty one
+// from this same corpus. Planting a wrong token on a rule that verifies today
+// proves it end to end, through the real fragments, real captures, and real
+// filtering -- not through a synthetic fixture.
+test("the zero-mismatch result is not vacuous: a wrong token on a verifying rule is reported", function () {
+  var target = "background: var(--zen-color-error-700);";
+  assert.equal(
+    BASE_CSS.split(target).length - 1,
+    1,
+    "the .ds-button--critical background declaration was located exactly once",
+  );
+  var report = runReportWithCss(
+    BASE_CSS.replace(target, "background: var(--zen-color-bg-subtle);"),
+  );
+  assert.ok(
+    mismatchesFor(report, "button").some(function (m) {
+      return /ds-button--critical/.test(m.selector);
+    }),
+    "a wrong token on .ds-button--critical must be reported, got: " +
+      JSON.stringify(report.mismatches),
+  );
+});
+
+// The failure text is what a future engineer acts on, so its content is
+// asserted rather than assumed. The two resolutions it names are the only two
+// there are, and an ignore list is not one of them.
+test("mismatchFailureMessage names every mismatch and both real resolutions, and rules out an ignore list", function () {
+  var msg = F.mismatchFailureMessage([
+    {
+      message:
+        "widget .ds-widget {background}: paints #000000 but the capture says #ffffff",
+    },
+    {
+      message:
+        "gadget .ds-gadget {border}: paints #111111 but the capture says #222222",
+    },
+  ]);
+  assert.match(msg, /FIDELITY MISMATCHES \(2\)/);
+  assert.match(msg, /\.ds-widget \{background\}/);
+  assert.match(msg, /\.ds-gadget \{border\}/);
+  assert.match(msg, /ds-base\.css/, "names where to fix a real defect");
+  assert.match(
+    msg,
+    /fidelity-classify\.test\.js/,
+    "names where to pin a classifier gap",
+  );
+  assert.match(msg, /ignore list is NOT an option/i);
+  assert.doesNotMatch(
+    msg,
+    /task 6/i,
+    "the shipped message must not reference an internal plan task",
+  );
+});
+
+test("CLI: fidelity-check.js prints the blind count and blocks when a mismatch appears", function () {
   var child_process = require("node:child_process");
   var result = child_process.spawnSync(
     process.execPath,
@@ -715,8 +831,7 @@ test("CLI: fidelity-check.js prints the blind count and does not fail the build 
   assert.equal(
     result.status,
     0,
-    "the report lands non-blocking (Task 6 triages mismatches before flipping " +
-      "the gate), so mismatches printing must not fail the process: " +
+    "the corpus carries no mismatches, so the gate must pass: " +
       result.stdout +
       result.stderr,
   );
@@ -725,17 +840,19 @@ test("CLI: fidelity-check.js prints the blind count and does not fail the build 
     /blind/i,
     "the CLI summary must print the blind count",
   );
-  // Finding 2: exit-code-0 plus a /blind/i match alone does not prove the
-  // gate is non-blocking ON MISMATCHES -- it would pass the same way if
-  // mismatches were silently dropped from the printout. The corpus carries 8
-  // real mismatches today (see fidelity-report.json), so the CLI's "candidate
-  // mismatches" section must actually be present in stdout: that is the
-  // subject this test's name claims to prove was there.
+  // A green exit proves nothing on its own -- it would look identical if the
+  // gate had been wired to never fail. The exit code is a pure function of the
+  // mismatch list, so asserting the reported list is empty AND that a non-empty
+  // list produces a failure message is what makes the green meaningful.
   assert.match(
     result.stdout,
-    /candidate mismatches/,
-    "the CLI must actually print the candidate mismatches section, or this " +
-      "test would pass vacuously even if mismatch reporting silently broke: " +
+    /mismatch: {5}0/,
+    "the summary must show the mismatch count it is gating on: " +
       result.stdout,
+  );
+  assert.doesNotMatch(
+    result.stdout + result.stderr,
+    /not blocking/i,
+    "the non-blocking wording is retired",
   );
 });

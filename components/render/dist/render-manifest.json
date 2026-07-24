@@ -57,7 +57,7 @@
       "tagName": "zen-button",
       "group": "Action",
       "fragment": "fragments/button.html",
-      "tokensConsumed": 19,
+      "tokensConsumed": 20,
       "source": "rendered"
     },
     {
@@ -353,7 +353,7 @@
       "tagName": "zen-segmented-control",
       "group": "Data Display",
       "fragment": "fragments/segmented-control.html",
-      "tokensConsumed": 16,
+      "tokensConsumed": 15,
       "source": "rendered"
     },
     {
@@ -457,7 +457,7 @@
       "tagName": "zen-tag-stage",
       "group": "Data Display",
       "fragment": "fragments/tag-stage.html",
-      "tokensConsumed": 24,
+      "tokensConsumed": 25,
       "source": "rendered"
     },
     {
