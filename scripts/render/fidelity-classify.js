@@ -15,11 +15,17 @@ var COLOR_PROPS =
 var SHORTHAND_PROPS =
   /^(background|border|border-(top|bottom|left|right)|outline)$/;
 var HEX = /^#[0-9a-fA-F]{3,8}$/;
+// A gradient function. A gradient has no single color, so it is caught up
+// front in colorOf before any stop is scanned.
+var GRADIENT_RE = /(?:repeating-)?(?:linear|radial|conic)-gradient\(/i;
 
 // A state the default-variant capture cannot address by construction. There is
 // no fact to compare against, so these are unverifiable rather than suspect.
+// Structural pseudo-classes (:first-child, :nth-child(), etc.) belong here
+// too: they address a positional state of the same kind, one the default
+// single-instance capture cannot reach.
 var STATE_RE =
-  /:hover|:focus|:active|:disabled|:checked|:not|::|\.is-|--selected|--expanded|--open|--active|--hover|--focus|\[aria-|\[disabled|\[data-/;
+  /:hover|:focus|:active|:disabled|:checked|:not|::|\.is-|--selected|--expanded|--open|--active|--hover|--focus|\[aria-|\[disabled|\[data-|:first-child|:last-child|:nth-child|:only-child|:first-of-type|:last-of-type|:nth-of-type/;
 
 // The color component of a declaration, or null when there is not one.
 //
@@ -30,6 +36,11 @@ var STATE_RE =
 function colorOf(prop, value, tokenMap) {
   var p = String(prop).toLowerCase();
   if (!COLOR_PROPS.test(p) && !SHORTHAND_PROPS.test(p)) return null;
+  // A gradient is not a single color: it is a function of multiple stops
+  // blended across an axis. Picking a representative stop (the first var(),
+  // as the scan below does for a plain shorthand) would be a confident WRONG
+  // answer, not a conservative unverifiable one, so bail out to null instead.
+  if (GRADIENT_RE.test(value)) return null;
   var vre = /var\(\s*(--zen-[a-z0-9-]+)\s*\)/gi;
   var m;
   while ((m = vre.exec(value)) !== null) {
@@ -64,7 +75,8 @@ function rightmost(selector) {
 function classifySelector(selector, prefix) {
   if (STATE_RE.test(selector)) return { bucket: "state" };
   var target = rightmost(selector);
-  if (new RegExp("\\." + prefix + "__").test(target)) return { bucket: "element" };
+  if (new RegExp("\\." + prefix + "__").test(target))
+    return { bucket: "element" };
   // A BEM element of ANY ds-* prefix is still an element, not this prefix's
   // root: `.ds-tag--indigo .ds-tag-stage__dot` is owned by ds-tag but paints a
   // ds-tag-stage element.

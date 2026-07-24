@@ -11,10 +11,13 @@ var TOKENS = {
 };
 
 test("colorOf: a color-valued token resolves", function () {
-  assert.deepEqual(C.colorOf("background", "var(--zen-color-bg-subtle)", TOKENS), {
-    token: "--zen-color-bg-subtle",
-    resolved: "#f5f5f8",
-  });
+  assert.deepEqual(
+    C.colorOf("background", "var(--zen-color-bg-subtle)", TOKENS),
+    {
+      token: "--zen-color-bg-subtle",
+      resolved: "#f5f5f8",
+    },
+  );
 });
 
 // The whole reason the earlier probe produced 1446 bogus findings: a spacing
@@ -44,7 +47,20 @@ test("colorOf: a literal hex is a color", function () {
 
 test("colorOf: a keyword with no resolvable color is not a color", function () {
   assert.equal(C.colorOf("background", "none", TOKENS), null);
-  assert.equal(C.colorOf("border", "var(--zen-border-width-md) solid transparent", TOKENS), null);
+  assert.equal(
+    C.colorOf("border", "var(--zen-border-width-md) solid transparent", TOKENS),
+    null,
+  );
+});
+
+// A gradient has no single color. Picking a stop (the first var(), as the
+// scan below would otherwise do) is a confident WRONG answer: the element is
+// not painted --zen-color-bg-subtle, it is painted a moving blend of three
+// stops. Real value lifted from ds-base.css:1446 (.ds-steward__shimmer).
+test("colorOf: a gradient background is not a single color", function () {
+  var gradient =
+    "linear-gradient(\n    90deg,\n    var(--zen-color-bg-subtle) 25%,\n    var(--zen-color-bg-emphasis) 50%,\n    var(--zen-color-bg-subtle) 75%\n  )";
+  assert.equal(C.colorOf("background", gradient, TOKENS), null);
 });
 
 test("kindOf maps properties to fact kinds", function () {
@@ -61,25 +77,55 @@ test("kindOf maps properties to fact kinds", function () {
 // compared the dot's fill against the container's variant background and
 // produced 14 false mismatches.
 test("rightmost returns the targeted compound", function () {
-  assert.equal(C.rightmost(".ds-tag--indigo .ds-tag-stage__dot"), ".ds-tag-stage__dot");
+  assert.equal(
+    C.rightmost(".ds-tag--indigo .ds-tag-stage__dot"),
+    ".ds-tag-stage__dot",
+  );
   assert.equal(C.rightmost(".ds-alert__icon"), ".ds-alert__icon");
   assert.equal(C.rightmost(".ds-card > .ds-card__title"), ".ds-card__title");
-  assert.equal(C.rightmost(".ds-alert--primary, .ds-alert--success"), ".ds-alert--primary");
+  assert.equal(
+    C.rightmost(".ds-alert--primary, .ds-alert--success"),
+    ".ds-alert--primary",
+  );
 });
 
 test("classifySelector buckets by what the rule targets", function () {
-  assert.deepEqual(C.classifySelector(".ds-alert", "ds-alert"), { bucket: "root" });
+  assert.deepEqual(C.classifySelector(".ds-alert", "ds-alert"), {
+    bucket: "root",
+  });
   assert.deepEqual(C.classifySelector(".ds-alert--warning", "ds-alert"), {
     bucket: "modifier",
     modifier: "warning",
   });
-  assert.deepEqual(C.classifySelector(".ds-alert__title", "ds-alert"), { bucket: "element" });
-  assert.deepEqual(C.classifySelector(".ds-link:hover", "ds-link"), { bucket: "state" });
-  assert.deepEqual(C.classifySelector(".ds-tag--indigo .ds-tag-stage__dot", "ds-tag"), {
+  assert.deepEqual(C.classifySelector(".ds-alert__title", "ds-alert"), {
     bucket: "element",
   });
+  assert.deepEqual(C.classifySelector(".ds-link:hover", "ds-link"), {
+    bucket: "state",
+  });
+  assert.deepEqual(
+    C.classifySelector(".ds-tag--indigo .ds-tag-stage__dot", "ds-tag"),
+    {
+      bucket: "element",
+    },
+  );
 });
 
 test("classifySelector treats an unrelated rightmost compound as unattributable", function () {
-  assert.deepEqual(C.classifySelector(".ds-header .ds-icon", "ds-header"), { bucket: "other" });
+  assert.deepEqual(C.classifySelector(".ds-header .ds-icon", "ds-header"), {
+    bucket: "other",
+  });
+});
+
+// A structural pseudo-class (:first-child, :nth-child(), etc.) addresses a
+// positional state the default-variant capture cannot reach. Real occurrence
+// from ds-base.css around line 3896 (.ds-avatar-group .ds-avatar:first-child).
+test("classifySelector treats a structural pseudo-class as state, not element", function () {
+  assert.deepEqual(
+    C.classifySelector(
+      ".ds-avatar-group .ds-avatar:first-child",
+      "ds-avatar-group",
+    ),
+    { bucket: "state" },
+  );
 });
