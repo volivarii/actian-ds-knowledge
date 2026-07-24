@@ -5,21 +5,9 @@
   "manifest_schema_version": "v1",
   "knowledge_version": "0.34.117",
   "_zones": {
-    "knowledge": [
-      "accessibility",
-      "components",
-      "content",
-      "foundations"
-    ],
-    "contract": [
-      "graph"
-    ],
-    "metadata": [
-      "appContext",
-      "appContextBundle",
-      "appContextSrc",
-      "tokens"
-    ],
+    "knowledge": ["accessibility", "components", "content", "foundations"],
+    "contract": ["graph"],
+    "metadata": ["appContext", "appContextBundle", "appContextSrc", "tokens"],
     "_pendingEviction": []
   },
   "paths": {
@@ -618,6 +606,13 @@
       "origin": "ci",
       "generator": "scripts/render/derive-canonical.js",
       "description": "The shared canonical-render stylesheet, inlined once and combined with each component fragment."
+    },
+    "components.render.fidelityReport": {
+      "path": "components/render/dist/fidelity-report.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/render/fidelity-check.js",
+      "description": "Per-slug render fidelity measurement: every color declaration in each render's owned CSS classified as verified, mismatch, or unverifiable against the Figma appearance capture. Carries two honest numbers: verifiedFidelity (of what the capture can speak to, how much is right) and oracleCoverage (how much of what the renders paint the capture can speak to at all). oracleCoverage is the roadmap input that sizes the Figma capture work per component. Also carries a blind list: slugs with zero verified and zero mismatch, where the capture can say nothing at all."
     },
     "components.render.manifest": {
       "path": "components/render/dist/render-manifest.json",

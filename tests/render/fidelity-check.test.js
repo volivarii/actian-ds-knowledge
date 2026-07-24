@@ -325,3 +325,282 @@ test("checkBaseCssRules: a planted bad tag rule is caught", function () {
       JSON.stringify(v),
   );
 });
+
+// Task 5: runFidelityReport walks every render slug, classifies every color
+// declaration its owned CSS carries, and emits components/render/dist/
+// fidelity-report.json. runFidelityReport reads no files of its own beyond
+// readAppearance and the fragment markup Amendment 1 needs, so the test
+// supplies the same stylesheet, token map, and fragments dir the CLI does.
+var CLASSIFY_MOD = require("../../scripts/render/fidelity-classify.js");
+var FRAGMENTS_DIR = path.join(REPO_ROOT, "components/render/dist/fragments");
+var BASE_CSS = fs.readFileSync(
+  path.join(REPO_ROOT, "components/render/renderer/ds-base.css"),
+  "utf8",
+);
+var TOKEN_MAP = A.loadTokenMap(
+  fs.readFileSync(path.join(REPO_ROOT, "tokens/tokens.css"), "utf8") +
+    "\n" +
+    BASE_CSS,
+);
+function runReport() {
+  return F.runFidelityReport({
+    anatomyDir: ANATOMY,
+    css: BASE_CSS,
+    tokenMap: TOKEN_MAP,
+    fragmentsDir: FRAGMENTS_DIR,
+  });
+}
+
+// Amendment 3: the signature grew a fourth required field (fragmentsDir, for
+// Amendment 1's per-slug filter) but stays all-required-or-throw, same as the
+// original three.
+test("runFidelityReport requires anatomyDir, css, tokenMap, and fragmentsDir", function () {
+  assert.throws(function () {
+    F.runFidelityReport({
+      css: BASE_CSS,
+      tokenMap: TOKEN_MAP,
+      fragmentsDir: FRAGMENTS_DIR,
+    });
+  }, /anatomyDir/);
+  assert.throws(function () {
+    F.runFidelityReport({
+      anatomyDir: ANATOMY,
+      tokenMap: TOKEN_MAP,
+      fragmentsDir: FRAGMENTS_DIR,
+    });
+  }, /css/);
+  assert.throws(function () {
+    F.runFidelityReport({
+      anatomyDir: ANATOMY,
+      css: BASE_CSS,
+      fragmentsDir: FRAGMENTS_DIR,
+    });
+  }, /tokenMap/);
+  assert.throws(function () {
+    F.runFidelityReport({
+      anatomyDir: ANATOMY,
+      css: BASE_CSS,
+      tokenMap: TOKEN_MAP,
+    });
+  }, /fragmentsDir/);
+});
+
+test("runFidelityReport examines every render slug", function () {
+  var report = runReport();
+  assert.equal(
+    Object.keys(report.bySlug).length,
+    MATRIX.RENDER_SLUGS.length,
+    "every render slug must appear in the report",
+  );
+  // The blind spot this work exists to close: the old loop examined zero.
+  // A floor of 0 rather than a pinned count, because a hand-maintained number
+  // here would be one more fact restated (see the standing rule in Global
+  // Constraints). Correctness lives in the unit tests over known inputs.
+  var examined =
+    report.totals.verified +
+    report.totals.mismatch +
+    report.totals.unverifiable;
+  assert.ok(examined > 0, "the classifier examined nothing at all");
+  assert.equal(
+    examined,
+    report.totals.examined,
+    "totals.examined disagrees with its buckets",
+  );
+
+  // Deliberately NOT asserting every slug classified at least one declaration:
+  // `loader-with-logo` owns rules that paint no color at all (verified 2026-07-24),
+  // so a blanket per-slug floor would be false. The real failure mode, an
+  // ownership entry that reaches no rules, is asserted directly in
+  // tests/render/css-owners.test.js instead of inferred here.
+});
+
+test("runFidelityReport reports both honest numbers", function () {
+  var report = runReport();
+  var checkable = report.totals.verified + report.totals.mismatch;
+  var total = checkable + report.totals.unverifiable;
+  assert.equal(
+    report.totals.oracleCoverage,
+    Number((checkable / total).toFixed(4)),
+  );
+  assert.equal(
+    report.totals.verifiedFidelity,
+    Number((report.totals.verified / checkable).toFixed(4)),
+  );
+  // Both ratios are derived from the buckets, so they are checked for internal
+  // consistency rather than against a pinned expected value. A pinned coverage
+  // number here would be a hand-maintained fact that goes stale the moment the
+  // capture deepens, which is exactly what this work is meant to enable.
+  assert.ok(
+    report.totals.oracleCoverage >= 0 && report.totals.oracleCoverage <= 1,
+    "oracle coverage is a ratio",
+  );
+  assert.equal(
+    report.totals.verified +
+      report.totals.mismatch +
+      report.totals.unverifiable,
+    total,
+    "buckets must partition the examined declarations, with no double counting",
+  );
+});
+
+// Amendment 1: fragment-aware rule attribution. CSS_OWNERS assigns the prefix
+// ds-tag to five slugs, so without a per-slug filter every one of them is
+// charged for every .ds-tag* rule in ds-base.css, including tag-stage's dot
+// rules and the grouped tag-status rules that the OTHER family members never
+// render at all.
+test("fragmentClasses reads the full ds-* class tokens a fragment emits", function () {
+  var html =
+    '<span class="ds-tag ds-tag--catalog"><span class="ds-tag__icon">x</span></span>';
+  var got = F.fragmentClasses(html);
+  assert.ok(got.has("ds-tag"));
+  assert.ok(got.has("ds-tag--catalog"));
+  assert.ok(got.has("ds-tag__icon"));
+  assert.equal(
+    got.size,
+    3,
+    "only the three real ds-* tokens, nothing invented",
+  );
+});
+
+test("filterCssForFragment drops a rule referencing any class the fragment does not emit, keeps rules whose classes are all emitted", function () {
+  var css =
+    ".ds-tag { color: red; }\n" +
+    ".ds-tag--pink { color: pink; }\n" +
+    ".ds-tag--catalog { color: blue; }\n" +
+    ".ds-tag--indigo .ds-tag-stage__dot { color: green; }\n";
+  var emitted = new Set(["ds-tag", "ds-tag--catalog", "ds-tag__icon"]);
+  var filtered = F.filterCssForFragment(css, emitted);
+  assert.match(filtered, /\.ds-tag\s*\{/);
+  assert.match(filtered, /\.ds-tag--catalog\s*\{/);
+  assert.doesNotMatch(
+    filtered,
+    /\.ds-tag--pink/,
+    "a rule naming an unemitted class must be dropped entirely",
+  );
+  assert.doesNotMatch(
+    filtered,
+    /ds-tag-stage__dot/,
+    "a descendant rule is dropped when EITHER of its classes is unemitted",
+  );
+});
+
+test("filterCssForFragment keeps a rule whose selector carries a pseudo-class, not a class token", function () {
+  // .ds-link:hover references only ds-link -- the pseudo-class is not itself
+  // a class token and must not cause a drop.
+  var css = ".ds-link:hover { color: blue; }\n.ds-link { color: black; }\n";
+  var emitted = new Set(["ds-link"]);
+  var filtered = F.filterCssForFragment(css, emitted);
+  assert.match(filtered, /\.ds-link:hover/);
+  assert.match(filtered, /\.ds-link\s*\{/);
+});
+
+test("fragment-aware filtering: tag-catalog is charged only for the ds-base.css rules its fragment can trigger", function () {
+  var html = fs.readFileSync(
+    path.join(FRAGMENTS_DIR, "tag-catalog.html"),
+    "utf8",
+  );
+  var emitted = F.fragmentClasses(html);
+  var filtered = F.filterCssForFragment(BASE_CSS, emitted);
+  var rules = CLASSIFY_MOD.ownedRules(filtered, ["ds-tag"]);
+  var selectors = rules
+    .map(function (r) {
+      return r.selector;
+    })
+    .sort();
+  assert.deepEqual(
+    selectors,
+    [".ds-tag", ".ds-tag--catalog", ".ds-tag__icon", ".ds-tag__icon svg"],
+    "tag-catalog must not be charged with tag-stage's dot rules, the grouped " +
+      "tag-status rules, or any other family member's color modifiers, got: " +
+      JSON.stringify(selectors),
+  );
+});
+
+// The brief evaluated and rejected de-duplicating declarations across slugs:
+// tag-default legitimately verifies the SAME .ds-tag--orange/--yellow
+// border-color rule that tag-stage's own capture disagrees with. Fragment
+// filtering must not collapse that real cross-capture contradiction.
+test("fragment-aware filtering does not deduplicate a rule across slugs: tag-default verifies while tag-stage's own capture disagrees on the identical rule", function () {
+  var report = runReport();
+  assert.ok(
+    report.bySlug["tag-default"].verified > 0,
+    "tag-default must still verify its owned color modifiers",
+  );
+  var stageMismatches = report.mismatches.filter(function (m) {
+    return m.slug === "tag-stage" && /orange|yellow/.test(m.selector);
+  });
+  assert.ok(
+    stageMismatches.length >= 2,
+    "tag-stage's orange/yellow border-color mismatches must stay visible even " +
+      "though tag-default verifies the identical CSS rule, got: " +
+      JSON.stringify(
+        report.mismatches.filter(function (m) {
+          return m.slug === "tag-stage";
+        }),
+      ),
+  );
+});
+
+// Amendment 2: a report that lists a blind slug beside a verified one with no
+// distinction is a false all-clear. See
+// feedback_gate_must_assert_its_subject_was_present.
+test("runFidelityReport reports blind slugs explicitly, not as an inferred zero", function () {
+  var report = runReport();
+  assert.ok(Array.isArray(report.blind), "the report must carry a blind list");
+  assert.ok(
+    report.blind.indexOf("loader-with-logo") !== -1,
+    "loader-with-logo owns rules that paint no color at all (verified 2026-07-24), " +
+      "so it must be reported blind, not silently indistinguishable from a verified slug",
+  );
+  report.blind.forEach(function (slug) {
+    assert.equal(report.bySlug[slug].verified, 0);
+    assert.equal(report.bySlug[slug].mismatch, 0);
+  });
+  Object.keys(report.bySlug).forEach(function (slug) {
+    var b = report.bySlug[slug];
+    var isBlind = b.verified === 0 && b.mismatch === 0;
+    assert.equal(
+      report.blind.indexOf(slug) !== -1,
+      isBlind,
+      slug +
+        ": blind-list membership disagrees with its own verified/mismatch counts",
+    );
+  });
+});
+
+test("the emitted report is stamped and deterministic", function () {
+  var p = path.join(REPO_ROOT, "components/render/dist/fidelity-report.json");
+  var json = JSON.parse(fs.readFileSync(p, "utf8"));
+  assert.equal(json._meta.auto_generated, true);
+  assert.equal(json._meta.source, "scripts/render/fidelity-check.js");
+  assert.ok(json._meta.do_not_edit);
+  // bySlug keys sorted, so the dist cannot shift with iteration order.
+  var keys = Object.keys(json.bySlug);
+  assert.deepEqual(keys, keys.slice().sort());
+  assert.ok(
+    Array.isArray(json.blind),
+    "the dist report must carry the blind list",
+  );
+});
+
+test("CLI: fidelity-check.js prints the blind count and does not fail the build on mismatches", function () {
+  var child_process = require("node:child_process");
+  var result = child_process.spawnSync(
+    process.execPath,
+    [path.join(REPO_ROOT, "scripts/render/fidelity-check.js")],
+    { encoding: "utf8" },
+  );
+  assert.equal(
+    result.status,
+    0,
+    "the report lands non-blocking (Task 6 triages mismatches before flipping " +
+      "the gate), so mismatches printing must not fail the process: " +
+      result.stdout +
+      result.stderr,
+  );
+  assert.match(
+    result.stdout,
+    /blind/i,
+    "the CLI summary must print the blind count",
+  );
+});
