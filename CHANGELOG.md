@@ -20,6 +20,45 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **A failing editor test could take the whole machine down, and did, four times.** With the rich
+  editor opt-in, a test asked for the source pane by *clearing* storage. That encoded the default
+  rather than stating a choice, so the moment the default moved the same line began requesting the
+  opposite surface and the assertion failed with a live DOM element as `actual`. `node:assert`
+  renders `actual` with `{ depth: 1000, sorted: true, getters: true }`, which on a DOM node walks a
+  cyclic graph, fires every getter and never terminates: measured at ~850 MB/s, and `node --test`
+  runs ten files at once. A full `npm test` exhausted a 17 GB machine in seconds and left a forced
+  power-off as the only way out. Tests now state which surface they exercise
+  (`setWysiwygFlag` in `editor/tests/helpers/editorSurface.ts`) and assert absence on a boolean
+  rather than on the node (`assertNoElement`), so a genuine failure prints one readable line. The
+  suite also runs under `--test-timeout=60000`, so a hung file fails instead of holding a parallel
+  worker forever. `npm test` went from unbounded to 1121 tests in 42 s at a 2.55 GB peak.
+
+- **Components whose CSS class is not `ds-<slug>` ship a real token surface again.** The
+  custom-elements manifest guessed each component's selector from its slug, so for the 27
+  components where the class differs (`alert-banner` is `.ds-alert`, `text-input` is `.ds-field`,
+  `global-header` is `.ds-header`) the scan matched nothing and the component published an empty
+  `cssProperties`: schema-valid, and wrong. Ownership is now declared explicitly (`CSS_OWNERS` in
+  `components/render/renderer/matrix.js`) and checked against both the rendered markup and the
+  stylesheet, so a renamed class fails loudly instead of silently emptying a component's token
+  surface. All 63 declarations now carry one, up from 36.
+  ([#474](https://github.com/volivarii/actian-ds-knowledge/issues/474),
+  [#487](https://github.com/volivarii/actian-ds-knowledge/pull/487))
+- **Four components were painting the wrong color.** Turning the new fidelity gate on real renders
+  (see "Added") caught genuine defects, not just gaps in the gate itself: `lineage-grouped-node` and
+  `segmented-control` filled a surface with `bg-subtle` where Figma renders it white; the critical
+  button's background was bound to a text-error token instead of a fill token; and `tag-stage` was
+  reusing `tag-default`'s orange and yellow modifier rules even though Figma gives the two
+  components different borders for the same color name, something one shared rule cannot serve, so
+  `tag-stage` now carries its own modifier scale for those two colors.
+  ([#487](https://github.com/volivarii/actian-ds-knowledge/pull/487))
+- **A feature referencing a component that does not exist now fails the graph derive instead of
+  vanishing.** `components[]` on an application-context feature is hand-authored, and an unresolvable
+  slug used to be dropped behind a `console.warn`: the `uses_component` edge simply disappeared, and
+  the feature went on claiming a component it was not connected to, with nothing in CI to notice. It
+  is an error now, listing every offending reference at once. All 93 references resolve today, so
+  this fails only on real drift (a renamed or removed component, a typo, a display name used where a
+  slug belongs). ([#484](https://github.com/volivarii/actian-ds-knowledge/pull/484))
+
 - **Components whose CSS class is not `ds-<slug>` ship a real token surface again.** The
   custom-elements manifest guessed each component's selector from its slug, so for the 27
   components where the class differs (`alert-banner` is `.ds-alert`, `text-input` is `.ds-field`,
