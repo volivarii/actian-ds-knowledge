@@ -663,8 +663,14 @@ export function FrontmatterBodyEditScreen(props: Props) {
               straight from the schema already in hand for this file — never
               a hardcoded per-domain string — so it stays true if a schema's
               description changes. One line by design: this is orientation
-              for an author who's never seen the file type, not a manual. */}
-          {typeof state.schema.description === "string" && (
+              for an author who's never seen the file type, not a manual.
+              Gated on !fmCollapsed: the caption describes the pane below it
+              (and the hover hint names an action — hovering a key — that
+              only makes sense with the pane visible), so with the pane
+              hidden (the default here, since fmCollapsed seeds to
+              `!bodyless` and every app-context record is bodyless: false)
+              the caption used to render above nothing hoverable. */}
+          {!fmCollapsed && typeof state.schema.description === "string" && (
             <Text
               size="1"
               color="gray"
