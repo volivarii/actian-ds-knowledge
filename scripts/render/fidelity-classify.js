@@ -105,11 +105,22 @@ function factOf(node, kind) {
 // the prefix that claimed it. Same selector regex consumedVars uses, so a
 // single trailing hyphen is rejected and `.ds-loader` does not absorb
 // `.ds-loader-with-logo`.
+//
+// Strips comments itself rather than trusting the caller to have done so.
+// A comment sits between two rules' braces, so the brace regex below folds
+// it into the FOLLOWING rule's captured selector text; a comment mentioning
+// another component's class (e.g. ".ds-search-result-card"'s own preceding
+// comment says it reuses ".ds-tag" rules verbatim) then makes that class
+// name match the prefix loop before the rule's real selector ever runs,
+// silently attributing the rule to the wrong owner. This function is
+// exported for future callers, so it must be correct on raw CSS, not merely
+// on whatever classifySlug happens to pre-strip.
 function ownedRules(css, prefixes) {
+  var stripped = stripComments(css);
   var out = [];
   var re = /([^{}]+)\{([^{}]*)\}/g;
   var m;
-  while ((m = re.exec(css)) !== null) {
+  while ((m = re.exec(stripped)) !== null) {
     var selector = m[1].trim();
     for (var i = 0; i < prefixes.length; i++) {
       var selRe = new RegExp("\\." + prefixes[i] + "(?![a-z0-9])(?!-(?!-))");
@@ -159,7 +170,8 @@ function classifySlug(opts) {
   var variants = (rootNode && rootNode.variants) || [];
   var rootIsVariantInstance = variants.length > 0;
 
-  ownedRules(stripComments(opts.css), prefixes).forEach(function (rule) {
+  // ownedRules strips comments itself now, so no need to pre-strip here too.
+  ownedRules(opts.css, prefixes).forEach(function (rule) {
     var shared = (sharedPrefixes[rule.prefix] || []).length > 1;
     var cls = classifySelector(rule.selector, rule.prefix);
 

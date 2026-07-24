@@ -279,3 +279,41 @@ test("classifySlug: a slug with no capture at all is unverifiable, not verified"
   assert.equal(r.unverifiable, 1);
   assert.equal(r.reasons["no-capture"], 1);
 });
+
+// Pins the ">" in `(sharedPrefixes[rule.prefix] || []).length > 1`. A prefix
+// is shared only when MORE THAN ONE slug claims it; a single-owner entry
+// (every real prefix in the caller's complete map, most of the time) must
+// still be evaluated normally. No prior test passed a sharedPrefixes map
+// with a single-owner entry for the prefix under test, so `> 1` silently
+// mutating to `>= 1` still passed every test here: every root rule in the
+// corpus would then read as shared-base-no-single-subject and the verified
+// bucket would collapse to near zero.
+test("classifySlug: a sharedPrefixes entry with exactly one owner is not shared", function () {
+  var r = C.classifySlug({
+    slug: "widget",
+    prefixes: ["ds-widget"],
+    css: ".ds-widget { background: var(--zen-ok); }",
+    facts: FACTS_PLAIN,
+    tokenMap: TOK,
+    sharedPrefixes: { "ds-widget": ["widget"] },
+  });
+  assert.equal(r.verified, 1);
+  assert.equal(r.mismatch, 0);
+  assert.equal(r.reasons["shared-base-no-single-subject"], undefined);
+});
+
+// ownedRules is exported and Tasks 5/6 will call it directly. A CSS comment
+// that mentions another component's class right before a rule must not steal
+// that rule's ownership -- reproduced against the real .ds-search-result-card
+// rule in ds-base.css, whose preceding comment block says it reuses ".ds-tag
+// / .ds-tag-stage / ... rules verbatim" and would otherwise attribute the
+// following .ds-search-result-card rule to ds-tag.
+test("ownedRules: a raw-CSS comment mentioning another prefix does not steal the next rule", function () {
+  var raw =
+    "/* reuses .ds-tag family rules verbatim */\n" +
+    ".ds-search-result-card { background: #ffffff; }";
+  var out = C.ownedRules(raw, ["ds-tag", "ds-search-result-card"]);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].prefix, "ds-search-result-card");
+  assert.equal(out[0].selector, ".ds-search-result-card");
+});
