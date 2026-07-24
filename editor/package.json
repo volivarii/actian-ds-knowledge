@@ -15,7 +15,7 @@
     "pregen:safe-paths": "test -d ../node_modules/marked || npm --prefix .. install --no-audit --no-fund",
     "gen:safe-paths": "tsx scripts/gen-wysiwyg-safe-paths.ts",
     "pretest": "test -d ../node_modules/yaml || npm --prefix .. install --no-audit --no-fund",
-    "test": "node --test --import tsx tests/**/*.test.ts tests/**/*.test.tsx"
+    "test": "node --test --test-timeout=60000 --import tsx tests/**/*.test.ts tests/**/*.test.tsx"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.2",
