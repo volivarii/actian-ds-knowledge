@@ -10,7 +10,7 @@
 // component is staged in the cart (inWorkspaceContext), so each test below
 // pre-stages a sibling before rendering.
 import "../setup-dom";
-import test from "node:test";
+import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import {
   render,
@@ -24,6 +24,14 @@ import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { MarkdownEditScreen } from "../../src/app/MarkdownEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
+
+// File-level, not inline per test: an inline cleanup() after the last
+// assertion is skipped the moment that assertion throws, leaking a mounted
+// component into the next test. afterEach runs regardless of the test's
+// outcome, so a throw can no longer leak a mount.
+afterEach(() => {
+  cleanup();
+});
 
 function b64(s: string) {
   return Buffer.from(s, "utf8").toString("base64");
@@ -83,7 +91,6 @@ function makeStaleFakeGh() {
 }
 
 test("MarkdownEditScreen workspace escape hatch: basedOnSha is threaded so stale-base guard fires on a drifted remote", async () => {
-  cleanup();
   localStorage.clear();
   submissionCartSingleton.clear();
 
@@ -116,8 +123,9 @@ test("MarkdownEditScreen workspace escape hatch: basedOnSha is threaded so stale
 
   // Confirm the orphan-submit AlertDialog — this is what actually calls
   // doSubmit(false).
-  const confirm = await waitFor(() =>
-    screen.getByRole("button", { name: /^yes, submit only this file/i }),
+  const confirm = await waitFor(
+    () => screen.getByRole("button", { name: /^yes, submit only this file/i }),
+    { timeout: 5000 },
   );
   await act(async () => {
     fireEvent.click(confirm);
@@ -139,7 +147,6 @@ test("MarkdownEditScreen workspace escape hatch: basedOnSha is threaded so stale
   );
 
   submissionCartSingleton.clear();
-  cleanup();
 });
 
 // ─── Fix #1: cart-source stale-base test ────────────────────────────────────
@@ -156,7 +163,6 @@ test("MarkdownEditScreen workspace escape hatch: basedOnSha is threaded so stale
 // via "Submit only this file…" hits the stale-base guard (the remote
 // returns a DIFFERENT sha during the detectStaleBase check).
 test("MarkdownEditScreen cart-source workspace escape hatch: basedOnSha threaded so stale-base guard fires", async () => {
-  cleanup();
   localStorage.clear();
   submissionCartSingleton.clear();
 
@@ -233,8 +239,9 @@ test("MarkdownEditScreen cart-source workspace escape hatch: basedOnSha threaded
     fireEvent.click(trigger);
   });
 
-  const confirm = await waitFor(() =>
-    screen.getByRole("button", { name: /^yes, submit only this file/i }),
+  const confirm = await waitFor(
+    () => screen.getByRole("button", { name: /^yes, submit only this file/i }),
+    { timeout: 5000 },
   );
   await act(async () => {
     fireEvent.click(confirm);
@@ -256,5 +263,4 @@ test("MarkdownEditScreen cart-source workspace escape hatch: basedOnSha threaded
   );
 
   submissionCartSingleton.clear();
-  cleanup();
 });

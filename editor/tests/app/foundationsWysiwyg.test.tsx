@@ -1,5 +1,5 @@
 import "../setup-happy-dom";
-import test from "node:test";
+import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import {
   render,
@@ -13,6 +13,14 @@ import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { MarkdownEditScreen } from "../../src/app/MarkdownEditScreen";
 import { draftStoreSingleton } from "../../src/drafts/store-instance";
+
+// File-level, not inline per test: an inline cleanup() after the last
+// assertion is skipped the moment that assertion throws, leaking a mounted
+// component into the next test. afterEach runs regardless of the test's
+// outcome, so a throw can no longer leak a mount.
+afterEach(() => {
+  cleanup();
+});
 
 // happy-dom lacks sessionStorage/localStorage -- minimal in-memory stubs.
 for (const key of ["sessionStorage", "localStorage"] as const) {
@@ -57,7 +65,6 @@ const UNSAFE = "foundations/src/AUTHORING.md";
 const FILE = "## 3. Guidelines {#g}\n\nProse.\n";
 
 test("SAFE foundations file renders RichBodyEditor when the wysiwyg flag is on", async () => {
-  cleanup();
   globalThis.localStorage.clear();
   globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
   render(
@@ -70,11 +77,9 @@ test("SAFE foundations file renders RichBodyEditor when the wysiwyg flag is on",
     { timeout: 5000 },
   );
   globalThis.sessionStorage.clear();
-  cleanup();
 });
 
 test("UNSAFE foundations file (AUTHORING) stays CodeMirror even with the flag on", async () => {
-  cleanup();
   globalThis.localStorage.clear();
   globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
   render(
@@ -89,11 +94,9 @@ test("UNSAFE foundations file (AUTHORING) stays CodeMirror even with the flag on
     "unsafe file must not use RichBodyEditor",
   );
   globalThis.sessionStorage.clear();
-  cleanup();
 });
 
 test("flag OFF -> CodeMirror (no body-editor role)", async () => {
-  cleanup();
   globalThis.localStorage.clear();
   globalThis.sessionStorage.clear();
   render(
@@ -107,7 +110,6 @@ test("flag OFF -> CodeMirror (no body-editor role)", async () => {
     null,
     "flag-off must use CodeMirror",
   );
-  cleanup();
 });
 
 // ─── Fix #2: WYSIWYG draft restore test ──────────────────────────────────────
@@ -118,7 +120,6 @@ test("flag OFF -> CodeMirror (no body-editor role)", async () => {
 // generalises onRestore to always update `text` state from `draft.text` (and
 // clear the draft), and bumps a key on RichBodyEditor to force it to re-seed.
 test("WYSIWYG restore: clicking Restore applies draft body to RichBodyEditor", async () => {
-  cleanup();
   globalThis.localStorage.clear();
   globalThis.sessionStorage.clear();
   globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
@@ -173,5 +174,4 @@ test("WYSIWYG restore: clicking Restore applies draft body to RichBodyEditor", a
 
   draftStoreSingleton.clear(SAFE);
   globalThis.sessionStorage.clear();
-  cleanup();
 });
