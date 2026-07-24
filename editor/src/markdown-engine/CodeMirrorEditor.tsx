@@ -146,9 +146,12 @@ export function CodeMirrorEditor({
               "var(--zen-font-family-text), system-ui, -apple-system, sans-serif",
             fontSize: "16px",
             lineHeight: "1.6",
-            maxWidth: "72ch",
+            // Same reading column as the preview and the rich surface, read
+            // from the custom properties base.css declares rather than a third
+            // copy of the numbers.
+            maxWidth: "var(--md-measure)",
             marginInline: "auto",
-            paddingInline: "24px",
+            paddingInline: "var(--md-gutter)",
             paddingBlock: "16px",
             caretColor: "var(--zen-color-text-primary)",
           },

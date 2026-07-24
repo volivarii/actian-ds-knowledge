@@ -24,6 +24,20 @@ body {
  * Spec: docs/superpowers/specs/2026-05-24-editor-ux-polish-design.md
  * ------------------------------------------------------------------------- */
 
+/* The reading column, shared by all three authoring surfaces: the rendered
+   preview (.md-prose), the WYSIWYG edit surface ([data-milkdown-root]) and the
+   source pane (CM6, which reads these same custom properties from its theme in
+   CodeMirrorEditor.tsx). One declaration rather than three copies kept in step
+   by a comment — the measure is the thing that has to agree.
+
+   --zen-* has no measure or gutter token, so these are editor-layer values;
+   72ch matches the 544px/16px line-length rule in the foundations typography
+   guidance, expressed in characters. */
+:root {
+  --md-measure: 72ch;
+  --md-gutter: 32px;
+}
+
 /* Preview container — wraps <ReactMarkdown> output. */
 .md-prose {
   /* Preview pane uses a warm cream "paper" surface that pairs
@@ -57,9 +71,9 @@ body {
     sans-serif;
   font-size: 16px;
   line-height: 1.6;
-  max-width: 72ch;
+  max-width: var(--md-measure);
   margin-inline: auto;
-  padding-inline: 32px;
+  padding-inline: var(--md-gutter);
   padding-block: 24px;
   color: var(--zen-color-text-primary);
   /* Paper cream background. Slightly less saturated than Kindle
@@ -206,6 +220,21 @@ body {
   font-weight: 600;
   background: var(--zen-color-bg-muted);
 }
+/* ProseMirror wraps every cell's text in a block paragraph, so the paragraph
+   rhythm above stacks on top of the cell padding and each row grows by ~2em.
+   The preview has no equivalent rule because ReactMarkdown puts bare text in
+   GFM cells. */
+[data-milkdown-root] th > p,
+[data-milkdown-root] td > p {
+  margin: 0;
+}
+/* A table at the reading measure is usually narrower than its content wants;
+   let it scroll inside the column instead of forcing the whole document wider.
+   `display: block` would break ProseMirror's table layout, so this sits on a
+   wrapper ProseMirror already provides for tables. */
+[data-milkdown-root] .ProseMirror .tableWrapper {
+  overflow-x: auto;
+}
 
 .md-prose a {
   color: var(--zen-color-text-link-default);
@@ -230,6 +259,78 @@ body {
 }
 
 /* ----------------------------------------------------------------------------
+ * WYSIWYG edit surface — the rich pane read the SAME markdown as the preview and
+ * looked nothing like it: it inherited only the table borders above, so prose ran
+ * edge-to-edge with no reading column, and every block carried the user agent's
+ * 1em paragraph margins. Inside a table cell those margins stack with the cell
+ * padding, which is what made rows read as enormous. These rules put the edit
+ * surface on the same rhythm as .md-prose. Colours are deliberately NOT copied:
+ * .md-prose re-lights itself as warm paper for reading, while editing stays on
+ * the app's dark chrome.
+ * ------------------------------------------------------------------------- */
+
+[data-milkdown-root] .ProseMirror {
+  font-family:
+    var(--zen-font-family-text),
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  padding-block: 24px;
+  /* Centre the reading column while keeping the contenteditable itself
+     full-width, so clicking in the gutter still puts the caret in the document
+     (a max-width + auto-margin box would make that dead space). The gutter never
+     drops below --md-gutter on a narrow pane. */
+  padding-inline: max(var(--md-gutter), calc((100% - var(--md-measure)) / 2));
+}
+
+[data-milkdown-root] .ProseMirror h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+}
+[data-milkdown-root] .ProseMirror h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 1.4em;
+  margin-bottom: 0.5em;
+}
+[data-milkdown-root] .ProseMirror h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.2em;
+  margin-bottom: 0.4em;
+}
+[data-milkdown-root] .ProseMirror > :first-child {
+  margin-top: 0;
+}
+
+[data-milkdown-root] .ProseMirror p,
+[data-milkdown-root] .ProseMirror ul,
+[data-milkdown-root] .ProseMirror ol,
+[data-milkdown-root] .ProseMirror blockquote {
+  margin-top: 0;
+  margin-bottom: 0.9em;
+}
+[data-milkdown-root] .ProseMirror ul,
+[data-milkdown-root] .ProseMirror ol {
+  padding-left: 1.5em;
+}
+[data-milkdown-root] .ProseMirror li {
+  margin-bottom: 0.3em;
+}
+/* A list item's paragraph is a block in ProseMirror; left at 0.9em it doubles
+   the gap between bullets. */
+[data-milkdown-root] .ProseMirror li > p {
+  margin-bottom: 0;
+}
+
+/* ----------------------------------------------------------------------------
  * Editor pane — CM6 surface inherits prose typography (font, size, line-height,
  * max-width). The CodeMirrorEditor theme override sets these on .cm-content;
  * this layer adds the {#anchor} muting rule.
@@ -241,8 +342,16 @@ body {
   opacity: 0.75;
 }
 
-/* Toolbar container styling — clusters block / inline / structure groups. */
+/* Toolbar container styling — clusters block / inline / structure groups.
+   Pinned to the top of the scrolling pane: the toolbar renders inside the same
+   overflow container as the document, so in a long file it used to scroll out of
+   reach and formatting meant scrolling back to the top. The background and
+   z-index are load-bearing, not decoration — a sticky bar over a transparent
+   background would have prose sliding visibly underneath it. */
 .md-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   background: var(--zen-color-bg-subtle);
   border-bottom: 1px solid var(--zen-color-neutral-200);
   padding: 6px 16px;
