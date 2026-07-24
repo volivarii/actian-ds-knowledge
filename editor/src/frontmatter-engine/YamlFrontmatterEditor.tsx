@@ -12,6 +12,7 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { yaml } from "@codemirror/lang-yaml";
 import { linter, lintGutter, type Diagnostic } from "@codemirror/lint";
 import { schemaCompletionExtension } from "./schemaCompletion";
+import { schemaHoverExtension } from "./schemaHover";
 import { frontmatterDiagnostics } from "./schemaDiagnostics";
 import type { JsonSchema } from "./schemaWalk";
 
@@ -42,13 +43,16 @@ export function YamlFrontmatterEditor({
         keymap.of([...defaultKeymap, ...historyKeymap]),
         yaml(),
         schemaCompletionExtension(schema),
+        schemaHoverExtension(schema),
         linter((view): Diagnostic[] =>
-          frontmatterDiagnostics(view.state.doc.toString(), schema).map((d) => ({
-            from: d.from,
-            to: d.to,
-            severity: d.severity,
-            message: d.message,
-          })),
+          frontmatterDiagnostics(view.state.doc.toString(), schema).map(
+            (d) => ({
+              from: d.from,
+              to: d.to,
+              severity: d.severity,
+              message: d.message,
+            }),
+          ),
         ),
         lintGutter(),
         EditorView.lineWrapping,

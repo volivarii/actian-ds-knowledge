@@ -641,6 +641,28 @@ export function FrontmatterBodyEditScreen(props: Props) {
       </Flex>
       {surface === "yaml" ? (
         <Box>
+          {/* Orientation caption: the schema's own root `description`, plus
+              a hint that hovering a key explains it (schemaHover.ts). Comes
+              straight from the schema already in hand for this file — never
+              a hardcoded per-domain string — so it stays true if a schema's
+              description changes. One line by design: this is orientation
+              for an author who's never seen the file type, not a manual. */}
+          {typeof state.schema.description === "string" && (
+            <Text
+              size="1"
+              color="gray"
+              as="p"
+              mb="2"
+              title={state.schema.description}
+              style={{
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {state.schema.description} · Hover a key to see its documentation.
+            </Text>
+          )}
           <Box
             // fm-yaml-pane pairs with the .fm-collapsed rule in base.css
             // (`.fm-yaml-pane.fm-collapsed { display: none; }`) — the RJSF

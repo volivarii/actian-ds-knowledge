@@ -30,6 +30,45 @@ function indentOf(line: string): number {
   return m[1]!.length + (m[2]?.length ?? 0);
 }
 
+export interface YamlKeyAt {
+  key: string;
+  path: string[];
+  from: number;
+  to: number;
+}
+
+/** The mapping key whose NAME text contains `offset` — the same block-path
+ *  walk `yamlCursorAt` runs for a value being typed at this indentation
+ *  (`parentPath` over the lines above, `indentOf` for where the key starts),
+ *  run instead against a key already written on the page. Returns null when
+ *  `offset` isn't over a key's name text: KEY_LINE simply doesn't match a
+ *  blank line, a comment, or a flow construct, and this rejects a hit whose
+ *  column falls in the value rather than the key.
+ *
+ *  Used by the hover-card adapter (schemaHover.ts, via keyDocumentation.ts)
+ *  to resolve documentation for whatever key the pointer is over. Kept here
+ *  rather than duplicated so the two "where in the block structure is this
+ *  position" questions share one path walker. */
+export function yamlKeyAt(text: string, offset: number): YamlKeyAt | null {
+  const lineStart = text.lastIndexOf("\n", offset - 1) + 1;
+  const lineEndIdx = text.indexOf("\n", lineStart);
+  const line = text.slice(
+    lineStart,
+    lineEndIdx === -1 ? text.length : lineEndIdx,
+  );
+
+  const m = KEY_LINE.exec(line);
+  if (!m) return null;
+
+  const key = m[2]!;
+  const indent = indentOf(line);
+  const from = lineStart + indent;
+  const to = from + key.length;
+  if (offset < from || offset > to) return null;
+  const before = text.slice(0, lineStart).split("\n").slice(0, -1);
+  return { key, path: parentPath(before, indent), from, to };
+}
+
 export function yamlCursorAt(text: string, offset: number): YamlCursor | null {
   const lineStart = text.lastIndexOf("\n", offset - 1) + 1;
   const prefix = text.slice(lineStart, offset);
