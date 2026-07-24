@@ -18,35 +18,27 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
-### Fixed
+### Changed
 
-- **Components whose CSS class is not `ds-<slug>` ship a real token surface again.** The
-  custom-elements manifest guessed each component's selector from its slug, so for the 27
-  components where the class differs (`alert-banner` is `.ds-alert`, `text-input` is `.ds-field`,
-  `global-header` is `.ds-header`) the scan matched nothing and the component published an empty
-  `cssProperties`: schema-valid, and wrong. Ownership is now declared explicitly (`CSS_OWNERS` in
-  `components/render/renderer/matrix.js`) and checked against both the rendered markup and the
-  stylesheet, so a renamed class fails loudly instead of silently emptying a component's token
-  surface. All 63 declarations now carry one, up from 36.
-  ([#474](https://github.com/volivarii/actian-ds-knowledge/issues/474),
-  [#487](https://github.com/volivarii/actian-ds-knowledge/pull/487))
-- **Four components were painting the wrong color.** Turning the new fidelity gate on real renders
-  (see "Added") caught genuine defects, not just gaps in the gate itself: `lineage-grouped-node` and
-  `segmented-control` filled a surface with `bg-subtle` where Figma renders it white; the critical
-  button's background was bound to a text-error token instead of a fill token; and `tag-stage` was
-  reusing `tag-default`'s orange and yellow modifier rules even though Figma gives the two
-  components different borders for the same color name, something one shared rule cannot serve, so
-  `tag-stage` now carries its own modifier scale for those two colors.
-  ([#487](https://github.com/volivarii/actian-ds-knowledge/pull/487))
-- **A feature referencing a component that does not exist now fails the graph derive instead of
-  vanishing.** `components[]` on an application-context feature is hand-authored, and an unresolvable
-  slug used to be dropped behind a `console.warn`: the `uses_component` edge simply disappeared, and
-  the feature went on claiming a component it was not connected to, with nothing in CI to notice. It
-  is an error now, listing every offending reference at once. All 93 references resolve today, so
-  this fails only on real drift (a renamed or removed component, a typo, a display name used where a
-  slug belongs). ([#484](https://github.com/volivarii/actian-ds-knowledge/pull/484))
+- **The rich text editor is the default authoring surface; raw markdown is now the opt-out.** The
+  Sidebar switch reads "Rich text editor" rather than "WYSIWYG editor (alpha)", and an author who
+  has never touched it lands on the rich surface. Turning it off *writes* the opt-out rather than
+  removing the key, because an absent key means "never chose", which is on: removing it would have
+  quietly undone the choice on the next reload. Being on by default is only safe because it is not
+  the only gate. `shouldUseWysiwyg` still intersects the flag with the CI-derived rich-safe set, so
+  a file whose Milkdown round-trip is unproven keeps opening in the source pane no matter what the
+  flag says.
 
 ### Added
+
+- **The body toolbar stays put, and all three surfaces share one reading column.** The toolbar
+  renders inside the same scrolling container as the document, so in a long file it used to scroll
+  out of reach and formatting meant scrolling back to the top; it is pinned now. The rendered
+  preview, the rich edit surface and the source pane also read their measure and gutter from one
+  pair of custom properties (`--md-measure`, `--md-gutter`) instead of three copies kept in step by
+  a comment, and a test fails if a `--md-*` name referenced in `src/` is not declared. The rich
+  surface previously inherited only table borders, so prose ran edge to edge with user-agent
+  paragraph margins that stacked inside table cells and made rows read as enormous.
 
 - **Every canonical render is now actually checked, and the report says how much of it we can check
   at all.** The fidelity gate filtered renders on a `source: "derived"` marker that no render
