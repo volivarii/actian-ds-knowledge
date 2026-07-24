@@ -36,6 +36,8 @@ const UNREACHABLE = {
   "inline-toast": "Never in the registry, same as global-toast.",
   "success-state":
     "Never in the registry. `confirmation` (Figma: 'A placeholder shown when success') looks like its successor and carries its own authored guideline, so this doc is probably superseded and should be retired or merged.",
+  "search-filters":
+    "LEFT the registry in the 2026-07-23 breaking sync (was on the published '✅ Filters' page; its Figma key now maps to no slug, verified against the live DS v2.5.0 library, so this is a removal not a rename). Deleted vs merely-unpublished is indistinguishable from the registry, but either way it is unavailable to consumers. The authored guideline is kept guidance-only, like success-state; if it is republished the next sync restores the registry entry and this exception should be deleted.",
   "upload-file":
     "NEEDS A DESIGN DECISION. No 'Upload file' component exists in DS Kit, and none ever did. The `upload-file` key that sat in dskit.json until 2026-07-13 was an ICON glyph (page '✍️ Icons'), squatting the component slug under the old flat icon+component namespace; the icon-namespace split (#418) moved icons out, and that is what revealed this guidance has never had a component behind it. Only FM Kit (wireframes) has `upload`/`cloud-upload`. Unlike combo-box/multi-select this looks accidental rather than deliberate: its content is `approved`. Either the component gets built in Figma, or the guidance is retired.",
 };

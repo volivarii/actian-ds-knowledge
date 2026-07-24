@@ -113,7 +113,6 @@ var CSS_OWNERS = {
   "lineage-individual-node": ["ds-lineage-node"],
   "notification-dropdown": ["ds-notification-menu"],
   "progress-bar-small": ["ds-progress"],
-  "radio-button": ["ds-radio"],
   "search-dropdown-menu": ["ds-search-menu"],
   "segmented-control": ["ds-segmented"],
   "side-nav": ["ds-sidenav"],
@@ -262,24 +261,20 @@ var MATRIX_OVERRIDES = {
     return { label: c, variant: "Color=" + c, props: { Label: c } };
   }),
 
-  // tag-status's Status axis has 11 values; the generic 5-cell cap would drop
-  // six. Every status is a distinct real-world state (not decorative), so
-  // show them all rather than an arbitrary subset.
-  "tag-status": [
-    "Fail",
-    "Warning",
-    "Loading",
-    "Maintenance",
-    "Scheduled",
-    "Queued",
-    "Stopped",
-    "Sleeping",
-    "Offline",
-    "Pending",
-    "Success",
-  ].map(function (s) {
-    return { label: s, variant: "Status=" + s, props: { Label: s } };
-  }),
+  // tag-status's Status axis carried 11 values until the 2026-07-23 Figma sync
+  // cut it to 5. This list is the registry's current set, and invariant 10 in
+  // tests/render/fragment-invariants.test.js fails the build if it names a
+  // value the registry does not have: the six dropped values (Maintenance,
+  // Scheduled, Queued, Stopped, Sleeping, Offline) kept rendering here after
+  // they disappeared upstream, so the gallery drew six components the design
+  // system no longer contains. Whether that upstream removal was deliberate is
+  // tracked in issue #496; rendering them regardless is not the way to keep the
+  // question open.
+  "tag-status": ["Fail", "Warning", "Loading", "Pending", "Success"].map(
+    function (s) {
+      return { label: s, variant: "Status=" + s, props: { Label: s } };
+    },
+  ),
 
   // Property 1 is single-valued ("Default"), so the generic derivation would
   // fall back to a single bare cell with no props and never show the

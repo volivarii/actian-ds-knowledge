@@ -11,7 +11,13 @@ function readJSON(rel) {
 }
 
 // Pure detection over the registries (no shared-dist write).
-test("detectSlugCollisions: 17 cross-registry collisions with distinct keys", function () {
+// Count moved 17 -> 24 with the 2026-07-23 sync, which added 42 DS icons whose
+// names coincide with FM-kit icons (ban, book-open, code, folder, phone, reply,
+// share, user, ...). All are benign cross-registry name overlaps resolving to
+// dskit, NOT the dangerous within-kit nodeId collision; the structural
+// assertions below (>=2 candidates, distinct keys, resolved_to set) are what
+// actually guards that, the count is a tripwire on top.
+test("detectSlugCollisions: 24 cross-registry collisions with distinct keys", function () {
   var kits = ["dskit", "fmkit", "metakit"].map(function (k) {
     return {
       kit: k,
@@ -19,7 +25,7 @@ test("detectSlugCollisions: 17 cross-registry collisions with distinct keys", fu
     };
   });
   var out = D.detectSlugCollisions(kits);
-  assert.equal(out.slug_collisions.length, 17);
+  assert.equal(out.slug_collisions.length, 24);
   out.slug_collisions.forEach(function (c) {
     assert.ok(c.candidates.length >= 2);
     assert.ok(
@@ -45,12 +51,12 @@ test("detectSlugCollisions: 17 cross-registry collisions with distinct keys", fu
   );
 });
 
-// Committed sidecar: 17 entries + auto_generated _meta, and it validates
+// Committed sidecar: 24 entries + auto_generated _meta, and it validates
 // against its schema.
-test("graph/dist/collisions.json: 17 entries + auto_generated _meta, schema-valid", function () {
+test("graph/dist/collisions.json: 24 entries + auto_generated _meta, schema-valid", function () {
   var col = readJSON("graph/dist/collisions.json");
   assert.equal(col._meta.auto_generated, true);
-  assert.equal(col.slug_collisions.length, 17);
+  assert.equal(col.slug_collisions.length, 24);
   var schema = readJSON("schemas/collisions.json");
   var validate = new (Ajv.default || Ajv)({ strict: false }).compile(schema);
   assert.ok(validate(col), JSON.stringify(validate.errors));

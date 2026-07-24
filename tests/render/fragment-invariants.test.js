@@ -422,7 +422,7 @@ test("invariant 7: the phase-1b fixes stay fixed", function () {
   var MARKERS = {
     "tag-default": /ds-tag--/,
     checkbox: /ds-checkbox--(checked|indeterminate)/,
-    "radio-button": /ds-radio--checked/,
+    "radio": /ds-radio--checked/,
     toggle: /ds-toggle--on/,
   };
   var failures = [];
@@ -433,4 +433,60 @@ test("invariant 7: the phase-1b fixes stay fixed", function () {
     }
   });
   assert.deepEqual(failures, [], failures.join("; "));
+});
+
+// Invariant 10: a curated MATRIX_OVERRIDES cell may only name a variant value
+// the registry actually carries.
+//
+// MATRIX_OVERRIDES exists so a component's gallery shows its real identity axis
+// instead of a bare stub, which means each cell restates a fact the registry
+// already owns. That copy goes stale silently: the 2026-07-23 Figma sync cut
+// tag-status from 11 Status values to 5, and the override kept rendering all
+// 11, so six cells drew a component the design system no longer has. Nothing
+// failed, because a curated override is authoritative for the gallery by
+// design. Fabricated output is worse than a missing cell: a consumer cannot
+// tell it apart from a real one.
+//
+// Derived from the registry, so it carries no hand-maintained count and stays
+// correct as Figma moves.
+test("invariant 10: every MATRIX_OVERRIDES cell names a variant value the registry has", function () {
+  var offenders = [];
+  // Per the repo rule that a gate whose subject can be absent must assert the
+  // subject was present: if findComponent ever returned null for every slug,
+  // every axis would be skipped and this would pass having compared nothing.
+  var compared = 0;
+  Object.keys(M.MATRIX_OVERRIDES).forEach(function (slug) {
+    var comp = M.findComponent(slug);
+    var variants = (comp && comp.variants) || {};
+    M.MATRIX_OVERRIDES[slug].forEach(function (cell) {
+      String(cell.variant || "")
+        .split(",")
+        .forEach(function (pair) {
+          var kv = pair.split("=");
+          if (kv.length !== 2) return;
+          var axis = kv[0].trim();
+          var value = kv[1].trim();
+          var known = variants[axis];
+          // An axis the registry does not declare at all is out of scope here:
+          // several overrides drive props rather than registry axes.
+          if (!known) return;
+          compared++;
+          if (known.indexOf(value) === -1) {
+            offenders.push(slug + " " + axis + "=" + value);
+          }
+        });
+    });
+  });
+  assert.ok(
+    compared > 0,
+    "this invariant compared nothing: every override axis resolved to no " +
+      "registry variant list, so it would pass vacuously",
+  );
+  assert.deepEqual(
+    offenders,
+    [],
+    "override cells naming a variant value the registry no longer has, so the " +
+      "gallery renders a component that does not exist: " +
+      JSON.stringify(offenders),
+  );
 });

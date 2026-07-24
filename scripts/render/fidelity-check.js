@@ -64,9 +64,21 @@ function checkRuleBody(label, selector, body, factSet, tokenMap, violations) {
           " matches no appearance fact",
       );
   });
-  // tokens emitted must be defined + round-trip to a fact value
-  (body.match(/var\((--zen-[a-z0-9-]+)\)/g) || []).forEach(function (v) {
-    var tok = v.slice(4, -1);
+  // Tokens emitted must be defined + round-trip to a fact value.
+  // Whitespace-tolerant on purpose: Prettier wraps a long declaration as
+  //   background: var(
+  //     --zen-color-success-50
+  //   );
+  // and the original `var\((--zen-[a-z0-9-]+)\)` required the name to sit
+  // flush against both parens, so every wrapped reference was silently
+  // skipped -- the gate read a rule it could not check as a clean rule. Found
+  // when a deliberately wrong stage colour passed. Match the name, not the
+  // formatting.
+  var VAR_REF = /var\(\s*(--zen-[a-z0-9-]+)\s*\)/g;
+  var vm;
+  var refs = [];
+  while ((vm = VAR_REF.exec(body)) !== null) refs.push(vm[1]);
+  refs.forEach(function (tok) {
     if (!tokenMap[tok])
       violations.push(
         label + " " + selector + ": token " + tok + " is undefined",
@@ -168,15 +180,34 @@ function resolveTagOwner(modifier, facts) {
 // above for how a compound modifier finds its owning fact source.
 function checkBaseCssRules(cssText, facts, tokenMap) {
   var violations = [];
-  var re = /\.ds-tag--([a-z0-9-]+)\s*\{([^}]*)\}/g;
+  // Capture the WHOLE selector, not just the modifier. A hue modifier can be
+  // scoped to one family member (`.ds-tag-stage.ds-tag--lime`), and after the
+  // 2026-07-23 redesign tag-stage's Lime and Orange fills no longer match
+  // tag-default's, so the same modifier legitimately carries two different
+  // values depending on which component the rule is scoped to. Resolving the
+  // owner from the modifier alone would check a stage rule against
+  // tag-default's capture and flag a correct colour.
+  var re = /([^{}]*?)\.ds-tag--([a-z0-9-]+)\s*\{([^}]*)\}/g;
   var m;
   while ((m = re.exec(cssText)) !== null) {
-    var modifier = m[1];
-    var owner = resolveTagOwner(modifier, facts);
+    // Strip comments and keep only the trailing selector fragment: [^{}]*?
+    // cannot cross a brace, so m[1] starts right after the previous rule's },
+    // which means it also sweeps up any comment block between the two rules.
+    // Left raw, a violation would print that whole comment as the selector.
+    var scope = m[1]
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .split("\n")
+      .pop()
+      .trim();
+    var modifier = m[2];
+    var selector = scope + ".ds-tag--" + modifier;
+    var owner = /\.ds-tag-stage\b/.test(scope)
+      ? facts["tag-stage"] || resolveTagOwner(modifier, facts)
+      : resolveTagOwner(modifier, facts);
     checkRuleBody(
       "ds-base.css",
-      ".ds-tag--" + modifier,
-      m[2],
+      selector,
+      m[3],
       factColors(owner),
       tokenMap,
       violations,
@@ -539,6 +570,16 @@ if (require.main === module) {
         "tag-catalog": A.readAppearance("tag-catalog", anatomyDir),
         "tag-shared": A.readAppearance("tag-shared", anatomyDir),
         "tag-status": A.readAppearance("tag-status", anatomyDir),
+        // Owner for rules scoped to .ds-tag-stage (see checkBaseCssRules).
+        "tag-stage": A.readAppearance("tag-stage", anatomyDir),
+        // Deliberately NO "tag-gray" entry. An earlier pass registered one
+        // pointing at tag-stage so a .ds-tag--gray rule carrying tag-stage's
+        // #e1e1e6 would pass, which made the gate agree with a wrong colour by
+        // construction instead of catching it. Gray is still a tag-default
+        // Color; it simply equals Color=Default now, so an unscoped
+        // .ds-tag--gray belongs to tag-default and the default fallback checks
+        // it correctly. tag-stage's own Gray is a scoped rule and routes via
+        // the selector.
         checkbox: A.readAppearance("checkbox", anatomyDir),
       },
       tokenMap,

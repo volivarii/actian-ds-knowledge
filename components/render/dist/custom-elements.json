@@ -2574,13 +2574,13 @@
     },
     {
       "kind": "javascript-module",
-      "path": "components/render/dist/fragments/radio-button.html",
+      "path": "components/render/dist/fragments/radio.html",
       "declarations": [
         {
           "kind": "class",
           "customElement": true,
-          "name": "RadioButton",
-          "tagName": "zen-radio-button",
+          "name": "Radio",
+          "tagName": "zen-radio",
           "description": "Used for mutually exclusive choices where the user must select exactly one option from a short list (2–7 items).",
           "attributes": [
             {
@@ -3469,7 +3469,7 @@
           "description": "Use for catalog types. Can be interactive (removable) or static metadata.",
           "attributes": [
             {
-              "name": "type",
+              "name": "property 1",
               "type": {
                 "text": "Default"
               }
@@ -3478,52 +3478,19 @@
           "cssParts": [],
           "cssProperties": [
             {
-              "name": "--zen-border-default"
-            },
-            {
-              "name": "--zen-border-disabled"
-            },
-            {
               "name": "--zen-border-radius-sm"
-            },
-            {
-              "name": "--zen-color-bg-subtle"
-            },
-            {
-              "name": "--zen-color-error-50"
-            },
-            {
-              "name": "--zen-color-error-800"
             },
             {
               "name": "--zen-color-icon-default"
             },
             {
-              "name": "--zen-color-primary-50"
-            },
-            {
-              "name": "--zen-color-primary-600"
-            },
-            {
-              "name": "--zen-color-success-50"
-            },
-            {
-              "name": "--zen-color-success-600"
+              "name": "--zen-color-success-700"
             },
             {
               "name": "--zen-color-text-default"
             },
             {
-              "name": "--zen-color-text-tertiary"
-            },
-            {
-              "name": "--zen-color-warning-100"
-            },
-            {
-              "name": "--zen-color-warning-50"
-            },
-            {
-              "name": "--zen-color-warning-800"
+              "name": "--zen-color-warning-700"
             },
             {
               "name": "--zen-font-family-text"
@@ -3567,18 +3534,12 @@
             {
               "name": "type",
               "type": {
-                "text": "Category | Dataset | Data process | Data product | Field | Output port | Use case | Visualization"
+                "text": "Dataset | Data process | Data product | Field | Output port | Use case | Visualization | Category"
               }
             }
           ],
           "cssParts": [],
           "cssProperties": [
-            {
-              "name": "--zen-color-error-50"
-            },
-            {
-              "name": "--zen-color-error-800"
-            },
             {
               "name": "--zen-color-success-50"
             },
@@ -3631,52 +3592,19 @@
           "cssParts": [],
           "cssProperties": [
             {
-              "name": "--zen-border-default"
-            },
-            {
-              "name": "--zen-border-disabled"
-            },
-            {
               "name": "--zen-border-radius-sm"
-            },
-            {
-              "name": "--zen-color-bg-subtle"
-            },
-            {
-              "name": "--zen-color-error-50"
-            },
-            {
-              "name": "--zen-color-error-800"
             },
             {
               "name": "--zen-color-icon-default"
             },
             {
-              "name": "--zen-color-primary-50"
-            },
-            {
-              "name": "--zen-color-primary-600"
-            },
-            {
-              "name": "--zen-color-success-50"
-            },
-            {
-              "name": "--zen-color-success-600"
+              "name": "--zen-color-success-700"
             },
             {
               "name": "--zen-color-text-default"
             },
             {
-              "name": "--zen-color-text-tertiary"
-            },
-            {
-              "name": "--zen-color-warning-100"
-            },
-            {
-              "name": "--zen-color-warning-50"
-            },
-            {
-              "name": "--zen-color-warning-800"
+              "name": "--zen-color-warning-700"
             },
             {
               "name": "--zen-font-family-text"
@@ -3774,7 +3702,7 @@
             {
               "name": "state",
               "type": {
-                "text": "Hovered | Pressed | Selected | Disabled | Focused | Default"
+                "text": "Hovered | Pressed | Expanded | Disabled | Focused | Default"
               }
             }
           ],
@@ -3862,52 +3790,19 @@
           "cssParts": [],
           "cssProperties": [
             {
-              "name": "--zen-border-default"
-            },
-            {
-              "name": "--zen-border-disabled"
-            },
-            {
               "name": "--zen-border-radius-sm"
-            },
-            {
-              "name": "--zen-color-bg-subtle"
-            },
-            {
-              "name": "--zen-color-error-50"
-            },
-            {
-              "name": "--zen-color-error-800"
             },
             {
               "name": "--zen-color-icon-default"
             },
             {
-              "name": "--zen-color-primary-50"
-            },
-            {
-              "name": "--zen-color-primary-600"
-            },
-            {
-              "name": "--zen-color-success-50"
-            },
-            {
-              "name": "--zen-color-success-600"
+              "name": "--zen-color-success-700"
             },
             {
               "name": "--zen-color-text-default"
             },
             {
-              "name": "--zen-color-text-tertiary"
-            },
-            {
-              "name": "--zen-color-warning-100"
-            },
-            {
-              "name": "--zen-color-warning-50"
-            },
-            {
-              "name": "--zen-color-warning-800"
+              "name": "--zen-color-warning-700"
             },
             {
               "name": "--zen-font-family-text"
@@ -3951,47 +3846,26 @@
             {
               "name": "color",
               "type": {
-                "text": "Orange | Indigo | Purple | Lime | Teal | Yellow | Pink | Gray"
+                "text": "Orange | Indigo | Purple | Lime | Teal | Yellow | Gray | Pink"
               }
             }
           ],
           "cssParts": [],
           "cssProperties": [
             {
-              "name": "--zen-border-default"
-            },
-            {
-              "name": "--zen-border-disabled"
-            },
-            {
               "name": "--zen-border-radius-sm"
-            },
-            {
-              "name": "--zen-color-bg-subtle"
-            },
-            {
-              "name": "--zen-color-error-100"
-            },
-            {
-              "name": "--zen-color-error-50"
-            },
-            {
-              "name": "--zen-color-error-800"
             },
             {
               "name": "--zen-color-icon-default"
             },
             {
-              "name": "--zen-color-primary-50"
-            },
-            {
-              "name": "--zen-color-primary-600"
+              "name": "--zen-color-neutral-50"
             },
             {
               "name": "--zen-color-success-50"
             },
             {
-              "name": "--zen-color-success-600"
+              "name": "--zen-color-success-700"
             },
             {
               "name": "--zen-color-text-default"
@@ -4000,13 +3874,10 @@
               "name": "--zen-color-text-tertiary"
             },
             {
-              "name": "--zen-color-warning-100"
-            },
-            {
               "name": "--zen-color-warning-50"
             },
             {
-              "name": "--zen-color-warning-800"
+              "name": "--zen-color-warning-700"
             },
             {
               "name": "--zen-font-family-text"
@@ -4050,59 +3921,26 @@
             {
               "name": "status",
               "type": {
-                "text": "Fail | Warning | Loading | Maintenance | Scheduled | Queued | Stopped | Sleeping | Offline | Pending | Success"
+                "text": "Warning | Loading | Pending | Success | Fail"
               }
             }
           ],
           "cssParts": [],
           "cssProperties": [
             {
-              "name": "--zen-border-default"
-            },
-            {
-              "name": "--zen-border-disabled"
-            },
-            {
               "name": "--zen-border-radius-sm"
-            },
-            {
-              "name": "--zen-color-bg-subtle"
-            },
-            {
-              "name": "--zen-color-error-50"
-            },
-            {
-              "name": "--zen-color-error-800"
             },
             {
               "name": "--zen-color-icon-default"
             },
             {
-              "name": "--zen-color-primary-50"
-            },
-            {
-              "name": "--zen-color-primary-600"
-            },
-            {
-              "name": "--zen-color-success-50"
-            },
-            {
-              "name": "--zen-color-success-600"
+              "name": "--zen-color-success-700"
             },
             {
               "name": "--zen-color-text-default"
             },
             {
-              "name": "--zen-color-text-tertiary"
-            },
-            {
-              "name": "--zen-color-warning-100"
-            },
-            {
-              "name": "--zen-color-warning-50"
-            },
-            {
-              "name": "--zen-color-warning-800"
+              "name": "--zen-color-warning-700"
             },
             {
               "name": "--zen-font-family-text"

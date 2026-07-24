@@ -208,6 +208,70 @@ Each entry links its pull request. Dates are the merge date (UTC).
   ever had, and the file documents that the exclusion was deliberate rather than lost.
 
 ### Changed
+- **Merging the breaking sync with the render fidelity gate found five more wrong colors.**
+  ([#475](https://github.com/volivarii/actian-ds-knowledge/pull/475))
+  The sync predates the gate that now blocks on a wrong color ([#487](https://github.com/volivarii/actian-ds-knowledge/pull/487)),
+  so bringing the two together was the gate's first real test against a live Figma sync. It failed the
+  build on five declarations whose values the sync's own captured anatomy contradicted:
+  `tag-catalog-item-type`'s data-product, output-port and use-case fills, and `tag-stage`'s lime and
+  orange. Corrected against the captures, binding a token where one round-trips (`success-50`,
+  `warning-50`) and a commented literal where none exists. `tag-default` and `tag-stage` turn out to
+  disagree on the shared lime and orange fills as well as the borders #487 already separated, so
+  `tag-stage` keeps its own scoped rules and the shared ones stay `tag-default`'s. The redesign
+  retired tag borders outright, so #487's `.ds-tag-stage--orange`/`--yellow` border overrides go with
+  them. Three further consequences of the two changes meeting: `CSS_OWNERS` drops its `radio-button`
+  entry, because the rename to `radio` makes the plain `ds-<slug>` fallback correct again (28 entries
+  to 27); three application-context features still listed `search-filters` in their components, which
+  [#484](https://github.com/volivarii/actian-ds-knowledge/pull/484)'s gate correctly refused to drop
+  silently, and the references are removed after confirming a genuine removal rather than a rename (no
+  component in the new registry carries its Figma key); and `tag-status`'s curated gallery override
+  still named all eleven Status values after the axis was cut to five, so the gallery drew six
+  components the design system no longer contains. That override is trimmed, and a new invariant fails
+  the build on any override cell naming a variant the registry lacks, so a curated list can no longer
+  outlive the facts it copies.
+
+- **Breaking Figma sync (2026-07-23).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#475](https://github.com/volivarii/actian-ds-knowledge/pull/475))
+- **The tag family is re-grounded on a DS redesign, and three of its contracts changed.** ([#475](https://github.com/volivarii/actian-ds-knowledge/pull/475))
+  The 2026-07-23 capture replaced the tag treatment: the old pale fill plus tinted border became a
+  single flat fill, and the fill IS the tint the border used to carry (Pink was background `#fff5f6`
+  with a `#ffd6d8` border, it is now `#ffd6d8` with no border, and every hue follows). Verified as a
+  real redesign rather than a degraded capture before encoding it: same Figma key, node id and page,
+  undegraded quality, coherent new values throughout. `ds-base.css` still encoded the old palette, so
+  shipped tags were visibly wrong against the DS and the fidelity gate correctly red with 22
+  violations. Note `Gray` deliberately gets no rule of its own: it is still a live `tag-default`
+  Color, it simply resolves to the same value as `Default` now, which is why it carries no delta.
+  `tag-stage`'s Gray, Lime and Orange did diverge and get scoped rules.
+  Three consumer-visible contract changes ride along:
+  - **`radio-button` is now `radio`.** Upstream renamed the component, and the anatomy capture lands
+    at `radio.json`, so `readAppearance("radio-button")` threw and hard-failed `derive:render`. The
+    slug is followed through the renderer, `components/src/`, content patterns, the manifest, the
+    editor's generated safe-path list and the tests. This changes a docs URL and the plugin's
+    `BUILT_SLUGS`.
+  - **`tag-status` lost six of its eleven Status values** (Maintenance, Queued, Scheduled, Offline,
+    Sleeping, Stopped) and the neutral colour family with them; Pending moved into info. A Status the
+    map no longer knows renders with no family modifier and falls back to base `.ds-tag`, rather than
+    the previous `|| "error"` default: painting a retired value red would assert a failure the DS
+    never described. `.ds-tag--status-neutral` is deleted rather than kept against an invented swatch.
+  - **`search-filters` left the registry**, so the `forms` pattern no longer lists it as a related
+    component. Its authored guideline stays and is now guidance-only, the same state `success-state`
+    already occupies. Whether it was deleted upstream or only unpublished is still open.
+- **Four icon slugs were retired upstream and followed through by Figma key, not by name.**
+  ([#475](https://github.com/volivarii/actian-ds-knowledge/pull/475))
+  `ai` to `stars-filled`, `chevron-left` to `arrow-left` and `directory` to `catalog` are the same
+  glyphs under new names, each confirmed by a matching `dsKey`. `chevron-up` has no successor by key:
+  the rework deleted it outright, like the six already tracked in #406. Its eight call sites are
+  carets, so they move to `arrow-down`, which survived the rework byte-identical and is precisely
+  `chevron-up` rotated, with the rotation flags inverted accordingly. `collapse`/`expand` were
+  rejected as substitutes despite the suggestive names: they are diagonal fullscreen glyphs and would
+  have masked the loss.
+- **The fidelity gate could not see a wrapped `var()`.** ([#475](https://github.com/volivarii/actian-ds-knowledge/pull/475))
+  `checkRuleBody` matched `var\((--zen-[a-z0-9-]+)\)` with the token name flush against both
+  parentheses, but Prettier wraps a long declaration across three lines, so every wrapped reference
+  was skipped and its rule read as clean. Found because a deliberately wrong `tag-stage` colour
+  passed. The matcher is now whitespace-tolerant, and `checkBaseCssRules` resolves a rule's owner
+  from the whole selector so a member-scoped hue (`.ds-tag-stage.ds-tag--lime`) is checked against
+  that member's capture instead of `tag-default`'s. Mutation-verified both ways: a fabricated literal
+  and a fabricated wrapped `var()` are each caught.
 - **`RENDER_SLUGS` is derived from the renderer's own switch instead of restating it.**
   `matrix.js` already documented where the truth lived ("the render slugs are the `case "<slug>":`
   branches in `ds-html-map.js`") and then listed all 63 by hand anyway, so adding or renaming a

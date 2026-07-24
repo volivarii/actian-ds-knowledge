@@ -37,9 +37,13 @@ test('fidelityCheck: the real derive has zero source:"derived" renders today, so
 test("fidelityCheck: a wrong derived color is caught", function () {
   // fidelityCheck is retained for a future escape-hatch template, but no real
   // slug is templated now, so construct the source:"derived" canonical inline.
-  // #000000 is not a tag-default appearance fact color, so the gate must name it.
+  // #123456 is not a tag-default appearance fact color, so the gate must name
+  // it. Deliberately fabricated rather than a real DS colour: this sentinel was
+  // #000000 until the 2026-07-23 capture made that a genuine tag-default fact
+  // (the label text), quietly turning the assertion into a no-op. A colour the
+  // palette can never adopt cannot go stale.
   var canonical = {
-    css: "/* tag-default (derived-from-facts) */\n.ds-tag--pink{background:#000000}\n",
+    css: "/* tag-default (derived-from-facts) */\n.ds-tag--pink{background:#123456}\n",
     manifest: { renders: [{ slug: "tag-default", source: "derived" }] },
   };
   var v = F.fidelityCheck(canonical, { anatomyDir: ANATOMY, tokenMap: {} });
@@ -94,6 +98,10 @@ test("checkBaseCssRules: the real ds-base.css tag/checkbox rules pass", function
     // the modifier regex to cross hyphens), so its fact source must be
     // registered here too, mirroring the CLI's require.main registration.
     "tag-status": A.readAppearance("tag-status", ANATOMY),
+    // tag-stage owns the .ds-tag-stage-scoped hue overrides (its Gray, Lime and
+    // Orange fills diverged from tag-default's in the 2026-07-23 redesign), so
+    // its facts must be in scope or those correct values read as violations.
+    "tag-stage": A.readAppearance("tag-stage", ANATOMY),
     checkbox: A.readAppearance("checkbox", ANATOMY),
   };
   var v = F.checkBaseCssRules(dsBaseCss, facts, tokenMap);
@@ -102,7 +110,7 @@ test("checkBaseCssRules: the real ds-base.css tag/checkbox rules pass", function
   // the gate catches it. Guards against a selector-regex regression that would
   // silently match nothing, making the pass above vacuous.
   var corrupted = dsBaseCss.replace(
-    "background: #fff5f6;",
+    "background: #ffd6d8;",
     "background: #123456;",
   );
   assert.notEqual(
@@ -130,31 +138,35 @@ test("checkBaseCssRules: a fabricated modifier cannot pass by borrowing a siblin
   // to tag-default -- whose Color axis never captured #000000 -- and must
   // still be flagged, even though tag-catalog (a sibling entry in the SAME
   // facts map) legitimately owns #000000.
+  // The borrowed value used to be tag-catalog's #000000 text colour, but the
+  // 2026-07-23 capture moved the tag label to #000000 too, so tag-default began
+  // owning it legitimately and this assertion stopped discriminating. #fff4ec
+  // belongs to exactly one owner in the family and the hue axis has no claim.
   var facts = {
     "tag-default": A.readAppearance("tag-default", ANATOMY),
-    "tag-catalog": A.readAppearance("tag-catalog", ANATOMY),
+    "tag-status": A.readAppearance("tag-status", ANATOMY),
     checkbox: A.readAppearance("checkbox", ANATOMY),
   };
-  var tokenMap = { "--zen-color-text-default": "#000000" };
+  var tokenMap = {};
   var cssText =
-    ".ds-tag--bogus { background: #000000; }\n" +
-    ".ds-tag--catalog { color: var(--zen-color-text-default); }\n";
+    ".ds-tag--bogus { background: #fff4ec; }\n" +
+    ".ds-tag--status-error { background: #fff4ec; }\n";
   var v = F.checkBaseCssRules(cssText, facts, tokenMap);
   assert.ok(
     v.some(function (m) {
-      return /\.ds-tag--bogus/.test(m) && /#000000/.test(m);
+      return /\.ds-tag--bogus/.test(m) && /#fff4ec/.test(m);
     }),
-    "a fabricated .ds-tag--bogus borrowing tag-catalog's #000000 text-color " +
-      "fact must still violate (checked against tag-default, which does not " +
-      "own #000000), got: " +
+    "a fabricated .ds-tag--bogus borrowing tag-status's #fff4ec Fail fill " +
+      "must still violate (checked against tag-default, which does not " +
+      "own #fff4ec), got: " +
       JSON.stringify(v),
   );
   assert.ok(
     !v.some(function (m) {
-      return /\.ds-tag--catalog/.test(m);
+      return /\.ds-tag--status-error/.test(m);
     }),
-    "legitimate .ds-tag--catalog color must pass (checked against its own " +
-      "owning fact source, tag-catalog), got: " +
+    "legitimate .ds-tag--status-error fill must pass (checked against its " +
+      "own owning fact source, tag-status), got: " +
       JSON.stringify(v),
   );
 });
@@ -211,6 +223,7 @@ test("checkBaseCssRules: the real .ds-tag--status-* family rules pass, and comme
     "tag-catalog": A.readAppearance("tag-catalog", ANATOMY),
     "tag-shared": A.readAppearance("tag-shared", ANATOMY),
     "tag-status": A.readAppearance("tag-status", ANATOMY),
+    "tag-stage": A.readAppearance("tag-stage", ANATOMY),
     checkbox: A.readAppearance("checkbox", ANATOMY),
   };
   var v = F.checkBaseCssRules(dsBaseCss, facts, tokenMap);
@@ -645,27 +658,46 @@ function mismatchesFor(report, slug) {
 // contradiction (tag-stage's Orange/Yellow borders, now carried by its own
 // .ds-tag-stage--<color> rules), so the property is proved by planting a value
 // that is wrong for BOTH captures and asserting BOTH slugs report it.
+// The specimen is DERIVED, never hardcoded. An earlier version pinned
+// `border-color: var(--zen-color-primary-50)` on .ds-tag--indigo; the
+// 2026-07-23 tag redesign retired tag borders outright and the test failed for
+// a reason that had nothing to do with the property it guards. A hand-picked
+// specimen is a copy of a fact the stylesheet already owns, and it goes stale
+// the first time the design moves.
+function firstSharedTagColorDecl(css) {
+  var re = /(\.ds-tag--([a-z0-9-]+))\s*\{([^}]*)\}/g;
+  var m;
+  while ((m = re.exec(css)) !== null) {
+    // Skip a colour a family member overrides with its own scoped rule: the
+    // cascade correctly files the shared declaration as `overridden` for that
+    // member, so it is genuinely not charged there and proves nothing about
+    // de-duplication. Only an un-overridden shared colour tests the property.
+    if (new RegExp("\\.ds-tag-[a-z]+--" + m[2] + "\\s*\\{").test(css)) continue;
+    var d = /(background|background-color|color|border-color)\s*:\s*([^;]+);/.exec(m[3]);
+    if (d && css.split(d[0]).length - 1 === 1) {
+      return { selector: m[1], decl: d[0], prop: d[1] };
+    }
+  }
+  return null;
+}
+
 test("fragment-aware filtering does not deduplicate a rule across slugs: one shared .ds-tag rule is charged to every family member that renders it", function () {
-  var target = "border-color: var(--zen-color-primary-50);";
-  assert.equal(
-    BASE_CSS.split(target).length - 1,
-    1,
-    "the shared .ds-tag--indigo border-color declaration was located exactly once",
-  );
+  var spec = firstSharedTagColorDecl(BASE_CSS);
+  assert.ok(spec, "no uniquely-locatable shared .ds-tag--<color> color declaration found");
   // #123456 is not an appearance fact color of any tag family member.
-  var corrupted = BASE_CSS.replace(target, "border-color: #123456;");
+  var corrupted = BASE_CSS.replace(spec.decl, spec.prop + ": #123456;");
   var report = runReportWithCss(corrupted);
-  ["tag-default", "tag-stage"].forEach(function (slug) {
-    assert.ok(
-      mismatchesFor(report, slug).some(function (m) {
-        return /ds-tag--indigo/.test(m.selector) && /#123456/.test(m.message);
-      }),
-      slug +
-        " must be charged for the shared .ds-tag--indigo rule its fragment " +
-        "renders, got: " +
-        JSON.stringify(mismatchesFor(report, slug)),
-    );
+  var charged = ["tag-default", "tag-stage"].filter(function (slug) {
+    return mismatchesFor(report, slug).some(function (m) {
+      return m.selector.indexOf(spec.selector) !== -1 && /#123456/.test(m.message);
+    });
   });
+  assert.ok(
+    charged.length >= 2,
+    "a shared " + spec.selector + " declaration must be charged to every family " +
+      "member whose fragment renders it, not collapsed to one; charged: " +
+      JSON.stringify(charged),
+  );
 });
 
 // The other half of the same property: a rule scoped to ONE member's own
@@ -673,17 +705,42 @@ test("fragment-aware filtering does not deduplicate a rule across slugs: one sha
 // Figma gives tag-stage a different Orange border than tag-default, so
 // corrupting it must red tag-stage and leave tag-default untouched.
 test("a tag-stage-scoped color rule is charged to tag-stage alone, not to the shared tag family", function () {
-  var target = "border-color: var(--zen-color-error-100);";
-  assert.equal(
-    BASE_CSS.split(target).length - 1,
-    1,
-    "the .ds-tag-stage--orange border-color declaration was located exactly once",
+  // Derived from what the gate actually VERIFIES today, not from CSS text. An
+  // earlier version scanned the stylesheet and picked the first uniquely
+  // locatable .ds-tag-stage--<colour> declaration, which selected gray: gray is
+  // tag-stage's own root variant, so a modifier rule for it matches no variant
+  // fact and is honestly unverifiable. Corrupting an unverifiable declaration
+  // proves nothing. Selecting a verified one guarantees the corruption has a
+  // subject to contradict.
+  var baseline = runReport();
+  var verifiedStageRule = null;
+  var re = /(\.ds-tag-stage--[a-z0-9-]+)\s*\{([^}]*)\}/g;
+  var m;
+  while (verifiedStageRule === null && (m = re.exec(BASE_CSS)) !== null) {
+    var d = /(background|background-color|color|border-color)\s*:\s*([^;]+);/.exec(m[2]);
+    if (!d || BASE_CSS.split(d[0]).length - 1 !== 1) continue;
+    // Only a selector the gate can currently reach for tag-stage qualifies.
+    var probe = runReportWithCss(BASE_CSS.replace(d[0], d[1] + ": #123456;"));
+    if (
+      mismatchesFor(probe, "tag-stage").some(function (x) {
+        return x.selector.indexOf(m[1]) !== -1;
+      })
+    ) {
+      verifiedStageRule = { selector: m[1], decl: d[0], prop: d[1] };
+    }
+  }
+  var spec = verifiedStageRule;
+  assert.ok(
+    spec,
+    "no .ds-tag-stage--<color> declaration is currently reachable by the gate " +
+      "for tag-stage, so this property cannot be tested; baseline verified: " +
+      baseline.bySlug["tag-stage"].verified,
   );
-  var corrupted = BASE_CSS.replace(target, "border-color: #123456;");
+  var corrupted = BASE_CSS.replace(spec.decl, spec.prop + ": #123456;");
   var report = runReportWithCss(corrupted);
   assert.ok(
     mismatchesFor(report, "tag-stage").some(function (m) {
-      return /ds-tag-stage--orange/.test(m.selector);
+      return m.selector.indexOf(spec.selector) !== -1;
     }),
     "tag-stage must be charged for its own scoped rule, got: " +
       JSON.stringify(mismatchesFor(report, "tag-stage")),

@@ -18,9 +18,17 @@ test("bindColor: value-first, token only when it round-trips", function () {
   assert.equal(A.bindColor("#abc123", undefined, map), "#abc123"); // no token -> value
 });
 
-test("readAppearance: tag-default exposes 8 Color variants with backgrounds", function () {
+test("readAppearance: tag-default exposes 7 Color variants with backgrounds", function () {
+  // Was 8 until the 2026-07-23 tag redesign. Gray is still a live Color on
+  // the component (the registry lists it), but it now resolves to the same
+  // fill as Color=Default, so it carries no delta and the capture has nothing
+  // to record for it. The remaining seven are the hues that do differ.
   var a = A.readAppearance("tag-default", ANATOMY);
-  var colors = a.variants.filter(function (v) { return v.prop === "Color"; });
-  assert.equal(colors.length, 8);
-  colors.forEach(function (v) { assert.match(v.background, /^#|^rgb|^oklch/i); });
+  var colors = a.variants.filter(function (v) {
+    return v.prop === "Color";
+  });
+  assert.equal(colors.length, 7);
+  colors.forEach(function (v) {
+    assert.match(v.background, /^#|^rgb|^oklch/i);
+  });
 });
