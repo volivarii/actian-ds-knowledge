@@ -185,6 +185,14 @@ Each entry links its pull request. Dates are the merge date (UTC).
   render in the canonical render library, not only the plugin, and de-vacuums the drift gate that
   guards that pairing ([#465](https://github.com/volivarii/actian-ds-knowledge/pull/465)).
 
+### Changed
+
+- **Editor: app-context records are edited as YAML, not as a generated form.** The frontmatter pane
+  now edits the file's own text with schema-driven key completion and inline schema errors, so an
+  untouched record round-trips byte-identically and `relationships` / `apps` are no longer typed into
+  a generic key/value widget. Other domains keep the existing form until the remaining slices land.
+  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD))
+
 ### Removed
 - **The 35 frozen seed renders and the all-35 oracle** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
   `components/render/src/` (15 MB) is gone. The gallery derives entirely from the relocated renderer,

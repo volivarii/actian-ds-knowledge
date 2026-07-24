@@ -36,3 +36,25 @@ test("a component body file does NOT match (routes elsewhere)", () => {
 test("app-context dist json does NOT match", () => {
   assert.equal(matchFrontmatterForm("app-context/dist/app-context.json"), null);
 });
+
+test("app-context records use the YAML surface", () => {
+  for (const p of [
+    "app-context/src/apps/studio.md",
+    "app-context/src/entities/dataset.md",
+    "app-context/src/patterns/wizards.md",
+  ]) {
+    assert.equal(matchFrontmatterForm(p)?.surface, "yaml", p);
+  }
+});
+
+test("every other domain keeps the form surface in this slice", () => {
+  for (const p of [
+    "content/src/patterns/forms.md",
+    "foundations/src/tokens.md",
+    "components/src/categories/action.md",
+  ]) {
+    const cfg = matchFrontmatterForm(p);
+    assert.ok(cfg, `${p} should still match a form config`);
+    assert.notEqual(cfg!.surface, "yaml", p);
+  }
+});

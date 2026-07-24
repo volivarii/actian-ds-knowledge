@@ -21,6 +21,8 @@ import {
   splitFrontmatter,
   routeNoFrontmatter,
 } from "../substrate/splitFrontmatter";
+import { assembleYamlFrontmatterFile } from "../frontmatter-engine/assembleYaml";
+import { YamlFrontmatterEditor } from "../frontmatter-engine/YamlFrontmatterEditor";
 import { EditorView } from "@codemirror/view";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
@@ -104,6 +106,9 @@ interface Props {
    *  editor. When false/omitted (record domains), a missing fence keeps the
    *  amber missing-frontmatter warning + raw fallback. */
   frontmatterOptional?: boolean;
+  /** `"yaml"` edits the frontmatter text directly; omitted keeps the RJSF
+   *  form. Slice 1 sets this on app-context records only. */
+  surface?: "yaml";
 }
 
 type Loaded =
@@ -134,10 +139,14 @@ export function FrontmatterBodyEditScreen(props: Props) {
     yamlFlowAtDepth,
     preserveComments,
     frontmatterOptional,
+    surface,
   } = props;
   const [state, setState] = useState<Loaded>({ kind: "loading" });
   const [formData, setFormData] = useState<unknown>(undefined);
   const [body, setBody] = useState<string>("");
+  const [fmText, setFmText] = useState<string>("");
+  const fmTextRef = useRef(fmText);
+  fmTextRef.current = fmText;
   // Latest-value mirrors. The body editors (Milkdown's useEditor([]) and
   // CodeMirror's useEffect([])) FREEZE their onChange at mount, capturing the
   // formData/body of that render. Reading these refs in the flush handlers keeps
@@ -312,6 +321,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
 
         setFormData(split.data);
         setBody(split.body);
+        setFmText(split.frontmatterText ?? "");
         setState({
           kind: "ready",
           schema,
@@ -333,22 +343,28 @@ export function FrontmatterBodyEditScreen(props: Props) {
   const flushToCart = useCallback(
     (fd: unknown, b: string) => {
       if (state.kind !== "ready") return;
-      // preserveComments (content/foundations): use the Document-merge path so
-      // `#` comments interleaved between data lines survive the save.
-      // Otherwise the flow-depth path: yamlFlowAtDepth undefined → default (2);
-      // null → block-style. assembleFrontmatterFile accepts null; default is 2.
-      const content = preserveComments
-        ? assembleFrontmatterFilePreservingComments(
-            fd,
-            state.frontmatterText,
-            b,
-          )
-        : assembleFrontmatterFile(
-            fd,
-            state.frontmatterText,
-            b,
-            yamlFlowAtDepth !== undefined ? yamlFlowAtDepth : 2,
-          );
+      // surface === "yaml": the pane edits the frontmatter TEXT directly, so
+      // assembly is plain concatenation of that text (never a re-serialized
+      // `fd`) — see assembleYaml.ts. Otherwise, preserveComments
+      // (content/foundations): use the Document-merge path so `#` comments
+      // interleaved between data lines survive the save. Otherwise the
+      // flow-depth path: yamlFlowAtDepth undefined → default (2); null →
+      // block-style. assembleFrontmatterFile accepts null; default is 2.
+      const content =
+        surface === "yaml"
+          ? assembleYamlFrontmatterFile(fmTextRef.current, b)
+          : preserveComments
+            ? assembleFrontmatterFilePreservingComments(
+                fd,
+                state.frontmatterText,
+                b,
+              )
+            : assembleFrontmatterFile(
+                fd,
+                state.frontmatterText,
+                b,
+                yamlFlowAtDepth !== undefined ? yamlFlowAtDepth : 2,
+              );
       submissionCartSingleton.add({
         path,
         content,
@@ -356,7 +372,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
         addedAt: Date.now(),
       });
     },
-    [state, path, yamlFlowAtDepth, preserveComments],
+    [state, path, yamlFlowAtDepth, preserveComments, surface],
   );
 
   const scheduleFlush = useCallback(
@@ -462,6 +478,91 @@ export function FrontmatterBodyEditScreen(props: Props) {
     </Box>
   );
 
+  // Shared between both branches: the prose body section (when the record
+  // carries one) and the submit row. In the RJSF branch this renders inside
+  // <Form>, so the button stays type="submit" and fires the form's onSubmit
+  // (Ajv-validated formData). In the yaml branch there is no <Form> to
+  // submit, so the button is type="button" and flushes the cart directly
+  // from the latest-ref mirrors.
+  const editorBody = (
+    <div className="fm-form-children">
+      {!bodyless && (
+        <Box mt="4">
+          <Text size="2" weight="bold" as="div" mb="1">
+            Prose body
+          </Text>
+          <Box
+            style={{
+              // Full-height prose editing: take the viewport minus the
+              // chrome above/below (banner, collapsed frontmatter header,
+              // submit row). Floor keeps it usable on short windows.
+              height: "max(360px, calc(100vh - 240px))",
+              border: "1px solid var(--gray-5)",
+              borderRadius: 6,
+            }}
+          >
+            {shouldUseWysiwyg(path) ? (
+              <Flex gap="2" height="100%">
+                {renderRelationsPanel(scrollRichHeading, null)}
+                <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
+                  <Suspense
+                    fallback={
+                      <Box p="3" role="status">
+                        <Text size="1" color="gray">
+                          Loading rich editor…
+                        </Text>
+                      </Box>
+                    }
+                  >
+                    <RichBodyEditor
+                      key={path}
+                      initialText={body}
+                      onChange={(t) => {
+                        setBody(t);
+                        scheduleFlush(formData, t);
+                      }}
+                      filename={path.split("/").pop()}
+                      componentSlug={componentSlugFromPath(path)}
+                      octokit={octokit}
+                    />
+                  </Suspense>
+                </Box>
+              </Flex>
+            ) : (
+              <Flex gap="2" height="100%">
+                {renderRelationsPanel(cmNavigate, activeAnchor)}
+                <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
+                  <CodeMirrorEditor
+                    key={path}
+                    initialText={body}
+                    onChange={(t) => {
+                      setBody(t);
+                      scheduleFlush(formDataRef.current, t);
+                    }}
+                    onReady={setCmView}
+                    onCursorLineChange={handleCursorLineChange}
+                  />
+                </Box>
+              </Flex>
+            )}
+          </Box>
+        </Box>
+      )}
+      <Flex gap="2" mt="3">
+        <Button
+          type={surface === "yaml" ? "button" : "submit"}
+          onClick={
+            surface === "yaml"
+              ? () => flushToCart(formDataRef.current, bodyRef.current)
+              : undefined
+          }
+        >
+          Add to batch
+        </Button>
+      </Flex>
+    </div>
+  );
+
   return (
     <Box>
       <TierBanner path={path} />
@@ -482,88 +583,46 @@ export function FrontmatterBodyEditScreen(props: Props) {
           {fmCollapsed ? "Show" : "Hide"}
         </Button>
       </Flex>
-      <RJSFForm
-        className={"rjsf fm-form" + (fmCollapsed ? " fm-collapsed" : "")}
-        schema={state.schema}
-        uiSchema={uiSchema}
-        formData={formData}
-        widgets={WIDGETS}
-        templates={frontmatterTemplates}
-        onChange={(next) => {
-          setFormData(next);
-          scheduleFlush(next, bodyRef.current);
-        }}
-        onSubmit={(next) => flushToCart(next, bodyRef.current)}
-        submitLabel="Add to batch"
-      >
-        <div className="fm-form-children">
-          {!bodyless && (
-            <Box mt="4">
-              <Text size="2" weight="bold" as="div" mb="1">
-                Prose body
-              </Text>
-              <Box
-                style={{
-                  // Full-height prose editing: take the viewport minus the
-                  // chrome above/below (banner, collapsed frontmatter header,
-                  // submit row). Floor keeps it usable on short windows.
-                  height: "max(360px, calc(100vh - 240px))",
-                  border: "1px solid var(--gray-5)",
-                  borderRadius: 6,
-                }}
-              >
-                {shouldUseWysiwyg(path) ? (
-                  <Flex gap="2" height="100%">
-                    {renderRelationsPanel(scrollRichHeading, null)}
-                    <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
-                      <Suspense
-                        fallback={
-                          <Box p="3" role="status">
-                            <Text size="1" color="gray">
-                              Loading rich editor…
-                            </Text>
-                          </Box>
-                        }
-                      >
-                        <RichBodyEditor
-                          key={path}
-                          initialText={body}
-                          onChange={(t) => {
-                            setBody(t);
-                            scheduleFlush(formData, t);
-                          }}
-                          filename={path.split("/").pop()}
-                          componentSlug={componentSlugFromPath(path)}
-                          octokit={octokit}
-                        />
-                      </Suspense>
-                    </Box>
-                  </Flex>
-                ) : (
-                  <Flex gap="2" height="100%">
-                    {renderRelationsPanel(cmNavigate, activeAnchor)}
-                    <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
-                      <CodeMirrorEditor
-                        key={path}
-                        initialText={body}
-                        onChange={(t) => {
-                          setBody(t);
-                          scheduleFlush(formDataRef.current, t);
-                        }}
-                        onReady={setCmView}
-                        onCursorLineChange={handleCursorLineChange}
-                      />
-                    </Box>
-                  </Flex>
-                )}
-              </Box>
-            </Box>
-          )}
-          <Flex gap="2" mt="3">
-            <Button type="submit">Add to batch</Button>
-          </Flex>
-        </div>
-      </RJSFForm>
+      {surface === "yaml" ? (
+        <Box>
+          <Box
+            className={fmCollapsed ? "fm-collapsed" : undefined}
+            style={{
+              border: "1px solid var(--gray-5)",
+              borderRadius: 6,
+              overflow: "hidden",
+            }}
+          >
+            <YamlFrontmatterEditor
+              key={path}
+              initialText={fmText}
+              schema={state.schema}
+              onChange={(t) => {
+                setFmText(t);
+                scheduleFlush(formDataRef.current, bodyRef.current);
+              }}
+            />
+          </Box>
+          {editorBody}
+        </Box>
+      ) : (
+        <RJSFForm
+          className={"rjsf fm-form" + (fmCollapsed ? " fm-collapsed" : "")}
+          schema={state.schema}
+          uiSchema={uiSchema}
+          formData={formData}
+          widgets={WIDGETS}
+          templates={frontmatterTemplates}
+          onChange={(next) => {
+            setFormData(next);
+            scheduleFlush(next, bodyRef.current);
+          }}
+          onSubmit={(next) => flushToCart(next, bodyRef.current)}
+          submitLabel="Add to batch"
+        >
+          {editorBody}
+        </RJSFForm>
+      )}
     </Box>
   );
 }
