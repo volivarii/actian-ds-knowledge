@@ -8,6 +8,7 @@ import {
   isWordsToAvoidFile,
   shouldUseWysiwyg,
 } from "../../src/lib/wysiwygPaths";
+import { setWysiwygFlag } from "../helpers/editorSurface";
 
 test("isAppContextFile matches only per-record app-context markdown", () => {
   assert.equal(isAppContextFile("app-context/src/apps/studio.md"), true);
@@ -51,11 +52,11 @@ test("isWordsToAvoidFile matches only the single words-to-avoid source file", ()
 });
 
 test("shouldUseWysiwyg requires the flag AND an app-context OR category record", () => {
-  globalThis.sessionStorage.clear();
+  setWysiwygFlag("source");
   // Flag off → never, even for a real record.
   assert.equal(shouldUseWysiwyg("app-context/src/apps/studio.md"), false);
   assert.equal(shouldUseWysiwyg("components/src/categories/action.md"), false);
-  globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
+  setWysiwygFlag("rich");
   // Flag on + per-record path → yes (both domains).
   assert.equal(shouldUseWysiwyg("app-context/src/apps/studio.md"), true);
   assert.equal(shouldUseWysiwyg("app-context/src/entities/x.md"), true);
@@ -75,7 +76,7 @@ test("shouldUseWysiwyg requires the flag AND an app-context OR category record",
   // Slice 7 recovered link/content (backtick-wrapped URL → no autolink drift) → eligible.
   assert.equal(shouldUseWysiwyg("components/src/link/content.md"), true);
   assert.equal(shouldUseWysiwyg("foundations/src/x.md"), false);
-  globalThis.sessionStorage.clear();
+  setWysiwygFlag("source");
 });
 
 test("isWysiwygSafePath — true for the registry's safe paths across domains", () => {
@@ -121,9 +122,9 @@ test("isWysiwygSafePath — false for files NOT in the registry", () => {
 });
 
 test("shouldUseWysiwyg includes registry-safe content/a11y files when flagged", () => {
-  globalThis.sessionStorage.clear();
+  setWysiwygFlag("source");
   assert.equal(shouldUseWysiwyg("accessibility/src/color-contrast.md"), false);
-  globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
+  setWysiwygFlag("rich");
   assert.equal(shouldUseWysiwyg("accessibility/src/color-contrast.md"), true);
   assert.equal(shouldUseWysiwyg("content/src/global-guidelines.md"), true);
   // Slice 6 — content/global stragglers now registry-safe.
@@ -135,5 +136,5 @@ test("shouldUseWysiwyg includes registry-safe content/a11y files when flagged", 
   );
   // Slice 4 recovered aria-labels (inline-code/<Media>-aware fail-closed).
   assert.equal(shouldUseWysiwyg("accessibility/src/aria-labels.md"), true);
-  globalThis.sessionStorage.clear();
+  setWysiwygFlag("source");
 });

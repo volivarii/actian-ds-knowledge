@@ -13,6 +13,7 @@ import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { MarkdownEditScreen } from "../../src/app/MarkdownEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
+import { setWysiwygFlag } from "../helpers/editorSurface";
 
 // File-level, not inline per test: an inline cleanup() after the last
 // assertion is skipped the moment that assertion throws, leaking a mounted
@@ -56,7 +57,7 @@ function wrap(node: React.ReactNode) {
 }
 
 test("MarkdownEditScreen: loads remote and shows file path heading", async () => {
-  localStorage.clear();
+  setWysiwygFlag("source");
   const { gh } = makeFakeOctokit("## Hello {#hello}\n");
   render(
     wrap(
@@ -78,7 +79,7 @@ test("MarkdownEditScreen: loads remote and shows file path heading", async () =>
 // asserts the non-workspace (empty-cart) render has no direct-submit button
 // at all, and that "Add to batch" only stages (never opens a PR itself).
 test("MarkdownEditScreen: non-workspace render has no direct 'Submit as PR' button; Add to batch only stages", async () => {
-  localStorage.clear();
+  setWysiwygFlag("source");
   submissionCartSingleton.clear();
   const { gh, calls } = makeFakeOctokit("## Hello {#hello}\n");
   render(

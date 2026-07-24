@@ -1,12 +1,19 @@
 // jsdom, not happy-dom (this screen mounts CodeMirror).
 import "../setup-dom";
-import { test, afterEach } from "node:test";
+import { test, afterEach, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
 import { EditorView } from "@codemirror/view";
 import { FrontmatterBodyEditScreen } from "../../src/app/FrontmatterBodyEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
+import { setWysiwygFlag } from "../helpers/editorSurface";
+
+// These suites exercise the YAML FRONTMATTER pane; the body surface below it is
+// incidental. Pin it to the source pane: the rich surface cannot mount under
+// jsdom at all (only tests/setup-happy-dom.ts installs what ProseMirror needs),
+// and app-context rich-body coverage lives in appContextWysiwyg.test.tsx.
+beforeEach(() => setWysiwygFlag("source"));
 
 afterEach(() => {
   cleanup();

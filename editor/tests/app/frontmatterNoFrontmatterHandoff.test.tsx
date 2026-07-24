@@ -6,6 +6,7 @@ import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { FrontmatterBodyEditScreen } from "../../src/app/FrontmatterBodyEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
+import { setWysiwygFlag } from "../helpers/editorSurface";
 
 function b64(s: string) {
   return Buffer.from(s, "utf8").toString("base64");
@@ -22,8 +23,7 @@ const NO_FENCE = "# Forms\n\nJust prose, no frontmatter.\n";
 test("no-frontmatter prose file opens silently and fetches the blob only once", async () => {
   cleanup();
   submissionCartSingleton.clear();
-  globalThis.sessionStorage.clear();
-  globalThis.localStorage.clear();
+  setWysiwygFlag("source");
 
   let blobFetches = 0;
   const gh = {

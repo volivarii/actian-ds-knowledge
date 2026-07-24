@@ -6,6 +6,7 @@ import React from "react";
 import { render, screen, cleanup } from "@testing-library/react";
 import { MarkdownEditScreen } from "../../src/app/MarkdownEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
+import { setWysiwygFlag } from "../helpers/editorSurface";
 
 function b64(s: string): string {
   return Buffer.from(s, "utf-8").toString("base64");
@@ -50,7 +51,7 @@ const APPEAR = { timeout: 8000 };
 
 beforeEach(() => {
   submissionCartSingleton.clear();
-  localStorage.clear();
+  setWysiwygFlag("source");
 });
 afterEach(() => {
   cleanup();

@@ -10,6 +10,7 @@ import {
 import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { MarkdownEditScreen } from "../../src/app/MarkdownEditScreen";
+import { setWysiwygFlag, assertNoElement } from "../helpers/editorSurface";
 
 // happy-dom lacks sessionStorage/localStorage -- minimal in-memory stubs.
 for (const key of ["sessionStorage", "localStorage"] as const) {
@@ -50,25 +51,29 @@ const CONTENT_SAFE = "content/src/global-guidelines.md";
 const FILE = "## Heading {#h}\n\nProse.\n";
 
 test("SAFE accessibility file renders RichBodyEditor when the flag is on", async () => {
-  cleanup(); globalThis.localStorage.clear();
-  globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
+  cleanup();
+  setWysiwygFlag("rich");
   render(<Theme><MarkdownEditScreen path={A11Y_SAFE} octokit={fakeGh(FILE)} /></Theme>);
   await waitFor(() => assert.ok(screen.getByRole("textbox", { name: /body editor/i })), { timeout: 5000 });
-  globalThis.sessionStorage.clear(); cleanup();
+  cleanup();
 });
 
 test("SAFE content file renders RichBodyEditor when the flag is on", async () => {
-  cleanup(); globalThis.localStorage.clear();
-  globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
+  cleanup();
+  setWysiwygFlag("rich");
   render(<Theme><MarkdownEditScreen path={CONTENT_SAFE} octokit={fakeGh(FILE)} /></Theme>);
   await waitFor(() => assert.ok(screen.getByRole("textbox", { name: /body editor/i })), { timeout: 5000 });
-  globalThis.sessionStorage.clear(); cleanup();
+  cleanup();
 });
 
 test("flag OFF -> CodeMirror (no body-editor role)", async () => {
-  cleanup(); globalThis.localStorage.clear(); globalThis.sessionStorage.clear();
+  cleanup();
+  setWysiwygFlag("source");
   render(<Theme><MarkdownEditScreen path={CONTENT_SAFE} octokit={fakeGh(FILE)} /></Theme>);
   await waitFor(() => assert.ok(screen.getByText(CONTENT_SAFE)), { timeout: 5000 });
-  assert.equal(screen.queryByRole("textbox", { name: /body editor/i }), null, "flag-off must use CodeMirror");
+  assertNoElement(
+    screen.queryByRole("textbox", { name: /body editor/i }),
+    "flag-off must use CodeMirror",
+  );
   cleanup();
 });

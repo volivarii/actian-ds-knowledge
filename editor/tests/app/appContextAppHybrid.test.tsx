@@ -6,6 +6,7 @@ import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { FrontmatterBodyEditScreen } from "../../src/app/FrontmatterBodyEditScreen";
 import { appContextAppUiSchema } from "../../src/uiSchemas/appContextApp";
+import { setWysiwygFlag } from "../helpers/editorSurface";
 
 function b64(s: string) {
   return Buffer.from(s, "utf8").toString("base64");
@@ -68,7 +69,7 @@ const ENUM_SCHEMA = JSON.stringify({
 
 test("app renders the markdown body editor (not bodyless)", async () => {
   cleanup();
-  globalThis.sessionStorage.clear();
+  setWysiwygFlag("source");
   const gh = fakeGh({
     "schemas/app-context-app.json": CORE_SCHEMA,
     "app-context/src/apps/studio.md": STUDIO_FILE,
@@ -102,7 +103,7 @@ test("app renders the markdown body editor (not bodyless)", async () => {
 // what app-context users actually get.
 test("header.type renders as a dropdown with the known variants", async () => {
   cleanup();
-  globalThis.sessionStorage.clear();
+  setWysiwygFlag("source");
   const gh = fakeGh({
     "schemas/app-context-app.json": ENUM_SCHEMA,
     "app-context/src/apps/studio.md":
@@ -132,7 +133,7 @@ test("header.type renders as a dropdown with the known variants", async () => {
 
 test("renders CodeMirror (not RichBodyEditor) when the wysiwyg flag is off", async () => {
   cleanup();
-  globalThis.sessionStorage.clear();
+  setWysiwygFlag("source");
   const gh = fakeGh({
     "schemas/app-context-app.json": CORE_SCHEMA,
     "app-context/src/apps/studio.md": STUDIO_FILE,
@@ -166,7 +167,7 @@ test("renders CodeMirror (not RichBodyEditor) when the wysiwyg flag is off", asy
 // what app-context users actually get.
 test("structured fields collapse under an App settings disclosure", async () => {
   cleanup();
-  globalThis.sessionStorage.clear();
+  setWysiwygFlag("source");
   const gh = fakeGh({
     "schemas/app-context-app.json": CORE_SCHEMA,
     "app-context/src/apps/studio.md": STUDIO_FILE,
