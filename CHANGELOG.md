@@ -208,6 +208,28 @@ Each entry links its pull request. Dates are the merge date (UTC).
   ever had, and the file documents that the exclusion was deliberate rather than lost.
 
 ### Changed
+- **Merging the breaking sync with the render fidelity gate found five more wrong colors.**
+  ([#475](https://github.com/volivarii/actian-ds-knowledge/pull/475))
+  The sync predates the gate that now blocks on a wrong color ([#487](https://github.com/volivarii/actian-ds-knowledge/pull/487)),
+  so bringing the two together was the gate's first real test against a live Figma sync. It failed the
+  build on five declarations whose values the sync's own captured anatomy contradicted:
+  `tag-catalog-item-type`'s data-product, output-port and use-case fills, and `tag-stage`'s lime and
+  orange. Corrected against the captures, binding a token where one round-trips (`success-50`,
+  `warning-50`) and a commented literal where none exists. `tag-default` and `tag-stage` turn out to
+  disagree on the shared lime and orange fills as well as the borders #487 already separated, so
+  `tag-stage` keeps its own scoped rules and the shared ones stay `tag-default`'s. The redesign
+  retired tag borders outright, so #487's `.ds-tag-stage--orange`/`--yellow` border overrides go with
+  them. Three further consequences of the two changes meeting: `CSS_OWNERS` drops its `radio-button`
+  entry, because the rename to `radio` makes the plain `ds-<slug>` fallback correct again (28 entries
+  to 27); three application-context features still listed `search-filters` in their components, which
+  [#484](https://github.com/volivarii/actian-ds-knowledge/pull/484)'s gate correctly refused to drop
+  silently, and the references are removed after confirming a genuine removal rather than a rename (no
+  component in the new registry carries its Figma key); and `tag-status`'s curated gallery override
+  still named all eleven Status values after the axis was cut to five, so the gallery drew six
+  components the design system no longer contains. That override is trimmed, and a new invariant fails
+  the build on any override cell naming a variant the registry lacks, so a curated list can no longer
+  outlive the facts it copies.
+
 - **Breaking Figma sync (2026-07-23).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#475](https://github.com/volivarii/actian-ds-knowledge/pull/475))
 - **The tag family is re-grounded on a DS redesign, and three of its contracts changed.** ([#475](https://github.com/volivarii/actian-ds-knowledge/pull/475))
   The 2026-07-23 capture replaced the tag treatment: the old pale fill plus tinted border became a
