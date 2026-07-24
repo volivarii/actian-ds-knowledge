@@ -2648,12 +2648,6 @@
  * inherit the shared rule. The 2026-07-23 sync retired tag borders entirely
  * (both captures now record border: null), so the border-color overrides that
  * used to live here are gone with them. */
-.ds-tag-stage--lime {
-  background: var(--zen-color-success-50); /* captured #d3efcd */
-}
-.ds-tag-stage--orange {
-  background: var(--zen-color-warning-50); /* captured #ffebce */
-}
 .ds-tag-stage__dot {
   width: 8px; /* dot geometry (raw px), diameter not captured by anatomy */
   height: 8px;
@@ -2677,18 +2671,14 @@
  * Lime and Orange no longer share a value, so the two rules below override
  * the shared .ds-tag--<hue> fill for stage pills only. The other five hues
  * still match tag-default exactly and are left to the shared rules. */
-.ds-tag-stage.ds-tag--gray {
+.ds-tag-stage--gray {
   background: var(--zen-color-neutral-50); /* #e1e1e6, not tag-default #dde6ec */
 }
-.ds-tag-stage.ds-tag--lime {
-  background: var(
-    --zen-color-success-50
-  ); /* #d3efcd, not tag-default #d3e7e0 */
+.ds-tag-stage--lime {
+  background: var(--zen-color-success-50); /* #d3efcd, not tag-default #d3e7e0 */
 }
-.ds-tag-stage.ds-tag--orange {
-  background: var(
-    --zen-color-warning-50
-  ); /* #ffebce, not tag-default #ffd7ca */
+.ds-tag-stage--orange {
+  background: var(--zen-color-warning-50); /* #ffebce, not tag-default #ffd7ca */
 }
 .ds-tag--indigo .ds-tag-stage__dot {
   background: #00699f; /* no captured token */
@@ -2984,10 +2974,10 @@
   color: #000000; /* no token captured */
 }
 .ds-tag-catalog-item-type--category {
-  background: var(--zen-color-error-50);
+  background: #ffd7ca; /* captured 2026-07-23; no token resolves to this value */
 }
 .ds-tag-catalog-item-type--category .ds-tag-catalog-item-type__name {
-  color: var(--zen-color-error-800);
+  color: #7b2000; /* captured 2026-07-23; no token resolves to this value */
 }
 .ds-tag-catalog-item-type--dataset {
   background: #cfeafd; /* --zen-color-primary-50 does not round-trip (:root resolves to #cbe3ff) */
@@ -3005,7 +2995,7 @@
   background: #cadcf7; /* captured 2026-07-23; no token resolves to this value */
 }
 .ds-tag-catalog-item-type--data-product .ds-tag-catalog-item-type__name {
-  color: #40404a; /* no captured token */
+  color: #00255a; /* captured 2026-07-23; no token resolves to this value */
 }
 .ds-tag-catalog-item-type--field {
   background: var(--zen-color-success-50);
@@ -3017,7 +3007,7 @@
   background: #f1fdff; /* captured 2026-07-23; no token resolves to this value */
 }
 .ds-tag-catalog-item-type--output-port .ds-tag-catalog-item-type__name {
-  color: #3c515a; /* no captured token */
+  color: #00255a; /* captured 2026-07-23; no token resolves to this value */
 }
 .ds-tag-catalog-item-type--use-case {
   background: #fff5d5; /* captured 2026-07-23; no token resolves to this value */

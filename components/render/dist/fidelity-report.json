@@ -8,20 +8,20 @@
     "verified": 47,
     "verifiedViaTokenName": 2,
     "mismatch": 0,
-    "unverifiable": 368,
+    "unverifiable": 366,
     "overridden": 2,
-    "oracleCoverage": 0.1175,
+    "oracleCoverage": 0.1181,
     "verifiedFidelity": 0.9592,
-    "examined": 417
+    "examined": 415
   },
   "reasons": {
     "no-fact-of-kind": 23,
     "element-no-node-mapping": 240,
     "root-is-variant-instance": 21,
-    "no-matching-variant": 22,
+    "no-matching-variant": 23,
     "root-is-non-default-state": 4,
     "state-unreachable": 42,
-    "selector-not-attributable": 6,
+    "selector-not-attributable": 3,
     "shared-base-no-single-subject": 10
   },
   "bySlug": {
@@ -649,7 +649,7 @@
       "verified": 7,
       "verifiedViaTokenName": 0,
       "mismatch": 0,
-      "unverifiable": 14,
+      "unverifiable": 12,
       "overridden": 2,
       "blind": false
     },

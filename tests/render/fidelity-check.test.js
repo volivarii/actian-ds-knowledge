@@ -705,15 +705,37 @@ test("fragment-aware filtering does not deduplicate a rule across slugs: one sha
 // Figma gives tag-stage a different Orange border than tag-default, so
 // corrupting it must red tag-stage and leave tag-default untouched.
 test("a tag-stage-scoped color rule is charged to tag-stage alone, not to the shared tag family", function () {
-  // Derived, not hardcoded, for the same reason as the test above.
+  // Derived from what the gate actually VERIFIES today, not from CSS text. An
+  // earlier version scanned the stylesheet and picked the first uniquely
+  // locatable .ds-tag-stage--<colour> declaration, which selected gray: gray is
+  // tag-stage's own root variant, so a modifier rule for it matches no variant
+  // fact and is honestly unverifiable. Corrupting an unverifiable declaration
+  // proves nothing. Selecting a verified one guarantees the corruption has a
+  // subject to contradict.
+  var baseline = runReport();
+  var verifiedStageRule = null;
   var re = /(\.ds-tag-stage--[a-z0-9-]+)\s*\{([^}]*)\}/g;
-  var spec = null;
   var m;
-  while (spec === null && (m = re.exec(BASE_CSS)) !== null) {
+  while (verifiedStageRule === null && (m = re.exec(BASE_CSS)) !== null) {
     var d = /(background|background-color|color|border-color)\s*:\s*([^;]+);/.exec(m[2]);
-    if (d && BASE_CSS.split(d[0]).length - 1 === 1) spec = { selector: m[1], decl: d[0], prop: d[1] };
+    if (!d || BASE_CSS.split(d[0]).length - 1 !== 1) continue;
+    // Only a selector the gate can currently reach for tag-stage qualifies.
+    var probe = runReportWithCss(BASE_CSS.replace(d[0], d[1] + ": #123456;"));
+    if (
+      mismatchesFor(probe, "tag-stage").some(function (x) {
+        return x.selector.indexOf(m[1]) !== -1;
+      })
+    ) {
+      verifiedStageRule = { selector: m[1], decl: d[0], prop: d[1] };
+    }
   }
-  assert.ok(spec, "no uniquely-locatable .ds-tag-stage--<color> color declaration found");
+  var spec = verifiedStageRule;
+  assert.ok(
+    spec,
+    "no .ds-tag-stage--<color> declaration is currently reachable by the gate " +
+      "for tag-stage, so this property cannot be tested; baseline verified: " +
+      baseline.bySlug["tag-stage"].verified,
+  );
   var corrupted = BASE_CSS.replace(spec.decl, spec.prop + ": #123456;");
   var report = runReportWithCss(corrupted);
   assert.ok(

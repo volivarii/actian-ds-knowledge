@@ -262,10 +262,14 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   // app-context patterns (marketplace-browsing, federated-catalog,
   // search-filtered-table) reference `search-filters`, which left the registry
   // that sync, so those three pattern->component edges no longer project. The
-  // references are kept on purpose (search-filters is guidance-only now, the
-  // same authored-without-a-registry-component state as combo-box/multi-select
-  // in guideline-reachability's UNREACHABLE list); if it is republished the
-  // edges return and this pin moves back up.
+  // Those three references have since been REMOVED: #484's gate fails the graph
+  // derive on a components[] entry that resolves to nothing, and search-filters
+  // is a genuine removal rather than a rename (no component in any new registry
+  // carries its Figma key 919ddc42...). Its authored guideline stays and is
+  // guidance-only now, the same authored-without-a-registry-component state as
+  // combo-box/multi-select in guideline-reachability's UNREACHABLE list. If it
+  // is republished, the references and their edges can come back and this pin
+  // moves up again.
   var ISLAND_PREFIXES = ["app", "entity", "pattern", "term"];
   var inIsland = function (id) {
     return ISLAND_PREFIXES.indexOf(String(id).split(":")[0]) !== -1;

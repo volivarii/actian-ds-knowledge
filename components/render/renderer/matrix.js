@@ -268,7 +268,7 @@ var MATRIX_OVERRIDES = {
   // Scheduled, Queued, Stopped, Sleeping, Offline) kept rendering here after
   // they disappeared upstream, so the gallery drew six components the design
   // system no longer contains. Whether that upstream removal was deliberate is
-  // tracked separately; rendering them regardless is not the way to keep the
+  // tracked in issue #496; rendering them regardless is not the way to keep the
   // question open.
   "tag-status": ["Fail", "Warning", "Loading", "Pending", "Success"].map(
     function (s) {

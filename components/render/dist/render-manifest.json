@@ -409,7 +409,7 @@
       "tagName": "zen-tag-catalog",
       "group": "Data Display",
       "fragment": "fragments/tag-catalog.html",
-      "tokensConsumed": 16,
+      "tokensConsumed": 13,
       "source": "rendered"
     },
     {
@@ -417,7 +417,7 @@
       "tagName": "zen-tag-catalog-item-type",
       "group": "Data Display",
       "fragment": "fragments/tag-catalog-item-type.html",
-      "tokensConsumed": 11,
+      "tokensConsumed": 9,
       "source": "rendered"
     },
     {
@@ -425,7 +425,7 @@
       "tagName": "zen-tag-default",
       "group": "Data Display",
       "fragment": "fragments/tag-default.html",
-      "tokensConsumed": 16,
+      "tokensConsumed": 13,
       "source": "rendered"
     },
     {
@@ -449,7 +449,7 @@
       "tagName": "zen-tag-shared",
       "group": "Data Display",
       "fragment": "fragments/tag-shared.html",
-      "tokensConsumed": 16,
+      "tokensConsumed": 13,
       "source": "rendered"
     },
     {
@@ -465,7 +465,7 @@
       "tagName": "zen-tag-status",
       "group": "Data Display",
       "fragment": "fragments/tag-status.html",
-      "tokensConsumed": 16,
+      "tokensConsumed": 13,
       "source": "rendered"
     },
     {

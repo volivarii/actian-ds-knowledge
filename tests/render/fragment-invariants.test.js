@@ -451,6 +451,10 @@ test("invariant 7: the phase-1b fixes stay fixed", function () {
 // correct as Figma moves.
 test("invariant 10: every MATRIX_OVERRIDES cell names a variant value the registry has", function () {
   var offenders = [];
+  // Per the repo rule that a gate whose subject can be absent must assert the
+  // subject was present: if findComponent ever returned null for every slug,
+  // every axis would be skipped and this would pass having compared nothing.
+  var compared = 0;
   Object.keys(M.MATRIX_OVERRIDES).forEach(function (slug) {
     var comp = M.findComponent(slug);
     var variants = (comp && comp.variants) || {};
@@ -465,12 +469,19 @@ test("invariant 10: every MATRIX_OVERRIDES cell names a variant value the regist
           var known = variants[axis];
           // An axis the registry does not declare at all is out of scope here:
           // several overrides drive props rather than registry axes.
-          if (known && known.indexOf(value) === -1) {
+          if (!known) return;
+          compared++;
+          if (known.indexOf(value) === -1) {
             offenders.push(slug + " " + axis + "=" + value);
           }
         });
     });
   });
+  assert.ok(
+    compared > 0,
+    "this invariant compared nothing: every override axis resolved to no " +
+      "registry variant list, so it would pass vacuously",
+  );
   assert.deepEqual(
     offenders,
     [],

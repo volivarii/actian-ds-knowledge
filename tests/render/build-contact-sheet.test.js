@@ -14,7 +14,7 @@ test("buildContactSheet: emits a page covering the four improved slugs + their o
   });
   var html = fs.readFileSync(out, "utf8");
   assert.match(html, /tag-default/);
-  assert.match(html, /radio/);
+  assert.match(html, /\bradio\b/);
   assert.match(html, /data:image\/webp;base64,/); // at least one oracle embedded
   fs.unlinkSync(out);
 });

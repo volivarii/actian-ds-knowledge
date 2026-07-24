@@ -3484,19 +3484,10 @@
               "name": "--zen-color-icon-default"
             },
             {
-              "name": "--zen-color-neutral-50"
-            },
-            {
-              "name": "--zen-color-success-50"
-            },
-            {
               "name": "--zen-color-success-700"
             },
             {
               "name": "--zen-color-text-default"
-            },
-            {
-              "name": "--zen-color-warning-50"
             },
             {
               "name": "--zen-color-warning-700"
@@ -3549,12 +3540,6 @@
           ],
           "cssParts": [],
           "cssProperties": [
-            {
-              "name": "--zen-color-error-50"
-            },
-            {
-              "name": "--zen-color-error-800"
-            },
             {
               "name": "--zen-color-success-50"
             },
@@ -3613,19 +3598,10 @@
               "name": "--zen-color-icon-default"
             },
             {
-              "name": "--zen-color-neutral-50"
-            },
-            {
-              "name": "--zen-color-success-50"
-            },
-            {
               "name": "--zen-color-success-700"
             },
             {
               "name": "--zen-color-text-default"
-            },
-            {
-              "name": "--zen-color-warning-50"
             },
             {
               "name": "--zen-color-warning-700"
@@ -3820,19 +3796,10 @@
               "name": "--zen-color-icon-default"
             },
             {
-              "name": "--zen-color-neutral-50"
-            },
-            {
-              "name": "--zen-color-success-50"
-            },
-            {
               "name": "--zen-color-success-700"
             },
             {
               "name": "--zen-color-text-default"
-            },
-            {
-              "name": "--zen-color-warning-50"
             },
             {
               "name": "--zen-color-warning-700"
@@ -3967,19 +3934,10 @@
               "name": "--zen-color-icon-default"
             },
             {
-              "name": "--zen-color-neutral-50"
-            },
-            {
-              "name": "--zen-color-success-50"
-            },
-            {
               "name": "--zen-color-success-700"
             },
             {
               "name": "--zen-color-text-default"
-            },
-            {
-              "name": "--zen-color-warning-50"
             },
             {
               "name": "--zen-color-warning-700"
