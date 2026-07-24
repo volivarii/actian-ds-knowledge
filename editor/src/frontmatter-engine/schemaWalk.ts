@@ -19,7 +19,9 @@ export interface CompletionCandidate {
   required: boolean;
 }
 
-function asSchema(v: unknown): JsonSchema | null {
+/** Exported so keyDocumentation.ts (schemaHover.ts's underlying analysis)
+ *  shares this instead of redefining an identical private copy. */
+export function asSchema(v: unknown): JsonSchema | null {
   return v && typeof v === "object" && !Array.isArray(v)
     ? (v as JsonSchema)
     : null;

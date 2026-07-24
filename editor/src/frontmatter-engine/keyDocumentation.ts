@@ -6,7 +6,12 @@
 // thin adapter over the function below.
 
 import { yamlKeyAt } from "./yamlCursor";
-import { schemaAtPath, keyCandidates, type JsonSchema } from "./schemaWalk";
+import {
+  schemaAtPath,
+  keyCandidates,
+  asSchema,
+  type JsonSchema,
+} from "./schemaWalk";
 
 export interface KeyDocumentation {
   key: string;
@@ -19,12 +24,6 @@ export interface KeyDocumentation {
   /** Range of the KEY NAME text in the source — the tooltip's anchor. */
   from: number;
   to: number;
-}
-
-function asSchema(v: unknown): JsonSchema | null {
-  return v && typeof v === "object" && !Array.isArray(v)
-    ? (v as JsonSchema)
-    : null;
 }
 
 /** A readable type label for a resolved subschema. Draft 2020-12 allows
