@@ -31,7 +31,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
   (`setWysiwygFlag` in `editor/tests/helpers/editorSurface.ts`) and assert absence on a boolean
   rather than on the node (`assertNoElement`), so a genuine failure prints one readable line. The
   suite also runs under `--test-timeout=60000`, so a hung file fails instead of holding a parallel
-  worker forever. `npm test` went from unbounded to 1121 tests in 42 s at a 2.55 GB peak.
+  worker forever. `npm test` went from unbounded to 1118 tests in 42 s at a 2.43 GB peak.
+  ([#502](https://github.com/volivarii/actian-ds-knowledge/pull/502))
 
 - **Components whose CSS class is not `ds-<slug>` ship a real token surface again.** The
   custom-elements manifest guessed each component's selector from its slug, so for the 27
