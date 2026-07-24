@@ -8,9 +8,15 @@
 import { useEffect, useRef } from "react";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import {
+  defaultKeymap,
+  history,
+  historyKeymap,
+  indentWithTab,
+} from "@codemirror/commands";
 import { yaml } from "@codemirror/lang-yaml";
 import { linter, lintGutter, type Diagnostic } from "@codemirror/lint";
+import { cmDarkSurface } from "../lib/cmDarkSurface";
 import { schemaCompletionExtension } from "./schemaCompletion";
 import { schemaHoverExtension } from "./schemaHover";
 import { frontmatterDiagnostics } from "./schemaDiagnostics";
@@ -40,7 +46,11 @@ export function YamlFrontmatterEditor({
       doc: initialText,
       extensions: [
         history(),
-        keymap.of([...defaultKeymap, ...historyKeymap]),
+        // indentWithTab is deliberately NOT in defaultKeymap: CM6 leaves Tab
+        // unbound so keyboard users can tab OUT of an editor. YAML indentation
+        // is semantic, so the pane binds it and the escape hatch becomes
+        // Escape-then-Tab, which CM6 supports out of the box.
+        keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
         yaml(),
         schemaCompletionExtension(schema),
         schemaHoverExtension(schema),
@@ -55,6 +65,7 @@ export function YamlFrontmatterEditor({
           ),
         ),
         lintGutter(),
+        cmDarkSurface,
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ "aria-label": "Frontmatter YAML" }),
         EditorView.updateListener.of((u) => {
