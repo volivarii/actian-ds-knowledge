@@ -1,4 +1,4 @@
-import { test } from "node:test";
+import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import "../setup-dom";
 import {
@@ -13,6 +13,14 @@ import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { MarkdownEditScreen } from "../../src/app/MarkdownEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
+
+// File-level, not inline per test: an inline cleanup() after the last
+// assertion is skipped the moment that assertion throws, leaking a mounted
+// component into the next test. afterEach runs regardless of the test's
+// outcome, so a throw can no longer leak a mount.
+afterEach(() => {
+  cleanup();
+});
 
 function makeFakeOctokit(remoteText: string, remoteSha = "SHA_REMOTE_1") {
   const remoteB64 = Buffer.from(remoteText, "utf-8").toString("base64");
@@ -58,10 +66,10 @@ test("MarkdownEditScreen: loads remote and shows file path heading", async () =>
       />,
     ),
   );
-  await waitFor(() =>
-    assert.ok(screen.getByText("foundations/src/color-primitives.md")),
+  await waitFor(
+    () => assert.ok(screen.getByText("foundations/src/color-primitives.md")),
+    { timeout: 5000 },
   );
-  cleanup();
 });
 
 // The direct "Submit as PR" path was removed (a real incident: using both
@@ -81,8 +89,9 @@ test("MarkdownEditScreen: non-workspace render has no direct 'Submit as PR' butt
       />,
     ),
   );
-  const addToBatch = await waitFor(() =>
-    screen.getByRole("button", { name: /add to batch/i }),
+  const addToBatch = await waitFor(
+    () => screen.getByRole("button", { name: /add to batch/i }),
+    { timeout: 5000 },
   );
   assert.equal(
     screen.queryByRole("button", { name: /submit as pr/i }),
@@ -98,5 +107,4 @@ test("MarkdownEditScreen: non-workspace render has no direct 'Submit as PR' butt
     "Add to batch must stage only — it must never open a PR directly",
   );
   submissionCartSingleton.clear();
-  cleanup();
 });

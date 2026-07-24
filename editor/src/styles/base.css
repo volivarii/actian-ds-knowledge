@@ -350,6 +350,16 @@ form.fm-form.fm-collapsed > *:not(.fm-form-children) {
   display: none;
 }
 
+/* YAML frontmatter pane collapse (surface: "yaml" branch of
+   FrontmatterBodyEditScreen): the pane wrapper is a plain Box, not the RJSF
+   <form>, so it gets its own class rather than matching the rule above. The
+   prose body + submit row live as a SIBLING of this Box (not a child), so
+   collapsing it entirely (rather than excepting a children wrapper) is
+   sufficient here — unlike the RJSF form case. */
+.fm-yaml-pane.fm-collapsed {
+  display: none;
+}
+
 /* Cross-surface relation highlight (crossSurfaceHighlight): hovering or
    focusing an inline typed link (.md-ref) or a relations-rail row lights every
    element sharing its data-ref. The accent alpha reads on both themes and
@@ -424,4 +434,59 @@ form.fm-form.fm-collapsed > *:not(.fm-form-children) {
   margin-top: 5px;
   font-size: 12px;
   color: var(--gray-11);
+}
+
+/* NOTE: CM6 tooltip/lint/completion colours are NOT stylable from here.
+ * CM6 emits its base rules scoped by a generated class, which out-specifies
+ * a plain `.cm-tooltip` selector, and it picks its light-vs-dark base from
+ * the `{ dark: true }` flag on EditorView.theme rather than from the page.
+ * That styling lives in src/lib/cmDarkSurface.ts, shared by both editors.
+ * The card-layout rules below are custom classes, so they are safe here. */
+
+/* Schema hover card — key documentation on hover in the YAML frontmatter
+   pane (schemaHover.ts). It renders inside the shared .cm-tooltip container
+   above, so it inherits that panel's background/border/color; these rules
+   only add the card's own layout plus the "required" accent. */
+.cm-schema-hover {
+  padding: 8px 10px;
+  max-width: 320px;
+}
+.cm-schema-hover-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.cm-schema-hover-key {
+  font-family: var(--zen-font-family-mono), ui-monospace, monospace;
+  font-weight: 600;
+  color: var(--gray-12);
+}
+.cm-schema-hover-type {
+  font-size: 11px;
+  color: var(--gray-11);
+}
+.cm-schema-hover-required {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-9);
+}
+.cm-schema-hover-description {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--gray-12);
+  margin-bottom: 6px;
+}
+.cm-schema-hover-examples-label {
+  font-size: 11px;
+  color: var(--gray-11);
+  margin-bottom: 2px;
+}
+.cm-schema-hover-examples {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11px;
+  font-family: var(--zen-font-family-mono), ui-monospace, monospace;
+  color: var(--gray-12);
 }

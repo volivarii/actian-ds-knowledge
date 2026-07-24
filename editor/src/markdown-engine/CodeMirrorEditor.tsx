@@ -20,6 +20,7 @@ import { markdown } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
 import { anchorCompletionExtension } from "./anchorCompletion";
+import { cmDarkSurface } from "../lib/cmDarkSurface";
 
 export interface CodeMirrorEditorProps {
   initialText: string;
@@ -124,6 +125,7 @@ export function CodeMirrorEditor({
             return false;
           },
         }),
+        cmDarkSurface,
         EditorView.lineWrapping,
         EditorView.updateListener.of((u) => {
           if (u.docChanged) onChange(u.state.doc.toString());

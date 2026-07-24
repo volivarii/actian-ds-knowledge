@@ -17,18 +17,19 @@ test("isAppContextFile matches only the three per-record kinds", () => {
   assert.equal(isAppContextFile("app-context/dist/app-context.json"), false);
 });
 
-test("matchFrontmatterForm selects schema/bodyless/flowAtDepth per app-context kind", () => {
+test("matchFrontmatterForm selects schema/bodyless per app-context kind", () => {
+  // flowAtDepth is not asserted here: all three app-context kinds route to
+  // the YAML surface, where flowAtDepth is dead config (flushToCart's
+  // surface === "yaml" branch never reaches the flow-depth path) — removed
+  // from the registry in final review, see frontmatterForms.ts.
   const app = matchFrontmatterForm("app-context/src/apps/studio.md");
   assert.equal(app?.schemaKey, "app-context-app");
   assert.equal(app?.bodyless, false);
-  assert.equal(app?.flowAtDepth, null);
   const ent = matchFrontmatterForm("app-context/src/entities/x.md");
   assert.equal(ent?.schemaKey, "app-context-entity");
   assert.equal(ent?.bodyless, false);
-  assert.equal(ent?.flowAtDepth, 2);
   const pat = matchFrontmatterForm("app-context/src/patterns/x.md");
   assert.equal(pat?.schemaKey, "app-context-pattern");
   assert.equal(pat?.bodyless, false);
-  assert.equal(pat?.flowAtDepth, 2);
   assert.equal(matchFrontmatterForm("app-context/dist/app-context.json"), null);
 });

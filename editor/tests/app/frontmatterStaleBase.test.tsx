@@ -41,6 +41,15 @@ const SCHEMA = JSON.stringify({
 const ENTITY_PATH = "app-context/src/entities/dataset.md";
 const REMOTE_SHA = "ENTITY_SHA_1";
 
+// This test renders FrontmatterBodyEditScreen without `surface`, so it
+// exercises the RJSF branch directly. Production now always routes
+// app-context paths through surface="yaml" (frontmatterForms.ts), so this
+// is no longer coverage of what app-context users actually get — it still
+// guards the #280 no-silent-overwrite guarantee for the RJSF component
+// itself, which the other three form domains (content, foundations,
+// categories, words-to-avoid) still use. See
+// FrontmatterYamlSurface.test.tsx's "byte-identical content" test for the
+// routed-path equivalent of this basedOnSha assertion.
 test("staging an app-context record carries the remote blob sha (stale-base detectable)", async () => {
   cleanup();
   submissionCartSingleton.clear();

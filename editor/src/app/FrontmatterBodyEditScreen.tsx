@@ -21,6 +21,8 @@ import {
   splitFrontmatter,
   routeNoFrontmatter,
 } from "../substrate/splitFrontmatter";
+import { assembleYamlFrontmatterFile } from "../frontmatter-engine/assembleYaml";
+import { YamlFrontmatterEditor } from "../frontmatter-engine/YamlFrontmatterEditor";
 import { EditorView } from "@codemirror/view";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
 import { shouldUseWysiwyg } from "../lib/wysiwygPaths";
@@ -104,6 +106,9 @@ interface Props {
    *  editor. When false/omitted (record domains), a missing fence keeps the
    *  amber missing-frontmatter warning + raw fallback. */
   frontmatterOptional?: boolean;
+  /** `"yaml"` edits the frontmatter text directly; omitted keeps the RJSF
+   *  form. Slice 1 sets this on app-context records only. */
+  surface?: "yaml";
 }
 
 type Loaded =
@@ -134,20 +139,60 @@ export function FrontmatterBodyEditScreen(props: Props) {
     yamlFlowAtDepth,
     preserveComments,
     frontmatterOptional,
+    surface,
   } = props;
   const [state, setState] = useState<Loaded>({ kind: "loading" });
   const [formData, setFormData] = useState<unknown>(undefined);
   const [body, setBody] = useState<string>("");
+  const [fmText, setFmText] = useState<string>("");
+  const fmTextRef = useRef(fmText);
+  fmTextRef.current = fmText;
   // Latest-value mirrors. The body editors (Milkdown's useEditor([]) and
   // CodeMirror's useEffect([])) FREEZE their onChange at mount, capturing the
-  // formData/body of that render. Reading these refs in the flush handlers keeps
-  // a body edit from flushing the cart with stale frontmatter (and vice-versa),
-  // which would silently revert an interleaved field edit.
+  // formData/body of that render. Reading these refs at the CALL SITE (the
+  // moment a body edit or the "Add to batch" click passes a snapshot into
+  // scheduleFlush/flushToCart) keeps a body edit from staging stale
+  // frontmatter (and vice-versa), which would silently revert an interleaved
+  // field edit. None of these refs is ever read inside flushToCart itself —
+  // only the fd/b/fm arguments it was called with — so a flush that fires
+  // after the screen has moved on to a different file still stages the
+  // snapshot taken when it was scheduled, not whatever the refs hold by then.
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
   const bodyRef = useRef(body);
   bodyRef.current = body;
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Keyed by path, not a single slot: scheduling a flush for one file must
+  // cancel only THAT file's own pending timer, never another file's. See
+  // scheduleFlush below for why a shared single slot silently dropped a
+  // foreign file's armed edit the moment the user typed anywhere else. Each
+  // entry pairs the timer handle with the same `run` closure the timer would
+  // have invoked, so the unmount effect below can fire it directly instead
+  // of only being able to cancel it.
+  const debounceRef = useRef<
+    Map<string, { timer: ReturnType<typeof setTimeout>; run: () => void }>
+  >(new Map());
+  // A pending debounce at unmount still holds up to a second of the user's
+  // most recent edit. flushToCart's only effect is
+  // `submissionCartSingleton.add(...)` — a module-level, localStorage-backed
+  // singleton (store-instance.ts) that outlives this screen (EditorShell
+  // swaps this component out the moment the user opens a different file, or
+  // any other screen) and performs no React state write. That makes firing
+  // it here, after the component tree has already unmounted, safe by
+  // construction: there is nothing left to read from React state, only the
+  // cart to write to. So on unmount this FIRES every pending timer's flush
+  // immediately (clearing the timer itself only to stop it firing a second,
+  // redundant time) rather than discarding it — clearing without firing
+  // (the previous behavior) silently dropped the last second of typing the
+  // instant the user navigated away.
+  useEffect(() => {
+    return () => {
+      for (const pending of debounceRef.current.values()) {
+        clearTimeout(pending.timer);
+        pending.run();
+      }
+      debounceRef.current.clear();
+    };
+  }, []);
 
   // Tick whenever anchorIndex finishes loading; drives recomputation of the
   // incoming-refs counts + snippets that feed the RelationsPanel. Mirrors
@@ -312,6 +357,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
 
         setFormData(split.data);
         setBody(split.body);
+        setFmText(split.frontmatterText ?? "");
         setState({
           kind: "ready",
           schema,
@@ -331,24 +377,44 @@ export function FrontmatterBodyEditScreen(props: Props) {
   }, [path, schemaKey, octokit, frontmatterOptional]);
 
   const flushToCart = useCallback(
-    (fd: unknown, b: string) => {
+    (fd: unknown, b: string, fm: string) => {
       if (state.kind !== "ready") return;
-      // preserveComments (content/foundations): use the Document-merge path so
-      // `#` comments interleaved between data lines survive the save.
-      // Otherwise the flow-depth path: yamlFlowAtDepth undefined → default (2);
-      // null → block-style. assembleFrontmatterFile accepts null; default is 2.
-      const content = preserveComments
-        ? assembleFrontmatterFilePreservingComments(
-            fd,
-            state.frontmatterText,
-            b,
-          )
-        : assembleFrontmatterFile(
-            fd,
-            state.frontmatterText,
-            b,
-            yamlFlowAtDepth !== undefined ? yamlFlowAtDepth : 2,
-          );
+      // surface === "yaml": the pane edits the frontmatter TEXT directly, so
+      // assembly is plain concatenation of that text (never a re-serialized
+      // `fd`) — see assembleYaml.ts. `fm` is a SNAPSHOT taken at the moment
+      // this flush was scheduled (or at click time for the button), never a
+      // live ref read here: a debounced flush can fire after the screen has
+      // navigated to a different file. The `state.kind !== "ready"` guard
+      // above does NOT perform any staleness check of its own — it only
+      // rejects non-ready states. What actually makes a late flush stage
+      // under the RIGHT path with the RIGHT sha is that this function is a
+      // useCallback with `[state, path, ...]` in its deps: a pending timer
+      // was scheduled with a `flushToCart` closure created for file A, so it
+      // still closes over A's own `state`/`path` no matter what the screen
+      // has moved on to since. A ref read at flush time, by contrast, would
+      // silently pull in whatever file is CURRENTLY on screen's live
+      // frontmatter text instead of the text that was on screen when this
+      // flush was armed — which is exactly why `fm` is an argument, not a
+      // ref read. Otherwise, preserveComments (content/foundations):
+      // use the Document-merge path so `#` comments interleaved between data
+      // lines survive the save. Otherwise the flow-depth path: yamlFlowAtDepth
+      // undefined → default (2); null → block-style. assembleFrontmatterFile
+      // accepts null; default is 2.
+      const content =
+        surface === "yaml"
+          ? assembleYamlFrontmatterFile(fm, b)
+          : preserveComments
+            ? assembleFrontmatterFilePreservingComments(
+                fd,
+                state.frontmatterText,
+                b,
+              )
+            : assembleFrontmatterFile(
+                fd,
+                state.frontmatterText,
+                b,
+                yamlFlowAtDepth !== undefined ? yamlFlowAtDepth : 2,
+              );
       submissionCartSingleton.add({
         path,
         content,
@@ -356,15 +422,33 @@ export function FrontmatterBodyEditScreen(props: Props) {
         addedAt: Date.now(),
       });
     },
-    [state, path, yamlFlowAtDepth, preserveComments],
+    [state, path, yamlFlowAtDepth, preserveComments, surface],
   );
 
   const scheduleFlush = useCallback(
-    (fd: unknown, b: string) => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => flushToCart(fd, b), 1000);
+    (fd: unknown, b: string, fm: string) => {
+      // fd/b/fm are all snapshotted HERE, at schedule time — not re-read from
+      // any ref when the timer fires. debounceRef is a Map keyed by path, so
+      // clearing "the" pending timer below only ever clears THIS path's own
+      // prior timer, never another file's: a user who edits file A and
+      // navigates to file B within the debounce window still gets A's edit
+      // staged under A even if they then edit B too — B's own scheduleFlush
+      // call only touches key B, leaving A's timer to fire on its own
+      // schedule with the snapshot it captured when it was armed. (A single
+      // shared slot could not make this distinction: any call anywhere would
+      // clear whatever timer happened to occupy the one slot, silently
+      // dropping a foreign file's armed edit.)
+      const key = path;
+      const pending = debounceRef.current.get(key);
+      if (pending) clearTimeout(pending.timer);
+      const run = () => {
+        debounceRef.current.delete(key);
+        flushToCart(fd, b, fm);
+      };
+      const timer = setTimeout(run, 1000);
+      debounceRef.current.set(key, { timer, run });
     },
-    [flushToCart],
+    [path, flushToCart],
   );
 
   if (state.kind === "loading") return <Text>Loading…</Text>;
@@ -462,6 +546,96 @@ export function FrontmatterBodyEditScreen(props: Props) {
     </Box>
   );
 
+  // Shared between both branches: the prose body section (when the record
+  // carries one) and the submit row. In the RJSF branch this renders inside
+  // <Form>, so the button stays type="submit" and fires the form's onSubmit
+  // (Ajv-validated formData). In the yaml branch there is no <Form> to
+  // submit, so the button is type="button" and flushes the cart directly
+  // from the latest-ref mirrors.
+  const editorBody = (
+    <div className="fm-form-children">
+      {!bodyless && (
+        <Box mt="4">
+          <Text size="2" weight="bold" as="div" mb="1">
+            Prose body
+          </Text>
+          <Box
+            style={{
+              // Full-height prose editing: take the viewport minus the
+              // chrome above/below (banner, collapsed frontmatter header,
+              // submit row). Floor keeps it usable on short windows.
+              height: "max(360px, calc(100vh - 240px))",
+              border: "1px solid var(--gray-5)",
+              borderRadius: 6,
+            }}
+          >
+            {shouldUseWysiwyg(path) ? (
+              <Flex gap="2" height="100%">
+                {renderRelationsPanel(scrollRichHeading, null)}
+                <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
+                  <Suspense
+                    fallback={
+                      <Box p="3" role="status">
+                        <Text size="1" color="gray">
+                          Loading rich editor…
+                        </Text>
+                      </Box>
+                    }
+                  >
+                    <RichBodyEditor
+                      key={path}
+                      initialText={body}
+                      onChange={(t) => {
+                        setBody(t);
+                        scheduleFlush(formData, t, fmTextRef.current);
+                      }}
+                      filename={path.split("/").pop()}
+                      componentSlug={componentSlugFromPath(path)}
+                      octokit={octokit}
+                    />
+                  </Suspense>
+                </Box>
+              </Flex>
+            ) : (
+              <Flex gap="2" height="100%">
+                {renderRelationsPanel(cmNavigate, activeAnchor)}
+                <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
+                  <CodeMirrorEditor
+                    key={path}
+                    initialText={body}
+                    onChange={(t) => {
+                      setBody(t);
+                      scheduleFlush(formDataRef.current, t, fmTextRef.current);
+                    }}
+                    onReady={setCmView}
+                    onCursorLineChange={handleCursorLineChange}
+                  />
+                </Box>
+              </Flex>
+            )}
+          </Box>
+        </Box>
+      )}
+      <Flex gap="2" mt="3">
+        <Button
+          type={surface === "yaml" ? "button" : "submit"}
+          onClick={
+            surface === "yaml"
+              ? () =>
+                  flushToCart(
+                    formDataRef.current,
+                    bodyRef.current,
+                    fmTextRef.current,
+                  )
+              : undefined
+          }
+        >
+          Add to batch
+        </Button>
+      </Flex>
+    </div>
+  );
+
   return (
     <Box>
       <TierBanner path={path} />
@@ -476,94 +650,89 @@ export function FrontmatterBodyEditScreen(props: Props) {
           type="button"
           size="1"
           variant="ghost"
-          aria-label="Toggle frontmatter form"
+          aria-label="Toggle frontmatter"
           onClick={() => setFmCollapsed((c) => !c)}
         >
           {fmCollapsed ? "Show" : "Hide"}
         </Button>
       </Flex>
-      <RJSFForm
-        className={"rjsf fm-form" + (fmCollapsed ? " fm-collapsed" : "")}
-        schema={state.schema}
-        uiSchema={uiSchema}
-        formData={formData}
-        widgets={WIDGETS}
-        templates={frontmatterTemplates}
-        onChange={(next) => {
-          setFormData(next);
-          scheduleFlush(next, bodyRef.current);
-        }}
-        onSubmit={(next) => flushToCart(next, bodyRef.current)}
-        submitLabel="Add to batch"
-      >
-        <div className="fm-form-children">
-          {!bodyless && (
-            <Box mt="4">
-              <Text size="2" weight="bold" as="div" mb="1">
-                Prose body
-              </Text>
-              <Box
-                style={{
-                  // Full-height prose editing: take the viewport minus the
-                  // chrome above/below (banner, collapsed frontmatter header,
-                  // submit row). Floor keeps it usable on short windows.
-                  height: "max(360px, calc(100vh - 240px))",
-                  border: "1px solid var(--gray-5)",
-                  borderRadius: 6,
-                }}
-              >
-                {shouldUseWysiwyg(path) ? (
-                  <Flex gap="2" height="100%">
-                    {renderRelationsPanel(scrollRichHeading, null)}
-                    <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
-                      <Suspense
-                        fallback={
-                          <Box p="3" role="status">
-                            <Text size="1" color="gray">
-                              Loading rich editor…
-                            </Text>
-                          </Box>
-                        }
-                      >
-                        <RichBodyEditor
-                          key={path}
-                          initialText={body}
-                          onChange={(t) => {
-                            setBody(t);
-                            scheduleFlush(formData, t);
-                          }}
-                          filename={path.split("/").pop()}
-                          componentSlug={componentSlugFromPath(path)}
-                          octokit={octokit}
-                        />
-                      </Suspense>
-                    </Box>
-                  </Flex>
-                ) : (
-                  <Flex gap="2" height="100%">
-                    {renderRelationsPanel(cmNavigate, activeAnchor)}
-                    <Box flexGrow="1" minWidth="0" style={{ overflow: "auto" }}>
-                      <CodeMirrorEditor
-                        key={path}
-                        initialText={body}
-                        onChange={(t) => {
-                          setBody(t);
-                          scheduleFlush(formDataRef.current, t);
-                        }}
-                        onReady={setCmView}
-                        onCursorLineChange={handleCursorLineChange}
-                      />
-                    </Box>
-                  </Flex>
-                )}
-              </Box>
-            </Box>
+      {surface === "yaml" ? (
+        <Box>
+          {/* Orientation caption: the schema's own root `description`, plus
+              a hint that hovering a key explains it (schemaHover.ts). Comes
+              straight from the schema already in hand for this file — never
+              a hardcoded per-domain string — so it stays true if a schema's
+              description changes. One line by design: this is orientation
+              for an author who's never seen the file type, not a manual.
+              Gated on !fmCollapsed: the caption describes the pane below it
+              (and the hover hint names an action — hovering a key — that
+              only makes sense with the pane visible), so with the pane
+              hidden (the default here, since fmCollapsed seeds to
+              `!bodyless` and every app-context record is bodyless: false)
+              the caption used to render above nothing hoverable. */}
+          {!fmCollapsed && typeof state.schema.description === "string" && (
+            <Text
+              size="1"
+              color="gray"
+              as="p"
+              mb="2"
+              title={state.schema.description}
+              style={{
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {state.schema.description} · Hover a key to see its documentation.
+            </Text>
           )}
-          <Flex gap="2" mt="3">
-            <Button type="submit">Add to batch</Button>
-          </Flex>
-        </div>
-      </RJSFForm>
+          <Box
+            // fm-yaml-pane pairs with the .fm-collapsed rule in base.css
+            // (`.fm-yaml-pane.fm-collapsed { display: none; }`) — the RJSF
+            // branch below relies on a form.fm-form.fm-collapsed selector,
+            // which never matches this plain Box, so the pane needs its own
+            // class to make the same toggle actually hide it.
+            className={"fm-yaml-pane" + (fmCollapsed ? " fm-collapsed" : "")}
+            style={{
+              border: "1px solid var(--gray-5)",
+              borderRadius: 6,
+              overflow: "hidden",
+            }}
+          >
+            <YamlFrontmatterEditor
+              key={path}
+              initialText={fmText}
+              schema={state.schema}
+              onChange={(t) => {
+                setFmText(t);
+                // `t` is the pane's own new text — the correct snapshot to
+                // arm the debounce with, taken at the moment it changed.
+                scheduleFlush(formDataRef.current, bodyRef.current, t);
+              }}
+            />
+          </Box>
+          {editorBody}
+        </Box>
+      ) : (
+        <RJSFForm
+          className={"rjsf fm-form" + (fmCollapsed ? " fm-collapsed" : "")}
+          schema={state.schema}
+          uiSchema={uiSchema}
+          formData={formData}
+          widgets={WIDGETS}
+          templates={frontmatterTemplates}
+          onChange={(next) => {
+            setFormData(next);
+            scheduleFlush(next, bodyRef.current, fmTextRef.current);
+          }}
+          onSubmit={(next) =>
+            flushToCart(next, bodyRef.current, fmTextRef.current)
+          }
+          submitLabel="Add to batch"
+        >
+          {editorBody}
+        </RJSFForm>
+      )}
     </Box>
   );
 }

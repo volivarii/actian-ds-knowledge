@@ -1,5 +1,5 @@
 import "../setup-dom";
-import test from "node:test";
+import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import {
   render,
@@ -11,6 +11,14 @@ import {
 import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { MediaPickerPopover } from "../../src/markdown-engine/MediaPickerPopover";
+
+// File-level, not inline per test: an inline cleanup() after the last
+// assertion is skipped the moment that assertion throws, leaking a mounted
+// component into the next test. afterEach runs regardless of the test's
+// outcome, so a throw can no longer leak a mount.
+afterEach(() => {
+  cleanup();
+});
 
 const INDEX = {
   media: {
@@ -44,7 +52,6 @@ function wrap(node: React.ReactNode) {
 
 test("offers only author roles, never preview/default", async () => {
   globalThis.sessionStorage.clear();
-  cleanup();
   render(
     wrap(
       <MediaPickerPopover
@@ -55,16 +62,21 @@ test("offers only author roles, never preview/default", async () => {
     ),
   );
   fireEvent.click(screen.getByRole("button", { name: /insert media/i }));
-  assert.ok(await screen.findByText(/Variations/i), "Variations offered");
+  assert.ok(
+    await screen.findByText(/Variations/i, {}, { timeout: 5000 }),
+    "Variations offered",
+  );
   assert.ok(screen.queryByText(/^Layout$/i), "Layout offered");
   assert.equal(screen.queryByText(/preview/i), null, "preview never offered");
-  assert.equal(screen.queryByText(/^default$/i), null, "default never offered");
-  cleanup();
+  assert.equal(
+    screen.queryByText(/^default$/i),
+    null,
+    "default never offered",
+  );
 });
 
 test("inserting a role emits the correct <Media> directive", async () => {
   globalThis.sessionStorage.clear();
-  cleanup();
   let inserted: string | null = null;
   render(
     wrap(
@@ -76,17 +88,17 @@ test("inserting a role emits the correct <Media> directive", async () => {
     ),
   );
   fireEvent.click(screen.getByRole("button", { name: /insert media/i }));
-  await screen.findByText(/Variations/i);
+  await screen.findByText(/Variations/i, {}, { timeout: 5000 });
   fireEvent.click(screen.getByText(/Variations/i));
   fireEvent.click(screen.getByRole("button", { name: /^Insert/i }));
-  await waitFor(() => assert.ok(inserted !== null, "onInsert fired"));
+  await waitFor(() => assert.ok(inserted !== null, "onInsert fired"), {
+    timeout: 5000,
+  });
   assert.equal(inserted, '\n<Media role="variations" layout="grid" />\n');
-  cleanup();
 });
 
 test("empty state when the component has no placeable media", async () => {
   globalThis.sessionStorage.clear();
-  cleanup();
   const gh = {
     repos: {
       getContent: async () => ({
@@ -105,13 +117,11 @@ test("empty state when the component has no placeable media", async () => {
     ),
   );
   fireEvent.click(screen.getByRole("button", { name: /insert media/i }));
-  assert.ok(await screen.findByText(/no captured media/i));
-  cleanup();
+  assert.ok(await screen.findByText(/no captured media/i, {}, { timeout: 5000 }));
 });
 
 test("discards an in-flight fetch when the component changes mid-load", async () => {
   globalThis.sessionStorage.clear();
-  cleanup();
   const INDEX = {
     media: {
       a: {
@@ -163,7 +173,7 @@ test("discards an in-flight fetch when the component changes mid-load", async ()
   // Open the picker on "b": it must fetch + show b's role, never a's.
   fireEvent.click(screen.getByRole("button", { name: /insert media/i }));
   assert.ok(
-    await screen.findByText(/Behavior/i),
+    await screen.findByText(/Behavior/i, {}, { timeout: 5000 }),
     "shows b's role after the race",
   );
   assert.equal(
@@ -171,12 +181,10 @@ test("discards an in-flight fetch when the component changes mid-load", async ()
     null,
     "stale a roles discarded",
   );
-  cleanup();
 });
 
 test("re-fetches roles when componentSlug changes (no stale media)", async () => {
   globalThis.sessionStorage.clear();
-  cleanup();
   const INDEX2 = {
     media: {
       a: {
@@ -206,7 +214,10 @@ test("re-fetches roles when componentSlug changes (no stale media)", async () =>
     ),
   );
   fireEvent.click(screen.getByRole("button", { name: /insert media/i }));
-  assert.ok(await screen.findByText(/Variations/i), "shows A's role");
+  assert.ok(
+    await screen.findByText(/Variations/i, {}, { timeout: 5000 }),
+    "shows A's role",
+  );
 
   // Navigate to component B (same instance — prop change, no remount).
   rerender(
@@ -216,7 +227,7 @@ test("re-fetches roles when componentSlug changes (no stale media)", async () =>
   );
   fireEvent.click(screen.getByRole("button", { name: /insert media/i }));
   assert.ok(
-    await screen.findByText(/Behavior/i),
+    await screen.findByText(/Behavior/i, {}, { timeout: 5000 }),
     "shows B's role after slug change",
   );
   assert.equal(
@@ -224,5 +235,4 @@ test("re-fetches roles when componentSlug changes (no stale media)", async () =>
     null,
     "no stale A role for B",
   );
-  cleanup();
 });

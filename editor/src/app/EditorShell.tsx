@@ -213,6 +213,7 @@ export function EditorShell({
         yamlFlowAtDepth={frontmatterForm.flowAtDepth}
         preserveComments={frontmatterForm.preserveComments}
         frontmatterOptional={frontmatterForm.frontmatterOptional}
+        surface={frontmatterForm.surface}
         octokit={gh}
         onOpenSettings={onOpenSettings}
         onNavigate={setActivePathSafe}

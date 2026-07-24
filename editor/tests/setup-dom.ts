@@ -24,6 +24,7 @@ const COPY_KEYS = [
   "Event",
   "CustomEvent",
   "MessageEvent",
+  "KeyboardEvent",
   "Window",
   "HTMLDivElement",
   "DOMException",
