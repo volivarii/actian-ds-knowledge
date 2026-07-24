@@ -1162,7 +1162,7 @@ Two tiers of placeholder exist for inputs: `--zen-color-text-placeholder` is the
 
 ### 3.10 Mouse cursor
 
-The pointer (hand) cursor is reserved for links only. Buttons, dropdown buttons, and tags use the default cursor. 
+The pointer (hand) cursor is reserved for links only. Buttons, dropdown buttons, and tags use the default cursor.
 Because buttons and tags do not use the pointer cursor, interactivity must be communicated through a clear hover state: ensure sufficient color contrast between the default and hover states so the change is easily perceptible. A brightness filter is acceptable for generating the hover state, provided the result is clearly distinct and still passes required contrast ratios.
 
 ---
