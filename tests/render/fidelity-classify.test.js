@@ -129,3 +129,153 @@ test("classifySelector treats a structural pseudo-class as state, not element", 
     { bucket: "state" },
   );
 });
+
+var FACTS_PLAIN = {
+  byNode: [{ name: "Root", appearance: { background: "#ffffff" } }],
+};
+var FACTS_VARIANT = {
+  byNode: [
+    {
+      name: "Type=Info",
+      appearance: {
+        background: "#f7fdff",
+        variants: [
+          { prop: "Type", values: ["Warning"], background: "#fff9e5" },
+        ],
+      },
+    },
+  ],
+};
+var TOK = {
+  "--zen-ok": "#ffffff",
+  "--zen-bad": "#000000",
+  "--zen-warn": "#fff9e5",
+  "--zen-wrong-warn": "#f7f4f2",
+};
+
+test("classifySlug: a root rule matching the captured root verifies", function () {
+  var r = C.classifySlug({
+    slug: "widget",
+    prefixes: ["ds-widget"],
+    css: ".ds-widget { background: var(--zen-ok); }",
+    facts: FACTS_PLAIN,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.verified, 1);
+  assert.equal(r.mismatch, 0);
+});
+
+// De-vacuuming: the checker's subject was present and it CAN fail. This is the
+// defect class of the #472 tag-glossary-item-type bug, a modifier binding
+// warning-25 and painting #f7f4f2 where the capture says #fff9e5.
+test("classifySlug: a wrong color on a rule whose node has a fact is exactly one mismatch", function () {
+  var r = C.classifySlug({
+    slug: "widget",
+    prefixes: ["ds-widget"],
+    css: ".ds-widget { background: var(--zen-bad); }",
+    facts: FACTS_PLAIN,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.mismatch, 1);
+  assert.equal(r.verified, 0);
+  assert.match(r.mismatches[0].message, /#000000/);
+  assert.match(r.mismatches[0].message, /#ffffff/);
+});
+
+test("classifySlug: a modifier resolves against the matching captured variant", function () {
+  var ok = C.classifySlug({
+    slug: "alert-banner",
+    prefixes: ["ds-alert"],
+    css: ".ds-alert--warning { background: var(--zen-warn); }",
+    facts: FACTS_VARIANT,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(ok.verified, 1);
+
+  var bad = C.classifySlug({
+    slug: "alert-banner",
+    prefixes: ["ds-alert"],
+    css: ".ds-alert--warning { background: var(--zen-wrong-warn); }",
+    facts: FACTS_VARIANT,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(bad.mismatch, 1);
+});
+
+test("classifySlug: a :hover rule with an uncaptured color is unverifiable, never mismatch", function () {
+  var r = C.classifySlug({
+    slug: "widget",
+    prefixes: ["ds-widget"],
+    css: ".ds-widget:hover { background: var(--zen-bad); }",
+    facts: FACTS_PLAIN,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.mismatch, 0);
+  assert.equal(r.unverifiable, 1);
+  assert.equal(r.reasons["state-unreachable"], 1);
+});
+
+test("classifySlug: a BEM element rule is unverifiable, never mismatch", function () {
+  var r = C.classifySlug({
+    slug: "widget",
+    prefixes: ["ds-widget"],
+    css: ".ds-widget__title { color: var(--zen-bad); }",
+    facts: FACTS_PLAIN,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.mismatch, 0);
+  assert.equal(r.reasons["element-no-node-mapping"], 1);
+});
+
+// A base rule under a prefix five slugs share belongs to the family, not to
+// whichever member is being walked. Comparing it against one member's capture
+// produced ~10 false mismatches. Union membership carries no provenance, which
+// is why resolveTagOwner already refuses to union.
+test("classifySlug: a shared base prefix has no single subject", function () {
+  var r = C.classifySlug({
+    slug: "tag-shared",
+    prefixes: ["ds-tag"],
+    css: ".ds-tag { background: var(--zen-bad); }",
+    facts: FACTS_PLAIN,
+    tokenMap: TOK,
+    sharedPrefixes: { "ds-tag": ["tag-catalog", "tag-default", "tag-shared"] },
+  });
+  assert.equal(r.mismatch, 0);
+  assert.equal(r.reasons["shared-base-no-single-subject"], 1);
+});
+
+// The capture's root node is a specific variant instance (alert-banner's is
+// "Type=Info, Orientation'=Horizontal"), not a neutral default, so an
+// unmodified base rule has no comparable subject.
+test("classifySlug: a root rule against a variant-instance capture is unverifiable", function () {
+  var r = C.classifySlug({
+    slug: "alert-banner",
+    prefixes: ["ds-alert"],
+    css: ".ds-alert { background: var(--zen-bad); }",
+    facts: FACTS_VARIANT,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.mismatch, 0);
+  assert.equal(r.reasons["root-is-variant-instance"], 1);
+});
+
+test("classifySlug: a slug with no capture at all is unverifiable, not verified", function () {
+  var r = C.classifySlug({
+    slug: "widget",
+    prefixes: ["ds-widget"],
+    css: ".ds-widget { background: var(--zen-ok); }",
+    facts: null,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.verified, 0);
+  assert.equal(r.unverifiable, 1);
+  assert.equal(r.reasons["no-capture"], 1);
+});

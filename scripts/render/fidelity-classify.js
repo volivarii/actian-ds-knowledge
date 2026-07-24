@@ -87,11 +87,157 @@ function classifySelector(selector, prefix) {
   return { bucket: "other" };
 }
 
+function stripComments(s) {
+  return String(s).replace(/\/\*[\s\S]*?\*\//g, "");
+}
+
+// The captured fact of a given kind for a node (or a variant entry, which
+// carries the same appearance shape).
+function factOf(node, kind) {
+  var a = node || {};
+  if (kind === "background") return a.background || null;
+  if (kind === "border") return (a.border && a.border.color) || null;
+  if (kind === "text") return (a.text && a.text.color) || null;
+  return null;
+}
+
+// Every rule in `css` whose selector matches one of `prefixes`, tagged with
+// the prefix that claimed it. Same selector regex consumedVars uses, so a
+// single trailing hyphen is rejected and `.ds-loader` does not absorb
+// `.ds-loader-with-logo`.
+function ownedRules(css, prefixes) {
+  var out = [];
+  var re = /([^{}]+)\{([^{}]*)\}/g;
+  var m;
+  while ((m = re.exec(css)) !== null) {
+    var selector = m[1].trim();
+    for (var i = 0; i < prefixes.length; i++) {
+      var selRe = new RegExp("\\." + prefixes[i] + "(?![a-z0-9])(?!-(?!-))");
+      if (selRe.test(selector)) {
+        out.push({ selector: selector, body: m[2], prefix: prefixes[i] });
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+// Classify every color declaration in one slug's owned rules into exactly one
+// of verified / mismatch / unverifiable.
+//
+// Conservative by construction. A false unverifiable understates our coverage
+// honestly; a false mismatch produces a bug list nobody trusts, and a
+// distrusted gate gets widened, which is the failure feedback_never_silence_a_signal
+// exists to prevent. Every branch that cannot name a confident subject returns
+// unverifiable with a reason, and the reasons are reported so the gaps are
+// visible rather than rounded away.
+function classifySlug(opts) {
+  var slug = opts.slug;
+  var prefixes = opts.prefixes;
+  var facts = opts.facts;
+  var tokenMap = opts.tokenMap || {};
+  var sharedPrefixes = opts.sharedPrefixes || {};
+
+  var result = {
+    slug: slug,
+    prefixes: prefixes.slice(),
+    verified: 0,
+    mismatch: 0,
+    unverifiable: 0,
+    mismatches: [],
+    reasons: {},
+  };
+  function unverifiable(reason) {
+    result.unverifiable++;
+    result.reasons[reason] = (result.reasons[reason] || 0) + 1;
+  }
+
+  var rootNode =
+    facts && facts.byNode && facts.byNode.length
+      ? facts.byNode[0].appearance
+      : null;
+  var variants = (rootNode && rootNode.variants) || [];
+  var rootIsVariantInstance = variants.length > 0;
+
+  ownedRules(stripComments(opts.css), prefixes).forEach(function (rule) {
+    var shared = (sharedPrefixes[rule.prefix] || []).length > 1;
+    var cls = classifySelector(rule.selector, rule.prefix);
+
+    rule.body.split(";").forEach(function (decl) {
+      var idx = decl.indexOf(":");
+      if (idx < 0) return;
+      var prop = decl.slice(0, idx).trim().toLowerCase();
+      var color = colorOf(prop, decl.slice(idx + 1).trim(), tokenMap);
+      if (!color) return;
+      var kind = kindOf(prop);
+      if (!kind) return;
+
+      if (!rootNode) return unverifiable("no-capture");
+      if (cls.bucket === "state") return unverifiable("state-unreachable");
+      if (cls.bucket === "element")
+        return unverifiable("element-no-node-mapping");
+      if (cls.bucket === "other")
+        return unverifiable("selector-not-attributable");
+
+      var target = null;
+      if (cls.bucket === "modifier") {
+        var wanted = cls.modifier.toLowerCase();
+        target =
+          variants.find(function (v) {
+            return (v.values || []).some(function (val) {
+              return String(val).toLowerCase().replace(/\s+/g, "-") === wanted;
+            });
+          }) || null;
+        if (!target) return unverifiable("no-matching-variant");
+      } else {
+        // bucket === "root"
+        if (shared) return unverifiable("shared-base-no-single-subject");
+        if (rootIsVariantInstance)
+          return unverifiable("root-is-variant-instance");
+        target = rootNode;
+      }
+
+      var fact = factOf(target, kind);
+      if (!fact) return unverifiable("no-fact-of-kind");
+
+      if (String(fact).toLowerCase() === String(color.resolved).toLowerCase()) {
+        result.verified++;
+      } else {
+        result.mismatch++;
+        result.mismatches.push({
+          slug: slug,
+          selector: rule.selector,
+          property: prop,
+          token: color.token,
+          painted: color.resolved,
+          fact: fact,
+          message:
+            slug +
+            " " +
+            rule.selector +
+            " {" +
+            prop +
+            "}: paints " +
+            (color.token ? color.token + "=" : "") +
+            color.resolved +
+            " but the capture says " +
+            fact,
+        });
+      }
+    });
+  });
+
+  return result;
+}
+
 module.exports = {
   colorOf: colorOf,
   kindOf: kindOf,
   rightmost: rightmost,
   classifySelector: classifySelector,
+  classifySlug: classifySlug,
+  ownedRules: ownedRules,
+  factOf: factOf,
   COLOR_PROPS: COLOR_PROPS,
   SHORTHAND_PROPS: SHORTHAND_PROPS,
   STATE_RE: STATE_RE,
