@@ -35,6 +35,11 @@ export function yamlCursorAt(text: string, offset: number): YamlCursor | null {
   const prefix = text.slice(lineStart, offset);
   if (prefix.trimStart().startsWith("#")) return null;
   // A flow mapping or sequence opened earlier on this line: bail out.
+  // Known limitation (not fixed here, out of scope): this only scans the
+  // current line's prefix, so a flow construct opened on a PREVIOUS line
+  // and continued onto this one (e.g. `- { name: orphan,` then a
+  // continuation line with `type: x }`) is invisible to this check and can
+  // still produce a wrong cursor.
   if (/[{[]/.test(prefix)) return null;
 
   const before = text.slice(0, lineStart).split("\n").slice(0, -1);
