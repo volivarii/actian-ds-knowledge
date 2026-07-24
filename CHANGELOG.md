@@ -199,7 +199,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   description, type, required status, and any example values straight from the same schema
   (`schemaHover.ts`), and a one-line caption above the pane surfaces the schema's own root
   description plus a hint to hover a key, so an author who has never seen the file type has
-  somewhere to start. ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD))
+  somewhere to start. ([#497](https://github.com/volivarii/actian-ds-knowledge/pull/497))
 
 ### Removed
 - **The 35 frozen seed renders and the all-35 oracle** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
