@@ -229,6 +229,322 @@ function checkBaseCssRules(cssText, facts, tokenMap) {
   return violations;
 }
 
+// Module scope, alongside the existing readAppearance require above.
+// Deliberately NOT named A/D/fs/path: the require.main block below declares
+// locals under those names, which are hoisted to this same module scope (the
+// `if` block is not a function), so a module-scope `var` under one of those
+// names would collide with (and be silently reassigned by) that block.
+var CLASSIFY = require("./fidelity-classify.js");
+var MATRIX = require("../../components/render/renderer/matrix.js");
+// Fragment-aware rule attribution (below) needs filesystem access (reading
+// each slug's fragment markup), so runFidelityReport is no longer purely
+// readAppearance-only. Named to avoid the same fs/path collision as above.
+var nodeFs = require("node:fs");
+var nodePath = require("node:path");
+
+// Which prefixes are claimed by more than one slug. Today this is exactly
+// `.ds-tag` across the five tag-family members. Derived, never hand-listed, so
+// a sixth member changes nothing here.
+function sharedPrefixMap() {
+  var claims = {};
+  MATRIX.RENDER_SLUGS.forEach(function (slug) {
+    MATRIX.ownedPrefixes(slug).forEach(function (p) {
+      (claims[p] = claims[p] || []).push(slug);
+    });
+  });
+  return claims;
+}
+
+// The full ds-* class tokens (root, BEM element, and modifier forms alike)
+// a fragment's rendered markup emits, read straight from its class="..."
+// attributes. A render fragment shows every matrix cell in its gallery (e.g.
+// tag-default's fragment carries every ds-tag--<color> modifier it renders),
+// so this is the complete set of classes that slug's markup can ever trigger
+// a ds-base.css rule through.
+function fragmentClasses(html) {
+  var set = new Set();
+  var re = /class="([^"]*)"/g;
+  var m;
+  while ((m = re.exec(html)) !== null) {
+    m[1]
+      .split(/\s+/)
+      .filter(Boolean)
+      .forEach(function (t) {
+        if (/^ds-/.test(t)) set.add(t);
+      });
+  }
+  return set;
+}
+
+// Every full ".ds-*" class token referenced anywhere in a selector.
+// Pseudo-classes, attribute selectors, and bare element selectors are not
+// class tokens and are never returned: ".ds-link:hover" yields only
+// "ds-link", so a fragment that emits ds-link keeps that rule.
+var SELECTOR_CLASS_TOKEN_RE = /\.ds-[a-z0-9_-]+/g;
+function selectorClassTokens(selector) {
+  var out = [];
+  var m;
+  SELECTOR_CLASS_TOKEN_RE.lastIndex = 0;
+  while ((m = SELECTOR_CLASS_TOKEN_RE.exec(selector)) !== null) {
+    out.push(m[0].slice(1));
+  }
+  return out;
+}
+
+// The prefix (from `prefixes`, in order) that owns a rule's selector, or null
+// if none does. Same match rule ownedRules (fidelity-classify.js) uses, so
+// "the owning prefix" means the same thing in both places: a single trailing
+// hyphen is rejected, so `.ds-loader` does not absorb `.ds-loader-with-logo`.
+function owningPrefixOf(selector, prefixes) {
+  for (var i = 0; i < prefixes.length; i++) {
+    var selRe = new RegExp("\\." + prefixes[i] + "(?![a-z0-9])(?!-(?!-))");
+    if (selRe.test(selector)) return prefixes[i];
+  }
+  return null;
+}
+
+// Fragment-aware rule attribution applies ONLY to a rule whose owning prefix
+// is claimed by more than one slug. CSS_OWNERS
+// assigns the prefix ds-tag to five slugs, and .ds-tag* carries rules for
+// every family member's own modifiers and descendants (tag-stage's dot, the
+// grouped tag-status rules, every color modifier...), so without this filter
+// a slug like tag-catalog -- whose fragment only ever emits ds-tag,
+// ds-tag--catalog, and ds-tag__icon -- is charged for rules it can never
+// actually trigger. That is a genuine cross-component attribution error, and
+// this filter fixes it.
+//
+// A rule whose owning prefix has exactly one owner carries no such ambiguity
+// -- there is no other slug it could be misattributed to -- so it is kept
+// unconditionally, even when the fragment's own curated matrix cells never
+// happen to render it. A component's own unrendered variant (e.g. button's
+// --small size, or an icon slot the gallery specimen never fills) is real
+// paint the component can produce; it still needs a capture fact one day, and
+// dropping it from the denominator would hide that capture work rather than
+// size it.
+//
+// Drops a rule when its owning prefix is shared AND any class token in its
+// selector is absent from the fragment's emitted set. A rule with no ds-*
+// class token at all (should not occur among ownedRules' candidates, but
+// conservative here) is kept: an empty token list vacuously passes.
+//
+// Deliberately does NOT deduplicate declarations across slugs: two rules with
+// identical selector text can still be kept for two different slugs (e.g.
+// .ds-tag--orange for both tag-default and tag-stage) when both fragments
+// emit the class -- each is then classified against ITS OWN capture, which is
+// how a real cross-capture contradiction (tag-default verifies, tag-stage
+// mismatches) stays visible instead of being silently collapsed.
+function filterCssForFragment(css, emitted, prefixes, sharedPrefixes) {
+  var pfx = prefixes || [];
+  var shared = sharedPrefixes || {};
+  var em = emitted || new Set();
+  var stripped = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  var out = [];
+  var re = /([^{}]+)\{([^{}]*)\}/g;
+  var m;
+  while ((m = re.exec(stripped)) !== null) {
+    var selector = m[1].trim();
+    var owner = owningPrefixOf(selector, pfx);
+    var isShared = owner !== null && (shared[owner] || []).length > 1;
+    if (isShared) {
+      var tokens = selectorClassTokens(selector);
+      var keep = tokens.every(function (t) {
+        return em.has(t);
+      });
+      if (!keep) continue;
+    }
+    out.push(selector + " {" + m[2] + "}");
+  }
+  return out.join("\n");
+}
+
+// The build-failure text for a non-empty mismatch list. Kept out of the CLI
+// block so its content is unit-testable: a message that tells a future
+// engineer the wrong thing is as much a defect as a wrong classification, and
+// there is no other way to assert on it.
+//
+// The two resolutions named here are the only two there are. An ignore list is
+// deliberately absent: an allowlist is a hand-maintained set of facts that
+// goes stale, which is the exact pattern this gate exists to end.
+function mismatchFailureMessage(mismatches) {
+  return (
+    "FIDELITY MISMATCHES (" +
+    mismatches.length +
+    "):\n" +
+    mismatches
+      .map(function (m) {
+        return "  " + m.message;
+      })
+      .join("\n") +
+    "\nEach one is a render painting a color its Figma capture contradicts.\n" +
+    "Fix the token binding in components/render/renderer/ds-base.css (bind a\n" +
+    "token, never a raw hex), or if the classifier is wrong, add a case to\n" +
+    "tests/render/fidelity-classify.test.js reproducing it and fix the rule in\n" +
+    "scripts/render/fidelity-classify.js.\n" +
+    "Adding an ignore list is NOT an option: an allowlist is a hand-maintained\n" +
+    "fact set that goes stale, which is the pattern this gate exists to end.\n"
+  );
+}
+
+// Walk every render slug and classify every color declaration it owns.
+//
+// This is the loop that replaces the inert `if (r.source !== "derived")
+// return;` skip. That skip meant the gate printed "fidelity: OK" while
+// examining ZERO of the 63 renders, which is how two slices shipped 28 renders
+// under a green check that verified none of them.
+function runFidelityReport(ctx) {
+  // Name the actually-missing ctx key, not the whole required shape.
+  // A message that always lists all four keys makes a test regex for any ONE
+  // key match regardless of which key is truly absent -- that is satisfiable
+  // by an unrelated failure, not proof of the specific guard. Checked in this
+  // fixed order so the first absent key is the one named.
+  var REQUIRED_CTX_KEYS = ["anatomyDir", "css", "tokenMap", "fragmentsDir"];
+  var missingCtxKey = null;
+  for (var reqIdx = 0; reqIdx < REQUIRED_CTX_KEYS.length; reqIdx++) {
+    if (!ctx || !ctx[REQUIRED_CTX_KEYS[reqIdx]]) {
+      missingCtxKey = REQUIRED_CTX_KEYS[reqIdx];
+      break;
+    }
+  }
+  if (missingCtxKey)
+    throw new Error(
+      "runFidelityReport requires ctx." +
+        missingCtxKey +
+        ": it reads only the per-slug appearance facts and fragment markup, " +
+        "so the caller controls everything else about what is measured.",
+    );
+  var css = ctx.css;
+  var tokenMap = ctx.tokenMap;
+  var shared = sharedPrefixMap();
+
+  var bySlug = {};
+  var mismatches = [];
+  var tokenNameAgreements = [];
+  var reasons = {};
+  var blind = [];
+  var totals = {
+    verified: 0,
+    // Token-name-agreement-with-differing-hex is tallied separately from
+    // `verified` so its size is visible rather than rounded into the same
+    // bucket as a direct hex match. Counted toward
+    // checkable/examined below (it IS a declaration the capture can speak
+    // to, and does speak to), never toward `mismatch`.
+    verifiedViaTokenName: 0,
+    mismatch: 0,
+    unverifiable: 0,
+    overridden: 0,
+  };
+
+  MATRIX.RENDER_SLUGS.slice()
+    .sort()
+    .forEach(function (slug) {
+      var facts = null;
+      try {
+        facts = readAppearance(slug, ctx.anatomyDir);
+      } catch (e) {
+        facts = null;
+      }
+
+      var fragmentHtml = "";
+      try {
+        fragmentHtml = nodeFs.readFileSync(
+          nodePath.join(ctx.fragmentsDir, slug + ".html"),
+          "utf8",
+        );
+      } catch (e) {
+        fragmentHtml = "";
+      }
+      var emitted = fragmentClasses(fragmentHtml);
+      var prefixes = MATRIX.ownedPrefixes(slug);
+      var filteredCss = filterCssForFragment(css, emitted, prefixes, shared);
+
+      var r = CLASSIFY.classifySlug({
+        slug: slug,
+        prefixes: prefixes,
+        css: filteredCss,
+        facts: facts,
+        tokenMap: tokenMap,
+        sharedPrefixes: shared,
+      });
+      // A gate whose subject can be absent must assert the subject was
+      // present. A slug with zero verified AND zero mismatch is one the
+      // capture can say nothing about at all -- that must be countable and
+      // explicit, not indistinguishable from a slug that was actually
+      // checked and found clean. The `blind` flag is carried on the bySlug
+      // row itself (not only the top-level `blind` array) so a consumer that
+      // filters bySlug directly (e.g. for mismatch === 0) sees the flag
+      // without having to remember to join the sibling array -- honesty here
+      // must not depend on the consumer's memory.
+      //
+      // verifiedViaTokenName is a real, positive signal (the capture spoke,
+      // and agreed) -- a slug with zero verified and zero mismatch but a
+      // non-zero verifiedViaTokenName is not blind, the capture said
+      // something about it. badge is exactly this case.
+      var isBlind =
+        r.verified === 0 && r.mismatch === 0 && r.verifiedViaTokenName === 0;
+      bySlug[slug] = {
+        prefixes: r.prefixes,
+        verified: r.verified,
+        verifiedViaTokenName: r.verifiedViaTokenName,
+        mismatch: r.mismatch,
+        unverifiable: r.unverifiable,
+        // Declarations another rule in the same slug's own CSS overrides, so
+        // they are not paint and are outside every other bucket. Reported
+        // rather than silently dropped: an unreported exclusion is the same
+        // laundering the rest of this report exists to end.
+        overridden: r.overridden,
+        blind: isBlind,
+      };
+      if (isBlind) blind.push(slug);
+      totals.verified += r.verified;
+      totals.verifiedViaTokenName += r.verifiedViaTokenName;
+      totals.mismatch += r.mismatch;
+      totals.unverifiable += r.unverifiable;
+      totals.overridden += r.overridden;
+      Object.keys(r.reasons).forEach(function (k) {
+        reasons[k] = (reasons[k] || 0) + r.reasons[k];
+      });
+      r.mismatches.forEach(function (m) {
+        mismatches.push(m);
+      });
+      r.tokenNameAgreements.forEach(function (t) {
+        tokenNameAgreements.push(t);
+      });
+    });
+
+  // verifiedViaTokenName is part of the comparable/checkable set: the
+  // capture DID speak to these declarations, and agreed on the binding, so
+  // excluding them here would shrink `examined` under the exact same
+  // declarations the report already counted before this bucket existed (they
+  // were simply inside plain `verified` before). verifiedFidelity's
+  // numerator stays `verified` alone (a direct hex match) so the headline
+  // number does not silently absorb a hex divergence that a stale token
+  // snapshot produced -- that divergence is real and now sized on its own
+  // line instead.
+  var checkable =
+    totals.verified + totals.verifiedViaTokenName + totals.mismatch;
+  var examined = checkable + totals.unverifiable;
+  // Two honest numbers. verifiedFidelity answers "of what the capture can speak
+  // to, how much is right". oracleCoverage answers "how much of what we paint
+  // can the capture speak to at all", and THAT is the roadmap input: it sizes
+  // the Figma capture work per component.
+  totals.oracleCoverage = examined
+    ? Number((checkable / examined).toFixed(4))
+    : 0;
+  totals.verifiedFidelity = checkable
+    ? Number((totals.verified / checkable).toFixed(4))
+    : 0;
+  totals.examined = examined;
+
+  return {
+    totals: totals,
+    bySlug: bySlug,
+    mismatches: mismatches,
+    tokenNameAgreements: tokenNameAgreements,
+    reasons: reasons,
+    blind: blind,
+  };
+}
+
 if (require.main === module) {
   var fs = require("node:fs");
   var path = require("node:path");
@@ -238,9 +554,6 @@ if (require.main === module) {
   var anatomyDir = path.join(root, "components", "dist", "anatomy");
   var out = D.deriveCanonical();
   var tokenMap = A.loadTokenMap(out.css);
-  var derivedRenders = (out.manifest.renders || []).filter(function (r) {
-    return r.source === "derived";
-  });
   var v = fidelityCheck(out, {
     anatomyDir: anatomyDir,
     tokenMap: tokenMap,
@@ -272,6 +585,81 @@ if (require.main === module) {
       tokenMap,
     ),
   );
+
+  var fragmentsDir = path.join(
+    root,
+    "components",
+    "render",
+    "dist",
+    "fragments",
+  );
+  var report = runFidelityReport({
+    anatomyDir: anatomyDir,
+    css: dsBaseCss,
+    tokenMap: tokenMap,
+    fragmentsDir: fragmentsDir,
+  });
+  fs.writeFileSync(
+    path.join(root, "components", "render", "dist", "fidelity-report.json"),
+    JSON.stringify(
+      {
+        _meta: {
+          auto_generated: true,
+          source: "scripts/render/fidelity-check.js",
+          do_not_edit:
+            "Regenerated by `npm run derive:render`. Edits are overwritten.",
+        },
+        totals: report.totals,
+        reasons: report.reasons,
+        bySlug: report.bySlug,
+        blind: report.blind,
+        mismatches: report.mismatches,
+        tokenNameAgreements: report.tokenNameAgreements,
+      },
+      null,
+      2,
+    ) + "\n",
+  );
+  process.stdout.write(
+    "fidelity: examined " +
+      report.totals.examined +
+      " color declarations across " +
+      Object.keys(report.bySlug).length +
+      " renders\n" +
+      "  verified:     " +
+      report.totals.verified +
+      "\n" +
+      "  verified via token name: " +
+      report.totals.verifiedViaTokenName +
+      " (the binding agrees with the token the capture names, but the " +
+      "resolved hex differs -- points at a stale tokens/tokens.css " +
+      "snapshot or a theme-mode difference, not a CSS defect; does not " +
+      "block the build; see fidelity-report.json#tokenNameAgreements)\n" +
+      "  mismatch:     " +
+      report.totals.mismatch +
+      "\n" +
+      "  unverifiable: " +
+      report.totals.unverifiable +
+      "\n" +
+      "  overridden:   " +
+      report.totals.overridden +
+      " (a later rule in the same slug's CSS paints this subject instead, so " +
+      "the declaration is not paint and is outside the buckets above)\n" +
+      "  blind slugs:  " +
+      report.blind.length +
+      " (zero verified, zero mismatch, and zero token-name agreement -- the " +
+      "capture can say nothing about them at all; see fidelity-report.json#blind)\n" +
+      "  verified fidelity: " +
+      (report.totals.verifiedFidelity * 100).toFixed(1) +
+      "%\n" +
+      "  ORACLE COVERAGE:   " +
+      (report.totals.oracleCoverage * 100).toFixed(1) +
+      "%  (how much of what we paint the capture can speak to)\n",
+  );
+  if (report.mismatches.length) {
+    process.stderr.write(mismatchFailureMessage(report.mismatches));
+  }
+
   if (v.length) {
     process.stderr.write(
       "FIDELITY VIOLATIONS:\n" +
@@ -282,21 +670,18 @@ if (require.main === module) {
           .join("\n") +
         "\n",
     );
-    process.exit(1);
   }
-  if (derivedRenders.length === 0) {
-    process.stdout.write(
-      "fidelity: OK, 0 derived renders examined (TEMPLATES is empty, so " +
-        "fidelityCheck had nothing to check; ds-base.css tag/checkbox rules " +
-        "verified separately, above)\n",
-    );
-  } else {
-    process.stdout.write(
-      "fidelity: OK (" +
-        derivedRenders.length +
-        " derived render(s) matched facts)\n",
-    );
-  }
+  // Both failure classes are printed before either exits, so one run reports
+  // everything that is wrong rather than only the first kind encountered.
+  if (report.mismatches.length || v.length) process.exit(1);
+  // No unconditional "fidelity: OK" trailer here. The legacy
+  // fidelityCheck/checkBaseCssRules violation reporting above still gates
+  // ds-base.css tag/checkbox rules and still exits 1 on a real violation --
+  // that check is intact. What is gone is the success text that used to run
+  // AFTER the real summary regardless of it, so the last line of a CI log
+  // read "fidelity: OK" even on a run whose entire purpose was to end that
+  // false all-clear. The honest summary printed above (verified/mismatch/
+  // unverifiable/blind/oracle coverage) is now the last thing printed.
 }
 
 module.exports = {
@@ -305,4 +690,9 @@ module.exports = {
   slugCss: slugCss,
   checkBaseCssRules: checkBaseCssRules,
   resolveTagOwner: resolveTagOwner,
+  runFidelityReport: runFidelityReport,
+  mismatchFailureMessage: mismatchFailureMessage,
+  sharedPrefixMap: sharedPrefixMap,
+  fragmentClasses: fragmentClasses,
+  filterCssForFragment: filterCssForFragment,
 };

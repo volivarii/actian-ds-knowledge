@@ -458,22 +458,31 @@ test("deriveCanonical/consumedVars: the 4 new gray-box-to-zero hyphen-prefix pai
   );
 
   // tag-catalog / tag-catalog-item-type: tag-catalog's real markup uses the
-  // BEM modifier .ds-tag--catalog, not .ds-tag-catalog, so its CEM
-  // declaration is genuinely empty regardless of this guard -- but its
-  // registry-fallback selector is still the literal string "ds-tag-catalog",
-  // which IS a hyphen-prefix of the real .ds-tag-catalog-item-type class. A
-  // regressed guard would make tag-catalog's declaration start absorbing
-  // tag-catalog-item-type's tokens (inflating it above zero), so the
-  // assertion is meaningful even though tag-catalog's own true count is 0.
+  // BEM modifier .ds-tag--catalog, not .ds-tag-catalog, so a guessed
+  // "ds-" + slug selector picked up nothing here. #474 replaced that guess
+  // with matrix.js's declared ownership, and tag-catalog is declared to own
+  // "ds-tag": the shared tag-family prefix, not a slug-shaped literal, so
+  // its declaration is no longer empty by design (it is the family's token
+  // surface, same as every other tag-family member). --zen-color-error-800
+  // is therefore a bad probe token now: it is legitimately part of that
+  // family surface too (.ds-tag--orange .ds-tag-stage__dot), so it can't
+  // tell a real absorption from tag-catalog's own intended scope.
+  // --zen-color-success-800 is used exactly once in ds-base.css, in
+  // .ds-tag-catalog-item-type--field's name color, and nowhere in any real
+  // .ds-tag family rule, so it still isolates the guard this test exists
+  // for: "ds-tag" is a genuine hyphen-prefix of
+  // ".ds-tag-catalog-item-type", and a regressed guard would make
+  // tag-catalog's declaration start absorbing tag-catalog-item-type's
+  // tokens.
   var tagCatalogItemTypeNames = namesFor("zen-tag-catalog-item-type");
   var tagCatalogNames = namesFor("zen-tag-catalog");
   assert.ok(
-    tagCatalogItemTypeNames.indexOf("--zen-color-error-800") >= 0,
-    "tag-catalog-item-type still consumes its own --zen-color-error-800 (fixture sanity)",
+    tagCatalogItemTypeNames.indexOf("--zen-color-success-800") >= 0,
+    "tag-catalog-item-type still consumes its own --zen-color-success-800 (fixture sanity)",
   );
   assert.ok(
-    tagCatalogNames.indexOf("--zen-color-error-800") < 0,
-    "tag-catalog must not absorb tag-catalog-item-type's --zen-color-error-800: got " +
+    tagCatalogNames.indexOf("--zen-color-success-800") < 0,
+    "tag-catalog must not absorb tag-catalog-item-type's --zen-color-success-800: got " +
       JSON.stringify(tagCatalogNames),
   );
 

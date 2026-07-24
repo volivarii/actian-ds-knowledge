@@ -18,8 +18,55 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Components whose CSS class is not `ds-<slug>` ship a real token surface again.** The
+  custom-elements manifest guessed each component's selector from its slug, so for the 27
+  components where the class differs (`alert-banner` is `.ds-alert`, `text-input` is `.ds-field`,
+  `global-header` is `.ds-header`) the scan matched nothing and the component published an empty
+  `cssProperties`: schema-valid, and wrong. Ownership is now declared explicitly (`CSS_OWNERS` in
+  `components/render/renderer/matrix.js`) and checked against both the rendered markup and the
+  stylesheet, so a renamed class fails loudly instead of silently emptying a component's token
+  surface. All 63 declarations now carry one, up from 36.
+  ([#474](https://github.com/volivarii/actian-ds-knowledge/issues/474),
+  [#487](https://github.com/volivarii/actian-ds-knowledge/pull/487))
+- **Four components were painting the wrong color.** Turning the new fidelity gate on real renders
+  (see "Added") caught genuine defects, not just gaps in the gate itself: `lineage-grouped-node` and
+  `segmented-control` filled a surface with `bg-subtle` where Figma renders it white; the critical
+  button's background was bound to a text-error token instead of a fill token; and `tag-stage` was
+  reusing `tag-default`'s orange and yellow modifier rules even though Figma gives the two
+  components different borders for the same color name, something one shared rule cannot serve, so
+  `tag-stage` now carries its own modifier scale for those two colors.
+  ([#487](https://github.com/volivarii/actian-ds-knowledge/pull/487))
+- **A feature referencing a component that does not exist now fails the graph derive instead of
+  vanishing.** `components[]` on an application-context feature is hand-authored, and an unresolvable
+  slug used to be dropped behind a `console.warn`: the `uses_component` edge simply disappeared, and
+  the feature went on claiming a component it was not connected to, with nothing in CI to notice. It
+  is an error now, listing every offending reference at once. All 93 references resolve today, so
+  this fails only on real drift (a renamed or removed component, a typo, a display name used where a
+  slug belongs). ([#484](https://github.com/volivarii/actian-ds-knowledge/pull/484))
+
 ### Added
 
+- **Every canonical render is now actually checked, and the report says how much of it we can check
+  at all.** The fidelity gate filtered renders on a `source: "derived"` marker that no render
+  carries, so it examined zero of the 63 canonical component renders while printing a green
+  "fidelity: OK". It now classifies every color declaration in each render's owned CSS against the
+  Figma appearance capture: 445 examined declarations land in verified, verified via token name,
+  mismatch, or unverifiable, and a further 2 are overridden by a later, more specific rule in the
+  same slug's own CSS and sit outside that examined set entirely, since an overridden declaration is
+  not paint. It writes `components/render/dist/fidelity-report.json`. Two numbers come out of it.
+  Verified fidelity, currently 96.9%, is the 63 declarations that matched the capture by a direct hex
+  comparison, as a share of the 65 declarations the capture could confirm one way or another (the
+  other 2 of those 65 verified via token name instead of a direct hex match, and are correct too,
+  just counted on their own line rather than folded into the headline number). Oracle coverage,
+  currently 14.6%, means: how much of what the renders paint the capture can speak to at all, with 37
+  of the 63 components entirely blind to it. Oracle coverage is the number that matters here: it says
+  the constraint on render quality is now the depth of the Figma capture, not the renders, and it
+  sizes that work per component. It is not a claim that the design system is 96.9% correct. Mismatches
+  now block the build; unverifiable never does, because absence of a captured fact is not evidence of
+  a wrong color.
+  ([#487](https://github.com/volivarii/actian-ds-knowledge/pull/487))
 - **The editor can finally answer what belongs to which product.** Opening a product now shows the
   entities and features that are part of it; opening an entity or a feature shows the products it
   belongs to, kept separate from what it depends on (a feature lists the design-system components it
