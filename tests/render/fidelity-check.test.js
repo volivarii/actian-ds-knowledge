@@ -239,6 +239,69 @@ test("resolveTagOwner: compound modifier resolves by longest-registered-prefix, 
   );
 });
 
+var MATRIX = require("../../components/render/renderer/matrix.js");
+
+// Mirrors derive-canonical.js's own stripComments: buildDeclaration scans
+// cemStyle (assetBase + PAGE_CSS with comments stripped), not the raw
+// out.css, so a comment referencing a --zen-* token inside a rule body
+// would otherwise read as a false positive here. Kept local rather than a
+// new export, since Task 2 adds no new exports.
+function stripComments(text) {
+  return text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/<!--[\s\S]*?-->/g, "");
+}
+
+test("every CEM declaration ships a non-empty cssProperties token surface (#474)", function () {
+  var out = D.deriveCanonical();
+  var empty = [];
+  (out.cem.modules || []).forEach(function (mod) {
+    (mod.declarations || []).forEach(function (decl) {
+      var slug = String(mod.path || "")
+        .replace(/^.*\//, "")
+        .replace(/\.[^.]*$/, "");
+      if (!decl.cssProperties || decl.cssProperties.length === 0)
+        empty.push(slug);
+    });
+  });
+  assert.deepEqual(empty, [], "CEM declarations with an empty token surface");
+});
+
+test("tag-stage's token surface unions both of its owned prefixes", function () {
+  var out = D.deriveCanonical();
+  var mod = (out.cem.modules || []).find(function (m) {
+    return /tag-stage/.test(String(m.path || ""));
+  });
+  var names = (mod.declarations[0].cssProperties || []).map(function (p) {
+    return p.name;
+  });
+  // Derived, not a pinned count: the union must contain everything each owned
+  // prefix contributes on its own, and tag-stage owns two.
+  var style = stripComments(out.css);
+  var expected = new Set();
+  MATRIX.ownedPrefixes("tag-stage").forEach(function (p) {
+    D.consumedVars(style, p).forEach(function (v) {
+      expected.add(v);
+    });
+  });
+  assert.ok(expected.size > 0, "the ownership probe itself found nothing");
+  expected.forEach(function (v) {
+    assert.ok(
+      names.indexOf(v) !== -1,
+      "token " +
+        v +
+        " is contributed by an owned prefix but missing from the CEM",
+    );
+  });
+});
+
+// The #472 regression: consumedVars' selector regex must keep rejecting a
+// single trailing hyphen so `.ds-loader` does not absorb `.ds-loader-with-logo`.
+test("consumedVars still separates hyphen-prefix slug pairs", function () {
+  var css =
+    ".ds-loader { color: var(--zen-a); } .ds-loader-with-logo { color: var(--zen-b); }";
+  assert.deepEqual(D.consumedVars(css, "ds-loader"), ["--zen-a"]);
+  assert.deepEqual(D.consumedVars(css, "ds-loader-with-logo"), ["--zen-b"]);
+});
+
 test("checkBaseCssRules: a planted bad tag rule is caught", function () {
   var tokenMap = A.loadTokenMap(
     fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8"),
