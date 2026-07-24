@@ -1,14 +1,7 @@
 import "../setup-dom";
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  render,
-  screen,
-  cleanup,
-  waitFor,
-  fireEvent,
-  act,
-} from "@testing-library/react";
+import { render, screen, cleanup, waitFor, fireEvent, act } from "@testing-library/react";
 import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { FrontmatterBodyEditScreen } from "../../src/app/FrontmatterBodyEditScreen";
@@ -64,10 +57,7 @@ test("staging an app-context record carries the remote blob sha (stale-base dete
 
   const gh = fakeGh({
     "schemas/app-context-entity.json": { content: SCHEMA, sha: "SCHEMA_SHA" },
-    [ENTITY_PATH]: {
-      content: "---\nlabel: Dataset\n---\nprose body\n",
-      sha: REMOTE_SHA,
-    },
+    [ENTITY_PATH]: { content: "---\nlabel: Dataset\n---\nprose body\n", sha: REMOTE_SHA },
   });
 
   const { container } = render(
@@ -92,9 +82,7 @@ test("staging an app-context record carries the remote blob sha (stale-base dete
     fireEvent.submit(form!);
   });
 
-  const entry = submissionCartSingleton
-    .list()
-    .find((e) => e.path === ENTITY_PATH);
+  const entry = submissionCartSingleton.list().find((e) => e.path === ENTITY_PATH);
   assert.ok(entry, "record should be staged in the submission cart");
   assert.equal(
     entry!.basedOnSha,
@@ -112,21 +100,11 @@ test("staging an app-context record carries the remote blob sha (stale-base dete
     },
   } as any;
   const conflicts = await detectStaleBase(
-    [
-      {
-        path: entry!.path,
-        content: entry!.content,
-        basedOnSha: entry!.basedOnSha,
-      },
-    ],
+    [{ path: entry!.path, content: entry!.content, basedOnSha: entry!.basedOnSha }],
     driftedGh,
     { owner: "o", repo: "r", base: "main" },
   );
-  assert.equal(
-    conflicts.length,
-    1,
-    "stale base must be detected for the record",
-  );
+  assert.equal(conflicts.length, 1, "stale base must be detected for the record");
   assert.equal(conflicts[0]!.path, ENTITY_PATH);
 
   submissionCartSingleton.clear();

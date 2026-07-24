@@ -1,6 +1,6 @@
 // jsdom, not happy-dom (this screen mounts CodeMirror).
 import "../setup-dom";
-import { test, afterEach, mock } from "node:test";
+import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
@@ -264,12 +264,12 @@ test("the collapse toggle actually hides and shows the YAML pane", async () => {
 // to batch" button, which calls flushToCart directly — none of them exercise
 // scheduleFlush (the debounce armed by the pane's own onChange). Deleting
 // the scheduleFlush(...) call from the pane's onChange would fail nothing
-// above. This test uses node:test's mock timers (`mock.timers.enable`) so
-// the 1000ms debounce can be advanced deterministically instead of a real
-// wait: it worked cleanly here because the fake is enabled only AFTER the
-// pane has already mounted (the initial async load — findByTestId — runs
-// under real timers), so nothing React needs during mount/data-fetch
-// depends on the faked setTimeout.
+// above. This test waits out the real 1000ms debounce rather than using
+// node:test's mock timers: `mock.timers.enable` emits Node's
+// ExperimentalWarning as two comment lines into the TAP stream on stdout
+// (not stderr), which is noise in the machine-readable test output. A real
+// ~1.1s wait is cheap and keeps this file to one consistent timing strategy,
+// matching the cross-file test below.
 test("editing the YAML pane debounces the flush via scheduleFlush, not just the button", async () => {
   render(
     <FrontmatterBodyEditScreen
@@ -288,20 +288,16 @@ test("editing the YAML pane debounces the flush via scheduleFlush, not just the 
   const view = EditorView.findFromDOM(host);
   assert.ok(view, "expected a live EditorView attached to the pane");
 
-  mock.timers.enable({ apis: ["setTimeout"] });
-  try {
-    view!.dispatch({
-      changes: { from: view!.state.doc.length, insert: "\nnote: debounced" },
-    });
-    assert.equal(
-      submissionCartSingleton.list().find((e) => e.path === PATH_A),
-      undefined,
-      "an edit must not stage immediately — only once the debounce fires",
-    );
-    mock.timers.tick(1000);
-  } finally {
-    mock.timers.reset();
-  }
+  view!.dispatch({
+    changes: { from: view!.state.doc.length, insert: "\nnote: debounced" },
+  });
+  assert.equal(
+    submissionCartSingleton.list().find((e) => e.path === PATH_A),
+    undefined,
+    "an edit must not stage immediately — only once the debounce fires",
+  );
+
+  await new Promise((resolve) => setTimeout(resolve, 1100));
 
   const staged = submissionCartSingleton.list().find((e) => e.path === PATH_A);
   assert.ok(staged, "expected the debounced flush to reach the cart");
@@ -375,6 +371,18 @@ test("a debounced flush armed on file A survives a switch to file B and stages u
     hostB.textContent ?? "",
     /slug: pipeline/,
     "expected file B's pane to show B's own content",
+  );
+
+  // Pin the ordering this test depends on: A's timer must still be pending
+  // at this crossing point. Without this, the test would silently stop
+  // testing the cross-file case if B's load ever outran the 1000ms debounce
+  // (CI under load, an extra fetch added later) — A's flush would have
+  // already fired while A was still current, and every assertion below
+  // would still pass for the wrong reason.
+  assert.equal(
+    submissionCartSingleton.list().find((e) => e.path === PATH_A),
+    undefined,
+    "A's timer must still be pending at the crossing point",
   );
 
   // Let A's still-pending 1000ms timer fire while B is on screen.
