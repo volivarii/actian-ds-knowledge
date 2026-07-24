@@ -29,7 +29,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   stylesheet, so a renamed class fails loudly instead of silently emptying a component's token
   surface. All 63 declarations now carry one, up from 36.
   ([#474](https://github.com/volivarii/actian-ds-knowledge/issues/474),
-  [#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD))
+  [#487](https://github.com/volivarii/actian-ds-knowledge/pull/487))
 - **Four components were painting the wrong color.** Turning the new fidelity gate on real renders
   (see "Added") caught genuine defects, not just gaps in the gate itself: `lineage-grouped-node` and
   `segmented-control` filled a surface with `bg-subtle` where Figma renders it white; the critical
@@ -37,7 +37,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   reusing `tag-default`'s orange and yellow modifier rules even though Figma gives the two
   components different borders for the same color name, something one shared rule cannot serve, so
   `tag-stage` now carries its own modifier scale for those two colors.
-  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD))
+  ([#487](https://github.com/volivarii/actian-ds-knowledge/pull/487))
 - **A feature referencing a component that does not exist now fails the graph derive instead of
   vanishing.** `components[]` on an application-context feature is hand-authored, and an unresolvable
   slug used to be dropped behind a `console.warn`: the `uses_component` edge simply disappeared, and
@@ -66,7 +66,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   sizes that work per component. It is not a claim that the design system is 96.9% correct. Mismatches
   now block the build; unverifiable never does, because absence of a captured fact is not evidence of
   a wrong color.
-  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD))
+  ([#487](https://github.com/volivarii/actian-ds-knowledge/pull/487))
 - **The editor can finally answer what belongs to which product.** Opening a product now shows the
   entities and features that are part of it; opening an entity or a feature shows the products it
   belongs to, kept separate from what it depends on (a feature lists the design-system components it
