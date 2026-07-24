@@ -33,6 +33,16 @@ var STATE_RE =
 // Reading the first var() unconditionally picked the WIDTH out of
 // `border: var(--zen-border-width-md) solid var(--zen-border-default)` and
 // compared "1px" against a captured hex, a false mismatch every time.
+//
+// var() with a fallback (`var(--zen-token, #fff)`) is matched too, with an
+// optional trailing `, <fallback>` group that is never captured or read: the
+// fallback is only what the browser paints when the token is undefined, the
+// token is the real binding and is what the capture names, so the token
+// always wins when it resolves to a hex. Real value from ds-base.css:529
+// (`.ds-topic { color: var(--zen-color-text-reverse, #fff); }`) -- without
+// this, the regex never matched at all, execution fell through to the bare
+// hex scan below, and it picked up the fallback's hex with token: null,
+// discarding the binding entirely.
 function colorOf(prop, value, tokenMap) {
   var p = String(prop).toLowerCase();
   if (!COLOR_PROPS.test(p) && !SHORTHAND_PROPS.test(p)) return null;
@@ -41,7 +51,7 @@ function colorOf(prop, value, tokenMap) {
   // as the scan below does for a plain shorthand) would be a confident WRONG
   // answer, not a conservative unverifiable one, so bail out to null instead.
   if (GRADIENT_RE.test(value)) return null;
-  var vre = /var\(\s*(--zen-[a-z0-9-]+)\s*\)/gi;
+  var vre = /var\(\s*(--zen-[a-z0-9-]+)\s*(?:,\s*[^)]*)?\)/gi;
   var m;
   while ((m = vre.exec(value)) !== null) {
     var resolved = tokenMap[m[1]];
@@ -51,6 +61,27 @@ function colorOf(prop, value, tokenMap) {
   var h = /#[0-9a-fA-F]{3,8}\b/.exec(value);
   if (h) return { token: null, resolved: h[0] };
   return null;
+}
+
+// Normalize a hex color literal for comparison: lowercase, and 3/4-digit
+// shorthand expanded to its 6/8-digit form (each digit doubled, the same
+// rule the CSS spec itself uses to expand `#fff` to `#ffffff`). A value that
+// is not a bare hex literal (should not happen for anything already matched
+// by HEX above, but this is also used directly on a captured fact, whose
+// shape this file does not control) is returned lowercased and otherwise
+// unchanged, so an odd fact value fails an equality check honestly instead
+// of throwing.
+function normalizeHex(value) {
+  var s = String(value).trim().toLowerCase();
+  var m = /^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/.exec(s);
+  if (!m) return s;
+  var digits = m[1];
+  if (digits.length === 3 || digits.length === 4) {
+    var expanded = "";
+    for (var i = 0; i < digits.length; i++) expanded += digits[i] + digits[i];
+    digits = expanded;
+  }
+  return "#" + digits;
 }
 
 // Which kind of captured fact a property should be compared against.
@@ -100,9 +131,9 @@ function classifyAlternative(alt, prefix) {
 
 // Bucket a rule by what it targets, relative to the prefix that owns it.
 //
-// Final-review finding 1: this used to test STATE_RE against the WHOLE
-// comma-separated selector, while `rightmost` (and so the rest of this
-// function) read only the FIRST alternative. Grouping a genuinely
+// This used to test STATE_RE against the WHOLE comma-separated selector,
+// while `rightmost` (and so the rest of this function) read only the FIRST
+// alternative. Grouping a genuinely
 // comparable selector with an unrelated alternative -- a trailing
 // `:hover`, a leading BEM-element sibling -- then flipped the WHOLE rule's
 // bucket to state/element and its wrong color silently stopped being
@@ -276,9 +307,9 @@ function classifySlug(opts) {
     slug: slug,
     prefixes: prefixes.slice(),
     verified: 0,
-    // Review finding 2: a declaration where our binding names the SAME token
-    // the capture names, but the two sides' resolved hexes differ, is
-    // correct (the binding is right) yet was previously folded into plain
+    // A declaration where our binding names the SAME token the capture
+    // names, but the two sides' resolved hexes differ, is correct (the
+    // binding is right) yet was previously folded into plain
     // `verified` with no way to tell it apart from a direct hex match. Kept
     // as its own bucket, counted toward the checkable/examined totals same
     // as `verified`, but never toward `mismatch` -- it does not block the
@@ -356,8 +387,8 @@ function classifySlug(opts) {
   // every other bucket: an overridden declaration is not paint at all, so
   // calling it unverifiable would inflate "the capture cannot speak to this"
   // with declarations the capture has no reason to speak to.
-  // Review finding 1: a root-bucket rule carries no modifier value, so
-  // bucket+modifier+prop alone gave every root rule the same key regardless
+  // A root-bucket rule carries no modifier value, so bucket+modifier+prop
+  // alone gave every root rule the same key regardless
   // of which prefix it came from -- "root||background" for BOTH `.ds-alpha`
   // and `.ds-beta`, even though a bare `.prefix` selector's identity IS its
   // prefix and nothing else names which element it targets. Two different
@@ -374,12 +405,12 @@ function classifySlug(opts) {
   // `.ds-tag-stage--orange` on the literal same element. Keying modifier by
   // prefix too would split that override into two independently classified
   // declarations and reintroduce the two real mismatches the tag-stage
-  // remedy (task 6) resolved -- confirmed by trial: doing so against the
-  // real corpus turns tag-stage's `mismatch 0, overridden 2` into
+  // remedy resolved -- confirmed by trial: doing so against the real corpus
+  // turns tag-stage's `mismatch 0, overridden 2` into
   // `mismatch 2, overridden 0`.
   //
-  // Final-review finding 2, the failure mode this trade-off carries: prefix
-  // is excluded from the modifier key precisely BECAUSE tag-stage's two
+  // The failure mode this trade-off carries: prefix is excluded from the
+  // modifier key precisely BECAUSE tag-stage's two
   // rules sit on the same element, so this is correct only as long as that
   // precondition holds. Stated explicitly: for any slug owning more than one
   // prefix, two modifier rules that restate the SAME modifier value under
@@ -479,14 +510,18 @@ function classifySlug(opts) {
       factToken &&
       String(factToken).toLowerCase() === String(color.token).toLowerCase()
     );
-    var hexAgrees =
-      String(fact).toLowerCase() === String(color.resolved).toLowerCase();
+    // Normalize BOTH sides before comparing: `#fff` and `#ffffff` are the
+    // same paint, and a raw string comparison read them as different colors
+    // (`.ds-spinner--on-dark .ds-spinner__ring { border-top-color: #fff; }`
+    // at ds-base.css:3739, captured as #ffffff). This only changes how two
+    // colors are compared for equality, not what counts as a color.
+    var hexAgrees = normalizeHex(fact) === normalizeHex(color.resolved);
 
     if (hexAgrees) {
       result.verified++;
     } else if (tokenAgrees) {
-      // Review finding 2: the binding names the same token the capture
-      // names, but the resolved hexes differ. That divergence is exactly
+      // The binding names the same token the capture names, but the
+      // resolved hexes differ. That divergence is exactly
       // what a stale tokens/tokens.css snapshot or a live theme-mode
       // difference looks like, never a CSS defect (the binding itself
       // agrees), so this is not a mismatch. It was previously silently
@@ -546,6 +581,7 @@ function classifySlug(opts) {
 
 module.exports = {
   colorOf: colorOf,
+  normalizeHex: normalizeHex,
   kindOf: kindOf,
   rightmost: rightmost,
   classifySelector: classifySelector,

@@ -45,6 +45,21 @@ test("colorOf: a literal hex is a color", function () {
   });
 });
 
+// A var() with a fallback used to fail the closing-paren-immediately-after
+// the token name match entirely, fall through to the bare-hex scan, and pick
+// up the FALLBACK's hex instead -- discarding the real binding. Real value
+// from ds-base.css:529 (`.ds-topic { color: var(--zen-color-text-reverse,
+// #fff); }`). The fallback is only what the browser paints when the token is
+// undefined; the token is the real binding and is what the capture names, so
+// it must win over the fallback literal whenever it resolves to a color.
+test("colorOf: a var() with a fallback resolves to the TOKEN, not the fallback literal", function () {
+  var tokens = { "--zen-color-text-reverse": "#ffffff" };
+  assert.deepEqual(
+    C.colorOf("color", "var(--zen-color-text-reverse, #fff)", tokens),
+    { token: "--zen-color-text-reverse", resolved: "#ffffff" },
+  );
+});
+
 test("colorOf: a keyword with no resolvable color is not a color", function () {
   assert.equal(C.colorOf("background", "none", TOKENS), null);
   assert.equal(
@@ -182,6 +197,25 @@ test("classifySlug: a wrong color on a rule whose node has a fact is exactly one
   assert.equal(r.verified, 0);
   assert.match(r.mismatches[0].message, /#000000/);
   assert.match(r.mismatches[0].message, /#ffffff/);
+});
+
+// Hex comparison used to be raw lowercase string equality, so a 3-digit hex
+// never equalled its 6-digit expansion and a semantically identical color
+// reported a false mismatch. Real value from ds-base.css:3739
+// (`.ds-spinner--on-dark .ds-spinner__ring { border-top-color: #fff; }`,
+// captured as #ffffff -- see its own comment "captured Ellipse 9-12 On-dark
+// arc, #ffffff, no token").
+test("classifySlug: a 3-digit hex verifies against its captured 6-digit expansion", function () {
+  var r = C.classifySlug({
+    slug: "widget",
+    prefixes: ["ds-widget"],
+    css: ".ds-widget { background: #fff; }",
+    facts: FACTS_PLAIN,
+    tokenMap: TOK,
+    sharedPrefixes: {},
+  });
+  assert.equal(r.verified, 1);
+  assert.equal(r.mismatch, 0);
 });
 
 test("classifySlug: a modifier resolves against the matching captured variant", function () {

@@ -88,10 +88,13 @@ var RENDER_SLUGS = readRenderSlugs();
 // slug that needs one of its own.
 //
 // `tag-stage` is the one slug owning two prefixes: it emits
-// `class="ds-tag ds-tag-stage ds-tag--orange"`, so it draws from the shared
-// tag base AND its own stage rules. `.ds-tag` is also the one prefix claimed
-// by more than one slug (the five tag-family members), which the fidelity
-// classifier treats as a family scope rather than any single member's.
+// `class="ds-tag ds-tag-stage ds-tag--orange ds-tag-stage--orange"`, so it
+// draws from the shared tag base AND its own stage rules -- the
+// `ds-tag-stage--<color>` modifier is what lets it override the shared
+// `ds-tag--<color>` border for itself alone. `.ds-tag` is also the one
+// prefix claimed by more than one slug (the five tag-family members), which
+// the fidelity classifier treats as a family scope rather than any single
+// member's.
 var CSS_OWNERS = {
   "account-dropdown": ["ds-account-menu"],
   "alert-banner": ["ds-alert"],

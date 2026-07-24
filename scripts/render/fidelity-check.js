@@ -205,9 +205,9 @@ function checkBaseCssRules(cssText, facts, tokenMap) {
 // names would collide with (and be silently reassigned by) that block.
 var CLASSIFY = require("./fidelity-classify.js");
 var MATRIX = require("../../components/render/renderer/matrix.js");
-// Amendment 1 needs filesystem access (reading each slug's fragment markup),
-// so runFidelityReport is no longer purely readAppearance-only. Named to
-// avoid the same fs/path collision as above.
+// Fragment-aware rule attribution (below) needs filesystem access (reading
+// each slug's fragment markup), so runFidelityReport is no longer purely
+// readAppearance-only. Named to avoid the same fs/path collision as above.
 var nodeFs = require("node:fs");
 var nodePath = require("node:path");
 
@@ -272,8 +272,8 @@ function owningPrefixOf(selector, prefixes) {
   return null;
 }
 
-// Amendment 1, narrowed: fragment-aware rule attribution applies ONLY to a
-// rule whose owning prefix is claimed by more than one slug. CSS_OWNERS
+// Fragment-aware rule attribution applies ONLY to a rule whose owning prefix
+// is claimed by more than one slug. CSS_OWNERS
 // assigns the prefix ds-tag to five slugs, and .ds-tag* carries rules for
 // every family member's own modifiers and descendants (tag-stage's dot, the
 // grouped tag-status rules, every color modifier...), so without this filter
@@ -361,7 +361,7 @@ function mismatchFailureMessage(mismatches) {
 // examining ZERO of the 63 renders, which is how two slices shipped 28 renders
 // under a green check that verified none of them.
 function runFidelityReport(ctx) {
-  // Amendment 5: name the actually-missing key, not the whole required shape.
+  // Name the actually-missing ctx key, not the whole required shape.
   // A message that always lists all four keys makes a test regex for any ONE
   // key match regardless of which key is truly absent -- that is satisfiable
   // by an unrelated failure, not proof of the specific guard. Checked in this
@@ -392,9 +392,9 @@ function runFidelityReport(ctx) {
   var blind = [];
   var totals = {
     verified: 0,
-    // Review finding 2: token-name-agreement-with-differing-hex, tallied
-    // separately from `verified` so its size is visible rather than rounded
-    // into the same bucket as a direct hex match. Counted toward
+    // Token-name-agreement-with-differing-hex is tallied separately from
+    // `verified` so its size is visible rather than rounded into the same
+    // bucket as a direct hex match. Counted toward
     // checkable/examined below (it IS a declaration the capture can speak
     // to, and does speak to), never toward `mismatch`.
     verifiedViaTokenName: 0,
@@ -434,20 +434,20 @@ function runFidelityReport(ctx) {
         tokenMap: tokenMap,
         sharedPrefixes: shared,
       });
-      // Amendment 2: a gate whose subject can be absent must assert the
-      // subject was present. A slug with zero verified AND zero mismatch is
-      // one the capture can say nothing about at all -- that must be
-      // countable and explicit, not indistinguishable from a slug that was
-      // actually checked and found clean. The `blind` flag is carried on the
-      // bySlug row itself (not only the top-level `blind` array) so a
-      // consumer that filters bySlug directly (e.g. for mismatch === 0) sees
-      // the flag without having to remember to join the sibling array --
-      // honesty here must not depend on the consumer's memory.
+      // A gate whose subject can be absent must assert the subject was
+      // present. A slug with zero verified AND zero mismatch is one the
+      // capture can say nothing about at all -- that must be countable and
+      // explicit, not indistinguishable from a slug that was actually
+      // checked and found clean. The `blind` flag is carried on the bySlug
+      // row itself (not only the top-level `blind` array) so a consumer that
+      // filters bySlug directly (e.g. for mismatch === 0) sees the flag
+      // without having to remember to join the sibling array -- honesty here
+      // must not depend on the consumer's memory.
       //
-      // Review finding 2: verifiedViaTokenName is a real, positive signal
-      // (the capture spoke, and agreed) -- a slug with zero verified and
-      // zero mismatch but a non-zero verifiedViaTokenName is not blind, the
-      // capture said something about it. badge is exactly this case.
+      // verifiedViaTokenName is a real, positive signal (the capture spoke,
+      // and agreed) -- a slug with zero verified and zero mismatch but a
+      // non-zero verifiedViaTokenName is not blind, the capture said
+      // something about it. badge is exactly this case.
       var isBlind =
         r.verified === 0 && r.mismatch === 0 && r.verifiedViaTokenName === 0;
       bySlug[slug] = {
@@ -483,11 +483,12 @@ function runFidelityReport(ctx) {
   // verifiedViaTokenName is part of the comparable/checkable set: the
   // capture DID speak to these declarations, and agreed on the binding, so
   // excluding them here would shrink `examined` under the exact same
-  // declarations the pre-finding-2 report already counted (they were simply
-  // inside plain `verified` before). verifiedFidelity's numerator stays
-  // `verified` alone (a direct hex match) so the headline number does not
-  // silently absorb a hex divergence that a stale token snapshot produced --
-  // that divergence is real and now sized on its own line instead.
+  // declarations the report already counted before this bucket existed (they
+  // were simply inside plain `verified` before). verifiedFidelity's
+  // numerator stays `verified` alone (a direct hex match) so the headline
+  // number does not silently absorb a hex divergence that a stale token
+  // snapshot produced -- that divergence is real and now sized on its own
+  // line instead.
   var checkable =
     totals.verified + totals.verifiedViaTokenName + totals.mismatch;
   var examined = checkable + totals.unverifiable;
@@ -632,7 +633,7 @@ if (require.main === module) {
   // Both failure classes are printed before either exits, so one run reports
   // everything that is wrong rather than only the first kind encountered.
   if (report.mismatches.length || v.length) process.exit(1);
-  // Amendment 3: no unconditional "fidelity: OK" trailer here. The legacy
+  // No unconditional "fidelity: OK" trailer here. The legacy
   // fidelityCheck/checkBaseCssRules violation reporting above still gates
   // ds-base.css tag/checkbox rules and still exits 1 on a real violation --
   // that check is intact. What is gone is the success text that used to run
