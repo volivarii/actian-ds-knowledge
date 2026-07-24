@@ -4,25 +4,56 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { splitFrontmatter } from "../../src/substrate/splitFrontmatter";
 import { assembleYamlFrontmatterFile } from "../../src/frontmatter-engine/assembleYaml";
-import { yamlSurfaceDirectories } from "../../src/lib/frontmatterForms";
+import {
+  yamlSurfaceDirectories,
+  yamlDirsOrThrow,
+} from "../../src/lib/frontmatterForms";
 
 const REPO_ROOT = new URL("../../../", import.meta.url).pathname;
 
-// Directories walked here come from the registry itself (which entries carry
-// `surface: "yaml"`), not a literal list — so this guard widens on its own
-// the moment a future slice routes another domain (e.g. content/src/**) to
-// the YAML surface, instead of silently staying narrow while the routing
-// moves on without it.
-function recordFiles(): string[] {
+/** Recursive .md walk: content/src/ (the example this guard's own comment
+ *  names) has writing/patterns/product subdirectories, so a non-recursive
+ *  walk would silently under-enumerate the moment content/src ever gained
+ *  `surface: "yaml"` — the one case the comment claims this widens for. */
+function walkMdFiles(dir: string): string[] {
   const out: string[] = [];
-  for (const rel of yamlSurfaceDirectories()) {
-    const dir = join(REPO_ROOT, rel);
-    for (const f of readdirSync(dir)) {
-      if (f.endsWith(".md")) out.push(join(dir, f));
-    }
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walkMdFiles(full));
+    else if (entry.isFile() && entry.name.endsWith(".md")) out.push(full);
   }
   return out;
 }
+
+// Directories walked here come from the registry itself (which entries carry
+// `surface: "yaml"`), not a literal list — so this guard widens on its own
+// the moment a future slice routes another domain (e.g. content/src/**,
+// walked recursively by walkMdFiles above) to the YAML surface, instead of
+// silently staying narrow while the routing moves on without it.
+function recordFiles(): string[] {
+  const out: string[] = [];
+  for (const rel of yamlSurfaceDirectories()) {
+    out.push(...walkMdFiles(join(REPO_ROOT, rel)));
+  }
+  return out;
+}
+
+// The mechanism behind the "widens on its own" claim above: a registry entry
+// with `surface: "yaml"` but no `dir` must fail loudly, not vanish from the
+// corpus this enumerates. Exercises yamlDirsOrThrow directly (rather than
+// waiting for a real future registry entry to be misconfigured) so this
+// guard is proven, not just asserted in a comment.
+test('a registry entry with surface: "yaml" but no dir throws instead of silently narrowing the corpus', () => {
+  assert.throws(
+    () =>
+      yamlDirsOrThrow([{ schemaKey: "future-yaml-domain", surface: "yaml" }]),
+    /future-yaml-domain.*surface: "yaml".*no `dir`/s,
+  );
+});
+
+test('yamlDirsOrThrow does not throw for the real registry (every current surface: "yaml" entry has a dir)', () => {
+  assert.doesNotThrow(() => yamlSurfaceDirectories());
+});
 
 test("every app-context record round-trips byte-identically", () => {
   const files = recordFiles();

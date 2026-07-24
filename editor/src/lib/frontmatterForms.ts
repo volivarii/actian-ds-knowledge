@@ -119,6 +119,38 @@ export function matchFrontmatterForm(
   return cfg;
 }
 
+/** The slice of a registry entry `yamlDirsOrThrow` needs — just enough to
+ *  spot a `surface: "yaml"` entry missing its `dir`, without depending on
+ *  the registry-internal `Entry` shape (private to this module) or the
+ *  routing-only `match` function tests have no reason to construct. */
+type YamlDirCandidate = Pick<FrontmatterFormConfig, "schemaKey" | "surface"> & {
+  dir?: string;
+};
+
+/** Pure (exported for tests): every `surface: "yaml"` entry's `dir`, in
+ *  registry order. Throws — rather than silently dropping the entry — the
+ *  moment one has `surface: "yaml"` but no `dir`, which is the failure mode
+ *  this whole mechanism exists to prevent: without the throw, a future
+ *  domain that gains `surface: "yaml"` without also adding a `dir` would
+ *  narrow the corpus `yamlSurfaceDirectories()` enumerates, and
+ *  `assembleYaml.test.ts`'s `files.length > 20` floor would keep passing on
+ *  whatever's left, never noticing the domain went unwalked. */
+export function yamlDirsOrThrow(entries: YamlDirCandidate[]): string[] {
+  const out: string[] = [];
+  for (const e of entries) {
+    if (e.surface !== "yaml") continue;
+    if (e.dir === undefined) {
+      throw new Error(
+        `frontmatterForms registry entry "${e.schemaKey}" has surface: "yaml" but no \`dir\` — ` +
+          `yamlSurfaceDirectories() cannot enumerate its corpus, which would silently narrow the ` +
+          `byte-identity round-trip guard in tests/frontmatter-engine/assembleYaml.test.ts. Add a \`dir\`.`,
+      );
+    }
+    out.push(e.dir);
+  }
+  return out;
+}
+
 /** Repo-root-relative directories whose entire `.md` corpus is routed to the
  *  YAML surface (`surface: "yaml"`) — derived from this registry, not a
  *  hand-maintained list, so a domain that later gains `surface: "yaml"` (with
@@ -126,8 +158,5 @@ export function matchFrontmatterForm(
  *  by the byte-identity round-trip guard in
  *  `tests/frontmatter-engine/assembleYaml.test.ts`. */
 export function yamlSurfaceDirectories(): string[] {
-  return REGISTRY.filter(
-    (e): e is Entry & { dir: string } =>
-      e.surface === "yaml" && e.dir !== undefined,
-  ).map((e) => e.dir);
+  return yamlDirsOrThrow(REGISTRY);
 }
