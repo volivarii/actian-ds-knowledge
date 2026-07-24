@@ -48,8 +48,17 @@ export function YamlFrontmatterEditor({
         history(),
         // indentWithTab is deliberately NOT in defaultKeymap: CM6 leaves Tab
         // unbound so keyboard users can tab OUT of an editor. YAML indentation
-        // is semantic, so the pane binds it and the escape hatch becomes
-        // Escape-then-Tab, which CM6 supports out of the box.
+        // is semantic, so the pane binds it, and the escape hatch is
+        // Escape-then-Tab: CM6's InputState.keydown (view/input.ts) returns
+        // early for Tab whenever tab-focus mode is armed, before the keymap
+        // facet — and so indentWithTab — ever sees the event, letting the
+        // browser move focus natively. One caveat this pane's aria-label
+        // below accounts for: defaultKeymap itself binds Escape to
+        // simplifySelection, which returns true (consuming the event) for a
+        // non-empty selection, so with text selected the FIRST Escape only
+        // collapses the selection to a caret — tab-focus mode only arms on
+        // the Escape after that, once the keymap has nothing left to do with
+        // it. With no selection, a single Escape is enough.
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
         yaml(),
         schemaCompletionExtension(schema),
@@ -67,7 +76,13 @@ export function YamlFrontmatterEditor({
         lintGutter(),
         cmDarkSurface,
         EditorView.lineWrapping,
-        EditorView.contentAttributes.of({ "aria-label": "Frontmatter YAML" }),
+        // WCAG 2.1.2 (no keyboard trap): Tab is bound here (indentWithTab
+        // above), so a keyboard user needs to be told the way out —
+        // Escape, then Tab — not left to discover it.
+        EditorView.contentAttributes.of({
+          "aria-label":
+            "Frontmatter YAML. Press Escape then Tab to leave this editor.",
+        }),
         EditorView.updateListener.of((u) => {
           if (u.docChanged) onChangeRef.current(u.state.doc.toString());
         }),
