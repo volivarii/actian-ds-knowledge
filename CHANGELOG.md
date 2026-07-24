@@ -191,7 +191,11 @@ Each entry links its pull request. Dates are the merge date (UTC).
   now edits the file's own text with schema-driven key completion and inline schema errors, so an
   untouched record round-trips byte-identically and `relationships` / `apps` are no longer typed into
   a generic key/value widget. Other domains keep the existing form until the remaining slices land.
-  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD))
+  One behavior change: staging to the batch no longer blocks on schema validity. Under the old
+  RJSF form, "Add to batch" only fired once the record validated against its schema; the YAML pane's
+  button stages unconditionally, so a record with a schema error can now be added to the batch (the
+  inline lint squiggle still shows it while editing, and `validate-app-context.js` still catches it
+  in PR CI before merge). ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD))
 
 ### Removed
 - **The 35 frozen seed renders and the all-35 oracle** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))

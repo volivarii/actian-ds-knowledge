@@ -1,7 +1,15 @@
 // Resolve what a JSON Schema allows at a block path, and turn that into
-// completion candidates. Draft 2020-12, no $ref resolution: the substrate's
-// form-driven schemas are self-contained (verified 2026-07-24), and a $ref
-// appearing later should fail loudly rather than be half-followed.
+// completion candidates. Draft 2020-12, no $ref resolution: an unresolved
+// $ref is simply not followed. schemaAtPath returns the $ref object as-is
+// (objectBranches finds no `properties` on a bare `{ $ref }`), so
+// keyCandidates/valueCandidates conservatively return no candidates rather
+// than throwing — this is a CodeMirror completion source, and a throw here
+// would break the whole pane, so "no suggestions" is the right degrade, not
+// a bug. The six schemas behind frontmatterForms.ts's registry
+// (app-context-app, app-context-entity, app-context-pattern,
+// category-defaults, content, foundations) contain zero `$ref` and zero
+// `$defs` (verified 2026-07-24), so this path is inert on the substrate
+// today; see the pinned test below for the behavior if that ever changes.
 
 export type JsonSchema = Record<string, unknown>;
 

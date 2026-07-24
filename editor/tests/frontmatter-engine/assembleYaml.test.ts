@@ -4,13 +4,19 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { splitFrontmatter } from "../../src/substrate/splitFrontmatter";
 import { assembleYamlFrontmatterFile } from "../../src/frontmatter-engine/assembleYaml";
+import { yamlSurfaceDirectories } from "../../src/lib/frontmatterForms";
 
-const AC_DIR = new URL("../../../app-context/src/", import.meta.url).pathname;
+const REPO_ROOT = new URL("../../../", import.meta.url).pathname;
 
+// Directories walked here come from the registry itself (which entries carry
+// `surface: "yaml"`), not a literal list — so this guard widens on its own
+// the moment a future slice routes another domain (e.g. content/src/**) to
+// the YAML surface, instead of silently staying narrow while the routing
+// moves on without it.
 function recordFiles(): string[] {
   const out: string[] = [];
-  for (const sub of ["apps", "entities", "patterns"]) {
-    const dir = join(AC_DIR, sub);
+  for (const rel of yamlSurfaceDirectories()) {
+    const dir = join(REPO_ROOT, rel);
     for (const f of readdirSync(dir)) {
       if (f.endsWith(".md")) out.push(join(dir, f));
     }

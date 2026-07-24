@@ -68,20 +68,16 @@ test("broken YAML is reported instead of schema errors", () => {
   assert.ok(diags[0]!.to >= diags[0]!.from);
 });
 
-test("diagnostic ranges stay inside the document", () => {
-  const text = VALID + "\nnonsense: true";
-  for (const d of frontmatterDiagnostics(text, ENTITY)) {
-    assert.ok(d.from >= 0 && d.to <= text.length, "range out of bounds");
-  }
-});
-
-// The six tests above are transcribed verbatim from the task brief. The
-// brief's own "unknown key" test only asserts `from >= indexOf("nonsense")`,
-// which a diagnostic pointing at the key's VALUE (rather than the key
-// itself) would also satisfy, since the value sits later in the text. And
-// the brief's "wrong type" test never inspects a range at all. Both gaps are
-// named explicitly in the task's diagnostics checklist, so the following
-// tests close them with exact-range assertions.
+// The five tests above are transcribed verbatim from the task brief (a sixth,
+// "diagnostic ranges stay inside the document", was deleted in final review:
+// it could not fail — the exact-range tests below and the end-of-input clamp
+// test already cover the property strictly). The brief's own "unknown key"
+// test only asserts `from >= indexOf("nonsense")`, which a diagnostic
+// pointing at the key's VALUE (rather than the key itself) would also
+// satisfy, since the value sits later in the text. And the brief's "wrong
+// type" test never inspects a range at all. Both gaps are named explicitly in
+// the task's diagnostics checklist, so the following tests close them with
+// exact-range assertions.
 
 test("an unknown key's range brackets exactly the key text, not its value", () => {
   const text = VALID + "\nnonsense: true";

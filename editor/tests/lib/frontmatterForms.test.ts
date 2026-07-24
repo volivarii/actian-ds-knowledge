@@ -2,16 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { matchFrontmatterForm } from "../../src/lib/frontmatterForms";
 
-test("app-context app routes to app-context-app, block style", () => {
+test("app-context app routes to app-context-app", () => {
   const m = matchFrontmatterForm("app-context/src/apps/studio.md");
   assert.equal(m?.schemaKey, "app-context-app");
-  assert.equal(m?.flowAtDepth, null);
 });
 
-test("app-context entity routes with flow depth 2", () => {
+test("app-context entity routes to app-context-entity", () => {
   const m = matchFrontmatterForm("app-context/src/entities/data-product.md");
   assert.equal(m?.schemaKey, "app-context-entity");
-  assert.equal(m?.flowAtDepth, 2);
 });
 
 test("category file routes to category-defaults", () => {

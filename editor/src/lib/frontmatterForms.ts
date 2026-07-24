@@ -35,6 +35,13 @@ export interface FrontmatterFormConfig {
 
 interface Entry extends FrontmatterFormConfig {
   match: (path: string) => boolean;
+  /** Present only for entries whose entire corpus is one flat,
+   *  non-recursive directory of `.md` files, relative to the repo root.
+   *  Lets tests derive a real-corpus file list from this registry (see
+   *  `yamlSurfaceDirectories` below) instead of hardcoding a path list that
+   *  can silently drift out of sync with it. Not read by `matchFrontmatterForm`
+   *  itself — routing is still decided by `match`. */
+  dir?: string;
 }
 
 // Ordered, first-match-wins. Specific entries (words-to-avoid) MUST precede
@@ -45,24 +52,24 @@ const REGISTRY: Entry[] = [
     schemaKey: "app-context-app",
     uiSchema: appContextAppUiSchema,
     bodyless: false,
-    flowAtDepth: null,
     surface: "yaml",
+    dir: "app-context/src/apps",
   },
   {
     match: (p) => /^app-context\/src\/entities\/[^/]+\.md$/.test(p),
     schemaKey: "app-context-entity",
     uiSchema: appContextEntityUiSchema,
     bodyless: false,
-    flowAtDepth: 2,
     surface: "yaml",
+    dir: "app-context/src/entities",
   },
   {
     match: (p) => /^app-context\/src\/patterns\/[^/]+\.md$/.test(p),
     schemaKey: "app-context-pattern",
     uiSchema: appContextPatternUiSchema,
     bodyless: false,
-    flowAtDepth: 2,
     surface: "yaml",
+    dir: "app-context/src/patterns",
   },
   {
     match: (p) => isCategoryFile(p),
@@ -105,6 +112,22 @@ export function matchFrontmatterForm(
 ): FrontmatterFormConfig | null {
   const hit = REGISTRY.find((e) => e.match(path));
   if (!hit) return null;
-  const { match: _m, ...cfg } = hit;
+  // `dir` is registry-internal (test enumeration only, see
+  // yamlSurfaceDirectories below) — strip it so callers only ever see the
+  // public FrontmatterFormConfig shape.
+  const { match: _m, dir: _d, ...cfg } = hit;
   return cfg;
+}
+
+/** Repo-root-relative directories whose entire `.md` corpus is routed to the
+ *  YAML surface (`surface: "yaml"`) — derived from this registry, not a
+ *  hand-maintained list, so a domain that later gains `surface: "yaml"` (with
+ *  its own `dir`) widens the corpus this enumerates automatically. Consumed
+ *  by the byte-identity round-trip guard in
+ *  `tests/frontmatter-engine/assembleYaml.test.ts`. */
+export function yamlSurfaceDirectories(): string[] {
+  return REGISTRY.filter(
+    (e): e is Entry & { dir: string } =>
+      e.surface === "yaml" && e.dir !== undefined,
+  ).map((e) => e.dir);
 }

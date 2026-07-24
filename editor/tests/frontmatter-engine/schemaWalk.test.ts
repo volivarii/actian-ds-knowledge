@@ -127,3 +127,17 @@ test("value candidates for a scalar sequence redirect through items.enum", () =>
   const got = valueCandidates(stageSchema, [], "stage").map((c) => c.label);
   assert.deepEqual(got, ["a", "b"]);
 });
+
+// Pins the module header's documented $ref behavior: no resolution is
+// attempted, so an unresolved $ref degrades to "no candidates" rather than
+// an error. The six real form schemas contain zero $ref/$defs today
+// (verified 2026-07-24), so this synthetic schema is the only way to
+// exercise the branch.
+test("an unresolved $ref yields no candidates, not an error", () => {
+  const schema: JsonSchema = {
+    type: "object",
+    properties: { thing: { $ref: "#/$defs/T" } },
+  };
+  assert.deepEqual(schemaAtPath(schema, ["thing"]), { $ref: "#/$defs/T" });
+  assert.deepEqual(keyCandidates(schema, ["thing"], []), []);
+});
