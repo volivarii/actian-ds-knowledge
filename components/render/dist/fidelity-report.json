@@ -28,7 +28,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 6
+      "unverifiable": 6,
+      "blind": false
     },
     "alert-banner": {
       "prefixes": [
@@ -36,7 +37,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 11
+      "unverifiable": 11,
+      "blind": true
     },
     "app-switcher-dropdown": {
       "prefixes": [
@@ -44,7 +46,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 6
+      "unverifiable": 6,
+      "blind": false
     },
     "avatar": {
       "prefixes": [
@@ -52,7 +55,8 @@
       ],
       "verified": 0,
       "mismatch": 1,
-      "unverifiable": 5
+      "unverifiable": 5,
+      "blind": false
     },
     "badge": {
       "prefixes": [
@@ -60,7 +64,8 @@
       ],
       "verified": 0,
       "mismatch": 1,
-      "unverifiable": 1
+      "unverifiable": 1,
+      "blind": false
     },
     "breadcrumb": {
       "prefixes": [
@@ -68,7 +73,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 3
+      "unverifiable": 3,
+      "blind": true
     },
     "button": {
       "prefixes": [
@@ -76,7 +82,8 @@
       ],
       "verified": 0,
       "mismatch": 1,
-      "unverifiable": 13
+      "unverifiable": 13,
+      "blind": false
     },
     "calendar": {
       "prefixes": [
@@ -84,7 +91,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 9
+      "unverifiable": 9,
+      "blind": false
     },
     "card-for-grouped-content": {
       "prefixes": [
@@ -92,7 +100,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 5
+      "unverifiable": 5,
+      "blind": false
     },
     "card-for-items": {
       "prefixes": [
@@ -100,7 +109,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 6
+      "unverifiable": 6,
+      "blind": true
     },
     "card-for-perimeter": {
       "prefixes": [
@@ -108,7 +118,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 2
+      "unverifiable": 2,
+      "blind": false
     },
     "chat-with-ai-steward": {
       "prefixes": [
@@ -116,7 +127,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 24
+      "unverifiable": 24,
+      "blind": true
     },
     "checkbox": {
       "prefixes": [
@@ -124,7 +136,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 7
+      "unverifiable": 7,
+      "blind": true
     },
     "collapse-accordion": {
       "prefixes": [
@@ -132,7 +145,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 5
+      "unverifiable": 5,
+      "blind": false
     },
     "confirmation": {
       "prefixes": [
@@ -140,7 +154,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 2
+      "unverifiable": 2,
+      "blind": true
     },
     "digram-item-types": {
       "prefixes": [
@@ -148,7 +163,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 1
+      "unverifiable": 1,
+      "blind": true
     },
     "digram-topic": {
       "prefixes": [
@@ -156,7 +172,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 1
+      "unverifiable": 1,
+      "blind": true
     },
     "drawer-side-panel": {
       "prefixes": [
@@ -164,7 +181,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 16
+      "unverifiable": 16,
+      "blind": false
     },
     "dropdown-select-default": {
       "prefixes": [
@@ -172,7 +190,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 8
+      "unverifiable": 8,
+      "blind": true
     },
     "empty-state": {
       "prefixes": [
@@ -180,7 +199,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 2
+      "unverifiable": 2,
+      "blind": true
     },
     "error-state": {
       "prefixes": [
@@ -188,7 +208,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 2
+      "unverifiable": 2,
+      "blind": true
     },
     "global-header": {
       "prefixes": [
@@ -196,7 +217,8 @@
       ],
       "verified": 1,
       "mismatch": 1,
-      "unverifiable": 17
+      "unverifiable": 17,
+      "blind": false
     },
     "input-date": {
       "prefixes": [
@@ -204,7 +226,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 7
+      "unverifiable": 7,
+      "blind": true
     },
     "lineage-grouped-node": {
       "prefixes": [
@@ -212,7 +235,8 @@
       ],
       "verified": 0,
       "mismatch": 1,
-      "unverifiable": 3
+      "unverifiable": 3,
+      "blind": false
     },
     "lineage-individual-node": {
       "prefixes": [
@@ -220,7 +244,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 6
+      "unverifiable": 6,
+      "blind": false
     },
     "link": {
       "prefixes": [
@@ -228,7 +253,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 5
+      "unverifiable": 5,
+      "blind": true
     },
     "loader": {
       "prefixes": [
@@ -236,7 +262,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 3
+      "unverifiable": 3,
+      "blind": true
     },
     "loader-with-logo": {
       "prefixes": [
@@ -244,7 +271,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 0
+      "unverifiable": 0,
+      "blind": true
     },
     "loading-skeleton": {
       "prefixes": [
@@ -252,7 +280,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 2
+      "unverifiable": 2,
+      "blind": true
     },
     "maintenance-state": {
       "prefixes": [
@@ -260,7 +289,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 2
+      "unverifiable": 2,
+      "blind": true
     },
     "metamodel-widget": {
       "prefixes": [
@@ -268,7 +298,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 4
+      "unverifiable": 4,
+      "blind": true
     },
     "modal": {
       "prefixes": [
@@ -276,7 +307,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 4
+      "unverifiable": 4,
+      "blind": false
     },
     "notification": {
       "prefixes": [
@@ -284,7 +316,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 7
+      "unverifiable": 7,
+      "blind": true
     },
     "notification-dropdown": {
       "prefixes": [
@@ -292,7 +325,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 6
+      "unverifiable": 6,
+      "blind": false
     },
     "page-header": {
       "prefixes": [
@@ -300,7 +334,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 3
+      "unverifiable": 3,
+      "blind": true
     },
     "popover": {
       "prefixes": [
@@ -308,7 +343,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 7
+      "unverifiable": 7,
+      "blind": false
     },
     "progress-bar-small": {
       "prefixes": [
@@ -316,7 +352,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 3
+      "unverifiable": 3,
+      "blind": true
     },
     "radio-button": {
       "prefixes": [
@@ -324,7 +361,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 9
+      "unverifiable": 9,
+      "blind": true
     },
     "rich-text": {
       "prefixes": [
@@ -332,7 +370,8 @@
       ],
       "verified": 2,
       "mismatch": 0,
-      "unverifiable": 5
+      "unverifiable": 5,
+      "blind": false
     },
     "scroll-bar": {
       "prefixes": [
@@ -340,7 +379,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 2
+      "unverifiable": 2,
+      "blind": true
     },
     "search": {
       "prefixes": [
@@ -348,7 +388,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 4
+      "unverifiable": 4,
+      "blind": true
     },
     "search-dropdown-menu": {
       "prefixes": [
@@ -356,7 +397,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 5
+      "unverifiable": 5,
+      "blind": false
     },
     "search-result-card": {
       "prefixes": [
@@ -364,7 +406,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 11
+      "unverifiable": 11,
+      "blind": true
     },
     "segmented-control": {
       "prefixes": [
@@ -372,7 +415,8 @@
       ],
       "verified": 1,
       "mismatch": 1,
-      "unverifiable": 3
+      "unverifiable": 3,
+      "blind": false
     },
     "side-nav": {
       "prefixes": [
@@ -380,7 +424,8 @@
       ],
       "verified": 2,
       "mismatch": 0,
-      "unverifiable": 8
+      "unverifiable": 8,
+      "blind": false
     },
     "spinner": {
       "prefixes": [
@@ -388,7 +433,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 5
+      "unverifiable": 5,
+      "blind": true
     },
     "stepper": {
       "prefixes": [
@@ -396,7 +442,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 13
+      "unverifiable": 13,
+      "blind": true
     },
     "sticky-footer": {
       "prefixes": [
@@ -404,7 +451,8 @@
       ],
       "verified": 2,
       "mismatch": 0,
-      "unverifiable": 0
+      "unverifiable": 0,
+      "blind": false
     },
     "table": {
       "prefixes": [
@@ -412,7 +460,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 7
+      "unverifiable": 7,
+      "blind": true
     },
     "tabs": {
       "prefixes": [
@@ -420,7 +469,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 4
+      "unverifiable": 4,
+      "blind": false
     },
     "tag-catalog": {
       "prefixes": [
@@ -428,7 +478,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 7
+      "unverifiable": 7,
+      "blind": true
     },
     "tag-catalog-item-type": {
       "prefixes": [
@@ -436,7 +487,8 @@
       ],
       "verified": 7,
       "mismatch": 0,
-      "unverifiable": 10
+      "unverifiable": 10,
+      "blind": false
     },
     "tag-default": {
       "prefixes": [
@@ -444,7 +496,8 @@
       ],
       "verified": 16,
       "mismatch": 0,
-      "unverifiable": 3
+      "unverifiable": 3,
+      "blind": false
     },
     "tag-glossary-item-type": {
       "prefixes": [
@@ -452,7 +505,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 2
+      "unverifiable": 2,
+      "blind": false
     },
     "tag-interactive": {
       "prefixes": [
@@ -460,7 +514,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 10
+      "unverifiable": 10,
+      "blind": true
     },
     "tag-shared": {
       "prefixes": [
@@ -468,7 +523,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 5
+      "unverifiable": 5,
+      "blind": true
     },
     "tag-stage": {
       "prefixes": [
@@ -477,7 +533,8 @@
       ],
       "verified": 12,
       "mismatch": 2,
-      "unverifiable": 14
+      "unverifiable": 14,
+      "blind": false
     },
     "tag-status": {
       "prefixes": [
@@ -485,7 +542,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 13
+      "unverifiable": 13,
+      "blind": true
     },
     "text-input": {
       "prefixes": [
@@ -493,7 +551,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 5
+      "unverifiable": 5,
+      "blind": true
     },
     "toggle": {
       "prefixes": [
@@ -501,7 +560,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 5
+      "unverifiable": 5,
+      "blind": true
     },
     "toolbar": {
       "prefixes": [
@@ -509,7 +569,8 @@
       ],
       "verified": 0,
       "mismatch": 0,
-      "unverifiable": 5
+      "unverifiable": 5,
+      "blind": true
     },
     "tooltip": {
       "prefixes": [
@@ -517,7 +578,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 2
+      "unverifiable": 2,
+      "blind": false
     },
     "whats-new-dropdown": {
       "prefixes": [
@@ -525,7 +587,8 @@
       ],
       "verified": 1,
       "mismatch": 0,
-      "unverifiable": 7
+      "unverifiable": 7,
+      "blind": false
     }
   },
   "blind": [

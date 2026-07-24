@@ -354,35 +354,59 @@ function runReport() {
 // Amendment 3: the signature grew a fourth required field (fragmentsDir, for
 // Amendment 1's per-slug filter) but stays all-required-or-throw, same as the
 // original three.
+// Finding 5: the guard used to list all four required keys in its message
+// regardless of which one was actually absent, so a regex for any ONE key
+// matched whichever key was truly missing -- the test was satisfiable by an
+// unrelated failure (e.g. it would still pass if the code always blamed the
+// wrong key). assertMissingCtxKey names the actually-missing key AND asserts
+// the other three keys are absent from the message, so the test can no
+// longer pass on a wrong-key report.
+var ALL_CTX_KEYS = ["anatomyDir", "css", "tokenMap", "fragmentsDir"];
+function assertMissingCtxKey(ctxPartial, missingKey) {
+  assert.throws(
+    function () {
+      F.runFidelityReport(ctxPartial);
+    },
+    function (err) {
+      assert.match(
+        err.message,
+        new RegExp("\\b" + missingKey + "\\b"),
+        "message names the actually-missing key " + missingKey,
+      );
+      ALL_CTX_KEYS.filter(function (k) {
+        return k !== missingKey;
+      }).forEach(function (otherKey) {
+        assert.doesNotMatch(
+          err.message,
+          new RegExp("\\b" + otherKey + "\\b"),
+          "message must not name an unrelated key (" +
+            otherKey +
+            "), or this test is satisfiable by a wrong-key report: " +
+            err.message,
+        );
+      });
+      return true;
+    },
+  );
+}
+
 test("runFidelityReport requires anatomyDir, css, tokenMap, and fragmentsDir", function () {
-  assert.throws(function () {
-    F.runFidelityReport({
-      css: BASE_CSS,
-      tokenMap: TOKEN_MAP,
-      fragmentsDir: FRAGMENTS_DIR,
-    });
-  }, /anatomyDir/);
-  assert.throws(function () {
-    F.runFidelityReport({
-      anatomyDir: ANATOMY,
-      tokenMap: TOKEN_MAP,
-      fragmentsDir: FRAGMENTS_DIR,
-    });
-  }, /css/);
-  assert.throws(function () {
-    F.runFidelityReport({
-      anatomyDir: ANATOMY,
-      css: BASE_CSS,
-      fragmentsDir: FRAGMENTS_DIR,
-    });
-  }, /tokenMap/);
-  assert.throws(function () {
-    F.runFidelityReport({
-      anatomyDir: ANATOMY,
-      css: BASE_CSS,
-      tokenMap: TOKEN_MAP,
-    });
-  }, /fragmentsDir/);
+  assertMissingCtxKey(
+    { css: BASE_CSS, tokenMap: TOKEN_MAP, fragmentsDir: FRAGMENTS_DIR },
+    "anatomyDir",
+  );
+  assertMissingCtxKey(
+    { anatomyDir: ANATOMY, tokenMap: TOKEN_MAP, fragmentsDir: FRAGMENTS_DIR },
+    "css",
+  );
+  assertMissingCtxKey(
+    { anatomyDir: ANATOMY, css: BASE_CSS, fragmentsDir: FRAGMENTS_DIR },
+    "tokenMap",
+  );
+  assertMissingCtxKey(
+    { anatomyDir: ANATOMY, css: BASE_CSS, tokenMap: TOKEN_MAP },
+    "fragmentsDir",
+  );
 });
 
 test("runFidelityReport examines every render slug", function () {
@@ -621,6 +645,15 @@ test("runFidelityReport reports blind slugs explicitly, not as an inferred zero"
   report.blind.forEach(function (slug) {
     assert.equal(report.bySlug[slug].verified, 0);
     assert.equal(report.bySlug[slug].mismatch, 0);
+    // Finding 1: a blind slug must be self-marking on its own bySlug row, not
+    // only present in the sibling top-level array -- a consumer filtering
+    // bySlug directly (e.g. for mismatch === 0) must not have to remember to
+    // join the top-level list to know the row is blind.
+    assert.equal(
+      report.bySlug[slug].blind,
+      true,
+      slug + ": a blind slug's own bySlug row must carry blind:true",
+    );
   });
   Object.keys(report.bySlug).forEach(function (slug) {
     var b = report.bySlug[slug];
@@ -630,6 +663,12 @@ test("runFidelityReport reports blind slugs explicitly, not as an inferred zero"
       isBlind,
       slug +
         ": blind-list membership disagrees with its own verified/mismatch counts",
+    );
+    assert.equal(
+      b.blind,
+      isBlind,
+      slug +
+        ": the bySlug row's own blind field disagrees with its verified/mismatch counts",
     );
   });
 });
@@ -647,6 +686,23 @@ test("the emitted report is stamped and deterministic", function () {
     Array.isArray(json.blind),
     "the dist report must carry the blind list",
   );
+  // Finding 1: every persisted bySlug row must carry an explicit boolean
+  // blind field, consistent with membership in the top-level blind array --
+  // a blind row (e.g. loader-with-logo) must not be indistinguishable from a
+  // genuinely clean, fully-verified row.
+  keys.forEach(function (slug) {
+    assert.equal(
+      typeof json.bySlug[slug].blind,
+      "boolean",
+      slug + ": bySlug row must carry an explicit boolean blind field",
+    );
+    assert.equal(
+      json.bySlug[slug].blind,
+      json.blind.indexOf(slug) !== -1,
+      slug +
+        ": bySlug row's blind field disagrees with the top-level blind list",
+    );
+  });
 });
 
 test("CLI: fidelity-check.js prints the blind count and does not fail the build on mismatches", function () {
@@ -668,5 +724,18 @@ test("CLI: fidelity-check.js prints the blind count and does not fail the build 
     result.stdout,
     /blind/i,
     "the CLI summary must print the blind count",
+  );
+  // Finding 2: exit-code-0 plus a /blind/i match alone does not prove the
+  // gate is non-blocking ON MISMATCHES -- it would pass the same way if
+  // mismatches were silently dropped from the printout. The corpus carries 8
+  // real mismatches today (see fidelity-report.json), so the CLI's "candidate
+  // mismatches" section must actually be present in stdout: that is the
+  // subject this test's name claims to prove was there.
+  assert.match(
+    result.stdout,
+    /candidate mismatches/,
+    "the CLI must actually print the candidate mismatches section, or this " +
+      "test would pass vacuously even if mismatch reporting silently broke: " +
+      result.stdout,
   );
 });

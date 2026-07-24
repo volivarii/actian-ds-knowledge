@@ -305,6 +305,7 @@ function owningPrefixOf(selector, prefixes) {
 function filterCssForFragment(css, emitted, prefixes, sharedPrefixes) {
   var pfx = prefixes || [];
   var shared = sharedPrefixes || {};
+  var em = emitted || new Set();
   var stripped = css.replace(/\/\*[\s\S]*?\*\//g, "");
   var out = [];
   var re = /([^{}]+)\{([^{}]*)\}/g;
@@ -316,7 +317,7 @@ function filterCssForFragment(css, emitted, prefixes, sharedPrefixes) {
     if (isShared) {
       var tokens = selectorClassTokens(selector);
       var keep = tokens.every(function (t) {
-        return emitted.has(t);
+        return em.has(t);
       });
       if (!keep) continue;
     }
@@ -332,11 +333,25 @@ function filterCssForFragment(css, emitted, prefixes, sharedPrefixes) {
 // examining ZERO of the 63 renders, which is how two slices shipped 28 renders
 // under a green check that verified none of them.
 function runFidelityReport(ctx) {
-  if (!ctx || !ctx.anatomyDir || !ctx.css || !ctx.tokenMap || !ctx.fragmentsDir)
+  // Amendment 5: name the actually-missing key, not the whole required shape.
+  // A message that always lists all four keys makes a test regex for any ONE
+  // key match regardless of which key is truly absent -- that is satisfiable
+  // by an unrelated failure, not proof of the specific guard. Checked in this
+  // fixed order so the first absent key is the one named.
+  var REQUIRED_CTX_KEYS = ["anatomyDir", "css", "tokenMap", "fragmentsDir"];
+  var missingCtxKey = null;
+  for (var reqIdx = 0; reqIdx < REQUIRED_CTX_KEYS.length; reqIdx++) {
+    if (!ctx || !ctx[REQUIRED_CTX_KEYS[reqIdx]]) {
+      missingCtxKey = REQUIRED_CTX_KEYS[reqIdx];
+      break;
+    }
+  }
+  if (missingCtxKey)
     throw new Error(
-      "runFidelityReport requires {anatomyDir, css, tokenMap, fragmentsDir}: " +
-        "it reads only the per-slug appearance facts and fragment markup, so " +
-        "the caller controls everything else about what is measured.",
+      "runFidelityReport requires ctx." +
+        missingCtxKey +
+        ": it reads only the per-slug appearance facts and fragment markup, " +
+        "so the caller controls everything else about what is measured.",
     );
   var css = ctx.css;
   var tokenMap = ctx.tokenMap;
@@ -369,28 +384,34 @@ function runFidelityReport(ctx) {
       }
       var emitted = fragmentClasses(fragmentHtml);
       var prefixes = MATRIX.ownedPrefixes(slug);
-      var slugCss = filterCssForFragment(css, emitted, prefixes, shared);
+      var filteredCss = filterCssForFragment(css, emitted, prefixes, shared);
 
       var r = CLASSIFY.classifySlug({
         slug: slug,
         prefixes: prefixes,
-        css: slugCss,
+        css: filteredCss,
         facts: facts,
         tokenMap: tokenMap,
         sharedPrefixes: shared,
       });
+      // Amendment 2: a gate whose subject can be absent must assert the
+      // subject was present. A slug with zero verified AND zero mismatch is
+      // one the capture can say nothing about at all -- that must be
+      // countable and explicit, not indistinguishable from a slug that was
+      // actually checked and found clean. The `blind` flag is carried on the
+      // bySlug row itself (not only the top-level `blind` array) so a
+      // consumer that filters bySlug directly (e.g. for mismatch === 0) sees
+      // the flag without having to remember to join the sibling array --
+      // honesty here must not depend on the consumer's memory.
+      var isBlind = r.verified === 0 && r.mismatch === 0;
       bySlug[slug] = {
         prefixes: r.prefixes,
         verified: r.verified,
         mismatch: r.mismatch,
         unverifiable: r.unverifiable,
+        blind: isBlind,
       };
-      // Amendment 2: a gate whose subject can be absent must assert the
-      // subject was present. A slug with zero verified AND zero mismatch is
-      // one the capture can say nothing about at all -- that must be
-      // countable and explicit, not indistinguishable from a slug that was
-      // actually checked and found clean.
-      if (r.verified === 0 && r.mismatch === 0) blind.push(slug);
+      if (isBlind) blind.push(slug);
       totals.verified += r.verified;
       totals.mismatch += r.mismatch;
       totals.unverifiable += r.unverifiable;
@@ -434,9 +455,6 @@ if (require.main === module) {
   var anatomyDir = path.join(root, "components", "dist", "anatomy");
   var out = D.deriveCanonical();
   var tokenMap = A.loadTokenMap(out.css);
-  var derivedRenders = (out.manifest.renders || []).filter(function (r) {
-    return r.source === "derived";
-  });
   var v = fidelityCheck(out, {
     anatomyDir: anatomyDir,
     tokenMap: tokenMap,
@@ -542,19 +560,14 @@ if (require.main === module) {
     );
     process.exit(1);
   }
-  if (derivedRenders.length === 0) {
-    process.stdout.write(
-      "fidelity: OK, 0 derived renders examined (TEMPLATES is empty, so " +
-        "fidelityCheck had nothing to check; ds-base.css tag/checkbox rules " +
-        "verified separately, above)\n",
-    );
-  } else {
-    process.stdout.write(
-      "fidelity: OK (" +
-        derivedRenders.length +
-        " derived render(s) matched facts)\n",
-    );
-  }
+  // Amendment 3: no unconditional "fidelity: OK" trailer here. The legacy
+  // fidelityCheck/checkBaseCssRules violation reporting above still gates
+  // ds-base.css tag/checkbox rules and still exits 1 on a real violation --
+  // that check is intact. What is gone is the success text that used to run
+  // AFTER the real summary regardless of it, so the last line of a CI log
+  // read "fidelity: OK" even on a run whose entire purpose was to end that
+  // false all-clear. The honest summary printed above (verified/mismatch/
+  // unverifiable/blind/oracle coverage) is now the last thing printed.
 }
 
 module.exports = {
