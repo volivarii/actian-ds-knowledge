@@ -420,8 +420,12 @@ test("runFidelityReport examines every render slug", function () {
   // A floor of 0 rather than a pinned count, because a hand-maintained number
   // here would be one more fact restated (see the standing rule in Global
   // Constraints). Correctness lives in the unit tests over known inputs.
+  // verifiedViaTokenName (review finding 2) is part of the examined/checkable
+  // set alongside verified and mismatch: the capture DID speak to those
+  // declarations, it just agreed via the token name rather than the hex.
   var examined =
     report.totals.verified +
+    report.totals.verifiedViaTokenName +
     report.totals.mismatch +
     report.totals.unverifiable;
   assert.ok(examined > 0, "the classifier examined nothing at all");
@@ -440,12 +444,24 @@ test("runFidelityReport examines every render slug", function () {
 
 test("runFidelityReport reports both honest numbers", function () {
   var report = runReport();
-  var checkable = report.totals.verified + report.totals.mismatch;
+  // verifiedViaTokenName (review finding 2) is part of `checkable`: the
+  // capture spoke to those declarations and agreed via the token name, so
+  // excluding them would shrink checkable/examined under the exact same
+  // declarations the report already counted before the split existed.
+  var checkable =
+    report.totals.verified +
+    report.totals.verifiedViaTokenName +
+    report.totals.mismatch;
   var total = checkable + report.totals.unverifiable;
   assert.equal(
     report.totals.oracleCoverage,
     Number((checkable / total).toFixed(4)),
   );
+  // verifiedFidelity's numerator stays `verified` alone (a direct hex
+  // match): a declaration that only agrees via token name is not folded
+  // back into the headline "how much is right" number, so a hex divergence
+  // a stale token snapshot produced stays visible instead of silently
+  // rounding up to 100%.
   assert.equal(
     report.totals.verifiedFidelity,
     Number((report.totals.verified / checkable).toFixed(4)),
@@ -460,6 +476,7 @@ test("runFidelityReport reports both honest numbers", function () {
   );
   assert.equal(
     report.totals.verified +
+      report.totals.verifiedViaTokenName +
       report.totals.mismatch +
       report.totals.unverifiable,
     total,
@@ -692,6 +709,11 @@ test("runFidelityReport reports blind slugs explicitly, not as an inferred zero"
   report.blind.forEach(function (slug) {
     assert.equal(report.bySlug[slug].verified, 0);
     assert.equal(report.bySlug[slug].mismatch, 0);
+    // Review finding 2: verifiedViaTokenName is a real positive signal too
+    // (the capture spoke and agreed), so a genuinely blind slug must also
+    // carry zero of it -- otherwise a slug like badge (0 verified, 0
+    // mismatch, 1 verifiedViaTokenName) would misread as blind.
+    assert.equal(report.bySlug[slug].verifiedViaTokenName, 0);
     // Finding 1: a blind slug must be self-marking on its own bySlug row, not
     // only present in the sibling top-level array -- a consumer filtering
     // bySlug directly (e.g. for mismatch === 0) must not have to remember to
@@ -704,20 +726,36 @@ test("runFidelityReport reports blind slugs explicitly, not as an inferred zero"
   });
   Object.keys(report.bySlug).forEach(function (slug) {
     var b = report.bySlug[slug];
-    var isBlind = b.verified === 0 && b.mismatch === 0;
+    var isBlind =
+      b.verified === 0 && b.mismatch === 0 && b.verifiedViaTokenName === 0;
     assert.equal(
       report.blind.indexOf(slug) !== -1,
       isBlind,
       slug +
-        ": blind-list membership disagrees with its own verified/mismatch counts",
+        ": blind-list membership disagrees with its own verified/mismatch/verifiedViaTokenName counts",
     );
     assert.equal(
       b.blind,
       isBlind,
       slug +
-        ": the bySlug row's own blind field disagrees with its verified/mismatch counts",
+        ": the bySlug row's own blind field disagrees with its verified/mismatch/verifiedViaTokenName counts",
     );
   });
+  // Non-vacuity: badge is exactly the case this guard exists for -- zero
+  // verified, zero mismatch, but a real verifiedViaTokenName signal, so it
+  // must NOT be blind.
+  assert.equal(
+    report.bySlug.badge.verified,
+    0,
+    "badge's one declaration verifies via token-name agreement, not a direct hex match",
+  );
+  assert.equal(report.bySlug.badge.verifiedViaTokenName, 1);
+  assert.equal(
+    report.bySlug.badge.blind,
+    false,
+    "badge must not read as blind: the capture spoke to it and agreed",
+  );
+  assert.equal(report.blind.indexOf("badge"), -1);
 });
 
 test("the emitted report is stamped and deterministic", function () {

@@ -199,10 +199,19 @@ function classifySlug(opts) {
     slug: slug,
     prefixes: prefixes.slice(),
     verified: 0,
+    // Review finding 2: a declaration where our binding names the SAME token
+    // the capture names, but the two sides' resolved hexes differ, is
+    // correct (the binding is right) yet was previously folded into plain
+    // `verified` with no way to tell it apart from a direct hex match. Kept
+    // as its own bucket, counted toward the checkable/examined totals same
+    // as `verified`, but never toward `mismatch` -- it does not block the
+    // build. See tokenNameAgreements below for the per-occurrence detail.
+    verifiedViaTokenName: 0,
     mismatch: 0,
     unverifiable: 0,
     overridden: 0,
     mismatches: [],
+    tokenNameAgreements: [],
     reasons: {},
   };
   function unverifiable(reason) {
@@ -270,8 +279,31 @@ function classifySlug(opts) {
   // every other bucket: an overridden declaration is not paint at all, so
   // calling it unverifiable would inflate "the capture cannot speak to this"
   // with declarations the capture has no reason to speak to.
+  // Review finding 1: a root-bucket rule carries no modifier value, so
+  // bucket+modifier+prop alone gave every root rule the same key regardless
+  // of which prefix it came from -- "root||background" for BOTH `.ds-alpha`
+  // and `.ds-beta`, even though a bare `.prefix` selector's identity IS its
+  // prefix and nothing else names which element it targets. Two different
+  // prefixes' root rules must never collapse into one subject on that basis
+  // alone: prefix is included here so they never do (proven by the
+  // ds-alpha/ds-beta synthetic case in fidelity-classify.test.js).
+  //
+  // A modifier-bucket rule keeps the prior modifier-only key, prefix
+  // excluded. The modifier VALUE itself (e.g. "orange") is a semantic axis
+  // value, and this repo's one multi-prefix slug (tag-stage, CSS_OWNERS:
+  // ["ds-tag", "ds-tag-stage"]) uses restating that SAME value under its own
+  // prefix as the deliberate mechanism for overriding a shared family color
+  // for itself alone: its fragment renders `.ds-tag--orange` and
+  // `.ds-tag-stage--orange` on the literal same element. Keying modifier by
+  // prefix too would split that override into two independently classified
+  // declarations and reintroduce the two real mismatches the tag-stage
+  // remedy (task 6) resolved -- confirmed by trial: doing so against the
+  // real corpus turns tag-stage's `mismatch 0, overridden 2` into
+  // `mismatch 2, overridden 0`.
   function subjectKey(c) {
-    return c.cls.bucket + "|" + (c.cls.modifier || "") + "|" + c.prop;
+    var mod = c.cls.modifier || "";
+    var prefixPart = mod ? "" : c.rule.prefix + "|";
+    return prefixPart + c.cls.bucket + "|" + mod + "|" + c.prop;
   }
   var winners = {};
   candidates.forEach(function (c) {
@@ -353,12 +385,44 @@ function classifySlug(opts) {
       factToken &&
       String(factToken).toLowerCase() === String(color.token).toLowerCase()
     );
+    var hexAgrees =
+      String(fact).toLowerCase() === String(color.resolved).toLowerCase();
 
-    if (
-      tokenAgrees ||
-      String(fact).toLowerCase() === String(color.resolved).toLowerCase()
-    ) {
+    if (hexAgrees) {
       result.verified++;
+    } else if (tokenAgrees) {
+      // Review finding 2: the binding names the same token the capture
+      // names, but the resolved hexes differ. That divergence is exactly
+      // what a stale tokens/tokens.css snapshot or a live theme-mode
+      // difference looks like, never a CSS defect (the binding itself
+      // agrees), so this is not a mismatch. It was previously silently
+      // indistinguishable from a direct hex-match `verified` -- counted here
+      // instead, so the size of this class is visible rather than rounded
+      // away into the same bucket as a plain match.
+      result.verifiedViaTokenName++;
+      result.tokenNameAgreements.push({
+        slug: slug,
+        selector: rule.selector,
+        property: prop,
+        token: color.token,
+        ourValue: color.resolved,
+        capturedValue: fact,
+        message:
+          slug +
+          " " +
+          rule.selector +
+          " {" +
+          prop +
+          "}: binds " +
+          color.token +
+          ", which the capture also names, but the resolved hexes differ " +
+          "(ours " +
+          color.resolved +
+          ", capture says " +
+          fact +
+          "). The binding agrees; the divergence points at the token " +
+          "snapshot (tokens/tokens.css), not the CSS.",
+      });
     } else {
       result.mismatch++;
       result.mismatches.push({

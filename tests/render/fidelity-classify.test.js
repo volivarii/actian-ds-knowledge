@@ -397,7 +397,12 @@ var TOK_THEMED = {
   "--zen-other": "#123456",
 };
 
-test("classifySlug: a declaration binding the token the capture names verifies, even when the captured hex is another theme's value", function () {
+// Review finding 2: this used to assert plain `verified`. Token-name
+// agreement with a DIFFERING hex is now its own countable bucket
+// (verifiedViaTokenName), not silently folded into `verified` -- see the
+// dedicated section below for the non-vacuity proof that it is not folded
+// back into either `verified` or `mismatch`.
+test("classifySlug: a declaration binding the token the capture names verifies via token-name agreement, even when the captured hex is another theme's value", function () {
   var r = C.classifySlug({
     slug: "global-header",
     prefixes: ["ds-header"],
@@ -415,7 +420,8 @@ test("classifySlug: a declaration binding the token the capture names verifies, 
     tokenMap: TOK_THEMED,
     sharedPrefixes: {},
   });
-  assert.equal(r.verified, 1);
+  assert.equal(r.verifiedViaTokenName, 1);
+  assert.equal(r.verified, 0);
   assert.equal(r.mismatch, 0);
 });
 
@@ -442,6 +448,62 @@ test("classifySlug: binding a different token than the capture names is still a 
   });
   assert.equal(r.mismatch, 1);
   assert.match(r.mismatches[0].message, /--zen-other/);
+});
+
+// ---------------------------------------------------------------------------
+// Review finding 2: token-name agreement with a DIFFERING hex was verified
+// correctly (task 6), but silently indistinguishable from a plain hex match
+// -- both landed in the same `verified` count with no way to tell which kind
+// of evidence produced them. badge's real capture is exactly this class:
+// --zen-color-icon-error is defined exactly once in tokens.css (#dc3514,
+// no theme-mode explanation available), yet the capture says #c12c11. The
+// binding is right (both sides name the same token), so it is not a
+// mismatch, but the divergence is real and must be countable and visible,
+// not folded into plain `verified`.
+// ---------------------------------------------------------------------------
+
+test("classifySlug: token-name agreement with a differing hex is counted in verifiedViaTokenName, not silently folded into plain verified", function () {
+  var r = C.classifySlug({
+    slug: "badge",
+    prefixes: ["ds-badge"],
+    css: ".ds-badge { background: var(--zen-color-icon-error); }",
+    facts: {
+      byNode: [
+        {
+          name: "Type=Default",
+          appearance: {
+            background: "#c12c11",
+            backgroundToken: "--zen-color-icon-error",
+          },
+        },
+      ],
+    },
+    tokenMap: { "--zen-color-icon-error": "#dc3514" },
+    sharedPrefixes: {},
+  });
+  assert.equal(
+    r.verifiedViaTokenName,
+    1,
+    "a token-name agreement with a differing hex must be counted in its own bucket",
+  );
+  assert.equal(
+    r.verified,
+    0,
+    "it must not also (or instead) be folded into plain verified",
+  );
+  assert.equal(r.mismatch, 0, "it must never block the build");
+  assert.equal(
+    r.tokenNameAgreements.length,
+    1,
+    "the per-occurrence record must be carried alongside the count",
+  );
+  var rec = r.tokenNameAgreements[0];
+  assert.equal(rec.slug, "badge");
+  assert.equal(rec.selector, ".ds-badge");
+  assert.equal(rec.property, "background");
+  assert.equal(rec.token, "--zen-color-icon-error");
+  assert.equal(rec.ourValue, "#dc3514");
+  assert.equal(rec.capturedValue, "#c12c11");
 });
 
 // And where the capture names NO token (button's Intent=Critical fill is a raw
@@ -630,4 +692,83 @@ test("ownedRules: a raw-CSS comment mentioning another prefix does not steal the
   assert.equal(out.length, 1);
   assert.equal(out[0].prefix, "ds-search-result-card");
   assert.equal(out[0].selector, ".ds-search-result-card");
+});
+
+// ---------------------------------------------------------------------------
+// Review finding 1: the cascade subjectKey used to be bucket|modifier|prop,
+// with no mention of which prefix owns the rule. When one slug owns more
+// than one prefix (today, only tag-stage), two ROOT rules from DIFFERENT
+// prefixes both produce the SAME key ("root||<prop>", modifier is always
+// empty at root bucket), so the winner-resolution pass silently treated them
+// as one subject even though a bare `.prefix` selector's identity IS its
+// prefix -- there is nothing else naming which element it targets. A root
+// rule losing that resolution was marked `overridden` and dropped from every
+// other bucket, so a real mismatch on it never reached the report.
+//
+// This is the exact synthetic case from the review: two prefixes owned by
+// one slug, each with its own plain root rule (no modifier to disambiguate),
+// targeting what must be presumed to be different elements absent any
+// evidence otherwise. The loser's color is contradicted by the capture, so
+// this must report a mismatch, not silently collapse into `overridden`.
+// ---------------------------------------------------------------------------
+
+test("classifySlug: two DIFFERENT prefixes' root rules are never the same subject, so a losing root declaration a capture contradicts is a mismatch, not a silent override", function () {
+  var r = C.classifySlug({
+    slug: "synth",
+    prefixes: ["ds-alpha", "ds-beta"],
+    css: ".ds-alpha{background:#222222}\n.ds-beta{background:#111111}\n",
+    facts: {
+      byNode: [{ name: "Root", appearance: { background: "#111111" } }],
+    },
+    tokenMap: {},
+    sharedPrefixes: { "ds-alpha": ["synth"], "ds-beta": ["synth"] },
+  });
+  assert.equal(
+    r.overridden,
+    0,
+    "two different prefixes' root rules must never be treated as the same subject",
+  );
+  assert.equal(
+    r.mismatch,
+    1,
+    ".ds-alpha paints #222222, which the capture (#111111) contradicts, and " +
+      "that must be reported, not silenced",
+  );
+  assert.equal(
+    r.verified,
+    1,
+    ".ds-beta paints #111111, which the capture agrees with",
+  );
+  assert.ok(
+    r.mismatches.some(function (m) {
+      return /ds-alpha/.test(m.selector) && /#222222/.test(m.message);
+    }),
+    "the mismatch names .ds-alpha and its wrong color, got: " +
+      JSON.stringify(r.mismatches),
+  );
+});
+
+// Non-vacuity for the real tag-stage remedy: fixing the synthetic case above
+// must not break the one place this exact structural pattern (one slug, two
+// prefixes) exists for real. tag-stage's fragment renders BOTH
+// `.ds-tag--orange` and `.ds-tag-stage--orange` on the literal SAME element
+// (`class="ds-tag ds-tag-stage ds-tag--orange ds-tag-stage--orange"`), so
+// unlike the root-bucket synthetic case above, these two rules genuinely
+// share one subject, and the modifier VALUE they both carry ("orange") is
+// itself the disambiguating signal a bare root selector lacks. They must
+// still resolve as overridden 2, not regress into 2 new mismatches.
+test("classifySlug: the real tag-stage cross-prefix modifier override still resolves as overridden, not a mismatch", function () {
+  var r = C.classifySlug({
+    slug: "tag-stage",
+    prefixes: ["ds-tag", "ds-tag-stage"],
+    css:
+      ".ds-tag--orange { border-color: var(--zen-color-error-50); }\n" +
+      ".ds-tag-stage--orange { border-color: var(--zen-color-error-100); }\n",
+    facts: FACTS_STAGE,
+    tokenMap: TOK_TAG,
+    sharedPrefixes: { "ds-tag": ["tag-default", "tag-stage"] },
+  });
+  assert.equal(r.mismatch, 0);
+  assert.equal(r.overridden, 1);
+  assert.equal(r.verified, 1);
 });

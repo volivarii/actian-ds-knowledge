@@ -387,9 +387,21 @@ function runFidelityReport(ctx) {
 
   var bySlug = {};
   var mismatches = [];
+  var tokenNameAgreements = [];
   var reasons = {};
   var blind = [];
-  var totals = { verified: 0, mismatch: 0, unverifiable: 0, overridden: 0 };
+  var totals = {
+    verified: 0,
+    // Review finding 2: token-name-agreement-with-differing-hex, tallied
+    // separately from `verified` so its size is visible rather than rounded
+    // into the same bucket as a direct hex match. Counted toward
+    // checkable/examined below (it IS a declaration the capture can speak
+    // to, and does speak to), never toward `mismatch`.
+    verifiedViaTokenName: 0,
+    mismatch: 0,
+    unverifiable: 0,
+    overridden: 0,
+  };
 
   MATRIX.RENDER_SLUGS.slice()
     .sort()
@@ -431,10 +443,17 @@ function runFidelityReport(ctx) {
       // consumer that filters bySlug directly (e.g. for mismatch === 0) sees
       // the flag without having to remember to join the sibling array --
       // honesty here must not depend on the consumer's memory.
-      var isBlind = r.verified === 0 && r.mismatch === 0;
+      //
+      // Review finding 2: verifiedViaTokenName is a real, positive signal
+      // (the capture spoke, and agreed) -- a slug with zero verified and
+      // zero mismatch but a non-zero verifiedViaTokenName is not blind, the
+      // capture said something about it. badge is exactly this case.
+      var isBlind =
+        r.verified === 0 && r.mismatch === 0 && r.verifiedViaTokenName === 0;
       bySlug[slug] = {
         prefixes: r.prefixes,
         verified: r.verified,
+        verifiedViaTokenName: r.verifiedViaTokenName,
         mismatch: r.mismatch,
         unverifiable: r.unverifiable,
         // Declarations another rule in the same slug's own CSS overrides, so
@@ -446,6 +465,7 @@ function runFidelityReport(ctx) {
       };
       if (isBlind) blind.push(slug);
       totals.verified += r.verified;
+      totals.verifiedViaTokenName += r.verifiedViaTokenName;
       totals.mismatch += r.mismatch;
       totals.unverifiable += r.unverifiable;
       totals.overridden += r.overridden;
@@ -455,9 +475,21 @@ function runFidelityReport(ctx) {
       r.mismatches.forEach(function (m) {
         mismatches.push(m);
       });
+      r.tokenNameAgreements.forEach(function (t) {
+        tokenNameAgreements.push(t);
+      });
     });
 
-  var checkable = totals.verified + totals.mismatch;
+  // verifiedViaTokenName is part of the comparable/checkable set: the
+  // capture DID speak to these declarations, and agreed on the binding, so
+  // excluding them here would shrink `examined` under the exact same
+  // declarations the pre-finding-2 report already counted (they were simply
+  // inside plain `verified` before). verifiedFidelity's numerator stays
+  // `verified` alone (a direct hex match) so the headline number does not
+  // silently absorb a hex divergence that a stale token snapshot produced --
+  // that divergence is real and now sized on its own line instead.
+  var checkable =
+    totals.verified + totals.verifiedViaTokenName + totals.mismatch;
   var examined = checkable + totals.unverifiable;
   // Two honest numbers. verifiedFidelity answers "of what the capture can speak
   // to, how much is right". oracleCoverage answers "how much of what we paint
@@ -475,6 +507,7 @@ function runFidelityReport(ctx) {
     totals: totals,
     bySlug: bySlug,
     mismatches: mismatches,
+    tokenNameAgreements: tokenNameAgreements,
     reasons: reasons,
     blind: blind,
   };
@@ -539,6 +572,7 @@ if (require.main === module) {
         bySlug: report.bySlug,
         blind: report.blind,
         mismatches: report.mismatches,
+        tokenNameAgreements: report.tokenNameAgreements,
       },
       null,
       2,
@@ -553,6 +587,12 @@ if (require.main === module) {
       "  verified:     " +
       report.totals.verified +
       "\n" +
+      "  verified via token name: " +
+      report.totals.verifiedViaTokenName +
+      " (the binding agrees with the token the capture names, but the " +
+      "resolved hex differs -- points at a stale tokens/tokens.css " +
+      "snapshot or a theme-mode difference, not a CSS defect; does not " +
+      "block the build; see fidelity-report.json#tokenNameAgreements)\n" +
       "  mismatch:     " +
       report.totals.mismatch +
       "\n" +
@@ -565,8 +605,8 @@ if (require.main === module) {
       "the declaration is not paint and is outside the buckets above)\n" +
       "  blind slugs:  " +
       report.blind.length +
-      " (zero verified and zero mismatch -- the capture can say nothing about " +
-      "them at all; see fidelity-report.json#blind)\n" +
+      " (zero verified, zero mismatch, and zero token-name agreement -- the " +
+      "capture can say nothing about them at all; see fidelity-report.json#blind)\n" +
       "  verified fidelity: " +
       (report.totals.verifiedFidelity * 100).toFixed(1) +
       "%\n" +
