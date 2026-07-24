@@ -51,14 +51,43 @@ test("a multi-sentence description is trimmed to its first sentence", () => {
 });
 
 test("keys inside an array of objects come from items, through oneOf", () => {
-  const got = keyCandidates(ENTITY, ["properties"], ["name"]).map(
-    (c) => c.label,
+  const got = keyCandidates(ENTITY, ["properties"], ["name"]);
+  assert.deepEqual(got.map((c) => c.label).sort(), [
+    "example",
+    "states",
+    "type",
+  ]);
+  // Every top-level property of ENTITY is required, so `required.has(name)`
+  // and a hardcoded `true` return are indistinguishable there — all six
+  // top-level candidates come back `required: true` either way. This
+  // branch's own `required` is `["name"]`, so `type`/`example`/`states` are
+  // the fixture's one real negative case: without this assertion, a stub
+  // that always returns `required: true` passes every test in this file.
+  const notRequired = got.filter((c) => c.required === false);
+  assert.ok(
+    notRequired.length > 0,
+    "expected at least one of type/example/states to be required: false",
   );
-  assert.deepEqual(got.sort(), ["example", "states", "type"]);
 });
 
 test("schemaAtPath returns null for a path the schema does not define", () => {
   assert.equal(schemaAtPath(ENTITY, ["nope"]), null);
+});
+
+// `schemaAtPath(ENTITY, ["nope"])` above only exercises the additionalProperties
+// fallback's FAILURE side: the root sets `additionalProperties: false`, so the
+// guard rejects before the assignment runs, and at that single step
+// `current === schema`, so it can't distinguish the shipped
+// `current.additionalProperties` from a `schema.additionalProperties`
+// regression. `relationships` is an open map two steps down
+// (`additionalProperties: {type: "string"}`), where `current` genuinely
+// differs from the root `schema` by the time the fallback fires — this is
+// where the fallback's SUCCESS path, and that current-vs-schema distinction,
+// actually get tested.
+test("the additionalProperties fallback resolves through an open map two steps down", () => {
+  assert.deepEqual(schemaAtPath(ENTITY, ["relationships", "owns"]), {
+    type: "string",
+  });
 });
 
 test("an open map offers no key candidates and does not throw", () => {
@@ -76,4 +105,25 @@ test("value candidates come from const", () => {
 
 test("value candidates are empty where the schema constrains nothing", () => {
   assert.deepEqual(valueCandidates(ENTITY, [], "label"), []);
+});
+
+// The real schemas contain no `enum` keyword anywhere — the only textual
+// hits in app-context-entity.json are the word "enum" inside an example
+// value and inside a description, not the keyword itself. So against ENTITY,
+// a correct items.enum redirect and a broken one both return []; this branch
+// is otherwise untested even though Task 4 needs it for scalar-sequence
+// value completion. Hence a small synthetic schema here rather than a read
+// of the real fixture.
+test("value candidates for a scalar sequence redirect through items.enum", () => {
+  const stageSchema: JsonSchema = {
+    type: "object",
+    properties: {
+      stage: {
+        type: "array",
+        items: { type: "string", enum: ["a", "b"] },
+      },
+    },
+  };
+  const got = valueCandidates(stageSchema, [], "stage").map((c) => c.label);
+  assert.deepEqual(got, ["a", "b"]);
 });
