@@ -1,7 +1,14 @@
 import "../setup-dom";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { render, screen, cleanup, waitFor, fireEvent, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  cleanup,
+  waitFor,
+  fireEvent,
+  act,
+} from "@testing-library/react";
 import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { FrontmatterBodyEditScreen } from "../../src/app/FrontmatterBodyEditScreen";
@@ -41,6 +48,15 @@ const SCHEMA = JSON.stringify({
 const ENTITY_PATH = "app-context/src/entities/dataset.md";
 const REMOTE_SHA = "ENTITY_SHA_1";
 
+// This test renders FrontmatterBodyEditScreen without `surface`, so it
+// exercises the RJSF branch directly. Production now always routes
+// app-context paths through surface="yaml" (frontmatterForms.ts), so this
+// is no longer coverage of what app-context users actually get — it still
+// guards the #280 no-silent-overwrite guarantee for the RJSF component
+// itself, which the other three form domains (content, foundations,
+// categories, words-to-avoid) still use. See
+// FrontmatterYamlSurface.test.tsx's "byte-identical content" test for the
+// routed-path equivalent of this basedOnSha assertion.
 test("staging an app-context record carries the remote blob sha (stale-base detectable)", async () => {
   cleanup();
   submissionCartSingleton.clear();
@@ -48,7 +64,10 @@ test("staging an app-context record carries the remote blob sha (stale-base dete
 
   const gh = fakeGh({
     "schemas/app-context-entity.json": { content: SCHEMA, sha: "SCHEMA_SHA" },
-    [ENTITY_PATH]: { content: "---\nlabel: Dataset\n---\nprose body\n", sha: REMOTE_SHA },
+    [ENTITY_PATH]: {
+      content: "---\nlabel: Dataset\n---\nprose body\n",
+      sha: REMOTE_SHA,
+    },
   });
 
   const { container } = render(
@@ -73,7 +92,9 @@ test("staging an app-context record carries the remote blob sha (stale-base dete
     fireEvent.submit(form!);
   });
 
-  const entry = submissionCartSingleton.list().find((e) => e.path === ENTITY_PATH);
+  const entry = submissionCartSingleton
+    .list()
+    .find((e) => e.path === ENTITY_PATH);
   assert.ok(entry, "record should be staged in the submission cart");
   assert.equal(
     entry!.basedOnSha,
@@ -91,11 +112,21 @@ test("staging an app-context record carries the remote blob sha (stale-base dete
     },
   } as any;
   const conflicts = await detectStaleBase(
-    [{ path: entry!.path, content: entry!.content, basedOnSha: entry!.basedOnSha }],
+    [
+      {
+        path: entry!.path,
+        content: entry!.content,
+        basedOnSha: entry!.basedOnSha,
+      },
+    ],
     driftedGh,
     { owner: "o", repo: "r", base: "main" },
   );
-  assert.equal(conflicts.length, 1, "stale base must be detected for the record");
+  assert.equal(
+    conflicts.length,
+    1,
+    "stale base must be detected for the record",
+  );
   assert.equal(conflicts[0]!.path, ENTITY_PATH);
 
   submissionCartSingleton.clear();

@@ -149,9 +149,14 @@ export function FrontmatterBodyEditScreen(props: Props) {
   fmTextRef.current = fmText;
   // Latest-value mirrors. The body editors (Milkdown's useEditor([]) and
   // CodeMirror's useEffect([])) FREEZE their onChange at mount, capturing the
-  // formData/body of that render. Reading these refs in the flush handlers keeps
-  // a body edit from flushing the cart with stale frontmatter (and vice-versa),
-  // which would silently revert an interleaved field edit.
+  // formData/body of that render. Reading these refs at the CALL SITE (the
+  // moment a body edit or the "Add to batch" click passes a snapshot into
+  // scheduleFlush/flushToCart) keeps a body edit from staging stale
+  // frontmatter (and vice-versa), which would silently revert an interleaved
+  // field edit. None of these refs is ever read inside flushToCart itself —
+  // only the fd/b/fm arguments it was called with — so a flush that fires
+  // after the screen has moved on to a different file still stages the
+  // snapshot taken when it was scheduled, not whatever the refs hold by then.
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
   const bodyRef = useRef(body);
@@ -341,18 +346,25 @@ export function FrontmatterBodyEditScreen(props: Props) {
   }, [path, schemaKey, octokit, frontmatterOptional]);
 
   const flushToCart = useCallback(
-    (fd: unknown, b: string) => {
+    (fd: unknown, b: string, fm: string) => {
       if (state.kind !== "ready") return;
       // surface === "yaml": the pane edits the frontmatter TEXT directly, so
       // assembly is plain concatenation of that text (never a re-serialized
-      // `fd`) — see assembleYaml.ts. Otherwise, preserveComments
-      // (content/foundations): use the Document-merge path so `#` comments
-      // interleaved between data lines survive the save. Otherwise the
-      // flow-depth path: yamlFlowAtDepth undefined → default (2); null →
-      // block-style. assembleFrontmatterFile accepts null; default is 2.
+      // `fd`) — see assembleYaml.ts. `fm` is a SNAPSHOT taken at the moment
+      // this flush was scheduled (or at click time for the button), never a
+      // live ref read here: a debounced flush can fire after the screen has
+      // navigated to a different file, and `state`/`path` above are already
+      // stale-checked by the `state.kind !== "ready"` guard above, but a ref
+      // read at flush time would silently pull in that OTHER file's live
+      // frontmatter text instead of the text that was on screen when this
+      // flush was armed. Otherwise, preserveComments (content/foundations):
+      // use the Document-merge path so `#` comments interleaved between data
+      // lines survive the save. Otherwise the flow-depth path: yamlFlowAtDepth
+      // undefined → default (2); null → block-style. assembleFrontmatterFile
+      // accepts null; default is 2.
       const content =
         surface === "yaml"
-          ? assembleYamlFrontmatterFile(fmTextRef.current, b)
+          ? assembleYamlFrontmatterFile(fm, b)
           : preserveComments
             ? assembleFrontmatterFilePreservingComments(
                 fd,
@@ -376,9 +388,16 @@ export function FrontmatterBodyEditScreen(props: Props) {
   );
 
   const scheduleFlush = useCallback(
-    (fd: unknown, b: string) => {
+    (fd: unknown, b: string, fm: string) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => flushToCart(fd, b), 1000);
+      // fd/b/fm are all snapshotted HERE, at schedule time — not re-read from
+      // any ref when the timer fires. A path change never cancels this timer
+      // (a user who edits and navigates away within the debounce window
+      // should still get their edit staged under the file they edited), so
+      // by the time it fires `path`/`state` may already describe a different
+      // file; only the closed-over snapshot can be trusted to describe the
+      // edit that armed it.
+      debounceRef.current = setTimeout(() => flushToCart(fd, b, fm), 1000);
     },
     [flushToCart],
   );
@@ -519,7 +538,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
                       initialText={body}
                       onChange={(t) => {
                         setBody(t);
-                        scheduleFlush(formData, t);
+                        scheduleFlush(formData, t, fmTextRef.current);
                       }}
                       filename={path.split("/").pop()}
                       componentSlug={componentSlugFromPath(path)}
@@ -537,7 +556,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
                     initialText={body}
                     onChange={(t) => {
                       setBody(t);
-                      scheduleFlush(formDataRef.current, t);
+                      scheduleFlush(formDataRef.current, t, fmTextRef.current);
                     }}
                     onReady={setCmView}
                     onCursorLineChange={handleCursorLineChange}
@@ -553,7 +572,12 @@ export function FrontmatterBodyEditScreen(props: Props) {
           type={surface === "yaml" ? "button" : "submit"}
           onClick={
             surface === "yaml"
-              ? () => flushToCart(formDataRef.current, bodyRef.current)
+              ? () =>
+                  flushToCart(
+                    formDataRef.current,
+                    bodyRef.current,
+                    fmTextRef.current,
+                  )
               : undefined
           }
         >
@@ -586,7 +610,12 @@ export function FrontmatterBodyEditScreen(props: Props) {
       {surface === "yaml" ? (
         <Box>
           <Box
-            className={fmCollapsed ? "fm-collapsed" : undefined}
+            // fm-yaml-pane pairs with the .fm-collapsed rule in base.css
+            // (`.fm-yaml-pane.fm-collapsed { display: none; }`) — the RJSF
+            // branch below relies on a form.fm-form.fm-collapsed selector,
+            // which never matches this plain Box, so the pane needs its own
+            // class to make the same toggle actually hide it.
+            className={"fm-yaml-pane" + (fmCollapsed ? " fm-collapsed" : "")}
             style={{
               border: "1px solid var(--gray-5)",
               borderRadius: 6,
@@ -599,7 +628,9 @@ export function FrontmatterBodyEditScreen(props: Props) {
               schema={state.schema}
               onChange={(t) => {
                 setFmText(t);
-                scheduleFlush(formDataRef.current, bodyRef.current);
+                // `t` is the pane's own new text — the correct snapshot to
+                // arm the debounce with, taken at the moment it changed.
+                scheduleFlush(formDataRef.current, bodyRef.current, t);
               }}
             />
           </Box>
@@ -615,9 +646,11 @@ export function FrontmatterBodyEditScreen(props: Props) {
           templates={frontmatterTemplates}
           onChange={(next) => {
             setFormData(next);
-            scheduleFlush(next, bodyRef.current);
+            scheduleFlush(next, bodyRef.current, fmTextRef.current);
           }}
-          onSubmit={(next) => flushToCart(next, bodyRef.current)}
+          onSubmit={(next) =>
+            flushToCart(next, bodyRef.current, fmTextRef.current)
+          }
           submitLabel="Add to batch"
         >
           {editorBody}

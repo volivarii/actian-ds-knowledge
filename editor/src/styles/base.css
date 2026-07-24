@@ -350,6 +350,16 @@ form.fm-form.fm-collapsed > *:not(.fm-form-children) {
   display: none;
 }
 
+/* YAML frontmatter pane collapse (surface: "yaml" branch of
+   FrontmatterBodyEditScreen): the pane wrapper is a plain Box, not the RJSF
+   <form>, so it gets its own class rather than matching the rule above. The
+   prose body + submit row live as a SIBLING of this Box (not a child), so
+   collapsing it entirely (rather than excepting a children wrapper) is
+   sufficient here — unlike the RJSF form case. */
+.fm-yaml-pane.fm-collapsed {
+  display: none;
+}
+
 /* Cross-surface relation highlight (crossSurfaceHighlight): hovering or
    focusing an inline typed link (.md-ref) or a relations-rail row lights every
    element sharing its data-ref. The accent alpha reads on both themes and

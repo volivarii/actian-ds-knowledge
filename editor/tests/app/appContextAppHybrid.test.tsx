@@ -94,6 +94,12 @@ test("app renders the markdown body editor (not bodyless)", async () => {
   cleanup();
 });
 
+// Renders FrontmatterBodyEditScreen without `surface`, so it exercises the
+// RJSF branch directly rather than the routed production path — production
+// now always passes surface="yaml" for app-context/src/apps paths
+// (frontmatterForms.ts). Kept because it still guards the RJSF dropdown
+// widget, which the other three form domains still use; not coverage of
+// what app-context users actually get.
 test("header.type renders as a dropdown with the known variants", async () => {
   cleanup();
   globalThis.sessionStorage.clear();
@@ -152,6 +158,12 @@ test("renders CodeMirror (not RichBodyEditor) when the wysiwyg flag is off", asy
   cleanup();
 });
 
+// Renders FrontmatterBodyEditScreen without `surface`, so it exercises the
+// RJSF branch directly rather than the routed production path — production
+// now always passes surface="yaml" for app-context/src/apps paths
+// (frontmatterForms.ts). Kept because it still guards the RJSF disclosure
+// template, which the other three form domains still use; not coverage of
+// what app-context users actually get.
 test("structured fields collapse under an App settings disclosure", async () => {
   cleanup();
   globalThis.sessionStorage.clear();

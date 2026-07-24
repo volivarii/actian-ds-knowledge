@@ -52,6 +52,7 @@ test("every other domain keeps the form surface in this slice", () => {
     "content/src/patterns/forms.md",
     "foundations/src/tokens.md",
     "components/src/categories/action.md",
+    "content/src/writing/words-to-avoid.md",
   ]) {
     const cfg = matchFrontmatterForm(p);
     assert.ok(cfg, `${p} should still match a form config`);
