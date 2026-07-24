@@ -164,16 +164,32 @@ export function FrontmatterBodyEditScreen(props: Props) {
   // Keyed by path, not a single slot: scheduling a flush for one file must
   // cancel only THAT file's own pending timer, never another file's. See
   // scheduleFlush below for why a shared single slot silently dropped a
-  // foreign file's armed edit the moment the user typed anywhere else.
-  const debounceRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
-    new Map(),
-  );
-  // A debounced flush firing after this screen has been torn down entirely
-  // (not just navigated to another file — the same instance survives that,
-  // see scheduleFlush) would write to a cart nothing is left to read from.
+  // foreign file's armed edit the moment the user typed anywhere else. Each
+  // entry pairs the timer handle with the same `run` closure the timer would
+  // have invoked, so the unmount effect below can fire it directly instead
+  // of only being able to cancel it.
+  const debounceRef = useRef<
+    Map<string, { timer: ReturnType<typeof setTimeout>; run: () => void }>
+  >(new Map());
+  // A pending debounce at unmount still holds up to a second of the user's
+  // most recent edit. flushToCart's only effect is
+  // `submissionCartSingleton.add(...)` — a module-level, localStorage-backed
+  // singleton (store-instance.ts) that outlives this screen (EditorShell
+  // swaps this component out the moment the user opens a different file, or
+  // any other screen) and performs no React state write. That makes firing
+  // it here, after the component tree has already unmounted, safe by
+  // construction: there is nothing left to read from React state, only the
+  // cart to write to. So on unmount this FIRES every pending timer's flush
+  // immediately (clearing the timer itself only to stop it firing a second,
+  // redundant time) rather than discarding it — clearing without firing
+  // (the previous behavior) silently dropped the last second of typing the
+  // instant the user navigated away.
   useEffect(() => {
     return () => {
-      for (const timer of debounceRef.current.values()) clearTimeout(timer);
+      for (const pending of debounceRef.current.values()) {
+        clearTimeout(pending.timer);
+        pending.run();
+      }
       debounceRef.current.clear();
     };
   }, []);
@@ -424,12 +440,13 @@ export function FrontmatterBodyEditScreen(props: Props) {
       // dropping a foreign file's armed edit.)
       const key = path;
       const pending = debounceRef.current.get(key);
-      if (pending) clearTimeout(pending);
-      const timer = setTimeout(() => {
+      if (pending) clearTimeout(pending.timer);
+      const run = () => {
         debounceRef.current.delete(key);
         flushToCart(fd, b, fm);
-      }, 1000);
-      debounceRef.current.set(key, timer);
+      };
+      const timer = setTimeout(run, 1000);
+      debounceRef.current.set(key, { timer, run });
     },
     [path, flushToCart],
   );

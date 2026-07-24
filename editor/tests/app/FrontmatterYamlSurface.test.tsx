@@ -156,7 +156,11 @@ test("staging an untouched record produces byte-identical content", async () => 
     />,
   );
   await screen.findByTestId("yaml-frontmatter-editor", {}, { timeout: 5000 });
-  const button = await screen.findByRole("button", { name: "Add to batch" });
+  const button = await screen.findByRole(
+    "button",
+    { name: "Add to batch" },
+    { timeout: 5000 },
+  );
   fireEvent.click(button);
   const staged = submissionCartSingleton
     .list()
@@ -200,7 +204,11 @@ test("staging an EDITED record reflects the edit, not a stale fmText closure", a
   view!.dispatch({
     changes: { from: view!.state.doc.length, insert: "\nnote: edited" },
   });
-  const button = await screen.findByRole("button", { name: "Add to batch" });
+  const button = await screen.findByRole(
+    "button",
+    { name: "Add to batch" },
+    { timeout: 5000 },
+  );
   fireEvent.click(button);
   const staged = submissionCartSingleton
     .list()
@@ -489,5 +497,60 @@ test("typing in file B while A's debounce is pending does not cancel A's timer",
     stagedB!.content,
     /note: edited-b/,
     "B's cart entry must contain B's own edit",
+  );
+});
+
+// The unmount cleanup used to CLEAR pending debounce timers (justified by a
+// comment claiming a late flush "would write to a cart nothing is left to
+// read from" — wrong, since submissionCartSingleton is a module-level,
+// localStorage-backed singleton that outlives this screen, and flushToCart
+// performs no React state write). That silently dropped up to a second of
+// typing every time the user navigated away before the debounce elapsed.
+// The fix FIRES the pending timer's flush on unmount instead of discarding
+// it, so this asserts the edit reaches the cart even though unmount() fires
+// well before the 1000ms debounce would have elapsed on its own.
+test("an edit still reaches the cart when the screen unmounts before the debounce elapses", async () => {
+  const { unmount } = render(
+    <FrontmatterBodyEditScreen
+      path={PATH_A}
+      schemaKey="app-context-entity"
+      uiSchema={{}}
+      surface="yaml"
+      octokit={fakeOctokit()}
+    />,
+  );
+  const host = await screen.findByTestId(
+    "yaml-frontmatter-editor",
+    {},
+    { timeout: 5000 },
+  );
+  const view = EditorView.findFromDOM(host);
+  assert.ok(view, "expected a live EditorView attached to the pane");
+
+  // Arms the 1000ms debounce; nowhere near elapsed by the time unmount()
+  // runs a few lines down.
+  view!.dispatch({
+    changes: {
+      from: view!.state.doc.length,
+      insert: "\nnote: unmounted-mid-debounce",
+    },
+  });
+  assert.equal(
+    submissionCartSingleton.list().find((e) => e.path === PATH_A),
+    undefined,
+    "sanity: the debounce must not have fired yet",
+  );
+
+  unmount();
+
+  const staged = submissionCartSingleton.list().find((e) => e.path === PATH_A);
+  assert.ok(
+    staged,
+    "expected the pending debounce to flush to the cart on unmount, not be silently dropped",
+  );
+  assert.match(
+    staged!.content,
+    /note: unmounted-mid-debounce/,
+    "the flushed content must carry the edit that was still pending at unmount",
   );
 });
