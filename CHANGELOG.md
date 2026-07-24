@@ -195,7 +195,11 @@ Each entry links its pull request. Dates are the merge date (UTC).
   RJSF form, "Add to batch" only fired once the record validated against its schema; the YAML pane's
   button stages unconditionally, so a record with a schema error can now be added to the batch (the
   inline lint squiggle still shows it while editing, and `validate-app-context.js` still catches it
-  in PR CI before merge). ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD))
+  in PR CI before merge). The pane also documents itself: hovering a key shows its schema
+  description, type, required status, and any example values straight from the same schema
+  (`schemaHover.ts`), and a one-line caption above the pane surfaces the schema's own root
+  description plus a hint to hover a key, so an author who has never seen the file type has
+  somewhere to start. ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD))
 
 ### Removed
 - **The 35 frozen seed renders and the all-35 oracle** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
