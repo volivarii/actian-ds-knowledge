@@ -95,7 +95,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   quietly undone the choice on the next reload. Being on by default is only safe because it is not
   the only gate. `shouldUseWysiwyg` still intersects the flag with the CI-derived rich-safe set, so
   a file whose Milkdown round-trip is unproven keeps opening in the source pane no matter what the
-  flag says.
+  flag says. ([#503](https://github.com/volivarii/actian-ds-knowledge/pull/503))
 
 ### Added
 
@@ -107,6 +107,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   a comment, and a test fails if a `--md-*` name referenced in `src/` is not declared. The rich
   surface previously inherited only table borders, so prose ran edge to edge with user-agent
   paragraph margins that stacked inside table cells and made rows read as enormous.
+  ([#503](https://github.com/volivarii/actian-ds-knowledge/pull/503))
 
 - **Every canonical render is now actually checked, and the report says how much of it we can check
   at all.** The fidelity gate filtered renders on a `source: "derived"` marker that no render
