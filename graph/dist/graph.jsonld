@@ -5194,6 +5194,11 @@
       "title": "Focus Ring Rules"
     },
     {
+      "@id": "foundation:design-guidelines/mouse-cursor",
+      "@type": "FoundationSection",
+      "title": "Mouse cursor"
+    },
+    {
       "@id": "foundation:design-guidelines/placeholder-text",
       "@type": "FoundationSection",
       "title": "Placeholder Text"
@@ -13529,6 +13534,12 @@
       "edgeType": "narrower",
       "source": "foundation:design-guidelines",
       "target": "foundation:design-guidelines/focus-ring-rules"
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "narrower",
+      "source": "foundation:design-guidelines",
+      "target": "foundation:design-guidelines/mouse-cursor"
     },
     {
       "@type": "Edge",
