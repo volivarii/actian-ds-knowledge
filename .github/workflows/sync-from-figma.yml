@@ -190,7 +190,10 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          MARKER="<!-- rolling-tracker: breaking-sync -->"
           # Idempotent: the marker label must exist before create/edit can use it.
+          # The label is now a convenience for humans filtering the issue list, NOT
+          # the dedupe key (see the marker note below).
           gh label create sync-breaking \
             --repo "$REPO" \
             --color B60205 \
@@ -200,6 +203,16 @@ jobs:
           TITLE="Breaking Figma sync — needs follow-through (latest: ${DATE})"
           BODY_FILE=/tmp/breaking-issue-body.md
           {
+            # Dedupe marker, in the BODY. The label alone was the dedupe key until
+            # 2026-07-29 and it silently stopped applying: `gh issue create
+            # --label sync-breaking` reported success while creating an UNLABELLED
+            # issue, so the next night's label lookup found nothing and opened
+            # another one. Five duplicates (#504-#508) before anyone noticed, all
+            # while the step printed "Opened rolling breaking-sync issue." A marker
+            # we write ourselves cannot half-apply: it is either in the body we
+            # just posted or the post failed.
+            echo "$MARKER"
+            echo ""
             echo "**A breaking Figma sync landed and needs a human to carry it through.** A breaking"
             echo "sync is never mergeable as-is: it typically renames a slug, retires a variant, or"
             echo "re-grounds colours, each of which touches editable source the sync cannot edit for you."
@@ -226,16 +239,56 @@ jobs:
             fi
           } > "$BODY_FILE"
 
-          EXISTING=$(gh issue list --repo "$REPO" --label sync-breaking --state open \
-            --json number --jq '.[0].number // empty')
+          # Find the tracker by the marker in its body. Listed and filtered locally
+          # rather than via `--search "... in:body"`, because code search is an
+          # index with its own lag and this must be exact on the run that follows
+          # a create.
+          # Whole list captured per call, never piped into `head`: under
+          # `pipefail` an early-closing reader can SIGPIPE gh and fail the step
+          # for a reason that has nothing to do with the query.
+          SCAN_LIMIT=500
+          trackers() {
+            gh issue list --repo "$REPO" --state open --limit "$SCAN_LIMIT" \
+              --json number,body \
+              --jq '[.[] | select(.body != null and (.body | contains("'"$MARKER"'"))) | .number] | sort | .[]'
+          }
+          count_trackers() {
+            printf '%s' "$1" | grep -c . || true
+          }
+
+          # The scan is bounded, so say when the bound is reached. An unreported
+          # cap is how the dedupe would start failing again: the tracker sits
+          # past the horizon, the lookup finds nothing, and a duplicate opens
+          # while every message still reads like success.
+          OPEN_COUNT=$(gh issue list --repo "$REPO" --state open --limit "$SCAN_LIMIT" --json number --jq 'length')
+          if [ "$OPEN_COUNT" -ge "$SCAN_LIMIT" ]; then
+            echo "::warning::Scanned ${OPEN_COUNT} open issues, which is the ${SCAN_LIMIT} cap: the tracker lookup may be truncated. Raise SCAN_LIMIT."
+          fi
+
+          FOUND=$(trackers)
+          EXISTING=$(printf '%s\n' "$FOUND" | sed -n '1p')
+
           if [ -n "$EXISTING" ]; then
-            gh issue edit "$EXISTING" --repo "$REPO" --title "$TITLE" --body-file "$BODY_FILE"
+            gh issue edit "$EXISTING" --repo "$REPO" --title "$TITLE" --body-file "$BODY_FILE" \
+              --add-label sync-breaking
             echo "Updated rolling breaking-sync issue #${EXISTING}."
           else
             gh issue create --repo "$REPO" --label sync-breaking \
               --title "$TITLE" --body-file "$BODY_FILE"
             echo "Opened rolling breaking-sync issue."
           fi
+
+          # Assert the postcondition this step exists to produce: ONE open tracker.
+          # The old step's success message was "I ran", not "it worked", which is how
+          # five duplicates accumulated unremarked. Anything other than exactly one
+          # means the dedupe is broken again, and saying so here is the whole point.
+          AFTER=$(trackers)
+          COUNT=$(count_trackers "$AFTER")
+          if [ "$COUNT" != "1" ]; then
+            echo "::error::Expected exactly 1 open breaking-sync tracker after this step, found ${COUNT}. Dedupe is broken: $(printf '%s' "$AFTER" | tr '\n' ' ')"
+            exit 1
+          fi
+          echo "Postcondition OK: exactly 1 open breaking-sync tracker."
 
       - name: Summarize
         if: always()
@@ -280,16 +333,35 @@ jobs:
           VERDICT: ${{ steps.verdict.outputs.category }}
         # Best-effort (the job has already failed; don't mask the real error).
         run: |
+          # The sync classifies its own failure so this issue can state the real
+          # remedy. `auth` means Figma rejected the credential on every phase; an
+          # expired PAT went undiagnosed for 11 nights (2026-07-30 onward) while
+          # this issue advised hunting a dangling icon override, which is the
+          # right advice for `content` and a wasted log-read for `auth`.
+          KIND=none
+          if [ -f /tmp/sync-failure-kind.txt ]; then
+            KIND=$(tr -d '[:space:]' < /tmp/sync-failure-kind.txt)
+          fi
+          if [ "$KIND" = "auth" ]; then
+            TITLE="🔑 Figma sync is failing: the Figma credential is rejected"
+            CAUSE="**Figma rejected the credential on every phase** (401/403 \`Token has expired\` / \`Invalid token\`), so no phase reached any content. Rotate the Figma PAT and update the \`FIGMA_KEYS_JSON\` repo secret, then re-run this workflow. Nothing in the log indicates a content or curated-override problem, and no upstream change has been observed since the credential stopped working, so treat every day since as unobserved rather than unchanged."
+          else
+            TITLE="🔴 Figma sync is failing"
+            CAUSE="Common cause: a Figma component was renamed/removed so a curated override now dangles (e.g. an icon slug in \`components/src/icons-svg.json\`). The icons phase warn-skips dangling *curated* slugs; check the run log for the failing phase."
+          fi
           # One tracking issue, not one per night: ensure the dedupe label, then
           # comment on the open issue if present, else open a new one.
           gh label create sync-failure --color B60205 --description "Nightly Figma sync is failing" 2>/dev/null || true
           existing=$(gh issue list --state open --label sync-failure --json number --jq '.[0].number // empty' 2>/dev/null || true)
-          note="Run: $RUN_URL"$'\n'"Verdict: \`${VERDICT:-unknown}\`"
+          note="Run: $RUN_URL"$'\n'"Verdict: \`${VERDICT:-unknown}\` · Failure kind: \`${KIND}\`"
           if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body "Still failing. $note" || true
+            # Re-title too: a run that starts failing for a NEW reason must not keep
+            # wearing the old diagnosis (this issue is long-lived by design).
+            gh issue edit "$existing" --title "$TITLE" || true
+            gh issue comment "$existing" --body "Still failing. $note"$'\n\n'"$CAUSE" || true
           else
-            gh issue create --title "🔴 Figma sync is failing" --label sync-failure \
-              --body "The nightly **Sync from Figma** workflow failed and will keep failing until fixed."$'\n\n'"$note"$'\n\n'"Common cause: a Figma component was renamed/removed so a curated override now dangles (e.g. an icon slug in \`components/src/icons-svg.json\`). The icons phase warn-skips dangling *curated* slugs; check the run log for the failing phase. This issue auto-closes when a sync next succeeds." || true
+            gh issue create --title "$TITLE" --label sync-failure \
+              --body "The nightly **Sync from Figma** workflow failed and will keep failing until fixed."$'\n\n'"$note"$'\n\n'"$CAUSE"$'\n\n'"This issue auto-closes when a sync next succeeds." || true
           fi
 
       # Category drift is a GREEN outcome, not a failure: a Figma reorg
