@@ -6,6 +6,7 @@ import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { FrontmatterBodyEditScreen } from "../../src/app/FrontmatterBodyEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
+import { setWysiwygFlag } from "../helpers/editorSurface";
 
 function b64(s: string) {
   return Buffer.from(s, "utf8").toString("base64");
@@ -38,7 +39,7 @@ const FILE = "---\ntitle: Forms\n---\n\nBody prose.\n";
 test("schema-fetch failure degrades to raw editing, not a hard error banner", async () => {
   cleanup();
   submissionCartSingleton.clear();
-  globalThis.sessionStorage.clear();
+  setWysiwygFlag("source");
 
   // NOTE: no `schemas/content.json` entry → the schema fetch 404s.
   const gh = fakeGh({ [CONTENT_PATH]: { content: FILE, sha: "F1" } });

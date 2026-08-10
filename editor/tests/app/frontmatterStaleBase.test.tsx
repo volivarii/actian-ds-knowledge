@@ -7,6 +7,7 @@ import { Theme } from "@radix-ui/themes";
 import { FrontmatterBodyEditScreen } from "../../src/app/FrontmatterBodyEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
 import { detectStaleBase } from "../../src/core/staleBase";
+import { setWysiwygFlag } from "../helpers/editorSurface";
 
 function b64(s: string) {
   return Buffer.from(s, "utf8").toString("base64");
@@ -53,7 +54,7 @@ const REMOTE_SHA = "ENTITY_SHA_1";
 test("staging an app-context record carries the remote blob sha (stale-base detectable)", async () => {
   cleanup();
   submissionCartSingleton.clear();
-  globalThis.sessionStorage.clear();
+  setWysiwygFlag("source");
 
   const gh = fakeGh({
     "schemas/app-context-entity.json": { content: SCHEMA, sha: "SCHEMA_SHA" },

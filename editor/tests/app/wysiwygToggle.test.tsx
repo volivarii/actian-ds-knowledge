@@ -1,11 +1,18 @@
 import "../setup-happy-dom";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { render, screen, cleanup, waitFor, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  cleanup,
+  waitFor,
+  fireEvent,
+} from "@testing-library/react";
 import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { EditorShell } from "../../src/app/EditorShell";
 import { isWysiwygEnabled } from "../../src/lib/editorFlags";
+import { assertNoElement } from "../helpers/editorSurface";
 
 // happy-dom lacks sessionStorage/localStorage -- minimal in-memory stubs.
 // Reuse the same pattern as contentA11yWysiwyg.test.tsx.
@@ -17,9 +24,15 @@ for (const key of ["sessionStorage", "localStorage"] as const) {
       writable: true,
       value: {
         getItem: (k: string) => store[k] ?? null,
-        setItem: (k: string, v: string) => { store[k] = v; },
-        removeItem: (k: string) => { delete store[k]; },
-        clear: () => { for (const k of Object.keys(store)) delete store[k]; },
+        setItem: (k: string, v: string) => {
+          store[k] = v;
+        },
+        removeItem: (k: string) => {
+          delete store[k];
+        },
+        clear: () => {
+          for (const k of Object.keys(store)) delete store[k];
+        },
       },
     });
   }
@@ -40,84 +53,107 @@ const fakeGh = (text: string) =>
     pulls: {},
   }) as any;
 
-test("Sidebar WYSIWYG toggle: off→on persists to localStorage and re-renders", async () => {
+// The rich editor is the DEFAULT now, so this toggle is an opt-OUT and its
+// first click turns the editor OFF. The opt-out has to be WRITTEN ("0"), not
+// recorded by removing the key: an absent key is "never chose", which reads as
+// on, so a removed key would silently undo the author's choice on reload.
+test("Sidebar rich-text toggle: on→off persists the opt-out and re-renders", async () => {
   cleanup();
   globalThis.localStorage.clear();
   globalThis.sessionStorage.clear();
 
   render(
     <Theme>
-      <EditorShell
-        octokit={fakeGh(FILE)}
-        activePath={CONTENT_SAFE}
-      />
-    </Theme>
+      <EditorShell octokit={fakeGh(FILE)} activePath={CONTENT_SAFE} />
+    </Theme>,
   );
 
   // Wait for sidebar to be present (needs entries to load — but fakeGh is instant)
   // The toggle is rendered regardless of entries load state (it's in the footer).
   const toggle = await waitFor(
-    () => screen.getByRole("switch", { name: /wysiwyg editor/i }),
-    { timeout: 5000 }
+    () => screen.getByRole("switch", { name: /rich text editor/i }),
+    { timeout: 5000 },
   );
 
-  // Flag is OFF initially
-  assert.equal(isWysiwygEnabled(), false, "flag should be off initially");
-  assert.equal(toggle.getAttribute("aria-checked"), "false", "switch should be unchecked");
+  // Nothing stored = the author has not chosen = ON.
+  assert.equal(isWysiwygEnabled(), true, "flag should default to on");
+  assert.equal(
+    toggle.getAttribute("aria-checked"),
+    "true",
+    "switch should start checked",
+  );
 
-  // Flip it ON
+  // Flip it OFF
   fireEvent.click(toggle);
 
-  // localStorage should now have the key
-  assert.equal(globalThis.localStorage.getItem("editor.wysiwyg"), "1", "localStorage key should be set after toggle on");
-  assert.equal(isWysiwygEnabled(), true, "isWysiwygEnabled() should return true");
+  assert.equal(
+    globalThis.localStorage.getItem("editor.wysiwyg"),
+    "0",
+    "opting out must WRITE '0'; removing the key would read as 'never chose' (on)",
+  );
+  assert.equal(isWysiwygEnabled(), false, "isWysiwygEnabled() should be false");
 
-  // The switch should be checked
+  // The switch should be unchecked
   await waitFor(
-    () => assert.equal(screen.getByRole("switch", { name: /wysiwyg editor/i }).getAttribute("aria-checked"), "true"),
-    { timeout: 2000 }
+    () =>
+      assert.equal(
+        screen
+          .getByRole("switch", { name: /rich text editor/i })
+          .getAttribute("aria-checked"),
+        "false",
+      ),
+    { timeout: 2000 },
   );
 
-  // Flip it back OFF
-  fireEvent.click(screen.getByRole("switch", { name: /wysiwyg editor/i }));
-  assert.equal(isWysiwygEnabled(), false, "isWysiwygEnabled() should return false after toggle off");
-  assert.equal(globalThis.localStorage.getItem("editor.wysiwyg"), null, "localStorage key should be removed");
+  // Flip it back ON
+  fireEvent.click(screen.getByRole("switch", { name: /rich text editor/i }));
+  assert.equal(isWysiwygEnabled(), true, "toggling back on should re-enable");
+  assert.equal(
+    globalThis.localStorage.getItem("editor.wysiwyg"),
+    "1",
+    "opting back in should record '1'",
+  );
 
   cleanup();
   globalThis.localStorage.clear();
   globalThis.sessionStorage.clear();
 });
 
-test("Sidebar WYSIWYG toggle: toggling on with SAFE content file causes body-editor to appear", async () => {
+// Same live-swap guarantee as before, read in the direction the toggle now runs:
+// the surface has to change without a reload.
+test("Sidebar rich-text toggle: toggling off with a SAFE content file swaps the body editor away", async () => {
   cleanup();
   globalThis.localStorage.clear();
   globalThis.sessionStorage.clear();
 
   render(
     <Theme>
-      <EditorShell
-        octokit={fakeGh(FILE)}
-        activePath={CONTENT_SAFE}
-      />
-    </Theme>
+      <EditorShell octokit={fakeGh(FILE)} activePath={CONTENT_SAFE} />
+    </Theme>,
   );
 
   const toggle = await waitFor(
-    () => screen.getByRole("switch", { name: /wysiwyg editor/i }),
-    { timeout: 5000 }
+    () => screen.getByRole("switch", { name: /rich text editor/i }),
+    { timeout: 5000 },
   );
 
-  // Flag off -> no WYSIWYG body editor role
-  await waitFor(() => assert.ok(screen.getByText(CONTENT_SAFE)), { timeout: 5000 });
-  assert.equal(screen.queryByRole("textbox", { name: /body editor/i }), null, "WYSIWYG should be off initially");
-
-  // Flip ON
-  fireEvent.click(toggle);
-
-  // WYSIWYG body editor should now appear (no reload)
+  // Default on -> the rich body editor is present for a safe file.
   await waitFor(
     () => assert.ok(screen.getByRole("textbox", { name: /body editor/i })),
-    { timeout: 5000 }
+    { timeout: 5000 },
+  );
+
+  // Flip OFF
+  fireEvent.click(toggle);
+
+  // The rich body editor should disappear (no reload).
+  await waitFor(
+    () =>
+      assertNoElement(
+        screen.queryByRole("textbox", { name: /body editor/i }),
+        "opting out should swap back to CodeMirror",
+      ),
+    { timeout: 5000 },
   );
 
   cleanup();

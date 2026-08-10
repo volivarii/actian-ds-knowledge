@@ -1377,7 +1377,7 @@ export function Sidebar({
             size="1"
             checked={wysiwygOn}
             onCheckedChange={onToggleWysiwyg}
-            aria-label="Toggle WYSIWYG editor alpha"
+            aria-label="Toggle rich text editor"
           />
           <Text
             as="label"
@@ -1385,8 +1385,9 @@ export function Sidebar({
             size="1"
             color="gray"
             style={{ cursor: "pointer" }}
+            title="On by default. Turn off to edit raw markdown. Files whose formatting cannot be round-tripped safely always open as markdown."
           >
-            WYSIWYG editor (alpha)
+            Rich text editor
           </Text>
         </Flex>
       )}

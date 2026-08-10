@@ -13,6 +13,7 @@ import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { MarkdownEditScreen } from "../../src/app/MarkdownEditScreen";
 import { draftStoreSingleton } from "../../src/drafts/store-instance";
+import { setWysiwygFlag, assertNoElement } from "../helpers/editorSurface";
 
 // File-level, not inline per test: an inline cleanup() after the last
 // assertion is skipped the moment that assertion throws, leaking a mounted
@@ -65,8 +66,7 @@ const UNSAFE = "foundations/src/AUTHORING.md";
 const FILE = "## 3. Guidelines {#g}\n\nProse.\n";
 
 test("SAFE foundations file renders RichBodyEditor when the wysiwyg flag is on", async () => {
-  globalThis.localStorage.clear();
-  globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
+  setWysiwygFlag("rich");
   render(
     <Theme>
       <MarkdownEditScreen path={SAFE} octokit={fakeGh(FILE)} />
@@ -76,38 +76,34 @@ test("SAFE foundations file renders RichBodyEditor when the wysiwyg flag is on",
     () => assert.ok(screen.getByRole("textbox", { name: /body editor/i })),
     { timeout: 5000 },
   );
-  globalThis.sessionStorage.clear();
 });
 
 test("UNSAFE foundations file (AUTHORING) stays CodeMirror even with the flag on", async () => {
-  globalThis.localStorage.clear();
-  globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
+  setWysiwygFlag("rich");
   render(
     <Theme>
       <MarkdownEditScreen path={UNSAFE} octokit={fakeGh(FILE)} />
     </Theme>,
   );
   await waitFor(() => assert.ok(screen.getByText(UNSAFE)), { timeout: 5000 });
-  assert.equal(
+  assertNoElement(
     screen.queryByRole("textbox", { name: /body editor/i }),
-    null,
     "unsafe file must not use RichBodyEditor",
   );
-  globalThis.sessionStorage.clear();
 });
 
+// "Off" has to be STATED. This test used to express it by clearing storage,
+// which stopped meaning off the moment the flag became an opt-out.
 test("flag OFF -> CodeMirror (no body-editor role)", async () => {
-  globalThis.localStorage.clear();
-  globalThis.sessionStorage.clear();
+  setWysiwygFlag("source");
   render(
     <Theme>
       <MarkdownEditScreen path={SAFE} octokit={fakeGh(FILE)} />
     </Theme>,
   );
   await waitFor(() => assert.ok(screen.getByText(SAFE)), { timeout: 5000 });
-  assert.equal(
+  assertNoElement(
     screen.queryByRole("textbox", { name: /body editor/i }),
-    null,
     "flag-off must use CodeMirror",
   );
 });
@@ -120,9 +116,7 @@ test("flag OFF -> CodeMirror (no body-editor role)", async () => {
 // generalises onRestore to always update `text` state from `draft.text` (and
 // clear the draft), and bumps a key on RichBodyEditor to force it to re-seed.
 test("WYSIWYG restore: clicking Restore applies draft body to RichBodyEditor", async () => {
-  globalThis.localStorage.clear();
-  globalThis.sessionStorage.clear();
-  globalThis.sessionStorage.setItem("editor.wysiwyg", "1");
+  setWysiwygFlag("rich");
 
   const REMOTE_SHA = "F1";
   const REMOTE_TEXT = "## 3. Guidelines {#g}\n\nOriginal prose.\n";
@@ -173,5 +167,4 @@ test("WYSIWYG restore: clicking Restore applies draft body to RichBodyEditor", a
   );
 
   draftStoreSingleton.clear(SAFE);
-  globalThis.sessionStorage.clear();
 });

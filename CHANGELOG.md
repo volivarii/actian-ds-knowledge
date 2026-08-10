@@ -86,7 +86,28 @@ Each entry links its pull request. Dates are the merge date (UTC).
   this fails only on real drift (a renamed or removed component, a typo, a display name used where a
   slug belongs). ([#484](https://github.com/volivarii/actian-ds-knowledge/pull/484))
 
+### Changed
+
+- **The rich text editor is the default authoring surface; raw markdown is now the opt-out.** The
+  Sidebar switch reads "Rich text editor" rather than "WYSIWYG editor (alpha)", and an author who
+  has never touched it lands on the rich surface. Turning it off *writes* the opt-out rather than
+  removing the key, because an absent key means "never chose", which is on: removing it would have
+  quietly undone the choice on the next reload. Being on by default is only safe because it is not
+  the only gate. `shouldUseWysiwyg` still intersects the flag with the CI-derived rich-safe set, so
+  a file whose Milkdown round-trip is unproven keeps opening in the source pane no matter what the
+  flag says. ([#503](https://github.com/volivarii/actian-ds-knowledge/pull/503))
+
 ### Added
+
+- **The body toolbar stays put, and all three surfaces share one reading column.** The toolbar
+  renders inside the same scrolling container as the document, so in a long file it used to scroll
+  out of reach and formatting meant scrolling back to the top; it is pinned now. The rendered
+  preview, the rich edit surface and the source pane also read their measure and gutter from one
+  pair of custom properties (`--md-measure`, `--md-gutter`) instead of three copies kept in step by
+  a comment, and a test fails if a `--md-*` name referenced in `src/` is not declared. The rich
+  surface previously inherited only table borders, so prose ran edge to edge with user-agent
+  paragraph margins that stacked inside table cells and made rows read as enormous.
+  ([#503](https://github.com/volivarii/actian-ds-knowledge/pull/503))
 
 - **Every canonical render is now actually checked, and the report says how much of it we can check
   at all.** The fidelity gate filtered renders on a `source: "derived"` marker that no render

@@ -1,36 +1,52 @@
 /**
- * Opt-in WYSIWYG body editor (alpha).
+ * The rich (WYSIWYG) body editor is the DEFAULT surface; this flag is an
+ * opt-OUT.
  *
- * Enable via the Sidebar toggle (persisted to localStorage), or manually:
- *   localStorage.setItem("editor.wysiwyg", "1")
+ * Turn it off via the Sidebar toggle (persisted to localStorage), or manually:
+ *   localStorage.setItem("editor.wysiwyg", "0")
  *
- * Also accepts the legacy sessionStorage key for back-compat with anyone
- * who already set it via devtools.
+ * Being on by default is only safe because it is not the only gate:
+ * `shouldUseWysiwyg` (lib/wysiwygPaths.ts) intersects this flag with the
+ * CI-derived rich-safe set, so a file whose Milkdown round-trip is not proven
+ * still opens in the source pane no matter what this returns.
+ *
+ * Storage shape: "0" means the author opted out, "1" means they opted in
+ * (or enabled the old alpha), and an ABSENT key means they have not chosen —
+ * which is now on. That is why turning it off has to WRITE "0" rather than
+ * remove the key: a removed key is indistinguishable from never having chosen,
+ * so the opt-out would not survive a reload.
+ *
+ * sessionStorage is still read for back-compat with anyone who set the key via
+ * devtools before it was persisted to localStorage.
  */
+const KEY = "editor.wysiwyg";
+
 export function isWysiwygEnabled(): boolean {
   try {
-    return (
-      globalThis.localStorage?.getItem("editor.wysiwyg") === "1" ||
-      globalThis.sessionStorage?.getItem("editor.wysiwyg") === "1"
-    );
+    const stored =
+      globalThis.localStorage?.getItem(KEY) ??
+      globalThis.sessionStorage?.getItem(KEY);
+    // Only an explicit "0" turns it off. Absent (null/undefined) or any other
+    // value falls through to the default.
+    return stored !== "0";
   } catch {
-    return false;
+    // Storage unavailable (private browsing restrictions, etc.) — fall back to
+    // the default rather than dropping the author into the source pane.
+    return true;
   }
 }
 
 /**
- * Persist or clear the WYSIWYG flag.
- * When turning off, clears BOTH localStorage and sessionStorage so a stale
- * session value cannot re-enable the editor after an explicit opt-out.
+ * Persist the author's choice.
+ *
+ * Both directions clear the sessionStorage copy, because it is read as a
+ * fallback: a stale value there would out-vote the choice just made in either
+ * direction.
  */
 export function setWysiwygEnabled(on: boolean): void {
   try {
-    if (on) {
-      globalThis.localStorage?.setItem("editor.wysiwyg", "1");
-    } else {
-      globalThis.localStorage?.removeItem("editor.wysiwyg");
-      globalThis.sessionStorage?.removeItem("editor.wysiwyg");
-    }
+    globalThis.localStorage?.setItem(KEY, on ? "1" : "0");
+    globalThis.sessionStorage?.removeItem(KEY);
   } catch {
     // Storage unavailable (private browsing restrictions, etc.) — ignore.
   }
