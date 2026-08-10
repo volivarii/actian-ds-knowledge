@@ -20,6 +20,37 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **An expired Figma token read as a content failure for 11 nights, and the breaking-sync tracker
+  duplicated itself for 5.** ([#PR](_PR link added at open_)) Two independent reporting defects, both
+  of the same shape: a step that says what it did rather than what it achieved.
+  - The Figma PAT expired on 2026-07-30. Every phase then failed at its first request with 401
+    `Token has expired` / 403 `Token expired`, which `aggregateVerdict` reported as a bare `error` —
+    the same word a dangling curated override earns. The tracking issue duly advised checking for a
+    renamed icon slug, so the actual remedy (rotate the credential) was reachable only by reading the
+    run log, and the sync stayed red for 11 nights. The sync now classifies its own failure:
+    `failureKind()` returns `auth` when **every** error is a credential rejection, `content`
+    otherwise. A mixed run stays `content` on purpose, because an auth-only diagnosis would send a
+    reader to rotate a token and stop while a real defect went unobserved. The kind is written to
+    `/tmp/sync-failure-kind.txt` (same handoff shape as the existing drift count), and the notify step
+    titles and explains the issue from it, including the part that matters most after a credential
+    outage: the quiet days were **unobserved**, not unchanged.
+  - The breaking-sync tracker deduped on its `sync-breaking` label, and from 2026-07-25 the label
+    silently stopped applying: `gh issue create --label sync-breaking` returned success while creating
+    an unlabelled issue, so the next night's lookup found nothing and opened another. Five duplicates
+    (#504-#508) accumulated while the step printed "Opened rolling breaking-sync issue." every time.
+    Dedupe now keys on a marker the workflow writes into the body itself, which cannot half-apply, and
+    the step **asserts its own postcondition**: exactly one open tracker must exist when it finishes,
+    or it fails loudly and names the duplicates. The label stays, as a convenience for filtering
+    rather than as the mechanism. The lookup scan is bounded (500 open issues) and now says so when
+    it reaches the bound, because an unreported cap is how this would fail again: the tracker sits
+    past the horizon, the lookup finds nothing, and a duplicate opens while every message still reads
+    like success. Both the marker lookup and the assertion were exercised against a stubbed `gh`
+    across four states (tracker present, absent, already duplicated, and 500 open issues).
+
+  Note for whoever rotates the token: the five breaking syncs of 2026-07-25 to 2026-07-29 were
+  detected but never carried through, and nothing has been observed since. Those legacy trackers
+  carry no body marker, so the new dedupe will not adopt them; they want closing by hand.
+
 - **A failing editor test could take the whole machine down, and did, four times.** With the rich
   editor opt-in, a test asked for the source pane by *clearing* storage. That encoded the default
   rather than stating a choice, so the moment the default moved the same line began requesting the

@@ -651,6 +651,37 @@ function exitCodeFor(category) {
   return 0;
 }
 
+// An expired or revoked Figma credential fails EVERY phase at the first request,
+// which the verdict reports as a bare `error` — indistinguishable from a dangling
+// curated override or a renamed component. On 2026-07-30 the PAT expired and the
+// nightly stayed red for 11 nights while the tracking issue advised checking for
+// a dangling icon slug, which is the wrong first move and costs a reader the run
+// log to find out. Classifying it means the remedy can name itself.
+//
+// Matched on the API's own words: Figma answers an expired token with 401
+// "Token has expired" on the REST endpoints and 403 "Token expired" on the
+// image/nodes endpoints, and an invalid one with 403 "Invalid token".
+var FIGMA_AUTH_ERROR_RE =
+  /\b(?:401|403)\b[\s\S]*?(?:token (?:has )?expired|invalid token|not authorized|unauthorized)/i;
+
+function isAuthError(err) {
+  return FIGMA_AUTH_ERROR_RE.test(String((err && err.message) || err || ""));
+}
+
+// "auth" only when EVERY error is a credential rejection. A mixed run (one phase
+// 401s, another hits a dangling override) stays "content", because the content
+// error is the one that needs a human reading the log: an auth-only diagnosis
+// would send them to rotate a token and declare victory while a real defect
+// stayed hidden.
+function failureKind(errors) {
+  if (!errors || errors.length === 0) return "none";
+  return errors.every(function (e) {
+    return isAuthError(e && e.error);
+  })
+    ? "auth"
+    : "content";
+}
+
 // ---- Changelog assembly ----
 
 function escapeBackticks(s) {
@@ -1485,6 +1516,16 @@ async function run(opts) {
     "utf8",
   );
 
+  // Failure-kind handoff, same shape as the drift handoff above: the workflow's
+  // notify step reads it so the tracking issue can state the actual remedy
+  // ("rotate the Figma token") instead of a guess.
+  var kind = failureKind(errors);
+  fs.writeFileSync(
+    path.join(artifactsDir, "sync-failure-kind.txt"),
+    kind + "\n",
+    "utf8",
+  );
+
   // Auto-bump plugin.json patch when generated data actually changed.
   // Cowork (cloud) re-pulls plugin per session and reads from the bumped
   // version; without this, designers see stale registries/styles until the
@@ -1548,6 +1589,7 @@ async function run(opts) {
     exitCode: exitCode,
     results: results,
     errors: errors,
+    failureKind: kind,
     releasePath: releasePath,
     changelog: changelog,
     bumpedFrom: bumpedFrom,
@@ -1597,6 +1639,15 @@ if (require.main === module) {
     function (r) {
       console.log("[sync] verdict=" + r.category + " exit=" + r.exitCode);
       if (r.errors.length > 0) {
+        if (r.failureKind === "auth") {
+          // First line a reader sees, because it is the whole diagnosis: no
+          // phase got past its first request, so nothing below is about content.
+          console.error(
+            "[sync] FAILURE KIND: auth — Figma rejected the credential on every " +
+              "phase. Rotate the Figma PAT and update the FIGMA_KEYS_JSON secret; " +
+              "nothing below indicates a content or override problem.",
+          );
+        }
         r.errors.forEach(function (e) {
           console.error(
             "[sync]   error in " + e.label + ": " + e.error.message,
@@ -1623,4 +1674,6 @@ module.exports = {
   categoryCounts: categoryCounts,
   preserveKnownCategories: preserveKnownCategories,
   assertNoCategoryMassLoss: assertNoCategoryMassLoss,
+  isAuthError: isAuthError,
+  failureKind: failureKind,
 };
