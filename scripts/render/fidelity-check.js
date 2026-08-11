@@ -545,6 +545,197 @@ function runFidelityReport(ctx) {
   };
 }
 
+// The number of declarations the capture can speak to at all: the numerator of
+// oracleCoverage. `mismatch` belongs in it because the capture DID address
+// those declarations (it addressed them and disagreed, which is why they block
+// on their own line); leaving them out would make a mismatch look like a
+// coverage loss and double-report one defect as two.
+function checkableCount(totals) {
+  if (!totals) return 0;
+  return (
+    (totals.verified || 0) +
+    (totals.verifiedViaTokenName || 0) +
+    (totals.mismatch || 0)
+  );
+}
+
+// Compare a freshly computed report against the one committed in dist.
+//
+// Oracle coverage was 14.6% when this gate first examined all 63 renders
+// (2026-07-24), 11.8% on 2026-08-11, and would be 9.1% if the held tag sync
+// landed as authored -- with `mismatch` at 0 the whole time, so the gate was
+// correct and silent while its own subject eroded by a third. This closes that.
+//
+// The BLOCKING condition is the absolute checkable count, not the ratio. A
+// declaration that used to be confirmable and now is not is unambiguously
+// worse. A new component the capture is blind to also lowers the ratio while
+// losing nothing, and blocking on that would red an ordinary additive Figma
+// sync every time a component lands, which is how a gate becomes noise and
+// then stops being read. The ratio is always REPORTED for direction.
+// oracleCoverage as the report states it, or recomputed when the field is
+// absent. Reading it raw made pct(undefined) render 0.0%, so a headline could
+// say "0.0% -> 9.1%" on a run that was blocking for a LOSS, which reads as a
+// gain to anyone skimming.
+function ratioOf(rep) {
+  var t = (rep && rep.totals) || null;
+  if (!t) return 0;
+  if (typeof t.oracleCoverage === "number") return t.oracleCoverage;
+  var checkable = checkableCount(t);
+  var examined =
+    typeof t.examined === "number"
+      ? t.examined
+      : checkable + (t.unverifiable || 0);
+  return examined ? Number((checkable / examined).toFixed(4)) : 0;
+}
+
+function coverageRegression(prev, next) {
+  if (!prev || !prev.totals) return null;
+  var from = checkableCount(prev.totals);
+  var to = checkableCount(next.totals);
+
+  var prevBySlug = prev.bySlug || {};
+  var nextBySlug = next.bySlug || {};
+  var lost = [];
+  var newlyBlind = [];
+  Object.keys(prevBySlug).forEach(function (slug) {
+    var before = checkableCount(prevBySlug[slug]);
+    // A slug that disappeared entirely lost everything it had. Reporting it
+    // as 0 is honest: whether it was renamed or removed, the capture no
+    // longer confirms those declarations under that name.
+    var after = nextBySlug[slug] ? checkableCount(nextBySlug[slug]) : 0;
+    if (after < before) lost.push({ slug: slug, from: before, to: after });
+    if (!prevBySlug[slug].blind && nextBySlug[slug] && nextBySlug[slug].blind) {
+      newlyBlind.push(slug);
+    }
+  });
+  // Worst loss first, so the first line a reader sees is the biggest subject.
+  // Alphabetical tie-break keeps the output stable across runs.
+  lost.sort(function (a, b) {
+    var byLoss = b.from - b.to - (a.from - a.to);
+    if (byLoss !== 0) return byLoss;
+    return a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0;
+  });
+
+  // Block on EITHER a per-slug loss or a fall in the repo-wide total.
+  //
+  // The first version returned here on the total alone, before this loop ran,
+  // and a review found the hole: a slug going FULLY BLIND passed silently
+  // whenever another slug gained as many declarations in the same change.
+  // That is precisely the erosion shape the gate was built for, since a Figma
+  // redesign that retires the tag borders can easily coincide with a
+  // token-name gain elsewhere. The per-slug list is the subject; the total is
+  // only the headline.
+  if (!lost.length && to >= from) return null;
+
+  return {
+    checkableFrom: from,
+    checkableTo: to,
+    coverageFrom: ratioOf(prev),
+    coverageTo: ratioOf(next),
+    lost: lost,
+    newlyBlind: newlyBlind,
+  };
+}
+
+function pct(x) {
+  return (Number(x || 0) * 100).toFixed(1) + "%";
+}
+
+function coverageFailureMessage(reg) {
+  var lines = [
+    "ORACLE COVERAGE REGRESSED: " +
+      reg.checkableFrom +
+      " -> " +
+      reg.checkableTo +
+      " checkable color declarations (" +
+      pct(reg.coverageFrom) +
+      " -> " +
+      pct(reg.coverageTo) +
+      ").",
+    "Declarations the Figma capture used to be able to confirm no longer are.",
+    "",
+    "Slugs that lost verification:",
+  ];
+  reg.lost.forEach(function (l) {
+    lines.push("  " + l.slug + ": " + l.from + " -> " + l.to);
+  });
+  if (reg.newlyBlind.length) {
+    lines.push("");
+    lines.push(
+      "Newly blind, the capture can now say nothing at all about these: " +
+        reg.newlyBlind.join(", "),
+    );
+  }
+  lines.push("");
+  lines.push(
+    "",
+    "A loss can be legitimate: a design change can retire the very treatment the",
+    "oracle was reading. It may not be silent, and it cannot be waved through",
+    "from CI, which runs this gate with no arguments. To land one, do it locally",
+    "and say why:",
+    "",
+    '  npm run derive:render -- --accept-coverage-loss="<why>"',
+    "  git add components/render/dist/fidelity-report.json",
+    "",
+    "That run records the lower baseline, so the check then passes on the",
+    "committed value. Put the same sentence in the CHANGELOG entry, because the",
+    "reason lives in that commit and nowhere else.",
+    "",
+    "Running this gate again WITHOUT the flag will not help: on a blocking loss",
+    "it deliberately leaves the report untouched.",
+  );
+  return lines.join("\n") + "\n";
+}
+
+// Accepts both `--flag=value` and `--flag value`. The equals-only version was a
+// trap: an author typing the natural space-separated form got the identical
+// wall of failure text with no hint the flag had been seen and ignored.
+function flagValue(argv, name) {
+  var eq = "--" + name + "=";
+  var bare = "--" + name;
+  var list = argv || [];
+  for (var i = 0; i < list.length; i++) {
+    var a = list[i];
+    if (typeof a !== "string") continue;
+    if (a.indexOf(eq) === 0) {
+      var inline = a.slice(eq.length).trim();
+      return inline ? inline : null;
+    }
+    if (a === bare) {
+      var next = list[i + 1];
+      if (typeof next === "string" && next.indexOf("--") !== 0 && next.trim()) {
+        return next.trim();
+      }
+      return null;
+    }
+  }
+  return null;
+}
+
+function flagPresent(argv, name) {
+  var bare = "--" + name;
+  var eq = bare + "=";
+  return (argv || []).some(function (a) {
+    return typeof a === "string" && (a === bare || a.indexOf(eq) === 0);
+  });
+}
+
+// Returns the stated reason, or null. A bare flag with no reason is NOT
+// acceptance: a switch that waves the gate through without saying why is the
+// silent pass this gate exists to remove.
+function acceptedCoverageLoss(argv) {
+  return flagValue(argv, "accept-coverage-loss");
+}
+
+// Relocates the report the run reads its baseline from AND writes its result
+// to. Exists for tests: doctoring the committed report in place races sibling
+// test files, which `node --test` runs in parallel. Both ends move together on
+// purpose, so the read-before-write ordering the gate depends on stays under
+// test.
+function reportPathOverride(argv) {
+  return flagValue(argv, "report");
+}
+
 if (require.main === module) {
   var fs = require("node:fs");
   var path = require("node:path");
@@ -593,14 +784,66 @@ if (require.main === module) {
     "dist",
     "fragments",
   );
+  var reportPath =
+    reportPathOverride(process.argv) ||
+    path.join(root, "components", "render", "dist", "fidelity-report.json");
+  if (reportPathOverride(process.argv)) {
+    process.stdout.write(
+      "FIXTURE RUN: baseline and output relocated to " +
+        reportPath +
+        "; the tracked dist report was NOT updated.\n",
+    );
+  }
+
+  // Read the committed report BEFORE the write below replaces it. This ordering
+  // is the whole gate: this script is the only writer of that file and it runs
+  // last in `derive:render`, so what is on disk right now is the baseline this
+  // branch inherited. Move this read after the write and the comparison becomes
+  // new-against-new, which always passes.
+  var previous = null;
+  var previousRaw = null;
+  try {
+    previousRaw = fs.readFileSync(reportPath, "utf8");
+  } catch (e) {
+    // No committed report yet (a fresh checkout of a branch that adds it, or
+    // the very first run). Nothing to compare against is not a regression, but
+    // say so, because a silent skip is indistinguishable from a passing
+    // comparison in a CI log.
+    process.stdout.write(
+      "  NOTE: no previous fidelity-report.json at " +
+        reportPath +
+        ", so there is no coverage baseline to compare against on this run.\n",
+    );
+  }
+  if (previousRaw !== null) {
+    try {
+      previous = JSON.parse(previousRaw);
+    } catch (e) {
+      // A corrupt baseline must NOT fall back to "no comparison". That turns
+      // the gate straight back into the silent pass it was added to remove,
+      // and the same run would then rewrite the file so the bypass left no
+      // trace in the diff.
+      process.stderr.write(
+        "FIDELITY BASELINE UNREADABLE: " +
+          reportPath +
+          " exists but could not be parsed (" +
+          e.message +
+          ").\n" +
+          "Refusing to run the coverage comparison against nothing. Restore the " +
+          "committed report (git checkout -- " +
+          "components/render/dist/fidelity-report.json) and re-run.\n",
+      );
+      process.exit(1);
+    }
+  }
+
   var report = runFidelityReport({
     anatomyDir: anatomyDir,
     css: dsBaseCss,
     tokenMap: tokenMap,
     fragmentsDir: fragmentsDir,
   });
-  fs.writeFileSync(
-    path.join(root, "components", "render", "dist", "fidelity-report.json"),
+  var reportJson =
     JSON.stringify(
       {
         _meta: {
@@ -618,8 +861,7 @@ if (require.main === module) {
       },
       null,
       2,
-    ) + "\n",
-  );
+    ) + "\n";
   process.stdout.write(
     "fidelity: examined " +
       report.totals.examined +
@@ -656,8 +898,36 @@ if (require.main === module) {
       (report.totals.oracleCoverage * 100).toFixed(1) +
       "%  (how much of what we paint the capture can speak to)\n",
   );
+  var regression = coverageRegression(previous, report);
+  var acceptedLoss = regression ? acceptedCoverageLoss(process.argv) : null;
+  if (
+    regression &&
+    !acceptedLoss &&
+    flagPresent(process.argv, "accept-coverage-loss")
+  ) {
+    process.stderr.write(
+      "--accept-coverage-loss was passed WITHOUT A REASON, so nothing was " +
+        'accepted. Give it one: --accept-coverage-loss="<why>".\n',
+    );
+  }
+  if (regression && acceptedLoss) {
+    process.stdout.write(
+      "  ACCEPTED COVERAGE LOSS: " +
+        regression.checkableFrom +
+        " -> " +
+        regression.checkableTo +
+        " checkable declarations, allowed on this run because: " +
+        acceptedLoss +
+        "\n  Put the same sentence in the CHANGELOG entry; this line lives only in " +
+        "a CI log.\n",
+    );
+  }
+
   if (report.mismatches.length) {
     process.stderr.write(mismatchFailureMessage(report.mismatches));
+  }
+  if (regression && !acceptedLoss) {
+    process.stderr.write(coverageFailureMessage(regression));
   }
 
   if (v.length) {
@@ -671,9 +941,34 @@ if (require.main === module) {
         "\n",
     );
   }
-  // Both failure classes are printed before either exits, so one run reports
-  // everything that is wrong rather than only the first kind encountered.
-  if (report.mismatches.length || v.length) process.exit(1);
+  // A BLOCKING COVERAGE LOSS MUST NOT REWRITE THE BASELINE IT COMPARED AGAINST.
+  //
+  // The first version wrote the report before evaluating the regression, and a
+  // review found that this made the gate self-erasing: it failed once, and the
+  // very next run compared the new value against itself and passed, so an
+  // author who re-ran to confirm, or who simply committed the regenerated dist,
+  // landed the regression with no reason recorded. That is the laundering path
+  // the gate exists to close, reopened by the gate. On a blocking loss the
+  // committed baseline stays untouched, so the failure is reproducible until it
+  // is either fixed or accepted by name.
+  var blockingLoss = Boolean(regression && !acceptedLoss);
+  if (!blockingLoss) {
+    fs.writeFileSync(reportPath, reportJson);
+  } else {
+    process.stderr.write(
+      "\n" +
+        reportPath +
+        " was left UNCHANGED so this failure stays reproducible. Committing a " +
+        "regenerated report is not a fix.\n",
+    );
+  }
+
+  // All failure classes are printed before any of them exits, so one run
+  // reports everything that is wrong rather than only the first kind
+  // encountered.
+  if (report.mismatches.length || v.length || blockingLoss) {
+    process.exit(1);
+  }
   // No unconditional "fidelity: OK" trailer here. The legacy
   // fidelityCheck/checkBaseCssRules violation reporting above still gates
   // ds-base.css tag/checkbox rules and still exits 1 on a real violation --
@@ -692,6 +987,13 @@ module.exports = {
   resolveTagOwner: resolveTagOwner,
   runFidelityReport: runFidelityReport,
   mismatchFailureMessage: mismatchFailureMessage,
+  checkableCount: checkableCount,
+  coverageRegression: coverageRegression,
+  coverageFailureMessage: coverageFailureMessage,
+  acceptedCoverageLoss: acceptedCoverageLoss,
+  reportPathOverride: reportPathOverride,
+  flagPresent: flagPresent,
+  ratioOf: ratioOf,
   sharedPrefixMap: sharedPrefixMap,
   fragmentClasses: fragmentClasses,
   filterCssForFragment: filterCssForFragment,

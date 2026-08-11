@@ -18,6 +18,46 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Added
+
+- **The render fidelity gate now blocks on a coverage regression, because its own subject had been
+  eroding for eighteen days and nothing said so.** ([#516](https://github.com/volivarii/actian-ds-knowledge/pull/516)) When #487 landed on
+  2026-07-24 the gate reported that the Figma capture could confirm 14.6% of the colors the canonical
+  renders paint. Measured again on 2026-08-11 it was **11.8%**, and the held 2026-08-11 tag sync would
+  take it to **9.1%**, blinding two more components. `mismatch` was 0 at every one of those points, so
+  the gate was correct and silent while the thing it measures lost a third of its reach. The cause is a
+  single point: the tag family is where the oracle lives, and each step of the tag redesign retires
+  exactly the bordered treatment the capture could compare, so `tag-default` and `tag-stage` fall from
+  7 confirmed declarations each to **0**.
+
+  The gate now reads the committed `fidelity-report.json` before it overwrites it and fails when this
+  run can confirm fewer declarations than that baseline could, naming the slugs that lost and the ones
+  that went blind. **The blocking condition is the absolute count, not the ratio**, deliberately: losing
+  a declaration the capture used to confirm is unambiguously worse, whereas a new component the capture
+  is blind to also lowers the ratio while losing nothing, and blocking on that would red an ordinary
+  additive Figma sync every time a component lands, which is how a gate becomes noise and stops being
+  read. The ratio is always printed for direction.
+
+  **A per-slug loss blocks even when the total holds level.** Gating on the total alone let a slug go
+  fully blind whenever another gained as many declarations in the same change, which is exactly the
+  motivating shape: a redesign retiring the tag borders can easily coincide with a token-name gain
+  elsewhere.
+
+  **On a blocking loss the run leaves `fidelity-report.json` untouched.** Writing the new report before
+  evaluating the regression made the gate self-erasing: it failed once, and the next run compared the
+  new value against itself and passed, so an author who re-ran to confirm, or who simply committed the
+  regenerated dist, landed the regression with no reason recorded. That is the laundering path the gate
+  exists to close, and the first version of the gate reopened it.
+
+  A loss can be legitimate, since a redesign can retire the very treatment the oracle was reading. It
+  may not be silent, and it cannot be waved through from CI, which invokes the gate with no arguments:
+  run `npm run derive:render -- --accept-coverage-loss="<why>"` locally and commit the regenerated
+  report, and put the same sentence in that change's CHANGELOG entry, because the commit is the only
+  place the reason is recorded. A bare flag with no reason accepts nothing and now says so instead of
+  reprinting the same wall of text. A corrupt baseline blocks rather than silently skipping the
+  comparison, and `render-derive.yml` now watches `components/dist/anatomy/**`, the gate's own oracle
+  input and the path a coverage loss actually arrives by.
+
 ### Fixed
 
 - **The tracker fix from #510 could create its issue but not update it, so the first breaking night
