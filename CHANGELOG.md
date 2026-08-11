@@ -18,6 +18,31 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Added
+
+- **The render fidelity gate now blocks on a coverage regression, because its own subject had been
+  eroding for eighteen days and nothing said so.** ([#PR](_PR link added at open_)) When #487 landed on
+  2026-07-24 the gate reported that the Figma capture could confirm 14.6% of the colors the canonical
+  renders paint. Measured again on 2026-08-11 it was **11.8%**, and the held 2026-08-11 tag sync would
+  take it to **9.1%**, blinding two more components. `mismatch` was 0 at every one of those points, so
+  the gate was correct and silent while the thing it measures lost a third of its reach. The cause is a
+  single point: the tag family is where the oracle lives, and each step of the tag redesign retires
+  exactly the bordered treatment the capture could compare, so `tag-default` and `tag-stage` fall from
+  7 confirmed declarations each to **0**.
+
+  The gate now reads the committed `fidelity-report.json` before it overwrites it and fails when this
+  run can confirm fewer declarations than that baseline could, naming the slugs that lost and the ones
+  that went blind. **The blocking condition is the absolute count, not the ratio**, deliberately: losing
+  a declaration the capture used to confirm is unambiguously worse, whereas a new component the capture
+  is blind to also lowers the ratio while losing nothing, and blocking on that would red an ordinary
+  additive Figma sync every time a component lands, which is how a gate becomes noise and stops being
+  read. The ratio is always printed for direction.
+
+  A loss can be legitimate, since a redesign can retire the very treatment the oracle was reading. It
+  may not be silent: `npm run derive:render -- --accept-coverage-loss="<why>"` lands one, and the same
+  sentence belongs in that change's CHANGELOG entry. A bare flag with no reason does not accept
+  anything.
+
 ### Fixed
 
 - **The tracker fix from #510 could create its issue but not update it, so the first breaking night

@@ -545,6 +545,140 @@ function runFidelityReport(ctx) {
   };
 }
 
+// The number of declarations the capture can speak to at all: the numerator of
+// oracleCoverage. `mismatch` belongs in it because the capture DID address
+// those declarations (it addressed them and disagreed, which is why they block
+// on their own line); leaving them out would make a mismatch look like a
+// coverage loss and double-report one defect as two.
+function checkableCount(totals) {
+  if (!totals) return 0;
+  return (
+    (totals.verified || 0) +
+    (totals.verifiedViaTokenName || 0) +
+    (totals.mismatch || 0)
+  );
+}
+
+// Compare a freshly computed report against the one committed in dist.
+//
+// Oracle coverage was 14.6% when this gate first examined all 63 renders
+// (2026-07-24), 11.8% on 2026-08-11, and would be 9.1% if the held tag sync
+// landed as authored -- with `mismatch` at 0 the whole time, so the gate was
+// correct and silent while its own subject eroded by a third. This closes that.
+//
+// The BLOCKING condition is the absolute checkable count, not the ratio. A
+// declaration that used to be confirmable and now is not is unambiguously
+// worse. A new component the capture is blind to also lowers the ratio while
+// losing nothing, and blocking on that would red an ordinary additive Figma
+// sync every time a component lands, which is how a gate becomes noise and
+// then stops being read. The ratio is always REPORTED for direction.
+function coverageRegression(prev, next) {
+  if (!prev || !prev.totals) return null;
+  var from = checkableCount(prev.totals);
+  var to = checkableCount(next.totals);
+  if (to >= from) return null;
+
+  var prevBySlug = prev.bySlug || {};
+  var nextBySlug = next.bySlug || {};
+  var lost = [];
+  var newlyBlind = [];
+  Object.keys(prevBySlug).forEach(function (slug) {
+    var before = checkableCount(prevBySlug[slug]);
+    // A slug that disappeared entirely lost everything it had. Reporting it
+    // as 0 is honest: whether it was renamed or removed, the capture no
+    // longer confirms those declarations under that name.
+    var after = nextBySlug[slug] ? checkableCount(nextBySlug[slug]) : 0;
+    if (after < before) lost.push({ slug: slug, from: before, to: after });
+    if (!prevBySlug[slug].blind && nextBySlug[slug] && nextBySlug[slug].blind) {
+      newlyBlind.push(slug);
+    }
+  });
+  // Worst loss first, so the first line a reader sees is the biggest subject.
+  // Alphabetical tie-break keeps the output stable across runs.
+  lost.sort(function (a, b) {
+    var byLoss = b.from - b.to - (a.from - a.to);
+    if (byLoss !== 0) return byLoss;
+    return a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0;
+  });
+
+  return {
+    checkableFrom: from,
+    checkableTo: to,
+    coverageFrom: prev.totals.oracleCoverage,
+    coverageTo: next.totals.oracleCoverage,
+    lost: lost,
+    newlyBlind: newlyBlind,
+  };
+}
+
+function pct(x) {
+  return (Number(x || 0) * 100).toFixed(1) + "%";
+}
+
+function coverageFailureMessage(reg) {
+  var lines = [
+    "ORACLE COVERAGE REGRESSED: " +
+      reg.checkableFrom +
+      " -> " +
+      reg.checkableTo +
+      " checkable color declarations (" +
+      pct(reg.coverageFrom) +
+      " -> " +
+      pct(reg.coverageTo) +
+      ").",
+    "Declarations the Figma capture used to be able to confirm no longer are.",
+    "",
+    "Slugs that lost verification:",
+  ];
+  reg.lost.forEach(function (l) {
+    lines.push("  " + l.slug + ": " + l.from + " -> " + l.to);
+  });
+  if (reg.newlyBlind.length) {
+    lines.push("");
+    lines.push(
+      "Newly blind, the capture can now say nothing at all about these: " +
+        reg.newlyBlind.join(", "),
+    );
+  }
+  lines.push("");
+  lines.push(
+    "A loss can be legitimate: a design change can retire the very treatment the",
+    "oracle was reading. It may not be silent. To land one, say why:",
+    "",
+    '  npm run derive:render -- --accept-coverage-loss="<why>"',
+    "",
+    "and put the same sentence in the CHANGELOG entry for the change, so the",
+    "next reader of this number knows where it went.",
+  );
+  return lines.join("\n") + "\n";
+}
+
+function flagValue(argv, name) {
+  var prefix = "--" + name + "=";
+  var hit = (argv || []).find(function (a) {
+    return typeof a === "string" && a.indexOf(prefix) === 0;
+  });
+  if (!hit) return null;
+  var value = hit.slice(prefix.length).trim();
+  return value ? value : null;
+}
+
+// Returns the stated reason, or null. A bare flag with no reason is NOT
+// acceptance: a switch that waves the gate through without saying why is the
+// silent pass this gate exists to remove.
+function acceptedCoverageLoss(argv) {
+  return flagValue(argv, "accept-coverage-loss");
+}
+
+// Relocates the report the run reads its baseline from AND writes its result
+// to. Exists for tests: doctoring the committed report in place races sibling
+// test files, which `node --test` runs in parallel. Both ends move together on
+// purpose, so the read-before-write ordering the gate depends on stays under
+// test.
+function reportPathOverride(argv) {
+  return flagValue(argv, "report");
+}
+
 if (require.main === module) {
   var fs = require("node:fs");
   var path = require("node:path");
@@ -593,6 +727,23 @@ if (require.main === module) {
     "dist",
     "fragments",
   );
+  var reportPath =
+    reportPathOverride(process.argv) ||
+    path.join(root, "components", "render", "dist", "fidelity-report.json");
+  // Read the committed report BEFORE the write below replaces it. This ordering
+  // is the whole gate: this script is the only writer of that file and it runs
+  // last in `derive:render`, so what is on disk right now is the baseline this
+  // branch inherited. Move this read after the write and the comparison becomes
+  // new-against-new, which always passes.
+  var previous = null;
+  try {
+    previous = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  } catch (e) {
+    // No committed report yet (a fresh checkout of a branch that adds it, or
+    // the very first run). Nothing to compare against is not a regression.
+    previous = null;
+  }
+
   var report = runFidelityReport({
     anatomyDir: anatomyDir,
     css: dsBaseCss,
@@ -600,7 +751,7 @@ if (require.main === module) {
     fragmentsDir: fragmentsDir,
   });
   fs.writeFileSync(
-    path.join(root, "components", "render", "dist", "fidelity-report.json"),
+    reportPath,
     JSON.stringify(
       {
         _meta: {
@@ -656,8 +807,26 @@ if (require.main === module) {
       (report.totals.oracleCoverage * 100).toFixed(1) +
       "%  (how much of what we paint the capture can speak to)\n",
   );
+  var regression = coverageRegression(previous, report);
+  var acceptedLoss = regression ? acceptedCoverageLoss(process.argv) : null;
+  if (regression && acceptedLoss) {
+    process.stdout.write(
+      "  ACCEPTED COVERAGE LOSS: " +
+        regression.checkableFrom +
+        " -> " +
+        regression.checkableTo +
+        " checkable declarations, allowed on this run because: " +
+        acceptedLoss +
+        "\n  Put the same sentence in the CHANGELOG entry; this line lives only in " +
+        "a CI log.\n",
+    );
+  }
+
   if (report.mismatches.length) {
     process.stderr.write(mismatchFailureMessage(report.mismatches));
+  }
+  if (regression && !acceptedLoss) {
+    process.stderr.write(coverageFailureMessage(regression));
   }
 
   if (v.length) {
@@ -671,9 +840,12 @@ if (require.main === module) {
         "\n",
     );
   }
-  // Both failure classes are printed before either exits, so one run reports
-  // everything that is wrong rather than only the first kind encountered.
-  if (report.mismatches.length || v.length) process.exit(1);
+  // All failure classes are printed before any of them exits, so one run
+  // reports everything that is wrong rather than only the first kind
+  // encountered.
+  if (report.mismatches.length || v.length || (regression && !acceptedLoss)) {
+    process.exit(1);
+  }
   // No unconditional "fidelity: OK" trailer here. The legacy
   // fidelityCheck/checkBaseCssRules violation reporting above still gates
   // ds-base.css tag/checkbox rules and still exits 1 on a real violation --
@@ -692,6 +864,11 @@ module.exports = {
   resolveTagOwner: resolveTagOwner,
   runFidelityReport: runFidelityReport,
   mismatchFailureMessage: mismatchFailureMessage,
+  checkableCount: checkableCount,
+  coverageRegression: coverageRegression,
+  coverageFailureMessage: coverageFailureMessage,
+  acceptedCoverageLoss: acceptedCoverageLoss,
+  reportPathOverride: reportPathOverride,
   sharedPrefixMap: sharedPrefixMap,
   fragmentClasses: fragmentClasses,
   filterCssForFragment: filterCssForFragment,
