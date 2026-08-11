@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Added
 
 - **The render fidelity gate now blocks on a coverage regression, because its own subject had been
-  eroding for eighteen days and nothing said so.** ([#PR](_PR link added at open_)) When #487 landed on
+  eroding for eighteen days and nothing said so.** ([#516](https://github.com/volivarii/actian-ds-knowledge/pull/516)) When #487 landed on
   2026-07-24 the gate reported that the Figma capture could confirm 14.6% of the colors the canonical
   renders paint. Measured again on 2026-08-11 it was **11.8%**, and the held 2026-08-11 tag sync would
   take it to **9.1%**, blinding two more components. `mismatch` was 0 at every one of those points, so
