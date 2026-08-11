@@ -20,6 +20,30 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **The tracker fix from #510 could create its issue but not update it, so the first breaking night
+  after it went red and raised a false alarm.** ([#PR](_PR link added at open_)) #510 made the marker
+  dedupe work, which routed the second night down the `gh issue edit` path for the first time. That
+  path failed with `GraphQL: Resource not accessible by integration (updateIssue)`: the step ran on the
+  **App token**, and the `actian-ds-bot` App can create an issue but not modify one.
+  This is also the complete explanation for #494, which had been open as a mystery. The same missing
+  permission silently dropped the label on `gh issue create --label`, which left the old dedupe key
+  unset, which is why five duplicate trackers accumulated. One permission gap, both symptoms. Verified
+  by hand: a normal token applied `sync-breaking` to #511 on the first attempt.
+  The step now uses `secrets.GITHUB_TOKEN`, like every sibling issue step in this workflow, all of
+  which have always worked. The App token stays where its purpose actually applies: opening the
+  additive pull request so downstream `pull_request` workflows fire against its head SHA.
+  The postcondition assertion added in #510 is deliberately unchanged. It failed the job within a day
+  of shipping, on a real permission defect that had been masked for weeks by the duplication it was
+  written to catch, which is the behaviour that was wanted.
+- **A failure in the workflow's own bookkeeping announced itself as "Figma sync is failing".** On
+  2026-08-11 the sync completed and reported no errors, the tracker step then failed, and the notify
+  step opened `🔴 Figma sync is failing` about a sync that had just succeeded. It now distinguishes the
+  two: when the orchestrator produced a verdict and reported no errors, the issue says the sync itself
+  was fine and points at the workflow step that broke, instead of sending a reader to look for a Figma
+  or content problem that does not exist. A tracker that cries wolf about the wrong thing is how a real
+  signal stops being read, which is the failure this whole area exists to leave behind. An early
+  failure with no verdict at all (checkout, dependency install) still reports as a sync failure, which
+  is what it is; all four branches are exercised against a stubbed `gh`.
 - **An expired Figma token read as a content failure for 11 nights, and the breaking-sync tracker
   duplicated itself for 5.** ([#PR](_PR link added at open_)) Two independent reporting defects, both
   of the same shape: a step that says what it did rather than what it achieved.
