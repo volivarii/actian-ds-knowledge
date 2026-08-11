@@ -16,38 +16,61 @@ var REPORT = path.join(
   "fidelity-report.json",
 );
 
-// Run the real CLI with its report relocated to a throwaway copy doctored to
-// claim MORE checkable declarations than the current CSS can actually produce,
-// which is exactly the shape of a real regression.
+// Fixture helpers.
 //
-// The relocation is why `--report` exists. The obvious version of this test
-// doctored the committed report in place, and that raced: `node --test` runs
-// test FILES in parallel, so a sibling file's CLI subprocess read the doctored
-// bytes and failed on a regression this file had planted. Relocating both the
-// read and the write keeps the fixture private to this test.
+// `--report` relocates the baseline read AND the dist write to the same
+// throwaway path. Both ends move together on purpose: the ordering that makes
+// or breaks this gate is read-before-write on ONE path, so a fixture that
+// separated them could not catch the mistake. Doctoring the committed report
+// in place was the first version and it raced, because `node --test` runs test
+// FILES in parallel and a sibling file`s CLI subprocess read the planted bytes.
 //
-// It stays a subprocess test on purpose. The pure-function tests above cannot
-// catch the one ordering mistake that would make this whole gate useless:
-// reading the previous report AFTER the run has already overwritten it. Then
-// the baseline would always equal the new value and the gate would be a
-// tautology. `--report` points the read and the write at the SAME path, so
-// that ordering is still what is under test.
-function withInflatedBaseline(extra, args) {
-  var fixture = path.join(
-    fs.mkdtempSync(path.join(require("node:os").tmpdir(), "fidelity-floor-")),
-    "fidelity-report.json",
-  );
-  var doctored = JSON.parse(fs.readFileSync(REPORT, "utf8"));
-  doctored.totals.verified += extra;
-  doctored.bySlug.badge.verified += extra;
-  fs.writeFileSync(fixture, JSON.stringify(doctored, null, 2) + "\n");
+// Nothing here pins a corpus fact. An earlier version hardcoded the verified
+// count 47 and the slug `badge`, which is the same pinned-number anti-pattern
+// this gate exists to remove: a Figma sync renaming that slug would have
+// crashed the gate`s own tests with a TypeError instead of a diagnosis.
+function checkableOf(row) {
+  return (row.verified || 0) + (row.verifiedViaTokenName || 0) + (row.mismatch || 0);
+}
 
-  var argv = [CLI, "--report=" + fixture].concat(args || []);
-  var res;
+function committedReport() {
+  return JSON.parse(fs.readFileSync(REPORT, "utf8"));
+}
+
+function trueVerifiedCount() {
+  return committedReport().totals.verified;
+}
+
+// The alphabetically first slug the capture can actually speak to. Derived, so
+// a rename moves the specimen instead of breaking the test.
+function specimenSlug(rep) {
+  var s = Object.keys(rep.bySlug)
+    .filter(function (k) {
+      return checkableOf(rep.bySlug[k]) > 0;
+    })
+    .sort()[0];
+  assert.ok(s, "the corpus has no verifiable slug to use as a specimen");
+  return s;
+}
+
+// A baseline claiming MORE checkable declarations than the current CSS can
+// produce, which is the shape of a real regression.
+function inflatedFixture(extra) {
+  var dir = fs.mkdtempSync(path.join(require("node:os").tmpdir(), "fidelity-floor-"));
+  var rep = committedReport();
+  var s = specimenSlug(rep);
+  rep.totals.verified += extra;
+  rep.bySlug[s].verified += extra;
+  var fixture = path.join(dir, "fidelity-report.json");
+  fs.writeFileSync(fixture, JSON.stringify(rep, null, 2) + "\n");
+  return fixture;
+}
+
+function runCli(args) {
   try {
-    res = {
+    return {
       code: 0,
-      out: execFileSync(process.execPath, argv, {
+      out: execFileSync(process.execPath, [CLI].concat(args || []), {
         cwd: REPO_ROOT,
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
@@ -55,15 +78,12 @@ function withInflatedBaseline(extra, args) {
       err: "",
     };
   } catch (e) {
-    res = {
+    return {
       code: e.status,
       out: String(e.stdout || ""),
       err: String(e.stderr || ""),
     };
   }
-  res.fixture = fixture;
-  res.rewritten = JSON.parse(fs.readFileSync(fixture, "utf8"));
-  return res;
 }
 
 // The gate this file covers exists because oracle coverage turned out to be
@@ -265,36 +285,131 @@ test("reportPathOverride: --report relocates the report, so a test can supply it
 });
 
 test("CLI: a coverage loss against the committed report blocks the build and names the slug", function () {
-  var r = withInflatedBaseline(5);
+  var fixture = inflatedFixture(5);
+  var specimen = specimenSlug(committedReport());
+  var r = runCli(["--report=" + fixture]);
   assert.equal(r.code, 1, "expected the gate to block:\n" + r.err);
   assert.match(r.err, /ORACLE COVERAGE REGRESSED/);
-  assert.match(r.err, /badge/);
-});
-
-test("CLI: the run overwrites the very report it compared against, so the read must have happened first", function () {
-  // The anti-tautology assertion. The regression above was detected against a
-  // baseline claiming badge had 5 extra verified declarations, and the file now
-  // holds the true, lower number. If the read were moved after the write, the
-  // baseline would have been these same true values and no regression could
-  // ever be reported.
-  var r = withInflatedBaseline(5);
-  assert.equal(r.code, 1);
-  assert.equal(
-    r.rewritten.totals.verified,
-    47,
-    "the report should have been rewritten with the real count",
-  );
-});
-
-test("CLI: --accept-coverage-loss with a stated reason lands the same run", function () {
-  var r = withInflatedBaseline(5, [
-    "--accept-coverage-loss=badge is being retired on purpose",
-  ]);
-  assert.equal(r.code, 0, "expected the stated reason to land it:\n" + r.err);
-  assert.match(r.out, /badge is being retired on purpose/);
+  assert.match(r.err, new RegExp(specimen));
 });
 
 test("CLI: a bare --accept-coverage-loss still blocks, since it says nothing", function () {
-  var r = withInflatedBaseline(5, ["--accept-coverage-loss"]);
+  var fixture = inflatedFixture(5);
+  var r = runCli(["--report=" + fixture, "--accept-coverage-loss"]);
   assert.equal(r.code, 1, "expected a reasonless flag to block");
+  assert.match(
+    r.err,
+    /without a reason/i,
+    "a flag that was seen and rejected must say so, not reprint the same wall of text",
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Review findings, 2026-08-11. Every test below was added because an
+// independent review pass found the first version of this gate could be
+// defeated. They are the anti-laundering half of the gate.
+// ---------------------------------------------------------------------------
+
+test("coverageRegression: a per-slug loss blocks even when a gain elsewhere keeps the total level", function () {
+  // The first version compared only the repo-wide total and returned before
+  // the per-slug loop, so the exact erosion shape it was built for passed
+  // whenever anything else improved in the same change.
+  var prev = report(
+    { verified: 14, verifiedViaTokenName: 0, mismatch: 0, examined: 100 },
+    { "tag-default": slug(7), badge: slug(7) },
+  );
+  var next = report(
+    { verified: 14, verifiedViaTokenName: 0, mismatch: 0, examined: 100 },
+    { "tag-default": slug(0, { blind: true }), badge: slug(14) },
+  );
+
+  var reg = F.coverageRegression(prev, next);
+  assert.ok(reg, "a slug going fully blind must block regardless of the total");
+  assert.deepEqual(reg.lost, [{ slug: "tag-default", from: 7, to: 0 }]);
+  assert.deepEqual(reg.newlyBlind, ["tag-default"]);
+});
+
+test("coverageRegression: a baseline with no oracleCoverage field still reports a real ratio", function () {
+  // pct(undefined) rendered 0.0%, so the headline read "0.0% -> 9.1%", which
+  // a reader parses as a GAIN on a run that is blocking them for a loss.
+  var prev = report({ verified: 10, verifiedViaTokenName: 0, mismatch: 0, examined: 100 });
+  var next = report({ verified: 5, verifiedViaTokenName: 0, mismatch: 0, examined: 100 });
+  var reg = F.coverageRegression(prev, next);
+  assert.equal(reg.coverageFrom, 0.1);
+  assert.equal(reg.coverageTo, 0.05);
+});
+
+test("acceptedCoverageLoss: the space-separated form is honoured too", function () {
+  assert.equal(
+    F.acceptedCoverageLoss([
+      "node",
+      "x.js",
+      "--accept-coverage-loss",
+      "the tag Type migration retires the bordered treatment",
+    ]),
+    "the tag Type migration retires the bordered treatment",
+  );
+});
+
+test("acceptedCoverageLoss: a flag followed by another flag is still no reason", function () {
+  assert.equal(
+    F.acceptedCoverageLoss(["node", "x.js", "--accept-coverage-loss", "--report=/tmp/x"]),
+    null,
+  );
+});
+
+test("CLI: a failing run does NOT overwrite the baseline it compared against", function () {
+  // The finding that mattered most. The first version wrote the new report
+  // before evaluating the regression, so the gate could fail at most once per
+  // checkout: re-running, or simply committing the regenerated dist, reported
+  // green with nothing fixed. That is the laundering path this gate exists to
+  // close, reopened by the gate itself.
+  var fixture = inflatedFixture(5);
+  var first = runCli(["--report=" + fixture]);
+  assert.equal(first.code, 1, "expected the first run to block:\n" + first.err);
+
+  var second = runCli(["--report=" + fixture]);
+  assert.equal(
+    second.code,
+    1,
+    "a second run with nothing changed must STILL block; if it passes, the " +
+      "failing run destroyed its own baseline:\n" +
+      second.out,
+  );
+});
+
+test("CLI: an accepted loss DOES write the report, since that is how the loss is landed", function () {
+  var fixture = inflatedFixture(5);
+  var r = runCli([
+    "--report=" + fixture,
+    "--accept-coverage-loss=badge is being retired on purpose",
+  ]);
+  assert.equal(r.code, 0, r.err);
+  var written = JSON.parse(fs.readFileSync(fixture, "utf8"));
+  assert.equal(
+    written.totals.verified,
+    trueVerifiedCount(),
+    "the accepted run must leave the real measurement behind as the new baseline",
+  );
+});
+
+test("CLI: an unparseable baseline blocks instead of silently skipping the comparison", function () {
+  // A corrupt report used to turn the gate back into the silent pass it was
+  // added to remove, with no output saying no comparison had happened.
+  var dir = fs.mkdtempSync(path.join(require("node:os").tmpdir(), "fid-corrupt-"));
+  var fixture = path.join(dir, "fidelity-report.json");
+  fs.writeFileSync(fixture, '{"totals": {"verified": 4');
+  var r = runCli(["--report=" + fixture]);
+  assert.equal(r.code, 1, "a corrupt baseline must not pass silently");
+  assert.match(r.err, /could not be read|unparseable|corrupt/i);
+});
+
+test("CLI: a fixture run says so, so a log can never be mistaken for a real one", function () {
+  var fixture = inflatedFixture(0);
+  var r = runCli(["--report=" + fixture]);
+  assert.match(
+    r.out + r.err,
+    /FIXTURE/,
+    "--report relocates the tracked artifact, which must be loud",
+  );
 });

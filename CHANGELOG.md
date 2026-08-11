@@ -38,10 +38,25 @@ Each entry links its pull request. Dates are the merge date (UTC).
   additive Figma sync every time a component lands, which is how a gate becomes noise and stops being
   read. The ratio is always printed for direction.
 
+  **A per-slug loss blocks even when the total holds level.** Gating on the total alone let a slug go
+  fully blind whenever another gained as many declarations in the same change, which is exactly the
+  motivating shape: a redesign retiring the tag borders can easily coincide with a token-name gain
+  elsewhere.
+
+  **On a blocking loss the run leaves `fidelity-report.json` untouched.** Writing the new report before
+  evaluating the regression made the gate self-erasing: it failed once, and the next run compared the
+  new value against itself and passed, so an author who re-ran to confirm, or who simply committed the
+  regenerated dist, landed the regression with no reason recorded. That is the laundering path the gate
+  exists to close, and the first version of the gate reopened it.
+
   A loss can be legitimate, since a redesign can retire the very treatment the oracle was reading. It
-  may not be silent: `npm run derive:render -- --accept-coverage-loss="<why>"` lands one, and the same
-  sentence belongs in that change's CHANGELOG entry. A bare flag with no reason does not accept
-  anything.
+  may not be silent, and it cannot be waved through from CI, which invokes the gate with no arguments:
+  run `npm run derive:render -- --accept-coverage-loss="<why>"` locally and commit the regenerated
+  report, and put the same sentence in that change's CHANGELOG entry, because the commit is the only
+  place the reason is recorded. A bare flag with no reason accepts nothing and now says so instead of
+  reprinting the same wall of text. A corrupt baseline blocks rather than silently skipping the
+  comparison, and `render-derive.yml` now watches `components/dist/anatomy/**`, the gate's own oracle
+  input and the path a coverage loss actually arrives by.
 
 ### Fixed
 

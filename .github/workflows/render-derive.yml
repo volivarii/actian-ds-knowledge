@@ -25,6 +25,14 @@ on:
       - 'scripts/render/**'
       - 'paths-manifest.json'
       - 'tokens/tokens.json'
+      # The fidelity gate's ORACLE. Every colour it can confirm is read from
+      # components/dist/anatomy/<slug>.json, so an anatomy change is the way a
+      # coverage loss actually arrives: the 2026-07-23 tag redesign is what took
+      # oracle coverage from 14.6% to 11.8%. A Figma sync also touches
+      # paths-manifest.json (the version bump), so in practice these runs were
+      # already triggered, but relying on that meant the gate's own input was
+      # not watched, and a sync that skipped the bump would have slipped past.
+      - 'components/dist/anatomy/**'
 
 # Serialize runs per branch: concurrent auto-commit pushes to the same PR
 # head race each other (lost push = red required check). Queue, never cancel:
