@@ -77,7 +77,12 @@ test("fidelityCheck: an empty derived CSS block cannot pass silently", function 
 // Phase 1b-alpha: the tag color variants + the checkbox indeterminate rule
 // live directly in ds-base.css (outside the derived-from-facts appendix
 // covered above), so their fact-color correctness needs its own coverage.
-test("checkBaseCssRules: the real ds-base.css tag/checkbox rules pass", function () {
+// The fixture facts map here used to be a copy of the CLI's hand-typed
+// registration (five tag slugs + checkbox, by name). It is derived now, from the
+// same helper the CLI uses, so the two can no longer disagree -- and so the
+// deletion of a capture shows up as a REPORTED rule rather than an ENOENT that
+// takes the whole file down.
+test("checkBaseCssRules: no real ds-base.css tag/checkbox rule contradicts its owner's capture, and every unverifiable rule is named", function () {
   var dsBaseCss = fs.readFileSync(
     path.join(REPO_ROOT, "components", "render", "renderer", "ds-base.css"),
     "utf8",
@@ -85,30 +90,44 @@ test("checkBaseCssRules: the real ds-base.css tag/checkbox rules pass", function
   var tokenMap = A.loadTokenMap(
     fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8"),
   );
-  var facts = {
-    "tag-default": A.readAppearance("tag-default", ANATOMY),
-    // Gray-box-to-zero family 2: tag-catalog and tag-shared also emit
-    // standalone .ds-tag--<x> rules with their OWN captured facts (not
-    // tag-default's Color axis), so their facts must be in scope too or a
-    // genuinely correct color reads as a violation.
-    "tag-catalog": A.readAppearance("tag-catalog", ANATOMY),
-    "tag-shared": A.readAppearance("tag-shared", ANATOMY),
-    // tag-status: the grouped tag-status family (.ds-tag--status-error/
-    // -info/-neutral/-success/-warning) is now checked too (Fix B widened
-    // the modifier regex to cross hyphens), so its fact source must be
-    // registered here too, mirroring the CLI's require.main registration.
-    "tag-status": A.readAppearance("tag-status", ANATOMY),
-    // tag-stage owns the .ds-tag-stage-scoped hue overrides (its Gray, Lime and
-    // Orange fills diverged from tag-default's in the 2026-07-23 redesign), so
-    // its facts must be in scope or those correct values read as violations.
-    "tag-stage": A.readAppearance("tag-stage", ANATOMY),
-    checkbox: A.readAppearance("checkbox", ANATOMY),
-  };
-  var v = F.checkBaseCssRules(dsBaseCss, facts, tokenMap);
-  assert.deepEqual(v, []);
+  var src = F.baseCssFactSources(ANATOMY);
+  var v = F.checkBaseCssRules(dsBaseCss, src.facts, tokenMap, src.uncaptured);
+  // Two kinds of violation, and only one of them is a defect in the CSS:
+  //  - a colour the owner's capture CONTRADICTS. There must be none.
+  //  - a rule whose owner has no capture at all, so it cannot be verified
+  //    either way. The 2026-08-12 sync retired five tag-family slugs and
+  //    deleted their captures while their rules and renderer cases stayed, so
+  //    this bucket is non-empty today and empties again when those rules are
+  //    retired with their slugs. It is asserted, not tolerated: each one must
+  //    name a slug the derive independently reported as uncaptured.
+  var unverifiable = v.filter(function (m) {
+    return /has no appearance capture/.test(m);
+  });
+  var contradictions = v.filter(function (m) {
+    return !/has no appearance capture/.test(m);
+  });
+  assert.deepEqual(
+    contradictions,
+    [],
+    "a real ds-base.css rule paints a colour its owner's capture contradicts",
+  );
+  unverifiable.forEach(function (m) {
+    assert.ok(
+      src.uncaptured.some(function (slug) {
+        return m.indexOf(" " + slug + " ") !== -1;
+      }),
+      "an unverifiable-rule violation must name one of the slugs the derive " +
+        "reported as uncaptured (" +
+        JSON.stringify(src.uncaptured) +
+        "), got: " +
+        m,
+    );
+  });
   // Non-vacuity: corrupt a REAL multi-line tag rule in ds-base.css and confirm
   // the gate catches it. Guards against a selector-regex regression that would
-  // silently match nothing, making the pass above vacuous.
+  // silently match nothing, making the pass above vacuous. .ds-tag--pink is
+  // owned by tag-default, whose capture is present, so this exercises the
+  // contradiction path and not the unverifiable one.
   var corrupted = dsBaseCss.replace(
     "background: #ffd6d8;",
     "background: #123456;",
@@ -118,7 +137,12 @@ test("checkBaseCssRules: the real ds-base.css tag/checkbox rules pass", function
     dsBaseCss,
     "the real .ds-tag--pink background was located for corruption",
   );
-  var vBad = F.checkBaseCssRules(corrupted, facts, tokenMap);
+  var vBad = F.checkBaseCssRules(
+    corrupted,
+    src.facts,
+    tokenMap,
+    src.uncaptured,
+  );
   assert.ok(
     vBad.some(function (m) {
       return /ds-tag--pink/.test(m) && /#123456/.test(m);
@@ -128,69 +152,88 @@ test("checkBaseCssRules: the real ds-base.css tag/checkbox rules pass", function
 });
 
 test("checkBaseCssRules: a fabricated modifier cannot pass by borrowing a sibling member's fact (per-owner, not union)", function () {
-  // tag-catalog's real anatomy legitimately captures #000000 as a text
-  // color (--zen-color-text-default). A prior version of checkBaseCssRules
-  // unioned every "tag*" fact set together before checking any rule, so a
-  // fabricated .ds-tag--bogus rule emitting #000000 would pass by borrowing
-  // tag-catalog's fact even though no fact source that actually owns the
-  // "bogus" modifier ever captured that value. This proves the per-owner
-  // fix: "bogus" has no registered tag-bogus fact source, so it falls back
-  // to tag-default -- whose Color axis never captured #000000 -- and must
-  // still be flagged, even though tag-catalog (a sibling entry in the SAME
-  // facts map) legitimately owns #000000.
-  // The borrowed value used to be tag-catalog's #000000 text colour, but the
-  // 2026-07-23 capture moved the tag label to #000000 too, so tag-default began
-  // owning it legitimately and this assertion stopped discriminating. #fff4ec
-  // belongs to exactly one owner in the family and the hue axis has no claim.
-  var facts = {
-    "tag-default": A.readAppearance("tag-default", ANATOMY),
-    "tag-status": A.readAppearance("tag-status", ANATOMY),
-    checkbox: A.readAppearance("checkbox", ANATOMY),
-  };
-  var tokenMap = {};
-  var cssText =
-    ".ds-tag--bogus { background: #fff4ec; }\n" +
-    ".ds-tag--status-error { background: #fff4ec; }\n";
-  var v = F.checkBaseCssRules(cssText, facts, tokenMap);
+  // A prior version of checkBaseCssRules unioned every "tag*" fact set together
+  // before checking any rule, so a fabricated .ds-tag--bogus rule passed on any
+  // value ANY sibling in the map had captured, even though no source owning the
+  // "bogus" modifier ever captured it.
+  //
+  // The borrowed value is DERIVED. Two hand-picked sentinels have already gone
+  // stale here: #000000 (the 2026-07-23 capture gave tag-default the same label
+  // colour) and then tag-status's #fff4ec (the 2026-08-12 fold-in gave
+  // tag-default that fill), and a stale sentinel stops discriminating in
+  // silence. Take a colour some other registered source really owns and
+  // tag-default really does not, whatever those captures happen to be today.
+  var tagDefault = A.readAppearance("tag-default", ANATOMY);
+  var sibling = A.readAppearance("checkbox", ANATOMY);
+  var own = F.factColors(tagDefault);
+  var borrowed = Array.from(F.factColors(sibling)).filter(function (c) {
+    // checkRuleBody scans hex literals and var() references, so an rgba() fact
+    // cannot exercise it.
+    return /^#[0-9a-f]{3,8}$/.test(c) && !own.has(c);
+  })[0];
   assert.ok(
-    v.some(function (m) {
-      return /\.ds-tag--bogus/.test(m) && /#fff4ec/.test(m);
-    }),
-    "a fabricated .ds-tag--bogus borrowing tag-status's #fff4ec Fail fill " +
-      "must still violate (checked against tag-default, which does not " +
-      "own #fff4ec), got: " +
-      JSON.stringify(v),
+    borrowed,
+    "no sibling colour outside tag-default's own capture is available to " +
+      "borrow, so this test cannot discriminate",
+  );
+  var facts = { "tag-default": tagDefault, checkbox: sibling };
+  var v = F.checkBaseCssRules(
+    ".ds-tag--bogus { background: " + borrowed + "; }\n",
+    facts,
+    {},
   );
   assert.ok(
-    !v.some(function (m) {
-      return /\.ds-tag--status-error/.test(m);
+    v.some(function (m) {
+      return /\.ds-tag--bogus/.test(m) && m.indexOf(borrowed) !== -1;
     }),
-    "legitimate .ds-tag--status-error fill must pass (checked against its " +
-      "own owning fact source, tag-status), got: " +
+    "a fabricated .ds-tag--bogus borrowing a sibling source's " +
+      borrowed +
+      " must still violate (it resolves to tag-default, which does not own " +
+      "it), got: " +
       JSON.stringify(v),
+  );
+  // The other direction, so the assertion above is not just "everything reds":
+  // a colour tag-default really owns passes on the hue axis it really owns.
+  var mine = Array.from(own).filter(function (c) {
+    return /^#[0-9a-f]{3,8}$/.test(c);
+  })[0];
+  assert.deepEqual(
+    F.checkBaseCssRules(
+      ".ds-tag--indigo { background: " + mine + "; }\n",
+      facts,
+      {},
+    ),
+    [],
+    "a hue rule carrying a colour tag-default captured must pass",
   );
 });
 
-test("checkBaseCssRules: a fabricated .ds-tag--status-error color is caught (hyphenated modifier is checked, not silently skipped)", function () {
+test("checkBaseCssRules: a hyphenated modifier is checked against its own owner, not silently skipped", function () {
   // Regression coverage for the regex-width bug: the modifier char class used
-  // to be [a-z0-9]+, which cannot cross a hyphen, so the 5 real grouped
-  // tag-status rules (.ds-tag--status-error/-info/-neutral/-success/
-  // -warning) were silently never checked -- a fabricated #123456 in one of
-  // them produced 0 violations. This proves the widened [a-z0-9-]+ regex now
-  // captures the compound modifier AND resolveTagOwner resolves it to the
-  // tag-status fact source (not tag-default, which never captured any of
-  // these colors), so a planted bad color in the family is flagged.
-  var tokenMap = A.loadTokenMap(
-    fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8"),
-  );
+  // to be [a-z0-9]+, which cannot cross a hyphen, so the grouped
+  // .ds-tag--status-<x> rules were silently never checked -- a fabricated
+  // #123456 in one of them produced 0 violations.
+  //
+  // The owning fact source is synthetic on purpose. The property under test is
+  // the RESOLUTION (status-error resolves to tag-status, not to tag-default),
+  // and this fixture used to prove it by reading tag-status's live capture --
+  // which is exactly why it died with an uncaught ENOENT the day the
+  // 2026-08-12 sync retired that slug and deleted its anatomy. A resolution
+  // test needs a source, not that source's real colours.
   var facts = {
     "tag-default": A.readAppearance("tag-default", ANATOMY),
-    "tag-status": A.readAppearance("tag-status", ANATOMY),
-    checkbox: A.readAppearance("checkbox", ANATOMY),
+    "tag-status": { variants: [{ background: "#0a0b0c" }], byNode: [] },
   };
-  // #123456 is not a tag-status appearance fact color (planted fixture).
-  var badCss = ".ds-tag--status-error{background:#123456}";
-  var v = F.checkBaseCssRules(badCss, facts, tokenMap);
+  assert.deepEqual(
+    F.checkBaseCssRules(".ds-tag--status-error{background:#0a0b0c}", facts, {}),
+    [],
+    "the compound modifier must resolve to tag-status, which owns #0a0b0c",
+  );
+  var v = F.checkBaseCssRules(
+    ".ds-tag--status-error{background:#123456}",
+    facts,
+    {},
+  );
   assert.ok(
     v.some(function (m) {
       return (
@@ -202,32 +245,50 @@ test("checkBaseCssRules: a fabricated .ds-tag--status-error color is caught (hyp
     "violation names ds-base.css, the hyphenated selector, and the bad color, got: " +
       JSON.stringify(v),
   );
+  assert.ok(
+    F.checkBaseCssRules(".ds-tag--indigo{background:#0a0b0c}", facts, {})
+      .length > 0,
+    "tag-status's colour must NOT excuse the same value on the hue axis: " +
+      "resolution is per-owner, not a union",
+  );
 });
 
-test("checkBaseCssRules: the real .ds-tag--status-* family rules pass, and comments inside the rule body are not mistaken for declarations", function () {
-  // The real .ds-tag--status-* rules (unlike the single-word rules above
-  // them) carry their value-first explanatory comment INSIDE the braces,
-  // and that comment text itself mentions hex codes (the non-round-tripping
-  // token's resolved value) that are NOT emitted declarations. Proves
-  // checkRuleBody strips comments before scanning, so those mentions do not
-  // read as false violations.
-  var dsBaseCss = fs.readFileSync(
-    path.join(REPO_ROOT, "components", "render", "renderer", "ds-base.css"),
-    "utf8",
-  );
-  var tokenMap = A.loadTokenMap(
-    fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8"),
-  );
+test("checkBaseCssRules: a hex mentioned in a comment inside the rule body is not read as an emitted declaration", function () {
+  // The real .ds-tag--status-* rules (unlike the single-word rules above them)
+  // carry their value-first explanatory comment INSIDE the braces, and that
+  // comment text itself mentions hex codes (the non-round-tripping token's
+  // resolved value) that are NOT emitted declarations. This fixture mirrors that
+  // shape.
+  //
+  // It used to assert against the real sheet with the real tag-status/-catalog/
+  // -shared/-stage captures in scope, which is why it died with an uncaught
+  // ENOENT once the 2026-08-12 sync deleted four of them. Comment stripping is a
+  // property of checkRuleBody and needs no live capture to prove; whether the
+  // real sheet is clean is asserted by the sibling test above, against the
+  // derived fact sources.
   var facts = {
-    "tag-default": A.readAppearance("tag-default", ANATOMY),
-    "tag-catalog": A.readAppearance("tag-catalog", ANATOMY),
-    "tag-shared": A.readAppearance("tag-shared", ANATOMY),
-    "tag-status": A.readAppearance("tag-status", ANATOMY),
-    "tag-stage": A.readAppearance("tag-stage", ANATOMY),
-    checkbox: A.readAppearance("checkbox", ANATOMY),
+    "tag-status": { variants: [{ background: "#0a0b0c" }], byNode: [] },
   };
-  var v = F.checkBaseCssRules(dsBaseCss, facts, tokenMap);
-  assert.deepEqual(v, []);
+  var css =
+    ".ds-tag--status-error {\n" +
+    "  /* value-first: resolves to #f8f4f3 in tokens.css, which does NOT " +
+    "round-trip */\n" +
+    "  background: #0a0b0c;\n" +
+    "}\n";
+  assert.deepEqual(
+    F.checkBaseCssRules(css, facts, {}),
+    [],
+    "a hex named only inside a comment must not be scanned as a declaration",
+  );
+  // Non-vacuity: the very same hex, emitted for real, IS scanned and flagged.
+  var live = css.replace("background: #0a0b0c;", "background: #f8f4f3;");
+  assert.ok(
+    F.checkBaseCssRules(live, facts, {}).some(function (m) {
+      return /#f8f4f3/.test(m);
+    }),
+    "the same value as a real declaration must be flagged, so the pass above " +
+      "is not the scanner missing the rule body altogether",
+  );
 });
 
 test("resolveTagOwner: compound modifier resolves by longest-registered-prefix, falls back to tag-default", function () {
@@ -313,6 +374,131 @@ test("consumedVars still separates hyphen-prefix slug pairs", function () {
     ".ds-loader { color: var(--zen-a); } .ds-loader-with-logo { color: var(--zen-b); }";
   assert.deepEqual(D.consumedVars(css, "ds-loader"), ["--zen-a"]);
   assert.deepEqual(D.consumedVars(css, "ds-loader-with-logo"), ["--zen-b"]);
+});
+
+// Which fact sources checkBaseCssRules needs used to be a hand-typed object
+// literal in the CLI, copied into four fixtures in this file. The 2026-08-12
+// breaking sync retired five tag-family slugs and deleted their anatomy while
+// the literal still named four of them, so `npm run derive:render` died with an
+// uncaught ENOENT inside readAppearance before a single number was computed --
+// the gate could not run at all. The same literal was ALSO wrong in the
+// opposite direction the whole time: it omitted tag-glossary-item-type and
+// tag-catalog-item-type, which do own ds-tag-family rules. One hand-typed list,
+// two opposite errors, neither of which any check could see. It is derived from
+// the renderer's own prefix ownership now, and these three tests are what makes
+// the derive answerable to reality.
+test("baseCssFactSources: every ds-tag/ds-checkbox owner is either captured or reported, none silently skipped", function () {
+  var src = F.baseCssFactSources(ANATOMY);
+  // The claim set comes from the renderer (which slugs it paints, and which
+  // ds-base.css prefixes each one owns); whether a claim is CAPTURED is a fact
+  // about the anatomy dist. Cross-checking the two is the assertion: a derive
+  // that quietly dropped a family member reds here, exactly as the hand-typed
+  // literal silently did not.
+  var claimed = MATRIX.RENDER_SLUGS.filter(function (slug) {
+    return MATRIX.ownedPrefixes(slug).some(function (p) {
+      return (
+        p === "ds-tag" || p.indexOf("ds-tag-") === 0 || p === "ds-checkbox"
+      );
+    });
+  });
+  assert.ok(
+    claimed.length > 1,
+    "the ownership probe itself found nothing to check, so this test proves nothing",
+  );
+  claimed.forEach(function (slug) {
+    var captured = Object.prototype.hasOwnProperty.call(src.facts, slug);
+    var reported = src.uncaptured.indexOf(slug) !== -1;
+    assert.ok(
+      captured || reported,
+      slug +
+        " owns a checked ds-base.css prefix but is neither captured nor reported",
+    );
+    assert.notEqual(
+      captured,
+      reported,
+      slug + " is both captured and reported as uncaptured",
+    );
+    assert.equal(
+      captured,
+      fs.existsSync(path.join(ANATOMY, slug + ".json")),
+      slug + ": the derived fact map disagrees with the anatomy dist on disk",
+    );
+  });
+});
+
+test("checkBaseCssRules: a rule whose owner lost its capture is reported, not quietly checked against another member's", function () {
+  // This is the failure the deleted captures create once the ENOENT is gone.
+  // ds-base.css's own comment records that .ds-tag--catalog's fill matches
+  // .ds-tag--teal exactly, so with tag-catalog's capture deleted the modifier
+  // falls back to tag-default and the rule PASSES -- the gate agreeing with a
+  // colour it has no evidence for, which is the same construction as the
+  // retired "tag-gray" registration the CLI comment warns about. The borrowed
+  // value is DERIVED from tag-default's real capture so it cannot go stale.
+  var real = A.readAppearance("tag-default", ANATOMY);
+  var borrowed = Array.from(F.factColors(real))[0];
+  assert.ok(borrowed, "tag-default's capture carries no colour to borrow");
+  var css = ".ds-tag--shared { background: " + borrowed + "; }\n";
+  var v = F.checkBaseCssRules(css, { "tag-default": real }, {}, ["tag-shared"]);
+  assert.ok(
+    v.some(function (m) {
+      return /\.ds-tag--shared/.test(m) && /tag-shared/.test(m);
+    }),
+    "the rule's own owner has no capture, so the rule must be reported as " +
+      "unverifiable instead of borrowing tag-default's " +
+      borrowed +
+      ", got: " +
+      JSON.stringify(v),
+  );
+  // Non-vacuity the other way: with the owner's capture present, the same rule
+  // is checked normally against it and passes.
+  var v2 = F.checkBaseCssRules(
+    css,
+    {
+      "tag-default": real,
+      "tag-shared": { variants: [{ background: borrowed }], byNode: [] },
+    },
+    {},
+    [],
+  );
+  assert.deepEqual(
+    v2,
+    [],
+    "a rule whose owner IS captured must still be checked against it, not reported",
+  );
+});
+
+test("CLI: fidelity-check.js reaches a verdict when a retired slug's capture is gone, instead of dying on ENOENT", function () {
+  var child_process = require("node:child_process");
+  var os = require("node:os");
+  var tmp = path.join(
+    fs.mkdtempSync(path.join(os.tmpdir(), "fidelity-enoent-")),
+    "report.json",
+  );
+  var result = child_process.spawnSync(
+    process.execPath,
+    [
+      path.join(REPO_ROOT, "scripts/render/fidelity-check.js"),
+      "--report=" + tmp,
+    ],
+    { encoding: "utf8" },
+  );
+  var all = String(result.stdout) + String(result.stderr);
+  assert.doesNotMatch(
+    all,
+    /ENOENT/,
+    "a deleted anatomy file must be a reported condition, not an uncaught " +
+      "throw that takes the whole gate down: " +
+      all,
+  );
+  assert.match(
+    result.stdout,
+    /ORACLE COVERAGE/,
+    "the gate must run all the way to its verdict: " + all,
+  );
+  assert.ok(
+    fs.existsSync(tmp),
+    "the run must still produce a report at the relocated path: " + all,
+  );
 });
 
 test("checkBaseCssRules: a planted bad tag rule is caught", function () {
@@ -673,7 +859,10 @@ function firstSharedTagColorDecl(css) {
     // member, so it is genuinely not charged there and proves nothing about
     // de-duplication. Only an un-overridden shared colour tests the property.
     if (new RegExp("\\.ds-tag-[a-z]+--" + m[2] + "\\s*\\{").test(css)) continue;
-    var d = /(background|background-color|color|border-color)\s*:\s*([^;]+);/.exec(m[3]);
+    var d =
+      /(background|background-color|color|border-color)\s*:\s*([^;]+);/.exec(
+        m[3],
+      );
     if (d && css.split(d[0]).length - 1 === 1) {
       return { selector: m[1], decl: d[0], prop: d[1] };
     }
@@ -683,18 +872,25 @@ function firstSharedTagColorDecl(css) {
 
 test("fragment-aware filtering does not deduplicate a rule across slugs: one shared .ds-tag rule is charged to every family member that renders it", function () {
   var spec = firstSharedTagColorDecl(BASE_CSS);
-  assert.ok(spec, "no uniquely-locatable shared .ds-tag--<color> color declaration found");
+  assert.ok(
+    spec,
+    "no uniquely-locatable shared .ds-tag--<color> color declaration found",
+  );
   // #123456 is not an appearance fact color of any tag family member.
   var corrupted = BASE_CSS.replace(spec.decl, spec.prop + ": #123456;");
   var report = runReportWithCss(corrupted);
   var charged = ["tag-default", "tag-stage"].filter(function (slug) {
     return mismatchesFor(report, slug).some(function (m) {
-      return m.selector.indexOf(spec.selector) !== -1 && /#123456/.test(m.message);
+      return (
+        m.selector.indexOf(spec.selector) !== -1 && /#123456/.test(m.message)
+      );
     });
   });
   assert.ok(
     charged.length >= 2,
-    "a shared " + spec.selector + " declaration must be charged to every family " +
+    "a shared " +
+      spec.selector +
+      " declaration must be charged to every family " +
       "member whose fragment renders it, not collapsed to one; charged: " +
       JSON.stringify(charged),
   );
@@ -717,7 +913,10 @@ test("a tag-stage-scoped color rule is charged to tag-stage alone, not to the sh
   var re = /(\.ds-tag-stage--[a-z0-9-]+)\s*\{([^}]*)\}/g;
   var m;
   while (verifiedStageRule === null && (m = re.exec(BASE_CSS)) !== null) {
-    var d = /(background|background-color|color|border-color)\s*:\s*([^;]+);/.exec(m[2]);
+    var d =
+      /(background|background-color|color|border-color)\s*:\s*([^;]+);/.exec(
+        m[2],
+      );
     if (!d || BASE_CSS.split(d[0]).length - 1 !== 1) continue;
     // Only a selector the gate can currently reach for tag-stage qualifies.
     var probe = runReportWithCss(BASE_CSS.replace(d[0], d[1] + ": #123456;"));

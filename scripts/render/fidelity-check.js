@@ -158,12 +158,74 @@ function fidelityCheck(canonical, ctx) {
 // modifier with no registered owner at any prefix depth (e.g. a fabricated
 // .ds-tag--bogus).
 function resolveTagOwner(modifier, facts) {
-  var segments = modifier.split("-");
+  // One implementation of the longest-registered-prefix walk, shared with the
+  // caller below: with no scope and nothing declared uncaptured, tagRuleOwner
+  // reduces exactly to this function's original body.
+  return tagRuleOwner("", modifier, facts, {}).facts;
+}
+
+// The same resolution, but it also answers WHICH source it resolved to and
+// whether that source's capture is actually present.
+//
+// `absent` is the set of slugs the renderer still paints but whose anatomy
+// capture is gone (the 2026-08-12 sync deleted five tag-family captures while
+// their ds-base.css rules and renderer cases stayed). Those slugs must not
+// resolve to a substitute owner: `.ds-tag--catalog` carries the same fill as
+// `.ds-tag--teal` (ds-base.css says so in its own comment), so falling back to
+// tag-default would PASS that rule on tag-default's evidence, with nothing in
+// the output saying the rule's own subject was never present. That is the
+// tag-gray construction documented in the CLI block below, arrived at by
+// deletion instead of by a hand-registered alias. So a claimed-but-uncaptured
+// owner ends the walk and the rule is reported as unverifiable.
+//
+// Returns { slug, facts, uncaptured }. `facts` is null exactly when
+// `uncaptured` is true.
+function tagRuleOwner(scope, modifier, facts, absent) {
+  var seen = absent || {};
+  var scoped = scopedTagOwnerSlug(scope);
+  if (scoped) {
+    if (facts[scoped])
+      return { slug: scoped, facts: facts[scoped], uncaptured: false };
+    if (seen[scoped]) return { slug: scoped, facts: null, uncaptured: true };
+    // The scope names a prefix no fact source claims at all (a fixture, or a
+    // member retired out of the renderer entirely). Resolve by modifier rather
+    // than invent an owner.
+  }
+  var segments = String(modifier).split("-");
   for (var i = segments.length; i > 0; i--) {
     var key = "tag-" + segments.slice(0, i).join("-");
-    if (facts[key]) return facts[key];
+    if (facts[key]) return { slug: key, facts: facts[key], uncaptured: false };
+    if (seen[key]) return { slug: key, facts: null, uncaptured: true };
   }
-  return facts["tag-default"] || { variants: [], byNode: [] };
+  if (!facts["tag-default"] && seen["tag-default"])
+    return { slug: "tag-default", facts: null, uncaptured: true };
+  return {
+    slug: "tag-default",
+    facts: facts["tag-default"] || { variants: [], byNode: [] },
+    uncaptured: false,
+  };
+}
+
+// A rule the gate cannot verify because its own owner's capture is not there.
+// Reported, never skipped: an unreported exclusion reads identically to a
+// passing check in the output, which is the false all-clear this gate exists to
+// remove.
+function uncapturedOwnerViolation(selector, slug) {
+  return (
+    "ds-base.css " +
+    selector +
+    ": its owner " +
+    slug +
+    " has no appearance capture (no " +
+    slug +
+    ".json in the anatomy dist), so this rule cannot be verified. It is NOT " +
+    "checked against another family member's capture, because agreeing with a " +
+    "colour on someone else's evidence is how a wrong value passes by " +
+    "construction. Three real resolutions, and an ignore list is none of them: " +
+    "re-attribute the rule to the slug that absorbed this one (a fold-in keeps " +
+    "the treatment, under a new owner and axis), retire the rule together with " +
+    "the slug, or restore the capture."
+  );
 }
 
 // Slice 2 folded the tag color variants + the checkbox indeterminate rule
@@ -178,8 +240,15 @@ function resolveTagOwner(modifier, facts) {
 // grouped tag-status family: status-error/-info/-neutral/-success/-warning)
 // are captured and checked, not silently skipped -- see resolveTagOwner
 // above for how a compound modifier finds its owning fact source.
-function checkBaseCssRules(cssText, facts, tokenMap) {
+function checkBaseCssRules(cssText, facts, tokenMap, uncaptured) {
   var violations = [];
+  // Slugs the renderer still paints whose capture is gone (see
+  // baseCssFactSources). Optional: a caller that passes none gets the original
+  // resolution, so every existing fixture behaves exactly as before.
+  var absent = {};
+  (uncaptured || []).forEach(function (slug) {
+    absent[slug] = true;
+  });
   // Capture the WHOLE selector, not just the modifier. A hue modifier can be
   // scoped to one family member (`.ds-tag-stage.ds-tag--lime`), and after the
   // 2026-07-23 redesign tag-stage's Lime and Orange fills no longer match
@@ -201,22 +270,38 @@ function checkBaseCssRules(cssText, facts, tokenMap) {
       .trim();
     var modifier = m[2];
     var selector = scope + ".ds-tag--" + modifier;
-    var owner = /\.ds-tag-stage\b/.test(scope)
-      ? facts["tag-stage"] || resolveTagOwner(modifier, facts)
-      : resolveTagOwner(modifier, facts);
+    // Which member the scope pins the rule to is derived from the renderer's
+    // prefix ownership now (scopedTagOwnerSlug), not from a literal
+    // /\.ds-tag-stage\b/ test with the slug name spelled out beside it.
+    var owner = tagRuleOwner(scope, modifier, facts, absent);
+    if (owner.uncaptured) {
+      violations.push(uncapturedOwnerViolation(selector, owner.slug));
+      continue;
+    }
     checkRuleBody(
       "ds-base.css",
       selector,
       m[3],
-      factColors(owner),
+      factColors(owner.facts),
       tokenMap,
       violations,
     );
   }
-  var cbFacts = factColors(facts["checkbox"]);
+  // Resolved lazily and by derived slug: the owner of the `ds-checkbox` prefix
+  // is whichever render slug claims it, and an absent capture is reported like
+  // any other. This used to be an eager factColors(facts["checkbox"]), which
+  // threw on any caller that had no checkbox entry even when the stylesheet
+  // carried no `.ds-checkbox--indeterminate` rule at all.
+  var cbSlug = checkboxFactSlug();
+  var cbSource = facts[cbSlug];
+  var cbFacts = cbSource ? factColors(cbSource) : null;
   var cre = /\.ds-checkbox--indeterminate[^{]*\{([^}]*)\}/g;
   while ((m = cre.exec(cssText)) !== null) {
     var cbSelector = m[0].slice(0, m[0].indexOf("{")).trim();
+    if (!cbFacts) {
+      violations.push(uncapturedOwnerViolation(cbSelector, cbSlug));
+      continue;
+    }
     checkRuleBody(
       "ds-base.css",
       cbSelector,
@@ -241,6 +326,97 @@ var MATRIX = require("../../components/render/renderer/matrix.js");
 // readAppearance-only. Named to avoid the same fs/path collision as above.
 var nodeFs = require("node:fs");
 var nodePath = require("node:path");
+
+// checkBaseCssRules inspects exactly two selector groups in ds-base.css:
+// `.ds-tag--<modifier>` (any tag-family member's, including a rule scoped to one
+// member's own `.ds-tag-<member>` prefix) and the single literal
+// `.ds-checkbox--indeterminate`. So the fact sources it needs are the render
+// slugs owning a prefix in the `ds-tag` family, plus the one owning
+// `ds-checkbox` exactly -- a RELATION the renderer already states, not a list
+// anyone has to keep true. `ds-checkbox` is matched exactly because the only
+// selector checked under it is that one literal; `ds-checkbox-card` is a
+// different component and no rule of its is examined here.
+function isCheckedBaseCssPrefix(prefix) {
+  return (
+    prefix === "ds-tag" ||
+    prefix.indexOf("ds-tag-") === 0 ||
+    prefix === "ds-checkbox"
+  );
+}
+
+function baseCssFactSlugs() {
+  var slugs = [];
+  MATRIX.RENDER_SLUGS.forEach(function (slug) {
+    if (slugs.indexOf(slug) !== -1) return;
+    if (MATRIX.ownedPrefixes(slug).some(isCheckedBaseCssPrefix))
+      slugs.push(slug);
+  });
+  return slugs.sort();
+}
+
+// Read a capture for every one of those slugs, and report the ones with no
+// capture instead of throwing on the first.
+//
+// The map this replaces was hand-typed in the CLI block below and copied into
+// four fixtures. The 2026-08-12 breaking sync retired five tag-family slugs and
+// deleted their anatomy; the literal still named four of them, so readAppearance
+// raised an uncaught ENOENT and `npm run derive:render` died before computing a
+// single number -- the gate could not run at all, on a migration whose whole
+// purpose was measurement. The same literal had ALSO been wrong in the opposite
+// direction for months: it omitted tag-glossary-item-type and
+// tag-catalog-item-type, both of which own ds-tag-family rules. One hand-typed
+// list, two opposite errors, and no check could see either.
+function baseCssFactSources(anatomyDir) {
+  var facts = {};
+  var uncaptured = [];
+  baseCssFactSlugs().forEach(function (slug) {
+    try {
+      facts[slug] = readAppearance(slug, anatomyDir);
+    } catch (e) {
+      // ENOENT only. A capture that exists but does not parse is NOT an absent
+      // capture: swallowing that would let a corrupt anatomy file read as
+      // "retired" and quietly drop its rules out of the check, the same
+      // laundering the unreadable-baseline branch in the CLI refuses.
+      if (e.code !== "ENOENT") throw e;
+      uncaptured.push(slug);
+    }
+  });
+  return { facts: facts, uncaptured: uncaptured };
+}
+
+// Which family member (if any) a rule's SCOPE pins it to: the slug whose own
+// `ds-tag-<member>` prefix appears as a class in the scope, longest match wins
+// (`.ds-tag-stage.ds-tag--lime` is tag-stage's rule, not the shared hue axis's).
+// `ds-tag` itself is the family base and pins nothing to any one member, which
+// is precisely why the modifier resolves the owner in that case.
+function scopedTagOwnerSlug(scope) {
+  if (!scope) return null;
+  var best = null;
+  var bestLen = 0;
+  MATRIX.RENDER_SLUGS.forEach(function (slug) {
+    MATRIX.ownedPrefixes(slug).forEach(function (p) {
+      if (p.indexOf("ds-tag-") !== 0) return;
+      if (p.length > bestLen && new RegExp("\\." + p + "\\b").test(scope)) {
+        best = slug;
+        bestLen = p.length;
+      }
+    });
+  });
+  return best;
+}
+
+// The `.ds-checkbox--indeterminate` group's owner. Derived so a rename follows
+// the renderer instead of leaving the rule checked against a key nothing fills.
+// Falls back to the historical key name so a caller-supplied fixture still
+// resolves if the renderer stops claiming the prefix altogether.
+function checkboxFactSlug() {
+  var owner = null;
+  MATRIX.RENDER_SLUGS.forEach(function (slug) {
+    if (owner) return;
+    if (MATRIX.ownedPrefixes(slug).indexOf("ds-checkbox") !== -1) owner = slug;
+  });
+  return owner || "checkbox";
+}
 
 // Which prefixes are claimed by more than one slug. Today this is exactly
 // `.ds-tag` across the five tag-family members. Derived, never hand-listed, so
@@ -753,29 +929,38 @@ if (require.main === module) {
     path.join(root, "components", "render", "renderer", "ds-base.css"),
     "utf8",
   );
+  // The fact sources are DERIVED from the renderer's own prefix ownership (see
+  // baseCssFactSources), and the slugs it still paints but can no longer
+  // capture come back named rather than as a throw.
+  //
+  // No "tag-gray" entry can appear here, and that is structural now rather than
+  // a warning to whoever edits the list: only a real render slug can become a
+  // fact source, and there is no tag-gray slug. An earlier pass hand-registered
+  // one pointing at tag-stage, so a .ds-tag--gray rule carrying tag-stage's
+  // #e1e1e6 passed -- the gate agreeing with a wrong colour by construction.
+  // Gray is a tag-default Color (it equals Color=Default), so an unscoped
+  // .ds-tag--gray routes to tag-default and is checked correctly; a
+  // stage-scoped Gray routes by selector.
+  var baseFacts = baseCssFactSources(anatomyDir);
   v = v.concat(
     checkBaseCssRules(
       dsBaseCss,
-      {
-        "tag-default": A.readAppearance("tag-default", anatomyDir),
-        "tag-catalog": A.readAppearance("tag-catalog", anatomyDir),
-        "tag-shared": A.readAppearance("tag-shared", anatomyDir),
-        "tag-status": A.readAppearance("tag-status", anatomyDir),
-        // Owner for rules scoped to .ds-tag-stage (see checkBaseCssRules).
-        "tag-stage": A.readAppearance("tag-stage", anatomyDir),
-        // Deliberately NO "tag-gray" entry. An earlier pass registered one
-        // pointing at tag-stage so a .ds-tag--gray rule carrying tag-stage's
-        // #e1e1e6 would pass, which made the gate agree with a wrong colour by
-        // construction instead of catching it. Gray is still a tag-default
-        // Color; it simply equals Color=Default now, so an unscoped
-        // .ds-tag--gray belongs to tag-default and the default fallback checks
-        // it correctly. tag-stage's own Gray is a scoped rule and routes via
-        // the selector.
-        checkbox: A.readAppearance("checkbox", anatomyDir),
-      },
+      baseFacts.facts,
       tokenMap,
+      baseFacts.uncaptured,
     ),
   );
+  if (baseFacts.uncaptured.length) {
+    process.stdout.write(
+      "  NOTE: " +
+        baseFacts.uncaptured.length +
+        " slug(s) the renderer still paints own ds-base.css rules but have no " +
+        "appearance capture in components/dist/anatomy: " +
+        baseFacts.uncaptured.join(", ") +
+        ".\n  Every rule they own is reported as unverifiable below instead of " +
+        "being checked against another family member's capture.\n",
+    );
+  }
 
   var fragmentsDir = path.join(
     root,
@@ -985,6 +1170,7 @@ module.exports = {
   slugCss: slugCss,
   checkBaseCssRules: checkBaseCssRules,
   resolveTagOwner: resolveTagOwner,
+  baseCssFactSources: baseCssFactSources,
   runFidelityReport: runFidelityReport,
   mismatchFailureMessage: mismatchFailureMessage,
   checkableCount: checkableCount,
