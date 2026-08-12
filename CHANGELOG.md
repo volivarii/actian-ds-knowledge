@@ -32,8 +32,6 @@ Each entry links its pull request. Dates are the merge date (UTC).
   number that matters; and the shades where computed OKLCH disagrees with Figma hex now need a
   correction or a named exception rather than standing as an accepted divergence.
 
-### Added
-
 - **The render fidelity gate now blocks on a coverage regression, because its own subject had been
   eroding for eighteen days and nothing said so.** ([#516](https://github.com/volivarii/actian-ds-knowledge/pull/516)) When #487 landed on
   2026-07-24 the gate reported that the Figma capture could confirm 14.6% of the colors the canonical
@@ -72,7 +70,88 @@ Each entry links its pull request. Dates are the merge date (UTC).
   comparison, and `render-derive.yml` now watches `components/dist/anatomy/**`, the gate's own oracle
   input and the path a coverage loss actually arrives by.
 
+### Changed
+
+- **BREAKING SYNC 2026-08-12: the tag family folded from eight components into three, and carrying it
+  through raised oracle coverage from 11.8% to 17.8% instead of costing the eight declarations it
+  looked like it would.** ([#PR](_PR link added at open_)) The registry goes 323 → 322 components.
+  Five components are **removed** — `tag-catalog`, `tag-shared`, `tag-stage`, `tag-status`,
+  `tag-glossary-item-type` — and they are not deleted so much as **re-axised**: `tag-default` now
+  carries a single `Type` axis with 14 values (`Default`, `Catalog`, `Shared`, `Stage-1`..`Stage-8`,
+  `Status-error`, `Status-warning`, `Status-success`), and every retired component's treatment lives
+  there. `tag-catalog-item-type` is **renamed** `tag-item-type`, `radio-button-card` is **renamed**
+  `radio-card`, and `arrow-up`, `datasets` and the two Actian Data Intelligence horizontal logos are
+  added.
+
+  **The renderer renders the Type axis from the anatomy capture, not from a hue table.** Each Type's
+  background and border come from `anatomy/tag-default.json`'s `root.appearance.variants[]`, and the
+  leading icon's slug swaps per Type from the same capture (`folder` for Catalog, `error-filled` /
+  `success-filled` / `warning-filled` for the Status values). That is why the result is verifiable
+  rather than merely plausible, and it is what moved the numbers: **checkable declarations 49 → 78,
+  oracle coverage 11.8% → 17.8%, examined 415 → 438, `mismatch` still 0.** This reverses the erosion
+  #516 documented (14.6% on 2026-07-24 → 11.8% on 2026-08-11), and the gain is understated, because
+  the old 49 double-counted the seven shared `.ds-tag--<hue>` declarations against both `tag-default`
+  and `tag-stage` while the new 51 are single-owner.
+
+  Two facts were taken from the capture rather than smoothed over. **`Stage-1` renders exactly as
+  `Default`**, because the capture holds no override group for it; no hue was invented for it.
+  And **`Type=Shared` renders no leading icon**, because `quality.structuralVariants` flags it
+  `childCount:2!=1` — the component has no icon child, which the retired `tag-shared` renderer also
+  reflected by rendering label-only. That second one is worth naming: the fidelity gate compares
+  colors, so a wrongly-added icon keeps `mismatch` at 0 forever and no measurement could ever have
+  caught it.
+
+  **Accepted per-slug coverage loss**, in the gate's own words: the tag fold-in retires `tag-stage`
+  and `tag-glossary-item-type` and renames `tag-catalog-item-type` to `tag-item-type`; their verified
+  declarations move into `tag-default`'s new Type axis and into `tag-item-type`, taking the repo-wide
+  checkable count from 49 to 78. The three slugs each drop 7 → 0, 1 → 0 and 7 → 0 under their old
+  names, which is what the per-slug floor fires on, and it fires correctly: a rename moves coverage,
+  it does not lose it, but only a human can say which of the two happened.
+
+  **What consumers must do.** The plugin needs #273's repoint repeated for `radio-button-card` →
+  `radio-card`. Anything resolving the five removed slugs by name will stop finding them, which is
+  the point: this repo was publishing them as ghosts with fossil anatomy until this sync, per #517.
+
+  **Two gaps named rather than papered over.** `radio-card`, `tag-item-type` and the two new Data
+  Intelligence logos have **no media capture**, because the media phases cannot run outside CI (they
+  fetch the full file subtree and the response terminates on a normal uplink); the predecessors' July
+  captures were deleted rather than renamed forward, since a stale image that looks current is worse
+  than a missing one. The next successful CI sync captures all four. Separately,
+  `derive-canonical.js` writes a fragment per rendered slug but **never prunes one whose slug has
+  disappeared**, unlike `derive-guidelines.js`, which pruned six stale files unprompted in this same
+  migration; twelve orphaned fragments and usage-notes were removed by hand here, and the missing
+  prune remains.
+
 ### Fixed
+
+- **The coverage gate shipped in #516 was disabled by the first change it ever faced, and it was the
+  change it exists to measure.** ([#PR](_PR link added at open_)) `fidelity-check.js` hand-listed the
+  slugs whose anatomy it reads and called `readAppearance` per entry with no `try`/`catch`, so when the
+  2026-08-12 sync deleted five tag components' anatomy the gate died with an uncaught `ENOENT` and
+  `npm run derive:render` produced no number at all. The same hand-typed list had been wrong in the
+  opposite direction for months, omitting two slugs that do own family rules: one list, two opposite
+  errors, and no check could see either. The fact sources are now derived, and a missing capture is
+  **reported** rather than thrown — reported specifically, because a rule silently dropped out of the
+  check reads identically to a rule that passed.
+
+- **A CSS rule was attributed to its owner by NAME, so a rule whose owner had been retired passed on a
+  different component's evidence.** ([#PR](_PR link added at open_)) `.ds-tag--catalog` resolved by
+  splitting its modifier to the key `tag-catalog`; once that slug left the renderer entirely the lookup
+  fell through to `tag-default`, whose capture happens to contain the same `#d0efed`, and the rule
+  passed with zero violations. The per-slug floor could not catch it either, because a vanished slug is
+  charged `after = 0` and those slugs were already at 0. Rules are now attributed to the slug that
+  **produces** them: every slug's variant matrix is rendered and its classes read back, so a rule with
+  no producer is an orphan violation and a rule with several is checked against each producer's own
+  capture. A strictly-additive role pass was added alongside it, because attribution alone did not
+  close the hole: a value the capture holds but in a different role (a border color painted as a
+  background) now reports instead of matching by set membership.
+
+- **The coverage gate reported the wrong direction when a slug lost coverage but the repo gained it.**
+  ([#PR](_PR link added at open_)) Its headline read `ORACLE COVERAGE REGRESSED: 49 -> 78 (11.8% ->
+  17.8%)` — a loss framing on a 60% gain. The message now states the two facts independently: which
+  slugs lost, which still blocks whichever way the total moved, and separately whether the repo-wide
+  total rose, fell or held level. A gate that misstates direction teaches its readers to discount it,
+  and the next time it says "regressed" about something real, nobody believes it.
 
 - **The tracker fix from #510 could create its issue but not update it, so the first breaking night
   after it went red and raised a false alarm.** ([#PR](_PR link added at open_)) #510 made the marker
