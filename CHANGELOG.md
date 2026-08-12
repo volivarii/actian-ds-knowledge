@@ -74,7 +74,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 - **BREAKING SYNC 2026-08-12: the tag family folded from eight components into three, and carrying it
   through raised oracle coverage from 11.8% to 17.8% instead of costing the eight declarations it
-  looked like it would.** ([#PR](_PR link added at open_)) The registry goes 323 → 322 components.
+  looked like it would.** ([#522](https://github.com/volivarii/actian-ds-knowledge/pull/522)) The registry goes 323 → 322 components.
   Five components are **removed** — `tag-catalog`, `tag-shared`, `tag-stage`, `tag-status`,
   `tag-glossary-item-type` — and they are not deleted so much as **re-axised**: `tag-default` now
   carries a single `Type` axis with 14 values (`Default`, `Catalog`, `Shared`, `Stage-1`..`Stage-8`,
@@ -129,7 +129,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **The coverage gate shipped in #516 was disabled by the first change it ever faced, and it was the
-  change it exists to measure.** ([#PR](_PR link added at open_)) `fidelity-check.js` hand-listed the
+  change it exists to measure.** ([#522](https://github.com/volivarii/actian-ds-knowledge/pull/522)) `fidelity-check.js` hand-listed the
   slugs whose anatomy it reads and called `readAppearance` per entry with no `try`/`catch`, so when the
   2026-08-12 sync deleted five tag components' anatomy the gate died with an uncaught `ENOENT` and
   `npm run derive:render` produced no number at all. That same list had also been copied into four test
@@ -138,7 +138,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   check reads identically to a rule that passed.
 
 - **A CSS rule was attributed to its owner by NAME, so a rule whose owner had been retired passed on a
-  different component's evidence.** ([#PR](_PR link added at open_)) `.ds-tag--catalog` resolved by
+  different component's evidence.** ([#522](https://github.com/volivarii/actian-ds-knowledge/pull/522)) `.ds-tag--catalog` resolved by
   splitting its modifier to the key `tag-catalog`; once that slug left the renderer entirely the lookup
   fell through to `tag-default`, whose capture happens to contain the same `#d0efed`, and the rule
   passed with zero violations. The per-slug floor could not catch it either, because a vanished slug is
@@ -150,7 +150,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   background) now reports instead of matching by set membership.
 
 - **The coverage gate reported the wrong direction when a slug lost coverage but the repo gained it.**
-  ([#PR](_PR link added at open_)) Its headline read `ORACLE COVERAGE REGRESSED: 49 -> 78 (11.8% ->
+  ([#522](https://github.com/volivarii/actian-ds-knowledge/pull/522)) Its headline read `ORACLE COVERAGE REGRESSED: 49 -> 78 (11.8% ->
   17.8%)` — a loss framing on a 60% gain. The message now states the two facts independently: which
   slugs lost, which still blocks whichever way the total moved, and separately whether the repo-wide
   total rose, fell or held level. A gate that misstates direction teaches its readers to discount it,
