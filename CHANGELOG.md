@@ -78,8 +78,9 @@ Each entry links its pull request. Dates are the merge date (UTC).
   Five components are **removed** — `tag-catalog`, `tag-shared`, `tag-stage`, `tag-status`,
   `tag-glossary-item-type` — and they are not deleted so much as **re-axised**: `tag-default` now
   carries a single `Type` axis with 14 values (`Default`, `Catalog`, `Shared`, `Stage-1`..`Stage-8`,
-  `Status-error`, `Status-warning`, `Status-success`), and every retired component's treatment lives
-  there. `tag-catalog-item-type` is **renamed** `tag-item-type`, `radio-button-card` is **renamed**
+  `Status-error`, `Status-warning`, `Status-success`), and four of the five retired components'
+  treatments live there. The fifth, `tag-glossary-item-type`, went instead to `tag-item-type` as its
+  `Glossary-1`..`Glossary-5` values. `tag-catalog-item-type` is **renamed** `tag-item-type`, `radio-button-card` is **renamed**
   `radio-card`, and `arrow-up`, `datasets` and the two Actian Data Intelligence horizontal logos are
   added.
 
@@ -91,7 +92,10 @@ Each entry links its pull request. Dates are the merge date (UTC).
   oracle coverage 11.8% → 17.8%, examined 415 → 438, `mismatch` still 0.** This reverses the erosion
   #516 documented (14.6% on 2026-07-24 → 11.8% on 2026-08-11), and the gain is understated, because
   the old 49 double-counted the seven shared `.ds-tag--<hue>` declarations against both `tag-default`
-  and `tag-stage` while the new 51 are single-owner.
+  and `tag-stage`, whereas the tag family's 51 of the new 78 (`tag-default` 24 + `tag-item-type` 27)
+  are each charged to a single owner. One declaration moved the other way: `.ds-tag-stage__dot`
+  survives for `search-result-card` but no slug now claims the `ds-tag-stage` prefix, so it left the
+  measured population entirely (worth 0.04pp, and no slug was invented to reclaim it).
 
   Two facts were taken from the capture rather than smoothed over. **`Stage-1` renders exactly as
   `Default`**, because the capture holds no override group for it; no hue was invented for it.
@@ -128,9 +132,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
   change it exists to measure.** ([#PR](_PR link added at open_)) `fidelity-check.js` hand-listed the
   slugs whose anatomy it reads and called `readAppearance` per entry with no `try`/`catch`, so when the
   2026-08-12 sync deleted five tag components' anatomy the gate died with an uncaught `ENOENT` and
-  `npm run derive:render` produced no number at all. The same hand-typed list had been wrong in the
-  opposite direction for months, omitting two slugs that do own family rules: one list, two opposite
-  errors, and no check could see either. The fact sources are now derived, and a missing capture is
+  `npm run derive:render` produced no number at all. That same list had also been copied into four test
+  fixtures, so the one set of facts had to be kept true in five places at once. The fact sources are now derived, and a missing capture is
   **reported** rather than thrown — reported specifically, because a rule silently dropped out of the
   check reads identically to a rule that passed.
 

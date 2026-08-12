@@ -547,10 +547,17 @@ function baseCssFactSlugs() {
 // deleted their anatomy; the literal still named four of them, so readAppearance
 // raised an uncaught ENOENT and `npm run derive:render` died before computing a
 // single number -- the gate could not run at all, on a migration whose whole
-// purpose was measurement. The same literal had ALSO been wrong in the opposite
-// direction for months: it omitted tag-glossary-item-type and
-// tag-catalog-item-type, both of which owned ds-tag-family rules. One hand-typed
-// list, two opposite errors, and no check could see either.
+// purpose was measurement. The same literal was copied into four fixtures, so
+// one set of facts had to be kept true in five places at once, and no check
+// could see when it stopped being true in any of them.
+//
+// It has been claimed (in the commit that first derived this set, and briefly in
+// the CHANGELOG) that the literal was ALSO wrong the opposite way, by omitting
+// tag-glossary-item-type and tag-catalog-item-type. That is not right, and the
+// correction is worth keeping: those two own only
+// `.ds-tag-glossary-item-type--*` / `.ds-tag-catalog-item-type--*` rules, and
+// this scanner checks neither -- it reads `.ds-tag--<modifier>` and
+// `.ds-checkbox--indeterminate` only. Omitting them cost nothing.
 function baseCssFactSources(anatomyDir) {
   var facts = {};
   var uncaptured = [];

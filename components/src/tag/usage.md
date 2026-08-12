@@ -23,9 +23,9 @@ This guideline covers the tag family: default (with status, stage, catalog, and 
 
 ## Variant selection
 
-* **Default (Type: Default):** user-defined or topic labels. The color axis (pink through gray) differentiates neighboring tags; color carries no meaning here.
+* **Default (Type: Default):** user-defined or topic labels. All of them share one neutral treatment; there is no color choice to make here, and none to read meaning into.
 
-* **Default (Type: Status-error / Status-warning / Status-success):** operational status of a running asset (for example **Success**, **Fail**, **Warning**, **Scheduled**, **Stopped**). Use the platform status vocabulary; never coin a new status word per screen.
+* **Default (Type: Status-error / Status-warning / Status-success):** operational status of a running asset (**Error**, **Warning**, **Success**). Use the platform status vocabulary; never coin a new status word per screen.
 
 * **Default (Type: Stage-1 through Stage-8):** data lifecycle stages, colored per stage consistently across the platform.
 
