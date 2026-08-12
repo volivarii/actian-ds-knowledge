@@ -192,48 +192,54 @@ test("checkBaseCssRules: a fabricated modifier cannot pass by borrowing a siblin
   // tag-default that fill), and a stale sentinel stops discriminating in
   // silence. Take a colour some other registered source really owns and
   // tag-default really does not, whatever those captures happen to be today.
+  // The producer relation is stated by the fixture rather than left to a
+  // slug-name coincidence: `.ds-tag--hue` is produced by tag-alpha, and tag-beta
+  // is a sibling entry in the SAME facts map that produces nothing here.
   var tagDefault = A.readAppearance("tag-default", ANATOMY);
   var sibling = A.readAppearance("checkbox", ANATOMY);
   var own = F.factColors(tagDefault);
-  var borrowed = Array.from(F.factColors(sibling)).filter(function (c) {
+  var borrowed = hexOnly(F.factColors(sibling)).filter(function (c) {
     // checkRuleBody scans hex literals and var() references, so an rgba() fact
     // cannot exercise it.
-    return /^#[0-9a-f]{3,8}$/.test(c) && !own.has(c);
+    return !own.has(c);
   })[0];
   assert.ok(
     borrowed,
     "no sibling colour outside tag-default's own capture is available to " +
       "borrow, so this test cannot discriminate",
   );
-  var facts = { "tag-default": tagDefault, checkbox: sibling };
+  var facts = { "tag-alpha": tagDefault, "tag-beta": sibling };
+  var index = { byClass: { "ds-tag--hue": ["tag-alpha"] }, failed: [] };
   var v = F.checkBaseCssRules(
-    ".ds-tag--bogus { background: " + borrowed + "; }\n",
+    ".ds-tag--hue { background: " + borrowed + "; }\n",
     facts,
     {},
+    [],
+    index,
   );
   assert.ok(
     v.some(function (m) {
-      return /\.ds-tag--bogus/.test(m) && m.indexOf(borrowed) !== -1;
+      return /\.ds-tag--hue/.test(m) && m.indexOf(borrowed) !== -1;
     }),
-    "a fabricated .ds-tag--bogus borrowing a sibling source's " +
+    "a rule produced by tag-alpha, carrying tag-beta's " +
       borrowed +
-      " must still violate (it resolves to tag-default, which does not own " +
-      "it), got: " +
+      ", must violate: a sibling's capture in the same map is not evidence, " +
+      "got: " +
       JSON.stringify(v),
   );
   // The other direction, so the assertion above is not just "everything reds":
-  // a colour tag-default really owns passes on the hue axis it really owns.
-  var mine = Array.from(own).filter(function (c) {
-    return /^#[0-9a-f]{3,8}$/.test(c);
-  })[0];
+  // a colour the PRODUCER really owns passes.
+  var mine = hexOnly(own)[0];
   assert.deepEqual(
     F.checkBaseCssRules(
-      ".ds-tag--indigo { background: " + mine + "; }\n",
+      ".ds-tag--hue { background: " + mine + "; }\n",
       facts,
       {},
+      [],
+      index,
     ),
     [],
-    "a hue rule carrying a colour tag-default captured must pass",
+    "a rule carrying a colour its own producer captured must pass",
   );
 });
 
@@ -243,25 +249,39 @@ test("checkBaseCssRules: a hyphenated modifier is checked against its own owner,
   // .ds-tag--status-<x> rules were silently never checked -- a fabricated
   // #123456 in one of them produced 0 violations.
   //
-  // The owning fact source is synthetic on purpose. The property under test is
-  // the RESOLUTION (status-error resolves to tag-status, not to tag-default),
-  // and this fixture used to prove it by reading tag-status's live capture --
-  // which is exactly why it died with an uncaught ENOENT the day the
-  // 2026-08-12 sync retired that slug and deleted its anatomy. A resolution
-  // test needs a source, not that source's real colours.
+  // Both the producer relation and the capture are stated by the fixture. The
+  // property under test is that the compound modifier CLASS is matched and
+  // charged to its producer; proving that by reading a live capture is what made
+  // this fixture die with an uncaught ENOENT the day the 2026-08-12 sync retired
+  // tag-status, and then made it depend on a slug-name coincidence.
   var facts = {
-    "tag-default": A.readAppearance("tag-default", ANATOMY),
     "tag-status": { variants: [{ background: "#0a0b0c" }], byNode: [] },
+    "tag-other": { variants: [{ background: "#123456" }], byNode: [] },
+  };
+  var index = {
+    byClass: {
+      "ds-tag--status-error": ["tag-status"],
+      "ds-tag--other": ["tag-other"],
+    },
+    failed: [],
   };
   assert.deepEqual(
-    F.checkBaseCssRules(".ds-tag--status-error{background:#0a0b0c}", facts, {}),
+    F.checkBaseCssRules(
+      ".ds-tag--status-error{background:#0a0b0c}",
+      facts,
+      {},
+      [],
+      index,
+    ),
     [],
-    "the compound modifier must resolve to tag-status, which owns #0a0b0c",
+    "the compound modifier must be charged to tag-status, which owns #0a0b0c",
   );
   var v = F.checkBaseCssRules(
     ".ds-tag--status-error{background:#123456}",
     facts,
     {},
+    [],
+    index,
   );
   assert.ok(
     v.some(function (m) {
@@ -275,10 +295,15 @@ test("checkBaseCssRules: a hyphenated modifier is checked against its own owner,
       JSON.stringify(v),
   );
   assert.ok(
-    F.checkBaseCssRules(".ds-tag--indigo{background:#0a0b0c}", facts, {})
-      .length > 0,
-    "tag-status's colour must NOT excuse the same value on the hue axis: " +
-      "resolution is per-owner, not a union",
+    F.checkBaseCssRules(
+      ".ds-tag--other{background:#0a0b0c}",
+      facts,
+      {},
+      [],
+      index,
+    ).length > 0,
+    "tag-status's colour must NOT excuse the same value on a rule tag-other " +
+      "produces: per-producer, not a union",
   );
 });
 
@@ -298,6 +323,10 @@ test("checkBaseCssRules: a hex mentioned in a comment inside the rule body is no
   var facts = {
     "tag-status": { variants: [{ background: "#0a0b0c" }], byNode: [] },
   };
+  var index = {
+    byClass: { "ds-tag--status-error": ["tag-status"] },
+    failed: [],
+  };
   var css =
     ".ds-tag--status-error {\n" +
     "  /* value-first: resolves to #f8f4f3 in tokens.css, which does NOT " +
@@ -305,14 +334,14 @@ test("checkBaseCssRules: a hex mentioned in a comment inside the rule body is no
     "  background: #0a0b0c;\n" +
     "}\n";
   assert.deepEqual(
-    F.checkBaseCssRules(css, facts, {}),
+    F.checkBaseCssRules(css, facts, {}, [], index),
     [],
     "a hex named only inside a comment must not be scanned as a declaration",
   );
   // Non-vacuity: the very same hex, emitted for real, IS scanned and flagged.
   var live = css.replace("background: #0a0b0c;", "background: #f8f4f3;");
   assert.ok(
-    F.checkBaseCssRules(live, facts, {}).some(function (m) {
+    F.checkBaseCssRules(live, facts, {}, [], index).some(function (m) {
       return /#f8f4f3/.test(m);
     }),
     "the same value as a real declaration must be flagged, so the pass above " +
@@ -320,27 +349,13 @@ test("checkBaseCssRules: a hex mentioned in a comment inside the rule body is no
   );
 });
 
-test("resolveTagOwner: compound modifier resolves by longest-registered-prefix, falls back to tag-default", function () {
-  var facts = {
-    "tag-default": { variants: [], byNode: [{ name: "default" }] },
-    "tag-status": { variants: [], byNode: [{ name: "status" }] },
-  };
-  assert.equal(
-    F.resolveTagOwner("status-error", facts).byNode[0].name,
-    "status",
-    "status-error strips to the registered tag-status prefix",
-  );
-  assert.equal(
-    F.resolveTagOwner("indigo", facts).byNode[0].name,
-    "default",
-    "a plain color modifier with no registered tag-indigo falls back to tag-default",
-  );
-  assert.equal(
-    F.resolveTagOwner("bogus-modifier", facts).byNode[0].name,
-    "default",
-    "an unregistered compound modifier falls back to tag-default at every prefix depth",
-  );
-});
+// The former "resolveTagOwner: compound modifier resolves by
+// longest-registered-prefix, falls back to tag-default" test is gone with the
+// function it covered. That resolution WAS the defect: its terminal fallback
+// adopted any modifier no key matched, so a rule whose producer had been deleted
+// was charged to tag-default and passed on tag-default's evidence. What owns a
+// rule is now read off the renderer's output (see the orphan and reuse tests
+// below), and there is no name-shaped fallback left to test.
 
 var MATRIX = require("../../components/render/renderer/matrix.js");
 
@@ -440,26 +455,46 @@ test("consumedVars still separates hyphen-prefix slug pairs", function () {
 // the gate could not run at all. The same literal was ALSO wrong in the
 // opposite direction the whole time: it omitted tag-glossary-item-type and
 // tag-catalog-item-type, which do own ds-tag-family rules. One hand-typed list,
-// two opposite errors, neither of which any check could see. It is derived from
-// the renderer's own prefix ownership now, and these three tests are what makes
-// the derive answerable to reality.
-test("baseCssFactSources: every ds-tag/ds-checkbox owner is either captured or reported, none silently skipped", function () {
+// two opposite errors, neither of which any check could see.
+//
+// The first fix derived the owner set from CSS prefix OWNERSHIP, which review
+// found had the mirror-image hole: a slug can drop out of that set (its renderer
+// case deleted) and take its own regression with it, because the resolution then
+// fell through to a terminal "must be tag-default" and adopted the orphan rule
+// silently. The relation is REVERSED now, and it is the only one that answers
+// the question the gate is actually asking: which slug PRODUCES this class, read
+// off the renderer's own output across the slug's whole variant matrix. These
+// tests are what makes that relation answerable to reality in both directions.
+function checkedClass(cls) {
+  return /^ds-tag--/.test(cls) || cls === "ds-checkbox--indeterminate";
+}
+
+function hexOnly(colors) {
+  return Array.from(colors).filter(function (c) {
+    return /^#[0-9a-f]{3,8}$/.test(c);
+  });
+}
+
+test("baseCssFactSources: every slug that PRODUCES a checked ds-base.css class is a fact source, captured or reported", function () {
   var src = F.baseCssFactSources(ANATOMY);
-  // The claim set comes from the renderer (which slugs it paints, and which
-  // ds-base.css prefixes each one owns); whether a claim is CAPTURED is a fact
-  // about the anatomy dist. Cross-checking the two is the assertion: a derive
-  // that quietly dropped a family member reds here, exactly as the hand-typed
-  // literal silently did not.
-  var claimed = MATRIX.RENDER_SLUGS.filter(function (slug) {
-    return MATRIX.ownedPrefixes(slug).some(function (p) {
-      return (
-        p === "ds-tag" || p.indexOf("ds-tag-") === 0 || p === "ds-checkbox"
-      );
+  var index = F.classEmitterIndex();
+  assert.deepEqual(
+    index.failed,
+    [],
+    "a render slug the renderer could not render at all: the producer index is " +
+      "incomplete, so every rule it would have claimed looks like an orphan",
+  );
+  var producers = {};
+  Object.keys(index.byClass).forEach(function (cls) {
+    if (!checkedClass(cls)) return;
+    index.byClass[cls].forEach(function (slug) {
+      producers[slug] = 1;
     });
   });
+  var claimed = Object.keys(producers).sort();
   assert.ok(
     claimed.length > 1,
-    "the ownership probe itself found nothing to check, so this test proves nothing",
+    "the producer probe itself found nothing, so this test proves nothing",
   );
   claimed.forEach(function (slug) {
     var captured = Object.prototype.hasOwnProperty.call(src.facts, slug);
@@ -467,7 +502,7 @@ test("baseCssFactSources: every ds-tag/ds-checkbox owner is either captured or r
     assert.ok(
       captured || reported,
       slug +
-        " owns a checked ds-base.css prefix but is neither captured nor reported",
+        " produces a class this gate checks but is neither captured nor reported",
     );
     assert.notEqual(
       captured,
@@ -480,32 +515,245 @@ test("baseCssFactSources: every ds-tag/ds-checkbox owner is either captured or r
       slug + ": the derived fact map disagrees with the anatomy dist on disk",
     );
   });
+  // The other direction, which the prefix-ownership derive got wrong: nothing
+  // that produces none of the checked classes may be dragged in, and nothing
+  // that produces one may be left out.
+  Object.keys(src.facts)
+    .concat(src.uncaptured)
+    .forEach(function (slug) {
+      assert.ok(
+        claimed.indexOf(slug) !== -1,
+        slug +
+          " is registered as a fact source but produces none of the classes " +
+          "this gate checks",
+      );
+    });
+});
+
+test("checkBaseCssRules: a rule no render slug produces is reported as an orphan, never adopted by tag-default", function () {
+  // The mirror-image bug review found. `.ds-tag--lime` was a real rule until the
+  // fold-in deleted tag-default's Color axis; a modifier whose producer is gone
+  // used to fall through to the terminal "resolve to tag-default", and because
+  // the check is set membership over that ONE slug's whole capture, a value
+  // tag-default carries anywhere -- a border colour of an unrelated Type, say --
+  // passed as a background. Zero violations for a rule nothing paints.
+  var index = F.classEmitterIndex();
+  var retired = "ds-tag--lime";
+  assert.ok(
+    !index.byClass[retired],
+    retired +
+      " is produced again, so it is no longer an orphan and this test needs a " +
+      "different specimen (that is the signal, not a failure to work around)",
+  );
+  var src = F.baseCssFactSources(ANATOMY);
+  var borrowed = hexOnly(F.factColors(src.facts["tag-default"]))[0];
+  assert.ok(borrowed, "tag-default's capture carries no colour to borrow");
+  var css = "." + retired + " { background: " + borrowed + "; }\n";
+  var v = F.checkBaseCssRules(css, src.facts, {}, src.uncaptured);
+  assert.ok(
+    v.some(function (m) {
+      return m.indexOf("." + retired) !== -1 && /no render slug/.test(m);
+    }),
+    "a rule no slug produces must be reported as an orphan even though " +
+      borrowed +
+      " is somewhere in tag-default's capture, got: " +
+      JSON.stringify(v),
+  );
+  // Non-vacuity: the same colour under a modifier that IS produced resolves to
+  // its producer and is checked, not reported.
+  var produced = Object.keys(index.byClass)
+    .filter(function (cls) {
+      return /^ds-tag--/.test(cls);
+    })
+    .sort()[0];
+  assert.ok(produced, "no produced .ds-tag--<modifier> class exists at all");
+  var vOk = F.checkBaseCssRules(
+    "." + produced + " { background: " + borrowed + "; }\n",
+    src.facts,
+    {},
+    src.uncaptured,
+  );
+  assert.ok(
+    !vOk.some(function (m) {
+      return /no render slug/.test(m);
+    }),
+    produced +
+      " is produced, so it must not be reported as an orphan: " +
+      JSON.stringify(vOk),
+  );
+});
+
+test("checkBaseCssRules: a captured colour painted in the WRONG role is reported (a border fill is not evidence for a background)", function () {
+  // The other half of review's reproduction, and the reason attribution alone
+  // does not close it: `.ds-tag--catalog { background: #d0efed }` passed because
+  // #d0efed IS in tag-default's capture -- as the BORDER of Type=Catalog. Once
+  // the rule is attributed to its real producer, the check still has to know
+  // which ROLE the capture recorded the value in, or any colour anywhere in the
+  // component's palette passes on any property. Specimen derived from the live
+  // capture: a colour this producer holds as a border and never as a background.
+  var src = F.baseCssFactSources(ANATOMY);
+  var index = F.classEmitterIndex();
+  var soleProducer = Object.keys(index.byClass)
+    .filter(function (cls) {
+      return (
+        /^ds-tag--/.test(cls) &&
+        index.byClass[cls].length === 1 &&
+        index.byClass[cls][0] === "tag-default"
+      );
+    })
+    .sort()[0];
+  assert.ok(
+    soleProducer,
+    "no .ds-tag--<modifier> class is produced by tag-default alone, so a " +
+      "single-producer specimen is not available",
+  );
+  var roles = F.propertyFactColors(src.facts["tag-default"]);
+  var borderOnly = hexOnly(roles.border).filter(function (c) {
+    return !roles.background.has(c);
+  })[0];
+  assert.ok(
+    borderOnly,
+    "tag-default's capture holds no border colour that is not also a " +
+      "background, so the role distinction cannot be told apart here",
+  );
+  var v = F.checkBaseCssRules(
+    "." + soleProducer + " { background: " + borderOnly + "; }\n",
+    src.facts,
+    {},
+    src.uncaptured,
+  );
+  assert.ok(
+    v.some(function (m) {
+      return (
+        m.indexOf(borderOnly) !== -1 && /NOT as a background value/.test(m)
+      );
+    }),
+    borderOnly +
+      " is a captured BORDER colour, so painting it as a background must be " +
+      "reported even though the value is somewhere in the capture, got: " +
+      JSON.stringify(v),
+  );
+  // Non-vacuity: the very same colour on the property the capture recorded it
+  // for passes, so this is a role check and not a blanket rejection.
+  assert.deepEqual(
+    F.checkBaseCssRules(
+      "." + soleProducer + " { border-color: " + borderOnly + "; }\n",
+      src.facts,
+      {},
+      src.uncaptured,
+    ),
+    [],
+    "the same value painted as a border must pass: the capture recorded it there",
+  );
+});
+
+test("checkBaseCssRules: a rule scoped to a class only a non-family slug produces is charged to THAT slug, not to tag-default", function () {
+  // The distinction the fold-in made live. `.ds-tag-stage` and
+  // `.ds-tag-stage__dot` survive in ds-base.css because search-result-card still
+  // emits them, while NO slug claims the ds-tag-stage prefix any more. A rule
+  // scoped to that class therefore belongs to search-result-card, and charging
+  // it to tag-default (the only claimant of the ds-tag prefix) would check it
+  // against the wrong component's capture. Both specimens are derived from the
+  // two real captures, so neither can go stale.
+  var index = F.classEmitterIndex();
+  var scopeClass = "ds-tag-stage";
+  var src = F.baseCssFactSources(ANATOMY);
+  var reuser = (index.byClass[scopeClass] || [])[0];
+  assert.ok(
+    reuser && (index.byClass[scopeClass] || []).length === 1,
+    scopeClass +
+      " is not produced by exactly one slug any more, so this specimen no " +
+      "longer isolates the reuse case: " +
+      JSON.stringify(index.byClass[scopeClass]),
+  );
+  var modClass = Object.keys(index.byClass)
+    .filter(function (cls) {
+      return /^ds-tag--/.test(cls) && index.byClass[cls].indexOf(reuser) !== -1;
+    })
+    .sort()[0];
+  assert.ok(
+    modClass,
+    reuser +
+      " produces no .ds-tag--<modifier> class, so no scoped rule can " +
+      "be attributed to it",
+  );
+  // Drawn from the BACKGROUND role of each capture, because the specimen is
+  // painted as a background: a colour either capture holds only as a border
+  // would be reported for the role mismatch instead, and this test would then
+  // red for a reason that has nothing to do with attribution.
+  var reuserColors = F.propertyFactColors(src.facts[reuser]).background;
+  var tagColors = F.propertyFactColors(src.facts["tag-default"]).background;
+  var reuserOnly = hexOnly(reuserColors).filter(function (c) {
+    return !tagColors.has(c);
+  })[0];
+  var tagOnly = hexOnly(tagColors).filter(function (c) {
+    return !reuserColors.has(c);
+  })[0];
+  assert.ok(
+    reuserOnly && tagOnly,
+    "the two captures do not disagree on any colour, so attribution cannot be " +
+      "told apart here",
+  );
+  var scoped = "." + scopeClass + " ." + modClass + " { background: ";
+  assert.deepEqual(
+    F.checkBaseCssRules(
+      scoped + reuserOnly + "; }\n",
+      src.facts,
+      {},
+      src.uncaptured,
+    ),
+    [],
+    "the scoped rule must be checked against " +
+      reuser +
+      "'s capture, which owns " +
+      reuserOnly,
+  );
+  var v = F.checkBaseCssRules(
+    scoped + tagOnly + "; }\n",
+    src.facts,
+    {},
+    src.uncaptured,
+  );
+  assert.ok(
+    v.some(function (m) {
+      return m.indexOf(modClass) !== -1 && m.indexOf(tagOnly) !== -1;
+    }),
+    "a colour only tag-default owns must NOT pass on a rule only " +
+      reuser +
+      " can produce, got: " +
+      JSON.stringify(v),
+  );
 });
 
 test("checkBaseCssRules: a rule whose owner lost its capture is reported, not quietly checked against another member's", function () {
-  // This is the failure the deleted captures create once the ENOENT is gone.
-  // ds-base.css's own comment records that .ds-tag--catalog's fill matches
-  // .ds-tag--teal exactly, so with tag-catalog's capture deleted the modifier
-  // falls back to tag-default and the rule PASSES -- the gate agreeing with a
-  // colour it has no evidence for, which is the same construction as the
-  // retired "tag-gray" registration the CLI comment warns about. The borrowed
-  // value is DERIVED from tag-default's real capture so it cannot go stale.
+  // A rule whose PRODUCER exists but whose capture does not: the deletion the
+  // 2026-08-12 sync made, seen from the other side. The producer relation is
+  // stated by the fixture (tag-shared produces the rule) while the anatomy dist
+  // has nothing for it, and the value is one tag-default really owns -- so a
+  // resolver that reached for the nearest available capture would pass it.
   var real = A.readAppearance("tag-default", ANATOMY);
-  var borrowed = Array.from(F.factColors(real))[0];
+  var borrowed = hexOnly(F.factColors(real))[0];
   assert.ok(borrowed, "tag-default's capture carries no colour to borrow");
+  var index = { byClass: { "ds-tag--shared": ["tag-shared"] }, failed: [] };
   var css = ".ds-tag--shared { background: " + borrowed + "; }\n";
-  var v = F.checkBaseCssRules(css, { "tag-default": real }, {}, ["tag-shared"]);
+  var v = F.checkBaseCssRules(
+    css,
+    { "tag-default": real },
+    {},
+    ["tag-shared"],
+    index,
+  );
   assert.ok(
     v.some(function (m) {
       return /\.ds-tag--shared/.test(m) && /tag-shared/.test(m);
     }),
-    "the rule's own owner has no capture, so the rule must be reported as " +
+    "the rule's own producer has no capture, so the rule must be reported as " +
       "unverifiable instead of borrowing tag-default's " +
       borrowed +
       ", got: " +
       JSON.stringify(v),
   );
-  // Non-vacuity the other way: with the owner's capture present, the same rule
+  // Non-vacuity the other way: with the producer's capture present, the same rule
   // is checked normally against it and passes.
   var v2 = F.checkBaseCssRules(
     css,
@@ -515,6 +763,7 @@ test("checkBaseCssRules: a rule whose owner lost its capture is reported, not qu
     },
     {},
     [],
+    index,
   );
   assert.deepEqual(
     v2,
@@ -561,19 +810,29 @@ test("checkBaseCssRules: a planted bad tag rule is caught", function () {
   var tokenMap = A.loadTokenMap(
     fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8"),
   );
-  var facts = {
-    "tag-default": A.readAppearance("tag-default", ANATOMY),
-    checkbox: A.readAppearance("checkbox", ANATOMY),
-  };
-  // #123456 is not a tag-default appearance fact color (planted fixture, not
-  // the real ds-base.css), so this must red -- proving the gate is not a
-  // no-op that would pass any input.
-  var badCss = ".ds-tag--pink{background:#123456}";
-  var v = F.checkBaseCssRules(badCss, facts, tokenMap);
+  var src = F.baseCssFactSources(ANATOMY);
+  // A modifier class the renderer really produces, so this exercises the
+  // contradiction path against a real producer rather than the orphan path. It
+  // was `.ds-tag--pink` until the fold-in deleted the Color axis: a hardcoded
+  // modifier in a non-vacuity probe stops testing what it says it tests the
+  // moment the axis behind it moves.
+  var produced = Object.keys(F.classEmitterIndex().byClass)
+    .filter(function (cls) {
+      return /^ds-tag--/.test(cls);
+    })
+    .sort()[0];
+  assert.ok(produced, "the renderer produces no .ds-tag--<modifier> class");
+  // #123456 is in no appearance capture (planted fixture, not the real
+  // ds-base.css), so this must red -- proving the gate is not a no-op that would
+  // pass any input.
+  var badCss = "." + produced + "{background:#123456}";
+  var v = F.checkBaseCssRules(badCss, src.facts, tokenMap, src.uncaptured);
   assert.ok(
     v.some(function (m) {
       return (
-        /^ds-base\.css/.test(m) && /\.ds-tag--pink/.test(m) && /#123456/.test(m)
+        /^ds-base\.css/.test(m) &&
+        m.indexOf("." + produced) !== -1 &&
+        /#123456/.test(m)
       );
     }),
     "violation names ds-base.css, the selector, and the bad color, got: " +
@@ -1206,16 +1465,34 @@ test("mismatchFailureMessage names every mismatch and both real resolutions, and
 });
 
 test("CLI: fidelity-check.js prints the blind count and blocks when a mismatch appears", function () {
+  // Run against a baseline that does not exist yet, for two reasons. The first
+  // is honesty about the subject: this test is about the mismatch/violation
+  // exit, and it used to assert `status === 0` with the reason "the corpus
+  // carries no mismatches", which stopped being why the status was what it was
+  // the moment a legitimate per-slug coverage loss started blocking too. The
+  // coverage comparison has its own file (fidelity-coverage-floor.test.js) with
+  // fixtures that can actually control the baseline. The second is that the
+  // no-argument form writes the TRACKED dist report, so this test used to
+  // mutate a committed artifact as a side effect of asserting on stdout.
   var child_process = require("node:child_process");
+  var os = require("node:os");
+  var tmp = path.join(
+    fs.mkdtempSync(path.join(os.tmpdir(), "fidelity-cli-")),
+    "report.json",
+  );
   var result = child_process.spawnSync(
     process.execPath,
-    [path.join(REPO_ROOT, "scripts/render/fidelity-check.js")],
+    [
+      path.join(REPO_ROOT, "scripts/render/fidelity-check.js"),
+      "--report=" + tmp,
+    ],
     { encoding: "utf8" },
   );
   assert.equal(
     result.status,
     0,
-    "the corpus carries no mismatches, so the gate must pass: " +
+    "no mismatch and no ds-base.css violation, and no baseline to compare " +
+      "against, so nothing is left for the gate to block on: " +
       result.stdout +
       result.stderr,
   );

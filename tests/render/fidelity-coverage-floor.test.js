@@ -30,15 +30,43 @@ var REPORT = path.join(
 // this gate exists to remove: a Figma sync renaming that slug would have
 // crashed the gate`s own tests with a TypeError instead of a diagnosis.
 function checkableOf(row) {
-  return (row.verified || 0) + (row.verifiedViaTokenName || 0) + (row.mismatch || 0);
+  return (
+    (row.verified || 0) + (row.verifiedViaTokenName || 0) + (row.mismatch || 0)
+  );
 }
 
 function committedReport() {
   return JSON.parse(fs.readFileSync(REPORT, "utf8"));
 }
 
+// What the CURRENT corpus verifies, measured by running the gate into a
+// throwaway report that has no baseline to compare against.
+//
+// This used to read `committedReport().totals.verified`, i.e. it took the
+// committed dist as the oracle for what a fresh run should produce. That is
+// backwards twice over: the artifact is an OUTPUT of the thing under test, so the
+// assertion goes stale on every legitimate change (it failed 75 !== 47 the day
+// the fold-in raised real coverage), and the obvious way to "fix" it is to
+// regenerate the artifact -- which is exactly the laundering shape the gate this
+// file guards exists to end. Measure, never remember.
+function freshReport() {
+  var dir = fs.mkdtempSync(
+    path.join(require("node:os").tmpdir(), "fidelity-fresh-"),
+  );
+  var probe = path.join(dir, "fidelity-report.json");
+  var r = runCli(["--report=" + probe]);
+  assert.ok(
+    fs.existsSync(probe),
+    "the measuring run wrote no report, so there is no oracle to compare " +
+      "against (a missing file must not read as a zero): " +
+      r.out +
+      r.err,
+  );
+  return JSON.parse(fs.readFileSync(probe, "utf8"));
+}
+
 function trueVerifiedCount() {
-  return committedReport().totals.verified;
+  return freshReport().totals.verified;
 }
 
 // The alphabetically first slug the capture can actually speak to. Derived, so
@@ -56,7 +84,9 @@ function specimenSlug(rep) {
 // A baseline claiming MORE checkable declarations than the current CSS can
 // produce, which is the shape of a real regression.
 function inflatedFixture(extra) {
-  var dir = fs.mkdtempSync(path.join(require("node:os").tmpdir(), "fidelity-floor-"));
+  var dir = fs.mkdtempSync(
+    path.join(require("node:os").tmpdir(), "fidelity-floor-"),
+  );
   var rep = committedReport();
   var s = specimenSlug(rep);
   rep.totals.verified += extra;
@@ -332,8 +362,18 @@ test("coverageRegression: a per-slug loss blocks even when a gain elsewhere keep
 test("coverageRegression: a baseline with no oracleCoverage field still reports a real ratio", function () {
   // pct(undefined) rendered 0.0%, so the headline read "0.0% -> 9.1%", which
   // a reader parses as a GAIN on a run that is blocking them for a loss.
-  var prev = report({ verified: 10, verifiedViaTokenName: 0, mismatch: 0, examined: 100 });
-  var next = report({ verified: 5, verifiedViaTokenName: 0, mismatch: 0, examined: 100 });
+  var prev = report({
+    verified: 10,
+    verifiedViaTokenName: 0,
+    mismatch: 0,
+    examined: 100,
+  });
+  var next = report({
+    verified: 5,
+    verifiedViaTokenName: 0,
+    mismatch: 0,
+    examined: 100,
+  });
   var reg = F.coverageRegression(prev, next);
   assert.equal(reg.coverageFrom, 0.1);
   assert.equal(reg.coverageTo, 0.05);
@@ -353,7 +393,12 @@ test("acceptedCoverageLoss: the space-separated form is honoured too", function 
 
 test("acceptedCoverageLoss: a flag followed by another flag is still no reason", function () {
   assert.equal(
-    F.acceptedCoverageLoss(["node", "x.js", "--accept-coverage-loss", "--report=/tmp/x"]),
+    F.acceptedCoverageLoss([
+      "node",
+      "x.js",
+      "--accept-coverage-loss",
+      "--report=/tmp/x",
+    ]),
     null,
   );
 });
@@ -396,7 +441,9 @@ test("CLI: an accepted loss DOES write the report, since that is how the loss is
 test("CLI: an unparseable baseline blocks instead of silently skipping the comparison", function () {
   // A corrupt report used to turn the gate back into the silent pass it was
   // added to remove, with no output saying no comparison had happened.
-  var dir = fs.mkdtempSync(path.join(require("node:os").tmpdir(), "fid-corrupt-"));
+  var dir = fs.mkdtempSync(
+    path.join(require("node:os").tmpdir(), "fid-corrupt-"),
+  );
   var fixture = path.join(dir, "fidelity-report.json");
   fs.writeFileSync(fixture, '{"totals": {"verified": 4');
   var r = runCli(["--report=" + fixture]);
