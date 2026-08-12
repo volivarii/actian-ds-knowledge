@@ -20,6 +20,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **The canonical render now declares which authority it serves: design first, production once
+  engineering's web components are consumable.** (docs-only) The render inherits production values (a
+  token resolves through the OKLCH formula in `color-primitives.md`) while the fidelity gate judges it
+  against design values (Figma hand-picked hex), and nothing said which is right where they disagree, so
+  every fidelity number was measuring a seam rather than a quality. This extends doctrine that already
+  existed for tokens (*"always defer to the Figma file for design decisions and engineering code for
+  production output"*) to the render tier. Consequences: the gate's comparison against Figma is
+  legitimate today and raising its coverage is worth doing; when the web components exist, the CEM
+  contract carries authority and the design-versus-development drift measure replaces fidelity as the
+  number that matters; and the shades where computed OKLCH disagrees with Figma hex now need a
+  correction or a named exception rather than standing as an accepted divergence.
+
+### Added
+
 - **The render fidelity gate now blocks on a coverage regression, because its own subject had been
   eroding for eighteen days and nothing said so.** ([#516](https://github.com/volivarii/actian-ds-knowledge/pull/516)) When #487 landed on
   2026-07-24 the gate reported that the Figma capture could confirm 14.6% of the colors the canonical
