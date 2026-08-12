@@ -90,6 +90,32 @@ Workflows live in `.github/workflows/`. Source of truth is the workflow files th
 - `graph-derive.yml`: regenerates `graph/dist/graph.json` (+ `.jsonld` + quality report) from the *dist* outputs of the other domains, so it also triggers on their auto-commits, not just its own inputs. Auto-bump + auto-commit.
 - `render-derive.yml`: runs `npm run derive:render` to regenerate `components/render/dist/` + `tokens/dist/` from `components/render/renderer/`, then runs the fidelity gate (`fidelity-check.js`). **A color mismatch fails the build**, not just the dist regen. **So does a coverage regression**: if this run can confirm fewer color declarations against the Figma capture than the committed `fidelity-report.json` could, **for any single slug or in total**, the gate names the slugs that lost and blocks. Oracle coverage fell from 14.6% to 11.8% between 2026-07-24 and 2026-08-11 with `mismatch` at 0 the whole time and nothing said so. Two deliberate properties: a per-slug loss blocks even when a gain elsewhere keeps the total level (a slug can go fully blind while the headline holds), and **on a blocking loss the run leaves `fidelity-report.json` untouched**, so re-running or committing a regenerated report is not a way through. A loss that is the intended consequence of a design change is landed locally with `npm run derive:render -- --accept-coverage-loss="<why>"` plus committing the regenerated report, because CI invokes the gate with no arguments and cannot pass the flag; the reason belongs in the CHANGELOG entry, since that commit is the only place it is recorded. Auto-bump + auto-commit on success.
 
+### Which authority the canonical render serves
+
+**Design first, and production once engineering's web components are consumable.** Decided 2026-08-12.
+
+This had never been declared, and the gap mattered: the render inherits **production** values (a token
+resolves through the OKLCH formula in `foundations/src/color-primitives.md`) while the fidelity gate
+judges it against **design** values (Figma stores hand-picked hex). Where those two disagree, nobody had
+said which one is right, so every fidelity number was measuring a seam rather than a quality.
+
+The decision extends doctrine that already existed one layer down. `color-primitives.md` says: *"always
+defer to the Figma file for design decisions and engineering code for production output."* The render
+tier is a design-decision surface until there is a shipped implementation to compare against, so:
+
+- **Today, Figma is the oracle and a divergence from it is a defect, not a documented difference.** That
+  makes the fidelity gate's comparison legitimate, and makes raising its coverage worth doing (see the
+  token-name verification work: asserting that we bound the token Figma bound is sound for the ~90% of
+  declarations where hex equality is not, and lifts the ceiling from about 12% to about 44%).
+- **When the web components exist**, the CEM contract becomes the source-swap bridge and authority moves
+  to the implementation. At that point the number that matters is the design-versus-development drift
+  measure, not fidelity against a capture.
+
+One consequence to settle separately: the colours where the computed OKLCH shade disagrees with Figma's
+hand-picked hex are now, by this decision, on the wrong side of the authority line rather than an
+accepted method divergence. They need either a correction or a named exception with an owner; the shade
+tiers marked "Proposed" in `color-primitives.md` are the likely explanation and are the place to start.
+
 **Validate (PR-event, required gates):**
 - `validate-manifest.yml` — manifest schema + every path resolves + test suite. **Required.**
 - `validate-schemas.yml` — Ajv validates dist JSONs against `schemas/*.json`. Inline reviewdog annotations on the Files-Changed view.
