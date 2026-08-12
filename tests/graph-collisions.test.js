@@ -17,7 +17,12 @@ function readJSON(rel) {
 // dskit, NOT the dangerous within-kit nodeId collision; the structural
 // assertions below (>=2 candidates, distinct keys, resolved_to set) are what
 // actually guards that, the count is a tripwire on top.
-test("detectSlugCollisions: 24 cross-registry collisions with distinct keys", function () {
+// Count moved 24 -> 25 with the 2026-08-12 tag fold-in sync: `arrow-up` is a
+// newly added dskit icon that already existed in fmkit, so it now collides
+// too (structurally identical to the long-standing arrow-down entry). None of
+// the sync's 5 retired tag slugs were ever in this list, so the count rising
+// while the registry shrank is expected, not alarming.
+test("detectSlugCollisions: 25 cross-registry collisions with distinct keys", function () {
   var kits = ["dskit", "fmkit", "metakit"].map(function (k) {
     return {
       kit: k,
@@ -25,7 +30,7 @@ test("detectSlugCollisions: 24 cross-registry collisions with distinct keys", fu
     };
   });
   var out = D.detectSlugCollisions(kits);
-  assert.equal(out.slug_collisions.length, 24);
+  assert.equal(out.slug_collisions.length, 25);
   out.slug_collisions.forEach(function (c) {
     assert.ok(c.candidates.length >= 2);
     assert.ok(
@@ -51,12 +56,12 @@ test("detectSlugCollisions: 24 cross-registry collisions with distinct keys", fu
   );
 });
 
-// Committed sidecar: 24 entries + auto_generated _meta, and it validates
+// Committed sidecar: 25 entries + auto_generated _meta, and it validates
 // against its schema.
-test("graph/dist/collisions.json: 24 entries + auto_generated _meta, schema-valid", function () {
+test("graph/dist/collisions.json: 25 entries + auto_generated _meta, schema-valid", function () {
   var col = readJSON("graph/dist/collisions.json");
   assert.equal(col._meta.auto_generated, true);
-  assert.equal(col.slug_collisions.length, 24);
+  assert.equal(col.slug_collisions.length, 25);
   var schema = readJSON("schemas/collisions.json");
   var validate = new (Ajv.default || Ajv)({ strict: false }).compile(schema);
   assert.ok(validate(col), JSON.stringify(validate.errors));

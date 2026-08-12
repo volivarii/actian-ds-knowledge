@@ -3,6 +3,7 @@ var test = require("node:test");
 var assert = require("node:assert/strict");
 var path = require("node:path");
 var A = require("../../scripts/render/derive-appearance.js");
+var MATRIX = require("../../components/render/renderer/matrix.js");
 var ANATOMY = path.resolve(__dirname, "../../components/dist/anatomy");
 
 test("loadTokenMap: parses --zen-* declarations, first wins", function () {
@@ -18,17 +19,66 @@ test("bindColor: value-first, token only when it round-trips", function () {
   assert.equal(A.bindColor("#abc123", undefined, map), "#abc123"); // no token -> value
 });
 
-test("readAppearance: tag-default exposes 7 Color variants with backgrounds", function () {
-  // Was 8 until the 2026-07-23 tag redesign. Gray is still a live Color on
-  // the component (the registry lists it), but it now resolves to the same
-  // fill as Color=Default, so it carries no delta and the capture has nothing
-  // to record for it. The remaining seven are the hues that do differ.
+// The 2026-08-12 breaking sync folded five tag-family components into
+// tag-default and replaced its Color axis with a single Type axis. This test
+// used to pin `Color` and a literal count of 7, so it asserted an axis Figma
+// had deleted -- a hardcoded copy of a fact the registry and the capture both
+// own, which is exactly what went stale.
+//
+// Rewritten as a cross-check between two independent sources instead: the
+// registry says which axis tag-default publishes and which values it carries,
+// the anatomy says which of those values carry a captured colour delta. No
+// count and no axis name is spelled out here, so the next axis change reds
+// only if the two sources genuinely disagree.
+test("readAppearance: tag-default's variants are keyed by the axis the registry publishes, and every colour group names published values", function () {
+  var comp = MATRIX.findComponent("tag-default");
+  assert.ok(comp && comp.variants, "tag-default is absent from every registry");
+  var axes = Object.keys(comp.variants);
+  assert.equal(
+    axes.length,
+    1,
+    "tag-default is expected to publish exactly one axis, got " +
+      JSON.stringify(axes),
+  );
+  var axis = axes[0];
+  var published = comp.variants[axis];
+
   var a = A.readAppearance("tag-default", ANATOMY);
-  var colors = a.variants.filter(function (v) {
-    return v.prop === "Color";
+  assert.ok(a.variants.length > 0, "the capture records no variants at all");
+
+  var offAxis = a.variants
+    .map(function (v) {
+      return v.prop;
+    })
+    .filter(function (p) {
+      return p !== axis;
+    });
+  assert.deepEqual(
+    offAxis,
+    [],
+    "the capture carries variant groups on an axis the registry does not " +
+      "publish (a retired axis still being read): " +
+      JSON.stringify(offAxis),
+  );
+
+  var withBackground = a.variants.filter(function (v) {
+    return !!v.background;
   });
-  assert.equal(colors.length, 7);
-  colors.forEach(function (v) {
+  assert.ok(
+    withBackground.length > 0,
+    "no variant group carries a background, so there is no colour delta to " +
+      "render the axis from",
+  );
+  withBackground.forEach(function (v) {
     assert.match(v.background, /^#|^rgb|^oklch/i);
+    v.values.forEach(function (val) {
+      assert.ok(
+        published.indexOf(val) !== -1,
+        axis +
+          "=" +
+          val +
+          " carries a captured colour but the registry does not publish it",
+      );
+    });
   });
 });

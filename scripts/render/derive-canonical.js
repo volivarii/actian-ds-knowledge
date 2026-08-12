@@ -236,8 +236,11 @@ function buildDeclaration(slug, styleText) {
   // Ownership is declared in matrix.js, not guessed. Guessing "ds-<slug>"
   // silently produced an EMPTY token surface for the 27 slugs whose class
   // differs (issue #474): schema-valid, and wrong. A slug owning more than one
-  // prefix (tag-stage: the shared ds-tag base plus its own ds-tag-stage rules)
-  // takes the union, sorted so the dist cannot shift with map order.
+  // prefix takes the union, sorted so the dist cannot shift with map order --
+  // tag-stage (the shared ds-tag base plus its own ds-tag-stage rules) was
+  // the one example of this until the 2026-08-12 fold-in retired it into
+  // tag-default's single-prefix Type axis; matrix.js's CSS_OWNERS has no
+  // multi-prefix entry today.
   var owned = new Set();
   matrix.ownedPrefixes(slug).forEach(function (prefix) {
     consumedVars(styleText, prefix).forEach(function (name) {
