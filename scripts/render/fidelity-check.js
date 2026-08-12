@@ -968,48 +968,164 @@ function pct(x) {
   return (Number(x || 0) * 100).toFixed(1) + "%";
 }
 
+// THE TWO FACTS ARE INDEPENDENT, SO THEY ARE REPORTED SEPARATELY.
+//
+// The blocking condition is compound: a per-slug loss OR a fall in the repo-wide
+// total. One headline cannot carry both, and the first version tried: it printed
+// "ORACLE COVERAGE REGRESSED: <from> -> <to>" using the TOTALS whenever anything
+// blocked. On the 2026-08-12 tag fold-in that read "REGRESSED: 49 -> 78 (11.8%
+// -> 17.8%)" -- announcing a 60% GAIN as a regression, because what had actually
+// happened was three slugs losing their own coverage while the repo improved.
+//
+// A gate that misstates direction launders understanding as surely as a gate
+// that cannot fail: a reviewer told "REGRESSED" about an improvement learns to
+// distrust it, and the next time it says "regressed" about a real regression,
+// nobody believes it. So: per-slug loss in its own terms (still first, still
+// named, still blocking), then the total in its own terms, whichever way it
+// went. The total NEVER suppresses the per-slug list -- gating on the total was
+// the exact hole #516 closed.
+function directionOf(from, to) {
+  if (to > from) return "ROSE";
+  if (to < from) return "FELL";
+  return "UNCHANGED";
+}
+
+function signed(delta) {
+  return (delta > 0 ? "+" : "") + delta;
+}
+
+// The count line and the ratio line each carry their own direction, because the
+// two units can genuinely disagree: the count holds level while the ratio falls
+// when the denominator grows (an additive sync landing a component the capture
+// is blind to).
+function totalDirectionLines(reg, indent) {
+  var pad = indent || "";
+  var countWord = directionOf(reg.checkableFrom, reg.checkableTo);
+  var ratioWord = directionOf(reg.coverageFrom, reg.coverageTo);
+  var count =
+    countWord === "UNCHANGED"
+      ? pad + "checkable color declarations UNCHANGED at " + reg.checkableTo
+      : pad +
+        "checkable color declarations " +
+        countWord +
+        " " +
+        reg.checkableFrom +
+        " -> " +
+        reg.checkableTo +
+        " (" +
+        signed(reg.checkableTo - reg.checkableFrom) +
+        ")";
+  var ratio =
+    ratioWord === "UNCHANGED"
+      ? pad + "oracle coverage UNCHANGED at " + pct(reg.coverageTo)
+      : pad +
+        "oracle coverage " +
+        ratioWord +
+        " " +
+        pct(reg.coverageFrom) +
+        " -> " +
+        pct(reg.coverageTo);
+  return [count, ratio];
+}
+
+function lostSlugCount(reg) {
+  return (reg.lost || []).length;
+}
+
 function coverageFailureMessage(reg) {
-  var lines = [
-    "ORACLE COVERAGE REGRESSED: " +
-      reg.checkableFrom +
-      " -> " +
-      reg.checkableTo +
-      " checkable color declarations (" +
-      pct(reg.coverageFrom) +
-      " -> " +
-      pct(reg.coverageTo) +
-      ").",
-    "Declarations the Figma capture used to be able to confirm no longer are.",
-    "",
-    "Slugs that lost verification:",
-  ];
-  reg.lost.forEach(function (l) {
-    lines.push("  " + l.slug + ": " + l.from + " -> " + l.to);
-  });
-  if (reg.newlyBlind.length) {
-    lines.push("");
+  var lines = [];
+  var n = lostSlugCount(reg);
+  if (n) {
     lines.push(
-      "Newly blind, the capture can now say nothing at all about these: " +
-        reg.newlyBlind.join(", "),
+      "PER-SLUG COVERAGE LOSS in " +
+        n +
+        " slug(s) -- THIS IS WHAT BLOCKS, whichever way the repo-wide total moved:",
+    );
+    reg.lost.forEach(function (l) {
+      lines.push("  " + l.slug + ": " + l.from + " -> " + l.to);
+    });
+    lines.push(
+      "Declarations the Figma capture used to be able to confirm for those slugs,",
+      "and no longer does.",
+    );
+    if (reg.newlyBlind.length) {
+      lines.push("");
+      lines.push(
+        "Newly blind, the capture can now say nothing at all about these: " +
+          reg.newlyBlind.join(", "),
+      );
+    }
+    lines.push("");
+  }
+  // Stated for direction, always, and truthfully. When the total itself fell it
+  // is also a blocking fact in its own right; when it rose or held level it is
+  // context, and saying so is the whole point.
+  var totalFell = reg.checkableTo < reg.checkableFrom;
+  lines.push(
+    "REPO-WIDE TOTAL, across every render" +
+      (totalFell ? " -- THIS BLOCKS TOO:" : ":"),
+  );
+  totalDirectionLines(reg, "  ").forEach(function (l) {
+    lines.push(l);
+  });
+  if (!totalFell && n) {
+    lines.push(
+      "The total did not fall, and that does NOT excuse the per-slug losses above:",
+      "a gain elsewhere masking a slug that went blind is the exact hole this gate",
+      "was added to close. The total is reported for direction; it never suppresses",
+      "the list.",
     );
   }
-  lines.push("");
   lines.push(
     "",
     "A loss can be legitimate: a design change can retire the very treatment the",
-    "oracle was reading. It may not be silent, and it cannot be waved through",
-    "from CI, which runs this gate with no arguments. To land one, do it locally",
-    "and say why:",
+    "oracle was reading, and a rename moves a slug's coverage rather than losing",
+    "it. It may not be silent, and it cannot be waved through from CI, which runs",
+    "this gate with no arguments. To land one, do it locally and say why:",
     "",
     '  npm run derive:render -- --accept-coverage-loss="<why>"',
     "  git add components/render/dist/fidelity-report.json",
     "",
-    "That run records the lower baseline, so the check then passes on the",
-    "committed value. Put the same sentence in the CHANGELOG entry, because the",
-    "reason lives in that commit and nowhere else.",
+    "That run records the NEW measurement as the baseline, so the check then",
+    "passes on the committed value. Put the same sentence in the CHANGELOG entry,",
+    "because the reason lives in that commit and nowhere else.",
     "",
     "Running this gate again WITHOUT the flag will not help: on a blocking loss",
     "it deliberately leaves the report untouched.",
+  );
+  return lines.join("\n") + "\n";
+}
+
+// The same two facts, for the run that WAIVED them. A CI log reader sees this
+// line and no other, so it said "ACCEPTED COVERAGE LOSS: 49 -> 78 checkable
+// declarations" -- the waiver recorded against a number that had gone UP, and
+// without naming a single slug it had actually waived.
+function acceptedLossMessage(reg, reason) {
+  var lines = [];
+  var n = lostSlugCount(reg);
+  if (n) {
+    lines.push(
+      "  ACCEPTED PER-SLUG COVERAGE LOSS in " +
+        n +
+        " slug(s), allowed on this run because: " +
+        reason,
+    );
+    reg.lost.forEach(function (l) {
+      lines.push("    " + l.slug + ": " + l.from + " -> " + l.to);
+    });
+  } else {
+    lines.push(
+      "  ACCEPTED REPO-WIDE COVERAGE LOSS, allowed on this run because: " +
+        reason,
+    );
+  }
+  lines.push("  Repo-wide total on the same run:");
+  totalDirectionLines(reg, "    ").forEach(function (l) {
+    lines.push(l);
+  });
+  lines.push(
+    "  Put the same sentence in the CHANGELOG entry; this line lives only in a " +
+      "CI log.",
   );
   return lines.join("\n") + "\n";
 }
@@ -1247,16 +1363,7 @@ if (require.main === module) {
     );
   }
   if (regression && acceptedLoss) {
-    process.stdout.write(
-      "  ACCEPTED COVERAGE LOSS: " +
-        regression.checkableFrom +
-        " -> " +
-        regression.checkableTo +
-        " checkable declarations, allowed on this run because: " +
-        acceptedLoss +
-        "\n  Put the same sentence in the CHANGELOG entry; this line lives only in " +
-        "a CI log.\n",
-    );
+    process.stdout.write(acceptedLossMessage(regression, acceptedLoss));
   }
 
   if (report.mismatches.length) {
@@ -1332,6 +1439,7 @@ module.exports = {
   checkableCount: checkableCount,
   coverageRegression: coverageRegression,
   coverageFailureMessage: coverageFailureMessage,
+  acceptedLossMessage: acceptedLossMessage,
   acceptedCoverageLoss: acceptedCoverageLoss,
   reportPathOverride: reportPathOverride,
   flagPresent: flagPresent,

@@ -265,6 +265,150 @@ test("coverageFailureMessage: states the direction, the losing slugs, and names 
   assert.match(msg, /--accept-coverage-loss/);
 });
 
+// DIRECTION. The blocking condition is compound -- a per-slug loss OR a fall in
+// the repo-wide total -- so the report of it has to be compound too, or it
+// misstates one of the two facts.
+//
+// The 2026-08-12 tag fold-in made that concrete: three slugs lost their own
+// coverage (renamed or retired) while the repo-wide count went 49 -> 78 and
+// oracle coverage 11.8% -> 17.8%. Both messages announced "ORACLE COVERAGE
+// REGRESSED: 49 -> 78 ... (11.8% -> 17.8%)" and "ACCEPTED COVERAGE LOSS: 49 ->
+// 78", i.e. they described a 60% GAIN as a loss. That is the reporting half of
+// the failure family this file exists for: a reader who is told "regressed"
+// about an improvement learns to distrust the gate, and the next time it says
+// "regressed" about a real regression, nobody believes it.
+//
+// So the two facts are pinned separately, in all three directions the total can
+// move, for BOTH messages. The per-slug half must stay just as prominent and
+// just as blocking whichever way the total went -- gating on the total was the
+// exact hole #516 closed.
+var DIRECTION_CASES = [
+  {
+    name: "total rose",
+    from: 49,
+    to: 78,
+    coverageFrom: 0.1181,
+    coverageTo: 0.178,
+    expect: /\bROSE\b/,
+    forbid: [/\bFELL\b/, /\bUNCHANGED\b/, /REGRESSED/],
+  },
+  {
+    name: "total fell",
+    from: 78,
+    to: 49,
+    coverageFrom: 0.178,
+    coverageTo: 0.1181,
+    expect: /\bFELL\b/,
+    forbid: [/\bROSE\b/, /\bUNCHANGED\b/],
+  },
+  {
+    name: "total level",
+    from: 49,
+    to: 49,
+    coverageFrom: 0.1181,
+    coverageTo: 0.1181,
+    expect: /\bUNCHANGED\b/,
+    forbid: [/\bROSE\b/, /\bFELL\b/],
+  },
+  {
+    // The count can hold level while the ratio falls, because the denominator
+    // grew. Two units, two directions, each stated on its own terms.
+    name: "count level, ratio fell",
+    from: 49,
+    to: 49,
+    coverageFrom: 0.1181,
+    coverageTo: 0.0914,
+    expect: /\bUNCHANGED\b/,
+    expectAlso: /\bFELL\b/,
+    forbid: [/\bROSE\b/],
+  },
+];
+
+function regressionFor(c) {
+  return {
+    checkableFrom: c.from,
+    checkableTo: c.to,
+    coverageFrom: c.coverageFrom,
+    coverageTo: c.coverageTo,
+    lost: [
+      { slug: "tag-stage", from: 7, to: 0 },
+      { slug: "tag-glossary-item-type", from: 1, to: 0 },
+    ],
+    newlyBlind: ["tag-stage"],
+  };
+}
+
+DIRECTION_CASES.forEach(function (c) {
+  test(
+    "coverageFailureMessage: states the per-slug loss AND the total's true direction (" +
+      c.name +
+      ")",
+    function () {
+      var msg = F.coverageFailureMessage(regressionFor(c));
+      // Fact 1: which slugs got worse, still named, still stated as blocking.
+      assert.match(msg, /tag-stage: 7 -> 0/);
+      assert.match(msg, /tag-glossary-item-type: 1 -> 0/);
+      assert.match(
+        msg,
+        /block/i,
+        "the per-slug loss must say it blocks, whichever way the total moved: " +
+          msg,
+      );
+      // Fact 2: the total's direction, in its own terms, truthfully.
+      assert.match(
+        msg,
+        c.expect,
+        "the total went " + c.name + ", so the message must say so: " + msg,
+      );
+      if (c.expectAlso) assert.match(msg, c.expectAlso);
+      c.forbid.forEach(function (bad) {
+        assert.doesNotMatch(
+          msg,
+          bad,
+          "the message states a direction the numbers contradict (" +
+            c.name +
+            "): " +
+            msg,
+        );
+      });
+      // Both counts are present, so nobody has to subtract to learn the delta.
+      assert.match(msg, new RegExp("\\b" + c.from + "\\b"));
+      assert.match(msg, new RegExp("\\b" + c.to + "\\b"));
+    },
+  );
+
+  test(
+    "acceptedLossMessage: records the per-slug loss it waived AND the total's true direction (" +
+      c.name +
+      ")",
+    function () {
+      var msg = F.acceptedLossMessage(
+        regressionFor(c),
+        "the tag fold-in renamed these slugs",
+      );
+      assert.match(
+        msg,
+        /tag-stage: 7 -> 0/,
+        "the waived subject must be named",
+      );
+      assert.match(msg, /the tag fold-in renamed these slugs/);
+      assert.match(
+        msg,
+        c.expect,
+        "the CI log line must state the total's real direction: " + msg,
+      );
+      if (c.expectAlso) assert.match(msg, c.expectAlso);
+      c.forbid.forEach(function (bad) {
+        assert.doesNotMatch(
+          msg,
+          bad,
+          "wrong direction (" + c.name + "): " + msg,
+        );
+      });
+    },
+  );
+});
+
 test("acceptedCoverageLoss: returns the stated reason so the run can record why the loss was allowed", function () {
   var reason = F.acceptedCoverageLoss([
     "node",
@@ -319,8 +463,18 @@ test("CLI: a coverage loss against the committed report blocks the build and nam
   var specimen = specimenSlug(committedReport());
   var r = runCli(["--report=" + fixture]);
   assert.equal(r.code, 1, "expected the gate to block:\n" + r.err);
-  assert.match(r.err, /ORACLE COVERAGE REGRESSED/);
+  // Wording updated with the direction split: this asserted
+  // /ORACLE COVERAGE REGRESSED/, a single headline built from the TOTALS, which
+  // is the line that announced a 60% gain as a regression on the tag fold-in.
+  // Both facts are asserted here instead, each in its own section.
+  assert.match(r.err, /PER-SLUG COVERAGE LOSS/, r.err);
   assert.match(r.err, new RegExp(specimen));
+  assert.match(r.err, /REPO-WIDE TOTAL/, r.err);
+  assert.match(
+    r.err,
+    /checkable color declarations (ROSE|FELL|UNCHANGED)/,
+    "the total's direction must be stated in its own terms: " + r.err,
+  );
 });
 
 test("CLI: a bare --accept-coverage-loss still blocks, since it says nothing", function () {
