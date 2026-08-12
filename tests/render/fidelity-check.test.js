@@ -82,6 +82,26 @@ test("fidelityCheck: an empty derived CSS block cannot pass silently", function 
 // same helper the CLI uses, so the two can no longer disagree -- and so the
 // deletion of a capture shows up as a REPORTED rule rather than an ENOENT that
 // takes the whole file down.
+// The first `.ds-tag--<modifier>` rule carrying a colour declaration whose
+// exact text occurs exactly once in the whole sheet, so a String.replace of it
+// corrupts that rule and nothing else. Comments are not stripped: the probe
+// must corrupt the sheet as checkBaseCssRules will read it.
+function firstUniqueTagModifierHex(css) {
+  var re = /(\.ds-tag--([a-z0-9-]+))\s*\{([^}]*)\}/g;
+  var m;
+  while ((m = re.exec(css)) !== null) {
+    var body = m[3].replace(/\/\*[\s\S]*?\*\//g, "");
+    var d =
+      /(background|background-color|color|border-color)\s*:\s*(#[0-9a-fA-F]{3,8});/.exec(
+        body,
+      );
+    if (d && css.split(d[0]).length - 1 === 1) {
+      return { selector: m[1], modifier: m[2], decl: d[0], prop: d[1] };
+    }
+  }
+  return null;
+}
+
 test("checkBaseCssRules: no real ds-base.css tag/checkbox rule contradicts its owner's capture, and every unverifiable rule is named", function () {
   var dsBaseCss = fs.readFileSync(
     path.join(REPO_ROOT, "components", "render", "renderer", "ds-base.css"),
@@ -125,17 +145,26 @@ test("checkBaseCssRules: no real ds-base.css tag/checkbox rule contradicts its o
   });
   // Non-vacuity: corrupt a REAL multi-line tag rule in ds-base.css and confirm
   // the gate catches it. Guards against a selector-regex regression that would
-  // silently match nothing, making the pass above vacuous. .ds-tag--pink is
-  // owned by tag-default, whose capture is present, so this exercises the
-  // contradiction path and not the unverifiable one.
-  var corrupted = dsBaseCss.replace(
-    "background: #ffd6d8;",
-    "background: #123456;",
+  // silently match nothing, making the pass above vacuous.
+  //
+  // The specimen is DERIVED. This used to replace the literal string
+  // "background: #ffd6d8;", spelled out beside the comment ".ds-tag--pink is
+  // owned by tag-default" -- and #ffd6d8 stopped being tag-default's Pink fill
+  // on the 2026-08-12 fold-in (it is Type=Stage-4's border now, and the first
+  // occurrence of that hex in the sheet moved to a rule this gate does not even
+  // scan). A hand-copied specimen for a non-vacuity probe fails in the worst
+  // direction: it stops corrupting anything and the probe passes.
+  var spec = firstUniqueTagModifierHex(dsBaseCss);
+  assert.ok(
+    spec,
+    "no uniquely-locatable hex declaration under a .ds-tag--<modifier> rule " +
+      "was found, so the non-vacuity probe has nothing to corrupt",
   );
+  var corrupted = dsBaseCss.replace(spec.decl, spec.prop + ": #123456;");
   assert.notEqual(
     corrupted,
     dsBaseCss,
-    "the real .ds-tag--pink background was located for corruption",
+    "the real " + spec.selector + " declaration was located for corruption",
   );
   var vBad = F.checkBaseCssRules(
     corrupted,
@@ -145,7 +174,7 @@ test("checkBaseCssRules: no real ds-base.css tag/checkbox rule contradicts its o
   );
   assert.ok(
     vBad.some(function (m) {
-      return /ds-tag--pink/.test(m) && /#123456/.test(m);
+      return m.indexOf(spec.selector) !== -1 && /#123456/.test(m);
     }),
     "corrupting a real multi-line rule is caught, got: " + JSON.stringify(vBad),
   );
@@ -339,32 +368,59 @@ test("every CEM declaration ships a non-empty cssProperties token surface (#474)
   assert.deepEqual(empty, [], "CEM declarations with an empty token surface");
 });
 
-test("tag-stage's token surface unions both of its owned prefixes", function () {
+// Every slug's CEM token surface must be the UNION over its owned prefixes.
+//
+// This was written as "tag-stage's token surface unions BOTH of its owned
+// prefixes", tag-stage being the repo's only multi-prefix slug. The 2026-08-12
+// fold-in retired it, and the test then failed on `mod.declarations[0]` of an
+// undefined module -- a hardcoded specimen for a property that belongs to the
+// derive, not to one component. Applied to every render slug instead: the
+// union property is identical for a one-prefix slug (the union of one set), so
+// the assertion is unchanged in kind and now covers the whole corpus rather
+// than a single specimen that could retire.
+test("every render slug's CEM token surface unions all of its owned prefixes", function () {
   var out = D.deriveCanonical();
-  var mod = (out.cem.modules || []).find(function (m) {
-    return /tag-stage/.test(String(m.path || ""));
-  });
-  var names = (mod.declarations[0].cssProperties || []).map(function (p) {
-    return p.name;
-  });
-  // Derived, not a pinned count: the union must contain everything each owned
-  // prefix contributes on its own, and tag-stage owns two.
   var style = stripComments(out.css);
-  var expected = new Set();
-  MATRIX.ownedPrefixes("tag-stage").forEach(function (p) {
-    D.consumedVars(style, p).forEach(function (v) {
-      expected.add(v);
+  var byPath = {};
+  (out.cem.modules || []).forEach(function (m) {
+    byPath[
+      String(m.path || "")
+        .replace(/^.*\//, "")
+        .replace(/\.[^.]*$/, "")
+    ] = m;
+  });
+  var probed = 0;
+  var failures = [];
+  MATRIX.RENDER_SLUGS.forEach(function (slug) {
+    var mod = byPath[slug];
+    if (!mod || !mod.declarations || !mod.declarations.length) {
+      failures.push(slug + ": no CEM module/declaration at all");
+      return;
+    }
+    var names = (mod.declarations[0].cssProperties || []).map(function (p) {
+      return p.name;
+    });
+    var expected = new Set();
+    MATRIX.ownedPrefixes(slug).forEach(function (p) {
+      D.consumedVars(style, p).forEach(function (v) {
+        expected.add(v);
+      });
+    });
+    if (!expected.size) return; // a prefix consuming no token proves nothing
+    probed++;
+    expected.forEach(function (v) {
+      if (names.indexOf(v) === -1) {
+        failures.push(
+          slug +
+            ": " +
+            v +
+            " is contributed by an owned prefix but not in the CEM",
+        );
+      }
     });
   });
-  assert.ok(expected.size > 0, "the ownership probe itself found nothing");
-  expected.forEach(function (v) {
-    assert.ok(
-      names.indexOf(v) !== -1,
-      "token " +
-        v +
-        " is contributed by an owned prefix but missing from the CEM",
-    );
-  });
+  assert.ok(probed > 1, "the ownership probe itself found nothing to check");
+  assert.deepEqual(failures, [], failures.join("; "));
 });
 
 // The #472 regression: consumedVars' selector regex must keep rejecting a
@@ -531,6 +587,7 @@ test("checkBaseCssRules: a planted bad tag rule is caught", function () {
 // readAppearance and the fragment markup Amendment 1 needs, so the test
 // supplies the same stylesheet, token map, and fragments dir the CLI does.
 var CLASSIFY_MOD = require("../../scripts/render/fidelity-classify.js");
+var DERIVE = require("../../scripts/render/derive-from-renderer.js");
 var FRAGMENTS_DIR = path.join(REPO_ROOT, "components/render/dist/fragments");
 var BASE_CSS = fs.readFileSync(
   path.join(REPO_ROOT, "components/render/renderer/ds-base.css"),
@@ -795,31 +852,66 @@ test("filterCssForFragment applies the fragment test to a shared prefix's rules 
   );
 });
 
-test("fragment-aware filtering: tag-catalog is charged only for the ds-base.css rules its fragment can trigger", function () {
-  var html = fs.readFileSync(
-    path.join(FRAGMENTS_DIR, "tag-catalog.html"),
-    "utf8",
-  );
-  var emitted = F.fragmentClasses(html);
-  var filtered = F.filterCssForFragment(
-    BASE_CSS,
-    emitted,
-    ["ds-tag"],
-    F.sharedPrefixMap(),
-  );
-  var rules = CLASSIFY_MOD.ownedRules(filtered, ["ds-tag"]);
-  var selectors = rules
-    .map(function (r) {
-      return r.selector;
-    })
-    .sort();
-  assert.deepEqual(
-    selectors,
-    [".ds-tag", ".ds-tag--catalog", ".ds-tag__icon", ".ds-tag__icon svg"],
-    "tag-catalog must not be charged with tag-stage's dot rules, the grouped " +
-      "tag-status rules, or any other family member's color modifiers, got: " +
-      JSON.stringify(selectors),
-  );
+// Fragment-aware filtering against the REAL corpus, on whatever prefix is
+// actually shared today.
+//
+// This was pinned to tag-catalog and an exact four-selector expectation
+// (".ds-tag", ".ds-tag--catalog", ".ds-tag__icon", ".ds-tag__icon svg"). Both
+// halves died with the 2026-08-12 fold-in: tag-catalog is no longer a render
+// slug, and after the fold-in NO prefix is claimed by more than one slug, so
+// the filter has no shared subject left in the corpus at all. Rather than
+// leaving a specimen that cannot exist, the precondition is asserted the way
+// this file's first test asserts its own ("zero source:derived renders today"),
+// and the property itself is proved on a fixture by the three
+// filterCssForFragment tests above, which do not need the corpus to contain a
+// multi-owner prefix.
+test("fragment-aware filtering: the corpus's shared prefixes are enumerated, so the real-CSS filter is never checked vacuously", function () {
+  var shared = F.sharedPrefixMap();
+  var multi = Object.keys(shared).filter(function (p) {
+    return shared[p].length > 1;
+  });
+  if (!multi.length) {
+    // No subject. Say so, and pin WHY it is legitimately absent so a future
+    // reader does not read this as coverage of the filter.
+    assert.deepEqual(
+      MATRIX.RENDER_SLUGS.filter(function (slug) {
+        return MATRIX.ownedPrefixes(slug).length > 1;
+      }),
+      [],
+      "a prefix is shared but no slug owns more than one -- sharedPrefixMap " +
+        "and ownedPrefixes disagree",
+    );
+    return;
+  }
+  // A shared prefix exists again: every slug claiming it must be charged only
+  // for the rules its own fragment can trigger.
+  multi.forEach(function (prefix) {
+    shared[prefix].forEach(function (slug) {
+      var emitted = F.fragmentClasses(DERIVE.deriveFragment(slug));
+      var filtered = F.filterCssForFragment(
+        BASE_CSS,
+        emitted,
+        [prefix],
+        shared,
+      );
+      CLASSIFY_MOD.ownedRules(filtered, [prefix]).forEach(function (rule) {
+        (rule.selector.match(/\.ds-[a-z0-9_-]+/g) || []).forEach(
+          function (dotted) {
+            var t = dotted.slice(1); // fragmentClasses keys are class tokens, no dot
+            assert.ok(
+              emitted.has(t),
+              slug +
+                " is charged for " +
+                rule.selector +
+                ", which references " +
+                t +
+                " -- a class its own fragment never emits",
+            );
+          },
+        );
+      });
+    });
+  });
 });
 
 function runReportWithCss(css) {
@@ -838,116 +930,114 @@ function mismatchesFor(report, slug) {
 }
 
 // The brief evaluated and rejected de-duplicating declarations across slugs: a
-// single shared .ds-tag--<color> rule is checked once per family member,
-// against THAT member's own capture, so a genuine cross-capture contradiction
-// stays visible instead of being collapsed. Task 6 resolved the one real
-// contradiction (tag-stage's Orange/Yellow borders, now carried by its own
-// .ds-tag-stage--<color> rules), so the property is proved by planting a value
-// that is wrong for BOTH captures and asserting BOTH slugs report it.
-// The specimen is DERIVED, never hardcoded. An earlier version pinned
-// `border-color: var(--zen-color-primary-50)` on .ds-tag--indigo; the
-// 2026-07-23 tag redesign retired tag borders outright and the test failed for
-// a reason that had nothing to do with the property it guards. A hand-picked
-// specimen is a copy of a fact the stylesheet already owns, and it goes stale
-// the first time the design moves.
-function firstSharedTagColorDecl(css) {
-  var re = /(\.ds-tag--([a-z0-9-]+))\s*\{([^}]*)\}/g;
-  var m;
-  while ((m = re.exec(css)) !== null) {
-    // Skip a colour a family member overrides with its own scoped rule: the
-    // cascade correctly files the shared declaration as `overridden` for that
-    // member, so it is genuinely not charged there and proves nothing about
-    // de-duplication. Only an un-overridden shared colour tests the property.
-    if (new RegExp("\\.ds-tag-[a-z]+--" + m[2] + "\\s*\\{").test(css)) continue;
-    var d =
-      /(background|background-color|color|border-color)\s*:\s*([^;]+);/.exec(
-        m[3],
-      );
-    if (d && css.split(d[0]).length - 1 === 1) {
-      return { selector: m[1], decl: d[0], prop: d[1] };
-    }
-  }
-  return null;
+// single shared `.ds-tag--<x>` rule is checked once per family member, against
+// THAT member's own capture, so a genuine cross-capture contradiction stays
+// visible instead of being collapsed.
+//
+// Both of these used to be run against the real corpus, with tag-default and
+// tag-stage as the two members and a derived `.ds-tag--<colour>` /
+// `.ds-tag-stage--<colour>` specimen. The 2026-08-12 fold-in retired every
+// co-owner of `.ds-tag`, so the corpus now has exactly one owner of that prefix
+// and NEITHER property has a real subject: "charged to every member" needs two
+// members, and "scoped to one member alone" needs a member-scoped prefix.
+//
+// The property is not gone, only its corpus instance, so it is proved on a
+// fixture rather than deleted -- and the corpus precondition is asserted
+// separately (see "the corpus's shared prefixes are enumerated" above), so a
+// future sixth family member reintroduces a real subject loudly instead of
+// leaving these two silently synthetic forever.
+//
+// classifySlug takes `sharedPrefixes` and `facts` as arguments, which is
+// exactly the seam runFidelityReport fills from the corpus, so a fixture
+// exercises the same code path the corpus did.
+var TWO_MEMBER_SHARED = { "ds-tag": ["tag-alpha", "tag-beta"] };
+
+function classifyMember(slug, css, background) {
+  return CLASSIFY_MOD.classifySlug({
+    slug: slug,
+    prefixes: ["ds-tag", "ds-" + slug],
+    css: css,
+    facts: {
+      byNode: [
+        {
+          name: "Type=Default",
+          appearance: {
+            background: "#111111",
+            variants: [
+              { prop: "Type", values: ["Hue"], background: background },
+            ],
+          },
+        },
+      ],
+      variants: [{ prop: "Type", values: ["Hue"], background: background }],
+    },
+    tokenMap: {},
+    sharedPrefixes: TWO_MEMBER_SHARED,
+  });
 }
 
-test("fragment-aware filtering does not deduplicate a rule across slugs: one shared .ds-tag rule is charged to every family member that renders it", function () {
-  var spec = firstSharedTagColorDecl(BASE_CSS);
-  assert.ok(
-    spec,
-    "no uniquely-locatable shared .ds-tag--<color> color declaration found",
-  );
-  // #123456 is not an appearance fact color of any tag family member.
-  var corrupted = BASE_CSS.replace(spec.decl, spec.prop + ": #123456;");
-  var report = runReportWithCss(corrupted);
-  var charged = ["tag-default", "tag-stage"].filter(function (slug) {
-    return mismatchesFor(report, slug).some(function (m) {
-      return (
-        m.selector.indexOf(spec.selector) !== -1 && /#123456/.test(m.message)
-      );
-    });
+test("classification does not deduplicate a rule across slugs: one shared .ds-tag rule is charged to every family member that renders it", function () {
+  var css = ".ds-tag--hue { background: #123456; }";
+  // #123456 is wrong for BOTH captures, so both members must report it. If the
+  // classifier ever collapsed a shared declaration to a single subject, one of
+  // the two would come back clean.
+  var alpha = classifyMember("tag-alpha", css, "#aaaaaa");
+  var beta = classifyMember("tag-beta", css, "#bbbbbb");
+  [
+    ["tag-alpha", alpha],
+    ["tag-beta", beta],
+  ].forEach(function (pair) {
+    assert.equal(
+      pair[1].mismatch,
+      1,
+      pair[0] +
+        " must be charged for the shared .ds-tag--hue declaration, got: " +
+        JSON.stringify(pair[1].mismatches),
+    );
+    assert.match(pair[1].mismatches[0].message, /#123456/);
   });
-  assert.ok(
-    charged.length >= 2,
-    "a shared " +
-      spec.selector +
-      " declaration must be charged to every family " +
-      "member whose fragment renders it, not collapsed to one; charged: " +
-      JSON.stringify(charged),
+  // Non-vacuity in the other direction: each member's OWN captured colour
+  // verifies for that member and mismatches for the other, which is the
+  // per-capture provenance the no-dedup rule exists to preserve.
+  assert.equal(
+    classifyMember(
+      "tag-alpha",
+      ".ds-tag--hue { background: #aaaaaa; }",
+      "#aaaaaa",
+    ).verified,
+    1,
+  );
+  assert.equal(
+    classifyMember(
+      "tag-beta",
+      ".ds-tag--hue { background: #aaaaaa; }",
+      "#bbbbbb",
+    ).mismatch,
+    1,
   );
 });
 
-// The other half of the same property: a rule scoped to ONE member's own
-// prefix belongs to that member alone. .ds-tag-stage--orange exists because
-// Figma gives tag-stage a different Orange border than tag-default, so
-// corrupting it must red tag-stage and leave tag-default untouched.
-test("a tag-stage-scoped color rule is charged to tag-stage alone, not to the shared tag family", function () {
-  // Derived from what the gate actually VERIFIES today, not from CSS text. An
-  // earlier version scanned the stylesheet and picked the first uniquely
-  // locatable .ds-tag-stage--<colour> declaration, which selected gray: gray is
-  // tag-stage's own root variant, so a modifier rule for it matches no variant
-  // fact and is honestly unverifiable. Corrupting an unverifiable declaration
-  // proves nothing. Selecting a verified one guarantees the corruption has a
-  // subject to contradict.
-  var baseline = runReport();
-  var verifiedStageRule = null;
-  var re = /(\.ds-tag-stage--[a-z0-9-]+)\s*\{([^}]*)\}/g;
-  var m;
-  while (verifiedStageRule === null && (m = re.exec(BASE_CSS)) !== null) {
-    var d =
-      /(background|background-color|color|border-color)\s*:\s*([^;]+);/.exec(
-        m[2],
-      );
-    if (!d || BASE_CSS.split(d[0]).length - 1 !== 1) continue;
-    // Only a selector the gate can currently reach for tag-stage qualifies.
-    var probe = runReportWithCss(BASE_CSS.replace(d[0], d[1] + ": #123456;"));
-    if (
-      mismatchesFor(probe, "tag-stage").some(function (x) {
-        return x.selector.indexOf(m[1]) !== -1;
-      })
-    ) {
-      verifiedStageRule = { selector: m[1], decl: d[0], prop: d[1] };
-    }
-  }
-  var spec = verifiedStageRule;
+test("a member-scoped color rule is charged to that member alone, not to the shared tag family", function () {
+  // `.ds-tag-beta--hue` is owned by ds-tag-beta, a prefix only tag-beta claims,
+  // so the shared `.ds-tag--hue` declaration is `overridden` for tag-beta (its
+  // own scoped rule wins the cascade) and untouched for tag-alpha.
+  var css =
+    ".ds-tag--hue { background: #aaaaaa; }\n.ds-tag-beta--hue { background: #123456; }\n";
+  var beta = classifyMember("tag-beta", css, "#bbbbbb");
   assert.ok(
-    spec,
-    "no .ds-tag-stage--<color> declaration is currently reachable by the gate " +
-      "for tag-stage, so this property cannot be tested; baseline verified: " +
-      baseline.bySlug["tag-stage"].verified,
-  );
-  var corrupted = BASE_CSS.replace(spec.decl, spec.prop + ": #123456;");
-  var report = runReportWithCss(corrupted);
-  assert.ok(
-    mismatchesFor(report, "tag-stage").some(function (m) {
-      return m.selector.indexOf(spec.selector) !== -1;
+    beta.mismatches.some(function (m) {
+      return /\.ds-tag-beta--hue/.test(m.selector) && /#123456/.test(m.message);
     }),
-    "tag-stage must be charged for its own scoped rule, got: " +
-      JSON.stringify(mismatchesFor(report, "tag-stage")),
+    "tag-beta must be charged for its own scoped rule, got: " +
+      JSON.stringify(beta.mismatches),
   );
+  var alpha = classifyMember("tag-alpha", css, "#aaaaaa");
   assert.deepEqual(
-    mismatchesFor(report, "tag-default"),
+    alpha.mismatches.filter(function (m) {
+      return /\.ds-tag-beta--hue/.test(m.selector);
+    }),
     [],
-    "tag-default must not be charged for a rule scoped to tag-stage's prefix",
+    "tag-alpha must not be charged for a rule scoped to tag-beta's prefix",
   );
 });
 

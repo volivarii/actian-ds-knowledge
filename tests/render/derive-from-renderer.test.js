@@ -3,6 +3,18 @@ var test = require("node:test");
 var assert = require("node:assert/strict");
 
 var D = require("../../scripts/render/derive-from-renderer.js");
+var M = require("../../components/render/renderer/matrix.js");
+
+// Mirrors ds-html-map.js's esc(), kept independent (not imported) for the same
+// oracle-independence reason fragment-invariants.test.js states: importing the
+// producer's own escape would make these assertions blind to a bug in it.
+function escLabel(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 // Phase 1a pinned deriveFragment("button"/"badge"/"tag-interactive") byte-for-byte
 // against the frozen captures in components/render/src/. Those three tests retired
@@ -17,9 +29,27 @@ var D = require("../../scripts/render/derive-from-renderer.js");
 // they survive the seeds: tag-default and checkbox are the derive-from-facts slugs
 // (North Star slice 2) whose markup INTENTIONALLY diverges from the degraded capture
 // (colored tag classes; real checkbox state classes + glyphs).
-test("deriveFragment(tag-default) colors each cell via ds-tag--<color>", function () {
+// The 2026-08-12 breaking sync replaced tag-default's Color axis with a single
+// Type axis. This asserted `ds-tag--pink`, a hand-copied value from the retired
+// axis, and it kept PASSING after the sync only because MATRIX_OVERRIDES still
+// drove the dead axis through the renderer -- a green test over fabricated
+// cells. The marker is derived from the registry now: whatever the published
+// axis is, the fragment must colour its cells by that axis's own values.
+test("deriveFragment(tag-default) colors each cell by a published variant value", function () {
   var derived = D.deriveFragment("tag-default");
-  assert.match(derived, /ds-tag--pink/);
+  var comp = M.findComponent("tag-default");
+  var axis = Object.keys(comp.variants)[0];
+  var painted = comp.variants[axis].filter(function (value) {
+    var mod = "ds-tag--" + String(value).toLowerCase().replace(/\s+/g, "-");
+    return new RegExp("\\b" + mod + "\\b").test(derived);
+  });
+  assert.ok(
+    painted.length > 1,
+    "the fragment paints no " +
+      axis +
+      " value as a ds-tag--<value> modifier; painted: " +
+      JSON.stringify(painted),
+  );
 });
 
 test("deriveFragment(checkbox) emits distinct classes + glyphs per Selection state", function () {
@@ -59,22 +89,31 @@ test("toggle derives a real On state, not the Selected==='Yes' bug", function ()
   );
 });
 
-test("tag-default renders every registry color, not the 5-cell generic cap", function () {
+// Same reason as above: the eight colour names were a copy of a retired axis.
+// The property is "the curated override shows the WHOLE identity axis, not the
+// generic 5-cell cap", and the registry is the only place that knows how many
+// values that is.
+test("tag-default renders every registry variant value, not the 5-cell generic cap", function () {
   var html = R.deriveFragment("tag-default");
-  [
-    "pink",
-    "purple",
-    "indigo",
-    "yellow",
-    "lime",
-    "teal",
-    "orange",
-    "gray",
-  ].forEach(function (c) {
-    assert.match(
-      html,
-      new RegExp("ds-tag--" + c + "\\b"),
-      "tag color " + c + " is rendered",
-    );
+  var comp = M.findComponent("tag-default");
+  var axis = Object.keys(comp.variants)[0];
+  var values = comp.variants[axis];
+  assert.ok(
+    values.length > 5,
+    "the axis has " +
+      values.length +
+      " values, so the generic 5-cell cap cannot be distinguished from a " +
+      "curated override and this test proves nothing",
+  );
+  var missing = values.filter(function (value) {
+    // Rendered means the cell is there, keyed by its caption; the class is
+    // asserted per value by the sibling test above (Default and Stage-1 carry
+    // no modifier of their own by design).
+    return html.indexOf(">" + escLabel(value) + "<") === -1;
   });
+  assert.deepEqual(
+    missing,
+    [],
+    "every published " + axis + " value must have a cell in the fragment",
+  );
 });

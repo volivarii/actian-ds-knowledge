@@ -4,8 +4,55 @@ var assert = require("node:assert/strict");
 var Ajv2020 = require("ajv/dist/2020");
 var addFormats = require("ajv-formats");
 var D = require("../../scripts/render/derive-canonical.js");
-var RENDER_SLUGS =
-  require("../../components/render/renderer/matrix.js").RENDER_SLUGS;
+var CLASSIFY = require("../../scripts/render/fidelity-classify.js");
+var MATRIX = require("../../components/render/renderer/matrix.js");
+var RENDER_SLUGS = MATRIX.RENDER_SLUGS;
+
+// A --zen-* token referenced by `prefix`'s OWN rules and by nothing else in the
+// sheet. Used as the isolator for the hyphen-prefix absorption guards below:
+// a token that is also legitimately consumed elsewhere cannot tell a real
+// absorption apart from correct shared use, which is why the hand-picked
+// isolators these guards used to carry went stale.
+// REFERENCES only (`var(--zen-x)`), never definitions (`--zen-x: value`).
+// tokens.css defines every token in one :root rule, so counting definitions
+// made every token "used elsewhere" and no isolator could ever be found --
+// which reads as "the property cannot be tested" rather than as the bug it was.
+function tokensIn(rules) {
+  var set = new Set();
+  rules.forEach(function (r) {
+    var re = /var\(\s*(--zen-[a-z0-9-]+)/g;
+    var m;
+    while ((m = re.exec(String(r.body))) !== null) set.add(m[1]);
+  });
+  return set;
+}
+function onlyOwnedToken(rawCss, prefix) {
+  // Comments stripped ONCE, up front: ownedRules strips them itself, so
+  // comparing its rule bodies against a walk over the raw text never matched
+  // and every owned rule counted as "elsewhere" too -- the helper then always
+  // returned null and the guard below read as "no isolator exists".
+  var css = rawCss.replace(/\/\*[\s\S]*?\*\//g, "");
+  var owned = CLASSIFY.ownedRules(css, [prefix]);
+  var ownedSelectors = new Set(
+    owned.map(function (r) {
+      return r.selector + "|" + r.body;
+    }),
+  );
+  var everythingElse = [];
+  var re = /([^{}]+)\{([^{}]*)\}/g;
+  var m;
+  while ((m = re.exec(css)) !== null) {
+    var entry = { selector: m[1].trim(), body: m[2] };
+    if (!ownedSelectors.has(entry.selector + "|" + entry.body))
+      everythingElse.push(entry);
+  }
+  var elsewhere = tokensIn(everythingElse);
+  return (
+    Array.from(tokensIn(owned)).find(function (t) {
+      return !elsewhere.has(t);
+    }) || null
+  );
+}
 
 test("deriveCanonical: emits a valid CEM declaration for button", function () {
   var out = D.deriveCanonical();
@@ -296,14 +343,61 @@ test("deriveCanonical: render.css base is exactly concat(tokens, fonts, ds-base)
   assert.ok(base.length > 100000, "the asset-derived base is non-trivial");
 });
 
-test("ds-base.css carries the tag color variants and checkbox indeterminate rule", function () {
+// ds-base.css must carry a rule for every tag-default variant value the CAPTURE
+// records a colour delta for, and none for a value it does not. Both halves are
+// derived: the old version asserted `.ds-tag--pink` by name, so it went stale
+// the moment the 2026-08-12 fold-in replaced the Color axis with Type -- a
+// single hand-copied selector standing in for the whole variant surface.
+test("ds-base.css carries a rule for every captured tag variant delta, and no no-op rule for the ones without one", function () {
   var fs = require("node:fs");
   var path = require("node:path");
   var base = fs.readFileSync(
     path.resolve(__dirname, "../../components/render/renderer/ds-base.css"),
     "utf8",
   );
-  assert.match(base, /\.ds-tag--pink\s*\{/, "tag pink variant rule present");
+  var anatomy = require("../../components/dist/anatomy/tag-default.json");
+  var groups = (anatomy.root.appearance || {}).variants || [];
+  var axis = Object.keys(anatomy.variantDefaults || {})[0];
+  var defaultValue = (anatomy.variantDefaults || {})[axis];
+  var withDelta = new Set();
+  groups.forEach(function (g) {
+    (g.values || []).forEach(function (v) {
+      if (g.background || (g.border && g.border.color)) withDelta.add(v);
+    });
+  });
+  assert.ok(withDelta.size > 1, "the capture records no variant colour deltas");
+
+  var missing = [];
+  withDelta.forEach(function (value) {
+    var mod = String(value).toLowerCase().replace(/\s+/g, "-");
+    if (!new RegExp("\\.ds-tag--" + mod + "\\s*\\{").test(base))
+      missing.push(value);
+  });
+  assert.deepEqual(
+    missing,
+    [],
+    "the capture records a colour delta for these values but ds-base.css has " +
+      "no .ds-tag--<value> rule, so the renderer paints them as the base pill",
+  );
+
+  // The other direction: a rule for a value the capture gives no delta is a
+  // no-op at best and an invented colour at worst. The captured default and
+  // any value with no appearance group (Stage-1 today) must have none.
+  var comp = MATRIX.findComponent("tag-default");
+  var noop = (comp.variants[axis] || []).filter(function (value) {
+    if (withDelta.has(value)) return false;
+    var mod = String(value).toLowerCase().replace(/\s+/g, "-");
+    return new RegExp("\\.ds-tag--" + mod + "\\s*\\{").test(base);
+  });
+  assert.deepEqual(
+    noop,
+    [],
+    "ds-base.css carries a .ds-tag--<value> rule for a value the capture " +
+      "records no colour delta for (the captured default is " +
+      defaultValue +
+      "), so the rule either restates the base or invents a colour",
+  );
+
   assert.match(
     base,
     /\.ds-checkbox--indeterminate\b/,
@@ -457,33 +551,36 @@ test("deriveCanonical/consumedVars: the 4 new gray-box-to-zero hyphen-prefix pai
       JSON.stringify(searchNames),
   );
 
-  // tag-catalog / tag-catalog-item-type: tag-catalog's real markup uses the
-  // BEM modifier .ds-tag--catalog, not .ds-tag-catalog, so a guessed
-  // "ds-" + slug selector picked up nothing here. #474 replaced that guess
-  // with matrix.js's declared ownership, and tag-catalog is declared to own
-  // "ds-tag": the shared tag-family prefix, not a slug-shaped literal, so
-  // its declaration is no longer empty by design (it is the family's token
-  // surface, same as every other tag-family member). --zen-color-error-800
-  // is therefore a bad probe token now: it is legitimately part of that
-  // family surface too (.ds-tag--orange .ds-tag-stage__dot), so it can't
-  // tell a real absorption from tag-catalog's own intended scope.
-  // --zen-color-success-800 is used exactly once in ds-base.css, in
-  // .ds-tag-catalog-item-type--field's name color, and nowhere in any real
-  // .ds-tag family rule, so it still isolates the guard this test exists
-  // for: "ds-tag" is a genuine hyphen-prefix of
-  // ".ds-tag-catalog-item-type", and a regressed guard would make
-  // tag-catalog's declaration start absorbing tag-catalog-item-type's
-  // tokens.
-  var tagCatalogItemTypeNames = namesFor("zen-tag-catalog-item-type");
-  var tagCatalogNames = namesFor("zen-tag-catalog");
+  // tag-default / tag-item-type: "ds-tag" is a genuine hyphen-prefix of
+  // ".ds-tag-item-type", so a regressed guard would make tag-default's
+  // declaration start absorbing tag-item-type's tokens.
+  //
+  // This pair used to be spelled tag-catalog / tag-catalog-item-type with
+  // --zen-color-success-800 hand-picked as the isolator ("used exactly once in
+  // ds-base.css"). Both halves went stale on the 2026-08-12 fold-in: tag-catalog
+  // was retired into tag-default's Type axis, and a "used exactly once" claim is
+  // a copy of a fact the stylesheet owns and can change under it. The isolator
+  // is computed now: a token that the longer prefix's own rules reference and
+  // that appears nowhere else in the sheet. If no such token exists, the test
+  // says so instead of passing on a probe that cannot discriminate.
+  var tagItemTypeNames = namesFor("zen-tag-item-type");
+  var tagDefaultNames = namesFor("zen-tag-default");
+  var isolator = onlyOwnedToken(cemStyle, "ds-tag-item-type");
   assert.ok(
-    tagCatalogItemTypeNames.indexOf("--zen-color-success-800") >= 0,
-    "tag-catalog-item-type still consumes its own --zen-color-success-800 (fixture sanity)",
+    isolator,
+    "no token is referenced exclusively by .ds-tag-item-type's own rules, so " +
+      "absorption by .ds-tag cannot be distinguished from legitimate shared use",
   );
   assert.ok(
-    tagCatalogNames.indexOf("--zen-color-success-800") < 0,
-    "tag-catalog must not absorb tag-catalog-item-type's --zen-color-success-800: got " +
-      JSON.stringify(tagCatalogNames),
+    tagItemTypeNames.indexOf(isolator) >= 0,
+    "tag-item-type still consumes its own " + isolator + " (fixture sanity)",
+  );
+  assert.ok(
+    tagDefaultNames.indexOf(isolator) < 0,
+    "tag-default must not absorb tag-item-type's " +
+      isolator +
+      ": got " +
+      JSON.stringify(tagDefaultNames),
   );
 
   // notification / notification-dropdown and search / search-dropdown-menu:

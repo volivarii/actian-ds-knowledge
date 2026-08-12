@@ -634,379 +634,372 @@ test("confirmation: escapes hostile Title and Body", function () {
   assert.doesNotMatch(html, /<svg onload/, "no raw injection from Body");
 });
 
-// ---- Gray-box-to-zero, family 2 (tag family) ----
+// ---- Tag family: the 2026-08-12 fold-in ----
+//
+// The breaking sync folded tag-shared, tag-catalog, tag-stage, tag-status and
+// tag-glossary-item-type INTO "Tag, Default"'s new single `Type` axis, and
+// renamed "Tag, Catalog item type" to "Tag, Item type" (whose axis became
+// `Property 1`, absorbing the five glossary values plus fifteen custom slots).
+// The five per-slug blocks that used to live here asserted exact class strings
+// for components Figma no longer publishes.
+//
+// What replaces them is derived from published facts -- the registry's axis
+// values and the anatomy's own per-value appearance/icon groups -- not from a
+// hand-copied list of classes. A hand-copied list is what went stale: the old
+// blocks kept passing while their subjects were being deleted upstream.
+var TAG_MATRIX = require("../../components/render/renderer/matrix.js");
+var TAG_DEFAULT_ANATOMY = require("../../components/dist/anatomy/tag-default.json");
+var TAG_ITEM_TYPE_ANATOMY = require("../../components/dist/anatomy/tag-item-type.json");
+var TAG_ICONS = require("../../components/dist/icons/icons.json").icons;
 
-test("tag-shared: base + modifier present, no color-modifier leak", function () {
-  var DS = require(DS_PATH);
-  var html = DS.renderDSComponent({
-    dsSlug: "tag-shared",
-    variant: "",
-    props: {},
-  });
-  assert.match(
-    html,
-    /class="ds-tag ds-tag--shared"/,
-    "carries base + modifier",
+// The same normalization fidelity-classify.js applies to a captured variant
+// value before matching it against a CSS modifier, so "the class the renderer
+// emits" and "the value the capture names" are compared on one rule.
+function modifierOf(value) {
+  return String(value).toLowerCase().replace(/\s+/g, "-");
+}
+
+function axisOf(slug) {
+  var comp = TAG_MATRIX.findComponent(slug);
+  assert.ok(comp && comp.variants, slug + " is absent from every registry");
+  var axes = Object.keys(comp.variants);
+  assert.equal(
+    axes.length,
+    1,
+    slug +
+      " is expected to publish exactly one axis, got " +
+      JSON.stringify(axes),
   );
-});
+  return { name: axes[0], values: comp.variants[axes[0]] };
+}
 
-test("tag-shared: default label is Shared", function () {
-  var DS = require(DS_PATH);
-  var html = DS.renderDSComponent({
-    dsSlug: "tag-shared",
-    variant: "",
-    props: {},
+// Every appearance group the capture records for the root, flattened to
+// value -> group, so a test can ask "does this Type carry a colour delta".
+function appearanceGroups(anatomy) {
+  var byValue = {};
+  ((anatomy.root.appearance || {}).variants || []).forEach(function (v) {
+    (v.values || []).forEach(function (val) {
+      byValue[val] = v;
+    });
   });
-  assert.match(html, />Shared</, "renders the anatomy's fixed label");
-});
+  return byValue;
+}
 
-test("tag-shared: escapes hostile Label", function () {
+test("tag-default: every published Type value renders a class the anatomy can be checked against", function () {
   var DS = require(DS_PATH);
-  var html = DS.renderDSComponent({
-    dsSlug: "tag-shared",
-    variant: "",
-    props: { Label: "<script>alert(1)</script>" },
-  });
-  assert.doesNotMatch(html, /<script/, "no raw script injection");
-  assert.match(html, /&lt;script&gt;/, "label escaped");
-});
+  var axis = axisOf("tag-default");
+  var groups = appearanceGroups(TAG_DEFAULT_ANATOMY);
+  var defaultValue = (TAG_DEFAULT_ANATOMY.variantDefaults || {})[axis.name];
+  assert.ok(defaultValue, "the capture records no default for " + axis.name);
 
-test("tag-catalog: base + modifier present", function () {
-  var DS = require(DS_PATH);
-  var html = DS.renderDSComponent({
-    dsSlug: "tag-catalog",
-    variant: "Type=Default",
-    props: {},
-  });
-  assert.match(
-    html,
-    /class="ds-tag ds-tag--catalog"/,
-    "carries base + modifier",
-  );
-});
-
-test("tag-catalog: leading icon slot present and resolved", function () {
-  var DS = require(DS_PATH);
-  DS.setIcons(require("../../components/dist/icons/icons.json").icons);
-  try {
+  // Emitted for EVERY value, including the captured default: singling the
+  // default out in the renderer would hardcode which value the capture calls
+  // its default. Which of these modifiers gets a ds-base.css RULE is the
+  // separate question, and it is asserted against the capture's own colour
+  // deltas by derive-canonical.test.js ("a rule for every captured tag variant
+  // delta, and no no-op rule for the ones without one").
+  var checked = 0;
+  axis.values.forEach(function (value) {
     var html = DS.renderDSComponent({
-      dsSlug: "tag-catalog",
+      dsSlug: "tag-default",
+      variant: axis.name + "=" + value,
+      props: { Label: value },
+    });
+    assert.match(html, /class="ds-tag\b/, value + ": carries the base class");
+    var modifier = "ds-tag--" + modifierOf(value);
+    assert.match(
+      html,
+      new RegExp("\\b" + modifier + "\\b"),
+      value + ": emits its own " + modifier + " modifier",
+    );
+    checked++;
+  });
+  assert.ok(checked > 1, "the registry axis probe found nothing to render");
+
+  // The two facts the capture states that this renderer must NOT paper over:
+  // Default and Stage-1 both carry no colour delta, so both render as the base
+  // pill (their modifier matches no rule). Pinned here so an upstream change
+  // that gives either one a real appearance group reds this premise instead of
+  // silently leaving a published value unpainted.
+  assert.ok(
+    !groups["Stage-1"],
+    "Stage-1 gained an appearance group upstream -- it now needs a ds-base.css " +
+      "rule, and this test's premise (it renders as Default) is stale",
+  );
+  assert.ok(
+    !groups[defaultValue],
+    defaultValue +
+      " is the captured default, so it must carry no appearance group of its " +
+      "own; base .ds-tag is its paint",
+  );
+});
+
+test("tag-default: the Type modifier is shape-clamped before it reaches the class attribute (XSS)", function () {
+  var DS = require(DS_PATH);
+  // The payload carries exactly ONE "=" on purpose. parseVariant requires
+  // `part.split("=").length === 2`, so a classic `x" onmouseover="alert(1)`
+  // payload is dropped before the renderer ever sees it -- v.Type comes back
+  // undefined, no modifier is emitted, and the assertions below pass whether or
+  // not the clamp exists. Confirmed by mutation: with that payload, deleting the
+  // clamp reds nothing. This one reaches the clamp.
+  var html = DS.renderDSComponent({
+    dsSlug: "tag-default",
+    variant: 'Type=x"><script>alert(1)</script>',
+    props: { Label: "x" },
+  });
+  assert.doesNotMatch(
+    html,
+    /<script/,
+    "a hostile Type value must not break out of the class attribute",
+  );
+  // No modifier at all rather than a sanitized one: an ill-shaped value names
+  // no published Type, so there is nothing to paint it as.
+  assert.doesNotMatch(
+    html,
+    /ds-tag--x/,
+    "an ill-shaped Type value emits no modifier of its own",
+  );
+});
+
+test("tag-default: the leading icon slug follows the anatomy's per-Type instance swap", function () {
+  var DS = require(DS_PATH);
+  DS.setIcons(TAG_ICONS);
+  try {
+    var iconChild = (TAG_DEFAULT_ANATOMY.root.children || []).find(
+      function (c) {
+        return c.kind === "instance";
+      },
+    );
+    assert.ok(iconChild, "the capture records no leading-icon instance child");
+    // The child's own slug is the default icon; each variant group names the
+    // slug that Type swaps in.
+    var expected = { __default__: iconChild.slug };
+    ((iconChild.appearance || {}).variants || []).forEach(function (v) {
+      (v.values || []).forEach(function (val) {
+        expected[val] = v.slug;
+      });
+    });
+    assert.ok(
+      Object.keys(expected).length > 2,
+      "the capture records no per-Type icon swap, so this test proves nothing",
+    );
+
+    var axis = axisOf("tag-default");
+    Object.keys(expected).forEach(function (value) {
+      var slug = expected[value];
+      assert.ok(
+        TAG_ICONS[slug],
+        "icon " + slug + " is missing from icons.json",
+      );
+      var variant =
+        value === "__default__"
+          ? axis.name +
+            "=" +
+            (TAG_DEFAULT_ANATOMY.variantDefaults || {})[axis.name]
+          : axis.name + "=" + value;
+      var html = DS.renderDSComponent({
+        dsSlug: "tag-default",
+        variant: variant,
+        props: { Label: "x" },
+      });
+      assert.match(
+        html,
+        /<span class="ds-tag__icon"><svg class="ds-icon"[^>]*>[\s\S]+?<\/svg><\/span>/,
+        variant + ": ds-tag__icon wraps a non-empty svg",
+      );
+      assert.ok(
+        html.indexOf(TAG_ICONS[slug].body) !== -1,
+        variant + ": renders the " + slug + " icon the capture names",
+      );
+    });
+  } finally {
+    DS.setIcons(null);
+  }
+});
+
+test("tag-default: the leading icon is a default-TRUE boolean, and an explicit false omits it", function () {
+  var DS = require(DS_PATH);
+  DS.setIcons(TAG_ICONS);
+  try {
+    var comp = TAG_MATRIX.findComponent("tag-default");
+    var prop = Object.keys(comp.properties || {}).find(function (k) {
+      return /^Leading icon show/.test(k);
+    });
+    assert.ok(
+      prop,
+      "the registry no longer publishes a Leading icon show prop",
+    );
+    assert.equal(
+      comp.properties[prop].default,
+      true,
+      "this test's premise is that the registry default is true",
+    );
+    var shown = DS.renderDSComponent({
+      dsSlug: "tag-default",
       variant: "Type=Default",
-      props: {},
+      props: { Label: "x" },
     });
     assert.match(
-      html,
-      /<span class="ds-tag__icon"><svg class="ds-icon"[^>]*>.+?<\/svg><\/span>/,
-      "ds-tag__icon wraps a non-empty svg (directory resolves)",
+      shown,
+      /ds-tag__icon/,
+      "absent prop honours the registry default",
+    );
+    var hidden = DS.renderDSComponent({
+      dsSlug: "tag-default",
+      variant: "Type=Default",
+      props: { Label: "x", "Leading icon show": false },
+    });
+    assert.doesNotMatch(
+      hidden,
+      /ds-tag__icon/,
+      "an explicit false omits the icon",
     );
   } finally {
     DS.setIcons(null);
   }
 });
 
-test("tag-catalog: default label, escapes hostile Label", function () {
+test("tag-default: escapes a hostile Label", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "tag-catalog",
-    variant: "Type=Default",
-    props: {},
-  });
-  assert.match(html, />Catalog</, "default label from anatomy");
-
-  var hostile = DS.renderDSComponent({
-    dsSlug: "tag-catalog",
+    dsSlug: "tag-default",
     variant: "Type=Default",
     props: { Label: "<img src=x onerror=alert(1)>" },
   });
-  assert.match(hostile, /&lt;img/, "label escaped");
-  assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
+  assert.match(html, /&lt;img/, "label escaped");
+  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
 });
 
-test("tag-stage: base structure, dot, label, trailing arrow icon", function () {
+test("tag-item-type: every published value renders its own modifier class", function () {
   var DS = require(DS_PATH);
-  DS.setIcons(require("../../components/dist/icons/icons.json").icons);
-  try {
+  var axis = axisOf("tag-item-type");
+  var groups = appearanceGroups(TAG_ITEM_TYPE_ANATOMY);
+  var defaultValue = (TAG_ITEM_TYPE_ANATOMY.variantDefaults || {})[axis.name];
+  assert.ok(defaultValue, "the capture records no default for " + axis.name);
+  assert.ok(
+    axis.values.indexOf("Glossary-1") !== -1,
+    "the glossary values must have folded into this component's axis -- " +
+      "tag-glossary-item-type was retired into it",
+  );
+
+  axis.values.forEach(function (value) {
     var html = DS.renderDSComponent({
-      dsSlug: "tag-stage",
-      variant: "Color=Gray",
-      props: { Label: "Raw" },
+      dsSlug: "tag-item-type",
+      variant: axis.name + "=" + value,
+      props: { Label: value },
     });
-    // Both color modifiers: the shared .ds-tag--<color> carries the fill and
-    // the border tint the tag family agrees on, and the stage-scoped
-    // .ds-tag-stage--<color> is where tag-stage's own capture differs from
-    // tag-default's (Orange and Yellow borders today).
     assert.match(
       html,
-      /class="ds-tag ds-tag-stage ds-tag--gray ds-tag-stage--gray"/,
-      "carries base + tag-stage + both color modifiers",
+      /class="ds-tag-item-type\b/,
+      value + ": carries the base class",
     );
+    var modifier = "ds-tag-item-type--" + modifierOf(value);
     assert.match(
       html,
-      /<span class="ds-tag-stage__dot"><\/span>/,
-      "renders the leading dot",
+      new RegExp("\\b" + modifier + "\\b"),
+      value + ": emits its own " + modifier + " modifier",
     );
-    assert.match(html, />Raw</, "renders the label");
-    assert.match(
-      html,
-      /<span class="ds-tag-stage__icon"><svg class="ds-icon"[^>]*>.+?<\/svg><\/span>/,
-      "trailing icon resolves (arrow-down)",
+    assert.ok(
+      html.indexOf(">" + value + "<") !== -1,
+      value + ": renders its label text",
     );
-  } finally {
-    DS.setIcons(null);
-  }
-});
-
-test("tag-stage: Color=Indigo activates the indigo modifier", function () {
-  var DS = require(DS_PATH);
-  var html = DS.renderDSComponent({
-    dsSlug: "tag-stage",
-    variant: "Color=Indigo",
-    props: { Label: "Building" },
   });
-  assert.match(html, /ds-tag--indigo/, "root carries the indigo modifier");
+  // Same split as tag-default: the modifier is emitted for every value, and
+  // WHICH modifiers get a rule is the capture's business. The captured default
+  // carries no appearance group of its own -- base .ds-tag-item-type is its
+  // paint -- so a rule for it would restate the base.
+  assert.ok(
+    !groups[defaultValue],
+    defaultValue +
+      " is the captured default, so it must carry no appearance group of its own",
+  );
+  assert.ok(
+    Object.keys(groups).length > 1,
+    "the capture records no per-value colour groups",
+  );
 });
 
-test("tag-stage: escapes hostile Label", function () {
+test("tag-item-type: the modifier is shape-clamped before it reaches the class attribute (XSS)", function () {
   var DS = require(DS_PATH);
+  // One "=" only, for the reason spelled out in tag-default's XSS test above:
+  // parseVariant silently drops a part with two, so a two-"=" payload never
+  // reaches the clamp and the assertion holds vacuously.
   var html = DS.renderDSComponent({
-    dsSlug: "tag-stage",
-    variant: "Color=Gray",
-    props: { Label: "<img src=x onerror=alert(1)>" },
-  });
-  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
-  assert.match(html, /&lt;img/, "label escaped");
-});
-
-test("tag-stage: clamps a hostile Color before it reaches the class attribute (XSS)", function () {
-  var DS = require(DS_PATH);
-  var html = DS.renderDSComponent({
-    dsSlug: "tag-stage",
-    variant: 'Color="><script>alert(1)</script>',
-    props: { Label: "Raw" },
+    dsSlug: "tag-item-type",
+    variant: 'Property 1=x"><script>alert(1)</script>',
+    props: { Label: "x" },
   });
   assert.doesNotMatch(
     html,
-    /"><script/,
-    "no raw class-attribute breakout from an unclamped Color",
-  );
-  assert.match(
-    html,
-    /class="ds-tag ds-tag-stage"/,
-    "unknown Color appends no modifier -- renders the base pill safely",
-  );
-});
-
-test("tag-status: base + family class present", function () {
-  var DS = require(DS_PATH);
-  var html = DS.renderDSComponent({
-    dsSlug: "tag-status",
-    variant: "Status=Fail",
-    props: {},
-  });
-  assert.match(html, /class="[^"]*\bds-tag\b/, "carries the ds-tag class");
-  assert.match(
-    html,
-    /class="[^"]*\bds-tag--status-error\b/,
-    "Fail carries the ds-tag--status-error family class (no bare " +
-      "ds-tag--status namespace class -- it was an empty no-op)",
-  );
-});
-
-test("tag-status: grouped family mapping from the anatomy", function () {
-  var DS = require(DS_PATH);
-  var successHtml = DS.renderDSComponent({
-    dsSlug: "tag-status",
-    variant: "Status=Success",
-    props: {},
-  });
-  assert.match(
-    successHtml,
-    /ds-tag--status-success/,
-    "Success maps to the success family",
+    /<script/,
+    "a hostile value must not break out of the class attribute",
   );
   assert.doesNotMatch(
-    successHtml,
-    /ds-tag--status-error/,
-    "Success does not carry the error family",
-  );
-
-  var pendingHtml = DS.renderDSComponent({
-    dsSlug: "tag-status",
-    variant: "Status=Pending",
-    props: {},
-  });
-  assert.match(
-    pendingHtml,
-    /ds-tag--status-info/,
-    "Pending maps to the grouped info family, not a per-value class",
-  );
-
-  // The 2026-07-23 capture retired six Status values (Maintenance, Queued,
-  // Scheduled, Offline, Sleeping, Stopped) and the whole neutral family with
-  // them. A retired value must fall back to base .ds-tag rather than pick up
-  // some other family's colour, and specifically must not read as an error.
-  var retiredHtml = DS.renderDSComponent({
-    dsSlug: "tag-status",
-    variant: "Status=Maintenance",
-    props: {},
-  });
-  assert.doesNotMatch(
-    retiredHtml,
-    /ds-tag--status-/,
-    "a retired Status carries no family modifier at all",
-  );
-  assert.match(
-    retiredHtml,
-    /class="ds-tag"/,
-    "a retired Status still renders as a base tag",
-  );
-});
-
-test("tag-status: escapes hostile Label, falls back to Status when Label omitted", function () {
-  var DS = require(DS_PATH);
-  var hostile = DS.renderDSComponent({
-    dsSlug: "tag-status",
-    variant: "Status=Fail",
-    props: { Label: "<img src=x onerror=alert(1)>" },
-  });
-  assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
-  assert.match(hostile, /&lt;img/, "label escaped");
-
-  var fallback = DS.renderDSComponent({
-    dsSlug: "tag-status",
-    variant: "Status=Warning",
-    props: {},
-  });
-  assert.match(fallback, />Warning</, "Label falls back to the Status value");
-});
-
-test("tag-glossary-item-type: base + label", function () {
-  var DS = require(DS_PATH);
-  var html = DS.renderDSComponent({
-    dsSlug: "tag-glossary-item-type",
-    variant: "Property 1=Default",
-    props: {},
-  });
-  assert.match(
     html,
-    /class="ds-tag-glossary-item-type"/,
-    "carries the base class",
-  );
-  assert.match(
-    html,
-    /<span class="ds-tag-glossary-item-type__label">Glossary item<\/span>/,
-    "renders the __label span with the anatomy default text",
+    /ds-tag-item-type--x/,
+    "an ill-shaped value emits no modifier of its own",
   );
 });
 
-test("tag-glossary-item-type: counter toggle", function () {
+test("tag-item-type: counter gating and escapes hostile Label", function () {
   var DS = require(DS_PATH);
   var withCounter = DS.renderDSComponent({
-    dsSlug: "tag-glossary-item-type",
-    variant: "Property 1=Default",
-    props: { "Show Counter": true, Counter: "7" },
-  });
-  assert.match(
-    withCounter,
-    /<span class="ds-tag-glossary-item-type__counter">7<\/span>/,
-    "counter renders when Show Counter is truthy",
-  );
-
-  var withoutCounter = DS.renderDSComponent({
-    dsSlug: "tag-glossary-item-type",
-    variant: "Property 1=Default",
-    props: {},
-  });
-  assert.doesNotMatch(
-    withoutCounter,
-    /ds-tag-glossary-item-type__counter/,
-    "no counter span when Show Counter is absent/false",
-  );
-});
-
-test("tag-glossary-item-type: escapes hostile Label", function () {
-  var DS = require(DS_PATH);
-  var html = DS.renderDSComponent({
-    dsSlug: "tag-glossary-item-type",
-    variant: "Property 1=Default",
-    props: { Label: "<img src=x onerror=alert(1)>" },
-  });
-  assert.match(html, /&lt;img/, "label escaped");
-  assert.doesNotMatch(html, /<img src=x/, "no raw injection");
-});
-
-test("tag-catalog-item-type: base + default Category modifier + label", function () {
-  var DS = require(DS_PATH);
-  var html = DS.renderDSComponent({
-    dsSlug: "tag-catalog-item-type",
-    variant: "Type=Category",
-    props: { Label: "Category" },
-  });
-  assert.match(html, /ds-tag-catalog-item-type/, "carries the base class");
-  assert.match(
-    html,
-    /ds-tag-catalog-item-type--category/,
-    "carries the category modifier",
-  );
-  assert.match(html, />Category</, "renders the label");
-});
-
-test("tag-catalog-item-type: Type slugifies into the modifier class", function () {
-  var DS = require(DS_PATH);
-  var dataProcess = DS.renderDSComponent({
-    dsSlug: "tag-catalog-item-type",
-    variant: "Type=Data process",
-    props: {},
-  });
-  assert.match(
-    dataProcess,
-    /ds-tag-catalog-item-type--data-process/,
-    "Data process lowercases + hyphenates",
-  );
-
-  var useCase = DS.renderDSComponent({
-    dsSlug: "tag-catalog-item-type",
-    variant: "Type=Use case",
-    props: {},
-  });
-  assert.match(
-    useCase,
-    /ds-tag-catalog-item-type--use-case/,
-    "Use case lowercases + hyphenates",
-  );
-});
-
-test("tag-catalog-item-type: counter gating and escapes hostile Label", function () {
-  var DS = require(DS_PATH);
-  var withCounter = DS.renderDSComponent({
-    dsSlug: "tag-catalog-item-type",
-    variant: "Type=Category",
+    dsSlug: "tag-item-type",
+    variant: "Property 1=Category",
     props: { "Show counter": true, Counter: "42" },
   });
   assert.match(
     withCounter,
-    /<span class="ds-tag-catalog-item-type__counter">42<\/span>/,
+    /<span class="ds-tag-item-type__counter">42<\/span>/,
     "counter renders when Show counter is truthy",
   );
 
   var withoutCounter = DS.renderDSComponent({
-    dsSlug: "tag-catalog-item-type",
-    variant: "Type=Category",
+    dsSlug: "tag-item-type",
+    variant: "Property 1=Category",
     props: {},
   });
   assert.doesNotMatch(
     withoutCounter,
-    /ds-tag-catalog-item-type__counter/,
+    /ds-tag-item-type__counter/,
     "no counter span when Show counter is absent/false",
   );
 
   var hostile = DS.renderDSComponent({
-    dsSlug: "tag-catalog-item-type",
-    variant: "Type=Category",
+    dsSlug: "tag-item-type",
+    variant: "Property 1=Category",
     props: { Label: "<img src=x onerror=alert(1)>" },
   });
   assert.match(hostile, /&lt;img/, "label escaped");
   assert.doesNotMatch(hostile, /<img src=x/, "no raw injection");
+});
+
+// The retired slugs must degrade to the graceful chip, not keep a live case.
+// A stale case is invisible: it renders plausible markup for a component the
+// design system no longer publishes, which is the fabrication invariant 10 in
+// fragment-invariants.test.js exists to prevent one level up.
+test("the five retired tag slugs have no renderer case left", function () {
+  var DS = require(DS_PATH);
+  [
+    "tag-shared",
+    "tag-catalog",
+    "tag-stage",
+    "tag-status",
+    "tag-glossary-item-type",
+    "tag-catalog-item-type",
+  ].forEach(function (slug) {
+    assert.equal(
+      DS.BUILT_SLUGS.indexOf(slug),
+      -1,
+      slug + " is still listed in BUILT_SLUGS",
+    );
+    var html = DS.renderDSComponent({ dsSlug: slug, name: slug, props: {} });
+    assert.match(
+      html,
+      /<span class="ds-component" data-slug=/,
+      slug + " must degrade to the graceful chip, not render a retired case",
+    );
+  });
 });
 
 // ---- Gray-box-to-zero, family 3 (card family) ----
