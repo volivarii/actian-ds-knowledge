@@ -161,13 +161,98 @@ function allIdentityValueCells(slug) {
   });
   if (axes.length !== 1) return [];
   var axis = axes[0];
+  var reduced = structurallyReducedProps(slug);
   return variants[axis].map(function (value) {
+    var props = { Label: value };
+    // A variant the capture reports as having FEWER children than the canonical
+    // node is missing one, and the renderer must not draw it. See
+    // structurallyReducedProps for why this is read rather than hardcoded.
+    Object.keys(reduced[value] || {}).forEach(function (k) {
+      props[k] = reduced[value][k];
+    });
     return {
       label: value,
       variant: axis + "=" + value,
-      props: { Label: value },
+      props: props,
     };
   });
+}
+
+// Per-variant prop overrides for the values the CAPTURE reports as structurally
+// reduced: `quality.structuralVariants` entries whose reason is a child-count
+// shortfall (`childCount:<canonical>!=<actual>`, actual < canonical).
+//
+// Why this exists at all. tag-default's Type=Shared has 1 child where the
+// canonical node has 2, and the missing one is the leading icon: the pre-sync
+// tag-shared capture had exactly one child (`Shared`, a text node) and the
+// retired tag-shared case rendered label-only. The 2026-08-12 fold-in gave the
+// renderer a default-TRUE "Leading icon show", so Shared started rendering a "+"
+// glyph the design system does not contain. THE FIDELITY GATE CANNOT SEE THIS:
+// it compares colours, and a spurious icon span carries none, so `mismatch`
+// stays 0 through it forever. Measurement was never going to catch it.
+//
+// Read, not hardcoded, on two counts:
+//  - WHICH values: from `quality.structuralVariants`. Shared is the only flagged
+//    value today, so an `if (type === "shared")` would look identical right now
+//    and diverge in silence the moment Figma flags another.
+//  - WHICH prop: the registry's own default-TRUE BOOLEAN props, by their real
+//    keys (`Leading icon show#7276:0`), which the renderer's normalizeProps
+//    aliases to the base name a case reads. So no prop name is typed here either.
+//
+// Applied ONLY when the mapping is unambiguous -- the shortfall must equal the
+// number of default-true booleans (1 = 1 today). A component with two optional
+// children and a shortfall of one does not say WHICH is absent, and turning both
+// off would be a confident wrong answer. That precondition is asserted by
+// tests/render/ds-html-map.test.js ("a Type the capture flags as structurally
+// reduced renders no leading icon"), so it reds there rather than silently
+// mis-suppressing here.
+//
+// Scope, stated because it is a real limit and not a hidden one: this drives the
+// variant MATRIX, so it covers every matrix-rendered surface -- the canonical
+// render, the gallery, the fragments the docs site ships, and the producer index
+// the fidelity gate builds. A hand-authored flow node that names Type=Shared and
+// passes no props still reaches the renderer's default-true branch; fixing that
+// needs the capture at render time, which this fs-free, browser-capable renderer
+// only has through an injected seam that no caller fills today (an unfilled seam
+// would put the glyph straight back, silently).
+var ANATOMY_DIR = path.resolve(__dirname, "..", "..", "dist", "anatomy");
+var _anatomyCache = {};
+function readAnatomy(slug) {
+  if (slug in _anatomyCache) return _anatomyCache[slug];
+  try {
+    _anatomyCache[slug] = JSON.parse(
+      fs.readFileSync(path.join(ANATOMY_DIR, slug + ".json"), "utf8"),
+    );
+  } catch (e) {
+    _anatomyCache[slug] = null;
+  }
+  return _anatomyCache[slug];
+}
+
+function structurallyReducedProps(slug) {
+  var anatomy = readAnatomy(slug);
+  var flags = ((anatomy && anatomy.quality) || {}).structuralVariants || [];
+  if (!flags.length) return {};
+  var comp = findComponent(slug);
+  var defaultTrueBooleans = Object.keys((comp && comp.properties) || {}).filter(
+    function (k) {
+      var p = comp.properties[k];
+      return p && p.type === "BOOLEAN" && p.default === true;
+    },
+  );
+  var out = {};
+  flags.forEach(function (entry) {
+    var m = /^childCount:(\d+)!=(\d+)$/.exec(String(entry.reason || ""));
+    if (!m) return;
+    var shortfall = Number(m[1]) - Number(m[2]);
+    if (shortfall <= 0) return;
+    if (defaultTrueBooleans.length !== shortfall) return;
+    out[entry.value] = out[entry.value] || {};
+    defaultTrueBooleans.forEach(function (k) {
+      out[entry.value][k] = false;
+    });
+  });
+  return out;
 }
 
 // Size, State (singular or plural), and Breakpoint(s) are secondary axes: they

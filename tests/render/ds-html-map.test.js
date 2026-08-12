@@ -685,6 +685,51 @@ function appearanceGroups(anatomy) {
   return byValue;
 }
 
+// The values `quality.structuralVariants` reports as having FEWER children than
+// the captured canonical node, with the shortfall. This is the only place the
+// capture states that a variant is missing a child; nothing in the per-variant
+// appearance data says so, which is exactly why an icon that Figma does not
+// contain can be rendered with `mismatch` at 0 forever -- the fidelity gate
+// compares colours, and a spurious icon span carries none.
+function structuralShortfalls(anatomy) {
+  var out = {};
+  ((anatomy.quality || {}).structuralVariants || []).forEach(function (e) {
+    var m = /^childCount:(\d+)!=(\d+)$/.exec(String(e.reason || ""));
+    if (!m) return;
+    var canonical = Number(m[1]);
+    var actual = Number(m[2]);
+    if (actual < canonical) out[e.value] = canonical - actual;
+  });
+  return out;
+}
+
+// Split a derived fragment into { label -> component markup } pairs. Harness
+// shape copied from derive-from-renderer.js's renderCell, deliberately not
+// imported, for the same oracle-independence reason fragment-invariants.test.js
+// states about these constants.
+var CELL_OPEN =
+  '<div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">';
+var CAPTION_OPEN = '<span style="font:12px/1.4 sans-serif;opacity:0.55">';
+function cellsByLabel(fragment) {
+  var out = {};
+  var from = 0;
+  while (true) {
+    var start = fragment.indexOf(CELL_OPEN, from);
+    if (start === -1) break;
+    var contentStart = start + CELL_OPEN.length;
+    var captionStart = fragment.indexOf(CAPTION_OPEN, contentStart);
+    if (captionStart === -1) break;
+    var labelStart = captionStart + CAPTION_OPEN.length;
+    var labelEnd = fragment.indexOf("</span>", labelStart);
+    out[fragment.slice(labelStart, labelEnd)] = fragment.slice(
+      contentStart,
+      captionStart,
+    );
+    from = labelEnd + 1;
+  }
+  return out;
+}
+
 test("tag-default: every published Type value renders a class the anatomy can be checked against", function () {
   var DS = require(DS_PATH);
   var axis = axisOf("tag-default");
@@ -731,6 +776,116 @@ test("tag-default: every published Type value renders a class the anatomy can be
     defaultValue +
       " is the captured default, so it must carry no appearance group of its " +
       "own; base .ds-tag is its paint",
+  );
+});
+
+// THE THIRD capture fact, and the one the colour gate can never catch: a Type
+// with FEWER children than the captured canonical node has no leading icon, so
+// rendering one puts a glyph in the design system that Figma does not contain.
+// `mismatch` stays 0 through it forever, because an icon span carries no colour.
+//
+// Today that is Type=Shared alone (canonical 2 children, Shared 1), corroborated
+// independently: the pre-sync tag-shared capture at 504dd3d1^ had exactly one
+// child, `Shared (text)`, and the retired tag-shared case rendered label-only.
+// So the fold-in is what introduced the "+" glyph, not Figma.
+//
+// Both halves are asserted together, on purpose. The premise (the capture flags
+// it, and the flag maps unambiguously onto one published boolean prop) is what
+// makes the suppression legitimate; if a future capture drops the flag, this
+// test reds instead of the glyph silently coming back. Nothing here names
+// "Shared", so a second flagged value is picked up rather than diverging.
+test("tag-default: a Type the capture flags as structurally reduced renders no leading icon", function () {
+  var RENDERER = require("../../scripts/render/derive-from-renderer.js");
+  var axis = axisOf("tag-default");
+  var comp = TAG_MATRIX.findComponent("tag-default");
+  var shortfalls = structuralShortfalls(TAG_DEFAULT_ANATOMY);
+  var flagged = Object.keys(shortfalls);
+
+  // PREMISE 1: the capture reports at least one structurally reduced value, and
+  // every reported value is one the registry actually publishes.
+  assert.ok(
+    flagged.length > 0,
+    "quality.structuralVariants reports no child-count shortfall, so this " +
+      "test has no subject -- if the capture stopped flagging it, confirm the " +
+      "variant really did gain its child back before deleting the suppression",
+  );
+  flagged.forEach(function (value) {
+    assert.ok(
+      axis.values.indexOf(value) !== -1,
+      value +
+        " is flagged as structurally reduced but is not a published " +
+        axis.name,
+    );
+  });
+
+  // PREMISE 2: the shortfall maps onto exactly one published default-TRUE
+  // boolean, so "this variant is missing a child" resolves to one prop without
+  // guessing. If a component ever grows a second optional child, this reds
+  // rather than turning off the wrong one.
+  var defaultTrueBooleans = Object.keys(comp.properties || {}).filter(
+    function (k) {
+      var p = comp.properties[k];
+      return p && p.type === "BOOLEAN" && p.default === true;
+    },
+  );
+  flagged.forEach(function (value) {
+    assert.equal(
+      defaultTrueBooleans.length,
+      shortfalls[value],
+      value +
+        " is short " +
+        shortfalls[value] +
+        " child(ren) but the registry publishes " +
+        defaultTrueBooleans.length +
+        " default-true boolean(s) (" +
+        JSON.stringify(defaultTrueBooleans) +
+        "), so which optional child is absent is ambiguous",
+    );
+  });
+
+  // CONSEQUENCE: the rendered cell carries neither the icon span nor the
+  // `--with-icon` flag that exists to mark exactly that span.
+  var cells = cellsByLabel(RENDERER.deriveFragment("tag-default"));
+  flagged.forEach(function (value) {
+    var cell = cells[value];
+    assert.ok(cell, value + " has no cell in the fragment");
+    assert.doesNotMatch(
+      cell,
+      /ds-tag__icon/,
+      value +
+        " is structurally reduced in the capture, so its cell must render no " +
+        "leading icon: " +
+        cell,
+    );
+    assert.doesNotMatch(
+      cell,
+      /ds-tag--with-icon/,
+      value +
+        " must not carry ds-tag--with-icon either -- that class is the flag for " +
+        "the very span the capture says is absent: " +
+        cell,
+    );
+  });
+
+  // NON-VACUITY: an unflagged value still renders its icon, so the assertions
+  // above cannot pass by the renderer having dropped the icon everywhere.
+  var unflagged = axis.values.filter(function (value) {
+    return flagged.indexOf(value) === -1;
+  });
+  assert.ok(unflagged.length > 0, "every published value is flagged");
+  var withIcon = unflagged.filter(function (value) {
+    return cells[value] && /ds-tag__icon/.test(cells[value]);
+  });
+  assert.equal(
+    withIcon.length,
+    unflagged.length,
+    "every value the capture does NOT flag must still render its leading " +
+      "icon; missing it on: " +
+      JSON.stringify(
+        unflagged.filter(function (v) {
+          return withIcon.indexOf(v) === -1;
+        }),
+      ),
   );
 });
 
