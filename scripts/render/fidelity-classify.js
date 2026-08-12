@@ -120,8 +120,8 @@ function classifyAlternative(alt, prefix) {
   if (new RegExp("\\." + prefix + "__").test(target))
     return { bucket: "element" };
   // A BEM element of ANY ds-* prefix is still an element, not this prefix's
-  // root: `.ds-tag--indigo .ds-tag-stage__dot` is owned by ds-tag but paints a
-  // ds-tag-stage element.
+  // root: `.ds-tag--stage-3 .ds-avatar__initials` is owned by ds-tag but
+  // paints a ds-avatar element.
   if (/\.ds-[a-z0-9-]+__/.test(target)) return { bucket: "element" };
   var mod = new RegExp("^\\." + prefix + "--([a-z0-9-]+)$").exec(target);
   if (mod) return { bucket: "modifier", modifier: mod[1] };
@@ -365,12 +365,18 @@ function classifySlug(opts) {
 
   // Pass 2: resolve the cascade. Two rules can set the SAME property on the
   // same subject, and then only one of them is what the browser paints: the
-  // more specific selector wins, source order breaks a tie. tag-stage is the
-  // case that needs this. It shares the `.ds-tag--<color>` scale with
-  // tag-default, but Figma gives the two components different Orange and
-  // Yellow borders, so tag-stage carries its own `.ds-tag-stage--<color>`
-  // rules AFTER the shared ones. Charging tag-stage for a shared declaration
-  // its own rule overrides would report a defect the render never paints.
+  // more specific selector wins, source order breaks a tie. tag-stage was the
+  // case that needed this, before the 2026-08-12 fold-in retired it into
+  // tag-default's Type axis (see the CSS_OWNERS comment in matrix.js). It
+  // shared the `.ds-tag--<color>` scale with tag-default, but Figma gave the
+  // two components different Orange and Yellow borders, so tag-stage carried
+  // its own `.ds-tag-stage--<color>` rules AFTER the shared ones. Charging
+  // tag-stage for a shared declaration its own rule overrode would have
+  // reported a defect the render never painted. The mechanism below has no
+  // live subject in the current corpus -- tests/render/css-owners.test.js
+  // enumerates that population so it is never checked vacuously -- but stays
+  // in place for the next multi-prefix slug, proven on a fixture instead in
+  // tests/render/fidelity-check.test.js.
   //
   // The key is the exact PROPERTY, not the fact kind it maps to. Keying on the
   // kind collapsed `.ds-notification { border: ...; border-left-color: ... }`,
@@ -398,22 +404,24 @@ function classifySlug(opts) {
   //
   // A modifier-bucket rule keeps the prior modifier-only key, prefix
   // excluded. The modifier VALUE itself (e.g. "orange") is a semantic axis
-  // value, and this repo's one multi-prefix slug (tag-stage, CSS_OWNERS:
-  // ["ds-tag", "ds-tag-stage"]) uses restating that SAME value under its own
+  // value, and this repo's one-time multi-prefix slug (tag-stage, retired
+  // into tag-default's Type axis on 2026-08-12; CSS_OWNERS carried it as
+  // ["ds-tag", "ds-tag-stage"]) used restating that SAME value under its own
   // prefix as the deliberate mechanism for overriding a shared family color
-  // for itself alone: its fragment renders `.ds-tag--orange` and
+  // for itself alone: its fragment rendered `.ds-tag--orange` and
   // `.ds-tag-stage--orange` on the literal same element. Keying modifier by
-  // prefix too would split that override into two independently classified
-  // declarations and reintroduce the two real mismatches the tag-stage
-  // remedy resolved -- confirmed by trial: doing so against the real corpus
-  // turns tag-stage's `mismatch 0, overridden 2` into
-  // `mismatch 2, overridden 0`.
+  // prefix too would have split that override into two independently
+  // classified declarations and reintroduced the two real mismatches the
+  // tag-stage remedy resolved -- confirmed by trial at the time: doing so
+  // against the then-real corpus turned tag-stage's `mismatch 0, overridden
+  // 2` into `mismatch 2, overridden 0`.
   //
   // The failure mode this trade-off carries: prefix is excluded from the
-  // modifier key precisely BECAUSE tag-stage's two
-  // rules sit on the same element, so this is correct only as long as that
-  // precondition holds. Stated explicitly: for any slug owning more than one
-  // prefix, two modifier rules that restate the SAME modifier value under
+  // modifier key precisely BECAUSE a multi-prefix slug's two rules sit on the
+  // same element (tag-stage's case, until its 2026-08-12 retirement), so this
+  // is correct only as long as that precondition holds. Stated explicitly:
+  // for any slug owning more than one prefix, two modifier rules that
+  // restate the SAME modifier value under
   // two different prefixes always collapse into one subject key here,
   // whether or not the two classes actually land on the same element. If
   // they were ever NOT on the same element, the loser would still resolve to
