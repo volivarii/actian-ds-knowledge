@@ -54,14 +54,21 @@ test("collectComponentsAndCategories: a keyless registry entry omits figmaKey/fi
   assert.equal(n.title, "No Key");
 });
 
-// Committed artifact: the shipped graph.json carries the key on all 614
-// component nodes and on no other node type.
-test("graph/dist/graph.json: 614 component nodes carry figmaKey; non-component nodes never do", function () {
+// Committed artifact: the shipped graph.json carries the key on all 612
+// component nodes and on no other node type. Count moved 614 -> 612 with the
+// 2026-08-12 tag fold-in sync: -7 retired (radio-button-card, tag-catalog,
+// tag-catalog-item-type, tag-glossary-item-type, tag-shared, tag-stage,
+// tag-status), +5 new/renamed (actian-data-intelligence-explorer-horizontal,
+// actian-data-intelligence-studio-horizontal, datasets, radio-card,
+// tag-item-type). Not -7/+6: arrow-up (see graph-collisions.test.js) already
+// had a component node via fmkit, so its arrival in dskit only tie-breaks the
+// existing node's key, adding no new node.
+test("graph/dist/graph.json: 612 component nodes carry figmaKey; non-component nodes never do", function () {
   var g = readJSON("graph/dist/graph.json");
   var comps = g.nodes.filter(function (n) {
     return n.type === "component";
   });
-  assert.equal(comps.length, 614);
+  assert.equal(comps.length, 612);
   assert.ok(
     comps.every(function (n) {
       return (
@@ -95,13 +102,13 @@ test("graph/dist/graph.jsonld carries figmaKey on component objects; context map
 
 // The shipped quality-report surfaces the collisions count in the documented
 // 5-key metric shape.
-test("graph/dist/quality-report.json reports the slug_collisions count (=24)", function () {
+test("graph/dist/quality-report.json reports the slug_collisions count (=25)", function () {
   var qr = readJSON("graph/dist/quality-report.json");
   var m = (Array.isArray(qr) ? qr : qr.metrics || []).find(function (x) {
     return x.metric === "slug_collisions";
   });
   assert.ok(m, "slug_collisions metric present");
-  assert.equal(m.value, 24);
+  assert.equal(m.value, 25);
   assert.deepEqual(Object.keys(m).sort(), [
     "dimension",
     "metric",
