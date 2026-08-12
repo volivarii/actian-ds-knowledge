@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Added
 
 - **The canonical render now declares which authority it serves: design first, production once
-  engineering's web components are consumable.** (docs-only) The render inherits production values (a
+  engineering's web components are consumable.** ([#518](https://github.com/volivarii/actian-ds-knowledge/pull/518)) The render inherits production values (a
   token resolves through the OKLCH formula in `color-primitives.md`) while the fidelity gate judges it
   against design values (Figma hand-picked hex), and nothing said which is right where they disagree, so
   every fidelity number was measuring a seam rather than a quality. This extends doctrine that already
