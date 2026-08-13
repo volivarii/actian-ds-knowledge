@@ -129,7 +129,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Changed
 
 - **The category taxonomy now matches the DS Kit's own, and the four page-name categories are gone.**
-  ([#PR](_PR link added at open_)) A hand-carried `--phase registries` sync landing #534's fixes.
+  ([#535](https://github.com/volivarii/actian-ds-knowledge/pull/535)) A hand-carried `--phase registries` sync landing #534's fixes.
   Categories go from **15 to 11**: `Form (input & selection)` becomes `Form`, and
   `Base: label, message, field, textfield buttons`, `Checkbox, checkbox card, checkbox group`,
   `Radio, radio card, radio group` and `Text area, text input` disappear, because they were never
@@ -151,7 +151,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   cannot run outside CI anyway.
 
 - **The curated category stopgap retired itself, exactly on its stated condition.**
-  ([#PR](_PR link added at open_)) `components/src/category-overrides.json` said it should be deleted
+  ([#535](https://github.com/volivarii/actian-ds-knowledge/pull/535)) `components/src/category-overrides.json` said it should be deleted
   once Figma created member pages under the Form header and a re-sync restored the categories. That
   has now happened, and all seven slugs are attributed natively. Two things this exposed: the entries
   had been inert for some time, since the registry always wins, and **`input` had gone stale in a way
