@@ -128,6 +128,37 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **A renamed Figma category could never take effect, because the guard that protects categories
+  during a reorg treats "not in the previous dist" as malformed.** ([#PR](_PR link added at open_))
+  Figma renamed its `Form (input & selection)` header page to `Form`. `preserveKnownCategories` builds
+  its `established` set from the **previous** dist, so a newly reported name is by definition not
+  well-formed and gets reverted, every night, forever. That is a ratchet: a deliberate rename can
+  never establish itself. The visible cost was in the docs sidebar, where nine Form member pages lost
+  their attribution and 21 components fell back to a last-known value carrying a Figma **page name**
+  as the category and a stale `section: Foundations`, so `Field`, `Label`, `Message` and
+  `Textfield buttons` rendered under FOUNDATIONS beneath a heading reading
+  `BASE-LABEL-MESSAGE-FIELD-TEXTFIELD-BUTTONS`.
+
+  A category is now well-formed if it is in the previous dist **or** declared in `KNOWN_CATEGORIES`,
+  which is the repo's statement of the taxonomy. A page name is in neither, so it is still reverted:
+  that case is covered by its own test. `KNOWN_CATEGORIES` now reads `Form`, mirroring the DS Kit's
+  own header, and the category doc's label follows. **The slug stays `form-input-selection`**: it is a
+  manifest logical name (`components.categoryDefaults.form-input-selection`) and therefore a consumer
+  contract, so renaming it is a parallel-change migration and deliberately not bundled here.
+
+  **Verified against the category mass-loss tripwire**, which was the real risk of a rename: it keys
+  on components ABSENT by stable identity, not on a category emptying, so an 11-component rebucket
+  passes while a genuine loss still throws. Confirmed with a positive control rather than by reading
+  the comment.
+
+- **Figma's auto-generated frame names were shipping as public documentation navigation.**
+  ([#PR](_PR link added at open_)) `deriveGroup` took `containing_frame.name` verbatim for non
+  Components sections, so `Group 42` and `Group 43` became Brand Assets nav sections holding **90
+  partner logos** between them. They carry no meaning, and the proof is that they overlap
+  alphabetically (`adlsgen1..snowflake` and `db2-database-1..xml`), which is canvas layout rather than
+  taxonomy. A frame whose name matches Figma's auto-naming pattern now falls back to the page, the
+  real bucket. A real frame name such as `Logos` or `Illustrations` is untouched.
+
 - **Five components were publishing another component's guidelines imagery, because a page that
   documents a family carries one `Design guidelines` wrapper per component and the sync always took
   the first.** ([#533](https://github.com/volivarii/actian-ds-knowledge/pull/533))

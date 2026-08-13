@@ -35,7 +35,7 @@ function fullFixture() {
     canvas("     ✍️ Button"),
     canvas("     ✅ Link"),
     canvas("     ✅ Sticky footer"),
-    canvas("Form (input & selection)"),
+    canvas("Form"),
     canvas("     ✅ Calendar"),
     canvas("     ✅ Checkbox"),
     canvas("Navigation "),
@@ -61,7 +61,7 @@ test("transform-categories — happy path: full fixture maps members correctly",
   assert.equal(result.map["Button"].status, "in-progress");
   assert.equal(result.map["Link"].category, "Action");
   assert.equal(result.map["Link"].status, null);
-  assert.equal(result.map["Calendar"].category, "Form (input & selection)");
+  assert.equal(result.map["Calendar"].category, "Form");
   assert.equal(result.map["Calendar"].status, null);
   assert.equal(result.map["Side nav"].category, "Navigation");
   assert.equal(result.map["Side nav"].status, "in-progress");
@@ -91,7 +91,7 @@ test("transform-categories — unknown category emits warning", function () {
     canvas("     ✅ Button"),
     canvas("Custom Family"),
     canvas("     ✅ Mystery widget"),
-    canvas("Form (input & selection)"),
+    canvas("Form"),
     canvas("Navigation"),
     canvas("Data Display"),
     canvas("Feedback"),
@@ -114,7 +114,7 @@ test("transform-categories — renamed known category triggers two warnings", fu
     canvas("🧱 COMPONENTS"),
     canvas("Actions"), // Renamed from Action
     canvas("     ✅ Button"),
-    canvas("Form (input & selection)"),
+    canvas("Form"),
     canvas("Navigation"),
     canvas("Data Display"),
     canvas("Feedback"),
@@ -137,7 +137,7 @@ test("transform-categories — missing known category warns", function () {
   var children = [
     canvas("🧱 COMPONENTS"),
     canvas("Action"),
-    canvas("Form (input & selection)"),
+    canvas("Form"),
     canvas("Navigation"),
     canvas("Data Display"),
     canvas("Overlays"),
@@ -155,7 +155,7 @@ test("transform-categories — member before any header → MEMBER_WITHOUT_CATEG
     canvas("🧱 COMPONENTS"),
     canvas("     ✅ Orphan"),
     canvas("Action"),
-    canvas("Form (input & selection)"),
+    canvas("Form"),
     canvas("Navigation"),
     canvas("Data Display"),
     canvas("Feedback"),
@@ -181,7 +181,7 @@ test("transform-categories — non-COMPONENTS pages get section + category (ζ.2
     canvas("🧱 COMPONENTS"),
     canvas("Action"),
     canvas("     ✅ Button"),
-    canvas("Form (input & selection)"),
+    canvas("Form"),
     canvas("Navigation"),
     canvas("Data Display"),
     canvas("Feedback"),
@@ -220,7 +220,7 @@ test("transform-categories — multiple separators reset category", function () 
     canvas("---"),
     canvas("----"),
     canvas("     ✅ Floating"),
-    canvas("Form (input & selection)"),
+    canvas("Form"),
     canvas("Navigation"),
     canvas("Data Display"),
     canvas("Feedback"),
@@ -242,7 +242,7 @@ test("transform-categories — trailing whitespace + double-space after emoji to
     canvas("Navigation "),
     canvas("     ✍️  Side nav"),
     canvas("Action"),
-    canvas("Form (input & selection)"),
+    canvas("Form"),
     canvas("Data Display"),
     canvas("Feedback"),
     canvas("Overlays"),
@@ -272,7 +272,7 @@ test("transform-categories — status emoji variants all parse correctly", funct
     canvas("     ✍️ InProg"),
     canvas("     ⛔️ Deprecated"),
     canvas("     ⚠️ Warn"),
-    canvas("Form (input & selection)"),
+    canvas("Form"),
     canvas("Navigation"),
     canvas("Data Display"),
     canvas("Feedback"),
@@ -292,7 +292,7 @@ test("transform-categories — non-CANVAS children are skipped", function () {
     canvas("🧱 COMPONENTS"),
     canvas("Action"),
     canvas("     ✅ Button"),
-    canvas("Form (input & selection)"),
+    canvas("Form"),
     canvas("Navigation"),
     canvas("Data Display"),
     canvas("Feedback"),
@@ -311,7 +311,7 @@ test("buildCategoriesArtifact — groups by category, sorts slugs, counts uncate
     components: {
       "z-button": { category: "Action" },
       "a-button": { category: "Action" },
-      checkbox: { category: "Form (input & selection)" },
+      checkbox: { category: "Form" },
       icon: { category: null },
       "icon-2": {},
     },
@@ -325,7 +325,7 @@ test("buildCategoriesArtifact — groups by category, sorts slugs, counts uncate
     "z-button",
   ]);
   assert.equal(artifact.categories["Action"].count, 2);
-  assert.deepEqual(artifact.categories["Form (input & selection)"].components, [
+  assert.deepEqual(artifact.categories["Form"].components, [
     "checkbox",
   ]);
   assert.equal(artifact.uncategorized.count, 2);
@@ -355,7 +355,7 @@ test("_isTopLevelMarker — Title Case names are NOT markers", function () {
 
 test("_isCategoryHeader — Title Case names with no emoji + no indent ARE headers", function () {
   assert.equal(mod._isCategoryHeader("Action"), true);
-  assert.equal(mod._isCategoryHeader("Form (input & selection)"), true);
+  assert.equal(mod._isCategoryHeader("Form"), true);
   assert.equal(mod._isCategoryHeader("Data Display"), true);
 });
 
@@ -418,7 +418,7 @@ test("transform-registry — applies category + status from documentChildren", f
     { type: "CANVAS", name: "🧱 COMPONENTS" },
     { type: "CANVAS", name: "Action" },
     { type: "CANVAS", name: "     ✍️ Button" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "     ✅ Calendar" },
     { type: "CANVAS", name: "Navigation" },
     { type: "CANVAS", name: "Data Display" },
@@ -440,7 +440,7 @@ test("transform-registry — applies category + status from documentChildren", f
   assert.equal(registry.components["button"].status, "in-progress");
   assert.equal(
     registry.components["calendar"].category,
-    "Form (input & selection)",
+    "Form",
   );
   // ✅ → status field absent
   assert.equal(
@@ -512,7 +512,7 @@ test("transform-registry — component not in map gets no category/status (miss 
     { type: "CANVAS", name: "🧱 COMPONENTS" },
     { type: "CANVAS", name: "Action" },
     { type: "CANVAS", name: "     ✅ Button" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "Navigation" },
     { type: "CANVAS", name: "Data Display" },
     { type: "CANVAS", name: "Feedback" },
@@ -577,7 +577,7 @@ test("transform-registry — multiple components on the same page share the page
   var documentChildren = [
     { type: "CANVAS", name: "🧱 COMPONENTS" },
     { type: "CANVAS", name: "Action" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "Navigation" },
     { type: "CANVAS", name: "Data Display" },
     { type: "CANVAS", name: "     ✍️ Tag (Identification key)" },
@@ -757,7 +757,7 @@ test("transform-registry — components get section + group from page", function
   var documentChildren = [
     { type: "CANVAS", name: "🧱 COMPONENTS" },
     { type: "CANVAS", name: "Action" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "Navigation" },
     { type: "CANVAS", name: "Data Display" },
     { type: "CANVAS", name: "     ✍️ Tag (Identification key)" },
@@ -821,7 +821,7 @@ test("transform-registry — icons get section + group from containing_frame.nam
     { type: "CANVAS", name: "Icons" },
     { type: "CANVAS", name: "🧱 COMPONENTS" },
     { type: "CANVAS", name: "Action" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "Navigation" },
     { type: "CANVAS", name: "Data Display" },
     { type: "CANVAS", name: "Feedback" },
@@ -883,7 +883,7 @@ test("transform-registry — icons fall back to page-name when frame missing/red
     { type: "CANVAS", name: "Icons" },
     { type: "CANVAS", name: "🧱 COMPONENTS" },
     { type: "CANVAS", name: "Action" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "Navigation" },
     { type: "CANVAS", name: "Data Display" },
     { type: "CANVAS", name: "Feedback" },
@@ -1167,7 +1167,7 @@ test("transform-registry — applies icon-groups for category=Icons (single grou
     { type: "CANVAS", name: "Icons" },
     { type: "CANVAS", name: "🧱 COMPONENTS" },
     { type: "CANVAS", name: "Action" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "Navigation" },
     { type: "CANVAS", name: "Data Display" },
     { type: "CANVAS", name: "Feedback" },
@@ -1217,7 +1217,7 @@ test("transform-registry — multi-group icon gets primary group + secondaryGrou
     { type: "CANVAS", name: "Icons" },
     { type: "CANVAS", name: "🧱 COMPONENTS" },
     { type: "CANVAS", name: "Action" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "Navigation" },
     { type: "CANVAS", name: "Data Display" },
     { type: "CANVAS", name: "Feedback" },
@@ -1262,7 +1262,7 @@ test("transform-registry — unmapped icon falls back to group=Other", function 
     { type: "CANVAS", name: "Icons" },
     { type: "CANVAS", name: "🧱 COMPONENTS" },
     { type: "CANVAS", name: "Action" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "Navigation" },
     { type: "CANVAS", name: "Data Display" },
     { type: "CANVAS", name: "Feedback" },
@@ -1303,7 +1303,7 @@ test("transform-registry — icon-groups ignores _-prefixed metadata keys", func
     { type: "CANVAS", name: "Icons" },
     { type: "CANVAS", name: "🧱 COMPONENTS" },
     { type: "CANVAS", name: "Action" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "Navigation" },
     { type: "CANVAS", name: "Data Display" },
     { type: "CANVAS", name: "Feedback" },
@@ -1347,7 +1347,7 @@ test("transform-registry — non-icon components unaffected by icon-groups (ζ.5
     { type: "CANVAS", name: "🧱 COMPONENTS" },
     { type: "CANVAS", name: "Action" },
     { type: "CANVAS", name: "     ✅ Button" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "Navigation" },
     { type: "CANVAS", name: "Data Display" },
     { type: "CANVAS", name: "Feedback" },
@@ -1376,7 +1376,7 @@ test("transform-registry — non-icon components unaffected by icon-groups (ζ.5
 });
 
 // ---- COMPONENT_ON_CATEGORY_PAGE: component frames sitting directly on a
-// category-header canvas (e.g. "Form (input & selection)") instead of their
+// category-header canvas (e.g. "Form") instead of their
 // own member page. lookupCategoryEntry misses (header pages are never in
 // categoryMap) and MEMBER_WITHOUT_CATEGORY never fires (header canvases are
 // correctly classified as headers, not orphan members) — so without this
@@ -1390,7 +1390,7 @@ test("transform-registry — non-icon components unaffected by icon-groups (ζ.5
 function knownCategoryHeaders() {
   return [
     { type: "CANVAS", name: "Action" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "Navigation" },
     { type: "CANVAS", name: "Data Display" },
     { type: "CANVAS", name: "Feedback" },
@@ -1405,9 +1405,9 @@ test("transform-registry — component frame directly on a category-header page:
       key: "k-rogue",
       node_id: "1:1",
       description: "",
-      // Sits directly on the "Form (input & selection)" category canvas —
+      // Sits directly on the "Form" category canvas —
       // no member page of its own, no status-emoji prefix.
-      containing_frame: { pageName: "Form (input & selection)" },
+      containing_frame: { pageName: "Form" },
     },
   ];
   var componentSetNodes = {
@@ -1447,7 +1447,7 @@ test("transform-registry — component frame directly on a category-header page:
     return w.code === "COMPONENT_ON_CATEGORY_PAGE";
   });
   assert.equal(componentWarnings.length, 1);
-  assert.equal(componentWarnings[0].page, "Form (input & selection)");
+  assert.equal(componentWarnings[0].page, "Form");
   assert.equal(componentWarnings[0].component, "rogue-field");
 });
 
@@ -1460,7 +1460,7 @@ test("transform-registry — component frame on a category-header page WITH a st
       description: "",
       // Status emoji prefixed directly on the category canvas name itself
       // (as opposed to a member page under it) — still a header miss.
-      containing_frame: { pageName: "✍️ Form (input & selection)" },
+      containing_frame: { pageName: "✍️ Form" },
     },
   ];
   var componentSetNodes = {
@@ -1495,7 +1495,7 @@ test("transform-registry — component frame on a category-header page WITH a st
     return w.code === "COMPONENT_ON_CATEGORY_PAGE";
   });
   assert.equal(componentWarnings.length, 1);
-  assert.equal(componentWarnings[0].page, "Form (input & selection)");
+  assert.equal(componentWarnings[0].page, "Form");
   assert.equal(componentWarnings[0].component, "rogue-field");
 });
 
@@ -1585,7 +1585,7 @@ test("transform-registry — onWarnings concat semantics: category-inference war
       key: "k-rogue",
       node_id: "1:1",
       description: "",
-      containing_frame: { pageName: "Form (input & selection)" },
+      containing_frame: { pageName: "Form" },
     },
   ];
   var componentSetNodes = {
@@ -1628,8 +1628,8 @@ test("transform-registry — onWarnings concat semantics: category-inference war
 
 test("transform-registry — same-slug collision: header-page duplicate never clobbers member-page original (member-first order)", function () {
   // Two component sets with the same name (→ same slug "rogue-field"):
-  // - one on a member page: "✅ Rogue Field" under "Form (input & selection)"
-  // - one on the category header itself: "Form (input & selection)"
+  // - one on a member page: "✅ Rogue Field" under "Form"
+  // - one on the category header itself: "Form"
   //
   // The member-page original should win; the header-page duplicate should be
   // excluded. The duplicate must NOT overwrite the member entry in the registry.
@@ -1639,7 +1639,7 @@ test("transform-registry — same-slug collision: header-page duplicate never cl
       key: "k-rogue-member",
       node_id: "1:1",
       description: "",
-      // Member page under Form (input & selection)
+      // Member page under Form
       containing_frame: { pageName: "✅ Rogue Field" },
     },
     {
@@ -1648,7 +1648,7 @@ test("transform-registry — same-slug collision: header-page duplicate never cl
       node_id: "1:2",
       description: "",
       // Same-slug duplicate on the category header itself
-      containing_frame: { pageName: "Form (input & selection)" },
+      containing_frame: { pageName: "Form" },
     },
   ];
   var componentSetNodes = {
@@ -1657,7 +1657,7 @@ test("transform-registry — same-slug collision: header-page duplicate never cl
   };
   var documentChildren = [
     { type: "CANVAS", name: "🧱 COMPONENTS" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "     ✅ Rogue Field" },
     { type: "CANVAS", name: "Action" },
     { type: "CANVAS", name: "Navigation" },
@@ -1724,7 +1724,7 @@ test("transform-registry — same-slug collision: header-page duplicate never cl
   );
   assert.equal(
     componentWarnings[0].page,
-    "Form (input & selection)",
+    "Form",
     "warning cites the category header page",
   );
 });
@@ -1740,14 +1740,14 @@ test("transform-registry — same-slug collision: header-page duplicate never cl
       node_id: "1:2",
       description: "",
       // Same-slug duplicate on the category header itself (FIRST in array)
-      containing_frame: { pageName: "Form (input & selection)" },
+      containing_frame: { pageName: "Form" },
     },
     {
       name: "Rogue Field",
       key: "k-rogue-member",
       node_id: "1:1",
       description: "",
-      // Member page under Form (input & selection) (SECOND in array)
+      // Member page under Form (SECOND in array)
       containing_frame: { pageName: "✅ Rogue Field" },
     },
   ];
@@ -1757,7 +1757,7 @@ test("transform-registry — same-slug collision: header-page duplicate never cl
   };
   var documentChildren = [
     { type: "CANVAS", name: "🧱 COMPONENTS" },
-    { type: "CANVAS", name: "Form (input & selection)" },
+    { type: "CANVAS", name: "Form" },
     { type: "CANVAS", name: "     ✅ Rogue Field" },
     { type: "CANVAS", name: "Action" },
     { type: "CANVAS", name: "Navigation" },
@@ -1824,7 +1824,7 @@ test("transform-registry — same-slug collision: header-page duplicate never cl
   );
   assert.equal(
     componentWarnings[0].page,
-    "Form (input & selection)",
+    "Form",
     "warning cites the category header page",
   );
 });
@@ -1865,4 +1865,51 @@ test("transform-categories — an override key colliding with a category header 
   var overrides = { Feedback: "Feedback" };
   var result = inferCategoryMap(children, overrides);
   assert.equal(result.map["Toast"].category, "Feedback");
+});
+
+// The DS Kit's COMPONENTS section names its category header "Form". Ours said
+// "Form", so the header went unrecognized: its nine member
+// pages lost their attribution, and 21 components fell back to a last-known
+// value that carried a PAGE NAME as the category and a stale
+// section=Foundations. That is what put Field/Label/Message/Textfield buttons
+// under FOUNDATIONS in the docs sidebar. Fixture mirrors the live page panel.
+test("the real 'Form' header attributes its member pages", function () {
+  var children = [
+    canvas("💎 FOUNDATIONS"),
+    canvas("✅ Breakpoint, grid & structure"),
+    canvas("🧱 COMPONENTS"),
+    canvas("Action"),
+    canvas("     ✍️ Button"),
+    canvas("Form"),
+    canvas("     ✅ Base(label, field, message, textfield button)"),
+    canvas("     ✍️ Checkbox, checkbox card, checkbox group"),
+    canvas("     ✍️ Text area, text input"),
+    canvas("Data Display"),
+    canvas("     ✅ Avatar"),
+  ];
+  var result = inferCategoryMap(children, {});
+  var base = result.map["Base(label, field, message, textfield button)"];
+  assert.ok(base, "the Base page must be attributed");
+  assert.equal(base.category, "Form");
+  assert.equal(base.section, "Components", "a Form page is NOT a Foundation");
+  assert.equal(
+    result.map["Checkbox, checkbox card, checkbox group"].category,
+    "Form",
+  );
+  assert.equal(result.map["Text area, text input"].category, "Form");
+  // Neighbours must be unaffected.
+  assert.equal(result.map["Button"].category, "Action");
+  assert.equal(result.map["Avatar"].category, "Data Display");
+});
+
+test("no category is named for a Figma page rather than a taxonomy", function () {
+  // A page name leaking into KNOWN_CATEGORIES is the shape that produced the
+  // BASE-LABEL-MESSAGE-FIELD-TEXTFIELD-BUTTONS sidebar section.
+  mod.KNOWN_CATEGORIES.forEach(function (c) {
+    assert.doesNotMatch(
+      c,
+      /,|\(/,
+      "category " + JSON.stringify(c) + " reads like a Figma page name",
+    );
+  });
 });

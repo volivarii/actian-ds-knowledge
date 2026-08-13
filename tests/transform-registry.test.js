@@ -250,3 +250,39 @@ test("pageOverrides: resolves via the component's own page name when the canvas 
   var reg = T(input);
   assert.equal(reg.components["add"].category, "Icons");
 });
+
+// Brand Assets groups came straight from containing_frame.name, so Figma's
+// auto-generated layout frames ("Group 42", "Group 43") became public docs
+// navigation sections holding 90 partner logos between them. Those names carry
+// no meaning: the two overlap alphabetically (adlsgen1..snowflake and
+// db2-database-1..xml), so they are canvas layout, not taxonomy.
+var deriveGroup = T._deriveGroup;
+
+test("deriveGroup ignores Figma auto-generated frame names", function () {
+  var meta = { containing_frame: { name: "Group 42" } };
+  assert.equal(
+    deriveGroup(meta, "Brand Assets", "Product logos"),
+    "Product logos",
+    "an auto-named frame must fall back to the page, not become a nav section",
+  );
+  ["Group 43", "Frame 1207", "Vector", "Rectangle 4", "Group"].forEach(
+    function (n) {
+      assert.equal(
+        deriveGroup({ containing_frame: { name: n } }, "Brand Assets", "Product logos"),
+        "Product logos",
+        n + " is a Figma default, not a group",
+      );
+    },
+  );
+});
+
+test("deriveGroup keeps a real frame name", function () {
+  assert.equal(
+    deriveGroup({ containing_frame: { name: "Logos" } }, "Brand Assets", "Product logos"),
+    "Logos",
+  );
+  assert.equal(
+    deriveGroup({ containing_frame: { name: "Illustrations" } }, "Brand Assets", "Illustrations & graphics"),
+    "Illustrations",
+  );
+});

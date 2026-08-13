@@ -11,7 +11,10 @@ var statusParser = require("./component-status-emoji.js");
 
 var KNOWN_CATEGORIES = Object.freeze([
   "Action",
-  "Form (input & selection)",
+  // Mirrors the DS Kit's own header page, which Figma renamed to "Form".
+  // Holding the old label here made the live header unrecognizable, and
+  // preserveKnownCategories then reverted it every night (see #428).
+  "Form",
   "Navigation",
   "Data Display",
   "Feedback",

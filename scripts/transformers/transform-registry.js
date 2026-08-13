@@ -90,6 +90,19 @@ function splitVariantAndProperties(definitions) {
 // For FOUNDATIONS / BRAND items: prefer containing_frame.name when it
 //   differs from the page clean-name (icons typically live in named
 //   sub-frames like "Navigation icons"); fall back to page clean-name.
+// Figma names a frame automatically when the designer does not: "Group 42",
+// "Frame 1207", "Vector", "Rectangle 4". Those are canvas layout, not taxonomy,
+// and they were reaching the docs as navigation sections: "Group 42" and
+// "Group 43" held 90 partner logos between them, and the two overlap
+// alphabetically (adlsgen1..snowflake, db2-database-1..xml), which is the proof
+// they carry no meaning. Fall back to the page, which is the real bucket.
+var FIGMA_AUTONAME_RE =
+  /^(group|frame|vector|rectangle|ellipse|line|polygon|star|union|subtract|intersect|exclude|component|instance|slice)(\s+\d+)?$/i;
+
+function isFigmaAutoName(name) {
+  return FIGMA_AUTONAME_RE.test(String(name).trim());
+}
+
 function deriveGroup(meta, section, pageCleanName) {
   var frameName = meta && meta.containing_frame && meta.containing_frame.name;
   if (
@@ -97,7 +110,8 @@ function deriveGroup(meta, section, pageCleanName) {
     section !== "Components" &&
     frameName &&
     String(frameName).trim() &&
-    String(frameName).trim() !== pageCleanName
+    String(frameName).trim() !== pageCleanName &&
+    !isFigmaAutoName(frameName)
   ) {
     return String(frameName).trim();
   }
@@ -716,6 +730,7 @@ function populateNestedComponents(
 }
 
 module.exports = transformRegistry;
+module.exports._deriveGroup = deriveGroup;
 module.exports._slugify = slugify;
 module.exports._splitVariantAndProperties = splitVariantAndProperties;
 module.exports._trimDescription = trimDescription;
