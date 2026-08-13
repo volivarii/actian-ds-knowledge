@@ -126,6 +126,51 @@ Each entry links its pull request. Dates are the merge date (UTC).
   migration; twelve orphaned fragments and usage-notes were removed by hand here, and the missing
   prune remains.
 
+### Changed
+
+- **The category taxonomy now matches the DS Kit's own, and the four page-name categories are gone.**
+  ([#535](https://github.com/volivarii/actian-ds-knowledge/pull/535)) A hand-carried `--phase registries` sync landing #534's fixes.
+  Categories go from **15 to 11**: `Form (input & selection)` becomes `Form`, and
+  `Base: label, message, field, textfield buttons`, `Checkbox, checkbox card, checkbox group`,
+  `Radio, radio card, radio group` and `Text area, text input` disappear, because they were never
+  categories at all, only Figma page names preserved by a fallback. Category drift falls from **21
+  components to 2**, and the two that remain (`identification-key`, `sticky-footer`) genuinely have no
+  category in Figma.
+
+  `field`, `label`, `message`, `textfield-buttons`, `checkbox-group`, `radio-group` and `text-area`
+  return to `section: Components`, having been marked `Foundations` by the same fallback. That is what
+  filed them under FOUNDATIONS in the docs sidebar. **Brand Assets groups** are now `Logos`,
+  `Product logos`, `Graphics` and `Illustrations`: `Group 42` and `Group 43`, which held 90 partner
+  logos between them, are gone.
+
+  **Carried by hand for a reason worth recording.** A breaking sync commits nothing: its
+  `Open pull request` step is gated on `category == 'additive'`, so every regenerated dist dies with
+  the runner (#519, verified). The four lost media on #526 still make a full sync breaking, so
+  dispatching one would have produced no dist and landed nothing. Running the `registries` phase alone
+  returns `verdict=additive`, which is the scope this fix needs and it excludes the media phases that
+  cannot run outside CI anyway.
+
+- **The graph joined category docs to category nodes by FILENAME, so renaming a category dangled nine
+  edges.** ([#535](https://github.com/volivarii/actian-ds-knowledge/pull/535)) A category node is built
+  by slugifying the registry's category value, while its transversal-ref edges were sourced from the
+  `<slug>-defaults.json` filename. Those two agreed only while the filename happened to match the
+  category name, so the rename left `a11y_ref`, `foundations_ref` and `motion_ref` edges pointing at a
+  `category:form-input-selection` node that no longer existed, and `validate-graph` correctly refused
+  the result. The edges now join on the doc's own `label`, which is the same value the node is built
+  from, so both sides agree by construction and the **filename stays put**: it is a manifest logical
+  name, and therefore a consumer contract that should not move because a display name changed. A new
+  test asserts the invariant directly (no edge may point at a category node that does not exist),
+  because `npm test` passed against the broken graph while only CI caught it.
+
+- **The curated category stopgap retired itself, exactly on its stated condition.**
+  ([#535](https://github.com/volivarii/actian-ds-knowledge/pull/535)) `components/src/category-overrides.json` said it should be deleted
+  once Figma created member pages under the Form header and a re-sync restored the categories. That
+  has now happened, and all seven slugs are attributed natively. Two things this exposed: the entries
+  had been inert for some time, since the registry always wins, and **`input` had gone stale in a way
+  nothing would have caught**, pinning to a form category a slug the registry publishes as an **icon**.
+  The file stays with an empty override map, which is the honest expression of "nothing needs curating
+  today", and its test now asserts the outcome (a real `in_category` edge) rather than the mechanism.
+
 ### Fixed
 
 - **A renamed Figma category could never take effect, because the guard that protects categories
