@@ -129,7 +129,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **A renamed Figma category could never take effect, because the guard that protects categories
-  during a reorg treats "not in the previous dist" as malformed.** ([#PR](_PR link added at open_))
+  during a reorg treats "not in the previous dist" as malformed.** ([#534](https://github.com/volivarii/actian-ds-knowledge/pull/534))
   Figma renamed its `Form (input & selection)` header page to `Form`. `preserveKnownCategories` builds
   its `established` set from the **previous** dist, so a newly reported name is by definition not
   well-formed and gets reverted, every night, forever. That is a ratchet: a deliberate rename can
@@ -152,7 +152,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   the comment.
 
 - **Figma's auto-generated frame names were shipping as public documentation navigation.**
-  ([#PR](_PR link added at open_)) `deriveGroup` took `containing_frame.name` verbatim for non
+  ([#534](https://github.com/volivarii/actian-ds-knowledge/pull/534)) `deriveGroup` took `containing_frame.name` verbatim for non
   Components sections, so `Group 42` and `Group 43` became Brand Assets nav sections holding **90
   partner logos** between them. They carry no meaning, and the proof is that they overlap
   alphabetically (`adlsgen1..snowflake` and `db2-database-1..xml`), which is canvas layout rather than
