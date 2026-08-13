@@ -128,6 +128,47 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **Five components were publishing another component's guidelines imagery, because a page that
+  documents a family carries one `Design guidelines` wrapper per component and the sync always took
+  the first.** ([#533](https://github.com/volivarii/actian-ds-knowledge/pull/533))
+  `findFrameByNameRecursive` returns the first match of a depth-first walk, and role sources were
+  keyed by page id, so on a family page one component got
+  its own boards by luck of ordering and the rest got someone else's. Live and shipping, unlike the
+  losses tracked in #526: `message`, `field` and `textfield-buttons` each showed **Label**'s four
+  boards, `checkbox-card` showed **Checkbox**'s preview, and `tag-interactive` showed the
+  **Read-Only / Item Type** boards across five images. 18 images in total. Verified rather than
+  inferred: every wrapper-derived role of `tag-interactive` was byte-identical to `tag-default`'s,
+  and the real Interactive board had never been captured.
+
+  **The mapping is derived, not configured.** Each wrapper's `.local - section header` instance names
+  what it documents, so a component is matched to the wrapper whose title carries its name. Matching
+  compares **significant words as a set**, because neither ordering is trustworthy: the Text page's
+  first wrapper documents Text *input*, and the registry says `Tag, Interactive` where Figma says
+  "Interactive Tag". A wrapper may legitimately serve several members, so a title containing all of a
+  component's words also matches, which is how `tag-item-type` resolves to "Read-Only and Item Type
+  Tag" and gains five images it never had. No hand-maintained slug-to-wrapper list is introduced:
+  such a list would drift silently, which is the failure mode the standing rule about hand-maintained
+  gates exists to prevent.
+
+  **The load-bearing half is that it never falls back to the first wrapper.** When a component on a
+  family page cannot be matched unambiguously, nothing is captured for it and the sync summary names
+  it on its own line with the titles it saw. A missing image is honest; a confident wrong one is not,
+  and because the artefact is an image no downstream gate can ever contradict it. That rule was
+  mutation-proved: restoring the fallback reds both guard tests.
+
+  **Measured against the live file**, the resolver assigns 13 of the 20 components across the six
+  family pages, and Checkbox, Radio and Text resolve completely.
+
+  **Honest limits, all of them Figma-side.** `message` does not resolve because its header reads
+  "Massage (form base)", a typo. `tag-default` does not resolve because the guidelines call that
+  component Read-Only while the registry publishes `Tag, Default` (the #517 and #521 naming drift).
+  The five grids do not resolve because their two wrapper titles name no component; they had no
+  wrapper-derived media to begin with, so nothing is lost there. An unmatched component keeps
+  whatever files it already has rather than having them pruned, since it is absent from the prune
+  count map, so `message` goes on shipping Label's images until the typo is corrected. A page with
+  **no** wrapper at all is unchanged, still treated as a page-wide outer-wrapper rename that keeps
+  its mass-prune refusal.
+
 - **An icon that Figma still draws was reported as lost, because ticking "Clip content" on its frame
   was enough to fail a guard that is supposed to be about paints.**
   ([#530](https://github.com/volivarii/actian-ds-knowledge/pull/530)) The 2026-08-13 sync classified `lifecycle-policy` under **Lost

@@ -108,22 +108,142 @@ function findFrameByNameRecursive(node, name) {
   return null;
 }
 
-// findRoleSourceNode — given a page subtree and a role-finder spec, locate
-// the outer "Design guidelines" wrapper, find the sub-section FRAME by name,
-// then return:
-//   capture:"first" (default) — the id of the FIRST FRAME child (a string).
-//   capture:"all"             — an array of ids of ALL FRAME children, in
-//                               Figma child order (skipping non-FRAME layers).
-// All name matches are case-insensitive.
-function findRoleSourceNode(pageNode, findSpec) {
-  var doc = pageNode && pageNode.document ? pageNode.document : pageNode;
-  if (!doc) return null;
-  var wrapper = findFrameByNameRecursive(doc, OUTER_WRAPPER_NAME);
+// A page that documents a component FAMILY carries one "Design guidelines"
+// wrapper PER COMPONENT (Checkbox/card/group, Radio/card/group, Text area+input,
+// the four form Base parts, the Tags, the grids: six such pages today). Taking
+// the first wrapper for every slug on the page is how 5 components ended up
+// publishing another component's imagery (#531).
+//
+// Each wrapper's ".local - section header" instance names what it documents
+// ("Checkbox card design guidelines", "Interactive Tag design guidelines"), so
+// the mapping is derivable and needs no hand-maintained list. Matching is on
+// SIGNIFICANT WORDS as a set, because neither wrapper order nor word order is
+// reliable: the Text page's first wrapper documents Text input, and the registry
+// says "Tag, Interactive" where Figma says "Interactive Tag".
+var TITLE_STOPWORDS = new Set([
+  "and",
+  "the",
+  "of",
+  "a",
+  "design",
+  "guidelines",
+]);
+
+function significantWords(s) {
+  return String(s == null ? "" : s)
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ") // drop qualifiers like "(form base)"
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(" ")
+    .filter(function (w) {
+      return w && !TITLE_STOPWORDS.has(w);
+    })
+    .sort();
+}
+
+function sameWords(a, b) {
+  return (
+    a.length === b.length &&
+    a.every(function (w, i) {
+      return w === b[i];
+    })
+  );
+}
+
+function containsAll(haystack, needles) {
+  return needles.every(function (w) {
+    return haystack.indexOf(w) !== -1;
+  });
+}
+
+function firstText(node) {
+  if (!node) return null;
+  if (
+    node.type === "TEXT" &&
+    typeof node.characters === "string" &&
+    node.characters.trim()
+  ) {
+    return node.characters.trim();
+  }
+  var kids = node.children || [];
+  for (var i = 0; i < kids.length; i++) {
+    var t = firstText(kids[i]);
+    if (t) return t;
+  }
+  return null;
+}
+
+// wrapperTitle: the section-header title of one "Design guidelines" wrapper.
+function wrapperTitle(w) {
+  if (!w || !Array.isArray(w.children)) return null;
+  for (var i = 0; i < w.children.length; i++) {
+    var c = w.children[i];
+    if (c && c.type === "INSTANCE") {
+      var t = firstText(c);
+      if (t) return t;
+    }
+  }
+  return null;
+}
+
+// findAllWrappers: every "Design guidelines" frame on a page, not just the
+// first. The count is what distinguishes a family page from an ordinary one.
+function findAllWrappers(node, out) {
+  out = out || [];
+  if (!node) return out;
+  if (
+    node.type === "FRAME" &&
+    typeof node.name === "string" &&
+    node.name.toLowerCase() === OUTER_WRAPPER_NAME.toLowerCase()
+  ) {
+    out.push(node);
+  }
+  (node.children || []).forEach(function (c) {
+    findAllWrappers(c, out);
+  });
+  return out;
+}
+
+// resolveWrapperForComponent: which wrapper documents this component?
+//
+// One wrapper on the page serves every slug (the ordinary case, e.g. the Alert
+// page feeding both alert-banner and alert-inline). Otherwise match the header
+// title against the component name: an exact word-set match wins, and failing
+// that a wrapper whose title CONTAINS all the component's words (one wrapper can
+// legitimately document several members, as "Read-Only and Item Type Tag" does).
+//
+// Returns null when nothing matches or several do. Callers must then capture
+// NOTHING for that component: a missing image is honest, a confident wrong one
+// is not, and because the artefact is an image no downstream gate can contradict
+// it. Never fall back to the first wrapper.
+function resolveWrapperForComponent(wrappers, componentName) {
+  if (!Array.isArray(wrappers) || wrappers.length === 0) return null;
+  if (wrappers.length === 1) return wrappers[0];
+
+  var want = significantWords(componentName);
+  if (want.length === 0) return null;
+
+  var titled = wrappers.map(function (w) {
+    return { wrapper: w, words: significantWords(wrapperTitle(w)) };
+  });
+
+  var exact = titled.filter(function (t) {
+    return t.words.length > 0 && sameWords(t.words, want);
+  });
+  if (exact.length === 1) return exact[0].wrapper;
+  if (exact.length > 1) return null; // two wrappers claim the same component
+
+  var covering = titled.filter(function (t) {
+    return t.words.length > 0 && containsAll(t.words, want);
+  });
+  return covering.length === 1 ? covering[0].wrapper : null;
+}
+
+// findRoleSourceInWrapper: the sub-section lookup, given a wrapper already
+// chosen. findRoleSourceNode keeps the page-level entry point for callers (and
+// tests) that do not care about family pages.
+function findRoleSourceInWrapper(wrapper, findSpec) {
   if (!wrapper || !Array.isArray(wrapper.children)) return null;
-  // Accept one name (`sectionName`) or several aliases (`sectionNames`),
-  // case-insensitive. A role matches the first sub-section whose name is in
-  // the set, so the post-rename "Parts & tokens"/"Anatomy" resolve the same
-  // `parts` board the original "Parts" did.
   var names = Array.isArray(findSpec.sectionNames)
     ? findSpec.sectionNames
     : [findSpec.sectionName];
@@ -154,6 +274,26 @@ function findRoleSourceNode(pageNode, findSpec) {
     return mode === "all" ? frameIds : frameIds[0];
   }
   return null;
+}
+
+// findRoleSourceNode — given a page subtree and a role-finder spec, locate
+// the outer "Design guidelines" wrapper, find the sub-section FRAME by name,
+// then return:
+//   capture:"first" (default) — the id of the FIRST FRAME child (a string).
+//   capture:"all"             — an array of ids of ALL FRAME children, in
+//                               Figma child order (skipping non-FRAME layers).
+// All name matches are case-insensitive.
+function findRoleSourceNode(pageNode, findSpec) {
+  var doc = pageNode && pageNode.document ? pageNode.document : pageNode;
+  if (!doc) return null;
+  // Accept one name (`sectionName`) or several aliases (`sectionNames`),
+  // case-insensitive. A role matches the first sub-section whose name is in
+  // the set, so the post-rename "Parts & tokens"/"Anatomy" resolve the same
+  // `parts` board the original "Parts" did.
+  return findRoleSourceInWrapper(
+    findFrameByNameRecursive(doc, OUTER_WRAPPER_NAME),
+    findSpec,
+  );
 }
 
 // wrapperSubsectionNames — the FRAME sub-section names directly under a page's
@@ -274,30 +414,97 @@ async function run(opts) {
   var nodesResp = await rest.getNodes(fileKey, uniquePageIds);
   var nodes = (nodesResp && nodesResp.nodes) || {};
 
-  // Step 4: for each page, find role-source frames once. Then expand each
-  // (slug, role) result into one pending entry per image:
+  // Step 4: resolve role-source frames PER SLUG, because a family page carries
+  // one wrapper per component. Then expand each (slug, role) result into one
+  // pending entry per image:
   //   capture:"first" → one entry, index 0.
   //   capture:"all"   → one entry per FRAME child id, index 0…N-1.
-  // pageRoleSources[pageId][role] = string | string[]
-  var pageRoleSources = {};
+  // slugRoleSources[slug][role] = string | string[]
+  var pageWrappers = {};
   uniquePageIds.forEach(function (pageId) {
     var page = nodes[pageId];
-    pageRoleSources[pageId] = {};
-    if (!page) return;
-    // Diagnostic: the actual sub-section names under this page's "Design
-    // guidelines" wrapper. A silent rename (e.g. "Parts" → "Parts & tokens")
-    // shows up here, so a role that captures 0 frames is never opaque.
+    if (!page) {
+      pageWrappers[pageId] = [];
+      return;
+    }
     var doc0 = page.document || page;
+    var wrappers = findAllWrappers(doc0);
+    pageWrappers[pageId] = wrappers;
+    // Diagnostic: every wrapper on the page with its title and sub-sections. A
+    // silent rename (e.g. "Parts" → "Parts & tokens") shows up here, and so does
+    // a family page, so a role that captures 0 frames is never opaque.
     console.log(
       "[media-preview] " +
         (doc0 && doc0.name ? doc0.name : pageId) +
-        " — sections: " +
-        JSON.stringify(wrapperSubsectionNames(page)),
+        ": " +
+        wrappers.length +
+        " wrapper(s)",
     );
-    roleNames.forEach(function (role) {
-      var src = findRoleSourceNode(page, ROLE_FINDERS[role]);
-      if (src) pageRoleSources[pageId][role] = src;
+    wrappers.forEach(function (w) {
+      console.log(
+        "[media-preview]    " +
+          JSON.stringify(wrapperTitle(w)) +
+          " sections: " +
+          JSON.stringify(
+            (w.children || [])
+              .filter(function (c) {
+                return c && c.type === "FRAME" && typeof c.name === "string";
+              })
+              .map(function (c) {
+                return c.name;
+              }),
+          ),
+      );
     });
+  });
+
+  // Assign each slug its own wrapper. A slug that cannot be matched on a
+  // multi-wrapper page captures NOTHING and joins unresolvedSlugs, so it is
+  // reported as missing rather than silently served the first wrapper's images.
+  // It is also then absent from countMap below, which means its existing files
+  // are left alone rather than pruned: stale beats wrong, and wrong beats
+  // deleted only if you can tell, which for an image you cannot.
+  var slugRoleSources = {};
+  var unmatched = [];
+  Object.keys(slugToPageId).forEach(function (slug) {
+    var pageId = slugToPageId[slug];
+    var wrappers = pageWrappers[pageId] || [];
+    var comp = components[slug] || {};
+    // No wrapper AT ALL is a different failure: the outer wrapper was renamed or
+    // removed page-wide. Keep those slugs in slugToPageId so they reach countMap
+    // with zero counts and the prune guard can refuse a mass deletion. Only a
+    // slug that cannot be told apart ON A FAMILY PAGE is routed to unresolved.
+    if (wrappers.length === 0) {
+      slugRoleSources[slug] = {};
+      return;
+    }
+    var wrapper = resolveWrapperForComponent(wrappers, comp.name || slug);
+    if (!wrapper) {
+      unmatched.push({
+        slug: slug,
+        page: comp.page,
+        titles: wrappers.map(wrapperTitle),
+      });
+      unresolvedSlugs.push(slug);
+      delete slugToPageId[slug];
+      return;
+    }
+    slugRoleSources[slug] = {};
+    roleNames.forEach(function (role) {
+      var src = findRoleSourceInWrapper(wrapper, ROLE_FINDERS[role]);
+      if (src) slugRoleSources[slug][role] = src;
+    });
+  });
+  unmatched.forEach(function (u) {
+    console.log(
+      "[media-preview] UNMATCHED " +
+        u.slug +
+        " on " +
+        JSON.stringify(u.page) +
+        ": no wrapper title matches its name. Titles present: " +
+        JSON.stringify(u.titles) +
+        ". Capturing nothing for it (name the component in the section header to fix).",
+    );
   });
 
   // pending entries: [{ slug, role, index, sourceNodeId }]
@@ -309,8 +516,7 @@ async function run(opts) {
     });
   });
   Object.keys(slugToPageId).forEach(function (slug) {
-    var pid = slugToPageId[slug];
-    var sources = pageRoleSources[pid] || {};
+    var sources = slugRoleSources[slug] || {};
     roleNames.forEach(function (role) {
       var src = sources[role];
       if (!src) {
@@ -355,6 +561,7 @@ async function run(opts) {
       missing: aggregateMissing(missingPairs).sort(),
       skipped: skippedSlugs,
       pruneRefused: earlyPrune.refused,
+      unmatchedWrappers: unmatched,
       pruned: earlyPrune.deleted + earlyLegacy,
     };
   }
@@ -423,6 +630,7 @@ async function run(opts) {
     missing: aggregateMissing(missingPairs).sort(),
     skipped: skippedSlugs,
     pruneRefused: prune.refused,
+    unmatchedWrappers: unmatched,
     pruned: prune.deleted + legacyPruned,
   };
 }
@@ -597,7 +805,11 @@ function aggregateMissing(pairs) {
 module.exports = {
   run: run,
   findRoleSourceNode: findRoleSourceNode,
+  findRoleSourceInWrapper: findRoleSourceInWrapper,
   findFrameByNameRecursive: findFrameByNameRecursive,
+  findAllWrappers: findAllWrappers,
+  wrapperTitle: wrapperTitle,
+  resolveWrapperForComponent: resolveWrapperForComponent,
   wrapperSubsectionNames: wrapperSubsectionNames,
   encodeWebp: encodeWebp,
   ROLE_FINDERS: ROLE_FINDERS,
