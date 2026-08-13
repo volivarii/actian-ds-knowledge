@@ -128,6 +128,32 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **The renderer stamped a `ds-tag--with-icon` modifier that no stylesheet has ever carried a rule for,
+  so it painted nothing and broke a consumer's exact match on the way past.**
+  ([#PR](_PR link added at open_)) The class landed on 13 of `tag-default`'s 14 `Type` cells and on
+  `card-for-items`' category pill, and a search for it across every stylesheet the renderer emits or
+  vendors returns nothing at all: `ds-base.css` has rules for `.ds-tag`, `.ds-tag__icon` and each
+  `.ds-tag--<type>` hue, and none for this one. It only restated what the `.ds-tag__icon` span beside it
+  already says. `ds-html-map.js` states the doctrine against exactly this shape elsewhere in the same
+  file, where `search-result-card`'s `App=Studio` renders the base card with no root modifier because
+  *"there is no built CSS delta for it, and a modifier class must not be emitted without one (no no-op
+  namespace-hook markers)"*, and the same 2026-08-12 fold-in dropped `.ds-tag--gray` on that reasoning.
+  It is distinct from the deliberately ruleless `.ds-tag--default` and `.ds-tag--stage-1`, which name
+  real published `Type` values and so each carry a capture fact; this one named no axis value at all.
+
+  What turned a style nit into a real defect is that the class was not free. A consumer's exact-match
+  test is what surfaced it: the plugin's renderer test asserts the adjacency `indexOf("ds-tag
+  ds-tag--with-icon") !== -1`, and the fold-in began appending the `Type` modifier first, so the output
+  became `ds-tag ds-tag--default ds-tag--with-icon` and the match failed on a class that had never
+  painted anything. The icon span itself is untouched, since it is the capture fact and the modifier was
+  only ever a marker for it. The fidelity gate cannot see this change and should not: verified 75,
+  examined 438, oracle coverage 17.8% before and after, because removing a class removes no color
+  declaration. The test that pinned the old class was rewritten rather than deleted, because its subject
+  (the capture's `quality.structuralVariants` is what suppresses the icon, which is why `Shared` renders
+  no glyph) is load-bearing. Asserting the absence of a class that can no longer exist would have left a
+  guard that passes even if suppression broke completely, so it now checks the absent wrapper **and** the
+  absent glyph, plus that the pill keeps its own `Type` modifier and its label.
+
 - **The coverage gate shipped in #516 was disabled by the first change it ever faced, and it was the
   change it exists to measure.** ([#522](https://github.com/volivarii/actian-ds-knowledge/pull/522)) `fidelity-check.js` hand-listed the
   slugs whose anatomy it reads and called `readAppearance` per entry with no `try`/`catch`, so when the

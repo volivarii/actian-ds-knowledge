@@ -843,8 +843,17 @@ test("tag-default: a Type the capture flags as structurally reduced renders no l
     );
   });
 
-  // CONSEQUENCE: the rendered cell carries neither the icon span nor the
-  // `--with-icon` flag that exists to mark exactly that span.
+  // CONSEQUENCE: the rendered cell emits no leading icon -- checked as the
+  // wrapper span AND the glyph inside it, because the original defect was a
+  // visible "+" Figma does not contain, and a wrapper can go while the glyph
+  // stays.
+  //
+  // This block used to also assert the cell carried no `ds-tag--with-icon`.
+  // That class has since been retired repo-wide (ruleless no-op modifier), so
+  // no cell can carry it for reasons that have nothing to do with
+  // structuralVariants: the assertion would now hold even if suppression broke
+  // completely. It is deliberately NOT replaced in kind. What replaces it is
+  // the surgical-suppression pair below, which can still fail.
   var cells = cellsByLabel(RENDERER.deriveFragment("tag-default"));
   flagged.forEach(function (value) {
     var cell = cells[value];
@@ -854,33 +863,53 @@ test("tag-default: a Type the capture flags as structurally reduced renders no l
       /ds-tag__icon/,
       value +
         " is structurally reduced in the capture, so its cell must render no " +
-        "leading icon: " +
+        "leading icon span: " +
         cell,
     );
     assert.doesNotMatch(
       cell,
-      /ds-tag--with-icon/,
+      /<svg/,
       value +
-        " must not carry ds-tag--with-icon either -- that class is the flag for " +
-        "the very span the capture says is absent: " +
+        " must render no icon GLYPH either -- dropping the wrapper while still " +
+        "emitting the svg would put back the mark Figma does not contain: " +
         cell,
+    );
+    // SURGICAL: only the icon goes. The pill keeps its own Type modifier and
+    // its label, so the two absences above cannot be satisfied by the cell
+    // having collapsed to nothing.
+    assert.match(
+      cell,
+      new RegExp("ds-tag--" + value.toLowerCase().replace(/\s+/g, "-") + "\\b"),
+      value +
+        " must still carry its own Type modifier; suppressing the icon must " +
+        "not cost the pill its identity class: " +
+        cell,
+    );
+    assert.ok(
+      cell.indexOf(value) !== -1,
+      value + " must still render its label: " + cell,
     );
   });
 
-  // NON-VACUITY: an unflagged value still renders its icon, so the assertions
-  // above cannot pass by the renderer having dropped the icon everywhere.
+  // NON-VACUITY: an unflagged value still renders its icon -- span AND glyph,
+  // matching both absences asserted above -- so those assertions cannot pass by
+  // the renderer having dropped the icon everywhere.
   var unflagged = axis.values.filter(function (value) {
     return flagged.indexOf(value) === -1;
   });
   assert.ok(unflagged.length > 0, "every published value is flagged");
   var withIcon = unflagged.filter(function (value) {
-    return cells[value] && /ds-tag__icon/.test(cells[value]);
+    return (
+      cells[value] &&
+      /ds-tag__icon/.test(cells[value]) &&
+      /<svg/.test(cells[value])
+    );
   });
   assert.equal(
     withIcon.length,
     unflagged.length,
     "every value the capture does NOT flag must still render its leading " +
-      "icon; missing it on: " +
+      "icon span and glyph; missing one on: " +
       JSON.stringify(
         unflagged.filter(function (v) {
           return withIcon.indexOf(v) === -1;

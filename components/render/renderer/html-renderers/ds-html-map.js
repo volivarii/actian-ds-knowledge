@@ -611,7 +611,16 @@
           };
           var tagIcon = "";
           if (props["Leading icon show"] !== false) {
-            tagCls += " ds-tag--with-icon";
+            // NO `ds-tag--with-icon` root modifier here. Unlike the ruleless
+            // .ds-tag--default / --stage-1 modifiers noted above, which name
+            // real published Type values and so each carry a capture fact, that
+            // one named no axis value at all: it had no ds-base.css rule, so it
+            // painted nothing, and it only restated that the .ds-tag__icon span
+            // below exists. That is the no-op namespace hook this file refuses
+            // elsewhere (see search-result-card's App=Studio note, and the
+            // .ds-tag--gray drop in the same fold-in). It was not free either:
+            // a consumer matches rendered tag HTML exactly, and the class broke
+            // that match while meaning nothing.
             tagIcon =
               '<span class="ds-tag__icon">' +
               renderIcon(TAG_TYPE_ICONS[tagType] || "add") +
@@ -731,7 +740,10 @@
             '<div class="ds-card__title">' +
             esc(props.Title || "Title") +
             "</div>" +
-            '<span class="ds-tag ds-tag--with-icon ds-card__cat">' +
+            // Category pill: .ds-tag base + the card's own slot class. No
+            // `ds-tag--with-icon` marker, retired repo-wide as a ruleless no-op
+            // (see the tag-default case); the .ds-tag__icon span is the fact.
+            '<span class="ds-tag ds-card__cat">' +
             '<span class="ds-tag__icon">' +
             renderIcon("catalog") +
             "</span>" +
