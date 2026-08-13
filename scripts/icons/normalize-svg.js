@@ -30,6 +30,45 @@ const SVGO_CONFIG = {
   ],
 };
 
+// Ticking "Clip content" on an icon's Figma frame makes the export wrap the
+// glyph in <g clip-path="url(#id)"> plus a <defs> clipPath. When that clip
+// covers the whole viewBox it crops nothing. The `url(#` guard below is about
+// PAINTS, but its regex matched any url reference, so a clip reference degraded
+// a perfectly monochrome glyph. That is how lifecycle-policy became a "lost
+// icon" in the 2026-08-13 sync (#526) with the artwork untouched.
+//
+// SVGO normalizes any clip shape to an axis-aligned rect path, so "covers the
+// whole viewBox" is decidable: d="M0 0h<W>v<H>H0z" with W/H equal to the
+// viewBox. Only then is dropping the reference provably lossless. A clip that
+// really crops keeps its reference and still degrades below, because shipping
+// it unclipped would mean shipping a glyph Figma does not draw.
+const FULL_BLEED_CLIP_PATH = /^M0 0h([\d.]+)v([\d.]+)H0z$/;
+
+function dropNoOpClipRefs(svg, vbW, vbH) {
+  const noOpIds = new Set();
+  const clipBlock =
+    /<clipPath\b[^>]*\bid="([^"]+)"[^>]*>([\s\S]*?)<\/clipPath>/gi;
+  let m;
+  while ((m = clipBlock.exec(svg)) !== null) {
+    const [, id, inner] = m;
+    const shapes = inner.match(/<(path|rect)\b[^>]*>/gi) || [];
+    if (shapes.length !== 1) continue; // compound clip, not provably a no-op
+    const d = shapes[0].match(/\bd="([^"]*)"/i);
+    if (!d) continue;
+    const box = d[1].trim().match(FULL_BLEED_CLIP_PATH);
+    if (box && Number(box[1]) === vbW && Number(box[2]) === vbH)
+      noOpIds.add(id);
+  }
+  if (noOpIds.size === 0) return svg;
+
+  // Drop only the references. The now-orphaned <clipPath> defs are collected by
+  // the follow-up SVGO pass, which is what already removes unreferenced defs.
+  // That is safer than hand-rolling defs surgery here.
+  return svg.replace(/\s*clip-path="url\(#([^)]+)\)"/gi, (full, id) =>
+    noOpIds.has(id) ? "" : full,
+  );
+}
+
 function normalizeIconSvg(rawSvg) {
   if (typeof rawSvg !== "string" || rawSvg.trim() === "") {
     return { ok: false, reason: "empty" };
@@ -40,6 +79,25 @@ function normalizeIconSvg(rawSvg) {
     optimized = optimize(rawSvg, SVGO_CONFIG).data;
   } catch (_e) {
     return { ok: false, reason: "render-failed" };
+  }
+
+  // Needs the viewBox to judge "full bleed", and needs SVGO to have normalized
+  // the clip shape first, hence a second pass rather than a pre-pass on raw.
+  const vbEarly = optimized.match(/viewBox="([^"]*)"/i);
+  const vbNums = vbEarly ? vbEarly[1].trim().split(/\s+/).map(Number) : null;
+  if (
+    vbNums &&
+    vbNums.length === 4 &&
+    vbNums.every((n) => Number.isFinite(n))
+  ) {
+    const declipped = dropNoOpClipRefs(optimized, vbNums[2], vbNums[3]);
+    if (declipped !== optimized) {
+      try {
+        optimized = optimize(declipped, SVGO_CONFIG).data;
+      } catch (_e) {
+        return { ok: false, reason: "render-failed" };
+      }
+    }
   }
 
   // SVGO self-closes empty SVGs (<svg .../>) — detect and treat as empty.
