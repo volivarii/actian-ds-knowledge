@@ -130,8 +130,9 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 - **Five components were publishing another component's guidelines imagery, because a page that
   documents a family carries one `Design guidelines` wrapper per component and the sync always took
-  the first.** ([#PR](_PR link added at open_)) `findFrameByNameRecursive` returns the first match of
-  a depth-first walk, and role sources were keyed by page id, so on a family page one component got
+  the first.** ([#533](https://github.com/volivarii/actian-ds-knowledge/pull/533))
+  `findFrameByNameRecursive` returns the first match of a depth-first walk, and role sources were
+  keyed by page id, so on a family page one component got
   its own boards by luck of ordering and the rest got someone else's. Live and shipping, unlike the
   losses tracked in #526: `message`, `field` and `textfield-buttons` each showed **Label**'s four
   boards, `checkbox-card` showed **Checkbox**'s preview, and `tag-interactive` showed the
