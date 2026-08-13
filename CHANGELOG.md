@@ -128,6 +128,35 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **An icon that Figma still draws was reported as lost, because ticking "Clip content" on its frame
+  was enough to fail a guard that is supposed to be about paints.**
+  ([#PR](_PR link added at open_)) The 2026-08-13 sync classified `lifecycle-policy` under **Lost
+  icons: BREAKING**, whose text tells consumers they now render an empty box. Nobody had touched the
+  artwork. Ticking "Clip content" on the icon's Figma frame makes the export wrap the glyph in
+  `<g clip-path="url(#id)">` plus a `<defs>` clipPath whose rect is 24x24 at `scale(2)`, exactly the
+  48x48 viewBox, so it crops nothing at all. `normalize-svg.js` degraded on `/url\(#/i`, and that
+  guard's own comment says it exists because *"gradients / pattern / image / url(#...) **paints**
+  can't become currentColor"*. A `clip-path` reference is not a paint, so the regex was broader than
+  the rule it enforces.
+
+  **The fix is narrow on purpose.** SVGO normalizes any clip shape to an axis-aligned rect path, so
+  "covers the whole viewBox" is decidable rather than guessed: only a clip matching
+  `d="M0 0h<W>v<H>H0z"` with W and H equal to the viewBox is dropped, and a follow-up SVGO pass
+  collects the orphaned def. A clip that genuinely crops keeps its reference and still degrades,
+  because shipping it unclipped would ship a glyph Figma does not draw. Both behaviours are tested
+  against the verbatim Figma export, and the crop test was confirmed to fail against a blanket-strip
+  mutation rather than being taken on trust.
+
+  **Evidence the artwork never moved:** normalizing the live export now produces a body byte-identical
+  to the one already in `components/dist/icons/icons.json` from the 2026-07-23 sync.
+
+  **Two things this does not do.** No dist changes here (the icons dist is written by the nightly
+  sync), so the correction reaches consumers with the next sync, which is also when #526 stops
+  reporting an icon loss. And `data-product-input-port` stays degraded, but its reason moves from
+  `gradient-or-image-fill` to the accurate `multicolor`: it is genuinely two-tone, and the clip was
+  only masking why. The `cursor-arrow` and `cursor-hand` pair keep degrading correctly on real
+  drop-shadow filters.
+
 - **Every released tag carried an `llms.txt` index describing content other than its own, because the
   index regenerated after the tag had already been cut and never bumped the version.**
   ([#PR](_PR link added at open_)) `llms.txt` and `llms-full.txt` both ship to consumers

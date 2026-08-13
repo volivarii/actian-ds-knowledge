@@ -179,3 +179,57 @@ test("style= paint, two distinct colors → multicolor", () => {
     reason: "multicolor",
   });
 });
+
+// Ticking "Clip content" on an icon's Figma frame makes the export wrap the
+// glyph in <g clip-path="url(#clipN)"> plus a <defs> clipPath whose rect covers
+// the WHOLE viewBox, so it crops nothing. The url(#…) guard is about paints
+// ("gradients / pattern / image … can't become currentColor"), but its regex
+// matched any url reference, so a clip reference degraded a perfectly monochrome
+// glyph. That is how lifecycle-policy became a "lost icon" in the 2026-08-13
+// sync (#526) without anyone touching the artwork.
+//
+// Verbatim Figma export of lifecycle-policy (node 13315:9276), trimmed to two of
+// its five paths. The wrapper and defs are exactly as Figma emits them.
+const NOOP_CLIP = [
+  '<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">',
+  '<g clip-path="url(#clip0_13315_9276)">',
+  '<path d="M24 33L20.792 31.481C18.1845 30.2475 16.5 27.5859 16.5 24.7017V15H31.5V24.7017C31.5 27.5861 29.8155 30.2477 27.2081 31.481L24 33ZM19.5 18V24.7017C19.5 26.4317 20.5107 28.0284 22.0752 28.768L24 29.6792L25.9248 28.768C27.4893 28.0282 28.5 26.4317 28.5 24.7017V18H19.5Z" fill="black"/>',
+  '<path d="M6.1812 26.4843C6.97695 25.9452 7.5 25.0333 7.5 24C7.5 22.3432 6.15675 21 4.5 21C2.84325 21 1.5 22.3432 1.5 24C1.5 25.1829 2.19105 26.1966 3.186 26.685C4.2048 34.686 9.7068 41.4565 17.5389 43.987L18.4609 41.1321C11.8077 38.9832 7.11465 33.2628 6.1812 26.4843Z" fill="black"/>',
+  "</g>",
+  '<defs><clipPath id="clip0_13315_9276">',
+  '<rect width="24" height="24" fill="white" transform="scale(2)"/>',
+  "</clipPath></defs></svg>",
+].join("\n");
+
+// Same wrapper, but the clip rect covers a quarter of the viewBox, so it really
+// does crop. Dropping THAT silently would ship a glyph that is not what Figma
+// draws, so it must stay degraded.
+const CROPPING_CLIP =
+  '<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+  '<g clip-path="url(#clip0_crop)"><path d="M4 4h40v40H4z" fill="black"/></g>' +
+  '<defs><clipPath id="clip0_crop"><rect width="24" height="24" fill="white"/></clipPath></defs></svg>';
+
+test("no-op full-bleed clip wrapper: ok, clip dropped, not gradient-or-image-fill", () => {
+  const r = normalizeIconSvg(NOOP_CLIP);
+  assert.equal(
+    r.ok,
+    true,
+    "a monochrome glyph behind a no-op clip is shippable",
+  );
+  assert.equal(r.viewBox, "0 0 48 48");
+  assert.match(r.body, /fill="currentColor"/);
+  assert.doesNotMatch(r.body, /clip-path=/i, "clip reference dropped");
+  assert.doesNotMatch(r.body, /<clipPath|<defs/i, "orphaned clip def dropped");
+  assert.doesNotMatch(
+    r.body,
+    /"white"|"black"/i,
+    "no raw paint survives, including the clip rect's own white fill",
+  );
+});
+
+test("clip that genuinely crops: still degraded, never silently unclipped", () => {
+  assert.deepEqual(normalizeIconSvg(CROPPING_CLIP), {
+    ok: false,
+    reason: "gradient-or-image-fill",
+  });
+});
