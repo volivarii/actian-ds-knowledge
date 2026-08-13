@@ -1,6 +1,6 @@
 "use strict";
 
-// #525 — the committed llms index must describe the content committed with it.
+// #525: the committed llms index must describe the content committed with it.
 //
 // llms.txt and llms-full.txt are both listed in vendor-include.json, so they
 // ship to consumers, and consumers resolve by TAG. A tag whose index does not
@@ -8,7 +8,7 @@
 // consumer reads to find anything else, so a stale entry is the ghost-reference
 // problem (#517) reintroduced by release mechanics.
 //
-// SCOPE NOTE — why only llms.txt is asserted here, and llms-full.txt is not:
+// SCOPE NOTE: why only llms.txt is asserted here, and llms-full.txt is not:
 //
 //   generateLlmsTxt() is a closed function of the generator source alone (a
 //   static index of logical locations), so regenerating it can never disagree
@@ -63,13 +63,13 @@ test("committed llms.txt matches what the generator produces", function () {
     fresh.length > 200 && fresh.indexOf("# Actian Design System") === 0,
     "generateLlmsTxt() produced no usable index (" +
       fresh.length +
-      " bytes) — the comparison below would be vacuous",
+      " bytes), so the comparison below would be vacuous",
   );
 
   var committedPath = path.join(ROOT, "llms.txt");
   assert.ok(
     fs.existsSync(committedPath),
-    "llms.txt is missing from the repo root — it is a vendored consumer contract; run `npm run derive:llms`",
+    "llms.txt is missing from the repo root: it is a vendored consumer contract; run `npm run derive:llms`",
   );
   var committed = fs.readFileSync(committedPath, "utf8");
 
