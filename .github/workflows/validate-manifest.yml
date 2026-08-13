@@ -148,6 +148,38 @@ jobs:
             exit 1
           fi
 
+      # llms.txt + llms-full.txt are the content INDEX, and both ship to
+      # consumers (vendor-include.json). A stale index is not cosmetic drift: it
+      # is the first thing an AI consumer reads to find anything else, so a
+      # retired heading left in it is the ghost-reference problem (#517)
+      # reintroduced by release mechanics. Before #525 every published tag
+      # carried an index that did not describe its own content, because the regen
+      # ran on push to main AFTER tag-on-merge had already cut the tag. This is
+      # the assertion that makes staleness un-mergeable no matter which workflow
+      # regenerates, and it runs LAST of the drift guards because the llms full
+      # dump reads content/dist/global.md plus the foundations/accessibility
+      # sources the guards above have already settled.
+      #
+      # Deliberately a step here rather than a test in `npm test`: the sibling
+      # derive workflows run `npm test` before their auto-commit step, so an
+      # llms-full assertion inside the suite would fail mid-cascade and block
+      # them from committing the dist they exist to produce, breaking the
+      # "authors need no local toolchain" guarantee. tests/llms-txt-freshness.test.js
+      # covers the cascade-independent half (llms.txt) in the suite.
+      - name: Derive llms index
+        run: npm run derive:llms
+
+      - name: llms index drift guard (committed llms.txt + llms-full.txt must match regeneration)
+        run: |
+          if ! git diff --quiet -- llms.txt llms-full.txt; then
+            echo "::error::llms.txt / llms-full.txt is STALE: the committed index does not describe the content committed alongside it. Run 'npm run derive:llms' and commit the result. Both files are vendored to consumers (vendor-include.json) and consumers resolve by tag, so a stale index ships inside the release tag (#525)."
+            echo "Files that drifted (committed -> regenerated):"
+            git --no-pager diff --stat -- llms.txt llms-full.txt
+            git --no-pager diff -- llms.txt
+            exit 1
+          fi
+          echo "llms index is current."
+
       - name: Run test suite
         run: npm test
 

@@ -1,96 +1,167 @@
-name: Regenerate llms.txt
+name: Derive llms.txt index from knowledge content
 
-# Regenerates llms.txt + llms-full.txt from the latest content after each
-# push to main that touches a source path. Opens an auto-merging PR via
-# the actian-ds-bot App (not a direct push to main) so:
-#   1. Branch-protection rules (required PRs + status checks) are honoured.
-#   2. The PR fires pull_request workflows normally (validate-manifest etc.),
-#      which a default GITHUB_TOKEN-authored PR would not.
+# Regenerates the root llms.txt + llms-full.txt on PR events that touch the
+# generator's inputs and pushes the result back to the PR branch, exactly like
+# every sibling derive (foundations, content, accessibility, guidelines,
+# categories, app-context, render, graph).
 #
-# Required repo secrets:
-#   BOT_APP_PRIVATE_KEY   — PEM private key for the actian-ds-bot GitHub App.
+# WHY THIS IS A PR-EVENT DERIVE AND NOT A PUSH-TO-MAIN REGEN (#525):
 #
-# Required repo variables:
-#   BOT_APP_ID            — actian-ds-bot App ID (currently 3678502).
+# llms.txt and llms-full.txt are both listed in vendor-include.json, so they ship
+# to consumers, and consumers resolve by TAG. The previous shape regenerated
+# AFTER a merge to main and opened a follow-up auto-merging PR that carried no
+# version bump, which produced a three-step failure on every content release:
+#   1. the content PR merged and tag-on-merge cut the release tag THERE, with the
+#      index still stale;
+#   2. the regen PR then merged with no bump, so no tag was cut for it;
+#   3. the fresh index sat on main waiting for an unrelated future bump to ship.
+# Every published tag therefore carried an index that did not describe its own
+# content. Verified at v0.34.124, whose llms-full.txt still named the retired
+# `radio-button-card` heading. Because this repo produces several patch bumps a
+# week, a regenerated index usually caught a ride on the next unrelated bump,
+# making the state EVENTUALLY consistent and never consistent at any given tag,
+# which is why it went unnoticed for so long.
+#
+# Deriving on the pull_request event lands the fresh index in the SAME merge
+# commit that tag-on-merge tags, which is how every other domain already works.
+#
+# Do NOT add `git tag` to this workflow. See tag-on-merge.yml: tags are emitted
+# only on main, because a tag cut on a PR branch is orphaned the moment the PR
+# squash-merges to a different main commit (the off-main-orphan bug that broke
+# consumer vendor-integrity at v0.25.5/v0.25.6).
+#
+# TRIGGER PATHS mirror the generator's REAL inputs (see the input-set comment in
+# scripts/llms-txt-generate.js):
+#   foundations/src/**   + accessibility/src/**  read directly via the concat helpers
+#   content/dist/**                              global.md is read verbatim
+# Two paths that the old push trigger watched are deliberately gone:
+#   - components/dist/**   the generator never reads it; llms.txt only names the
+#                          directory as a location, it does not enumerate it.
+#   - paths-manifest.json  was parsed into an unused variable, now removed.
+# content/src/** is deliberately NOT a trigger either: global.md is produced by
+# content-derive.yml on the same PR, and its auto-commit re-fires this workflow
+# through content/dist/**, which is the correct ordering. Triggering on the
+# source as well would only add an early run against a global.md that has not
+# been regenerated yet.
+#
+# The freshness INVARIANT does not depend on this workflow firing: the required
+# "Validate manifest schema + coverage" check re-derives the index and fails on
+# any drift, so a missed trigger is a missing convenience, not a silent stale
+# ship. This workflow is what keeps authors from needing a local toolchain.
+#
+# The auto-commit pushes with the actian-ds-bot App token (vars.BOT_APP_ID +
+# secrets.BOT_APP_PRIVATE_KEY) so it re-triggers the required checks on the new
+# HEAD SHA, which a GITHUB_TOKEN push cannot do. Shared with foundations-derive.yml.
 
 on:
-  push:
-    branches: [main]
+  pull_request:
     paths:
-      - 'foundations/**'
-      - 'content/**'
-      - 'accessibility/**'
-      - 'components/dist/**'
-      - 'paths-manifest.json'
-  workflow_dispatch: {}
+      - 'foundations/src/**'
+      - 'accessibility/src/**'
+      - 'content/dist/**'
+      - 'scripts/llms-txt-generate.js'
+      - 'scripts/foundations/derive-foundations.js'
+      - 'scripts/accessibility/derive-a11y-index.js'
+      - 'scripts/lib/**'
+
+# Serialize runs per branch: concurrent auto-commit pushes to the same PR head
+# race each other (lost push = red required check). Queue, never cancel:
+# cancelling mid-push could strand a half-committed index.
+concurrency:
+  group: llms-derive-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  regenerate:
+  derive:
+    name: Derive llms.txt index
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-
-      # llms-txt-generate.js requires `marked` transitively (via
-      # derive-foundations → scripts/lib/section-dist), which is a
-      # devDependency — so deps MUST be installed before regenerating.
-      # Matches the install step used by the derive workflows.
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
-      # Mint App token so the regen PR is authored by actian-ds-bot —
-      # required for branch-protected main (direct push fails) and for
-      # downstream pull_request workflows to fire on the PR.
-      - name: Mint App token
+      # App token for the auto-commit push below. A commit pushed with the
+      # default GITHUB_TOKEN cannot trigger further workflow runs, leaving the
+      # required checks with no status on the auto-commit's SHA and blocking
+      # merge. Skipped on fork PRs, BOT_APP_PRIVATE_KEY is not exposed to them;
+      # checkout then falls back to github.token.
+      - name: Generate App token
         id: app-token
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ vars.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
 
-      - name: Regenerate llms.txt + llms-full.txt
-        run: node scripts/llms-txt-generate.js
-
-      - name: Open auto-merging PR if changed
-        id: cpr
-        uses: peter-evans/create-pull-request@v7
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
         with:
-          token: ${{ steps.app-token.outputs.token }}
-          commit-message: "chore: regenerate llms.txt from latest content"
-          title: "chore: regenerate llms.txt"
-          body: |
-            Auto-regeneration of `llms.txt` + `llms-full.txt` triggered by a push to
-            `main` that touched a source path (foundations, content, accessibility,
-            components/dist, or paths-manifest).
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token || github.token }}
 
-            Generated by `.github/workflows/llms-txt.yml` via
-            `scripts/llms-txt-generate.js`.
-          branch: "chore/regenerate-llms-txt"
-          labels: chore,auto-merge
-          delete-branch: true
-          add-paths: |
-            llms.txt
-            llms-full.txt
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
 
-      - name: Enable auto-merge
-        if: steps.cpr.outputs.pull-request-number
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      # llms-txt-generate.js requires `marked` transitively (via
+      # derive-foundations -> scripts/lib/section-dist), which is a
+      # devDependency, so deps MUST be installed before regenerating.
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Regenerate llms.txt + llms-full.txt
+        run: npm run derive:llms
+
+      # NOTE: no `npm test` step here, unlike the sibling derives. This workflow
+      # fires mid-cascade, when ANOTHER domain's dist can still be stale on the
+      # branch (tests/content-derive.test.js, for one, asserts that the committed
+      # content/dist/global.md matches its source). Running the whole suite here
+      # would fail on that unrelated staleness and strand the index commit, which
+      # is the one thing this workflow exists to land. The llms invariant itself
+      # is enforced on every PR by the required "Validate manifest schema +
+      # coverage" check, which runs on a settled tree.
+
+      - name: Detect changes
+        id: diff
         run: |
-          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --squash --repo "${{ github.repository }}"
+          if git diff --quiet -- llms.txt llms-full.txt; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "llms index already current."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "llms index drifted from the content, regenerated:"
+            git --no-pager diff --stat -- llms.txt llms-full.txt
+          fi
+
+      # Both files are vendorable and consumers resolve by tag, so a change to
+      # them that does not move the version never reaches a consumer. This is the
+      # bump the old push-to-main shape was missing (#525).
+      - name: Auto-bump package.json patch
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          node scripts/lib/bump-version.js package.json patch
+
+      # Skip on fork PRs, GITHUB_TOKEN can't push to forks.
+      - name: Commit regenerated index back to PR
+        if: steps.diff.outputs.changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add llms.txt llms-full.txt package.json paths-manifest.json package-lock.json
+          git commit -m "chore(llms): regenerate llms.txt index from content + bump patch"
+          # Race-safe push: another derive workflow may have pushed to this
+          # branch since checkout (concurrent auto-commits), rebase and retry
+          # once instead of failing the required check on a lost race.
+          # --autostash: npm install rewrites the stale tracked package-lock.json
+          # in every run, and a dirty tree makes a bare rebase refuse to start.
+          git push || (git pull --rebase --autostash && git push)
 
       - name: Summarize
         if: always()
         run: |
-          if [ -n "${{ steps.cpr.outputs.pull-request-number }}" ]; then
-            echo "### llms.txt PR opened: #${{ steps.cpr.outputs.pull-request-number }}" >> "$GITHUB_STEP_SUMMARY"
-            echo "${{ steps.cpr.outputs.pull-request-url }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.diff.outputs.changed }}" = "true" ]; then
+            echo "### llms index: regenerated + patch bumped" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "### llms.txt: no changes detected" >> "$GITHUB_STEP_SUMMARY"
+            echo "### llms index: no changes" >> "$GITHUB_STEP_SUMMARY"
           fi

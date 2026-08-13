@@ -19,6 +19,7 @@
     "validate:anatomy": "node scripts/validate/validate-anatomy.js",
     "validate:domains": "node scripts/validate/validate-domains.js",
     "derive:vendor-include": "node scripts/derive-vendor-include.js",
+    "derive:llms": "node scripts/llms-txt-generate.js",
     "sync:version": "node scripts/lib/sync-knowledge-version.js",
     "derive:graph": "node scripts/graph/derive-graph.js",
     "validate:graph": "node scripts/graph/validate-graph.js",

@@ -128,6 +128,38 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **Every released tag carried an `llms.txt` index describing content other than its own, because the
+  index regenerated after the tag had already been cut and never bumped the version.**
+  ([#PR](_PR link added at open_)) `llms.txt` and `llms-full.txt` both ship to consumers
+  (`vendor-include.json`) and consumers resolve by tag, but `llms-txt.yml` ran on push to `main`: the
+  content PR merged, `tag-on-merge` cut the release tag there with the index still stale, and the
+  follow-up regen PR then merged carrying no bump, so no tag was cut for it either. Verified at
+  `v0.34.124`, whose `llms-full.txt` still named the retired `radio-button-card` heading three days
+  after the fold-in that replaced it. The failure hid behind the repo's own release cadence: with
+  several patch bumps a week a regenerated index usually caught a ride on the next unrelated bump,
+  which made the state eventually consistent and never consistent at any given tag. This matters more
+  than a cosmetic drift because `llms.txt` is the first thing an AI consumer reads to find anything
+  else, so a retired heading left inside it is the ghost-reference problem of #517 reintroduced by
+  release mechanics rather than by Figma.
+
+  **The fix is an assertion first and a workflow move second.** The required
+  `Validate manifest schema + coverage` check now re-derives the index and fails on any drift, naming
+  the drifted file and the command that refreshes it, which is what makes staleness un-mergeable
+  regardless of which workflow regenerates; `tests/llms-txt-freshness.test.js` covers the
+  cascade-independent half in the suite. `llms-txt.yml` then becomes an ordinary PR-event derive like
+  every sibling, auto-bumping and auto-committing with the bot App token so the fresh index lands in
+  the same merge commit `tag-on-merge` tags. No tag is emitted from the derive: `tag-on-merge.yml`
+  remains the single source, because a tag cut on a PR branch is orphaned when the PR squash-merges.
+
+  Two consequences worth naming. The freshness guard lives in the required check rather than in
+  `npm test` on purpose: the sibling derives run the suite *before* their auto-commit step, so an
+  assertion there would fail mid-cascade on an index that is legitimately stale for another few
+  seconds and block those workflows from committing the dist they exist to produce, which would cost
+  the "authors need no local toolchain" guarantee. And the derive's trigger list now mirrors the
+  generator's real inputs: `components/dist/**` and `paths-manifest.json` are gone, the latter because
+  it was being parsed into a variable nothing read, which made the derive look manifest-dependent when
+  it never was.
+
 - **The renderer stamped a `ds-tag--with-icon` modifier that no stylesheet has ever carried a rule for,
   so it painted nothing and broke a consumer's exact match on the way past.**
   ([#PR](_PR link added at open_)) The class landed on 13 of `tag-default`'s 14 `Type` cells and on
