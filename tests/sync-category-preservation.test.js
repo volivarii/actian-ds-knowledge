@@ -203,3 +203,76 @@ test("preserveKnownCategories then assertNoCategoryMassLoss: a page rename no lo
     S.assertNoCategoryMassLoss(before, after, { allow: [] });
   });
 });
+
+// A RENAMED category could never establish itself. `established` is built from
+// the PREVIOUS dist, so a category Figma newly reports is "not well-formed" by
+// definition and gets reverted, every night, forever. That is what pinned nine
+// Form pages to a last-known value carrying a PAGE NAME as the category and a
+// stale section=Foundations, which is what put Field/Label/Message/Textfield
+// buttons under FOUNDATIONS in the docs sidebar.
+//
+// A category named in KNOWN_CATEGORIES is a declared part of the taxonomy, so it
+// is well-formed on its first appearance. A page name never is.
+test("a renamed-but-declared category is trusted on its first sync", function () {
+  var before = {
+    components: {
+      field: {
+        name: "Field",
+        key: "k-field",
+        category: "Form (input & selection)",
+        section: "Components",
+        page: "Base(label, field, message, textfield button)",
+      },
+    },
+  };
+  var after = {
+    components: {
+      field: {
+        name: "Field",
+        key: "k-field",
+        category: "Form", // Figma renamed the header
+        section: "Components",
+        page: "Base(label, field, message, textfield button)",
+      },
+    },
+  };
+  var drift = S.preserveKnownCategories(before, after);
+  assert.equal(
+    after.components.field.category,
+    "Form",
+    "the rename must survive, not be reverted to the old name",
+  );
+  assert.equal(drift.length, 0, "a declared rename is not drift");
+});
+
+test("a page name masquerading as a category is still reverted", function () {
+  var before = {
+    components: {
+      "checkbox-group": {
+        name: "Checkbox group",
+        key: "k-cbg",
+        category: "Form (input & selection)",
+        section: "Components",
+        page: "Checkbox, checkbox card, checkbox group",
+      },
+    },
+  };
+  var after = {
+    components: {
+      "checkbox-group": {
+        name: "Checkbox group",
+        key: "k-cbg",
+        category: "Checkbox, checkbox card, checkbox group", // the page name
+        section: "Foundations",
+        page: "Checkbox, checkbox card, checkbox group",
+      },
+    },
+  };
+  var drift = S.preserveKnownCategories(before, after);
+  assert.equal(
+    after.components["checkbox-group"].category,
+    "Form (input & selection)",
+    "an undeclared page name must NOT be trusted",
+  );
+  assert.equal(drift.length, 1);
+});

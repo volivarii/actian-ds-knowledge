@@ -188,6 +188,15 @@ function categoryCounts(registry) {
 // from mutating `after`'s components; returns the drift list for reporting.
 // Self-retiring: a stable file matches last-known-good, so nothing is restored
 // and the drift list comes back empty.
+var KNOWN_CATEGORY_SET =
+  require("../transformers/transform-categories.js").KNOWN_CATEGORIES.reduce(
+    function (acc, name) {
+      acc[name] = true;
+      return acc;
+    },
+    Object.create(null),
+  );
+
 function preserveKnownCategories(before, after) {
   var beforeComps = (before && before.components) || {};
   var afterComps = (after && after.components) || {};
@@ -202,7 +211,19 @@ function preserveKnownCategories(before, after) {
   Object.keys(afterComps).forEach(function (slug) {
     var c = afterComps[slug];
     if (!c) return;
-    if (c.category && established[c.category]) return; // well-formed, trust it
+    // Well-formed means EITHER already in the previous dist's universe, OR a
+    // declared member of the taxonomy. Without the second clause this is a
+    // ratchet: `established` is built from the previous dist, so a category
+    // Figma RENAMES can never establish itself and is reverted every night,
+    // forever. That is what pinned the nine Form pages to a last-known value
+    // carrying a page name as the category and a stale section (#428).
+    // A page name is still reverted, because it is in neither set.
+    if (
+      c.category &&
+      (established[c.category] || KNOWN_CATEGORY_SET[c.category])
+    ) {
+      return;
+    }
     var twin = byIdentity[identityOf(slug, c)];
     if (!twin || !twin.category) return; // genuinely new / never categorized
     drift.push({
