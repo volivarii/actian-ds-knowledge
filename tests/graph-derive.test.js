@@ -382,7 +382,13 @@ test("graph.json: component-scoped a11y_ref edges are present after derive", fun
   );
 });
 
-test("graph.json: category-override stopgap keeps in_category edges for category-less dskit components", function () {
+// The curated stopgap in components/src/category-overrides.json retired on
+// 2026-08-13, exactly on the condition its own `remove_when` named: Figma
+// created the member pages under the Form header, and the sync now attributes
+// those components natively. The registry always wins over the override, so the
+// edge is real rather than curated. Asserting the OUTCOME, not the mechanism,
+// is also what lets the stopgap be deleted without reopening this test.
+test("graph.json: form components carry a real in_category edge, no stopgap needed", function () {
   var fs = require("node:fs"),
     path = require("node:path");
   var graph = JSON.parse(
@@ -391,15 +397,25 @@ test("graph.json: category-override stopgap keeps in_category edges for category
       "utf8",
     ),
   );
-  assert.ok(
-    graph.edges.some(function (e) {
-      return (
-        e.type === "in_category" &&
-        e.source === "component:radio" &&
-        e.target === "category:form-input-selection"
-      );
-    }),
-    "expected component:radio -> category:form-input-selection via the curated override (components/src/category-overrides.json)",
+  ["radio", "checkbox", "toggle", "search"].forEach(function (slug) {
+    assert.ok(
+      graph.edges.some(function (e) {
+        return (
+          e.type === "in_category" &&
+          e.source === "component:" + slug &&
+          e.target === "category:form"
+        );
+      }),
+      "expected component:" + slug + " -> category:form from the registry",
+    );
+  });
+  // The retired category must not linger as a node with nothing in it.
+  assert.equal(
+    graph.nodes.filter(function (n) {
+      return n.id === "category:form-input-selection";
+    }).length,
+    0,
+    "the pre-rename category node must be gone once nothing points at it",
   );
 });
 
@@ -635,7 +651,9 @@ test("collectPatternComponents: emits ux_pattern->component uses_component edges
 // failure now: this is hand-authored, so a typo or a display name used in place
 // of a slug has to stop the derive rather than quietly shrink the graph.
 test("collectPatternComponents: an unresolved reference fails the derive instead of vanishing", function () {
-  var registries = { components: { table: { name: "Table", category: "Data Display" } } };
+  var registries = {
+    components: { table: { name: "Table", category: "Data Display" } },
+  };
   var ac = {
     apps: { studio: { label: "Studio" } },
     entities: {},
@@ -668,7 +686,9 @@ test("collectPatternComponents: an unresolved reference fails the derive instead
 // an author round the loop once per typo, and a refactor that moved the throw
 // inside the inner loop would otherwise pass unnoticed.
 test("collectPatternComponents: one failure lists every unresolved reference", function () {
-  var registries = { components: { table: { name: "Table", category: "Data Display" } } };
+  var registries = {
+    components: { table: { name: "Table", category: "Data Display" } },
+  };
   var ac = {
     apps: { studio: { label: "Studio" } },
     entities: {},
@@ -688,7 +708,11 @@ test("collectPatternComponents: one failure lists every unresolved reference", f
     },
     function (err) {
       assert.match(err.message, /ghost-one/);
-      assert.match(err.message, /ghost-two/, "the second offender must appear too");
+      assert.match(
+        err.message,
+        /ghost-two/,
+        "the second offender must appear too",
+      );
       assert.match(err.message, /^derive-graph: 2 /);
       return true;
     },
@@ -698,7 +722,9 @@ test("collectPatternComponents: one failure lists every unresolved reference", f
 // The gate has to be able to see its subject: with every reference resolvable
 // it must stay silent, or it would just be an alarm that is always on.
 test("collectPatternComponents: resolvable references do not fail", function () {
-  var registries = { components: { table: { name: "Table", category: "Data Display" } } };
+  var registries = {
+    components: { table: { name: "Table", category: "Data Display" } },
+  };
   var ac = {
     apps: { studio: { label: "Studio" } },
     entities: {},
