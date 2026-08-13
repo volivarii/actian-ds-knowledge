@@ -130,7 +130,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 - **An icon that Figma still draws was reported as lost, because ticking "Clip content" on its frame
   was enough to fail a guard that is supposed to be about paints.**
-  ([#PR](_PR link added at open_)) The 2026-08-13 sync classified `lifecycle-policy` under **Lost
+  ([#530](https://github.com/volivarii/actian-ds-knowledge/pull/530)) The 2026-08-13 sync classified `lifecycle-policy` under **Lost
   icons: BREAKING**, whose text tells consumers they now render an empty box. Nobody had touched the
   artwork. Ticking "Clip content" on the icon's Figma frame makes the export wrap the glyph in
   `<g clip-path="url(#id)">` plus a `<defs>` clipPath whose rect is 24x24 at `scale(2)`, exactly the
