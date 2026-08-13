@@ -1127,3 +1127,271 @@ test("orchestrator runs media-preview phase end-to-end", async function () {
   assert.equal(result.errors.length, 0, "no phase errors");
   assert.ok(fs.existsSync(path.join(mediaDir, "button", "preview.webp")));
 });
+
+// ---------------------------------------------------------------------------
+// Family pages: one "Design guidelines" wrapper PER COMPONENT.
+//
+// Six pages in the DS file document a whole family (Checkbox/card/group,
+// Radio/card/group, Text area+input, the four form Base parts, the three Tags,
+// and the grids). Each component gets its own wrapper, and the wrapper's
+// ".local - section header" instance names which one it is. The finder used to
+// take the FIRST wrapper on the page for every slug, so 5 components shipped
+// another component's imagery (#531).
+//
+// Fixtures below mirror the REAL titles from those pages, typo included.
+// ---------------------------------------------------------------------------
+
+function wrapper(id, title, previewFrameId) {
+  return {
+    id: id,
+    type: "FRAME",
+    name: "Design guidelines",
+    children: [
+      {
+        id: id + ":hdr",
+        type: "INSTANCE",
+        name: ".local - section header",
+        children: [
+          { id: id + ":t", type: "TEXT", characters: title },
+          {
+            id: id + ":s",
+            type: "TEXT",
+            characters: "Structural breakdown, all variant states",
+          },
+        ],
+      },
+      {
+        id: id + ":prev",
+        type: "FRAME",
+        name: "Preview",
+        children: [{ id: previewFrameId, type: "FRAME", name: "Overview" }],
+      },
+    ],
+  };
+}
+
+test("resolveWrapperForComponent: exact title match picks each family member's own wrapper", function () {
+  var ws = [
+    wrapper("w:1", "Checkbox design guidelines", "v:1"),
+    wrapper("w:2", "Checkbox card design guidelines", "v:2"),
+    wrapper("w:3", "Checkbox group design guidelines", "v:3"),
+  ];
+  assert.equal(syncMedia.resolveWrapperForComponent(ws, "Checkbox").id, "w:1");
+  assert.equal(
+    syncMedia.resolveWrapperForComponent(ws, "Checkbox card").id,
+    "w:2",
+  );
+  assert.equal(
+    syncMedia.resolveWrapperForComponent(ws, "Checkbox group").id,
+    "w:3",
+  );
+});
+
+test("resolveWrapperForComponent: ignores wrapper ORDER (the Text page is reversed)", function () {
+  // Page is named "Text area, text input" but wrapper[0] documents Text input.
+  // A positional rule would hand Text area the wrong board.
+  var ws = [
+    wrapper("w:in", "Text input design guidelines", "v:in"),
+    wrapper("w:ar", "Text area design guidelines", "v:ar"),
+  ];
+  assert.equal(
+    syncMedia.resolveWrapperForComponent(ws, "Text area").id,
+    "w:ar",
+    "must not fall back to the first wrapper",
+  );
+  assert.equal(
+    syncMedia.resolveWrapperForComponent(ws, "Text input").id,
+    "w:in",
+  );
+});
+
+test("resolveWrapperForComponent: word ORDER inside the title does not matter", function () {
+  // Registry says "Tag, Interactive"; Figma title says "Interactive Tag".
+  var ws = [
+    wrapper("w:ro", "Read-Only and Item Type Tag design guidelines", "v:ro"),
+    wrapper("w:ix", "Interactive Tag design guidelines", "v:ix"),
+  ];
+  assert.equal(
+    syncMedia.resolveWrapperForComponent(ws, "Tag, Interactive").id,
+    "w:ix",
+  );
+});
+
+test("resolveWrapperForComponent: a wrapper covering several members matches by subset", function () {
+  var ws = [
+    wrapper("w:ro", "Read-Only and Item Type Tag design guidelines", "v:ro"),
+    wrapper("w:ix", "Interactive Tag design guidelines", "v:ix"),
+  ];
+  assert.equal(
+    syncMedia.resolveWrapperForComponent(ws, "Tag, Item type").id,
+    "w:ro",
+    "one wrapper legitimately documents two components",
+  );
+});
+
+test("resolveWrapperForComponent: no match returns null rather than guessing", function () {
+  // The real Base page header reads "Massage (form base)" (a typo for Message).
+  var base = [
+    wrapper("w:l", "Label (form base) design guidelines", "v:l"),
+    wrapper("w:m", "Massage (form base) design guidelines", "v:m"),
+    wrapper("w:f", "Field (form base) design guidelines", "v:f"),
+  ];
+  assert.equal(syncMedia.resolveWrapperForComponent(base, "Message"), null);
+  assert.equal(syncMedia.resolveWrapperForComponent(base, "Label").id, "w:l");
+
+  // "Tag, Default" is called Read-Only in the guidelines, so it cannot resolve.
+  var tag = [
+    wrapper("w:ro", "Read-Only and Item Type Tag design guidelines", "v:ro"),
+    wrapper("w:ix", "Interactive Tag design guidelines", "v:ix"),
+  ];
+  assert.equal(syncMedia.resolveWrapperForComponent(tag, "Tag, Default"), null);
+});
+
+test("resolveWrapperForComponent: ambiguity returns null rather than picking one", function () {
+  var ws = [
+    wrapper("w:a", "Radio design guidelines", "v:a"),
+    wrapper("w:b", "Radio design guidelines", "v:b"),
+  ];
+  assert.equal(syncMedia.resolveWrapperForComponent(ws, "Radio"), null);
+});
+
+test("resolveWrapperForComponent: a single wrapper serves every slug on the page", function () {
+  // Alert-banner + alert-inline share one wrapper. Unchanged behaviour.
+  var ws = [wrapper("w:only", "Alert design guidelines", "v:only")];
+  assert.equal(
+    syncMedia.resolveWrapperForComponent(ws, "Alert banner").id,
+    "w:only",
+  );
+  assert.equal(
+    syncMedia.resolveWrapperForComponent(ws, "Anything at all").id,
+    "w:only",
+  );
+});
+
+function familyPageTree() {
+  return {
+    document: {
+      id: "0:0",
+      type: "DOCUMENT",
+      children: [
+        {
+          id: "p:fam",
+          type: "CANVAS",
+          name: "Tag: Item type, Read-only, Interactive",
+          children: [
+            wrapper(
+              "w:ro",
+              "Read-Only and Item Type Tag design guidelines",
+              "v:ro",
+            ),
+            wrapper("w:ix", "Interactive Tag design guidelines", "v:ix"),
+          ],
+        },
+      ],
+    },
+  };
+}
+
+test("run(): each family member captures from ITS OWN wrapper", async function () {
+  var dir = tmpdir();
+  var tree = familyPageTree();
+  var reg = {
+    fileKey: "FILEKEY",
+    components: {
+      "tag-item-type": {
+        name: "Tag, Item type",
+        nodeId: "1:1",
+        page: "Tag: Item type, Read-only, Interactive",
+      },
+      "tag-interactive": {
+        name: "Tag, Interactive",
+        nodeId: "1:2",
+        page: "Tag: Item type, Read-only, Interactive",
+      },
+    },
+  };
+  var asked = [];
+  var result = await syncMedia.run({
+    registry: reg,
+    outputDir: dir,
+    rest: mockRest({
+      getFile: function () {
+        return Promise.resolve(tree);
+      },
+      getNodes: function (fileKey, ids) {
+        var resp = { nodes: {} };
+        ids.forEach(function (id) {
+          if (id === "p:fam")
+            resp.nodes[id] = { document: tree.document.children[0] };
+        });
+        return Promise.resolve(resp);
+      },
+      getImages: function (fileKey, ids) {
+        ids.forEach(function (i) {
+          asked.push(i);
+        });
+        var images = {};
+        ids.forEach(function (id) {
+          images[id] = "https://signed/" + id + ".png";
+        });
+        return Promise.resolve({ images: images });
+      },
+    }),
+  });
+  assert.deepEqual(result.captured.sort(), [
+    "tag-interactive/preview",
+    "tag-item-type/preview",
+  ]);
+  assert.ok(
+    asked.indexOf("v:ix") !== -1,
+    "the Interactive wrapper's frame must actually be rendered",
+  );
+  assert.ok(asked.indexOf("v:ro") !== -1, "and the Read-Only one too");
+});
+
+test("run(): an unmatchable family member captures NOTHING and is reported", async function () {
+  var dir = tmpdir();
+  var tree = familyPageTree();
+  var reg = {
+    fileKey: "FILEKEY",
+    components: {
+      // "Tag, Default" is called Read-Only in the guidelines: no honest match.
+      "tag-default": {
+        name: "Tag, Default",
+        nodeId: "1:0",
+        page: "Tag: Item type, Read-only, Interactive",
+      },
+      "tag-interactive": {
+        name: "Tag, Interactive",
+        nodeId: "1:2",
+        page: "Tag: Item type, Read-only, Interactive",
+      },
+    },
+  };
+  var result = await syncMedia.run({
+    registry: reg,
+    outputDir: dir,
+    rest: mockRest({
+      getFile: function () {
+        return Promise.resolve(tree);
+      },
+      getNodes: function (fileKey, ids) {
+        var resp = { nodes: {} };
+        ids.forEach(function (id) {
+          if (id === "p:fam")
+            resp.nodes[id] = { document: tree.document.children[0] };
+        });
+        return Promise.resolve(resp);
+      },
+    }),
+  });
+  assert.deepEqual(result.captured, ["tag-interactive/preview"]);
+  assert.ok(
+    !fs.existsSync(path.join(dir, "tag-default")),
+    "no wrong image is written for the unmatched slug",
+  );
+  assert.ok(
+    result.missing.indexOf("tag-default") !== -1,
+    "the unmatched slug is reported as missing, not silently skipped",
+  );
+});

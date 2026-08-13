@@ -1034,6 +1034,23 @@ async function run(opts) {
           if (r.missing.length > 0) {
             lines.push("- Missing sub-section frame: " + r.missing.join(", "));
           }
+          // Surfaced on its own line rather than buried in `missing` (hundreds
+          // of entries): on a family page these are components whose wrapper
+          // could not be told apart, so nothing was captured on purpose. The
+          // fix is a Figma section-header rename, and the line has to say so.
+          if (r.unmatchedWrappers && r.unmatchedWrappers.length > 0) {
+            lines.push(
+              "- ⚠️ No wrapper matched (captured nothing, existing files left alone). " +
+                "Name the component in its section header to fix: " +
+                r.unmatchedWrappers
+                  .map(function (u) {
+                    return (
+                      u.slug + " (titles: " + JSON.stringify(u.titles) + ")"
+                    );
+                  })
+                  .join("; "),
+            );
+          }
           if (r.skipped.length > 0) {
             lines.push(
               "- Skipped (excluded category — no capture frames): " +
