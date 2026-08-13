@@ -88,6 +88,7 @@ Workflows live in `.github/workflows/`. Source of truth is the workflow files th
 **Derive (PR-event, regenerate `dist/` on `src/` edits):**
 - `foundations-derive.yml` / `categories-derive.yml` / `guidelines-derive.yml` / `content-derive.yml` / `app-context-derive.yml` / `icons-derive.yml` / `graphics-derive.yml` / `accessibility-derive.yml` — each regenerates the corresponding `dist/` artifacts on PR-touch of its inputs. Auto-bump + auto-commit the regenerated dist back to the PR branch.
 - `graph-derive.yml`: regenerates `graph/dist/graph.json` (+ `.jsonld` + quality report) from the *dist* outputs of the other domains, so it also triggers on their auto-commits, not just its own inputs. Auto-bump + auto-commit.
+- `llms-txt.yml`: regenerates the root `llms.txt` + `llms-full.txt` content index from `foundations/src/**`, `accessibility/src/**`, and `content/dist/global.md`. Auto-bump + auto-commit, like its siblings, so the fresh index lands in the same merge commit `tag-on-merge` tags. It regenerated on push to `main` with no bump until #525, which is why every released tag carried an index describing content other than its own. It runs no test step of its own on purpose (it fires mid-cascade, when another domain's dist can still be stale); the freshness invariant is enforced by the `llms` drift guard in the required `validate-manifest.yml` check.
 - `render-derive.yml`: runs `npm run derive:render` to regenerate `components/render/dist/` + `tokens/dist/` from `components/render/renderer/`, then runs the fidelity gate (`fidelity-check.js`). **A color mismatch fails the build**, not just the dist regen. **So does a coverage regression**: if this run can confirm fewer color declarations against the Figma capture than the committed `fidelity-report.json` could, **for any single slug or in total**, the gate names the slugs that lost and blocks. Oracle coverage fell from 14.6% to 11.8% between 2026-07-24 and 2026-08-11 with `mismatch` at 0 the whole time and nothing said so. Two deliberate properties: a per-slug loss blocks even when a gain elsewhere keeps the total level (a slug can go fully blind while the headline holds), and **on a blocking loss the run leaves `fidelity-report.json` untouched**, so re-running or committing a regenerated report is not a way through. A loss that is the intended consequence of a design change is landed locally with `npm run derive:render -- --accept-coverage-loss="<why>"` plus committing the regenerated report, because CI invokes the gate with no arguments and cannot pass the flag; the reason belongs in the CHANGELOG entry, since that commit is the only place it is recorded. Auto-bump + auto-commit on success.
 
 ### Which authority the canonical render serves
@@ -117,13 +118,12 @@ accepted method divergence. They need either a correction or a named exception w
 tiers marked "Proposed" in `color-primitives.md` are the likely explanation and are the place to start.
 
 **Validate (PR-event, required gates):**
-- `validate-manifest.yml` — manifest schema + every path resolves + test suite. **Required.**
+- `validate-manifest.yml`: manifest schema + every path resolves + test suite, plus the re-derive-and-`git diff` drift guards (graph, foundations, accessibility, `tokens/token-reference.md`, `llms.txt` + `llms-full.txt`). **Required.**
 - `validate-schemas.yml` — Ajv validates dist JSONs against `schemas/*.json`. Inline reviewdog annotations on the Files-Changed view.
 - `retired-layer-guard.yml` — guards against revival of retired transitional layers.
 
 **Release / housekeeping:**
 - `tag-on-merge.yml` — creates `v$VERSION` git tag on every push to `main`. Consumers' `vendor-snapshot.cjs --range` resolves against these tags.
-- `llms-txt.yml` — regenerates `llms.txt` index when knowledge content changes.
 
 ## Changelog
 

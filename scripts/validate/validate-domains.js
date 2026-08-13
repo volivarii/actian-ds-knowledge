@@ -20,7 +20,14 @@ const REPO_ROOT = path.resolve(__dirname, "..", "..");
 // render derives the canonical component render dist (HTML + CEM + DTCG +
 // usage-notes) from captured seeds and tokens, a build pipeline like icons, not
 // an authored MD body domain, so it carries no domains.json unit.
-const INFRA_DERIVES = new Set(["icons", "vendor-include", "render"]);
+// llms re-projects three domains that each already carry their own unit
+// (foundations, accessibility, content/global) into the root llms.txt index +
+// llms-full.txt prose dump. It has no authoring surface of its own: no src/, no
+// frontmatter schema, no body to parse, and no distShape in the enum fits a
+// plain-text concatenation. Registering a unit for it would claim an authoring
+// contract that does not exist; its freshness is asserted instead by the llms
+// drift guard in validate-manifest.yml (#525).
+const INFRA_DERIVES = new Set(["icons", "vendor-include", "render", "llms"]);
 
 // Literal prefix of a glob (up to first `*` or `{`), trailing slash trimmed.
 // NOTE: the referential check below only asserts this LITERAL PREFIX exists —

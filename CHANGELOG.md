@@ -75,8 +75,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
 - **BREAKING SYNC 2026-08-12: the tag family folded from eight components into three, and carrying it
   through raised oracle coverage from 11.8% to 17.8% instead of costing the eight declarations it
   looked like it would.** ([#522](https://github.com/volivarii/actian-ds-knowledge/pull/522)) The registry goes 323 → 322 components.
-  Five components are **removed** — `tag-catalog`, `tag-shared`, `tag-stage`, `tag-status`,
-  `tag-glossary-item-type` — and they are not deleted so much as **re-axised**: `tag-default` now
+  Five components are **removed**: `tag-catalog`, `tag-shared`, `tag-stage`, `tag-status`,
+  `tag-glossary-item-type`, and they are not deleted so much as **re-axised**: `tag-default` now
   carries a single `Type` axis with 14 values (`Default`, `Catalog`, `Shared`, `Stage-1`..`Stage-8`,
   `Status-error`, `Status-warning`, `Status-success`), and four of the five retired components'
   treatments live there. The fifth, `tag-glossary-item-type`, went instead to `tag-item-type` as its
@@ -100,7 +100,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   Two facts were taken from the capture rather than smoothed over. **`Stage-1` renders exactly as
   `Default`**, because the capture holds no override group for it; no hue was invented for it.
   And **`Type=Shared` renders no leading icon**, because `quality.structuralVariants` flags it
-  `childCount:2!=1` — the component has no icon child, which the retired `tag-shared` renderer also
+  `childCount:2!=1`, so the component has no icon child, which the retired `tag-shared` renderer also
   reflected by rendering label-only. That second one is worth naming: the fidelity gate compares
   colors, so a wrongly-added icon keeps `mismatch` at 0 forever and no measurement could ever have
   caught it.
@@ -127,6 +127,38 @@ Each entry links its pull request. Dates are the merge date (UTC).
   prune remains.
 
 ### Fixed
+
+- **Every released tag carried an `llms.txt` index describing content other than its own, because the
+  index regenerated after the tag had already been cut and never bumped the version.**
+  ([#PR](_PR link added at open_)) `llms.txt` and `llms-full.txt` both ship to consumers
+  (`vendor-include.json`) and consumers resolve by tag, but `llms-txt.yml` ran on push to `main`: the
+  content PR merged, `tag-on-merge` cut the release tag there with the index still stale, and the
+  follow-up regen PR then merged carrying no bump, so no tag was cut for it either. Verified at
+  `v0.34.124`, whose `llms-full.txt` still named the retired `radio-button-card` heading three days
+  after the fold-in that replaced it. The failure hid behind the repo's own release cadence: with
+  several patch bumps a week a regenerated index usually caught a ride on the next unrelated bump,
+  which made the state eventually consistent and never consistent at any given tag. This matters more
+  than a cosmetic drift because `llms.txt` is the first thing an AI consumer reads to find anything
+  else, so a retired heading left inside it is the ghost-reference problem of #517 reintroduced by
+  release mechanics rather than by Figma.
+
+  **The fix is an assertion first and a workflow move second.** The required
+  `Validate manifest schema + coverage` check now re-derives the index and fails on any drift, naming
+  the drifted file and the command that refreshes it, which is what makes staleness un-mergeable
+  regardless of which workflow regenerates; `tests/llms-txt-freshness.test.js` covers the
+  cascade-independent half in the suite. `llms-txt.yml` then becomes an ordinary PR-event derive like
+  every sibling, auto-bumping and auto-committing with the bot App token so the fresh index lands in
+  the same merge commit `tag-on-merge` tags. No tag is emitted from the derive: `tag-on-merge.yml`
+  remains the single source, because a tag cut on a PR branch is orphaned when the PR squash-merges.
+
+  Two consequences worth naming. The freshness guard lives in the required check rather than in
+  `npm test` on purpose: the sibling derives run the suite *before* their auto-commit step, so an
+  assertion there would fail mid-cascade on an index that is legitimately stale for another few
+  seconds and block those workflows from committing the dist they exist to produce, which would cost
+  the "authors need no local toolchain" guarantee. And the derive's trigger list now mirrors the
+  generator's real inputs: `components/dist/**` and `paths-manifest.json` are gone, the latter because
+  it was being parsed into a variable nothing read, which made the derive look manifest-dependent when
+  it never was.
 
 - **The renderer stamped a `ds-tag--with-icon` modifier that no stylesheet has ever carried a rule for,
   so it painted nothing and broke a consumer's exact match on the way past.**
@@ -160,7 +192,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   2026-08-12 sync deleted five tag components' anatomy the gate died with an uncaught `ENOENT` and
   `npm run derive:render` produced no number at all. That same list had also been copied into four test
   fixtures, so the one set of facts had to be kept true in five places at once. The fact sources are now derived, and a missing capture is
-  **reported** rather than thrown — reported specifically, because a rule silently dropped out of the
+  **reported** rather than thrown, reported specifically, because a rule silently dropped out of the
   check reads identically to a rule that passed.
 
 - **A CSS rule was attributed to its owner by NAME, so a rule whose owner had been retired passed on a
@@ -177,7 +209,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 - **The coverage gate reported the wrong direction when a slug lost coverage but the repo gained it.**
   ([#522](https://github.com/volivarii/actian-ds-knowledge/pull/522)) Its headline read `ORACLE COVERAGE REGRESSED: 49 -> 78 (11.8% ->
-  17.8%)` — a loss framing on a 60% gain. The message now states the two facts independently: which
+  17.8%)`, a loss framing on a 60% gain. The message now states the two facts independently: which
   slugs lost, which still blocks whichever way the total moved, and separately whether the repo-wide
   total rose, fell or held level. A gate that misstates direction teaches its readers to discount it,
   and the next time it says "regressed" about something real, nobody believes it.

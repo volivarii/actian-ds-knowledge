@@ -44,16 +44,16 @@ Workflow files in `.github/workflows/` are the source of truth — list here is 
 - **`guidelines-derive.yml`** — `components/src/<slug>/{_meta.yml,*.md,tokens.yml}` → `components/dist/guidelines/<slug>.json` + `bundle.json` + `coverage.md`. Also re-derives the `components/dist/media/_index.json` sidecar (slug → role-keyed media map). Auto-bumps patch + auto-commits regenerated dist back to the PR branch.
 - **`content-derive.yml`** — `content/src/{writing,patterns,product}/*.md` → `content/dist/global.md` + `content/dist/words-to-avoid.json`
 - **`app-context-derive.yml`** — `app-context/src/{apps,entities,patterns}/*.md` + `terminology.yml` → `app-context/dist/app-context.json` + `app-context.bundle.json`
+- **`llms-txt.yml`**: `foundations/src/**` + `accessibility/src/**` + `content/dist/global.md` → root `llms.txt` + `llms-full.txt`. Auto-bumps patch + auto-commits back to the PR branch, so the fresh index lands in the same merge commit `tag-on-merge` tags. It used to regenerate on push to `main` with no bump, which meant every released tag carried an index of somebody else's content (#525).
 
 **Validate (PR event, required gates):**
-- **`validate-manifest.yml`** — `scripts/validate-manifest.js` checks manifest schema + every path resolves + no orphans, then runs the test suite. Required check (named `Validate manifest schema + coverage`).
+- **`validate-manifest.yml`** — `scripts/validate-manifest.js` checks manifest schema + every path resolves + no orphans, then runs the test suite. Also carries the re-derive-and-`git diff` drift guards for the domains whose dist must match regeneration (graph, foundations, accessibility, `tokens/token-reference.md`, and the `llms.txt` + `llms-full.txt` index; see #525 for why the llms one lives here and not in `npm test`). Required check (named `Validate manifest schema + coverage`).
 - **`validate-schemas.yml`** — Ajv validates dist JSONs against `schemas/*.json`. Inline reviewdog annotations on the Files-Changed view.
 - **`retired-layer-guard.yml`** — Asserts retired layers (Phase 5: scraped `components/src/guidelines/`, transitional content concat) stay gone.
 
 **Release / housekeeping:**
 - **`tag-on-merge.yml`** — On push to `main`, reads `package.json#version`, creates a `v$VERSION` git tag if not already present. Downstream consumers' `vendor-snapshot.cjs --range` resolves against these tags.
 - **`vendored-source-bump.yml`** (PR event on `clients/**` + `schemas/**`): patch-bumps the version so `tag-on-merge` can emit a tag. These two directories ship to consumers as **source** and have no derive, so without this a change to them never bumped, never tagged, and reached no consumer. Idempotent: it compares the version at the **merge base** (not at `main`, which moves on its own) and stands down if this branch already bumped, including via a derive.
-- **`llms-txt.yml`** — Regenerates the root `llms.txt` index when knowledge content changes.
 
 🔑 **Consumers pull by TAG, so shipping anything requires a version bump.** Every bump lives in a derive workflow gated on "did the dist change", which covers `src/` → `dist/` domains only. If you add a new directory that ships to consumers as source (check `vendor-include.json`), it needs a bump trigger too, or its changes will be invisible downstream.
 

@@ -4,9 +4,15 @@ var fs = require("node:fs");
 var path = require("node:path");
 
 var ROOT = path.resolve(__dirname, "..");
-var manifest = JSON.parse(
-  fs.readFileSync(path.join(ROOT, "paths-manifest.json"), "utf8"),
-);
+
+// The generator's COMPLETE input set is:
+//   - foundations/src/**        (concatFoundationsSources, below)
+//   - accessibility/src/**      (concatA11ySources, below)
+//   - content/dist/global.md    (read verbatim in generateLlmsFullTxt)
+// Nothing else is read. paths-manifest.json used to be parsed here into an
+// unused variable, which made the derive look manifest-dependent and put
+// `paths-manifest.json` on the regeneration trigger for no reason; the trigger
+// list in .github/workflows/llms-txt.yml now mirrors the real inputs (#525).
 
 // Defer to the derive scripts' canonical concat helpers so the llms-full dump
 // always matches the dist verbatim copy byte-for-byte (modulo the anchor-strip
