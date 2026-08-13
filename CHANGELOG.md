@@ -150,6 +150,18 @@ Each entry links its pull request. Dates are the merge date (UTC).
   returns `verdict=additive`, which is the scope this fix needs and it excludes the media phases that
   cannot run outside CI anyway.
 
+- **The graph joined category docs to category nodes by FILENAME, so renaming a category dangled nine
+  edges.** ([#535](https://github.com/volivarii/actian-ds-knowledge/pull/535)) A category node is built
+  by slugifying the registry's category value, while its transversal-ref edges were sourced from the
+  `<slug>-defaults.json` filename. Those two agreed only while the filename happened to match the
+  category name, so the rename left `a11y_ref`, `foundations_ref` and `motion_ref` edges pointing at a
+  `category:form-input-selection` node that no longer existed, and `validate-graph` correctly refused
+  the result. The edges now join on the doc's own `label`, which is the same value the node is built
+  from, so both sides agree by construction and the **filename stays put**: it is a manifest logical
+  name, and therefore a consumer contract that should not move because a display name changed. A new
+  test asserts the invariant directly (no edge may point at a category node that does not exist),
+  because `npm test` passed against the broken graph while only CI caught it.
+
 - **The curated category stopgap retired itself, exactly on its stated condition.**
   ([#535](https://github.com/volivarii/actian-ds-knowledge/pull/535)) `components/src/category-overrides.json` said it should be deleted
   once Figma created member pages under the Form header and a re-sync restored the categories. That

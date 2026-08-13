@@ -5996,7 +5996,7 @@
       "note": "respect prefers-reduced-motion — disable entrance pulse + slide"
     },
     {
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "a11y:alerts-toasts-banners",
       "type": "a11y_ref",
       "scope": "category",
@@ -6008,7 +6008,7 @@
       }
     },
     {
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "a11y:aria-labels",
       "type": "a11y_ref",
       "scope": "category",
@@ -6020,7 +6020,7 @@
       }
     },
     {
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "a11y:color-contrast",
       "type": "a11y_ref",
       "scope": "category",
@@ -6032,7 +6032,7 @@
       }
     },
     {
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "a11y:focus-keyboard",
       "type": "a11y_ref",
       "scope": "category",
@@ -6044,7 +6044,7 @@
       }
     },
     {
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "a11y:forms",
       "type": "a11y_ref",
       "scope": "category",
@@ -6057,7 +6057,7 @@
       "note": "every control needs a programmatically-associated label + accessible error message"
     },
     {
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "a11y:states",
       "type": "a11y_ref",
       "scope": "category",
@@ -9395,7 +9395,7 @@
       "note": "spacing and motion-timing tokens"
     },
     {
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "foundation:design-guidelines",
       "type": "foundations_ref",
       "scope": "category",
@@ -9407,7 +9407,7 @@
       }
     },
     {
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "foundation:tokens",
       "type": "foundations_ref",
       "scope": "category",
@@ -12194,7 +12194,7 @@
       "note": "transient feedback follows the toast enter/exit timing curve"
     },
     {
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "motion:state-transitions",
       "type": "motion_ref",
       "scope": "category",

@@ -745,3 +745,57 @@ test("collectPatternComponents: resolvable references do not fail", function () 
     1,
   );
 });
+
+// The category NODE is built by slugifying the registry's category value, while
+// the transversal-ref EDGES were sourced from the defaults FILENAME. Those two
+// agreed only while the filename happened to match the category name. Renaming
+// the category to "Form" broke the join and left nine dangling edges pointing at
+// category:form-input-selection, which validate-graph correctly refused.
+//
+// Joining on the doc's own `label` makes both sides agree by construction, and
+// leaves the filename free to stay put: it is a manifest logical name
+// (components.categoryDefaults.form-input-selection) and therefore a consumer
+// contract that should not move for a display-name change.
+test("categorySlugForDefaults joins on the label, not the filename", function () {
+  assert.equal(
+    D.categorySlugForDefaults({ label: "Form" }, "form-input-selection"),
+    "form",
+    "a renamed category must resolve to the node the registry builds",
+  );
+  assert.equal(
+    D.categorySlugForDefaults({ label: "Data Display" }, "data-display"),
+    "data-display",
+  );
+});
+
+test("categorySlugForDefaults falls back to the filename when no label", function () {
+  assert.equal(D.categorySlugForDefaults({}, "action"), "action");
+  assert.equal(D.categorySlugForDefaults(null, "overlays"), "overlays");
+});
+
+test("graph.json: no edge points at a category node that does not exist", function () {
+  // The invariant validate-graph enforces, asserted here so a rename cannot get
+  // as far as CI again.
+  var fs = require("node:fs"),
+    path = require("node:path");
+  var graph = JSON.parse(
+    fs.readFileSync(
+      path.join(__dirname, "..", "graph", "dist", "graph.json"),
+      "utf8",
+    ),
+  );
+  var ids = new Set(
+    graph.nodes.map(function (n) {
+      return n.id;
+    }),
+  );
+  var dangling = [];
+  graph.edges.forEach(function (e) {
+    [e.source, e.target].forEach(function (ref) {
+      if (String(ref).startsWith("category:") && !ids.has(ref)) {
+        dangling.push(e.type + " -> " + ref);
+      }
+    });
+  });
+  assert.deepEqual(dangling, [], "dangling category refs: " + dangling.join(", "));
+});

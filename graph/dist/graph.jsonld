@@ -6066,7 +6066,7 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "a11y:alerts-toasts-banners",
       "scope": "category",
       "confidence": "asserted",
@@ -6079,7 +6079,7 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "a11y:aria-labels",
       "scope": "category",
       "confidence": "asserted",
@@ -6092,7 +6092,7 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "a11y:color-contrast",
       "scope": "category",
       "confidence": "asserted",
@@ -6105,7 +6105,7 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "a11y:focus-keyboard",
       "scope": "category",
       "confidence": "asserted",
@@ -6118,7 +6118,7 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "a11y:forms",
       "scope": "category",
       "confidence": "asserted",
@@ -6132,7 +6132,7 @@
     {
       "@type": "Edge",
       "edgeType": "a11y_ref",
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "a11y:states",
       "scope": "category",
       "confidence": "asserted",
@@ -9980,7 +9980,7 @@
     {
       "@type": "Edge",
       "edgeType": "foundations_ref",
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "foundation:design-guidelines",
       "scope": "category",
       "confidence": "asserted",
@@ -9993,7 +9993,7 @@
     {
       "@type": "Edge",
       "edgeType": "foundations_ref",
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "foundation:tokens",
       "scope": "category",
       "confidence": "asserted",
@@ -13207,7 +13207,7 @@
     {
       "@type": "Edge",
       "edgeType": "motion_ref",
-      "source": "category:form-input-selection",
+      "source": "category:form",
       "target": "motion:state-transitions",
       "scope": "category",
       "confidence": "asserted",

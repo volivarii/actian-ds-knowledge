@@ -180,6 +180,23 @@ function collectMotionPatterns(g, motion) {
 }
 
 var REF_KINDS = refKinds.CATEGORY_REF_KINDS;
+// Which category node do a defaults doc's transversal refs hang off?
+//
+// The category NODE is built by slugifying the REGISTRY's category value, while
+// these edges used to be sourced from the defaults FILENAME. Those agreed only
+// while the filename happened to match the category name, so renaming the
+// category to "Form" left nine edges dangling at category:form-input-selection.
+//
+// The doc's own `label` IS the category display name, i.e. the same value the
+// node is built from, so joining on it makes both sides agree by construction.
+// The filename stays free to remain what it is: a manifest logical name
+// (components.categoryDefaults.form-input-selection) and so a consumer contract
+// that should not move because a display name changed.
+function categorySlugForDefaults(defaults, filenameSlug) {
+  var label = defaults && defaults.label;
+  return label ? M.slugify(label) : filenameSlug;
+}
+
 function collectTransversalRefs(g, catSlug, defaults) {
   var sourceFile =
     (defaults._meta && defaults._meta.source) ||
@@ -580,11 +597,11 @@ function derive() {
         return f.endsWith("-defaults.json");
       })
       .forEach(function (f) {
-        var catSlug = f.replace(/-defaults\.json$/, "");
+        var defaults = readJSON("components/dist/categories/" + f);
         collectTransversalRefs(
           g,
-          catSlug,
-          readJSON("components/dist/categories/" + f),
+          categorySlugForDefaults(defaults, f.replace(/-defaults\.json$/, "")),
+          defaults,
         );
       });
   }
@@ -657,6 +674,7 @@ module.exports = {
   collectA11yCriteria: collectA11yCriteria,
   collectFoundationSections: collectFoundationSections,
   collectMotionPatterns: collectMotionPatterns,
+  categorySlugForDefaults: categorySlugForDefaults,
   collectTransversalRefs: collectTransversalRefs,
   collectComponentRefs: collectComponentRefs,
   readGuidelineDocs: readGuidelineDocs,
