@@ -1391,23 +1391,33 @@
         }
 
         case "alert-banner": {
-          // Registry variant axis: Type = Primary | Success | Warning | Danger
-          // Primary → info-filled icon, role=status
-          // Success → success-filled icon, role=status
-          // Warning → warning-filled icon, role=status
-          // Danger  → error-filled icon,   role=alert
+          // Two vocabularies meet here, so the mapping is deliberate:
+          //   Figma publishes  Type = Info | Success | Warning | Error
+          //   the stylesheet defines .ds-alert--primary|success|warning|danger
+          // primary → info-filled icon, role=status
+          // success → success-filled icon, role=status
+          // warning → warning-filled icon, role=status
+          // danger  → error-filled icon,   role=alert
           var alertIconMap = {
             primary: "info-filled",
             success: "success-filled",
             warning: "warning-filled",
             danger: "error-filled",
           };
+          // The published vocabulary mapped onto the styled one. Without this,
+          // `Error` missed the lookup and hit the clamp below, so an error alert
+          // shipped with the info colour, the info glyph and role="status": a
+          // silent a11y defect, because a clamp reads exactly like a default.
+          // Sibling `alert-inline` still publishes the older Primary/Danger
+          // spelling, so both spellings must keep resolving.
+          var alertTypeAlias = { info: "primary", error: "danger" };
           // Clamp Type to the known enum BEFORE it reaches the class attribute —
           // v.Type is user-supplied flow-data; an unclamped value would break out
           // of the class attribute and inject markup (XSS). Unknown/crafted values
-          // fall back to "primary".
+          // fall back to "primary". Aliasing widens the vocabulary, never the clamp.
           var alertTypeRaw = (v.Type || "Primary").toLowerCase();
-          var alertType = alertIconMap[alertTypeRaw] ? alertTypeRaw : "primary";
+          var alertTypeKey = alertTypeAlias[alertTypeRaw] || alertTypeRaw;
+          var alertType = alertIconMap[alertTypeKey] ? alertTypeKey : "primary";
           var alertIconSlug = alertIconMap[alertType];
           var alertRole = alertType === "danger" ? "alert" : "status";
           var alertCls = "ds-alert ds-alert--" + alertType;

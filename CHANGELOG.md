@@ -173,6 +173,18 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **The error alert rendered as an info alert, and screen readers announced it politely.** Figma
+  publishes `alert-banner.Type` as `Info | Success | Warning | Error`, while the renderer's severity
+  lookup was keyed `primary | success | warning | danger`. `Error` missed the lookup and hit the clamp
+  that exists to stop a crafted variant value escaping the class attribute, so it fell back to
+  `primary`: the info background, the info glyph, and `role="status"` where an error needs
+  `role="alert"`. The renderer now maps the published vocabulary onto the styled one
+  (`info → primary`, `error → danger`) while the clamp keeps its original scope, so unknown values
+  still fall back and nothing new reaches the class attribute. Sibling `alert-inline` still publishes
+  the older `Primary | Danger` spelling, which is why the renderer looked correct against one of the
+  two components it serves and no gate could see the difference: a clamp is indistinguishable from a
+  deliberate default.
+
 - **A renamed Figma category could never take effect, because the guard that protects categories
   during a reorg treats "not in the previous dist" as malformed.** ([#534](https://github.com/volivarii/actian-ds-knowledge/pull/534))
   Figma renamed its `Form (input & selection)` header page to `Form`. `preserveKnownCategories` builds

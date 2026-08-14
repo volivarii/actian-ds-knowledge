@@ -2275,3 +2275,65 @@ test("family 5: no silent no-op modifiers among the new primitive classes", func
       JSON.stringify(checked),
   );
 });
+
+// ---------------------------------------------------------------------------
+// alert-banner: the renderer's severity vocabulary must be the one the registry
+// publishes. Figma publishes Type = Info | Success | Warning | Error; the map
+// below used to be keyed Primary | Success | Warning | Danger, so `Error` missed
+// the lookup and hit the XSS clamp that falls back to "primary". The result was
+// an error alert wearing the info colour, the info glyph, and role="status"
+// instead of role="alert" -- a silent accessibility defect no gate could see,
+// because a clamp is indistinguishable from a deliberate default.
+//
+// The stub icon map makes the glyph choice assertable: without it renderIcon
+// resolves nothing and the two severities are indistinguishable in the markup.
+var ALERT_ICON_STUB = {
+  "info-filled": { viewBox: "0 0 24 24", body: '<path d="INFO-GLYPH"/>' },
+  "error-filled": { viewBox: "0 0 24 24", body: '<path d="ERROR-GLYPH"/>' },
+  "success-filled": { viewBox: "0 0 24 24", body: '<path d="SUCCESS-GLYPH"/>' },
+  "warning-filled": { viewBox: "0 0 24 24", body: '<path d="WARNING-GLYPH"/>' },
+};
+
+function renderAlert(typeValue) {
+  var DS = require(DS_PATH);
+  DS.setIcons(ALERT_ICON_STUB);
+  try {
+    return DS.renderDSComponent({
+      dsSlug: "alert-banner",
+      variant: "Type=" + typeValue,
+      props: { Message: "Connection lost." },
+    });
+  } finally {
+    DS.setIcons(null);
+  }
+}
+
+test("alert-banner: Type=Error renders the danger treatment and role=alert", function () {
+  var html = renderAlert("Error");
+  assert.match(
+    html,
+    /class="ds-alert ds-alert--danger"/,
+    'Error must resolve to the danger modifier the stylesheet defines, not "primary"',
+  );
+  assert.match(
+    html,
+    /role="alert"/,
+    'an error alert must be announced assertively, not with role="status"',
+  );
+  assert.match(html, /ERROR-GLYPH/, "Error must carry the error-filled icon");
+});
+
+test("alert-banner: Type=Info keeps the primary treatment and role=status", function () {
+  var html = renderAlert("Info");
+  assert.match(html, /class="ds-alert ds-alert--primary"/);
+  assert.match(html, /role="status"/);
+  assert.match(html, /INFO-GLYPH/, "Info must carry the info-filled icon");
+});
+
+test("alert-banner: a Type the registry does not publish still clamps to primary", function () {
+  // The clamp exists so a crafted variant value cannot break out of the class
+  // attribute. Widening the vocabulary must not widen what reaches the class.
+  var html = renderAlert('x"><script>alert(1)</script>');
+  assert.match(html, /class="ds-alert ds-alert--primary"/);
+  assert.doesNotMatch(html, /<script>alert\(1\)<\/script>/);
+});
