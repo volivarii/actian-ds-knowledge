@@ -1672,6 +1672,36 @@ Each entry links its pull request. Dates are the merge date (UTC).
   The gap was only the 200-with-`err` shape, and it matters now that a URL-less node is treated as
   evidence about the registry.
 
+### Fixed
+
+- **Empty text slots across 18 components.** 83 of the 358 visible text slots in the
+  canonical renders were rendering an element with no text, so the design bundle and
+  generated flows showed components missing a part the design file gives them. Each of
+  the 26 affected slots now carries a value quoted from the Figma capture, with a comment
+  naming the layer it came from. Three initials values are derived from each component's
+  own captured vocabulary; `chat-with-ai-steward`, `table`, `modal`'s body and
+  `input-date`'s helper are authored, because those Figma components hold no text for
+  those slots; `account-dropdown`'s email is deliberately substituted, because the
+  capture holds what reads as a real person's address at an external domain.
+  `alert-banner`'s title stays empty by design and is exempted with that reason.
+
+### Added
+
+- **A gate on empty text slots**, covering all 58 render slugs. It injects a sentinel per
+  prop per matrix cell and fails when removing it leaves the cell's text unchanged.
+  `fragment-invariants.test.js` had said in its own header that a fragment could render
+  every cell as an empty string and every gate would stay green; this closes that.
+  Exemptions require a reason and must still name a real slot.
+- **A ratchet on variant collapse.** `derive-contract.js` already measured how many variant
+  values render identically to a sibling (57 of 236 identity-axis values) and recorded it
+  without enforcing it. An increase now fails, per component and in total, compared against
+  the contract at the merge base.
+
+### Removed
+
+- `components/render/renderer/default-props.json`, which had three entries and no readers,
+  and a README line claiming the matrix fell back to it, which was never true.
+
 ## [0.34.69] - 2026-07-03
 
 ### Added
