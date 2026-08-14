@@ -33,6 +33,19 @@ on:
       # already triggered, but relying on that meant the gate's own input was
       # not watched, and a sync that skipped the bump would have slipped past.
       - 'components/dist/anatomy/**'
+      # The render contract's own inputs, declared as INPUTS in
+      # scripts/render/derive-contract.js and asserted against this list by
+      # tests/render/derive-contract.test.js. Its variant values come from the
+      # registries, and its rendersAs measurement renders real glyphs and
+      # artwork, so a change to any of these three moves the committed contract.
+      # That contract has a committed-vs-fresh test inside the REQUIRED manifest
+      # check, which runs on every PR, while only this workflow can repair a
+      # drift by regenerating and auto-committing. An input missing here is
+      # therefore a required check going red with no job able to fix it. Same
+      # lesson as the anatomy path above, learned before it could cost a night.
+      - 'components/dist/registries/**'
+      - 'components/dist/icons/**'
+      - 'components/dist/graphics/**'
 
 # Serialize runs per branch: concurrent auto-commit pushes to the same PR
 # head race each other (lost push = red required check). Queue, never cancel:

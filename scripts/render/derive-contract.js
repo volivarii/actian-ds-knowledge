@@ -74,15 +74,26 @@ function loadJson(rel, key) {
 // A branch runs from its `case "<slug>":` to the next one. A slug with more than
 // one branch (none today, but the switch does not forbid it) gets them joined,
 // so a prop read in the second branch is not silently dropped.
+//
+// The LAST branch ends at the switch's `default:`, not at end of file. Without
+// that bound it absorbs the default branch, the catch, BUILT_SLUGS and the
+// exports block: harmless only for as long as no `props.X` read exists below the
+// switch, and the day one appears that slug silently gains a prop it never reads.
 function caseBlocks(src) {
   var marks = [];
   var re = /\n[ \t]*case "([a-z0-9-]+)":/g;
   var m;
   while ((m = re.exec(src)) !== null) marks.push([m.index, m[1]]);
   var out = Object.create(null);
+  if (!marks.length) return out;
+  var defaultAt = src
+    .slice(marks[marks.length - 1][0])
+    .search(/\n[ \t]*default:/);
+  var switchEnd =
+    defaultAt === -1 ? src.length : marks[marks.length - 1][0] + defaultAt;
   for (var i = 0; i < marks.length; i++) {
     var start = marks[i][0];
-    var end = i + 1 < marks.length ? marks[i + 1][0] : src.length;
+    var end = i + 1 < marks.length ? marks[i + 1][0] : switchEnd;
     var slug = marks[i][1];
     out[slug] = (out[slug] || "") + src.slice(start, end);
   }
@@ -93,15 +104,31 @@ function caseBlocks(src) {
 // Both spellings the renderer uses: props.Name, and props["Name with spaces"].
 var DOT_READ = /props\.([A-Za-z_][A-Za-z0-9_]*)/g;
 var BRACKET_READ = /props\[\s*"([^"]+)"\s*\]/g;
-// `props.X || "literal"` is the renderer stating its own default. The literal is
-// captured with escapes intact and unescaped once, so a default containing a
-// quote survives.
-var DOT_DEFAULT =
-  /props\.([A-Za-z_][A-Za-z0-9_]*)\s*\|\|\s*"((?:[^"\\]|\\.)*)"/g;
-var BRACKET_DEFAULT = /props\[\s*"([^"]+)"\s*\]\s*\|\|\s*"((?:[^"\\]|\\.)*)"/g;
+// `props.X || "literal"` is the renderer stating its own default.
+//
+// The chain form matters. `props.Headline || props.Title || "No policies"` states
+// ONE default, and the prop a consumer should set is the FIRST of the chain;
+// binding the literal to the last alias before it inverts that. Chain order
+// differs per slug, so getting this wrong made siblings contradict each other
+// (empty-state defaulting Title while confirmation defaulted Headline), and the
+// content layer this field exists to seed would have filled the alias and left
+// the preferred prop empty. So the pattern below skips any `|| props.Y` links and
+// binds the literal to the head of the chain.
+var PROP_REF = 'props(?:\\.([A-Za-z_][A-Za-z0-9_]*)|\\[\\s*"([^"]+)"\\s*\\])';
+var DEFAULT_CHAIN = new RegExp(
+  PROP_REF +
+    '(?:\\s*\\|\\|\\s*props(?:\\.[A-Za-z_][A-Za-z0-9_]*|\\[\\s*"[^"]+"\\s*\\]))*' +
+    '\\s*\\|\\|\\s*"((?:[^"\\\\]|\\\\.)*)"',
+  "g",
+);
 
+// Only the escapes a JS string literal can carry. A blanket `\\(.)` -> `$1`
+// turned "a\nb" into "anb", publishing a default the renderer never produces.
+var ESCAPES = { n: "\n", t: "\t", r: "\r", "\\": "\\", '"': '"', "'": "'" };
 function unescapeLiteral(s) {
-  return s.replace(/\\(.)/g, "$1");
+  return s.replace(/\\(.)/g, function (_, ch) {
+    return Object.prototype.hasOwnProperty.call(ESCAPES, ch) ? ESCAPES[ch] : ch;
+  });
 }
 
 function collect(re, block, onMatch) {
@@ -120,11 +147,9 @@ function propsOf(block) {
   });
 
   var defaults = Object.create(null);
-  collect(DOT_DEFAULT, block, function (m) {
-    if (defaults[m[1]] === undefined) defaults[m[1]] = unescapeLiteral(m[2]);
-  });
-  collect(BRACKET_DEFAULT, block, function (m) {
-    if (defaults[m[1]] === undefined) defaults[m[1]] = unescapeLiteral(m[2]);
+  collect(DEFAULT_CHAIN, block, function (m) {
+    var head = m[1] || m[2];
+    if (defaults[head] === undefined) defaults[head] = unescapeLiteral(m[3]);
   });
 
   return Object.keys(names)
@@ -133,7 +158,12 @@ function propsOf(block) {
       var entry = { name: name };
       // An empty fallback is the absence of a default, not a default of "".
       // Emitting it would invite a consumer to render `default: ""` as guidance.
-      if (defaults[name]) entry.default = defaults[name];
+      // Tested for explicitly rather than by truthiness: `props.Count || "0"` is
+      // a real default, and a truthiness check drops it indistinguishably from a
+      // prop the renderer gives no fallback at all.
+      if (defaults[name] !== undefined && defaults[name] !== "") {
+        entry.default = defaults[name];
+      }
       return entry;
     });
 }
@@ -257,9 +287,25 @@ function writeContract(outPath) {
   return target;
 }
 
+// Declared next to the loads that read them, so the workflow test can assert the
+// derive-and-auto-commit job watches every input. The committed-vs-fresh test
+// runs in the required manifest check on every PR, while only render-derive.yml
+// can repair a drift; an unwatched input reds a required check nothing can fix.
+var INPUTS = [
+  DS_MAP_REL,
+  "components/dist/registries/",
+  "components/dist/icons/",
+  "components/dist/graphics/",
+];
+
 module.exports = {
   deriveContract: deriveContract,
   writeContract: writeContract,
+  INPUTS: INPUTS,
+  // Exported for the extractor's own unit tests: an or-chain default and a
+  // falsy literal have no instance in the renderer today, and a latent silent
+  // drop is exactly what a contract consumer cannot detect.
+  propsOf: propsOf,
   // Exported for the partition self-guard in tests: a phantom `case` marker
   // inside a comment or a string would split a real branch and silently drop
   // every prop after it, which is indistinguishable from a prop never read.

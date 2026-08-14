@@ -203,10 +203,11 @@ Each entry links its pull request. Dates are the merge date (UTC).
   `primary`: the info background, the info glyph, and `role="status"` where an error needs
   `role="alert"`. The renderer now maps the published vocabulary onto the styled one
   (`info → primary`, `error → danger`) while the clamp keeps its original scope, so unknown values
-  still fall back and nothing new reaches the class attribute. Sibling `alert-inline` still publishes
-  the older `Primary | Danger` spelling, which is why the renderer looked correct against one of the
-  two components it serves and no gate could see the difference: a clamp is indistinguishable from a
-  deliberate default.
+  still fall back and nothing new reaches the class attribute. Both spellings keep resolving because
+  `v.Type` is flow data as well as registry data, so a flow authored against the older spelling would
+  otherwise degrade the same silent way. No gate could see any of this: a clamp is indistinguishable
+  from a deliberate default, which is precisely what the render contract added below now states as
+  data.
 
 - **A renamed Figma category could never take effect, because the guard that protects categories
   during a reorg treats "not in the previous dist" as malformed.** ([#534](https://github.com/volivarii/actian-ds-knowledge/pull/534))

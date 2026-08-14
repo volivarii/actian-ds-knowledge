@@ -1408,14 +1408,21 @@
           // `Error` missed the lookup and hit the clamp below, so an error alert
           // shipped with the info colour, the info glyph and role="status": a
           // silent a11y defect, because a clamp reads exactly like a default.
-          // Sibling `alert-inline` still publishes the older Primary/Danger
-          // spelling, so both spellings must keep resolving.
+          //
+          // Both spellings keep resolving because v.Type is flow data, not only
+          // registry data: a flow authored against the older Primary/Danger
+          // spelling (which the registry still publishes for `alert-inline`, a
+          // component with no branch here) would otherwise degrade the same
+          // silent way. Retiring the aliases needs those authored flows checked,
+          // not just the registry.
           var alertTypeAlias = { info: "primary", error: "danger" };
           // Clamp Type to the known enum BEFORE it reaches the class attribute —
           // v.Type is user-supplied flow-data; an unclamped value would break out
           // of the class attribute and inject markup (XSS). Unknown/crafted values
           // fall back to "primary". Aliasing widens the vocabulary, never the clamp.
-          var alertTypeRaw = (v.Type || "Primary").toLowerCase();
+          // "Info" and not "Primary": both alias to the same treatment, but Info
+          // is the value the registry actually publishes for this component.
+          var alertTypeRaw = (v.Type || "Info").toLowerCase();
           var alertTypeKey = alertTypeAlias[alertTypeRaw] || alertTypeRaw;
           var alertType = alertIconMap[alertTypeKey] ? alertTypeKey : "primary";
           var alertIconSlug = alertIconMap[alertType];

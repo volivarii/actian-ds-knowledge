@@ -447,26 +447,26 @@
           "default": "The selected items will be imported into the catalog. You will be notified once the import is complete."
         },
         {
-          "name": "Cta"
+          "name": "Cta",
+          "default": "Open the catalog"
         },
         {
-          "name": "Headline",
-          "default": "Success!"
+          "name": "Headline"
         },
         {
           "name": "Illustration",
           "default": "illustration-success"
         },
         {
-          "name": "Primary",
-          "default": "Open the catalog"
+          "name": "Primary"
         },
         {
           "name": "Secondary",
           "default": "Learn more"
         },
         {
-          "name": "Title"
+          "name": "Title",
+          "default": "Success!"
         }
       ],
       "variants": {
@@ -656,26 +656,26 @@
           "default": "Create policies to define how your platform operates."
         },
         {
-          "name": "Cta"
+          "name": "Cta",
+          "default": "Create policy"
         },
         {
-          "name": "Headline"
+          "name": "Headline",
+          "default": "No policies available"
         },
         {
           "name": "Illustration",
           "default": "illustration-empty-state"
         },
         {
-          "name": "Primary",
-          "default": "Create policy"
+          "name": "Primary"
         },
         {
           "name": "Secondary",
           "default": "Learn more"
         },
         {
-          "name": "Title",
-          "default": "No policies available"
+          "name": "Title"
         }
       ],
       "variants": {
@@ -700,15 +700,15 @@
           "default": "There was an error creating your item. Please try again in a moment."
         },
         {
-          "name": "Cta",
-          "default": "Try again"
+          "name": "Cta"
         },
         {
           "name": "Illustration",
           "default": "illustration-error-state"
         },
         {
-          "name": "Primary"
+          "name": "Primary",
+          "default": "Try again"
         },
         {
           "name": "Secondary",
@@ -986,26 +986,26 @@
           "default": "Reports may be unavailable. Refresh or check back when the maintenance window is complete."
         },
         {
-          "name": "Cta"
+          "name": "Cta",
+          "default": "Create policy"
         },
         {
-          "name": "Headline"
+          "name": "Headline",
+          "default": "Scheduled maintenance in progress until 12:00 PM EST"
         },
         {
           "name": "Illustration",
           "default": "illustration-maintenance"
         },
         {
-          "name": "Primary",
-          "default": "Create policy"
+          "name": "Primary"
         },
         {
           "name": "Secondary",
           "default": "Learn more"
         },
         {
-          "name": "Title",
-          "default": "Scheduled maintenance in progress until 12:00 PM EST"
+          "name": "Title"
         }
       ],
       "variants": {
@@ -1363,15 +1363,15 @@
       "group": "Data Display",
       "props": [
         {
-          "name": "Body",
-          "default": "A product is anything that can be offered to a market that might satisfy a want or need by potential customers."
+          "name": "Body"
         },
         {
           "name": "Catalog",
           "default": "Catalog"
         },
         {
-          "name": "Description"
+          "name": "Description",
+          "default": "A product is anything that can be offered to a market that might satisfy a want or need by potential customers."
         },
         {
           "name": "Featured property 1",

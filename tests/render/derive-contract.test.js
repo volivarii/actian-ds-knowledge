@@ -205,10 +205,16 @@ test("the case-block partition covers the whole renderer source", function () {
   }, 0);
   var firstCase = src.search(/\n[ \t]*case "[a-z0-9-]+":/);
   assert.ok(firstCase > 0, "the renderer has at least one case branch");
+  // The switch's own `default:` is the end of the case region. Located here by
+  // searching from the last case marker, independently of how caseBlocks finds
+  // it, so this stays a check rather than a restatement.
+  var lastCase = src.lastIndexOf('case "');
+  var defaultOffset = src.slice(lastCase).search(/\n[ \t]*default:/);
+  assert.ok(defaultOffset > 0, "the switch has a default branch");
   assert.equal(
     covered,
-    src.length - firstCase,
-    "blocks must partition the source from the first case marker to the end",
+    lastCase + defaultOffset - firstCase,
+    "blocks must partition the source from the first case to the default branch",
   );
 });
 
@@ -238,4 +244,115 @@ test("an absent graphics map is tolerated, unlike an absent icon map", function 
   );
   var contract = D.deriveContract({ graphics: {} });
   assert.equal(Object.keys(contract.slugs).length, matrix.RENDER_SLUGS.length);
+});
+
+// --- review findings 2026-08-14 ---------------------------------------------
+
+test("a default in an or-chain binds to the prop the renderer prefers", function () {
+  // `props.Headline || props.Title || "No policies available"` states one default
+  // for a chain, and the prop a consumer should set is the FIRST one. Binding it
+  // to the last alias before the literal inverts that, and because chain order
+  // differs per slug it made siblings contradict each other: empty-state put its
+  // default on Title and left Headline bare while confirmation did the reverse.
+  // The content layer this field exists to seed would have filled the alias and
+  // left the preferred prop empty.
+  var props = entry("empty-state").props;
+  var byName = {};
+  props.forEach(function (p) {
+    byName[p.name] = p;
+  });
+  assert.equal(
+    byName.Headline.default,
+    "No policies available",
+    "the renderer prefers Headline, so the chain's default belongs to it",
+  );
+  assert.ok(
+    !Object.prototype.hasOwnProperty.call(byName.Title, "default"),
+    "Title is the fallback alias and must not claim the chain's default",
+  );
+});
+
+test("the last case block stops at the switch's default branch", function () {
+  // Without a bound, the final `case` absorbs the default branch, the catch,
+  // BUILT_SLUGS and the exports block. Nothing there reads props today, so the
+  // output is right by luck; the day a `props.X` read appears below the switch,
+  // that slug silently gains a prop it never reads.
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  var src = fs.readFileSync(
+    path.join(
+      REPO_ROOT,
+      "components",
+      "render",
+      "renderer",
+      "html-renderers",
+      "ds-html-map.js",
+    ),
+    "utf8",
+  );
+  var blocks = D.caseBlocks(src);
+  var last = blocks["search-result-card"];
+  assert.ok(last, "search-result-card is the final case branch");
+  assert.doesNotMatch(
+    last,
+    /BUILT_SLUGS/,
+    "the last block must not run past the switch into module-level code",
+  );
+});
+
+test("a falsy default literal is published, not dropped", function () {
+  // `props.Count || "0"` gives a real default. Testing the extractor directly
+  // because no such literal exists in the renderer today, and a latent silent
+  // drop is exactly what a contract consumer cannot detect.
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  var props = D.propsOf('case "x": { var a = esc(props.Count || "0"); }');
+  assert.deepEqual(props, [{ name: "Count", default: "0" }]);
+});
+
+test("an escaped newline in a default survives as a newline", function () {
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  var props = D.propsOf('case "x": { var a = props.Body || "a\\nb"; }');
+  assert.equal(
+    props[0].default,
+    "a\nb",
+    "\\n must not be published as the letter n",
+  );
+});
+
+test("the derive declares its inputs, and the derive workflow watches all of them", function () {
+  // The committed-vs-fresh test above runs inside the required manifest check on
+  // every PR, while only render-derive.yml can repair a drift by regenerating and
+  // auto-committing. An input the workflow does not watch therefore reds a
+  // required check that no workflow can fix. The workflow already learned this
+  // once for components/dist/anatomy; the relation is asserted here instead.
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  var wf = fs.readFileSync(
+    path.join(REPO_ROOT, ".github", "workflows", "render-derive.yml"),
+    "utf8",
+  );
+  var triggers = wf
+    .slice(wf.indexOf("paths:"), wf.indexOf("concurrency:"))
+    .split("\n")
+    .map(function (l) {
+      return (l.match(/^\s*-\s*'([^']+)'/) || [])[1];
+    })
+    .filter(Boolean);
+  assert.ok(triggers.length, "the workflow declares trigger paths");
+  D.INPUTS.forEach(function (input) {
+    var watched = triggers.some(function (t) {
+      var prefix = t.replace(/\*+$/, "");
+      return input.indexOf(prefix) === 0 || t === input;
+    });
+    assert.ok(
+      watched,
+      input + " is a derive input no workflow trigger watches",
+    );
+  });
 });
