@@ -196,6 +196,30 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **19 components resolved to no category defaults at all, and every gate stayed green.** The
+  registry derives `categorySlug` by slugifying the Figma category's display name, while the
+  category's defaults file declares its own authored `slug`. Those two agreed only for as long as the
+  display name happened to slugify to the authored slug, and nothing asserted the agreement, so it
+  was a coincidence rather than a contract. Renaming the Figma page `Form (input & selection)` to
+  `Form` ([#534](https://github.com/volivarii/actian-ds-knowledge/pull/534)) broke it: the registry
+  began publishing `form` for all 19 Form components while the only defaults file still declared
+  `form-input-selection`, so any consumer resolving defaults by `categorySlug` found nothing for the
+  whole category. The source category is renamed to `form.md` with `slug: form`, which moves the
+  manifest key `components.categoryDefaults.form-input-selection` to `components.categoryDefaults.form`
+  (no consumer referenced it by name; they resolve through `byKey(slug)`, which is exactly the call
+  that was returning nothing).
+
+  The reason it was invisible is the more useful half. The only test on this relationship asserted
+  the slugify **function** against a fixture, never that its output resolves to a file, and the
+  fixture still named the retired category, so it passed while describing a category that no longer
+  exists. There is now a gate asserting that every `categorySlug` the registry publishes resolves to
+  a defaults file, reported per category with its component count. Two hand-written lists that would
+  have needed editing for any future rename are derived instead: the bundle roll-up test now reads
+  the authored slugs from their own frontmatter, and the fixture names a live category.
+
+  Found by wiring a consumer rather than by inspection: the plugin's nightly vendor PR had been red
+  since the taxonomy change landed, failing inside a PR nobody reads.
+
 - **The error alert rendered as an info alert, and screen readers announced it politely.** Figma
   publishes `alert-banner.Type` as `Info | Success | Warning | Error`, while the renderer's severity
   lookup was keyed `primary | success | warning | danger`. `Error` missed the lookup and hit the clamp

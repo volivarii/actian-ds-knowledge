@@ -113,12 +113,12 @@
       "generator": "scripts/categories/derive-categories.js",
       "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'feedback' category. Consumed by the component-brief skill for stub components."
     },
-    "components.categoryDefaults.form-input-selection": {
-      "path": "components/dist/categories/form-input-selection-defaults.json",
+    "components.categoryDefaults.form": {
+      "path": "components/dist/categories/form-defaults.json",
       "type": "json",
       "origin": "ci",
       "generator": "scripts/categories/derive-categories.js",
-      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'form-input-selection' category. Consumed by the component-brief skill for stub components."
+      "description": "Per-category structural defaults (anatomy, variants, motion refs, a11y refs) for the 'form' category. Consumed by the component-brief skill for stub components."
     },
     "components.categoryDefaults.navigation": {
       "path": "components/dist/categories/navigation-defaults.json",
