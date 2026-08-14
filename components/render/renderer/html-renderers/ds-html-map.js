@@ -1278,7 +1278,16 @@
 
         case "table": {
           var cols = parseItems(props.Columns, "Name, Status, Updated");
-          var rowsRaw = props.Rows;
+          // authored: anatomy/table.json holds no text nodes. Three cells per row so
+          // the body matches the Columns default above rather than rendering ragged.
+          var rowsRaw =
+            props.Rows === undefined
+              ? [
+                  ["customer_orders", "Published", "Dec 15, 2025"],
+                  ["orders_raw", "Draft", "Dec 12, 2025"],
+                  ["sales_summary", "Published", "Dec 09, 2025"],
+                ]
+              : props.Rows;
           var rows = Array.isArray(rowsRaw)
             ? rowsRaw
             : parseItems(rowsRaw, "").map(function (cell) {
@@ -1325,7 +1334,11 @@
           var modalBody =
             '<div class="ds-modal__body">' + esc(modalBodyText) + "</div>";
           var modalFooter = "";
-          var modalActionsRaw = props.Actions;
+          // capture: anatomy/modal.json nested button labels "Cancel" and "Confirm".
+          // Confirm is the primary action, so it goes first: the i === 0 branch
+          // below renders index 0 as ds-button--primary.
+          var modalActionsRaw =
+            props.Actions === undefined ? ["Confirm", "Cancel"] : props.Actions;
           if (Array.isArray(modalActionsRaw) && modalActionsRaw.length) {
             modalFooter =
               '<div class="ds-modal__footer">' +
@@ -1520,7 +1533,8 @@
           // Task-input footer (anatomy: input + context chip + Plan button).
           // Context may be an object {type,name} ("Dataset Customer Orders") or a
           // bare string; both render to a single esc'd chip label.
-          var stCtxLabel = "";
+          // authored: anatomy/chat-with-ai-steward.json holds no text nodes at all
+          var stCtxLabel = "Dataset Customer Orders";
           if (props.Context && typeof props.Context === "object") {
             stCtxLabel =
               String(props.Context.type || "") +

@@ -186,3 +186,27 @@ test("popover renders its full resolved body text in the body element", function
     "popover must render its full captured body text (both sentences) in its own element",
   );
 });
+
+test("modal renders its captured footer actions", function () {
+  const text = firstCellText("modal");
+  assert.match(text, /Cancel/, "modal must render its captured Cancel action");
+  assert.match(
+    text,
+    /Confirm/,
+    "modal must render its captured Confirm action",
+  );
+});
+
+test("table renders body rows matching its column defaults", function () {
+  const text = firstCellText("table");
+  assert.match(text, /Name/, "the default columns still render");
+  assert.match(
+    text,
+    /customer_orders/,
+    "the table must render body rows, not an empty tbody",
+  );
+});
+
+test("chat-with-ai-steward renders a context chip", function () {
+  assert.match(firstCellText("chat-with-ai-steward"), /Dataset/);
+});
