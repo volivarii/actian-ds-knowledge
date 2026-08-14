@@ -316,3 +316,61 @@ test("every categorySlug the registry publishes resolves to a defaults file", fu
       "header changed and the source needs to follow it.",
   );
 });
+
+// The SECOND join, and the one #541 missed. A guideline doc carries its own
+// `meta.category`, hand-authored in components/src/<slug>/_meta.yml, and
+// derive-usage-notes.js resolves components/dist/categories/<that>.md to append
+// the category's inherited design and behavior guidance. That is a third
+// independent copy of the same slug, after the registry's categorySlug and the
+// defaults file's own slug.
+//
+// #541 swept two of the three. The 17 Form components kept `form-input-selection`
+// in their _meta.yml, so their usage notes silently lost the whole "Category
+// guidance (inherited: design, behavior)" section: real published paragraphs,
+// gone from 16 files, with every gate green because the gate added in #541 checks
+// only the registry join.
+test("every guideline's meta.category resolves to a category source file", () => {
+  const guidelinesDir = path.join(REPO_ROOT, "components", "dist", "guidelines");
+  const srcDir = path.join(REPO_ROOT, "components", "src", "categories");
+  const authored = new Set(
+    fs
+      .readdirSync(srcDir)
+      .filter((f) => f.endsWith(".md") && f !== "AUTHORING.md")
+      .map(
+        (f) =>
+          (fs.readFileSync(path.join(srcDir, f), "utf8").match(/^slug:\s*(\S+)/m) ||
+            [])[1],
+      )
+      .filter(Boolean),
+  );
+  assert.ok(authored.size, "there are authored categories to resolve against");
+
+  const dangling = new Map();
+  let examined = 0;
+  fs.readdirSync(guidelinesDir)
+    .filter((f) => f.endsWith(".json") && f !== "bundle.json")
+    .forEach((f) => {
+      const doc = JSON.parse(
+        fs.readFileSync(path.join(guidelinesDir, f), "utf8"),
+      );
+      const category = doc && doc.meta && doc.meta.category;
+      if (!category) return;
+      examined += 1;
+      if (authored.has(category)) return;
+      dangling.set(category, (dangling.get(category) || 0) + 1);
+    });
+
+  // Same reason as the registry gate above: both terms of that filter can empty
+  // it without a single component being fixed.
+  assert.ok(
+    examined > 0,
+    "no guideline doc carried a meta.category, so this gate examined nothing",
+  );
+  assert.deepEqual(
+    [...dangling].map(([c, n]) => c + " (" + n + " guidelines)").sort(),
+    [],
+    "a guideline's meta.category resolves to no category source, so every one " +
+      "of those components silently loses its inherited category guidance from " +
+      "its usage note. Update components/src/<slug>/_meta.yml to the current slug.",
+  );
+});
