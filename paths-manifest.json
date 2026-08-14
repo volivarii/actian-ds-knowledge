@@ -5,21 +5,9 @@
   "manifest_schema_version": "v1",
   "knowledge_version": "0.34.128",
   "_zones": {
-    "knowledge": [
-      "accessibility",
-      "components",
-      "content",
-      "foundations"
-    ],
-    "contract": [
-      "graph"
-    ],
-    "metadata": [
-      "appContext",
-      "appContextBundle",
-      "appContextSrc",
-      "tokens"
-    ],
+    "knowledge": ["accessibility", "components", "content", "foundations"],
+    "contract": ["graph"],
+    "metadata": ["appContext", "appContextBundle", "appContextSrc", "tokens"],
     "_pendingEviction": []
   },
   "paths": {
@@ -611,6 +599,13 @@
       "origin": "ci",
       "generator": "scripts/render/derive-canonical.js",
       "description": "Custom Elements Manifest: attributes, parts, and css properties for every canonical render."
+    },
+    "components.render.contract": {
+      "path": "components/render/dist/render-contract.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/render/derive-contract.js",
+      "description": "What the renderer actually implements per render slug: the content props its branch reads (with the fallback each one has), and, per registry variant axis, which values it renders distinctly. rendersAs maps a value to the earlier value of the same axis it renders identically to, measured by rendering both rather than by reading the source, so it is empty for a fully honoured axis and self-corrects when the renderer learns a difference. Consumers read this instead of restating it: the plugin's flow-authoring reference had drifted to 19 renderable slugs against the renderer's 58, and to 45 prop bindings against 177."
     },
     "components.render.css": {
       "path": "components/render/dist/render.css",
