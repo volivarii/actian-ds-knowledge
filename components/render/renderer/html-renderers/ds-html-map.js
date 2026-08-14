@@ -500,10 +500,12 @@
           if (v.Format === "Card format") rbCls += " ds-radio--card";
           if (v.State === "Disabled") rbCls += " is-disabled";
           var rbLabel = esc(props.Label || "Label");
+          // capture: anatomy/radio.json text layer "Description"
+          var rbHelperText = props["Helper text"] || "Description";
           var rbHelper =
-            props["Helper text"] && props["Show Helper text"] !== false
+            rbHelperText && props["Show Helper text"] !== false
               ? '<span class="ds-radio__helper">' +
-                esc(props["Helper text"]) +
+                esc(rbHelperText) +
                 "</span>"
               : "";
           return (
@@ -526,10 +528,13 @@
           if (v["Toggle location"] === "Right") tgCls += " ds-toggle--right";
           if (v.State === "Disabled") tgCls += " is-disabled";
           var tgLabel = esc(props.Label || "Label");
+          // authored: toggle has no helper layer in the capture; mirrors radio's
+          // captured "Description" so the two form controls read consistently
+          var tgHelperText = props["Helper text"] || "Description";
           var tgHelper =
-            props["Helper text"] && props["Show Helper text"] !== false
+            tgHelperText && props["Show Helper text"] !== false
               ? '<span class="ds-toggle__helper">' +
-                esc(props["Helper text"]) +
+                esc(tgHelperText) +
                 "</span>"
               : "";
           return (
@@ -1182,11 +1187,10 @@
 
         case "page-header": {
           var phTitle = esc(props.Title || "Page title");
-          var phDesc = props.Description
-            ? '<p class="ds-page-header__desc">' +
-              esc(props.Description) +
-              "</p>"
-            : "";
+          // capture: anatomy/page-header.json layer "Suppot text" [sic] reads "Support text"
+          var phDescText = props.Description || "Support text";
+          var phDesc =
+            '<p class="ds-page-header__desc">' + esc(phDescText) + "</p>";
           var phActions = "";
           var actionsRaw = props.Actions;
           if (Array.isArray(actionsRaw) && actionsRaw.length) {
@@ -1314,9 +1318,12 @@
 
         case "modal": {
           var modalTitle = esc(props.Title || "Dialog");
-          var modalBody = props.Body
-            ? '<div class="ds-modal__body">' + esc(props.Body) + "</div>"
-            : "";
+          // authored: the capture holds a title ("Edit description") but no body layer
+          var modalBodyText =
+            props.Body ||
+            "Update the description so teammates know what this connection is for.";
+          var modalBody =
+            '<div class="ds-modal__body">' + esc(modalBodyText) + "</div>";
           var modalFooter = "";
           var modalActionsRaw = props.Actions;
           if (Array.isArray(modalActionsRaw) && modalActionsRaw.length) {
@@ -1615,9 +1622,11 @@
           // capture: anatomy/notification.json text layer "Item deleted"
           var notifMsg = esc(props.Message || "Item deleted");
           // Action button is optional — only render when an Action label exists.
-          var notifAction = props.Action
+          // capture: anatomy/notification.json nested button label "Close"
+          var notifActionText = props.Action || "Close";
+          var notifAction = notifActionText
             ? '<button class="ds-button ds-button--tertiary ds-button--small ds-notification__action" type="button">' +
-              esc(props.Action) +
+              esc(notifActionText) +
               "</button>"
             : "";
           return (
@@ -1654,9 +1663,10 @@
               "</span>"
             : // capture: anatomy/stepper.json text layer "1"
               esc(props.Step || "1");
-          var stepBody = props.Body
-            ? '<span class="ds-stepper__body">' + esc(props.Body) + "</span>"
-            : "";
+          // capture: anatomy/stepper.json layer "Body" reads "Optional body"
+          var stepBodyText = props.Body || "Optional body";
+          var stepBody =
+            '<span class="ds-stepper__body">' + esc(stepBodyText) + "</span>";
           return (
             '<div class="' +
             stepperCls +
@@ -1763,11 +1773,12 @@
               '<span class="ds-input-date__sep">–</span>' +
               dateInput()
             : dateInput();
-          var dateHelper = props.Helper
-            ? '<span class="ds-input-date__helper">' +
-              esc(props.Helper) +
-              "</span>"
-            : "";
+          // authored: the capture holds "Date", "*" and "mm/dd/yyyy" but no helper layer
+          var dateHelperText = props.Helper || "Use MM/DD/YYYY.";
+          var dateHelper =
+            '<span class="ds-input-date__helper">' +
+            esc(dateHelperText) +
+            "</span>";
           return (
             '<div class="' +
             dateCls +
@@ -1834,21 +1845,25 @@
           var ddDisabled = v.State === "Disabled";
           var ddCls = "ds-dropdown-select";
           if (ddDisabled) ddCls += " is-disabled";
-          var ddDesc = props.Description
-            ? '<span class="ds-dropdown-select__desc">' +
-              esc(props.Description) +
-              "</span>"
-            : "";
+          // capture: anatomy/dropdown-select-default.json layer "description"
+          var ddDescText =
+            props.Description ||
+            "A description helps users to define and understand the purpose of the input.";
+          var ddDesc =
+            '<span class="ds-dropdown-select__desc">' +
+            esc(ddDescText) +
+            "</span>";
           var ddValueText = props.Value;
           var ddValueCls =
             "ds-dropdown-select__value" +
             (ddValueText ? "" : " ds-dropdown-select__value--placeholder");
           var ddValue = esc(ddValueText || props.Placeholder || "Select…");
-          var ddHelper = props.Helper
-            ? '<span class="ds-dropdown-select__helper">' +
-              esc(props.Helper) +
-              "</span>"
-            : "";
+          // capture: anatomy/dropdown-select-default.json layer "helper text"
+          var ddHelperText = props.Helper || "Helper text goes here";
+          var ddHelper =
+            '<span class="ds-dropdown-select__helper">' +
+            esc(ddHelperText) +
+            "</span>";
           return (
             '<div class="' +
             ddCls +
@@ -2086,12 +2101,15 @@
                 renderIcon("help-circle") +
                 "</span>"
               : "";
-          var poTitle = props.Title
-            ? '<span class="ds-popover__title">' + esc(props.Title) + "</span>"
-            : "";
-          var poBody = props.Body
-            ? '<span class="ds-popover__body">' + esc(props.Body) + "</span>"
-            : "";
+          // capture: anatomy/popover.json layers "Header" and "description"
+          var poTitleText = props.Title || "Interaction guide";
+          var poBodyText =
+            props.Body ||
+            "Explore this asset’s upstream sources and downstream consumers, as well as the transformations connecting them across the data pipeline.";
+          var poTitle =
+            '<span class="ds-popover__title">' + esc(poTitleText) + "</span>";
+          var poBody =
+            '<span class="ds-popover__body">' + esc(poBodyText) + "</span>";
           return (
             '<div class="' +
             poCls +
@@ -2113,11 +2131,15 @@
           // arrow-down / exit baked into the Figma component). Render an account
           // menu overlay: identity header + default items (Items prop overrides).
           var acName = esc(props.Name || "Account user");
-          var acEmail = props.Email
-            ? '<span class="ds-account-menu__email">' +
-              esc(props.Email) +
-              "</span>"
-            : "";
+          // substituted, not captured: anatomy/account-dropdown.json holds what reads
+          // as a real person's name and address at an external domain. Shipping that
+          // as specimen content in a customer-facing bundle is not acceptable, so the
+          // structure is kept and the address replaced. See the spec's flag.
+          var acEmailText = props.Email || "account.user@example.com";
+          var acEmail =
+            '<span class="ds-account-menu__email">' +
+            esc(acEmailText) +
+            "</span>";
           var acIcons = {
             "account settings": "settings",
             help: "help-bubble",

@@ -86,3 +86,43 @@ test("stepper renders the captured Step fallback on a non-complete cell", functi
     "stepper must render its captured Step fallback in the status element on a non-complete cell",
   );
 });
+
+// Conditional-omit slots: the element is absent entirely when the prop is unset,
+// so these assert the rendered text, not just a non-empty element.
+const RESOLVED = [
+  ["radio", "Description"],
+  ["toggle", "Description"],
+  ["page-header", "Support text"],
+  ["modal", "Update the description"],
+  ["input-date", "MM/DD/YYYY"],
+  ["dropdown-select-default", "A description helps users"],
+  ["popover", "Interaction guide"],
+  ["account-dropdown", "account.user@example.com"],
+];
+
+RESOLVED.forEach(function (pair) {
+  test("renders resolved content for " + pair[0], function () {
+    assert.match(
+      firstCellText(pair[0]),
+      new RegExp(pair[1].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+      pair[0] + " must render its slot rather than omitting the element",
+    );
+  });
+});
+
+test("account-dropdown does not ship the captured personal address", function () {
+  const text = firstCellText("account-dropdown");
+  assert.doesNotMatch(
+    text,
+    /hcl-software\.com/,
+    "the Figma capture holds a real-looking personal address; it must not ship as specimen content",
+  );
+});
+
+test("stepper renders its captured body", function () {
+  assert.match(firstCellText("stepper"), /Optional body/);
+});
+
+test("notification renders its captured action label", function () {
+  assert.match(firstCellText("notification"), /Close/);
+});
