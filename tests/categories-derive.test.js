@@ -98,7 +98,7 @@ test("e2e: live MD files all derive successfully", () => {
   }
 });
 
-test("e2e: bundle roll-up keys all 6 category slugs", () => {
+test("e2e: bundle roll-up keys exactly the authored category slugs", () => {
   const bundlePath = path.join(
     REPO_ROOT,
     "components",
@@ -112,14 +112,27 @@ test("e2e: bundle roll-up keys all 6 category slugs", () => {
   }
   const bundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
   const slugs = Object.keys(bundle.categories).sort();
-  assert.deepEqual(slugs, [
-    "action",
-    "data-display",
-    "feedback",
-    "form-input-selection",
-    "navigation",
-    "overlays",
-  ]);
+  // Derived from the authored sources, not restated. This list used to be
+  // written out, still carrying `form-input-selection` after that category was
+  // renamed, so the test asserted the retired name and would have had to be
+  // hand-edited for any rename: the same shape as the drift it sits next to.
+  // The real invariant is that the bundle keys exactly the authored categories.
+  // Read from each source's own frontmatter rather than from its filename: the
+  // derive keys the dist on the authored `slug`, so a source whose filename ever
+  // differs from its slug must not fail this on a naming coincidence.
+  const srcDir = path.join(REPO_ROOT, "components", "src", "categories");
+  const authored = fs
+    .readdirSync(srcDir)
+    .filter((f) => f.endsWith(".md") && f !== "AUTHORING.md")
+    .map(
+      (f) =>
+        (fs.readFileSync(path.join(srcDir, f), "utf8").match(/^slug:\s*(\S+)/m) ||
+          [])[1],
+    )
+    .filter(Boolean)
+    .sort();
+  assert.ok(authored.length, "there are authored category sources to compare against");
+  assert.deepEqual(slugs, authored);
 });
 
 test("e2e: motion + a11y slug refs all resolve against upstream sources", () => {
@@ -234,4 +247,72 @@ test("e2e: paths-manifest updates include components.categoryDefaults entries", 
   assert.ok(m.collections["components.categoryDefaults.byKey"]);
   assert.ok(m.collections["components.categoriesSrc"]);
   fs.rmSync(tmpManifest, { force: true });
+});
+
+// ---------------------------------------------------------------------------
+// The join a consumer actually makes: registry `categorySlug` -> defaults file.
+//
+// These two slugs are produced INDEPENDENTLY. The registry slugifies the Figma
+// category's display name (transform-registry.js), while the defaults slug is
+// authored in the category's own frontmatter. They agreed for as long as the
+// display name happened to slugify to the authored slug, and nothing asserted
+// that agreement, so it was a coincidence rather than a contract.
+//
+// It broke on an ordinary rename. "Form (input & selection)" slugified to
+// `form-input-selection`, matching the authored slug; renaming the Figma page to
+// "Form" (#534) made the registry publish `form` while the defaults file kept
+// `form-input-selection`, so all 19 Form components resolved to no defaults at
+// all. Every gate stayed green: the only test on this relationship asserted the
+// slugify FUNCTION against a fixture, never that its output resolves to a file.
+
+test("every categorySlug the registry publishes resolves to a defaults file", function () {
+  const registry = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, "components", "dist", "registries", "dskit.json"),
+      "utf8",
+    ),
+  );
+  const distDir = path.join(REPO_ROOT, "components", "dist", "categories");
+  const available = new Set(
+    fs
+      .readdirSync(distDir)
+      .filter((f) => /-defaults\.json$/.test(f))
+      .map((f) => f.replace(/-defaults\.json$/, "")),
+  );
+  assert.ok(available.size, "the dist ships at least one category defaults file");
+
+  // Reported per category with its component count, not per component: the
+  // failure is one broken category, and listing it 19 times buries that.
+  const dangling = new Map();
+  let examined = 0;
+  Object.keys(registry.components).forEach((slug) => {
+    const c = registry.components[slug];
+    if (!c || c.section !== "Components" || !c.categorySlug) return;
+    examined += 1;
+    if (available.has(c.categorySlug)) return;
+    const key = c.category + " -> " + c.categorySlug;
+    dangling.set(key, (dangling.get(key) || 0) + 1);
+  });
+
+  // Assert the subject was PRESENT, not merely that no failure was found. Both
+  // of this filter's terms can empty it without any component being fixed: a
+  // sync that stops emitting `categorySlug` at all, and a Figma reorg that
+  // renames the section away from the literal "Components" this line matches on.
+  // Either one turns the check below into a comparison of two empty lists, which
+  // is the exact shape of the gate this whole change exists to replace.
+  assert.ok(
+    examined > 0,
+    "no Components-section component carried a categorySlug, so this gate " +
+      "examined nothing. Either the registry stopped publishing categorySlug, " +
+      "or the section label moved away from \"Components\".",
+  );
+
+  assert.deepEqual(
+    [...dangling].map(([k, n]) => k + " (" + n + " components)").sort(),
+    [],
+    "a published categorySlug resolves to no defaults file, so every component " +
+      "in that category loses its category guidance. Either rename the source " +
+      "category in components/src/categories/ to match, or the Figma category " +
+      "header changed and the source needs to follow it.",
+  );
 });

@@ -752,10 +752,11 @@ test("collectPatternComponents: resolvable references do not fail", function () 
 // the category to "Form" broke the join and left nine dangling edges pointing at
 // category:form-input-selection, which validate-graph correctly refused.
 //
-// Joining on the doc's own `label` makes both sides agree by construction, and
-// leaves the filename free to stay put: it is a manifest logical name
-// (components.categoryDefaults.form-input-selection) and therefore a consumer
-// contract that should not move for a display-name change.
+// Joining on the doc's own `label` makes both sides agree by construction. It
+// used to add that the filename should therefore stay put, being a consumer
+// contract; that was reversed once measured, because the registry's categorySlug
+// is a slugified display name and the divergence cost 19 components their
+// defaults through byKey(). This test covers the label join only.
 test("categorySlugForDefaults joins on the label, not the filename", function () {
   assert.equal(
     D.categorySlugForDefaults({ label: "Form" }, "form-input-selection"),
