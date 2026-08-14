@@ -3,7 +3,7 @@
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.34.130",
+  "knowledge_version": "0.34.131",
   "_zones": {
     "knowledge": [
       "accessibility",
@@ -890,7 +890,7 @@
       "pattern": "{slug}-defaults.json",
       "type": "json",
       "origin": "ci",
-      "description": "Per-category defaults (Phase 2 v2), one entry per category authored in components/src/categories/. The slugs are deliberately NOT enumerated here: this description is hand-written while the sibling keys are generated, so an enumeration goes stale on the next category rename and then contradicts the keys beside it, which is exactly what happened to the Form category. See the sibling components.categoryDefaults.* keys for the live set, and components.categoryDefaults.bundle for the roll-up. Renamed from components.categoryDefaults in v0.5.1 to honor leaf-XOR-namespace manifest convention."
+      "description": "Per-category defaults (Phase 2 v2). 6 categories: action, form-input-selection, navigation, data-display, feedback, overlays. See also bundle entry components.categoryDefaults.bundle for the roll-up. Renamed from components.categoryDefaults in v0.5.1 to honor leaf-XOR-namespace manifest convention."
     },
     "components.graphics.dist": {
       "dir": "components/dist/graphics",
