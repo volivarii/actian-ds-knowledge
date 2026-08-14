@@ -210,3 +210,27 @@ test("table renders body rows matching its column defaults", function () {
 test("chat-with-ai-steward renders a context chip", function () {
   assert.match(firstCellText("chat-with-ai-steward"), /Dataset/);
 });
+
+test("each alert Type cell carries its own message", function () {
+  const cells = matrix.variantMatrix("alert-banner");
+  const messages = cells.map(function (c) {
+    return (c.props || {}).Message;
+  });
+  assert.deepEqual(
+    messages,
+    ["Info", "Success", "Warning", "Error"],
+    "four cells sharing one message render four identical alerts",
+  );
+  const rendered = cells.map(function (c) {
+    return dsMap.renderDSComponent({
+      dsSlug: "alert-banner",
+      variant: c.variant,
+      props: c.props,
+    });
+  });
+  assert.equal(
+    new Set(rendered).size,
+    4,
+    "the four alert cells must not render identical markup",
+  );
+});

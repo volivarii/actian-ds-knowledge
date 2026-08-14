@@ -77,14 +77,18 @@ test("a prop carries the renderer's own fallback as its default", function () {
 });
 
 test("a prop with no literal fallback carries no invented default", function () {
-  var message = entry("alert-banner").props.find(function (p) {
-    return p.name === "Message";
+  // Re-pointed from Message to Title in the content-layer change: Message now
+  // falls back to the captured "Info". Title stays the right specimen because
+  // the Figma component has no title layer, so the renderer deliberately omits
+  // the element and must not invent a value for it.
+  var title = entry("alert-banner").props.find(function (p) {
+    return p.name === "Title";
   });
-  assert.ok(message);
+  assert.ok(title);
   assert.ok(
-    !Object.prototype.hasOwnProperty.call(message, "default") ||
-      message.default === "",
-    'props.Message falls back to "" so the contract must not claim a value',
+    !Object.prototype.hasOwnProperty.call(title, "default") ||
+      title.default === "",
+    "props.Title has no literal fallback so the contract must not claim a value",
   );
 });
 
