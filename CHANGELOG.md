@@ -1674,16 +1674,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
-- **Empty text slots across 18 components.** 83 of the 358 visible text slots in the
-  canonical renders were rendering an element with no text, so the design bundle and
-  generated flows showed components missing a part the design file gives them. Each of
-  the 26 affected slots now carries a value quoted from the Figma capture, with a comment
-  naming the layer it came from. Three initials values are derived from each component's
-  own captured vocabulary; `chat-with-ai-steward`, `table`, `modal`'s body and
-  `input-date`'s helper are authored, because those Figma components hold no text for
-  those slots; `account-dropdown`'s email is deliberately substituted, because the
-  capture holds what reads as a real person's address at an external domain.
-  `alert-banner`'s title stays empty by design and is exempted with that reason.
+- **Empty text slots across 18 components.** 83 of the 358 visible text cell-slots in
+  the canonical renders, one rendered matrix cell times one content prop, were
+  rendering an element with no text, so the design bundle and generated flows showed
+  components missing a part the design file gives them. Those 83 empty cell-slots
+  collapse to 26 distinct component-and-prop pairs across the 18 components, because
+  the same prop is empty in more than one cell for several of them. 25 of the 26 pairs
+  now carry a value quoted from the Figma capture, with a comment naming the layer it
+  came from: 15 are quoted directly from the capture, 3 initials values are derived
+  from each component's own captured vocabulary, and 6 are authored,
+  `chat-with-ai-steward`'s context and insight, `table`'s rows, `modal`'s body,
+  `input-date`'s helper and `toggle`'s helper text, because those Figma components
+  hold no text for those slots. `account-dropdown`'s email is the 1 substituted value,
+  deliberately replaced because the capture holds what reads as a real person's
+  address at an external domain. The remaining pair, `alert-banner`'s title, stays
+  empty by design and is exempted with that reason.
 
 ### Added
 
