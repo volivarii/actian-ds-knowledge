@@ -98,7 +98,7 @@ test("e2e: live MD files all derive successfully", () => {
   }
 });
 
-test("e2e: bundle roll-up keys all 6 category slugs", () => {
+test("e2e: bundle roll-up keys exactly the authored category slugs", () => {
   const bundlePath = path.join(
     REPO_ROOT,
     "components",
@@ -284,13 +284,28 @@ test("every categorySlug the registry publishes resolves to a defaults file", fu
   // Reported per category with its component count, not per component: the
   // failure is one broken category, and listing it 19 times buries that.
   const dangling = new Map();
+  let examined = 0;
   Object.keys(registry.components).forEach((slug) => {
     const c = registry.components[slug];
     if (!c || c.section !== "Components" || !c.categorySlug) return;
+    examined += 1;
     if (available.has(c.categorySlug)) return;
     const key = c.category + " -> " + c.categorySlug;
     dangling.set(key, (dangling.get(key) || 0) + 1);
   });
+
+  // Assert the subject was PRESENT, not merely that no failure was found. Both
+  // of this filter's terms can empty it without any component being fixed: a
+  // sync that stops emitting `categorySlug` at all, and a Figma reorg that
+  // renames the section away from the literal "Components" this line matches on.
+  // Either one turns the check below into a comparison of two empty lists, which
+  // is the exact shape of the gate this whole change exists to replace.
+  assert.ok(
+    examined > 0,
+    "no Components-section component carried a categorySlug, so this gate " +
+      "examined nothing. Either the registry stopped publishing categorySlug, " +
+      "or the section label moved away from \"Components\".",
+  );
 
   assert.deepEqual(
     [...dangling].map(([k, n]) => k + " (" + n + " components)").sort(),

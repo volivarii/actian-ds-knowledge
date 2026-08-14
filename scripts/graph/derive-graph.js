@@ -189,9 +189,13 @@ var REF_KINDS = refKinds.CATEGORY_REF_KINDS;
 //
 // The doc's own `label` IS the category display name, i.e. the same value the
 // node is built from, so joining on it makes both sides agree by construction.
-// The filename stays free to remain what it is: a manifest logical name
-// (components.categoryDefaults.form-input-selection) and so a consumer contract
-// that should not move because a display name changed.
+// Joining on the label is what lets THIS derive survive a rename. It is not an
+// argument for the filename staying put, and it used to be written as one. That
+// reasoning was reversed once measured: the registry's own `categorySlug` is a
+// slugified display name, so a rename made it diverge from the authored slug and
+//19 components resolved to no defaults at all through the byKey() call every
+// consumer uses. The source category was renamed so the two agree by
+// construction; no consumer named the manifest key.
 function categorySlugForDefaults(defaults, filenameSlug) {
   var label = defaults && defaults.label;
   return label ? M.slugify(label) : filenameSlug;

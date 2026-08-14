@@ -890,7 +890,7 @@
       "pattern": "{slug}-defaults.json",
       "type": "json",
       "origin": "ci",
-      "description": "Per-category defaults (Phase 2 v2). 6 categories: action, form-input-selection, navigation, data-display, feedback, overlays. See also bundle entry components.categoryDefaults.bundle for the roll-up. Renamed from components.categoryDefaults in v0.5.1 to honor leaf-XOR-namespace manifest convention."
+      "description": "Per-category defaults (Phase 2 v2), one entry per category authored in components/src/categories/. The slugs are deliberately NOT enumerated here: this description is hand-written while the sibling keys are generated, so an enumeration goes stale on the next category rename and then contradicts the keys beside it, which is exactly what happened to the Form category. See the sibling components.categoryDefaults.* keys for the live set, and components.categoryDefaults.bundle for the roll-up. Renamed from components.categoryDefaults in v0.5.1 to honor leaf-XOR-namespace manifest convention."
     },
     "components.graphics.dist": {
       "dir": "components/dist/graphics",
