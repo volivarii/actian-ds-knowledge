@@ -176,3 +176,66 @@ test("the contract validates against schemas/render-contract.json", function () 
   var validate = ajv.compile(schema);
   assert.ok(validate(CONTRACT), JSON.stringify(validate.errors));
 });
+
+// --- self-guards: the two ways this derive could lie quietly -----------------
+
+test("the case-block partition covers the whole renderer source", function () {
+  // If a `case "<slug>":` marker were matched inside a comment or a string, the
+  // real branch around it would be split and every prop after the phantom marker
+  // would be attributed to a slug nobody iterates, i.e. silently dropped. The
+  // partition is checked structurally rather than by spot-checking a slug,
+  // because a dropped prop looks exactly like a prop the renderer does not read.
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  var src = fs.readFileSync(
+    path.join(
+      REPO_ROOT,
+      "components",
+      "render",
+      "renderer",
+      "html-renderers",
+      "ds-html-map.js",
+    ),
+    "utf8",
+  );
+  var blocks = D.caseBlocks(src);
+  var covered = Object.keys(blocks).reduce(function (n, slug) {
+    return n + blocks[slug].length;
+  }, 0);
+  var firstCase = src.search(/\n[ \t]*case "[a-z0-9-]+":/);
+  assert.ok(firstCase > 0, "the renderer has at least one case branch");
+  assert.equal(
+    covered,
+    src.length - firstCase,
+    "blocks must partition the source from the first case marker to the end",
+  );
+});
+
+test("the derive refuses to run without the icon map instead of inventing aliases", function () {
+  // rendersAs is measured from rendered markup, so two values differing only by
+  // their glyph collapse into an alias when the icon map is missing. That would
+  // publish "the renderer cannot tell these apart" about a renderer that can:
+  // a false all-clear, inverted. Absent icons must stop the derive, not shrink it.
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  assert.throws(
+    function () {
+      D.deriveContract({ icons: {} });
+    },
+    /icon/i,
+    "an empty icon map must throw and name the reason",
+  );
+});
+
+test("an absent graphics map is tolerated, unlike an absent icon map", function () {
+  // graphics.json is a newer dist that legitimately may not exist in an older
+  // checkout, and artwork absence cannot collapse two variant values the way a
+  // missing glyph can. The asymmetry is deliberate, so it is pinned.
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  var contract = D.deriveContract({ graphics: {} });
+  assert.equal(Object.keys(contract.slugs).length, matrix.RENDER_SLUGS.length);
+});

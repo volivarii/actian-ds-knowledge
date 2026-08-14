@@ -183,7 +183,8 @@ function variantsOf(slug, comp) {
 }
 
 // --- derive ------------------------------------------------------------------
-function deriveContract() {
+function deriveContract(options) {
+  var opts = options || {};
   var src = fs.readFileSync(DS_MAP_PATH, "utf8");
   var blocks = caseBlocks(src);
   var slugs = matrix.RENDER_SLUGS;
@@ -200,9 +201,27 @@ function deriveContract() {
     );
   }
 
-  dsMap.setIcons(loadJson("components/dist/icons/icons.json", "icons"));
+  // rendersAs is measured from rendered markup, so two values that differ only by
+  // their glyph collapse into an alias when the icon map is absent. Publishing
+  // "the renderer cannot tell these apart" about a renderer that can is a false
+  // all-clear wearing the shape of a finding, and it would be believed: consumers
+  // read this file precisely so they do not have to check. Absent icons stop the
+  // derive. Artwork is different and stays tolerated: graphics.json is a newer
+  // dist that an older checkout may not have, and a missing illustration cannot
+  // make two variant values render the same markup.
+  var icons =
+    opts.icons || loadJson("components/dist/icons/icons.json", "icons");
+  if (!Object.keys(icons).length) {
+    throw new Error(
+      "derive-contract: the icon map is empty, so a value that differs only by " +
+        "its icon would be recorded as an alias of another. Run the icons derive " +
+        "first (components/dist/icons/icons.json).",
+    );
+  }
+  dsMap.setIcons(icons);
   dsMap.setGraphics(
-    loadJson("components/dist/graphics/graphics.json", "graphics"),
+    opts.graphics ||
+      loadJson("components/dist/graphics/graphics.json", "graphics"),
   );
   var out = {};
   try {
@@ -241,6 +260,10 @@ function writeContract(outPath) {
 module.exports = {
   deriveContract: deriveContract,
   writeContract: writeContract,
+  // Exported for the partition self-guard in tests: a phantom `case` marker
+  // inside a comment or a string would split a real branch and silently drop
+  // every prop after it, which is indistinguishable from a prop never read.
+  caseBlocks: caseBlocks,
   OUT_PATH: OUT_PATH,
 };
 
