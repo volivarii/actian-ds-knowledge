@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://actian.com/ds/schemas/render-contract.json",
   "title": "Render Contract",
-  "description": "What the canonical renderer actually implements, per component render: the content props its branch reads, the fallback each prop has, and which of the registry's variant values it renders distinctly. Emitted by scripts/render/derive-contract.js into components/render/dist/render-contract.json. Consumers (the plugin's flow-authoring reference, the render content layer, the Claude Design bundle) read this instead of restating the same facts by hand, which is how a consumer's list of renderable components drifted to 19 while the renderer had 58.",
+  "description": "What the canonical renderer actually implements, per component render: the content props its branch reads, the fallback each prop has, and which of the registry's variant values it renders distinctly. Emitted by scripts/render/derive-contract.js into components/render/dist/render-contract.json. Consumers (the plugin's flow-authoring reference, the render content layer, the Claude Design bundle) read this instead of restating the same facts by hand, which is how a consumer's list of renderable components had drifted to 19 against the renderer's 58 by August 2026. Those two numbers are dated history, not a live claim about either side.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "slugs"],

@@ -484,7 +484,7 @@ test("consecutive fall-through case labels both get a block", function () {
   assert.deepEqual(Object.keys(blocks).sort(), ["a", "b"]);
 });
 
-test("a malformed escape in a comment does not crash the derive", function () {
+test("a malformed escape is left as written, and does not crash the derive", function () {
   // The extractor scans comments as plain text, so a Windows path in a comment
   // puts a lone \u before non-hex characters. That fell through to the bare
   // single-character branch with seq === "u", making parseInt("") NaN and
@@ -493,10 +493,18 @@ test("a malformed escape in a comment does not crash the derive", function () {
   var D = require(
     path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
   );
-  assert.doesNotThrow(function () {
-    D.propsOf('case "x": { /* props.Path || "C:\\users\\bin" */ }');
-  });
-  assert.doesNotThrow(function () {
-    D.propsOf('case "x": { props.P || "\\u{110000}"; }');
-  }, "an out-of-range codepoint must not throw either");
+  // The VALUE is asserted, not merely the absence of a throw. doesNotThrow alone
+  // is too weak here: changing the out-of-range fallback from `return seq` to
+  // `return ""` keeps every test green while silently deleting text from a
+  // default, which is the "stops throwing, starts producing garbage" case.
+  assert.equal(
+    D.propsOf('case "x": { /* props.Path || "C:\\users\\bin" */ }')[0].default,
+    "C:users\bin",
+    "a malformed \\u is left as the bare letter, and \\b is a real backspace",
+  );
+  assert.equal(
+    D.propsOf('case "x": { props.P || "a\\u{110000}b"; }')[0].default,
+    "au{110000}b",
+    "an out-of-range codepoint is left as written, and nothing around it is lost",
+  );
 });

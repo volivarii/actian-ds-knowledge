@@ -131,23 +131,33 @@ var BRACKET_READ = /props\[\s*"([^"]+)"\s*\]/g;
 // the preferred prop empty. So the pattern below skips any `|| props.Y` links and
 // binds the literal to the head of the chain.
 //
-// KNOWN LIMIT, stated because absence here reads as "there is no fallback": a
-// chain whose fallback is not a prop and not a literal publishes NO default,
-// even though the renderer states one. Four props today, in two shapes:
+// KNOWN LIMIT, stated because absence here reads as "there is no fallback": the
+// renderer states defaults this pattern cannot see. THIRTEEN props today, in
+// three shapes, and only the first two are `||` chains at all:
 //
-//   a non-props operand mid-chain
-//     global-header.App          props.App || v["App type"] || "Studio"
-//     whats-new-dropdown.Detail  props.Detail || wnFirstItem || "New items..."
-//   a fallback that is a variable rather than a literal
-//     tag-item-type.Label        props.Label || titRaw
-//     search-dropdown-menu.Heading  props.Heading || sdmHeadingDefault
+//   1. a non-props operand mid-chain (2)
+//        global-header.App             props.App || v["App type"] || "Studio"
+//        whats-new-dropdown.Detail     props.Detail || wnFirstItem || "New..."
+//   2. a fallback that is a variable, not a literal (2)
+//        tag-item-type.Label           props.Label || titRaw
+//        search-dropdown-menu.Heading  props.Heading || sdmHeadingDefault
+//   3. the default is a CALLEE ARGUMENT, not a fallback operand (9)
+//        parseItems(props.Items, "Home, Section, Page")  and its siblings in
+//        side-nav, breadcrumb, tabs, table, account-dropdown,
+//        notification-dropdown, search-dropdown-menu, app-switcher-dropdown,
+//        segmented-control. The literal there is exactly what a consumer would
+//        pass, so these are defaults in every sense that matters.
 //
-// Resolving either means following identifiers through the renderer, which is
-// static analysis this file deliberately does not do: a wrong default is worse
-// than a missing one, since the content layer can author what is missing but
-// will silently trust what is wrong. The count is stated here, next to the
-// enumeration that carries it, and NOT in the published schema, where a
-// hand-maintained number would be a consumer-visible claim that goes stale.
+// Resolving any of them means following identifiers and callee contracts through
+// the renderer, which is static analysis this file deliberately does not do: a
+// wrong default is worse than a missing one, since the content layer can author
+// what is missing but will silently trust what is wrong.
+//
+// 🪤 This count has been wrong twice: five (a double-count), then four (correct
+// for shapes 1 and 2, but read as the whole population while shape 3 went
+// unnamed). It lives HERE, next to the enumeration that carries it, and NOT in
+// the published schema, which keeps only the qualitative sentence a consumer
+// needs. That sentence stayed true through both corrections; the number did not.
 var PROP_REF = 'props(?:\\.([A-Za-z_][A-Za-z0-9_]*)|\\[\\s*"([^"]+)"\\s*\\])';
 var DEFAULT_CHAIN = new RegExp(
   PROP_REF +
@@ -189,8 +199,12 @@ function unescapeLiteral(s) {
         var code = parseInt(seq.replace(/^u\{|^u|^x|\}$/g, ""), 16);
         // Out of range is a SyntaxError in real JS, so it can only reach here
         // from text that is not a string literal. Left as written rather than
-        // thrown on, for the same reason.
-        if (code >= 0 && code <= 0x10ffff) return String.fromCodePoint(code);
+        // thrown on, for the same reason. One comparison and not two: parseInt
+        // over hex digits is never negative, and the upper bound already rejects
+        // NaN, so a `code >= 0` clause would be dead code sitting next to a
+        // guard whose redundancy is documented. One of those is honest; two is
+        // just noise.
+        if (code <= 0x10ffff) return String.fromCodePoint(code);
         return seq;
       }
       return Object.prototype.hasOwnProperty.call(ESCAPES, seq)
