@@ -6,13 +6,22 @@ const path = require("node:path");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const dsMap = require(
-  path.join(REPO_ROOT, "components/render/renderer/html-renderers/ds-html-map.js"),
+  path.join(
+    REPO_ROOT,
+    "components/render/renderer/html-renderers/ds-html-map.js",
+  ),
 );
-const matrix = require(path.join(REPO_ROOT, "components/render/renderer/matrix.js"));
+const matrix = require(
+  path.join(REPO_ROOT, "components/render/renderer/matrix.js"),
+);
 
-dsMap.setIcons(require(path.join(REPO_ROOT, "components/dist/icons/icons.json")));
+dsMap.setIcons(
+  require(path.join(REPO_ROOT, "components/dist/icons/icons.json")),
+);
 try {
-  dsMap.setGraphics(require(path.join(REPO_ROOT, "components/dist/graphics/graphics.json")));
+  dsMap.setGraphics(
+    require(path.join(REPO_ROOT, "components/dist/graphics/graphics.json")),
+  );
 } catch (e) {}
 
 function firstCellText(slug) {
@@ -22,7 +31,10 @@ function firstCellText(slug) {
     variant: cell.variant,
     props: cell.props || {},
   });
-  return String(html).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return String(html)
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // Each expectation is the string the Figma capture holds for that slot, so a
@@ -50,5 +62,27 @@ CAPTURED.forEach(function (pair) {
 test("chat-with-ai-steward renders an authored insight", function () {
   const text = firstCellText("chat-with-ai-steward");
   assert.ok(text.length > 0, "chat-with-ai-steward renders no text at all");
-  assert.match(text, /lineage/i, "the authored insight mentions the asset it describes");
+  assert.match(
+    text,
+    /lineage/i,
+    "the authored insight mentions the asset it describes",
+  );
+});
+
+// The State=Complete matrix cell (the one firstCellText reads) takes the
+// check-icon branch and never evaluates the Step fallback, so that fallback
+// needs its own non-complete cell to be exercised at all. Anchored on the
+// status element's own class, not a bare "1" in the full text, so this
+// cannot pass by matching an unrelated digit elsewhere in the markup.
+test("stepper renders the captured Step fallback on a non-complete cell", function () {
+  const html = dsMap.renderDSComponent({
+    dsSlug: "stepper",
+    variant: "State=Active",
+    props: {},
+  });
+  assert.match(
+    String(html),
+    /<span class="ds-stepper__status">1<\/span>/,
+    "stepper must render its captured Step fallback in the status element on a non-complete cell",
+  );
 });
