@@ -8,7 +8,7 @@
   "slug": "input-date",
   "component": "Date input",
   "meta": {
-    "category": "form-input-selection",
+    "category": "form",
     "related": [
       "calendar",
       "text-input"

@@ -1193,7 +1193,7 @@
       "slug": "calendar",
       "component": "Calendar",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"
@@ -2775,7 +2775,7 @@
       "slug": "checkbox",
       "component": "Checkboxes",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"
@@ -3839,7 +3839,7 @@
       "slug": "combo-box",
       "component": "Combo box",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"
@@ -4449,7 +4449,7 @@
       "slug": "dropdown-select",
       "component": "Dropdown / Select",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"
@@ -4607,7 +4607,7 @@
       "slug": "dropdown-select",
       "component": "Dropdown / Select",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"
@@ -5687,7 +5687,7 @@
       "slug": "input-date",
       "component": "Date input",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "related": [
           "calendar",
           "text-input"
@@ -7578,7 +7578,7 @@
       "slug": "multi-select",
       "component": "Multi-select",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"
@@ -8797,7 +8797,7 @@
       "slug": "radio",
       "component": "Radio",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"
@@ -9594,7 +9594,7 @@
       "slug": "rich-text",
       "component": "Rich text",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"
@@ -9903,7 +9903,7 @@
       "slug": "search",
       "component": "Search",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"
@@ -10152,7 +10152,7 @@
       "slug": "search-dropdown-menu",
       "component": "Search dropdown menu",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "dropdowns-menus-popovers"
@@ -10325,7 +10325,7 @@
       "slug": "search-filters",
       "component": "Filters",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"
@@ -10639,7 +10639,7 @@
       "slug": "segmented-control",
       "component": "Segmented control",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "tabs"
@@ -13613,7 +13613,7 @@
       "slug": "text-input",
       "component": "Text input",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"
@@ -14509,7 +14509,7 @@
       "slug": "toggle",
       "component": "Toggle control",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"
@@ -15592,7 +15592,7 @@
       "slug": "upload-file",
       "component": "Upload file",
       "meta": {
-        "category": "form-input-selection",
+        "category": "form",
         "a11y_refs": [
           {
             "ref": "forms"

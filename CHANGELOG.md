@@ -196,6 +196,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **#541 swept two of three copies of the category slug, and 16 components silently lost their
+  published category guidance.** A guideline doc carries its own `meta.category`, hand-authored in
+  `components/src/<slug>/_meta.yml`, and `derive-usage-notes.js` resolves
+  `components/dist/categories/<that>.md` to append the category's inherited design and behavior
+  guidance. That is a **third** independent copy of the same slug, after the registry's
+  `categorySlug` and the defaults file's own `slug`. The Form components kept
+  `form-input-selection`, so their usage notes lost the entire *"Category guidance (inherited: design,
+  behavior)"* section: real published paragraphs, gone from 16 files and shipped in v0.34.131 to both
+  consumers, with every gate green because the gate added in #541 checks only the registry join.
+
+  The 15 sources are swept and the notes regenerate **byte-identical to v0.34.129**, the last version
+  before the loss. The gate is extended to the join it missed: every guideline's `meta.category` must
+  resolve to a category source, asserting a non-zero examined count for the same reason its sibling
+  does. Found by review of the consumer PRs carrying the tag, not by anything in this repo.
+
 - **19 components resolved to no category defaults at all, and every gate stayed green.** The
   registry derives `categorySlug` by slugifying the Figma category's display name, while the
   category's defaults file declares its own authored `slug`. Those two agreed only for as long as the
