@@ -463,3 +463,40 @@ test("a nested switch's default branch does not truncate the outer case block", 
     "the block still stops at the outer default",
   );
 });
+
+test("consecutive fall-through case labels both get a block", function () {
+  // Widening the marker regex to capture the following indent made it CONSUME
+  // the newline after the label, so `case "a":` immediately followed by
+  // `case "b":` swallowed the second. matrix.js still reported both, so the
+  // derive threw "no renderer branch found for b" about a branch that exists.
+  // The captured group was never read, so the widening bought nothing at all.
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  var src = [
+    '        case "a":',
+    '        case "b": {',
+    "          var x = props.Shared;",
+    "        }",
+    "        default: {}",
+  ].join("\n");
+  var blocks = D.caseBlocks("\n" + src);
+  assert.deepEqual(Object.keys(blocks).sort(), ["a", "b"]);
+});
+
+test("a malformed escape in a comment does not crash the derive", function () {
+  // The extractor scans comments as plain text, so a Windows path in a comment
+  // puts a lone \u before non-hex characters. That fell through to the bare
+  // single-character branch with seq === "u", making parseInt("") NaN and
+  // String.fromCodePoint(NaN) throw, turning a documentation comment into a hard
+  // derive failure whose message names neither the file nor the literal.
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  assert.doesNotThrow(function () {
+    D.propsOf('case "x": { /* props.Path || "C:\\users\\bin" */ }');
+  });
+  assert.doesNotThrow(function () {
+    D.propsOf('case "x": { props.P || "\\u{110000}"; }');
+  }, "an out-of-range codepoint must not throw either");
+});

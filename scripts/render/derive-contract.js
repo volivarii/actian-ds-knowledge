@@ -81,7 +81,11 @@ function loadJson(rel, key) {
 // switch, and the day one appears that slug silently gains a prop it never reads.
 function caseBlocks(src) {
   var marks = [];
-  var re = /\n[ \t]*case "([a-z0-9-]+)":\n?([ \t]*)/g;
+  // Deliberately narrow: matching anything AFTER the colon consumes it, and two
+  // fall-through labels on consecutive lines then lose the second, so the derive
+  // throws "no renderer branch found" about a branch that plainly exists. The
+  // indent is read back off the match itself, which needs no extra capture.
+  var re = /\n[ \t]*case "([a-z0-9-]+)":/g;
   var m;
   while ((m = re.exec(src)) !== null) marks.push([m.index, m[1], m[0]]);
   var out = Object.create(null);
@@ -129,15 +133,21 @@ var BRACKET_READ = /props\[\s*"([^"]+)"\s*\]/g;
 //
 // KNOWN LIMIT, stated because absence here reads as "there is no fallback": a
 // chain whose fallback is not a prop and not a literal publishes NO default,
-// even though the renderer states one. Two shapes do this today, five props in
-// total. A non-props operand mid-chain, `props.App || v["App type"] || "Studio"`
-// (global-header) and `props.Detail || wnFirstItem || "..."` (whats-new-dropdown);
-// and a fallback that is a variable rather than a literal, `props.Label ||
-// titRaw`, `props.Heading || sdmHeadingDefault`, `props.Detail || wnFirstItem`.
-// Resolving either would mean following identifiers through the renderer, which
-// is static analysis this file deliberately does not do: a wrong default is
-// worse than a missing one, since the content layer can author what is missing
-// but will silently trust what is wrong.
+// even though the renderer states one. Four props today, in two shapes:
+//
+//   a non-props operand mid-chain
+//     global-header.App          props.App || v["App type"] || "Studio"
+//     whats-new-dropdown.Detail  props.Detail || wnFirstItem || "New items..."
+//   a fallback that is a variable rather than a literal
+//     tag-item-type.Label        props.Label || titRaw
+//     search-dropdown-menu.Heading  props.Heading || sdmHeadingDefault
+//
+// Resolving either means following identifiers through the renderer, which is
+// static analysis this file deliberately does not do: a wrong default is worse
+// than a missing one, since the content layer can author what is missing but
+// will silently trust what is wrong. The count is stated here, next to the
+// enumeration that carries it, and NOT in the published schema, where a
+// hand-maintained number would be a consumer-visible claim that goes stale.
 var PROP_REF = 'props(?:\\.([A-Za-z_][A-Za-z0-9_]*)|\\[\\s*"([^"]+)"\\s*\\])';
 var DEFAULT_CHAIN = new RegExp(
   PROP_REF +
@@ -167,9 +177,21 @@ function unescapeLiteral(s) {
   return s.replace(
     /\\(u\{[0-9a-fA-F]+\}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|.)/g,
     function (_, seq) {
-      if (seq[0] === "u" || seq[0] === "x") {
-        var hex = seq.replace(/^u\{|^u|^x|\}$/g, "");
-        return String.fromCodePoint(parseInt(hex, 16));
+      // A MALFORMED escape falls through to the bare single-character
+      // alternative, so `\u` before non-hex arrives here as just "u", and
+      // parseInt("") is NaN. The reachable vector is a comment, which this
+      // extractor scans as plain text, so a Windows path in a comment could turn
+      // into a hard derive failure naming neither the file nor the literal.
+      // The RANGE CHECK below is what prevents that (NaN fails it, and so does
+      // an out-of-range codepoint); the length test is redundant with it and
+      // kept only because it names the malformed case where a reader meets it.
+      if (seq.length > 1 && (seq[0] === "u" || seq[0] === "x")) {
+        var code = parseInt(seq.replace(/^u\{|^u|^x|\}$/g, ""), 16);
+        // Out of range is a SyntaxError in real JS, so it can only reach here
+        // from text that is not a string literal. Left as written rather than
+        // thrown on, for the same reason.
+        if (code >= 0 && code <= 0x10ffff) return String.fromCodePoint(code);
+        return seq;
       }
       return Object.prototype.hasOwnProperty.call(ESCAPES, seq)
         ? ESCAPES[seq]
