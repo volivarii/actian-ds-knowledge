@@ -750,7 +750,11 @@
             esc(props.Category || "Catalog") +
             "</span>" +
             '<p class="ds-card__body">' +
-            esc(props.Body || "") +
+            // capture: components/dist/anatomy/card-for-items.json layer "Subtitle"
+            esc(
+              props.Body ||
+                "Body goes here. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse nec lacus urna.",
+            ) +
             "</p>" +
             "</div>"
           );
@@ -802,7 +806,8 @@
             '<span class="ds-item-type" style="' +
             digramItemTypeStyle(linItemType) +
             '">' +
-            esc(props["Item type initials"] || "") +
+            // derived: the capture has no initials layer; its nested tag reads "powerbi"
+            esc(props["Item type initials"] || "PB") +
             "</span>";
 
           // powerbi/identification-key have no captured icon or graphic asset
@@ -849,7 +854,8 @@
             '<span class="ds-item-type" style="' +
             digramItemTypeStyle(lgnItemType) +
             '">' +
-            esc(props["Item type initials"] || "") +
+            // derived: the capture has no initials layer; its nested button reads "2 datasets"
+            esc(props["Item type initials"] || "DS") +
             "</span>";
 
           // Inline lineage-individual-node's own markup for the one
@@ -900,7 +906,8 @@
             '<span class="ds-item-type" style="' +
             digramItemTypeStyle(mwItemType) +
             '">' +
-            esc(props["Item type initials"] || "") +
+            // derived: the capture has no initials layer; its item-type layer reads "Dataset"
+            esc(props["Item type initials"] || "DS") +
             "</span>";
           var mwSection = props["Show Section"]
             ? '<div class="ds-metamodel-widget__section">' +
@@ -1431,7 +1438,10 @@
           var alertTitleHtml = props.Title
             ? '<p class="ds-alert__title">' + esc(props.Title) + "</p>"
             : "";
-          var alertMsg = esc(props.Message || "");
+          // capture: anatomy/alert-banner.json layer "Primary" reads "Info" on the
+          // default variant (Type=Info), so the message mirrors the type name.
+          // matrix.js supplies the per-Type value; this is the no-props fallback.
+          var alertMsg = esc(props.Message || "Info");
           return (
             '<div class="' +
             alertCls +
@@ -1557,7 +1567,11 @@
             stBody =
               '<div class="ds-steward__body" aria-live="polite">' +
               '<p class="ds-steward__insight">' +
-              esc(props.Insight || "") +
+              // authored: the Figma capture for this component has zero text nodes
+              esc(
+                props.Insight ||
+                  "This dataset has three upstream sources and feeds two published reports. Review its lineage before changing the schema.",
+              ) +
               "</p>" +
               stSrc +
               '<div class="ds-steward__actions">' +
@@ -1598,7 +1612,8 @@
             "ds-notification" +
             (notifCritical ? " ds-notification--critical" : "");
           var notifRole = notifCritical ? "alert" : "status";
-          var notifMsg = esc(props.Message || "");
+          // capture: anatomy/notification.json text layer "Item deleted"
+          var notifMsg = esc(props.Message || "Item deleted");
           // Action button is optional — only render when an Action label exists.
           var notifAction = props.Action
             ? '<button class="ds-button ds-button--tertiary ds-button--small ds-notification__action" type="button">' +
@@ -1637,7 +1652,8 @@
             ? '<span class="ds-stepper__check">' +
               renderIcon("simple-check") +
               "</span>"
-            : esc(props.Step || "");
+            : // capture: anatomy/stepper.json text layer "1"
+              esc(props.Step || "1");
           var stepBody = props.Body
             ? '<span class="ds-stepper__body">' + esc(props.Body) + "</span>"
             : "";
@@ -1650,7 +1666,8 @@
             "</span>" +
             '<span class="ds-stepper__text">' +
             '<span class="ds-stepper__title">' +
-            esc(props.Title || "") +
+            // capture: anatomy/stepper.json layer "Title" reads "Complete"
+            esc(props.Title || "Complete") +
             "</span>" +
             stepBody +
             "</span>" +
@@ -1706,7 +1723,11 @@
           return (
             '<div class="ds-tooltip" role="tooltip">' +
             '<span class="ds-tooltip__body">' +
-            esc(props.Body || "") +
+            // capture: anatomy/tooltip.json layer "Body"
+            esc(
+              props.Body ||
+                "Body line text lorem ipsum dolor sit amet, consectetur",
+            ) +
             "</span>" +
             '<span class="ds-tooltip__arrow" aria-hidden="true"></span>' +
             "</div>"
