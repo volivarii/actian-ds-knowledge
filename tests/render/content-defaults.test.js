@@ -89,12 +89,15 @@ test("stepper renders the captured Step fallback on a non-complete cell", functi
 
 // Conditional-omit slots: the element is absent entirely when the prop is unset,
 // so these assert the rendered text, not just a non-empty element.
+// input-date's helper slot is NOT covered here: "MM/DD/YYYY" also appears in
+// datePlaceholder's own unconditional literal elsewhere in the same case block,
+// so a stripped-text match on that string would pass whether or not the helper
+// slot itself was filled. See the raw-HTML-anchored test below instead.
 const RESOLVED = [
   ["radio", "Description"],
   ["toggle", "Description"],
   ["page-header", "Support text"],
   ["modal", "Update the description"],
-  ["input-date", "MM/DD/YYYY"],
   ["dropdown-select-default", "A description helps users"],
   ["popover", "Interaction guide"],
   ["account-dropdown", "account.user@example.com"],
@@ -125,4 +128,61 @@ test("stepper renders its captured body", function () {
 
 test("notification renders its captured action label", function () {
   assert.match(firstCellText("notification"), /Close/);
+});
+
+// Fix round 1: three conditional-omit fills had no assertion that would fail
+// if the fill were reverted, because a stripped-text match on the resolved
+// string can be satisfied by an identical (or coincidentally overlapping)
+// substring rendered elsewhere in the same component. These assert against
+// the raw HTML, anchored to the specific element's own class, so a match
+// elsewhere in the markup cannot satisfy them.
+function firstCellHtml(slug) {
+  const cell = matrix.variantMatrix(slug)[0];
+  return String(
+    dsMap.renderDSComponent({
+      dsSlug: slug,
+      variant: cell.variant,
+      props: cell.props || {},
+    }),
+  );
+}
+
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+test("input-date renders its resolved helper text in the helper element", function () {
+  assert.match(
+    firstCellHtml("input-date"),
+    new RegExp(
+      '<span class="ds-input-date__helper">' +
+        escapeRegExp("Use MM/DD/YYYY.") +
+        "</span>",
+    ),
+    "input-date must render its helper slot rather than omitting the element",
+  );
+});
+
+test("dropdown-select-default renders its resolved helper text in the helper element", function () {
+  assert.match(
+    firstCellHtml("dropdown-select-default"),
+    new RegExp(
+      '<span class="ds-dropdown-select__helper">' +
+        escapeRegExp("Helper text goes here") +
+        "</span>",
+    ),
+    "dropdown-select-default must render its helper slot rather than omitting the element",
+  );
+});
+
+test("popover renders its full resolved body text in the body element", function () {
+  const body =
+    "Explore this asset’s upstream sources and downstream consumers, as well as the transformations connecting them across the data pipeline. Learn how to navigate data lineage using mouse and keyboard controls.";
+  assert.match(
+    firstCellHtml("popover"),
+    new RegExp(
+      '<span class="ds-popover__body">' + escapeRegExp(body) + "</span>",
+    ),
+    "popover must render its full captured body text (both sentences) in its own element",
+  );
 });

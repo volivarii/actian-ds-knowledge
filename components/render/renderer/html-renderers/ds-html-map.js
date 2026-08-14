@@ -2101,11 +2101,14 @@
                 renderIcon("help-circle") +
                 "</span>"
               : "";
-          // capture: anatomy/popover.json layers "Header" and "description"
+          // capture: anatomy/popover.json layer "Header"
           var poTitleText = props.Title || "Interaction guide";
+          // capture: anatomy/popover.json layer "description"; the capture holds two
+          // sentences joined by U+2028 line separator characters, normalised here to
+          // a single space so no raw line separator reaches the rendered markup
           var poBodyText =
             props.Body ||
-            "Explore this asset’s upstream sources and downstream consumers, as well as the transformations connecting them across the data pipeline.";
+            "Explore this asset’s upstream sources and downstream consumers, as well as the transformations connecting them across the data pipeline. Learn how to navigate data lineage using mouse and keyboard controls.";
           var poTitle =
             '<span class="ds-popover__title">' + esc(poTitleText) + "</span>";
           var poBody =
