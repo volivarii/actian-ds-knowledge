@@ -94,7 +94,7 @@
                 },
                 "default": {
                   "type": "string",
-                  "description": "The literal the renderer falls back to when the prop is absent. Omitted when the fallback is the empty string, because an empty default is the absence of one rather than guidance to render nothing.",
+                  "description": "The literal the renderer falls back to when the prop is absent. Omitted when the fallback is the empty string, because an empty default is the absence of one rather than guidance to render nothing. Also omitted, and this is a known limit rather than a statement about the renderer, when the fallback is reached through a variable or through a non-prop operand (`props.App || v[\"App type\"] || \"Studio\"`): resolving those would mean following identifiers through the renderer, and a wrong default is worse than a missing one because a content layer can author what is missing but will trust what is wrong. Five props are affected today. So read an absent default as \"this derive cannot see one\", never as \"the renderer has none\".",
                   "examples": ["AI Steward", "Placeholder text"]
                 }
               }
@@ -105,7 +105,10 @@
             "description": "One entry per registry variant axis, keyed by the axis name exactly as the registry spells it (the renderer keys on that spelling, e.g. button uses \"State\" and text-input uses \"States\").",
             "examples": [
               {
-                "App": { "values": ["Admin", "Studio"], "rendersAs": { "Studio": "Admin" } }
+                "App": {
+                  "values": ["Admin", "Studio"],
+                  "rendersAs": { "Studio": "Admin" }
+                }
               }
             ],
             "additionalProperties": {

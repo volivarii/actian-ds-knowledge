@@ -301,15 +301,29 @@ test("the last case block stops at the switch's default branch", function () {
   );
 });
 
-test("a falsy default literal is published, not dropped", function () {
-  // `props.Count || "0"` gives a real default. Testing the extractor directly
-  // because no such literal exists in the renderer today, and a latent silent
-  // drop is exactly what a contract consumer cannot detect.
+test("an empty fallback earlier in a branch does not mask a real default later", function () {
+  // This replaces a test that asserted a falsy literal survives. That test was
+  // tautological: "0" is a truthy JS string, so the truthiness check it was
+  // written against never dropped it, and it passed against the very code it
+  // claimed to catch. The condition that DOES differ is where the empty literal
+  // is discarded. Recorded, "" wins first-wins and then vanishes at emit, so the
+  // prop publishes no default while the renderer plainly states one, and which
+  // happens depends only on the order the two chains appear in the branch.
   var D = require(
     path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
   );
-  var props = D.propsOf('case "x": { var a = esc(props.Count || "0"); }');
-  assert.deepEqual(props, [{ name: "Count", default: "0" }]);
+  var emptyFirst = D.propsOf(
+    'case "x": { esc(props.Label || ""); esc(props.Label || "Untitled"); }',
+  );
+  var realFirst = D.propsOf(
+    'case "x": { esc(props.Label || "Untitled"); esc(props.Label || ""); }',
+  );
+  assert.deepEqual(emptyFirst, [{ name: "Label", default: "Untitled" }]);
+  assert.deepEqual(
+    realFirst,
+    emptyFirst,
+    "source order must not decide whether a stated default is published",
+  );
 });
 
 test("an escaped newline in a default survives as a newline", function () {
@@ -345,14 +359,107 @@ test("the derive declares its inputs, and the derive workflow watches all of the
     })
     .filter(Boolean);
   assert.ok(triggers.length, "the workflow declares trigger paths");
-  D.INPUTS.forEach(function (input) {
-    var watched = triggers.some(function (t) {
-      var prefix = t.replace(/\*+$/, "");
-      return input.indexOf(prefix) === 0 || t === input;
+
+  // Matched the way GitHub matches, not by string prefix. A prefix test accepted
+  // a bare '*' (which reduces to the empty string, and every input starts with
+  // it) and accepted a truncated path like 'components/dist/icon', neither of
+  // which matches anything in GitHub's globbing: a false all-clear on the one
+  // check standing between a required gate and a workflow that cannot repair it.
+  function watchedBy(triggerList, input) {
+    return triggerList.some(function (t) {
+      if (t === input) return true;
+      // Only a `dir/**` trigger covers things beneath it, and it covers them by
+      // whole path segments. That segment boundary is what rejects a truncation:
+      // 'components/dist/icon/**' does not cover 'components/dist/icons/'.
+      if (t.slice(-3) !== "/**") return false;
+      return input.indexOf(t.slice(0, -2)) === 0;
     });
+  }
+
+  // Negative controls first, so this cannot pass by being permissive.
+  assert.equal(
+    watchedBy(["*"], "components/dist/icons/"),
+    false,
+    "a bare * must not count as watching a directory",
+  );
+  assert.equal(
+    watchedBy(["components/dist/icon/**"], "components/dist/icons/"),
+    false,
+    "a truncated path must not count as watching the real one",
+  );
+  assert.equal(
+    watchedBy(["components/dist/icons/**"], "components/dist/icons/"),
+    true,
+    "positive control: the real trigger shape does match",
+  );
+
+  D.INPUTS.forEach(function (input) {
     assert.ok(
-      watched,
+      watchedBy(triggers, input),
       input + " is a derive input no workflow trigger watches",
     );
   });
+});
+
+test("unicode and hex escapes in a default survive as their characters", function () {
+  // The escape table's comment claimed to cover "the escapes a JS string literal
+  // can carry"; \u, \x, \b, \f, \v and \0 are all such escapes and all fell
+  // through to the bare letter, so "é" published as the text u00e9. Defaults
+  // are user-facing copy, so that reads as a plausible string rather than as an
+  // error, which is the silent shape this file keeps trying to eliminate.
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  assert.equal(
+    D.propsOf('case "x": { props.L || "\\u00e9t\\u00e9"; }')[0].default,
+    "été",
+  );
+  assert.equal(
+    D.propsOf('case "x": { props.M || "a\\x41b"; }')[0].default,
+    "aAb",
+  );
+});
+
+test("a switch with no default branch is an error, not a silent run to EOF", function () {
+  // The -1 fallback reproduced exactly the over-extension this file just fixed,
+  // and only the test against the real renderer would have noticed. This module
+  // throws on both of its other impossible states, so it throws here too.
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  assert.throws(function () {
+    D.caseBlocks('\n        case "a": { var x = props.A; }\n      }\n');
+  }, /default/i);
+});
+
+test("a nested switch's default branch does not truncate the outer case block", function () {
+  // The end marker is matched at the case markers' own indentation, so a deeper
+  // `default:` inside the final branch cannot end it early and drop every prop
+  // after it. No nested switch exists in the renderer today; this is the guard
+  // that keeps that from mattering.
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  var src = [
+    '        case "a": {',
+    "          switch (inner) {",
+    "            default: { var y = props.Ignored; }",
+    "          }",
+    "          var z = props.Kept;",
+    "        }",
+    "        default: {",
+    "          var w = props.OutsideTheSwitch;",
+    "        }",
+  ].join("\n");
+  var names = D.propsOf(D.caseBlocks("\n" + src).a).map(function (p) {
+    return p.name;
+  });
+  assert.ok(
+    names.indexOf("Kept") !== -1,
+    "props after a nested default survive",
+  );
+  assert.ok(
+    names.indexOf("OutsideTheSwitch") === -1,
+    "the block still stops at the outer default",
+  );
 });

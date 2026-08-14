@@ -81,16 +81,28 @@ function loadJson(rel, key) {
 // switch, and the day one appears that slug silently gains a prop it never reads.
 function caseBlocks(src) {
   var marks = [];
-  var re = /\n[ \t]*case "([a-z0-9-]+)":/g;
+  var re = /\n[ \t]*case "([a-z0-9-]+)":\n?([ \t]*)/g;
   var m;
-  while ((m = re.exec(src)) !== null) marks.push([m.index, m[1]]);
+  while ((m = re.exec(src)) !== null) marks.push([m.index, m[1], m[0]]);
   var out = Object.create(null);
   if (!marks.length) return out;
-  var defaultAt = src
-    .slice(marks[marks.length - 1][0])
-    .search(/\n[ \t]*default:/);
-  var switchEnd =
-    defaultAt === -1 ? src.length : marks[marks.length - 1][0] + defaultAt;
+  var last = marks[marks.length - 1];
+  // Matched at the case markers' OWN indentation, so a nested switch's deeper
+  // `default:` cannot end the outer block early and drop every prop after it.
+  var indent = (last[2].match(/\n([ \t]*)case/) || [])[1] || "";
+  var endRe = new RegExp("\\n" + indent + "default:");
+  var defaultAt = src.slice(last[0]).search(endRe);
+  if (defaultAt === -1) {
+    // Falling back to end-of-file here would silently reproduce the very
+    // over-extension this bound exists to prevent, and only a test against the
+    // real renderer would ever notice. This module throws on its other
+    // impossible states; a switch with no default is one of them.
+    throw new Error(
+      "derive-contract: no `default:` branch found at the case indentation, so " +
+        "the last case block has no end. The renderer's switch shape changed.",
+    );
+  }
+  var switchEnd = last[0] + defaultAt;
   for (var i = 0; i < marks.length; i++) {
     var start = marks[i][0];
     var end = i + 1 < marks.length ? marks[i + 1][0] : switchEnd;
@@ -114,6 +126,18 @@ var BRACKET_READ = /props\[\s*"([^"]+)"\s*\]/g;
 // content layer this field exists to seed would have filled the alias and left
 // the preferred prop empty. So the pattern below skips any `|| props.Y` links and
 // binds the literal to the head of the chain.
+//
+// KNOWN LIMIT, stated because absence here reads as "there is no fallback": a
+// chain whose fallback is not a prop and not a literal publishes NO default,
+// even though the renderer states one. Two shapes do this today, five props in
+// total. A non-props operand mid-chain, `props.App || v["App type"] || "Studio"`
+// (global-header) and `props.Detail || wnFirstItem || "..."` (whats-new-dropdown);
+// and a fallback that is a variable rather than a literal, `props.Label ||
+// titRaw`, `props.Heading || sdmHeadingDefault`, `props.Detail || wnFirstItem`.
+// Resolving either would mean following identifiers through the renderer, which
+// is static analysis this file deliberately does not do: a wrong default is
+// worse than a missing one, since the content layer can author what is missing
+// but will silently trust what is wrong.
 var PROP_REF = 'props(?:\\.([A-Za-z_][A-Za-z0-9_]*)|\\[\\s*"([^"]+)"\\s*\\])';
 var DEFAULT_CHAIN = new RegExp(
   PROP_REF +
@@ -122,13 +146,36 @@ var DEFAULT_CHAIN = new RegExp(
   "g",
 );
 
-// Only the escapes a JS string literal can carry. A blanket `\\(.)` -> `$1`
-// turned "a\nb" into "anb", publishing a default the renderer never produces.
-var ESCAPES = { n: "\n", t: "\t", r: "\r", "\\": "\\", '"': '"', "'": "'" };
+// A blanket `\\(.)` -> `$1` turned "a\nb" into "anb", and the first attempt to
+// fix it covered only the single-character escapes: an accented character written
+// as "é" still published as the text u00e9, which reads as a plausible
+// default rather than as an error. Defaults are user-facing copy, so the numeric
+// forms matter as much as the named ones.
+var ESCAPES = {
+  n: "\n",
+  t: "\t",
+  r: "\r",
+  b: "\b",
+  f: "\f",
+  v: "\v",
+  0: "\0",
+  "\\": "\\",
+  '"': '"',
+  "'": "'",
+};
 function unescapeLiteral(s) {
-  return s.replace(/\\(.)/g, function (_, ch) {
-    return Object.prototype.hasOwnProperty.call(ESCAPES, ch) ? ESCAPES[ch] : ch;
-  });
+  return s.replace(
+    /\\(u\{[0-9a-fA-F]+\}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|.)/g,
+    function (_, seq) {
+      if (seq[0] === "u" || seq[0] === "x") {
+        var hex = seq.replace(/^u\{|^u|^x|\}$/g, "");
+        return String.fromCodePoint(parseInt(hex, 16));
+      }
+      return Object.prototype.hasOwnProperty.call(ESCAPES, seq)
+        ? ESCAPES[seq]
+        : seq;
+    },
+  );
 }
 
 function collect(re, block, onMatch) {
@@ -149,21 +196,25 @@ function propsOf(block) {
   var defaults = Object.create(null);
   collect(DEFAULT_CHAIN, block, function (m) {
     var head = m[1] || m[2];
-    if (defaults[head] === undefined) defaults[head] = unescapeLiteral(m[3]);
+    var literal = unescapeLiteral(m[3]);
+    // An empty fallback is the absence of a default, not a default of "".
+    // Discarded HERE rather than at emit, because recorded it would win
+    // first-wins and block a real literal for the same prop later in the same
+    // branch: the prop would then publish no default while the renderer plainly
+    // states one, decided by nothing but the order the two chains appear in.
+    if (literal === "") return;
+    if (defaults[head] === undefined) defaults[head] = literal;
   });
 
   return Object.keys(names)
     .sort()
     .map(function (name) {
       var entry = { name: name };
-      // An empty fallback is the absence of a default, not a default of "".
-      // Emitting it would invite a consumer to render `default: ""` as guidance.
-      // Tested for explicitly rather than by truthiness: `props.Count || "0"` is
-      // a real default, and a truthiness check drops it indistinguishably from a
-      // prop the renderer gives no fallback at all.
-      if (defaults[name] !== undefined && defaults[name] !== "") {
-        entry.default = defaults[name];
-      }
+      // Empty literals never reach this map (see the record site above), so a
+      // present value is always a real default. Deliberately NOT a truthiness
+      // check: it would read as guarding the empty case while actually being
+      // equivalent, since "0" and every other non-empty string is truthy.
+      if (defaults[name] !== undefined) entry.default = defaults[name];
       return entry;
     });
 }
