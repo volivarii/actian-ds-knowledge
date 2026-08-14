@@ -60,7 +60,10 @@ dependency injection:
 - `matrix.js`: the variant-matrix logic (`variantMatrix`, `findComponent`, `groupFor`,
   `RENDER_SLUGS`, `MATRIX_OVERRIDES`), ported from the plugin's capture driver. It is
   also the authority on WHICH slugs the gallery covers and which group each lands in.
-- `default-props.json`: default prop values the matrix falls back to.
+Content defaults live in `html-renderers/ds-html-map.js` as each prop's `|| "literal"`
+fallback, and `scripts/render/derive-contract.js` publishes them as `props[].default`
+in `components/render/dist/render-contract.json`. Each literal carries a comment naming
+the `components/dist/anatomy/<slug>.json` layer it was taken from.
 
 These modules read facts (anatomy JSON, `icons.json`) via **injected** loaders and maps,
 never via `lib/paths` (which lives only in the plugin): a missing `lib/paths` require

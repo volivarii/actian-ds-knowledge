@@ -18,9 +18,11 @@
 // restating by hand a fact the producer already owns. The fix is the relation, not
 // a better list. This file is the relation.
 //
-// It is also the prerequisite for a real content layer. `default-props.json`
-// exists to give each render example content and has 3 entries and zero readers;
-// nothing knew which props needed values. The `props` array below is that list.
+// It is also the real content layer. An earlier attempt, `default-props.json`,
+// tried to give each render example content but had 3 entries, zero readers, and
+// its one interesting entry recorded a Figma layer name rather than the layer's
+// text, so it was deleted. The `default` field below, sourced from each prop's
+// `|| "literal"` fallback in ds-html-map.js, is what actually reaches consumers.
 //
 // HOW EACH FACT IS DERIVED (nothing here is hand-maintained)
 //

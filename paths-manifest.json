@@ -5,21 +5,9 @@
   "manifest_schema_version": "v1",
   "knowledge_version": "0.34.132",
   "_zones": {
-    "knowledge": [
-      "accessibility",
-      "components",
-      "content",
-      "foundations"
-    ],
-    "contract": [
-      "graph"
-    ],
-    "metadata": [
-      "appContext",
-      "appContextBundle",
-      "appContextSrc",
-      "tokens"
-    ],
+    "knowledge": ["accessibility", "components", "content", "foundations"],
+    "contract": ["graph"],
+    "metadata": ["appContext", "appContextBundle", "appContextSrc", "tokens"],
     "_pendingEviction": []
   },
   "paths": {
@@ -950,7 +938,7 @@
       "recursive": true,
       "type": "text",
       "origin": "human",
-      "description": "The relocated renderer: the fact-driven DS component renderer JS (ds-html-map + appearance/anatomy interpreters, structure-preserving under html-renderers/), its hi-fi styling source (ds-base.css, ds-fonts.css), the lo-fi Fat Marker renderer JS and its self-contained styling source (html-renderers/fm-html-map.js, fm-base.css), and default-props.json. Knowledge owns the one renderer; the plugin vendors it back (renderer-relocation phase 1; the fm tier finished in the fm-relocation follow-up). render.css derives from the ds-tier .css members; the gallery derives by running the ds-tier .js over each component's variant matrix. fm-base.css and fm-html-map.js are carried for the plugin's own parametric fm-tier consumption; knowledge derives no fm gallery of its own."
+      "description": "The relocated renderer: the fact-driven DS component renderer JS (ds-html-map + appearance/anatomy interpreters, structure-preserving under html-renderers/), its hi-fi styling source (ds-base.css, ds-fonts.css), the lo-fi Fat Marker renderer JS and its self-contained styling source (html-renderers/fm-html-map.js, fm-base.css). Knowledge owns the one renderer; the plugin vendors it back (renderer-relocation phase 1; the fm tier finished in the fm-relocation follow-up). render.css derives from the ds-tier .css members; the gallery derives by running the ds-tier .js over each component's variant matrix. fm-base.css and fm-html-map.js are carried for the plugin's own parametric fm-tier consumption; knowledge derives no fm gallery of its own."
     },
     "components.render.usageNotes": {
       "dir": "components/render/dist/usage-notes",
