@@ -86,31 +86,42 @@ function tryGit(args, extra) {
 // `.github/workflows/vendored-source-bump.yml` solved this by fetching the base
 // ref and merge-basing against FETCH_HEAD; that is the mechanism used here.
 //
-// The remote-tracking ref is still tried FIRST when it already resolves: a
-// `git fetch` on every `npm test` run is slow and non-hermetic, and a
-// developer's clone has fetched at least once.
+// The remote-tracking ref is tried FIRST, and the fetch is a genuine FALLBACK
+// reached only when that yields nothing: a `git fetch` on every `npm test` run
+// is slow and non-hermetic, and a developer's clone has fetched at least once.
+// Building both candidates up front and looping over them ran the fetch
+// unconditionally, which is the same defect in a shape that reads like a fast
+// path, so the ordering is expressed as control flow rather than as list order.
+function contractAtMergeBaseWith(ref) {
+  const mergeBase = tryGit(["merge-base", ref, "HEAD"]);
+  if (!mergeBase) return null;
+  const raw = tryGit(["show", mergeBase + ":" + CONTRACT_REL], {
+    maxBuffer: 32 * 1024 * 1024,
+  });
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    // A corrupt baseline is not a pass: report nothing so the caller falls
+    // through to its next candidate, and to the loud failure if there is none.
+    return null;
+  }
+}
+
 function baselineContract() {
   const baseRef = process.env.GITHUB_BASE_REF || "main";
-  const refs = [];
+  // Fast path, and it stays offline: no network call is made at all unless this
+  // fails to produce a usable baseline.
   if (tryGit(["rev-parse", "--verify", "--quiet", "origin/" + baseRef])) {
-    refs.push("origin/" + baseRef);
+    const local = contractAtMergeBaseWith("origin/" + baseRef);
+    if (local) return local;
   }
+  // Fallback only. On a fork PR `origin/<baseRef>` does not exist and cannot be
+  // made to exist under actions/checkout's narrow refspec, but the fetch still
+  // populates FETCH_HEAD, which is enough to merge-base against.
   if (tryGit(["fetch", "--no-tags", "--quiet", "origin", baseRef]) !== null) {
-    refs.push("FETCH_HEAD");
-  }
-  for (const ref of refs) {
-    const mergeBase = tryGit(["merge-base", ref, "HEAD"]);
-    if (!mergeBase) continue;
-    const raw = tryGit(["show", mergeBase + ":" + CONTRACT_REL], {
-      maxBuffer: 32 * 1024 * 1024,
-    });
-    if (!raw) continue;
-    try {
-      return JSON.parse(raw);
-    } catch (e) {
-      // A corrupt baseline is not a pass: keep looking, and fall through to the
-      // loud failure below if no candidate yields a readable contract.
-    }
+    const fetched = contractAtMergeBaseWith("FETCH_HEAD");
+    if (fetched) return fetched;
   }
   return null;
 }
