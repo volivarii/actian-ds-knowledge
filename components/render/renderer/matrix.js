@@ -289,6 +289,25 @@ function disabledValue(values) {
 // registry derivation, so it is authored here rather than derived. Kept in the
 // deriver so a re-run of --all reproduces it instead of clobbering it.
 var MATRIX_OVERRIDES = {
+  // The capture holds one text node reading "Info" on the default variant
+  // (Type=Info), so in the design file the message mirrors the type name.
+  // Anatomy captures only the default variant, so the same rule is applied to
+  // the other three rather than repeating one message across four cells.
+  "alert-banner": [
+    { label: "Info", variant: "Type=Info", props: { Message: "Info" } },
+    {
+      label: "Success",
+      variant: "Type=Success",
+      props: { Message: "Success" },
+    },
+    {
+      label: "Warning",
+      variant: "Type=Warning",
+      props: { Message: "Warning" },
+    },
+    { label: "Error", variant: "Type=Error", props: { Message: "Error" } },
+  ],
+
   button: [
     {
       label: "Primary",

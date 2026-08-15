@@ -11,7 +11,8 @@
       "group": "Navigation",
       "props": [
         {
-          "name": "Email"
+          "name": "Email",
+          "default": "account.user@example.com"
         },
         {
           "name": "Items"
@@ -27,7 +28,8 @@
       "group": "Feedback",
       "props": [
         {
-          "name": "Message"
+          "name": "Message",
+          "default": "Info"
         },
         {
           "name": "Title"
@@ -255,7 +257,8 @@
       "group": "Data Display",
       "props": [
         {
-          "name": "Body"
+          "name": "Body",
+          "default": "Body goes here. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse nec lacus urna."
         },
         {
           "name": "Category",
@@ -353,7 +356,8 @@
           "name": "Greeting"
         },
         {
-          "name": "Insight"
+          "name": "Insight",
+          "default": "This dataset has three upstream sources and feeds two published reports. Review its lineage before changing the schema."
         },
         {
           "name": "Source"
@@ -599,10 +603,12 @@
       "group": "Form",
       "props": [
         {
-          "name": "Description"
+          "name": "Description",
+          "default": "A description helps users to define and understand the purpose of the input."
         },
         {
-          "name": "Helper"
+          "name": "Helper",
+          "default": "Helper text goes here"
         },
         {
           "name": "Label",
@@ -785,7 +791,8 @@
       "group": "Form",
       "props": [
         {
-          "name": "Helper"
+          "name": "Helper",
+          "default": "Use MM/DD/YYYY."
         },
         {
           "name": "Label",
@@ -834,7 +841,8 @@
           "name": "Child label"
         },
         {
-          "name": "Item type initials"
+          "name": "Item type initials",
+          "default": "DS"
         },
         {
           "name": "Label"
@@ -866,7 +874,8 @@
       "group": "Data Display",
       "props": [
         {
-          "name": "Item type initials"
+          "name": "Item type initials",
+          "default": "PB"
         },
         {
           "name": "Label"
@@ -1056,7 +1065,8 @@
           "name": "Actions"
         },
         {
-          "name": "Body"
+          "name": "Body",
+          "default": "Update the description so teammates know what this connection is for."
         },
         {
           "name": "Title",
@@ -1095,10 +1105,12 @@
       "group": "Feedback",
       "props": [
         {
-          "name": "Action"
+          "name": "Action",
+          "default": "Close"
         },
         {
-          "name": "Message"
+          "name": "Message",
+          "default": "Item deleted"
         }
       ],
       "variants": {
@@ -1143,7 +1155,8 @@
           "name": "Actions"
         },
         {
-          "name": "Description"
+          "name": "Description",
+          "default": "Support text"
         },
         {
           "name": "Title",
@@ -1170,14 +1183,15 @@
       "group": "Overlays",
       "props": [
         {
-          "name": "Body"
+          "name": "Body",
+          "default": "Explore this asset’s upstream sources and downstream consumers, as well as the transformations connecting them across the data pipeline. Learn how to navigate data lineage using mouse and keyboard controls."
         },
         {
           "name": "Show info icon"
         },
         {
           "name": "Title",
-          "default": "Popover"
+          "default": "Interaction guide"
         }
       ],
       "variants": {
@@ -1219,7 +1233,8 @@
       "group": "Form",
       "props": [
         {
-          "name": "Helper text"
+          "name": "Helper text",
+          "default": "Description"
         },
         {
           "name": "Label",
@@ -1520,13 +1535,16 @@
       "group": "Navigation",
       "props": [
         {
-          "name": "Body"
+          "name": "Body",
+          "default": "Optional body"
         },
         {
-          "name": "Step"
+          "name": "Step",
+          "default": "1"
         },
         {
-          "name": "Title"
+          "name": "Title",
+          "default": "Connect source"
         }
       ],
       "variants": {
@@ -1779,7 +1797,8 @@
       "group": "Form",
       "props": [
         {
-          "name": "Helper text"
+          "name": "Helper text",
+          "default": "Description"
         },
         {
           "name": "Label",
@@ -1854,7 +1873,8 @@
       "group": "Overlays",
       "props": [
         {
-          "name": "Body"
+          "name": "Body",
+          "default": "Body line text lorem ipsum dolor sit amet, consectetur"
         }
       ],
       "variants": {
