@@ -198,7 +198,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **A thirteenth optional slot was still carrying a literal fallback, and the test that was supposed
-  to catch it could only check slots somebody had remembered to list.** `chat-with-ai-steward`
+  to catch it could only check slots somebody had remembered to list.**
+  ([#PR](_PR link added at open_)) `chat-with-ai-steward`
   initialised its context-chip label to *"Dataset Customer Orders"* instead of guarding the element
   on the prop, so the chip rendered whether or not the caller scoped the session to anything. It
   survived the #544 sweep because it wears a different shape: a variable initialised to the literal
@@ -211,10 +212,12 @@ Each entry links its pull request. Dates are the merge date (UTC).
   and the bare string.
 
 - **The sparse render ratchet: a component must not invent content the caller did not ask for.**
-  (`tests/render/sparse-render-ratchet.test.js`) The omission test added with #544 iterates
-  `SPECIMEN_PROPS`, so a slot missing from that map is a slot nothing checks, which is exactly how
-  the thirteenth shipped. This gate takes no list at all. It measures two things, both by rendering
-  and reading the markup rather than the source, so the fallback can be written any way at all:
+  ([#PR](_PR link added at open_)) (`tests/render/sparse-render-ratchet.test.js`) The omission test
+  added with #544 iterates `SPECIMEN_PROPS`, so a slot missing from that map is a slot nothing
+  checks, which is exactly how the thirteenth shipped. This gate keeps no list of slots: its
+  subjects come from the render contract and its answers are read off the rendered markup rather
+  than the source, so within the scope stated below, the fallback can be written any way at all. It
+  measures two things:
 
   1. **every slug rendered with no props whatsoever**, counting the elements that carry visible
      text. Blocks when that count rises, per slug and across the components present at both points.
@@ -225,9 +228,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
      `<svg><title>`.
   2. **every `(slug, prop)` pair rendered twice**, empty and with a sentinel in that prop, asking
      whether supplying the prop **removed** anything. A prop may add to the markup; the moment it
-     takes something away, the renderer was carrying content of its own for it. This is the
-     complement that closes all three blind spots above, since it compares raw HTML. It is a set
-     that must not **grow**, not one that must be empty: 99 pairs have a designed fallback today.
+     takes something away, the renderer was carrying content of its own for it. Because it compares
+     raw HTML, this closes measure 1's three blind spots and only those. It is a set that must not
+     **grow**, not one that must be empty: 99 pairs have a designed fallback today.
+
+  **What neither measure reaches**, stated because the first version of this entry claimed more than
+  it should. Both render one cell per slug, with no variant and no props, and the pair check
+  examines only contract-listed props whose value actually reaches the markup: today that is 132 of
+  the 177 pairs the contract lists, across 58 of the 200 cells in the variant matrix. So three real
+  invented-content defects still land unmoved: a fallback reachable only under another variant or
+  State (a literal in the steward's `Welcome` branch, or in `collapse-accordion` when expanded), a
+  prop the contract's regex cannot see (`props["Sc" + "ope"]`), and a listed prop whose value never
+  reaches the markup. All three gaps are published as numbers in the artifact's `totals`
+  (`pairsProbed` against `pairsInContract`, `cellsRendered` against `matrixCells`), measured on every
+  run rather than described in a comment that ages. Closing the first two is a coverage extension
+  and is tracked as follow-up, not claimed here.
 
   Verified by mutation, twice. A literal fallback reintroduced for `chat-with-ai-steward.Source` in
   its own element reds measure 1 with `chat-with-ai-steward: 8 -> 10` while the list-based omission

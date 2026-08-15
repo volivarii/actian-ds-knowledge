@@ -19,7 +19,9 @@
 // by an attribute, and to one inside an svg. A review demonstrated the first of
 // those with a real exploit: moving chat-with-ai-steward's Source fallback into
 // the existing "New chat" button changed the rendered text and moved the count
-// by zero. Measurement 2 names that pair.
+// by zero. Measurement 2 names that pair. What neither one reaches is stated
+// below, in its own section, because the round that added measurement 2 claimed
+// the pair closed everything and it does not.
 //
 // It exists because the guard next to it cannot see far enough. #543 gave the
 // renderer a literal fallback for thirteen optional slots, which removed the
@@ -32,13 +34,33 @@
 // shipped into every steward render downstream.
 //
 // A guard keyed on a list checks the things somebody remembered to list. Neither
-// measurement here takes a list of slots or of props: the slugs come from the
-// contract, the props come from the contract, and the ANSWER is read off the
-// rendered markup, so the source can be written any way at all.
+// measurement here keeps a list of SLOTS: the subjects come from the render
+// contract and the ANSWER is read off the rendered markup, so within their scope
+// the source can be written any way at all.
 //
-// Neither number is a target. 44 of the 58 slugs render some visible text with
-// nothing supplied, and 99 (slug, prop) pairs have a designed fallback; most of
-// both is legitimate. Only the direction is gated.
+// THAT SCOPE, exactly, because the round before this one overclaimed it. Both
+// measurements render ONE cell per slug, with no variant and no props, and the
+// pair check examines only contract-listed props whose value actually reaches
+// the markup. So three real invented-content defects can land with both numbers
+// unmoved:
+//
+//   - a fallback reachable only under another variant or State (a literal in the
+//     steward's Welcome branch, in collapse-accordion's expanded state)
+//   - a prop the contract's regex cannot see, e.g. `props["Sc" + "ope"]`
+//   - a listed prop whose value never reaches the markup, so the sentinel never
+//     appears and the pair is skipped
+//
+// The artifact publishes all three gaps as numbers (`totals.pairsProbed` against
+// `totals.pairsInContract`, `totals.cellsRendered` against `totals.matrixCells`)
+// so they are measured on every run rather than described in a comment that
+// ages. Closing them is a coverage extension, tracked as follow-up work.
+//
+// What measure 2 DOES close is measure 1's three blind spots, and only those:
+// injection into an element that already carries text, an attribute-borne
+// fallback, and svg title text.
+//
+// Neither number is a target. Most of both sets is legitimate: structural
+// chrome in one, designed fallbacks in the other. Only the direction is gated.
 
 const test = require("node:test");
 const assert = require("node:assert");
@@ -770,6 +792,30 @@ test("the committed measurement matches a fresh one", function () {
   assert.deepEqual(committed, fresh, "the committed artifact is stale");
 });
 
+test("the artifact publishes the scope of what it measured", function () {
+  // The scope figures are the honest half of this gate: they say how much of the
+  // surface the two measurements do NOT reach, and they are measured on every
+  // run so the claim cannot age the way a comment does. Only the relations are
+  // asserted, never the values: pinning "132 of 177" here would be a
+  // hand-maintained number in a gate, and a real improvement to either figure
+  // would then read as a failure.
+  const t = fresh.totals;
+  assert.ok(
+    t.pairsProbed <= t.pairsInContract,
+    "more pairs were probed than the contract lists",
+  );
+  assert.ok(t.pairsProbed > 0, "no (slug, prop) pair was probed at all");
+  assert.equal(
+    t.cellsRendered,
+    t.slugs,
+    "both measurements are sparse: exactly one cell per slug",
+  );
+  assert.ok(
+    t.matrixCells >= t.cellsRendered,
+    "the matrix cannot have fewer cells than the slugs rendered from it",
+  );
+});
+
 test("the artifact is stamped as generated, and names its source", function () {
   assert.equal(fresh._meta.auto_generated, true);
   assert.match(fresh._meta.source, /ds-html-map\.js/);
@@ -814,6 +860,22 @@ test("the working-tree fallback is gated on this branch actually adding the file
       "the fallback was taken, so this branch must be the introducing commit",
     );
   }
+});
+
+test("a merge base that lacks the file keeps looking, a corrupt one does not", function () {
+  // The recovery path, as a rule rather than as a code path: a stale local
+  // `origin/main` resolves a merge base that predates the artifact, and the
+  // `git fetch` fallback is what heals it. An earlier version returned on the
+  // first resolved merge base, so a developer who had not fetched since the
+  // artifact landed got a hard failure the fetch would have fixed. Corruption is
+  // different: it is a fault to report, not a reason to look elsewhere.
+  assert.equal(mergeBase.endsTheSearch({ json: { bySlug: {} } }), true);
+  assert.equal(mergeBase.endsTheSearch({ json: null, corrupt: true }), true);
+  assert.equal(
+    mergeBase.endsTheSearch({ json: null, corrupt: false }),
+    false,
+    "a merge base that simply does not carry the file must not end the search",
+  );
 });
 
 test("the measurement does not depend on the icon or artwork maps", function () {

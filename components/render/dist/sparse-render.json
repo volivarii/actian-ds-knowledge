@@ -10,7 +10,11 @@
     "slugs": 58,
     "slugsWithText": 44,
     "textBearingElements": 176,
-    "inventedSlots": 99
+    "inventedSlots": 99,
+    "pairsInContract": 177,
+    "pairsProbed": 132,
+    "cellsRendered": 58,
+    "matrixCells": 200
   },
   "bySlug": {
     "account-dropdown": 4,

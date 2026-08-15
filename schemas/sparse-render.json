@@ -56,15 +56,23 @@
         "slugs",
         "slugsWithText",
         "textBearingElements",
-        "inventedSlots"
+        "inventedSlots",
+        "pairsInContract",
+        "pairsProbed",
+        "cellsRendered",
+        "matrixCells"
       ],
-      "description": "The repo-wide headline, so a reader learns the direction of the whole tier without summing bySlug or counting inventedSlots.",
+      "description": "The repo-wide headline, so a reader learns the direction of the whole tier without summing bySlug or counting inventedSlots, plus the scope figures that say how much of the surface these measurements actually reach.",
       "examples": [
         {
           "slugs": 58,
           "slugsWithText": 44,
           "textBearingElements": 176,
-          "inventedSlots": 99
+          "inventedSlots": 99,
+          "pairsInContract": 177,
+          "pairsProbed": 132,
+          "cellsRendered": 58,
+          "matrixCells": 200
         }
       ],
       "properties": {
@@ -91,6 +99,30 @@
           "minimum": 0,
           "description": "The size of the inventedSlots list: how many (slug, prop) pairs currently displace content the renderer invented for them. Reported for direction; the ratchet blocks on the membership of the list itself, so a pair added while another is removed still fails.",
           "examples": [99]
+        },
+        "pairsInContract": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many (slug, prop) pairs the render contract lists in total. The gap against pairsProbed is the first scope limit, published rather than described: a prop whose value never reaches the markup is skipped by the pair check, so a fallback behind such a prop is not measured.",
+          "examples": [177]
+        },
+        "pairsProbed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many of those pairs the sentinel actually reached, and therefore how many were checked for displaced content. Props the contract cannot see at all (a computed read such as props[\"Sc\" + \"ope\"]) are in neither figure, which is the second scope limit.",
+          "examples": [132]
+        },
+        "cellsRendered": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many variant-matrix cells were rendered: one per slug, with no variant and no props. Both measurements are sparse by design, so this is always the slug count.",
+          "examples": [58]
+        },
+        "matrixCells": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many cells the variant matrix has in total. The gap against cellsRendered is the third scope limit: a fallback reachable only under a non-default variant or State (a literal in a Welcome branch, or in an expanded accordion) is never executed by these measurements and cannot move either number.",
+          "examples": [200]
         }
       }
     },

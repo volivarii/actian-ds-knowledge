@@ -71,21 +71,49 @@ function showAt(mergeBase, rel) {
 // INTRODUCES an artifact, and only that commit.
 function jsonAtMergeBase(rel) {
   const ref = baseRef();
+  // The best empty answer seen so far, kept so the caller learns WHICH merge
+  // base lacked the file rather than being told none resolved.
+  let empty = null;
 
   // Fast path, and it stays offline: no network call is made at all unless this
   // fails to produce a usable baseline.
   if (tryGit(["rev-parse", "--verify", "--quiet", "origin/" + ref])) {
     const mergeBase = tryGit(["merge-base", "origin/" + ref, "HEAD"]);
-    if (mergeBase) return read(mergeBase, "origin/" + ref, rel);
+    if (mergeBase) {
+      const local = read(mergeBase, "origin/" + ref, rel);
+      if (endsTheSearch(local)) return local;
+      // Resolved, but the file is not in it. That is exactly what a stale local
+      // `origin/<ref>` produces, and the fetch below is the recovery: an earlier
+      // version returned here, so a developer who had not fetched since the
+      // artifact landed got a hard `npm test` failure that a fetch would have
+      // healed. A corrupt parse does NOT come here; it is a real fault and it
+      // ends the search above.
+      empty = local;
+    }
   }
-  // Fallback only. On a fork PR `origin/<ref>` does not exist and cannot be made
-  // to exist under actions/checkout's narrow refspec, but the fetch still
-  // populates FETCH_HEAD, which is enough to merge-base against.
+  // Fallback, and the recovery path. On a fork PR `origin/<ref>` does not exist
+  // and cannot be made to exist under actions/checkout's narrow refspec, but the
+  // fetch still populates FETCH_HEAD, which is enough to merge-base against.
   if (tryGit(["fetch", "--no-tags", "--quiet", "origin", ref]) !== null) {
     const mergeBase = tryGit(["merge-base", "FETCH_HEAD", "HEAD"]);
-    if (mergeBase) return read(mergeBase, "FETCH_HEAD", rel);
+    if (mergeBase) {
+      const fetched = read(mergeBase, "FETCH_HEAD", rel);
+      if (endsTheSearch(fetched)) return fetched;
+      // The fetched merge base is at least as new as the local one, so it is the
+      // more accurate subject for the failure message.
+      empty = fetched;
+    }
   }
-  return { mergeBase: null, ref: null, baseRef: ref, json: null, path: rel };
+  return (
+    empty || { mergeBase: null, ref: null, baseRef: ref, json: null, path: rel }
+  );
+}
+
+// A usable baseline ends the search, and so does a corrupt one: corruption is a
+// fault to report, never a reason to go looking for a baseline somewhere else. A
+// merge base that simply does not carry the file ends nothing.
+function endsTheSearch(result) {
+  return Boolean(result.json) || Boolean(result.corrupt);
 }
 
 function read(mergeBase, ref, rel) {
@@ -200,4 +228,7 @@ module.exports = {
   addedSince: addedSince,
   describeMissing: describeMissing,
   unresolvedMessage: unresolvedMessage,
+  // Exported so the fall-through rule is testable on its own: which of the two
+  // empty answers keeps looking is the whole of the recovery path.
+  endsTheSearch: endsTheSearch,
 };

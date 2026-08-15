@@ -117,8 +117,12 @@ sync can no longer make either stale:
   elements, which catches a fallback that adds a NEW element; and every `(slug, prop)` rendered
   empty and with a sentinel, which catches a fallback that merely REPLACES content, including one
   injected into an element that already has text, one carried by an attribute, and one inside an
-  svg. Neither takes a list of slots or props, so unlike the omission test they cannot go stale by
-  omission.
+  svg. Neither keeps a list of slots, so unlike the omission test they cannot go stale by omission.
+  Their scope is narrower than that sounds and the artifact's `totals` publish it: one cell per slug
+  (no variant, no props) and only contract-listed props whose value reaches the markup, so a
+  fallback behind another variant or State, one behind a prop read the contract's regex cannot see,
+  and one behind a prop that never echoes are all still invisible. Extending that coverage is
+  follow-up work.
 
 This is renderer-relocation phase 0 (styling) + phase 1a (the renderer JS and the matrix
 logic) + phase 1b (the whole gallery deriving from this renderer) + phase 3 (the frozen

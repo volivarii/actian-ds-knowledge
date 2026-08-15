@@ -20,8 +20,12 @@
 // That is the failure mode this file answers: a guard whose subject is a
 // hand-maintained list checks exactly the things somebody remembered.
 //
-// So the measurements here take no list. Both render every slug in the render
-// contract and read the answer off the markup, never off the source.
+// So neither measurement here keeps a list of SLOTS. Both take their subjects
+// from the render contract and read the answer off the markup rather than off
+// the source, which is what makes them indifferent to how a fallback is
+// written. That is a smaller claim than "no list at all", and the difference is
+// the scope section below: they inherit the contract's own limits, and they
+// render one cell per slug.
 //
 // TWO MEASUREMENTS, AND EXACTLY WHAT EACH ONE GUARANTEES
 //
@@ -41,7 +45,7 @@
 //   - text inside `<svg>`, including `<title>`, which is stripped before
 //     counting so icon geometry cannot read as a part.
 //
-// `inventedSlots` is the complement that closes those three. For every
+// `inventedSlots` is the complement, and it closes those three. For every
 // (slug, prop) in the contract it renders the slug twice, once with nothing and
 // once with a sentinel in that prop, then removes the sentinel from the second
 // render. Supplying a prop may only ADD to the markup: if the sentinel render
@@ -51,6 +55,27 @@
 // over raw HTML, so it sees attributes and svg text as readily as text nodes,
 // and it sees injection into an existing element because the injected literal
 // disappears from the markup when the prop is supplied.
+//
+// WHAT NEITHER MEASUREMENT SEES. Three gaps, all of them scope rather than
+// technique, and all of them ways a real invented-content defect can land with
+// this artifact byte-identical:
+//
+//   - ANOTHER VARIANT. Both render one cell per slug, with no variant and no
+//     props, so a fallback reachable only under a non-default variant or State
+//     is never executed: a literal in the steward's `Welcome` branch, or in
+//     collapse-accordion's expanded state, is invisible here. `totals` records
+//     how many of the matrix's cells that leaves unrendered.
+//   - A PROP THE CONTRACT CANNOT SEE. The subject list is the contract's, and
+//     the contract extracts prop reads with a regex, so a computed read such as
+//     `props["Sc" + "ope"]` is in neither.
+//   - A PROP WHOSE VALUE NEVER REACHES THE MARKUP. The pair check skips those
+//     deliberately (a boolean or an enum renders differently for reasons that
+//     are not invented content), which means a listed prop that feeds a branch
+//     rather than a slot is not checked either. `totals.pairsProbed` against
+//     `totals.pairsInContract` is that gap, measured on every run.
+//
+// Closing the first two is a coverage extension, not a correction, and it is
+// tracked as follow-up work rather than pretended away here.
 //
 // Neither number is a target. 44 of the 58 slugs render some visible text with
 // nothing supplied, and many props genuinely have a designed fallback; most of
@@ -65,6 +90,9 @@
 //   bySlug         MEASURED: the slug rendered with `props: {}` and no variant,
 //                  then counted
 //   inventedSlots  MEASURED: the two renders above, compared
+//   totals         MEASURED, including the scope figures: how many contract
+//                  pairs exist, how many were probed, and how many matrix cells
+//                  the one-cell-per-slug rendering leaves out
 
 var fs = require("node:fs");
 var path = require("node:path");
@@ -75,6 +103,7 @@ var OUT_REL = "components/render/dist/sparse-render.json";
 var OUT_PATH = path.join(REPO_ROOT, OUT_REL);
 
 var contractDerive = require(path.join(__dirname, "derive-contract.js"));
+var matrix = require(path.join(RENDERER_DIR, "matrix.js"));
 var dsMap = require(
   path.join(RENDERER_DIR, "html-renderers", "ds-html-map.js"),
 );
@@ -243,7 +272,7 @@ function isSubsequence(part, whole) {
 // props), so what is compared is the prop's own contribution.
 function inventedFor(slug, props) {
   var empty = render(slug, "", {});
-  var out = [];
+  var out = { invented: [], probed: 0 };
   props.forEach(function (prop) {
     var probed = {};
     probed[prop] = SENTINEL;
@@ -251,10 +280,14 @@ function inventedFor(slug, props) {
     // A prop whose value never reaches the markup is not a content slot at all
     // (a boolean, an enum the renderer only compares against). Its render can
     // differ for reasons that have nothing to do with invented content, so it is
-    // not a subject here. The same skip the emptiness probe applies.
+    // not a subject here. The same skip the emptiness probe applies, and the
+    // count of what was skipped is published rather than left implicit: a check
+    // that quietly examines three quarters of its subjects is the shape this
+    // file exists to argue against.
     if (withProp.indexOf(SENTINEL) === -1) return;
+    out.probed += 1;
     if (!isSubsequence(empty, withProp.split(SENTINEL).join(""))) {
-      out.push(slug + "." + prop);
+      out.invented.push(slug + "." + prop);
     }
   });
   return out;
@@ -275,6 +308,9 @@ function measureSparse(options) {
   loadAssets(opts);
   var bySlug = {};
   var invented = [];
+  var pairsInContract = 0;
+  var pairsProbed = 0;
+  var matrixCells = 0;
   try {
     slugs
       .slice()
@@ -286,7 +322,16 @@ function measureSparse(options) {
         // green. Refusing to write is recoverable; publishing a smaller truth is
         // not.
         bySlug[slug] = textBearingElements(render(slug, "", {}));
-        invented = invented.concat(inventedFor(slug, propsOf(slug)));
+        var props = propsOf(slug);
+        pairsInContract += props.length;
+        var pairs = inventedFor(slug, props);
+        pairsProbed += pairs.probed;
+        invented = invented.concat(pairs.invented);
+        // How many cells this slug's variant matrix has, i.e. how much of the
+        // component's real surface the single sparse render does not reach. A
+        // fallback behind another variant lands inside this gap, so the gap is
+        // published as a number rather than described in a comment that ages.
+        matrixCells += matrix.variantMatrix(slug).length;
       });
   } finally {
     releaseAssets();
@@ -313,6 +358,10 @@ function measureSparse(options) {
         return n + bySlug[s];
       }, 0),
       inventedSlots: invented.length,
+      pairsInContract: pairsInContract,
+      pairsProbed: pairsProbed,
+      cellsRendered: slugNames.length,
+      matrixCells: matrixCells,
     },
     bySlug: bySlug,
     inventedSlots: invented,
@@ -359,7 +408,16 @@ if (require.main === module) {
       out.totals.textBearingElements +
       " text-bearing elements in total; " +
       out.totals.inventedSlots +
-      " (slug, prop) pairs displace content the renderer invented -> " +
+      " of " +
+      out.totals.pairsProbed +
+      " probed (slug, prop) pairs displace content the renderer invented, out " +
+      "of " +
+      out.totals.pairsInContract +
+      " the contract lists, across " +
+      out.totals.cellsRendered +
+      " of " +
+      out.totals.matrixCells +
+      " matrix cells -> " +
       path.relative(REPO_ROOT, written) +
       "\n",
   );

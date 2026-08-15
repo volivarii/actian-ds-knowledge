@@ -43,7 +43,24 @@ function emptyTextSlots() {
   // Assets are loaded and left loaded, as before: callers of this helper render
   // nothing of their own afterwards, and releasing them here would make the
   // helper's side effects depend on call order.
-  probe.loadAssets();
+  //
+  // The icon map is required LOUDLY here, unlike the derive's own tolerant load.
+  // The derive can shrug an absent icons.json off because a glyph cannot change
+  // an element count; this probe compares rendered text cell by cell, and an
+  // empty icon map changes what renders. Going through the shared loader without
+  // this turned a throw into a silent `{}`, which is the wrong direction for a
+  // gate that reports what it could not see.
+  const icons = require(
+    path.join(REPO_ROOT, "components/dist/icons/icons.json"),
+  ).icons;
+  if (!icons || !Object.keys(icons).length) {
+    throw new Error(
+      "empty-slots: components/dist/icons/icons.json carries no icons, so this " +
+        "probe would measure a renderer drawing no glyphs and report slots as " +
+        "empty that are not",
+    );
+  }
+  probe.loadAssets({ icons: icons });
   const render = probe.render;
 
   const seen = new Set();
