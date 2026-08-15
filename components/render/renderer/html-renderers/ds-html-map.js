@@ -523,8 +523,10 @@
           var rbLabel = esc(props.Label || "Label");
           // capture: anatomy/radio.json text layer "Description"
           var rbHelperText = props["Helper text"] || "Description";
+          // rbHelperText is always truthy now that it has a fallback, so the
+          // only real condition left is the explicit Show Helper text opt-out.
           var rbHelper =
-            rbHelperText && props["Show Helper text"] !== false
+            props["Show Helper text"] !== false
               ? '<span class="ds-radio__helper">' +
                 esc(rbHelperText) +
                 "</span>"
@@ -552,8 +554,10 @@
           // authored: toggle has no helper layer in the capture; mirrors radio's
           // captured "Description" so the two form controls read consistently
           var tgHelperText = props["Helper text"] || "Description";
+          // Same as radio: the fallback makes tgHelperText unconditionally
+          // truthy, so Show Helper text is the only condition that can vary.
           var tgHelper =
-            tgHelperText && props["Show Helper text"] !== false
+            props["Show Helper text"] !== false
               ? '<span class="ds-toggle__helper">' +
                 esc(tgHelperText) +
                 "</span>"
@@ -1352,7 +1356,9 @@
 
         case "modal": {
           var modalTitle = esc(props.Title || "Dialog");
-          // authored: the capture holds a title ("Edit description") but no body layer
+          // authored: the capture holds a title ("Edit description") and a Body
+          // container, but that container holds only a nested "Rich text"
+          // instance with no text to extract, so there is no captured string
           var modalBodyText =
             props.Body ||
             "Update the description so teammates know what this connection is for.";
@@ -1660,14 +1666,14 @@
           var notifRole = notifCritical ? "alert" : "status";
           // capture: anatomy/notification.json text layer "Item deleted"
           var notifMsg = esc(props.Message || "Item deleted");
-          // Action button is optional — only render when an Action label exists.
+          // The action button always renders: the capture has one, so the
+          // fallback below is unconditional and there is no omit branch.
           // capture: anatomy/notification.json nested button label "Close"
           var notifActionText = props.Action || "Close";
-          var notifAction = notifActionText
-            ? '<button class="ds-button ds-button--tertiary ds-button--small ds-notification__action" type="button">' +
-              esc(notifActionText) +
-              "</button>"
-            : "";
+          var notifAction =
+            '<button class="ds-button ds-button--tertiary ds-button--small ds-notification__action" type="button">' +
+            esc(notifActionText) +
+            "</button>";
           return (
             '<div class="' +
             notifCls +
