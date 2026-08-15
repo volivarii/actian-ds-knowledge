@@ -239,10 +239,13 @@ Each entry links its pull request. Dates are the merge date (UTC).
   invented-content defects still land unmoved: a fallback reachable only under another variant or
   State (a literal in the steward's `Welcome` branch, or in `collapse-accordion` when expanded), a
   prop the contract's regex cannot see (`props["Sc" + "ope"]`), and a listed prop whose value never
-  reaches the markup. All three gaps are published as numbers in the artifact's `totals`
-  (`pairsProbed` against `pairsInContract`, `cellsRendered` against `matrixCells`), measured on every
-  run rather than described in a comment that ages. Closing the first two is a coverage extension
-  and is tracked as follow-up, not claimed here.
+  reaches the markup. Two of those three gaps are published as ratios in the artifact's `totals`,
+  measured on every run rather than described in a comment that ages: `pairsProbed` against
+  `pairsInContract` for the props that never echo, and `cellsRendered` against `matrixCells` for the
+  unrendered variants. The third has no number at all, and cannot have one: a prop the contract
+  cannot see is absent from both sides of a count derived from the contract, so `props["Sc" + "ope"]`
+  is named here and nowhere counted. Closing the first two is a coverage extension and is tracked as
+  follow-up, not claimed here.
 
   Verified by mutation, twice. A literal fallback reintroduced for `chat-with-ai-steward.Source` in
   its own element reds measure 1 with `chat-with-ai-steward: 8 -> 10` while the list-based omission

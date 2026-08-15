@@ -50,10 +50,14 @@
 //   - a listed prop whose value never reaches the markup, so the sentinel never
 //     appears and the pair is skipped
 //
-// The artifact publishes all three gaps as numbers (`totals.pairsProbed` against
-// `totals.pairsInContract`, `totals.cellsRendered` against `totals.matrixCells`)
-// so they are measured on every run rather than described in a comment that
-// ages. Closing them is a coverage extension, tracked as follow-up work.
+// The artifact publishes two of those three gaps as ratios, measured on every
+// run rather than described in a comment that ages: `totals.pairsProbed` against
+// `totals.pairsInContract` for the props that never echo, and
+// `totals.cellsRendered` against `totals.matrixCells` for the unrendered
+// variants. The third cannot have a number: a prop the contract cannot see is
+// missing from both sides of any count derived from the contract, so
+// `props["Sc" + "ope"]` is named here and nowhere counted. Closing the first two
+// is a coverage extension, tracked as follow-up work.
 //
 // What measure 2 DOES close is measure 1's three blind spots, and only those:
 // injection into an element that already carries text, an attribute-borne
