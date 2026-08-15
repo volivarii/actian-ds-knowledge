@@ -1680,15 +1680,40 @@ Each entry links its pull request. Dates are the merge date (UTC).
   components missing a part the design file gives them. Those 83 empty cell-slots
   collapse to 26 distinct component-and-prop pairs across the 18 components, because
   the same prop is empty in more than one cell for several of them. 25 of the 26 pairs
-  now carry a value quoted from the Figma capture, with a comment naming the layer it
-  came from: 15 are quoted directly from the capture, 3 initials values are derived
-  from each component's own captured vocabulary, and 6 are authored,
+  now carry a value, each with a comment naming where it came from: 14 are quoted
+  directly from the Figma capture, naming the layer; 3 initials values are derived
+  from the component's own vocabulary, `metamodel-widget`'s from each cell's own Type
+  value, since its Type axis is the item-type vocabulary itself; 7 are authored,
   `chat-with-ai-steward`'s context and insight, `table`'s rows, `modal`'s body,
-  `input-date`'s helper and `toggle`'s helper text, because those Figma components
-  hold no text for those slots. `account-dropdown`'s email is the 1 substituted value,
-  deliberately replaced because the capture holds what reads as a real person's
-  address at an external domain. The remaining pair, `alert-banner`'s title, stays
-  empty by design and is exempted with that reason.
+  `input-date`'s helper, `toggle`'s helper text and `stepper`'s title, because those
+  Figma components hold no usable text for those slots. `account-dropdown`'s email is
+  the 1 substituted value, deliberately replaced because the capture holds what reads
+  as a real person's address at an external domain. The remaining pair,
+  `alert-banner`'s title, stays empty by design and is exempted with that reason.
+
+  `stepper`'s title is the one place a captured string was deliberately not used. The
+  capture reads `Complete`, which is the name of one value of the State axis, so
+  quoting it made three of the four State cells display "Complete" while rendering as
+  something else. A step's title is its name and does not vary by state, so the
+  authored `Connect source` reads correctly in every cell, and the code comment says
+  so and names the value it declined.
+
+  **Behaviour change for consumers who suppressed a part by passing an empty value.**
+  Twelve of these slots, across ten components, were conditional-omit: the element
+  rendered only when the consumer supplied a value, and now it always renders. Those
+  twelve are `account-dropdown` (email), `dropdown-select-default` (description and
+  helper), `input-date` (helper), `modal` (body), `notification` (action button),
+  `page-header` (description), `popover` (title and body), `radio` (helper text),
+  `stepper` (body) and `toggle` (helper text). They resolve their value as
+  `props.X || "literal"`, so a consumer that passed `Description: ""` to drop the
+  element previously got no element and now gets the default text; an empty string no
+  longer suppresses the part. `radio` and `toggle` keep an explicit opt-out through
+  their `Show Helper text` prop.
+
+  `table` (rows) and `modal` (actions) are the exception: they test
+  `props.X === undefined`, so an empty value still suppresses their part. The two
+  idioms are deliberately left as they are rather than unified, since unifying them
+  would be a second behaviour change in the same release.
 
 - **`components/render/renderer/default-props.json` is retained, and its README description
   corrected.** The file has no reader in this repository, and it was briefly deleted on that
