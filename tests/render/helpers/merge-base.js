@@ -118,22 +118,86 @@ function read(mergeBase, ref, rel) {
   };
 }
 
-// The message every caller needs when `mergeBase` came back null: the same
-// diagnosis, stated once.
-function unresolvedMessage(who, rel) {
+// Does this branch's own history ADD the file, i.e. is the file missing from the
+// merge base because this branch introduces it?
+//
+// The distinction matters because it is the only honest reason to accept a
+// baseline that is not at the merge base. A branch that does not add the file
+// and does not find it at the merge base is looking at a merge base older than
+// the artifact, which happens for real: render-derive.yml checks out
+// `head.repo.full_name`, so on a fork PR `origin` is the FORK, and a
+// contributor whose fork's default branch is behind gets exactly that. Treating
+// the two the same would let a stale fork compare a fresh derive against its own
+// output forever.
+function addedSince(mergeBase, rel) {
+  const log = tryGit([
+    "log",
+    "--diff-filter=A",
+    "--format=%H",
+    mergeBase + "..HEAD",
+    "--",
+    rel,
+  ]);
+  return Boolean(log);
+}
+
+// Why there is no baseline, in the caller's words. Three different conditions
+// reach one message shape, and saying "could not resolve the merge base" about a
+// merge base that resolved fine sends the reader to look at connectivity when
+// the real answer is that the commit simply does not carry the file.
+function describeMissing(who, at) {
+  if (!at.mergeBase) {
+    return (
+      who +
+      ": could not resolve a merge base with " +
+      at.baseRef +
+      " (neither origin/" +
+      at.baseRef +
+      " nor the fallback `git fetch` produced one), so there is nothing to " +
+      "compare " +
+      at.path +
+      " against. Fix connectivity/git history rather than treating this as a " +
+      "pass."
+    );
+  }
+  if (at.corrupt) {
+    return (
+      who +
+      ": the copy of " +
+      at.path +
+      " at merge base " +
+      at.mergeBase +
+      " is not parseable JSON, so there is no baseline. A corrupt baseline is " +
+      "not a pass."
+    );
+  }
   return (
     who +
-    ": could not resolve the merge-base copy of " +
-    rel +
-    " (neither origin/" +
-    baseRef() +
-    " nor the fallback `git fetch` produced a merge base), so there is " +
-    "nothing to compare against. Fix connectivity/git history rather than " +
-    "treating this as a pass."
+    ": merge base " +
+    at.mergeBase +
+    " does not carry " +
+    at.path +
+    ", so there is no baseline to compare against. The usual cause is a merge " +
+    "base older than the file, which a stale fork produces: merge " +
+    at.baseRef +
+    " into this branch. Comparing against the working tree instead would " +
+    "measure this branch against its own output."
   );
+}
+
+// Kept as the narrow alias for the first of those three, so a caller that only
+// ever fails on an unresolvable merge base reads as such.
+function unresolvedMessage(who, rel) {
+  return describeMissing(who, {
+    mergeBase: null,
+    baseRef: baseRef(),
+    path: rel,
+  });
 }
 
 module.exports = {
   jsonAtMergeBase: jsonAtMergeBase,
+  addedSince: addedSince,
+  describeMissing: describeMissing,
   unresolvedMessage: unresolvedMessage,
 };

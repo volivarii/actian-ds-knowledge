@@ -2,10 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://actian.com/ds/schemas/sparse-render.json",
   "title": "Sparse Render Measurement",
-  "description": "How much each component renders when the caller supplies NO props: the number of elements carrying visible text in a render with an empty prop bag. Emitted by scripts/render/derive-sparse-render.js into components/render/dist/sparse-render.json and read by tests/render/sparse-render-ratchet.test.js, which fails when a count rises against this artifact as it stood at the merge base. The property it protects is that a component must not invent parts the caller did not ask for: a literal fallback in the renderer removes the caller's ability to render the component without that part, which is what shipped in #543 and was only partly undone in #544. The counts are not a target to drive to zero; plenty of sparse text is legitimate structural chrome, and only a rise is a defect.",
+  "description": "What each component renders when the caller supplies NO props, measured two ways. bySlug counts the elements carrying visible text in a render with an empty prop bag, which catches a fallback that adds a NEW text-bearing element. inventedSlots names the (slug, prop) pairs where supplying the prop REMOVES content from the markup, which catches the three shapes the count cannot see: a fallback injected into an element that already carries text, one carried by an attribute, and one inside an svg. Emitted by scripts/render/derive-sparse-render.js into components/render/dist/sparse-render.json and read by tests/render/sparse-render-ratchet.test.js, which fails when a count rises or the set grows against this artifact as it stood at the merge base. The property protected is that a component must not invent content the caller did not ask for: a literal fallback in the renderer removes the caller's ability to render the component without it, which is what shipped in #543 and was only partly undone in #544. Neither measure is a target to drive to zero; plenty of sparse text is structural chrome and plenty of props have a designed fallback, so only the direction is a defect.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "totals", "bySlug"],
+  "required": ["schemaVersion", "totals", "bySlug", "inventedSlots"],
   "properties": {
     "_meta": {
       "type": "object",
@@ -52,9 +52,21 @@
     "totals": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["slugs", "slugsWithText", "textBearingElements"],
-      "description": "The repo-wide headline, so a reader learns the direction of the whole tier without summing bySlug.",
-      "examples": [{ "slugs": 58, "slugsWithText": 44, "textBearingElements": 176 }],
+      "required": [
+        "slugs",
+        "slugsWithText",
+        "textBearingElements",
+        "inventedSlots"
+      ],
+      "description": "The repo-wide headline, so a reader learns the direction of the whole tier without summing bySlug or counting inventedSlots.",
+      "examples": [
+        {
+          "slugs": 58,
+          "slugsWithText": 44,
+          "textBearingElements": 176,
+          "inventedSlots": 99
+        }
+      ],
       "properties": {
         "slugs": {
           "type": "integer",
@@ -73,6 +85,12 @@
           "minimum": 0,
           "description": "The sum of bySlug. This is the headline the ratchet gates in addition to the per-slug counts, so a rise cannot hide behind a fall somewhere else.",
           "examples": [176]
+        },
+        "inventedSlots": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The size of the inventedSlots list: how many (slug, prop) pairs currently displace content the renderer invented for them. Reported for direction; the ratchet blocks on the membership of the list itself, so a pair added while another is removed still fails.",
+          "examples": [99]
         }
       }
     },
@@ -92,6 +110,16 @@
         "minimum": 0,
         "description": "Text-bearing elements this component renders with no props supplied. Zero means it renders nothing a reader could read without being given content, which is the ideal for a component with no structural copy of its own.",
         "examples": [0, 1, 8]
+      }
+    },
+    "inventedSlots": {
+      "type": "array",
+      "description": "Every \"<slug>.<prop>\" pair for which supplying the prop REMOVES content from the markup, sorted. Measured by rendering the slug empty and again with a sentinel in that prop, then checking that the empty render survives inside the sentinel render with the sentinel taken out: supplying a prop may add markup, never take it away. A member is a prop with a fallback of some kind, which is often the design and sometimes the defect; what the ratchet blocks is a NEW member. Props whose value never reaches the markup (booleans, enums the renderer only compares against) are not measured, since their renders differ for reasons unrelated to invented content.",
+      "examples": [["alert-banner.Message", "empty-state.Body", "link.Label"]],
+      "items": {
+        "type": "string",
+        "description": "One pair, written \"<slug>.<prop>\". The prop name is the renderer's own spelling and may contain spaces, e.g. \"search.Placeholder text\".",
+        "examples": ["empty-state.Body", "search.Placeholder text"]
       }
     }
   }

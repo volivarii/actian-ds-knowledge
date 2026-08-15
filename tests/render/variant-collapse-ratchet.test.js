@@ -56,9 +56,13 @@ function collapseBySlug(contract) {
 // The baseline is the contract at the merge base, not at HEAD: see
 // helpers/merge-base.js, which owns that resolution for both render ratchets.
 // It used to live here in full, and a second copy of it went into the sparse
-// ratchet before the duplication was noticed.
+// ratchet before the duplication was noticed. The whole resolution attempt is
+// returned, not just the JSON, so the failure below can say WHICH way it came
+// up empty: an unresolvable merge base and a merge base that simply does not
+// carry the file are different diagnoses, and the second used to be reported as
+// the first.
 function baselineContract() {
-  return mergeBase.jsonAtMergeBase(CONTRACT_REL).json;
+  return mergeBase.jsonAtMergeBase(CONTRACT_REL);
 }
 
 // Baseline at the merge base when this ratchet landed: 57 of 236 identity-axis
@@ -66,17 +70,15 @@ function baselineContract() {
 // collapse at 51.6%. Both re-derived rather than restated.
 
 test("variant collapse does not increase, per slug or in total", function () {
-  const base = baselineContract();
-  if (!base) {
-    // A missing baseline is a real condition (neither the remote-tracking ref
-    // nor the fallback fetch produced a merge base carrying the contract) but it
-    // must fail loudly rather than pass silently: a silent return here would
-    // mean the ratchet asserted nothing while still going green.
-    assert.fail(
-      mergeBase.unresolvedMessage("variant-collapse-ratchet", CONTRACT_REL),
-    );
+  const at = baselineContract();
+  if (!at.json) {
+    // A missing baseline is a real condition but it must fail loudly rather
+    // than pass silently: a silent return here would mean the ratchet asserted
+    // nothing while still going green. The message names which of the three
+    // ways it came up empty.
+    assert.fail(mergeBase.describeMissing("variant-collapse-ratchet", at));
   }
-  const before = collapseBySlug(base);
+  const before = collapseBySlug(at.json);
   const after = collapseBySlug(fresh);
 
   const worse = Object.keys(after)

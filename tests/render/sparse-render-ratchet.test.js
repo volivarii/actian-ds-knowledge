@@ -2,10 +2,24 @@
 
 // THE SPARSE RENDER RATCHET.
 //
-// The property, stated directly: a component must not invent parts the caller
-// did not ask for. Every slug in the render contract is rendered with NO props
-// at all and its visible text-bearing elements are counted; the count may fall,
-// it may not rise.
+// The property, stated directly: a component must not invent content the caller
+// did not ask for. Two measurements, because one of them alone was believed to
+// cover more than it does:
+//
+//   1. every slug rendered with NO props, counting the elements that carry
+//      visible text. That count may fall, it may not rise. What it catches is a
+//      fallback that adds a NEW text-bearing element.
+//   2. every (slug, prop) pair rendered twice, empty and with a sentinel, to ask
+//      whether supplying the prop REMOVED anything. A prop may add to the
+//      markup; if it takes something away, the renderer had content of its own
+//      there. That set may shrink, it may not grow.
+//
+// The second exists because the first is blind to a fallback injected into an
+// element that ALREADY carries text (elements are counted once), to one carried
+// by an attribute, and to one inside an svg. A review demonstrated the first of
+// those with a real exploit: moving chat-with-ai-steward's Source fallback into
+// the existing "New chat" button changed the rendered text and moved the count
+// by zero. Measurement 2 names that pair.
 //
 // It exists because the guard next to it cannot see far enough. #543 gave the
 // renderer a literal fallback for thirteen optional slots, which removed the
@@ -17,14 +31,14 @@
 // the map, so the omission test walked past it and stayed green while the chip
 // shipped into every steward render downstream.
 //
-// A guard keyed on a list checks the things somebody remembered to list. This
-// one takes no list of slots and no list of props: it reads the slugs from the
-// contract and it reads the ANSWER off the rendered markup, so a fallback added
-// in any shape at all moves the number.
+// A guard keyed on a list checks the things somebody remembered to list. Neither
+// measurement here takes a list of slots or of props: the slugs come from the
+// contract, the props come from the contract, and the ANSWER is read off the
+// rendered markup, so the source can be written any way at all.
 //
-// The number is not a target. 44 of the 58 slugs render some visible text with
-// nothing supplied and most of it is legitimate structural chrome. Only the
-// direction is gated.
+// Neither number is a target. 44 of the 58 slugs render some visible text with
+// nothing supplied, and 99 (slug, prop) pairs have a designed fallback; most of
+// both is legitimate. Only the direction is gated.
 
 const test = require("node:test");
 const assert = require("node:assert");
@@ -36,43 +50,63 @@ const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const D = require(
   path.join(REPO_ROOT, "scripts", "render", "derive-sparse-render.js"),
 );
-const { deriveContract } = require(
-  path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
-);
-
 // Measured NOW from the renderer in the working tree, never read from the
 // committed dist: on a branch that has not yet run its own derive the dist is
 // stale by construction, and on a branch that has, comparing dist to dist is
 // new-against-new and always passes.
 const fresh = D.measureSparse();
 
-// Escape hatch, the same shape as variant-collapse-ratchet's ACCEPTED_RISE and
-// the fidelity gate's --accept-coverage-loss="<why>": a rise is allowed only by
-// naming the slug with a reason, so a decision to ship a new unconditional part
-// reads like a decision in the diff. A rise can be legitimate (a component can
-// genuinely gain a part by design, and a redesign can make a part mandatory).
-// It may not be silent.
+// Escape hatch, the same intent as the fidelity gate's
+// --accept-coverage-loss="<why>": a rise is allowed only by naming it with a
+// reason, so a decision to ship a new unconditional part reads like a decision
+// in the diff. A rise can be legitimate (a component can genuinely gain a part
+// by design). It may not be silent.
 //
-// Each key must still name a real slug, asserted below, so a key left behind by
-// a rename cannot quietly cover a different regression later.
+// A waiver names the EXACT rise it was written for, `from` and `to`, and waives
+// only that one. The first version keyed on the slug alone and read nothing but
+// the key, so `{"page-header": ""}` waived silently, and a waiver written for
+// 1 -> 2 went on covering 2 -> 9 for as long as it sat here. Both are the
+// silent-pass shape this file exists to remove, reintroduced by its own escape
+// hatch.
 const ACCEPTED_RISE = {
-  // "some-slug": "why this component legitimately renders a new part with no props",
+  // "some-slug": { from: 1, to: 2, reason: "why this part is now unconditional" },
+};
+
+// The same hatch for the invented-content set, keyed by "slug.prop". Membership
+// is binary, so there is no from/to to pin: naming the pair IS naming the exact
+// change, and the reason is mandatory in the same way.
+const ACCEPTED_INVENTED = {
+  // "some-slug.SomeProp": "why this prop has a designed fallback now",
 };
 
 function hasOwn(o, k) {
   return Object.prototype.hasOwnProperty.call(o, k);
 }
 
-// Pure, and exported to the tests below as its own subject: the comparison is
-// the part that has to be able to go red, and proving that on the real corpus
-// would mean breaking the renderer to watch it work.
+function reasonOf(entry) {
+  const reason = entry && typeof entry === "object" ? entry.reason : entry;
+  return typeof reason === "string" ? reason.trim() : "";
+}
+
+// A waiver applies only when it carries a reason AND describes the rise in front
+// of it. Anything else is not a waiver, so the rise it was meant to cover fails
+// loudly and names itself.
+function waives(accepted, slug, from, to) {
+  const entry = accepted[slug];
+  if (!entry || !reasonOf(entry)) return false;
+  return entry.from === from && entry.to === to;
+}
+
+// Pure, and their own subject in the tests below: the comparison is the part
+// that has to be able to go red, and proving that on the real corpus would mean
+// breaking the renderer to watch it work.
 function risesAgainst(before, after, accepted) {
   return Object.keys(after)
     .filter(function (slug) {
       return (
         hasOwn(before, slug) &&
         after[slug] > before[slug] &&
-        !hasOwn(accepted, slug)
+        !waives(accepted, slug, before[slug], after[slug])
       );
     })
     .sort()
@@ -81,25 +115,72 @@ function risesAgainst(before, after, accepted) {
     });
 }
 
-// Headroom, so the total never reds for something the per-slug check has already
-// allowed. Two sources: slugs the baseline did not have (a new component's
-// sparse content is a NEW FACT, not a regression, and a Figma sync adding one is
-// the common case), and rises named in ACCEPTED_RISE. Slugs that DISAPPEAR need
-// no headroom, they only lower the total.
+// Waivers that are not usable as written: no reason, a blank one, or a malformed
+// from/to. Reported by name rather than ignored, because an unusable waiver in
+// the map reads to a later author as cover that exists.
+function malformedWaivers(accepted) {
+  return Object.keys(accepted)
+    .filter(function (slug) {
+      const entry = accepted[slug];
+      if (!reasonOf(entry)) return true;
+      return !(
+        Number.isInteger(entry.from) &&
+        Number.isInteger(entry.to) &&
+        entry.to > entry.from
+      );
+    })
+    .sort();
+}
+
+function malformedInventedWaivers(accepted) {
+  return Object.keys(accepted)
+    .filter(function (key) {
+      return !reasonOf(accepted[key]);
+    })
+    .sort();
+}
+
+// New members of the invented-content set, minus the ones waived with a reason.
+function newlyInvented(before, after, accepted) {
+  const had = new Set(before);
+  return after
+    .filter(function (pair) {
+      return !had.has(pair) && !reasonOf(accepted[pair]);
+    })
+    .sort();
+}
+
+// Headroom for the total, so it never reds for something the per-slug check has
+// already allowed. Only waived rises need it now: slugs absent from the baseline
+// are excluded from the total outright (see comparableTotals), which is tighter
+// than giving them headroom.
 function headroomFor(before, after, accepted) {
   return Object.keys(after).reduce(function (a, slug) {
-    if (!hasOwn(before, slug)) return a + after[slug];
-    if (hasOwn(accepted, slug) && after[slug] > before[slug]) {
+    if (!hasOwn(before, slug)) return a;
+    if (waives(accepted, slug, before[slug], after[slug])) {
       return a + (after[slug] - before[slug]);
     }
     return a;
   }, 0);
 }
 
-function sum(o) {
-  return Object.keys(o).reduce(function (a, k) {
-    return a + o[k];
-  }, 0);
+// The total, over the components present at BOTH points and nothing else.
+// Summing all of `before` let a retired slug's count pay for a rise somewhere
+// else, and summing all of `after` made a newly added component look like one.
+// Same population on both sides, so the direction means what it says.
+function comparableTotals(before, after) {
+  const common = Object.keys(after).filter(function (slug) {
+    return hasOwn(before, slug);
+  });
+  return {
+    common: common,
+    from: common.reduce(function (a, s) {
+      return a + before[s];
+    }, 0),
+    to: common.reduce(function (a, s) {
+      return a + after[s];
+    }, 0),
+  };
 }
 
 // DIRECTION, stated in the total's own terms and carried by BOTH messages. The
@@ -110,16 +191,35 @@ function sum(o) {
 // per-slug list is the subject; this is the headline next to it, and it never
 // says "regressed" about a fall.
 function totalDirection(before, after) {
-  const from = sum(before);
-  const to = sum(after);
-  const word = to > from ? "ROSE" : to < from ? "FELL" : "UNCHANGED";
+  const t = comparableTotals(before, after);
+  const word = t.to > t.from ? "ROSE" : t.to < t.from ? "FELL" : "UNCHANGED";
   return (
-    "Repo-wide, sparse text-bearing elements " +
+    "Across the " +
+    t.common.length +
+    " components present at both points, sparse text-bearing elements " +
     word +
     ": " +
-    from +
+    t.from +
     " -> " +
-    to +
+    t.to +
+    "."
+  );
+}
+
+function inventedDirection(before, after) {
+  const word =
+    after.length > before.length
+      ? "GREW"
+      : after.length < before.length
+        ? "SHRANK"
+        : "UNCHANGED";
+  return (
+    "The set of (slug, prop) pairs that displace invented content " +
+    word +
+    ": " +
+    before.length +
+    " -> " +
+    after.length +
     "."
   );
 }
@@ -141,7 +241,7 @@ function perSlugMessage(worse, before, after) {
     " Specimen content belongs in matrix.js SPECIMEN_PROPS, where the gallery " +
     "gets it and the caller keeps the choice, not in a literal fallback in " +
     "ds-html-map.js. If the component really did gain a part by design, name " +
-    "the slug in ACCEPTED_RISE with a reason."
+    "the slug in ACCEPTED_RISE with the exact rise and a reason."
   );
 }
 
@@ -151,47 +251,54 @@ function totalMessage(headroom, before, after) {
     totalDirection(before, after) +
     " " +
     headroom +
-    " of the rise is already allowed (slugs absent from the baseline, plus any " +
-    "named in ACCEPTED_RISE). Each of these elements is a part a caller cannot " +
-    "switch off. Move the content to matrix.js SPECIMEN_PROPS, or name the " +
-    "slug in ACCEPTED_RISE with a reason."
+    " of the rise is already waived in ACCEPTED_RISE. Each of these elements " +
+    "is a part a caller cannot switch off. Move the content to matrix.js " +
+    "SPECIMEN_PROPS, or name the slug in ACCEPTED_RISE with the exact rise " +
+    "and a reason."
+  );
+}
+
+// The complement's message. Its subject is a (slug, prop) pair rather than a
+// slug, and its remedy is the same one: the content belongs to the gallery, not
+// to the renderer's runtime.
+function inventedMessage(added, before, after) {
+  return (
+    "these props no longer add content, they REPLACE content the renderer " +
+    "invented for them, so a caller cannot render the component without it: " +
+    JSON.stringify(added) +
+    ". " +
+    inventedDirection(before, after) +
+    " This catches what the sparse count cannot: a fallback injected into an " +
+    "element that already carries text, one carried by an attribute, one " +
+    "inside an svg. Move the content to matrix.js SPECIMEN_PROPS, or name the " +
+    "pair in ACCEPTED_INVENTED with a reason."
   );
 }
 
 // The baseline is the artifact as it stood at the MERGE BASE, resolved by
 // helpers/merge-base.js (shared with variant-collapse-ratchet).
 //
-// The one fallback: on the commit that INTRODUCES this artifact the merge base
-// does not carry it, and that is the only case in which the committed copy is
-// read instead. It is narrow (git resolved a merge base, the file simply is not
-// in it), it is loud, and it cannot recur once this has landed on the base
-// branch. A merge base that cannot be resolved at all is a different condition
-// and fails, because a silent pass there would mean the ratchet asserted
-// nothing while still going green.
-function baseline() {
+// THE ONE FALLBACK, and why it is gated rather than merely rare. On the commit
+// that INTRODUCES this artifact the merge base cannot carry it, so there is
+// nothing to compare against and the committed copy is read instead. Left
+// ungated, that path is reachable forever: render-derive.yml checks out
+// `head.repo.full_name`, so on a fork PR `origin` is the FORK, and a
+// contributor whose fork is behind gets a merge base older than the artifact,
+// falls into the fallback, and compares a fresh derive against its own output.
+// A vacuous green with one buried note is exactly what this file exists to stop.
+//
+// So the fallback applies only when this branch's own history ADDS the file,
+// which is true of the introducing commit and of nothing else. Every other way
+// of arriving without a baseline fails loudly, which is where
+// variant-collapse-ratchet already stands.
+function baselineArtifact() {
   const at = mergeBase.jsonAtMergeBase(D.OUT_REL);
-  if (!at.mergeBase) {
-    assert.fail(
-      mergeBase.unresolvedMessage("sparse-render-ratchet", D.OUT_REL),
-    );
-  }
-  if (at.corrupt) {
-    assert.fail(
-      "sparse-render-ratchet: the copy of " +
-        D.OUT_REL +
-        " at merge base " +
-        at.mergeBase +
-        " is not parseable JSON, so there is no baseline to compare against. " +
-        "A corrupt baseline is not a pass.",
-    );
-  }
   if (at.json) {
-    // A baseline with no per-slug entries is worse than no baseline: every slug
-    // reads as absent from it, absence buys headroom, and the whole comparison
-    // passes having compared nothing. It fails here instead.
-    const bySlug = at.json.bySlug || {};
+    // A baseline with no entries is worse than no baseline: every slug reads as
+    // absent from it, absence is excluded from the comparison, and the whole
+    // thing passes having compared nothing. It fails here instead.
     assert.ok(
-      Object.keys(bySlug).length > 0,
+      Object.keys(at.json.bySlug || {}).length > 0,
       "sparse-render-ratchet: the copy of " +
         D.OUT_REL +
         " at merge base " +
@@ -199,47 +306,52 @@ function baseline() {
         " names no slugs, so every component would read as new and the " +
         "comparison would pass having compared nothing",
     );
-    return bySlug;
+    return at.json;
+  }
+
+  const introducing =
+    at.mergeBase &&
+    !at.corrupt &&
+    mergeBase.addedSince(at.mergeBase, D.OUT_REL);
+  if (!introducing) {
+    assert.fail(mergeBase.describeMissing("sparse-render-ratchet", at));
   }
 
   const committedPath = path.join(REPO_ROOT, D.OUT_REL);
   assert.ok(
     fs.existsSync(committedPath),
-    "sparse-render-ratchet: merge base " +
-      at.mergeBase +
-      " does not carry " +
+    "sparse-render-ratchet: this branch adds " +
       D.OUT_REL +
-      " and neither does the working tree, so nothing measures anything here",
+      " but the working tree has no copy of it, so nothing measures anything here",
   );
   process.stderr.write(
-    "NOTE sparse-render-ratchet: merge base " +
-      at.mergeBase +
-      " does not carry " +
+    "NOTE sparse-render-ratchet: this branch ADDS " +
       D.OUT_REL +
-      " yet, so this run compares against the committed copy instead. That is " +
-      "the introducing commit's own baseline and happens exactly once.\n",
+      " (merge base " +
+      at.mergeBase +
+      " predates it), so this run compares against the committed copy. That is " +
+      "the introducing commit's own baseline, and the only case in which this " +
+      "path is taken.\n",
   );
-  return JSON.parse(fs.readFileSync(committedPath, "utf8")).bySlug || {};
+  return JSON.parse(fs.readFileSync(committedPath, "utf8"));
 }
 
+const BASE = baselineArtifact();
+
 test("no component invents a part it did not render before, per slug and in total", function () {
-  const before = baseline();
+  const before = BASE.bySlug || {};
   const after = fresh.bySlug;
 
   const worse = risesAgainst(before, after, ACCEPTED_RISE);
-  const totalBefore = sum(before);
-  const totalAfter = sum(after);
+  const totals = comparableTotals(before, after);
   const headroom = headroomFor(before, after, ACCEPTED_RISE);
 
   // How many components this run actually compared. Zero is the vacuous pass
   // this whole file exists to avoid: a baseline sharing no slug with the current
-  // renderer would send every count through the new-slug headroom and go green
-  // having watched nothing.
-  const compared = Object.keys(after).filter(function (slug) {
-    return hasOwn(before, slug);
-  }).length;
+  // renderer would leave every count outside the comparison and go green having
+  // watched nothing.
   assert.ok(
-    compared > 0,
+    totals.common.length > 0,
     "no component was compared against the baseline at all, so this ratchet " +
       "would pass vacuously: " +
       Object.keys(after).length +
@@ -250,50 +362,100 @@ test("no component invents a part it did not render before, per slug and in tota
 
   assert.deepEqual(worse, [], perSlugMessage(worse, before, after));
   assert.ok(
-    totalAfter - headroom <= totalBefore,
+    totals.to - headroom <= totals.from,
     totalMessage(headroom, before, after),
   );
 });
 
-test("the measurement covers every slug the contract has", function () {
-  // Non-vacuity, at the right grain. `> 0` is the global version and it is too
-  // weak: a renderer change that made 30 slugs throw would leave a comfortably
-  // positive count while the ratchet stopped watching most of the tier. The
-  // subject is asserted per slug, and both sides are derived.
-  const contractSlugs = Object.keys(deriveContract().slugs).sort();
+test("no prop starts replacing content the renderer invented for it", function () {
+  // The complement, and the half that catches the shape the count cannot see. A
+  // prop may ADD to the markup; the moment supplying it REMOVES something the
+  // empty render had, the renderer is carrying content of its own for that prop
+  // and the caller cannot get the component without it.
+  //
+  // This set has legitimate members and always will: many props have a designed
+  // fallback. It is ratcheted, not emptied.
+  const before = BASE.inventedSlots || [];
+  const after = fresh.inventedSlots;
+  assert.ok(
+    before.length > 0,
+    "the baseline names no invented slots at all, so every pair would read as " +
+      "pre-existing and this comparison would pass vacuously",
+  );
+
+  const added = newlyInvented(before, after, ACCEPTED_INVENTED);
+  assert.deepEqual(added, [], inventedMessage(added, before, after));
+});
+
+test("the measurement covers every slug the renderer implements", function () {
+  // Non-vacuity, at the right grain: a renderer change that made 30 slugs
+  // unmeasurable would leave a comfortably positive count while the ratchet
+  // stopped watching most of the tier, so the subject is asserted per slug.
+  //
+  // Checked against matrix.RENDER_SLUGS, which reads the renderer's own `case`
+  // markers. The first version compared the measurement against a contract
+  // derived in the same call it came from, which is the same number twice: it
+  // could only have failed if deriveContract were nondeterministic.
+  const matrix = require(
+    path.join(REPO_ROOT, "components/render/renderer/matrix.js"),
+  );
+  const implemented = matrix.RENDER_SLUGS.slice().sort();
   const measured = Object.keys(fresh.bySlug).sort();
   assert.ok(
-    contractSlugs.length > 0,
-    "the contract named no slugs, so this file measured nothing at all",
+    implemented.length > 0,
+    "the renderer implements no slugs, so this file measured nothing at all",
   );
   assert.deepEqual(
     measured,
-    contractSlugs,
-    "the sparse measurement and the render contract disagree about which " +
-      "components exist, so some slug is going unwatched",
+    implemented,
+    "the sparse measurement and the renderer disagree about which components " +
+      "exist, so some slug is going unwatched",
   );
+  // And every measured slug carries a real number rather than an absent one, so
+  // a slug present in the map with nothing behind it cannot read as covered.
+  const notMeasured = measured.filter(function (slug) {
+    return typeof fresh.bySlug[slug] !== "number";
+  });
+  assert.deepEqual(notMeasured, []);
 });
 
-test("every accepted rise still names a real slug", function () {
-  const unknown = Object.keys(ACCEPTED_RISE).filter(function (slug) {
+test("every waiver names a real slug or pair, and is usable as written", function () {
+  const unknownSlugs = Object.keys(ACCEPTED_RISE).filter(function (slug) {
     return !hasOwn(fresh.bySlug, slug);
   });
   assert.deepEqual(
-    unknown,
+    unknownSlugs,
     [],
     "accepted rises naming components that no longer exist: " +
-      JSON.stringify(unknown),
+      JSON.stringify(unknownSlugs),
   );
-  // ACCEPTED_RISE is empty at landing, so the assertion above cannot fail on its
-  // own contents and would read as an all-clear from a broken predicate just as
-  // easily as from an empty map. Run the same predicate over a fabricated key to
-  // prove it CAN fail.
+  const unknownPairs = Object.keys(ACCEPTED_INVENTED).filter(function (pair) {
+    const slug = pair.slice(0, pair.indexOf("."));
+    return !hasOwn(fresh.bySlug, slug);
+  });
   assert.deepEqual(
-    Object.keys({ "no-such-component": "fabricated" }).filter(function (slug) {
+    unknownPairs,
+    [],
+    "accepted invented slots naming components that no longer exist: " +
+      JSON.stringify(unknownPairs),
+  );
+  assert.deepEqual(malformedWaivers(ACCEPTED_RISE), []);
+  assert.deepEqual(malformedInventedWaivers(ACCEPTED_INVENTED), []);
+
+  // Both maps are empty at landing, so every assertion above would read as an
+  // all-clear from a broken predicate just as easily as from a clean map. The
+  // same predicates over fabricated entries, to prove they CAN fail.
+  assert.deepEqual(
+    Object.keys({ "no-such-component": {} }).filter(function (slug) {
       return !hasOwn(fresh.bySlug, slug);
     }),
     ["no-such-component"],
     "the staleness predicate must report a slug the renderer does not have",
+  );
+  assert.deepEqual(
+    malformedWaivers({ a: { from: 1, to: 2, reason: "  " } }),
+    ["a"],
+    "a whitespace-only reason is no reason",
   );
 });
 
@@ -313,20 +475,135 @@ test("a fall is not a rise, and neither is a slug the baseline never had", funct
   assert.deepEqual(risesAgainst({}, { brandNew: 4 }, {}), []);
 });
 
-test("an accepted rise is waived, and only for the slug it names", function () {
+// --- the escape hatch, which is itself a way to go silent -------------------
+
+test("a waiver with no reason waives nothing", function () {
+  // The first version read only `hasOwnProperty(accepted, slug)`, so an entry
+  // with an empty value waived the rise while the docs promised a reason was
+  // required. The value is read now, and a blank one is not a reason.
+  const before = { a: 1 };
+  const after = { a: 2 };
+  assert.deepEqual(risesAgainst(before, after, { a: { from: 1, to: 2 } }), [
+    "a: 1 -> 2",
+  ]);
+  assert.deepEqual(
+    risesAgainst(before, after, { a: { from: 1, to: 2, reason: "" } }),
+    ["a: 1 -> 2"],
+  );
+  assert.deepEqual(
+    risesAgainst(before, after, { a: { from: 1, to: 2, reason: "   \n" } }),
+    ["a: 1 -> 2"],
+  );
+  assert.deepEqual(
+    malformedWaivers({ a: { from: 1, to: 2 } }),
+    ["a"],
+    "an unusable waiver must be named, not ignored",
+  );
+});
+
+test("a waiver covers the rise it was written for and no other", function () {
+  // The second silent shape: a waiver written for 1 -> 2 sat in the map after
+  // the rise was baselined and then covered every later rise on that slug. It
+  // waives its own rise and nothing else.
+  const waiver = { a: { from: 1, to: 2, reason: "the part is mandatory now" } };
+  assert.deepEqual(risesAgainst({ a: 1 }, { a: 2 }, waiver), []);
+  assert.deepEqual(
+    risesAgainst({ a: 1 }, { a: 9 }, waiver),
+    ["a: 1 -> 9"],
+    "a bigger rise than the one waived is a different rise",
+  );
+  assert.deepEqual(
+    risesAgainst({ a: 2 }, { a: 3 }, waiver),
+    ["a: 2 -> 3"],
+    "once the waived rise is in the baseline, the waiver is inert",
+  );
+});
+
+test("a waiver waives only the slug it names, and buys exactly its own headroom", function () {
   const before = { a: 1, b: 1 };
   const after = { a: 2, b: 2 };
-  assert.deepEqual(risesAgainst(before, after, { a: "by design" }), [
-    "b: 1 -> 2",
-  ]);
-  assert.equal(headroomFor(before, after, { a: "by design" }), 1);
+  const waiver = { a: { from: 1, to: 2, reason: "by design" } };
+  assert.deepEqual(risesAgainst(before, after, waiver), ["b: 1 -> 2"]);
+  assert.equal(headroomFor(before, after, waiver), 1);
+  assert.equal(
+    headroomFor(before, after, { a: { from: 1, to: 2 } }),
+    0,
+    "a reasonless waiver buys no headroom either",
+  );
 });
 
-test("a slug absent from the baseline buys headroom, so a new component cannot red the total", function () {
-  assert.equal(headroomFor({ a: 1 }, { a: 1, fresh: 5 }, {}), 5);
+test("the total compares the same components on both sides", function () {
+  // A retired slug used to pay for a rise elsewhere, because its count sat in
+  // the baseline total with nothing on the other side. A newly added one used to
+  // need headroom for the mirror-image reason. Neither is in the total now.
+  const t = comparableTotals({ a: 1, retired: 7 }, { a: 1, brandNew: 5 });
+  assert.deepEqual(t.common, ["a"]);
+  assert.equal(t.from, 1);
+  assert.equal(t.to, 1);
+  assert.equal(headroomFor({ a: 1 }, { a: 1, brandNew: 5 }, {}), 0);
 });
 
-test("the headline states the total's real direction, all three ways", function () {
+// --- the complement: props that replace invented content --------------------
+
+test("a newly invented slot is reported, and a pre-existing one is not", function () {
+  assert.deepEqual(
+    newlyInvented(["x.A"], ["x.A", "y.B"], {}),
+    ["y.B"],
+    "only the pair that was not there before",
+  );
+  assert.deepEqual(newlyInvented(["x.A", "y.B"], ["x.A"], {}), []);
+});
+
+test("an invented-slot waiver needs a reason too", function () {
+  assert.deepEqual(newlyInvented([], ["y.B"], { "y.B": "" }), ["y.B"]);
+  assert.deepEqual(newlyInvented([], ["y.B"], { "y.B": "   " }), ["y.B"]);
+  assert.deepEqual(
+    newlyInvented([], ["y.B"], { "y.B": "the empty state needs a headline" }),
+    [],
+  );
+  assert.deepEqual(malformedInventedWaivers({ "y.B": " " }), ["y.B"]);
+});
+
+test("supplying a prop may add markup, never take it away", function () {
+  // The property the complement is built on, at the size where it can be read.
+  // Insertion only, which is what an optional element looks like:
+  assert.equal(
+    D.isSubsequence("<div><h1>T</h1></div>", "<div><h1>T</h1><p></p></div>"),
+    true,
+  );
+  // The three shapes the sparse count cannot see, each one a removal:
+  assert.equal(
+    D.isSubsequence('<p class="b">Support text</p>', '<p class="b"></p>'),
+    false,
+    "a fallback in the element's own text",
+  );
+  assert.equal(
+    D.isSubsequence(
+      "<button>New chat on Customer Orders</button>",
+      "<button>New chat on </button>",
+    ),
+    false,
+    "a fallback injected into an element that already carries text",
+  );
+  assert.equal(
+    D.isSubsequence(
+      '<input placeholder="Search datasets"/>',
+      '<input placeholder=""/>',
+    ),
+    false,
+    "a fallback carried by an attribute",
+  );
+  assert.equal(
+    D.isSubsequence(
+      "<svg><title>Star</title></svg>",
+      "<svg><title></title></svg>",
+    ),
+    false,
+    "a fallback inside an svg",
+  );
+});
+
+test("the headline states the real direction, all three ways, for both measures", function () {
   // The half of the fidelity gate's direction lesson that is cheap to keep: a
   // message that says the number rose when it fell teaches the reader to stop
   // reading the message.
@@ -336,9 +613,14 @@ test("the headline states the total's real direction, all three ways", function 
   assert.doesNotMatch(totalDirection({ a: 3 }, { a: 1 }), /ROSE|UNCHANGED/);
   assert.match(totalDirection({ a: 2 }, { a: 2 }), /UNCHANGED: 2 -> 2\./);
   assert.doesNotMatch(totalDirection({ a: 2 }, { a: 2 }), /ROSE|FELL/);
+
+  assert.match(inventedDirection([], ["y.B"]), /GREW: 0 -> 1\./);
+  assert.doesNotMatch(inventedDirection([], ["y.B"]), /SHRANK|UNCHANGED/);
+  assert.match(inventedDirection(["y.B"], []), /SHRANK: 1 -> 0\./);
+  assert.match(inventedDirection(["y.B"], ["y.B"]), /UNCHANGED: 1 -> 1\./);
 });
 
-test("the blocking messages name the slug, both counts, and the way out", function () {
+test("the blocking messages name the subject, both counts, and the way out", function () {
   const before = { "page-header": 1 };
   const after = { "page-header": 2 };
   const perSlug = perSlugMessage(
@@ -353,6 +635,15 @@ test("the blocking messages name the slug, both counts, and the way out", functi
   const total = totalMessage(0, before, after);
   assert.match(total, /ROSE: 1 -> 2/);
   assert.match(total, /ACCEPTED_RISE/);
+
+  const invented = inventedMessage(
+    ["chat-with-ai-steward.Source"],
+    [],
+    ["chat-with-ai-steward.Source"],
+  );
+  assert.match(invented, /chat-with-ai-steward\.Source/);
+  assert.match(invented, /GREW: 0 -> 1/);
+  assert.match(invented, /ACCEPTED_INVENTED/);
 });
 
 test("no failure message tells the reader to regenerate or re-baseline", function () {
@@ -366,6 +657,8 @@ test("no failure message tells the reader to regenerate or re-baseline", functio
     perSlugMessage(risesAgainst(before, after, {}), before, after),
     totalMessage(0, before, after),
     totalDirection(before, after),
+    inventedMessage(["x.A"], [], ["x.A"]),
+    inventedDirection([], ["x.A"]),
   ];
   const LAUNDERING =
     /re-?generate|re-?baseline|update the (baseline|artifact)|commit the result/i;
@@ -431,12 +724,12 @@ test("a void element does not swallow the text after it", function () {
   );
 });
 
-test("the counter sees a literal fallback whatever shape it is written in", function () {
-  // The three shapes the renderer actually uses, each one turned into markup the
+test("the counter sees a fallback that adds an element, in either shape", function () {
+  // The two shapes the renderer actually uses, each one turned into markup the
   // way the renderer would emit it. The conditional shape is the one #544 fixed;
-  // the initialiser shape is the one it missed. Both arrive here as an element
+  // the initialiser shape is the one it missed. Both arrive here as a NEW element
   // with text in it, which is why this measurement did not need to know the
-  // difference.
+  // difference between them.
   const withoutPart = "<div><h2>Title</h2></div>";
   const conditionalFallback =
     '<div><h2>Title</h2><p class="d">Support text</p></div>';
@@ -445,6 +738,20 @@ test("the counter sees a literal fallback whatever shape it is written in", func
   assert.equal(D.textBearingElements(withoutPart), 1);
   assert.equal(D.textBearingElements(conditionalFallback), 2);
   assert.equal(D.textBearingElements(initialiserFallback), 2);
+});
+
+test("the counter is BLIND to a fallback injected into an element that already has text", function () {
+  // Pinned as a limitation, not as a capability, because a gate believed to
+  // cover more than it does is worse than no gate. An element is counted once,
+  // so text appended inside one that already carries text moves nothing. This is
+  // the review's exploit in miniature, and it is why the complement above exists
+  // and why the header of the derive names this blind spot in words.
+  assert.equal(D.textBearingElements("<button>New chat</button>"), 1);
+  assert.equal(
+    D.textBearingElements("<button>New chat on Customer Orders</button>"),
+    1,
+    "the count cannot see this; the invented-slot set is what does",
+  );
 });
 
 // --- the artifact -----------------------------------------------------------
@@ -456,8 +763,11 @@ test("the committed measurement matches a fresh one", function () {
   const committed = JSON.parse(
     fs.readFileSync(path.join(REPO_ROOT, D.OUT_REL), "utf8"),
   );
-  assert.deepEqual(committed.bySlug, fresh.bySlug);
-  assert.deepEqual(committed.totals, fresh.totals);
+  // The WHOLE artifact, not a chosen field. Comparing bySlug and totals only
+  // left _meta and schemaVersion unwatched, which are exactly the fields a hand
+  // edit reaches for: an artifact whose stamp says something the derive does not
+  // is how a generated file starts being treated as editable.
+  assert.deepEqual(committed, fresh, "the committed artifact is stale");
 });
 
 test("the artifact is stamped as generated, and names its source", function () {
@@ -476,6 +786,36 @@ test("the artifact validates against schemas/sparse-render.json", function () {
   assert.ok(validate(fresh), JSON.stringify(validate.errors));
 });
 
+test("the working-tree fallback is gated on this branch actually adding the file", function () {
+  // The gate that keeps the fallback from being a permanent hole. render-derive
+  // checks out the PR head repo, so on a fork PR `origin` is the FORK: a
+  // contributor whose fork is behind gets a merge base older than this artifact,
+  // and an ungated fallback would compare their fresh derive against its own
+  // output, forever, on a green run.
+  const at = mergeBase.jsonAtMergeBase(D.OUT_REL);
+  assert.ok(
+    at.mergeBase,
+    mergeBase.describeMissing("sparse-render-ratchet", at),
+  );
+  // Negative control first: a file that has been in the tree far longer than
+  // this branch must NOT read as added by it. Without this, a gate that always
+  // answered "yes" would look exactly like a working one.
+  assert.equal(
+    mergeBase.addedSince(at.mergeBase, "README.md"),
+    false,
+    "the introducing-commit gate must not call an old file newly added",
+  );
+  // And the two states agree: the fallback path is entered only when the merge
+  // base lacks the artifact AND this branch is the one adding it.
+  if (!at.json) {
+    assert.equal(
+      mergeBase.addedSince(at.mergeBase, D.OUT_REL),
+      true,
+      "the fallback was taken, so this branch must be the introducing commit",
+    );
+  }
+});
+
 test("the measurement does not depend on the icon or artwork maps", function () {
   // The derive tolerates absent assets, and this is the assertion that tolerance
   // rests on: renderIcon() returns the empty string for a glyph it does not
@@ -489,6 +829,11 @@ test("the measurement does not depend on the icon or artwork maps", function () 
     fresh.bySlug,
     "an asset map changed the sparse counts, so the derive may no longer " +
       "tolerate an absent one",
+  );
+  assert.deepEqual(
+    bare.inventedSlots,
+    fresh.inventedSlots,
+    "an asset map changed which props displace invented content",
   );
 });
 

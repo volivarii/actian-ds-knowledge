@@ -20,27 +20,51 @@
 // That is the failure mode this file answers: a guard whose subject is a
 // hand-maintained list checks exactly the things somebody remembered.
 //
-// So the measurement here takes no list. It renders every slug in the render
-// contract with NO props at all and counts the elements that carry visible text.
-// The property it feeds is stated directly by that number: a component must not
-// invent parts the caller did not ask for. A reintroduced literal fallback adds
-// a text-bearing element to a sparse render whatever shape it is written in --
-// a conditional, a variable initialiser, an `||` chain -- because the render is
-// the thing being read, not the source.
+// So the measurements here take no list. Both render every slug in the render
+// contract and read the answer off the markup, never off the source.
 //
-// The number is NOT a target to drive to zero. 44 of the 58 slugs render some
-// visible text with nothing supplied, and most of that is legitimate: a
-// spinner's label, a disclaimer, a component whose entire content is structural
-// chrome. What must not happen is that the number RISES. The ratchet lives in
-// tests/render/sparse-render-ratchet.test.js and compares a fresh measurement
-// against this artifact as it stood at the merge base.
+// TWO MEASUREMENTS, AND EXACTLY WHAT EACH ONE GUARANTEES
+//
+// `bySlug` counts the elements carrying visible text in a render with no props.
+// What it catches is precisely a fallback that adds a NEW text-bearing element,
+// in whichever shape it is written: a conditional element, a variable
+// initialised to a literal, an `||` chain. What it does NOT catch, stated
+// plainly because a gate believed to cover more than it does is worse than no
+// gate:
+//
+//   - text injected into an element that ALREADY carries text. An element is
+//     counted once, so turning `New chat` into `New chat on Customer Orders`
+//     leaves the count untouched. Measured, not assumed: the fallback the
+//     review used as an exploit moves this number by zero.
+//   - a fallback carried by an ATTRIBUTE (`placeholder=`, `aria-label=`,
+//     `alt=`). Attribute values are not text nodes and are not counted.
+//   - text inside `<svg>`, including `<title>`, which is stripped before
+//     counting so icon geometry cannot read as a part.
+//
+// `inventedSlots` is the complement that closes those three. For every
+// (slug, prop) in the contract it renders the slug twice, once with nothing and
+// once with a sentinel in that prop, then removes the sentinel from the second
+// render. Supplying a prop may only ADD to the markup: if the sentinel render
+// with the sentinel taken out no longer contains everything the empty render
+// had, then the prop DISPLACED something the renderer had invented for it, and
+// a caller cannot get the component without that content. That comparison is
+// over raw HTML, so it sees attributes and svg text as readily as text nodes,
+// and it sees injection into an existing element because the injected literal
+// disappears from the markup when the prop is supplied.
+//
+// Neither number is a target. 44 of the 58 slugs render some visible text with
+// nothing supplied, and many props genuinely have a designed fallback; most of
+// both sets is legitimate. What must not happen is that they GROW. The ratchet
+// lives in tests/render/sparse-render-ratchet.test.js and compares a fresh
+// measurement against this artifact as it stood at the merge base.
 //
 // HOW EACH FACT IS DERIVED (nothing here is hand-maintained)
 //
-//   slugs    the render contract's own key set, from derive-contract.js, which
-//            reads the `case "<slug>":` branches in the renderer
-//   bySlug   MEASURED: the slug rendered with `props: {}` and no variant, then
-//            counted. Nothing is read out of the source.
+//   slugs          the render contract's own key set, from derive-contract.js,
+//                  which reads the `case "<slug>":` branches in the renderer
+//   bySlug         MEASURED: the slug rendered with `props: {}` and no variant,
+//                  then counted
+//   inventedSlots  MEASURED: the two renders above, compared
 
 var fs = require("node:fs");
 var path = require("node:path");
@@ -153,18 +177,10 @@ function loadJson(rel, key) {
   }
 }
 
-function renderSparse(slug) {
-  return String(
-    dsMap.renderDSComponent({
-      type: "INSTANCE",
-      library: "ds",
-      dsSlug: slug,
-      variant: "",
-      props: {},
-    }),
-  );
-}
-
+// ONE probe, shared. tests/render/helpers/empty-slots.js renders through these
+// too, so the sentinel, the asset loading and the call shape exist once: a
+// second copy is how two gates end up disagreeing about what they rendered.
+//
 // Icons and artwork are supplied when present but their absence is tolerated,
 // unlike derive-contract.js, which must refuse to run without them. The reason
 // is not tolerance for its own sake: renderIcon() returns the empty string for a
@@ -173,12 +189,10 @@ function renderSparse(slug) {
 // asserted in tests/render/sparse-render-ratchet.test.js rather than asserted
 // here in a comment, so the day an asset renderer grows a text fallback the
 // tolerance stops being true and something says so.
-function measureSparse(options) {
-  var opts = options || {};
-  var slugs =
-    opts.slugs ||
-    Object.keys(contractDerive.deriveContract(opts.contractOptions).slugs);
+var SENTINEL = "ZZPROBEZZ";
 
+function loadAssets(options) {
+  var opts = options || {};
   dsMap.setIcons(
     opts.icons || loadJson("components/dist/icons/icons.json", "icons"),
   );
@@ -186,7 +200,81 @@ function measureSparse(options) {
     opts.graphics ||
       loadJson("components/dist/graphics/graphics.json", "graphics"),
   );
+}
+
+function releaseAssets() {
+  dsMap.setIcons(null);
+  dsMap.setGraphics(null);
+}
+
+function render(slug, variant, props) {
+  return String(
+    dsMap.renderDSComponent({
+      type: "INSTANCE",
+      library: "ds",
+      dsSlug: slug,
+      variant: variant || "",
+      props: props || {},
+    }),
+  );
+}
+
+// "Supplying a prop may only ADD to the markup." Character-level subsequence,
+// which is the cheap exact statement of that: `whole` contains every character
+// of `part` in order, so `part` can be recovered from it by insertions alone.
+//
+// Insertion-only is what an honestly optional slot looks like: with the prop
+// absent the element is missing, with it present and then blanked the element is
+// there but empty, and the empty render survives inside the fuller one. A
+// fallback is the opposite: the literal is present with the prop absent and gone
+// once the prop is supplied, so something the empty render had cannot be found
+// any more. A diff would answer the same question; this answers it in one pass
+// with no dependency, and on the render sizes here it costs microseconds.
+function isSubsequence(part, whole) {
+  var i = 0;
+  for (var j = 0; j < whole.length && i < part.length; j++) {
+    if (part.charCodeAt(i) === whole.charCodeAt(j)) i++;
+  }
+  return i === part.length;
+}
+
+// The (slug, prop) pairs where supplying the prop takes content away, i.e. the
+// renderer had invented something for it. Both renders are sparse (no other
+// props), so what is compared is the prop's own contribution.
+function inventedFor(slug, props) {
+  var empty = render(slug, "", {});
+  var out = [];
+  props.forEach(function (prop) {
+    var probed = {};
+    probed[prop] = SENTINEL;
+    var withProp = render(slug, "", probed);
+    // A prop whose value never reaches the markup is not a content slot at all
+    // (a boolean, an enum the renderer only compares against). Its render can
+    // differ for reasons that have nothing to do with invented content, so it is
+    // not a subject here. The same skip the emptiness probe applies.
+    if (withProp.indexOf(SENTINEL) === -1) return;
+    if (!isSubsequence(empty, withProp.split(SENTINEL).join(""))) {
+      out.push(slug + "." + prop);
+    }
+  });
+  return out;
+}
+
+function measureSparse(options) {
+  var opts = options || {};
+  var contract =
+    opts.contract || contractDerive.deriveContract(opts.contractOptions);
+  var slugs = opts.slugs || Object.keys(contract.slugs);
+  var propsOf = function (slug) {
+    var entry = (contract.slugs || {})[slug];
+    return ((entry && entry.props) || []).map(function (p) {
+      return p.name;
+    });
+  };
+
+  loadAssets(opts);
   var bySlug = {};
+  var invented = [];
   try {
     slugs
       .slice()
@@ -197,12 +285,13 @@ function measureSparse(options) {
         // broken sync take the emptiness probe from 58 slugs to 28 with the gate
         // green. Refusing to write is recoverable; publishing a smaller truth is
         // not.
-        bySlug[slug] = textBearingElements(renderSparse(slug));
+        bySlug[slug] = textBearingElements(render(slug, "", {}));
+        invented = invented.concat(inventedFor(slug, propsOf(slug)));
       });
   } finally {
-    dsMap.setIcons(null);
-    dsMap.setGraphics(null);
+    releaseAssets();
   }
+  invented.sort();
 
   var slugNames = Object.keys(bySlug);
   return {
@@ -223,8 +312,10 @@ function measureSparse(options) {
       textBearingElements: slugNames.reduce(function (n, s) {
         return n + bySlug[s];
       }, 0),
+      inventedSlots: invented.length,
     },
     bySlug: bySlug,
+    inventedSlots: invented,
   };
 }
 
@@ -244,6 +335,13 @@ module.exports = {
   measureSparse: measureSparse,
   writeSparse: writeSparse,
   textBearingElements: textBearingElements,
+  isSubsequence: isSubsequence,
+  // The shared probe: one sentinel, one asset load, one call shape, used by
+  // tests/render/helpers/empty-slots.js as well.
+  SENTINEL: SENTINEL,
+  loadAssets: loadAssets,
+  releaseAssets: releaseAssets,
+  render: render,
   INPUTS: INPUTS,
   OUT_PATH: OUT_PATH,
   OUT_REL: OUT_REL,
@@ -259,7 +357,9 @@ if (require.main === module) {
       out.totals.slugs +
       " slugs render visible text with no props supplied, " +
       out.totals.textBearingElements +
-      " text-bearing elements in total -> " +
+      " text-bearing elements in total; " +
+      out.totals.inventedSlots +
+      " (slug, prop) pairs displace content the renderer invented -> " +
       path.relative(REPO_ROOT, written) +
       "\n",
   );

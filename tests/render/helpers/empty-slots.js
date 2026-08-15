@@ -15,7 +15,13 @@
 const path = require("node:path");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
-const SENTINEL = "ZZPROBEZZ";
+// The probe itself (sentinel, asset loading, call shape) is the render derive's,
+// so this file and the sparse ratchet cannot drift into probing two different
+// renderers or agreeing by accident on two different sentinels.
+const probe = require(
+  path.join(REPO_ROOT, "scripts/render/derive-sparse-render.js"),
+);
+const SENTINEL = probe.SENTINEL;
 
 function textOf(html) {
   return String(html)
@@ -27,12 +33,6 @@ function textOf(html) {
 }
 
 function emptyTextSlots() {
-  const dsMap = require(
-    path.join(
-      REPO_ROOT,
-      "components/render/renderer/html-renderers/ds-html-map.js",
-    ),
-  );
   const matrix = require(
     path.join(REPO_ROOT, "components/render/renderer/matrix.js"),
   );
@@ -40,26 +40,11 @@ function emptyTextSlots() {
     path.join(REPO_ROOT, "components/render/dist/render-contract.json"),
   );
 
-  dsMap.setIcons(
-    require(path.join(REPO_ROOT, "components/dist/icons/icons.json")),
-  );
-  try {
-    dsMap.setGraphics(
-      require(path.join(REPO_ROOT, "components/dist/graphics/graphics.json")),
-    );
-  } catch (e) {
-    // graphics are optional, same tolerance derive-from-renderer.js applies
-  }
-
-  const render = function (slug, variant, props) {
-    return dsMap.renderDSComponent({
-      type: "INSTANCE",
-      library: "ds",
-      dsSlug: slug,
-      variant: variant,
-      props: props,
-    });
-  };
+  // Assets are loaded and left loaded, as before: callers of this helper render
+  // nothing of their own afterwards, and releasing them here would make the
+  // helper's side effects depend on call order.
+  probe.loadAssets();
+  const render = probe.render;
 
   const seen = new Set();
   const empty = [];
