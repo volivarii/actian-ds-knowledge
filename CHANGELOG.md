@@ -197,6 +197,48 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **#543 filled twelve empty gallery slots by giving the renderer a literal fallback for each, and
+  in doing so removed the ability to render those components without their optional parts.** The
+  fill turned `props.Description ? '<p class="ds-page-header__desc">' + ... : ""` into a paragraph
+  that always renders, so every generated page-header grew a *"Support text"*, every toggle and
+  radio a *"Description"*, every date input a *"Use MM/DD/YYYY."*, with no way to turn them off.
+  The gallery looked right and the capability was gone. The plugin's suite said so within a day:
+  1997 passing at v0.34.132, 13 failures at v0.34.133, three of them behavioural rather than stale
+  snapshots, and all three of the same shape as
+  `render({ dsSlug: "page-header", props: { Title: "Only title" } })` asserting no
+  `ds-page-header__desc` in the output.
+
+  **Specimen content belongs to the variant matrix, not to the renderer's runtime fallbacks.** The
+  renderer says what a component DOES with the props it is given, and an optional part being absent
+  when its prop is absent is part of that answer. The matrix says what the GALLERY should SHOW, and
+  an empty slot there is a poor specimen. Those are two questions, and answering the second inside
+  the renderer answered the first wrongly. The twelve strings move to a new `SPECIMEN_PROPS` map in
+  `components/render/renderer/matrix.js`, each with the provenance comment it carried in the
+  renderer, and merge into every cell `variantMatrix()` derives for that slug. Merge, not replace:
+  `MATRIX_OVERRIDES` would have been the wrong home because an override substitutes a slug's whole
+  cell list, which silently changes variant coverage, and a per-cell prop still wins over the
+  specimen value. The other thirteen fills from that PR are untouched: they render their element
+  either way, so a literal took no capability away.
+
+  **Consumer-visible contract change.** `components/render/dist/render-contract.json` loses the
+  `default` entry for eleven props, because the renderer genuinely no longer states one for them:
+  `account-dropdown.Email`, `dropdown-select-default.Description`, `dropdown-select-default.Helper`,
+  `input-date.Helper`, `modal.Body`, `notification.Action`, `page-header.Description`,
+  `popover.Body`, `radio.Helper text`, `stepper.Body`, `toggle.Helper text`. A twelfth changes
+  rather than disappears: `popover.Title` now publishes `"Popover"`, the literal the renderer still
+  falls back to for the dialog's `aria-label`, in place of `"Interaction guide"`. That is not a loss
+  of information but a correction of it: a `default` on an optional prop claimed a value the caller
+  would not get. The gallery's content is unchanged, and the popover fragment improves in passing,
+  since its `aria-label` now reads the same *"Interaction guide"* the title element shows instead of
+  a generic *"Popover"*. Repo-wide empty text slots stay at 1 (`alert-banner.Title`, exempted), and
+  oracle coverage is unchanged at 17.8%.
+
+  **The gate that would have caught it** is `tests/render/optional-slot-omission.test.js`: for every
+  slot in `SPECIMEN_PROPS`, rendering the slug without that prop must produce no element for it. The
+  slot list is read from `SPECIMEN_PROPS` and the element's class is derived by probing the prop with
+  a sentinel, so neither is written out a second time, and a slot whose class cannot be derived is
+  reported rather than skipped.
+
 - **#541 swept two of three copies of the category slug, and 16 components silently lost their
   published category guidance.** A guideline doc carries its own `meta.category`, hand-authored in
   `components/src/<slug>/_meta.yml`, and `derive-usage-notes.js` resolves
