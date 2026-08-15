@@ -177,7 +177,11 @@ test("stepper renders the captured Step fallback on a non-complete cell", functi
 });
 
 // Conditional-omit slots: the element is absent entirely when the prop is unset,
-// so these assert the rendered text, not just a non-empty element.
+// so these assert the rendered text, not just a non-empty element. The value
+// reaching them comes from matrix.js SPECIMEN_PROPS, not from a fallback in the
+// renderer, which is why every assertion here renders a MATRIX CELL. The mirror
+// assertion, that the element is gone when the prop is not supplied, lives in
+// tests/render/optional-slot-omission.test.js.
 // input-date's helper slot is NOT covered here: "MM/DD/YYYY" also appears in
 // datePlaceholder's own unconditional literal elsewhere in the same case block,
 // so a stripped-text match on that string would pass whether or not the helper

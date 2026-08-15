@@ -58,17 +58,26 @@ dependency injection:
   gallery from either; the plugin's generate-flow and component-brief renderers
   are the real consumers, and vendor both back.
 - `matrix.js`: the variant-matrix logic (`variantMatrix`, `findComponent`, `groupFor`,
-  `RENDER_SLUGS`, `MATRIX_OVERRIDES`), ported from the plugin's capture driver. It is
-  also the authority on WHICH slugs the gallery covers and which group each lands in.
+  `RENDER_SLUGS`, `MATRIX_OVERRIDES`, `SPECIMEN_PROPS`), ported from the plugin's capture
+  driver. It is also the authority on WHICH slugs the gallery covers, which group each
+  lands in, and what content the gallery's cells carry.
 - `default-props.json`: three per-slug prop defaults, with **no reader in this repository**.
   It is retained because the plugin's fidelity harness reads it out of the vendored tree
   (`scripts/lib/renderer.js` loads it unguarded at module load), so deleting it here breaks
   a consumer. It is not what the variant matrix falls back to, and never was.
 
-Content defaults for rendering live in `html-renderers/ds-html-map.js` as each prop's `|| "literal"`
-fallback, and `scripts/render/derive-contract.js` publishes them as `props[].default`
-in `components/render/dist/render-contract.json`. Each literal carries a comment naming
-the `components/dist/anatomy/<slug>.json` layer it was taken from.
+Content lives in one of two layers, and which one is not a matter of taste:
+
+- A prop whose element is **not optional** takes its default in `html-renderers/ds-html-map.js`
+  as that prop's `|| "literal"` fallback, and `scripts/render/derive-contract.js` publishes it
+  as `props[].default` in `components/render/dist/render-contract.json`. Each literal carries a
+  comment naming the `components/dist/anatomy/<slug>.json` layer it was taken from.
+- A prop whose element **is optional** (`props.X ? <el> : ""`) takes its gallery value in
+  `matrix.js` `SPECIMEN_PROPS`, which merges into every cell `variantMatrix()` derives for
+  that slug. A literal fallback there would fill the gallery at the price of the renderer's
+  ability to omit the part, which is the regression `tests/render/optional-slot-omission.test.js`
+  now guards: the renderer says what a component DOES with the props it is given, the matrix
+  says what the gallery should SHOW.
 
 These modules read facts (anatomy JSON, `icons.json`) via **injected** loaders and maps,
 never via `lib/paths` (which lives only in the plugin): a missing `lib/paths` require

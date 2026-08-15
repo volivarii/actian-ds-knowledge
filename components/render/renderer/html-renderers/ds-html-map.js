@@ -521,14 +521,12 @@
           if (v.Format === "Card format") rbCls += " ds-radio--card";
           if (v.State === "Disabled") rbCls += " is-disabled";
           var rbLabel = esc(props.Label || "Label");
-          // capture: anatomy/radio.json text layer "Description"
-          var rbHelperText = props["Helper text"] || "Description";
-          // rbHelperText is always truthy now that it has a fallback, so the
-          // only real condition left is the explicit Show Helper text opt-out.
+          // Optional slot: no helper prop, no helper element. The gallery's
+          // helper string lives in matrix.js SPECIMEN_PROPS, not here.
           var rbHelper =
-            props["Show Helper text"] !== false
+            props["Helper text"] && props["Show Helper text"] !== false
               ? '<span class="ds-radio__helper">' +
-                esc(rbHelperText) +
+                esc(props["Helper text"]) +
                 "</span>"
               : "";
           return (
@@ -551,15 +549,11 @@
           if (v["Toggle location"] === "Right") tgCls += " ds-toggle--right";
           if (v.State === "Disabled") tgCls += " is-disabled";
           var tgLabel = esc(props.Label || "Label");
-          // authored: toggle has no helper layer in the capture; mirrors radio's
-          // captured "Description" so the two form controls read consistently
-          var tgHelperText = props["Helper text"] || "Description";
-          // Same as radio: the fallback makes tgHelperText unconditionally
-          // truthy, so Show Helper text is the only condition that can vary.
+          // Same as radio: optional slot, omitted when the prop is absent.
           var tgHelper =
-            props["Show Helper text"] !== false
+            props["Helper text"] && props["Show Helper text"] !== false
               ? '<span class="ds-toggle__helper">' +
-                esc(tgHelperText) +
+                esc(props["Helper text"]) +
                 "</span>"
               : "";
           return (
@@ -1216,10 +1210,13 @@
 
         case "page-header": {
           var phTitle = esc(props.Title || "Page title");
-          // capture: anatomy/page-header.json layer "Suppot text" [sic] reads "Support text"
-          var phDescText = props.Description || "Support text";
-          var phDesc =
-            '<p class="ds-page-header__desc">' + esc(phDescText) + "</p>";
+          // Optional slot: a page header with no description is a real page
+          // header. The gallery's description lives in matrix.js SPECIMEN_PROPS.
+          var phDesc = props.Description
+            ? '<p class="ds-page-header__desc">' +
+              esc(props.Description) +
+              "</p>"
+            : "";
           var phActions = "";
           var actionsRaw = props.Actions;
           if (Array.isArray(actionsRaw) && actionsRaw.length) {
@@ -1356,14 +1353,11 @@
 
         case "modal": {
           var modalTitle = esc(props.Title || "Dialog");
-          // authored: the capture holds a title ("Edit description") and a Body
-          // container, but that container holds only a nested "Rich text"
-          // instance with no text to extract, so there is no captured string
-          var modalBodyText =
-            props.Body ||
-            "Update the description so teammates know what this connection is for.";
-          var modalBody =
-            '<div class="ds-modal__body">' + esc(modalBodyText) + "</div>";
+          // Optional slot: a confirm dialog with a title and buttons and no body
+          // is a real modal. The gallery's body lives in matrix.js SPECIMEN_PROPS.
+          var modalBody = props.Body
+            ? '<div class="ds-modal__body">' + esc(props.Body) + "</div>"
+            : "";
           var modalFooter = "";
           // capture: anatomy/modal.json nested button labels "Cancel" and "Confirm".
           // Confirm is the primary action, so it goes first: the i === 0 branch
@@ -1666,14 +1660,13 @@
           var notifRole = notifCritical ? "alert" : "status";
           // capture: anatomy/notification.json text layer "Item deleted"
           var notifMsg = esc(props.Message || "Item deleted");
-          // The action button always renders: the capture has one, so the
-          // fallback below is unconditional and there is no omit branch.
-          // capture: anatomy/notification.json nested button label "Close"
-          var notifActionText = props.Action || "Close";
-          var notifAction =
-            '<button class="ds-button ds-button--tertiary ds-button--small ds-notification__action" type="button">' +
-            esc(notifActionText) +
-            "</button>";
+          // Action button is optional: only render when an Action label exists.
+          // The gallery's label lives in matrix.js SPECIMEN_PROPS.
+          var notifAction = props.Action
+            ? '<button class="ds-button ds-button--tertiary ds-button--small ds-notification__action" type="button">' +
+              esc(props.Action) +
+              "</button>"
+            : "";
           return (
             '<div class="' +
             notifCls +
@@ -1708,10 +1701,11 @@
               "</span>"
             : // capture: anatomy/stepper.json text layer "1"
               esc(props.Step || "1");
-          // capture: anatomy/stepper.json layer "Body" reads "Optional body"
-          var stepBodyText = props.Body || "Optional body";
-          var stepBody =
-            '<span class="ds-stepper__body">' + esc(stepBodyText) + "</span>";
+          // Optional slot, and the capture says so in words: the layer reads
+          // "Optional body". The gallery's body lives in matrix.js SPECIMEN_PROPS.
+          var stepBody = props.Body
+            ? '<span class="ds-stepper__body">' + esc(props.Body) + "</span>"
+            : "";
           return (
             '<div class="' +
             stepperCls +
@@ -1825,12 +1819,13 @@
               '<span class="ds-input-date__sep">–</span>' +
               dateInput()
             : dateInput();
-          // authored: the capture holds "Date", "*" and "mm/dd/yyyy" but no helper layer
-          var dateHelperText = props.Helper || "Use MM/DD/YYYY.";
-          var dateHelper =
-            '<span class="ds-input-date__helper">' +
-            esc(dateHelperText) +
-            "</span>";
+          // Optional slot: the capture holds no helper layer at all. The
+          // gallery's helper string lives in matrix.js SPECIMEN_PROPS.
+          var dateHelper = props.Helper
+            ? '<span class="ds-input-date__helper">' +
+              esc(props.Helper) +
+              "</span>"
+            : "";
           return (
             '<div class="' +
             dateCls +
@@ -1897,25 +1892,25 @@
           var ddDisabled = v.State === "Disabled";
           var ddCls = "ds-dropdown-select";
           if (ddDisabled) ddCls += " is-disabled";
-          // capture: anatomy/dropdown-select-default.json layer "description"
-          var ddDescText =
-            props.Description ||
-            "A description helps users to define and understand the purpose of the input.";
-          var ddDesc =
-            '<span class="ds-dropdown-select__desc">' +
-            esc(ddDescText) +
-            "</span>";
+          // Optional slot. The gallery's description lives in matrix.js
+          // SPECIMEN_PROPS.
+          var ddDesc = props.Description
+            ? '<span class="ds-dropdown-select__desc">' +
+              esc(props.Description) +
+              "</span>"
+            : "";
           var ddValueText = props.Value;
           var ddValueCls =
             "ds-dropdown-select__value" +
             (ddValueText ? "" : " ds-dropdown-select__value--placeholder");
           var ddValue = esc(ddValueText || props.Placeholder || "Select…");
-          // capture: anatomy/dropdown-select-default.json layer "helper text"
-          var ddHelperText = props.Helper || "Helper text goes here";
-          var ddHelper =
-            '<span class="ds-dropdown-select__helper">' +
-            esc(ddHelperText) +
-            "</span>";
+          // Optional slot. The gallery's helper string lives in matrix.js
+          // SPECIMEN_PROPS.
+          var ddHelper = props.Helper
+            ? '<span class="ds-dropdown-select__helper">' +
+              esc(props.Helper) +
+              "</span>"
+            : "";
           return (
             '<div class="' +
             ddCls +
@@ -2153,18 +2148,14 @@
                 renderIcon("help-circle") +
                 "</span>"
               : "";
-          // capture: anatomy/popover.json layer "Header"
-          var poTitleText = props.Title || "Interaction guide";
-          // capture: anatomy/popover.json layer "description"; the capture holds two
-          // sentences joined by U+2028 line separator characters, normalised here to
-          // a single space so no raw line separator reaches the rendered markup
-          var poBodyText =
-            props.Body ||
-            "Explore this asset’s upstream sources and downstream consumers, as well as the transformations connecting them across the data pipeline. Learn how to navigate data lineage using mouse and keyboard controls.";
-          var poTitle =
-            '<span class="ds-popover__title">' + esc(poTitleText) + "</span>";
-          var poBody =
-            '<span class="ds-popover__body">' + esc(poBodyText) + "</span>";
+          // Both slots are optional: a popover may carry a body with no title,
+          // or neither. The gallery's strings live in matrix.js SPECIMEN_PROPS.
+          var poTitle = props.Title
+            ? '<span class="ds-popover__title">' + esc(props.Title) + "</span>"
+            : "";
+          var poBody = props.Body
+            ? '<span class="ds-popover__body">' + esc(props.Body) + "</span>"
+            : "";
           return (
             '<div class="' +
             poCls +
@@ -2186,15 +2177,13 @@
           // arrow-down / exit baked into the Figma component). Render an account
           // menu overlay: identity header + default items (Items prop overrides).
           var acName = esc(props.Name || "Account user");
-          // substituted, not captured: anatomy/account-dropdown.json holds what reads
-          // as a real person's name and address at an external domain. Shipping that
-          // as specimen content in a customer-facing bundle is not acceptable, so the
-          // structure is kept and the address replaced. See the spec's flag.
-          var acEmailText = props.Email || "account.user@example.com";
-          var acEmail =
-            '<span class="ds-account-menu__email">' +
-            esc(acEmailText) +
-            "</span>";
+          // Optional slot: the menu renders name-only when no address is given.
+          // The gallery's address lives in matrix.js SPECIMEN_PROPS.
+          var acEmail = props.Email
+            ? '<span class="ds-account-menu__email">' +
+              esc(props.Email) +
+              "</span>"
+            : "";
           var acIcons = {
             "account settings": "settings",
             help: "help-bubble",

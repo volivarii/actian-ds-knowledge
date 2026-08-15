@@ -25,6 +25,12 @@
 // of the vendored tree. The `default` field below, sourced from each prop's
 // `|| "literal"` fallback in ds-html-map.js, is what actually reaches consumers.
 //
+// A prop with no `default` here is not necessarily an empty slot: an OPTIONAL
+// element (`props.X ? <el> : ""`) has no fallback by design, because the caller
+// must be able to render the component without that part. The gallery's content
+// for those props lives in matrix.js SPECIMEN_PROPS instead. See that map's
+// header for the layer separation, and components/render/renderer/README.md.
+//
 // HOW EACH FACT IS DERIVED (nothing here is hand-maintained)
 //
 //   slugs        matrix.RENDER_SLUGS, which reads the `case "<slug>":` branches
