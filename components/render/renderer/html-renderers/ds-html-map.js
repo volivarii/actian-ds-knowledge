@@ -230,6 +230,27 @@
       : "border-color:" + b.color;
   }
 
+  // Two-character initials badge, derived from the item type's own name rather
+  // than from a hand-maintained list. Derivation, not capture: no anatomy JSON
+  // in this family holds an initials layer at all, so there is nothing to quote.
+  // Multi-word takes the first letter of the first two words (Business Term ->
+  // BT, Data Process -> DP); single-word takes its first two letters (Dataset ->
+  // DA, Field -> FI). Uppercase for both shapes, one convention: .ds-item-type
+  // applies no text-transform, so the string is exactly what a reader sees, and
+  // the badges already rendered into that span read uppercase.
+  function itemTypeInitials(type) {
+    var words = String(type == null ? "" : type)
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!words.length) return "";
+    var letters =
+      words.length > 1
+        ? words[0].charAt(0) + words[1].charAt(0)
+        : words[0].slice(0, 2);
+    return letters.toUpperCase();
+  }
+
   // Inline icon glyphs (geometry in raw px — viewBox coords, not design tokens).
   // The button/input/checkbox/tag/card glyphs now come from renderIcon() (real
   // vendored DS icons, orphan-ref gated). The search magnifier stays hardcoded
@@ -911,8 +932,12 @@
             '<span class="ds-item-type" style="' +
             digramItemTypeStyle(mwItemType) +
             '">' +
-            // derived: the capture has no initials layer; its item-type layer reads "Dataset"
-            esc(props["Item type initials"] || "DS") +
+            // derived from the variant, not captured: the anatomy JSON has no
+            // initials layer, and this component's Type axis IS the item-type
+            // vocabulary (Dataset, Business Term, Data Process, Field,
+            // Visualisation), so one fixed string would contradict the title
+            // beside it in four of the five cells.
+            esc(props["Item type initials"] || itemTypeInitials(mwType)) +
             "</span>";
           var mwSection = props["Show Section"]
             ? '<div class="ds-metamodel-widget__section">' +
@@ -1690,8 +1715,15 @@
             "</span>" +
             '<span class="ds-stepper__text">' +
             '<span class="ds-stepper__title">' +
-            // capture: anatomy/stepper.json layer "Title" reads "Complete"
-            esc(props.Title || "Complete") +
+            // AUTHORED, and a deliberate exception to this file's "use the
+            // Figma capture" policy. anatomy/stepper.json layer "Title" reads
+            // "Complete", but that is the name of ONE State value, and the
+            // State axis renders four cells (Complete, Active, Default,
+            // State5). Quoting the capture makes three of the four say
+            // "Complete" while rendering as something else. A stepper's title
+            // is the step's NAME and is state-independent, so one authored
+            // title reads correctly in every cell.
+            esc(props.Title || "Connect source") +
             "</span>" +
             stepBody +
             "</span>" +

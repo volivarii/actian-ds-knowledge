@@ -41,11 +41,7 @@ function firstCellText(slug) {
 // reviewer can check it against the design file rather than against taste.
 const CAPTURED = [
   ["card-for-items", "Body goes here. Lorem ipsum"],
-  ["lineage-individual-node", "PB"],
-  ["lineage-grouped-node", "DS"],
-  ["metamodel-widget", "DS"],
   ["notification", "Item deleted"],
-  ["stepper", "Complete"],
   ["tooltip", "Body line text lorem ipsum"],
 ];
 
@@ -57,6 +53,99 @@ CAPTURED.forEach(function (pair) {
       pair[0] + " must render its captured text, not an empty slot",
     );
   });
+});
+
+// Derived, not captured: no anatomy JSON in the item-type badge family holds an
+// initials layer, so these strings are computed rather than quoted and belong in
+// their own list so the comment above CAPTURED stays true.
+//
+// The lineage nodes are NOT in the metamodel-widget case: their Type axis is
+// Main item / Sub item, a hierarchy position, so a single badge value does not
+// contradict any cell and is derived once from the component's own captured
+// vocabulary (a nested "powerbi" tag, a "2 datasets" button label).
+const DERIVED_FIXED = [
+  ["lineage-individual-node", "PB"],
+  ["lineage-grouped-node", "DS"],
+];
+
+DERIVED_FIXED.forEach(function (pair) {
+  test("renders the derived badge for " + pair[0], function () {
+    assert.match(
+      firstCellText(pair[0]),
+      new RegExp(pair[1].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+      pair[0] + " must render its derived badge, not an empty slot",
+    );
+  });
+});
+
+// metamodel-widget's Type axis IS the item-type vocabulary, so every cell needs
+// its OWN badge. Asserted per cell against the cell's own Type value, which is
+// what a hardcoded string could not satisfy.
+test("metamodel-widget derives each cell's badge from that cell's Type", function () {
+  const expected = {
+    Dataset: "DA",
+    "Business Term": "BT",
+    "Data Process": "DP",
+    Field: "FI",
+    Visualisation: "VI",
+  };
+  const seen = {};
+  matrix.variantMatrix("metamodel-widget").forEach(function (cell) {
+    const type = String(cell.variant).replace(/^Type=/, "");
+    const html = String(
+      dsMap.renderDSComponent({
+        dsSlug: "metamodel-widget",
+        variant: cell.variant,
+        props: cell.props || {},
+      }),
+    );
+    const m = html.match(/<span class="ds-item-type"[^>]*>([^<]*)<\/span>/);
+    seen[type] = m ? m[1] : null;
+  });
+  assert.deepEqual(
+    seen,
+    expected,
+    "each Type cell must carry its own two-letter badge, not one string repeated",
+  );
+});
+
+test("metamodel-widget still lets a supplied Item type initials win", function () {
+  const html = String(
+    dsMap.renderDSComponent({
+      dsSlug: "metamodel-widget",
+      variant: "Type=Business Term",
+      props: { "Item type initials": "XY" },
+    }),
+  );
+  assert.match(
+    html,
+    /<span class="ds-item-type"[^>]*>XY<\/span>/,
+    "an explicitly supplied badge must override the derived one",
+  );
+});
+
+// AUTHORED, and the one place this branch departs from the capture. The capture
+// reads "Complete", which is the name of a single State value, so it contradicts
+// three of the four cells. A step's title is state-independent, so the authored
+// title must read the same in every cell and must not be a state word.
+test("stepper renders a state-neutral title in every State cell", function () {
+  const titles = matrix.variantMatrix("stepper").map(function (cell) {
+    const html = String(
+      dsMap.renderDSComponent({
+        dsSlug: "stepper",
+        variant: cell.variant,
+        props: cell.props || {},
+      }),
+    );
+    const m = html.match(/<span class="ds-stepper__title">([^<]*)<\/span>/);
+    return m ? m[1] : null;
+  });
+  assert.ok(titles.length > 1, "the stepper matrix must render several cells");
+  assert.deepEqual(
+    Array.from(new Set(titles)),
+    ["Connect source"],
+    "every stepper cell must show the same state-neutral step name",
+  );
 });
 
 test("chat-with-ai-steward renders an authored insight", function () {
