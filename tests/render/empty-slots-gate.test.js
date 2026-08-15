@@ -37,6 +37,24 @@ test("the probe is not vacuous", function () {
   );
 });
 
+// `probed > 0` is a GLOBAL non-vacuity check, and global is the wrong grain: the
+// helper skips a slug whose variantMatrix throws and a probe whose render
+// throws, so a sync that broke 30 slugs would shrink coverage from 58 to 28 and
+// leave `probed > 0` comfortably true. The subject has to be asserted per slug,
+// which means asserting that NOTHING was skipped and naming what was.
+test("no slug was silently skipped", function () {
+  const { skipped } = emptyTextSlots();
+  assert.deepEqual(
+    skipped,
+    [],
+    "the probe could not reach these slugs, so the gate above measured a " +
+      "smaller surface than it appears to and their empty slots would not be " +
+      "reported at all. Fix the throw rather than accepting the reduced " +
+      "coverage: " +
+      JSON.stringify(skipped),
+  );
+});
+
 const contract = require("../../components/render/dist/render-contract.json");
 
 // A slot is exempt only with a reason. Exemptions are the escape hatch, not the

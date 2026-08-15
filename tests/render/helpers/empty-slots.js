@@ -28,16 +28,25 @@ function textOf(html) {
 
 function emptyTextSlots() {
   const dsMap = require(
-    path.join(REPO_ROOT, "components/render/renderer/html-renderers/ds-html-map.js"),
+    path.join(
+      REPO_ROOT,
+      "components/render/renderer/html-renderers/ds-html-map.js",
+    ),
   );
-  const matrix = require(path.join(REPO_ROOT, "components/render/renderer/matrix.js"));
+  const matrix = require(
+    path.join(REPO_ROOT, "components/render/renderer/matrix.js"),
+  );
   const contract = require(
     path.join(REPO_ROOT, "components/render/dist/render-contract.json"),
   );
 
-  dsMap.setIcons(require(path.join(REPO_ROOT, "components/dist/icons/icons.json")));
+  dsMap.setIcons(
+    require(path.join(REPO_ROOT, "components/dist/icons/icons.json")),
+  );
   try {
-    dsMap.setGraphics(require(path.join(REPO_ROOT, "components/dist/graphics/graphics.json")));
+    dsMap.setGraphics(
+      require(path.join(REPO_ROOT, "components/dist/graphics/graphics.json")),
+    );
   } catch (e) {
     // graphics are optional, same tolerance derive-from-renderer.js applies
   }
@@ -55,6 +64,19 @@ function emptyTextSlots() {
   const seen = new Set();
   const empty = [];
   const slugsWithTextProps = [];
+  // Every slug the probe could not reach, and why. Both call sites below can
+  // throw, and both used to swallow it and move on, so a sync that broke 30
+  // slugs shrank coverage from 58 to 28 with the gate still green: the loop
+  // body simply stopped executing for them. Reported so the caller can assert
+  // this list is empty and name the casualties rather than measuring only that
+  // SOMETHING was probed.
+  const skipped = [];
+  const skippedSeen = new Set();
+  const noteSkip = function (slug, reason) {
+    if (skippedSeen.has(slug)) return;
+    skippedSeen.add(slug);
+    skipped.push({ slug: slug, reason: reason });
+  };
   let probed = 0;
 
   Object.keys(contract.slugs).forEach(function (slug) {
@@ -64,6 +86,7 @@ function emptyTextSlots() {
     try {
       cells = matrix.variantMatrix(slug);
     } catch (e) {
+      noteSkip(slug, "variantMatrix threw: " + (e && e.message));
       return;
     }
     let slugHasTextProp = false;
@@ -79,13 +102,26 @@ function emptyTextSlots() {
         try {
           probedText = textOf(render(slug, cell.variant, withProbe));
         } catch (e) {
+          noteSkip(
+            slug,
+            "render threw on " +
+              p.name +
+              " @ " +
+              cell.variant +
+              ": " +
+              (e && e.message),
+          );
           return;
         }
         if (!probedText.includes(SENTINEL)) return;
 
         probed += 1;
         slugHasTextProp = true;
-        const stripped = probedText.split(SENTINEL).join("").replace(/\s+/g, " ").trim();
+        const stripped = probedText
+          .split(SENTINEL)
+          .join("")
+          .replace(/\s+/g, " ")
+          .trim();
         if (stripped !== plain) return;
 
         const key = slug + "." + p.name;
@@ -101,7 +137,15 @@ function emptyTextSlots() {
   empty.sort(function (a, b) {
     return a.slug.localeCompare(b.slug) || a.prop.localeCompare(b.prop);
   });
-  return { empty: empty, probed: probed, slugsWithTextProps: slugsWithTextProps };
+  skipped.sort(function (a, b) {
+    return a.slug.localeCompare(b.slug);
+  });
+  return {
+    empty: empty,
+    probed: probed,
+    slugsWithTextProps: slugsWithTextProps,
+    skipped: skipped,
+  };
 }
 
 module.exports = { emptyTextSlots: emptyTextSlots, SENTINEL: SENTINEL };
