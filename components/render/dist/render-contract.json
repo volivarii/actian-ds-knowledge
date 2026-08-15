@@ -11,8 +11,7 @@
       "group": "Navigation",
       "props": [
         {
-          "name": "Email",
-          "default": "account.user@example.com"
+          "name": "Email"
         },
         {
           "name": "Items"
@@ -603,12 +602,10 @@
       "group": "Form",
       "props": [
         {
-          "name": "Description",
-          "default": "A description helps users to define and understand the purpose of the input."
+          "name": "Description"
         },
         {
-          "name": "Helper",
-          "default": "Helper text goes here"
+          "name": "Helper"
         },
         {
           "name": "Label",
@@ -791,8 +788,7 @@
       "group": "Form",
       "props": [
         {
-          "name": "Helper",
-          "default": "Use MM/DD/YYYY."
+          "name": "Helper"
         },
         {
           "name": "Label",
@@ -1065,8 +1061,7 @@
           "name": "Actions"
         },
         {
-          "name": "Body",
-          "default": "Update the description so teammates know what this connection is for."
+          "name": "Body"
         },
         {
           "name": "Title",
@@ -1105,8 +1100,7 @@
       "group": "Feedback",
       "props": [
         {
-          "name": "Action",
-          "default": "Close"
+          "name": "Action"
         },
         {
           "name": "Message",
@@ -1155,8 +1149,7 @@
           "name": "Actions"
         },
         {
-          "name": "Description",
-          "default": "Support text"
+          "name": "Description"
         },
         {
           "name": "Title",
@@ -1183,15 +1176,14 @@
       "group": "Overlays",
       "props": [
         {
-          "name": "Body",
-          "default": "Explore this asset’s upstream sources and downstream consumers, as well as the transformations connecting them across the data pipeline. Learn how to navigate data lineage using mouse and keyboard controls."
+          "name": "Body"
         },
         {
           "name": "Show info icon"
         },
         {
           "name": "Title",
-          "default": "Interaction guide"
+          "default": "Popover"
         }
       ],
       "variants": {
@@ -1233,8 +1225,7 @@
       "group": "Form",
       "props": [
         {
-          "name": "Helper text",
-          "default": "Description"
+          "name": "Helper text"
         },
         {
           "name": "Label",
@@ -1535,8 +1526,7 @@
       "group": "Navigation",
       "props": [
         {
-          "name": "Body",
-          "default": "Optional body"
+          "name": "Body"
         },
         {
           "name": "Step",
@@ -1797,8 +1787,7 @@
       "group": "Form",
       "props": [
         {
-          "name": "Helper text",
-          "default": "Description"
+          "name": "Helper text"
         },
         {
           "name": "Label",
