@@ -19,9 +19,10 @@
 // a better list. This file is the relation.
 //
 // It is also the real content layer. An earlier attempt, `default-props.json`,
-// tried to give each render example content but had 3 entries, zero readers, and
-// its one interesting entry recorded a Figma layer name rather than the layer's
-// text, so it was deleted. The `default` field below, sourced from each prop's
+// tried to give each render example content but has 3 entries, no reader in this
+// repo, and its one interesting entry records a Figma layer name rather than the
+// layer's text. It is retained anyway: the plugin's fidelity harness reads it out
+// of the vendored tree. The `default` field below, sourced from each prop's
 // `|| "literal"` fallback in ds-html-map.js, is what actually reaches consumers.
 //
 // HOW EACH FACT IS DERIVED (nothing here is hand-maintained)

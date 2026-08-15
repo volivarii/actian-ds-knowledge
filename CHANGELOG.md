@@ -1690,6 +1690,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
   address at an external domain. The remaining pair, `alert-banner`'s title, stays
   empty by design and is exempted with that reason.
 
+- **`components/render/renderer/default-props.json` is retained, and its README description
+  corrected.** The file has no reader in this repository, and it was briefly deleted on that
+  basis, but it does have a consumer: the plugin's fidelity harness
+  (`scripts/lib/renderer.js`) reads it out of the vendored tree at module load and unguarded,
+  and 48 plugin files require that module, so removing it upstream would land as a red plugin
+  PR on the next nightly vendor snapshot. The plugin also has a test forbidding it from keeping
+  its own copy, so reading this one is deliberate. What was wrong was the README line claiming
+  the variant matrix falls back to this file, which was never true. The README, the
+  `paths-manifest.json` collection description and `scripts/render/derive-contract.js` now all
+  say the same accurate thing: no reader here, retained for the plugin, and content defaults
+  for rendering live in `ds-html-map.js` and reach consumers as `props[].default` in the render
+  contract. `tests/render/renderer-relocation.test.js` asserts the file's presence again,
+  because that assertion is what guards the vendored contract.
+
 ### Added
 
 - **A gate on empty text slots**, covering all 58 render slugs. It injects a sentinel per
@@ -1701,11 +1715,6 @@ Each entry links its pull request. Dates are the merge date (UTC).
   values render identically to a sibling (57 of 236 identity-axis values) and recorded it
   without enforcing it. An increase now fails, per component and in total, compared against
   the contract at the merge base.
-
-### Removed
-
-- `components/render/renderer/default-props.json`, which had three entries and no readers,
-  and a README line claiming the matrix fell back to it, which was never true.
 
 ## [0.34.69] - 2026-07-03
 

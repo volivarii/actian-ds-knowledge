@@ -12,6 +12,11 @@ test("relocated renderer modules are present and manifest-covered (no orphans)",
     "anatomy-render.js",
     "appearance-render.js",
     "appearance-style.js",
+    // No reader in this repo, but the plugin's fidelity harness reads it out of
+    // the vendored tree at module load and unguarded, so its absence is a red
+    // plugin PR on the next vendor snapshot. This assertion is what guards that
+    // vendored contract.
+    "default-props.json",
     "html-renderers/ds-html-map.js",
     "html-renderers/anatomy-variant-key.js",
     "html-renderers/fm-html-map.js",
