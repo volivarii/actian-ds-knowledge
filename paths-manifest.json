@@ -646,6 +646,13 @@
       "origin": "human",
       "description": "The official Custom Elements Manifest JSON schema, used to validate the emitted CEM."
     },
+    "components.render.sparse": {
+      "path": "components/render/dist/sparse-render.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/render/derive-sparse-render.js",
+      "description": "What each component renders when the caller supplies NO props: per slug, the number of elements carrying visible text in a render with an empty prop bag, plus the repo-wide totals. Measured by rendering, never read from the source, so a literal fallback counts whatever shape it is written in. The ratchet in tests/render/sparse-render-ratchet.test.js fails when a count rises against this artifact as it stood at the merge base, which is how the render tier keeps the property that a component must not invent parts the caller did not ask for: a fallback removes the caller's ability to render the component without that part, and the same renderer draws real product screens downstream. The counts are not a target to drive to zero (44 of 58 slugs render some structural copy of their own); only a rise is a defect."
+    },
     "components.styles.effect": {
       "path": "components/dist/effect-styles.md",
       "type": "markdown",

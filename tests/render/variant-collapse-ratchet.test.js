@@ -2,8 +2,8 @@
 
 const test = require("node:test");
 const assert = require("node:assert");
-const { execFileSync } = require("node:child_process");
 const path = require("node:path");
+const mergeBase = require("./helpers/merge-base.js");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const CONTRACT_REL = "components/render/dist/render-contract.json";
@@ -53,77 +53,12 @@ function collapseBySlug(contract) {
   return out;
 }
 
-function tryGit(args, extra) {
-  try {
-    return execFileSync(
-      "git",
-      args,
-      Object.assign(
-        {
-          cwd: REPO_ROOT,
-          encoding: "utf8",
-          stdio: ["ignore", "pipe", "ignore"],
-        },
-        extra || {},
-      ),
-    ).trim();
-  } catch (e) {
-    return null;
-  }
-}
-
-// The baseline is the contract at the merge base, not at HEAD. render-derive.yml
-// regenerates the committed contract before the suite runs, so comparing against
-// the working tree would be new-against-new and would always pass.
-// fidelity-check.js:1257 carries the same warning about its own baseline.
-//
-// Resolving the literal ref name `origin/main` does NOT work everywhere.
-// validate-manifest.yml runs `npm test` on fork PRs with
-// `repository: head.repo.full_name`, so `origin` is the FORK, and under
-// actions/checkout's narrow refspec a `git fetch origin main` populates
-// FETCH_HEAD without ever creating `refs/remotes/origin/main`. An outside
-// contributor's PR then hit the hard failure below with nothing wrong.
-// `.github/workflows/vendored-source-bump.yml` solved this by fetching the base
-// ref and merge-basing against FETCH_HEAD; that is the mechanism used here.
-//
-// The remote-tracking ref is tried FIRST, and the fetch is a genuine FALLBACK
-// reached only when that yields nothing: a `git fetch` on every `npm test` run
-// is slow and non-hermetic, and a developer's clone has fetched at least once.
-// Building both candidates up front and looping over them ran the fetch
-// unconditionally, which is the same defect in a shape that reads like a fast
-// path, so the ordering is expressed as control flow rather than as list order.
-function contractAtMergeBaseWith(ref) {
-  const mergeBase = tryGit(["merge-base", ref, "HEAD"]);
-  if (!mergeBase) return null;
-  const raw = tryGit(["show", mergeBase + ":" + CONTRACT_REL], {
-    maxBuffer: 32 * 1024 * 1024,
-  });
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch (e) {
-    // A corrupt baseline is not a pass: report nothing so the caller falls
-    // through to its next candidate, and to the loud failure if there is none.
-    return null;
-  }
-}
-
+// The baseline is the contract at the merge base, not at HEAD: see
+// helpers/merge-base.js, which owns that resolution for both render ratchets.
+// It used to live here in full, and a second copy of it went into the sparse
+// ratchet before the duplication was noticed.
 function baselineContract() {
-  const baseRef = process.env.GITHUB_BASE_REF || "main";
-  // Fast path, and it stays offline: no network call is made at all unless this
-  // fails to produce a usable baseline.
-  if (tryGit(["rev-parse", "--verify", "--quiet", "origin/" + baseRef])) {
-    const local = contractAtMergeBaseWith("origin/" + baseRef);
-    if (local) return local;
-  }
-  // Fallback only. On a fork PR `origin/<baseRef>` does not exist and cannot be
-  // made to exist under actions/checkout's narrow refspec, but the fetch still
-  // populates FETCH_HEAD, which is enough to merge-base against.
-  if (tryGit(["fetch", "--no-tags", "--quiet", "origin", baseRef]) !== null) {
-    const fetched = contractAtMergeBaseWith("FETCH_HEAD");
-    if (fetched) return fetched;
-  }
-  return null;
+  return mergeBase.jsonAtMergeBase(CONTRACT_REL).json;
 }
 
 // Baseline at the merge base when this ratchet landed: 57 of 236 identity-axis
@@ -138,13 +73,7 @@ test("variant collapse does not increase, per slug or in total", function () {
     // must fail loudly rather than pass silently: a silent return here would
     // mean the ratchet asserted nothing while still going green.
     assert.fail(
-      "variant-collapse-ratchet: could not resolve the merge-base contract " +
-        "(neither origin/" +
-        (process.env.GITHUB_BASE_REF || "main") +
-        " nor the fallback `git fetch` produced a merge base carrying " +
-        CONTRACT_REL +
-        "), so there is nothing to compare against. Fix connectivity/git " +
-        "history rather than treating this as a pass.",
+      mergeBase.unresolvedMessage("variant-collapse-ratchet", CONTRACT_REL),
     );
   }
   const before = collapseBySlug(base);

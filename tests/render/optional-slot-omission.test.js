@@ -35,6 +35,9 @@ const dsMap = require(
 const matrix = require(
   path.join(REPO_ROOT, "components/render/renderer/matrix.js"),
 );
+const { deriveContract } = require(
+  path.join(REPO_ROOT, "scripts/render/derive-contract.js"),
+);
 
 dsMap.setIcons(
   require(path.join(REPO_ROOT, "components/dist/icons/icons.json")),
@@ -133,6 +136,49 @@ test("every specimen slot names a slug the renderer implements", function () {
     "SPECIMEN_PROPS names slugs with no renderer branch, so their content " +
       "reaches nothing: " +
       JSON.stringify(unknown),
+  );
+});
+
+// The slug half of that check has a prop half, and it was missing. A typo or a
+// retired prop makes SPECIMEN_PROPS supply content nothing reads: the gallery
+// cell silently loses its specimen, and the per-slot test below stops asserting
+// anything about a real slot while still counting as a passing test. The
+// contract is derived FRESH rather than read from the committed dist, so a
+// branch that has not yet run its derive is measured against what the renderer
+// does now.
+const CONTRACT = deriveContract();
+
+function orphansIn(slots) {
+  return slots
+    .filter(function (s) {
+      const entry = CONTRACT.slugs[s.slug];
+      if (!entry) return true;
+      return !(entry.props || []).some(function (p) {
+        return p.name === s.prop;
+      });
+    })
+    .map(function (s) {
+      return s.slug + "." + s.prop;
+    });
+}
+
+test("every specimen prop is a prop the renderer actually reads", function () {
+  const orphans = orphansIn(SLOTS);
+  assert.deepEqual(
+    orphans,
+    [],
+    "SPECIMEN_PROPS sets props the renderer does not read, so the gallery gets " +
+      "no specimen content from them and the omission checks below have no " +
+      "subject: " +
+      JSON.stringify(orphans),
+  );
+  // The same predicate over a fabricated slot, because an empty result reads as
+  // an all-clear whether the map is clean or the predicate is broken. The slug
+  // is real and the prop is not, which is the shape a typo takes.
+  assert.deepEqual(
+    orphansIn([{ slug: SLOTS[0].slug, prop: "NoSuchPropZZ" }]),
+    [SLOTS[0].slug + ".NoSuchPropZZ"],
+    "the orphan predicate must report a prop the renderer does not read",
   );
 });
 
