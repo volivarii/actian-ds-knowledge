@@ -1558,8 +1558,16 @@
           // Task-input footer (anatomy: input + context chip + Plan button).
           // Context may be an object {type,name} ("Dataset Customer Orders") or a
           // bare string; both render to a single esc'd chip label.
-          // authored: anatomy/chat-with-ai-steward.json holds no text nodes at all
-          var stCtxLabel = "Dataset Customer Orders";
+          //
+          // The initial value is EMPTY on purpose. The chip is optional: a caller
+          // that scopes a steward session to nothing must get a task input with
+          // no chip, and a literal here takes that choice away. This slot is the
+          // thirteenth of the #543 fills, and it survived #544 because it wears a
+          // different shape: a variable initialised to the literal, rather than
+          // the ternary-guarded element the other twelve used, so a reader
+          // scanning for that shape walked straight past it. The gallery's label
+          // lives in matrix.js SPECIMEN_PROPS, like the other twelve.
+          var stCtxLabel = "";
           if (props.Context && typeof props.Context === "object") {
             stCtxLabel =
               String(props.Context.type || "") +
