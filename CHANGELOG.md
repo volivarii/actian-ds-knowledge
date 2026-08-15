@@ -1691,6 +1691,11 @@ Each entry links its pull request. Dates are the merge date (UTC).
   the 1 substituted value, deliberately replaced because the capture holds what reads
   as a real person's address at an external domain. The remaining pair,
   `alert-banner`'s title, stays empty by design and is exempted with that reason.
+  One consumer-visible consequence of deriving those initials: `metamodel-widget`'s
+  `Item type initials` no longer publishes a `default` in `render-contract.json`,
+  because the value is now computed per variant rather than written as a literal the
+  contract extractor can read, and a single published default would in any case have
+  been wrong for four of the five cells.
 
   `stepper`'s title is the one place a captured string was deliberately not used. The
   capture reads `Complete`, which is the name of one value of the State axis, so
