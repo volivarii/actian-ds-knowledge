@@ -1030,8 +1030,7 @@
       "group": "Data Display",
       "props": [
         {
-          "name": "Item type initials",
-          "default": "DS"
+          "name": "Item type initials"
         },
         {
           "name": "Label"
@@ -1545,7 +1544,7 @@
         },
         {
           "name": "Title",
-          "default": "Complete"
+          "default": "Connect source"
         }
       ],
       "variants": {
