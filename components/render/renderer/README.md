@@ -79,6 +79,16 @@ Content lives in one of two layers, and which one is not a matter of taste:
   now guards: the renderer says what a component DOES with the props it is given, the matrix
   says what the gallery should SHOW.
 
+  The ternary is the usual shape, not the rule. A variable initialised to a literal
+  (`var label = "Dataset Customer Orders"`) makes the part unconditional just as surely, and
+  that is how one slot survived the pass that fixed the other twelve. The omission test can
+  only check slots named in `SPECIMEN_PROPS`, so the guard that needs no list is
+  `tests/render/sparse-render-ratchet.test.js`: it renders every slug with **no props at
+  all**, blocks when the number of parts a component produces goes up, and blocks when a prop
+  starts REPLACING content instead of adding it, which is the same defect written so that the
+  count cannot see it (a literal appended inside an element that already has text, or carried by
+  an attribute).
+
 These modules read facts (anatomy JSON, `icons.json`) via **injected** loaders and maps,
 never via `lib/paths` (which lives only in the plugin): a missing `lib/paths` require
 degrades to `null` rather than throwing, and callers (knowledge's own derive scripts)
@@ -101,6 +111,18 @@ sync can no longer make either stale:
   cell emits a real `ds-` class, cell counts and labels match the variant matrix, every
   slug resolves a real registry group, the phase-1b fixes hold).
 - `scripts/render/fidelity-check.js`: color correctness against the appearance facts.
+- `tests/render/sparse-render-ratchet.test.js`: a component must not invent content the caller did
+  not ask for. Two measurements against `components/render/dist/sparse-render.json` as that file
+  stood at the merge base, both blocking. Every slug rendered with no props, counting text-bearing
+  elements, which catches a fallback that adds a NEW element; and every `(slug, prop)` rendered
+  empty and with a sentinel, which catches a fallback that merely REPLACES content, including one
+  injected into an element that already has text, one carried by an attribute, and one inside an
+  svg. Neither keeps a list of slots, so unlike the omission test they cannot go stale by omission.
+  Their scope is narrower than that sounds and the artifact's `totals` publish it: one cell per slug
+  (no variant, no props) and only contract-listed props whose value reaches the markup, so a
+  fallback behind another variant or State, one behind a prop read the contract's regex cannot see,
+  and one behind a prop that never echoes are all still invisible. Extending that coverage is
+  follow-up work.
 
 This is renderer-relocation phase 0 (styling) + phase 1a (the renderer JS and the matrix
 logic) + phase 1b (the whole gallery deriving from this renderer) + phase 3 (the frozen

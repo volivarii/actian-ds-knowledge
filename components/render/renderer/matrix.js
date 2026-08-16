@@ -723,11 +723,19 @@ var MATRIX_OVERRIDES = {
 // caller generating a screen must be able to ask for one. matrix.js says what
 // the GALLERY should SHOW, and an empty description slot is a poor specimen.
 // Two different questions. #543 answered the second one inside the renderer, by
-// turning twelve optional slots into unconditional elements with literal
+// turning thirteen optional slots into unconditional elements with literal
 // fallbacks, and in doing so answered the first one wrongly: every generated
 // page-header grew a "Support text", every toggle a "Description", every date
 // input a "Use MM/DD/YYYY.", with no way to turn them off. The strings below
-// are those twelve, moved to the layer that actually wanted them.
+// are those, moved to the layer that actually wanted them.
+//
+// #544 moved twelve. The thirteenth, chat-with-ai-steward's context chip, went
+// on shipping in the renderer because it wore a different shape (a variable
+// initialised to the literal, not a `props.X ? el : ""` conditional), and the
+// omission test that guards this map ITERATES this map, so a slot missing here
+// was a slot nothing checked. The guard that needs no list is
+// tests/render/sparse-render-ratchet.test.js: it renders every slug with no
+// props at all and fails when one starts producing parts it did not before.
 //
 // Provenance travels with the value, in the words it had in the renderer:
 // `capture:` quotes components/dist/anatomy/<slug>.json, `authored:` means the
@@ -781,6 +789,13 @@ var SPECIMEN_PROPS = {
     // single space so no raw line separator reaches the rendered markup
     Body: "Explore this asset’s upstream sources and downstream consumers, as well as the transformations connecting them across the data pipeline. Learn how to navigate data lineage using mouse and keyboard controls.",
   },
+
+  // authored: anatomy/chat-with-ai-steward.json holds zero text nodes, so the
+  // context chip has no captured string. It names the asset the steward session
+  // is scoped to, which is what the Figma preview shows the chip doing. The
+  // renderer accepts this bare-string form and the object form {type, name}
+  // alike; the gallery uses the string.
+  "chat-with-ai-steward": { Context: "Dataset Customer Orders" },
 
   // substituted, not captured: anatomy/account-dropdown.json holds what reads as
   // a real person's name and address at an external domain. Shipping that as
