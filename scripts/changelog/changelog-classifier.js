@@ -336,6 +336,25 @@ function buildRegistryChangelog(diff) {
   return lines.join("\n");
 }
 
+// A reported rename cannot break a consumer when the slug did not change. The
+// differ reports a rename when the slug OR the display name changes, so editing
+// a status emoji in a component's name used to push the verdict to breaking on
+// its own and stall a night's sync (knowledge #512). No consumer addresses a
+// component by display name, so resolution is untouched.
+//
+// A slug change stays breaking. components/dist/identity.json now lets a
+// consumer resolve the old slug, which is what would make such a rename
+// additive, but the verdict cannot yet see that: the sync classifies inside its
+// orchestrator step while the ledger is derived in a later one, and a breaking
+// verdict opens no PR, so the regenerated ledger is discarded and the rename is
+// re-detected identically the next night. Absorption has to be computed from the
+// rename the run is about to record, which needs syncRegistry split into
+// compute-then-classify. Deliberately not stubbed in here: a rule that cannot
+// fire reads as a rule that works.
+function renameBreaksResolution(rename) {
+  return rename.fromSlug !== rename.toSlug;
+}
+
 function classifyRegistry(before, after) {
   if (isRegistryUnchanged(before, after)) {
     return {
@@ -350,6 +369,7 @@ function classifyRegistry(before, after) {
     reasons.push("removed component '" + (e.entry.name || e.slug) + "'");
   });
   diff.renamed.forEach(function (e) {
+    if (!renameBreaksResolution(e)) return;
     reasons.push("renamed component '" + e.fromName + "' → '" + e.toName + "'");
   });
   diff.modified.forEach(function (e) {
@@ -724,9 +744,7 @@ function classifyMedia(before, after, opts) {
   var lines = [];
   if (lostSlugs.length > 0 || lostRoles.length > 0) {
     lines.push(
-      "## Lost media (" +
-        (lostSlugs.length + lostRoles.length) +
-        "): BREAKING",
+      "## Lost media (" + (lostSlugs.length + lostRoles.length) + "): BREAKING",
     );
     lines.push("");
     lines.push(
@@ -743,9 +761,7 @@ function classifyMedia(before, after, opts) {
     lines.push("");
   }
   if (gainedSlugs.length > 0 || gainedFrames > 0) {
-    lines.push(
-      "## New media (" + (gainedSlugs.length + gainedFrames) + ")",
-    );
+    lines.push("## New media (" + (gainedSlugs.length + gainedFrames) + ")");
     lines.push("");
     gainedSlugs.forEach(function (s) {
       lines.push("- `" + s + "`");

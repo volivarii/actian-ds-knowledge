@@ -136,6 +136,19 @@ jobs:
           echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
           echo "Sync verdict: $VERDICT"
 
+      # Records this run's slug for every stable Figma identity, so a rename
+      # leaves a trail a consumer can follow instead of a slug that no longer
+      # resolves. Reads the registries, so it runs after they are written.
+      #
+      # Deliberately AFTER the verdict is read, and non-fatal: derive-identity
+      # fails loudly on an unreadable or empty registry set, and if that threw
+      # here it would kill the job before the verdict was consumed, so an
+      # otherwise-additive night would produce no PR, no changelog and no
+      # tracking issue. A ledger problem must not discard a good sync.
+      - name: Update the identity ledger
+        continue-on-error: true
+        run: node scripts/components/derive-identity.js
+
       # Only ADDITIVE syncs open a PR, and it auto-merges the same day. Breaking
       # syncs no longer open a PR at all -- see the tracking-issue step below.
       # A breaking sync always needs human follow-through before it can merge
@@ -144,6 +157,7 @@ jobs:
       # up, went stale against a moving main, and any follow-through on one
       # branch was orphaned when the next night opened another. A rolling issue
       # says the same thing once, without the stale-PR debris.
+
       - name: Open pull request
         id: cpr
         if: steps.verdict.outputs.category == 'additive'

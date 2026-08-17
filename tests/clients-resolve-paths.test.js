@@ -21,11 +21,24 @@ var MANIFEST = {
     },
   },
   collections: {
+    // NOT component-keyed: content sections have their own slug namespace, and
+    // eight app-context/content slugs already collide with component slugs
+    // (api-key, dataset, field, lineage, scanner, suggestion, template,
+    // user-group). Rename history must not reach here.
     "content.section": {
       dir: "content/src",
       pattern: "{slug}.md",
       type: "markdown",
       origin: "human",
+      description: "y",
+    },
+    // Component-keyed, so rename history applies.
+    "components.guidelineDoc.byKey": {
+      dir: "components/dist/guidelines",
+      pattern: "{slug}.json",
+      slugNamespace: "component",
+      type: "json",
+      origin: "ci",
       description: "y",
     },
   },
@@ -42,6 +55,102 @@ test("buildPathsFromManifest joins entry paths onto vendorRoot", function () {
     P.content.section("forms"),
     path.join("/v", "content/src", "forms.md"),
   );
+});
+
+// The identity ledger (components/dist/identity.json) exists so a consumer
+// holding a slug that has since been renamed resolves it instead of breaking on
+// it. Without this, a Figma display-name change breaks every consumer that
+// addresses the component by slug, which is 15 of the 18 manifest collections.
+var LEDGER = {
+  schemaVersion: "1.0.0",
+  entries: {
+    KEY_A: {
+      slug: "action-bar",
+      nodeId: "14747:9839",
+      previousSlugs: ["sticky-footer"],
+    },
+  },
+};
+
+test("a component collection resolves a slug the component was renamed away from", function () {
+  var P = buildPathsFromManifest(MANIFEST, "/v", LEDGER);
+  assert.equal(
+    P.components.guidelineDoc.byKey("sticky-footer"),
+    path.join("/v", "components/dist/guidelines", "action-bar.json"),
+  );
+});
+
+// The ledger's namespace is Figma components. Applying it to every {slug}
+// collection breaks resolution for the seven that key on something else: with a
+// ledger recording `field` -> `form-field`, `appContextSrc("field")` returned
+// null for an app-context entity file that exists and was never renamed.
+test("a collection in another slug namespace is not touched by component renames", function () {
+  var P = buildPathsFromManifest(MANIFEST, "/v", LEDGER);
+  assert.equal(
+    P.content.section("sticky-footer"),
+    path.join("/v", "content/src", "sticky-footer.md"),
+    "content sections are not component-keyed, so the rename must not apply",
+  );
+});
+
+// A freed name can be reused. If a retired slug were mapped unconditionally, a
+// consumer asking for the slug a DIFFERENT component now carries would be handed
+// the renamed one, which is worse than the breakage this feature removes: it
+// resolves, so nothing reports it.
+test("a slug another component now carries resolves to that component, not the renamed one", function () {
+  var reused = {
+    schemaVersion: "1.0.0",
+    entries: {
+      KEY_A: {
+        slug: "action-bar",
+        nodeId: "1:1",
+        previousSlugs: ["sticky-footer"],
+      },
+      KEY_B: { slug: "sticky-footer", nodeId: "2:2", previousSlugs: [] },
+    },
+  };
+  var P = buildPathsFromManifest(MANIFEST, "/v", reused);
+  assert.equal(
+    P.content.section("sticky-footer"),
+    path.join("/v", "content/src", "sticky-footer.md"),
+  );
+});
+
+test("buildPaths reads the identity ledger from the vendored snapshot", function () {
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), "rp-"));
+  fs.writeFileSync(
+    path.join(dir, "paths-manifest.json"),
+    JSON.stringify(MANIFEST),
+  );
+  fs.mkdirSync(path.join(dir, "components", "dist"), { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, "components", "dist", "identity.json"),
+    JSON.stringify(LEDGER),
+  );
+
+  var P = buildPaths(dir);
+  assert.equal(
+    P.components.guidelineDoc.byKey("sticky-footer"),
+    path.join(dir, "components/dist/guidelines", "action-bar.json"),
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+// Older vendored snapshots have no ledger. Resolution must carry on rather than
+// throw, or upgrading the client would break every consumer pinned to a snapshot
+// taken before this landed.
+test("a snapshot with no identity ledger still resolves", function () {
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), "rp-"));
+  fs.writeFileSync(
+    path.join(dir, "paths-manifest.json"),
+    JSON.stringify(MANIFEST),
+  );
+  var P = buildPaths(dir);
+  assert.equal(
+    P.content.section("forms"),
+    path.join(dir, "content/src", "forms.md"),
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 test("buildPaths reads <vendorRoot>/paths-manifest.json and resolves", function () {
@@ -267,11 +376,17 @@ test("every {slug} shape in the real manifest still resolves", function () {
     if (pattern.indexOf("{slug}") === -1) return; // descriptive, covered above
     checked++;
     var P = collWith(pattern);
-    assert.doesNotThrow(function () {
-      P.probe("button");
-    }, "pattern " + pattern + " (" + key + ") must stay resolvable");
+    assert.doesNotThrow(
+      function () {
+        P.probe("button");
+      },
+      "pattern " + pattern + " (" + key + ") must stay resolvable",
+    );
   });
-  assert.ok(checked >= 7, "expected several {slug} collections, saw " + checked);
+  assert.ok(
+    checked >= 7,
+    "expected several {slug} collections, saw " + checked,
+  );
 });
 
 test("a descriptive collection says so rather than blaming the pattern", function () {
@@ -301,4 +416,114 @@ test("a descriptive collection says so rather than blaming the pattern", functio
   assert.throws(function () {
     P.leafy("anything");
   }, /declared descriptive-only \(resolvable: false\)/);
+});
+
+// The rename index is a lookup keyed by slug, so a slug that collides with a
+// name on Object.prototype must not resolve through the prototype. Without a
+// null-prototype map, `constructor` resolves to Object itself, which is truthy,
+// and the path becomes the stringified function.
+test("a slug colliding with an Object.prototype key resolves normally", function () {
+  var P = buildPathsFromManifest(MANIFEST, "/v", LEDGER);
+  ["constructor", "toString", "hasOwnProperty"].forEach(function (slug) {
+    assert.equal(
+      P.content.section(slug),
+      path.join("/v", "content/src", slug + ".md"),
+      slug + " must resolve to its own path",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// slugNamespace, asserted against the REAL manifest
+// ---------------------------------------------------------------------------
+
+var REAL_MANIFEST = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "..", "paths-manifest.json"), "utf8"),
+);
+
+test("every collection declared component-keyed actually lives under components/", function () {
+  var flagged = Object.keys(REAL_MANIFEST.collections).filter(function (k) {
+    return REAL_MANIFEST.collections[k].slugNamespace === "component";
+  });
+  assert.ok(flagged.length > 0, "the declaration must not be empty");
+  flagged.forEach(function (k) {
+    assert.match(
+      REAL_MANIFEST.collections[k].dir,
+      /^components\//,
+      k +
+        " claims the component slug namespace but its dir is not under components/",
+    );
+  });
+});
+
+// The regression the review caught, asserted at the real-manifest level: eight
+// app-context and content slugs collide with component slugs, so component
+// rename history reaching those collections would send a never-renamed file
+// somewhere else or to null.
+test("component rename history cannot redirect an app-context record", function () {
+  var ledger = {
+    schemaVersion: "1.0.0",
+    entries: {
+      KEY_X: { slug: "form-field", nodeId: "9:9", previousSlugs: ["field"] },
+    },
+  };
+  // Resolved against the real repo root, because appContextSrc's pattern is
+  // "{kind}/{slug}.md": it walks sub-directories, so a fake root returns null
+  // for every input and the assertion would hold vacuously.
+  var P = buildPathsFromManifest(
+    REAL_MANIFEST,
+    path.join(__dirname, ".."),
+    ledger,
+  );
+
+  ["field", "dataset", "api-key", "lineage", "template", "user-group"].forEach(
+    function (slug) {
+      var resolved = P.appContextSrc(slug);
+      assert.ok(
+        resolved && resolved.endsWith(path.join("entities", slug + ".md")),
+        "appContextSrc(" +
+          slug +
+          ") must resolve to its own app-context record, got " +
+          resolved,
+      );
+    },
+  );
+});
+
+// Guideline and usage-note filenames come from the authored components/src/<slug>/
+// directory (derive-guidelines listComponentDirs), NOT from the registry slug. A
+// Figma rename moves only the registry slug, so the file on disk keeps the old
+// name. Mapping blindly would return a path that does not exist while breaking
+// the one that does, which is worse than the breakage the ledger removes.
+// Resolution must never lose a path that resolved before.
+test("a mapped slug falls back to the original when only the original file exists", function () {
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), "rp-"));
+  var guidelines = path.join(dir, "components", "dist", "guidelines");
+  fs.mkdirSync(guidelines, { recursive: true });
+  // The authored directory was never renamed, so the doc is still sticky-footer.
+  fs.writeFileSync(path.join(guidelines, "sticky-footer.json"), "{}");
+
+  var P = buildPathsFromManifest(MANIFEST, dir, LEDGER);
+  assert.equal(
+    P.components.guidelineDoc.byKey("sticky-footer"),
+    path.join(guidelines, "sticky-footer.json"),
+    "must not redirect to action-bar.json, which does not exist",
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test("a mapped slug prefers the current name when that file exists", function () {
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), "rp-"));
+  var guidelines = path.join(dir, "components", "dist", "guidelines");
+  fs.mkdirSync(guidelines, { recursive: true });
+  fs.writeFileSync(path.join(guidelines, "action-bar.json"), "{}");
+  fs.writeFileSync(path.join(guidelines, "sticky-footer.json"), "{}");
+
+  var P = buildPathsFromManifest(MANIFEST, dir, LEDGER);
+  assert.equal(
+    P.components.guidelineDoc.byKey("sticky-footer"),
+    path.join(guidelines, "action-bar.json"),
+    "when both exist the current name is canonical",
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
 });
