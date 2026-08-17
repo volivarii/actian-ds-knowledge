@@ -49,21 +49,6 @@ Each entry links its pull request. Dates are the merge date (UTC).
   exemption is paid for the same way llms' is: a re-derive-and-diff drift guard in
   `validate-manifest.yml` plus a test that the committed ledger is what a fresh derive produces.
 
-### Changed
-
-- **A rename is breaking only when the slug it renamed away from stops resolving.** The classifier
-  pushed a breaking reason for every rename, and any single reason makes the whole sync breaking,
-  which commits nothing. Two consequences, both now fixed:
-
-  - A change to a component's **display name that leaves the slug alone** is no longer breaking. The
-    differ reports a rename when the slug *or* the name changes, so editing a status emoji in a name
-    could stall a night's sync on its own (#512). No consumer addresses a component by display name.
-  - A **slug** change the identity ledger has absorbed is additive, because the old slug still
-    resolves. Absorption is checked by target and not merely by presence: a ledger naming the wrong
-    successor still classifies as breaking, so a stale ledger cannot launder a real break into an
-    auto-merge.
-
-  The changelog still reports every rename either way. Absorbed does not mean invisible.
 
 - **`components/render/dist/render-contract.json`: what the renderer actually implements, per slug,
   so consumers stop restating it.** Each entry carries the content props that slug's branch reads,
@@ -140,6 +125,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
   input and the path a coverage loss actually arrives by.
 
 ### Changed
+
+- **A rename is breaking only when the slug it renamed away from stops resolving.** The classifier
+  pushed a breaking reason for every rename, and any single reason makes the whole sync breaking,
+  which commits nothing. Two consequences, both now fixed:
+
+  - A change to a component's **display name that leaves the slug alone** is no longer breaking. The
+    differ reports a rename when the slug *or* the name changes, so editing a status emoji in a name
+    could stall a night's sync on its own (#512). No consumer addresses a component by display name.
+  - A **slug** change the identity ledger has absorbed is additive, because the old slug still
+    resolves. Absorption is checked by target and not merely by presence: a ledger naming the wrong
+    successor still classifies as breaking, so a stale ledger cannot launder a real break into an
+    auto-merge.
+
+  The changelog still reports every rename either way. Absorbed does not mean invisible.
 
 - **BREAKING SYNC 2026-08-12: the tag family folded from eight components into three, and carrying it
   through raised oracle coverage from 11.8% to 17.8% instead of costing the eight declarations it

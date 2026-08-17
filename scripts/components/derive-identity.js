@@ -20,10 +20,19 @@
 var fs = require("node:fs");
 var path = require("node:path");
 
-// Stable identity for a registry entry, most durable first. Deliberately the
-// same precedence as `identityOf` in the sync, because the two must agree: if
-// the sync pairs a rename by `key` and this ledger keyed by `nodeId`, a rename
-// would look like a new entry here and the previous slug would be lost.
+// Stable identity for a registry entry, most durable first.
+//
+// Precedence differs from its two neighbours on purpose, and the difference is
+// worth stating because it is where a disagreement would hide:
+//   - the sync's identityOf(slug, comp) is `key || nodeId || slug` (three tiers,
+//     sync-from-figma.js), because it must classify every entry it sees;
+//   - the differ that decides the breaking verdict pairs renames by `key` ONLY
+//     (changelog-classifier.js), with no nodeId fallback;
+//   - this returns `key || nodeId` and SKIPS an entry with neither, because a
+//     ledger keyed by slug would defeat the whole point.
+// So for a keyless entry this would record a rename by nodeId while the
+// classifier reported a removal plus an addition. Latent today: all 637 entries
+// carry a key, and Figma gives every published component one.
 function identityOf(entry) {
   return (entry && (entry.key || entry.nodeId)) || null;
 }
@@ -90,7 +99,7 @@ function serialize(ledger) {
           auto_generated: true,
           source: "components/dist/registries/*.json",
           do_not_edit:
-            "Regenerate with `npm run derive:identity`. Hand edits are overwritten.",
+            "Regenerate with `npm run derive:identity`. `slug` and `nodeId` are re-derived from the registries and a hand edit to them is overwritten. `previousSlugs` ACCUMULATES and is carried forward verbatim, so a hand edit there survives regeneration and the drift guard: it is history, not derivable from current state.",
         },
         schemaVersion: ledger.schemaVersion,
         entries: entries,
@@ -101,10 +110,49 @@ function serialize(ledger) {
   );
 }
 
-function readJson(file) {
+// Registries are the authority this ledger is derived from, so an unreadable one
+// must stop the derive rather than shrink the output. Swallowing it rewrote the
+// ledger without those identities and without the rename history they carried,
+// and exited 0. The sync orchestrator runs with continue-on-error, so a truncated
+// registry is reachable.
+function readRegistry(file) {
+  var raw;
+  try {
+    raw = fs.readFileSync(file, "utf8");
+  } catch (err) {
+    throw new Error(
+      "derive-identity: cannot read registry " + file + ": " + err.message,
+    );
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    throw new Error(
+      "derive-identity: " +
+        file +
+        " is not valid JSON (" +
+        err.message +
+        "). Refusing to rewrite the ledger from a partial registry set, which " +
+        "would drop identities and their rename history.",
+    );
+  }
+}
+
+// The committed ledger is different: absent is the normal first-run state, and a
+// corrupt one must not wedge the derive. It is rebuilt from the registries, so
+// the only loss is history, and that loss is reported rather than silent.
+function readLedgerOrNull(file) {
+  if (!fs.existsSync(file)) return null;
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"));
   } catch (err) {
+    console.error(
+      "derive-identity: committed ledger at " +
+        file +
+        " is unreadable (" +
+        err.message +
+        "). Rebuilding without rename history.",
+    );
     return null;
   }
 }
@@ -123,14 +171,20 @@ function writeIdentity(repoRoot) {
     : [];
   // Sorted so the build order, and therefore any insertion-order effect, does
   // not depend on the filesystem's directory order.
-  var registries = files
-    .sort()
-    .map(function (f) {
-      return readJson(path.join(registriesDir, f));
-    })
-    .filter(Boolean);
+  if (files.length === 0) {
+    throw new Error(
+      "derive-identity: no registries found in " +
+        registriesDir +
+        ". Refusing to write an empty ledger, which would erase every identity " +
+        "and its rename history.",
+    );
+  }
 
-  var previous = fs.existsSync(ledgerPath) ? readJson(ledgerPath) : null;
+  var registries = files.sort().map(function (f) {
+    return readRegistry(path.join(registriesDir, f));
+  });
+
+  var previous = readLedgerOrNull(ledgerPath);
   var ledger = buildIdentity(registries, previous);
   var bytes = serialize(ledger);
 

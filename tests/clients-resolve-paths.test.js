@@ -21,11 +21,24 @@ var MANIFEST = {
     },
   },
   collections: {
+    // NOT component-keyed: content sections have their own slug namespace, and
+    // eight app-context/content slugs already collide with component slugs
+    // (api-key, dataset, field, lineage, scanner, suggestion, template,
+    // user-group). Rename history must not reach here.
     "content.section": {
       dir: "content/src",
       pattern: "{slug}.md",
       type: "markdown",
       origin: "human",
+      description: "y",
+    },
+    // Component-keyed, so rename history applies.
+    "components.guidelineDoc.byKey": {
+      dir: "components/dist/guidelines",
+      pattern: "{slug}.json",
+      slugNamespace: "component",
+      type: "json",
+      origin: "ci",
       description: "y",
     },
   },
@@ -59,11 +72,24 @@ var LEDGER = {
   },
 };
 
-test("a collection resolves a slug the component was renamed away from", function () {
+test("a component collection resolves a slug the component was renamed away from", function () {
+  var P = buildPathsFromManifest(MANIFEST, "/v", LEDGER);
+  assert.equal(
+    P.components.guidelineDoc.byKey("sticky-footer"),
+    path.join("/v", "components/dist/guidelines", "action-bar.json"),
+  );
+});
+
+// The ledger's namespace is Figma components. Applying it to every {slug}
+// collection breaks resolution for the seven that key on something else: with a
+// ledger recording `field` -> `form-field`, `appContextSrc("field")` returned
+// null for an app-context entity file that exists and was never renamed.
+test("a collection in another slug namespace is not touched by component renames", function () {
   var P = buildPathsFromManifest(MANIFEST, "/v", LEDGER);
   assert.equal(
     P.content.section("sticky-footer"),
-    path.join("/v", "content/src", "action-bar.md"),
+    path.join("/v", "content/src", "sticky-footer.md"),
+    "content sections are not component-keyed, so the rename must not apply",
   );
 });
 
@@ -104,8 +130,8 @@ test("buildPaths reads the identity ledger from the vendored snapshot", function
 
   var P = buildPaths(dir);
   assert.equal(
-    P.content.section("sticky-footer"),
-    path.join(dir, "content/src", "action-bar.md"),
+    P.components.guidelineDoc.byKey("sticky-footer"),
+    path.join(dir, "components/dist/guidelines", "action-bar.json"),
   );
   fs.rmSync(dir, { recursive: true, force: true });
 });
@@ -405,4 +431,61 @@ test("a slug colliding with an Object.prototype key resolves normally", function
       slug + " must resolve to its own path",
     );
   });
+});
+
+// ---------------------------------------------------------------------------
+// slugNamespace, asserted against the REAL manifest
+// ---------------------------------------------------------------------------
+
+var REAL_MANIFEST = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "..", "paths-manifest.json"), "utf8"),
+);
+
+test("every collection declared component-keyed actually lives under components/", function () {
+  var flagged = Object.keys(REAL_MANIFEST.collections).filter(function (k) {
+    return REAL_MANIFEST.collections[k].slugNamespace === "component";
+  });
+  assert.ok(flagged.length > 0, "the declaration must not be empty");
+  flagged.forEach(function (k) {
+    assert.match(
+      REAL_MANIFEST.collections[k].dir,
+      /^components\//,
+      k +
+        " claims the component slug namespace but its dir is not under components/",
+    );
+  });
+});
+
+// The regression the review caught, asserted at the real-manifest level: eight
+// app-context and content slugs collide with component slugs, so component
+// rename history reaching those collections would send a never-renamed file
+// somewhere else or to null.
+test("component rename history cannot redirect an app-context record", function () {
+  var ledger = {
+    schemaVersion: "1.0.0",
+    entries: {
+      KEY_X: { slug: "form-field", nodeId: "9:9", previousSlugs: ["field"] },
+    },
+  };
+  // Resolved against the real repo root, because appContextSrc's pattern is
+  // "{kind}/{slug}.md": it walks sub-directories, so a fake root returns null
+  // for every input and the assertion would hold vacuously.
+  var P = buildPathsFromManifest(
+    REAL_MANIFEST,
+    path.join(__dirname, ".."),
+    ledger,
+  );
+
+  ["field", "dataset", "api-key", "lineage", "template", "user-group"].forEach(
+    function (slug) {
+      var resolved = P.appContextSrc(slug);
+      assert.ok(
+        resolved && resolved.endsWith(path.join("entities", slug + ".md")),
+        "appContextSrc(" +
+          slug +
+          ") must resolve to its own app-context record, got " +
+          resolved,
+      );
+    },
+  );
 });

@@ -888,6 +888,7 @@
     "components.anatomy.byKey": {
       "dir": "components/dist/anatomy",
       "pattern": "{slug}.json",
+      "slugNamespace": "component",
       "type": "json",
       "origin": "ci",
       "description": "Per-component anatomy JSONs (normalized structure tree, Figma-synced). See components.anatomy.bundle for the roll-up."
@@ -916,6 +917,7 @@
     "components.guidelineDoc.byKey": {
       "dir": "components/dist/guidelines",
       "pattern": "{slug}.json",
+      "slugNamespace": "component",
       "type": "json",
       "origin": "ci",
       "description": "Per-component merged guideline objects. See components.guidelineDoc.bundle for the roll-up."
@@ -923,6 +925,7 @@
     "components.guidelineDocSrc": {
       "dir": "components/src",
       "pattern": "{slug}/{_meta.yml,content.md,usage.md,design.md,behavior.md,tokens.yml}",
+      "slugNamespace": "component",
       "type": "yaml",
       "origin": "human",
       "recursive": true,
@@ -938,6 +941,7 @@
     "components.images": {
       "dir": "components/src",
       "pattern": "{slug}/images/{filename}",
+      "slugNamespace": "component",
       "recursive": true,
       "type": "binary",
       "origin": "human",
@@ -946,6 +950,7 @@
     "components.media.ci": {
       "dir": "components/dist/media",
       "pattern": "{slug}/{role}[-{index}].{ext}",
+      "slugNamespace": "component",
       "recursive": true,
       "type": "binary",
       "origin": "ci",
@@ -954,6 +959,7 @@
     "components.render.fragments": {
       "dir": "components/render/dist/fragments",
       "pattern": "{slug}.html",
+      "slugNamespace": "component",
       "type": "text",
       "origin": "ci",
       "description": "Per-component markup fragments, combined with components/render/dist/render.css by consumers."
@@ -969,6 +975,7 @@
     "components.render.usageNotes": {
       "dir": "components/render/dist/usage-notes",
       "pattern": "{slug}.md",
+      "slugNamespace": "component",
       "type": "markdown",
       "origin": "ci",
       "description": "Per-component usage notes composed from the guideline domains (slice 2)."

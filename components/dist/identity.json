@@ -2,7 +2,7 @@
   "_meta": {
     "auto_generated": true,
     "source": "components/dist/registries/*.json",
-    "do_not_edit": "Regenerate with `npm run derive:identity`. Hand edits are overwritten."
+    "do_not_edit": "Regenerate with `npm run derive:identity`. `slug` and `nodeId` are re-derived from the registries and a hand edit to them is overwritten. `previousSlugs` ACCUMULATES and is carried forward verbatim, so a hand edit there survives regeneration and the drift guard: it is history, not derivable from current state."
   },
   "schemaVersion": "1.0.0",
   "entries": {

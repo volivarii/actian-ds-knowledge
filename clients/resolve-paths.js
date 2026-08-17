@@ -14,6 +14,10 @@ var path = require("path");
 
 var SUPPORTED_SCHEMA_VERSION = "v1";
 
+// Null-prototype so a slug colliding with an Object.prototype name cannot
+// resolve through the prototype.
+var NO_RENAMES = Object.create(null);
+
 // The ONLY definition of "can this collection pattern address a member".
 // Exported so scripts/validate-manifest.js gates on the same rule the resolver
 // enforces at runtime: a gate that disagrees with the code it protects is the
@@ -75,13 +79,26 @@ function buildRenameIndex(ledger) {
     if (slug) current[slug] = true;
   });
 
+  // A retired slug two identities both claim is dropped rather than resolved to
+  // whichever key sorts later: two components can have carried the same name at
+  // different times, and guessing between them resolves silently to an arbitrary
+  // one. Ambiguous means unmapped, which fails the way it did before the ledger
+  // existed instead of failing invisibly.
   var retired = Object.create(null);
+  var ambiguous = Object.create(null);
   Object.keys(entries).forEach(function (id) {
     var e = entries[id] || {};
     (e.previousSlugs || []).forEach(function (was) {
       if (current[was]) return;
+      if (retired[was] !== undefined && retired[was] !== e.slug) {
+        ambiguous[was] = true;
+        return;
+      }
       retired[was] = e.slug;
     });
+  });
+  Object.keys(ambiguous).forEach(function (was) {
+    delete retired[was];
   });
   return retired;
 }
@@ -249,7 +266,21 @@ function buildPathsFromManifest(manifest, vendorRoot, ledger) {
           }
           return null;
         };
-      })(dir, path.resolve(dir), collName, coll, renames),
+      })(
+        dir,
+        path.resolve(dir),
+        collName,
+        coll,
+        // Rename history is applied ONLY to collections a manifest declares as
+        // keyed by a component slug. The ledger's namespace is Figma components,
+        // and 7 of the 15 {slug} collections key on something else (a11y topics,
+        // app-context records, categories, content sections, foundations, icons).
+        // Eight of those slugs already collide with component slugs (api-key,
+        // dataset, field, lineage, scanner, suggestion, template, user-group), so
+        // an unscoped map sends an unrelated, never-renamed file to the wrong path
+        // or to null. Undeclared means untouched, which is the safe default.
+        coll.slugNamespace === "component" ? renames : NO_RENAMES,
+      ),
     );
   }
 
@@ -308,6 +339,7 @@ function readLedger(vendorRoot) {
 
 module.exports = {
   buildPaths: buildPaths,
+  buildRenameIndex: buildRenameIndex,
   isResolvablePattern: isResolvablePattern,
   buildPathsFromManifest: buildPathsFromManifest,
   SUPPORTED_SCHEMA_VERSION: SUPPORTED_SCHEMA_VERSION,

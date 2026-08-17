@@ -217,3 +217,48 @@ test("the committed ledger is what a fresh derive produces", function () {
     "run `npm run derive:identity` and commit the result",
   );
 });
+
+// A malformed registry used to be swallowed: readJson returned null for every
+// error and the entry was filtered out, so the ledger was rewritten without
+// those identities AND without the rename history they carried, exiting 0. The
+// sync orchestrator runs with continue-on-error, so a truncated dskit.json is
+// reachable.
+test("writeIdentity refuses to rewrite the ledger from an unreadable registry", function () {
+  var root = tmpRepo({
+    dskit: registry({ "action-bar": { key: "KEY_A", nodeId: "1:1" } }),
+  });
+  fs.writeFileSync(
+    path.join(root, "components", "dist", "registries", "dskit.json"),
+    "{ truncated",
+  );
+
+  assert.throws(function () {
+    identity.writeIdentity(root);
+  }, /dskit\.json/);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test("writeIdentity refuses to write an empty ledger when no registry is present", function () {
+  var root = fs.mkdtempSync(path.join(os.tmpdir(), "identity-"));
+  fs.mkdirSync(path.join(root, "components", "dist"), { recursive: true });
+
+  assert.throws(function () {
+    identity.writeIdentity(root);
+  }, /no registries/i);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+// Two components can each have carried the same slug at different times. Mapping
+// it silently to whichever identity sorts later hands back an arbitrary
+// component, so the collision has to be dropped rather than guessed.
+test("a retired slug claimed by two identities is not mapped at all", function () {
+  var rp = require("../clients/resolve-paths.js");
+  var index = rp.buildRenameIndex({
+    schemaVersion: "1.0.0",
+    entries: {
+      KEY_A: { slug: "alpha", nodeId: "1:1", previousSlugs: ["panel"] },
+      KEY_B: { slug: "beta", nodeId: "2:2", previousSlugs: ["panel"] },
+    },
+  });
+  assert.equal(index.panel, undefined, "an ambiguous retired slug must not map");
+});
