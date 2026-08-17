@@ -917,7 +917,6 @@
     "components.guidelineDoc.byKey": {
       "dir": "components/dist/guidelines",
       "pattern": "{slug}.json",
-      "slugNamespace": "component",
       "type": "json",
       "origin": "ci",
       "description": "Per-component merged guideline objects. See components.guidelineDoc.bundle for the roll-up."
@@ -925,7 +924,6 @@
     "components.guidelineDocSrc": {
       "dir": "components/src",
       "pattern": "{slug}/{_meta.yml,content.md,usage.md,design.md,behavior.md,tokens.yml}",
-      "slugNamespace": "component",
       "type": "yaml",
       "origin": "human",
       "recursive": true,
