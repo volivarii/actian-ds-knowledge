@@ -31,7 +31,10 @@ var path = require("node:path");
 //   - this returns `key || nodeId` and SKIPS an entry with neither, because a
 //     ledger keyed by slug would defeat the whole point.
 // So for a keyless entry this would record a rename by nodeId while the
-// classifier reported a removal plus an addition. Latent today: all 637 entries
+// classifier reported a removal plus an addition. A related consequence: an entry
+// first recorded under its nodeId and later given a key becomes a DIFFERENT
+// identity, so the nodeId-keyed entry drops out (nothing is tombstoned) and a
+// fresh one starts with an empty history. Both are latent today: all 637 entries
 // carry a key, and Figma gives every published component one.
 function identityOf(entry) {
   return (entry && (entry.key || entry.nodeId)) || null;

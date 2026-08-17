@@ -38,16 +38,25 @@ Each entry links its pull request. Dates are the merge date (UTC).
   resolves to the live component and not to the renamed one. An absent or unreadable ledger means
   "no renames" rather than an error, so snapshots vendored before this keep resolving.
 
-  Identity precedence is deliberately the same as `identityOf()` in the sync (`key`, then `nodeId`):
-  if the two disagreed, a rename the sync paired by key would look like a new entry here and the
-  previous slug would be lost. History starts empty by construction, so the ledger cannot resolve a
-  rename that landed before it existed; it records from its first run forward. A component that
+  Identity precedence differs from its two neighbours, and the difference is recorded rather than
+  smoothed over: the sync's `identityOf()` is `key` then `nodeId` then `slug` because it must classify
+  every entry it sees, the differ that decides the breaking verdict pairs renames by `key` alone, and
+  this ledger uses `key` then `nodeId` and skips an entry with neither, since a ledger keyed by slug
+  would defeat its purpose. For a keyless entry the ledger would record a rename while the differ
+  reported a removal plus an addition, and an entry that later gains a key starts a fresh identity and
+  loses its accumulated history. Both are latent: all 637 entries carry a key. History also starts
+  empty by construction, so the ledger cannot resolve a rename that landed before it existed. A component that
   leaves the registries drops out rather than being tombstoned, because a retired slug should stop
   resolving rather than resolve to something that no longer ships.
 
   It carries no authoring surface, so it registers no `domains.json` unit (`INFRA_DERIVES`), and that
   exemption is paid for the same way llms' is: a re-derive-and-diff drift guard in
-  `validate-manifest.yml` plus a test that the committed ledger is what a fresh derive produces.
+  `validate-manifest.yml` plus a test that the committed ledger is what a fresh derive produces. Both
+  cover `slug` and `nodeId` only. `previousSlugs` accumulates and is carried forward verbatim, so
+  **neither can detect a hand-edited or fabricated history**, which is the one field the feature
+  depends on; the schema and the file's own `do_not_edit` stamp say so rather than implying otherwise.
+  While a slug rename stays breaking (below), history advances only through the human follow-through
+  PR, where the drift guard is what tells the author to regenerate and commit it.
 
 
 - **`components/render/dist/render-contract.json`: what the renderer actually implements, per slug,

@@ -489,3 +489,41 @@ test("component rename history cannot redirect an app-context record", function 
     },
   );
 });
+
+// Guideline and usage-note filenames come from the authored components/src/<slug>/
+// directory (derive-guidelines listComponentDirs), NOT from the registry slug. A
+// Figma rename moves only the registry slug, so the file on disk keeps the old
+// name. Mapping blindly would return a path that does not exist while breaking
+// the one that does, which is worse than the breakage the ledger removes.
+// Resolution must never lose a path that resolved before.
+test("a mapped slug falls back to the original when only the original file exists", function () {
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), "rp-"));
+  var guidelines = path.join(dir, "components", "dist", "guidelines");
+  fs.mkdirSync(guidelines, { recursive: true });
+  // The authored directory was never renamed, so the doc is still sticky-footer.
+  fs.writeFileSync(path.join(guidelines, "sticky-footer.json"), "{}");
+
+  var P = buildPathsFromManifest(MANIFEST, dir, LEDGER);
+  assert.equal(
+    P.components.guidelineDoc.byKey("sticky-footer"),
+    path.join(guidelines, "sticky-footer.json"),
+    "must not redirect to action-bar.json, which does not exist",
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test("a mapped slug prefers the current name when that file exists", function () {
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), "rp-"));
+  var guidelines = path.join(dir, "components", "dist", "guidelines");
+  fs.mkdirSync(guidelines, { recursive: true });
+  fs.writeFileSync(path.join(guidelines, "action-bar.json"), "{}");
+  fs.writeFileSync(path.join(guidelines, "sticky-footer.json"), "{}");
+
+  var P = buildPathsFromManifest(MANIFEST, dir, LEDGER);
+  assert.equal(
+    P.components.guidelineDoc.byKey("sticky-footer"),
+    path.join(guidelines, "action-bar.json"),
+    "when both exist the current name is canonical",
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
+});

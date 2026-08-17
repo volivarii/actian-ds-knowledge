@@ -262,3 +262,20 @@ test("a retired slug claimed by two identities is not mapped at all", function (
   });
   assert.equal(index.panel, undefined, "an ambiguous retired slug must not map");
 });
+
+// readLedger treats an unreadable ledger as "no renames" so a bad file cannot
+// wedge a consumer, but a JSON-valid ledger with the wrong shape used to throw a
+// TypeError out of buildPaths and take down all path resolution. The schema gates
+// this repo's CI, not a vendored snapshot.
+test("a structurally wrong ledger degrades to no renames instead of throwing", function () {
+  var rp = require("../clients/resolve-paths.js");
+  [
+    { entries: { K: { slug: "a", previousSlugs: "not-an-array" } } },
+    { entries: { K: { slug: "a", previousSlugs: { 0: "x" } } } },
+    { entries: { K: null } },
+    { entries: "nope" },
+  ].forEach(function (bad) {
+    var index = rp.buildRenameIndex(bad);
+    assert.equal(typeof index, "object", "must return a map, not throw");
+  });
+});

@@ -190,7 +190,12 @@ jobs:
 
       - name: Identity ledger drift guard (committed components/dist/identity.json must match regeneration)
         run: |
-          if ! git diff --quiet -- components/dist/identity.json; then
+          # `git diff` reports nothing for an untracked file, so a PR that deletes
+          # the ledger would see the derive re-create it and the guard print
+          # "current" while the file is absent from the commit. --porcelain covers
+          # deleted, untracked and modified alike, so the guard asserts its own
+          # postcondition rather than one case of it.
+          if [ -n "$(git status --porcelain -- components/dist/identity.json)" ]; then
             echo "::error::components/dist/identity.json is STALE: the committed ledger does not describe the registries committed alongside it. Run 'npm run derive:identity' and commit the result. clients/resolve-paths.js reads this to resolve a slug a component was renamed away from, so a stale ledger silently mis-resolves."
             echo "Drift (committed -> regenerated):"
             git --no-pager diff -- components/dist/identity.json

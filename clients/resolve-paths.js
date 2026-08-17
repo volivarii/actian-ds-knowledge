@@ -72,11 +72,16 @@ function setNested(obj, parts, value) {
 // `renameMap["constructor"]` returns Object itself, which is truthy, and the
 // path would become the stringified function.
 function buildRenameIndex(ledger) {
-  var entries = (ledger && ledger.entries) || {};
+  // Shape-tolerant on purpose. readLedger below already treats an unreadable
+  // ledger as "no renames" so a bad file cannot wedge a consumer, and a
+  // JSON-valid ledger with the wrong shape has to degrade the same way: the
+  // schema gates this repo's CI, not a snapshot already vendored somewhere.
+  var raw = ledger && ledger.entries;
+  var entries = raw && typeof raw === "object" ? raw : {};
   var current = Object.create(null);
   Object.keys(entries).forEach(function (id) {
     var slug = entries[id] && entries[id].slug;
-    if (slug) current[slug] = true;
+    if (typeof slug === "string" && slug) current[slug] = true;
   });
 
   // A retired slug two identities both claim is dropped rather than resolved to
@@ -88,7 +93,10 @@ function buildRenameIndex(ledger) {
   var ambiguous = Object.create(null);
   Object.keys(entries).forEach(function (id) {
     var e = entries[id] || {};
-    (e.previousSlugs || []).forEach(function (was) {
+    var history = Array.isArray(e.previousSlugs) ? e.previousSlugs : [];
+    history.forEach(function (was) {
+      if (typeof was !== "string" || !was) return;
+      if (typeof e.slug !== "string" || !e.slug) return;
       if (current[was]) return;
       if (retired[was] !== undefined && retired[was] !== e.slug) {
         ambiguous[was] = true;
@@ -246,7 +254,20 @@ function buildPathsFromManifest(manifest, vendorRoot, ledger) {
           // Substitute {slug}; if no other placeholders remain, join + return.
           var resolved = pattern.replace("{slug}", effective);
           if (!/\{[^}]+\}/.test(resolved)) {
-            return path.join(collDir, resolved);
+            var mapped = path.join(collDir, resolved);
+            if (effective === slug) return mapped;
+            // Renaming must never LOSE a path that resolved before. Several
+            // collections are named after the authored components/src/<slug>/
+            // directory rather than the registry slug (guideline docs and the
+            // usage notes derived from them), and a Figma rename moves only the
+            // registry slug, so the file on disk keeps the old name. Prefer the
+            // current name when it exists, fall back to the name asked for when
+            // that is the one on disk, and otherwise return the current name so
+            // the resulting ENOENT names the component as it is now called.
+            if (fs.existsSync(mapped)) return mapped;
+            var asAsked = path.join(collDir, pattern.replace("{slug}", slug));
+            if (fs.existsSync(asAsked)) return asAsked;
+            return mapped;
           }
           // Pattern has additional placeholders (e.g. {bucket}/{slug}.md for
           // recursive collections). Walk one level of sub-dirs and return the
