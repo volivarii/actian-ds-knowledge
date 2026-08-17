@@ -336,7 +336,28 @@ function buildRegistryChangelog(diff) {
   return lines.join("\n");
 }
 
-function classifyRegistry(before, after) {
+// A rename is a consumer break only when the slug a consumer holds stops
+// resolving. `absorbedRenames` is { fromSlug: toSlug } as recorded in the
+// identity ledger, so the old slug still resolves through
+// clients/resolve-paths.js and there is nothing for a human to carry through.
+//
+// The target is compared, not just the presence of the key: a ledger naming the
+// wrong successor would otherwise launder a real break into an auto-merge.
+// Two ways a reported rename cannot break a consumer:
+//
+//   1. The slug did not change. The differ reports a rename when the slug OR the
+//      display name changes, so editing a status emoji in a name used to push
+//      the verdict to breaking on its own (knowledge #512). No consumer
+//      addresses a component by display name, so resolution is untouched.
+//   2. The ledger absorbed the slug change, so the old slug still resolves.
+function renameBreaksResolution(rename, absorbedRenames) {
+  if (rename.fromSlug === rename.toSlug) return false;
+  if (absorbedRenames && absorbedRenames[rename.fromSlug] === rename.toSlug)
+    return false;
+  return true;
+}
+
+function classifyRegistry(before, after, absorbedRenames) {
   if (isRegistryUnchanged(before, after)) {
     return {
       category: "unchanged",
@@ -350,6 +371,7 @@ function classifyRegistry(before, after) {
     reasons.push("removed component '" + (e.entry.name || e.slug) + "'");
   });
   diff.renamed.forEach(function (e) {
+    if (!renameBreaksResolution(e, absorbedRenames)) return;
     reasons.push("renamed component '" + e.fromName + "' → '" + e.toName + "'");
   });
   diff.modified.forEach(function (e) {
@@ -724,9 +746,7 @@ function classifyMedia(before, after, opts) {
   var lines = [];
   if (lostSlugs.length > 0 || lostRoles.length > 0) {
     lines.push(
-      "## Lost media (" +
-        (lostSlugs.length + lostRoles.length) +
-        "): BREAKING",
+      "## Lost media (" + (lostSlugs.length + lostRoles.length) + "): BREAKING",
     );
     lines.push("");
     lines.push(
@@ -743,9 +763,7 @@ function classifyMedia(before, after, opts) {
     lines.push("");
   }
   if (gainedSlugs.length > 0 || gainedFrames > 0) {
-    lines.push(
-      "## New media (" + (gainedSlugs.length + gainedFrames) + ")",
-    );
+    lines.push("## New media (" + (gainedSlugs.length + gainedFrames) + ")");
     lines.push("");
     gainedSlugs.forEach(function (s) {
       lines.push("- `" + s + "`");
@@ -763,7 +781,7 @@ function classifyMedia(before, after, opts) {
 function classify(input) {
   var fileKind = input.fileKind;
   if (fileKind === "registry")
-    return classifyRegistry(input.before, input.after);
+    return classifyRegistry(input.before, input.after, input.absorbedRenames);
   if (fileKind === "styles") return classifyStyles(input.before, input.after);
   if (fileKind === "icons")
     return classifyIcons(input.before, input.after, input.degraded);

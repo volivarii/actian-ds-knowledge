@@ -180,6 +180,24 @@ jobs:
           fi
           echo "llms index is current."
 
+      # The identity ledger carries no authoring surface, so it registers no
+      # domains.json unit (see INFRA_DERIVES in validate-domains.js). That
+      # exemption is only honest if freshness is asserted here instead: a stale
+      # ledger resolves a renamed-away slug to the wrong component, or fails to
+      # resolve it at all, and it ships inside the release tag either way.
+      - name: Update the identity ledger
+        run: npm run derive:identity
+
+      - name: Identity ledger drift guard (committed components/dist/identity.json must match regeneration)
+        run: |
+          if ! git diff --quiet -- components/dist/identity.json; then
+            echo "::error::components/dist/identity.json is STALE: the committed ledger does not describe the registries committed alongside it. Run 'npm run derive:identity' and commit the result. clients/resolve-paths.js reads this to resolve a slug a component was renamed away from, so a stale ledger silently mis-resolves."
+            echo "Drift (committed -> regenerated):"
+            git --no-pager diff -- components/dist/identity.json
+            exit 1
+          fi
+          echo "identity ledger is current."
+
       - name: Run test suite
         run: npm test
 

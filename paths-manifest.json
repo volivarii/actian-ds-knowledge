@@ -577,6 +577,13 @@
       "generator": "scripts/components/derive-media-index.js",
       "description": "Slug → role-keyed media map for every component with at least one CI-generated asset under components/dist/media/<slug>/. Decoupled from guideline coverage: components without authored or pattern-synthesized guidelines still surface their media here. Consumers (docs MediaAsset, plugin component-brief, future MCP) read this to enumerate media availability without filesystem scans."
     },
+    "components.identity": {
+      "path": "components/dist/identity.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-identity.js",
+      "description": "Stable Figma identity to the slug a component answers to now, plus the slugs it answered to before. Read by clients/resolve-paths.js so a consumer holding a slug the component was renamed away from resolves it instead of breaking: the slug is a slugified display name and is the address in most collections, so before this a Figma rename broke every consumer that had written the old name down."
+    },
     "components.registries.dskit": {
       "path": "components/dist/registries/dskit.json",
       "type": "json",

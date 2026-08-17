@@ -124,6 +124,13 @@ jobs:
       - name: Render styles MDs (text-styles.md, effect-styles.md)
         run: node scripts/styles-to-md.js
 
+      # Records this run's slug for every stable Figma identity, so a rename
+      # leaves a trail a consumer can follow instead of a slug that no longer
+      # resolves. Runs after the registries are written, because it reads them.
+      # Cheap and idempotent: unchanged registries produce no diff.
+      - name: Update the identity ledger
+        run: node scripts/components/derive-identity.js
+
       - name: Read verdict
         id: verdict
         run: |

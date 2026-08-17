@@ -44,6 +44,89 @@ test("buildPathsFromManifest joins entry paths onto vendorRoot", function () {
   );
 });
 
+// The identity ledger (components/dist/identity.json) exists so a consumer
+// holding a slug that has since been renamed resolves it instead of breaking on
+// it. Without this, a Figma display-name change breaks every consumer that
+// addresses the component by slug, which is 15 of the 18 manifest collections.
+var LEDGER = {
+  schemaVersion: "1.0.0",
+  entries: {
+    KEY_A: {
+      slug: "action-bar",
+      nodeId: "14747:9839",
+      previousSlugs: ["sticky-footer"],
+    },
+  },
+};
+
+test("a collection resolves a slug the component was renamed away from", function () {
+  var P = buildPathsFromManifest(MANIFEST, "/v", LEDGER);
+  assert.equal(
+    P.content.section("sticky-footer"),
+    path.join("/v", "content/src", "action-bar.md"),
+  );
+});
+
+// A freed name can be reused. If a retired slug were mapped unconditionally, a
+// consumer asking for the slug a DIFFERENT component now carries would be handed
+// the renamed one, which is worse than the breakage this feature removes: it
+// resolves, so nothing reports it.
+test("a slug another component now carries resolves to that component, not the renamed one", function () {
+  var reused = {
+    schemaVersion: "1.0.0",
+    entries: {
+      KEY_A: {
+        slug: "action-bar",
+        nodeId: "1:1",
+        previousSlugs: ["sticky-footer"],
+      },
+      KEY_B: { slug: "sticky-footer", nodeId: "2:2", previousSlugs: [] },
+    },
+  };
+  var P = buildPathsFromManifest(MANIFEST, "/v", reused);
+  assert.equal(
+    P.content.section("sticky-footer"),
+    path.join("/v", "content/src", "sticky-footer.md"),
+  );
+});
+
+test("buildPaths reads the identity ledger from the vendored snapshot", function () {
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), "rp-"));
+  fs.writeFileSync(
+    path.join(dir, "paths-manifest.json"),
+    JSON.stringify(MANIFEST),
+  );
+  fs.mkdirSync(path.join(dir, "components", "dist"), { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, "components", "dist", "identity.json"),
+    JSON.stringify(LEDGER),
+  );
+
+  var P = buildPaths(dir);
+  assert.equal(
+    P.content.section("sticky-footer"),
+    path.join(dir, "content/src", "action-bar.md"),
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+// Older vendored snapshots have no ledger. Resolution must carry on rather than
+// throw, or upgrading the client would break every consumer pinned to a snapshot
+// taken before this landed.
+test("a snapshot with no identity ledger still resolves", function () {
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), "rp-"));
+  fs.writeFileSync(
+    path.join(dir, "paths-manifest.json"),
+    JSON.stringify(MANIFEST),
+  );
+  var P = buildPaths(dir);
+  assert.equal(
+    P.content.section("forms"),
+    path.join(dir, "content/src", "forms.md"),
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test("buildPaths reads <vendorRoot>/paths-manifest.json and resolves", function () {
   var dir = fs.mkdtempSync(path.join(os.tmpdir(), "rp-"));
   fs.writeFileSync(
@@ -267,11 +350,17 @@ test("every {slug} shape in the real manifest still resolves", function () {
     if (pattern.indexOf("{slug}") === -1) return; // descriptive, covered above
     checked++;
     var P = collWith(pattern);
-    assert.doesNotThrow(function () {
-      P.probe("button");
-    }, "pattern " + pattern + " (" + key + ") must stay resolvable");
+    assert.doesNotThrow(
+      function () {
+        P.probe("button");
+      },
+      "pattern " + pattern + " (" + key + ") must stay resolvable",
+    );
   });
-  assert.ok(checked >= 7, "expected several {slug} collections, saw " + checked);
+  assert.ok(
+    checked >= 7,
+    "expected several {slug} collections, saw " + checked,
+  );
 });
 
 test("a descriptive collection says so rather than blaming the pattern", function () {
@@ -301,4 +390,19 @@ test("a descriptive collection says so rather than blaming the pattern", functio
   assert.throws(function () {
     P.leafy("anything");
   }, /declared descriptive-only \(resolvable: false\)/);
+});
+
+// The rename index is a lookup keyed by slug, so a slug that collides with a
+// name on Object.prototype must not resolve through the prototype. Without a
+// null-prototype map, `constructor` resolves to Object itself, which is truthy,
+// and the path becomes the stringified function.
+test("a slug colliding with an Object.prototype key resolves normally", function () {
+  var P = buildPathsFromManifest(MANIFEST, "/v", LEDGER);
+  ["constructor", "toString", "hasOwnProperty"].forEach(function (slug) {
+    assert.equal(
+      P.content.section(slug),
+      path.join("/v", "content/src", slug + ".md"),
+      slug + " must resolve to its own path",
+    );
+  });
 });

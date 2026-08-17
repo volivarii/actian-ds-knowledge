@@ -27,7 +27,19 @@ const REPO_ROOT = path.resolve(__dirname, "..", "..");
 // plain-text concatenation. Registering a unit for it would claim an authoring
 // contract that does not exist; its freshness is asserted instead by the llms
 // drift guard in validate-manifest.yml (#525).
-const INFRA_DERIVES = new Set(["icons", "vendor-include", "render", "llms"]);
+// identity derives dist-from-dist: it reads components/dist/registries/*.json and
+// records which slug each stable Figma identity answers to. There is no authoring
+// surface at all (no src/, no frontmatter, no body), so a unit here would claim a
+// contract that does not exist. Its freshness is asserted the same way llms' is:
+// a re-derive-and-diff drift guard, plus a test that the committed ledger is what
+// a fresh derive produces.
+const INFRA_DERIVES = new Set([
+  "icons",
+  "vendor-include",
+  "render",
+  "llms",
+  "identity",
+]);
 
 // Literal prefix of a glob (up to first `*` or `{`), trailing slash trimmed.
 // NOTE: the referential check below only asserts this LITERAL PREFIX exists —

@@ -8,6 +8,101 @@ var classifier = require(
   path.join(__dirname, "..", "scripts", "changelog", "changelog-classifier.js"),
 );
 
+// ---------------------------------------------------------------------------
+// Renames: breaking only when the old slug stops resolving
+// ---------------------------------------------------------------------------
+// A rename used to be breaking unconditionally, and any breaking reason makes
+// the whole sync breaking, which commits nothing. So two display-name changes
+// (`sticky-footer` to `action-bar`, `view-details` to `view-detail`) stalled four
+// nights of otherwise additive work, including 241 icon updates, while the
+// sync's own evidence said the identity had survived (knowledge #526).
+//
+// A rename is a consumer break only if the old slug stops resolving. When the
+// identity ledger has absorbed it, the old slug still resolves, so there is
+// nothing for a human to carry through and the verdict should let it land.
+
+function renamedRegistry(slug) {
+  return {
+    library: "ds",
+    fileKey: "test",
+    components: {
+      [slug]: {
+        name: slug === "sticky-footer" ? "Sticky footer" : "Action bar",
+        key: "k-a",
+        nodeId: "14747:9839",
+        importMethod: "set",
+        description: "",
+        page: "✅ Action bar",
+        properties: {},
+        nestedComponents: [],
+        variants: {},
+      },
+    },
+  };
+}
+
+test("classifier — a rename the ledger has absorbed is additive", function () {
+  var result = classifier({
+    before: renamedRegistry("sticky-footer"),
+    after: renamedRegistry("action-bar"),
+    fileKind: "registry",
+    absorbedRenames: { "sticky-footer": "action-bar" },
+  });
+
+  assert.equal(result.category, "additive");
+  assert.deepEqual(result.reasons, []);
+  assert.match(
+    result.changelog,
+    /Renamed/,
+    "the changelog must still report the rename; absorbed is not invisible",
+  );
+});
+
+test("classifier — a rename nothing absorbed is still breaking", function () {
+  var result = classifier({
+    before: renamedRegistry("sticky-footer"),
+    after: renamedRegistry("action-bar"),
+    fileKind: "registry",
+  });
+
+  assert.equal(result.category, "breaking");
+  assert.equal(result.reasons.length, 1);
+});
+
+// A ledger naming the wrong successor must not launder a real break into an
+// auto-merge. Absorption is only absorption if the old slug resolves to the
+// component that actually carries it now.
+test("classifier — an absorption naming the wrong successor is still breaking", function () {
+  var result = classifier({
+    before: renamedRegistry("sticky-footer"),
+    after: renamedRegistry("action-bar"),
+    fileKind: "registry",
+    absorbedRenames: { "sticky-footer": "some-other-component" },
+  });
+
+  assert.equal(result.category, "breaking");
+  assert.equal(result.reasons.length, 1);
+});
+
+// knowledge #512: the differ reports a rename when the slug changes OR the
+// display name changes, so editing a status emoji in a component's name pushed
+// the verdict to breaking on its own. A name-only change cannot break slug
+// resolution, because no consumer addresses a component by its display name.
+test("classifier — a display-name change that keeps the slug is not breaking", function () {
+  var before = renamedRegistry("action-bar");
+  var after = JSON.parse(JSON.stringify(before));
+  after.components["action-bar"].name = "Action bar ✍️";
+
+  var result = classifier({
+    before: before,
+    after: after,
+    fileKind: "registry",
+  });
+
+  assert.equal(result.category, "additive");
+  assert.deepEqual(result.reasons, []);
+});
+
 test("classifier — identical object property-defaults do NOT trigger 'breaking' (regression test for INSTANCE_SWAP false positive)", function () {
   // Two registries with the same component, both have a property whose
   // default is a structurally-equal but reference-different object.
@@ -207,7 +302,7 @@ test("classifier — adding categorySlug to an entry is detected as additive (no
 function iconSet(slugs) {
   var icons = {};
   slugs.forEach(function (s) {
-    icons[s] = { viewBox: "0 0 24 24", body: "<path d=\"M0 0h24v24H0z\"/>" };
+    icons[s] = { viewBox: "0 0 24 24", body: '<path d="M0 0h24v24H0z"/>' };
   });
   return { _schema_version: 1, icons: icons };
 }
@@ -231,7 +326,14 @@ test("classifier(icons): losing a previously-clean icon is BREAKING, not additiv
 });
 
 test("classifier(icons): a multi-icon loss classifies breaking, one reason per lost glyph", function () {
-  var before = iconSet(["add", "asleep", "chart-bar", "chart-pie", "expand", "mail"]);
+  var before = iconSet([
+    "add",
+    "asleep",
+    "chart-bar",
+    "chart-pie",
+    "expand",
+    "mail",
+  ]);
   var after = iconSet(["add"]);
   var res = classifier({
     fileKind: "icons",
@@ -274,9 +376,21 @@ test("classifier(icons): identical sets are unchanged (no-op nights stay no-op)"
 
 test("classifier(icons): a redrawn glyph (same slug, new body) is additive, not breaking", function () {
   var before = iconSet(["add"]);
-  var after = { _schema_version: 1, icons: { add: { viewBox: "0 0 24 24", body: "<path d=\"M1 1h2v2H1z\"/>" } } };
-  var res = classifier({ fileKind: "icons", before: before, after: after, degraded: [] });
-  assert.equal(res.category, "additive", "the glyph still resolves, so consumers do not break");
+  var after = {
+    _schema_version: 1,
+    icons: { add: { viewBox: "0 0 24 24", body: '<path d="M1 1h2v2H1z"/>' } },
+  };
+  var res = classifier({
+    fileKind: "icons",
+    before: before,
+    after: after,
+    degraded: [],
+  });
+  assert.equal(
+    res.category,
+    "additive",
+    "the glyph still resolves, so consumers do not break",
+  );
   assert.equal(res.reasons.length, 0);
 });
 
@@ -379,7 +493,11 @@ test("classifier(media): a swap (one slug in, one slug out) is still BREAKING", 
     before: mediaIdx({ old: { preview: "a" } }),
     after: mediaIdx({ new: { preview: "b" } }),
   });
-  assert.equal(res.category, "breaking", "a loss is a loss even when a gain masks the byte count");
+  assert.equal(
+    res.category,
+    "breaking",
+    "a loss is a loss even when a gain masks the byte count",
+  );
   assert.equal(res.reasons.length, 1);
 });
 
@@ -393,7 +511,11 @@ test("classifier(media): a role that SHRINKS its frame count is BREAKING (the co
     before: mediaIdx({ button: { variations: ["a", "b", "c", "d"] } }),
     after: mediaIdx({ button: { variations: ["a"] } }),
   });
-  assert.equal(res.category, "breaking", "3 deleted images must not auto-merge");
+  assert.equal(
+    res.category,
+    "breaking",
+    "3 deleted images must not auto-merge",
+  );
   assert.match(res.reasons[0], /button:variations/);
   assert.match(res.reasons[0], /4 -> 1/, "say how much was lost");
 });

@@ -20,6 +20,51 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **`components/dist/identity.json`: the slug is now a label and the stable Figma identity is the
+  record, so a rename stops being a migration.** Every registry entry already carried a rename-proof
+  Figma `key` and a `nodeId`, and the sync already used them to tell a rename apart from a
+  delete-plus-add. Nothing downstream did: the slug, which is a slugified *display name*, is the
+  address in 15 of 18 manifest collections, in the manifest keys themselves
+  (`components.guidelineDoc.<slug>`), in the media and anatomy filenames, and in the authored
+  `components/src/<slug>/` directories. So renaming one Figma component cost about 90 references
+  across three repositories, and two display-name changes stalled the nightly sync for four nights
+  while it discarded 241 icon updates alongside them (#526).
+
+  The ledger records `identity -> { slug, nodeId, previousSlugs }` for all **637** identities across
+  the three registries, and **`clients/resolve-paths.js` reads it**, so a consumer holding a slug a
+  component was renamed away from now resolves it instead of breaking on it. That is one change at
+  the single place every `{slug}` collection resolves through, rather than a fix per collection. A
+  slug that is *current* for some component is never treated as retired, so a freed-and-reused name
+  resolves to the live component and not to the renamed one. An absent or unreadable ledger means
+  "no renames" rather than an error, so snapshots vendored before this keep resolving.
+
+  Identity precedence is deliberately the same as `identityOf()` in the sync (`key`, then `nodeId`):
+  if the two disagreed, a rename the sync paired by key would look like a new entry here and the
+  previous slug would be lost. History starts empty by construction, so the ledger cannot resolve a
+  rename that landed before it existed; it records from its first run forward. A component that
+  leaves the registries drops out rather than being tombstoned, because a retired slug should stop
+  resolving rather than resolve to something that no longer ships.
+
+  It carries no authoring surface, so it registers no `domains.json` unit (`INFRA_DERIVES`), and that
+  exemption is paid for the same way llms' is: a re-derive-and-diff drift guard in
+  `validate-manifest.yml` plus a test that the committed ledger is what a fresh derive produces.
+
+### Changed
+
+- **A rename is breaking only when the slug it renamed away from stops resolving.** The classifier
+  pushed a breaking reason for every rename, and any single reason makes the whole sync breaking,
+  which commits nothing. Two consequences, both now fixed:
+
+  - A change to a component's **display name that leaves the slug alone** is no longer breaking. The
+    differ reports a rename when the slug *or* the name changes, so editing a status emoji in a name
+    could stall a night's sync on its own (#512). No consumer addresses a component by display name.
+  - A **slug** change the identity ledger has absorbed is additive, because the old slug still
+    resolves. Absorption is checked by target and not merely by presence: a ledger naming the wrong
+    successor still classifies as breaking, so a stale ledger cannot launder a real break into an
+    auto-merge.
+
+  The changelog still reports every rename either way. Absorbed does not mean invisible.
+
 - **`components/render/dist/render-contract.json`: what the renderer actually implements, per slug,
   so consumers stop restating it.** Each entry carries the content props that slug's branch reads,
   the fallback literal each prop has, and, per registry variant axis, which values the renderer
