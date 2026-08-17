@@ -140,14 +140,29 @@ function isExplained(exemptions, key) {
 // back" to anything. This split is REPORTING only; nothing gates on it, exactly
 // because a Figma reorder can move it. What holds either way is the part that
 // matters: the caller named a value and received the markup of a different one.
+// 🪤 Explained-vs-unexplained is decided per GROUP, not per key. A decision
+// record names one value of a duplicate group, and which values appear in
+// `rendersAs` depends on the anchor: reorder the axis so the exempted value
+// becomes the anchor and it drops out, while a previously-anchoring value
+// appears and reads as newly unexplained. The published figure would then move
+// on a Figma reorder with nothing changed, which is the property the rest of
+// this file was rewritten to remove.
 function classify(contract, exemptions) {
   const clamps = [];
   const twins = [];
   const exempt = [];
   const unexplained = [];
-  eachCollapse(contract, function (key, target, values) {
-    (target === values[0] ? clamps : twins).push(key);
-    (isExplained(exemptions, key) ? exempt : unexplained).push(key);
+  eachAxis(contract, function (slug, axis, values, rendersAs) {
+    const explainedValue = values.some(function (value) {
+      return isExplained(exemptions, keyFor(slug, axis, value));
+    });
+    Object.keys(rendersAs).forEach(function (value) {
+      const key = keyFor(slug, axis, value);
+      // Reporting only, and order-sensitive by construction: see the note above
+      // the split's definition. Nothing gates on it.
+      (rendersAs[value] === values[0] ? clamps : twins).push(key);
+      (explainedValue ? exempt : unexplained).push(key);
+    });
   });
   return {
     clamps: clamps.sort(),
@@ -155,6 +170,16 @@ function classify(contract, exemptions) {
     exempt: exempt.sort(),
     unexplained: unexplained.sort(),
   };
+}
+
+// How many slugs the two contracts have in common. Zero means newlyIdentical
+// skipped everything and returned the same empty array a clean run returns, so
+// a green result proves nothing.
+function sharedSlugs(before, after) {
+  const had = new Set(Object.keys((before && before.slugs) || {}));
+  return Object.keys((after && after.slugs) || {}).filter(function (slug) {
+    return had.has(slug);
+  }).length;
 }
 
 // Values that now render identically to something they did not render
@@ -186,10 +211,19 @@ function classify(contract, exemptions) {
 // which sibling the contract will anchor it against. That is what lets
 // `spinner Complete` be waived by naming the three non-anchor values rather than
 // all six pairs among four values.
+function axisValues(contract) {
+  const out = new Map();
+  eachAxis(contract, function (slug, axis, values) {
+    out.set(slug + " " + axis, new Set(values));
+  });
+  return out;
+}
+
 function newlyIdentical(before, after, exemptions) {
   const was = identicalSets(before);
   const now = identicalSets(after);
   const knownSlugs = new Set(Object.keys((before && before.slugs) || {}));
+  const knownValues = axisValues(before);
   const seen = new Set();
   const out = [];
   now.forEach(function (siblings, key) {
@@ -204,8 +238,16 @@ function newlyIdentical(before, after, exemptions) {
     const eq = key.indexOf("=", slug.length);
     const axis = key.slice(slug.length + 1, eq);
     const value = key.slice(eq + 1);
+    // 🪤 A value the baseline's axis did not carry is skipped, for the same
+    // reason a slug it did not carry is: a value RENAME is indistinguishable
+    // from a new value, Figma auto-names them (`Percent3` and `Property 1` are
+    // in the shipped data), and reporting it puts a red on an ordinary sync PR
+    // whose only remedy is hand-editing a decision record.
+    const baselineValues = knownValues.get(slug + " " + axis);
+    if (!baselineValues || !baselineValues.has(value)) return;
     siblings.forEach(function (sibling) {
       if (had.indexOf(sibling) !== -1) return;
+      if (!baselineValues.has(sibling)) return;
       const pair = [value, sibling].sort();
       const id = slug + " " + axis + ": " + pair[0] + " | " + pair[1];
       if (seen.has(id)) return;
@@ -298,6 +340,12 @@ module.exports = {
   STATE_AXIS: STATE_AXIS,
   isStateAxis: isStateAxis,
   slugOf: slugOf,
+  // Exported so no caller rebuilds the key format inline. The ratchet's
+  // uniqueness guard did exactly that, which is the drift slugOf's own note
+  // warns about: change the separator here and an inline copy keeps proving the
+  // old format unique while the gate uses the new one.
+  keyFor: keyFor,
+  sharedSlugs: sharedSlugs,
   collapseKeys: collapseKeys,
   identicalSets: identicalSets,
   newlyIdentical: newlyIdentical,

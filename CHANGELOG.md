@@ -167,8 +167,10 @@ Each entry links its pull request. Dates are the merge date (UTC).
   design and 50 are not**; the 50 are what roadmap item 23 has to work through. The split is printed as
   a test diagnostic rather than stored, so no number is kept in step by hand.
 
-  The clamp-versus-twin split the diagnostic also prints (48 and 9) is REPORTING only, and nothing
-  gates on it. Clamp means "renders as the axis's first-listed value", which is a proxy for the default
+  Explained-versus-unexplained is decided per duplicate GROUP rather than per value, so a Figma reorder
+  cannot move it: a record names one value of a group, and which values appear in `rendersAs` depends
+  on which one happens to be listed first. The clamp-versus-twin split the diagnostic also prints
+  (48 and 9) is REPORTING only, is order-sensitive by construction, and nothing gates on it. Clamp means "renders as the axis's first-listed value", which is a proxy for the default
   and not a record of one: nothing in the pipeline stores a default, so an axis the renderer ignores
   entirely scores as all clamps, and a Figma reorder can move the split without anything changing.
 
@@ -184,14 +186,18 @@ Each entry links its pull request. Dates are the merge date (UTC).
   that it caught renames, which is false (a renamed component is a slug the baseline lacks, so its
   collapses are credited as a new component's), and the algebra of what remained showed it could only
   fail when the per-value check had already failed. A bound that cannot fire must not read as one that
-  can. Two guards that can fire took its place: one asserting the comparison found something to compare
-  rather than passing vacuously, and one asserting no slug or axis name breaks the key format, since
-  both of those failures are silent passes rather than reds.
+  can. Two guards that can fire took its place: one asserting the two sides actually share slugs, and
+  one asserting no slug or axis name breaks the key format, since both of those failures are silent
+  passes rather than reds. The first is deliberately not "collapses still exist": collapses reaching
+  zero is the goal of roadmap item 23, and a gate that reds on success would repeat the mistake above.
 
-  **Known limit, stated rather than implied:** a collapse arriving inside a component that was renamed
-  in the same sync is not caught, because nothing in it is recognisable against the baseline. Closing
-  that needs the identity ledger shipped above, which can tell a renamed slug from a new one. It is
-  left undone and stated here rather than stubbed in.
+  **Known limit, stated rather than implied:** a collapse arriving inside a component, an axis, or a
+  value that was renamed in the same sync is not caught, because nothing in it is recognisable against
+  the baseline. Values are skipped for the same reason slugs are, and it is not hypothetical: Figma
+  auto-names variant values, and `Percent3` and `Property 1` are in the shipped data today, so
+  reporting a renamed value would put a red on an ordinary sync PR whose only remedy is hand-editing a
+  decision record. Closing the component half needs the identity ledger shipped above, which can tell
+  a renamed slug from a new one. Left undone and stated here rather than stubbed in.
 
 - **A change to a component's display name no longer stalls a night's sync.** The differ reports a
   rename when the slug *or* the display name changes, and the classifier pushed a breaking reason for

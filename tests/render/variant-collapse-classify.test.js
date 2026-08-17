@@ -296,6 +296,103 @@ test("a value containing an equals sign is reported once and can be waived", fun
   );
 });
 
+test("a baseline sharing no slugs with the fresh contract is not comparable", function () {
+  // newlyIdentical skips every slug the baseline lacks, so when the two sides
+  // share no slugs it returns the same empty array a clean run returns. Both
+  // sides having collapses does not make them comparable, which is what the
+  // guard used to check.
+  const before = contractWith({
+    "old-name": {
+      variants: { T: { values: ["a", "b"], rendersAs: { b: "a" } } },
+    },
+  });
+  const after = contractWith({
+    "new-name": {
+      variants: {
+        T: { values: ["a", "b", "c"], rendersAs: { b: "a", c: "a" } },
+      },
+    },
+  });
+
+  assert.equal(classify.sharedSlugs(before, after), 0);
+  assert.equal(classify.sharedSlugs(before, before), 1);
+});
+
+test("a value new to an axis is a new fact, not a regression", function () {
+  // Figma auto-names variant values, and `Percent3` and `Property 1` in the
+  // shipped data are what that looks like. A value RENAME is indistinguishable
+  // from a new value, and reporting it puts a red on an ordinary sync PR whose
+  // only remedy is hand-editing the decision record. Same reasoning as skipping
+  // a slug the baseline lacks.
+  const before = contractWith({
+    loader: {
+      variants: {
+        Percent: {
+          values: ["Property 1", "10%", "Percent3"],
+          rendersAs: { "10%": "Property 1", Percent3: "Property 1" },
+        },
+      },
+    },
+  });
+  const after = contractWith({
+    loader: {
+      variants: {
+        Percent: {
+          values: ["Property 1", "10%", "Percent4"],
+          rendersAs: { "10%": "Property 1", Percent4: "Property 1" },
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(classify.newlyIdentical(before, after), []);
+});
+
+test("the explained split does not move when an axis is reordered", function () {
+  const values = ["50%", "75%", "100%", "25%"];
+  const before = contractWith({
+    spinner: {
+      variants: {
+        Complete: {
+          values: values,
+          rendersAs: { "75%": "50%", "100%": "50%", "25%": "50%" },
+        },
+      },
+    },
+  });
+  // The same flat axis, reordered so the exempted 25% becomes the anchor. The
+  // record still covers the same group, so the counts must not move.
+  const after = contractWith({
+    spinner: {
+      variants: {
+        Complete: {
+          values: ["25%", "50%", "75%", "100%"],
+          rendersAs: { "50%": "25%", "75%": "25%", "100%": "25%" },
+        },
+      },
+    },
+  });
+  const reasons = {
+    "spinner Complete=25%": "keyframe",
+    "spinner Complete=75%": "keyframe",
+    "spinner Complete=100%": "keyframe",
+  };
+
+  assert.deepEqual(classify.classify(before, reasons).unexplained, []);
+  assert.deepEqual(classify.classify(after, reasons).unexplained, []);
+  assert.equal(
+    classify.classify(before, reasons).exempt.length,
+    classify.classify(after, reasons).exempt.length,
+  );
+});
+
+test("keyFor is exported, so callers cannot re-implement the key format", function () {
+  assert.equal(
+    classify.keyFor("side-nav", "Built type", "By rows"),
+    "side-nav Built type=By rows",
+  );
+});
+
 test("an empty contract yields no collapses, so a vacuity guard can fire", function () {
   // The ratchet asserts the baseline produced something to compare, because
   // newlyIdentical returns [] for an unrecognisable baseline exactly as it does

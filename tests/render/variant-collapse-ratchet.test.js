@@ -108,28 +108,26 @@ test("no two variant values start rendering identically", function () {
       "the reason.",
   );
 
-  // The comparison must have had something to compare, on BOTH sides. Every
-  // filter above can empty, and each of those failures is a silent pass rather
-  // than a red.
+  // The comparison must have had something to compare, and the honest measure
+  // of that is how many slugs the two sides SHARE.
   //
-  // 🪤 The baseline side is the one that bites, and an earlier version checked
-  // only the fresh side. newlyIdentical skips any slug the baseline does not
-  // carry, so a baseline whose top-level shape changed (no `slugs` key at all)
-  // makes knownSlugs empty, every key is skipped, and the result is the same
-  // empty array a clean run produces. requireBaseline catches a MISSING file;
-  // nothing caught a file that parsed and yielded nothing.
+  // 🪤 Two earlier versions got this wrong in the same direction. The first
+  // checked only the fresh side. The second checked that both sides had
+  // collapses, which still passes when the two carry entirely different slugs:
+  // newlyIdentical skips every slug the baseline lacks, so a mass rename, or a
+  // contract that starts keying `slugs` by something else, makes it return the
+  // same empty array a clean run returns while comparing nothing.
+  //
+  // Deliberately NOT "collapses exist". Collapses reaching zero is the goal of
+  // roadmap item 23, and a gate that reds on success, blaming a shape change, is
+  // the failure this whole branch exists to remove.
   assert.ok(
-    collapse.collapseKeys(fresh).size > 0,
-    "this ratchet found no collapses at all in the fresh contract, so it would " +
-      "pass vacuously; the contract shape or the axis predicate has changed",
-  );
-  assert.ok(
-    collapse.collapseKeys(before).size > 0,
-    "the baseline contract at the merge base yielded no collapses, so every " +
-      "value was skipped and this ratchet compared nothing. That is a shape " +
-      "change in " +
+    collapse.sharedSlugs(before, fresh) > 0,
+    "the baseline at the merge base and the fresh contract share no slugs, so " +
+      "every value was skipped and this ratchet compared nothing. That is a " +
+      "shape change in " +
       CONTRACT_REL +
-      ", not a clean run.",
+      " or a wholesale rename, not a clean run.",
   );
 });
 
@@ -156,7 +154,9 @@ test("no slug or axis name can silently defeat the key format", function () {
     Object.keys(variants).forEach(function (axis) {
       if (collapse.isStateAxis(axis)) return;
       Object.keys(variants[axis].rendersAs || {}).forEach(function (value) {
-        keys.push(slug + " " + axis + "=" + value);
+        // The helper's own keyFor, not an inline copy: an inline copy keeps
+        // proving the OLD format unique the moment the real one changes.
+        keys.push(collapse.keyFor(slug, axis, value));
       });
     });
   });
