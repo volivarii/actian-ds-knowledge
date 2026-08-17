@@ -17,6 +17,11 @@ const { deriveContract } = require(
 );
 const fresh = deriveContract();
 
+// Resolved ONCE for the whole file. merge-base.js can fall back to a real
+// `git fetch`, which its own header calls slow and non-hermetic, and resolving
+// per test would run that fetch once per test on a cold or fork-PR checkout.
+const BASELINE = mergeBase.jsonAtMergeBase(CONTRACT_REL);
+
 // State axes are excluded and only reported. Roughly half of their values collapse,
 // but a static fragment cannot show hover or focus without forced-state classes,
 // so gating them would fail on a limitation of the medium rather than a defect.
@@ -34,11 +39,12 @@ const fresh = deriveContract();
 //
 // Keyed by the exact value, not by the slug, so a reason cannot drift onto a
 // different regression in the same component. Every key is asserted below to
-// still name a real collapse, so one left behind by a fix cannot quietly cover
-// the next one. A key with an empty reason excuses nothing.
+// still name a real collapse AND to carry a usable reason, so one left behind by
+// a fix cannot quietly cover the next one.
 //
 // This is a decision record, not a tally: it must never grow a count, a
-// threshold, or an entry whose reason is "known issue".
+// threshold, or an entry whose reason is "known issue". A Figma value rename is
+// a legitimate entry, but its reason must name the key it replaces.
 const BY_DESIGN = {
   // ds-html-map.js, case "spinner": "Complete = 25%|50%|75%|100% is the
   // animation's own arc-fill cycle, not a chooseable variant (usage guideline),
@@ -67,8 +73,17 @@ const BY_DESIGN = {
     "the guideline folds Drilldown1 and Drilldown2 into one Drilldown concept",
 };
 
-function hasOwn(o, k) {
-  return Object.prototype.hasOwnProperty.call(o, k);
+function requireBaseline() {
+  if (!BASELINE.json) {
+    // A missing baseline is a real condition but it must fail loudly rather
+    // than pass silently: a silent return here would mean the ratchet asserted
+    // nothing while still going green. The message names which of the three
+    // ways it came up empty.
+    assert.fail(
+      mergeBase.describeMissing("variant-collapse-ratchet", BASELINE),
+    );
+  }
+  return BASELINE.json;
 }
 
 function countBySlug(contract) {
@@ -77,33 +92,20 @@ function countBySlug(contract) {
     out[slug] = 0;
   });
   collapse.collapseKeys(contract).forEach(function (key) {
-    const slug = key.slice(0, key.indexOf(" "));
+    const slug = collapse.slugOf(key);
     out[slug] = (out[slug] || 0) + 1;
   });
   return out;
 }
 
-// The baseline is the contract at the merge base, not at HEAD: see
-// helpers/merge-base.js, which owns that resolution for both render ratchets.
-function baselineContract() {
-  return mergeBase.jsonAtMergeBase(CONTRACT_REL);
-}
-
 test("no variant value newly renders identically to a sibling", function () {
-  const at = baselineContract();
-  if (!at.json) {
-    // A missing baseline is a real condition but it must fail loudly rather
-    // than pass silently: a silent return here would mean the ratchet asserted
-    // nothing while still going green. The message names which of the three
-    // ways it came up empty.
-    assert.fail(mergeBase.describeMissing("variant-collapse-ratchet", at));
-  }
+  const before = requireBaseline();
 
   // Compared as a SET of values, not as a count per slug. A count cannot see a
   // swap: give one collapsed value its own rendering, introduce a collapse on
   // another value of the same component, and the number is unchanged while the
   // gallery still shows a duplicate cell. This names the value instead.
-  const appeared = collapse.newCollapses(at.json, fresh, BY_DESIGN);
+  const appeared = collapse.newCollapses(before, fresh, BY_DESIGN);
 
   assert.deepEqual(
     appeared,
@@ -117,12 +119,29 @@ test("no variant value newly renders identically to a sibling", function () {
   );
 });
 
+test("no collapsed value changes which sibling it renders as", function () {
+  const before = requireBaseline();
+
+  // The set check above cannot see this: the key is on both sides, so nothing
+  // is new. What changed is the answer to the same request. A value that used
+  // to duplicate a non-default sibling and now duplicates the shipped default
+  // has become the "ask for Glossary type, receive Catalog" defect (#550), and
+  // it would otherwise ship green.
+  const moved = collapse.retargeted(before, fresh);
+
+  assert.deepEqual(
+    moved,
+    [],
+    "these values still collapse but now render as a DIFFERENT sibling, so " +
+      "callers who ask for them get a different component back than they did " +
+      "at the merge base: " +
+      JSON.stringify(moved) +
+      ". This is a behaviour change even though the collapse count did not move.",
+  );
+});
+
 test("identity-axis variant collapse does not rise in total", function () {
-  const at = baselineContract();
-  if (!at.json) {
-    assert.fail(mergeBase.describeMissing("variant-collapse-ratchet", at));
-  }
-  const before = countBySlug(at.json);
+  const before = countBySlug(requireBaseline());
   const after = countBySlug(fresh);
 
   const sum = function (o) {
@@ -132,39 +151,31 @@ test("identity-axis variant collapse does not rise in total", function () {
   };
   const totalBefore = sum(before);
   const totalAfter = sum(after);
+  const allowed = collapse.allowedRise(requireBaseline(), fresh, BY_DESIGN);
 
-  // Kept alongside the per-value check above, and not replaced by it, because
-  // the two fail on different things. The per-value check skips slugs the
-  // baseline does not carry, which is what keeps a RENAME from reddening a gate
-  // with nothing to fix -- but that same skip means a collapse arriving inside a
-  // renamed component is invisible to it. This crude total is rename-immune and
-  // catches exactly that. The same pairing was reached the hard way on the
-  // plugin's blank-box baseline, where a name-keyed comparison alone let a rename
-  // hide an increase.
+  // Kept alongside the per-value checks, and not replaced by them, because it
+  // fails on something they cannot see: a collapse that arrives while its
+  // component's NAME is unchanged but its axis or value names churn, which
+  // leaves the per-value set comparison looking at keys it has never seen.
   //
-  // Headroom, so the total never reds for something the per-value check has
-  // already allowed: slugs the baseline did not have, plus values named in
-  // BY_DESIGN.
-  const headroom = Object.keys(after).reduce(function (a, slug) {
-    if (!hasOwn(before, slug)) return a + after[slug];
-    return a;
-  }, 0);
-  const waived = Object.keys(BY_DESIGN).filter(function (key) {
-    return !collapse.collapseKeys(at.json).has(key);
-  }).length;
-
+  // 🪤 It is NOT rename-immune, and an earlier draft of this comment claimed it
+  // was. A renamed component is a slug the baseline lacks, so `allowedRise`
+  // credits every one of its collapses and a rise inside it passes both gates.
+  // Closing that needs the identity ledger (components/dist/identity.json,
+  // #553), which can tell a renamed slug from a new one. Left undone and stated
+  // here rather than stubbed in, because a bound that cannot fire must not read
+  // as one that can.
   assert.ok(
-    totalAfter - headroom - waived <= totalBefore,
+    totalAfter - allowed <= totalBefore,
     "identity-axis variant collapse rose from " +
       totalBefore +
       " to " +
       totalAfter +
       " values rendering identically to a sibling (" +
-      headroom +
-      " of the rise is already allowed as slugs absent from the baseline, and " +
-      waived +
-      " as values newly named in BY_DESIGN). Give the collapsed values their " +
-      "own rendering, or name them in BY_DESIGN with a reason.",
+      allowed +
+      " of the rise is already allowed: values on slugs absent from the " +
+      "baseline, plus values newly named in BY_DESIGN). Give the collapsed " +
+      "values their own rendering, or name them in BY_DESIGN with a reason.",
   );
   assert.ok(
     Object.keys(after).length > 0,
@@ -196,37 +207,72 @@ test("every by-design collapse still names a real one", function () {
   );
 });
 
+test("every by-design collapse carries a usable reason", function () {
+  const unusable = collapse.unusableExemptions(fresh, BY_DESIGN);
+  assert.deepEqual(
+    unusable,
+    [],
+    "these BY_DESIGN entries name a real collapse but carry no reason, so they " +
+      "excuse nothing and the value is still counted: " +
+      JSON.stringify(unusable) +
+      ". Write the reason, or remove the entry.",
+  );
+  // Reported apart from staleness because the remedies are opposite, and
+  // because an earlier version failed the reasonless case with a message
+  // pointing at the staleness test, which was green and named nothing.
+  const oneRealKey = Object.keys(BY_DESIGN)[0];
+  const probe = {};
+  probe[oneRealKey] = "   ";
+  assert.deepEqual(
+    collapse.unusableExemptions(fresh, probe),
+    [oneRealKey],
+    "the reason predicate must report an entry whose reason is only whitespace",
+  );
+});
+
 test("the reported collapse figure counts only unexplained values", function (t) {
   const report = collapse.classify(fresh, BY_DESIGN);
+  const all = collapse.collapseKeys(fresh);
 
-  // Deliberately NOT asserting the current totals. A pinned number here would be
-  // a hand-maintained count standing in for a fact the contract already knows,
-  // which is the anti-pattern this gate family exists to remove; it would also
-  // have to be edited by every legitimate fix. What is asserted is the RELATION
-  // between the parts, which holds at any size.
-  assert.equal(
-    report.clamps.length + report.twins.length,
-    report.exempt.length + report.unexplained.length,
-    "every collapse must be classified both ways: clamp-or-twin, and " +
-      "explained-or-not",
+  // An earlier version asserted clamps+twins === exempt+unexplained, which
+  // classify() makes true by construction: it pushes into one of each pair per
+  // collapse, so the equality held for any input, including a completely broken
+  // classification. These compare the partitions against the collapse set they
+  // are meant to partition, which a broken classify() fails.
+  assert.deepEqual(
+    report.clamps
+      .concat(report.twins)
+      .sort()
+      .filter(function (k, i, a) {
+        return a.indexOf(k) === i;
+      }),
+    Array.from(all).sort(),
+    "clamps and twins together must be exactly the collapses the contract has",
   );
-  assert.ok(
-    report.exempt.length === Object.keys(BY_DESIGN).length,
-    "every BY_DESIGN entry should have matched a real collapse; the staleness " +
-      "test above names any that did not",
+  assert.deepEqual(
+    report.exempt.concat(report.unexplained).sort(),
+    Array.from(all).sort(),
+    "explained and unexplained together must be exactly the collapses the " +
+      "contract has",
   );
+  const both = report.clamps.filter(function (k) {
+    return report.twins.indexOf(k) !== -1;
+  });
+  assert.deepEqual(both, [], "no value can be both a clamp and a twin");
 
   // Derived and printed rather than stored, so `npm test` output carries the
   // current split without anything having to be kept in step by hand.
   t.diagnostic(
     "variant collapse: " +
-      report.unexplained.length +
-      " unexplained (" +
+      all.size +
+      " collapses = " +
       report.clamps.length +
       " clamp / " +
       report.twins.length +
-      " twin, " +
+      " twin; " +
       report.exempt.length +
-      " explained by design)",
+      " explained by design, " +
+      report.unexplained.length +
+      " unexplained",
   );
 });

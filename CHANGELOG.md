@@ -143,21 +143,36 @@ Each entry links its pull request. Dates are the merge date (UTC).
   breaking its `Orientation`, which takes that component from two collapses to one. The count-keyed
   check passed it; the value-keyed check names `toolbar Orientation=Vertical`.
 
-  The single reported number was also measuring two different things. Seven of the 57 collapses are
+  It also could not see a value that keeps collapsing but starts collapsing onto something else. That
+  is the same defect wearing a different hat: a value that used to duplicate a non-default sibling and
+  now duplicates the shipped default has become the "ask for `Glossary type`, receive `Catalog`"
+  substitution (#550). A second check reports any collapse whose target moved.
+
+  The single reported number was also measuring two different things. Seven of the collapses are
   deliberate and say so **in the renderer's own source**: `spinner`'s `Complete` is "the animation's
   own arc-fill cycle, not a chooseable variant", `loader` is the indeterminate spinner, and
   `search-result-card App=Studio` is "intentionally NOT built here, per the spec". The gate was
   contradicting the code it measures. Those seven now sit in a `BY_DESIGN` record keyed by the exact
   value, each carrying its reason, so the reported figure means one thing: values the renderer cannot
-  tell apart and nobody has said why. Currently **50 unexplained, 48 clamp and 9 twin, 7 explained**,
-  printed as a test diagnostic rather than stored, so no number has to be kept in step by hand.
+  tell apart and nobody has said why. At merge time that is **57 collapses, 48 clamp and 9 twin, of
+  which 7 are explained by design and 50 are not**. The split is printed as a test diagnostic rather
+  than stored, so no number is kept in step by hand.
+
+  Clamp means "renders as the axis's first-listed value". That is a proxy for the default, not a
+  record of one: nothing in the pipeline stores a default, `values` is Figma's `variantOptions` in
+  insertion order, and an axis the renderer ignores entirely therefore scores as all clamps. What
+  holds either way is the part that matters, that the caller named a value and received another one.
 
   The escape hatch is per value rather than per slug, and a reasonless entry excuses nothing, matching
-  the coverage gate's `--accept-coverage-loss="<why>"`. A stale entry that no longer names a real
-  collapse fails the suite, so one left behind by a fix cannot cover the next regression on that
-  value. The crude total bound stays alongside the per-value check, because the per-value check skips
-  slugs the baseline lacks (which is what stops a rename reddening a gate with nothing to fix) and is
-  therefore blind to a collapse arriving inside a renamed component.
+  the coverage gate's `--accept-coverage-loss="<why>"`. Entries are checked two ways, reported apart
+  because the remedies are opposite: one that no longer names a real collapse should be deleted, and
+  one that names a real collapse without a reason is missing the decision.
+
+  **Known limit, stated rather than implied:** the total bound is *not* rename-immune. A renamed
+  component is a slug the baseline lacks, so its collapses are credited as a new component's and a
+  rise inside it passes both checks. Closing that needs the identity ledger shipped above, which can
+  tell a renamed slug from a new one. It is left undone and stated here rather than stubbed in,
+  because a bound that cannot fire must not read as one that can.
 
 - **A change to a component's display name no longer stalls a night's sync.** The differ reports a
   rename when the slug *or* the display name changes, and the classifier pushed a breaking reason for

@@ -44,10 +44,12 @@ test("a collapse that moves to a different value is new, even at an unchanged co
   ]);
 });
 
-test("a value collapsing onto the axis default is a clamp; onto a sibling, a twin", function () {
+test("a value collapsing onto the first-listed value is a clamp; onto another sibling, a twin", function () {
   const contract = contractWith({
-    // Asking for Glossary type and receiving the axis default is a substitution:
-    // the caller named a value and got a different component back.
+    // Asking for Glossary type and receiving the first-listed value is a
+    // substitution: the caller named a value and got a different one back.
+    // First-listed is a proxy for the default, not a record of it; see the
+    // helper's note on why the registry stores no default.
     "card-for-items": {
       variants: {
         Type: {
@@ -194,6 +196,89 @@ test("a new collapse can be waived, but only by naming that value with a reason"
   assert.deepEqual(
     classify.newCollapses(before, after, { "toolbar Type=Group": "" }),
     ["toolbar Type=Group"],
+  );
+});
+
+test("a value that changes what it collapses onto is reported", function () {
+  const before = contractWith({
+    card: {
+      variants: {
+        Type: {
+          values: ["Catalog", "Item", "Glossary type"],
+          rendersAs: { "Glossary type": "Item" },
+        },
+      },
+    },
+  });
+  const after = contractWith({
+    card: {
+      variants: {
+        Type: {
+          values: ["Catalog", "Item", "Glossary type"],
+          rendersAs: { "Glossary type": "Catalog" },
+        },
+      },
+    },
+  });
+
+  // The value collapsed before and collapses now, so the set of collapsed
+  // values is unchanged and the new-collapse check sees nothing. What changed is
+  // WHICH component the caller receives: Glossary type used to come back as
+  // Item and now comes back as Catalog. That is a different answer to the same
+  // request, and it is the regression this gate exists to name.
+  assert.deepEqual(classify.newCollapses(before, after), []);
+  assert.deepEqual(classify.retargeted(before, after), [
+    "card Type=Glossary type: Item -> Catalog",
+  ]);
+});
+
+test("a by-design entry on a slug the baseline lacks is credited once, not twice", function () {
+  const before = contractWith({
+    toolbar: {
+      variants: { Type: { values: ["Single", "Group"], rendersAs: {} } },
+    },
+  });
+  // One genuine regression on a baseline slug, plus one waived collapse on a
+  // slug the baseline never had. The new slug must not be credited by both the
+  // absent-slug allowance and the waiver, or a real rise passes.
+  const after = contractWith({
+    toolbar: {
+      variants: {
+        Type: { values: ["Single", "Group"], rendersAs: { Group: "Single" } },
+      },
+    },
+    spinner: {
+      variants: {
+        Complete: { values: ["50%", "75%"], rendersAs: { "75%": "50%" } },
+      },
+    },
+  });
+
+  assert.equal(
+    classify.allowedRise(before, after, { "spinner Complete=75%": "waived" }),
+    1,
+  );
+});
+
+test("an exemption whose reason is blank is reported as unusable", function () {
+  const contract = contractWith({
+    spinner: {
+      variants: {
+        Complete: { values: ["50%", "75%"], rendersAs: { "75%": "50%" } },
+      },
+    },
+  });
+
+  // It names a real collapse, so the staleness check passes it, but it excuses
+  // nothing. Reported separately so the failure sends a reader to the entry
+  // rather than to a staleness test that is green and names nothing.
+  assert.deepEqual(
+    classify.unusableExemptions(contract, { "spinner Complete=75%": "  " }),
+    ["spinner Complete=75%"],
+  );
+  assert.deepEqual(
+    classify.unusableExemptions(contract, { "spinner Complete=75%": "why" }),
+    [],
   );
 });
 
