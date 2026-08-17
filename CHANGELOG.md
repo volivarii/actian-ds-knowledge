@@ -126,19 +126,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
-- **A rename is breaking only when the slug it renamed away from stops resolving.** The classifier
-  pushed a breaking reason for every rename, and any single reason makes the whole sync breaking,
-  which commits nothing. Two consequences, both now fixed:
+- **A change to a component's display name no longer stalls a night's sync.** The differ reports a
+  rename when the slug *or* the display name changes, and the classifier pushed a breaking reason for
+  either, while any single breaking reason makes the whole sync breaking, which commits nothing. So
+  editing a status emoji in a component's name could discard a night of otherwise additive work
+  (#512). No consumer addresses a component by display name, so a name change that leaves the slug
+  alone cannot break resolution and is now additive. The changelog still reports the rename.
 
-  - A change to a component's **display name that leaves the slug alone** is no longer breaking. The
-    differ reports a rename when the slug *or* the name changes, so editing a status emoji in a name
-    could stall a night's sync on its own (#512). No consumer addresses a component by display name.
-  - A **slug** change the identity ledger has absorbed is additive, because the old slug still
-    resolves. Absorption is checked by target and not merely by presence: a ledger naming the wrong
-    successor still classifies as breaking, so a stale ledger cannot launder a real break into an
-    auto-merge.
-
-  The changelog still reports every rename either way. Absorbed does not mean invisible.
+  **A slug change is still breaking, deliberately.** The ledger above is what would make it additive,
+  since the old slug still resolves, but the verdict cannot see that yet: the sync classifies inside
+  its orchestrator step while the ledger is derived in a later one, and a breaking verdict opens no
+  PR, so the regenerated ledger is discarded and the same rename is re-detected identically the next
+  night. Making it additive requires computing absorption from the rename the run is *about to*
+  record, which needs `syncRegistry` split into compute-then-classify. Filed as #552 rather than stubbed in,
+  because a rule that cannot fire reads as a rule that works.
 
 - **BREAKING SYNC 2026-08-12: the tag family folded from eight components into three, and carrying it
   through raised oracle coverage from 11.8% to 17.8% instead of costing the eight declarations it

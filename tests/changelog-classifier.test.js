@@ -17,9 +17,11 @@ var classifier = require(
 // nights of otherwise additive work, including 241 icon updates, while the
 // sync's own evidence said the identity had survived (knowledge #526).
 //
-// A rename is a consumer break only if the old slug stops resolving. When the
-// identity ledger has absorbed it, the old slug still resolves, so there is
-// nothing for a human to carry through and the verdict should let it land.
+// A rename is a consumer break only if the old slug stops resolving, so a
+// display-name change that keeps the slug must not be breaking. A slug change
+// still is: components/dist/identity.json can now resolve the old slug, but the
+// verdict cannot see that yet (see renameBreaksResolution for why), so the rule
+// deliberately stops here rather than claiming a capability that cannot fire.
 
 function renamedRegistry(slug) {
   return {
@@ -41,43 +43,11 @@ function renamedRegistry(slug) {
   };
 }
 
-test("classifier — a rename the ledger has absorbed is additive", function () {
+test("classifier — a slug rename is still breaking", function () {
   var result = classifier({
     before: renamedRegistry("sticky-footer"),
     after: renamedRegistry("action-bar"),
     fileKind: "registry",
-    absorbedRenames: { "sticky-footer": "action-bar" },
-  });
-
-  assert.equal(result.category, "additive");
-  assert.deepEqual(result.reasons, []);
-  assert.match(
-    result.changelog,
-    /Renamed/,
-    "the changelog must still report the rename; absorbed is not invisible",
-  );
-});
-
-test("classifier — a rename nothing absorbed is still breaking", function () {
-  var result = classifier({
-    before: renamedRegistry("sticky-footer"),
-    after: renamedRegistry("action-bar"),
-    fileKind: "registry",
-  });
-
-  assert.equal(result.category, "breaking");
-  assert.equal(result.reasons.length, 1);
-});
-
-// A ledger naming the wrong successor must not launder a real break into an
-// auto-merge. Absorption is only absorption if the old slug resolves to the
-// component that actually carries it now.
-test("classifier — an absorption naming the wrong successor is still breaking", function () {
-  var result = classifier({
-    before: renamedRegistry("sticky-footer"),
-    after: renamedRegistry("action-bar"),
-    fileKind: "registry",
-    absorbedRenames: { "sticky-footer": "some-other-component" },
   });
 
   assert.equal(result.category, "breaking");

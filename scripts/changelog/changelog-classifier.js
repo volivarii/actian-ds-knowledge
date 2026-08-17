@@ -336,28 +336,26 @@ function buildRegistryChangelog(diff) {
   return lines.join("\n");
 }
 
-// A rename is a consumer break only when the slug a consumer holds stops
-// resolving. `absorbedRenames` is { fromSlug: toSlug } as recorded in the
-// identity ledger, so the old slug still resolves through
-// clients/resolve-paths.js and there is nothing for a human to carry through.
+// A reported rename cannot break a consumer when the slug did not change. The
+// differ reports a rename when the slug OR the display name changes, so editing
+// a status emoji in a component's name used to push the verdict to breaking on
+// its own and stall a night's sync (knowledge #512). No consumer addresses a
+// component by display name, so resolution is untouched.
 //
-// The target is compared, not just the presence of the key: a ledger naming the
-// wrong successor would otherwise launder a real break into an auto-merge.
-// Two ways a reported rename cannot break a consumer:
-//
-//   1. The slug did not change. The differ reports a rename when the slug OR the
-//      display name changes, so editing a status emoji in a name used to push
-//      the verdict to breaking on its own (knowledge #512). No consumer
-//      addresses a component by display name, so resolution is untouched.
-//   2. The ledger absorbed the slug change, so the old slug still resolves.
-function renameBreaksResolution(rename, absorbedRenames) {
-  if (rename.fromSlug === rename.toSlug) return false;
-  if (absorbedRenames && absorbedRenames[rename.fromSlug] === rename.toSlug)
-    return false;
-  return true;
+// A slug change stays breaking. components/dist/identity.json now lets a
+// consumer resolve the old slug, which is what would make such a rename
+// additive, but the verdict cannot yet see that: the sync classifies inside its
+// orchestrator step while the ledger is derived in a later one, and a breaking
+// verdict opens no PR, so the regenerated ledger is discarded and the rename is
+// re-detected identically the next night. Absorption has to be computed from the
+// rename the run is about to record, which needs syncRegistry split into
+// compute-then-classify. Deliberately not stubbed in here: a rule that cannot
+// fire reads as a rule that works.
+function renameBreaksResolution(rename) {
+  return rename.fromSlug !== rename.toSlug;
 }
 
-function classifyRegistry(before, after, absorbedRenames) {
+function classifyRegistry(before, after) {
   if (isRegistryUnchanged(before, after)) {
     return {
       category: "unchanged",
@@ -371,7 +369,7 @@ function classifyRegistry(before, after, absorbedRenames) {
     reasons.push("removed component '" + (e.entry.name || e.slug) + "'");
   });
   diff.renamed.forEach(function (e) {
-    if (!renameBreaksResolution(e, absorbedRenames)) return;
+    if (!renameBreaksResolution(e)) return;
     reasons.push("renamed component '" + e.fromName + "' → '" + e.toName + "'");
   });
   diff.modified.forEach(function (e) {
@@ -781,7 +779,7 @@ function classifyMedia(before, after, opts) {
 function classify(input) {
   var fileKind = input.fileKind;
   if (fileKind === "registry")
-    return classifyRegistry(input.before, input.after, input.absorbedRenames);
+    return classifyRegistry(input.before, input.after);
   if (fileKind === "styles") return classifyStyles(input.before, input.after);
   if (fileKind === "icons")
     return classifyIcons(input.before, input.after, input.degraded);
