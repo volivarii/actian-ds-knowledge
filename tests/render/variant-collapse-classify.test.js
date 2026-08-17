@@ -14,192 +14,33 @@ function contractWith(slugs) {
   return { slugs: slugs };
 }
 
-test("a collapse that moves to a different value is new, even at an unchanged count", function () {
-  const before = contractWith({
-    button: {
-      variants: {
-        Emphasis: {
-          values: ["Filled", "Outlined", "Ghost"],
-          rendersAs: { Outlined: "Filled" },
-        },
-      },
-    },
-  });
-  const after = contractWith({
-    button: {
-      variants: {
-        Emphasis: {
-          values: ["Filled", "Outlined", "Ghost"],
-          rendersAs: { Ghost: "Filled" },
-        },
-      },
-    },
-  });
+// --- what must be reported ---------------------------------------------------
 
-  // One collapse fixed, one introduced: the count is 1 before and 1 after, so a
-  // count-keyed comparison reports nothing. The value that newly collapses is
-  // the regression, and it must be named.
-  assert.deepEqual(classify.newCollapses(before, after), [
-    "button Emphasis=Ghost",
-  ]);
-});
-
-test("a value collapsing onto the first-listed value is a clamp; onto another sibling, a twin", function () {
-  const contract = contractWith({
-    // Asking for Glossary type and receiving the first-listed value is a
-    // substitution: the caller named a value and got a different one back.
-    // First-listed is a proxy for the default, not a record of it; see the
-    // helper's note on why the registry stores no default.
-    "card-for-items": {
-      variants: {
-        Type: {
-          values: ["Catalog", "Item", "Glossary type"],
-          rendersAs: { "Glossary type": "Catalog" },
-        },
-      },
-    },
-    // Two non-default values that render alike state a fact about the design,
-    // not a substitution of the caller's request.
-    toolbar: {
-      variants: {
-        Type: {
-          values: ["Single", "Combined", "Group"],
-          rendersAs: { Group: "Combined" },
-        },
-      },
-    },
-  });
-
-  const report = classify.classify(contract);
-  assert.deepEqual(report.clamps, ["card-for-items Type=Glossary type"]);
-  assert.deepEqual(report.twins, ["toolbar Type=Group"]);
-});
-
-// The renderer documents decisions the contract cannot express. spinner's branch
-// says its Complete axis "is the animation's own arc-fill cycle, not a chooseable
-// variant (usage guideline), so it is ignored here". Counting that as a defect
-// makes the reported number mean two different things at once.
-const SPINNER_REASON =
-  "the renderer documents Complete as the animation's arc-fill cycle, not a " +
-  "chooseable variant";
-
-test("an explained collapse is exempt, and only the rest is unexplained", function () {
-  const contract = contractWith({
-    spinner: {
-      variants: {
-        Complete: {
-          values: ["50%", "75%", "100%"],
-          rendersAs: { "75%": "50%", "100%": "50%" },
-        },
-      },
-    },
-    "page-header": {
-      variants: {
-        Type: {
-          values: ["Default", "Details page"],
-          rendersAs: { "Details page": "Default" },
-        },
-      },
-    },
-  });
-
-  const report = classify.classify(contract, {
-    "spinner Complete=75%": SPINNER_REASON,
-    "spinner Complete=100%": SPINNER_REASON,
-  });
-
-  assert.deepEqual(report.exempt, [
-    "spinner Complete=100%",
-    "spinner Complete=75%",
-  ]);
-  assert.deepEqual(report.unexplained, ["page-header Type=Details page"]);
-});
-
-test("an exemption that no longer names a real collapse is reported as stale", function () {
-  const contract = contractWith({
-    spinner: {
-      variants: {
-        Complete: { values: ["50%", "75%"], rendersAs: {} },
-      },
-    },
-  });
-
-  // Someone gave Complete=75% its own rendering. The exemption now excuses
-  // nothing, and left in place it would silently cover a future regression on
-  // the same key.
-  assert.deepEqual(
-    classify.staleExemptions(contract, {
-      "spinner Complete=75%": SPINNER_REASON,
-    }),
-    ["spinner Complete=75%"],
-  );
-});
-
-test("a collapse in a slug the baseline never had is a new fact, not a regression", function () {
-  const before = contractWith({
-    button: {
-      variants: {
-        Emphasis: { values: ["Filled", "Ghost"], rendersAs: {} },
-      },
-    },
-  });
-  // `action-bar` is absent from the baseline: either a component the sync just
-  // added, or `sticky-footer` under its new name. Every one of its keys is
-  // unseen, so a set comparison that did not skip it would red on a rename with
-  // nothing to fix -- and the identity ledger (#553) exists precisely so a
-  // rename lands additively.
-  const after = contractWith({
-    button: {
-      variants: {
-        Emphasis: { values: ["Filled", "Ghost"], rendersAs: {} },
-      },
-    },
-    "action-bar": {
-      variants: {
-        Type: {
-          values: ["Default", "Compact"],
-          rendersAs: { Compact: "Default" },
-        },
-      },
-    },
-  });
-
-  assert.deepEqual(classify.newCollapses(before, after), []);
-});
-
-test("a new collapse can be waived, but only by naming that value with a reason", function () {
+test("a value that newly collapses at all is reported", function () {
   const before = contractWith({
     toolbar: {
-      variants: { Type: { values: ["Single", "Group"], rendersAs: {} } },
+      variants: {
+        Orientation: { values: ["Horizontal", "Vertical"], rendersAs: {} },
+      },
     },
   });
   const after = contractWith({
     toolbar: {
       variants: {
-        Type: { values: ["Single", "Group"], rendersAs: { Group: "Single" } },
+        Orientation: {
+          values: ["Horizontal", "Vertical"],
+          rendersAs: { Vertical: "Horizontal" },
+        },
       },
     },
   });
 
-  assert.deepEqual(classify.newCollapses(before, after), [
-    "toolbar Type=Group",
+  assert.deepEqual(classify.newlyIdentical(before, after), [
+    "toolbar Orientation: Horizontal and Vertical now render identically",
   ]);
-  // The escape hatch is per VALUE, not per slug: a reason attached to the exact
-  // value it excuses cannot also cover a different regression in the same
-  // component later.
-  assert.deepEqual(
-    classify.newCollapses(before, after, {
-      "toolbar Type=Group": "the redesign folded Group into Single",
-    }),
-    [],
-  );
-  assert.deepEqual(
-    classify.newCollapses(before, after, { "toolbar Type=Group": "" }),
-    ["toolbar Type=Group"],
-  );
 });
 
-test("a value that changes what it collapses onto is reported", function () {
+test("a value that starts duplicating a value it did not duplicate is reported", function () {
   const before = contractWith({
     card: {
       variants: {
@@ -221,42 +62,177 @@ test("a value that changes what it collapses onto is reported", function () {
     },
   });
 
-  // The value collapsed before and collapses now, so the set of collapsed
-  // values is unchanged and the new-collapse check sees nothing. What changed is
-  // WHICH component the caller receives: Glossary type used to come back as
-  // Item and now comes back as Catalog. That is a different answer to the same
-  // request, and it is the regression this gate exists to name.
-  assert.deepEqual(classify.newCollapses(before, after), []);
-  assert.deepEqual(classify.retargeted(before, after), [
-    "card Type=Glossary type: Item -> Catalog",
+  // Ask for Glossary type, and where you used to receive Item you now receive
+  // Catalog. The collapse COUNT never moved, and neither did the set of
+  // collapsed values, so only a comparison of what-duplicates-what sees it.
+  assert.deepEqual(classify.newlyIdentical(before, after), [
+    "card Type: Catalog and Glossary type now render identically",
   ]);
 });
 
-test("a by-design entry on a slug the baseline lacks is credited once, not twice", function () {
+test("a swap inside one component is reported, at an unchanged count", function () {
+  const before = contractWith({
+    button: {
+      variants: {
+        Emphasis: {
+          values: ["Filled", "Outlined", "Ghost"],
+          rendersAs: { Outlined: "Filled" },
+        },
+      },
+    },
+  });
+  const after = contractWith({
+    button: {
+      variants: {
+        Emphasis: {
+          values: ["Filled", "Outlined", "Ghost"],
+          rendersAs: { Ghost: "Filled" },
+        },
+      },
+    },
+  });
+
+  // One collapse fixed, one introduced: the count is 1 on both sides, so the
+  // count-keyed comparison this replaced reported nothing.
+  assert.deepEqual(classify.newlyIdentical(before, after), [
+    "button Emphasis: Filled and Ghost now render identically",
+  ]);
+});
+
+// --- what must NOT be reported -----------------------------------------------
+//
+// `rendersAs` names, for each duplicated value, the FIRST value of its group in
+// `values` order. That anchor is an artifact of iteration order, so a check
+// keyed on it fires on things that are not regressions. These two are why the
+// comparison is on equivalence classes instead.
+
+test("giving the anchor value its own rendering is an improvement, not a regression", function () {
+  const before = contractWith({
+    calendar: {
+      variants: {
+        Type: {
+          values: ["Single date select", "Date", "Month", "Single"],
+          rendersAs: {
+            Date: "Single date select",
+            Month: "Single date select",
+            Single: "Single date select",
+          },
+        },
+      },
+    },
+  });
+  // Someone implements "Single date select". Three collapses become two, and the
+  // remaining group re-anchors on Date purely because it is now first. Nothing
+  // got worse for any caller, and a gate that reds here blocks the exact work it
+  // exists to encourage.
+  const after = contractWith({
+    calendar: {
+      variants: {
+        Type: {
+          values: ["Single date select", "Date", "Month", "Single"],
+          rendersAs: { Month: "Date", Single: "Date" },
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(classify.newlyIdentical(before, after), []);
+});
+
+test("reordering an axis's values on its own reports nothing", function () {
+  // transform-registry.js copies Figma's variantOptions verbatim, so a designer
+  // reordering variants is an ordinary nightly-sync event with no renderer
+  // change and nothing visible to any caller, even though every anchor moves.
+  const before = contractWith({
+    tag: {
+      variants: {
+        Kind: { values: ["A", "B", "C"], rendersAs: { B: "A", C: "A" } },
+      },
+    },
+  });
+  const after = contractWith({
+    tag: {
+      variants: {
+        Kind: { values: ["B", "A", "C"], rendersAs: { A: "B", C: "B" } },
+      },
+    },
+  });
+
+  assert.deepEqual(classify.newlyIdentical(before, after), []);
+});
+
+test("a collapse in a slug the baseline never had is a new fact, not a regression", function () {
+  const before = contractWith({
+    button: {
+      variants: { Emphasis: { values: ["Filled", "Ghost"], rendersAs: {} } },
+    },
+  });
+  // `action-bar` is absent from the baseline: either a component the sync just
+  // added, or `sticky-footer` under its new name. Nothing in it is recognisable,
+  // so a comparison that did not skip it would red a rename with nothing to fix.
+  const after = contractWith({
+    button: {
+      variants: { Emphasis: { values: ["Filled", "Ghost"], rendersAs: {} } },
+    },
+    "action-bar": {
+      variants: {
+        Type: {
+          values: ["Default", "Compact"],
+          rendersAs: { Compact: "Default" },
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(classify.newlyIdentical(before, after), []);
+});
+
+// --- the escape hatch --------------------------------------------------------
+
+test("a new collapse can be waived, but only by naming that value with a reason", function () {
   const before = contractWith({
     toolbar: {
       variants: { Type: { values: ["Single", "Group"], rendersAs: {} } },
     },
   });
-  // One genuine regression on a baseline slug, plus one waived collapse on a
-  // slug the baseline never had. The new slug must not be credited by both the
-  // absent-slug allowance and the waiver, or a real rise passes.
   const after = contractWith({
     toolbar: {
       variants: {
         Type: { values: ["Single", "Group"], rendersAs: { Group: "Single" } },
       },
     },
+  });
+
+  assert.equal(classify.newlyIdentical(before, after).length, 1);
+  // Per VALUE, not per slug: a reason attached to the exact value it excuses
+  // cannot also cover a different regression in the same component later.
+  assert.deepEqual(
+    classify.newlyIdentical(before, after, {
+      "toolbar Type=Group": "the redesign folded Group into Single",
+    }),
+    [],
+  );
+  // Same rule as the coverage gate's --accept-coverage-loss="<why>": the flag
+  // without a reason accepts nothing.
+  assert.equal(
+    classify.newlyIdentical(before, after, { "toolbar Type=Group": "" }).length,
+    1,
+  );
+});
+
+test("an exemption that no longer names a real collapse is reported as stale", function () {
+  const contract = contractWith({
     spinner: {
-      variants: {
-        Complete: { values: ["50%", "75%"], rendersAs: { "75%": "50%" } },
-      },
+      variants: { Complete: { values: ["50%", "75%"], rendersAs: {} } },
     },
   });
 
-  assert.equal(
-    classify.allowedRise(before, after, { "spinner Complete=75%": "waived" }),
-    1,
+  // Someone gave Complete=75% its own rendering. The exemption now excuses
+  // nothing, and left in place it would silently cover a future regression on
+  // the same key.
+  assert.deepEqual(
+    classify.staleExemptions(contract, { "spinner Complete=75%": "a reason" }),
+    ["spinner Complete=75%"],
   );
 });
 
@@ -282,19 +258,106 @@ test("an exemption whose reason is blank is reported as unusable", function () {
   );
 });
 
-test("an exemption with no reason excuses nothing", function () {
+// --- reporting ---------------------------------------------------------------
+
+test("a value collapsing onto the first-listed value is a clamp; onto another sibling, a twin", function () {
   const contract = contractWith({
-    spinner: {
+    // First-listed is a proxy for the default, not a record of it; see the
+    // helper's note on why the registry stores no default. Reporting only.
+    "card-for-items": {
       variants: {
-        Complete: { values: ["50%", "75%"], rendersAs: { "75%": "50%" } },
+        Type: {
+          values: ["Catalog", "Item", "Glossary type"],
+          rendersAs: { "Glossary type": "Catalog" },
+        },
+      },
+    },
+    toolbar: {
+      variants: {
+        Type: {
+          values: ["Single", "Combined", "Group"],
+          rendersAs: { Group: "Combined" },
+        },
       },
     },
   });
 
-  // Same shape as the coverage gate's --accept-coverage-loss="<why>": the flag
-  // without a reason accepts nothing. A bare key would let a collapse be waved
-  // through by an edit that records no decision.
-  const report = classify.classify(contract, { "spinner Complete=75%": "" });
-  assert.deepEqual(report.exempt, []);
-  assert.deepEqual(report.unexplained, ["spinner Complete=75%"]);
+  const report = classify.classify(contract);
+  assert.deepEqual(report.clamps, ["card-for-items Type=Glossary type"]);
+  assert.deepEqual(report.twins, ["toolbar Type=Group"]);
+});
+
+test("an explained collapse is exempt, and only the rest is unexplained", function () {
+  const contract = contractWith({
+    spinner: {
+      variants: {
+        Complete: {
+          values: ["50%", "75%", "100%"],
+          rendersAs: { "75%": "50%", "100%": "50%" },
+        },
+      },
+    },
+    "page-header": {
+      variants: {
+        Type: {
+          values: ["Default", "Details page"],
+          rendersAs: { "Details page": "Default" },
+        },
+      },
+    },
+  });
+
+  const report = classify.classify(contract, {
+    "spinner Complete=75%": "an animation keyframe",
+    "spinner Complete=100%": "an animation keyframe",
+  });
+
+  assert.deepEqual(report.exempt, [
+    "spinner Complete=100%",
+    "spinner Complete=75%",
+  ]);
+  assert.deepEqual(report.unexplained, ["page-header Type=Details page"]);
+});
+
+// --- the key format's own invariants -----------------------------------------
+
+test("the state-axis predicate matches only whole State axis names", function () {
+  // It suppresses 47 of the 104 collapses in the shipped contract, so an
+  // over-matching regression would empty the gated set and turn every check
+  // green. Nothing else asserted it.
+  assert.equal(classify.isStateAxis("State"), true);
+  assert.equal(classify.isStateAxis("States"), true);
+  assert.equal(classify.isStateAxis("state"), true);
+  assert.equal(classify.isStateAxis("Toggle position"), false);
+  assert.equal(classify.isStateAxis("Type"), false);
+  // Non-letters are stripped before matching, which is what lets the kit's
+  // stray-apostrophe axis names through, so this must not become a substring
+  // match on the way past.
+  assert.equal(classify.isStateAxis("State'"), true);
+  assert.equal(classify.isStateAxis("Built type"), false);
+  assert.equal(classify.isStateAxis("Estates"), false);
+});
+
+test("names that would break the key format are reported", function () {
+  // Both failures below are SILENT PASSES rather than reds, which is why they
+  // are asserted rather than assumed: a slug with a space makes slugOf return a
+  // prefix, so the component is skipped entirely, and an axis containing "="
+  // makes two different values share one key.
+  const contract = contractWith({
+    "bad slug": { variants: { Type: { values: ["a", "b"], rendersAs: {} } } },
+    good: { variants: { "we=ird": { values: ["a", "b"], rendersAs: {} } } },
+  });
+
+  assert.deepEqual(classify.malformedNames(contract), [
+    "axis contains '=': good we=ird",
+    "slug contains whitespace: bad slug",
+  ]);
+  assert.deepEqual(
+    classify.malformedNames(
+      contractWith({
+        fine: { variants: { "Size & Type": { values: ["a"], rendersAs: {} } } },
+      }),
+    ),
+    [],
+  );
 });

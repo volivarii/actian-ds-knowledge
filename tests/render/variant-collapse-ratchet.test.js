@@ -22,11 +22,11 @@ const fresh = deriveContract();
 // per test would run that fetch once per test on a cold or fork-PR checkout.
 const BASELINE = mergeBase.jsonAtMergeBase(CONTRACT_REL);
 
-// State axes are excluded and only reported. Roughly half of their values collapse,
-// but a static fragment cannot show hover or focus without forced-state classes,
-// so gating them would fail on a limitation of the medium rather than a defect.
-// The predicate itself lives in helpers/variant-collapse.js, with the set logic
-// that uses it.
+// State axes are excluded and only reported. Roughly half of their values
+// collapse, but a static fragment cannot show hover or focus without
+// forced-state classes, so gating them would fail on a limitation of the medium
+// rather than a defect. The predicate lives in helpers/variant-collapse.js with
+// the set logic that uses it, and has its own unit test there.
 
 // Collapses the renderer makes ON PURPOSE, each with the reason it makes them.
 //
@@ -86,100 +86,69 @@ function requireBaseline() {
   return BASELINE.json;
 }
 
-function countBySlug(contract) {
-  const out = {};
-  Object.keys(contract.slugs || {}).forEach(function (slug) {
-    out[slug] = 0;
-  });
-  collapse.collapseKeys(contract).forEach(function (key) {
-    const slug = collapse.slugOf(key);
-    out[slug] = (out[slug] || 0) + 1;
-  });
-  return out;
-}
-
-test("no variant value newly renders identically to a sibling", function () {
+test("no two variant values start rendering identically", function () {
   const before = requireBaseline();
 
-  // Compared as a SET of values, not as a count per slug. A count cannot see a
-  // swap: give one collapsed value its own rendering, introduce a collapse on
-  // another value of the same component, and the number is unchanged while the
-  // gallery still shows a duplicate cell. This names the value instead.
-  const appeared = collapse.newCollapses(before, fresh, BY_DESIGN);
+  // The whole gate, and it compares EQUIVALENCE CLASSES rather than counts or
+  // aliases. A count cannot see a swap. An alias moves when Figma reorders an
+  // axis, and it moves again when someone fixes the value a duplicate group was
+  // anchored on, which would red the exact improvement this exists to
+  // encourage. What neither of those touches is which values a caller cannot
+  // tell apart, so that is what is asserted.
+  const appeared = collapse.newlyIdentical(before, fresh, BY_DESIGN);
 
   assert.deepEqual(
     appeared,
     [],
-    "these variant values now render identically to a sibling and did not at " +
-      "the merge base, so a caller who asks for them receives a different " +
-      "component than the one they named: " +
+    "these variant values render identically to each other and did not at the " +
+      "merge base, so a caller who asks for one receives the other: " +
       JSON.stringify(appeared) +
-      ". Give each value its own rendering in ds-html-map.js, or, if the values " +
-      "really do render alike now, add the value to BY_DESIGN with the reason.",
+      ". Give each value its own rendering in ds-html-map.js, or, if they " +
+      "really do render alike now, add one of the two values to BY_DESIGN with " +
+      "the reason.",
+  );
+
+  // The comparison must have had something to compare. Every filter above can
+  // empty (an unrecognised contract shape, a state-axis predicate that starts
+  // matching everything), and each of those failures is a silent pass.
+  assert.ok(
+    collapse.collapseKeys(fresh).size > 0,
+    "this ratchet found no collapses at all in the fresh contract, so it would " +
+      "pass vacuously; the contract shape or the axis predicate has changed",
   );
 });
 
-test("no collapsed value changes which sibling it renders as", function () {
-  const before = requireBaseline();
-
-  // The set check above cannot see this: the key is on both sides, so nothing
-  // is new. What changed is the answer to the same request. A value that used
-  // to duplicate a non-default sibling and now duplicates the shipped default
-  // has become the "ask for Glossary type, receive Catalog" defect (#550), and
-  // it would otherwise ship green.
-  const moved = collapse.retargeted(before, fresh);
-
+test("no slug or axis name can silently defeat the key format", function () {
+  // Both failures this guards are SILENT PASSES rather than reds, which is the
+  // only reason it is worth a test: a slug containing whitespace makes slugOf
+  // return a prefix, so every collapse in that component is skipped, and an
+  // axis containing "=" makes two different values share one key so one of them
+  // stops being watched.
+  const malformed = collapse.malformedNames(fresh);
   assert.deepEqual(
-    moved,
+    malformed,
     [],
-    "these values still collapse but now render as a DIFFERENT sibling, so " +
-      "callers who ask for them get a different component back than they did " +
-      "at the merge base: " +
-      JSON.stringify(moved) +
-      ". This is a behaviour change even though the collapse count did not move.",
+    "these names break the assumption the collapse key format rests on, and " +
+      "would make the gate skip a component rather than fail: " +
+      JSON.stringify(malformed),
   );
-});
 
-test("identity-axis variant collapse does not rise in total", function () {
-  const before = countBySlug(requireBaseline());
-  const after = countBySlug(fresh);
-
-  const sum = function (o) {
-    return Object.keys(o).reduce(function (a, k) {
-      return a + o[k];
-    }, 0);
-  };
-  const totalBefore = sum(before);
-  const totalAfter = sum(after);
-  const allowed = collapse.allowedRise(requireBaseline(), fresh, BY_DESIGN);
-
-  // Kept alongside the per-value checks, and not replaced by them, because it
-  // fails on something they cannot see: a collapse that arrives while its
-  // component's NAME is unchanged but its axis or value names churn, which
-  // leaves the per-value set comparison looking at keys it has never seen.
-  //
-  // 🪤 It is NOT rename-immune, and an earlier draft of this comment claimed it
-  // was. A renamed component is a slug the baseline lacks, so `allowedRise`
-  // credits every one of its collapses and a rise inside it passes both gates.
-  // Closing that needs the identity ledger (components/dist/identity.json,
-  // #553), which can tell a renamed slug from a new one. Left undone and stated
-  // here rather than stubbed in, because a bound that cannot fire must not read
-  // as one that can.
-  assert.ok(
-    totalAfter - allowed <= totalBefore,
-    "identity-axis variant collapse rose from " +
-      totalBefore +
-      " to " +
-      totalAfter +
-      " values rendering identically to a sibling (" +
-      allowed +
-      " of the rise is already allowed: values on slugs absent from the " +
-      "baseline, plus values newly named in BY_DESIGN). Give the collapsed " +
-      "values their own rendering, or name them in BY_DESIGN with a reason.",
-  );
-  assert.ok(
-    Object.keys(after).length > 0,
-    "this ratchet compared no slugs, so it would pass vacuously",
+  // Every collapse key must also be unique, which is the other half of the same
+  // assumption and is not implied by the name check alone.
+  const keys = [];
+  Object.keys(fresh.slugs).forEach(function (slug) {
+    const variants = fresh.slugs[slug].variants || {};
+    Object.keys(variants).forEach(function (axis) {
+      if (collapse.isStateAxis(axis)) return;
+      Object.keys(variants[axis].rendersAs || {}).forEach(function (value) {
+        keys.push(slug + " " + axis + "=" + value);
+      });
+    });
+  });
+  assert.equal(
+    new Set(keys).size,
+    keys.length,
+    "two collapses share one key, so one of them is invisible to this gate",
   );
 });
 
@@ -194,10 +163,10 @@ test("every by-design collapse still names a real one", function () {
       JSON.stringify(stale) +
       ". Remove them.",
   );
-  // The map above is populated, so the assertion can fail on its own contents.
-  // The fabricated key still runs the predicate over something known-absent, to
-  // prove a stale entry is actually detected rather than the check reporting an
-  // all-clear from a broken comparison.
+  // The map above is populated today, but emptying it is exactly what fixing
+  // all seven looks like, and an assertion that only holds while it is
+  // populated would quietly stop proving anything at that moment. The
+  // fabricated key is independent of BY_DESIGN's contents.
   assert.deepEqual(
     collapse.staleExemptions(fresh, {
       "no-such-component Axis=Value": "fabricated",
@@ -220,38 +189,37 @@ test("every by-design collapse carries a usable reason", function () {
   // Reported apart from staleness because the remedies are opposite, and
   // because an earlier version failed the reasonless case with a message
   // pointing at the staleness test, which was green and named nothing.
-  const oneRealKey = Object.keys(BY_DESIGN)[0];
+  //
+  // The probe takes any real collapse rather than a BY_DESIGN key, so it still
+  // proves the predicate fires once BY_DESIGN is empty.
+  const anyRealKey = Array.from(collapse.collapseKeys(fresh)).sort()[0];
   const probe = {};
-  probe[oneRealKey] = "   ";
+  probe[anyRealKey] = "   ";
   assert.deepEqual(
     collapse.unusableExemptions(fresh, probe),
-    [oneRealKey],
+    [anyRealKey],
     "the reason predicate must report an entry whose reason is only whitespace",
   );
 });
 
 test("the reported collapse figure counts only unexplained values", function (t) {
   const report = collapse.classify(fresh, BY_DESIGN);
-  const all = collapse.collapseKeys(fresh);
+  const all = Array.from(collapse.collapseKeys(fresh)).sort();
 
   // An earlier version asserted clamps+twins === exempt+unexplained, which
   // classify() makes true by construction: it pushes into one of each pair per
   // collapse, so the equality held for any input, including a completely broken
-  // classification. These compare the partitions against the collapse set they
-  // are meant to partition, which a broken classify() fails.
+  // classification. These compare each partition against the collapse set it is
+  // meant to partition, which a broken classify() fails. Neither side dedupes,
+  // so a key collision fails both rather than only one.
   assert.deepEqual(
-    report.clamps
-      .concat(report.twins)
-      .sort()
-      .filter(function (k, i, a) {
-        return a.indexOf(k) === i;
-      }),
-    Array.from(all).sort(),
+    report.clamps.concat(report.twins).sort(),
+    all,
     "clamps and twins together must be exactly the collapses the contract has",
   );
   assert.deepEqual(
     report.exempt.concat(report.unexplained).sort(),
-    Array.from(all).sort(),
+    all,
     "explained and unexplained together must be exactly the collapses the " +
       "contract has",
   );
@@ -264,7 +232,7 @@ test("the reported collapse figure counts only unexplained values", function (t)
   // current split without anything having to be kept in step by hand.
   t.diagnostic(
     "variant collapse: " +
-      all.size +
+      all.length +
       " collapses = " +
       report.clamps.length +
       " clamp / " +
