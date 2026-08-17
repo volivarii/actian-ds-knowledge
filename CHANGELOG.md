@@ -175,7 +175,10 @@ Each entry links its pull request. Dates are the merge date (UTC).
   The escape hatch is per value rather than per slug, and a reasonless entry excuses nothing, matching
   the coverage gate's `--accept-coverage-loss="<why>"`. Entries are checked two ways, reported apart
   because the remedies are opposite: one that no longer names a real collapse should be deleted, and
-  one that names a real collapse without a reason is missing the decision.
+  one that names a real collapse without a reason is missing the decision. Both checks ask whether the
+  value still shares a rendering with a sibling, not whether it still appears in `rendersAs`, for the
+  same reason the gate itself does: `rendersAs` holds only the non-anchor members, so an anchor-keyed
+  check would call a still-true decision record stale the moment someone fixed the anchor.
 
   The per-slug total bound is **removed** rather than carried forward. Its stated justification was
   that it caught renames, which is false (a renamed component is a slug the baseline lacks, so its

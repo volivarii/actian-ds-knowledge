@@ -236,6 +236,74 @@ test("an exemption that no longer names a real collapse is reported as stale", f
   );
 });
 
+test("an exemption stays valid when its group re-anchors onto it", function () {
+  // The anchor moves for reasons that are not regressions, which is the whole
+  // premise of this file. An exemption validated against `rendersAs` keys is
+  // valid only while its value is NOT the anchor, so implementing the anchor,
+  // or a Figma reorder, would tell the author to delete a decision record that
+  // is still true. Membership of a duplicate group is the anchor-free test.
+  const after = contractWith({
+    spinner: {
+      variants: {
+        Complete: {
+          values: ["50%", "75%", "100%", "25%"],
+          // Someone implemented 50%, so the remaining group re-anchors on 75%.
+          rendersAs: { "100%": "75%", "25%": "75%" },
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(
+    classify.staleExemptions(after, { "spinner Complete=75%": "a keyframe" }),
+    [],
+  );
+  // Once 75% renders distinctly it really is stale, and must still be caught.
+  const fixed = contractWith({
+    spinner: {
+      variants: {
+        Complete: {
+          values: ["50%", "75%", "100%", "25%"],
+          rendersAs: { "25%": "100%" },
+        },
+      },
+    },
+  });
+  assert.deepEqual(
+    classify.staleExemptions(fixed, { "spinner Complete=75%": "a keyframe" }),
+    ["spinner Complete=75%"],
+  );
+});
+
+test("a value containing an equals sign is reported once and can be waived", function () {
+  const before = contractWith({
+    s: { variants: { A: { values: ["x=1", "y"], rendersAs: {} } } },
+  });
+  const after = contractWith({
+    s: { variants: { A: { values: ["x=1", "y"], rendersAs: { y: "x=1" } } } },
+  });
+
+  // One fact, so one line. Splitting the key at the LAST "=" instead of the
+  // first disagreed with how keyFor builds it, so the two directions of the
+  // same pair parsed differently, dodged the dedupe, and a correct waiver
+  // suppressed only half of it.
+  assert.deepEqual(classify.newlyIdentical(before, after), [
+    "s A: x=1 and y now render identically",
+  ]);
+  assert.deepEqual(
+    classify.newlyIdentical(before, after, { "s A=y": "why" }),
+    [],
+  );
+});
+
+test("an empty contract yields no collapses, so a vacuity guard can fire", function () {
+  // The ratchet asserts the baseline produced something to compare, because
+  // newlyIdentical returns [] for an unrecognisable baseline exactly as it does
+  // for a clean one. That guard is only worth anything if this is true.
+  assert.equal(classify.collapseKeys({ slugs: {} }).size, 0);
+  assert.equal(classify.collapseKeys({}).size, 0);
+});
+
 test("an exemption whose reason is blank is reported as unusable", function () {
   const contract = contractWith({
     spinner: {

@@ -196,8 +196,14 @@ function newlyIdentical(before, after, exemptions) {
     if (!knownSlugs.has(slugOf(key))) return;
     const had = was.get(key) || [];
     const slug = slugOf(key);
-    const axis = key.slice(slug.length + 1, key.lastIndexOf("="));
-    const value = key.slice(key.lastIndexOf("=") + 1);
+    // The FIRST "=" after the slug, matching how keyFor builds the key. Using
+    // the last one disagreed with it as soon as a VALUE contained "=": the two
+    // directions of one pair then parsed to different ids, dodged the dedupe
+    // below, and a correct waiver suppressed only half of the doubled report.
+    // malformedNames rejects "=" in an AXIS, which is what keeps this injective.
+    const eq = key.indexOf("=", slug.length);
+    const axis = key.slice(slug.length + 1, eq);
+    const value = key.slice(eq + 1);
     siblings.forEach(function (sibling) {
       if (had.indexOf(sibling) !== -1) return;
       const pair = [value, sibling].sort();
@@ -225,6 +231,19 @@ function newlyIdentical(before, after, exemptions) {
   return out.sort();
 }
 
+// Does this key still name a value that renders identically to a sibling?
+//
+// 🪤 Deliberately NOT `collapseKeys`, which holds only the NON-ANCHOR members of
+// each group. Keyed on that, an exemption is valid only while its value is not
+// the anchor, so implementing the anchor (or a Figma reorder) would re-anchor
+// the group onto the exempted value and report a still-true decision record as
+// stale, right after the improvement the gate exists to encourage. Membership of
+// a duplicate group is the same question asked without reference to the anchor.
+function stillCollapses(sets, key) {
+  const siblings = sets.get(key);
+  return Boolean(siblings && siblings.length);
+}
+
 // Exemption keys that no longer name a collapse the contract has.
 //
 // The mirror of the ratchet's existing "every accepted rise still names a real
@@ -232,10 +251,10 @@ function newlyIdentical(before, after, exemptions) {
 // rendering, the entry excusing it excuses nothing, and left behind it would
 // quietly cover the next regression on that key.
 function staleExemptions(contract, exemptions) {
-  const present = collapseKeys(contract);
+  const sets = identicalSets(contract);
   return Object.keys(exemptions || {})
     .filter(function (key) {
-      return !present.has(key);
+      return !stillCollapses(sets, key);
     })
     .sort();
 }
@@ -248,10 +267,10 @@ function staleExemptions(contract, exemptions) {
 // them together produced a failure that pointed at a staleness check which was
 // green and named nothing.
 function unusableExemptions(contract, exemptions) {
-  const present = collapseKeys(contract);
+  const sets = identicalSets(contract);
   return Object.keys(exemptions || {})
     .filter(function (key) {
-      return present.has(key) && !isExplained(exemptions, key);
+      return stillCollapses(sets, key) && !isExplained(exemptions, key);
     })
     .sort();
 }

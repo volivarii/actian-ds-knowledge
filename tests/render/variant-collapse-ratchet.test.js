@@ -108,13 +108,28 @@ test("no two variant values start rendering identically", function () {
       "the reason.",
   );
 
-  // The comparison must have had something to compare. Every filter above can
-  // empty (an unrecognised contract shape, a state-axis predicate that starts
-  // matching everything), and each of those failures is a silent pass.
+  // The comparison must have had something to compare, on BOTH sides. Every
+  // filter above can empty, and each of those failures is a silent pass rather
+  // than a red.
+  //
+  // 🪤 The baseline side is the one that bites, and an earlier version checked
+  // only the fresh side. newlyIdentical skips any slug the baseline does not
+  // carry, so a baseline whose top-level shape changed (no `slugs` key at all)
+  // makes knownSlugs empty, every key is skipped, and the result is the same
+  // empty array a clean run produces. requireBaseline catches a MISSING file;
+  // nothing caught a file that parsed and yielded nothing.
   assert.ok(
     collapse.collapseKeys(fresh).size > 0,
     "this ratchet found no collapses at all in the fresh contract, so it would " +
       "pass vacuously; the contract shape or the axis predicate has changed",
+  );
+  assert.ok(
+    collapse.collapseKeys(before).size > 0,
+    "the baseline contract at the merge base yielded no collapses, so every " +
+      "value was skipped and this ratchet compared nothing. That is a shape " +
+      "change in " +
+      CONTRACT_REL +
+      ", not a clean run.",
   );
 });
 
