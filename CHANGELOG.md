@@ -135,6 +135,30 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The variant-collapse gate now compares which values collapse, not how many, and separates the
+  collapses the renderer makes on purpose from the ones nobody has explained.** It counted collapses
+  per slug, which cannot see a swap: give one collapsed value its own rendering, introduce a collapse
+  on another value of the same component, and the count is unchanged while the gallery still shows a
+  duplicate cell. Verified against the real renderer by differentiating `toolbar`'s `Type` while
+  breaking its `Orientation`, which takes that component from two collapses to one. The count-keyed
+  check passed it; the value-keyed check names `toolbar Orientation=Vertical`.
+
+  The single reported number was also measuring two different things. Seven of the 57 collapses are
+  deliberate and say so **in the renderer's own source**: `spinner`'s `Complete` is "the animation's
+  own arc-fill cycle, not a chooseable variant", `loader` is the indeterminate spinner, and
+  `search-result-card App=Studio` is "intentionally NOT built here, per the spec". The gate was
+  contradicting the code it measures. Those seven now sit in a `BY_DESIGN` record keyed by the exact
+  value, each carrying its reason, so the reported figure means one thing: values the renderer cannot
+  tell apart and nobody has said why. Currently **50 unexplained, 48 clamp and 9 twin, 7 explained**,
+  printed as a test diagnostic rather than stored, so no number has to be kept in step by hand.
+
+  The escape hatch is per value rather than per slug, and a reasonless entry excuses nothing, matching
+  the coverage gate's `--accept-coverage-loss="<why>"`. A stale entry that no longer names a real
+  collapse fails the suite, so one left behind by a fix cannot cover the next regression on that
+  value. The crude total bound stays alongside the per-value check, because the per-value check skips
+  slugs the baseline lacks (which is what stops a rename reddening a gate with nothing to fix) and is
+  therefore blind to a collapse arriving inside a renamed component.
+
 - **A change to a component's display name no longer stalls a night's sync.** The differ reports a
   rename when the slug *or* the display name changes, and the classifier pushed a breaking reason for
   either, while any single breaking reason makes the whole sync breaking, which commits nothing. So
