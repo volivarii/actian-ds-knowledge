@@ -234,11 +234,23 @@ async function syncAnatomy(opts, kit) {
   var count = 0;
   var written = 0;
   var failed = [];
+  var deferred = [];
   slugs.forEach(function (slug) {
     var nid = comps[slug].nodeId;
     var payload = nid && nodes[nid];
     var doc = payload && payload.document;
     if (!doc) {
+      // 🪤 That assumption does NOT hold for a deferred removal. Such a component
+      // is in the registry only because components/src/sync-deferrals.json says
+      // to carry it forward; Figma really has stopped publishing it, so its node
+      // is genuinely gone and will be gone every night the deferral runs.
+      // Reporting it as a failure would make a ⚠️ FAILED line indistinguishable
+      // from a real Figma outage, for weeks. Its existing file is preserved by
+      // the prune below either way.
+      if ((opts.deferredSlugs || []).indexOf(slug) !== -1) {
+        deferred.push(slug);
+        return;
+      }
       // A missing subtree is a transient fetch miss, not an absent component —
       // record it (visible in the changelog) instead of silently skipping, and
       // let the prune below preserve the slug's existing file.
@@ -360,6 +372,14 @@ async function syncAnatomy(opts, kit) {
       "- No anatomy changes (" + count + " component(s) verified).",
     );
   }
+  if (deferred.length) {
+    changelog.push(
+      "- ⏸️ " +
+        deferred.length +
+        " deferred-removal slug(s) have no node in Figma, as expected, existing anatomy preserved: " +
+        deferred.join(", "),
+    );
+  }
   if (failed.length) {
     changelog.push(
       "- ⚠️ FAILED " +
@@ -401,11 +421,7 @@ async function syncAnatomy(opts, kit) {
   }
   var extra = {
     verdict: {
-      category: lost.length
-        ? "breaking"
-        : changed
-          ? "additive"
-          : "unchanged",
+      category: lost.length ? "breaking" : changed ? "additive" : "unchanged",
       changelog: changelog.join("\n"),
     },
     wrote: changed,

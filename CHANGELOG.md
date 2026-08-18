@@ -85,6 +85,78 @@ Each entry links its pull request. Dates are the merge date (UTC).
   One thing found on the way, not fixed here: `rename-preconditions.mentions()` reads the whole file, so a
   slug named only in **prose** blocks a rename exactly as a real `components[]` entry does. Its own
   rationale is about gates that fail, and prose fails none, so the gate is stricter than its reason.
+- **Registry removals can be deliberately deferred, so one component mid-rework in Figma stops freezing
+  the whole nightly.** `aggregateVerdict` is any-breaking-is-breaking and a breaking sync commits nothing
+  (#519), so between 2026-08-13 and 2026-08-18 the Card family being decomposed halfway held back 241 icon
+  updates, three additions and two renames, every night, with no partial landing available and no
+  preparatory work possible (#526).
+
+  A deferral is authored in `components/src/sync-deferrals.json`, following the
+  `category-page-overrides.json` convention. It names the kit, the slug, the Figma **key**, a reason, an
+  issue and a `review_by` date. The key is required because a slug is a label that can be freed and
+  reused, and identity is what stops the wrong component being carried forward.
+
+  **It works by carrying the entry forward, not by suppressing the verdict.** The component is reinstated
+  into the run's `after` registry before anything is classified, so there is no removal left to see and
+  `changelog-classifier.js` is untouched. The entry is carried **verbatim** plus a `deferral` block, so it
+  stays byte-stable across nights and consumers see what they always saw.
+
+  **The block is its own field, not a `status` value**, and that correction came from the schema. `status`
+  is an enum sourced from the Figma page emoji (`in-progress` / `warn` / `deprecated`), so it says what
+  *Figma* thinks of a component; a deferral is a fact about the substrate's handling of it. Writing one
+  into the other would conflate two sources and clobber a real Figma status where an entry has one, which
+  a test now guards.
+
+  **Expiry is hard, deliberately.** Past `review_by` (inclusive) the deferral simply stops applying: the
+  entry drops, the removal returns, the verdict goes breaking and the run names which deferral expired and
+  by how many days. A soft expiry would be a warning inside a green run, which this ecosystem has already
+  learned is not a signal (plugin #294). So a deferral is a dated pause, never a decision.
+
+  Every deferral is **recorded** in the release notes under `### Deferred removals`, with its reason,
+  issue and expiry. Suppressing the verdict without saying so in the artifact would be the thing this is
+  meant to prevent.
+
+  Guards, each watched failing before being trusted: a deferral whose slug is **not** being removed by this
+  run is an error rather than a no-op, because dead config would sit waiting to wave through some future
+  removal of the same slug; a `key` that does not match the registry entry is refused; `reason`, `issue`
+  and `review_by` are all required and `review_by` must be a real ISO date; and `schemas/registry.json`
+  gains `deferral` on `componentEntry`, which is `additionalProperties: false`. Expiry was proven by
+  mutating the comparison and watching both the unit and the end-to-end test go red.
+
+  **Scope is registry removals only.** Not renames, not modified entries, not icons. Measured against live
+  Figma on 2026-08-18: deferring the two held removals (`card-for-items`, `identification-key`) leaves the
+  night still breaking on `alert-inline` and `snowflake` being removed, the `sticky-footer` rename, and
+  `segmented-control` losing a variant axis. So this is **necessary but not sufficient** for that
+  particular night, and it is not sold as a fix for it. What it changes is that a removal can now be
+  paused with a reason and an end date instead of stopping everything indefinitely.
+
+  **A review found two defects in the first cut of this, and both shared one root cause: the deferral was
+  applied too late.** It ran at classify time, which is after the category mass-loss tripwire (which
+  *throws*, so a deferred family decomposition would have made the night `error`, strictly worse than the
+  breaking night this replaces) and after the identity ledger is built and written from the run's
+  registries. So a deferred component dropped out of `identity.json` and lost its accumulated
+  `previousSlugs`, the one field not derivable from current state and the field
+  `clients/resolve-paths.js` reads to resolve a renamed-away slug. It also left `componentCount`
+  disagreeing with the file it describes, which is the same defect `excludeDeniedPages` recomputes to
+  avoid after it shipped once (v0.34.54). Reinstatement now happens in `computeRegistry`, before all
+  three, and `finishRegistry` only reports.
+
+  The same review closed five narrower holes, each now tested: a deferral cannot cover a **rename** (the
+  key surviving under a new slug), which would have left two slugs sharing one Figma key and cost one of
+  them its ledger entry to last-writer-wins; an unknown `kit` and a malformed deferrals file are errors
+  rather than a silent empty list; `review_by` must be a **real** date, since `2026-02-31` is date-shaped
+  and `Date.UTC` rolls it to March 3; `key` is required on both sides, so two absent keys cannot match
+  each other; and a **rejected** deferral now forces the night breaking, because dead config produces no
+  removal, so on a quiet night the verdict would be `unchanged` and the reason would be discarded with
+  the runner (`release-notes/` is gitignored). The anatomy phase also no longer reports a deferred slug's
+  genuinely-absent Figma node as a fetch failure, which would have printed a `⚠️ FAILED` line
+  indistinguishable from a real outage every night of a deferral.
+
+  Worth knowing: adding the `deferral` block alone classifies as `unchanged`, so a deferral on an
+  otherwise-quiet night opens no PR and reaches consumers only riding a later additive change.
+
+  No deferral is authored. The file ships empty: shipping the capability and choosing to use it are
+  separate decisions.
 
 - **A pattern can now say what it is for (`tags`) and when to use something else (`when`), so choosing a
   page shape stops being a naming coincidence.** Closes #558. The consumer side already existed: the

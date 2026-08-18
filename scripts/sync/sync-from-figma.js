@@ -34,6 +34,7 @@ var deriveGraphicsMod = require("../graphics/derive-graphics-svg.js");
 var deriveIdentity = require("../components/derive-identity.js");
 var resolvePaths = require("../../clients/resolve-paths.js");
 var renamePreconditions = require("./rename-preconditions.js");
+var deferredRemovals = require("./deferred-removals.js");
 var { syncKnowledgeVersion } = require("../lib/sync-knowledge-version.js");
 
 var KIT_MAP = {
@@ -340,6 +341,25 @@ function loadPageOverrides(pluginDir) {
   );
 }
 
+// Authored deferrals for registry removals. Absent file means none, which is the
+// correct default: a missing file must never read as "defer everything".
+function loadDeferrals(pluginDir) {
+  var file = path.join(pluginDir, "components", "src", "sync-deferrals.json");
+  if (!fs.existsSync(file)) return [];
+  var doc = readJsonOrNull(file);
+  // 🪤 A present-but-malformed file must NOT read as "defer nothing". That is
+  // the false all-clear shape: somebody authored a deferral, mistyped the key,
+  // and the night breaks with the file sitting there looking correct.
+  if (!doc || !Array.isArray(doc.deferrals)) {
+    throw new Error(
+      file +
+        " exists but has no `deferrals` array. Fix the file, or delete it if " +
+        "nothing is deferred. Refusing to read a malformed override as 'none'.",
+    );
+  }
+  return doc.deferrals;
+}
+
 // Split in two on purpose (#552). The verdict on a slug RENAME depends on
 // whether the old slug will still resolve, which is a fact about the ledger this
 // run is about to write, not about the ledger already committed. So every kit's
@@ -474,6 +494,26 @@ async function computeRegistry(opts, kitId) {
     }
   }
 
+  // Deferred removals are applied HERE, not at classify time, and the placement
+  // is load-bearing. Everything downstream of this point reasons about `after`
+  // as the set the run is publishing: the category mass-loss tripwire (which
+  // THROWS, so a deferred family decomposition would otherwise make the whole
+  // night `error`, strictly worse than the breaking night this replaces), the
+  // category preservation below, and the identity ledger, which is built and
+  // written from these registries before any verdict is taken. Applying it later
+  // dropped the deferred component from the ledger and erased its accumulated
+  // `previousSlugs` — the one field that is not derivable from current state,
+  // and the field clients/resolve-paths.js reads to resolve a renamed-away slug.
+  var deferralState = deferredRemovals.resolve({
+    deferrals: (opts && opts.deferrals) || [],
+    kitId: kitId,
+    knownKits: Object.keys(KIT_MAP),
+    before: before,
+    after: after,
+    now: (opts && opts.syncedAt) || new Date().toISOString(),
+  });
+  after = deferredRemovals.reinstate(before, after, deferralState.apply);
+
   var categoryDrift = [];
   if (kitId === "dsKit") {
     // Carry a survivor's last-known category forward when a Figma page rename
@@ -559,6 +599,7 @@ async function computeRegistry(opts, kitId) {
     kitId: kitId,
     meta: meta,
     opts: opts,
+    deferralState: deferralState,
     before: before,
     beforeFile: beforeFile,
     after: after,
@@ -584,12 +625,56 @@ function finishRegistry(computed, absorbedRenames) {
   var categoryWarnings = computed.categoryWarnings;
   var categoryDrift = computed.categoryDrift;
 
+  // Reporting only. The deferrals were APPLIED in computeRegistry, before the
+  // mass-loss tripwire and before the ledger was built from these registries;
+  // re-resolving here would find nothing, because `after` already carries the
+  // reinstated entries. See the comment at the application site.
+  var deferralState = computed.deferralState || {
+    apply: [],
+    expired: [],
+    errors: [],
+  };
+  deferralState.errors.forEach(function (e) {
+    console.warn("[sync] deferral rejected: " + e);
+  });
+  deferralState.expired.forEach(function (e) {
+    console.warn(
+      "[sync] deferral for '" +
+        e.slug +
+        "' EXPIRED on " +
+        e.deferral.review_by +
+        " (" +
+        e.daysPast +
+        " days ago). Removals are no longer deferred. Extend it with a fresh " +
+        "reason, or carry the removal through.",
+    );
+  });
+
   var verdict = classify({
     fileKind: "registry",
     before: before,
     after: after,
     absorbedRenames: absorbedRenames,
   });
+
+  // 🪤 A REJECTED deferral must reach a human, and on a quiet night nothing else
+  // would carry it. Dead config produces no removal, so the verdict can be
+  // `unchanged`: no PR, no rolling tracker, and release-notes/ is gitignored, so
+  // the reason is discarded with the runner. That is a warning inside a green
+  // run, which this feature's own rationale cites plugin #294 to reject. An
+  // expired deferral needs no help here, because the removal it stopped
+  // deferring is itself breaking.
+  if (deferralState.errors.length > 0) {
+    verdict = {
+      category: "breaking",
+      changelog: verdict.changelog,
+      reasons: (verdict.reasons || []).concat(
+        deferralState.errors.map(function (e) {
+          return "rejected deferral: " + e;
+        }),
+      ),
+    };
+  }
   // Canonical write gate. When the entries are unchanged, carry the previous
   // lastSynced forward so the timestamp never churns on a re-emit; then write
   // ONLY when the canonical bytes differ from what is on disk. Three cases:
@@ -650,6 +735,7 @@ function finishRegistry(computed, absorbedRenames) {
     fileLabel: meta.outputFile,
     verdict: verdict,
     wrote: wrote,
+    deferrals: deferralState,
     categoryWarnings: categoryWarnings,
     categoryDrift: categoryDrift,
   };
@@ -766,6 +852,45 @@ function buildChangelog(date, category, results, errors) {
     lines.push("");
     lines.push(r.verdict.changelog || "_(empty)_");
     lines.push("");
+
+    // Deferred removals are RECORDED, never merely suppressed. A reader of this
+    // file must be able to see that the registry is carrying something Figma has
+    // retired, why, where the conversation lives, and when it stops.
+    var def = r.deferrals;
+    if (def && (def.apply.length || def.expired.length || def.errors.length)) {
+      lines.push("### Deferred removals");
+      lines.push("");
+      def.apply.forEach(function (a) {
+        lines.push(
+          "- ⏸️ `" +
+            escapeBackticks(a.slug) +
+            "` kept, removal deferred until **" +
+            a.deferral.review_by +
+            "** (#" +
+            a.deferral.issue +
+            "): " +
+            a.deferral.reason,
+        );
+      });
+      def.expired.forEach(function (e) {
+        lines.push(
+          "- ⛔ `" +
+            escapeBackticks(e.slug) +
+            "` deferral EXPIRED on " +
+            e.deferral.review_by +
+            " (" +
+            e.daysPast +
+            " days ago), so the removal is back and this sync is breaking. " +
+            "Extend it with a fresh reason, or carry the removal through (#" +
+            e.deferral.issue +
+            ").",
+        );
+      });
+      def.errors.forEach(function (msg) {
+        lines.push("- 🚨 " + msg);
+      });
+      lines.push("");
+    }
     // Slug collisions get their own heading, ABOVE the warn-only drift block:
     // this is not drift, it is a component that Figma publishes and the registry
     // silently does not. Nothing downstream can see the loss (the cross-registry
@@ -1000,6 +1125,7 @@ async function run(opts) {
     iconGroups = loadIconGroups(opts.iconGroupsPath);
   }
   var pageOverrides = opts.pageOverrides || loadPageOverrides(pluginDir);
+  var deferrals = opts.deferrals || loadDeferrals(pluginDir);
 
   var orchOpts = {
     rest: rest,
@@ -1009,6 +1135,7 @@ async function run(opts) {
     iconGroups: iconGroups,
     pageOverrides: pageOverrides,
   };
+  orchOpts.deferrals = deferrals;
   orchOpts.writeJson = writeJson;
   orchOpts.registriesDir = outputDir;
   orchOpts.anatomyDir = path.join(pluginDir, "components", "dist", "anatomy");
@@ -1240,6 +1367,15 @@ async function run(opts) {
       orchOpts.absorbedRenames = dsComputed
         ? restrictToKit(absorbedRenames, dsComputed)
         : {};
+      // Same reason and same shape: the anatomy phase must know which slugs are
+      // in the registry only because a deferral carries them, so it does not
+      // report their genuinely-absent Figma node as a fetch failure every night.
+      orchOpts.deferredSlugs =
+        dsComputed && dsComputed.deferralState
+          ? dsComputed.deferralState.apply.map(function (a) {
+              return a.slug;
+            })
+          : [];
     } catch (err) {
       console.warn(
         "[sync] identity ledger could not be updated (" +
@@ -1970,6 +2106,7 @@ module.exports = {
   suppressDeniedPageCollisions: suppressDeniedPageCollisions,
   DENIED_PAGES: DENIED_PAGES,
   loadPageOverrides: loadPageOverrides,
+  loadDeferrals: loadDeferrals,
   categoryCounts: categoryCounts,
   preserveKnownCategories: preserveKnownCategories,
   assertNoCategoryMassLoss: assertNoCategoryMassLoss,
