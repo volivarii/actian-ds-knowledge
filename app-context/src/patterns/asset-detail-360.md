@@ -6,6 +6,16 @@ label: 360-degree asset detail view
 apps:
   - studio
   - explorer
+tags:
+  - detail
+  - single-object
+  - tabs
+  - properties
+  - stewardship
+when: >-
+  Use for one catalog object with more peer facets than a screen can hold. Do not use
+  faceted-browse, which composes a collection. Do not use search-filtered-table for the
+  whole page: that shape is real here but it is the content of one tab, not the page.
 components:
   - tabs
   - page-header
