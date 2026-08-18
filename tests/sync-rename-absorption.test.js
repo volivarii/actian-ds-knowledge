@@ -332,3 +332,56 @@ test("a ledger that cannot be written degrades the rename, it does not discard t
 // which returns additive and never runs the phase where a rename's deletion
 // surfaces. The workaround for the stall is what creates the blind spot. A test
 // that exercises the phase most likely to pass is not a test of the change.
+
+test("a rename whose old slug is still named in authored source stays breaking", async () => {
+  const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "sync-blocked-"));
+  try {
+    const outputDir = seedRepo(tmpdir, {
+      library: "ds",
+      fileKey: "DS_KEY",
+      components: {
+        "sticky-footer": {
+          name: "Sticky footer",
+          key: "K-STICKY",
+          nodeId: "10:1",
+        },
+      },
+    });
+    // The renderer still has `case "sticky-footer"`. That must be renamed by a
+    // human: tolerating it would ship a renderer that cannot draw the new slug.
+    // Absorbing the rename here would open an auto-merge PR whose required
+    // checks can never go green, which is worse than staying breaking.
+    const mapPath = path.join(
+      tmpdir,
+      "components/render/renderer/html-renderers/ds-html-map.js",
+    );
+    fs.mkdirSync(path.dirname(mapPath), { recursive: true });
+    fs.writeFileSync(mapPath, 'switch (s) { case "sticky-footer": {} }');
+
+    const result = await runSync(
+      tmpdir,
+      outputDir,
+      restRenaming("Action bar", "K-STICKY"),
+    );
+
+    assert.equal(
+      result.category,
+      "breaking",
+      "authored source still names the old slug, so the rename is not absorbable",
+    );
+
+    // The ledger is still written: recording where the slug went is true and
+    // useful regardless of whether the verdict can absorb it yet.
+    const ledger = JSON.parse(
+      fs.readFileSync(
+        path.join(tmpdir, "components", "dist", "identity.json"),
+        "utf8",
+      ),
+    );
+    assert.deepEqual(ledger.entries["K-STICKY"].previousSlugs, [
+      "sticky-footer",
+    ]);
+  } finally {
+    fs.rmSync(tmpdir, { recursive: true, force: true });
+  }
+});

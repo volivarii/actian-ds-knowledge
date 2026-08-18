@@ -165,6 +165,24 @@ Each entry links its pull request. Dates are the merge date (UTC).
   insurance and is described as such: it reads the same path in the same process moments after the
   write reported success, so it is not a proven guard.
 
+  🔑 **Absorption is gated on a PRECONDITION, not on the ledger alone: nothing authored may still name
+  the retired slug.** The ledger says where the old slug went; it cannot make authored references
+  correct. `ds-html-map.js` carries `case "sticky-footer":`, which a human must rename (teaching a gate
+  to tolerate it would ship a renderer that cannot draw the new slug), and app-context patterns list
+  slugs in `components[]`, which `derive-graph` throws on. Calling such a rename additive opens an
+  auto-merge PR whose required checks can never go green, which is strictly **worse** than the breaking
+  path it replaces, because breaking at least raises a tracking issue a human acts on.
+
+  That is the general form of a problem found four times one gate at a time (anatomy, guideline
+  reachability, render invariants, the graph), with no reason to think the list ended. Rather than
+  teach gate N+1 about the ledger, the sync now asserts the condition that makes all of them pass, and
+  names the files still holding a rename back. The ledger is still written either way: recording where
+  a slug went is true and useful whether or not the verdict can absorb it yet.
+
+  ⚠️ So the pending `sticky-footer` rename stays breaking today, correctly: two authored surfaces still
+  name it. What changes is that a rename with no authored references now lands additively, and one with
+  references reports exactly which files to fix.
+
   **Two further gates stopped a rename even after the verdict allowed it, both found by review rather
   than by the issue, and both are fixed here.**
 

@@ -33,6 +33,7 @@ var syncGraphics = require("../graphics/export-graphics-svg.js");
 var deriveGraphicsMod = require("../graphics/derive-graphics-svg.js");
 var deriveIdentity = require("../components/derive-identity.js");
 var resolvePaths = require("../../clients/resolve-paths.js");
+var renamePreconditions = require("./rename-preconditions.js");
 var { syncKnowledgeVersion } = require("../lib/sync-knowledge-version.js");
 
 var KIT_MAP = {
@@ -1143,7 +1144,32 @@ async function run(opts) {
           "), so absorption cannot be claimed for them.",
       );
     }
-    return index;
+
+    // 🔑 The ledger says where the old slug WENT. It does not say that anything
+    // authored stopped naming it, and several authored files are keyed by slug:
+    // the renderer's `case "<slug>"` labels and app-context's `components[]`
+    // lists, which derive-graph throws on. Calling such a rename additive opens
+    // an auto-merge PR whose required checks can never go green, which is worse
+    // than the breaking path, because breaking at least raises a tracking issue
+    // a human acts on. So absorption is gated on the PRECONDITION rather than on
+    // the ledger alone.
+    var verdictOnRenames = renamePreconditions.absorbable(pluginDir, index);
+    Object.keys(verdictOnRenames.blocked).forEach(function (from) {
+      console.warn(
+        "[sync] rename '" +
+          from +
+          "' -> '" +
+          index[from] +
+          "' stays BREAKING: authored source still names the old slug in " +
+          verdictOnRenames.blocked[from]
+            .map(function (h) {
+              return path.relative(pluginDir, h.file);
+            })
+            .join(", ") +
+          ". Rename those references, then the sync absorbs it.",
+      );
+    });
+    return verdictOnRenames.absorbable;
   }
 
   // The ledger spans every kit, but a verdict is always about ONE kit, so an
