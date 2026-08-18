@@ -414,6 +414,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
   team-signed-off, and this promotion is a baseline rather than a sign-off, so that gap is recorded here
   and on #537 instead of in a fifth enum value every consumer would have to learn.
 
+  **A test lost its subject to this promotion, and CI caught what my local run could not.**
+  `usageNote: approved-only draws only approved domains` proved that `--strict` excludes non-approved
+  guidance by asserting that usage's "When not to use" heading stayed out. Promoting usage did not break
+  that assertion so much as empty it: the heading is now drawn, correctly. It re-anchors on `design`,
+  which is still `draft`, and both tests in that pair now **assert the status of the domain they depend
+  on**, so the day design is promoted they fail loudly rather than passing for the wrong reason. Verified
+  by mutating design to `approved`: both fail.
+
+  The tests also had to stop depending on which dist they read. `guidelines-derive.yml` regenerates
+  `components/dist/guidelines` and then runs the suite against it, while `validate-manifest.yml` runs the
+  same suite against the **committed** dist, and those two disagree for exactly the life of a promotion
+  PR. The pair now passes in both states. Worth recording because my own local run was green at 1661/0
+  while CI was red: I had reverted the regenerated dist before testing, so the assertion never saw the
+  state that broke it.
 - **The sync's registry verdict no longer calls a slug rename breaking, because the run now records
   where the slug went before it decides what the change means.** `components/dist/identity.json`
   already let a consumer resolve a slug a component was renamed away from, but the verdict could not
