@@ -85,6 +85,11 @@ function seedRepo(tmpdir, committedRegistry) {
 async function runSync(tmpdir, outputDir, rest) {
   return sync.run({
     rest: rest,
+    // 🚨 pluginDir MUST be set. It defaults to the repo root, and the anatomy
+    // phase derives its own directory from it and PRUNES what the run did not
+    // write. Omitting it here deleted 179 real anatomy files during
+    // development, restored from git. outputDir alone does not confine a run.
+    pluginDir: tmpdir,
     keys: { dsKit: "DS_KEY", fmKit: "FM_KEY", metaKit: "META_KEY" },
     outputDir: outputDir,
     releaseNotesDir: path.join(tmpdir, "release-notes"),
@@ -287,3 +292,28 @@ test("a ledger that cannot be written degrades the rename, it does not discard t
     fs.rmSync(tmpdir, { recursive: true, force: true });
   }
 });
+
+// ⚠️ A `--phase all` test belongs here and is NOT here, deliberately.
+//
+// It was written, and it passed: with one more REST stub (`getImages`) the full
+// pipeline completes and a rename lands additive through anatomy. But running it
+// WROTE INTO THE REAL REPOSITORY. `pluginDir` confines most phases; the graphics
+// derive does not honour it, because scripts/graphics/derive-graphics-svg.js
+// hardcodes `ROOT = path.resolve(__dirname, "..", "..")`. Restoring the file it
+// touches from a test would race sibling test files, since `node --test` runs
+// them in parallel.
+//
+// The cost of finding that out was real: an earlier version of the test, which
+// also omitted `pluginDir`, let the anatomy phase prune 179 committed anatomy
+// files. Restored from git, but it would have been committed had the suite not
+// been checked against `git status`.
+//
+// So the orchestrator's handoff of absorbedRenames to the anatomy phase stays
+// UNCOVERED. Both ends around it are tested: consumerVisibleDeletions here, and
+// syncAnatomy reading opts.absorbedRenames in tests/sync-anatomy.test.js.
+//
+// 🪤 The trap this sits in is the third recorded occurrence: `--phase all`
+// stalling against real Figma pushed two prior sessions to `--phase registries`,
+// which returns additive and never runs the phase where a rename's deletion
+// surfaces. The workaround for the stall is what creates the blind spot. A test
+// that exercises the phase most likely to pass is not a test of the change.
