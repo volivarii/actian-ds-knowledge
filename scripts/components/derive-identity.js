@@ -220,20 +220,41 @@ function writeIdentity(repoRoot) {
 // a registry key at old guidance would invent reachability), or when two
 // previous slugs are both authored, which is ambiguous and better left to a
 // human than guessed.
-function renameAliases(ledger, authoredSlugs, registryKeys) {
+function renameAliases(ledger, authoredSlugs, registryComponents) {
   var authored = new Set(authoredSlugs || []);
-  var live = new Set(registryKeys || []);
+  var comps = registryComponents || {};
   var entries = (ledger && ledger.entries) || {};
+
+  // Every slug some entry currently answers to. A retired slug that has been
+  // REUSED must not be redirected: clients/resolve-paths.js declines exactly
+  // this case, and a deriver that disagreed with the resolver about the same
+  // ledger would serve one component's guidance under another's name.
+  var liveSlugs = new Set();
+  Object.keys(entries).forEach(function (id) {
+    var slug = entries[id] && entries[id].slug;
+    if (typeof slug === "string" && slug) liveSlugs.add(slug);
+  });
+
   var out = {};
   Object.keys(entries).forEach(function (id) {
     var e = entries[id] || {};
     var slug = e.slug;
     if (typeof slug !== "string" || !slug) return;
-    if (!live.has(slug)) return;
+
+    // 🪤 The ledger spans every kit; `registryComponents` is ONE kit's. Matching
+    // by slug alone let an entry from another kit inject an alias whenever its
+    // current slug merely collided with a key here, and the kits do share slug
+    // vocabulary. Comparing IDENTITY, not name, is what makes it the same
+    // component rather than the same word.
+    if (!Object.prototype.hasOwnProperty.call(comps, slug)) return;
+    if (identityOf(comps[slug]) !== id) return;
+
     if (authored.has(slug)) return;
     var candidates = (Array.isArray(e.previousSlugs) ? e.previousSlugs : [])
       .filter(function (was) {
-        return typeof was === "string" && authored.has(was);
+        return (
+          typeof was === "string" && authored.has(was) && !liveSlugs.has(was)
+        );
       })
       .sort();
     if (candidates.length !== 1) return;

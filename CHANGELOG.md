@@ -187,10 +187,12 @@ Each entry links its pull request. Dates are the merge date (UTC).
   FM-Kit rename `foo` to `bar` absorb a genuine DS-Kit deletion of `foo` whenever some unrelated
   DS-Kit component was named `bar`. The kits do share slug vocabulary.
 
-  `guidelines-derive.yml` now also triggers on `components/dist/identity.json` and the registries.
-  They are inputs too: a rename changes only dist, so without this the derive never ran on the night
-  the rename landed, the alias copy and its manifest key were missing, and the next unrelated
-  `components/src/**` PR would have landed them as surprise churn.
+  `guidelines-derive.yml` now also triggers on `components/dist/identity.json`, which became an input
+  the moment the aliases were derived from it. The registry half was already a trigger, so the
+  correction is narrower than it first looked: without this one line the derive still ran on a rename
+  night but read a ledger it was not watching, and the alias copy plus its bundle and coverage entries
+  would have arrived later as churn on an unrelated PR. (Alias keys get no `components.guidelineDoc.*`
+  manifest entry either way; none of the seven hand-written aliases has one.)
 
   🪤 One line is NOT covered by a test: handing the absorbed renames to the anatomy phase. Exercising
   it needs a full `--phase all` run, which stalls before anatomy under a fake REST. It is a single

@@ -957,7 +957,7 @@ function runCli(argv) {
     const derivedAliases = identityLedger.renameAliases(
       ledger,
       listComponentDirs(srcDir),
-      Object.keys(registry.components),
+      registry.components,
     );
     Object.keys(derivedAliases).forEach((from) => {
       // A hand-written entry wins: it is a human decision about which doc

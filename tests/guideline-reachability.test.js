@@ -73,6 +73,15 @@ function readReachable() {
   // the ledger already knows, on a sync PR that is meant to auto-merge (#552).
   const registryKeys = new Set(Object.keys(dskit.components || {}));
   const aliasTargets = new Set(Object.values(manifest.registryAliases || {}));
+  // 🪤 Mirror the deriver's ENABLING condition too, not only its precedence.
+  // derive-guidelines computes derived aliases only when the registry AND
+  // categories.json AND components/dist/categories/ are all present. Deriving
+  // them here from the registry alone would declare guidance reachable that no
+  // alias file was ever written for, which is a false all-clear from the gate
+  // whose whole purpose is to catch that.
+  const derivesAliases =
+    fs.existsSync(path.join(REPO_ROOT, "components/dist/categories.json")) &&
+    fs.existsSync(path.join(REPO_ROOT, "components/dist/categories"));
   let ledger = null;
   try {
     ledger = JSON.parse(
@@ -93,11 +102,13 @@ function readReachable() {
   const derived = identity.renameAliases(
     ledger,
     readAuthoredSlugs(),
-    Array.from(registryKeys),
+    dskit.components || {},
   );
-  Object.keys(derived)
-    .filter((from) => !Object.prototype.hasOwnProperty.call(handWritten, from))
-    .forEach((from) => aliasTargets.add(derived[from]));
+  if (derivesAliases) {
+    Object.keys(derived)
+      .filter((from) => !Object.prototype.hasOwnProperty.call(handWritten, from))
+      .forEach((from) => aliasTargets.add(derived[from]));
+  }
   return { registryKeys, aliasTargets };
 }
 

@@ -1096,6 +1096,17 @@ async function run(opts) {
     var previous = previousRaw;
     var ledger = deriveIdentity.buildIdentity(registries, previous);
     var bytes = deriveIdentity.serialize(ledger);
+
+    // 🪤 KNOWN WINDOW, stated rather than half-closed. The ledger is written
+    // here, before pass 2 writes the registries it describes, because the
+    // verdict needs the index first. If a registry write then fails, dist is
+    // briefly inconsistent: identity.json says `action-bar` while dskit.json
+    // still says `sticky-footer`. In CI the run verdict is `error`, no PR opens
+    // and the runner is discarded, so nothing is published; on a local
+    // `npm run sync` it is visible and self-heals on the next successful run.
+    // Deferring the write until after pass 2 would close it, at the cost of
+    // moving the ledger write away from the code that reasons about it in the
+    // highest-stakes script in the repo. Recorded as the smaller risk.
     var current = fs.existsSync(ledgerPath)
       ? fs.readFileSync(ledgerPath, "utf8")
       : null;

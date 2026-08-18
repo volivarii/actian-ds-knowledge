@@ -296,7 +296,9 @@ test("a rename whose authored directory did not move yields an alias", () => {
     },
   };
   assert.deepEqual(
-    identity.renameAliases(ledger, ["sticky-footer"], ["action-bar"]),
+    identity.renameAliases(ledger, ["sticky-footer"], {
+      "action-bar": { key: "K1" },
+    }),
     { "action-bar": "sticky-footer" },
   );
 });
@@ -310,7 +312,9 @@ test("no alias once the authored directory has been moved to the new name", () =
   // The convergence happened, so an alias would be the redundant kind
   // resolveRegistryAliases already refuses.
   assert.deepEqual(
-    identity.renameAliases(ledger, ["action-bar"], ["action-bar"]),
+    identity.renameAliases(ledger, ["action-bar"], {
+      "action-bar": { key: "K1" },
+    }),
     {},
   );
 });
@@ -321,12 +325,66 @@ test("no alias for a rename whose component has left the registry", () => {
   };
   // Nothing ships under `action-bar`, so pointing a registry key at the old
   // guidance would invent reachability that does not exist.
-  assert.deepEqual(identity.renameAliases(ledger, ["sticky-footer"], []), {});
+  assert.deepEqual(identity.renameAliases(ledger, ["sticky-footer"], {}), {});
 });
 
 test("no alias when the old slug never had authored guidance", () => {
   const ledger = {
     entries: { K1: { slug: "action-bar", previousSlugs: ["sticky-footer"] } },
   };
-  assert.deepEqual(identity.renameAliases(ledger, [], ["action-bar"]), {});
+  assert.deepEqual(
+    identity.renameAliases(ledger, [], { "action-bar": { key: "K1" } }),
+    {},
+  );
+});
+
+test("no alias when the old slug has been REUSED by another component", () => {
+  // Sticky footer (K1) became Action bar; later a DIFFERENT component was
+  // published under the freed name and components/src/sticky-footer/ was
+  // re-authored for it. Redirecting action-bar at that directory would serve
+  // another component's guidance. buildRenameIndex already declines this, and
+  // the deriver and the resolver must not disagree about the same ledger.
+  const ledger = {
+    entries: {
+      K1: { slug: "action-bar", previousSlugs: ["sticky-footer"] },
+      K2: { slug: "sticky-footer", previousSlugs: [] },
+    },
+  };
+  assert.deepEqual(
+    identity.renameAliases(
+      ledger,
+      ["sticky-footer"],
+      { "action-bar": { key: "K1" }, "sticky-footer": { key: "K2" } },
+    ),
+    {},
+  );
+});
+
+test("no alias from a ledger entry belonging to a different kit", () => {
+  // The ledger spans every kit; the registry passed in is one kit's. An entry
+  // whose current slug merely COLLIDES with a key in this registry must not
+  // inject an alias for it. Same trap restrictToKit closes on the sync side,
+  // and the kits do share slug vocabulary.
+  const ledger = {
+    entries: { KFM: { slug: "card-for-items", previousSlugs: ["button"] } },
+  };
+  assert.deepEqual(
+    identity.renameAliases(ledger, ["button"], {
+      // dsKit's card-for-items is a DIFFERENT component from the ledger's KFM.
+      "card-for-items": { key: "K-DS-CARD" },
+    }),
+    {},
+  );
+});
+
+test("the alias survives when the identity matches the registry entry", () => {
+  const ledger = {
+    entries: { K1: { slug: "action-bar", previousSlugs: ["sticky-footer"] } },
+  };
+  assert.deepEqual(
+    identity.renameAliases(ledger, ["sticky-footer"], {
+      "action-bar": { key: "K1" },
+    }),
+    { "action-bar": "sticky-footer" },
+  );
 });
