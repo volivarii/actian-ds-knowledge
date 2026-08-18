@@ -265,6 +265,35 @@ function deriveAll(opts) {
   return out;
 }
 
+// Delete notes whose slug the derive no longer emits. Without this the producer
+// only ever writes, so a rename leaves a fossil no regeneration can reach:
+// usage-notes/radio-button.md survived the radio-button -> radio rename in #438
+// and was still asserting "DRAFT (usage)" after #566 made that false, tracked and
+// shipped, for a month. Same shape as #520.
+//
+// Takes outDir explicitly so it can be tested against a temp directory. The CLI
+// block below hardcodes REPO_ROOT, and a prune driven at the real tree is how 179
+// committed anatomy files were once deleted by a test.
+function pruneNotes(outDir, slugs) {
+  // An empty emitted set means the input is missing, not that every note should
+  // go. That distinction is the difference between a no-op and a silent wipe, so
+  // the caller has to have checked it before getting here.
+  if (!slugs.length) throw new Error("pruneNotes: refusing to prune against an empty slug set");
+  var keep = Object.create(null);
+  slugs.forEach(function (s) {
+    keep[s + ".md"] = true;
+  });
+  return fs
+    .readdirSync(outDir)
+    .filter(function (f) {
+      return f.endsWith(".md") && !keep[f];
+    })
+    .map(function (f) {
+      fs.unlinkSync(path.join(outDir, f));
+      return f;
+    });
+}
+
 if (require.main === module) {
   var strict = process.argv.indexOf("--strict") >= 0;
   var all = deriveAll({ strict: strict });
@@ -275,17 +304,34 @@ if (require.main === module) {
     "dist",
     "usage-notes",
   );
+  var slugs = Object.keys(all);
+  if (!slugs.length) {
+    process.stderr.write(
+      "derive-usage-notes: emitted 0 notes. components/dist/guidelines is empty or missing; " +
+        "refusing to write or prune.\n",
+    );
+    process.exit(1);
+  }
   fs.mkdirSync(outDir, { recursive: true });
-  Object.keys(all).forEach(function (slug) {
+  slugs.forEach(function (slug) {
     fs.writeFileSync(path.join(outDir, slug + ".md"), all[slug] + "\n");
   });
+  // Only the default run prunes. `--strict` emits a different and potentially
+  // smaller set (hasBody drops a note left with no approved body), and the
+  // committed dist is the permissive output, so pruning on a strict run would
+  // delete valid notes.
+  var pruned = strict ? [] : pruneNotes(outDir, slugs);
   process.stdout.write(
-    "wrote " + Object.keys(all).length + " usage note(s) -> " + outDir + "\n",
+    "wrote " + slugs.length + " usage note(s) -> " + outDir + "\n",
   );
+  if (pruned.length) {
+    process.stdout.write("pruned " + pruned.length + ": " + pruned.join(", ") + "\n");
+  }
 }
 
 module.exports = {
   usageNote: usageNote,
+  pruneNotes: pruneNotes,
   deriveAll: deriveAll,
   clean: clean,
   sections: sections,

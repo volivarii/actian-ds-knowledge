@@ -43,6 +43,13 @@ on:
       # drift by regenerating and auto-committing. An input missing here is
       # therefore a required check going red with no job able to fix it. Same
       # lesson as the anatomy path above, learned before it could cost a night.
+      # usage-notes' actual input. derive-usage-notes.js reads
+      # components/dist/guidelines/, and until #565 this workflow reached it only
+      # by coincidence: guidelines-derive.yml bumps knowledge_version in
+      # paths-manifest.json, which IS watched, so the auto-commit re-triggered this
+      # run. Correct behaviour resting on a version bump is the exact thing the
+      # anatomy comment above warns about, so the input is declared now.
+      - 'components/dist/guidelines/**'
       - 'components/dist/registries/**'
       - 'components/dist/icons/**'
       - 'components/dist/graphics/**'

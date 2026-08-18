@@ -115,3 +115,68 @@ test("deriveAll: emits a note for a component with prose, omits one without", fu
     "a prose-less doc yields a body-less note, so deriveAll omits it",
   );
 });
+
+// --- pruneNotes -------------------------------------------------------------
+// The producer only ever wrote, so a rename left a fossil nothing could reach:
+// usage-notes/radio-button.md outlived the radio-button -> radio rename by a
+// month and kept asserting "DRAFT (usage)" after #566 made that false. These
+// tests run against a temp directory, never the repo tree: this producer
+// hardcodes REPO_ROOT for its output, and a prune pointed at the real tree is
+// how 179 committed anatomy files were once deleted.
+
+var os = require("node:os");
+var { pruneNotes } = require("../../scripts/render/derive-usage-notes.js");
+
+function tmpNotesDir(files) {
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), "usage-notes-"));
+  Object.keys(files).forEach(function (name) {
+    fs.writeFileSync(path.join(dir, name), files[name]);
+  });
+  return dir;
+}
+
+test("pruneNotes: deletes a note the derive no longer emits", function () {
+  var dir = tmpNotesDir({
+    "radio.md": "kept",
+    "radio-button.md": "fossil",
+    "button.md": "kept",
+  });
+  var pruned = pruneNotes(dir, ["radio", "button"]);
+  assert.deepEqual(pruned, ["radio-button.md"], "reports what it removed, by name");
+  assert.deepEqual(
+    fs.readdirSync(dir).sort(),
+    ["button.md", "radio.md"],
+    "emitted slugs survive",
+  );
+});
+
+test("pruneNotes: refuses to prune against an empty slug set", function () {
+  // THE WIPE GUARD. An empty emitted set means the input is missing, not that
+  // every note should go, and "derive produced nothing so delete everything" is
+  // the exact shape of the anatomy prune that removed 179 committed files.
+  var dir = tmpNotesDir({ "radio.md": "kept", "button.md": "kept" });
+  assert.throws(
+    function () {
+      pruneNotes(dir, []);
+    },
+    /refusing to prune against an empty slug set/,
+  );
+  assert.deepEqual(
+    fs.readdirSync(dir).sort(),
+    ["button.md", "radio.md"],
+    "nothing was deleted before it threw",
+  );
+});
+
+test("pruneNotes: leaves files that are not notes alone", function () {
+  var dir = tmpNotesDir({ "button.md": "kept", "README.txt": "not a note" });
+  var pruned = pruneNotes(dir, ["button"]);
+  assert.deepEqual(pruned, [], "a non-.md file is not the producer's to delete");
+  assert.ok(fs.existsSync(path.join(dir, "README.txt")));
+});
+
+test("pruneNotes: a clean tree is a no-op", function () {
+  var dir = tmpNotesDir({ "button.md": "kept", "radio.md": "kept" });
+  assert.deepEqual(pruneNotes(dir, ["button", "radio"]), []);
+  assert.equal(fs.readdirSync(dir).length, 2);
+});

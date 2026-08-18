@@ -391,6 +391,41 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **`derive-usage-notes.js` now prunes, and `render-derive.yml` declares the input it actually reads.**
+  Two defects found by reviewing #566 after it merged, one of them a false claim of mine.
+
+  **The producer only ever wrote, so a rename left a fossil nothing could reach.**
+  `components/render/dist/usage-notes/radio-button.md` outlived the `radio-button` to `radio` rename from
+  #438 (2026-07-17): `deriveAll()` emits 60 slugs and that was the 61st file on disk, tracked and shipped,
+  still asserting `DRAFT (usage)` a month later and after #566 made it false. No trigger coverage can fix
+  this, because the file is one the producer never writes. The derive now removes any `.md` whose slug it
+  did not emit. Same family as #520.
+
+  The file is **deliberately not deleted by hand here**: `render-derive.yml` gates its patch bump on
+  `git diff -- components/render/dist/`, so a pre-deleted file leaves the derive nothing to do, and no
+  bump means no tag and no consumer ever loses the fossil. Letting CI's prune perform the deletion both
+  proves the prune end to end and produces the diff the bump needs.
+
+  The prune carries two deliberate guards. An **empty emitted set throws** rather than deleting every
+  note, because "the derive produced nothing, so remove everything" is the exact shape that once deleted
+  179 committed anatomy files. And **`--strict` does not prune**, because it emits a different and
+  possibly smaller set while the committed dist is the permissive output. `pruneNotes(outDir, slugs)` is
+  exported and takes its directory, so it is tested against a temp dir: the CLI hardcodes `REPO_ROOT`, and
+  a prune driven at the real tree is how those 179 files went. Both guards are proved by mutation.
+
+  **The correction.** Commit `327e9ee3` and #566's description claim that "no workflow would have"
+  regenerated these notes. That is false, and #565 was filed on it. `render-derive.yml` watches
+  `paths-manifest.json`; `guidelines-derive.yml` bumps `knowledge_version` there and commits it with the
+  App token, which re-triggers this workflow. It ran on #566's bump commit and passed, and would have
+  produced the same diff I had made by hand. The listing in that commit message even names
+  `paths-manifest` among the watched paths before concluding the opposite.
+
+  What was true, and is now fixed, is narrower: the coupling was **incidental**. `usage-notes` derives
+  from `components/dist/guidelines/`, and that path was nowhere in the triggers, so a correct outcome
+  rested on a version bump happening to touch a watched file. That is precisely what this workflow's own
+  comment warns about where it explains why `components/dist/anatomy/**` was added. The path is declared
+  now. #565 is re-scoped and retitled rather than closed.
+
 - **The 54 usage domains are promoted from `draft` to `approved`, deliberately, as a baseline to be
   reviewed against rather than a sign-off.** ([#566](https://github.com/volivarii/actian-ds-knowledge/pull/566)) Vincent's decision on #537. The docs are finished writing
   and have been live on 56 documentation pages since 2026-07-14; the design-lead review that was meant
