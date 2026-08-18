@@ -54,6 +54,37 @@ Each entry links its pull request. Dates are the merge date (UTC).
   `components`, so the graph kept asserting a `uses_component` edge to it; `import-wizard` described
   radio cards and a persistent action bar it did not name. Correcting prose and leaving `components` is
   how a graph goes on asserting something the record itself denies.
+- **Two Studio patterns corrected against the running product, and the `sticky-footer` rename proven
+  unpreparable.** Both come out of investigating the five-day breaking sync (#526).
+
+  `analytics-dashboard` named `card-for-items`; its completion cards are the `card-for-perimeter` shape,
+  verified against that component's own `default.webp` rather than by resemblance, and
+  `card-for-perimeter` is a different component the sync does not retire. `type-picker-grid` was wrong
+  twice: it named `modal` for what is a full page at `/new-item` carrying the app sidebar and a pinned
+  action bar, and `card-for-items` for what are radio cards. Both records now describe the page and say
+  what was corrected and how it was checked.
+
+  Both were among the five patterns cited as depending on `card-for-items` in the #526 hold, so **the
+  recorded cost of that decision falls as a side effect of correcting them**, which seems the right order:
+  fix the numbers, then take the decision.
+
+  Also recorded on `analytics-dashboard`, because it is why the page cannot be drawn: **no radial gauge
+  component exists in either kit** (`gauge`, `donut`, `radial`, `ring`, `circular` all return nothing),
+  and the two adoption gauges lead that page.
+
+  **The `sticky-footer` → `action-bar` rename cannot be prepared ahead of the sync, and this was measured
+  rather than assumed.** `rename-preconditions` requires the retired slug to be absent from the authored
+  surfaces, but the new slug is not in the registry until the sync lands, so every route fails: renaming
+  the pattern's `components[]` entry makes `derive-graph` throw by design, and renaming the renderer's
+  case label fails **seven** tests including the very invariant 5 the precondition's own comment predicts.
+  Keeping the old name blocks absorption. The only legitimate path is the one the tracker already
+  documents, running the sync locally and renaming the authored files in the same branch, which
+  necessarily lands the removals too. So there is **no preparatory work available ahead of the held
+  decision**, which is worth knowing before anyone offers to do some.
+
+  One thing found on the way, not fixed here: `rename-preconditions.mentions()` reads the whole file, so a
+  slug named only in **prose** blocks a rename exactly as a real `components[]` entry does. Its own
+  rationale is about gates that fail, and prose fails none, so the gate is stricter than its reason.
 
 - **A pattern can now say what it is for (`tags`) and when to use something else (`when`), so choosing a
   page shape stops being a naming coincidence.** Closes #558. The consumer side already existed: the

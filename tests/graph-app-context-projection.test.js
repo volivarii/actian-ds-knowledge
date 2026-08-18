@@ -290,6 +290,14 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   // `import-wizard` described radio cards and an action bar it did not name.
   // Correcting prose and leaving the machine-read field is how a graph keeps
   // asserting something the record itself denies.
+  //
+  // 266 -> 272, again edges only: two Studio patterns were corrected against the
+  // running product rather than counted. `analytics-dashboard` named
+  // `card-for-items` where its completion cards are the `card-for-perimeter`
+  // shape (+2 net), and `type-picker-grid` named `card-for-items` and `modal`
+  // for what is a full page of radio cards (+4 net). Both were among the five
+  // patterns cited as depending on `card-for-items` in the #526 hold, so the
+  // recorded cost of that decision falls as a side effect of the correction.
   var ISLAND_PREFIXES = ["app", "entity", "pattern", "term"];
   var inIsland = function (id) {
     return ISLAND_PREFIXES.indexOf(String(id).split(":")[0]) !== -1;
@@ -301,7 +309,7 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
     return inIsland(e.source) || inIsland(e.target);
   });
   assert.equal(islandNodes.length, 97, "app-context island nodes");
-  assert.equal(islandEdges.length, 266, "app-context island edges");
+  assert.equal(islandEdges.length, 272, "app-context island edges");
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {
