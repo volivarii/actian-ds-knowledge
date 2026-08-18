@@ -135,6 +135,70 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The variant-collapse gate now asserts which values a caller cannot tell apart, instead of how many
+  there are, and separates the collapses the renderer makes on purpose from the ones nobody has
+  explained.** It counted collapses per slug, which cannot see a swap: give one collapsed value its own
+  rendering, introduce a collapse on another value of the same component, and the count is unchanged
+  while the gallery still shows a duplicate cell.
+
+  The obvious repair, comparing each duplicated value against the sibling it renders as, is also wrong,
+  and it took a second review round to see why. `rendersAs` records the FIRST value of each duplicate
+  group in `values` order, and that anchor is an artifact of iteration order. It moves when Figma
+  reorders an axis, which `transform-registry.js` copies verbatim and which changes nothing a caller
+  can see. It moves again when someone gives the anchor value its own rendering, so a gate keyed on it
+  reds on `calendar`'s three collapses becoming two, blocking the exact improvement it exists to
+  encourage.
+
+  So the comparison is on equivalence classes: which values render identically to which. That is
+  invariant under both, and still catches a value that starts duplicating something it did not
+  duplicate before, which is the "ask for `Glossary type`, receive `Catalog`" substitution (#550).
+  Verified against the real renderer by differentiating `toolbar`'s `Type` while breaking its
+  `Orientation`, a change that lowers that component's collapse count: the gate names
+  `toolbar Orientation: Horizontal and Vertical now render identically` and stays silent about the
+  improvement in the same commit.
+
+  The single reported number was also measuring two different things. Seven of the collapses are
+  deliberate and say so **in the renderer's own source**: `spinner`'s `Complete` is "the animation's
+  own arc-fill cycle, not a chooseable variant", `loader` is the indeterminate spinner, and
+  `search-result-card App=Studio` is "intentionally NOT built here, per the spec". The gate was
+  contradicting the code it measures. Those seven now sit in a `BY_DESIGN` record keyed by the exact
+  value, each carrying its reason, so the reported figure means one thing: values the renderer cannot
+  tell apart and nobody has said why. At merge time that is **57 collapses, of which 7 are explained by
+  design and 50 are not**; the 50 are what roadmap item 23 has to work through. The split is printed as
+  a test diagnostic rather than stored, so no number is kept in step by hand.
+
+  Explained-versus-unexplained is decided per duplicate GROUP rather than per value, so a Figma reorder
+  cannot move it: a record names one value of a group, and which values appear in `rendersAs` depends
+  on which one happens to be listed first. The clamp-versus-twin split the diagnostic also prints
+  (48 and 9) is REPORTING only, is order-sensitive by construction, and nothing gates on it. Clamp means "renders as the axis's first-listed value", which is a proxy for the default
+  and not a record of one: nothing in the pipeline stores a default, so an axis the renderer ignores
+  entirely scores as all clamps, and a Figma reorder can move the split without anything changing.
+
+  The escape hatch is per value rather than per slug, and a reasonless entry excuses nothing, matching
+  the coverage gate's `--accept-coverage-loss="<why>"`. Entries are checked two ways, reported apart
+  because the remedies are opposite: one that no longer names a real collapse should be deleted, and
+  one that names a real collapse without a reason is missing the decision. Both checks ask whether the
+  value still shares a rendering with a sibling, not whether it still appears in `rendersAs`, for the
+  same reason the gate itself does: `rendersAs` holds only the non-anchor members, so an anchor-keyed
+  check would call a still-true decision record stale the moment someone fixed the anchor.
+
+  The per-slug total bound is **removed** rather than carried forward. Its stated justification was
+  that it caught renames, which is false (a renamed component is a slug the baseline lacks, so its
+  collapses are credited as a new component's), and the algebra of what remained showed it could only
+  fail when the per-value check had already failed. A bound that cannot fire must not read as one that
+  can. Two guards that can fire took its place: one asserting the two sides actually share slugs, and
+  one asserting no slug or axis name breaks the key format, since both of those failures are silent
+  passes rather than reds. The first is deliberately not "collapses still exist": collapses reaching
+  zero is the goal of roadmap item 23, and a gate that reds on success would repeat the mistake above.
+
+  **Known limit, stated rather than implied:** a collapse arriving inside a component, an axis, or a
+  value that was renamed in the same sync is not caught, because nothing in it is recognisable against
+  the baseline. Values are skipped for the same reason slugs are, and it is not hypothetical: Figma
+  auto-names variant values, and `Percent3` and `Property 1` are in the shipped data today, so
+  reporting a renamed value would put a red on an ordinary sync PR whose only remedy is hand-editing a
+  decision record. Closing the component half needs the identity ledger shipped above, which can tell
+  a renamed slug from a new one. Left undone and stated here rather than stubbed in.
+
 - **A change to a component's display name no longer stalls a night's sync.** The differ reports a
   rename when the slug *or* the display name changes, and the classifier pushed a breaking reason for
   either, while any single breaking reason makes the whole sync breaking, which commits nothing. So
