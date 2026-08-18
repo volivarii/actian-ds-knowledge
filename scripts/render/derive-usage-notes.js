@@ -21,6 +21,11 @@ var CATEGORIES_DIR = path.join(REPO_ROOT, "components", "dist", "categories");
 // this producer has no committed-vs-fresh drift guard to catch it when it does.
 var INPUTS = ["components/dist/guidelines/", "components/dist/categories/"];
 
+// A rename or a retirement moves a handful of slugs. Anything bulk is a broken
+// input, and the cost of stopping is one reviewed commit raising this number,
+// against a silent tagged-and-vendored deletion if it is wrong.
+var PRUNE_CEILING = 10;
+
 var PERMISSIVE = ["approved", "draft", "inherited", "synthesized"];
 var STRICT = ["approved"];
 
@@ -311,11 +316,24 @@ function pruneNotes(outDir, knownSlugs) {
   knownSlugs.forEach(function (s) {
     keep[s + ".md"] = true;
   });
-  return fs
-    .readdirSync(outDir)
-    .filter(function (f) {
-      return f.endsWith(".md") && !keep[f];
-    })
+  var doomed = fs.readdirSync(outDir).filter(function (f) {
+    return f.endsWith(".md") && !keep[f];
+  });
+  // Zero known slugs is the only TOTAL loss, and refusing at exactly zero leaves
+  // the realistic case open: a partial guidelines dist, say 3 of 61 JSONs after a
+  // bad checkout or a half-finished upstream derive, still looks like 58 slugs
+  // being retired at once. render-derive.yml would bump, commit, tag and vendor
+  // that. A real removal moves a handful of slugs; anything bulk is a broken
+  // input until a human says otherwise. Same threshold and the same "assume
+  // something went wrong" reading as the sync's ten-removals-per-category stop.
+  if (doomed.length > PRUNE_CEILING) {
+    throw new Error(
+      "pruneNotes: refusing to delete " + doomed.length + " notes in one run " +
+        "(ceiling " + PRUNE_CEILING + "). This is a partial or broken guidelines dist, " +
+        "not a retirement. Slugs: " + doomed.join(", "),
+    );
+  }
+  return doomed
     .map(function (f) {
       fs.unlinkSync(path.join(outDir, f));
       return f;
@@ -369,6 +387,19 @@ if (require.main === module) {
   process.stdout.write(
     "wrote " + slugs.length + " usage note(s) -> " + outDir + "\n",
   );
+  // A guideline that stops emitting keeps its committed note, deliberately: that
+  // is what makes the prune safe. But it also means the shipped note freezes at
+  // its old content with nothing saying so, which is the fossil this file exists
+  // to prevent, in a quieter flavour. Name them.
+  var silent = known.filter(function (s) {
+    return slugs.indexOf(s) < 0;
+  });
+  if (silent.length) {
+    process.stdout.write(
+      "no note emitted for " + silent.length + " known slug(s), committed copy kept: " +
+        silent.join(", ") + "\n",
+    );
+  }
   if (pruned.length) {
     process.stdout.write("pruned " + pruned.length + ": " + pruned.join(", ") + "\n");
   }

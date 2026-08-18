@@ -181,6 +181,66 @@ test("pruneNotes: a clean tree is a no-op", function () {
   assert.equal(fs.readdirSync(dir).length, 2);
 });
 
+// Collect ONLY the entries under `on:` ... `paths:`. Reading every quoted list
+// item in the file would count a future `paths-ignore:` entry as watched, which
+// is a false all-clear in a gate whose whole purpose is preventing false
+// all-clears, and it would count quoted strings from unrelated steps too.
+function watchedPaths(yml) {
+  var lines = yml.split("\n");
+  var out = [];
+  var inOn = false;
+  var pathsIndent = null;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (/^\S/.test(line)) inOn = /^on:/.test(line);
+    if (!inOn) continue;
+    var m = line.match(/^(\s*)paths:\s*$/);
+    if (m) {
+      pathsIndent = m[1].length;
+      continue;
+    }
+    if (pathsIndent === null) continue;
+    if (/^\s*(#.*)?$/.test(line)) continue; // blank or comment, still inside
+    var indent = line.match(/^\s*/)[0].length;
+    if (indent <= pathsIndent) {
+      pathsIndent = null; // a sibling key ended the list
+      i--;
+      continue;
+    }
+    var item = line.match(/^\s*-\s*'([^']+)'\s*$/);
+    if (item) out.push(item[1]);
+  }
+  return out;
+}
+
+test("watchedPaths reads on.paths and nothing else", function () {
+  // The control that matters: paths-ignore must never read as watched.
+  var yml = [
+    "on:",
+    "  pull_request:",
+    "    paths:",
+    "      # a comment inside the list",
+    "      - 'components/dist/guidelines/**'",
+    "",
+    "      # a blank line above must not end the list: it would silently drop every",
+    "      # path below it, which is the false all-clear this helper exists to stop",
+    "      - 'components/dist/categories/**'",
+    "    paths-ignore:",
+    "      - 'components/dist/categories/**'",
+    "",
+    "jobs:",
+    "  derive:",
+    "    steps:",
+    "      - run: echo 'components/dist/anatomy/**'",
+    "",
+  ].join("\n");
+  assert.deepEqual(
+    watchedPaths(yml),
+    ["components/dist/guidelines/**", "components/dist/categories/**"],
+    "paths-ignore and unrelated quoted strings must not count as watched, and a blank line must not truncate the list",
+  );
+});
+
 test("render-derive.yml watches every path this producer reads", function () {
   // The trigger list and the producer's inputs are the same fact written twice,
   // and until #567 they disagreed: usage-notes derives from
@@ -195,9 +255,7 @@ test("render-derive.yml watches every path this producer reads", function () {
     path.resolve(__dirname, "../../.github/workflows/render-derive.yml"),
     "utf8",
   );
-  var triggers = (yml.match(/^\s*- '([^']+)'/gm) || []).map(function (l) {
-    return l.replace(/^\s*- '/, "").replace(/'$/, "");
-  });
+  var triggers = watchedPaths(yml);
 
   function watchedBy(triggerList, input) {
     return triggerList.some(function (t) {
@@ -259,4 +317,37 @@ test("pruneNotes keys on the guidelines dist, not on what emitted a note", funct
     ["chat-with-ai-steward.md"],
     "and keying on the emitted set is what would have deleted it",
   );
+});
+
+test("pruneNotes: refuses a bulk deletion, which is a broken input not a retirement", function () {
+  // Refusing only at EXACTLY zero known slugs left the realistic case open: a
+  // partial guidelines dist (3 of 61 JSONs after a bad checkout or a half-finished
+  // upstream derive) reads as 58 slugs retiring at once, and render-derive.yml
+  // would bump, commit, tag and vendor that deletion.
+  var files = {};
+  for (var i = 0; i < 15; i++) files["gone-" + i + ".md"] = "shipped";
+  files["kept.md"] = "shipped";
+  var dir = tmpNotesDir(files);
+
+  assert.throws(
+    function () {
+      pruneNotes(dir, ["kept"]);
+    },
+    /refusing to delete 15 notes in one run/,
+  );
+  assert.equal(
+    fs.readdirSync(dir).length,
+    16,
+    "nothing is deleted before it throws, so a partial input cannot half-wipe the tree",
+  );
+});
+
+test("pruneNotes: a handful still prunes, so the ceiling is not a blanket refusal", function () {
+  var dir = tmpNotesDir({
+    "kept.md": "shipped",
+    "gone-a.md": "fossil",
+    "gone-b.md": "fossil",
+  });
+  assert.deepEqual(pruneNotes(dir, ["kept"]).sort(), ["gone-a.md", "gone-b.md"]);
+  assert.deepEqual(fs.readdirSync(dir), ["kept.md"]);
 });
