@@ -610,8 +610,10 @@
         },
         "tags": {
           "type": "array",
+          "minItems": 2,
           "items": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
           },
           "description": "Selection tags for this page shape, authored in the pattern's frontmatter. A consumer picking a layout should RANK candidates by how many of these overlap, not treat any single shared word as a match: measured over the plugin's 12 flow archetypes, boolean overlap leaves 6 ties while ranking resolves 13 of 25 decisively. Absent when the shape legitimately has no archetype, which is the signal a capture is needed rather than a defect.",
           "examples": [

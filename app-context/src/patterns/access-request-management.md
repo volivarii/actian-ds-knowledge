@@ -18,7 +18,10 @@ when: >-
   the unit of work.
 components:
   - table
-  - tabs
+  - table
+  - button
+  - dropdown-select-default
+  - tag-interactive
   - tag-default
   - button
 ---
