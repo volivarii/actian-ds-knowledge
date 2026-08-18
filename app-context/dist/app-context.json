@@ -1211,12 +1211,14 @@
       ],
       "when": "Use for the aggregate view over a whole catalog: a grid of per-type completion cards beside a rail of charts. Do not use documentation-completion-dashboard, which scores individual items against criteria; this one answers how the catalog is doing, not which item is behind.",
       "components": [
-        "card-for-items",
+        "card-for-perimeter",
+        "progress-bar-small",
+        "segmented-control",
         "bar-graph",
         "line-graph",
         "page-header"
       ],
-      "description": "Completion cards, adoption rate charts, popular items, frequent searches."
+      "description": "Two columns. The main one is a grid of per-type completion cards, each a type badge, the type name, its\nitem count, a progress bar and a percentage, with `N/A` where the count is zero; below it a Custom\nAnalysis section whose empty state carries a Create an analysis button. The rail holds adoption rate as\ntwo radial gauges (a large percentage inside the ring, a fraction and a role beneath), then adoption rate\nevolution as a dual-axis time chart with a segmented control switching the series, then a numbered list\nof most popular items with type badges.\n\nCorrected 2026-08-18 against the running product. This record named `card-for-items`; the completion\ncards are the `card-for-perimeter` shape, verified against that component's own `default.webp` capture,\nand `card-for-perimeter` is a different component that the current sync does not retire. `bar-graph` and\n`line-graph` are left in place: the evolution chart is line-shaped so `line-graph` is defensible, and the\npage was not read to its end, so removing `bar-graph` would be an assertion from absence.\n\nKnown gap, and it is the reason the rail cannot be drawn today: **no radial gauge component exists in\neither kit**, under `gauge`, `donut`, `radial`, `ring` or `circular`. The two adoption gauges lead this\npage and the design system cannot express them."
     },
     "ask-ai": {
       "label": "Ask AI",
@@ -1738,10 +1740,14 @@
       ],
       "when": "Use when creation begins by choosing a type from a grid of equally weighted options, grouped by family and filtered by a segmented control. Do not use a dropdown: the grid exists because the options carry an icon and a colour that make them recognisable.",
       "components": [
-        "card-for-items",
-        "modal"
+        "radio-card",
+        "segmented-control",
+        "search",
+        "text-input",
+        "sticky-footer",
+        "page-header"
       ],
-      "description": "Grid of type tiles with color-coded icons for New Item creation."
+      "description": "A full page, not an overlay. A required Name field over an information banner explaining that a key is\ngenerated from it, then an Item type section: a segmented control filtering All Types / Glossary Types /\nPhysical & Logical Types, a search input, and grids of selectable tiles grouped under family headings.\nEach tile is a radio control, a two-letter colour-coded type badge and the type name, truncated when\nlong. A persistent action bar at the foot of the page carries a single Confirm, disabled until a name\nand a type are both chosen.\n\nCorrected 2026-08-18 against the running product, where this record was wrong twice. It named `modal`:\ncreation is a full page at `/new-item`, carrying the app sidebar and a pinned action bar, with no overlay\ninvolved. And it named `card-for-items`: the tiles are radio cards, verified by comparing the page\nagainst `card-for-items`' own `default.webp`, which is a badge, a title, a catalog chip and body prose,\nand is nothing like a type tile.\n\nNote for whoever carries the `sticky-footer` → `action-bar` rename through: this record now names\n`sticky-footer` truthfully, which makes it a fourth authored reference to rename. That does not change\nthe situation, since the rename can only be landed alongside the registry in one branch anyway."
     }
   }
 }
