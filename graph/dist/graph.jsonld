@@ -5420,7 +5420,7 @@
       "@id": "pattern:asset-detail-360",
       "@type": "UXPattern",
       "title": "360-degree asset detail view",
-      "description": "Every catalog object has a tabbed detail page with property panel/sidebar."
+      "description": "The page every catalog object opens into. A full-width identity header carries the type and sharing tags, the object name, a status control and an Actions menu, over three metadata lines: technical name, a catalog/category/connection path whose parts are links, and a last-updated date. Below it a tab bar spans the object's facets (General, Fields, Sample Data, Data Quality, Lineage, View 360, Data Model, Activity, Discussions), some carrying a count, any of which is disabled when the source supplies nothing for it. Opposite the tabs sit two avatar stacks, curators and contacts, which summarise the People panel further down.\n\nThe body is two columns that scroll independently of each other and of the header. The left column holds the authored narrative: an access-request policy select, a glossary multi-select of removable chips, a description block with a rich-text switch and a use-source checkbox, and a relations section that is empty more often than not. The right column holds a completion meter over a second tab set (Properties, People, Suggestions), and that panel is the densest form in the product: label-and-control pairs mixing selects, multi-selects, plain values, date inputs with a format caption, and unset properties that read \"No data has been registered.\", closing with a read-only source-properties definition list. People is two role sections with an add action and a grid of avatar, name and remove. Suggestions is a four-way segmented control over cards that each carry an author, a relative time, a status, a comment box and an accept/reject pair.\n\nThe defining trait is two independent tab levels over one object, with columns that scroll separately while the header and tab bar stay put. That is what separates it from every list shape here.\n\nDistinct from `faceted-browse`, which composes a collection rather than one object, and from `search-filtered-table`, which is real on this page but is the content of a single tab (Fields) rather than the page itself. Choose this pattern whenever one object has more peer facets than a screen can hold."
     },
     {
       "@id": "pattern:bulk-edit",
@@ -5451,6 +5451,12 @@
       "@type": "UXPattern",
       "title": "Documentation Completion Dashboard",
       "description": "Stewardship dashboard of per-item documentation-completion percentages and the criteria contributing to each score."
+    },
+    {
+      "@id": "pattern:faceted-browse",
+      "@type": "UXPattern",
+      "title": "Faceted browse",
+      "description": "Three pane browse over a large item set: app sidebar, a filter rail, and a result list. The rail holds several independent facet groups (a range facet, a counted checkbox list of item types, a boolean toggle, and type-to-search selects), each collapsible. Results are composed cards rather than table rows: each carries type and sharing tags, a title, source metadata, a summary, domain values, a pending-suggestion chip, and a right-hand meta column with a completion meter and a last-updated date. A bulk action bar sits above the list with select-all, batch actions and a sort control.\n\nThe defining trait is scale. A live total is shown against the current filter state, and each facet value carries its own count, so narrowing is visible before it is committed. Studio Catalog is the canonical instance.\n\nDistinct from `search-filtered-table`, which is the single-search-input case with no facet rail, and from `table-with-tabs`, where pre-filtering is by one categorical axis rather than several independent ones. Choose this pattern whenever more than one facet narrows the same collection."
     },
     {
       "@id": "pattern:federated-catalog",
@@ -10817,6 +10823,30 @@
     {
       "@type": "Edge",
       "edgeType": "in_app",
+      "source": "pattern:faceted-browse",
+      "target": "app:explorer",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "in_app",
+      "source": "pattern:faceted-browse",
+      "target": "app:studio",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.apps"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "in_app",
       "source": "pattern:federated-catalog",
       "target": "app:administration",
       "confidence": "asserted",
@@ -14306,7 +14336,43 @@
       "@type": "Edge",
       "edgeType": "uses_component",
       "source": "pattern:asset-detail-360",
+      "target": "component:avatar",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
       "target": "component:breadcrumb",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:checkbox",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -14330,7 +14396,67 @@
       "@type": "Edge",
       "edgeType": "uses_component",
       "source": "pattern:asset-detail-360",
+      "target": "component:dropdown-select-default",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:empty-state",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:input-date",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
       "target": "component:page-header",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:progress-bar-small",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:segmented-control",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -14355,6 +14481,42 @@
       "edgeType": "uses_component",
       "source": "pattern:asset-detail-360",
       "target": "component:tabs",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:tag-default",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:tag-interactive",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:asset-detail-360",
+      "target": "component:text-area",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -14571,6 +14733,102 @@
       "edgeType": "uses_component",
       "source": "pattern:documentation-completion-dashboard",
       "target": "component:table",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:faceted-browse",
+      "target": "component:button",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:faceted-browse",
+      "target": "component:checkbox",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:faceted-browse",
+      "target": "component:dropdown-select-default",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:faceted-browse",
+      "target": "component:progress-bar-small",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:faceted-browse",
+      "target": "component:search",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:faceted-browse",
+      "target": "component:table",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:faceted-browse",
+      "target": "component:tag-default",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:faceted-browse",
+      "target": "component:toggle",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",

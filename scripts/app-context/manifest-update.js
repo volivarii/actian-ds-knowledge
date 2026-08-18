@@ -6,7 +6,8 @@
 // updatePathsManifest (lines 190-266) with these deltas:
 //   - key prefix  : "appContext."
 //   - dist         : one consolidated file (no per-slug leaves)
-//   - collections  : appContext.src (human) — no byKey (no per-slug dist)
+//   - collections  : appContextSrc (human) + appContextRecipesSrc (human)
+//                    + appContextRecipes (ci, per-slug dist leaves)
 //   - generator    : "scripts/app-context/derive-app-context.js"
 
 const fs = require("node:fs");
@@ -34,7 +35,7 @@ function updatePathsManifest(manifestPath, opts) {
       delete manifest.paths[k];
     }
   });
-  ["appContext.src", "appContextSrc"].forEach((k) => {
+  ["appContext.src", "appContextSrc", "appContextRecipesSrc", "appContextRecipes"].forEach((k) => {
     if (Object.prototype.hasOwnProperty.call(manifest.collections, k)) {
       delete manifest.collections[k];
     }
@@ -82,12 +83,46 @@ function updatePathsManifest(manifestPath, opts) {
   };
   added.push("appContextSrc");
 
+  // Recipes: authored JSON + per-slug dist leaves. A separate collection from
+  // appContextSrc because that one is `{kind}/{slug}.md` and a recipe is JSON.
+  // Keys avoid the "appContext." prefix for the same leaf-XOR-namespace reason.
+  manifest.collections["appContextRecipesSrc"] = {
+    dir: "app-context/src/recipes",
+    pattern: "{slug}.json",
+    type: "json",
+    origin: "human",
+    description:
+      "Authoring surface for page recipes: the composition for a page shape named by an app-context pattern. Governed by schemas/app-context-recipe.json. Derived per slug to app-context/dist/recipes. See README.md in that directory.",
+  };
+  added.push("appContextRecipesSrc");
+
+  manifest.collections["appContextRecipes"] = {
+    dir: "app-context/dist/recipes",
+    pattern: "{slug}.json",
+    type: "json",
+    origin: "ci",
+    // The entry point, not the module. derive-recipes.js exports functions and
+    // has no CLI, so running it exits 0 having written nothing, which is the
+    // silent-success shape this repo keeps getting caught by. This is the only
+    // `generator` in the manifest, so it also sets the precedent: name the file
+    // a reader can actually run (`npm run derive:app-context` reaches it).
+    generator: "scripts/app-context/derive-app-context.js",
+    description:
+      "Per-slug page recipe JSONs (validated + stamped). Resolved one at a time rather than folded into app-context.json, which is consumed whole: a single recipe exceeds 1400 lines, so bundling them would make every consumer pay for every archetype to read one.",
+  };
+  added.push("appContextRecipes");
+
   // 4. Zones — ensure appContextSrc + appContextBundle are classified in _zones.metadata.
   // Each non-namespaced key prefix must appear in _zones so the manifest-zones check passes.
   // "appContext" is already there; "appContextSrc" and "appContextBundle" must be added
   // separately (they cannot use the "appContext." prefix — that violates leaf-XOR-namespace).
   if (manifest._zones && Array.isArray(manifest._zones.metadata)) {
-    for (const key of ["appContextSrc", "appContextBundle"]) {
+    for (const key of [
+      "appContextSrc",
+      "appContextBundle",
+      "appContextRecipesSrc",
+      "appContextRecipes",
+    ]) {
       if (!manifest._zones.metadata.includes(key)) {
         manifest._zones.metadata.push(key);
       }
