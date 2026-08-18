@@ -23,8 +23,23 @@ Each entry links its pull request. Dates are the merge date (UTC).
 - **Page recipes are now substrate: `app-context/src/recipes/<slug>.json` authored, derived per slug
   to `app-context/dist/recipes/<slug>.json`.** A pattern names a page shape and says in prose what it
   is; a recipe gives that shape a composition, the node tree a consumer renders. Compositions lived in
-  the plugin as generic SaaS archetypes (`table-list`, `form-create`, `dashboard`) written from
-  imagination rather than from the product, which is both the wrong owner and the wrong source.
+  the plugin as 12 flow archetypes, which is the wrong owner: a consumer holding its own copy of a fact
+  the producer should own.
+
+  **Not, as an earlier draft of this entry said, "written from imagination".** That was checked and it
+  is false: `browse-search` names Studio's 277px tree nav and Explorer's 335px faceted filter panel, and
+  `detail-view` names Studio's 568px equal columns. They carry real product knowledge. Nor are they all
+  page shapes: 4 of the 12 (`overlay`, `sticky-footer`, and two explicit `composition-*`) are fragments,
+  which belong with the renderer rather than in a page-shape catalogue.
+
+  **The defect is the join, not the compositions.** The plugin already resolves app-context patterns and
+  biases recipe selection by tag overlap, so the link exists. But a pattern has no `tags` field, so
+  `resolve-patterns.js` invents them by splitting the slug on hyphens. Measured over the 25 Studio
+  patterns against the 12 recipes, that produces ties (`faceted-browse` matches both `table-list` and
+  `browse-search`, on the word "browse"), floods (`search-filtered-table` matches **five**), coincidences
+  (`import-wizard` reaches `form-create` through the word "wizard"), and silence: **11 of the 25 match no
+  recipe at all**, including `activity-timeline`, `metamodel-designer`, `notification-system` and
+  `access-request-management`, every one of which is a real Studio page. Filed as plugin #300.
 
   Governed by `schemas/app-context-recipe.json`, which requires a `derivedFrom` block naming the
   product surface and the ISO date it was captured, because a recipe never compared against the

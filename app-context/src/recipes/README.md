@@ -7,10 +7,26 @@ Patterns answer "what shapes exist". Recipes answer "what is this shape made of"
 
 ## Where recipes came from, and why they moved
 
-Recipes lived in the plugin (`recipes/flow/`) and were generic SaaS archetypes written from
-imagination: `table-list`, `form-create`, `dashboard`. That is the wrong owner and the wrong source.
-Consumers that keep their own copy of a shared fact drift from it, and a page shape invented rather
-than observed describes a product nobody ships.
+Compositions lived in the plugin (`recipes/flow/`, 12 of them). That is the wrong **owner**:
+consumers that keep their own copy of a shared fact drift from it.
+
+It is **not** the wrong source, and an earlier version of this file said it was. Checked, and false:
+`browse-search` names Studio's 277px tree nav and Explorer's 335px faceted filter panel, `detail-view`
+names Studio's 568px equal columns. Those were written by someone looking at the product. Nor are all 12
+page shapes: `overlay`, `sticky-footer` and the two `composition-*` entries are fragments, which belong
+with the renderer, not in a page-shape catalogue. Retiring them wholesale would delete working
+knowledge.
+
+**The defect is the join.** The plugin resolves app-context patterns and biases recipe selection by tag
+overlap, so the link already exists. But the pattern schema has no `tags` field, so
+`resolve-patterns.js` invents them by splitting the slug on hyphens. Over the 25 Studio patterns and 12
+recipes that yields ties (`faceted-browse` hits `table-list` **and** `browse-search`, both on "browse"),
+floods (`search-filtered-table` hits five), coincidences (`import-wizard` reaches `form-create` via
+"wizard"), and silence: **11 of 25 match nothing**, `activity-timeline`, `metamodel-designer`,
+`notification-system` and `access-request-management` among them, all real Studio pages. Filed as plugin #300.
+
+So the sequence is: give patterns real tags, then have the plugin read recipes, and only then retire an
+individual flow archetype once a captured recipe covers the same shape.
 
 The evidence, gathered 2026-08-18 by composing the Studio Catalog page and comparing it against a
 screenshot of the running product.
