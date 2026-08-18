@@ -392,7 +392,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Changed
 
 - **The 54 usage domains are promoted from `draft` to `approved`, deliberately, as a baseline to be
-  reviewed against rather than a sign-off.** Vincent's decision on #537. The docs are finished writing
+  reviewed against rather than a sign-off.** ([#566](https://github.com/volivarii/actian-ds-knowledge/pull/566)) Vincent's decision on #537. The docs are finished writing
   and have been live on 56 documentation pages since 2026-07-14; the design-lead review that was meant
   to gate the promotion has not been scheduled. Holding the whole domain at `draft` until that
   happens bought nothing, so the promotion lands now and the review happens against it.
