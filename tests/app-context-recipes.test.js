@@ -131,3 +131,81 @@ test("positive control: an unknown pattern reference is caught", () => {
   assert.equal(errs.length, 1, "reference check must reject an unknown pattern");
   assert.match(errs[0], /unknown pattern/);
 });
+
+// ---------------------------------------------------------------------------
+// Layout correctness: axis-blind FILL.
+//
+// `render-node.js` emits `flex:1` for sizing.horizontal === "FILL" with no
+// awareness of the parent's direction, so inside a VERTICAL frame it
+// distributes HEIGHT rather than setting width. Width already fills there:
+// the renderer only writes `align-items` when `counterAxisAlignItems` is
+// given, so flexbox's `stretch` default applies. FILL is therefore never
+// right for a child of a VERTICAL frame, and faceted-browse carried 20 of
+// them (plugin #298). This gate is the reason the next recipe cannot.
+// ---------------------------------------------------------------------------
+
+function axisBlindFills(skeleton) {
+  const bad = [];
+  (function walk(node, parentMode) {
+    if (Array.isArray(node)) {
+      for (const n of node) walk(n, parentMode);
+      return;
+    }
+    if (!node || typeof node !== "object") return;
+    if (parentMode === "VERTICAL" && (node.sizing || {}).horizontal === "FILL") {
+      bad.push(node.name || node.ref || node.type);
+    }
+    const mode = (node.layout || {}).mode;
+    for (const child of node.children || []) walk(child, mode);
+  })(skeleton.content, null);
+  return bad;
+}
+
+test("no recipe sets sizing.horizontal FILL inside a VERTICAL frame", () => {
+  const { recipes } = readRecipes(path.join(ROOT, "app-context", "src"), SCHEMA);
+  assert.ok(recipes.length > 0, "no recipes read; this check would be vacuous");
+  let framesChecked = 0;
+  for (const r of recipes) {
+    (function count(node, parentMode) {
+      if (Array.isArray(node)) {
+        for (const n of node) count(n, parentMode);
+        return;
+      }
+      if (!node || typeof node !== "object") return;
+      if (parentMode === "VERTICAL") framesChecked += 1;
+      const mode = (node.layout || {}).mode;
+      for (const child of node.children || []) count(child, mode);
+    })(r.skeleton.content, null);
+    assert.deepEqual(
+      axisBlindFills(r.skeleton),
+      [],
+      r.slug + ": these are children of a VERTICAL frame and must omit sizing.horizontal",
+    );
+  }
+  // Non-vacuity: the walk must actually have descended into vertical frames.
+  assert.ok(
+    framesChecked > 20,
+    "walked only " + framesChecked + " children of VERTICAL frames; the check is not reaching the tree",
+  );
+});
+
+test("positive control: the axis-blind FILL check does catch one", () => {
+  const planted = {
+    content: [
+      {
+        type: "FRAME",
+        layout: { mode: "VERTICAL" },
+        children: [
+          { type: "FRAME", name: "PLANTED", sizing: { horizontal: "FILL" }, children: [] },
+          { type: "FRAME", name: "fine-in-a-row", layout: { mode: "HORIZONTAL" },
+            children: [{ type: "FRAME", name: "legit", sizing: { horizontal: "FILL" }, children: [] }] },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(
+    axisBlindFills(planted),
+    ["PLANTED"],
+    "must flag the vertical-parent case and must NOT flag the horizontal-parent one",
+  );
+});

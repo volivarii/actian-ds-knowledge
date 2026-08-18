@@ -106,11 +106,7 @@
                         "size": 12,
                         "color": "var(--zen-color-text-tertiary)"
                       }
-                    ],
-                    "sizing": {
-                      "horizontal": "FILL",
-                      "vertical": "HUG"
-                    }
+                    ]
                   },
                   {
                     "type": "TEXT",
@@ -149,17 +145,9 @@
                         "size": 11,
                         "color": "var(--zen-color-text-tertiary)"
                       }
-                    ],
-                    "sizing": {
-                      "horizontal": "FILL",
-                      "vertical": "HUG"
-                    }
+                    ]
                   }
-                ],
-                "sizing": {
-                  "horizontal": "FILL",
-                  "vertical": "HUG"
-                }
+                ]
               },
               {
                 "type": "DIVIDER"
@@ -201,11 +189,7 @@
                         "size": 12,
                         "color": "var(--zen-color-text-tertiary)"
                       }
-                    ],
-                    "sizing": {
-                      "horizontal": "FILL",
-                      "vertical": "HUG"
-                    }
+                    ]
                   },
                   {
                     "type": "FRAME",
@@ -544,11 +528,7 @@
                     "size": 12,
                     "color": "var(--zen-color-text-primary)"
                   }
-                ],
-                "sizing": {
-                  "horizontal": "FILL",
-                  "vertical": "HUG"
-                }
+                ]
               },
               {
                 "type": "DIVIDER"
@@ -590,11 +570,7 @@
                         "size": 12,
                         "color": "var(--zen-color-text-tertiary)"
                       }
-                    ],
-                    "sizing": {
-                      "horizontal": "FILL",
-                      "vertical": "HUG"
-                    }
+                    ]
                   },
                   {
                     "type": "FRAME",
@@ -619,17 +595,9 @@
                         "variant": "State=Off",
                         "props": {}
                       }
-                    ],
-                    "sizing": {
-                      "horizontal": "FILL",
-                      "vertical": "HUG"
-                    }
+                    ]
                   }
-                ],
-                "sizing": {
-                  "horizontal": "FILL",
-                  "vertical": "HUG"
-                }
+                ]
               },
               {
                 "type": "DIVIDER"
@@ -671,11 +639,7 @@
                         "size": 12,
                         "color": "var(--zen-color-text-tertiary)"
                       }
-                    ],
-                    "sizing": {
-                      "horizontal": "FILL",
-                      "vertical": "HUG"
-                    }
+                    ]
                   },
                   {
                     "type": "INSTANCE",
@@ -686,11 +650,7 @@
                       "Show label": false
                     }
                   }
-                ],
-                "sizing": {
-                  "horizontal": "FILL",
-                  "vertical": "HUG"
-                }
+                ]
               },
               {
                 "type": "FRAME",
@@ -729,11 +689,7 @@
                         "size": 12,
                         "color": "var(--zen-color-text-tertiary)"
                       }
-                    ],
-                    "sizing": {
-                      "horizontal": "FILL",
-                      "vertical": "HUG"
-                    }
+                    ]
                   },
                   {
                     "type": "INSTANCE",
@@ -744,11 +700,7 @@
                       "Show label": false
                     }
                   }
-                ],
-                "sizing": {
-                  "horizontal": "FILL",
-                  "vertical": "HUG"
-                }
+                ]
               },
               {
                 "type": "FRAME",
@@ -787,11 +739,7 @@
                         "size": 12,
                         "color": "var(--zen-color-text-tertiary)"
                       }
-                    ],
-                    "sizing": {
-                      "horizontal": "FILL",
-                      "vertical": "HUG"
-                    }
+                    ]
                   },
                   {
                     "type": "INSTANCE",
@@ -802,11 +750,7 @@
                       "Show label": false
                     }
                   }
-                ],
-                "sizing": {
-                  "horizontal": "FILL",
-                  "vertical": "HUG"
-                }
+                ]
               }
             ],
             "sizing": {
@@ -845,8 +789,8 @@
                     "variant": "Type=Outline, Size=sm, Shape=Pill, State=Default",
                     "props": {
                       "Label#1411:32": "Save filters",
-                      "👁 Leading Icon": false,
-                      "👁 Trailing Icon": false
+                      "\ud83d\udc41 Leading Icon": false,
+                      "\ud83d\udc41 Trailing Icon": false
                     }
                   }
                 ]
@@ -990,11 +934,7 @@
                             "size": 14,
                             "color": "var(--zen-color-text-primary)"
                           }
-                        ],
-                        "sizing": {
-                          "horizontal": "FILL",
-                          "vertical": "HUG"
-                        }
+                        ]
                       },
                       {
                         "type": "TEXT",
@@ -1085,11 +1025,7 @@
                             "size": 12,
                             "color": "var(--zen-color-text-secondary)"
                           }
-                        ],
-                        "sizing": {
-                          "horizontal": "FILL",
-                          "vertical": "HUG"
-                        }
+                        ]
                       },
                       {
                         "type": "TEXT",
@@ -1171,11 +1107,7 @@
                             "size": 14,
                             "color": "var(--zen-color-text-primary)"
                           }
-                        ],
-                        "sizing": {
-                          "horizontal": "FILL",
-                          "vertical": "HUG"
-                        }
+                        ]
                       },
                       {
                         "type": "TEXT",
@@ -1251,11 +1183,7 @@
                             "size": 12,
                             "color": "var(--zen-color-text-secondary)"
                           }
-                        ],
-                        "sizing": {
-                          "horizontal": "FILL",
-                          "vertical": "HUG"
-                        }
+                        ]
                       },
                       {
                         "type": "TEXT",
@@ -1337,11 +1265,7 @@
                             "size": 14,
                             "color": "var(--zen-color-text-primary)"
                           }
-                        ],
-                        "sizing": {
-                          "horizontal": "FILL",
-                          "vertical": "HUG"
-                        }
+                        ]
                       },
                       {
                         "type": "TEXT",
@@ -1409,11 +1333,7 @@
                             "size": 12,
                             "color": "var(--zen-color-text-secondary)"
                           }
-                        ],
-                        "sizing": {
-                          "horizontal": "FILL",
-                          "vertical": "HUG"
-                        }
+                        ]
                       },
                       {
                         "type": "TEXT",

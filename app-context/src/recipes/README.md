@@ -31,6 +31,46 @@ That contrast is suggestive, not established. **It is one page.** Treat it as a 
 a second archetype is composed the same way and either confirms or breaks it. It should not be quoted
 as a general law about substrates versus consumers.
 
+## The second capture, 2026-08-18: what held and what did not
+
+`asset-detail-360` was composed from a Studio Dataset page the same way, after browsing fifteen Studio
+surfaces rather than one.
+
+**Held.** Composing the detail page needed no new FM components either. `fmUser`, `fmEmptyState`,
+`fmMultiSelectDropdown`, `fmDateInput`, `fmTabs` and `fmInputLabel` all already shipped.
+
+**Held, and larger than first stated.** Studio runs on roughly **fourteen distinct page shapes**, against
+the three generic archetypes the plugin held. That is the composition gap in one number.
+
+**Corrected.** `table-list` was **misapplied, not useless**: the Topics page really is one. The archetype
+set was not wrong so much as unanchored.
+
+**Corrected, and this is the part one page could not show.** Three component gaps are real, found by
+probing the registry with a positive control rather than by eye:
+
+- **No radial gauge exists in either kit** (`gauge`, `donut`, `radial`, `ring`, `circular` all return
+  nothing), while the Analytics page leads with two of them.
+- **The DS tier has no slider.** `fm-slider` exists, so the FM-tier claim above stands, but the Catalog's
+  primary facet is a range slider with no DS-tier component behind it.
+- Analytics' chart is an **area chart with dual y-axes**, which is neither `bar-graph` nor `line-graph`.
+
+A removable chip is **not** a gap: the DS tier spells it `tag-interactive`, which carries a trailing-icon
+property. Checking that before reporting it is the difference between a finding and a rename.
+
+## Authoring against the renderer, not against a guess
+
+Read `vendor/.../html-renderers/fm-html-map.js` in the plugin before authoring: several components read
+less than their name suggests, and a prop the renderer does not read renders blank rather than erroring.
+`fmEmptyState` takes no props at all and always says "No items". Those three are filed as plugin #299. `fmTextArea` reads only its `Content=`
+variant. `fmTabs` reads `Tabs` plus `Active` and has no count badge. `fmUser` always draws the name
+beside the initials. Each recipe's `renderNotes` is where these go, so the next author does not
+rediscover them by looking at a broken page.
+
+One rule is now a gate rather than a note. Inside a VERTICAL frame, `sizing.horizontal: "FILL"` is never
+correct: it emits `flex:1` with no axis awareness and distributes height, while width already fills from
+flexbox's `stretch` default. `faceted-browse` carried 20 of them against its own `renderNotes`, and they
+are gone. `tests/app-context-recipes.test.js` now walks every skeleton for the case.
+
 ## Authoring a recipe
 
 Derive it from the product, not from an idea of the product. Take a screenshot of the real page,
@@ -66,7 +106,8 @@ is a plugin problem.
 ## Known gap in the pattern set
 
 `faceted-browse` now exists in `../patterns/`, added here because the derive refuses to emit a recipe
-whose pattern does not resolve.
+whose pattern does not resolve. `asset-detail-360` existed but held a single sentence; it is now written
+from the capture, and its `components` list grew from 5 to 16.
 
 Still open, and deliberately untouched: `search-filtered-table` describes the Studio Catalog page as
 its own opposite, "no separate filter sidebar... no other facets". That is the substrate being

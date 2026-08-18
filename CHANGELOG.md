@@ -40,8 +40,10 @@ Each entry links its pull request. Dates are the merge date (UTC).
   with a positive control proving the count can be zero, so the assertion cannot pass over an empty
   list. Dist leaves whose source has disappeared are pruned, unlike `derive-canonical.js` (#520).
 
-  First recipe: `faceted-browse`, derived from the Studio Catalog page on 2026-08-18, together with the
-  `faceted-browse` pattern, which did not exist. What that composition measured, across the whole kit:
+  Two recipes so far, both derived from the running product on 2026-08-18: `faceted-browse` from the
+  Studio Catalog page (with the `faceted-browse` pattern, which did not exist) and `asset-detail-360`
+  from a Studio Dataset page (whose pattern existed as a single sentence and is now written from the
+  capture, its `components` list going from 5 to 16). What that composition measured, across the whole kit:
   rebuilding the page correctly required **no new FM components**. Slider, checkbox, toggle, progress
   bar, tag, chip and multi-select all already shipped, and across all twelve plugin recipes they were
   used five times in total, with zero uses of slider, toggle or progress bar. The vocabulary existed
@@ -50,6 +52,26 @@ Each entry links its pull request. Dates are the merge date (UTC).
   and produced a two pane CRUD table, where the real page is a three pane faceted browse over 24,160
   items. That contrast is one datapoint, not a law, and should not be quoted as one until a second
   archetype is composed the same way.
+
+  **The second capture both confirms and corrects the first.** Confirmed: composing the detail page
+  again needed no new FM components, so the finding is no longer a single page. Corrected, by surveying
+  fifteen Studio surfaces rather than one: the app runs on roughly fourteen distinct page shapes against
+  the three archetypes the plugin held, `table-list` was misapplied rather than useless (Topics really is
+  one), and three component gaps exist that one page could not reveal. **No radial gauge exists in either
+  kit** while Analytics leads with two; the **DS tier has no slider** though the Catalog's primary facet is
+  one (`fm-slider` exists, so the FM-tier claim stands); and Analytics' chart is an area chart with dual
+  axes, which is neither `bar-graph` nor `line-graph`. A removable chip is not a gap: the DS tier spells it
+  `tag-interactive`, which carries a trailing-icon property.
+
+  **A layout defect found by authoring the second recipe, and fixed in the first.** `render-node.js` emits
+  `flex:1` for `sizing.horizontal: "FILL"` without consulting the parent's direction, so inside a VERTICAL
+  frame it distributes height instead of setting width; width already fills there, because the renderer
+  writes `align-items` only when `counterAxisAlignItems` is given and flexbox defaults to `stretch`. So the
+  property is never correct for a child of a vertical frame. `faceted-browse` carried **20** of them,
+  against a `renderNotes` entry of its own that said not to, and they are removed. A new gate walks every
+  recipe skeleton for the case, asserts it descended into a vertical frame at all so it cannot pass
+  vacuously, and was proven to fail by planting one in a real recipe rather than only in a fixture. The
+  renderer fix belongs upstream in the plugin (#298); this stops recipes shipping the workaround unevenly.
 
   **What this does not yet do: nothing reads a recipe.** The file is derived, validated, stamped and
   path-resolvable, so it can no longer rot silently, but the plugin's `resolve-patterns.js` resolves
