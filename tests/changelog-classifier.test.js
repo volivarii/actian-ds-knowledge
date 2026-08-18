@@ -514,3 +514,79 @@ test("classifier(media): an unreadable prior index is BREAKING, not a guess", fu
   assert.equal(res.category, "breaking");
   assert.match(res.reasons[0], /unreadable/);
 });
+
+// ---------- #552: a rename the run is about to record ----------
+//
+// A slug rename is breaking only when the old slug stops resolving. The identity
+// ledger makes it resolve, but the verdict can only use that when it is handed
+// the rename this run is ABOUT TO record: the committed ledger cannot contain it
+// yet, and a breaking verdict opens no PR, so a run that waited for the ledger to
+// be committed would re-detect the same rename every night forever.
+
+function registryWith(slug, entry) {
+  var comps = {};
+  comps[slug] = entry;
+  return { library: "ds", components: comps };
+}
+
+test("a slug rename is breaking when nothing records where the slug went", function () {
+  var before = registryWith("sticky-footer", { name: "Sticky footer", key: "K1" });
+  var after = registryWith("action-bar", { name: "Action bar", key: "K1" });
+
+  var verdict = classifier({ fileKind: "registry", before: before, after: after });
+  assert.equal(verdict.category, "breaking");
+});
+
+test("a slug rename is additive when the run records where the slug went", function () {
+  var before = registryWith("sticky-footer", { name: "Sticky footer", key: "K1" });
+  var after = registryWith("action-bar", { name: "Action bar", key: "K1" });
+
+  var verdict = classifier({
+    fileKind: "registry",
+    before: before,
+    after: after,
+    absorbedRenames: { "sticky-footer": "action-bar" },
+  });
+  assert.equal(verdict.category, "additive");
+  assert.deepEqual(verdict.reasons, []);
+});
+
+test("absorption is checked by TARGET, so a ledger naming the wrong successor stays breaking", function () {
+  var before = registryWith("sticky-footer", { name: "Sticky footer", key: "K1" });
+  var after = registryWith("action-bar", { name: "Action bar", key: "K1" });
+
+  // The old slug resolves, but to a DIFFERENT component. Treating "present in
+  // the index" as absorption would launder a real break into an auto-merge.
+  var verdict = classifier({
+    fileKind: "registry",
+    before: before,
+    after: after,
+    absorbedRenames: { "sticky-footer": "some-other-component" },
+  });
+  assert.equal(verdict.category, "breaking");
+});
+
+test("absorption does not excuse a removal that happens alongside it", function () {
+  var before = {
+    library: "ds",
+    components: {
+      "sticky-footer": { name: "Sticky footer", key: "K1" },
+      "alert-inline": { name: "Alert-inline", key: "K2" },
+    },
+  };
+  var after = { library: "ds", components: { "action-bar": { name: "Action bar", key: "K1" } } };
+
+  var verdict = classifier({
+    fileKind: "registry",
+    before: before,
+    after: after,
+    absorbedRenames: { "sticky-footer": "action-bar" },
+  });
+  assert.equal(verdict.category, "breaking");
+  assert.ok(
+    verdict.reasons.some(function (r) {
+      return /removed component/.test(r);
+    }),
+    "the removal must still be reported: " + JSON.stringify(verdict.reasons),
+  );
+});

@@ -135,6 +135,92 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The sync's registry verdict no longer calls a slug rename breaking, because the run now records
+  where the slug went before it decides what the change means.** `components/dist/identity.json`
+  already let a consumer resolve a slug a component was renamed away from, but the verdict could not
+  use it, so a rename classified breaking, and a breaking verdict commits nothing.
+
+  Wiring the committed ledger into the classifier could never have worked, and the reason is a deadlock
+  rather than an oversight: the ledger is derived in a later step than the verdict, and a breaking
+  verdict opens no PR, so the ledger regenerated in that run is discarded with the runner and the next
+  night re-detects the identical rename against the identical committed registry. Forever.
+
+  So `syncRegistry` splits into **compute-then-classify**. Every kit's `after` registry is computed
+  first, the ledger is rebuilt from those and written, the `{fromSlug: toSlug}` index is derived from
+  it, and only then is anything classified. Verified against the real pending rename by replaying it
+  over the committed `dskit.json` and `identity.json`: with absorption `sticky-footer` to `action-bar`
+  is additive, without it the same input is breaking.
+
+  **Absorption is checked by target, not by presence**, so a ledger naming the wrong successor stays
+  breaking rather than laundering a real break into an auto-merge. That property is mutation-tested,
+  as is the wiring on both sides.
+
+  Two degradations, both deliberate and both tested by making them actually happen. An **unreadable
+  committed registry or ledger abandons absorption without writing anything**, because rewriting from a
+  partial set would drop identities and their rename history, which no later run can recover; and a
+  **ledger that cannot be written degrades the rename rather than discarding the night**, because
+  turning it into a run error would throw away an otherwise additive sync of registries, styles, media,
+  icons and tokens over one failed file. In both cases the index is empty and renames simply go back to
+  breaking, which is where they stood before this existed. The read-back after writing is kept as cheap
+  insurance and is described as such: it reads the same path in the same process moments after the
+  write reported success, so it is not a proven guard.
+
+  🔑 **Absorption is gated on a PRECONDITION, not on the ledger alone: nothing authored may still name
+  the retired slug.** The ledger says where the old slug went; it cannot make authored references
+  correct. `ds-html-map.js` carries `case "sticky-footer":`, which a human must rename (teaching a gate
+  to tolerate it would ship a renderer that cannot draw the new slug), and app-context patterns list
+  slugs in `components[]`, which `derive-graph` throws on. Calling such a rename additive opens an
+  auto-merge PR whose required checks can never go green, which is strictly **worse** than the breaking
+  path it replaces, because breaking at least raises a tracking issue a human acts on.
+
+  That is the general form of a problem found four times one gate at a time (anatomy, guideline
+  reachability, render invariants, the graph), with no reason to think the list ended. Rather than
+  teach gate N+1 about the ledger, the sync now asserts the condition that makes all of them pass, and
+  names the files still holding a rename back. The ledger is still written either way: recording where
+  a slug went is true and useful whether or not the verdict can absorb it yet.
+
+  ⚠️ So the pending `sticky-footer` rename stays breaking today, correctly: two authored surfaces still
+  name it. What changes is that a rename with no authored references now lands additively, and one with
+  references reports exactly which files to fix.
+
+  **Two further gates stopped a rename even after the verdict allowed it, both found by review rather
+  than by the issue, and both are fixed here.**
+
+  1. The anatomy phase deletes `components/dist/anatomy/<oldSlug>.json` and reported any deletion as
+     breaking, and the run verdict is the OR across phases, so a pure rename still stalled the nightly.
+     A deletion is now only a removal when nothing redirects the old slug, and absorption requires the
+     SUCCESSOR to be present: a ledger claiming the slug moved somewhere nothing was written leaves a
+     consumer following a redirect to nothing, which is a real loss wearing a rename's clothes.
+  2. `tests/guideline-reachability.test.js` requires every `components/src/<slug>/` to be a live
+     registry key or an alias target, so `components/src/sticky-footer/` would have become an unnamed
+     orphan and failed a REQUIRED check. A rename leaves the authored directory behind, and
+     `registryAliases` already expresses exactly that shape (registry key to the doc slug that serves
+     it), so the rename-induced entries are now **derived from the ledger** rather than hand-written on
+     a PR meant to auto-merge. Editorial aliases stay hand-written, because "this family doc covers
+     these components" is not derivable, and a hand-written entry always wins over a derived one. The
+     derived map is empty until a rename lands, so it changes no bytes today.
+
+  Each kit gets a rename index **restricted to renames that happened inside it**. The ledger spans all
+  three, and the anatomy check knows only the slug that disappeared, so an unrestricted index let an
+  FM-Kit rename `foo` to `bar` absorb a genuine DS-Kit deletion of `foo` whenever some unrelated
+  DS-Kit component was named `bar`. The kits do share slug vocabulary.
+
+  `guidelines-derive.yml` now also triggers on `components/dist/identity.json`, which became an input
+  the moment the aliases were derived from it. The registry half was already a trigger, so the
+  correction is narrower than it first looked: without this one line the derive still ran on a rename
+  night but read a ledger it was not watching, and the alias copy plus its bundle and coverage entries
+  would have arrived later as churn on an unrelated PR. (Alias keys get no `components.guidelineDoc.*`
+  manifest entry either way; none of the seven hand-written aliases has one.)
+
+  🪤 One line is NOT covered by a test: handing the absorbed renames to the anatomy phase. Exercising
+  it needs a full `--phase all` run, which stalls before anatomy under a fake REST. It is a single
+  assignment next to the computation rather than a line each future phase must remember, and both ends
+  around it are tested.
+
+  And the four removals in the current backlog
+  (`alert-inline`, `card-for-items`, `identification-key`, a duplicate `snowflake`) are breaking
+  whatever the ledger says; that half is the `card-for-items` decision in #526.
+
 - **The variant-collapse gate now asserts which values a caller cannot tell apart, instead of how many
   there are, and separates the collapses the renderer makes on purpose from the ones nobody has
   explained.** It counted collapses per slug, which cannot see a swap: give one collapsed value its own

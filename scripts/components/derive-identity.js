@@ -202,7 +202,69 @@ function writeIdentity(repoRoot) {
   return { wrote: true, ledger: ledger, path: ledgerPath };
 }
 
+// Rename-induced registry aliases, derived rather than hand-written.
+//
+// A rename leaves the AUTHORED directory behind: Figma renames the component to
+// `action-bar` while its guidance stays in `components/src/sticky-footer/`.
+// paths-manifest.json#registryAliases already expresses exactly that shape
+// (registry key -> the doc slug that serves it), and the ledger already knows
+// the pair, so the entry is derivable and does not need a human to notice.
+//
+// 🪤 This covers ONLY the rename-induced subset. The hand-written entries are
+// editorial many-to-one ("this family doc covers these components"), which no
+// ledger can derive, so the two are unioned rather than one replacing the other.
+//
+// Emits nothing when the authored directory has already been moved to the new
+// name (the convergence happened, and an alias would be the redundant kind
+// resolveRegistryAliases refuses), when the component no longer ships (pointing
+// a registry key at old guidance would invent reachability), or when two
+// previous slugs are both authored, which is ambiguous and better left to a
+// human than guessed.
+function renameAliases(ledger, authoredSlugs, registryComponents) {
+  var authored = new Set(authoredSlugs || []);
+  var comps = registryComponents || {};
+  var entries = (ledger && ledger.entries) || {};
+
+  // Every slug some entry currently answers to. A retired slug that has been
+  // REUSED must not be redirected: clients/resolve-paths.js declines exactly
+  // this case, and a deriver that disagreed with the resolver about the same
+  // ledger would serve one component's guidance under another's name.
+  var liveSlugs = new Set();
+  Object.keys(entries).forEach(function (id) {
+    var slug = entries[id] && entries[id].slug;
+    if (typeof slug === "string" && slug) liveSlugs.add(slug);
+  });
+
+  var out = {};
+  Object.keys(entries).forEach(function (id) {
+    var e = entries[id] || {};
+    var slug = e.slug;
+    if (typeof slug !== "string" || !slug) return;
+
+    // 🪤 The ledger spans every kit; `registryComponents` is ONE kit's. Matching
+    // by slug alone let an entry from another kit inject an alias whenever its
+    // current slug merely collided with a key here, and the kits do share slug
+    // vocabulary. Comparing IDENTITY, not name, is what makes it the same
+    // component rather than the same word.
+    if (!Object.prototype.hasOwnProperty.call(comps, slug)) return;
+    if (identityOf(comps[slug]) !== id) return;
+
+    if (authored.has(slug)) return;
+    var candidates = (Array.isArray(e.previousSlugs) ? e.previousSlugs : [])
+      .filter(function (was) {
+        return (
+          typeof was === "string" && authored.has(was) && !liveSlugs.has(was)
+        );
+      })
+      .sort();
+    if (candidates.length !== 1) return;
+    out[slug] = candidates[0];
+  });
+  return out;
+}
+
 module.exports = {
+  renameAliases: renameAliases,
   identityOf: identityOf,
   buildIdentity: buildIdentity,
   serialize: serialize,

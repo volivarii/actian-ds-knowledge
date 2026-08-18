@@ -380,6 +380,14 @@ async function syncAnatomy(opts, kit) {
         deleted.join(", "),
     );
   }
+  // Deletions caused by an absorbed rename are not removals; see
+  // consumerVisibleDeletions. `changed` still counts every deletion, because a
+  // rename genuinely changes the dist and must produce a version bump.
+  var lost = consumerVisibleDeletions(
+    deleted,
+    opts && opts.absorbedRenames,
+    Object.keys(bundle.components),
+  );
   var changed = written > 0 || bundleWrote || deleted.length > 0;
   // Failure-only nights (transient outage, nothing written, files preserved)
   // stay "unchanged": an additive verdict would mint a content-free version
@@ -393,7 +401,7 @@ async function syncAnatomy(opts, kit) {
   }
   var extra = {
     verdict: {
-      category: deleted.length
+      category: lost.length
         ? "breaking"
         : changed
           ? "additive"
@@ -416,7 +424,33 @@ function anatomyContentEqual(a, b) {
   );
 }
 
+// Which of the pruned anatomy files are a consumer-visible removal.
+//
+// A slug RENAME deletes <oldSlug>.json and writes <newSlug>.json. That is not a
+// loss: components/dist/identity.json redirects the old slug, so a consumer
+// holding it still resolves, and clients/resolve-paths.js does that lookup at
+// the single place every {slug} collection goes through. Counting it as a
+// removal made this phase report breaking, and the run verdict is the OR across
+// phases, so a pure rename stalled the nightly even after the registry verdict
+// stopped calling it breaking (#552).
+//
+// 🪤 Absorption requires the SUCCESSOR to be present. A ledger that claims the
+// slug moved somewhere nothing was written leaves the consumer following a
+// redirect to nothing, which is a real loss wearing a rename's clothes.
+function consumerVisibleDeletions(deleted, absorbedRenames, keptSlugs) {
+  var absorbed = absorbedRenames || {};
+  var kept = new Set(keptSlugs || []);
+  return (deleted || []).filter(function (file) {
+    var slug = String(file).replace(/\.json$/, "");
+    var successor = Object.prototype.hasOwnProperty.call(absorbed, slug)
+      ? absorbed[slug]
+      : null;
+    return !(successor && kept.has(successor));
+  });
+}
+
 module.exports = {
+  consumerVisibleDeletions,
   syncAnatomy,
   nodeIdToSlugMap,
   keyToSlugMap,

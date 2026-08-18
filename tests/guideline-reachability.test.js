@@ -19,6 +19,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const identity = require("../scripts/components/derive-identity.js");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 
@@ -60,10 +61,54 @@ function readReachable() {
       "utf8",
     ),
   );
-  // Two ways to reach a consumer: BE a registry key, or be the target of an
-  // alias FROM one (how the card and tag family docs reach their members).
+  // Three ways to reach a consumer: BE a registry key, be the target of a
+  // hand-written alias FROM one (how the card and tag family docs reach their
+  // members), or be the target of a RENAME-INDUCED alias derived from the
+  // identity ledger.
+  //
+  // The third exists because a rename leaves the authored directory behind:
+  // Figma renames the component to `action-bar` while its guidance stays in
+  // `components/src/sticky-footer/`. Without it this gate fails a required check
+  // on every slug rename, and the only remedy would be hand-writing the alias
+  // the ledger already knows, on a sync PR that is meant to auto-merge (#552).
   const registryKeys = new Set(Object.keys(dskit.components || {}));
   const aliasTargets = new Set(Object.values(manifest.registryAliases || {}));
+  // 🪤 Mirror the deriver's ENABLING condition too, not only its precedence.
+  // derive-guidelines computes derived aliases only when the registry AND
+  // categories.json AND components/dist/categories/ are all present. Deriving
+  // them here from the registry alone would declare guidance reachable that no
+  // alias file was ever written for, which is a false all-clear from the gate
+  // whose whole purpose is to catch that.
+  const derivesAliases =
+    fs.existsSync(path.join(REPO_ROOT, "components/dist/categories.json")) &&
+    fs.existsSync(path.join(REPO_ROOT, "components/dist/categories"));
+  let ledger = null;
+  try {
+    ledger = JSON.parse(
+      fs.readFileSync(
+        path.join(REPO_ROOT, "components/dist/identity.json"),
+        "utf8",
+      ),
+    );
+  } catch (e) {
+    ledger = null;
+  }
+  // 🪤 Mirror derive-guidelines' precedence exactly: a hand-written entry wins,
+  // so a derived alias for a key the manifest already claims is NEVER applied
+  // there. Counting it reachable here would pass a required check on guidance
+  // the deriver does not serve, which is the false all-clear this gate exists to
+  // prevent.
+  const handWritten = manifest.registryAliases || {};
+  const derived = identity.renameAliases(
+    ledger,
+    readAuthoredSlugs(),
+    dskit.components || {},
+  );
+  if (derivesAliases) {
+    Object.keys(derived)
+      .filter((from) => !Object.prototype.hasOwnProperty.call(handWritten, from))
+      .forEach((from) => aliasTargets.add(derived[from]));
+  }
   return { registryKeys, aliasTargets };
 }
 

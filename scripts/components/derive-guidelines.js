@@ -33,6 +33,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const identityLedger = require("./derive-identity.js");
 const cp = require("node:child_process");
 const Ajv2020 = require("ajv/dist/2020");
 const addFormats = require("ajv-formats");
@@ -917,6 +918,54 @@ function runCli(argv) {
       );
       return 2;
     }
+  }
+
+  // Union the RENAME-INDUCED aliases the identity ledger already knows onto the
+  // hand-written editorial ones (#552).
+  //
+  // A slug rename leaves the authored directory behind: Figma renames the
+  // component to `action-bar` while its guidance stays in
+  // `components/src/sticky-footer/`. Without this the nightly would have to
+  // hand-write an alias entry on a PR meant to auto-merge, which is the
+  // consumer-restates-the-producer shape this repo keeps paying for. The
+  // editorial entries stay hand-written because "this family doc covers these
+  // components" is not derivable from any ledger.
+  //
+  // Empty until a rename actually lands, so it changes no bytes today.
+  if (registry && registry.components) {
+    let ledger = null;
+    try {
+      const ledgerPath = path.join(
+        d.repoRoot,
+        "components",
+        "dist",
+        "identity.json",
+      );
+      if (fs.existsSync(ledgerPath)) {
+        ledger = JSON.parse(fs.readFileSync(ledgerPath, "utf8"));
+      }
+    } catch (err) {
+      // A ledger that will not parse means no rename aliases, never a crash:
+      // the hand-written entries must keep working on their own.
+      console.error(
+        "[derive-guidelines] identity ledger unreadable, deriving no rename " +
+          "aliases: " +
+          err.message,
+      );
+      ledger = null;
+    }
+    const derivedAliases = identityLedger.renameAliases(
+      ledger,
+      listComponentDirs(srcDir),
+      registry.components,
+    );
+    Object.keys(derivedAliases).forEach((from) => {
+      // A hand-written entry wins: it is a human decision about which doc
+      // serves a registry key, and the ledger must not silently retarget it.
+      if (!Object.prototype.hasOwnProperty.call(registryAliases, from)) {
+        registryAliases[from] = derivedAliases[from];
+      }
+    });
   }
 
   let result;

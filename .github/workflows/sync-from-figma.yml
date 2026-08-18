@@ -138,13 +138,21 @@ jobs:
 
       # Records this run's slug for every stable Figma identity, so a rename
       # leaves a trail a consumer can follow instead of a slug that no longer
-      # resolves. Reads the registries, so it runs after they are written.
+      # resolves.
       #
-      # Deliberately AFTER the verdict is read, and non-fatal: derive-identity
-      # fails loudly on an unreadable or empty registry set, and if that threw
-      # here it would kill the job before the verdict was consumed, so an
-      # otherwise-additive night would produce no PR, no changelog and no
-      # tracking issue. A ledger problem must not discard a good sync.
+      # The registries phase now writes the ledger ITSELF, before it classifies
+      # anything (#552): the verdict on a rename depends on where the old slug
+      # lands, which is a fact about the ledger this run is about to write, and
+      # a breaking verdict opens no PR, so a ledger written only here would be
+      # discarded with the runner and the same rename re-detected every night.
+      #
+      # This step is therefore a no-op on a registries run, and is kept for the
+      # phases that do not touch the registries, so the ledger stays current
+      # whichever phase ran. Still non-fatal: derive-identity fails loudly on an
+      # unreadable or empty registry set, and if that threw here it would kill
+      # the job before the verdict was consumed, so an otherwise-additive night
+      # would produce no PR, no changelog and no tracking issue. A ledger
+      # problem must not discard a good sync.
       - name: Update the identity ledger
         continue-on-error: true
         run: node scripts/components/derive-identity.js

@@ -26,6 +26,14 @@ on:
       - 'components/src/*/behavior.md'
       - 'components/src/*/tokens.yml'
       - 'scripts/components/**'
+      # The identity ledger is an INPUT as of #552: derive-guidelines reads it to
+      # derive the registry-alias entry a slug rename needs, because a rename
+      # leaves the authored directory under the old name. dskit.json is already
+      # listed further down, so the rename's registry half was always a trigger;
+      # this line is the half that was not, and removing it would mean the alias
+      # copy and its bundle/coverage entries never land on the night the rename
+      # does, arriving later as churn on an unrelated PR.
+      - 'components/dist/identity.json'
       - 'scripts/lib/frontmatter.js'
       - 'scripts/lib/dist-io.js'
       - 'scripts/content/fanout-patterns.js'
