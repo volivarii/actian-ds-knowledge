@@ -43,16 +43,21 @@ on:
       # drift by regenerating and auto-committing. An input missing here is
       # therefore a required check going red with no job able to fix it. Same
       # lesson as the anatomy path above, learned before it could cost a night.
-      # usage-notes' actual input. derive-usage-notes.js reads
-      # components/dist/guidelines/, and until #565 this workflow reached it only
-      # by coincidence: guidelines-derive.yml bumps knowledge_version in
-      # paths-manifest.json, which IS watched, so the auto-commit re-triggered this
-      # run. Correct behaviour resting on a version bump is the exact thing the
-      # anatomy comment above warns about, so the input is declared now.
-      - 'components/dist/guidelines/**'
       - 'components/dist/registries/**'
       - 'components/dist/icons/**'
       - 'components/dist/graphics/**'
+      # derive-usage-notes.js's own inputs, declared as INPUTS in that script and
+      # asserted against this list by tests/render/derive-usage-notes.test.js. It
+      # reads components/dist/guidelines/ for the per-domain prose and
+      # components/dist/categories/ for the inherited category rationale that 59 of
+      # the 60 committed notes carry. Until #567 neither was watched: the notes
+      # regenerated only because guidelines-derive.yml bumps knowledge_version in
+      # paths-manifest.json, which IS watched, so its auto-commit re-triggered this
+      # run. That is the same "correct by coincidence" the anatomy comment above
+      # warns about, and here there is no drift guard to catch it: a stale note
+      # reds no required check, which is how a fossil survived a month (#565).
+      - 'components/dist/guidelines/**'
+      - 'components/dist/categories/**'
 
 # Serialize runs per branch: concurrent auto-commit pushes to the same PR
 # head race each other (lost push = red required check). Queue, never cancel:

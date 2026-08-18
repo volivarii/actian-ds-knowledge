@@ -180,3 +180,83 @@ test("pruneNotes: a clean tree is a no-op", function () {
   assert.deepEqual(pruneNotes(dir, ["button", "radio"]), []);
   assert.equal(fs.readdirSync(dir).length, 2);
 });
+
+test("render-derive.yml watches every path this producer reads", function () {
+  // The trigger list and the producer's inputs are the same fact written twice,
+  // and until #567 they disagreed: usage-notes derives from
+  // components/dist/guidelines/ and components/dist/categories/, neither of which
+  // was watched. It regenerated anyway, but only because guidelines-derive.yml
+  // bumps knowledge_version in paths-manifest.json, which IS watched. Correct by
+  // coincidence, and there is no committed-vs-fresh drift guard on usage-notes to
+  // red a required check when the coincidence stops holding. Same assertion, and
+  // the same watchedBy semantics, as tests/render/derive-contract.test.js.
+  var D = require("../../scripts/render/derive-usage-notes.js");
+  var yml = fs.readFileSync(
+    path.resolve(__dirname, "../../.github/workflows/render-derive.yml"),
+    "utf8",
+  );
+  var triggers = (yml.match(/^\s*- '([^']+)'/gm) || []).map(function (l) {
+    return l.replace(/^\s*- '/, "").replace(/'$/, "");
+  });
+
+  function watchedBy(triggerList, input) {
+    return triggerList.some(function (t) {
+      if (t === input) return true;
+      // Only `dir/**` covers what is beneath it, by whole path segments, so a
+      // truncation cannot pass: 'components/dist/guideline/**' does not cover
+      // 'components/dist/guidelines/'.
+      if (t.slice(-3) !== "/**") return false;
+      return input.indexOf(t.slice(0, -2)) === 0;
+    });
+  }
+
+  // Negative controls first, so this cannot pass by being permissive.
+  assert.equal(watchedBy(["*"], "components/dist/guidelines/"), false);
+  assert.equal(
+    watchedBy(["components/dist/guideline/**"], "components/dist/guidelines/"),
+    false,
+    "a truncated path must not count as watching the real one",
+  );
+  assert.equal(
+    watchedBy(["components/dist/guidelines/**"], "components/dist/guidelines/"),
+    true,
+    "positive control: the real trigger shape does match",
+  );
+
+  assert.ok(D.INPUTS.length, "the producer must declare what it reads");
+  D.INPUTS.forEach(function (input) {
+    assert.ok(
+      watchedBy(triggers, input),
+      input + " is a derive input render-derive.yml does not watch",
+    );
+  });
+});
+
+test("pruneNotes keys on the guidelines dist, not on what emitted a note", function () {
+  // THE REGRESSION THIS PREVENTS. deriveAll drops any slug whose note fails
+  // hasBody, and chat-with-ai-steward is a real guideline that does exactly that
+  // today. Pruning against the emitted set would delete that slug's shipped note,
+  // and render-derive.yml would bump, commit, tag and vendor the deletion with a
+  // green run throughout. Only a slug LEAVING the guidelines dist may remove one.
+  var known = require("../../scripts/render/derive-usage-notes.js").guidelineSlugs();
+  var emitted = Object.keys(deriveAll({}));
+  var thin = known.filter(function (s) {
+    return emitted.indexOf(s) < 0;
+  });
+  assert.ok(
+    thin.length,
+    "expected at least one guideline that emits no note, or this test has lost its subject",
+  );
+
+  var dir = tmpNotesDir({ "chat-with-ai-steward.md": "shipped", "button.md": "shipped" });
+  assert.deepEqual(
+    pruneNotes(dir, known),
+    [],
+    "a guideline that emits no note keeps whatever is committed for it",
+  );
+  assert.deepEqual(
+    pruneNotes(dir, emitted).sort(),
+    ["chat-with-ai-steward.md"],
+    "and keying on the emitted set is what would have deleted it",
+  );
+});

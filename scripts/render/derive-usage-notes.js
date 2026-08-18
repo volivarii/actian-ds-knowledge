@@ -15,6 +15,12 @@ var REPO_ROOT = path.resolve(__dirname, "..", "..");
 var GUIDELINES_DIR = path.join(REPO_ROOT, "components", "dist", "guidelines");
 var CATEGORIES_DIR = path.join(REPO_ROOT, "components", "dist", "categories");
 
+// The dist paths this producer READS. render-derive.yml must watch every one of
+// them, and tests/render/derive-usage-notes.test.js asserts that it does. Same
+// contract as derive-contract.js INPUTS: a trigger list nobody checks rots, and
+// this producer has no committed-vs-fresh drift guard to catch it when it does.
+var INPUTS = ["components/dist/guidelines/", "components/dist/categories/"];
+
 var PERMISSIVE = ["approved", "draft", "inherited", "synthesized"];
 var STRICT = ["approved"];
 
@@ -242,30 +248,47 @@ function hasBody(note) {
   return /\n## /.test(note);
 }
 
-function deriveAll(opts) {
-  var out = {};
-  fs.readdirSync(GUIDELINES_DIR)
+// Every slug the guidelines dist holds, which is NOT the same as the slugs that
+// emit a note: `chat-with-ai-steward` is a real guideline whose prose is too thin
+// to pass hasBody. That difference is why the prune keys on this and not on the
+// emitted set, see pruneNotes.
+function guidelineSlugs() {
+  return fs
+    .readdirSync(GUIDELINES_DIR)
     .filter(function (f) {
       // Per-component docs only; skip the guidelines.bundle.json roll-up.
       return f.endsWith(".json") && !f.endsWith(".bundle.json");
     })
-    .sort()
-    .forEach(function (f) {
-      var slug = path.basename(f, ".json");
-      var doc;
-      try {
-        doc = JSON.parse(fs.readFileSync(path.join(GUIDELINES_DIR, f), "utf8"));
-      } catch (e) {
-        process.stderr.write("skip " + slug + " (unreadable guideline)\n");
-        return;
-      }
-      var note = usageNote(doc, opts);
-      if (hasBody(note)) out[slug] = note;
-    });
+    .map(function (f) {
+      return path.basename(f, ".json");
+    })
+    .sort();
+}
+
+function deriveAll(opts) {
+  var out = {};
+  guidelineSlugs().forEach(function (slug) {
+    var doc;
+    try {
+      doc = JSON.parse(
+        fs.readFileSync(path.join(GUIDELINES_DIR, slug + ".json"), "utf8"),
+      );
+    } catch (e) {
+      // Previously this was a skipped slug on stderr. It cannot be: the caller
+      // prunes, and a swallowed parse error would turn one corrupt input into a
+      // deleted, committed, tagged and vendored note. A guideline that will not
+      // parse is a broken input, not a component without guidance.
+      throw new Error(
+        "derive-usage-notes: " + slug + ".json is unreadable: " + e.message,
+      );
+    }
+    var note = usageNote(doc, opts);
+    if (hasBody(note)) out[slug] = note;
+  });
   return out;
 }
 
-// Delete notes whose slug the derive no longer emits. Without this the producer
+// Delete notes for slugs the guidelines dist no longer holds. Without this the producer
 // only ever writes, so a rename leaves a fossil no regeneration can reach:
 // usage-notes/radio-button.md survived the radio-button -> radio rename in #438
 // and was still asserting "DRAFT (usage)" after #566 made that false, tracked and
@@ -274,13 +297,18 @@ function deriveAll(opts) {
 // Takes outDir explicitly so it can be tested against a temp directory. The CLI
 // block below hardcodes REPO_ROOT, and a prune driven at the real tree is how 179
 // committed anatomy files were once deleted by a test.
-function pruneNotes(outDir, slugs) {
-  // An empty emitted set means the input is missing, not that every note should
-  // go. That distinction is the difference between a no-op and a silent wipe, so
-  // the caller has to have checked it before getting here.
-  if (!slugs.length) throw new Error("pruneNotes: refusing to prune against an empty slug set");
+function pruneNotes(outDir, knownSlugs) {
+  // knownSlugs is the set of slugs the guidelines dist HOLDS, never the set that
+  // emitted a note. A guideline whose prose is momentarily too thin, or truncated
+  // by a bad write, emits nothing; keying on the emitted set would delete its
+  // shipped note, bump, tag and vendor the deletion, with a green run throughout.
+  // The only thing that should remove a note is its guideline disappearing.
+  //
+  // An empty set means the input is missing, not that every note should go. That
+  // distinction is the difference between a no-op and a silent wipe.
+  if (!knownSlugs.length) throw new Error("pruneNotes: refusing to prune against an empty slug set");
   var keep = Object.create(null);
-  slugs.forEach(function (s) {
+  knownSlugs.forEach(function (s) {
     keep[s + ".md"] = true;
   });
   return fs
@@ -295,8 +323,23 @@ function pruneNotes(outDir, slugs) {
 }
 
 if (require.main === module) {
+  // `--strict` is a measurement mode: it drops every non-approved domain, so its
+  // output is a different artifact from the committed dist, which is the
+  // permissive one. It used to write that different artifact straight into the
+  // shipped directory. Nothing in package.json or CI passes the flag, so the only
+  // way to reach that was a human running it by hand and silently clobbering 60
+  // vendored notes. It reports now and writes nothing.
   var strict = process.argv.indexOf("--strict") >= 0;
   var all = deriveAll({ strict: strict });
+  var slugs = Object.keys(all);
+  if (strict) {
+    process.stdout.write(
+      "--strict: " + slugs.length + " note(s) would be emitted. Reporting only; " +
+        "the committed dist is the permissive output and is not written.\n",
+    );
+    return;
+  }
+
   var outDir = path.join(
     REPO_ROOT,
     "components",
@@ -304,10 +347,16 @@ if (require.main === module) {
     "dist",
     "usage-notes",
   );
-  var slugs = Object.keys(all);
-  if (!slugs.length) {
+  // The guidelines dist is what the prune keys on, not the emitted set. A slug
+  // that exists but yields no note (chat-with-ai-steward today) must keep whatever
+  // is committed for it; only a slug that has GONE should lose its note.
+  var known = guidelineSlugs();
+  if (!known.length) {
+    // Reachable only as "the directory exists and holds no per-component JSON".
+    // A missing directory throws out of readdirSync inside deriveAll above, long
+    // before here, which is the louder failure and the right one.
     process.stderr.write(
-      "derive-usage-notes: emitted 0 notes. components/dist/guidelines is empty or missing; " +
+      "derive-usage-notes: components/dist/guidelines holds no per-component JSON; " +
         "refusing to write or prune.\n",
     );
     process.exit(1);
@@ -316,11 +365,7 @@ if (require.main === module) {
   slugs.forEach(function (slug) {
     fs.writeFileSync(path.join(outDir, slug + ".md"), all[slug] + "\n");
   });
-  // Only the default run prunes. `--strict` emits a different and potentially
-  // smaller set (hasBody drops a note left with no approved body), and the
-  // committed dist is the permissive output, so pruning on a strict run would
-  // delete valid notes.
-  var pruned = strict ? [] : pruneNotes(outDir, slugs);
+  var pruned = pruneNotes(outDir, known);
   process.stdout.write(
     "wrote " + slugs.length + " usage note(s) -> " + outDir + "\n",
   );
@@ -332,6 +377,8 @@ if (require.main === module) {
 module.exports = {
   usageNote: usageNote,
   pruneNotes: pruneNotes,
+  guidelineSlugs: guidelineSlugs,
+  INPUTS: INPUTS,
   deriveAll: deriveAll,
   clean: clean,
   sections: sections,
