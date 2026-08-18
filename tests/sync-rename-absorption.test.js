@@ -173,3 +173,117 @@ test("a removal alongside a rename still stalls the night", async () => {
     fs.rmSync(tmpdir, { recursive: true, force: true });
   }
 });
+
+test("an unreadable committed registry abandons absorption instead of erasing history", async () => {
+  const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "sync-corrupt-"));
+  try {
+    const outputDir = seedRepo(tmpdir, {
+      library: "ds",
+      fileKey: "DS_KEY",
+      components: {
+        "sticky-footer": {
+          name: "Sticky footer",
+          key: "K-STICKY",
+          nodeId: "10:1",
+        },
+      },
+    });
+    // A kit whose fetch fails falls back to its committed file, and that file is
+    // truncated from an earlier interrupted write. Rewriting the ledger from
+    // what is left would drop every metaKit identity AND its previousSlugs,
+    // which is history no later run can recover.
+    fs.writeFileSync(path.join(outputDir, "metakit.json"), '{"components": {');
+    const ledgerBefore = fs.readFileSync(
+      path.join(tmpdir, "components", "dist", "identity.json"),
+      "utf8",
+    );
+
+    const rest = restRenaming("Action bar", "K-STICKY");
+    rest.getComponents = async (fileKey) => {
+      if (fileKey === "META_KEY") throw new Error("figma 500");
+      return fileKey === "DS_KEY"
+        ? {
+            meta: {
+              components: [
+                {
+                  key: "K-STICKY",
+                  name: "Action bar",
+                  node_id: "10:1",
+                  description: "",
+                  containing_frame: {},
+                },
+              ],
+            },
+          }
+        : { meta: { components: [] } };
+    };
+
+    const result = await runSync(tmpdir, outputDir, rest);
+
+    assert.equal(
+      fs.readFileSync(
+        path.join(tmpdir, "components", "dist", "identity.json"),
+        "utf8",
+      ),
+      ledgerBefore,
+      "the ledger must not be rewritten from a partial registry set",
+    );
+    assert.notEqual(
+      result.category,
+      "additive",
+      "with no ledger update there is nothing to absorb, so the rename stays breaking",
+    );
+  } finally {
+    fs.rmSync(tmpdir, { recursive: true, force: true });
+  }
+});
+
+test("a ledger that cannot be written degrades the rename, it does not discard the night", async () => {
+  const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "sync-ledger-fail-"));
+  try {
+    const outputDir = seedRepo(tmpdir, {
+      library: "ds",
+      fileKey: "DS_KEY",
+      components: { "some-card": { name: "Some card", key: "K-CARD", nodeId: "9:1" } },
+    });
+    // The ledger is valid and readable; its DIRECTORY is read-only, so the
+    // rebuild parses fine and then fails at writeFileSync. That is the path the
+    // degradation exists for, and it is distinct from an unreadable ledger,
+    // which is handled before any write is attempted.
+    const ledgerPath = path.join(tmpdir, "components", "dist", "identity.json");
+    fs.chmodSync(ledgerPath, 0o444);
+
+    // An ordinary additive night: one component gains a sibling.
+    const rest = restRenaming("Some card", "K-CARD");
+    rest.getComponents = async (fileKey) =>
+      fileKey === "DS_KEY"
+        ? {
+            meta: {
+              components: [
+                { key: "K-CARD", name: "Some card", node_id: "9:1", description: "", containing_frame: {} },
+                { key: "K-NEW", name: "Brand new", node_id: "9:2", description: "", containing_frame: {} },
+              ],
+            },
+          }
+        : { meta: { components: [] } };
+
+    const result = await runSync(tmpdir, outputDir, rest);
+
+    assert.notEqual(
+      result.category,
+      "error",
+      "a ledger write failure must not throw away an otherwise additive night",
+    );
+    assert.equal(result.category, "additive");
+  } finally {
+    try {
+      fs.chmodSync(
+        path.join(tmpdir, "components", "dist", "identity.json"),
+        0o644,
+      );
+    } catch (e) {
+      void e;
+    }
+    fs.rmSync(tmpdir, { recursive: true, force: true });
+  }
+});

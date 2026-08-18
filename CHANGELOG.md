@@ -135,11 +135,10 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
-- **A slug rename is additive again, because the sync now records where the slug went before it decides
-  what the change means.** `components/dist/identity.json` already let a consumer resolve a slug a
-  component was renamed away from, but the verdict could not use it, so a rename still classified
-  breaking, and a breaking verdict commits nothing. Two components (`sticky-footer` to `action-bar`,
-  `view-details` to `view-detail`) have been holding a night's additive work behind them.
+- **The sync's registry verdict no longer calls a slug rename breaking, because the run now records
+  where the slug went before it decides what the change means.** `components/dist/identity.json`
+  already let a consumer resolve a slug a component was renamed away from, but the verdict could not
+  use it, so a rename classified breaking, and a breaking verdict commits nothing.
 
   Wiring the committed ledger into the classifier could never have worked, and the reason is a deadlock
   rather than an oversight: the ledger is derived in a later step than the verdict, and a breaking
@@ -148,19 +147,38 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
   So `syncRegistry` splits into **compute-then-classify**. Every kit's `after` registry is computed
   first, the ledger is rebuilt from those and written, the `{fromSlug: toSlug}` index is derived from
-  it, and only then is anything classified. The ledger and the registries are committed together in one
-  PR. Verified against the real pending rename: with absorption `sticky-footer` to `action-bar` is
-  additive, without it the same input is breaking.
+  it, and only then is anything classified. Verified against the real pending rename by replaying it
+  over the committed `dskit.json` and `identity.json`: with absorption `sticky-footer` to `action-bar`
+  is additive, without it the same input is breaking.
 
-  Two properties it holds deliberately. **Absorption is checked by target, not by presence**, so a
-  ledger naming the wrong successor stays breaking rather than laundering a real break into an
-  auto-merge. And **the postcondition is asserted**: the ledger is read back from disk and the renames
-  the run computed must survive the round trip, or the run fails loudly instead of auto-merging a
-  rename nothing recorded. Both are mutation-tested, along with the wiring itself.
+  **Absorption is checked by target, not by presence**, so a ledger naming the wrong successor stays
+  breaking rather than laundering a real break into an auto-merge. That property is mutation-tested,
+  as is the wiring on both sides.
 
-  **This does not on its own unblock the current backlog.** Tonight's sync also removes four components
-  (`alert-inline`, `card-for-items`, `identification-key`, and a duplicate `snowflake`), and a removal
-  is breaking whatever the ledger says. That half is the `card-for-items` decision in #526.
+  Two degradations, both deliberate and both tested by making them actually happen. An **unreadable
+  committed registry or ledger abandons absorption without writing anything**, because rewriting from a
+  partial set would drop identities and their rename history, which no later run can recover; and a
+  **ledger that cannot be written degrades the rename rather than discarding the night**, because
+  turning it into a run error would throw away an otherwise additive sync of registries, styles, media,
+  icons and tokens over one failed file. In both cases the index is empty and renames simply go back to
+  breaking, which is where they stood before this existed. The read-back after writing is kept as cheap
+  insurance and is described as such: it reads the same path in the same process moments after the
+  write reported success, so it is not a proven guard.
+
+  ⚠️ **This is necessary but NOT sufficient, and a rename still will not land tonight.** Two other gates
+  stop it, both found by review rather than by the issue:
+
+  1. On the nightly `--phase all`, the anatomy phase deletes `components/dist/anatomy/<oldSlug>.json`
+     and reports any deletion as breaking, and the run verdict is the OR across phases. So a pure
+     rename still stalls; only a hand-dispatched `--phase registries` benefits today.
+  2. Even as an additive PR, `tests/guideline-reachability.test.js` requires every
+     `components/src/<slug>/` to be a live registry key or an alias target, and it does not consult the
+     ledger. `components/src/sticky-footer/` would become an unnamed orphan and fail the required
+     check, so auto-merge never fires.
+
+  Both are tracked rather than half-fixed here. And the four removals in the current backlog
+  (`alert-inline`, `card-for-items`, `identification-key`, a duplicate `snowflake`) are breaking
+  whatever the ledger says; that half is the `card-for-items` decision in #526.
 
 - **The variant-collapse gate now asserts which values a caller cannot tell apart, instead of how many
   there are, and separates the collapses the renderer makes on purpose from the ones nobody has

@@ -1043,6 +1043,12 @@ async function run(opts) {
       computedFiles[KIT_MAP[c.kitId].outputFile] = true;
       return c.after;
     });
+    // 🪤 A kit that failed to compute falls back to its committed registry, and
+    // an UNREADABLE one must abandon absorption rather than be skipped. Skipping
+    // it would write a ledger missing every identity in that file, including
+    // previousSlugs, which is history that cannot be recovered from current
+    // state. derive-identity refuses the same thing for the same reason.
+    var unreadable = [];
     if (fs.existsSync(orchOpts.outputDir)) {
       fs.readdirSync(orchOpts.outputDir)
         .filter(function (f) {
@@ -1052,11 +1058,36 @@ async function run(opts) {
         .forEach(function (f) {
           var reg = readJsonOrNull(path.join(orchOpts.outputDir, f));
           if (reg) registries.push(reg);
+          else unreadable.push(f);
         });
+    }
+    if (unreadable.length > 0) {
+      console.warn(
+        "[sync] identity ledger NOT updated: unreadable registry " +
+          unreadable.join(", ") +
+          ". Rewriting it now would drop those identities and their rename " +
+          "history, so no rename is absorbed this run.",
+      );
+      return {};
     }
     if (registries.length === 0) return {};
 
-    var previous = readJsonOrNull(ledgerPath);
+    // Same rule for the committed ledger: rebuilding from a corrupt one loses
+    // every previousSlug silently, and the rename this run wants to absorb is
+    // precisely the history being lost.
+    var previousRaw = fs.existsSync(ledgerPath)
+      ? readJsonOrNull(ledgerPath)
+      : null;
+    if (fs.existsSync(ledgerPath) && !previousRaw) {
+      console.warn(
+        "[sync] identity ledger NOT updated: the committed ledger at " +
+          ledgerPath +
+          " is unreadable, and rebuilding from it would erase every recorded " +
+          "rename. No rename is absorbed this run.",
+      );
+      return {};
+    }
+    var previous = previousRaw;
     var ledger = deriveIdentity.buildIdentity(registries, previous);
     var bytes = deriveIdentity.serialize(ledger);
     var current = fs.existsSync(ledgerPath)
@@ -1067,10 +1098,13 @@ async function run(opts) {
       fs.writeFileSync(ledgerPath, bytes);
     }
 
-    // Postcondition, asserted rather than assumed. The verdict is about to call
-    // a rename harmless BECAUSE the ledger records where the slug went, so if
-    // the write did not land, that claim is false and the run must fail loudly
-    // rather than auto-merge a rename nothing recorded.
+    // Read back what was written, because the verdict is about to call a rename
+    // harmless BECAUSE the ledger records where the slug went. 🪤 Honest about
+    // its own strength: this reads the same path in the same process moments
+    // after writeFileSync reported success, so it catches a lying filesystem and
+    // little else, and there is no test that forces it. It is cheap insurance,
+    // NOT a proven guard. What is proven is the degradation below: any doubt
+    // returns {} and renames go back to breaking.
     var onDisk = readJsonOrNull(ledgerPath);
     if (!onDisk) {
       throw new Error(
@@ -1115,14 +1149,23 @@ async function run(opts) {
     }
 
     // Between the passes: the ledger, and the renames it absorbs.
+    // 🪤 A ledger problem DEGRADES, it does not discard the night. Pushing this
+    // into `errors` made aggregateVerdict return "error", which fails the job
+    // and produces no PR, no changelog and no tracking issue, so a full disk
+    // while writing one file would throw away an otherwise additive sync of the
+    // registries, styles, media, icons and tokens. The safe degradation is an
+    // empty index: renames simply go back to being breaking, which is exactly
+    // where they stood before this existed. The workflow states this invariant
+    // in as many words.
     var absorbedRenames = {};
     try {
       absorbedRenames = absorptionForRun(computedRegistries);
     } catch (err) {
-      errors.push({ label: "identity-ledger", error: err });
-      if (opts.logger && typeof opts.logger.error === "function") {
-        opts.logger.error("[sync] identity-ledger failed:", err.message);
-      }
+      console.warn(
+        "[sync] identity ledger could not be updated (" +
+          err.message +
+          "). No rename is absorbed this run, so a rename stays breaking.",
+      );
     }
 
     // Pass 2: classify and write, now that the run knows where renamed slugs go.
