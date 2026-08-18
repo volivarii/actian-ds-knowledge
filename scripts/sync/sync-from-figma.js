@@ -1135,6 +1135,30 @@ async function run(opts) {
     return index;
   }
 
+  // The ledger spans every kit, but a verdict is always about ONE kit, so an
+  // index handed to a kit must be restricted to renames that happened inside it.
+  //
+  // 🪤 Without this, an FM-Kit rename `foo -> bar` absorbs a genuine DS-Kit
+  // deletion of `foo` whenever some unrelated DS-Kit component is named `bar`.
+  // The kits do share slug vocabulary (`upload`, `card`), and within-kit slug
+  // collisions are a known recurring problem here. classifyRegistry is tighter
+  // because it matches BOTH endpoints, but the anatomy check only knows the slug
+  // that disappeared, so the restriction has to happen here.
+  function restrictToKit(index, computed) {
+    var was = (computed && computed.before && computed.before.components) || {};
+    var now = (computed && computed.after && computed.after.components) || {};
+    var out = {};
+    Object.keys(index || {}).forEach(function (from) {
+      if (
+        Object.prototype.hasOwnProperty.call(was, from) &&
+        Object.prototype.hasOwnProperty.call(now, index[from])
+      ) {
+        out[from] = index[from];
+      }
+    });
+    return out;
+  }
+
   if (phase === "registries" || phase === "all") {
     // Pass 1: compute every kit's `after`. Deliberately NOT pushed into
     // `results`, which carries verdicts; nothing has been classified yet.
@@ -1172,7 +1196,13 @@ async function run(opts) {
       // needs a full `--phase all` run, which stalls before anatomy under the
       // fake REST. What IS tested is both ends, consumerVisibleDeletions and
       // syncAnatomy's use of opts.absorbedRenames.
-      orchOpts.absorbedRenames = absorbedRenames;
+      var dsComputed = computedRegistries.filter(function (c) {
+        return c.kitId === "dsKit";
+      })[0];
+      // ANATOMY_KITS is dsKit-only, so that is the scope the anatomy phase gets.
+      orchOpts.absorbedRenames = dsComputed
+        ? restrictToKit(absorbedRenames, dsComputed)
+        : {};
     } catch (err) {
       console.warn(
         "[sync] identity ledger could not be updated (" +
@@ -1184,7 +1214,7 @@ async function run(opts) {
     // Pass 2: classify and write, now that the run knows where renamed slugs go.
     computedRegistries.forEach(function (c) {
       try {
-        results.push(finishRegistry(c, absorbedRenames));
+        results.push(finishRegistry(c, restrictToKit(absorbedRenames, c)));
       } catch (err) {
         errors.push({ label: "registry:" + c.kitId, error: err });
         if (opts.logger && typeof opts.logger.error === "function") {

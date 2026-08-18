@@ -26,6 +26,17 @@ on:
       - 'components/src/*/behavior.md'
       - 'components/src/*/tokens.yml'
       - 'scripts/components/**'
+      # The registries and the identity ledger are INPUTS too, not just the
+      # authored sources. A slug rename changes only dist: the registry gains
+      # the new key and the ledger records where the old slug went, and
+      # derive-guidelines turns that pair into the registry-alias copy that lets
+      # a consumer resolve the new slug's guideline (#552). Without these two
+      # lines the derive never runs on the night the rename lands, so the alias
+      # copy, its bundle entry, the coverage row and the manifest key are all
+      # missing, and the next unrelated components/src/** PR lands them as
+      # surprise churn attributed to whoever authored it.
+      - 'components/dist/identity.json'
+      - 'components/dist/registries/*.json'
       - 'scripts/lib/frontmatter.js'
       - 'scripts/lib/dist-io.js'
       - 'scripts/content/fanout-patterns.js'

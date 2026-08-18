@@ -182,6 +182,16 @@ Each entry links its pull request. Dates are the merge date (UTC).
      these components" is not derivable, and a hand-written entry always wins over a derived one. The
      derived map is empty until a rename lands, so it changes no bytes today.
 
+  Each kit gets a rename index **restricted to renames that happened inside it**. The ledger spans all
+  three, and the anatomy check knows only the slug that disappeared, so an unrestricted index let an
+  FM-Kit rename `foo` to `bar` absorb a genuine DS-Kit deletion of `foo` whenever some unrelated
+  DS-Kit component was named `bar`. The kits do share slug vocabulary.
+
+  `guidelines-derive.yml` now also triggers on `components/dist/identity.json` and the registries.
+  They are inputs too: a rename changes only dist, so without this the derive never ran on the night
+  the rename landed, the alias copy and its manifest key were missing, and the next unrelated
+  `components/src/**` PR would have landed them as surprise churn.
+
   🪤 One line is NOT covered by a test: handing the absorbed renames to the anatomy phase. Exercising
   it needs a full `--phase all` run, which stalls before anatomy under a fake REST. It is a single
   assignment next to the computation rather than a line each future phase must remember, and both ends

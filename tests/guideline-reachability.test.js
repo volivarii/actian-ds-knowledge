@@ -84,13 +84,20 @@ function readReachable() {
   } catch (e) {
     ledger = null;
   }
-  Object.values(
-    identity.renameAliases(
-      ledger,
-      readAuthoredSlugs(),
-      Array.from(registryKeys),
-    ),
-  ).forEach((target) => aliasTargets.add(target));
+  // 🪤 Mirror derive-guidelines' precedence exactly: a hand-written entry wins,
+  // so a derived alias for a key the manifest already claims is NEVER applied
+  // there. Counting it reachable here would pass a required check on guidance
+  // the deriver does not serve, which is the false all-clear this gate exists to
+  // prevent.
+  const handWritten = manifest.registryAliases || {};
+  const derived = identity.renameAliases(
+    ledger,
+    readAuthoredSlugs(),
+    Array.from(registryKeys),
+  );
+  Object.keys(derived)
+    .filter((from) => !Object.prototype.hasOwnProperty.call(handWritten, from))
+    .forEach((from) => aliasTargets.add(derived[from]));
   return { registryKeys, aliasTargets };
 }
 

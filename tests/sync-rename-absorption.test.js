@@ -233,17 +233,19 @@ test("an unreadable committed registry abandons absorption instead of erasing hi
       ledgerBefore,
       "the ledger must not be rewritten from a partial registry set",
     );
-    assert.notEqual(
-      result.category,
-      "additive",
-      "with no ledger update there is nothing to absorb, so the rename stays breaking",
-    );
+    // 🪤 NOT an assertion about the rename verdict. The failed metaKit fetch
+    // pushes an error, and aggregateVerdict returns "error" before any registry
+    // verdict is consulted, so a check for "not additive" here would pass
+    // whether or not absorption had been wrongly applied. The meaningful
+    // assertion is the untouched ledger above; this one only pins the shape of
+    // the run so a future change to that path is visible.
+    assert.equal(result.category, "error");
   } finally {
     fs.rmSync(tmpdir, { recursive: true, force: true });
   }
 });
 
-test("a ledger that cannot be written degrades the rename, it does not discard the night", async () => {
+test("a ledger that cannot be written degrades the rename, it does not discard the night", async (t) => {
   const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "sync-ledger-fail-"));
   try {
     const outputDir = seedRepo(tmpdir, {
@@ -257,6 +259,19 @@ test("a ledger that cannot be written degrades the rename, it does not discard t
     // which is handled before any write is attempted.
     const ledgerPath = path.join(tmpdir, "components", "dist", "identity.json");
     fs.chmodSync(ledgerPath, 0o444);
+    // 🪤 chmod does not stop root. In a root container this test would assert
+    // "additive" on a run where the ledger wrote fine and nothing degraded,
+    // which is a guard that cannot fail. Prove the setup actually bites first.
+    let readOnly = false;
+    try {
+      fs.appendFileSync(ledgerPath, "");
+    } catch (e) {
+      readOnly = true;
+    }
+    if (!readOnly) {
+      t.skip("running as root: a read-only file cannot be simulated");
+      return;
+    }
 
     // An ordinary additive night: one component gains a sibling.
     const rest = restRenaming("Some card", "K-CARD");

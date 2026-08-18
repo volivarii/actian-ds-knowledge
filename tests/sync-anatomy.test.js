@@ -1023,10 +1023,15 @@ test("syncAnatomy feeds P2 token-name maps into appearance capture (opts.tokenNa
 // breaking.
 var { consumerVisibleDeletions } = require("../scripts/sync/sync-anatomy.js");
 
+// 🪤 pruneStaleAnatomy hands BARE SLUGS (sync-anatomy.js strips the extension
+// before pushing), so these pass bare slugs. An earlier version passed
+// "<slug>.json" and asserted the function echoed that back, pinning a contract
+// the real caller never produces; only a defensive strip made it look right.
+
 test("a deletion whose slug was renamed away is not consumer-visible", function () {
   assert.deepEqual(
     consumerVisibleDeletions(
-      ["sticky-footer.json"],
+      ["sticky-footer"],
       { "sticky-footer": "action-bar" },
       ["action-bar", "button"],
     ),
@@ -1036,8 +1041,8 @@ test("a deletion whose slug was renamed away is not consumer-visible", function 
 
 test("a genuine removal is still consumer-visible", function () {
   assert.deepEqual(
-    consumerVisibleDeletions(["alert-inline.json"], {}, ["button"]),
-    ["alert-inline.json"],
+    consumerVisibleDeletions(["alert-inline"], {}, ["button"]),
+    ["alert-inline"],
   );
 });
 
@@ -1047,11 +1052,11 @@ test("a rename whose successor has no anatomy is still consumer-visible", functi
   // and treating it as absorbed would hide it.
   assert.deepEqual(
     consumerVisibleDeletions(
-      ["sticky-footer.json"],
+      ["sticky-footer"],
       { "sticky-footer": "action-bar" },
       ["button"],
     ),
-    ["sticky-footer.json"],
+    ["sticky-footer"],
   );
 });
 
