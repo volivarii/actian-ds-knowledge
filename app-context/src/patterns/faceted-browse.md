@@ -6,6 +6,18 @@ label: Faceted browse
 apps:
   - studio
   - explorer
+tags:
+  - browse
+  - search
+  - facets
+  - filter
+  - results
+  - collection
+when: >-
+  Use when the user narrows a large collection by several independent facets at once, each
+  carrying its own count against a live total. Do not use search-filtered-table, which is
+  explicitly the single-search-no-facets case, and do not use table-with-tabs, where pre-
+  filtering is by one categorical axis rather than several.
 components:
   - checkbox
   - toggle

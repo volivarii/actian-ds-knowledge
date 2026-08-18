@@ -20,6 +20,52 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **A pattern can now say what it is for (`tags`) and when to use something else (`when`), so choosing a
+  page shape stops being a naming coincidence.** Closes #558. The consumer side already existed: the
+  plugin resolves app-context patterns and biases layout selection by tag overlap. But a pattern carried
+  no tags, so `resolve-patterns.js` invented them by splitting the slug on hyphens, which joins on
+  spelling rather than meaning (plugin #300).
+
+  30 of the 31 patterns are tagged. `mcp-server` is deliberately left untagged because it is not a page
+  shape, and the schema says so: a shape that legitimately has no archetype should stay honestly
+  untagged rather than be given tags that force a match. 14 carry a `when`, and the other 17 do not,
+  which is also deliberate. `when` names the neighbour to use instead, and naming a neighbour for a page
+  nobody has looked at is exactly the invention this program keeps paying for. An absent `when` is a
+  visible gap; a guessed one is not.
+
+  **The measurement, including the half that went the wrong way.** Scored over the 25 Studio patterns
+  against the plugin's 12 flow archetypes:
+
+  | | no match | 2-3 candidates | 4+ candidates |
+  | --- | --- | --- | --- |
+  | Slug words (today) | 11 | 5 | 1 |
+  | Real tags, same boolean join | 6 | 8 | **2** |
+
+  So better tags alone **made ambiguity worse**: silence fell from 11 to 6, and floods rose. That result
+  is worth keeping because it says the join itself is wrong, not just its input. Treating any single
+  shared word as a match cannot be rescued by supplying better words.
+
+  Ranking candidates by how many tags overlap, rather than accepting any overlap, is what actually
+  works: **decisive top-1 rises from 8 to 13 of 25 and no-match falls from 11 to 6**, with ties
+  unchanged at 6. The case that started this goes from a tie the wrong way to a decisive win:
+  `faceted-browse` scored `table-list` and `browse-search` at 1 each on the word "browse" and took the
+  wrong one; with authored tags it scores `browse-search` at **4** against `table-list` at 1. That is
+  the Studio Catalog defect, fixed without capturing anything new. The remaining 6 unmatched and 6 tied
+  are now a **derived** capture backlog rather than a guessed one.
+
+  Two records were also corrected against the running product rather than left as written:
+  `import-wizard` said 6 steps and named "Data Product" as the sixth, and there are **7** with `Data
+  source` first and `Category` sixth; `access-request-management` said "Status tabs: Pending / Done",
+  and there are no status tabs at all, the filter being a status multi-select of removable chips beside
+  a per-row reject/approve pair.
+
+  Two gates, each proven to fail before being trusted. A pattern slug named inside a `when` must
+  resolve, so a pointer cannot outlive a rename, and it matches only the "use `<slug>`" form so ordinary
+  prose ("use a plain form") cannot force a neighbour to be invented; proven by pointing a real `when`
+  at a retired name. And `tags` must be absent or plural, never a single word, because one tag is the
+  coincidence engine this metadata exists to replace. The first pass at the dangling-reference control
+  failed against its own fixture and was wrong, not the code.
+
 - **Page recipes are now substrate: `app-context/src/recipes/<slug>.json` authored, derived per slug
   to `app-context/dist/recipes/<slug>.json`.** A pattern names a page shape and says in prose what it
   is; a recipe gives that shape a composition, the node tree a consumer renders. Compositions lived in

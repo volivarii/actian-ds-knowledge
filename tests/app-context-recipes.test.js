@@ -209,3 +209,64 @@ test("positive control: the axis-blind FILL check does catch one", () => {
     "must flag the vertical-parent case and must NOT flag the horizontal-parent one",
   );
 });
+
+// ---------------------------------------------------------------------------
+// Pattern selection metadata.
+//
+// `when` exists to point a reader at the neighbouring shape to use instead.
+// A pointer to a pattern that has been renamed or retired is worse than no
+// pointer, because it reads as authoritative. The phrase this catches is the
+// one the authored `when` texts actually use: "use <slug>". Ordinary prose
+// ("use a plain form", "use a dropdown") is deliberately not matched, so the
+// gate cannot force a neighbour to be invented where none exists.
+// ---------------------------------------------------------------------------
+
+const AC = JSON.parse(
+  fs.readFileSync(path.join(ROOT, "app-context", "dist", "app-context.json"), "utf8"),
+);
+
+function danglingWhenRefs(patterns) {
+  const known = new Set(Object.keys(patterns));
+  const bad = [];
+  for (const [slug, p] of Object.entries(patterns)) {
+    if (!p.when) continue;
+    const refs = String(p.when).match(/\buse ([a-z][a-z0-9]*(?:-[a-z0-9]+)+)/g) || [];
+    for (const raw of refs) {
+      const ref = raw.replace(/^use /, "");
+      if (!known.has(ref)) bad.push(slug + " -> " + ref);
+    }
+  }
+  return bad;
+}
+
+test("every pattern named inside a `when` resolves to a pattern that exists", () => {
+  const withWhen = Object.values(AC.patterns).filter((p) => p.when);
+  assert.ok(
+    withWhen.length >= 10,
+    "only " + withWhen.length + " patterns carry `when`; this check would be near-vacuous",
+  );
+  assert.deepEqual(danglingWhenRefs(AC.patterns), []);
+});
+
+test("positive control: a `when` naming a retired pattern is caught", () => {
+  const planted = {
+    // present, so a reference to it must be accepted
+    "search-filtered-table": { label: "Search-filtered list table" },
+    "faceted-browse": { when: "Do not use search-filtered-table, which has no facet rail." },
+    "some-shape": { when: "Do not use a plain form. Do not use retired-shape-name either." },
+  };
+  assert.deepEqual(
+    danglingWhenRefs(planted),
+    ["some-shape -> retired-shape-name"],
+    "must flag the dangling slug, must ignore ordinary prose, must accept the real one",
+  );
+});
+
+test("tags are absent or plural, never a single word", () => {
+  const single = Object.entries(AC.patterns)
+    .filter(([, p]) => Array.isArray(p.tags) && p.tags.length === 1)
+    .map(([s]) => s);
+  // One tag is the coincidence engine this metadata exists to replace: it
+  // matches any archetype sharing that word and ranks no better than chance.
+  assert.deepEqual(single, [], "these patterns carry exactly one tag");
+});
