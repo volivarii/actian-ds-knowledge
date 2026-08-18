@@ -165,18 +165,29 @@ Each entry links its pull request. Dates are the merge date (UTC).
   insurance and is described as such: it reads the same path in the same process moments after the
   write reported success, so it is not a proven guard.
 
-  ⚠️ **This is necessary but NOT sufficient, and a rename still will not land tonight.** Two other gates
-  stop it, both found by review rather than by the issue:
+  **Two further gates stopped a rename even after the verdict allowed it, both found by review rather
+  than by the issue, and both are fixed here.**
 
-  1. On the nightly `--phase all`, the anatomy phase deletes `components/dist/anatomy/<oldSlug>.json`
-     and reports any deletion as breaking, and the run verdict is the OR across phases. So a pure
-     rename still stalls; only a hand-dispatched `--phase registries` benefits today.
-  2. Even as an additive PR, `tests/guideline-reachability.test.js` requires every
-     `components/src/<slug>/` to be a live registry key or an alias target, and it does not consult the
-     ledger. `components/src/sticky-footer/` would become an unnamed orphan and fail the required
-     check, so auto-merge never fires.
+  1. The anatomy phase deletes `components/dist/anatomy/<oldSlug>.json` and reported any deletion as
+     breaking, and the run verdict is the OR across phases, so a pure rename still stalled the nightly.
+     A deletion is now only a removal when nothing redirects the old slug, and absorption requires the
+     SUCCESSOR to be present: a ledger claiming the slug moved somewhere nothing was written leaves a
+     consumer following a redirect to nothing, which is a real loss wearing a rename's clothes.
+  2. `tests/guideline-reachability.test.js` requires every `components/src/<slug>/` to be a live
+     registry key or an alias target, so `components/src/sticky-footer/` would have become an unnamed
+     orphan and failed a REQUIRED check. A rename leaves the authored directory behind, and
+     `registryAliases` already expresses exactly that shape (registry key to the doc slug that serves
+     it), so the rename-induced entries are now **derived from the ledger** rather than hand-written on
+     a PR meant to auto-merge. Editorial aliases stay hand-written, because "this family doc covers
+     these components" is not derivable, and a hand-written entry always wins over a derived one. The
+     derived map is empty until a rename lands, so it changes no bytes today.
 
-  Both are tracked rather than half-fixed here. And the four removals in the current backlog
+  🪤 One line is NOT covered by a test: handing the absorbed renames to the anatomy phase. Exercising
+  it needs a full `--phase all` run, which stalls before anatomy under a fake REST. It is a single
+  assignment next to the computation rather than a line each future phase must remember, and both ends
+  around it are tested.
+
+  And the four removals in the current backlog
   (`alert-inline`, `card-for-items`, `identification-key`, a duplicate `snowflake`) are breaking
   whatever the ledger says; that half is the `card-for-items` decision in #526.
 

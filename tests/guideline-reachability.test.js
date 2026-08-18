@@ -19,6 +19,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const identity = require("../scripts/components/derive-identity.js");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 
@@ -60,10 +61,36 @@ function readReachable() {
       "utf8",
     ),
   );
-  // Two ways to reach a consumer: BE a registry key, or be the target of an
-  // alias FROM one (how the card and tag family docs reach their members).
+  // Three ways to reach a consumer: BE a registry key, be the target of a
+  // hand-written alias FROM one (how the card and tag family docs reach their
+  // members), or be the target of a RENAME-INDUCED alias derived from the
+  // identity ledger.
+  //
+  // The third exists because a rename leaves the authored directory behind:
+  // Figma renames the component to `action-bar` while its guidance stays in
+  // `components/src/sticky-footer/`. Without it this gate fails a required check
+  // on every slug rename, and the only remedy would be hand-writing the alias
+  // the ledger already knows, on a sync PR that is meant to auto-merge (#552).
   const registryKeys = new Set(Object.keys(dskit.components || {}));
   const aliasTargets = new Set(Object.values(manifest.registryAliases || {}));
+  let ledger = null;
+  try {
+    ledger = JSON.parse(
+      fs.readFileSync(
+        path.join(REPO_ROOT, "components/dist/identity.json"),
+        "utf8",
+      ),
+    );
+  } catch (e) {
+    ledger = null;
+  }
+  Object.values(
+    identity.renameAliases(
+      ledger,
+      readAuthoredSlugs(),
+      Array.from(registryKeys),
+    ),
+  ).forEach((target) => aliasTargets.add(target));
   return { registryKeys, aliasTargets };
 }
 

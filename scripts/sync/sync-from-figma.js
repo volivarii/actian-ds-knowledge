@@ -1014,6 +1014,12 @@ async function run(opts) {
   orchOpts.syncedAt = new Date().toISOString();
   var results = [];
   var errors = [];
+  // Renames this run is absorbing, shared across phases. The registries phase
+  // computes it; the anatomy phase needs it too, because deleting
+  // anatomy/<oldSlug>.json is only a removal when nothing redirects the old
+  // slug. Empty on any phase that does not run the registries, which is the
+  // safe reading: nothing is absorbed and a deletion stays breaking.
+  var absorbedRenames = {};
 
   async function runWithGuard(label, fn) {
     try {
@@ -1157,9 +1163,16 @@ async function run(opts) {
     // empty index: renames simply go back to being breaking, which is exactly
     // where they stood before this existed. The workflow states this invariant
     // in as many words.
-    var absorbedRenames = {};
     try {
       absorbedRenames = absorptionForRun(computedRegistries);
+      // Set on orchOpts HERE, next to the computation, rather than handed to
+      // each phase that needs it. The anatomy phase already receives orchOpts,
+      // so this is the difference between one assignment and a line every
+      // future phase has to remember. 🪤 Not covered by a test: exercising it
+      // needs a full `--phase all` run, which stalls before anatomy under the
+      // fake REST. What IS tested is both ends, consumerVisibleDeletions and
+      // syncAnatomy's use of opts.absorbedRenames.
+      orchOpts.absorbedRenames = absorbedRenames;
     } catch (err) {
       console.warn(
         "[sync] identity ledger could not be updated (" +

@@ -279,3 +279,54 @@ test("a structurally wrong ledger degrades to no renames instead of throwing", f
     assert.equal(typeof index, "object", "must return a map, not throw");
   });
 });
+
+// ---------- rename-induced aliases (#552) ----------
+//
+// A rename leaves the AUTHORED directory behind: Figma renames the component to
+// `action-bar` while the guidance stays in `components/src/sticky-footer/`. The
+// registryAliases mechanism already expresses exactly that (registry key -> the
+// doc slug that serves it), and the ledger already knows the pair, so the entry
+// is derivable instead of hand-written. Editorial aliases stay hand-written:
+// "this family doc covers these components" is not something a ledger can know.
+
+test("a rename whose authored directory did not move yields an alias", () => {
+  const ledger = {
+    entries: {
+      K1: { slug: "action-bar", previousSlugs: ["sticky-footer"] },
+    },
+  };
+  assert.deepEqual(
+    identity.renameAliases(ledger, ["sticky-footer"], ["action-bar"]),
+    { "action-bar": "sticky-footer" },
+  );
+});
+
+test("no alias once the authored directory has been moved to the new name", () => {
+  const ledger = {
+    entries: {
+      K1: { slug: "action-bar", previousSlugs: ["sticky-footer"] },
+    },
+  };
+  // The convergence happened, so an alias would be the redundant kind
+  // resolveRegistryAliases already refuses.
+  assert.deepEqual(
+    identity.renameAliases(ledger, ["action-bar"], ["action-bar"]),
+    {},
+  );
+});
+
+test("no alias for a rename whose component has left the registry", () => {
+  const ledger = {
+    entries: { K1: { slug: "action-bar", previousSlugs: ["sticky-footer"] } },
+  };
+  // Nothing ships under `action-bar`, so pointing a registry key at the old
+  // guidance would invent reachability that does not exist.
+  assert.deepEqual(identity.renameAliases(ledger, ["sticky-footer"], []), {});
+});
+
+test("no alias when the old slug never had authored guidance", () => {
+  const ledger = {
+    entries: { K1: { slug: "action-bar", previousSlugs: ["sticky-footer"] } },
+  };
+  assert.deepEqual(identity.renameAliases(ledger, [], ["action-bar"]), {});
+});

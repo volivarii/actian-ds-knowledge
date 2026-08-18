@@ -1011,3 +1011,111 @@ test("syncAnatomy feeds P2 token-name maps into appearance capture (opts.tokenNa
   assert.equal(file.root.layout.gap, "8px");
   assert.equal(file.root.layout.gapToken, "--zen-spacing-xs");
 });
+
+// ---------- #552: a rename's deleted anatomy file is not a removal ----------
+//
+// A slug rename deletes components/dist/anatomy/<oldSlug>.json and writes
+// <newSlug>.json. The old file's disappearance is not consumer-visible loss:
+// the identity ledger redirects the old slug to the new one, so a consumer
+// holding it still resolves. Counting it as a removal made the anatomy phase
+// report breaking, and the run verdict ORs across phases, so a pure rename
+// stalled the nightly even after the registry verdict stopped calling it
+// breaking.
+var { consumerVisibleDeletions } = require("../scripts/sync/sync-anatomy.js");
+
+test("a deletion whose slug was renamed away is not consumer-visible", function () {
+  assert.deepEqual(
+    consumerVisibleDeletions(
+      ["sticky-footer.json"],
+      { "sticky-footer": "action-bar" },
+      ["action-bar", "button"],
+    ),
+    [],
+  );
+});
+
+test("a genuine removal is still consumer-visible", function () {
+  assert.deepEqual(
+    consumerVisibleDeletions(["alert-inline.json"], {}, ["button"]),
+    ["alert-inline.json"],
+  );
+});
+
+test("a rename whose successor has no anatomy is still consumer-visible", function () {
+  // The ledger claims the slug moved, but nothing was written under the new
+  // name, so the consumer following the redirect finds nothing. That is a loss,
+  // and treating it as absorbed would hide it.
+  assert.deepEqual(
+    consumerVisibleDeletions(
+      ["sticky-footer.json"],
+      { "sticky-footer": "action-bar" },
+      ["button"],
+    ),
+    ["sticky-footer.json"],
+  );
+});
+
+test("syncAnatomy: a deletion absorbed by a rename is additive, not breaking", async function () {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  // The anatomy file under the OLD slug. The registry now ships the component
+  // under the new one, so pruning deletes this file.
+  writeJsonReal(path.join(anatomyDir, "sticky-footer.json"), {
+    slug: "sticky-footer",
+  });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        "action-bar": { nodeId: "1:1", category: "Action", importMethod: "set" },
+      },
+    }),
+  );
+  var fakeRest = {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: {
+          "1:1": {
+            document: {
+              type: "COMPONENT_SET",
+              name: "Action bar",
+              children: [
+                {
+                  type: "COMPONENT",
+                  name: "Type=Default",
+                  layoutMode: "HORIZONTAL",
+                  itemSpacing: 8,
+                  children: [{ type: "TEXT", name: "Label", characters: "Go" }],
+                },
+              ],
+            },
+          },
+        },
+      });
+    },
+  };
+  var opts = {
+    rest: fakeRest,
+    registriesDir: registriesDir,
+    anatomyDir: anatomyDir,
+    keys: { dsKit: "F" },
+    writeJson: writeJsonReal,
+    syncedAt: "2026-08-18",
+  };
+
+  // Without the rename recorded, the deletion is a removal and stalls the night.
+  var uninformed = await syncAnatomy(opts, "dsKit");
+  assert.equal(uninformed.verdict.category, "breaking");
+
+  // Same inputs, with the run's rename handed in: the old slug still resolves
+  // through the ledger, so nothing was lost.
+  writeJsonReal(path.join(anatomyDir, "sticky-footer.json"), {
+    slug: "sticky-footer",
+  });
+  opts.absorbedRenames = { "sticky-footer": "action-bar" };
+  var informed = await syncAnatomy(opts, "dsKit");
+  assert.equal(informed.verdict.category, "additive");
+});
