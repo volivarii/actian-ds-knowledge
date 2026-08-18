@@ -391,6 +391,29 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The 54 usage domains are promoted from `draft` to `approved`, deliberately, as a baseline to be
+  reviewed against rather than a sign-off.** Vincent's decision on #537. The docs are finished writing
+  and have been live on 56 documentation pages since 2026-07-14; the design-lead review that was meant
+  to gate the promotion has not been scheduled. Holding the whole domain at `draft` until that
+  happens bought nothing, so the promotion lands now and the review happens against it.
+  `coverage.md` moves usage from 0 approved / 54 draft to 54 approved / 0 draft. Nothing else
+  moved: the other four domains are byte-identical, and each of the 54 files changed one line.
+
+  **What consumers see, with no consumer code change.** The status is read, never restated, so both
+  effects follow on the next vendor refresh: the docs site stops emitting the "Authored, pending design
+  lead review." note above each Usage section (`render-mdx.cjs` keys it on `status === "draft"`), and
+  every component's usage confidence chip moves from medium to high.
+
+  **`--strict` is deliberately NOT flipped**, which was item 3 of #537's done-when. Measured after the
+  promotion, not assumed: `STRICT` is `["approved"]` and so excludes `inherited`, while design and
+  behavior are `inherited` for about 50 of the 54 components. Turning the flag on today would drop
+  **25% of the derived usage-note text, 30,397 characters across 59 of the 60 slugs**. It cannot be
+  flipped until it admits `inherited`, which stays tracked on #537.
+
+  No new status value was added. `approved` is defined in `schemas/guideline-meta.json` as
+  team-signed-off, and this promotion is a baseline rather than a sign-off, so that gap is recorded here
+  and on #537 instead of in a fifth enum value every consumer would have to learn.
+
 - **The sync's registry verdict no longer calls a slug rename breaking, because the run now records
   where the slug went before it decides what the change means.** `components/dist/identity.json`
   already let a consumer resolve a slug a component was renamed away from, but the verdict could not
