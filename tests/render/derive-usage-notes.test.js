@@ -21,13 +21,33 @@ function guideline(slug) {
 }
 
 test("usageNote: approved-only draws only approved domains", function () {
-  var note = usageNote(guideline("button"), { strict: true });
+  var doc = guideline("button");
+  // ASSERT THE SUBJECT. This test only means something while some domain is NOT
+  // approved, and it used to rely on `usage` being that domain: it asserted that
+  // "When not to use" (usage's heading) stayed out under strict. #566 promoted all
+  // 54 usage domains to approved, so that assertion stopped describing an
+  // exclusion. `design` is the subject now, and its status is asserted rather than
+  // assumed, so the day design is promoted this test fails loudly instead of
+  // passing for the wrong reason.
+  //
+  // Nothing here depends on usage's own status, deliberately. The suite runs in
+  // validate-manifest.yml against the COMMITTED dist and in guidelines-derive.yml
+  // against a freshly regenerated one, and those two disagree for exactly the life
+  // of a promotion PR. A test that reads a status it does not control has to hold
+  // in both.
+  assert.equal(
+    doc.domains.design.status,
+    "draft",
+    "design is the non-approved domain this test excludes",
+  );
+
+  var note = usageNote(doc, { strict: true });
   assert.match(note, /Buttons trigger actions/, "lead paragraph present");
   assert.match(note, /## When to use/);
   assert.match(note, /## Style/);
   assert.ok(
-    note.indexOf("When not to use") < 0,
-    "no draft 'when not to use' under strict",
+    note.indexOf("## Design") < 0,
+    "no draft design guidance under strict",
   );
   assert.ok(
     note.indexOf("> Note:") < 0,
@@ -36,8 +56,14 @@ test("usageNote: approved-only draws only approved domains", function () {
 });
 
 test("usageNote: permissive adds draft guidance and a disclosure", function () {
-  var note = usageNote(guideline("button")); // default permissive
-  assert.match(note, /## When not to use/, "draft usage section present");
+  var doc = guideline("button");
+  assert.equal(
+    doc.domains.design.status,
+    "draft",
+    "design is the draft domain this test draws",
+  );
+  var note = usageNote(doc); // default permissive
+  assert.match(note, /## Design/, "draft design section present");
   assert.match(note, /> Note:.*DRAFT/, "disclosure names draft");
 });
 
