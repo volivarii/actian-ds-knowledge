@@ -1130,7 +1130,10 @@
       "when": "Use for the reviewer's side of a request flow: a queue of pending decisions, each row carrying its own approve and reject action. Do not use table-with-tabs, whose tabs partition one collection; here the filter is a status multi-select and the row itself is the unit of work.",
       "components": [
         "table",
-        "tabs",
+        "table",
+        "button",
+        "dropdown-select-default",
+        "tag-interactive",
         "tag-default",
         "button"
       ],
@@ -1380,7 +1383,7 @@
         "results",
         "collection"
       ],
-      "when": "Use when the user narrows a large collection by several independent facets at once, each carrying its own count against a live total. Do not use search-filtered-table, which is explicitly the single-search-no-facets case, and do not use table-with-tabs, where pre- filtering is by one categorical axis rather than several.",
+      "when": "Use when the user narrows a large collection by several independent facets at once, each carrying its own count against a live total. Do not use search-filtered-table, which is explicitly the single-search-no-facets case, and do not use table-with-tabs, where pre-filtering is by one categorical axis rather than several.",
       "components": [
         "checkbox",
         "toggle",
@@ -1465,9 +1468,11 @@
         "stepper",
         "button",
         "text-input",
-        "dropdown-select-default"
+        "dropdown-select-default",
+        "radio-card",
+        "sticky-footer"
       ],
-      "description": "7-step horizontal stepper: Data source → Connection → Items → Curator → Contact → Category → Confirm. Each step is a numbered circle with a label and a one-line helper beneath it, and a persistent action bar at the foot of the page carries Back and Next, with Next disabled until the step is satisfied. Step one is a grid of radio cards, one per data source, each with the source's logo.\n\nCorrected 2026-08-18 from the running product: this record previously said 6 steps and named \"Data Product\" as the sixth. There are 7, the first is Data source, and the sixth is Category."
+      "description": "7-step horizontal stepper: Data source → Connection → Items → Curator → Contact → Category → Confirm. Each step is a numbered circle with a label and a one-line helper beneath it, and a persistent action bar at the foot of the page carries Back and Next, with Next disabled until the step is satisfied. Step one is a grid of radio cards, one per data source, each with the source's logo.\n\nCorrected 2026-08-18 from the running product: this record previously said 6 steps and named \"Data Product\" as the sixth. There are 7, the first is Data source, and the sixth is Category. `components` also gained the radio\ncards of step one and the persistent action bar, which the corrected prose described and the\nmachine-read field did not. The action bar is named by its current slug `sticky-footer`; Figma has\nrenamed it to `action-bar` and that rename can only land alongside the registry, in one branch."
     },
     "interactive-graph": {
       "label": "Interactive graph visualization",
@@ -1613,7 +1618,7 @@
         "collection",
         "single-search"
       ],
-      "when": "Use for a collection narrowed by ONE inline search input and nothing else, most often as the content of a detail tab rather than as a whole page. Do not use it for a page with a filter rail: that is faceted-browse. If tabs partition the collection, that is table-with- tabs.",
+      "when": "Use for a collection narrowed by ONE inline search input and nothing else, most often as the content of a detail tab rather than as a whole page. Do not use it for a page with a filter rail: that is faceted-browse. If tabs partition the collection, that is table-with-tabs.",
       "components": [
         "search",
         "table"

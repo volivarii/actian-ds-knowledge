@@ -19,7 +19,22 @@ const SCHEMA_VERSION = 1;
 
 function readRecipes(srcDir, schema) {
   const dir = path.join(srcDir, "recipes");
-  if (!fs.existsSync(dir)) return { recipes: [], errors: [] };
+  // 🚨 An absent directory is NOT "no recipes". writeRecipes prunes every dist
+  // leaf this run did not write, so returning an empty list here turned a bad
+  // rebase or a sparse checkout into a silent full wipe that printed
+  // "derived app-context recipes: 0" and exited 0. Same shape as the anatomy
+  // prune that deleted 179 committed files. Unknown must not read as absent.
+  if (!fs.existsSync(dir)) {
+    return {
+      recipes: [],
+      errors: [
+        dir +
+          " does not exist. Refusing to treat a missing source directory as " +
+          "'no recipes', because the dist leaves would be pruned. Create the " +
+          "directory (it may hold only a README) or remove the collection.",
+      ],
+    };
+  }
 
   const ajv = new Ajv({ strict: false, allowUnionTypes: true });
   const validate = ajv.compile(schema);
@@ -38,6 +53,13 @@ function readRecipes(srcDir, schema) {
       doc = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
     } catch (e) {
       errors.push("recipes/" + file + ": invalid JSON (" + e.message + ")");
+      continue;
+    }
+    // JSON.parse succeeds on `null`, `123` and `[]`, none of which has a slug.
+    // Without this the dereference below throws an uncaught TypeError and takes
+    // the whole derive with it, instead of the per-file error line intended.
+    if (!doc || typeof doc !== "object" || Array.isArray(doc)) {
+      errors.push("recipes/" + file + ": not a JSON object");
       continue;
     }
     // Same guard the pattern/app/entity kinds enforce: the filename IS the id.

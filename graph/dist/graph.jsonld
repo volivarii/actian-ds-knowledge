@@ -5480,7 +5480,7 @@
       "@id": "pattern:import-wizard",
       "@type": "UXPattern",
       "title": "Multi-step import wizard",
-      "description": "7-step horizontal stepper: Data source → Connection → Items → Curator → Contact → Category → Confirm. Each step is a numbered circle with a label and a one-line helper beneath it, and a persistent action bar at the foot of the page carries Back and Next, with Next disabled until the step is satisfied. Step one is a grid of radio cards, one per data source, each with the source's logo.\n\nCorrected 2026-08-18 from the running product: this record previously said 6 steps and named \"Data Product\" as the sixth. There are 7, the first is Data source, and the sixth is Category."
+      "description": "7-step horizontal stepper: Data source → Connection → Items → Curator → Contact → Category → Confirm. Each step is a numbered circle with a label and a one-line helper beneath it, and a persistent action bar at the foot of the page carries Back and Next, with Next disabled until the step is satisfied. Step one is a grid of radio cards, one per data source, each with the source's logo.\n\nCorrected 2026-08-18 from the running product: this record previously said 6 steps and named \"Data Product\" as the sixth. There are 7, the first is Data source, and the sixth is Category. `components` also gained the radio\ncards of step one and the persistent action bar, which the corrected prose described and the\nmachine-read field did not. The action bar is named by its current slug `sticky-footer`; Figma has\nrenamed it to `action-bar` and that rename can only land alongside the registry, in one branch."
     },
     {
       "@id": "pattern:interactive-graph",
@@ -14132,6 +14132,18 @@
       "@type": "Edge",
       "edgeType": "uses_component",
       "source": "pattern:access-request-management",
+      "target": "component:dropdown-select-default",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:access-request-management",
       "target": "component:table",
       "confidence": "asserted",
       "provenance": {
@@ -14144,7 +14156,7 @@
       "@type": "Edge",
       "edgeType": "uses_component",
       "source": "pattern:access-request-management",
-      "target": "component:tabs",
+      "target": "component:tag-default",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -14156,7 +14168,7 @@
       "@type": "Edge",
       "edgeType": "uses_component",
       "source": "pattern:access-request-management",
-      "target": "component:tag-default",
+      "target": "component:tag-interactive",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -14972,7 +14984,31 @@
       "@type": "Edge",
       "edgeType": "uses_component",
       "source": "pattern:import-wizard",
+      "target": "component:radio-card",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:import-wizard",
       "target": "component:stepper",
+      "confidence": "asserted",
+      "provenance": {
+        "source_file": "app-context/dist/app-context.json",
+        "deriver": "derive-graph.js",
+        "method": "patterns.components"
+      }
+    },
+    {
+      "@type": "Edge",
+      "edgeType": "uses_component",
+      "source": "pattern:import-wizard",
+      "target": "component:sticky-footer",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",

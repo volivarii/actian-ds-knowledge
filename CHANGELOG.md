@@ -20,6 +20,41 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **Nine review findings across the two merged recipe PRs, two of them shipping defects.** I pushed #559,
+  #560 and #561 without an independent review and said so; running one afterwards found these.
+
+  **`when` prose was corrupted on arrival.** A `when` is authored as a YAML folded scalar, which turns
+  each line break into a space, and the wrapper broke lines mid-token: `table-with-tabs` reached
+  `app-context/dist` as **`table-with- tabs`**. The neighbour pointer in `search-filtered-table` was
+  therefore broken from the day it merged, and `faceted-browse` shipped `pre- filtering`. Both are
+  rewrapped, and a gate now rejects a fold artifact in any authored `when` or `description`. The
+  dangling-reference gate could not have caught it: it matched only lowercase `use <slug>`, guarding 13
+  of the 15 pointers actually written, and **both unguarded ones were the broken pair**. It now matches
+  `use` / `that is` / `prefer`, case-insensitively.
+
+  **A missing source directory was a silent full wipe.** `readRecipes` returned an empty list for an
+  absent `app-context/src/recipes`, and `writeRecipes` prunes every dist leaf it did not write, so a bad
+  rebase or a sparse checkout deleted the derived surface while printing `derived app-context recipes: 0`
+  and exiting 0. The same shape as the anatomy prune that removed 179 committed files, and **my own
+  positive control pinned it in place** by asserting the empty case was fine. An absent directory is now
+  an error; an empty one is still fine, and the two are asserted separately.
+
+  Also: a recipe file parsing to `null` or `[]` crashed the derive with a `TypeError` instead of the
+  intended per-file error; the recipe schema is `additionalProperties: false` yet the derive stamps
+  `_meta`, so **no dist recipe validated against its own schema** and the first validator wired into
+  `validate-schemas.yml` would have failed on every file; the layout gate hardcoded `skeleton.content`
+  while `skeleton` is deliberately schema-unconstrained, so a recipe rooted anywhere else was walked as
+  `undefined`, and its non-vacuity guard was a **sum across recipes**, which a new unwalked recipe could
+  never trip; the src/dist correspondence was asserted by count, which `{a,b}` against `{a,c}` satisfies;
+  and the plural-tags rule lived only in a dist-reading test, so a single tag passed authoring and failed
+  later with a message naming no file. The two copies of `tags` also disagreed on the kebab pattern.
+
+  **Two corrections had reached the prose and not the machine-read field.**
+  `access-request-management` said "there are no status tabs" while still listing `tabs` in
+  `components`, so the graph kept asserting a `uses_component` edge to it; `import-wizard` described
+  radio cards and a persistent action bar it did not name. Correcting prose and leaving `components` is
+  how a graph goes on asserting something the record itself denies.
+
 - **A pattern can now say what it is for (`tags`) and when to use something else (`when`), so choosing a
   page shape stops being a naming coincidence.** Closes #558. The consumer side already existed: the
   plugin resolves app-context patterns and biases layout selection by tag overlap. But a pattern carried

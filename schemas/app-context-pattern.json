@@ -64,6 +64,7 @@
     },
     "tags": {
       "type": "array",
+      "minItems": 2,
       "items": {
         "type": "string",
         "pattern": "^[a-z][a-z0-9-]*$"

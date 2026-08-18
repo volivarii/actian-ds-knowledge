@@ -283,6 +283,13 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   // the components the page actually uses, so 11 more pattern->component edges
   // exist that the graph could not previously see. `chip` is deliberately not
   // among them; the DS tier expresses a removable chip as `tag-interactive`.
+  //
+  // 263 -> 266: a review found two patterns whose CORRECTED prose disagreed with
+  // their own `components`. `access-request-management` said "there are no
+  // status tabs" while still asserting a uses_component edge to `tabs`, and
+  // `import-wizard` described radio cards and an action bar it did not name.
+  // Correcting prose and leaving the machine-read field is how a graph keeps
+  // asserting something the record itself denies.
   var ISLAND_PREFIXES = ["app", "entity", "pattern", "term"];
   var inIsland = function (id) {
     return ISLAND_PREFIXES.indexOf(String(id).split(":")[0]) !== -1;
@@ -294,7 +301,7 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
     return inIsland(e.source) || inIsland(e.target);
   });
   assert.equal(islandNodes.length, 97, "app-context island nodes");
-  assert.equal(islandEdges.length, 263, "app-context island edges");
+  assert.equal(islandEdges.length, 266, "app-context island edges");
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {
