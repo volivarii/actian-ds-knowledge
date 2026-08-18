@@ -142,12 +142,6 @@
       "origin": "human",
       "description": "Curated slug -> category display-name overrides consumed by scripts/graph/derive-graph.js when a registry component carries no category (Figma frames on a category-header page). Registry wins when present; entries self-retire after the Figma page reorg + re-sync. Provenance manual-override."
     },
-    "components.syncDeferrals": {
-      "path": "components/src/sync-deferrals.json",
-      "type": "json",
-      "origin": "human",
-      "description": "Registry removals deliberately NOT carried through yet, consumed by scripts/sync/sync-from-figma.js. A breaking sync commits nothing and the verdict is any-breaking-is-breaking, so one component mid-rework in Figma freezes the whole nightly; a deferral carries that entry forward so the rest of the sync lands. Each names the kit, slug, Figma key, a reason, an issue and an inclusive `review_by` date, past which the deferral stops applying and the removal returns. Self-retiring: a deferral whose slug is no longer being removed is dead config and fails the run. Provenance manual-override."
-    },
     "components.categoryPageOverrides": {
       "path": "components/src/category-page-overrides.json",
       "type": "json",
@@ -681,6 +675,12 @@
       "origin": "ci",
       "generator": "scripts/styles-to-md.js",
       "description": "DS Kit text styles (human-readable catalog)"
+    },
+    "components.syncDeferrals": {
+      "path": "components/src/sync-deferrals.json",
+      "type": "json",
+      "origin": "human",
+      "description": "Registry removals deliberately NOT carried through yet, consumed by scripts/sync/sync-from-figma.js. A breaking sync commits nothing and the verdict is any-breaking-is-breaking, so one component mid-rework in Figma freezes the whole nightly; a deferral carries that entry forward so the rest of the sync lands. Each names the kit, slug, Figma key, a reason, an issue and an inclusive `review_by` date, past which the deferral stops applying and the removal returns. Self-retiring: a deferral whose slug is no longer being removed is dead config and fails the run. Provenance manual-override."
     },
     "content.globalMd": {
       "path": "content/dist/global.md",
