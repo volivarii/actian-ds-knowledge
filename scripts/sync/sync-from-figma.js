@@ -31,6 +31,8 @@ var syncIcons = require("../icons/export-icons-svg.js");
 var deriveIconsMod = require("../icons/derive-icons-svg.js");
 var syncGraphics = require("../graphics/export-graphics-svg.js");
 var deriveGraphicsMod = require("../graphics/derive-graphics-svg.js");
+var deriveIdentity = require("../components/derive-identity.js");
+var resolvePaths = require("../../clients/resolve-paths.js");
 var { syncKnowledgeVersion } = require("../lib/sync-knowledge-version.js");
 
 var KIT_MAP = {
@@ -337,7 +339,14 @@ function loadPageOverrides(pluginDir) {
   );
 }
 
-async function syncRegistry(opts, kitId) {
+// Split in two on purpose (#552). The verdict on a slug RENAME depends on
+// whether the old slug will still resolve, which is a fact about the ledger this
+// run is about to write, not about the ledger already committed. So every kit's
+// `after` registry is computed first, the ledger is rebuilt from those, and only
+// then is anything classified. Doing it the other way round deadlocks: the
+// ledger is derived in a later step, and a breaking verdict opens no PR, so the
+// regenerated ledger is discarded and the same rename is re-detected forever.
+async function computeRegistry(opts, kitId) {
   var meta = KIT_MAP[kitId];
   var fileKey = opts.keys[kitId];
   if (!fileKey)
@@ -545,10 +554,40 @@ async function syncRegistry(opts, kitId) {
     after._meta = beforeFile._meta;
   }
 
+  return {
+    kitId: kitId,
+    meta: meta,
+    opts: opts,
+    before: before,
+    beforeFile: beforeFile,
+    after: after,
+    outputPath: outputPath,
+    documentChildren: documentChildren,
+    categoryWarnings: categoryWarnings,
+    categoryDrift: categoryDrift,
+  };
+}
+
+// Classify and write, given the rename index derived from the ledger this run
+// just rebuilt. `absorbedRenames` is `{fromSlug: toSlug}`; a rename it records
+// with the matching target is not breaking, because the old slug still resolves.
+function finishRegistry(computed, absorbedRenames) {
+  var kitId = computed.kitId;
+  var meta = computed.meta;
+  var opts = computed.opts;
+  var before = computed.before;
+  var beforeFile = computed.beforeFile;
+  var after = computed.after;
+  var outputPath = computed.outputPath;
+  var documentChildren = computed.documentChildren;
+  var categoryWarnings = computed.categoryWarnings;
+  var categoryDrift = computed.categoryDrift;
+
   var verdict = classify({
     fileKind: "registry",
     before: before,
     after: after,
+    absorbedRenames: absorbedRenames,
   });
   // Canonical write gate. When the entries are unchanged, carry the previous
   // lastSynced forward so the timestamp never churns on a re-emit; then write
@@ -988,19 +1027,118 @@ async function run(opts) {
     }
   }
 
-  if (phase === "registries" || phase === "all") {
-    for (var i = 0; i < REGISTRY_KITS.length; i++) {
-      var kit = REGISTRY_KITS[i];
-      // Bind kit into the closure
-      // eslint-disable-next-line no-loop-func
-      await runWithGuard(
-        "registry:" + kit,
-        (
-          (k) => () =>
-            syncRegistry(orchOpts, k)
-        )(kit),
+  // Rebuild the ledger from THIS RUN's registries, write it, and return the
+  // `{fromSlug: toSlug}` index the verdict needs (#552).
+  //
+  // Built from the computed `after` registries, not from the committed dist,
+  // because the whole point is to know where a slug the run is about to rename
+  // will land. Kits that failed to compute fall back to their committed
+  // registry, so one kit's fetch failure cannot silently erase every other
+  // kit's identities and their rename history.
+  function absorptionForRun(computedRegistries) {
+    var distDir = path.dirname(orchOpts.outputDir);
+    var ledgerPath = path.join(distDir, "identity.json");
+    var computedFiles = {};
+    var registries = computedRegistries.map(function (c) {
+      computedFiles[KIT_MAP[c.kitId].outputFile] = true;
+      return c.after;
+    });
+    if (fs.existsSync(orchOpts.outputDir)) {
+      fs.readdirSync(orchOpts.outputDir)
+        .filter(function (f) {
+          return f.endsWith(".json") && !computedFiles[f];
+        })
+        .sort()
+        .forEach(function (f) {
+          var reg = readJsonOrNull(path.join(orchOpts.outputDir, f));
+          if (reg) registries.push(reg);
+        });
+    }
+    if (registries.length === 0) return {};
+
+    var previous = readJsonOrNull(ledgerPath);
+    var ledger = deriveIdentity.buildIdentity(registries, previous);
+    var bytes = deriveIdentity.serialize(ledger);
+    var current = fs.existsSync(ledgerPath)
+      ? fs.readFileSync(ledgerPath, "utf8")
+      : null;
+    if (current !== bytes) {
+      fs.mkdirSync(distDir, { recursive: true });
+      fs.writeFileSync(ledgerPath, bytes);
+    }
+
+    // Postcondition, asserted rather than assumed. The verdict is about to call
+    // a rename harmless BECAUSE the ledger records where the slug went, so if
+    // the write did not land, that claim is false and the run must fail loudly
+    // rather than auto-merge a rename nothing recorded.
+    var onDisk = readJsonOrNull(ledgerPath);
+    if (!onDisk) {
+      throw new Error(
+        "sync: the identity ledger could not be read back from " +
+          ledgerPath +
+          " after writing it, so a rename cannot be classified as absorbed.",
       );
     }
+    var index = resolvePaths.buildRenameIndex(onDisk);
+    var intended = resolvePaths.buildRenameIndex(ledger);
+    var lost = Object.keys(intended).filter(function (from) {
+      return index[from] !== intended[from];
+    });
+    if (lost.length > 0) {
+      throw new Error(
+        "sync: the identity ledger on disk does not carry the renames this run " +
+          "computed (" +
+          lost.join(", ") +
+          "), so absorption cannot be claimed for them.",
+      );
+    }
+    return index;
+  }
+
+  if (phase === "registries" || phase === "all") {
+    // Pass 1: compute every kit's `after`. Deliberately NOT pushed into
+    // `results`, which carries verdicts; nothing has been classified yet.
+    var computedRegistries = [];
+    for (var i = 0; i < REGISTRY_KITS.length; i++) {
+      var kit = REGISTRY_KITS[i];
+      // eslint-disable-next-line no-loop-func
+      await (async function (k) {
+        try {
+          computedRegistries.push(await computeRegistry(orchOpts, k));
+        } catch (err) {
+          errors.push({ label: "registry:" + k, error: err });
+          if (opts.logger && typeof opts.logger.error === "function") {
+            opts.logger.error("[sync] registry:" + k + " failed:", err.message);
+          }
+        }
+      })(kit);
+    }
+
+    // Between the passes: the ledger, and the renames it absorbs.
+    var absorbedRenames = {};
+    try {
+      absorbedRenames = absorptionForRun(computedRegistries);
+    } catch (err) {
+      errors.push({ label: "identity-ledger", error: err });
+      if (opts.logger && typeof opts.logger.error === "function") {
+        opts.logger.error("[sync] identity-ledger failed:", err.message);
+      }
+    }
+
+    // Pass 2: classify and write, now that the run knows where renamed slugs go.
+    computedRegistries.forEach(function (c) {
+      try {
+        results.push(finishRegistry(c, absorbedRenames));
+      } catch (err) {
+        errors.push({ label: "registry:" + c.kitId, error: err });
+        if (opts.logger && typeof opts.logger.error === "function") {
+          opts.logger.error(
+            "[sync] registry:" + c.kitId + " failed:",
+            err.message,
+          );
+        }
+      }
+    });
   }
 
   if (phase === "styles" || phase === "all") {

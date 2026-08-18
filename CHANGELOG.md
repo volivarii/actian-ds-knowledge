@@ -135,6 +135,33 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **A slug rename is additive again, because the sync now records where the slug went before it decides
+  what the change means.** `components/dist/identity.json` already let a consumer resolve a slug a
+  component was renamed away from, but the verdict could not use it, so a rename still classified
+  breaking, and a breaking verdict commits nothing. Two components (`sticky-footer` to `action-bar`,
+  `view-details` to `view-detail`) have been holding a night's additive work behind them.
+
+  Wiring the committed ledger into the classifier could never have worked, and the reason is a deadlock
+  rather than an oversight: the ledger is derived in a later step than the verdict, and a breaking
+  verdict opens no PR, so the ledger regenerated in that run is discarded with the runner and the next
+  night re-detects the identical rename against the identical committed registry. Forever.
+
+  So `syncRegistry` splits into **compute-then-classify**. Every kit's `after` registry is computed
+  first, the ledger is rebuilt from those and written, the `{fromSlug: toSlug}` index is derived from
+  it, and only then is anything classified. The ledger and the registries are committed together in one
+  PR. Verified against the real pending rename: with absorption `sticky-footer` to `action-bar` is
+  additive, without it the same input is breaking.
+
+  Two properties it holds deliberately. **Absorption is checked by target, not by presence**, so a
+  ledger naming the wrong successor stays breaking rather than laundering a real break into an
+  auto-merge. And **the postcondition is asserted**: the ledger is read back from disk and the renames
+  the run computed must survive the round trip, or the run fails loudly instead of auto-merging a
+  rename nothing recorded. Both are mutation-tested, along with the wiring itself.
+
+  **This does not on its own unblock the current backlog.** Tonight's sync also removes four components
+  (`alert-inline`, `card-for-items`, `identification-key`, and a duplicate `snowflake`), and a removal
+  is breaking whatever the ledger says. That half is the `card-for-items` decision in #526.
+
 - **The variant-collapse gate now asserts which values a caller cannot tell apart, instead of how many
   there are, and separates the collapses the renderer makes on purpose from the ones nobody has
   explained.** It counted collapses per slug, which cannot see a swap: give one collapsed value its own

@@ -342,20 +342,31 @@ function buildRegistryChangelog(diff) {
 // its own and stall a night's sync (knowledge #512). No consumer addresses a
 // component by display name, so resolution is untouched.
 //
-// A slug change stays breaking. components/dist/identity.json now lets a
-// consumer resolve the old slug, which is what would make such a rename
-// additive, but the verdict cannot yet see that: the sync classifies inside its
-// orchestrator step while the ledger is derived in a later one, and a breaking
-// verdict opens no PR, so the regenerated ledger is discarded and the rename is
-// re-detected identically the next night. Absorption has to be computed from the
-// rename the run is about to record, which needs syncRegistry split into
-// compute-then-classify. Deliberately not stubbed in here: a rule that cannot
-// fire reads as a rule that works.
-function renameBreaksResolution(rename) {
-  return rename.fromSlug !== rename.toSlug;
+// A slug change is breaking only when the old slug stops resolving.
+// components/dist/identity.json is what makes it resolve, and `absorbedRenames`
+// is that fact for the rename THIS RUN is about to record: `{fromSlug: toSlug}`,
+// derived from the ledger the run has just rebuilt from its own `after`
+// registries, before any verdict is taken (#552).
+//
+// It cannot come from the COMMITTED ledger, and that is a deadlock rather than
+// an oversight: the ledger is derived in a later step than the classify, and a
+// breaking verdict opens no PR, so the regenerated ledger is discarded with the
+// runner and the next night re-detects the identical rename. Hence
+// compute-then-classify in syncRegistry.
+//
+// 🪤 Checked BY TARGET, not by presence. A ledger that maps the old slug to some
+// OTHER component means the old slug resolves to the wrong thing, which is a
+// real break; accepting mere presence would launder it into an auto-merge.
+function renameBreaksResolution(rename, absorbedRenames) {
+  if (rename.fromSlug === rename.toSlug) return false;
+  var absorbed = absorbedRenames || {};
+  return (
+    Object.prototype.hasOwnProperty.call(absorbed, rename.fromSlug) !== true ||
+    absorbed[rename.fromSlug] !== rename.toSlug
+  );
 }
 
-function classifyRegistry(before, after) {
+function classifyRegistry(before, after, absorbedRenames) {
   if (isRegistryUnchanged(before, after)) {
     return {
       category: "unchanged",
@@ -369,7 +380,7 @@ function classifyRegistry(before, after) {
     reasons.push("removed component '" + (e.entry.name || e.slug) + "'");
   });
   diff.renamed.forEach(function (e) {
-    if (!renameBreaksResolution(e)) return;
+    if (!renameBreaksResolution(e, absorbedRenames)) return;
     reasons.push("renamed component '" + e.fromName + "' → '" + e.toName + "'");
   });
   diff.modified.forEach(function (e) {
@@ -779,7 +790,7 @@ function classifyMedia(before, after, opts) {
 function classify(input) {
   var fileKind = input.fileKind;
   if (fileKind === "registry")
-    return classifyRegistry(input.before, input.after);
+    return classifyRegistry(input.before, input.after, input.absorbedRenames);
   if (fileKind === "styles") return classifyStyles(input.before, input.after);
   if (fileKind === "icons")
     return classifyIcons(input.before, input.after, input.degraded);
