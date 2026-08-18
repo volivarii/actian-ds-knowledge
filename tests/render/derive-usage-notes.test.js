@@ -185,36 +185,61 @@ test("pruneNotes: a clean tree is a no-op", function () {
 // item in the file would count a future `paths-ignore:` entry as watched, which
 // is a false all-clear in a gate whose whole purpose is preventing false
 // all-clears, and it would count quoted strings from unrelated steps too.
-function watchedPaths(yml) {
-  var lines = yml.split("\n");
-  var out = [];
-  var inOn = false;
-  var pathsIndent = null;
+// Every line of the block a `key:` introduces. A line belongs to the block while
+// it is indented deeper than the key, and a LIST ITEM at the key's own indent
+// belongs too, because that is legal YAML and the workflow could be reformatted
+// that way tomorrow. Blank and comment lines never end a block: a blank line
+// inside the list used to truncate it, silently dropping every path below.
+function blockUnder(lines, key) {
+  var start = -1;
+  var keyIndent = 0;
   for (var i = 0; i < lines.length; i++) {
-    var line = lines[i];
-    if (/^\S/.test(line)) inOn = /^on:/.test(line);
-    if (!inOn) continue;
-    var m = line.match(/^(\s*)paths:\s*$/);
-    if (m) {
-      pathsIndent = m[1].length;
+    var m = lines[i].match(/^(\s*)([\w-]+):\s*$/);
+    if (m && m[2] === key) {
+      start = i + 1;
+      keyIndent = m[1].length;
+      break;
+    }
+  }
+  if (start < 0) return [];
+  var out = [];
+  for (var j = start; j < lines.length; j++) {
+    var line = lines[j];
+    if (/^\s*(#.*)?$/.test(line)) {
+      out.push(line);
       continue;
     }
-    if (pathsIndent === null) continue;
-    if (/^\s*(#.*)?$/.test(line)) continue; // blank or comment, still inside
-    var indent = line.match(/^\s*/)[0].length;
-    if (indent <= pathsIndent) {
-      pathsIndent = null; // a sibling key ended the list
-      i--;
-      continue;
-    }
-    var item = line.match(/^\s*-\s*'([^']+)'\s*$/);
-    if (item) out.push(item[1]);
+    var isItem = /^\s*-\s/.test(line);
+    if (!isItem && line.match(/^\s*/)[0].length <= keyIndent) break;
+    out.push(line);
   }
   return out;
 }
 
-test("watchedPaths reads on.paths and nothing else", function () {
-  // The control that matters: paths-ignore must never read as watched.
+// The paths watched for ONE event. Scoping to the event matters: render-derive
+// runs on pull_request, and collecting every `paths:` under `on:` would let an
+// input listed only under a later `push:` trigger satisfy the gate while PRs
+// stopped regenerating the notes. `paths-ignore:` is a different key and is never
+// collected, which is the case that would otherwise report a path as watched at
+// the exact moment GitHub is told to ignore it.
+function watchedPaths(yml, event) {
+  var paths = blockUnder(blockUnder(blockUnder(yml.split("\n"), "on"), event), "paths");
+  return paths
+    .map(function (l) {
+      // Either quote style: a reformat to double quotes must not read as "the
+      // input is unwatched", which points a reader at the wrong cause entirely.
+      return l.match(/^\s*-\s*['"]([^'"]+)['"]\s*$/);
+    })
+    .filter(Boolean)
+    .map(function (m) {
+      return m[1];
+    });
+}
+
+test("watchedPaths reads one event's paths, and only those", function () {
+  // Every branch here is a way this gate could report a path as watched when it
+  // is not, or vice versa. All were found by review or by mutation, none by
+  // reading the helper.
   var yml = [
     "on:",
     "  pull_request:",
@@ -224,21 +249,60 @@ test("watchedPaths reads on.paths and nothing else", function () {
     "",
     "      # a blank line above must not end the list: it would silently drop every",
     "      # path below it, which is the false all-clear this helper exists to stop",
-    "      - 'components/dist/categories/**'",
+    '      - "components/dist/categories/**"',
     "    paths-ignore:",
-    "      - 'components/dist/categories/**'",
+    "      - 'components/dist/anatomy/**'",
+    "  push:",
+    "    paths:",
+    "      - 'components/dist/icons/**'",
     "",
     "jobs:",
     "  derive:",
     "    steps:",
-    "      - run: echo 'components/dist/anatomy/**'",
+    "      - run: echo 'components/dist/graphics/**'",
     "",
   ].join("\n");
+
+  var pr = watchedPaths(yml, "pull_request");
   assert.deepEqual(
-    watchedPaths(yml),
+    pr,
     ["components/dist/guidelines/**", "components/dist/categories/**"],
-    "paths-ignore and unrelated quoted strings must not count as watched, and a blank line must not truncate the list",
+    "collects both quote styles, across a blank line and comments",
   );
+  assert.ok(
+    pr.indexOf("components/dist/anatomy/**") < 0,
+    "paths-ignore must never read as watched: that is the inversion this gate exists to prevent",
+  );
+  assert.ok(
+    pr.indexOf("components/dist/icons/**") < 0,
+    "another event's paths must not satisfy the gate; render-derive runs on pull_request, " +
+      "so an input listed only under push would leave PRs not regenerating",
+  );
+  assert.ok(
+    pr.indexOf("components/dist/graphics/**") < 0,
+    "a quoted string in an unrelated step is not a trigger",
+  );
+  assert.deepEqual(
+    watchedPaths(yml, "push"),
+    ["components/dist/icons/**"],
+    "and the event argument actually selects, rather than being ignored",
+  );
+});
+
+test("watchedPaths tolerates list items at the key's own indent", function () {
+  // Legal YAML, and a reformat of render-derive.yml into this shape would
+  // otherwise fail the gate with "is a derive input render-derive.yml does not
+  // watch", pointing the reader at the wrong cause entirely.
+  var yml = [
+    "on:",
+    "  pull_request:",
+    "    paths:",
+    "    - 'components/dist/guidelines/**'",
+    "",
+  ].join("\n");
+  assert.deepEqual(watchedPaths(yml, "pull_request"), [
+    "components/dist/guidelines/**",
+  ]);
 });
 
 test("render-derive.yml watches every path this producer reads", function () {
@@ -255,7 +319,7 @@ test("render-derive.yml watches every path this producer reads", function () {
     path.resolve(__dirname, "../../.github/workflows/render-derive.yml"),
     "utf8",
   );
-  var triggers = watchedPaths(yml);
+  var triggers = watchedPaths(yml, "pull_request");
 
   function watchedBy(triggerList, input) {
     return triggerList.some(function (t) {
@@ -350,4 +414,34 @@ test("pruneNotes: a handful still prunes, so the ceiling is not a blanket refusa
   });
   assert.deepEqual(pruneNotes(dir, ["kept"]).sort(), ["gone-a.md", "gone-b.md"]);
   assert.deepEqual(fs.readdirSync(dir), ["kept.md"]);
+});
+
+test("categoryBody: a declared category that will not read is fatal", function () {
+  // The loss here is a REWRITE, not a deletion, which is why it needed hardening
+  // separately from the guidelines read and why neither the empty-set guard nor
+  // PRUNE_CEILING would ever see it: the note simply loses its
+  // "## Category guidance" section, still passes hasBody, is rewritten, and gets
+  // bumped, tagged and vendored on a green run. 59 of the 60 notes carry that
+  // section, so a half-written categories dist would strip nearly all of them.
+  var { categoryBody } = require("../../scripts/render/derive-usage-notes.js");
+  assert.throws(
+    function () {
+      categoryBody("no-such-category-exists");
+    },
+    /category no-such-category-exists\.md is unreadable/,
+  );
+});
+
+test("categoryBody: declaring no category is a real state, not an error", function () {
+  var { categoryBody } = require("../../scripts/render/derive-usage-notes.js");
+  assert.equal(categoryBody(""), "");
+  assert.equal(categoryBody(undefined), "");
+});
+
+test("categoryBody: a real category still resolves, so the throw is not blanket", function () {
+  var { categoryBody } = require("../../scripts/render/derive-usage-notes.js");
+  assert.ok(
+    categoryBody("feedback").length > 0,
+    "positive control: the category rationale 59 of 60 notes depend on still loads",
+  );
 });

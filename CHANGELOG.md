@@ -421,7 +421,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
   files once went (#556 is the same hazard in graphics). Every guard is proved by mutation, including the
   two on the trigger assertion.
 
-  **The wipe guard is proportional, not binary.** Refusing at exactly zero known slugs left the
+  **The categories read stops swallowing too.** Hardening only the guidelines read left the other
+  declared input soft, and its failure is quieter: the loss is a REWRITE, not a deletion. With a category
+  file unresolvable, a note simply loses its `## Category guidance` section, still passes `hasBody`, is
+  rewritten, and gets bumped, tagged and vendored on a green run. Neither the empty-set guard nor the
+  ceiling can see a rewrite, and 59 of the 60 notes carry that section, so a half-written categories dist
+  would strip it from nearly all of them. A declared category that will not read is now fatal; declaring
+  no category at all stays a real state.
+
+    **The wipe guard is proportional, not binary.** Refusing at exactly zero known slugs left the
   realistic case open: a partial guidelines dist, 3 of 61 JSONs after a bad checkout or a half-finished
   upstream derive, reads as 58 slugs retiring at once and would have been bumped, committed, tagged and
   vendored. A run may now delete at most ten notes, the same threshold and the same "assume something
@@ -437,11 +445,16 @@ Each entry links its pull request. Dates are the merge date (UTC).
   contract `derive-contract.js` already has, because a trigger list nobody checks rots and this producer
   has no committed-vs-fresh drift guard to red a required check when it does.
 
-  The gate reads `on: ... paths:` specifically, not every quoted list item in the file. Applied to the
+  The gate reads one event's `paths:` specifically, not every quoted list item in the file. Applied to the
   whole workflow, a future `paths-ignore:` entry would have counted as watching a path precisely when
   GitHub is being told to ignore it, which is a false all-clear in a gate whose only purpose is
-  preventing false all-clears. A blank line inside the list must not truncate it either; both are
-  negative controls in the test, and both were found by mutating the helper rather than by reading it.
+  preventing false all-clears. Scoping to the event matters for the same reason: collecting every
+  `paths:` under `on:` would let an input listed only under a later `push:` trigger satisfy the gate while
+  pull requests quietly stopped regenerating. A blank line inside the list must not truncate it, and both
+  quote styles and a list indented at its key's own level must read the same, because a reformat that
+  fails this gate would report "is a derive input render-derive.yml does not watch" and point the reader
+  at entirely the wrong cause. Every one of those is a negative control in the test, and every one was
+  found by review or by mutating the helper, none by reading it.
 
     **`--strict` no longer writes.** It drops every non-approved domain, so its output is a different
   artifact from the committed dist, which is the permissive one, and it was writing that different

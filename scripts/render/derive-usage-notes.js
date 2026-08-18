@@ -106,18 +106,26 @@ function dedupe(arr) {
 // Inherited domains carry no prose; resolve the category rationale (derive-guidelines
 // L17: "inherited -> consumers resolve from category-defaults"), keyed by category.
 function categoryBody(category) {
+  // No category declared is a real state and yields no rationale.
   if (!category) return "";
+  var raw;
   try {
-    var raw = fs.readFileSync(
-      path.join(CATEGORIES_DIR, category + ".md"),
-      "utf8",
-    );
-    var parts = raw.split(/\n---\n/);
-    var body = parts.length > 1 ? parts.slice(1).join("\n---\n") : raw;
-    return clean(body);
+    raw = fs.readFileSync(path.join(CATEGORIES_DIR, category + ".md"), "utf8");
   } catch (e) {
-    return "";
+    // A DECLARED category that will not read is a broken input, and swallowing it
+    // is worse here than for guidelines, because the loss is a REWRITE rather than
+    // a deletion: the note simply loses its "## Category guidance" section, still
+    // passes hasBody, is rewritten, and gets bumped, tagged and vendored on a green
+    // run. Neither the empty-set guard nor PRUNE_CEILING sees a rewrite, and 59 of
+    // the 60 notes carry that section, so a half-written categories dist would
+    // quietly strip it from nearly all of them.
+    throw new Error(
+      "derive-usage-notes: category " + category + ".md is unreadable: " + e.message,
+    );
   }
+  var parts = raw.split(/\n---\n/);
+  var body = parts.length > 1 ? parts.slice(1).join("\n---\n") : raw;
+  return clean(body);
 }
 
 function usageNote(doc, opts) {
@@ -396,9 +404,19 @@ if (require.main === module) {
   });
   if (silent.length) {
     process.stdout.write(
-      "no note emitted for " + silent.length + " known slug(s), committed copy kept: " +
-        silent.join(", ") + "\n",
+      "no note emitted for " + silent.length + " known slug(s): " + silent.join(", ") + "\n",
     );
+    // Only some of those actually have a committed note to keep. Saying "copy
+    // kept" for a slug with no file would be this diagnostic asserting the very
+    // kind of phantom it was added to help spot.
+    var frozen = silent.filter(function (s) {
+      return fs.existsSync(path.join(outDir, s + ".md"));
+    });
+    if (frozen.length) {
+      process.stdout.write(
+        "  committed note kept and NOT refreshed for: " + frozen.join(", ") + "\n",
+      );
+    }
   }
   if (pruned.length) {
     process.stdout.write("pruned " + pruned.length + ": " + pruned.join(", ") + "\n");
