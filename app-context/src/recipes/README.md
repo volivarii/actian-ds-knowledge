@@ -71,4 +71,7 @@ whose pattern does not resolve.
 Still open, and deliberately untouched: `search-filtered-table` describes the Studio Catalog page as
 its own opposite, "no separate filter sidebar... no other facets". That is the substrate being
 actively wrong about the product's main screen, and every consumer reading patterns has been reading
-it. Correcting it is tracked separately.
+it. Tracked as #558, which found the deeper cause: the pattern schema is `additionalProperties: false`
+over five fields with nowhere to record when a pattern applies or which neighbour to use instead, and
+25 of the 31 patterns claim `studio`. Correcting the prose alone would leave the next reader with the
+same 25-way choice, so the fix is a selection field first.

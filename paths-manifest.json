@@ -884,7 +884,7 @@
       "pattern": "{slug}.json",
       "type": "json",
       "origin": "ci",
-      "generator": "scripts/app-context/derive-recipes.js",
+      "generator": "scripts/app-context/derive-app-context.js",
       "description": "Per-slug page recipe JSONs (validated + stamped). Resolved one at a time rather than folded into app-context.json, which is consumed whole: a single recipe exceeds 1400 lines, so bundling them would make every consumer pay for every archetype to read one."
     },
     "appContextRecipesSrc": {

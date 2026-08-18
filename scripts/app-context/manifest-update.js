@@ -101,7 +101,12 @@ function updatePathsManifest(manifestPath, opts) {
     pattern: "{slug}.json",
     type: "json",
     origin: "ci",
-    generator: "scripts/app-context/derive-recipes.js",
+    // The entry point, not the module. derive-recipes.js exports functions and
+    // has no CLI, so running it exits 0 having written nothing, which is the
+    // silent-success shape this repo keeps getting caught by. This is the only
+    // `generator` in the manifest, so it also sets the precedent: name the file
+    // a reader can actually run (`npm run derive:app-context` reaches it).
+    generator: "scripts/app-context/derive-app-context.js",
     description:
       "Per-slug page recipe JSONs (validated + stamped). Resolved one at a time rather than folded into app-context.json, which is consumed whole: a single recipe exceeds 1400 lines, so bundling them would make every consumer pay for every archetype to read one.",
   };
