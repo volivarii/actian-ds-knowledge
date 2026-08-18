@@ -17,6 +17,8 @@
     "metadata": [
       "appContext",
       "appContextBundle",
+      "appContextRecipes",
+      "appContextRecipesSrc",
       "appContextSrc",
       "tokens"
     ],
@@ -876,6 +878,21 @@
       "origin": "ci",
       "description": "Per-leaf accessibility section JSONs in hierarchical Pattern H layout (mirrors foundations.leaf). Each leaf mirrors its MD heading path. Branch nodes carry an `_index.json` instead. Single roll-up at accessibility.bundle. Recursive: any file under accessibility/dist/ is covered by this collection. Descriptive only (resolvable: false): the layout is arbitrarily deep, so no single pattern addresses a member. If a consumer ever needs path-addressed access, switch to pattern '{name}'.",
       "resolvable": false
+    },
+    "appContextRecipes": {
+      "dir": "app-context/dist/recipes",
+      "pattern": "{slug}.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/app-context/derive-recipes.js",
+      "description": "Per-slug page recipe JSONs (validated + stamped). Resolved one at a time rather than folded into app-context.json, which is consumed whole: a single recipe exceeds 1400 lines, so bundling them would make every consumer pay for every archetype to read one."
+    },
+    "appContextRecipesSrc": {
+      "dir": "app-context/src/recipes",
+      "pattern": "{slug}.json",
+      "type": "json",
+      "origin": "human",
+      "description": "Authoring surface for page recipes: the composition for a page shape named by an app-context pattern. Governed by schemas/app-context-recipe.json. Derived per slug to app-context/dist/recipes. See README.md in that directory."
     },
     "appContextSrc": {
       "dir": "app-context/src",

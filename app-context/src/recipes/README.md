@@ -40,25 +40,35 @@ claims to describe is a guess.
 Carry a `renderNotes` array. It records the renderer behaviours an author must know to make the
 composition draw correctly, so the next recipe does not rediscover them by looking at a broken page.
 
-## Status: INERT
+## Status: wired
 
-**These files are INERT. They ship, and nothing reads them.** `app-context/` is vendored whole, so consumers receive
-this directory, but `scripts/app-context/derive-app-context.js` reads only `apps`, `entities` and
-`patterns`. A recipe is therefore not folded into `dist/app-context.json` and does not reach
-`resolve-patterns.js`.
+A recipe is derived per slug to `app-context/dist/recipes/<slug>.json`, validated against
+`schemas/app-context-recipe.json`, stamped, and registered in `paths-manifest.json` as the
+`appContextRecipes` collection so `validate-manifest` proves the path resolves.
 
-Wiring is deliberately a separate change, because it alters the derived consumer contract. Until it
-lands, a recipe is a checked-in reference a human reads, not something a generator resolves.
+Per slug rather than folded into `app-context.json`, because that file is consumed whole and one
+recipe already exceeds 1400 lines. Bundling them would make every consumer pay for every archetype in
+order to read one, which is the mistake already on the roadmap for the 497KB `render.css` inlined into
+all 61 bundle cards.
 
-**Do not record a recipe as delivered while this section still says INERT.** A file that is vendored,
-greppable and reviewable looks finished, and that appearance is the known failure mode here: usage
-guidance was once 54 of 54 authored, derived, vendored and live on 56 pages while rendering on zero
-of them, with every upstream check green. The rule that came out of it is to measure at the surface
-and prefer the metric that ends at a human. Presence in the tree is not effect on a page.
+Two guards, both proven to fail before they were trusted:
+
+- The derive refuses to emit when a recipe names an app or pattern that does not exist. Verified by
+  pointing a recipe at a non-existent pattern: exit 1, no dist leaf written.
+- `tests/app-context-recipes.test.js` asserts a recipe actually reached dist, with a positive control
+  proving the count can be zero, so the assertion cannot pass over an empty list.
+
+The remaining consumer-side gap is the plugin's, not this repo's: `resolve-patterns.js` lives in the
+plugin and resolves patterns only, so nothing there reads a recipe yet. Two separate facts, worth not
+conflating: unread here would be a knowledge problem, and this repo now reads them; unresolved there
+is a plugin problem.
 
 ## Known gap in the pattern set
 
-There is no `faceted-browse` pattern in `../patterns/`. The nearest, `search-filtered-table`,
-describes the Catalog page as its own opposite: *"no separate filter sidebar... no other facets"*.
-Adding the pattern and correcting that description changes derived output, so it is tracked
-separately rather than folded in here.
+`faceted-browse` now exists in `../patterns/`, added here because the derive refuses to emit a recipe
+whose pattern does not resolve.
+
+Still open, and deliberately untouched: `search-filtered-table` describes the Studio Catalog page as
+its own opposite, "no separate filter sidebar... no other facets". That is the substrate being
+actively wrong about the product's main screen, and every consumer reading patterns has been reading
+it. Correcting it is tracked separately.

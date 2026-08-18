@@ -136,6 +136,29 @@ function runCli(argv) {
     console.error("app-context integrity errors:\n" + errors.join("\n"));
     return 1;
   }
+  // Recipes: per-slug dist leaves, validated against schemas/app-context-recipe.json
+  // and cross-checked against the apps/patterns just derived above.
+  const {
+    readRecipes,
+    checkReferences,
+    writeRecipes,
+  } = require("./derive-recipes");
+  const recipeSchema = JSON.parse(
+    fs.readFileSync(
+      path.join(repoRoot, "schemas", "app-context-recipe.json"),
+      "utf8",
+    ),
+  );
+  const { recipes, errors: recipeErrors } = readRecipes(srcDir, recipeSchema);
+  const refErrors = checkReferences(recipes, dist);
+  const allRecipeErrors = recipeErrors.concat(refErrors);
+  if (allRecipeErrors.length) {
+    console.error(
+      "app-context recipe errors:\n" + allRecipeErrors.join("\n"),
+    );
+    return 1;
+  }
+
   writeAtomic(path.join(distDir, "app-context.json"), stableStringify(dist));
   writeAtomic(
     path.join(distDir, "app-context.bundle.json"),
@@ -145,6 +168,9 @@ function runCli(argv) {
       appContext: dist,
     }),
   );
+  const recipeCount = writeRecipes(distDir, recipes, META);
+  console.log("derived app-context recipes: " + recipeCount);
+
   require("./manifest-update").updatePathsManifest(
     path.join(repoRoot, "paths-manifest.json"),
   );

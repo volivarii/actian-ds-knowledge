@@ -16,7 +16,7 @@ function project() {
   return g.build();
 }
 
-test("collectAppContext: node counts by type (3 app / 30 app_entity / 33 terminology_term / 30 ux_pattern)", function () {
+test("collectAppContext: node counts by type (3 app / 30 app_entity / 33 terminology_term / 31 ux_pattern)", function () {
   var out = project();
   var byType = {};
   out.nodes.forEach(function (n) {
@@ -25,8 +25,8 @@ test("collectAppContext: node counts by type (3 app / 30 app_entity / 33 termino
   assert.equal(byType.app, 3);
   assert.equal(byType.app_entity, 30);
   assert.equal(byType.terminology_term, 33);
-  assert.equal(byType.ux_pattern, 30);
-  assert.equal(out.nodes.length, 96);
+  assert.equal(byType.ux_pattern, 31);
+  assert.equal(out.nodes.length, 97);
 });
 
 test("collectAppContext: app node carries title<-label and description<-purpose", function () {
@@ -66,7 +66,7 @@ test("collectAppContext: ux_pattern node carries title<-label and description", 
   assert.equal(p.description, AC.patterns["marketplace-browsing"].description);
 });
 
-test("derive(): emitted graph.json includes the app-context nodes (96 island nodes)", function () {
+test("derive(): emitted graph.json includes the app-context nodes (97 island nodes)", function () {
   D.derive();
   var g = JSON.parse(
     fs.readFileSync(path.join(ROOT, "graph/dist/graph.json"), "utf8"),
@@ -79,7 +79,7 @@ test("derive(): emitted graph.json includes the app-context nodes (96 island nod
   var islandNodes = g.nodes.filter(function (n) {
     return ISLAND_PREFIXES.indexOf(String(n.id).split(":")[0]) !== -1;
   });
-  assert.equal(islandNodes.length, 96, "app-context island nodes");
+  assert.equal(islandNodes.length, 97, "app-context island nodes");
   assert.ok(
     g.nodes.some(function (n) {
       return n.id === "app:studio";
@@ -97,17 +97,17 @@ var VOCAB = JSON.parse(
   fs.readFileSync(path.join(ROOT, "graph/vocabulary.json"), "utf8"),
 );
 
-test("collectAppContext: edge counts (93 in_app / 42 entity_related / 17 term_about)", function () {
+test("collectAppContext: edge counts (95 in_app / 42 entity_related / 17 term_about, 154 total)", function () {
   var edges = project().edges;
   function n(type) {
     return edges.filter(function (e) {
       return e.type === type;
     }).length;
   }
-  assert.equal(n("in_app"), 93);
+  assert.equal(n("in_app"), 95);
   assert.equal(n("entity_related"), 42);
   assert.equal(n("term_about"), 17);
-  assert.equal(edges.length, 152);
+  assert.equal(edges.length, 154);
 });
 
 test("collectAppContext: in_app edges point entities/patterns to apps, asserted + provenance cites the dist", function () {
@@ -269,7 +269,12 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   // guidance-only now, the same authored-without-a-registry-component state as
   // combo-box/multi-select in guideline-reachability's UNREACHABLE list. If it
   // is republished, the references and their edges can come back and this pin
-  // moves up again.
+  // moves up again. 2026-08-18 moved it from 96/242 to 97/252: the
+  // `faceted-browse` pattern was added (the Studio Catalog page shape, which
+  // had no pattern at all), contributing 1 node, 2 in_app edges for its two
+  // apps, and 7 pattern->component edges for the registry components it names.
+  // This is the pin behaving as designed: an app-context edit is exactly what
+  // it exists to surface.
   var ISLAND_PREFIXES = ["app", "entity", "pattern", "term"];
   var inIsland = function (id) {
     return ISLAND_PREFIXES.indexOf(String(id).split(":")[0]) !== -1;
@@ -280,8 +285,8 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   var islandEdges = g.edges.filter(function (e) {
     return inIsland(e.source) || inIsland(e.target);
   });
-  assert.equal(islandNodes.length, 96, "app-context island nodes");
-  assert.equal(islandEdges.length, 242, "app-context island edges");
+  assert.equal(islandNodes.length, 97, "app-context island nodes");
+  assert.equal(islandEdges.length, 252, "app-context island edges");
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {

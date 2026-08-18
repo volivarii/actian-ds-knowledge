@@ -1,5 +1,10 @@
 {
   "_schema_version": 1,
+  "_meta": {
+    "auto_generated": true,
+    "source": "scripts/app-context/derive-app-context.js",
+    "do_not_edit": "Edit the app-context/src/ files; CI regenerates this file."
+  },
   "slug": "faceted-browse",
   "label": "Faceted browse",
   "description": "Three pane faceted browse over a large item set: app sidebar, a fixed-width filter rail of collapsible facet groups, and a result list of composed cards. The defining trait is scale: a live total, per-facet counts, and results that carry their own metadata rather than fitting table columns. Derived from the Studio Catalog page.",
