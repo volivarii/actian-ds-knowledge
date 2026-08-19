@@ -337,39 +337,23 @@ function notesToPrune(outDir, knownSlugs) {
   );
 }
 
-function pruneNotes(outDir, knownSlugs) {
-  // knownSlugs is the set of slugs the guidelines dist HOLDS, never the set that
-  // emitted a note. A guideline whose prose is momentarily too thin, or truncated
-  // by a bad write, emits nothing; keying on the emitted set would delete its
-  // shipped note, bump, tag and vendor the deletion, with a green run throughout.
-  // The only thing that should remove a note is its guideline disappearing.
-  //
-  // An empty set means the input is missing, not that every note should go. That
-  // distinction is the difference between a no-op and a silent wipe.
-  if (!knownSlugs.length) throw new Error("pruneNotes: refusing to prune against an empty slug set");
-  var keep = Object.create(null);
-  knownSlugs.forEach(function (s) {
-    keep[s + ".md"] = true;
+// Delete a list already vetted by notesToPrune. Split from the decision so the
+// CLI can refuse BEFORE it writes: one filter and one keep-set, built once, so a
+// future exclusion cannot be added to the vetting copy and missed by the acting
+// copy, leaving the run to vet one set and delete another.
+function deleteNotes(outDir, doomed) {
+  return doomed.map(function (f) {
+    fs.unlinkSync(path.join(outDir, f));
+    return f;
   });
-  var doomed = fs.readdirSync(outDir).filter(function (f) {
-    return f.endsWith(".md") && !keep[f];
-  });
-  checkPruneSize(doomed);
-  // Zero known slugs is the only TOTAL loss, and refusing at exactly zero leaves
-  // the realistic case open: a partial guidelines dist, say 3 of 61 JSONs after a
-  // bad checkout or a half-finished upstream derive, still looks like 58 slugs
-  // being retired at once. render-derive.yml would bump, commit, tag and vendor
-  // that. A real removal moves a handful of slugs; anything bulk is a broken
-  // input until a human says otherwise. Same threshold and the same "assume
-  // something went wrong" reading as the sync's ten-removals-per-category stop.
-  return doomed
-    .map(function (f) {
-      fs.unlinkSync(path.join(outDir, f));
-      return f;
-    });
 }
 
-if (require.main === module) {
+function pruneNotes(outDir, knownSlugs) {
+  return deleteNotes(outDir, notesToPrune(outDir, knownSlugs));
+
+}
+
+function main() {
   // `--strict` is a measurement mode: it drops every non-approved domain, so its
   // output is a different artifact from the committed dist, which is the
   // permissive one. It used to write that different artifact straight into the
@@ -384,7 +368,7 @@ if (require.main === module) {
       "--strict: " + slugs.length + " note(s) would be emitted. Reporting only; " +
         "the committed dist is the permissive output and is not written.\n",
     );
-    process.exit(0);
+    return;
   }
 
   var outDir = path.join(
@@ -417,7 +401,7 @@ if (require.main === module) {
   slugs.forEach(function (slug) {
     fs.writeFileSync(path.join(outDir, slug + ".md"), all[slug] + "\n");
   });
-  var pruned = pruneNotes(outDir, known);
+  var pruned = deleteNotes(outDir, doomed);
   process.stdout.write(
     "wrote " + slugs.length + " usage note(s) -> " + outDir + "\n",
   );
@@ -449,10 +433,13 @@ if (require.main === module) {
   }
 }
 
+if (require.main === module) main();
+
 module.exports = {
   usageNote: usageNote,
   pruneNotes: pruneNotes,
   notesToPrune: notesToPrune,
+  deleteNotes: deleteNotes,
   guidelineSlugs: guidelineSlugs,
   INPUTS: INPUTS,
   deriveAll: deriveAll,

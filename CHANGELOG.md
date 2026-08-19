@@ -431,15 +431,18 @@ Each entry links its pull request. Dates are the merge date (UTC).
   prevented cost one section. Both reads swallow as before, and the underlying silent rewrite is filed
   rather than fixed here, as #569.
 
-  **The guard cannot take down the gate it sits next to.** `derive-usage-notes.js` ran fifth of six in
-  `npm run derive:render`, so a prune refusal aborted the chain before `fidelity-check.js` and discarded
-  the canonical dist, contract, sparse render and DTCG output already produced, none of which is committed
-  because the workflow fails at the derive step and never reaches the commit step. `render-derive` is not
-  a required check, so a PR retiring eleven components could have merged with a stale render dist, no
-  bump, no tag, and the fidelity ratchet never having run. It is last in the chain now, which confines the
-  guard's blast radius to the artifact it is about. The refusal also happens BEFORE any note is written,
-  so a run that refuses a partial dist leaves the tree exactly as it found it rather than leaving the
-  degraded notes it just derived from that same partial input.
+  **The prune runs after the fidelity gate, and the guard's failure mode is stated honestly rather than
+  claimed fixed.** `derive-usage-notes.js` ran fifth of six in `npm run derive:render`, so a
+  `PRUNE_CEILING` refusal aborted the chain before `fidelity-check.js` ran at all. It is last now, so the
+  fidelity ratchet always executes. That is the whole of what the reorder buys, and an earlier version of
+  this entry claimed more: it said the reorder "confines the guard's blast radius". **It does not.**
+  `derive:render` is one `&&` chain, so a refusal still fails the workflow's derive step, and none of
+  "Detect changes", "Auto-bump" or "Commit" carries `if: always()`, so all three are skipped. Since
+  `render-derive` is not a required check, a PR retiring eleven or more components would still go red
+  there and remain mergeable with a stale render dist, no bump and no tag. Real confinement means running
+  the prune as its own step after the commit, which is a workflow change and is filed as #571, not smuggled in
+  here. The refusal does at least leave the tree untouched: the prune set is vetted before any note is
+  written, and acted on afterwards, so one list is decided and that same list is deleted.
 
   **The wipe guard is proportional, not binary.** Refusing at exactly zero known slugs left the
   realistic case open: a partial guidelines dist, 3 of 61 JSONs after a bad checkout or a half-finished
