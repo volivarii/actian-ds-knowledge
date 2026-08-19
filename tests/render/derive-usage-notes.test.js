@@ -226,9 +226,13 @@ function watchedPaths(yml, event) {
   var paths = blockUnder(blockUnder(blockUnder(yml.split("\n"), "on"), event), "paths");
   return paths
     .map(function (l) {
-      // Either quote style: a reformat to double quotes must not read as "the
-      // input is unwatched", which points a reader at the wrong cause entirely.
-      return l.match(/^\s*-\s*['"]([^'"]+)['"]\s*$/);
+      // Any quoting, including none. All three are valid YAML, and a reformat this
+      // gate could not read would fail with "is a derive input render-derive.yml
+      // does not watch" while GitHub is in fact watching it, pointing a reader at
+      // entirely the wrong cause.
+      return (
+        l.match(/^\s*-\s*['"]([^'"]+)['"]\s*$/) || l.match(/^\s*-\s*(\S+)\s*$/)
+      );
     })
     .filter(Boolean)
     .map(function (m) {
@@ -287,6 +291,24 @@ test("watchedPaths reads one event's paths, and only those", function () {
     ["components/dist/icons/**"],
     "and the event argument actually selects, rather than being ignored",
   );
+});
+
+test("watchedPaths reads an unquoted path, which is the commonest YAML style", function () {
+  // Quotes were required, so `- components/dist/guidelines/**` read as unwatched.
+  // It fails closed rather than open, but the message it fails with names the
+  // wrong cause: it would say the input is not watched while GitHub is watching it.
+  var yml = [
+    "on:",
+    "  pull_request:",
+    "    paths:",
+    "      - components/dist/guidelines/**",
+    "      - 'components/dist/categories/**'",
+    "",
+  ].join("\n");
+  assert.deepEqual(watchedPaths(yml, "pull_request"), [
+    "components/dist/guidelines/**",
+    "components/dist/categories/**",
+  ]);
 });
 
 test("watchedPaths tolerates list items at the key's own indent", function () {
@@ -356,29 +378,26 @@ test("render-derive.yml watches every path this producer reads", function () {
 
 test("pruneNotes keys on the guidelines dist, not on what emitted a note", function () {
   // THE REGRESSION THIS PREVENTS. deriveAll drops any slug whose note fails
-  // hasBody, and chat-with-ai-steward is a real guideline that does exactly that
-  // today. Pruning against the emitted set would delete that slug's shipped note,
-  // and render-derive.yml would bump, commit, tag and vendor the deletion with a
-  // green run throughout. Only a slug LEAVING the guidelines dist may remove one.
-  var known = require("../../scripts/render/derive-usage-notes.js").guidelineSlugs();
-  var emitted = Object.keys(deriveAll({}));
-  var thin = known.filter(function (s) {
-    return emitted.indexOf(s) < 0;
-  });
-  assert.ok(
-    thin.length,
-    "expected at least one guideline that emits no note, or this test has lost its subject",
-  );
+  // hasBody, so keying the prune on the emitted set would delete that slug's
+  // shipped note, and render-derive.yml would bump, commit, tag and vendor the
+  // deletion on a green run. Only a slug LEAVING the guidelines dist removes one.
+  //
+  // Stated synthetically on purpose. An earlier version asserted this against the
+  // live tree and named the one guideline that is thin today, which meant a content
+  // author fleshing out that component's usage.md would have reddened a required
+  // check, with a message naming no cause they could act on.
+  var known = ["button", "thin-one"];
+  var emitted = ["button"]; // thin-one exists, but its note fails hasBody
+  var files = { "button.md": "shipped", "thin-one.md": "shipped" };
 
-  var dir = tmpNotesDir({ "chat-with-ai-steward.md": "shipped", "button.md": "shipped" });
   assert.deepEqual(
-    pruneNotes(dir, known),
+    pruneNotes(tmpNotesDir(files), known),
     [],
     "a guideline that emits no note keeps whatever is committed for it",
   );
   assert.deepEqual(
-    pruneNotes(dir, emitted).sort(),
-    ["chat-with-ai-steward.md"],
+    pruneNotes(tmpNotesDir(files), emitted),
+    ["thin-one.md"],
     "and keying on the emitted set is what would have deleted it",
   );
 });
@@ -416,20 +435,15 @@ test("pruneNotes: a handful still prunes, so the ceiling is not a blanket refusa
   assert.deepEqual(fs.readdirSync(dir), ["kept.md"]);
 });
 
-test("categoryBody: a declared category that will not read is fatal", function () {
-  // The loss here is a REWRITE, not a deletion, which is why it needed hardening
-  // separately from the guidelines read and why neither the empty-set guard nor
-  // PRUNE_CEILING would ever see it: the note simply loses its
-  // "## Category guidance" section, still passes hasBody, is rewritten, and gets
-  // bumped, tagged and vendored on a green run. 59 of the 60 notes carry that
-  // section, so a half-written categories dist would strip nearly all of them.
+test("categoryBody: an unresolvable category yields nothing, and that is filed not fixed", function () {
+  // Pinning current behaviour, not endorsing it. An unresolvable category silently
+  // costs a note its "## Category guidance" section (58 of the 60 carry it), which
+  // is a REWRITE rather than a deletion, so neither the empty-set guard nor
+  // PRUNE_CEILING can ever see it. Making it throw was tried and reverted:
+  // build-bundle.js catches around usageNote, so the same broken input would have
+  // shipped an ENTIRELY empty note, degrading worse than the bug being prevented.
   var { categoryBody } = require("../../scripts/render/derive-usage-notes.js");
-  assert.throws(
-    function () {
-      categoryBody("no-such-category-exists");
-    },
-    /category no-such-category-exists\.md is unreadable/,
-  );
+  assert.equal(categoryBody("no-such-category-exists"), "");
 });
 
 test("categoryBody: declaring no category is a real state, not an error", function () {
@@ -442,6 +456,6 @@ test("categoryBody: a real category still resolves, so the throw is not blanket"
   var { categoryBody } = require("../../scripts/render/derive-usage-notes.js");
   assert.ok(
     categoryBody("feedback").length > 0,
-    "positive control: the category rationale 59 of 60 notes depend on still loads",
+    "positive control: the category rationale 58 of 60 notes depend on still loads",
   );
 });

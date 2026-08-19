@@ -19,7 +19,9 @@ var CATEGORIES_DIR = path.join(REPO_ROOT, "components", "dist", "categories");
 // them, and tests/render/derive-usage-notes.test.js asserts that it does. Same
 // contract as derive-contract.js INPUTS: a trigger list nobody checks rots, and
 // this producer has no committed-vs-fresh drift guard to catch it when it does.
-var INPUTS = ["components/dist/guidelines/", "components/dist/categories/"];
+var INPUTS = [GUIDELINES_DIR, CATEGORIES_DIR].map(function (d) {
+  return path.relative(REPO_ROOT, d) + "/";
+});
 
 // A rename or a retirement moves a handful of slugs. Anything bulk is a broken
 // input, and the cost of stopping is one reviewed commit raising this number,
@@ -106,26 +108,24 @@ function dedupe(arr) {
 // Inherited domains carry no prose; resolve the category rationale (derive-guidelines
 // L17: "inherited -> consumers resolve from category-defaults"), keyed by category.
 function categoryBody(category) {
-  // No category declared is a real state and yields no rationale.
   if (!category) return "";
-  var raw;
   try {
-    raw = fs.readFileSync(path.join(CATEGORIES_DIR, category + ".md"), "utf8");
-  } catch (e) {
-    // A DECLARED category that will not read is a broken input, and swallowing it
-    // is worse here than for guidelines, because the loss is a REWRITE rather than
-    // a deletion: the note simply loses its "## Category guidance" section, still
-    // passes hasBody, is rewritten, and gets bumped, tagged and vendored on a green
-    // run. Neither the empty-set guard nor PRUNE_CEILING sees a rewrite, and 59 of
-    // the 60 notes carry that section, so a half-written categories dist would
-    // quietly strip it from nearly all of them.
-    throw new Error(
-      "derive-usage-notes: category " + category + ".md is unreadable: " + e.message,
+    var raw = fs.readFileSync(
+      path.join(CATEGORIES_DIR, category + ".md"),
+      "utf8",
     );
+    var parts = raw.split(/\n---\n/);
+    var body = parts.length > 1 ? parts.slice(1).join("\n---\n") : raw;
+    return clean(body);
+  } catch (e) {
+    // Swallowed, as before. An unresolvable category silently costs a note its
+    // "## Category guidance" section, which is a real defect (58 of the 60 notes
+    // carry it) but it is a REWRITE, not a deletion, so it is out of this change
+    // and filed separately. Throwing here was tried and reverted: build-bundle.js
+    // catches around usageNote and would have shipped an ENTIRELY empty note on
+    // the same broken input, degrading worse than the bug being prevented.
+    return "";
   }
-  var parts = raw.split(/\n---\n/);
-  var body = parts.length > 1 ? parts.slice(1).join("\n---\n") : raw;
-  return clean(body);
 }
 
 function usageNote(doc, opts) {
@@ -287,13 +287,14 @@ function deriveAll(opts) {
         fs.readFileSync(path.join(GUIDELINES_DIR, slug + ".json"), "utf8"),
       );
     } catch (e) {
-      // Previously this was a skipped slug on stderr. It cannot be: the caller
-      // prunes, and a swallowed parse error would turn one corrupt input into a
-      // deleted, committed, tagged and vendored note. A guideline that will not
-      // parse is a broken input, not a component without guidance.
-      throw new Error(
-        "derive-usage-notes: " + slug + ".json is unreadable: " + e.message,
-      );
+      // Skipped, as before. This was briefly fatal, on the reasoning that a
+      // swallowed parse error would become a deleted note. That reasoning stopped
+      // holding the moment the prune was re-keyed onto guidelineSlugs(), which
+      // lists filenames and never parses: a corrupt slug is still listed, so its
+      // note is KEPT. Making it fatal only turned a degraded-but-green run into a
+      // red required check that only the workflow it broke could repair.
+      process.stderr.write("skip " + slug + " (unreadable guideline)\n");
+      return;
     }
     var note = usageNote(doc, opts);
     if (hasBody(note)) out[slug] = note;

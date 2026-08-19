@@ -409,7 +409,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   would then bump, auto-commit, tag and vendor the deletion, with a green run throughout. The
   empty-set guard only ever caught total loss. The prune now keys on **which slugs the guidelines dist
   holds**, so only a guideline actually disappearing can remove a note, and a corrupt guideline is now a
-  thrown error rather than a `skip` line on stderr in a passing run.
+  skipped slug, as before: the prune cannot delete it, so making it fatal bought nothing.
 
   The fossil is deliberately **not** deleted by hand: `render-derive.yml` gates its patch bump on
   `git diff -- components/render/dist/`, so a pre-deleted file leaves the derive nothing to do, and no
@@ -421,15 +421,17 @@ Each entry links its pull request. Dates are the merge date (UTC).
   files once went (#556 is the same hazard in graphics). Every guard is proved by mutation, including the
   two on the trigger assertion.
 
-  **The categories read stops swallowing too.** Hardening only the guidelines read left the other
-  declared input soft, and its failure is quieter: the loss is a REWRITE, not a deletion. With a category
-  file unresolvable, a note simply loses its `## Category guidance` section, still passes `hasBody`, is
-  rewritten, and gets bumped, tagged and vendored on a green run. Neither the empty-set guard nor the
-  ceiling can see a rewrite, and 59 of the 60 notes carry that section, so a half-written categories dist
-  would strip it from nearly all of them. A declared category that will not read is now fatal; declaring
-  no category at all stays a real state.
+  **Two hardening attempts were reverted, and that is the point of the entry.** Making an unreadable
+  guideline and an unresolvable category fatal both looked right and both were wrong. The guideline throw
+  was justified by a hazard the final prune design removes: once the prune keys on `guidelineSlugs()`, a
+  `readdirSync` listing that never parses, a corrupt slug is still listed and its note is KEPT, so nothing
+  could delete it. All the throw did was turn a degraded-but-green run into a red required check that only
+  the workflow it broke could repair. The category throw was worse: `build-bundle.js` catches around
+  `usageNote`, so the same broken input would have shipped an ENTIRELY empty note where the bug being
+  prevented cost one section. Both reads swallow as before, and the underlying silent rewrite is filed
+  rather than fixed here, as #569.
 
-    **The wipe guard is proportional, not binary.** Refusing at exactly zero known slugs left the
+  **The wipe guard is proportional, not binary.** Refusing at exactly zero known slugs left the
   realistic case open: a partial guidelines dist, 3 of 61 JSONs after a bad checkout or a half-finished
   upstream derive, reads as 58 slugs retiring at once and would have been bumped, committed, tagged and
   vendored. A run may now delete at most ten notes, the same threshold and the same "assume something
@@ -440,7 +442,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
     **Both inputs are declared now, and a test holds them there.** `derive-usage-notes.js` reads
   `components/dist/guidelines/` for the per-domain prose and `components/dist/categories/` for the
-  inherited category rationale that 59 of the 60 notes carry. Neither was watched. It exports `INPUTS`
+  inherited category rationale that 58 of the 60 notes carry. Neither was watched. It exports `INPUTS`
   and `tests/render/derive-usage-notes.test.js` asserts `render-derive.yml` watches every one, the same
   contract `derive-contract.js` already has, because a trigger list nobody checks rots and this producer
   has no committed-vs-fresh drift guard to red a required check when it does.
@@ -454,7 +456,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   quote styles and a list indented at its key's own level must read the same, because a reformat that
   fails this gate would report "is a derive input render-derive.yml does not watch" and point the reader
   at entirely the wrong cause. Every one of those is a negative control in the test, and every one was
-  found by review or by mutating the helper, none by reading it.
+  found by review or by mutating the helper, none by reading it. The weaker duplicate of this same gate in `derive-contract.js` is #570, deliberately left out of this change.
 
     **`--strict` no longer writes.** It drops every non-approved domain, so its output is a different
   artifact from the committed dist, which is the permissive one, and it was writing that different

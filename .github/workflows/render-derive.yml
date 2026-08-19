@@ -49,7 +49,7 @@ on:
       # derive-usage-notes.js's own inputs, declared as INPUTS in that script and
       # asserted against this list by tests/render/derive-usage-notes.test.js. It
       # reads components/dist/guidelines/ for the per-domain prose and
-      # components/dist/categories/ for the inherited category rationale that 59 of
+      # components/dist/categories/ for the inherited category rationale that 58 of
       # the 60 committed notes carry. Until #567 neither was watched: the notes
       # regenerated only because guidelines-derive.yml bumps knowledge_version in
       # paths-manifest.json, which IS watched, so its auto-commit re-triggered this
