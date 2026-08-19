@@ -15,7 +15,7 @@
     "derive:identity": "node scripts/components/derive-identity.js",
     "derive:icons": "node scripts/icons/__cli.js",
     "derive:accessibility": "node scripts/accessibility/derive-a11y-index.js && node scripts/accessibility/derive-a11y-sections.js",
-    "derive:render": "node scripts/render/derive-canonical.js && node scripts/render/derive-contract.js && node scripts/render/derive-sparse-render.js && node scripts/render/derive-dtcg.js && node scripts/render/derive-usage-notes.js && node scripts/render/fidelity-check.js",
+    "derive:render": "node scripts/render/derive-canonical.js && node scripts/render/derive-contract.js && node scripts/render/derive-sparse-render.js && node scripts/render/derive-dtcg.js && node scripts/render/fidelity-check.js && node scripts/render/derive-usage-notes.js",
     "validate:manifest": "node scripts/validate-manifest.js",
     "validate:anatomy": "node scripts/validate/validate-anatomy.js",
     "validate:domains": "node scripts/validate/validate-domains.js",

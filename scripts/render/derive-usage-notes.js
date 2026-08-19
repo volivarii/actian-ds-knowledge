@@ -311,6 +311,32 @@ function deriveAll(opts) {
 // Takes outDir explicitly so it can be tested against a temp directory. The CLI
 // block below hardcodes REPO_ROOT, and a prune driven at the real tree is how 179
 // committed anatomy files were once deleted by a test.
+function checkPruneSize(doomed) {
+  if (doomed.length > PRUNE_CEILING) {
+    throw new Error(
+      "pruneNotes: refusing to delete " + doomed.length + " notes in one run " +
+        "(ceiling " + PRUNE_CEILING + "). This is a partial or broken guidelines dist, " +
+        "not a retirement. Nothing was written or deleted. Slugs: " + doomed.join(", "),
+    );
+  }
+  return doomed;
+}
+
+// What pruneNotes WOULD delete, without deleting it, so the caller can refuse
+// before it writes anything.
+function notesToPrune(outDir, knownSlugs) {
+  if (!knownSlugs.length) throw new Error("pruneNotes: refusing to prune against an empty slug set");
+  var keep = Object.create(null);
+  knownSlugs.forEach(function (s) {
+    keep[s + ".md"] = true;
+  });
+  return checkPruneSize(
+    fs.readdirSync(outDir).filter(function (f) {
+      return f.endsWith(".md") && !keep[f];
+    }),
+  );
+}
+
 function pruneNotes(outDir, knownSlugs) {
   // knownSlugs is the set of slugs the guidelines dist HOLDS, never the set that
   // emitted a note. A guideline whose prose is momentarily too thin, or truncated
@@ -328,6 +354,7 @@ function pruneNotes(outDir, knownSlugs) {
   var doomed = fs.readdirSync(outDir).filter(function (f) {
     return f.endsWith(".md") && !keep[f];
   });
+  checkPruneSize(doomed);
   // Zero known slugs is the only TOTAL loss, and refusing at exactly zero leaves
   // the realistic case open: a partial guidelines dist, say 3 of 61 JSONs after a
   // bad checkout or a half-finished upstream derive, still looks like 58 slugs
@@ -335,13 +362,6 @@ function pruneNotes(outDir, knownSlugs) {
   // that. A real removal moves a handful of slugs; anything bulk is a broken
   // input until a human says otherwise. Same threshold and the same "assume
   // something went wrong" reading as the sync's ten-removals-per-category stop.
-  if (doomed.length > PRUNE_CEILING) {
-    throw new Error(
-      "pruneNotes: refusing to delete " + doomed.length + " notes in one run " +
-        "(ceiling " + PRUNE_CEILING + "). This is a partial or broken guidelines dist, " +
-        "not a retirement. Slugs: " + doomed.join(", "),
-    );
-  }
   return doomed
     .map(function (f) {
       fs.unlinkSync(path.join(outDir, f));
@@ -364,7 +384,7 @@ if (require.main === module) {
       "--strict: " + slugs.length + " note(s) would be emitted. Reporting only; " +
         "the committed dist is the permissive output and is not written.\n",
     );
-    return;
+    process.exit(0);
   }
 
   var outDir = path.join(
@@ -389,6 +409,11 @@ if (require.main === module) {
     process.exit(1);
   }
   fs.mkdirSync(outDir, { recursive: true });
+  // Decide the prune BEFORE writing. Both guards exist to refuse a partial or
+  // broken guidelines dist, and writing first meant the degraded notes derived
+  // from exactly that input were already on disk when the refusal fired, while the
+  // error talked only about deletions. Refusing now leaves the tree untouched.
+  var doomed = notesToPrune(outDir, known);
   slugs.forEach(function (slug) {
     fs.writeFileSync(path.join(outDir, slug + ".md"), all[slug] + "\n");
   });
@@ -427,6 +452,7 @@ if (require.main === module) {
 module.exports = {
   usageNote: usageNote,
   pruneNotes: pruneNotes,
+  notesToPrune: notesToPrune,
   guidelineSlugs: guidelineSlugs,
   INPUTS: INPUTS,
   deriveAll: deriveAll,

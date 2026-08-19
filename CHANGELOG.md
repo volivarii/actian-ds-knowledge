@@ -431,6 +431,16 @@ Each entry links its pull request. Dates are the merge date (UTC).
   prevented cost one section. Both reads swallow as before, and the underlying silent rewrite is filed
   rather than fixed here, as #569.
 
+  **The guard cannot take down the gate it sits next to.** `derive-usage-notes.js` ran fifth of six in
+  `npm run derive:render`, so a prune refusal aborted the chain before `fidelity-check.js` and discarded
+  the canonical dist, contract, sparse render and DTCG output already produced, none of which is committed
+  because the workflow fails at the derive step and never reaches the commit step. `render-derive` is not
+  a required check, so a PR retiring eleven components could have merged with a stale render dist, no
+  bump, no tag, and the fidelity ratchet never having run. It is last in the chain now, which confines the
+  guard's blast radius to the artifact it is about. The refusal also happens BEFORE any note is written,
+  so a run that refuses a partial dist leaves the tree exactly as it found it rather than leaving the
+  degraded notes it just derived from that same partial input.
+
   **The wipe guard is proportional, not binary.** Refusing at exactly zero known slugs left the
   realistic case open: a partial guidelines dist, 3 of 61 JSONs after a bad checkout or a half-finished
   upstream derive, reads as 58 slugs retiring at once and would have been bumped, committed, tagged and
@@ -456,7 +466,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   quote styles and a list indented at its key's own level must read the same, because a reformat that
   fails this gate would report "is a derive input render-derive.yml does not watch" and point the reader
   at entirely the wrong cause. Every one of those is a negative control in the test, and every one was
-  found by review or by mutating the helper, none by reading it. The weaker duplicate of this same gate in `derive-contract.js` is #570, deliberately left out of this change.
+  found by review or by mutating the helper, none by reading it. The weaker duplicate of this same gate in `tests/render/derive-contract.test.js` is #570, deliberately left out of this change.
 
     **`--strict` no longer writes.** It drops every non-approved domain, so its output is a different
   artifact from the committed dist, which is the permissive one, and it was writing that different

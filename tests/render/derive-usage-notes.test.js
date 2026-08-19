@@ -125,15 +125,24 @@ test("deriveAll: emits a note for a component with prose, omits one without", fu
 // how 179 committed anatomy files were once deleted.
 
 var os = require("node:os");
-var { pruneNotes } = require("../../scripts/render/derive-usage-notes.js");
+var { pruneNotes, notesToPrune } = require("../../scripts/render/derive-usage-notes.js");
 
+var tmpDirs = [];
 function tmpNotesDir(files) {
   var dir = fs.mkdtempSync(path.join(os.tmpdir(), "usage-notes-"));
+  tmpDirs.push(dir);
   Object.keys(files).forEach(function (name) {
     fs.writeFileSync(path.join(dir, name), files[name]);
   });
   return dir;
 }
+
+// These accumulated: seven per run, and a developer machine had 337 of them.
+test.after(function () {
+  tmpDirs.forEach(function (d) {
+    fs.rmSync(d, { recursive: true, force: true });
+  });
+});
 
 test("pruneNotes: deletes a note the derive no longer emits", function () {
   var dir = tmpNotesDir({
@@ -230,8 +239,14 @@ function watchedPaths(yml, event) {
       // gate could not read would fail with "is a derive input render-derive.yml
       // does not watch" while GitHub is in fact watching it, pointing a reader at
       // entirely the wrong cause.
+      // Strip a trailing inline comment first. Every path in render-derive.yml
+      // already carries an explanatory comment, so moving one onto the same line
+      // is a realistic edit, and it would otherwise fail this gate with "is a
+      // derive input render-derive.yml does not watch" while GitHub watches it.
+      var bare = l.replace(/\s+#.*$/, "");
       return (
-        l.match(/^\s*-\s*['"]([^'"]+)['"]\s*$/) || l.match(/^\s*-\s*(\S+)\s*$/)
+        bare.match(/^\s*-\s*['"]([^'"]+)['"]\s*$/) ||
+        bare.match(/^\s*-\s*(\S+)\s*$/)
       );
     })
     .filter(Boolean)
@@ -291,6 +306,24 @@ test("watchedPaths reads one event's paths, and only those", function () {
     ["components/dist/icons/**"],
     "and the event argument actually selects, rather than being ignored",
   );
+});
+
+test("watchedPaths reads a path carrying a trailing inline comment", function () {
+  // Every path in render-derive.yml already has an explanatory comment above it,
+  // so moving one onto the same line is a realistic edit. It would otherwise fail
+  // this gate with a message naming the wrong cause.
+  var yml = [
+    "on:",
+    "  pull_request:",
+    "    paths:",
+    "      - 'components/dist/guidelines/**' # the per-domain prose",
+    "      - components/dist/categories/** # the inherited rationale",
+    "",
+  ].join("\n");
+  assert.deepEqual(watchedPaths(yml, "pull_request"), [
+    "components/dist/guidelines/**",
+    "components/dist/categories/**",
+  ]);
 });
 
 test("watchedPaths reads an unquoted path, which is the commonest YAML style", function () {
@@ -458,4 +491,28 @@ test("categoryBody: a real category still resolves, so the throw is not blanket"
     categoryBody("feedback").length > 0,
     "positive control: the category rationale 58 of 60 notes depend on still loads",
   );
+});
+
+test("notesToPrune: reports what would go without deleting anything", function () {
+  var dir = tmpNotesDir({ "button.md": "shipped", "gone.md": "fossil" });
+  assert.deepEqual(notesToPrune(dir, ["button"]), ["gone.md"]);
+  assert.deepEqual(
+    fs.readdirSync(dir).sort(),
+    ["button.md", "gone.md"],
+    "deciding must not delete: the CLI calls this BEFORE it writes, so a refusal " +
+      "leaves the tree exactly as it found it",
+  );
+});
+
+test("notesToPrune: applies the same two guards, so the refusal happens before any write", function () {
+  var files = { "kept.md": "shipped" };
+  for (var i = 0; i < 15; i++) files["gone-" + i + ".md"] = "shipped";
+  var dir = tmpNotesDir(files);
+  assert.throws(function () {
+    notesToPrune(dir, ["kept"]);
+  }, /refusing to delete 15 notes in one run/);
+  assert.throws(function () {
+    notesToPrune(dir, []);
+  }, /refusing to prune against an empty slug set/);
+  assert.equal(fs.readdirSync(dir).length, 16, "and neither guard deleted anything");
 });
