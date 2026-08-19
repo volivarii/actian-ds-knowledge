@@ -79,13 +79,23 @@ jobs:
       - name: Detect changes
         id: diff
         run: |
-          if git diff --quiet -- app-context/dist/ paths-manifest.json; then
+          # git status, NOT git diff. `git diff` reports only files git already
+          # tracks, so a brand-new per-slug dist leaf is invisible to it: adding
+          # the first recipe for an existing pattern regenerated a new
+          # app-context/dist/recipes/<slug>.json, the step read "No dist changes
+          # after regeneration", and the bump, the commit and therefore the tag
+          # never happened. The required check then stayed red forever, because
+          # tests/app-context-recipes.test.js enforces src<->dist parity and the
+          # dist it wanted was the one this step declined to commit. The earlier
+          # recipes only bumped because their PR also modified a tracked file.
+          # `git status --porcelain` reports modified AND untracked.
+          if [ -z "$(git status --porcelain -- app-context/dist/ paths-manifest.json)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No dist changes after regeneration."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Dist changes detected:"
-            git diff --stat -- app-context/dist/ paths-manifest.json
+            git status --porcelain -- app-context/dist/ paths-manifest.json
           fi
 
       - name: Auto-bump package.json patch
