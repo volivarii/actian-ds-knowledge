@@ -15,6 +15,19 @@ var REPO_ROOT = path.resolve(__dirname, "..", "..");
 var GUIDELINES_DIR = path.join(REPO_ROOT, "components", "dist", "guidelines");
 var CATEGORIES_DIR = path.join(REPO_ROOT, "components", "dist", "categories");
 
+// The dist paths this producer READS. render-derive.yml must watch every one of
+// them, and tests/render/derive-usage-notes.test.js asserts that it does. Same
+// contract as derive-contract.js INPUTS: a trigger list nobody checks rots, and
+// this producer has no committed-vs-fresh drift guard to catch it when it does.
+var INPUTS = [GUIDELINES_DIR, CATEGORIES_DIR].map(function (d) {
+  return path.relative(REPO_ROOT, d) + "/";
+});
+
+// A rename or a retirement moves a handful of slugs. Anything bulk is a broken
+// input, and the cost of stopping is one reviewed commit raising this number,
+// against a silent tagged-and-vendored deletion if it is wrong.
+var PRUNE_CEILING = 10;
+
 var PERMISSIVE = ["approved", "draft", "inherited", "synthesized"];
 var STRICT = ["approved"];
 
@@ -105,6 +118,12 @@ function categoryBody(category) {
     var body = parts.length > 1 ? parts.slice(1).join("\n---\n") : raw;
     return clean(body);
   } catch (e) {
+    // Swallowed, as before. An unresolvable category silently costs a note its
+    // "## Category guidance" section, which is a real defect (58 of the 60 notes
+    // carry it) but it is a REWRITE, not a deletion, so it is out of this change
+    // and filed separately. Throwing here was tried and reverted: build-bundle.js
+    // catches around usageNote and would have shipped an ENTIRELY empty note on
+    // the same broken input, degrading worse than the bug being prevented.
     return "";
   }
 }
@@ -242,32 +261,116 @@ function hasBody(note) {
   return /\n## /.test(note);
 }
 
-function deriveAll(opts) {
-  var out = {};
-  fs.readdirSync(GUIDELINES_DIR)
+// Every slug the guidelines dist holds, which is NOT the same as the slugs that
+// emit a note: `chat-with-ai-steward` is a real guideline whose prose is too thin
+// to pass hasBody. That difference is why the prune keys on this and not on the
+// emitted set, see pruneNotes.
+function guidelineSlugs() {
+  return fs
+    .readdirSync(GUIDELINES_DIR)
     .filter(function (f) {
       // Per-component docs only; skip the guidelines.bundle.json roll-up.
       return f.endsWith(".json") && !f.endsWith(".bundle.json");
     })
-    .sort()
-    .forEach(function (f) {
-      var slug = path.basename(f, ".json");
-      var doc;
-      try {
-        doc = JSON.parse(fs.readFileSync(path.join(GUIDELINES_DIR, f), "utf8"));
-      } catch (e) {
-        process.stderr.write("skip " + slug + " (unreadable guideline)\n");
-        return;
-      }
-      var note = usageNote(doc, opts);
-      if (hasBody(note)) out[slug] = note;
-    });
+    .map(function (f) {
+      return path.basename(f, ".json");
+    })
+    .sort();
+}
+
+function deriveAll(opts) {
+  var out = {};
+  guidelineSlugs().forEach(function (slug) {
+    var doc;
+    try {
+      doc = JSON.parse(
+        fs.readFileSync(path.join(GUIDELINES_DIR, slug + ".json"), "utf8"),
+      );
+    } catch (e) {
+      // Skipped, as before. This was briefly fatal, on the reasoning that a
+      // swallowed parse error would become a deleted note. That reasoning stopped
+      // holding the moment the prune was re-keyed onto guidelineSlugs(), which
+      // lists filenames and never parses: a corrupt slug is still listed, so its
+      // note is KEPT. Making it fatal only turned a degraded-but-green run into a
+      // red required check that only the workflow it broke could repair.
+      process.stderr.write("skip " + slug + " (unreadable guideline)\n");
+      return;
+    }
+    var note = usageNote(doc, opts);
+    if (hasBody(note)) out[slug] = note;
+  });
   return out;
 }
 
-if (require.main === module) {
+// Delete notes for slugs the guidelines dist no longer holds. Without this the producer
+// only ever writes, so a rename leaves a fossil no regeneration can reach:
+// usage-notes/radio-button.md survived the radio-button -> radio rename in #438
+// and was still asserting "DRAFT (usage)" after #566 made that false, tracked and
+// shipped, for a month. Same shape as #520.
+//
+// Takes outDir explicitly so it can be tested against a temp directory. The CLI
+// block below hardcodes REPO_ROOT, and a prune driven at the real tree is how 179
+// committed anatomy files were once deleted by a test.
+function checkPruneSize(doomed) {
+  if (doomed.length > PRUNE_CEILING) {
+    throw new Error(
+      "pruneNotes: refusing to delete " + doomed.length + " notes in one run " +
+        "(ceiling " + PRUNE_CEILING + "). This is a partial or broken guidelines dist, " +
+        "not a retirement. Nothing was written or deleted. Slugs: " + doomed.join(", "),
+    );
+  }
+  return doomed;
+}
+
+// What pruneNotes WOULD delete, without deleting it, so the caller can refuse
+// before it writes anything.
+function notesToPrune(outDir, knownSlugs) {
+  if (!knownSlugs.length) throw new Error("pruneNotes: refusing to prune against an empty slug set");
+  var keep = Object.create(null);
+  knownSlugs.forEach(function (s) {
+    keep[s + ".md"] = true;
+  });
+  return checkPruneSize(
+    fs.readdirSync(outDir).filter(function (f) {
+      return f.endsWith(".md") && !keep[f];
+    }),
+  );
+}
+
+// Delete a list already vetted by notesToPrune. Split from the decision so the
+// CLI can refuse BEFORE it writes: one filter and one keep-set, built once, so a
+// future exclusion cannot be added to the vetting copy and missed by the acting
+// copy, leaving the run to vet one set and delete another.
+function deleteNotes(outDir, doomed) {
+  return doomed.map(function (f) {
+    fs.unlinkSync(path.join(outDir, f));
+    return f;
+  });
+}
+
+function pruneNotes(outDir, knownSlugs) {
+  return deleteNotes(outDir, notesToPrune(outDir, knownSlugs));
+
+}
+
+function main() {
+  // `--strict` is a measurement mode: it drops every non-approved domain, so its
+  // output is a different artifact from the committed dist, which is the
+  // permissive one. It used to write that different artifact straight into the
+  // shipped directory. Nothing in package.json or CI passes the flag, so the only
+  // way to reach that was a human running it by hand and silently clobbering 60
+  // vendored notes. It reports now and writes nothing.
   var strict = process.argv.indexOf("--strict") >= 0;
   var all = deriveAll({ strict: strict });
+  var slugs = Object.keys(all);
+  if (strict) {
+    process.stdout.write(
+      "--strict: " + slugs.length + " note(s) would be emitted. Reporting only; " +
+        "the committed dist is the permissive output and is not written.\n",
+    );
+    return;
+  }
+
   var outDir = path.join(
     REPO_ROOT,
     "components",
@@ -275,17 +378,70 @@ if (require.main === module) {
     "dist",
     "usage-notes",
   );
+  // The guidelines dist is what the prune keys on, not the emitted set. A slug
+  // that exists but yields no note (chat-with-ai-steward today) must keep whatever
+  // is committed for it; only a slug that has GONE should lose its note.
+  var known = guidelineSlugs();
+  if (!known.length) {
+    // Reachable only as "the directory exists and holds no per-component JSON".
+    // A missing directory throws out of readdirSync inside deriveAll above, long
+    // before here, which is the louder failure and the right one.
+    process.stderr.write(
+      "derive-usage-notes: components/dist/guidelines holds no per-component JSON; " +
+        "refusing to write or prune.\n",
+    );
+    process.exit(1);
+  }
   fs.mkdirSync(outDir, { recursive: true });
-  Object.keys(all).forEach(function (slug) {
+  // Decide the prune BEFORE writing. Both guards exist to refuse a partial or
+  // broken guidelines dist, and writing first meant the degraded notes derived
+  // from exactly that input were already on disk when the refusal fired, while the
+  // error talked only about deletions. Refusing now leaves the tree untouched.
+  var doomed = notesToPrune(outDir, known);
+  slugs.forEach(function (slug) {
     fs.writeFileSync(path.join(outDir, slug + ".md"), all[slug] + "\n");
   });
+  var pruned = deleteNotes(outDir, doomed);
   process.stdout.write(
-    "wrote " + Object.keys(all).length + " usage note(s) -> " + outDir + "\n",
+    "wrote " + slugs.length + " usage note(s) -> " + outDir + "\n",
   );
+  // A guideline that stops emitting keeps its committed note, deliberately: that
+  // is what makes the prune safe. But it also means the shipped note freezes at
+  // its old content with nothing saying so, which is the fossil this file exists
+  // to prevent, in a quieter flavour. Name them.
+  var silent = known.filter(function (s) {
+    return slugs.indexOf(s) < 0;
+  });
+  if (silent.length) {
+    process.stdout.write(
+      "no note emitted for " + silent.length + " known slug(s): " + silent.join(", ") + "\n",
+    );
+    // Only some of those actually have a committed note to keep. Saying "copy
+    // kept" for a slug with no file would be this diagnostic asserting the very
+    // kind of phantom it was added to help spot.
+    var frozen = silent.filter(function (s) {
+      return fs.existsSync(path.join(outDir, s + ".md"));
+    });
+    if (frozen.length) {
+      process.stdout.write(
+        "  committed note kept and NOT refreshed for: " + frozen.join(", ") + "\n",
+      );
+    }
+  }
+  if (pruned.length) {
+    process.stdout.write("pruned " + pruned.length + ": " + pruned.join(", ") + "\n");
+  }
 }
+
+if (require.main === module) main();
 
 module.exports = {
   usageNote: usageNote,
+  pruneNotes: pruneNotes,
+  notesToPrune: notesToPrune,
+  deleteNotes: deleteNotes,
+  guidelineSlugs: guidelineSlugs,
+  INPUTS: INPUTS,
   deriveAll: deriveAll,
   clean: clean,
   sections: sections,

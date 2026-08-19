@@ -391,6 +391,101 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **`derive-usage-notes.js` now prunes safely, and `render-derive.yml` declares the inputs it actually
+  reads.** ([#567](https://github.com/volivarii/actian-ds-knowledge/pull/567)) Three defects, found by
+  reviewing #566 after it merged and then by reviewing this PR's own first attempt. One is a false claim
+  of mine.
+
+  **The fossil.** The producer only ever wrote, never pruned, so a rename left a file nothing could
+  reach. `components/render/dist/usage-notes/radio-button.md` outlived the `radio-button` to `radio`
+  rename from #438 (2026-07-17): 61 files on disk, 60 emitted, and it was still asserting
+  `DRAFT (usage)` a month later, which #566 made false. Tracked, shipped, and unreachable by any trigger
+  fix, because it is a file the producer does not write. Same family as #520.
+
+  **Pruning on "did not emit" was worse than not pruning at all**, and this is the finding worth keeping.
+  `deriveAll` drops any slug whose note fails `hasBody`, and `chat-with-ai-steward` is a real guideline
+  that does exactly that today. Keyed on the emitted set, one truncated or momentarily prose-less
+  `components/dist/guidelines/<slug>.json` would delete that slug's shipped note, and `render-derive.yml`
+  would then bump, auto-commit, tag and vendor the deletion, with a green run throughout. The
+  empty-set guard only ever caught total loss. The prune now keys on **which slugs the guidelines dist
+  holds**, so only a guideline actually disappearing can remove a note, and a corrupt guideline is now a
+  skipped slug, as before: the prune cannot delete it, so making it fatal bought nothing.
+
+  The fossil is deliberately **not** deleted by hand: `render-derive.yml` gates its patch bump on
+  `git diff -- components/render/dist/`, so a pre-deleted file leaves the derive nothing to do, and no
+  bump means no tag and no consumer ever loses it. CI's prune performs the deletion, which proves the
+  prune end to end and produces the diff the bump needs.
+
+  `pruneNotes(outDir, knownSlugs)` is exported and takes its directory, so it is tested against a temp
+  dir: the CLI hardcodes `REPO_ROOT`, and a prune pointed at the real tree is how 179 committed anatomy
+  files once went (#556 is the same hazard in graphics). Every guard is proved by mutation, including the
+  two on the trigger assertion.
+
+  **Two hardening attempts were reverted, and that is the point of the entry.** Making an unreadable
+  guideline and an unresolvable category fatal both looked right and both were wrong. The guideline throw
+  was justified by a hazard the final prune design removes: once the prune keys on `guidelineSlugs()`, a
+  `readdirSync` listing that never parses, a corrupt slug is still listed and its note is KEPT, so nothing
+  could delete it. All the throw did was turn a degraded-but-green run into a red required check that only
+  the workflow it broke could repair. The category throw was worse: `build-bundle.js` catches around
+  `usageNote`, so the same broken input would have shipped an ENTIRELY empty note where the bug being
+  prevented cost one section. Both reads swallow as before, and the underlying silent rewrite is filed
+  rather than fixed here, as #569.
+
+  **The prune runs after the fidelity gate, and the guard's failure mode is stated honestly rather than
+  claimed fixed.** `derive-usage-notes.js` ran fifth of six in `npm run derive:render`, so a
+  `PRUNE_CEILING` refusal aborted the chain before `fidelity-check.js` ran at all. It is last now, so the
+  fidelity ratchet always executes. That is the whole of what the reorder buys, and an earlier version of
+  this entry claimed more: it said the reorder "confines the guard's blast radius". **It does not.**
+  `derive:render` is one `&&` chain, so a refusal still fails the workflow's derive step, and none of
+  "Detect changes", "Auto-bump" or "Commit" carries `if: always()`, so all three are skipped. Since
+  `render-derive` is not a required check, a PR retiring eleven or more components would still go red
+  there and remain mergeable with a stale render dist, no bump and no tag. Real confinement means running
+  the prune as its own step after the commit, which is a workflow change and is filed as #571, not smuggled in
+  here. The refusal does at least leave the tree untouched: the prune set is vetted before any note is
+  written, and acted on afterwards, so one list is decided and that same list is deleted.
+
+  **The wipe guard is proportional, not binary.** Refusing at exactly zero known slugs left the
+  realistic case open: a partial guidelines dist, 3 of 61 JSONs after a bad checkout or a half-finished
+  upstream derive, reads as 58 slugs retiring at once and would have been bumped, committed, tagged and
+  vendored. A run may now delete at most ten notes, the same threshold and the same "assume something
+  went wrong" reading as the sync's ten-removals-per-category stop, and it deletes nothing before it
+  refuses. The quieter half of the same problem is reported rather than fixed: a guideline that stops
+  emitting keeps its committed note by design, which is what makes the prune safe, so the run now names
+  those slugs instead of leaving the frozen copy silent.
+
+    **Both inputs are declared now, and a test holds them there.** `derive-usage-notes.js` reads
+  `components/dist/guidelines/` for the per-domain prose and `components/dist/categories/` for the
+  inherited category rationale that 58 of the 60 notes carry. Neither was watched. It exports `INPUTS`
+  and `tests/render/derive-usage-notes.test.js` asserts `render-derive.yml` watches every one, the same
+  contract `derive-contract.js` already has, because a trigger list nobody checks rots and this producer
+  has no committed-vs-fresh drift guard to red a required check when it does.
+
+  The gate reads one event's `paths:` specifically, not every quoted list item in the file. Applied to the
+  whole workflow, a future `paths-ignore:` entry would have counted as watching a path precisely when
+  GitHub is being told to ignore it, which is a false all-clear in a gate whose only purpose is
+  preventing false all-clears. Scoping to the event matters for the same reason: collecting every
+  `paths:` under `on:` would let an input listed only under a later `push:` trigger satisfy the gate while
+  pull requests quietly stopped regenerating. A blank line inside the list must not truncate it, and both
+  quote styles and a list indented at its key's own level must read the same, because a reformat that
+  fails this gate would report "is a derive input render-derive.yml does not watch" and point the reader
+  at entirely the wrong cause. Every one of those is a negative control in the test, and every one was
+  found by review or by mutating the helper, none by reading it. The weaker duplicate of this same gate in `tests/render/derive-contract.test.js` is #570, deliberately left out of this change.
+
+    **`--strict` no longer writes.** It drops every non-approved domain, so its output is a different
+  artifact from the committed dist, which is the permissive one, and it was writing that different
+  artifact straight into the shipped directory. Nothing in `package.json` or CI passes the flag, so only
+  a human running it by hand could silently clobber 60 vendored notes. It reports and writes nothing.
+
+  **The correction.** Commit `327e9ee3` and #566's description claim "no workflow would have" regenerated
+  these notes, and #565 was filed on that. It is false. `render-derive.yml` watches `paths-manifest.json`;
+  `guidelines-derive.yml` bumps `knowledge_version` there and commits it with the App token, which
+  re-triggers the run. It ran on #566's bump commit and passed, and would have produced the same diff
+  made by hand. That commit message even lists `paths-manifest` among the watched paths before concluding
+  the opposite. What was true is narrower and is what is fixed above: the coupling was incidental, and a
+  correct outcome rested on a version bump happening to touch a watched file, which is precisely what
+  this workflow's own comment warns about where it explains why `components/dist/anatomy/**` was added.
+  #565 is re-scoped and retitled, not closed.
+
 - **The 54 usage domains are promoted from `draft` to `approved`, deliberately, as a baseline to be
   reviewed against rather than a sign-off.** ([#566](https://github.com/volivarii/actian-ds-knowledge/pull/566)) Vincent's decision on #537. The docs are finished writing
   and have been live on 56 documentation pages since 2026-07-14; the design-lead review that was meant
