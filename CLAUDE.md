@@ -87,9 +87,10 @@ same PR:
 Never hand-edit version fields (CI owns them). This is an **ecosystem-wide** rule: all four DS repos
 (`actian-ds-knowledge`, `actian-design-system-plugin`, `actian-ds-docs`, `actian-ds-ecosystem`) follow
 it, and `actian-ds-ecosystem` additionally combines the three consumers' notable entries. The global
-cross-repo copy of this rule lives in the shared-brain memory `feedback_changelog_discipline` (it
-auto-loads in every repo's Claude context); this section is the authoritative checked-in copy for
-this repo.
+cross-repo copy of this rule lives in `product-ds/doctrine.md` in `actian-ds-ecosystem`; this section
+is the authoritative checked-in copy for this repo. Agent memories may restate it, but they are a
+cache and never the source, because they live under one person's home directory and are invisible to
+everyone else.
 
 ## Roles
 
