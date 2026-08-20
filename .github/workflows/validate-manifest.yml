@@ -73,7 +73,16 @@ jobs:
       - name: Detect manifest drift
         id: diff
         run: |
-          if git diff --quiet -- paths-manifest.json; then
+          # Decide with git status, not git diff (#575). paths-manifest.json is
+          # always tracked so the added-file blind spot cannot bite HERE, but a
+          # single uniform detection form means no reader has to work out which
+          # steps are the exception. Reporting below still uses `git diff`, which
+          # is more informative for one tracked file than a porcelain status line.
+          CHANGED="$(git status --porcelain --untracked-files=all -- paths-manifest.json)" || {
+            echo "::error::git status failed while detecting manifest drift"
+            exit 1
+          }
+          if [ -z "$CHANGED" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "knowledge_version already in sync."
           else
@@ -113,7 +122,7 @@ jobs:
 
       - name: Graph drift guard (committed graph.json + quality-report.json + collisions.json must match regeneration)
         run: |
-          if ! git diff --quiet -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/collisions.json; then
+          if [ -n "$(git status --porcelain --untracked-files=all -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/collisions.json)" ]; then
             echo "::error::graph/dist/{graph,quality-report,collisions}.json is stale — run 'npm run derive:graph && npm run validate:graph' and commit."
             git diff -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/collisions.json
             exit 1
@@ -131,7 +140,7 @@ jobs:
 
       - name: Foundations dist drift guard (committed foundations/dist must match regeneration)
         run: |
-          if ! git diff --quiet -- foundations/dist; then
+          if [ -n "$(git status --porcelain --untracked-files=all -- foundations/dist)" ]; then
             echo "::error::foundations/dist is stale — run 'npm run derive:foundations' and commit."
             git --no-pager diff --stat -- foundations/dist
             exit 1
@@ -141,13 +150,14 @@ jobs:
         run: npm run derive:app-context
 
       # 🚨 git status, NOT git diff. `git diff` reports only files git already
-      # TRACKS, so a brand-new per-slug leaf (app-context/dist/recipes/<slug>.json)
-      # is invisible to it. That is the same blind spot b4ab8340 corrected in
-      # app-context-derive.yml's change detection and #575 tracks across the
-      # derives. It is NOT the first porcelain guard in this file: the identity
-      # ledger guard below already uses this form for the same reason. The four
-      # that still use `git diff --quiet` (graph, foundations, accessibility,
-      # llms) guard fixed file sets, where the blind spot rarely bites.
+      # TRACKS, so a brand-new leaf is invisible to it. Every drift guard in this
+      # file now uses this form, and an earlier revision of this comment claimed
+      # the others could stay on `git diff --quiet` because they "guard fixed file
+      # sets". That was FALSE for foundations/dist and accessibility/dist, which
+      # take directory pathspecs where an added leaf is a live case: on a fork PR
+      # the derive's commit step is skipped, so this job re-derives, the new leaf
+      # is untracked, `git diff --quiet` reports clean, and the required check goes
+      # green with the leaf absent from the merge.
       #
       # The pathspec covers paths-manifest.json as well as the dist, because
       # `derive:app-context` writes BOTH (updatePathsManifest). Guarding only the
@@ -156,9 +166,9 @@ jobs:
       # broken manifest is missed by the dist-only pathspec and caught by this one.
       - name: app-context dist drift guard (committed app-context/dist + manifest entries must match regeneration)
         run: |
-          if [ -n "$(git status --porcelain -- app-context/dist paths-manifest.json)" ]; then
+          if [ -n "$(git status --porcelain --untracked-files=all -- app-context/dist paths-manifest.json)" ]; then
             echo "::error::app-context/dist or its paths-manifest entries are stale: run 'npm run derive:app-context' and commit. app-context-derive.yml does not trigger on app-context/dist/**, so a dist-only edit reaches consumers with no derive and, before this guard, no check."
-            git --no-pager status --porcelain -- app-context/dist paths-manifest.json
+            git --no-pager status --porcelain --untracked-files=all -- app-context/dist paths-manifest.json
             git --no-pager diff --stat -- app-context/dist paths-manifest.json
             exit 1
           fi
@@ -168,7 +178,7 @@ jobs:
 
       - name: Accessibility dist drift guard (committed accessibility/dist must match regeneration)
         run: |
-          if ! git diff --quiet -- accessibility/dist; then
+          if [ -n "$(git status --porcelain --untracked-files=all -- accessibility/dist)" ]; then
             echo "::error::accessibility/dist is stale — run 'npm run derive:accessibility' and commit."
             git --no-pager diff --stat -- accessibility/dist
             exit 1
@@ -197,7 +207,7 @@ jobs:
 
       - name: llms index drift guard (committed llms.txt + llms-full.txt must match regeneration)
         run: |
-          if ! git diff --quiet -- llms.txt llms-full.txt; then
+          if [ -n "$(git status --porcelain --untracked-files=all -- llms.txt llms-full.txt)" ]; then
             echo "::error::llms.txt / llms-full.txt is STALE: the committed index does not describe the content committed alongside it. Run 'npm run derive:llms' and commit the result. Both files are vendored to consumers (vendor-include.json) and consumers resolve by tag, so a stale index ships inside the release tag (#525)."
             echo "Files that drifted (committed -> regenerated):"
             git --no-pager diff --stat -- llms.txt llms-full.txt
@@ -221,7 +231,7 @@ jobs:
           # "current" while the file is absent from the commit. --porcelain covers
           # deleted, untracked and modified alike, so the guard asserts its own
           # postcondition rather than one case of it.
-          if [ -n "$(git status --porcelain -- components/dist/identity.json)" ]; then
+          if [ -n "$(git status --porcelain --untracked-files=all -- components/dist/identity.json)" ]; then
             echo "::error::components/dist/identity.json is STALE: the committed ledger does not describe the registries committed alongside it. Run 'npm run derive:identity' and commit the result. clients/resolve-paths.js reads this to resolve a slug a component was renamed away from, so a stale ledger silently mis-resolves."
             echo "Drift (committed -> regenerated):"
             git --no-pager diff -- components/dist/identity.json
@@ -235,7 +245,7 @@ jobs:
       - name: Token reference in sync with tokens.json
         run: |
           npm run render:tokens
-          if ! git diff --quiet -- tokens/token-reference.md; then
+          if [ -n "$(git status --porcelain --untracked-files=all -- tokens/token-reference.md)" ]; then
             echo "::error::tokens/token-reference.md is stale — run 'npm run render:tokens' and commit."
             git --no-pager diff -- tokens/token-reference.md
             exit 1
