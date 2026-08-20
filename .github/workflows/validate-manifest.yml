@@ -137,6 +137,23 @@ jobs:
             exit 1
           fi
 
+      - name: Derive app-context
+        run: npm run derive:app-context
+
+      # 🚨 git status, NOT git diff. `git diff` reports only files git already
+      # TRACKS, so a brand-new per-slug leaf (app-context/dist/recipes/<slug>.json)
+      # is invisible to it. That is the same blind spot b4ab8340 corrected in
+      # app-context-derive.yml's change detection, and #575 records that the
+      # guards here still carry the `git diff` form. This one does not.
+      - name: app-context dist drift guard (committed app-context/dist must match regeneration)
+        run: |
+          if [ -n "$(git status --porcelain -- app-context/dist)" ]; then
+            echo "::error::app-context/dist is stale: run 'npm run derive:app-context' and commit. app-context-derive.yml does not trigger on app-context/dist/**, so a dist-only edit reaches consumers with no derive and, before this guard, no check."
+            git --no-pager status --porcelain -- app-context/dist
+            git --no-pager diff --stat -- app-context/dist
+            exit 1
+          fi
+
       - name: Derive accessibility
         run: npm run derive:accessibility
 

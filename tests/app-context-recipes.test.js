@@ -425,3 +425,140 @@ test("a recipe file that parses to a non-object is an error, not a crash", () =>
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+// ---------------------------------------------------------------------------
+// Design tokens a recipe NAMES must exist
+//
+// 🚨 A recipe could name a colour token that has never existed and stay green
+// through the derive, the schema and every other check here. Both drawer
+// recipes shipped `var(--zen-color-text-subtle)`, which is not in
+// tokens/tokens.css, and one reached for `--zen-color-text-link`, a family the
+// changelog records as RETIRED. Neither failed anything, because nothing read a
+// token NAME. The failure is invisible rather than loud: an undefined custom
+// property is invalid at computed-value time, so the text silently inherits its
+// parent colour instead of rendering wrong in a way anyone would notice.
+//
+// Scoped to the `--zen-` namespace ON PURPOSE. tokens.css declares only that
+// namespace; `--fm-brand` and `--fm-base-200` are real renderer-internal
+// properties declared in the plugin's fm-base.css, which this repo does not
+// own, so matching every `var(--…)` would report those as undeclared.
+// ---------------------------------------------------------------------------
+function declaredTokenNames() {
+  const css = fs.readFileSync(path.join(ROOT, "tokens", "tokens.css"), "utf8");
+  const names = new Set();
+  const re = /(--zen-[a-z0-9-]+)\s*:/g;
+  let m;
+  while ((m = re.exec(css)) !== null) names.add(m[1]);
+  return names;
+}
+
+// Every `--zen-` reference under a skeleton, plus the number of values visited.
+//
+// 🪤 The first version of this walker recursed into arrays with
+// `node.forEach(walk)`, and `walk` returns immediately for a non-object, so a
+// string INSIDE an array was never scanned: `{styles: ["var(--zen-bogus)"]}`
+// came back clean. Skeleton node shape is deliberately schema-unconstrained and
+// fmTabs legitimately takes an array, so that was a false all-clear in a gate
+// written to prevent exactly this class of miss. Strings are now scanned
+// wherever they sit, and `visited` counts them so non-vacuity can be asserted
+// on reach rather than on findings.
+function scanTokens(skeleton) {
+  const refs = [];
+  let visited = 0;
+  const re = /var\(\s*(--zen-[a-z0-9-]+)/g;
+  function readString(str) {
+    visited += 1;
+    let m;
+    re.lastIndex = 0;
+    while ((m = re.exec(str)) !== null) refs.push(m[1]);
+  }
+  (function walk(node) {
+    if (typeof node === "string") return readString(node);
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node)) return node.forEach(walk);
+    for (const v of Object.values(node)) walk(v);
+  })(skeleton);
+  return { refs, visited };
+}
+
+// Asserted over BOTH src and dist. The gate above reads authored source, but
+// consumers vendor `app-context/dist/recipes/*.json`, and no drift guard
+// re-derives app-context the way validate-manifest does for graph, foundations
+// and accessibility. A PR touching only dist would otherwise run no derive, no
+// drift guard and no token check over the artifact that actually ships.
+function recipesUnderTest() {
+  const out = [];
+  const { recipes, errors } = readRecipes(
+    path.join(ROOT, "app-context", "src"),
+    SCHEMA,
+  );
+  // 🪤 readRecipes DROPS a schema-invalid recipe from `recipes` and reports it
+  // in `errors`. Discarding `errors` would mean a broken recipe is silently
+  // never token-scanned, while `subjects.length > 0` still passes on the dist
+  // entries alone: the false-all-clear shape this gate exists to prevent. CI
+  // catches it because the derive exits 1, but a local `npm test` would not.
+  assert.deepEqual(errors, [], "src recipes failed to read; they were not scanned");
+  for (const r of recipes) out.push({ label: "src/" + r.slug, skeleton: r.skeleton });
+  for (const f of distFiles()) {
+    const doc = JSON.parse(fs.readFileSync(path.join(DIST, f), "utf8"));
+    out.push({ label: "dist/" + f, skeleton: doc.skeleton });
+  }
+  return out;
+}
+
+test("every design token a recipe names exists in tokens/tokens.css", () => {
+  const declared = declaredTokenNames();
+  assert.ok(
+    declared.size > 100,
+    "read only " + declared.size + " tokens from tokens.css; the check would be toothless",
+  );
+  const subjects = recipesUnderTest();
+  assert.ok(subjects.length > 0, "no recipes read; this check would be vacuous");
+  for (const s of subjects) {
+    const { refs, visited } = scanTokens(s.skeleton);
+    // Non-vacuity on REACH, not on findings. A recipe composed entirely of
+    // INSTANCE nodes authors no explicit colour at all (FM components carry
+    // their own from fm-base.css), so "found zero tokens" is a legitimate
+    // state; "visited zero values" is the one that means the walker missed it.
+    assert.ok(
+      visited > 5,
+      s.label + ": walker visited only " + visited + " values; it is not reaching this recipe",
+    );
+    const unknown = [...new Set(refs)].filter((t) => !declared.has(t)).sort();
+    assert.deepEqual(
+      unknown,
+      [],
+      s.label + ": names --zen- tokens that do not exist in tokens/tokens.css",
+    );
+  }
+});
+
+test("positive control: the token check catches an undeclared name, including inside an array", () => {
+  const declared = declaredTokenNames();
+  const planted = {
+    content: [
+      { type: "TEXT", color: "var(--zen-color-text-default)" },
+      // The array case the first walker was blind to.
+      { type: "TEXT", styles: ["color: var(--zen-color-text-subtle)"] },
+    ],
+  };
+  const { refs, visited } = scanTokens(planted);
+  assert.ok(visited >= 4, "the walker must reach the nested array string");
+  assert.deepEqual(
+    [...new Set(refs)].sort(),
+    ["--zen-color-text-default", "--zen-color-text-subtle"],
+    "both refs must be seen, the array one included",
+  );
+  assert.deepEqual(
+    refs.filter((t) => !declared.has(t)),
+    ["--zen-color-text-subtle"],
+    "the retired name must be flagged and the real one must not",
+  );
+});
+
+test("positive control: a non---zen custom property is NOT reported as undeclared", () => {
+  const { refs } = scanTokens({
+    content: [{ type: "TEXT", color: "var(--fm-brand)" }],
+  });
+  assert.deepEqual(refs, [], "--fm- properties are the renderer's, not tokens.css's");
+});

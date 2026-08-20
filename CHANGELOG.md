@@ -20,6 +20,89 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **Studio's quick edit drawer captured, and it is a different composition from Explorer's.**
+  ([#PR](_PR link added at open_)) Studio
+  became observable again on a working environment, so the drawer that #574 could only capture in
+  Explorer is now captured in Studio too, as `studio-quick-edit-drawer`.
+
+  **The shell is shared and the body is not.** Both apps draw the same element: a 550px
+  `dialog.zng-drawer`, `position: fixed` at `inset: 70px 0 0 0`, `z-index: 950`, opened by clicking a
+  result row's BODY while the title still routes to the full page. It is non-modal in both, and the
+  stylesheet is explicit about the distinction, `.zng-drawer::backdrop { display: none }` against
+  `.zng-dialog::backdrop` at 60 percent black, which is the second app to confirm that drawer and modal
+  are different surfaces rather than different styling. What differs is everything inside: Studio edits
+  the title in place, renders Properties as editable fields, assigns Curator and Contact, and moderates
+  suggestions behind a segmented control, where Explorer reads. Studio carries two header icon buttons
+  to Explorer's three, and its four tabs carry no counts where Explorer's do.
+
+  **A second recipe rather than a wider `apps`, and the plugin already required it.** The
+  `right-sliding-drawer` PATTERN already claimed both apps and already said "Studio: quick edit.
+  Explorer: quick view", so the prose was right while the only recipe was scoped `explorer`: a Studio
+  request resolved the pattern, matched no capture, and fell back to a generic archetype. Widening
+  `apps` on the existing recipe would have fixed the fallback by handing Studio Explorer's body with
+  full confidence, which is worse. `selectPageRecipe` scopes the lookup by the recipe's own `apps` for
+  exactly this reason, so two captures of one pattern, one per app, is the shape it was built for.
+
+  **A token that does not exist shipped in a recipe, and nothing caught it.** Both drawer recipes named
+  `var(--zen-color-text-subtle)`, and the retired-token family `--zen-color-text-link-*` was the other
+  one reached for. Neither is in `tokens/tokens.css`. They are now `--zen-color-text-secondary` and
+  `--zen-color-text-primary`, the latter being the migration target the changelog already records for
+  the retired link family. The fix to `right-sliding-drawer` is included here because it is the same
+  defect found by the same work.
+
+  **And a gate now reads them, because nothing did.** Both instances shipped green through the derive,
+  the schema validation and every other check, since no check had ever looked at a token NAME. The
+  failure is invisible rather than loud: an undefined custom property is invalid at computed-value
+  time, so the text silently inherits its parent colour instead of rendering visibly wrong.
+  `tests/app-context-recipes.test.js` now collects every `var(--zen-…)` under a skeleton and asserts
+  membership in the names declared by `tokens/tokens.css`. Proven by mutating a real recipe back to
+  `--zen-color-text-subtle` and confirming it reddens, not only by a planted fixture.
+
+  **The first version of that gate had the defect it was written to prevent, and review caught it.**
+  Its walker recursed into arrays with `forEach(walk)`, and `walk` returns immediately for a
+  non-object, so a string INSIDE an array was never scanned: `{styles: ["var(--zen-bogus)"]}` came back
+  clean. Skeleton node shape is deliberately schema-unconstrained and `fmTabs` legitimately takes an
+  array, so that was a false all-clear in the one place it could not be afforded. Two more corrections
+  came with it, and a third after that: `readRecipes` reports a schema-invalid recipe in `errors` while
+  dropping it from `recipes`, so discarding `errors` would have left a broken recipe unscanned while the
+  dist entries kept the non-vacuity assertion satisfied. Non-vacuity now asserts the walker VISITED values
+  rather than that it FOUND tokens,
+  because a recipe composed entirely of `INSTANCE` nodes authors no explicit colour and would have been
+  failed for being legitimate; and the check is scoped to the `--zen-` namespace, because `--fm-brand`
+  and `--fm-base-200` are real renderer properties this repo does not own and were being reported as
+  undeclared.
+
+  **It runs over `dist` as well as `src`, because consumers vendor `dist`.** `validate-manifest` carried
+  re-derive drift guards for graph, foundations, accessibility and the llms index, and **none for
+  `app-context/dist`**. `app-context-derive.yml` triggers on `app-context/src/**`, `scripts/app-context/**`,
+  `scripts/lib/dist-io.js` and `schemas/app-context*.json`, none of which a dist-only edit touches, so a
+  change to `app-context/dist/recipes/*.json` alone ran no derive, no drift guard and no token check over
+  the artifact that actually ships.
+
+  **So this adds the missing drift guard rather than only filing it.** `validate-manifest.yml` now derives
+  app-context and fails on any difference, which makes the committed dist provably a function of src for
+  this domain as it already is for the other four. It uses `git status --porcelain`, NOT the
+  `git diff --quiet` its four siblings use, because `git diff` cannot see an added file and every recipe
+  is a new per-slug leaf; that is the blind spot `b4ab8340` corrected in the derive and #575 records as
+  still present in these guards. Verified in a throwaway worktree on clean `origin/main`: the guard passes
+  there (so it is not a false positive), catches a hand-edited tracked dist file, and catches a new
+  untracked leaf that `git diff --quiet` reports as no change.
+
+  **Two renderer facts recorded for the next author.** `fmProgressBar` reads its value from the VARIANT,
+  not from props, and drops it straight into a CSS `width`, so an unsubstituted `{{token}}` there draws
+  an empty bar rather than a visibly broken one: plugin #306 with an invisible failure mode. An
+  INSTANCE's `sizing` is dropped entirely by `render-node.js`, which returns `renderFMComponent(node)`
+  with no style wrapper, so the `width: 100%` on `.fm-progress-bar` can only be constrained by wrapping
+  it in a FRAME. And there is no segmented control in the FM tier at all, while the DS tier has one, so
+  the Suggestions filter is described in `slots` rather than composed.
+
+  **The Explorer comparison was re-taken on the same host.** Every differential claim above started as a
+  comparison between a Studio capture on `manufacturing` and an Explorer capture on `next.dev`, which
+  would have recorded a difference between two ENVIRONMENTS as a fact about two APPS. Explorer was
+  re-opened on `manufacturing` and the three claims were confirmed there: 550px shell with identical
+  `inset` and `z-index`, three header icon buttons against Studio's two, and tab labels reading
+  `Fields 2 / Properties 18 / Contacts 6 / Suggestions 1` against Studio's bare four.
+
 - **Nine review findings across the two merged recipe PRs, two of them shipping defects.** I pushed #559,
   #560 and #561 without an independent review and said so; running one afterwards found these.
 
