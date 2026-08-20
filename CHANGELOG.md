@@ -81,12 +81,19 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
   **So this adds the missing drift guard rather than only filing it.** `validate-manifest.yml` now derives
   app-context and fails on any difference, which makes the committed dist provably a function of src for
-  this domain as it already is for the other four. It uses `git status --porcelain`, NOT the
-  `git diff --quiet` its four siblings use, because `git diff` cannot see an added file and every recipe
-  is a new per-slug leaf; that is the blind spot `b4ab8340` corrected in the derive and #575 records as
-  still present in these guards. Verified in a throwaway worktree on clean `origin/main`: the guard passes
-  there (so it is not a false positive), catches a hand-edited tracked dist file, and catches a new
-  untracked leaf that `git diff --quiet` reports as no change.
+  this domain as it already is for the others. It uses `git status --porcelain` because `git diff` cannot
+  see an added file and every recipe is a new per-slug leaf, which is the blind spot `b4ab8340` corrected
+  in the derive and #575 tracks across the derives. It is **not** the first porcelain guard in this file:
+  the identity-ledger guard already used that form for the same reason. Of the guards that remain on
+  `git diff --quiet` (graph, foundations, accessibility, llms), all four cover fixed file sets, where an
+  added file is not the usual failure.
+
+  The pathspec covers `paths-manifest.json` as well as the dist, because `derive:app-context` writes both.
+  Verified in a throwaway worktree: on clean branch HEAD the guard passes, so it is not a false positive;
+  it catches a hand-edited tracked dist file; it catches a new untracked leaf that `git diff --quiet`
+  reports as no change; and with a COMMITTED broken manifest the dist-only pathspec misses while this one
+  catches. (The first attempt at that last control broke the working tree rather than the commit, which
+  proved nothing, since repairing an uncommitted edit is the derive behaving correctly.)
 
   **Two renderer facts recorded for the next author.** `fmProgressBar` reads its value from the VARIANT,
   not from props, and drops it straight into a CSS `width`, so an unsubstituted `{{token}}` there draws
@@ -99,9 +106,14 @@ Each entry links its pull request. Dates are the merge date (UTC).
   **The Explorer comparison was re-taken on the same host.** Every differential claim above started as a
   comparison between a Studio capture on `manufacturing` and an Explorer capture on `next.dev`, which
   would have recorded a difference between two ENVIRONMENTS as a fact about two APPS. Explorer was
-  re-opened on `manufacturing` and the three claims were confirmed there: 550px shell with identical
-  `inset` and `z-index`, three header icon buttons against Studio's two, and tab labels reading
-  `Fields 2 / Properties 18 / Contacts 6 / Suggestions 1` against Studio's bare four.
+  re-opened on `manufacturing` and the claims were confirmed there: 550px shell with identical `inset`
+  and `z-index`, three header icon buttons against Studio's two, and five tabs reading `Description`,
+  `Fields 2`, `Properties 18`, `Contacts 6`, `Suggestions 1` against Studio's four bare ones, `General`,
+  `Properties`, `People`, `Suggestions`. The tab sets OVERLAP rather than nest: both apps carry Properties
+  and Suggestions, only Studio carries General and People, only Explorer carries Description and Fields.
+  An earlier draft of this entry enumerated four Explorer tabs, dropping `Description`, and the
+  cross-pointer written into the Explorer capture used "adds a Suggestions tab" as a differentiator when
+  Explorer has had one all along.
 
 - **Nine review findings across the two merged recipe PRs, two of them shipping defects.** I pushed #559,
   #560 and #561 without an independent review and said so; running one afterwards found these.
