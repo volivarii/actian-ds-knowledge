@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Added
 
 - **Studio's quick edit drawer captured, and it is a different composition from Explorer's.**
-  ([#PR](_PR link added at open_)) Studio
+  ([#576](https://github.com/volivarii/actian-ds-knowledge/pull/576)) Studio
   became observable again on a working environment, so the drawer that #574 could only capture in
   Explorer is now captured in Studio too, as `studio-quick-edit-drawer`.
 
