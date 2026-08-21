@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **The drift-guard conversion in #582 dropped git's exit status, which put a silent green on a required
-  check.** ([#PR](_PR link added at open_)) Converting five guards from `if ! git diff --quiet` to
+  check.** ([#583](https://github.com/volivarii/actian-ds-knowledge/pull/583)) Converting five guards from `if ! git diff --quiet` to
   `if [ -n "$(git status --porcelain --untracked-files=all -- …)" ]` removed the loud-failure property
   along with the blind spot. `[ -n "$(git ...)" ]` reads only stdout, so a git failure (dubious
   ownership, a stuck `index.lock`) prints nothing, the test is false, the guard body is SKIPPED and the
