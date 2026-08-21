@@ -122,8 +122,22 @@ jobs:
 
       - name: Graph drift guard (committed graph.json + quality-report.json + collisions.json must match regeneration)
         run: |
-          if [ -n "$(git status --porcelain --untracked-files=all -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/collisions.json)" ]; then
+          # 🚨 Capture and check git's own exit status BEFORE testing the value.
+          # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
+          # a stuck index.lock) prints nothing, the test is false, the guard body is
+          # SKIPPED and the step exits 0. That is a silent green on a required check.
+          # The `if ! git diff --quiet` this replaced exited 128, which `!` inverted,
+          # so it fired loudly. Converting without this traded one false all-clear for
+          # another.
+          DRIFT="$(git status --porcelain --untracked-files=all -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/collisions.json)" || {
+            echo "::error::git status failed while checking drift"
+            exit 1
+          }
+          if [ -n "$DRIFT" ]; then
             echo "::error::graph/dist/{graph,quality-report,collisions}.json is stale — run 'npm run derive:graph && npm run validate:graph' and commit."
+            # The captured list, because `git diff` prints NOTHING for the
+            # untracked leaf these guards were converted to catch.
+            printf '%s\n' "$DRIFT"
             git diff -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/collisions.json
             exit 1
           fi
@@ -140,8 +154,22 @@ jobs:
 
       - name: Foundations dist drift guard (committed foundations/dist must match regeneration)
         run: |
-          if [ -n "$(git status --porcelain --untracked-files=all -- foundations/dist)" ]; then
+          # 🚨 Capture and check git's own exit status BEFORE testing the value.
+          # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
+          # a stuck index.lock) prints nothing, the test is false, the guard body is
+          # SKIPPED and the step exits 0. That is a silent green on a required check.
+          # The `if ! git diff --quiet` this replaced exited 128, which `!` inverted,
+          # so it fired loudly. Converting without this traded one false all-clear for
+          # another.
+          DRIFT="$(git status --porcelain --untracked-files=all -- foundations/dist)" || {
+            echo "::error::git status failed while checking drift"
+            exit 1
+          }
+          if [ -n "$DRIFT" ]; then
             echo "::error::foundations/dist is stale — run 'npm run derive:foundations' and commit."
+            # The captured list, because `git diff` prints NOTHING for the
+            # untracked leaf these guards were converted to catch.
+            printf '%s\n' "$DRIFT"
             git --no-pager diff --stat -- foundations/dist
             exit 1
           fi
@@ -166,8 +194,22 @@ jobs:
       # broken manifest is missed by the dist-only pathspec and caught by this one.
       - name: app-context dist drift guard (committed app-context/dist + manifest entries must match regeneration)
         run: |
-          if [ -n "$(git status --porcelain --untracked-files=all -- app-context/dist paths-manifest.json)" ]; then
+          # 🚨 Capture and check git's own exit status BEFORE testing the value.
+          # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
+          # a stuck index.lock) prints nothing, the test is false, the guard body is
+          # SKIPPED and the step exits 0. That is a silent green on a required check.
+          # The `if ! git diff --quiet` this replaced exited 128, which `!` inverted,
+          # so it fired loudly. Converting without this traded one false all-clear for
+          # another.
+          DRIFT="$(git status --porcelain --untracked-files=all -- app-context/dist paths-manifest.json)" || {
+            echo "::error::git status failed while checking drift"
+            exit 1
+          }
+          if [ -n "$DRIFT" ]; then
             echo "::error::app-context/dist or its paths-manifest entries are stale: run 'npm run derive:app-context' and commit. app-context-derive.yml does not trigger on app-context/dist/**, so a dist-only edit reaches consumers with no derive and, before this guard, no check."
+            # The captured list, because `git diff` prints NOTHING for the
+            # untracked leaf these guards were converted to catch.
+            printf '%s\n' "$DRIFT"
             git --no-pager status --porcelain --untracked-files=all -- app-context/dist paths-manifest.json
             git --no-pager diff --stat -- app-context/dist paths-manifest.json
             exit 1
@@ -178,8 +220,22 @@ jobs:
 
       - name: Accessibility dist drift guard (committed accessibility/dist must match regeneration)
         run: |
-          if [ -n "$(git status --porcelain --untracked-files=all -- accessibility/dist)" ]; then
+          # 🚨 Capture and check git's own exit status BEFORE testing the value.
+          # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
+          # a stuck index.lock) prints nothing, the test is false, the guard body is
+          # SKIPPED and the step exits 0. That is a silent green on a required check.
+          # The `if ! git diff --quiet` this replaced exited 128, which `!` inverted,
+          # so it fired loudly. Converting without this traded one false all-clear for
+          # another.
+          DRIFT="$(git status --porcelain --untracked-files=all -- accessibility/dist)" || {
+            echo "::error::git status failed while checking drift"
+            exit 1
+          }
+          if [ -n "$DRIFT" ]; then
             echo "::error::accessibility/dist is stale — run 'npm run derive:accessibility' and commit."
+            # The captured list, because `git diff` prints NOTHING for the
+            # untracked leaf these guards were converted to catch.
+            printf '%s\n' "$DRIFT"
             git --no-pager diff --stat -- accessibility/dist
             exit 1
           fi
@@ -207,8 +263,22 @@ jobs:
 
       - name: llms index drift guard (committed llms.txt + llms-full.txt must match regeneration)
         run: |
-          if [ -n "$(git status --porcelain --untracked-files=all -- llms.txt llms-full.txt)" ]; then
+          # 🚨 Capture and check git's own exit status BEFORE testing the value.
+          # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
+          # a stuck index.lock) prints nothing, the test is false, the guard body is
+          # SKIPPED and the step exits 0. That is a silent green on a required check.
+          # The `if ! git diff --quiet` this replaced exited 128, which `!` inverted,
+          # so it fired loudly. Converting without this traded one false all-clear for
+          # another.
+          DRIFT="$(git status --porcelain --untracked-files=all -- llms.txt llms-full.txt)" || {
+            echo "::error::git status failed while checking drift"
+            exit 1
+          }
+          if [ -n "$DRIFT" ]; then
             echo "::error::llms.txt / llms-full.txt is STALE: the committed index does not describe the content committed alongside it. Run 'npm run derive:llms' and commit the result. Both files are vendored to consumers (vendor-include.json) and consumers resolve by tag, so a stale index ships inside the release tag (#525)."
+            # The captured list, because `git diff` prints NOTHING for the
+            # untracked leaf these guards were converted to catch.
+            printf '%s\n' "$DRIFT"
             echo "Files that drifted (committed -> regenerated):"
             git --no-pager diff --stat -- llms.txt llms-full.txt
             git --no-pager diff -- llms.txt
@@ -231,8 +301,22 @@ jobs:
           # "current" while the file is absent from the commit. --porcelain covers
           # deleted, untracked and modified alike, so the guard asserts its own
           # postcondition rather than one case of it.
-          if [ -n "$(git status --porcelain --untracked-files=all -- components/dist/identity.json)" ]; then
+          # 🚨 Capture and check git's own exit status BEFORE testing the value.
+          # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
+          # a stuck index.lock) prints nothing, the test is false, the guard body is
+          # SKIPPED and the step exits 0. That is a silent green on a required check.
+          # The `if ! git diff --quiet` this replaced exited 128, which `!` inverted,
+          # so it fired loudly. Converting without this traded one false all-clear for
+          # another.
+          DRIFT="$(git status --porcelain --untracked-files=all -- components/dist/identity.json)" || {
+            echo "::error::git status failed while checking drift"
+            exit 1
+          }
+          if [ -n "$DRIFT" ]; then
             echo "::error::components/dist/identity.json is STALE: the committed ledger does not describe the registries committed alongside it. Run 'npm run derive:identity' and commit the result. clients/resolve-paths.js reads this to resolve a slug a component was renamed away from, so a stale ledger silently mis-resolves."
+            # The captured list, because `git diff` prints NOTHING for the
+            # untracked leaf these guards were converted to catch.
+            printf '%s\n' "$DRIFT"
             echo "Drift (committed -> regenerated):"
             git --no-pager diff -- components/dist/identity.json
             exit 1
@@ -245,8 +329,22 @@ jobs:
       - name: Token reference in sync with tokens.json
         run: |
           npm run render:tokens
-          if [ -n "$(git status --porcelain --untracked-files=all -- tokens/token-reference.md)" ]; then
+          # 🚨 Capture and check git's own exit status BEFORE testing the value.
+          # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
+          # a stuck index.lock) prints nothing, the test is false, the guard body is
+          # SKIPPED and the step exits 0. That is a silent green on a required check.
+          # The `if ! git diff --quiet` this replaced exited 128, which `!` inverted,
+          # so it fired loudly. Converting without this traded one false all-clear for
+          # another.
+          DRIFT="$(git status --porcelain --untracked-files=all -- tokens/token-reference.md)" || {
+            echo "::error::git status failed while checking drift"
+            exit 1
+          }
+          if [ -n "$DRIFT" ]; then
             echo "::error::tokens/token-reference.md is stale — run 'npm run render:tokens' and commit."
+            # The captured list, because `git diff` prints NOTHING for the
+            # untracked leaf these guards were converted to catch.
+            printf '%s\n' "$DRIFT"
             git --no-pager diff -- tokens/token-reference.md
             exit 1
           fi

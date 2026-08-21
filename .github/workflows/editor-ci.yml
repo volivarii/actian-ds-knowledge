@@ -62,8 +62,22 @@ jobs:
         # it must match a fresh walk + round-trip of every editable file.
         run: |
           npm run gen:safe-paths
-          git diff --exit-code src/generated/wysiwyg-safe-paths.json \
-            || { echo "::error::wysiwyg-safe-paths.json is stale (run 'npm run gen:safe-paths' and commit it)."; exit 1; }
+          # 🚨 git status, NOT `git diff --exit-code`. `git diff` reports only files
+          # git already TRACKS, so if this file is DELETED in a PR and the generator
+          # above recreates it untracked, `git diff --exit-code` returns 0 and this
+          # guard reports clean: the lane goes green with a build input the editor
+          # gate reads absent from the merge. Same blind spot corrected across the
+          # derives in #575, reached here by deletion rather than by addition.
+          # The exit status is captured so a git failure cannot read as "not stale".
+          DRIFT="$(git status --porcelain --untracked-files=all -- src/generated/wysiwyg-safe-paths.json)" || {
+            echo "::error::git status failed while checking the rich-safe set"
+            exit 1
+          }
+          if [ -n "$DRIFT" ]; then
+            echo "::error::wysiwyg-safe-paths.json is stale (run 'npm run gen:safe-paths' and commit it)."
+            printf '%s\n' "$DRIFT"
+            exit 1
+          fi
 
       - name: Production build
         run: npm run build

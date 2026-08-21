@@ -20,6 +20,54 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **The drift-guard conversion in #582 dropped git's exit status, which put a silent green on a required
+  check.** ([#PR](_PR link added at open_)) Converting five guards from `if ! git diff --quiet` to
+  `if [ -n "$(git status --porcelain --untracked-files=all -- …)" ]` removed the loud-failure property
+  along with the blind spot. `[ -n "$(git ...)" ]` reads only stdout, so a git failure (dubious
+  ownership, a stuck `index.lock`) prints nothing, the test is false, the guard body is SKIPPED and the
+  step exits 0. The form it replaced exited 128, which `!` inverted, so it fired. **That is the exact
+  defect #582 fixed in the detect steps, twenty lines away, described at length in its own changelog
+  entry, and not applied to the guards in the same change.**
+
+  All seven guards using that form now capture, check git's exit status, and fail the step. They also
+  print the captured list: they had kept `git diff --stat` for reporting, which outputs **nothing** for
+  the untracked leaf they were converted to catch, so the check would have failed with an empty "Files
+  that drifted" list.
+
+  **`editor-ci.yml` carried the same blind spot and was missed entirely.** It decided with
+  `git diff --exit-code src/generated/wysiwyg-safe-paths.json`. Reached by DELETION rather than
+  addition: a PR removes the generated file, `npm run gen:safe-paths` recreates it untracked,
+  `git diff --exit-code` returns 0, and the lane goes green with a build input the editor gate reads
+  absent from the merge. Demonstrated in a scratch repo rather than argued.
+
+  **The guard could not see any of this**, which is why none of it was caught. It inspected only steps
+  writing `changed=` to `$GITHUB_OUTPUT`, so the drift guards and `editor-ci` were outside it by
+  construction. A second assertion now covers every `VAR="$(git status …)"` capture in any workflow,
+  discovered by the git call itself, and it is mutation-proven by reverting one real guard to the
+  unguarded form.
+
+  **The guard was rebuilt after review defeated three versions of it on real workflows.** Each version
+  checked a SYNTAX SHAPE rather than the postcondition, and every one both accepted broken code and
+  rejected correct code. It matched `|| {` over the whole run block, so an unrelated
+  `npm run … || { exit 1; }` on a neighbouring line satisfied it. Narrowed to the capture line, it then
+  passed a handler that does not exit (`|| { echo "continuing"; }`), passed an UNQUOTED capture with the
+  handler deleted, passed a revert to the inline `if [ -n "$(git status …)" ]` (a capture of no kind, so
+  invisible to a capture-shaped walker), and RED-flagged the strictly correct `… )" || exit 1` for
+  having no brace.
+
+  It now classifies EVERY occurrence of `git status --porcelain` in every workflow as a condition (bad,
+  git called inline), a checked capture (its failure handler exits, inline or block, braces or not), a
+  reporting line, or **unknown**, which is itself a failure. An occurrence whose shape the guard cannot
+  vouch for is not silently skipped. Non-vacuity needs no magic number as a result: the previous
+  `>= 8` floor sat against 20 real occurrences, so all eight guards could have been reverted and it
+  would still have held.
+
+  Two weaker rules were tried on the "step detects nothing" case and both leaked: scoping the git checks
+  to git-consulting steps let `CHANGED=""` fall through as out of scope, and a "must compute something"
+  floor of `$(` then let `CHANGED=$(true)` through. A change-detection step must now consult git. That
+  is stronger and simpler, one rule instead of two, at the cost that a genuinely non-git step would need
+  a documented edit here.
+
 - **Every derive decided "did the dist change" with `git diff`, which cannot see an added file.**
   ([#PR](_PR link added at open_)) `git diff` reports only files git already TRACKS, so a regeneration
   that ADDS a file was invisible: the step logged "No dist changes after regeneration", and the bump,
@@ -83,8 +131,9 @@ Each entry links its pull request. Dates are the merge date (UTC).
   `accessibility/dist`, which take directory pathspecs. The live case: on a fork PR the derive's commit
   step is skipped, so `validate-manifest` re-derives, a new leaf is untracked, `git diff --quiet` reports
   clean, and the required check goes green with the leaf absent from the merge. All five now use the same
-  form, so no workflow in the repo decides anything with `git diff` any more, which is also what makes
-  the test's stated invariant true rather than aspirational.
+  form. (An earlier revision of this sentence claimed no workflow in the repo decided anything with
+  `git diff` any more. That was false when written: `editor-ci.yml` still did, and the guard could not
+  see it. Corrected in the follow-up below.)
 
   **One thing left alone on purpose.** `foundations-derive.yml` is the one step whose pathspec is source trees
   rather than generated output, so `-uall` widens what can flip it to `changed=true`. Narrowing it was

@@ -98,19 +98,102 @@ function problemsFor(run) {
   var deciding = decidingLines(run);
   var out = [];
   if (!deciding.trim()) return ["no-deciding-line"];
+  // A change-detection step must consult GIT.
+  //
+  // 🪤 Two weaker rules were tried and both leaked. Scoping the git checks to
+  // git-consulting steps (so a hypothetical non-git step would not be forced to
+  // add a dummy git call) let `CHANGED=""` fall through as out of scope, which is
+  // the "detection deleted" bypass. Adding a "must compute something" floor of
+  // `$(` then let `CHANGED=$(true)` through: the something can be nothing.
+  //
+  // Requiring git is stronger AND simpler, one rule instead of two. The cost is
+  // that a genuinely non-git change-detection step would red this and need a
+  // documented edit here. No such step exists, and making that a conscious edit
+  // is the right price for closing two demonstrated bypasses.
+  if (!/\bgit\b/.test(deciding)) return ["no-git"];
   if (/git diff\b/.test(deciding)) out.push("git-diff");
   if (!/git status --porcelain/.test(deciding)) out.push("no-porcelain");
   if (!/--untracked-files=all/.test(deciding)) out.push("no-uall");
-  // 🪤 The `|| { ... }` must actually EXIT. Matching only the tokens `|| {`
-  // passed `|| { echo "status failed, continuing"; }`, which swallows the git
-  // failure and takes the "no changes" branch: exactly the false all-clear this
-  // part exists to prevent. The `exit` lives outside the deciding lines, so this
-  // one is matched over the whole comment-stripped block.
-  if (!/\|\|\s*\{[^}]*\bexit\b/.test(withoutComments(run))) out.push("no-rc-check");
+  // 🪤 The condition itself must not call git INLINE. `[ -z "$(git ...)" ]`
+  // reads only stdout, so a git failure prints nothing and the test silently
+  // takes the "no changes" branch. Going through a captured variable is what
+  // makes the exit status checkable at all, and the companion test below
+  // asserts every such capture has a failure handler that EXITS.
+  //
+  // This replaced a match for `|| {` over the WHOLE block, which an unrelated
+  // `npm run derive:thing || { echo; exit 1; }` on a neighbouring line
+  // satisfied while the git call stayed uncaptured.
+  var conditionLines = withoutComments(run)
+    .split("\n")
+    .filter(function (line) {
+      return /^\s*(if\b|elif\b)/.test(line);
+    })
+    .join("\n");
+  if (/\bgit\b/.test(conditionLines)) out.push("inline-git-in-condition");
   return out;
 }
 
+// EVERY occurrence of `git status --porcelain` in any workflow, classified.
+//
+// 🪤 An earlier version keyed on the capture's SYNTAX (`VAR="$(git status ` ...
+// ending `)" || {`). Review defeated it three ways on real workflows, all green:
+//   - a handler that does not exit: `|| {` / `echo "continuing"` / `}`
+//   - an UNQUOTED capture: `CHANGED=$(git status ...)` with the handler deleted
+//   - a revert to the inline `if [ -n "$(git status ...)" ]`, which is a capture
+//     of no kind at all and so was invisible to a capture-shaped walker
+// It also RED-flagged correct code, `... )" || exit 1`, because that has no brace.
+// Checking a formatting shape rejects correct code and accepts incorrect code at
+// the same time. What matters is the POSTCONDITION: git's failure must stop the
+// step. So every occurrence is classified, and an occurrence whose shape this
+// walker does not recognise is itself a failure rather than a silent skip.
+function classifyLine(lines, i) {
+  var line = lines[i];
+  if (/^\s*(if|elif)\b/.test(line)) return "condition";
+  if (/^\s*git\b/.test(line)) return "reporting";
+  if (!/^\s*[A-Za-z_][A-Za-z0-9_]*=/.test(line)) return "unknown";
+  // A capture. Its failure handler must exit, whether written inline
+  // (`|| exit 1`, `|| { ...; exit 1; }`) or as a block opened with `|| {`.
+  if (!/\|\|/.test(line)) return "capture-unchecked";
+  var tail = line.slice(line.indexOf("||"));
+  if (/\bexit\b/.test(tail)) return "capture-checked";
+  if (/\{\s*$/.test(tail)) {
+    for (var j = i + 1; j < lines.length; j++) {
+      if (/^\s*\}/.test(lines[j])) break;
+      if (/\bexit\b/.test(lines[j])) return "capture-checked";
+    }
+  }
+  return "capture-unchecked";
+}
+
+function gitStatusSites() {
+  var sites = [];
+  fs.readdirSync(WORKFLOW_DIR)
+    .filter(function (f) {
+      return /\.ya?ml$/.test(f);
+    })
+    .sort()
+    .forEach(function (file) {
+      var lines = withoutComments(
+        fs.readFileSync(path.join(WORKFLOW_DIR, file), "utf8"),
+      ).split("\n");
+      lines.forEach(function (line, i) {
+        if (!/git status --porcelain/.test(line)) return;
+        sites.push({
+          file: file,
+          line: i + 1,
+          kind: classifyLine(lines, i),
+        });
+      });
+    });
+  return sites;
+}
+
 // A change-detection step is one that writes `changed=` to $GITHUB_OUTPUT.
+//
+// 🪤 `changed=` and GITHUB_OUTPUT anywhere in the block, NOT the literal
+// `changed=true` on the same line as the redirect: the strict form missed
+// `echo "changed=$DIRTY" >> "$GITHUB_OUTPUT"` and grouped redirects, so such a
+// step dropped silently out of the guarded set while the test stayed green.
 function changeDetectionSteps() {
   var found = [];
   fs.readdirSync(WORKFLOW_DIR)
@@ -130,13 +213,6 @@ function changeDetectionSteps() {
       Object.keys(jobs).forEach(function (jobName) {
         ((jobs[jobName] && jobs[jobName].steps) || []).forEach(function (step) {
           var run = String((step && step.run) || "");
-          // 🪤 `changed=` and GITHUB_OUTPUT anywhere in the block, NOT the
-          // literal `changed=true` on the same line as the redirect. The strict
-          // form missed `echo "changed=$DIRTY" >> "$GITHUB_OUTPUT"` and grouped
-          // redirects, so such a step dropped silently out of the guarded set
-          // while the test stayed green: discovery that misses is worse than
-          // discovery that over-reaches, because an over-reached step simply has
-          // to be in the corrected form too.
           if (/changed=/.test(run) && /GITHUB_OUTPUT/.test(run)) {
             found.push({
               label: file + " [" + ((step && step.name) || "(unnamed)") + "]",
@@ -203,6 +279,42 @@ test("every change-detection step decides with git status, never git diff", func
   );
 });
 
+test("every `git status` decision is a capture whose failure exits", function () {
+  var sites = gitStatusSites();
+
+  // Non-vacuity WITHOUT a magic floor: every occurrence must be classified, and
+  // an unrecognised shape counts as a failure. A count-based floor was worse than
+  // useless here: `>= 8` sat against 20 real occurrences, so all eight guards
+  // could have been reverted to the inline form and it would still have held.
+  assert.ok(
+    sites.length > 0,
+    "no `git status --porcelain` found at all; the walker is broken",
+  );
+
+  var bad = sites
+    .filter(function (s) {
+      return s.kind !== "capture-checked" && s.kind !== "reporting";
+    })
+    .map(function (s) {
+      return s.file + ":" + s.line + " (" + s.kind + ")";
+    })
+    .sort();
+
+  assert.deepEqual(
+    bad,
+    [],
+    "condition = git called inline, so its failure prints nothing and reads as no-change; " +
+      "capture-unchecked = the failure is swallowed; unknown = a shape this guard cannot vouch for",
+  );
+
+  assert.ok(
+    sites.some(function (s) {
+      return s.kind === "capture-checked";
+    }),
+    "found no checked capture at all; the walker is only seeing reporting lines",
+  );
+});
+
 test("positive control: every bypass a review actually found is caught", function () {
   // None of these are invented. Each defeated an earlier version of this guard.
   var COMMENT =
@@ -213,66 +325,59 @@ test("positive control: every bypass a review actually found is caught", functio
     "          }\n" +
     '          if [ -z "$CHANGED" ]; then\n';
 
-  assert.deepEqual(problemsFor(COMMENT + GOOD), [], "the corrected form must pass");
-
-  assert.deepEqual(
-    problemsFor(COMMENT + "          if git diff --quiet -- d/; then\n"),
-    ["git-diff", "no-porcelain", "no-uall", "no-rc-check"],
-    "the original blind form",
-  );
-
-  assert.deepEqual(
-    problemsFor(COMMENT + '          CHANGED="$(git diff --name-only -- d/)"\n'),
-    ["git-diff", "no-porcelain", "no-uall", "no-rc-check"],
-    "equally blind but never says --quiet; this slipped the first guard entirely",
-  );
-
-  assert.deepEqual(
-    problemsFor(COMMENT + '          CHANGED=""\n'),
-    ["no-porcelain", "no-uall", "no-rc-check"],
-    "detection deleted, explanatory comment retained",
-  );
-
-  assert.deepEqual(
-    problemsFor(
+  var cases = [
+    [[], COMMENT + GOOD, "the corrected form"],
+    [
+      ["git-diff", "no-porcelain", "no-uall", "inline-git-in-condition"],
+      COMMENT + "          if git diff --quiet -- d/; then\n",
+      "the original blind form",
+    ],
+    [
+      ["git-diff", "no-porcelain", "no-uall"],
+      COMMENT + '          CHANGED="$(git diff --name-only -- d/)"\n',
+      "equally blind but never says --quiet; slipped the first guard entirely",
+    ],
+    [
+      ["no-git"],
+      COMMENT + '          CHANGED=""\n',
+      "detection deleted, explanatory comment retained",
+    ],
+    [
+      ["no-git"],
       '          CHANGED=""   # replaced git status --porcelain --untracked-files=all\n',
-    ),
-    ["no-porcelain", "no-uall", "no-rc-check"],
-    "trailing inline comment; stripping only full-line comments let this pass",
-  );
-
-  assert.deepEqual(
-    problemsFor(COMMENT + '          if [ -z "$(git status --porcelain -- d/)" ]; then\n'),
-    ["no-uall", "no-rc-check"],
-    "porcelain without -uall and without the capture, the form validate-manifest carried",
-  );
-
-  assert.deepEqual(
-    problemsFor(
+      "trailing inline comment; stripping only full-line comments let this pass",
+    ],
+    [
+      ["no-uall", "inline-git-in-condition"],
+      COMMENT + '          if [ -z "$(git status --porcelain -- d/)" ]; then\n',
+      "porcelain inline without -uall, the form validate-manifest carried",
+    ],
+    [
+      ["git-diff"],
       COMMENT +
-        '          CHANGED="$(git status --porcelain --untracked-files=all -- d/)" || {\n' +
-        "            exit 1\n          }\n" +
-        '          FILES=$(git diff --name-only -- d/)\n' +
+        GOOD +
+        "          FILES=$(git diff --name-only -- d/)\n" +
         '          if [ -z "$FILES" ]; then\n',
-    ),
-    ["git-diff"],
-    "decision routed through another variable while a vestigial CHANGED= satisfies the presence checks",
-  );
+      "decision routed through a second variable while a vestigial CHANGED= satisfies the rest",
+    ],
+    [
+      [],
+      GOOD + "            git diff -- paths-manifest.json\n",
+      "git diff in a REPORTING line decides nothing and must be allowed",
+    ],
+    [
+      ["no-git"],
+      COMMENT + "          A=$(cat marker)\n" + '          if [ "$A" != "$B" ]; then\n',
+      "a change-detection step that never consults git is not detecting a change",
+    ],
+    [
+      ["no-git"],
+      COMMENT + "          CHANGED=$(true)\n" + '          if [ -z "$CHANGED" ]; then\n',
+      "the `$(` floor let this through: a substitution that asks nothing",
+    ],
+  ];
 
-  assert.deepEqual(
-    problemsFor(
-      COMMENT +
-        '          CHANGED="$(git status --porcelain --untracked-files=all -- d/)" || { echo "continuing"; }\n' +
-        '          if [ -z "$CHANGED" ]; then\n',
-    ),
-    ["no-rc-check"],
-    "`|| {` present but it does not exit, so the git failure is swallowed anyway",
-  );
-
-  // Reporting with git diff is legitimate and must not be flagged.
-  assert.deepEqual(
-    problemsFor(GOOD + "            git diff -- paths-manifest.json\n"),
-    [],
-    "git diff in a REPORTING line decides nothing and must be allowed",
-  );
+  cases.forEach(function (c) {
+    assert.deepEqual(problemsFor(c[1]), c[0], c[2]);
+  });
 });
