@@ -18,6 +18,82 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Every derive decided "did the dist change" with `git diff`, which cannot see an added file.**
+  ([#PR](_PR link added at open_)) `git diff` reports only files git already TRACKS, so a regeneration
+  that ADDS a file was invisible: the step logged "No dist changes after regeneration", and the bump,
+  the auto-commit and therefore the tag never happened. Consumers pull by tag, so that is "no bump, no
+  tag, no consumer" reached by a route nobody walks until a per-slug collection gains its first new
+  leaf.
+
+  **It had already cost a day.** Adding one recipe for an existing pattern (#574) regenerated exactly
+  one new file and nothing else, and the required check then stayed red permanently, because the parity
+  test wanted the dist leaf the derive had just declined to commit. The two recipes that shipped before
+  it only bumped because their PRs also touched a tracked file, so the diff was non-empty for an
+  unrelated reason. `app-context-derive.yml` was corrected in place at the time; the other ten carried
+  the same check.
+
+  **All ten now use `git status --porcelain`, which reports modified AND untracked.** The commit steps
+  already use `git add`, which stages untracked files, so only detection needed changing. The reporting
+  line moved too: `git diff --stat` would have printed nothing under a "Dist changes detected:" heading
+  for a new-file-only change.
+
+  **Scope is every change-detection step, not the four collections that can gain a file today**
+  (guidelines, render fragments and usage notes, categories, and app-context recipes, the one whose new
+  leaf caused the incident). A narrower rule would need a hand-maintained list of which collections are
+  per-slug, and this repo's gate doctrine says a gate needing a hand-maintained list is the wrong gate:
+  the list rots, and a new per-slug collection would be missing from it exactly when it matters. One
+  rule with no exceptions is smaller than four plus a list. Twelve steps in total, because
+  `validate-manifest.yml`'s own manifest-drift detection is one and a filename-based rule had missed it.
+
+  **A test holds it, and three review rounds defeated it five times before it stopped being
+  defeatable.** `tests/derive-change-detection.test.js` discovers BEHAVIOURALLY: a step that writes
+  `changed=` to `$GITHUB_OUTPUT` is a change-detection step, whatever it or its file is called. An
+  earlier version discovered by step name and cross-checked against `*-derive.yml` plus a hardcoded
+  `llms-txt.yml`, which is exactly the hand-maintained list the paragraph above rejects, and it was
+  already wrong: it missed `validate-manifest.yml`'s own detection entirely. Every bypass review found
+  is now a committed control: `git diff --name-only` (equally blind, never says `--quiet`); a step's own
+  explanatory COMMENT satisfying the presence check; a TRAILING inline comment doing the same one
+  character of syntax later; a decision routed through a second variable while a vestigial `CHANGED=`
+  line satisfies every check; and `|| { echo "continuing"; }`, which has the tokens the guard looked for
+  while swallowing the failure anyway. **A gate a comment can satisfy is not a gate**, and neither is
+  one that matches the shape of a check instead of its effect.
+
+  **Two further corrections came out of the same review, and one was a regression this change
+  introduced.** `[ -z "$(git status ...)" ]` reads only stdout, so a git failure (dubious ownership, a
+  stuck `index.lock`) prints nothing and takes the "no changes" branch: green check, no bump, no tag.
+  The form it replaced at least exited 128 and failed loudly downstream, so the fix had traded one
+  false all-clear for another. Detection now captures the value, checks git's own exit status, and
+  fails the step. And it passes `--untracked-files=all`, because `status.showUntrackedFiles=no` in any
+  runner image or global config would silently restore the exact added-file blindness this exists to
+  remove. Both applied to all twelve detect steps, `app-context-derive.yml` included, since it shared
+  the first defect from the day it was written. The guard asserts all three parts of the corrected form
+  rather than only the first: a review found `validate-manifest.yml` already carrying a porcelain call
+  without `-uall`, which is the in-repo shape the next author copies, so a guard checking only "is it
+  porcelain" would have let the other two corrections be silently half-undone. Each assertion was
+  mutation-proven against a real workflow during development, by reverting one live step and confirming
+  the guard names it; the controls committed alongside are string fixtures, which is what a test can
+  carry without editing the workflows it guards.
+
+  **The drift guards were converted too, after an argument against deferring them held up.** An earlier
+  revision of this entry deferred `validate-manifest.yml`'s five inverted guards (`if ! git diff --quiet
+  ... then fail`) on the grounds that "fail on drift" is a different rule, and justified it in the
+  workflow comment by saying they "guard fixed file sets". **That was false** for `foundations/dist` and
+  `accessibility/dist`, which take directory pathspecs. The live case: on a fork PR the derive's commit
+  step is skipped, so `validate-manifest` re-derives, a new leaf is untracked, `git diff --quiet` reports
+  clean, and the required check goes green with the leaf absent from the merge. All five now use the same
+  form, so no workflow in the repo decides anything with `git diff` any more, which is also what makes
+  the test's stated invariant true rather than aspirational.
+
+  **One thing left alone on purpose.** `foundations-derive.yml` is the one step whose pathspec is source trees
+  rather than generated output, so `-uall` widens what can flip it to `changed=true`. Narrowing it was
+  considered and rejected: this change is to detection METHOD, not detection SCOPE, and guessing which
+  files the derive writes risks under-detection, which is the same defect in the other direction.
+
+  No version bump: `.github/workflows/` and `tests/` are not in `vendor-include.json`, so nothing here
+  reaches a consumer and there is nothing to tag. Cite the PR, not a version.
+
 ### Added
 
 - **Studio's quick edit drawer captured, and it is a different composition from Explorer's.**

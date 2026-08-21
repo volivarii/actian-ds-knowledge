@@ -89,13 +89,24 @@ jobs:
           # dist it wanted was the one this step declined to commit. The earlier
           # recipes only bumped because their PR also modified a tracked file.
           # `git status --porcelain` reports modified AND untracked.
-          if [ -z "$(git status --porcelain -- app-context/dist/ paths-manifest.json)" ]; then
+          # Capture and check git's own exit status BEFORE testing the value.
+          # `[ -z "$(git ...)" ]` sees only stdout, and a git failure (dubious
+          # ownership, a stuck index.lock, a corrupt index) prints nothing, so the
+          # empty-string branch would report "no changes": green check, no bump, no
+          # tag. `git diff --quiet` at least exited 128 and failed loudly downstream.
+          # --untracked-files=all because status.showUntrackedFiles=no would
+          # otherwise silently restore the added-file blindness this exists to remove.
+          CHANGED="$(git status --porcelain --untracked-files=all -- app-context/dist/ paths-manifest.json)" || {
+            echo "::error::git status failed while detecting changes"
+            exit 1
+          }
+          if [ -z "$CHANGED" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No dist changes after regeneration."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Dist changes detected:"
-            git status --porcelain -- app-context/dist/ paths-manifest.json
+            printf '%s\n' "$CHANGED"
           fi
 
       - name: Auto-bump package.json patch

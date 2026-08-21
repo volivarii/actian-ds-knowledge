@@ -125,13 +125,29 @@ jobs:
       - name: Detect changes
         id: diff
         run: |
-          if git diff --quiet -- llms.txt llms-full.txt; then
+          # git status, NOT git diff. `git diff` reports only files git already
+          # TRACKS, so a regeneration that ADDS a file is invisible to it and the
+          # bump, the auto-commit and the tag never happen. Corrected in
+          # app-context-derive.yml first (b4ab8340, knowledge #574); applied to every
+          # derive here so the rule has no exceptions to remember (#575).
+          # Capture and check git's own exit status BEFORE testing the value.
+          # `[ -z "$(git ...)" ]` sees only stdout, and a git failure (dubious
+          # ownership, a stuck index.lock, a corrupt index) prints nothing, so the
+          # empty-string branch would report "no changes": green check, no bump, no
+          # tag. `git diff --quiet` at least exited 128 and failed loudly downstream.
+          # --untracked-files=all because status.showUntrackedFiles=no would
+          # otherwise silently restore the added-file blindness this exists to remove.
+          CHANGED="$(git status --porcelain --untracked-files=all -- llms.txt llms-full.txt)" || {
+            echo "::error::git status failed while detecting changes"
+            exit 1
+          }
+          if [ -z "$CHANGED" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "llms index already current."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "llms index drifted from the content, regenerated:"
-            git --no-pager diff --stat -- llms.txt llms-full.txt
+            printf '%s\n' "$CHANGED"
           fi
 
       # Both files are vendorable and consumers resolve by tag, so a change to
