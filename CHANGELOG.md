@@ -69,7 +69,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   a documented edit here.
 
 - **Every derive decided "did the dist change" with `git diff`, which cannot see an added file.**
-  ([#PR](_PR link added at open_)) `git diff` reports only files git already TRACKS, so a regeneration
+  ([#582](https://github.com/volivarii/actian-ds-knowledge/pull/582)) `git diff` reports only files git already TRACKS, so a regeneration
   that ADDS a file was invisible: the step logged "No dist changes after regeneration", and the bump,
   the auto-commit and therefore the tag never happened. Consumers pull by tag, so that is "no bump, no
   tag, no consumer" reached by a route nobody walks until a per-slug collection gains its first new
