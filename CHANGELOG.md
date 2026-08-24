@@ -20,6 +20,41 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **A review of #584 found five defects in it, including a comment that replaced a false claim with a
+  worse one.** ([#PR](_PR link added at open_))
+
+  **The identity-ledger guard's rationale is now checked against its whole history rather than one
+  commit.** #584 replaced "the `if ! git diff --quiet` this replaced exited 128" on two guards, having
+  verified only the state at `d7aae3a8^1`. For app-context that is right: it never used `git diff`. For
+  the identity ledger it is wrong: `6cca872d` introduced it **as** `if ! git diff --quiet --
+  components/dist/identity.json`, and `5020e482` converted it to the silent inline form. The original
+  comment was wrong about which commit did the conversion; the replacement was wrong about whether it
+  happened at all, which is worse, and it sat on a required check.
+
+  Four defects in the walker itself, each demonstrated before being fixed:
+
+  - **`EXITS_HERE` still accepted a handler that only talks about exiting**, when the sentence
+    contains a semicolon: `|| { echo "git status failed; exit skipped, continuing"; }` read as
+    exiting, because `;` inside a quoted string looked like a command position. Quoted string
+    contents are now stripped before the test. Same bypass as the one #584 closed, one level down.
+  - **A prefixed capture was invisible.** `export CHANGED="$(git status …)"` matched neither the
+    deciding-line filter nor the capture regex, so it classified `unknown` **and** its decision
+    classified `decision-not-from-git-status`: correct code reddened a required check twice.
+  - **The per-condition rule rejected correct code.** Any extra `if`/`elif` reading a variable other
+    than the capture failed the gate, so a future fork-PR or event-name guard inside a
+    change-detection step would have failed with a message naming the wrong problem. Only
+    **locally-captured** names are evidence now; an env var or an input is not, which is what
+    separates a legitimate guard from a decision routed through a non-git capture.
+  - **The `--untracked-files=all` binding was half made.** It asked whether *some* porcelain call in
+    the block carried the flag, so a logging capture that had it vouched for a decision capture that
+    did not. It now binds to the call the decision actually reads.
+
+  **Two of those fixes were unproven until mutation testing said so.** Reverting the decision-binding
+  changed no test, because the operator had already been tightened; and `every` versus `some` was
+  indistinguishable while every case had a single capture. Both now have a case that fails when
+  reverted: one where a logging capture lacks the flag and the decision has it, and one where a
+  decision reads two captures of which one is blind.
+
 - **The rolling tracker told a human to carry a breaking sync by dispatching the sync workflow, and
   that path produced nothing.** ([#585](https://github.com/volivarii/actian-ds-knowledge/pull/585)) The only step in
   `sync-from-figma.yml` that commits anything is `Open pull request`, gated on

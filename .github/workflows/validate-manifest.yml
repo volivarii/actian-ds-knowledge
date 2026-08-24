@@ -304,9 +304,10 @@ jobs:
           # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
           # a stuck index.lock) prints nothing, the test is false, the guard body is
           # SKIPPED and the step exits 0. That is a silent green on a required check.
-          # Unlike the guards converted from `git diff --quiet`, this one carried the
-          # silent inline form from the start, so it never had a loud failure to lose:
-          # it could always go green on a git failure. Capturing is what gives it one.
+          # This guard's lineage is its own: `6cca872d` introduced it AS
+          # `if ! git diff --quiet -- components/dist/identity.json`, which exited 128
+          # and fired, and `5020e482` converted it to the silent inline form. So it did
+          # have a loud failure and lost it, just not in the conversion #582 made.
           DRIFT="$(git status --porcelain --untracked-files=all -- components/dist/identity.json)" || {
             echo "::error::git status failed while checking drift"
             exit 1
