@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "library": "ds",
   "fileKey": "l8biHxfarNi1I2RMvVxVOK",
-  "lastSynced": "2026-08-24T12:00:29.608Z",
+  "lastSynced": "2026-08-24T13:44:41.720Z",
   "componentCount": 321,
   "components": {
     "account-dropdown": {
@@ -234,9 +234,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "adobe-analytics": {
       "name": "adobe-analytics",
@@ -249,9 +249,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "alert": {
       "name": "alert",
@@ -362,9 +362,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "amazons3": {
       "name": "amazons3",
@@ -377,9 +377,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "analytics": {
       "name": "analytics",
@@ -408,9 +408,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "api-key": {
       "name": "api-key",
@@ -566,9 +566,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "attachments": {
       "name": "Attachments",
@@ -627,9 +627,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "aws-glue-etl": {
       "name": "Aws-glue-etl",
@@ -642,9 +642,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "awsredshift": {
       "name": "awsredshift",
@@ -657,9 +657,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "azure": {
       "name": "Azure",
@@ -672,9 +672,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "azure-cosmosdb": {
       "name": "azure-cosmosdb",
@@ -687,9 +687,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "azure-datafactory": {
       "name": "azure-datafactory",
@@ -702,9 +702,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "azure-purview": {
       "name": "azure-purview",
@@ -717,9 +717,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "azure-synapse": {
       "name": "azure-synapse",
@@ -732,9 +732,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "back": {
       "name": "back",
@@ -848,9 +848,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "bin-type": {
       "name": "bin-type",
@@ -1295,9 +1295,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "catalog": {
       "name": "catalog",
@@ -1607,9 +1607,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "close": {
       "name": "close",
@@ -1654,9 +1654,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "cognos-bi": {
       "name": "cognos-bi",
@@ -1669,9 +1669,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "collapse": {
       "name": "collapse",
@@ -1826,9 +1826,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "couchbase": {
       "name": "couchbase",
@@ -1841,9 +1841,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "csv": {
       "name": "csv",
@@ -1856,9 +1856,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "csv-custom-item": {
       "name": "csv-custom-item",
@@ -1871,9 +1871,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "cursor-arrow": {
       "name": "cursor-arrow",
@@ -2068,9 +2068,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "dataiku": {
       "name": "dataiku",
@@ -2083,9 +2083,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "dataset": {
       "name": "dataset",
@@ -2098,9 +2098,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "datasets": {
       "name": "Datasets",
@@ -2145,9 +2145,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "db2-database-1": {
       "name": "db2--database 1",
@@ -2160,9 +2160,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "dbt": {
       "name": "dbt",
@@ -2175,9 +2175,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "denodo": {
       "name": "denodo",
@@ -2190,9 +2190,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "dictionnary": {
       "name": "dictionnary",
@@ -2205,9 +2205,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "digram-item-types": {
       "name": "Digram, Item types",
@@ -2631,9 +2631,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "empty-state": {
       "name": "Empty state",
@@ -2800,9 +2800,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "exit": {
       "name": "exit",
@@ -3112,9 +3112,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "gcpcloudstorage": {
       "name": "gcpcloudstorage",
@@ -3127,9 +3127,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "generic-jdbc": {
       "name": "generic-jdbc",
@@ -3142,9 +3142,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "geo-point-type": {
       "name": "geo-point-type",
@@ -3332,9 +3332,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "graph-merge": {
       "name": "graph-merge",
@@ -3363,9 +3363,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "hbase": {
       "name": "hbase",
@@ -3378,9 +3378,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "hdfs": {
       "name": "hdfs",
@@ -3393,9 +3393,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "help-bubble": {
       "name": "help-bubble",
@@ -3456,9 +3456,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "home": {
       "name": "home",
@@ -3529,9 +3529,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "influxdb": {
       "name": "influxdb",
@@ -3544,9 +3544,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "info": {
       "name": "info",
@@ -3591,9 +3591,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "input": {
       "name": "input",
@@ -3712,9 +3712,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "json": {
       "name": "json",
@@ -3727,9 +3727,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "kafka": {
       "name": "kafka",
@@ -3742,9 +3742,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "l-grid": {
       "name": "L grid",
@@ -4248,9 +4248,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "looker": {
       "name": "looker",
@@ -4263,9 +4263,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "m-grid": {
       "name": "M grid",
@@ -4372,9 +4372,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "mariadb": {
       "name": "mariadb",
@@ -4387,9 +4387,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "matillion": {
       "name": "matillion",
@@ -4402,9 +4402,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "message": {
       "name": "Message",
@@ -4502,9 +4502,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "modal": {
       "name": "Modal",
@@ -4643,9 +4643,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "more": {
       "name": "more",
@@ -4690,9 +4690,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "mysql": {
       "name": "mysql",
@@ -4705,9 +4705,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "netezza": {
       "name": "netezza",
@@ -4720,9 +4720,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "notification": {
       "name": "Notification",
@@ -4847,9 +4847,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "opendatagouv": {
       "name": "opendatagouv",
@@ -4862,9 +4862,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "oracle": {
       "name": "oracle",
@@ -4877,9 +4877,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "orc": {
       "name": "orc",
@@ -4892,9 +4892,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "output": {
       "name": "output",
@@ -5012,9 +5012,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "paragraph-justify": {
       "name": "paragraph-justify",
@@ -5043,9 +5043,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "phone": {
       "name": "phone",
@@ -5219,9 +5219,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "powerbi": {
       "name": "Powerbi",
@@ -5234,9 +5234,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "powerbireportserver": {
       "name": "powerbireportserver",
@@ -5249,9 +5249,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "process": {
       "name": "process",
@@ -5283,9 +5283,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "products-briefcase": {
       "name": "products-briefcase",
@@ -5340,9 +5340,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "radio": {
       "name": "Radio",
@@ -5678,9 +5678,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "safyr-dynamicsax": {
       "name": "safyr-dynamicsax",
@@ -5693,9 +5693,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "safyr-ebs": {
       "name": "safyr-ebs",
@@ -5708,9 +5708,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "safyr-jdedwards": {
       "name": "safyr-jdedwards",
@@ -5723,9 +5723,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "safyr-peoplesoft": {
       "name": "safyr-peoplesoft",
@@ -5738,9 +5738,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "safyr-salesforce": {
       "name": "safyr-salesforce",
@@ -5753,9 +5753,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "safyr-sap-bw": {
       "name": "safyr-sap-bw",
@@ -5768,9 +5768,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "safyr-siebel": {
       "name": "safyr-siebel",
@@ -5783,9 +5783,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "sas-database": {
       "name": "sas-database",
@@ -5798,9 +5798,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "scanner": {
       "name": "scanner",
@@ -6308,9 +6308,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "sparkdb": {
       "name": "sparkdb",
@@ -6323,9 +6323,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "spinner": {
       "name": "Spinner",
@@ -6365,9 +6365,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "splunk": {
       "name": "splunk",
@@ -6380,9 +6380,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "sqlserver": {
       "name": "sqlserver",
@@ -6395,9 +6395,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "stars": {
       "name": "stars",
@@ -6538,9 +6538,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "table": {
       "name": "✍️ Table",
@@ -6641,9 +6641,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "tabs": {
       "name": "Tabs",
@@ -6910,9 +6910,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "target-type": {
       "name": "target-type",
@@ -6973,9 +6973,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "text-area": {
       "name": "Text area",
@@ -7238,9 +7238,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "thumbs-down": {
       "name": "thumbs-down",
@@ -7285,9 +7285,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "time-type": {
       "name": "time-type",
@@ -7576,7 +7576,7 @@
       "section": "Foundations",
       "category": "Icons",
       "categorySlug": "icons",
-      "group": "Other",
+      "group": "Navigation",
       "status": "in-progress"
     },
     "warning": {
@@ -7710,9 +7710,9 @@
       "nestedComponents": [],
       "documentationLinks": [],
       "section": "Brand Assets",
-      "category": "Product logos",
-      "categorySlug": "product-logos",
-      "group": "Product logos"
+      "category": "Third-party logos",
+      "categorySlug": "third-party-logos",
+      "group": "Third-party logos"
     },
     "xs-grid": {
       "name": "XS grid",
@@ -9626,7 +9626,7 @@
       "section": "Foundations",
       "category": "Icons",
       "categorySlug": "icons",
-      "group": "Other",
+      "group": "Navigation",
       "status": "in-progress"
     },
     "remove-circle": {
