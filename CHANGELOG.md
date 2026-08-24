@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **A review of #584 found five defects in it, including a comment that replaced a false claim with a
-  worse one.** ([#PR](_PR link added at open_))
+  worse one.** ([#586](https://github.com/volivarii/actian-ds-knowledge/pull/586))
 
   **The identity-ledger guard's rationale is now checked against its whole history rather than one
   commit.** #584 replaced "the `if ! git diff --quiet` this replaced exited 128" on two guards, having
