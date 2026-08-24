@@ -28,7 +28,14 @@ Each entry links its pull request. Dates are the merge date (UTC).
   | --- | --- |
   | renamed | `sticky-footer` to `action-bar`, `view-details` to `view-detail` |
   | retired | `alert-inline`, `card-for-items`, `identification-key` |
-  | added | `Card`, `Dot`, `Snowflake` |
+  | added | `Card`, `Dot` |
+  | re-keyed | `snowflake` |
+
+  **`snowflake` is not an addition, and the sync summary calling it one is worth correcting.** The slug
+  already existed; what changed is its Figma key, `046781...` (node `7691:4999`) to `14abdd...` (node
+  `8504:23447`), with `previousSlugs: []`. The identity ledger makes a SLUG rename survivable for a
+  consumer holding the old name, and records nothing at all for a KEY replacement, so a consumer
+  pinning `snowflake` by `figmaKey` stops resolving with no trail. Filed separately.
 
   **It was carried by dispatching the sync workflow**, which #519 made produce something two hours
   earlier the same day. Every phase ran in CI (registries, anatomy, icons) and pushed its own dist to
@@ -57,11 +64,17 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
   **Two gates could not see a rename, and both were used with a reason rather than waved through.**
 
-  - The fidelity per-slug check blocked on `sticky-footer: 2 -> 0`. Accepted with:
-    *sticky-footer 2 -> 0 is the rename to action-bar, not a loss: Figma renamed the component in the
-    2026-08-24 breaking sync (#526), the anatomy capture followed, and repo-wide checkable declarations
-    are UNCHANGED at 78 while oracle coverage ROSE 17.8% to 18.1%. The per-slug view cannot see a
-    rename.*
+  - The fidelity per-slug check blocked on `sticky-footer: 2 -> 0`. It was accepted because the
+    coverage **moved**: `action-bar` now carries `verified: 2` where `sticky-footer` did, and
+    repo-wide verified is unchanged at 75 (+3 via token name) on both sides. That, not the ratio, is
+    the evidence.
+
+    **The reason first recorded on this branch cited the ratio, and that was laundering.** It said
+    "oracle coverage ROSE 17.8% to 18.1%" as if something had been newly verified. Nothing was: the
+    numerator is 78 before and after, and the ratio moved only because `examined` fell 438 to 432 when
+    retiring `card-for-items` removed 6 **unverifiable** declarations. A smaller denominator is not a
+    coverage win, and this repo's own rule is that a gate must report direction honestly. The rule
+    applies to a sentence a human writes next to the gate just as much as to the gate.
   - The sparse-render ratchet read `action-bar.Primary` and `.Secondary` as brand-new invented slots,
     because it compares against the merge base, which still says `sticky-footer`. Both are named in
     `ACCEPTED_INVENTED` with that reason, and with a note that the real question (should an action bar
@@ -72,13 +85,46 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
   - `.ds-segmented` painted `--zen-border-default` (#c7c7ce) where the fresh capture says #e1e1e6,
     which is exactly `--zen-border-subtle`. Figma is the oracle for the render tier (#518), so this
-    was a defect rather than a difference. Verified declarations 74 to 75, mismatches 1 to 0.
+    was a defect rather than a difference. **The committed report shows no delta**, because the gate
+    refuses to write a report on a blocking failure: the new capture produced `verified: 74,
+    mismatch: 1`, the rebind restored `75 / 0`, and only the second was ever written. A reader diffing
+    the dist will find the totals identical on both sides and should not conclude nothing happened.
   - The tag capture now names an icon for the whole Stage range (`Stage-1..8` to `dot`, an icon this
     sync adds) where before it named none, and `TAG_TYPE_ICONS` is hand-copied from that capture.
     That is the gap #521 describes: a colour-only gate cannot check an icon slug. The test that reads
     the capture directly is what caught it.
 
-  Oracle coverage ends at **18.1%**, up from 17.8%. Suite 1689 pass, 0 fail.
+  **A review of this branch found twelve issues, three of them high, and every one is fixed here.**
+  The three that mattered were all the same shape, a rename that stopped short of something derived:
+
+  - `components/src/action-bar/` was renamed as a DIRECTORY and kept its contents, so the shipped
+    `guidelines/action-bar.json` carried `slug: action-bar` beside `component: "Sticky footer"`, and
+    any consumer rendering the display name labelled it wrong. Both docs' titles, the H1, `nav_order`
+    and nine body mentions now say action bar.
+  - `components/src/categories/action.md` still listed `sticky-footer` as a member of the action
+    category, in a file the repo's own `AUTHORED_SURFACES` gate covers. That makes **six** authored
+    surfaces, not five, and the earlier scoping did list this one.
+  - `components/dist/media/_index.json` still mapped four retired slugs and had no `action-bar` entry
+    at all, so the renamed component silently lost its images while retired ones kept advertising
+    theirs. The media phase had not been run; it has now, and the four retired media directories are
+    pruned.
+
+  Also from that review: two orphan fragments (`sticky-footer.html`, `card-for-items.html`) that
+  `derive-canonical.js` never prunes, which is #520; the ~50 orphaned `.ds-card` rules whose only
+  emitter was the deleted `card-for-items` case, removed rather than kept, since nothing emits them,
+  no slug owns them and the fidelity denominator never examines them (a future `card` leaf should be
+  written against the capture of the day, not resurrected from a retired component's rules); and five
+  comments that pointed at `.ds-card` after it was gone.
+
+  **One test was passing with its premise false.** `rename-preconditions.test.js` asserted "the real
+  repo still names sticky-footer, so that rename is NOT absorbable" and went on passing after the
+  rename landed, because the matcher hits historical PROSE in two pattern files rather than any
+  `components[]` entry or renderer case. That is #562 seen from the other side, and the transition the
+  test existed to detect could never have fired. It now asserts the real state and pins the
+  over-match.
+
+  Oracle coverage reads **18.1%** against 17.8% before, but see above: the numerator did not move.
+  Suite 1689 pass, 0 fail.
 
 ### Fixed
 

@@ -4,7 +4,7 @@
 
 | Component | Content | Usage | Design | Behavior | Tokens |
 |---|---|---|---|---|---|
-| Sticky footer | approved | approved | inherited | inherited | not started |
+| Action bar | approved | approved | inherited | inherited | not started |
 | Alert / banner | approved | approved | inherited | inherited | not started |
 | Avatar | approved | approved | inherited | inherited | not started |
 | Badges | approved | approved | inherited | inherited | approved |

@@ -56,9 +56,12 @@ test("collectComponentsAndCategories: a keyless registry entry omits figmaKey/fi
 
 // Committed artifact: the shipped graph.json carries the key on all 611
 // component nodes and on no other node type. Count moved 612 -> 611 with the
-// 2026-08-24 breaking sync (#526): sticky-footer and view-details were renamed
-// (no net change), Card, Dot and Snowflake were added, and alert-inline,
-// card-for-items and identification-key were retired. Earlier it moved 614 -> 612 with the
+// 2026-08-24 breaking sync (#526). The arithmetic, because an earlier version of
+// this comment summed to 0 rather than -1: FIVE nodes go (alert-inline,
+// card-for-items, identification-key, sticky-footer, view-details) and FOUR
+// arrive (action-bar, card, dot, view-detail). snowflake is NOT among the
+// arrivals: its slug already existed and only its Figma key changed, which is
+// the fact the earlier comment got wrong. Earlier it moved 614 -> 612 with the
 // 2026-08-12 tag fold-in sync: -7 retired (radio-button-card, tag-catalog,
 // tag-catalog-item-type, tag-glossary-item-type, tag-shared, tag-stage,
 // tag-status), +5 new/renamed (actian-data-intelligence-explorer-horizontal,

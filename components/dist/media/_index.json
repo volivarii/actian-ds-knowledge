@@ -38,16 +38,6 @@
       ],
       "default": "components/dist/media/alert-banner/default.webp"
     },
-    "alert-inline": {
-      "preview": "components/dist/media/alert-inline/preview.webp",
-      "variations": [
-        "components/dist/media/alert-inline/variations-0.webp"
-      ],
-      "layout": [
-        "components/dist/media/alert-inline/layout-0.webp"
-      ],
-      "default": "components/dist/media/alert-inline/default.webp"
-    },
     "alteryx": {
       "default": "components/dist/media/alteryx/default.webp"
     },
@@ -174,10 +164,6 @@
     "card-for-grouped-content": {
       "preview": "components/dist/media/card-for-grouped-content/preview.webp",
       "default": "components/dist/media/card-for-grouped-content/default.webp"
-    },
-    "card-for-items": {
-      "preview": "components/dist/media/card-for-items/preview.webp",
-      "default": "components/dist/media/card-for-items/default.webp"
     },
     "card-for-perimeter": {
       "preview": "components/dist/media/card-for-perimeter/preview.webp",
@@ -423,22 +409,6 @@
     },
     "hive": {
       "default": "components/dist/media/hive/default.webp"
-    },
-    "identification-key": {
-      "preview": "components/dist/media/identification-key/preview.webp",
-      "parts": [
-        "components/dist/media/identification-key/parts-0.webp"
-      ],
-      "variations": [
-        "components/dist/media/identification-key/variations-0.webp"
-      ],
-      "behavior": [
-        "components/dist/media/identification-key/behavior-0.webp"
-      ],
-      "layout": [
-        "components/dist/media/identification-key/layout-0.webp"
-      ],
-      "default": "components/dist/media/identification-key/default.webp"
     },
     "illustration": {
       "default": "components/dist/media/illustration/default.webp"
@@ -818,13 +788,6 @@
     "stepper": {
       "preview": "components/dist/media/stepper/preview.webp",
       "default": "components/dist/media/stepper/default.webp"
-    },
-    "sticky-footer": {
-      "preview": "components/dist/media/sticky-footer/preview.webp",
-      "parts": [
-        "components/dist/media/sticky-footer/parts-0.webp"
-      ],
-      "default": "components/dist/media/sticky-footer/default.webp"
     },
     "sybaseiq": {
       "default": "components/dist/media/sybaseiq/default.webp"
