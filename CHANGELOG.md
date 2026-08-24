@@ -20,6 +20,39 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **The rolling tracker told a human to carry a breaking sync by dispatching the sync workflow, and
+  that path produced nothing.** ([#PR](_PR link added at open_)) The only step in
+  `sync-from-figma.yml` that commits anything is `Open pull request`, gated on
+  `steps.verdict.outputs.category == 'additive'`. So a dispatched **breaking** run fetched Figma,
+  regenerated every dist file into the runner's checkout, updated the tracker, printed the diff
+  summary, exited 0, and the dist died with the runner. Verified on run 31590872588: conclusion
+  success, **0 commits added to the dispatched branch, 0 artifacts**. This repo's own false-all-clear
+  shape one layer up from the gates: the run was green, the instructions were followed, and nothing
+  was produced.
+
+  A `workflow_dispatch` run against a working branch now **pushes what it generated onto that
+  branch**, so a breaking sync is carryable from CI by anyone. That matters beyond convenience: the
+  full-file Figma fetch needs egress a laptop may not have (it dies at about 592s with `ETIMEDOUT` on
+  at least one), while CI does the same fetch nightly in seconds. Until now every breaking
+  follow-through carried a locally-authored dist commit, which meant it could only be done by someone
+  whose network cooperated.
+
+  **The nightly is untouched, and by two independent conditions**: the step requires
+  `github.event_name == 'workflow_dispatch'` and refuses
+  `github.ref_name == github.event.repository.default_branch`. A breaking sync is never mergeable
+  as-is, so pushing one onto `main` is the exact outcome the rolling tracker exists to prevent. Both
+  rails are mutation-proven: removing either fails a named test.
+
+  The test asserts the **join** rather than either half. The tracker prints an instruction to
+  dispatch; the workflow must therefore contain a step that pushes what that run generated. Delete
+  the step and the instruction silently becomes false again, which is how this shipped in the first
+  place. The tracker's step 2 is also rewritten to say what now happens.
+
+  Staged with `git add -A` rather than a path list: the sync writes registries, categories, anatomy,
+  media, icons, graphics, release notes, the manifest and `package.json`, and a list here would be one
+  more hand-kept copy of a fact the producer owns, wrong the first time a phase gains an output.
+  `.figma-keys.json` is gitignored, so the secret materialized earlier in the job cannot ride along.
+
 - **The guard #583 added to catch a failure handler that does not exit accepted one that merely says
   the word "exit".** ([#584](https://github.com/volivarii/actian-ds-knowledge/pull/584)) `classifyLine` tested `/\bexit\b/` against
   everything after `||`, so `CHANGED="$(git status …)" || { echo "::warning::git status exit code
