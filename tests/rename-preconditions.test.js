@@ -100,8 +100,15 @@ test("sticky-footer's authored follow-through is done, and what still matches is
 
   var live = pre.authoredReferences(repo, "sticky-footer").filter(function (h) {
     var body = fs.readFileSync(h.file, "utf8");
-    // A components[] entry is a list item, not a sentence mentioning the slug.
-    return /^\s*-\s*sticky-footer\s*$/m.test(body) || /case "sticky-footer"/.test(body);
+    // A components[] entry, not a sentence mentioning the slug. Both YAML
+    // shapes: a block sequence item, and the flow style the schema also accepts
+    // (`components: [page-header, sticky-footer]`), which a block-only pattern
+    // would miss while the guard reported the follow-through done.
+    var frontmatter = (/^---\n([\s\S]*?)\n---/.exec(body) || [])[1] || "";
+    return (
+      /(^|[\s\[,])sticky-footer(\s*$|[\s\],])/m.test(frontmatter) ||
+      /case "sticky-footer"/.test(body)
+    );
   });
   assert.deepEqual(
     live,

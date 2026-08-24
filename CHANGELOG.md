@@ -35,7 +35,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
   already existed; what changed is its Figma key, `046781...` (node `7691:4999`) to `14abdd...` (node
   `8504:23447`), with `previousSlugs: []`. The identity ledger makes a SLUG rename survivable for a
   consumer holding the old name, and records nothing at all for a KEY replacement, so a consumer
-  pinning `snowflake` by `figmaKey` stops resolving with no trail. Filed separately.
+  pinning `snowflake` by `figmaKey` stops resolving with no trail. Filed as
+  [#587](https://github.com/volivarii/actian-ds-knowledge/issues/587).
 
   **It was carried by dispatching the sync workflow**, which #519 made produce something two hours
   earlier the same day. Every phase ran in CI (registries, anatomy, icons) and pushed its own dist to
@@ -115,6 +116,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
   no slug owns them and the fidelity denominator never examines them (a future `card` leaf should be
   written against the capture of the day, not resurrected from a retired component's rules); and five
   comments that pointed at `.ds-card` after it was gone.
+
+  **A second review round found seven more, and the instructive one is that I had fixed a file
+  instead of sweeping a glob.** `components/src/categories/action.md` was corrected for the rename;
+  `components/src/categories/data-display.md`, the same glob and the same derive path, still listed
+  the retired `identification-key`. Also live rather than prose: `components/src/toolbar/usage.md`
+  carried `[sticky footer](sticky-footer)`, a guideline cross-link to a slug that no longer exists,
+  which propagated verbatim into two dist guidelines, the bundle and a usage note, with nothing gating
+  link targets; and `components/src/icon-groups.json` still keyed `view-details`, so `applyIconGroups`
+  fell back and shipped `view-detail` with `"group": "Other"` instead of `Navigation`. That file is
+  the surface [#579](https://github.com/volivarii/actian-ds-knowledge/issues/579) predicts, and this
+  is its first live instance. Two further `.ds-card` comments had been missed, making it seven sites
+  and not five, and the rewritten precondition filter recognised only block-style YAML, so a
+  flow-style `components: [..., sticky-footer]` would have passed the guard while `derive-graph`
+  threw.
 
   **One test was passing with its premise false.** `rename-preconditions.test.js` asserted "the real
   repo still names sticky-footer, so that rename is NOT absorbable" and went on passing after the

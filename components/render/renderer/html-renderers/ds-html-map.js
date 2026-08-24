@@ -1448,7 +1448,8 @@
           //
           // Both spellings keep resolving because v.Type is flow data, not only
           // registry data: a flow authored against the older Primary/Danger
-          // spelling (which the registry still publishes for `alert-inline`, a
+          // spelling (which the registry published for `alert-inline` until the
+          // 2026-08-24 sync retired it, so this reason no longer holds on its own; a
           // component with no branch here) would otherwise degrade the same
           // silent way. Retiring the aliases needs those authored flows checked,
           // not just the registry.
