@@ -749,40 +749,6 @@
           );
         }
 
-        case "card-for-items": {
-          // DS-native only — no FM mapping. Composite data-product card (Catalog
-          // type). Reuses the shared .ds-tag classes for the eyebrow + category.
-          var cardCls = "ds-card";
-          if (v.State === "Selected") cardCls += " ds-card--selected";
-          return (
-            '<div class="' +
-            cardCls +
-            '">' +
-            '<span class="ds-tag ds-card__eyebrow">' +
-            esc(props.Eyebrow || "Dataset") +
-            "</span>" +
-            '<div class="ds-card__title">' +
-            esc(props.Title || "Title") +
-            "</div>" +
-            // Category pill: .ds-tag base + the card's own slot class. No
-            // `ds-tag--with-icon` marker, retired repo-wide as a ruleless no-op
-            // (see the tag-default case); the .ds-tag__icon span is the fact.
-            '<span class="ds-tag ds-card__cat">' +
-            '<span class="ds-tag__icon">' +
-            renderIcon("catalog") +
-            "</span>" +
-            esc(props.Category || "Catalog") +
-            "</span>" +
-            '<p class="ds-card__body">' +
-            // capture: components/dist/anatomy/card-for-items.json layer "Subtitle"
-            esc(
-              props.Body ||
-                "Body goes here. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse nec lacus urna.",
-            ) +
-            "</p>" +
-            "</div>"
-          );
-        }
 
         case "digram-item-types": {
           var itItemType = v["Item type"] || "Category";
@@ -3239,7 +3205,6 @@
     "tag-default",
     "badge",
     "search",
-    "card-for-items",
     "global-header",
     "side-nav",
     "page-header",

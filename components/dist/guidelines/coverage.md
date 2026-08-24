@@ -76,7 +76,6 @@
 | Registry key | Guideline slug |
 |---|---|
 | card-for-grouped-content | card |
-| card-for-items | card |
 | card-for-perimeter | card |
 | dropdown-select-default | dropdown-select |
 | tag-default | tag |

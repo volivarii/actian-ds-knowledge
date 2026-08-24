@@ -40,7 +40,6 @@ function firstCellText(slug) {
 // Each expectation is the string the Figma capture holds for that slot, so a
 // reviewer can check it against the design file rather than against taste.
 const CAPTURED = [
-  ["card-for-items", "Body goes here. Lorem ipsum"],
   ["notification", "Item deleted"],
   ["tooltip", "Body line text lorem ipsum"],
 ];
