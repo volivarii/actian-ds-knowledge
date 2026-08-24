@@ -136,6 +136,20 @@ jobs:
           echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
           echo "Sync verdict: $VERDICT"
 
+          # "Carrying" = a human dispatched this against their own branch to
+          # follow a breaking sync through. Computed ONCE here so the push, the
+          # PR and the auto-merge cannot disagree about which mode the run is in;
+          # three copies of the condition is how one of them ends up narrower
+          # than the others. The nightly fails both halves: it is `schedule`, and
+          # it runs on the default branch.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] \
+            && [ "${{ github.ref_name }}" != "${{ github.event.repository.default_branch }}" ]; then
+            echo "carrying=true" >> "$GITHUB_OUTPUT"
+            echo "Mode: carrying a breaking sync onto ${{ github.ref_name }}"
+          else
+            echo "carrying=false" >> "$GITHUB_OUTPUT"
+          fi
+
       # Records this run's slug for every stable Figma identity, so a rename
       # leaves a trail a consumer can follow instead of a slug that no longer
       # resolves.
@@ -186,7 +200,8 @@ jobs:
         if: >-
           github.event_name == 'workflow_dispatch' &&
           github.ref_name != github.event.repository.default_branch &&
-          steps.verdict.outputs.category == 'breaking'
+          steps.verdict.outputs.carrying == 'true' &&
+          steps.verdict.outputs.category != 'error'
         env:
           # App token, for the same reason the PR below is App-authored: a push
           # with the default GITHUB_TOKEN fires no pull_request workflows, so if
@@ -198,11 +213,16 @@ jobs:
           git remote set-url origin \
             "https://x-access-token:${BOT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           # -A rather than a path list. The sync writes registries, categories,
-          # anatomy, media, icons, graphics, release notes, the manifest and
-          # package.json, and a list here would be one more hand-kept copy of a
-          # fact the producer owns, wrong the first time a phase gains an output.
-          # .figma-keys.json is gitignored (.gitignore:28), so the secret
-          # materialized earlier in this job cannot ride along.
+          # anatomy, media, icons, graphics, the manifest and package.json, and a
+          # list here would be one more hand-kept copy of a fact the producer
+          # owns, wrong the first time a phase gains an output.
+          #
+          # Two things -A deliberately cannot carry, both gitignored: the secret
+          # .figma-keys.json materialized earlier in this job (.gitignore:28), and
+          # the run's own release note release-notes/sync-<date>.md
+          # (.gitignore:29, and no release note has ever been tracked). The note's
+          # content reaches the human another way: it is the diff summary the
+          # rolling tracker prints.
           git add -A
           DIST="$(git status --porcelain --untracked-files=all)" || {
             echo "::error::git status failed after the sync; refusing to push a tree I cannot describe"
@@ -221,7 +241,7 @@ jobs:
 
       - name: Open pull request
         id: cpr
-        if: steps.verdict.outputs.category == 'additive'
+        if: steps.verdict.outputs.category == 'additive' && steps.verdict.outputs.carrying == 'false'
         uses: peter-evans/create-pull-request@v7
         with:
           # App token (not default GITHUB_TOKEN) so the PR fires pull_request
@@ -242,7 +262,7 @@ jobs:
             package-lock.json
 
       - name: Enable auto-merge for additive PRs
-        if: steps.verdict.outputs.category == 'additive' && steps.cpr.outputs.pull-request-number
+        if: steps.verdict.outputs.category == 'additive' && steps.verdict.outputs.carrying == 'false' && steps.cpr.outputs.pull-request-number
         env:
           # Same App token — gh CLI auto-merge call attributes to the App.
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -254,9 +274,13 @@ jobs:
       # signal is said once and never accumulates. A human runs the sync into a
       # branch and does the follow-through when ready -- which needs a local
       # branch anyway -- then the CHANGELOG entry rides that human PR, the way
-      # every breaking-sync entry already does in practice (see #475). The
-      # registry regeneration this job produced is not pushed anywhere: it is
-      # reproduced by the human sync, which is where the follow-through lives.
+      # every breaking-sync entry already does in practice (see #475).
+      #
+      # On the NIGHTLY the registry regeneration this job produced is not pushed
+      # anywhere: main must not receive a breaking sync, and the human reproduces
+      # it on a branch. On a DISPATCH against that branch it now is pushed, by the
+      # step above, because the alternative was telling people to run something
+      # that generated everything and kept nothing (#519).
       - name: Upsert breaking-sync tracking issue
         if: steps.verdict.outputs.category == 'breaking'
         env:
@@ -407,7 +431,7 @@ jobs:
       # and closes when a sync next succeeds. Uses the default GITHUB_TOKEN
       # (issues don't need the App-token downstream-trigger workaround PRs do).
       - name: Resolve sync-failure issue on success
-        if: success()
+        if: success() && github.event_name == 'schedule'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -418,7 +442,7 @@ jobs:
           done
 
       - name: Notify on sync failure
-        if: failure()
+        if: failure() && github.event_name == 'schedule'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

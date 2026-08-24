@@ -48,6 +48,26 @@ Each entry links its pull request. Dates are the merge date (UTC).
   the step and the instruction silently becomes false again, which is how this shipped in the first
   place. The tracker's step 2 is also rewritten to say what now happens.
 
+  **Review found the first fix narrowed #519 rather than closing it, and the narrowing was worse than
+  the gap.** Gating the push on a `breaking` verdict looked conservative. The verdict is computed
+  against the checked-out branch, so the moment a human carries part of the follow-through their next
+  dispatch classifies **additive**: the push was skipped, and `create-pull-request` fired instead. That
+  action FORCE-PUSHES its `branch:`, which is `sync/figma-<date>`, and that is the branch name the
+  tracker instructs the human to create. So the additive path would have clobbered their work in
+  progress and the next step would have set the resulting PR to **auto-merge into `main`**. The exact
+  #519 shape, one iteration later, in the loop the step exists for.
+
+  A dispatch against a non-default branch is now one condition, `carrying`, computed once in the
+  verdict step so the push, the PR and the auto-merge cannot disagree about which mode the run is in.
+  While carrying: push whatever the sync generated unless it errored, and open no PR. The nightly
+  fails both halves of `carrying` independently.
+
+  The nightly's two shared failure trackers are now scoped to `schedule` as well. They retitle and
+  close ONE long-lived issue describing the nightly, so a dispatch failing on a push rejection would
+  have retitled it, and a dispatch succeeding would have closed a genuine nightly failure with "Sync
+  succeeded again". That pre-existed, but this change makes dispatch the recommended path, so it moves
+  from rare to routine.
+
   Staged with `git add -A` rather than a path list: the sync writes registries, categories, anatomy,
   media, icons, graphics, release notes, the manifest and `package.json`, and a list here would be one
   more hand-kept copy of a fact the producer owns, wrong the first time a phase gains an output.
