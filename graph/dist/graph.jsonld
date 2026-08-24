@@ -11219,13 +11219,13 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:adlsgen1",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:adobe-analytics",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11243,13 +11243,13 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:alteryx",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:amazons3",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11261,7 +11261,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:api",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11315,7 +11315,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:atlas",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11333,49 +11333,49 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:avro",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:aws-glue-etl",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:awsredshift",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:azure",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:azure-cosmosdb",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:azure-datafactory",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:azure-purview",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:azure-synapse",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11411,7 +11411,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:bigquery",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11507,7 +11507,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:cassandra",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11555,7 +11555,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:ckan",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11573,13 +11573,13 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:cognos",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:cognos-bi",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11615,25 +11615,25 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:cosmosdb",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:couchbase",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:csv",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:csv-custom-item",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11705,19 +11705,19 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:databricks",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:dataiku",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:dataset",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11735,31 +11735,31 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:db2",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:db2-database-1",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:dbt",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:denodo",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:dictionnary",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11831,7 +11831,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:elasticsearch",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11861,7 +11861,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:erwin-data-modeler",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11957,19 +11957,19 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:gcp",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:gcpcloudstorage",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:generic-jdbc",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -11999,7 +11999,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:google-cloud",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12011,19 +12011,19 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:greenplum",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:hbase",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:hdfs",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12047,7 +12047,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:hive",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12071,13 +12071,13 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:impala",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:influxdb",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12095,7 +12095,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:informatica",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12125,19 +12125,19 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:jdbc",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:json",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:kafka",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12239,13 +12239,13 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:local-filesystem",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:looker",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12275,19 +12275,19 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:mapr",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:mariadb",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:matillion",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12305,7 +12305,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:microstrategy",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12317,7 +12317,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:mongodb",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12335,19 +12335,19 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:ms-teams",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:mysql",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:netezza",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12383,25 +12383,25 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:openapi",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:opendatagouv",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:oracle",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:orc",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12419,7 +12419,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:palantir",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12431,7 +12431,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:parquet",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12461,19 +12461,19 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:postgresql",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:powerbi",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:powerbireportserver",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12485,7 +12485,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:process-csv",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12503,7 +12503,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:qlik-sense",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12581,55 +12581,55 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:safyr-dynamics365",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:safyr-dynamicsax",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:safyr-ebs",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:safyr-jdedwards",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:safyr-peoplesoft",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:safyr-salesforce",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:safyr-sap-bw",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:safyr-siebel",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:sas-database",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12731,13 +12731,13 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:soda",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:sparkdb",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12749,19 +12749,19 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:spline",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:splunk",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:sqlserver",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12809,7 +12809,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:sybaseiq",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12821,7 +12821,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:tableau",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12857,7 +12857,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:talend",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12881,7 +12881,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:teradata",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12917,7 +12917,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:thoughtspot",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -12935,7 +12935,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:tibco-datavirtualization",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
@@ -13049,7 +13049,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:xml",
-      "target": "category:product-logos"
+      "target": "category:third-party-logos"
     },
     {
       "@type": "Edge",
