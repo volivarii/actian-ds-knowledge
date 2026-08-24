@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Changed
 
 - **The breaking Figma sync of 2026-08-13 is carried through, eleven days after the registry last
-  moved.** ([#PR](_PR link added at open_)) Two renames, three retirements, three additions, and the
+  moved.** ([#588](https://github.com/volivarii/actian-ds-knowledge/pull/588)) Two renames, three retirements, three additions, and the
   first breaking sync ever carried from CI rather than from one person's laptop.
 
   | change | slug |
