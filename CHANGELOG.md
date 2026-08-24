@@ -20,6 +20,51 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **The guard #583 added to catch a failure handler that does not exit accepted one that merely says
+  the word "exit".** ([#PR](_PR link added at open_)) `classifyLine` tested `/\bexit\b/` against
+  everything after `||`, so `CHANGED="$(git status …)" || { echo "::warning::git status exit code
+  ignored"; }` classified as `capture-checked`. The handler does not exit; the word does. That is the
+  precise bypass the no-exit case exists to catch, reintroduced by the check written to close it.
+
+  **It survived because `classifyLine` had no positive control.** The `positive control:` test
+  exercised only `problemsFor`; the classifier was never fed a known-bad shape, and the `no-rc-check`
+  case that used to cover it (`|| { echo "continuing"; }`) was dropped when the guard was rebuilt.
+  This repo's own gate doctrine says prove it CAN fail by mutating the specific guard, and the
+  classifier was unproven. It now has eleven cases, and every rule below is mutation-proven:
+  reverting any one of them fails a named case.
+
+  `exit` now counts only at a **command position** (start of a segment, or directly after `{`, `;`,
+  `&&`, `||`), so prose about exiting no longer passes for exiting.
+
+  Four narrower holes in the same walker, all demonstrated on real workflow text rather than argued:
+
+  - **The `|| {` lookahead was unbounded.** With no closing brace on the block it scanned to
+    end-of-file and could borrow an `exit` from an unrelated later step. It now stops at the next
+    YAML key.
+  - **`--untracked-files=all` was matched over the whole deciding blob**, not on the `git status`
+    call, so `X="$(git status --porcelain -- d/)"` passed while a neighbouring
+    `Y="--untracked-files=all"` supplied the token.
+  - **A decision routed through a second variable was only half-closed.** The documented
+    `FILES=$(git diff …)` bypass was caught only because it happened to contain the token `git diff`;
+    any non-git second source passed clean. The variable a condition READS must now be one captured
+    from `git status`, checked per condition rather than per block, because the bypass keeps a
+    vestigial correct `if [ -z "$CHANGED" ]` alongside the stray one.
+  - **A legitimate one-line `run: git status --porcelain -- <path>` reporting step was red-flagged**
+    as `unknown`, which this guard treats as a failure. Rejecting correct code is the same trade its
+    own comment criticises the previous version for.
+
+- **Two drift-guard comments claimed a history that did not happen for those guards.**
+  ([#PR](_PR link added at open_)) The app-context and identity-ledger guards both carried
+  "The `if ! git diff --quiet` this replaced exited 128, which `!` inverted, so it fired loudly",
+  copy-pasted from the five that were genuinely converted. Before #582 those two already read
+  `if [ -n "$(git status --porcelain -- …)" ]`: they carried the silent inline form from the start and
+  never had a loud failure to lose. The comment now says so. The CHANGELOG's own "all seven guards
+  using that form" was accurate; only these in-file comments over-claimed.
+
+  Also drops a duplicated report in the app-context guard, where
+  `git --no-pager status --porcelain --untracked-files=all -- …` printed the identical list that
+  `printf '%s\n' "$DRIFT"` had just printed. The other six guards do not re-run it.
+
 - **The drift-guard conversion in #582 dropped git's exit status, which put a silent green on a required
   check.** ([#583](https://github.com/volivarii/actian-ds-knowledge/pull/583)) Converting five guards from `if ! git diff --quiet` to
   `if [ -n "$(git status --porcelain --untracked-files=all -- …)" ]` removed the loud-failure property
