@@ -18,6 +18,68 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Changed
+
+- **The breaking Figma sync of 2026-08-13 is carried through, eleven days after the registry last
+  moved.** ([#PR](_PR link added at open_)) Two renames, three retirements, three additions, and the
+  first breaking sync ever carried from CI rather than from one person's laptop.
+
+  | change | slug |
+  | --- | --- |
+  | renamed | `sticky-footer` to `action-bar`, `view-details` to `view-detail` |
+  | retired | `alert-inline`, `card-for-items`, `identification-key` |
+  | added | `Card`, `Dot`, `Snowflake` |
+
+  **It was carried by dispatching the sync workflow**, which #519 made produce something two hours
+  earlier the same day. Every phase ran in CI (registries, anatomy, icons) and pushed its own dist to
+  the branch. Until today the only working path was a local run with a `FIGMA_PAT`, which meant a
+  breaking sync could only be carried by someone whose network reached Figma.
+
+  **`card-for-items` is retired without a replacement, deliberately.** Three patterns named it:
+  `documentation-completion-dashboard`, `marketplace-browsing`, `topic-browse`. Each drops the
+  reference and records why. `card-for-perimeter`, `card-for-grouped-content`, `search-result-card`
+  and `radio-card` all survive, so a replacement exists in principle, but choosing between them is a
+  fact about the running product that nobody has checked for those screens. The two earlier
+  corrections to this same slug were both made by looking at the product and both found a different
+  component, so guessing would have been the third such error rather than the first.
+
+  **It is not repointed at the new `card` either.** That component is a blank container with a content
+  slot carrying `status: in-progress`. `components[]` means what a pattern COMPOSES, so naming it
+  there would assert something false. The basis relationship is already recorded twice, between
+  components where it belongs: the family shares `group: "Card"` in the registry, and `registryAliases`
+  routes `card-for-perimeter` and `card-for-grouped-content` to the `card` guideline doc.
+
+  **The rename touched five authored surfaces, and the scoping had listed four.** The fifth was
+  `content/src/content-index.md`, which drives a content section whose source lives at
+  `components/src/<slug>/content.md`, so renaming the directory orphaned it. The `derive-content` gate
+  caught it and named both halves. `app-context/src/recipes/README.md` keeps its `sticky-footer`
+  mention: that names a plugin FLOW ARCHETYPE, not this component.
+
+  **Two gates could not see a rename, and both were used with a reason rather than waved through.**
+
+  - The fidelity per-slug check blocked on `sticky-footer: 2 -> 0`. Accepted with:
+    *sticky-footer 2 -> 0 is the rename to action-bar, not a loss: Figma renamed the component in the
+    2026-08-24 breaking sync (#526), the anatomy capture followed, and repo-wide checkable declarations
+    are UNCHANGED at 78 while oracle coverage ROSE 17.8% to 18.1%. The per-slug view cannot see a
+    rename.*
+  - The sparse-render ratchet read `action-bar.Primary` and `.Secondary` as brand-new invented slots,
+    because it compares against the merge base, which still says `sticky-footer`. Both are named in
+    `ACCEPTED_INVENTED` with that reason, and with a note that the real question (should an action bar
+    invent "Save" and "Cancel" at all, or supply them from `SPECIMEN_PROPS`) is the specimen-vs-runtime
+    question #543 to #545 answered for thirteen other slots and never asked for this one.
+
+  **Two real defects surfaced that were nothing to do with the renames.**
+
+  - `.ds-segmented` painted `--zen-border-default` (#c7c7ce) where the fresh capture says #e1e1e6,
+    which is exactly `--zen-border-subtle`. Figma is the oracle for the render tier (#518), so this
+    was a defect rather than a difference. Verified declarations 74 to 75, mismatches 1 to 0.
+  - The tag capture now names an icon for the whole Stage range (`Stage-1..8` to `dot`, an icon this
+    sync adds) where before it named none, and `TAG_TYPE_ICONS` is hand-copied from that capture.
+    That is the gap #521 describes: a colour-only gate cannot check an icon slug. The test that reads
+    the capture directly is what caught it.
+
+  Oracle coverage ends at **18.1%**, up from 17.8%. Suite 1689 pass, 0 fail.
+
 ### Fixed
 
 - **A review of #584 found five defects in it, including a comment that replaced a false claim with a
