@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **The guard #583 added to catch a failure handler that does not exit accepted one that merely says
-  the word "exit".** ([#PR](_PR link added at open_)) `classifyLine` tested `/\bexit\b/` against
+  the word "exit".** ([#584](https://github.com/volivarii/actian-ds-knowledge/pull/584)) `classifyLine` tested `/\bexit\b/` against
   everything after `||`, so `CHANGED="$(git status …)" || { echo "::warning::git status exit code
   ignored"; }` classified as `capture-checked`. The handler does not exit; the word does. That is the
   precise bypass the no-exit case exists to catch, reintroduced by the check written to close it.
@@ -54,7 +54,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
     own comment criticises the previous version for.
 
 - **Two drift-guard comments claimed a history that did not happen for those guards.**
-  ([#PR](_PR link added at open_)) The app-context and identity-ledger guards both carried
+  ([#584](https://github.com/volivarii/actian-ds-knowledge/pull/584)) The app-context and identity-ledger guards both carried
   "The `if ! git diff --quiet` this replaced exited 128, which `!` inverted, so it fired loudly",
   copy-pasted from the five that were genuinely converted. Before #582 those two already read
   `if [ -n "$(git status --porcelain -- …)" ]`: they carried the silent inline form from the start and
