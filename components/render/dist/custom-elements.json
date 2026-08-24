@@ -2989,13 +2989,13 @@
           "cssParts": [],
           "cssProperties": [
             {
-              "name": "--zen-border-default"
-            },
-            {
               "name": "--zen-border-radius-sm"
             },
             {
               "name": "--zen-border-radius-xs"
+            },
+            {
+              "name": "--zen-border-subtle"
             },
             {
               "name": "--zen-color-bg-default"

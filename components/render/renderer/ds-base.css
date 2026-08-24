@@ -2345,10 +2345,14 @@
   padding: var(--zen-spacing-3xs);
   gap: var(--zen-spacing-3xs);
   /* Capture (root "Type=Default", the neutral default of the only axis) paints
-   * the track #ffffff, same root whose border already verifies. bg-subtle was
+   * the track #ffffff, same root whose border verifies. bg-subtle was
    * the iOS/Material "gray trough" idiom, not the captured component. */
   background: var(--zen-color-bg-default);
-  border: 1px solid var(--zen-border-default);
+  /* border-subtle, not border-default: the 2026-08-24 sync's capture paints this
+   * border #e1e1e6 where it used to paint #c7c7ce, and #e1e1e6 is exactly what
+   * --zen-border-subtle resolves to. Figma is the oracle for the render tier
+   * (#518), so a divergence from the capture is a defect, not a difference. */
+  border: 1px solid var(--zen-border-subtle);
   border-radius: var(--zen-border-radius-sm);
   font-family: var(--zen-font-family-text);
   box-sizing: border-box;
