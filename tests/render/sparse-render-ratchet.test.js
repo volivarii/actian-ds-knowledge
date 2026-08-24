@@ -103,6 +103,24 @@ const ACCEPTED_RISE = {
 // change, and the reason is mandatory in the same way.
 const ACCEPTED_INVENTED = {
   // "some-slug.SomeProp": "why this prop has a designed fallback now",
+
+  // Not new invention. These are sticky-footer.Primary/.Secondary under the
+  // slug Figma renamed the component to in the 2026-08-24 breaking sync (#526).
+  // The renderer's `props.Primary || "Save"` fallback is unchanged and predates
+  // the ratchet; the baseline is read at the merge base, which still says
+  // sticky-footer, so a rename reads as two brand-new invented slots. The
+  // fidelity gate's per-slug check could not see the same rename either.
+  //
+  // These entries are deliberately NOT permanent cover: whether an action bar
+  // should invent "Save" and "Cancel" at all, or supply them from
+  // matrix.js SPECIMEN_PROPS so a real product screen renders without them, is
+  // the specimen-vs-runtime question #543 to #545 answered for 13 other slots
+  // and never asked for this one. Filed separately; remove these two lines when
+  // it is answered.
+  "action-bar.Primary":
+    "rename of sticky-footer.Primary (#526); pre-existing fallback, see note above",
+  "action-bar.Secondary":
+    "rename of sticky-footer.Secondary (#526); pre-existing fallback, see note above",
 };
 
 function hasOwn(o, k) {

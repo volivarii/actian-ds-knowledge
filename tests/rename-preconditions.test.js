@@ -85,13 +85,41 @@ test("every declared surface still exists in the real repo", function () {
   assert.ok(pre.AUTHORED_SURFACES.length > 0, "the list must not be empty");
 });
 
-test("the real repo still names sticky-footer, so that rename is NOT absorbable", function () {
-  // The live case this was built for. If this ever goes empty, the authored
-  // follow-through has been done and the rename becomes absorbable.
-  var hits = pre.authoredReferences(path.join(__dirname, ".."), "sticky-footer");
+test("sticky-footer's authored follow-through is done, and what still matches is prose (#562)", function () {
+  // This was "the real repo still names sticky-footer, so that rename is NOT
+  // absorbable", asserting hits.length >= 2 and naming "the renderer case and
+  // the app-context pattern". The 2026-08-24 sync (#526) carried that rename
+  // through, and the test went on passing: the renderer case is renamed and no
+  // components[] entry names the slug, but the two files still match on
+  // HISTORICAL PROSE describing the rename.
+  //
+  // So it passed with its stated premise false, and the "now absorbable"
+  // transition it was written to detect could never fire. It asserts the real
+  // state instead, and pins the prose over-match as the defect it is.
+  var repo = path.join(__dirname, "..");
+
+  var live = pre.authoredReferences(repo, "sticky-footer").filter(function (h) {
+    var body = fs.readFileSync(h.file, "utf8");
+    // A components[] entry, not a sentence mentioning the slug. Both YAML
+    // shapes: a block sequence item, and the flow style the schema also accepts
+    // (`components: [page-header, sticky-footer]`), which a block-only pattern
+    // would miss while the guard reported the follow-through done.
+    var frontmatter = (/^---\n([\s\S]*?)\n---/.exec(body) || [])[1] || "";
+    return (
+      /(^|[\s\[,])sticky-footer(\s*$|[\s\],])/m.test(frontmatter) ||
+      /case "sticky-footer"/.test(body)
+    );
+  });
+  assert.deepEqual(
+    live,
+    [],
+    "the follow-through is done: no components[] entry and no renderer case may name it",
+  );
+
+  var hits = pre.authoredReferences(repo, "sticky-footer");
   assert.ok(
-    hits.length >= 2,
-    "expected the renderer case and the app-context pattern: " +
-      JSON.stringify(hits),
+    hits.length > 0,
+    "expected the prose over-match to still be demonstrable; if this is empty, " +
+      "#562 is fixed or the notes were deleted, and this test should be retired",
   );
 });

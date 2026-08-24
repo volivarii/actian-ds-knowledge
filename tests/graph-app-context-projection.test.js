@@ -291,7 +291,10 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   // Correcting prose and leaving the machine-read field is how a graph keeps
   // asserting something the record itself denies.
   //
-  // 266 -> 272, again edges only: two Studio patterns were corrected against the
+  // 272 -> 269, edges only: the 2026-08-24 breaking sync (#526) retired
+  // card-for-items, and the three patterns that named it dropped the reference
+  // rather than repointing it at a component nobody has verified for that
+  // screen. Before that, 266 -> 272, again edges only: two Studio patterns were corrected against the
   // running product rather than counted. `analytics-dashboard` named
   // `card-for-items` where its completion cards are the `card-for-perimeter`
   // shape (+2 net), and `type-picker-grid` named `card-for-items` and `modal`
@@ -309,7 +312,7 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
     return inIsland(e.source) || inIsland(e.target);
   });
   assert.equal(islandNodes.length, 97, "app-context island nodes");
-  assert.equal(islandEdges.length, 272, "app-context island edges");
+  assert.equal(islandEdges.length, 269, "app-context island edges");
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {

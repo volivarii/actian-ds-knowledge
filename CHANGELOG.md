@@ -18,6 +18,138 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Changed
+
+- **The breaking Figma sync of 2026-08-13 is carried through, eleven days after the registry last
+  moved.** ([#588](https://github.com/volivarii/actian-ds-knowledge/pull/588)) Two renames, three retirements, three additions, and the
+  first breaking sync ever carried from CI rather than from one person's laptop.
+
+  | change | slug |
+  | --- | --- |
+  | renamed | `sticky-footer` to `action-bar`, `view-details` to `view-detail` |
+  | retired | `alert-inline`, `card-for-items`, `identification-key` |
+  | added | `Card`, `Dot` |
+  | re-keyed | `snowflake` |
+
+  **`snowflake` is not an addition, and the sync summary calling it one is worth correcting.** The slug
+  already existed; what changed is its Figma key, `046781...` (node `7691:4999`) to `14abdd...` (node
+  `8504:23447`), with `previousSlugs: []`. The identity ledger makes a SLUG rename survivable for a
+  consumer holding the old name, and records nothing at all for a KEY replacement, so a consumer
+  pinning `snowflake` by `figmaKey` stops resolving with no trail. Filed as
+  [#587](https://github.com/volivarii/actian-ds-knowledge/issues/587).
+
+  **It was carried by dispatching the sync workflow**, which #519 made produce something two hours
+  earlier the same day. Every phase ran in CI (registries, anatomy, icons) and pushed its own dist to
+  the branch. Until today the only working path was a local run with a `FIGMA_PAT`, which meant a
+  breaking sync could only be carried by someone whose network reached Figma.
+
+  **`card-for-items` is retired without a replacement, deliberately.** Three patterns named it:
+  `documentation-completion-dashboard`, `marketplace-browsing`, `topic-browse`. Each drops the
+  reference and records why. `card-for-perimeter`, `card-for-grouped-content`, `search-result-card`
+  and `radio-card` all survive, so a replacement exists in principle, but choosing between them is a
+  fact about the running product that nobody has checked for those screens. The two earlier
+  corrections to this same slug were both made by looking at the product and both found a different
+  component, so guessing would have been the third such error rather than the first.
+
+  **It is not repointed at the new `card` either.** That component is a blank container with a content
+  slot carrying `status: in-progress`. `components[]` means what a pattern COMPOSES, so naming it
+  there would assert something false. The basis relationship is already recorded twice, between
+  components where it belongs: the family shares `group: "Card"` in the registry, and `registryAliases`
+  routes `card-for-perimeter` and `card-for-grouped-content` to the `card` guideline doc.
+
+  **The rename touched five authored surfaces, and the scoping had listed four.** The fifth was
+  `content/src/content-index.md`, which drives a content section whose source lives at
+  `components/src/<slug>/content.md`, so renaming the directory orphaned it. The `derive-content` gate
+  caught it and named both halves. `app-context/src/recipes/README.md` keeps its `sticky-footer`
+  mention: that names a plugin FLOW ARCHETYPE, not this component.
+
+  **Two gates could not see a rename, and both were used with a reason rather than waved through.**
+
+  - The fidelity per-slug check blocked on `sticky-footer: 2 -> 0`. It was accepted because the
+    coverage **moved**: `action-bar` now carries `verified: 2` where `sticky-footer` did, and
+    repo-wide verified is unchanged at 75 (+3 via token name) on both sides. That, not the ratio, is
+    the evidence.
+
+    **The reason first recorded on this branch cited the ratio, and that was laundering.** It said
+    "oracle coverage ROSE 17.8% to 18.1%" as if something had been newly verified. Nothing was: the
+    numerator is 78 before and after, and the ratio moved only because `examined` fell 438 to 432 when
+    retiring `card-for-items` removed 6 **unverifiable** declarations. A smaller denominator is not a
+    coverage win, and this repo's own rule is that a gate must report direction honestly. The rule
+    applies to a sentence a human writes next to the gate just as much as to the gate.
+  - The sparse-render ratchet read `action-bar.Primary` and `.Secondary` as brand-new invented slots,
+    because it compares against the merge base, which still says `sticky-footer`. Both are named in
+    `ACCEPTED_INVENTED` with that reason, and with a note that the real question (should an action bar
+    invent "Save" and "Cancel" at all, or supply them from `SPECIMEN_PROPS`) is the specimen-vs-runtime
+    question #543 to #545 answered for thirteen other slots and never asked for this one.
+
+  **Two real defects surfaced that were nothing to do with the renames.**
+
+  - `.ds-segmented` painted `--zen-border-default` (#c7c7ce) where the fresh capture says #e1e1e6,
+    which is exactly `--zen-border-subtle`. Figma is the oracle for the render tier (#518), so this
+    was a defect rather than a difference. **The committed report shows no delta**, because the gate
+    refuses to write a report on a blocking failure: the new capture produced `verified: 74,
+    mismatch: 1`, the rebind restored `75 / 0`, and only the second was ever written. A reader diffing
+    the dist will find the totals identical on both sides and should not conclude nothing happened.
+  - The tag capture now names an icon for the whole Stage range (`Stage-1..8` to `dot`, an icon this
+    sync adds) where before it named none, and `TAG_TYPE_ICONS` is hand-copied from that capture.
+    That is the gap #521 describes: a colour-only gate cannot check an icon slug. The test that reads
+    the capture directly is what caught it.
+
+  **A review of this branch found twelve issues, three of them high, and every one is fixed here.**
+  The three that mattered were all the same shape, a rename that stopped short of something derived:
+
+  - `components/src/action-bar/` was renamed as a DIRECTORY and kept its contents, so the shipped
+    `guidelines/action-bar.json` carried `slug: action-bar` beside `component: "Sticky footer"`, and
+    any consumer rendering the display name labelled it wrong. Both docs' titles, the H1, `nav_order`
+    and nine body mentions now say action bar.
+  - `components/src/categories/action.md` still listed `sticky-footer` as a member of the action
+    category, in a file the repo's own `AUTHORED_SURFACES` gate covers. That makes **six** authored
+    surfaces, not five, and the earlier scoping did list this one.
+  - `components/dist/media/_index.json` still mapped four retired slugs and had no `action-bar` entry
+    at all, so the renamed component silently lost its images while retired ones kept advertising
+    theirs. The media phase had not been run; it has now, and the four retired media directories are
+    pruned.
+
+  Also from that review: two orphan fragments (`sticky-footer.html`, `card-for-items.html`) that
+  `derive-canonical.js` never prunes, which is #520; the ~50 orphaned `.ds-card` rules whose only
+  emitter was the deleted `card-for-items` case, removed rather than kept, since nothing emits them,
+  no slug owns them and the fidelity denominator never examines them (a future `card` leaf should be
+  written against the capture of the day, not resurrected from a retired component's rules); and five
+  comments that pointed at `.ds-card` after it was gone.
+
+  **A second review round found seven more, and the instructive one is that I had fixed a file
+  instead of sweeping a glob.** `components/src/categories/action.md` was corrected for the rename;
+  `components/src/categories/data-display.md`, the same glob and the same derive path, still listed
+  the retired `identification-key`. Also live rather than prose: `components/src/toolbar/usage.md`
+  carried `[sticky footer](sticky-footer)`, a guideline cross-link to a slug that no longer exists,
+  which propagated verbatim into two dist guidelines, the bundle and a usage note, with nothing gating
+  link targets; and `components/src/icon-groups.json` still keyed `view-details`, so `applyIconGroups`
+  fell back and shipped `view-detail` with `"group": "Other"` instead of `Navigation`. That file is
+  the surface [#579](https://github.com/volivarii/actian-ds-knowledge/issues/579) predicts, and this
+  is its first live instance. Two further `.ds-card` comments had been missed, making it seven sites
+  and not five, and the rewritten precondition filter recognised only block-style YAML, so a
+  flow-style `components: [..., sticky-footer]` would have passed the guard while `derive-graph`
+  threw.
+
+  **One test was passing with its premise false.** `rename-preconditions.test.js` asserted "the real
+  repo still names sticky-footer, so that rename is NOT absorbable" and went on passing after the
+  rename landed, because the matcher hits historical PROSE in two pattern files rather than any
+  `components[]` entry or renderer case. That is #562 seen from the other side, and the transition the
+  test existed to detect could never have fired. It now asserts the real state and pins the
+  over-match.
+
+  **The editor's generated rich-safe path set is a seventh authored-adjacent surface**, and CI caught
+  it after the PR opened: `editor/src/generated/wysiwyg-safe-paths.json` listed
+  `components/src/sticky-footer/{content,usage}.md`. The local knowledge suite does not run the
+  editor's, which is why six rounds of checking here did not see it. Regenerated, and the direction
+  stated because [#500](https://github.com/volivarii/actian-ds-knowledge/issues/500) is precisely that
+  this check reports the set moved without saying which way: **two paths out, two in, total unchanged
+  at 152 rich-safe of 156 walked.** Nothing became unsafe; the same two files are listed under the new
+  slug.
+
+  Oracle coverage reads **18.1%** against 17.8% before, but see above: the numerator did not move.
+  Suite 1689 pass, 0 fail.
+
 ### Fixed
 
 - **A review of #584 found five defects in it, including a comment that replaced a false claim with a
