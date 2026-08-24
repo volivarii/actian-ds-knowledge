@@ -54,8 +54,11 @@ test("collectComponentsAndCategories: a keyless registry entry omits figmaKey/fi
   assert.equal(n.title, "No Key");
 });
 
-// Committed artifact: the shipped graph.json carries the key on all 612
-// component nodes and on no other node type. Count moved 614 -> 612 with the
+// Committed artifact: the shipped graph.json carries the key on all 611
+// component nodes and on no other node type. Count moved 612 -> 611 with the
+// 2026-08-24 breaking sync (#526): sticky-footer and view-details were renamed
+// (no net change), Card, Dot and Snowflake were added, and alert-inline,
+// card-for-items and identification-key were retired. Earlier it moved 614 -> 612 with the
 // 2026-08-12 tag fold-in sync: -7 retired (radio-button-card, tag-catalog,
 // tag-catalog-item-type, tag-glossary-item-type, tag-shared, tag-stage,
 // tag-status), +5 new/renamed (actian-data-intelligence-explorer-horizontal,
@@ -63,12 +66,12 @@ test("collectComponentsAndCategories: a keyless registry entry omits figmaKey/fi
 // tag-item-type). Not -7/+6: arrow-up (see graph-collisions.test.js) already
 // had a component node via fmkit, so its arrival in dskit only tie-breaks the
 // existing node's key, adding no new node.
-test("graph/dist/graph.json: 612 component nodes carry figmaKey; non-component nodes never do", function () {
+test("graph/dist/graph.json: 611 component nodes carry figmaKey; non-component nodes never do", function () {
   var g = readJSON("graph/dist/graph.json");
   var comps = g.nodes.filter(function (n) {
     return n.type === "component";
   });
-  assert.equal(comps.length, 612);
+  assert.equal(comps.length, 611);
   assert.ok(
     comps.every(function (n) {
       return (

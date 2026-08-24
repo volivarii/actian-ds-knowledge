@@ -627,8 +627,27 @@
           // WHICH icon is a capture fact too: the anatomy's leading-icon child
           // swaps slug per Type (folder for Catalog, error-/success-/
           // warning-filled for the Status values, its own `add` otherwise).
+          // Hand-copied from the capture's per-Type instance-swap groups in
+          // components/dist/anatomy/tag-default.json, which is the gap #521
+          // names: a colour-only gate cannot check an icon slug. The
+          // "leading icon slug follows the anatomy's per-Type instance swap"
+          // test reads that capture directly and fails when this map drifts,
+          // which is how the Stage entries below arrived.
+          //
+          // Stage-1..8 -> dot is new in the 2026-08-24 breaking sync (#526).
+          // The comment above still says Stage-1 has no appearance group; that
+          // was true of the fill, and remains true, but the capture now names
+          // an icon for the whole Stage range.
           var TAG_TYPE_ICONS = {
             catalog: "folder",
+            "stage-1": "dot",
+            "stage-2": "dot",
+            "stage-3": "dot",
+            "stage-4": "dot",
+            "stage-5": "dot",
+            "stage-6": "dot",
+            "stage-7": "dot",
+            "stage-8": "dot",
             "status-error": "error-filled",
             "status-success": "success-filled",
             "status-warning": "warning-filled",
