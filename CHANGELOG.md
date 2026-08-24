@@ -138,6 +138,15 @@ Each entry links its pull request. Dates are the merge date (UTC).
   test existed to detect could never have fired. It now asserts the real state and pins the
   over-match.
 
+  **The editor's generated rich-safe path set is a seventh authored-adjacent surface**, and CI caught
+  it after the PR opened: `editor/src/generated/wysiwyg-safe-paths.json` listed
+  `components/src/sticky-footer/{content,usage}.md`. The local knowledge suite does not run the
+  editor's, which is why six rounds of checking here did not see it. Regenerated, and the direction
+  stated because [#500](https://github.com/volivarii/actian-ds-knowledge/issues/500) is precisely that
+  this check reports the set moved without saying which way: **two paths out, two in, total unchanged
+  at 152 rich-safe of 156 walked.** Nothing became unsafe; the same two files are listed under the new
+  slug.
+
   Oracle coverage reads **18.1%** against 17.8% before, but see above: the numerator did not move.
   Suite 1689 pass, 0 fail.
 
