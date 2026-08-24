@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **The rolling tracker told a human to carry a breaking sync by dispatching the sync workflow, and
-  that path produced nothing.** ([#PR](_PR link added at open_)) The only step in
+  that path produced nothing.** ([#585](https://github.com/volivarii/actian-ds-knowledge/pull/585)) The only step in
   `sync-from-figma.yml` that commits anything is `Open pull request`, gated on
   `steps.verdict.outputs.category == 'additive'`. So a dispatched **breaking** run fetched Figma,
   regenerated every dist file into the runner's checkout, updated the tracker, printed the diff
