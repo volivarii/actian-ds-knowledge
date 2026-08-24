@@ -2684,7 +2684,7 @@
           );
         }
 
-        case "sticky-footer": {
+        case "action-bar": {
           // Registry axis: Property 1 = Default (no content props). Persistent
           // bottom action bar; right-aligned DS buttons (reuses .ds-button) —
           // defaults Cancel (secondary) + Save (primary); Primary/Secondary
@@ -2692,8 +2692,8 @@
           var sfPrimary = esc(props.Primary || "Save");
           var sfSecondary = esc(props.Secondary || "Cancel");
           return (
-            '<div class="ds-sticky-footer">' +
-            '<div class="ds-sticky-footer__actions">' +
+            '<div class="ds-action-bar">' +
+            '<div class="ds-action-bar__actions">' +
             '<button class="ds-button ds-button--secondary">' +
             sfSecondary +
             "</button>" +
@@ -3266,7 +3266,7 @@
     // Hi-Fi A1 (narrow) — degraded-slug overrides. Batch 2: controls.
     "segmented-control",
     "toolbar",
-    "sticky-footer",
+    "action-bar",
     // Hi-Fi A1 (narrow) — degraded-slug overrides. Batch 3: feedback + date.
     "loader",
     "calendar",

@@ -2436,7 +2436,7 @@
 
 /* ============ Sticky footer (persistent action bar) ============ */
 /* Registry axis: Property 1 = Default. Reuses .ds-button leaves. */
-.ds-sticky-footer {
+.ds-action-bar {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -2448,7 +2448,7 @@
   font-family: var(--zen-font-family-text);
   box-sizing: border-box;
 }
-.ds-sticky-footer__actions {
+.ds-action-bar__actions {
   display: inline-flex;
   align-items: center;
   gap: var(--zen-spacing-sm);
