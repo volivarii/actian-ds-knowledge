@@ -198,9 +198,9 @@ jobs:
           # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
           # a stuck index.lock) prints nothing, the test is false, the guard body is
           # SKIPPED and the step exits 0. That is a silent green on a required check.
-          # The `if ! git diff --quiet` this replaced exited 128, which `!` inverted,
-          # so it fired loudly. Converting without this traded one false all-clear for
-          # another.
+          # Unlike the guards converted from `git diff --quiet`, this one carried the
+          # silent inline form from the start, so it never had a loud failure to lose:
+          # it could always go green on a git failure. Capturing is what gives it one.
           DRIFT="$(git status --porcelain --untracked-files=all -- app-context/dist paths-manifest.json)" || {
             echo "::error::git status failed while checking drift"
             exit 1
@@ -210,7 +210,6 @@ jobs:
             # The captured list, because `git diff` prints NOTHING for the
             # untracked leaf these guards were converted to catch.
             printf '%s\n' "$DRIFT"
-            git --no-pager status --porcelain --untracked-files=all -- app-context/dist paths-manifest.json
             git --no-pager diff --stat -- app-context/dist paths-manifest.json
             exit 1
           fi
@@ -305,9 +304,9 @@ jobs:
           # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
           # a stuck index.lock) prints nothing, the test is false, the guard body is
           # SKIPPED and the step exits 0. That is a silent green on a required check.
-          # The `if ! git diff --quiet` this replaced exited 128, which `!` inverted,
-          # so it fired loudly. Converting without this traded one false all-clear for
-          # another.
+          # Unlike the guards converted from `git diff --quiet`, this one carried the
+          # silent inline form from the start, so it never had a loud failure to lose:
+          # it could always go green on a git failure. Capturing is what gives it one.
           DRIFT="$(git status --porcelain --untracked-files=all -- components/dist/identity.json)" || {
             echo "::error::git status failed while checking drift"
             exit 1
