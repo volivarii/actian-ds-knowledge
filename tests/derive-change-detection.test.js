@@ -89,7 +89,12 @@ function decidingLines(run) {
       //   FILES=$(git diff --name-only -- d/)
       //   if [ -z "$FILES" ]; then
       // passed with zero problems while deciding entirely with git diff.
-      return /^\s*(if\b|elif\b|[A-Za-z_][A-Za-z0-9_]*=)/.test(line);
+      // The assignment half allows export/readonly/local, the same as ASSIGNMENT:
+      // without it an `export CHANGED=...` capture was not even a deciding line, so
+      // every rule below silently had nothing to judge.
+      return /^\s*(if\b|elif\b|(?:export\s+|readonly\s+|local\s+)?[A-Za-z_][A-Za-z0-9_]*=)/.test(
+        line,
+      );
     })
     .join("\n");
 }
@@ -119,65 +124,86 @@ function problemsFor(run) {
   var porcelainCalls = decidingLineList.filter(function (line) {
     return /git status --porcelain/.test(line);
   });
-  if (porcelainCalls.length === 0) {
-    out.push("no-porcelain");
-    out.push("no-uall");
-  } else if (
-    !porcelainCalls.some(function (line) {
-      return /--untracked-files=all/.test(line);
-    })
-  ) {
-    out.push("no-uall");
+  // Everything is COMPUTED first, then pushed in a fixed order. Interleaving the
+  // two made a later rule land between two earlier ones and reorder the result,
+  // which the positive control asserts exactly.
+  var assignedIn = {};
+  decidingLineList.forEach(function (line) {
+    var m = ASSIGNMENT.exec(line);
+    if (m) assignedIn[m[1]] = line;
+  });
+  function isGitStatusVar(name) {
+    return /git status --porcelain/.test(assignedIn[name] || "");
   }
-  // 🪤 The condition itself must not call git INLINE. `[ -z "$(git ...)" ]`
-  // reads only stdout, so a git failure prints nothing and the test silently
-  // takes the "no changes" branch. Going through a captured variable is what
-  // makes the exit status checkable at all, and the companion test below
-  // asserts every such capture has a failure handler that EXITS.
+
+  // 🪤 The condition itself must not call git INLINE. `[ -z "$(git ...)" ]` reads
+  // only stdout, so a git failure prints nothing and the test silently takes the
+  // "no changes" branch. Going through a captured variable is what makes the exit
+  // status checkable at all, and the companion test asserts every such capture
+  // has a failure handler that EXITS.
   //
   // This replaced a match for `|| {` over the WHOLE block, which an unrelated
-  // `npm run derive:thing || { echo; exit 1; }` on a neighbouring line
-  // satisfied while the git call stayed uncaptured.
+  // `npm run derive:thing || { echo; exit 1; }` on a neighbouring line satisfied
+  // while the git call stayed uncaptured.
   var conditionLines = withoutComments(run)
     .split("\n")
     .filter(function (line) {
       return /^\s*(if\b|elif\b)/.test(line);
     })
     .join("\n");
-  if (/\bgit\b/.test(conditionLines)) out.push("inline-git-in-condition");
 
   // 🪤 The variable the decision READS must be the one captured from git status.
-  // Every check above is satisfied by presence somewhere in the block, so a
-  // vestigial correct capture plus a decision on an unrelated variable passed
-  // clean. The documented `FILES=$(git diff ...)` bypass was caught only because
-  // it happened to contain the token `git diff`; any non-git second source was
-  // invisible. A condition that reads no variable at all (`if git diff --quiet`)
-  // is out of scope here and already caught by the git-diff / inline-git rules.
-  var gitStatusVars = decidingLineList
-    .filter(function (line) {
-      return /git status --porcelain/.test(line);
-    })
-    .map(function (line) {
-      var m = /^\s*([A-Za-z_][A-Za-z0-9_]*)=/.exec(line);
-      return m ? m[1] : null;
-    })
-    .filter(Boolean);
-  // 🪤 Per CONDITION, not per block. Asking whether ANY condition variable came
-  // from git status is what the bypass exploits: it keeps the correct
-  // `if [ -z "$CHANGED" ]` in place and adds a second condition on a variable
-  // that never touched git. Every condition that reads a variable has to read
-  // one that did.
-  var strayCondition = conditionLines.split("\n").some(function (line) {
+  // Every presence check is satisfied by something existing somewhere in the
+  // block, so a vestigial correct capture plus a decision on an unrelated
+  // variable passed clean. Judged PER CONDITION, because the bypass keeps the
+  // correct condition beside the stray one.
+  //
+  // Only LOCALLY-CAPTURED names are evidence. An env var or an input is not in
+  // `assignedIn`, which is what separates a legitimate extra guard
+  // (`elif [ "$GITHUB_REF_NAME" = main ]`, or a `if [ "$FORCE" = "1" ]`
+  // pre-guard) from a decision routed through a non-git capture. Judging every
+  // condition reddened correct code.
+  var strayCondition = false;
+  var decisionGitVars = [];
+  conditionLines.split("\n").forEach(function (line) {
     var names = [];
     line.replace(/\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?/g, function (_, name) {
       names.push(name);
       return _;
     });
-    if (!names.length) return false;
-    return !names.some(function (name) {
-      return gitStatusVars.indexOf(name) !== -1;
+    var local = names.filter(function (n) {
+      return Object.prototype.hasOwnProperty.call(assignedIn, n);
     });
+    if (!local.length) return;
+    var fromGit = local.filter(isGitStatusVar);
+    if (!fromGit.length) strayCondition = true;
+    decisionGitVars = decisionGitVars.concat(fromGit);
   });
+
+  // 🪤 `--untracked-files=all` must be on the call the DECISION reads. Checking
+  // "some porcelain call in the block has it" let a logging capture carrying the
+  // flag vouch for a decision capture without it: the same neighbouring-token
+  // blindness the block-wide check had, one indirection out. With no captured
+  // decision variable (the inline form) there is no call to bind to, so fall
+  // back to the block.
+  var uallSubjects = decisionGitVars.length
+    ? decisionGitVars.map(function (n) {
+        return assignedIn[n];
+      })
+    : porcelainCalls;
+  var missingUall =
+    porcelainCalls.length &&
+    !uallSubjects.every(function (line) {
+      return /--untracked-files=all/.test(line);
+    });
+
+  if (porcelainCalls.length === 0) {
+    out.push("no-porcelain");
+    out.push("no-uall");
+  } else if (missingUall) {
+    out.push("no-uall");
+  }
+  if (/\bgit\b/.test(conditionLines)) out.push("inline-git-in-condition");
   if (strayCondition) out.push("decision-not-from-git-status");
   return out;
 }
@@ -201,6 +227,20 @@ function problemsFor(run) {
 // which is the precise bypass the no-exit case exists to catch.
 var EXITS_HERE = /(^|[;{]|&&|\|\|)\s*exit\b/;
 
+// Shell text with the CONTENTS of quoted strings removed. `exit` only counts at
+// a command position, and a `;` inside a message is not one:
+// `|| { echo "git status failed; exit skipped, continuing"; }` otherwise reads as
+// a handler that exits, which is the same "says the word exit" bypass one level
+// down. Strip the strings and the handler is `|| { echo ; }`, which it is.
+function withoutQuotedStrings(text) {
+  return String(text).replace(/"[^"]*"/g, '""').replace(/'[^']*'/g, "''");
+}
+
+// An assignment, optionally prefixed. `export CHANGED="$(git status ...)"` is
+// still a capture; without the prefix it classified `unknown`, which this guard
+// treats as a failure, so correct code reddened the required check.
+var ASSIGNMENT = /^\s*(?:export\s+|readonly\s+|local\s+)?([A-Za-z_][A-Za-z0-9_]*)=/;
+
 // A new YAML key ends the shell block. Without this the `|| {` lookahead ran to
 // end-of-file and could borrow an `exit` from an unrelated later step.
 var ENDS_BLOCK = /^\s*(-\s|(run|name|if|with|uses|env|shell|id|working-directory):)/;
@@ -213,17 +253,17 @@ function classifyLine(lines, i) {
   var line = lines[i].replace(/^(\s*)run:\s+/, "$1");
   if (/^\s*(if|elif)\b/.test(line)) return "condition";
   if (/^\s*git\b/.test(line)) return "reporting";
-  if (!/^\s*[A-Za-z_][A-Za-z0-9_]*=/.test(line)) return "unknown";
+  if (!ASSIGNMENT.test(line)) return "unknown";
   // A capture. Its failure handler must exit, whether written inline
   // (`|| exit 1`, `|| { ...; exit 1; }`) or as a block opened with `|| {`.
   if (!/\|\|/.test(line)) return "capture-unchecked";
-  var tail = line.slice(line.indexOf("||"));
+  var tail = withoutQuotedStrings(line.slice(line.indexOf("||")));
   if (EXITS_HERE.test(tail)) return "capture-checked";
   if (/\{\s*$/.test(tail)) {
     for (var j = i + 1; j < lines.length; j++) {
       if (/^\s*\}/.test(lines[j])) break;
       if (ENDS_BLOCK.test(lines[j])) break;
-      if (EXITS_HERE.test(lines[j])) return "capture-checked";
+      if (EXITS_HERE.test(withoutQuotedStrings(lines[j]))) return "capture-checked";
     }
   }
   return "capture-unchecked";
@@ -441,6 +481,51 @@ test("positive control: every bypass a review actually found is caught", functio
       "the `$(` floor let this through: a substitution that asks nothing",
     ],
     [
+      [],
+      GOOD + '          elif [ "$GITHUB_REF_NAME" = main ]; then\n',
+      "an extra condition on an ENV var decides nothing about change detection; correct code",
+    ],
+    [
+      [],
+      COMMENT + '          if [ "$FORCE" = "1" ]; then\n' + GOOD,
+      "a pre-guard on an input is correct code; the rule must not red the check for it",
+    ],
+    [
+      [],
+      COMMENT +
+        '          export CHANGED="$(git status --porcelain --untracked-files=all -- d/)" || exit 1\n' +
+        '          if [ -z "$CHANGED" ]; then\n',
+      "an exported capture is still captured from git status",
+    ],
+    [
+      ["no-uall"],
+      COMMENT +
+        '          LOG="$(git status --porcelain --untracked-files=all -- x/)" || exit 1\n' +
+        '          CHANGED="$(git status --porcelain -- d/)" || exit 1\n' +
+        '          if [ -z "$CHANGED" ]; then\n',
+      "the flag must be on the call the DECISION reads, not another porcelain call nearby",
+    ],
+    [
+      [],
+      COMMENT +
+        '          LOG="$(git status --porcelain -- x/)" || exit 1\n' +
+        '          CHANGED="$(git status --porcelain --untracked-files=all -- d/)" || exit 1\n' +
+        '          if [ -z "$CHANGED" ]; then\n',
+      "the mirror of the case above, and the one that justifies binding to the decision: " +
+        "a logging capture without the flag says nothing about a decision capture that has it, " +
+        "so requiring every porcelain call to carry it would reject correct code",
+    ],
+    [
+      ["no-uall"],
+      COMMENT +
+        '          A="$(git status --porcelain --untracked-files=all -- x/)" || exit 1\n' +
+        '          B="$(git status --porcelain -- d/)" || exit 1\n' +
+        '          if [ -n "$A" ] || [ -n "$B" ]; then\n',
+      "when the decision reads TWO captures, every one of them has to see untracked files: " +
+        "one blind capture in an or-condition is a blind decision. This is the case that makes " +
+        "`every` rather than `some` the right operator, which a single-capture decision cannot show",
+    ],
+    [
       ["no-uall"],
       COMMENT +
         '          X="$(git status --porcelain -- d/)" || exit 1\n' +
@@ -527,6 +612,17 @@ test("positive control: classifyLine vouches for no capture whose failure escape
       "reporting",
       "          run: git status --porcelain -- src/generated",
       "a one-line reporting step is correct code and must not be red-flagged",
+    ],
+    [
+      "capture-unchecked",
+      CAP + ' || { echo "git status failed; exit skipped, continuing"; }',
+      "a semicolon INSIDE a quoted string is not a command position; this handler " +
+        "talks about exiting and does not exit",
+    ],
+    [
+      "capture-checked",
+      "          export " + CAP.trim() + " || exit 1",
+      "an exported capture is still a capture, and this one exits",
     ],
   ];
 
