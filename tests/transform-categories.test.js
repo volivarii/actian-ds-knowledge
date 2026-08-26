@@ -393,7 +393,7 @@ var transformRegistry = require(
   ),
 );
 
-test("transform-registry — applies category + status from documentChildren", function () {
+test("transform-registry — applies category from documentChildren; the page no longer sets status", function () {
   var componentSets = [
     {
       name: "Button",
@@ -437,7 +437,8 @@ test("transform-registry — applies category + status from documentChildren", f
   });
 
   assert.equal(registry.components["button"].category, "Action");
-  assert.equal(registry.components["button"].status, "in-progress");
+  // Status is authored on the COMPONENT now, so a page emoji sets nothing.
+  assert.equal(registry.components["button"].status, undefined);
   assert.equal(
     registry.components["calendar"].category,
     "Form",
@@ -596,11 +597,11 @@ test("transform-registry — multiple components on the same page share the page
   });
 
   assert.equal(registry.components["tag-default"].category, "Data Display");
-  assert.equal(registry.components["tag-default"].status, "in-progress");
+  assert.equal(registry.components["tag-default"].status, undefined);
   assert.equal(registry.components["tag-interactive"].category, "Data Display");
-  assert.equal(registry.components["tag-interactive"].status, "in-progress");
+  assert.equal(registry.components["tag-interactive"].status, undefined);
   assert.equal(registry.components["tag-status"].category, "Data Display");
-  assert.equal(registry.components["tag-status"].status, "in-progress");
+  assert.equal(registry.components["tag-status"].status, undefined);
 });
 
 // ---- ζ.1 (2026-05-13): registry hygiene ----

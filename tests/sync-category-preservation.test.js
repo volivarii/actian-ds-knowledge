@@ -96,18 +96,19 @@ test("preserveKnownCategories: restores the whole attribution block for a surviv
   };
   var after = { components: { toast: comp("k1", null) } };
   var drift = S.preserveKnownCategories(before, after);
-  // category alone is not enough: section/group/status ship in registry.json
-  // and are consumed by the docs page tree and the status badge.
+  // category alone is not enough: section/group ship in registry.json and are
+  // consumed by the docs page tree. `status` is NOT restored — it is authored
+  // on the component name, so it does not move with page attribution.
   assert.equal(after.components.toast.category, "Feedback");
   assert.equal(after.components.toast.categorySlug, "feedback");
   assert.equal(after.components.toast.section, "Components");
   assert.equal(after.components.toast.group, "Toast");
-  assert.equal(after.components.toast.status, "stable");
+  assert.equal(after.components.toast.status, undefined);
   assert.equal(drift.length, 1);
   assert.equal(drift[0].from, "Feedback");
 });
 
-test("preserveKnownCategories: reconciles a stale section/group/status left by the drifted bucket", function () {
+test("preserveKnownCategories: reconciles a stale section/group left by the drifted bucket, leaving status alone", function () {
   var before = {
     components: {
       toast: comp("k1", "Feedback", {
@@ -119,9 +120,9 @@ test("preserveKnownCategories: reconciles a stale section/group/status left by t
     },
   };
   // The drift landed toast on a section-bearing non-category page, so transform
-  // gave it a mismatched section/group and a stray status alongside a null
-  // category. Restore must overwrite section/group AND drop the stray status,
-  // not leave an inconsistent section/category/group/status quartet.
+  // gave it a mismatched section/group alongside a null category. Restore must
+  // overwrite section/group, not leave an inconsistent trio. `status` came off
+  // the component name, so the drift guard must not touch it.
   var after = {
     components: {
       toast: comp("k1", null, {
@@ -135,7 +136,7 @@ test("preserveKnownCategories: reconciles a stale section/group/status left by t
   assert.equal(after.components.toast.category, "Feedback");
   assert.equal(after.components.toast.section, "Components");
   assert.equal(after.components.toast.group, "Toast");
-  assert.equal("status" in after.components.toast, false); // stray status dropped
+  assert.equal(after.components.toast.status, "beta"); // component-authored, untouched
 });
 
 test("preserveKnownCategories: restores when the new bucket is a non-category (page name)", function () {

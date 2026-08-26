@@ -20,6 +20,33 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **Component `status` is read from the component name, not the Figma page.** The DS Kit reorg
+  (Figma v2.7.0) moved the status emoji off the page names and onto the components themselves, so
+  the sync now parses a leading `✅ ✍️ ⛔️ ⚠️` from the component or component-set name, strips it
+  from the shipped `name`, and writes the meaning into `status`. Matching ignores the emoji
+  variation selector (`⚠` and `⚠️` both read as `warn`) and the space after it, so a near-miss
+  glyph is not a failure. Pages no longer contribute `status` at all:
+  `containing_frame.pageName` reflects the last publish, so a page renamed without republishing
+  carried a stale emoji, which made page-derived status an artifact rather than a signal. The
+  category-drift guard stops restoring `status` for the same reason. `category`, `section` and
+  `group` are unaffected.
+
+  **Consumer-visible consequence, please read:** `status` drops from **316 values to 7**. Before
+  the reorg the emoji sat on pages, so every component on a marked page inherited it, including
+  all **147 icons** (from the single `DS Icons` page). Icon names carry no emoji, so **icons no
+  longer carry `status` at all**, and only the 7 components Kristina marked individually do. This
+  is not a regression in the pipeline: it is the real state of the Figma file, previously
+  overstated by page-level inheritance. Anything rendering a status badge should expect it to be
+  absent far more often.
+
+- **The sync refuses to ship an emoji in a component `name`.** `name` is the display name the docs
+  site and the plugin render, and `✍️ Badge` shipped to both for weeks before anyone looked. Any
+  emoji left in a name after status parsing (so: one that is not in the status vocabulary) now
+  ends that kit's sync with `error` and no PR, naming the offending slugs and the two remedies
+  (rename in Figma, or add the emoji to `COMPONENT_STATUS_MAP`). The DS Kit already carries `🟢`
+  as a `Dev status` variant value, so this is a live risk rather than a hypothetical one. The
+  guard runs on all three registries.
+
 - **The breaking Figma sync of 2026-08-13 is carried through, eleven days after the registry last
   moved.** ([#588](https://github.com/volivarii/actian-ds-knowledge/pull/588)) Two renames, three retirements, three additions, and the
   first breaking sync ever carried from CI rather than from one person's laptop.
