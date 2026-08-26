@@ -238,17 +238,22 @@ function preserveKnownCategories(before, after) {
       page: c.page || null,
     });
     // Reconcile the WHOLE page-attribution block to last-known-good, not just
-    // `category`. `section`, `group`, and `status` are derived from the same
-    // page position and ship in registry.json (the docs page tree groups on
-    // `section`/`group`; the badge reads `status`), so restoring `category`
-    // alone would leave an internally inconsistent entry that no schema gate
-    // catches. `page` is the component's own factual page and is left intact.
-    ["section", "category", "categorySlug", "group", "status"].forEach(
-      function (f) {
-        if (twin[f] != null) c[f] = twin[f];
-        else delete c[f];
-      },
-    );
+    // `category`. `section` and `group` are derived from the same page position
+    // and ship in registry.json (the docs page tree groups on
+    // `section`/`group`), so restoring `category` alone would leave an
+    // internally inconsistent entry that no schema gate catches. `page` is the
+    // component's own factual page and is left intact.
+    //
+    // `status` is deliberately NOT in this list. It used to be page-derived,
+    // which is why it belonged here; since the DS Kit v2.7.0 reorg it is
+    // authored on the COMPONENT NAME, so it does not move when page
+    // attribution drifts. Restoring it from the previous dist would resurrect
+    // a value Figma no longer asserts, and the component's own emoji (or its
+    // absence) is the answer either way.
+    ["section", "category", "categorySlug", "group"].forEach(function (f) {
+      if (twin[f] != null) c[f] = twin[f];
+      else delete c[f];
+    });
   });
   return drift;
 }
@@ -298,6 +303,65 @@ function assertNoCategoryMassLoss(before, after, opts) {
         ". These components are ABSENT from the new sync (removed from Figma), not " +
         "merely re-bucketed. If intentional, acknowledge via SYNC_ALLOW_CATEGORY_LOSS. " +
         "Refusing to emit a registry that lost components.",
+    );
+  }
+}
+
+// Emoji blocks that can plausibly prefix a Figma layer name: Misc Symbols +
+// Dingbats (✅ ✍ ⚠ ⛔ ⚪) and the pictograph planes (🟢 …), plus the
+// variation selector that trails most of them. Deliberately excludes arrows
+// and math symbols, which are punctuation a real component name may want.
+var NAME_EMOJI_RE = /[\u{2600}-\u{27BF}\u{1F000}-\u{1FAFF}\u{FE0F}]/u;
+
+// Refuse to emit a registry whose `name` still carries an emoji.
+//
+// Status is authored as a leading emoji on the component name and stripped by
+// transform-registry, so anything left over is an emoji we do NOT understand.
+// It is not decoration: `name` is the display name the docs site and the
+// plugin render, and "✍️ Badge" shipped to both for weeks before anyone
+// looked. The DS Kit already contains 🟢 as a `Dev status` variant value, so
+// the next vocabulary someone invents lands here first.
+//
+// Throwing makes the sync verdict "error" (exit 2, no PR), same as the
+// category mass-loss guard. The fix is a rename in Figma, or adding the emoji
+// to COMPONENT_STATUS_MAP if it is meant to be a status.
+function assertNoEmojiInNames(registry) {
+  var offenders = [];
+  var inspected = 0;
+  var present = 0;
+  ["components", "icons"].forEach(function (ns) {
+    var bucket = (registry && registry[ns]) || {};
+    Object.keys(bucket).forEach(function (slug) {
+      var entry = bucket[slug];
+      present++;
+      if (!entry || typeof entry.name !== "string") return;
+      inspected++;
+      if (NAME_EMOJI_RE.test(entry.name)) {
+        offenders.push(ns + ":" + slug + " (" + entry.name + ")");
+      }
+    });
+  });
+  // THE FALSE ALL-CLEAR: entries are present but none exposed a `name`, so the
+  // gate would report clean having checked nothing. An empty kit is a
+  // different thing (fmKit/metaKit can legitimately carry no components) and
+  // is not a failure — there is genuinely nothing to check.
+  if (present > 0 && inspected === 0) {
+    throw new Error(
+      "[sync] emoji-in-name gate inspected no names, yet " +
+        present +
+        " entr" +
+        (present === 1 ? "y is" : "ies are") +
+        " present. Refusing to report clean on a check that ran on nothing.",
+    );
+  }
+  if (offenders.length) {
+    throw new Error(
+      "[sync] emoji left in component name(s): " +
+        offenders.join(", ") +
+        ". `name` is the display name shipped to the docs site and the plugin. " +
+        "Rename the component in Figma, or if this emoji is meant to mark " +
+        "status, add it to COMPONENT_STATUS_MAP in " +
+        "scripts/transformers/component-status-emoji.js. Refusing to emit.",
     );
   }
 }
@@ -583,6 +647,10 @@ async function computeRegistry(opts, kitId) {
       .filter(Boolean);
     assertNoCategoryMassLoss(before, after, { allow: allowedLoss });
   }
+
+  // Every kit, not just dsKit: `name` ships as the display name from all three
+  // registries, so an emoji left in one is equally wrong wherever it came from.
+  assertNoEmojiInNames(after);
 
   // Meta Kit: preserve hand-curated `templates` section across resync (Task 2.3).
   if (kitId === "metaKit" && beforeFile && beforeFile.templates) {
@@ -1023,7 +1091,7 @@ function buildChangelog(date, category, results, errors) {
         "A Figma reorg changed how these components are bucketed, so their category " +
           "came back missing or unrecognized. Rather than let them fall out of " +
           "`categories.json`, the docs page tree, and the graph, the sync carried each " +
-          "one's **last-known category** (and its section/group/status) forward, matched " +
+          "one's **last-known category** (and its section/group) forward, matched " +
           "by stable Figma identity. Nothing is lost, and this self-clears once the file " +
           "settles. If a move is intentional, accept it in " +
           "`components/src/category-page-overrides.json`.",
@@ -1078,7 +1146,7 @@ function buildChangelog(date, category, results, errors) {
               escapeBackticks(w.component) +
               "` sits directly on category page `" +
               escapeBackticks(w.page) +
-              "` — EXCLUDED from sync; give it its own member page (5-space indent + status emoji) to publish it",
+              "` — EXCLUDED from sync; give it its own member page (5-space indent, plain name) to publish it",
           );
         }
       });
@@ -2109,6 +2177,7 @@ module.exports = {
   loadDeferrals: loadDeferrals,
   categoryCounts: categoryCounts,
   preserveKnownCategories: preserveKnownCategories,
+  assertNoEmojiInNames: assertNoEmojiInNames,
   assertNoCategoryMassLoss: assertNoCategoryMassLoss,
   isAuthError: isAuthError,
   failureKind: failureKind,

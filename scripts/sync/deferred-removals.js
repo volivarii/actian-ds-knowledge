@@ -1,5 +1,7 @@
 "use strict";
 
+var statusEmoji = require("../transformers/component-status-emoji.js");
+
 // Deferred registry removals.
 //
 // A breaking sync commits nothing (#519) and `aggregateVerdict` is
@@ -195,12 +197,24 @@ function reinstate(before, after, apply) {
   next.components = Object.assign({}, after.components);
   apply.forEach(function (a) {
     var carried = Object.assign({}, before.components[a.slug]);
-    // Deliberately NOT written into `status`. That field is an enum sourced from
-    // the Figma page emoji (in-progress / warn / deprecated), so it says what
-    // FIGMA thinks of the component. A deferral is a fact about the substrate's
-    // handling of it. Writing one into the other conflates two sources and would
-    // clobber a real Figma status where the entry has one. The presence of this
-    // block is the marker, and it is unambiguous on its own.
+    // Normalise the carried name the same way the live transform does. The
+    // entry comes from the PREVIOUS dist, which can predate a change to how
+    // names are built, and it is carried verbatim by design. When status moved
+    // onto the component name, every emoji-prefixed name already committed
+    // became legacy data that the emoji-in-name gate would reject — turning
+    // one deferral into a whole-night `error`, which is exactly what deferrals
+    // exist to prevent, with a remedy ("rename it in Figma") that is
+    // impossible for a component no longer in Figma.
+    var parsedName = statusEmoji.extractStatus(carried.name);
+    if (carried.name != null && parsedName.cleanName) {
+      carried.name = parsedName.cleanName;
+      if (parsedName.status != null) carried.status = parsedName.status;
+    }
+    // The deferral is deliberately NOT written into `status`. That field says
+    // what FIGMA thinks of the component; a deferral is a fact about the
+    // substrate's handling of it. Writing one into the other conflates two
+    // sources and would clobber a real status where the entry has one. The
+    // presence of this block is the marker, and it is unambiguous on its own.
     carried.deferral = {
       reason: a.deferral.reason,
       issue: a.deferral.issue,

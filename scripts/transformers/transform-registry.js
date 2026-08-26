@@ -159,6 +159,19 @@ function buildEntry(
   var pageCleanName =
     statusParser.extractStatus(pageName).cleanName || pageName;
 
+  // Status is authored ON THE COMPONENT (Figma DS Kit v2.7.0, 2026-08-26).
+  // The reorg stripped the status emoji from every member page name and put it
+  // on the component itself, so the component name is the ONLY status driver.
+  // The emoji is stripped from the shipped `name` — leaving it in would ship
+  // "✍️ Badge" as a display name to the docs site and the plugin.
+  //
+  // The page deliberately does NOT contribute status any more. `/components`
+  // returns `containing_frame.pageName` as of the last publish, so a page
+  // renamed without republishing keeps its old emoji; a page-derived status is
+  // therefore a stale-metadata artifact rather than a signal. One field, one
+  // driver.
+  var componentStatus = statusParser.extractStatus(meta.name);
+
   // Figma REST exposes documentationLinks on COMPONENT_SET node documents.
   // Shape: [{ uri: string }]. Pass through verbatim (preserves Figma's
   // representation; consumers can extract `.uri` themselves).
@@ -172,7 +185,7 @@ function buildEntry(
   // (components/dist/guidelines/<slug>.json, domains.* shape).
 
   var entry = {
-    name: meta.name,
+    name: componentStatus.cleanName || meta.name,
     key: meta.key,
     nodeId: meta.node_id,
     importMethod: importMethod,
@@ -202,9 +215,12 @@ function buildEntry(
     // label from icon-groups.json (and add `secondaryGroups` for icons
     // that span multiple groups). For non-icons this is a no-op.
     applyIconGroups(entry, slug, iconGroupsLookup);
-    if (categoryEntry.status != null) {
-      entry.status = categoryEntry.status;
-    }
+  }
+
+  // `null` means curated/healthy, which stays implicit (no field), mirroring
+  // the foundations precedent for ✅.
+  if (componentStatus.status != null) {
+    entry.status = componentStatus.status;
   }
 
   if (importMethod === "set") {
@@ -378,7 +394,13 @@ function transformRegistry(input) {
   // `meta` (not yet built) or an already-built registry `entry`.
   function metaSide(meta, lookup, importMethod) {
     return {
-      name: meta.name,
+      // Cleaned, because entrySide reads an already-built entry whose `name`
+      // has had its status emoji stripped. Comparing a raw name against a
+      // cleaned one made two masters of `✍️ Badge` look like different
+      // components, so a benign duplicate publish reported as a LOST
+      // COMPONENT — the false alarm that trains a reader to skim the section
+      // that exists to catch a real loss.
+      name: statusParser.extractStatus(meta.name).cleanName || meta.name,
       nodeId: meta.node_id,
       importMethod: importMethod,
       page: (lookup && lookup.cleanPage) || null,
