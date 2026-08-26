@@ -85,7 +85,7 @@ function shallowEqualEntry(b, a) {
   return true;
 }
 
-function diffRegistry(before, after) {
+function diffRegistry(before, after, foldedInto) {
   var bC = before.components || {};
   var aC = after.components || {};
   var bSlugs = Object.keys(bC);
@@ -225,11 +225,42 @@ function diffRegistry(before, after) {
     stillRemoved.push(r);
   });
 
+  // A FOLD is a removal that went somewhere.
+  //
+  // Retiring a component by folding its artwork into a variant axis of a
+  // surviving one leaves no trace the sync can infer: the variant values do not
+  // carry the old slug (`Empty=Maintenance` is not `maintenance-state`,
+  // `Item type=Topic 1` is not `digram-topic`). So a fold is DECLARED, and an
+  // undeclared removal stays a removal.
+  //
+  // A declared fold is NOT absorbed. It still breaks the night, because the
+  // identity ledger makes resolution survive but cannot make authored
+  // references correct (see rename-preconditions.js): the renderer, the
+  // app-context patterns and the category defaults still name the retired slug,
+  // and an additive verdict would open an auto-merge PR whose checks can never
+  // go green. What changes is only what the report SAYS: "folded into
+  // empty-state" rather than "removed", which is the difference between a
+  // decision a reader can check and artwork they think has been deleted.
+  var folds = foldedInto || {};
+  var folded = [];
+  var notFolded = [];
+  stillRemoved.forEach(function (r) {
+    var into = folds[r.slug];
+    // The destination must actually be in the new registry. A dead or mistyped
+    // declaration must not launder a real removal into a fold.
+    if (into && Object.prototype.hasOwnProperty.call(aC, into)) {
+      folded.push({ slug: r.slug, into: into, entry: r.entry });
+      return;
+    }
+    notFolded.push(r);
+  });
+
   return {
     added: added.filter(function (_, i) {
       return !pairedAdded[i];
     }),
-    removed: stillRemoved,
+    removed: notFolded,
+    folded: folded,
     renamed: renamed,
     rekeyed: rekeyed,
     modified: modified,
@@ -366,6 +397,28 @@ function buildRegistryChangelog(diff) {
     });
     lines.push("");
   }
+  // Named destinations, so a reader can check the decision instead of reading
+  // "removed" and concluding the artwork is gone.
+  if ((diff.folded || []).length > 0) {
+    lines.push("## Folded (" + diff.folded.length + ")");
+    lines.push(
+      "_Retired into a variant of a surviving component. The artwork is not" +
+        " lost, and the retired slug still resolves through the identity" +
+        " ledger, but consumers addressing it directly need updating._",
+    );
+    diff.folded.forEach(function (e) {
+      lines.push(
+        "- " +
+          (e.entry.name || e.slug) +
+          " (`" +
+          e.slug +
+          "`) → `" +
+          e.into +
+          "`",
+      );
+    });
+    lines.push("");
+  }
   // Reported, never silent. A re-key is not breaking, but it IS a change to
   // the Figma node behind a slug, and the reader deciding whether a reorg went
   // as intended needs to see it.
@@ -464,7 +517,7 @@ function renameBreaksResolution(rename, absorbedRenames) {
   );
 }
 
-function classifyRegistry(before, after, absorbedRenames) {
+function classifyRegistry(before, after, absorbedRenames, foldedInto) {
   if (isRegistryUnchanged(before, after)) {
     return {
       category: "unchanged",
@@ -472,10 +525,19 @@ function classifyRegistry(before, after, absorbedRenames) {
       reasons: [],
     };
   }
-  var diff = diffRegistry(before, after);
+  var diff = diffRegistry(before, after, foldedInto);
   var reasons = [];
   diff.removed.forEach(function (e) {
     reasons.push("removed component '" + (e.entry.name || e.slug) + "'");
+  });
+  (diff.folded || []).forEach(function (e) {
+    reasons.push(
+      "folded component '" +
+        (e.entry.name || e.slug) +
+        "' into '" +
+        e.into +
+        "'",
+    );
   });
   diff.renamed.forEach(function (e) {
     if (!renameBreaksResolution(e, absorbedRenames)) return;
@@ -888,7 +950,12 @@ function classifyMedia(before, after, opts) {
 function classify(input) {
   var fileKind = input.fileKind;
   if (fileKind === "registry")
-    return classifyRegistry(input.before, input.after, input.absorbedRenames);
+    return classifyRegistry(
+      input.before,
+      input.after,
+      input.absorbedRenames,
+      input.foldedInto,
+    );
   if (fileKind === "styles") return classifyStyles(input.before, input.after);
   if (fileKind === "icons")
     return classifyIcons(input.before, input.after, input.degraded);

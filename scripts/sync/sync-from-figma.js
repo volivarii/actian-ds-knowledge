@@ -718,11 +718,27 @@ function finishRegistry(computed, absorbedRenames) {
     );
   });
 
+  // Fold declarations come from the identity ledger, which is where a retired
+  // slug's destination is already recorded, rather than from a second
+  // hand-maintained list saying the same thing in another file.
+  // `buildRenameIndex` is reused rather than restated: it already drops a slug
+  // that is current for some component and refuses an ambiguous one claimed by
+  // two identities.
+  //
+  // Scope, precisely: the CLASSIFIER never absorbs a fold, so passing
+  // `foldedInto` cannot turn a breaking night additive. It does not follow that
+  // declaring a fold is cosmetic. `previousSlugs` is a shared ledger, and its
+  // other readers act on the same entry: it is what makes the retired slug
+  // resolve for consumers (the point), and a 1:1 fold whose authored references
+  // have since been cleaned also becomes absorbable by the rename machinery.
+  // A fold declaration is a statement about where a component went, not a label
+  // on a report.
   var verdict = classify({
     fileKind: "registry",
     before: before,
     after: after,
     absorbedRenames: absorbedRenames,
+    foldedInto: computed.foldedInto || null,
   });
 
   // 🪤 A REJECTED deferral must reach a human, and on a quiet night nothing else
@@ -1290,7 +1306,17 @@ async function run(opts) {
       return {};
     }
     var previous = previousRaw;
-    var ledger = deriveIdentity.buildIdentity(registries, previous);
+    // Which current identity replaces which retired one. Read from the
+    // classifier rather than re-derived, so "these two are the same component"
+    // is decided once, by the code that also has the display names.
+    var rekeyedFrom = {};
+    computedRegistries.forEach(function (c) {
+      var d = classify._diffRegistry(c.before, c.after);
+      (d.rekeyed || []).forEach(function (r) {
+        if (r.fromKey && r.toKey) rekeyedFrom[r.toKey] = r.fromKey;
+      });
+    });
+    var ledger = deriveIdentity.buildIdentity(registries, previous, rekeyedFrom);
     var bytes = deriveIdentity.serialize(ledger);
 
     // 🪤 KNOWN WINDOW, stated rather than half-closed. The ledger is written
@@ -1452,9 +1478,36 @@ async function run(opts) {
       );
     }
 
+    // Fold destinations, read from the ledger the run just wrote. Reused from
+    // clients/resolve-paths.js rather than restated, so the sync and every
+    // consumer answer "where did this slug go" from the same code.
+    var foldedInto = null;
+    var foldLedgerPath = path.join(
+      path.dirname(orchOpts.outputDir),
+      "identity.json",
+    );
+    var foldLedger = readJsonOrNull(foldLedgerPath);
+    if (foldLedger) {
+      foldedInto = resolvePaths.buildRenameIndex(foldLedger);
+    } else if (fs.existsSync(foldLedgerPath)) {
+      // Present but unparseable. readJsonOrNull swallows the error and
+      // buildRenameIndex is shape-tolerant, so without this the degradation is
+      // silent: every fold reports as a bare removal and nothing says why.
+      console.warn(
+        "[sync] identity ledger at " +
+          foldLedgerPath +
+          " is unreadable, so no retired slug can name where it went. Folds " +
+          "report as plain removals this run.",
+      );
+    }
+
     // Pass 2: classify and write, now that the run knows where renamed slugs go.
     computedRegistries.forEach(function (c) {
       try {
+        // 🪤 The ledger spans every kit and the kits share slug vocabulary, so
+        // a declaration recorded for one kit must not name a destination in
+        // another. Same guard the absorbed renames already use.
+        c.foldedInto = restrictToKit(foldedInto, c);
         results.push(finishRegistry(c, restrictToKit(absorbedRenames, c)));
       } catch (err) {
         errors.push({ label: "registry:" + c.kitId, error: err });
