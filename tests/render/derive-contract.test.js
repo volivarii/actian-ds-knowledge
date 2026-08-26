@@ -65,13 +65,13 @@ test("a slug's props are exactly the ones its renderer branch reads", function (
 });
 
 test("a prop carries the renderer's own fallback as its default", function () {
-  var title = entry("chat-with-ai-steward").props.find(function (p) {
-    return p.name === "Title";
+  var primary = entry("action-bar").props.find(function (p) {
+    return p.name === "Primary";
   });
-  assert.ok(title, "chat-with-ai-steward reads props.Title");
+  assert.ok(primary, "action-bar reads props.Primary");
   assert.equal(
-    title.default,
-    "AI Steward",
+    primary.default,
+    "Save",
     "the default must be the literal the renderer falls back to",
   );
 });

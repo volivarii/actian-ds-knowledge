@@ -58,7 +58,7 @@ CAPTURED.forEach(function (pair) {
 // initials layer, so these strings are computed rather than quoted and belong in
 // their own list so the comment above CAPTURED stays true.
 //
-// The lineage nodes are NOT in the metamodel-widget case: their Type axis is
+// The lineage nodes are NOT in the metamodel case: their Type axis is
 // Main item / Sub item, a hierarchy position, so a single badge value does not
 // contradict any cell and is derived once from the component's own captured
 // vocabulary (a nested "powerbi" tag, a "2 datasets" button label).
@@ -77,10 +77,10 @@ DERIVED_FIXED.forEach(function (pair) {
   });
 });
 
-// metamodel-widget's Type axis IS the item-type vocabulary, so every cell needs
+// metamodel's Type axis IS the item-type vocabulary, so every cell needs
 // its OWN badge. Asserted per cell against the cell's own Type value, which is
 // what a hardcoded string could not satisfy.
-test("metamodel-widget derives each cell's badge from that cell's Type", function () {
+test("metamodel derives each cell's badge from that cell's Type", function () {
   const expected = {
     Dataset: "DA",
     "Business Term": "BT",
@@ -89,11 +89,11 @@ test("metamodel-widget derives each cell's badge from that cell's Type", functio
     Visualisation: "VI",
   };
   const seen = {};
-  matrix.variantMatrix("metamodel-widget").forEach(function (cell) {
+  matrix.variantMatrix("metamodel").forEach(function (cell) {
     const type = String(cell.variant).replace(/^Type=/, "");
     const html = String(
       dsMap.renderDSComponent({
-        dsSlug: "metamodel-widget",
+        dsSlug: "metamodel",
         variant: cell.variant,
         props: cell.props || {},
       }),
@@ -108,10 +108,10 @@ test("metamodel-widget derives each cell's badge from that cell's Type", functio
   );
 });
 
-test("metamodel-widget still lets a supplied Item type initials win", function () {
+test("metamodel still lets a supplied Item type initials win", function () {
   const html = String(
     dsMap.renderDSComponent({
-      dsSlug: "metamodel-widget",
+      dsSlug: "metamodel",
       variant: "Type=Business Term",
       props: { "Item type initials": "XY" },
     }),
@@ -147,16 +147,6 @@ test("stepper renders a state-neutral title in every State cell", function () {
   );
 });
 
-test("chat-with-ai-steward renders an authored insight", function () {
-  const text = firstCellText("chat-with-ai-steward");
-  assert.ok(text.length > 0, "chat-with-ai-steward renders no text at all");
-  assert.match(
-    text,
-    /lineage/i,
-    "the authored insight mentions the asset it describes",
-  );
-});
-
 // The State=Complete matrix cell (the one firstCellText reads) takes the
 // check-icon branch and never evaluates the Step fallback, so that fallback
 // needs its own non-complete cell to be exercised at all. Anchored on the
@@ -181,7 +171,7 @@ test("stepper renders the captured Step fallback on a non-complete cell", functi
 // renderer, which is why every assertion here renders a MATRIX CELL. The mirror
 // assertion, that the element is gone when the prop is not supplied, lives in
 // tests/render/optional-slot-omission.test.js.
-// input-date's helper slot is NOT covered here: "MM/DD/YYYY" also appears in
+// date-input's helper slot is NOT covered here: "MM/DD/YYYY" also appears in
 // datePlaceholder's own unconditional literal elsewhere in the same case block,
 // so a stripped-text match on that string would pass whether or not the helper
 // slot itself was filled. See the raw-HTML-anchored test below instead.
@@ -243,15 +233,15 @@ function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-test("input-date renders its resolved helper text in the helper element", function () {
+test("date-input renders its resolved helper text in the helper element", function () {
   assert.match(
-    firstCellHtml("input-date"),
+    firstCellHtml("date-input"),
     new RegExp(
-      '<span class="ds-input-date__helper">' +
+      '<span class="ds-date-input__helper">' +
         escapeRegExp("Use MM/DD/YYYY.") +
         "</span>",
     ),
-    "input-date must render its helper slot rather than omitting the element",
+    "date-input must render its helper slot rather than omitting the element",
   );
 });
 
@@ -297,10 +287,6 @@ test("table renders body rows matching its column defaults", function () {
     /customer_orders/,
     "the table must render body rows, not an empty tbody",
   );
-});
-
-test("chat-with-ai-steward renders a context chip", function () {
-  assert.match(firstCellText("chat-with-ai-steward"), /Dataset/);
 });
 
 test("each alert Type cell carries its own message", function () {

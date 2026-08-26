@@ -91,6 +91,10 @@ test("sync auto-bump — writes both package.json AND paths-manifest.json when a
         fmKit: "FM_KEY",
         metaKit: "META_KEY",
       },
+      // Confine EVERY path, not just the outputs: without pluginDir the run
+      // reads the real repo's components/src config (deferrals, page
+      // overrides), so a producer test drives the real producer's inputs.
+      pluginDir: tmpdir,
       outputDir: outputDir,
       releaseNotesDir: releaseNotesDir,
       artifactsDir: artifactsDir,

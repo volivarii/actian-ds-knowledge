@@ -291,7 +291,13 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   // Correcting prose and leaving the machine-read field is how a graph keeps
   // asserting something the record itself denies.
   //
-  // 272 -> 269, edges only: the 2026-08-24 breaking sync (#526) retired
+  // 269 -> 266, edges only: `chat-with-ai-steward` left the registry when its
+  // Figma component was unpublished on 2026-08-26 (an old version, being rebuilt,
+  // archived in the file rather than deleted), and the three patterns that named
+  // it (ai-analyst-panel, ask-ai, data-steward-agent-panel) dropped the
+  // reference. Its authored guideline stays and is guidance-only, the same state
+  // search-filters is in below. When it is republished the reference comes back
+  // and so does this count. Before that, 272 -> 269, edges only: the 2026-08-24 breaking sync (#526) retired
   // card-for-items, and the three patterns that named it dropped the reference
   // rather than repointing it at a component nobody has verified for that
   // screen. Before that, 266 -> 272, again edges only: two Studio patterns were corrected against the
@@ -312,7 +318,7 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
     return inIsland(e.source) || inIsland(e.target);
   });
   assert.equal(islandNodes.length, 97, "app-context island nodes");
-  assert.equal(islandEdges.length, 269, "app-context island edges");
+  assert.equal(islandEdges.length, 266, "app-context island edges");
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {

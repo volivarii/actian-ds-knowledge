@@ -234,7 +234,7 @@ function factTokenOf(node, kind) {
 // Emphasis=Filled, Size=Default, State=Default"), and those roots stay
 // comparable. The `(?:^|,)` anchor and the `=` immediately after `State` keep
 // this from firing on a different axis that merely starts with the same
-// letters: `input-date`'s "States=Enabled" is a plural axis name, not State.
+// letters: `date-input`'s "States=Enabled" is a plural axis name, not State.
 var ROOT_STATE_RE = /(?:^|,)\s*State\s*=\s*([^,]+)/i;
 function rootIsNonDefaultState(name) {
   var m = ROOT_STATE_RE.exec(String(name || ""));
@@ -367,8 +367,8 @@ function classifySlug(opts) {
   // same subject, and then only one of them is what the browser paints: the
   // more specific selector wins, source order breaks a tie. tag-stage was the
   // case that needed this, before the 2026-08-12 fold-in retired it into
-  // tag-default's Type axis (see the CSS_OWNERS comment in matrix.js). It
-  // shared the `.ds-tag--<color>` scale with tag-default, but Figma gave the
+  // tag-read-only's Type axis (see the CSS_OWNERS comment in matrix.js). It
+  // shared the `.ds-tag--<color>` scale with tag-read-only, but Figma gave the
   // two components different Orange and Yellow borders, so tag-stage carried
   // its own `.ds-tag-stage--<color>` rules AFTER the shared ones. Charging
   // tag-stage for a shared declaration its own rule overrode would have
@@ -405,7 +405,7 @@ function classifySlug(opts) {
   // A modifier-bucket rule keeps the prior modifier-only key, prefix
   // excluded. The modifier VALUE itself (e.g. "orange") is a semantic axis
   // value, and this repo's one-time multi-prefix slug (tag-stage, retired
-  // into tag-default's Type axis on 2026-08-12; CSS_OWNERS carried it as
+  // into tag-read-only's Type axis on 2026-08-12; CSS_OWNERS carried it as
   // ["ds-tag", "ds-tag-stage"]) used restating that SAME value under its own
   // prefix as the deliberate mechanism for overriding a shared family color
   // for itself alone: its fragment rendered `.ds-tag--orange` and

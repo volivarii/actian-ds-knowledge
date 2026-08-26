@@ -287,7 +287,7 @@ test('deriveCanonical: templates retired, no render is source "derived"', functi
   // Renderer relocation phase 1b-beta emptied TEMPLATES, so the
   // TEMPLATES[slug] override loop in derive-canonical.js never fires (the
   // loop itself is retained as the escape hatch, see the "templates
-  // retired" test below for the tag-default/checkbox specifics).
+  // retired" test below for the tag-read-only/checkbox specifics).
   var out = D.deriveCanonical();
   assert.equal(
     out.manifest.renders.some(function (r) {
@@ -343,7 +343,7 @@ test("deriveCanonical: render.css base is exactly concat(tokens, fonts, ds-base)
   assert.ok(base.length > 100000, "the asset-derived base is non-trivial");
 });
 
-// ds-base.css must carry a rule for every tag-default variant value the CAPTURE
+// ds-base.css must carry a rule for every tag-read-only variant value the CAPTURE
 // records a colour delta for, and none for a value it does not. Both halves are
 // derived: the old version asserted `.ds-tag--pink` by name, so it went stale
 // the moment the 2026-08-12 fold-in replaced the Color axis with Type -- a
@@ -355,7 +355,7 @@ test("ds-base.css carries a rule for every captured tag variant delta, and no no
     path.resolve(__dirname, "../../components/render/renderer/ds-base.css"),
     "utf8",
   );
-  var anatomy = require("../../components/dist/anatomy/tag-default.json");
+  var anatomy = require("../../components/dist/anatomy/tag-read-only.json");
   var groups = (anatomy.root.appearance || {}).variants || [];
   var axis = Object.keys(anatomy.variantDefaults || {})[0];
   var defaultValue = (anatomy.variantDefaults || {})[axis];
@@ -383,7 +383,7 @@ test("ds-base.css carries a rule for every captured tag variant delta, and no no
   // The other direction: a rule for a value the capture gives no delta is a
   // no-op at best and an invented colour at worst. The captured default and
   // any value with no appearance group (Stage-1 today) must have none.
-  var comp = MATRIX.findComponent("tag-default");
+  var comp = MATRIX.findComponent("tag-read-only");
   var noop = (comp.variants[axis] || []).filter(function (value) {
     if (withDelta.has(value)) return false;
     var mod = String(value).toLowerCase().replace(/\s+/g, "-");
@@ -411,7 +411,7 @@ test("templates retired: tag/checkbox derive through the generic renderer, no de
     deriveFragment,
   } = require("../../scripts/render/derive-from-renderer.js");
   var out = deriveCanonical();
-  ["tag-default", "checkbox"].forEach(function (slug) {
+  ["tag-read-only", "checkbox"].forEach(function (slug) {
     var r = out.manifest.renders.find(function (x) {
       return x.slug === slug;
     });
@@ -551,20 +551,20 @@ test("deriveCanonical/consumedVars: the 4 new gray-box-to-zero hyphen-prefix pai
       JSON.stringify(searchNames),
   );
 
-  // tag-default / tag-item-type: "ds-tag" is a genuine hyphen-prefix of
-  // ".ds-tag-item-type", so a regressed guard would make tag-default's
+  // tag-read-only / tag-item-type: "ds-tag" is a genuine hyphen-prefix of
+  // ".ds-tag-item-type", so a regressed guard would make tag-read-only's
   // declaration start absorbing tag-item-type's tokens.
   //
   // This pair used to be spelled tag-catalog / tag-catalog-item-type with
   // --zen-color-success-800 hand-picked as the isolator ("used exactly once in
   // ds-base.css"). Both halves went stale on the 2026-08-12 fold-in: tag-catalog
-  // was retired into tag-default's Type axis, and a "used exactly once" claim is
+  // was retired into tag-read-only's Type axis, and a "used exactly once" claim is
   // a copy of a fact the stylesheet owns and can change under it. The isolator
   // is computed now: a token that the longer prefix's own rules reference and
   // that appears nowhere else in the sheet. If no such token exists, the test
   // says so instead of passing on a probe that cannot discriminate.
   var tagItemTypeNames = namesFor("zen-tag-item-type");
-  var tagDefaultNames = namesFor("zen-tag-default");
+  var tagDefaultNames = namesFor("zen-tag-read-only");
   var isolator = onlyOwnedToken(cemStyle, "ds-tag-item-type");
   assert.ok(
     isolator,
@@ -577,7 +577,7 @@ test("deriveCanonical/consumedVars: the 4 new gray-box-to-zero hyphen-prefix pai
   );
   assert.ok(
     tagDefaultNames.indexOf(isolator) < 0,
-    "tag-default must not absorb tag-item-type's " +
+    "tag-read-only must not absorb tag-item-type's " +
       isolator +
       ": got " +
       JSON.stringify(tagDefaultNames),

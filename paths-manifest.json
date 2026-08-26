@@ -266,6 +266,13 @@
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Component × domain × status coverage matrix — the documentation-debt backlog."
     },
+    "components.guidelineDoc.date-input": {
+      "path": "components/dist/guidelines/date-input.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/components/derive-guidelines.js",
+      "description": "Merged multi-domain guideline object for the 'date-input' component (content, usage, design, behavior, tokens — each optional)."
+    },
     "components.guidelineDoc.drawer-side-panel": {
       "path": "components/dist/guidelines/drawer-side-panel.json",
       "type": "json",
@@ -314,13 +321,6 @@
       "origin": "ci",
       "generator": "scripts/components/derive-guidelines.js",
       "description": "Merged multi-domain guideline object for the 'inline-toast' component (content, usage, design, behavior, tokens — each optional)."
-    },
-    "components.guidelineDoc.input-date": {
-      "path": "components/dist/guidelines/input-date.json",
-      "type": "json",
-      "origin": "ci",
-      "generator": "scripts/components/derive-guidelines.js",
-      "description": "Merged multi-domain guideline object for the 'input-date' component (content, usage, design, behavior, tokens — each optional)."
     },
     "components.guidelineDoc.link": {
       "path": "components/dist/guidelines/link.json",
@@ -1031,7 +1031,7 @@
     "card-for-grouped-content": "card",
     "card-for-perimeter": "card",
     "dropdown-select-default": "dropdown-select",
-    "tag-default": "tag",
+    "tag-read-only": "tag",
     "tag-interactive": "tag",
     "tag-item-type": "tag"
   },

@@ -29,7 +29,7 @@ function factColors(facts) {
 // factColors above flattens a slug's whole capture into one set, which answers
 // "did we ever see this value" and nothing more. Review's reproduction of the
 // attribution bug landed on the cost of that: `.ds-tag--catalog { background:
-// #d0efed }` passed because #d0efed is in tag-default's capture -- as the BORDER
+// #d0efed }` passed because #d0efed is in tag-read-only's capture -- as the BORDER
 // of Type=Catalog. A border colour is not evidence for a background, so the
 // buckets are kept separate and a value found under the wrong one is reported.
 //
@@ -240,14 +240,14 @@ function fidelityCheck(canonical, ctx) {
 // a fabricated .ds-tag--bogus passed by borrowing a sibling's captured colour;
 // union membership carries no provenance. The second resolved a modifier by
 // longest-registered-prefix (facts["tag-status-error"], then facts["tag-status"],
-// ...) and, failing that, fell through to a terminal "must be tag-default". That
+// ...) and, failing that, fell through to a terminal "must be tag-read-only". That
 // terminal branch is what review caught: when the 2026-08-12 fold-in deleted the
 // tag-catalog / tag-shared / tag-status / tag-stage renderer cases, their surviving
-// .ds-tag--<x> rules stopped matching any key and were adopted by tag-default in
+// .ds-tag--<x> rules stopped matching any key and were adopted by tag-read-only in
 // silence. Because the check is set membership over that one slug's whole
 // capture, `.ds-tag--lime { background: #d0efed }` then produced ZERO violations
 // on a rule nothing paints, #d0efed being a BORDER colour of an unrelated Type in
-// tag-default's capture. A retired slug took its own regression with it, and the
+// tag-read-only's capture. A retired slug took its own regression with it, and the
 // per-slug coverage floor could not see it either: a vanished slug is charged
 // after=0, and those slugs were already 0 checkable in the baseline, so the loss
 // was worth nothing.
@@ -356,7 +356,7 @@ function uncapturedOwnerViolation(selector, slug) {
 // verifies THOSE rules against the same fact-color invariant, extracted by
 // selector (robust to ds-base.css's comment headers moving or changing).
 // `cssText` is ds-base.css's content and `facts` maps a fact-source name
-// (e.g. "tag-default", "checkbox") to its readAppearance() result, so the
+// (e.g. "tag-read-only", "checkbox") to its readAppearance() result, so the
 // caller controls which anatomy facts each selector group is checked
 // against. The modifier char class includes `-` so compound modifiers (the
 // grouped tag-status family: status-error/-info/-neutral/-success/-warning)
@@ -421,10 +421,10 @@ function checkBaseCssRules(cssText, facts, tokenMap, uncaptured, emitterIndex) {
   // Capture the WHOLE selector, not just the modifier. A hue modifier can be
   // scoped to one family member (`.ds-tag-stage.ds-tag--lime`), and after the
   // 2026-07-23 redesign tag-stage's Lime and Orange fills no longer match
-  // tag-default's, so the same modifier legitimately carries two different
+  // tag-read-only's, so the same modifier legitimately carries two different
   // values depending on which component the rule is scoped to. Resolving the
   // owner from the modifier alone would check a stage rule against
-  // tag-default's capture and flag a correct colour.
+  // tag-read-only's capture and flag a correct colour.
   var re = /([^{}]*?)\.ds-tag--([a-z0-9-]+)\s*\{([^}]*)\}/g;
   var m;
   while ((m = re.exec(cssText)) !== null) {
@@ -592,7 +592,7 @@ function sharedPrefixMap() {
 // The full ds-* class tokens (root, BEM element, and modifier forms alike)
 // a fragment's rendered markup emits, read straight from its class="..."
 // attributes. A render fragment shows every matrix cell in its gallery (e.g.
-// tag-default's fragment carries every ds-tag--<color> modifier it renders),
+// tag-read-only's fragment carries every ds-tag--<color> modifier it renders),
 // so this is the complete set of classes that slug's markup can ever trigger
 // a ds-base.css rule through.
 function fragmentClasses(html) {
@@ -663,9 +663,9 @@ function owningPrefixOf(selector, prefixes) {
 //
 // Deliberately does NOT deduplicate declarations across slugs: two rules with
 // identical selector text can still be kept for two different slugs (e.g.
-// .ds-tag--orange for both tag-default and tag-stage) when both fragments
+// .ds-tag--orange for both tag-read-only and tag-stage) when both fragments
 // emit the class -- each is then classified against ITS OWN capture, which is
-// how a real cross-capture contradiction (tag-default verifies, tag-stage
+// how a real cross-capture contradiction (tag-read-only verifies, tag-stage
 // mismatches) stays visible instead of being silently collapsed.
 function filterCssForFragment(css, emitted, prefixes, sharedPrefixes) {
   var pfx = prefixes || [];
@@ -1212,8 +1212,8 @@ if (require.main === module) {
   // fact source, and there is no tag-gray slug. An earlier pass hand-registered
   // one pointing at tag-stage, so a .ds-tag--gray rule carrying tag-stage's
   // #e1e1e6 passed -- the gate agreeing with a wrong colour by construction.
-  // Gray is a tag-default Color (it equals Color=Default), so an unscoped
-  // .ds-tag--gray routes to tag-default and is checked correctly; a
+  // Gray is a tag-read-only Color (it equals Color=Default), so an unscoped
+  // .ds-tag--gray routes to tag-read-only and is checked correctly; a
   // stage-scoped Gray routes by selector.
   var baseFacts = baseCssFactSources(anatomyDir);
   v = v.concat(

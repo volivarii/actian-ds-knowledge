@@ -57,10 +57,10 @@ const BY_DESIGN = {
   // progress is the progress-bar-small leaf)."
   "loader Percent=10%":
     "loader is the INDETERMINATE spinner; determinate progress is progress-bar-small",
-  "loader Percent=Percent3":
-    "loader is the INDETERMINATE spinner, and Percent3 is an auto-named Figma value",
+  "loader Percent=50":
+    "loader is the INDETERMINATE spinner; Percent=50 renders the same spinner as every other Percent value",
   // ds-html-map.js, case "search-result-card": "Studio's structural swaps
-  // (button -> progress-bar-small, digram -> tag-default) are intentionally NOT
+  // (button -> progress-bar-small, digram -> tag-read-only) are intentionally NOT
   // built here, per the spec. App=Studio therefore renders the BASE card with no
   // root modifier -- there is no built CSS delta for it, and a modifier class
   // must not be emitted without one."

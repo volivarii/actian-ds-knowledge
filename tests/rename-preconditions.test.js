@@ -85,17 +85,19 @@ test("every declared surface still exists in the real repo", function () {
   assert.ok(pre.AUTHORED_SURFACES.length > 0, "the list must not be empty");
 });
 
-test("sticky-footer's authored follow-through is done, and what still matches is prose (#562)", function () {
-  // This was "the real repo still names sticky-footer, so that rename is NOT
-  // absorbable", asserting hits.length >= 2 and naming "the renderer case and
-  // the app-context pattern". The 2026-08-24 sync (#526) carried that rename
-  // through, and the test went on passing: the renderer case is renamed and no
-  // components[] entry names the slug, but the two files still match on
-  // HISTORICAL PROSE describing the rename.
+test("sticky-footer's authored follow-through is done", function () {
+  // The one assertion worth keeping: no components[] entry and no renderer case
+  // may name the old slug. That is what makes the rename absorbable, and it is
+  // checked against the real repo rather than a fixture.
   //
-  // So it passed with its stated premise false, and the "now absorbable"
-  // transition it was written to detect could never fire. It asserts the real
-  // state instead, and pins the prose over-match as the defect it is.
+  // This test also used to pin #562 by asserting the prose over-match was still
+  // demonstrable on this slug. #562 is not fixed -- authoredReferences still
+  // matches a sentence as if it were a reference -- but the demonstration is
+  // gone: the two app-context records carried paragraphs narrating this rename,
+  // those paragraphs blocked the next rename through the very over-match they
+  // demonstrated, and they were retrospective prose that does not belong in an
+  // authored record. A guard that needs a standing rule to be broken to stay
+  // green guards nothing, so the pin is retired and #562 carries the defect.
   var repo = path.join(__dirname, "..");
 
   var live = pre.authoredReferences(repo, "sticky-footer").filter(function (h) {
@@ -114,12 +116,5 @@ test("sticky-footer's authored follow-through is done, and what still matches is
     live,
     [],
     "the follow-through is done: no components[] entry and no renderer case may name it",
-  );
-
-  var hits = pre.authoredReferences(repo, "sticky-footer");
-  assert.ok(
-    hits.length > 0,
-    "expected the prose over-match to still be demonstrable; if this is empty, " +
-      "#562 is fixed or the notes were deleted, and this test should be retired",
   );
 });

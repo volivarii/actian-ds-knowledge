@@ -121,6 +121,23 @@ const ACCEPTED_INVENTED = {
     "rename of sticky-footer.Primary (#526); pre-existing fallback, see note above",
   "action-bar.Secondary":
     "rename of sticky-footer.Secondary (#526); pre-existing fallback, see note above",
+
+  // Same shape, one reorg later. Figma v2.7.0 renamed input-date to date-input
+  // and metamodel-widget to metamodel (#589). The baseline is read at the merge
+  // base, which still lists these three slots under the old slugs, so the
+  // rename alone reads as three brand-new invented slots. Verified, not
+  // assumed: inventedSlots holds input-date.Label, input-date.Placeholder text
+  // and metamodel-widget.Item type initials at the merge base, and the total is
+  // unchanged at 95. The renderer's fallbacks are untouched.
+  //
+  // Not permanent cover either: these are the same specimen-vs-runtime question
+  // (#543 to #545) as the two above. Remove all five together when it is answered.
+  "date-input.Label":
+    "rename of input-date.Label (#589); pre-existing fallback, see note above",
+  "date-input.Placeholder text":
+    "rename of input-date.Placeholder text (#589); pre-existing fallback, see note above",
+  "metamodel.Item type initials":
+    "rename of metamodel-widget.Item type initials (#589); pre-existing fallback, see note above",
 };
 
 function hasOwn(o, k) {

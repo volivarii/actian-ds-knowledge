@@ -278,7 +278,7 @@ test("classifySlug: a shared base prefix has no single subject", function () {
     css: ".ds-tag { background: var(--zen-bad); }",
     facts: FACTS_PLAIN,
     tokenMap: TOK,
-    sharedPrefixes: { "ds-tag": ["tag-catalog", "tag-default", "tag-shared"] },
+    sharedPrefixes: { "ds-tag": ["tag-catalog", "tag-read-only", "tag-shared"] },
   });
   assert.equal(r.mismatch, 0);
   assert.equal(r.reasons["shared-base-no-single-subject"], 1);
@@ -398,7 +398,7 @@ test("classifySlug: a State=Default root is still a comparable subject (the rule
   });
 });
 
-// "States=Enabled" (input-date's real root name) is a DIFFERENT axis that
+// "States=Enabled" (date-input's real root name) is a DIFFERENT axis that
 // merely starts with the same five letters. Matching it would suppress a root
 // that is a perfectly good subject.
 test("rootIsNonDefaultState reads the State axis only, not an axis that starts like it", function () {
@@ -584,7 +584,7 @@ test("classifySlug: with no captured token name, a wrong hex is still a mismatch
 
 // ---------------------------------------------------------------------------
 // Task 6, cascade resolution. tag-stage shares the .ds-tag--<color> scale with
-// tag-default but its capture gives Orange and Yellow different borders, so it
+// tag-read-only but its capture gives Orange and Yellow different borders, so it
 // carries its own .ds-tag-stage--<color> rules AFTER the shared ones. The
 // shared declaration is then not what tag-stage paints, and charging it for
 // one is reporting a defect the render never produces.
@@ -621,7 +621,7 @@ test("classifySlug: a later equal-specificity rule overrides the earlier one for
       ".ds-tag-stage--orange { border-color: var(--zen-color-error-100); }\n",
     facts: FACTS_STAGE,
     tokenMap: TOK_TAG,
-    sharedPrefixes: { "ds-tag": ["tag-default", "tag-stage"] },
+    sharedPrefixes: { "ds-tag": ["tag-read-only", "tag-stage"] },
   });
   assert.equal(r.mismatch, 0);
   assert.equal(r.verified, 1, "the winning declaration is still classified");
@@ -649,7 +649,7 @@ test("classifySlug: a wrong value on the overriding rule is still a mismatch", f
       ".ds-tag-stage--orange { border-color: var(--zen-color-error-50); }\n",
     facts: FACTS_STAGE,
     tokenMap: TOK_TAG,
-    sharedPrefixes: { "ds-tag": ["tag-default", "tag-stage"] },
+    sharedPrefixes: { "ds-tag": ["tag-read-only", "tag-stage"] },
   });
   assert.equal(r.mismatch, 1);
   assert.match(r.mismatches[0].selector, /ds-tag-stage--orange/);
@@ -800,7 +800,7 @@ test("classifySlug: the real tag-stage cross-prefix modifier override still reso
       ".ds-tag-stage--orange { border-color: var(--zen-color-error-100); }\n",
     facts: FACTS_STAGE,
     tokenMap: TOK_TAG,
-    sharedPrefixes: { "ds-tag": ["tag-default", "tag-stage"] },
+    sharedPrefixes: { "ds-tag": ["tag-read-only", "tag-stage"] },
   });
   assert.equal(r.mismatch, 0);
   assert.equal(r.overridden, 1);

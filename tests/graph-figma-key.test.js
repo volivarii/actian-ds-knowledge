@@ -69,12 +69,18 @@ test("collectComponentsAndCategories: a keyless registry entry omits figmaKey/fi
 // tag-item-type). Not -7/+6: arrow-up (see graph-collisions.test.js) already
 // had a component node via fmkit, so its arrival in dskit only tie-breaks the
 // existing node's key, adding no new node.
-test("graph/dist/graph.json: 611 component nodes carry figmaKey; non-component nodes never do", function () {
+// 611 -> 613 with the 2026-08-26 reorg carry-through (#589): FOUR nodes go
+// (chat-with-ai-steward unpublished, plus input-date, metamodel-widget and
+// tag-default, which are renames) and SIX arrive (date-input, metamodel and
+// tag-read-only for those three renames, plus data-viz-legend-item, dropdown and
+// pagination, which are genuinely new in Figma v2.7.0). Counted off the two
+// graphs, not off the release notes.
+test("graph/dist/graph.json: 613 component nodes carry figmaKey; non-component nodes never do", function () {
   var g = readJSON("graph/dist/graph.json");
   var comps = g.nodes.filter(function (n) {
     return n.type === "component";
   });
-  assert.equal(comps.length, 611);
+  assert.equal(comps.length, 613);
   assert.ok(
     comps.every(function (n) {
       return (

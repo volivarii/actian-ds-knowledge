@@ -26,18 +26,18 @@ function escLabel(s) {
 // instead, so a legitimate Figma sync cannot make it stale.
 //
 // The tests below assert the renderer's output POSITIVELY, by marker, which is why
-// they survive the seeds: tag-default and checkbox are the derive-from-facts slugs
+// they survive the seeds: tag-read-only and checkbox are the derive-from-facts slugs
 // (North Star slice 2) whose markup INTENTIONALLY diverges from the degraded capture
 // (colored tag classes; real checkbox state classes + glyphs).
-// The 2026-08-12 breaking sync replaced tag-default's Color axis with a single
+// The 2026-08-12 breaking sync replaced tag-read-only's Color axis with a single
 // Type axis. This asserted `ds-tag--pink`, a hand-copied value from the retired
 // axis, and it kept PASSING after the sync only because MATRIX_OVERRIDES still
 // drove the dead axis through the renderer -- a green test over fabricated
 // cells. The marker is derived from the registry now: whatever the published
 // axis is, the fragment must colour its cells by that axis's own values.
-test("deriveFragment(tag-default) colors each cell by a published variant value", function () {
-  var derived = D.deriveFragment("tag-default");
-  var comp = M.findComponent("tag-default");
+test("deriveFragment(tag-read-only) colors each cell by a published variant value", function () {
+  var derived = D.deriveFragment("tag-read-only");
+  var comp = M.findComponent("tag-read-only");
   var axis = Object.keys(comp.variants)[0];
   var painted = comp.variants[axis].filter(function (value) {
     var mod = "ds-tag--" + String(value).toLowerCase().replace(/\s+/g, "-");
@@ -93,9 +93,9 @@ test("toggle derives a real On state, not the Selected==='Yes' bug", function ()
 // The property is "the curated override shows the WHOLE identity axis, not the
 // generic 5-cell cap", and the registry is the only place that knows how many
 // values that is.
-test("tag-default renders every registry variant value, not the 5-cell generic cap", function () {
-  var html = R.deriveFragment("tag-default");
-  var comp = M.findComponent("tag-default");
+test("tag-read-only renders every registry variant value, not the 5-cell generic cap", function () {
+  var html = R.deriveFragment("tag-read-only");
+  var comp = M.findComponent("tag-read-only");
   var axis = Object.keys(comp.variants)[0];
   var values = comp.variants[axis];
   assert.ok(
