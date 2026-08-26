@@ -20,6 +20,55 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The v2.7.0 reorg is carried through, so the dist stops disagreeing with the code.**
+  ([#596](https://github.com/volivarii/actian-ds-knowledge/pull/596)) Since #594 the sync read
+  `status` from the component name and refused an emoji in a name, while `main` went on shipping
+  **7 emoji names and 316 status values**, because a breaking sync commits nothing (#519). This
+  lands it: `dskit.json` now carries zero emoji names and 7 status values.
+
+  Four renames move with the registry, which is the whole constraint: `tag-default` to
+  `tag-read-only` (CSS unchanged, `ds-tag` is an explicit owner), `input-date` to `date-input`
+  (11 CSS rules and the `components/src/` directory), `metamodel-widget` to `metamodel` (6 rules),
+  and `sticky-footer` to `action-bar`, whose precondition now passes. Renaming ahead of the
+  registry fails 12 tests including `fragment-invariants` invariant 5, proved by mutation.
+  `tag-item-type`'s axis also moved from `Property 1` to `Type` with the same 28 values, so every
+  instance had been rendering the base class with no modifier.
+
+  `chat-with-ai-steward` is unpublished in Figma: an old version being rebuilt, archived in the
+  file, expected back. Its guidance is kept and named in `guideline-reachability`'s `UNREACHABLE`,
+  the same guidance-only state `search-filters` is in, so republishing restores it with no work
+  here. Its render leaf, 27 `ds-steward` CSS rules, fragment and captures are retired, because they
+  reproduce the version being replaced and no capture can verify them.
+
+  **Coverage note, required by the fidelity gate:** `tag-default` was renamed to `tag-read-only` in
+  Figma v2.7.0; its 24 checkable colour declarations moved to the new slug rather than disappearing,
+  and the repo-wide checkable total is unchanged at 78. Oracle coverage moves 18.1% to 19.1% purely
+  because a slug with no capture left the denominator.
+
+  **One capture is genuinely lost**, `tag-item-type/variations-1.webp`, whose Figma section is gone.
+  Everything else that looked like loss is a re-attribution, checked byte for byte:
+  `tag-item-type`'s two behavior captures are byte-identical to `tag-read-only`'s, and
+  `breadcrumb/variations-0.webp` is byte-identical to `breadcrumbs`'.
+
+### Fixed
+
+- **A denied Figma page stopped being denied when its name grew a suffix.**
+  ([#596](https://github.com/volivarii/actian-ds-knowledge/pull/596)) `DENIED_PAGES` exact-matched
+  `"Local components"`. The page became `"Local components + templates"`, `includes` quietly stopped
+  matching, the run stayed green because the stale-list message is a `console.warn` and not a gate,
+  and `Notes/Feedback` published into `dskit.json` under a category of its own. One predicate now
+  answers "is this page denied" for both the exclusion and the collision suppressor, which
+  previously answered it with two separate expressions, and it matches the exact name or a leading
+  whole word. The test fixture carries the name Figma actually reports, so the existing drop
+  assertions are the regression guard: mutating the matcher back to exact-match turns 4 tests red.
+
+- **`rename-preconditions` blocked a rename on prose that described a rename (#562).**
+  ([#596](https://github.com/volivarii/actian-ds-knowledge/pull/596)) Two app-context records
+  carried paragraphs narrating the `sticky-footer` to `action-bar` rename, and those paragraphs were
+  what held the next rename. The prose is removed rather than reworded, since retrospective
+  narration does not belong in an authored record. #562 keeps its defect and loses its live
+  demonstration, so the test that pinned it is retired rather than left asserting a false premise.
+
 - **A retired component that was folded into another is reported as a fold, naming where it went.**
   The DS Kit reorg retired six components by folding their artwork into a variant of a surviving
   one (`confirmation`, `error-state` and `maintenance-state` into `empty-state`'s `Empty=` axis;
