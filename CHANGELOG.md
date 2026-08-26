@@ -20,6 +20,28 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **A Figma re-key is no longer reported as a removal.** The sync pairs components by Figma `key`,
+  which is what makes a rename safe (the name moves, the key does not, resolution survives).
+  Dissolving a component *set* is the opposite shape: the child publishes as a new node with a new
+  key, so the same slug arrives as a removal plus an addition. The DS Kit reorg did that six times
+  (`action-bar`, `breadcrumb`, `segmented-control`, `tabs`, `textfield-buttons`,
+  `glossary-item-hierarchy-diagram`), each keeping its slug **and** its display name, and each
+  making the night breaking for something no consumer could observe. A removal is now judged on
+  what a consumer can still resolve: same slug plus same name on both sides is a re-key, reported
+  under its own `Re-keyed` heading rather than silently folded away. A slug whose **name** differs
+  stays a removal on purpose, because silently repointing a slug at a different component is worse
+  than removing it.
+
+  A re-key says "same component, new Figma node". It deliberately does **not** say "nothing
+  changed": the replacing node can carry a smaller contract, so the pair is still checked for
+  removed variant axes and properties and those still break the night. That is not theoretical.
+  On the live reorg all six dropped a variant axis (each holding only `Default`, so no consumer
+  could have chosen otherwise), and `tabs` also dropped a real `Show Avatar` property, which a
+  looser rule would have published as a routine addition.
+
+  On the live reorg this takes the sync from 13 removals to 7, and the 7 that remain are exactly
+  the deliberate retirements that need a decision.
+
 - **Component `status` is read from the component name, not the Figma page.** The DS Kit reorg
   (Figma v2.7.0) moved the status emoji off the page names and onto the components themselves, so
   the sync now parses a leading `✅ ✍️ ⛔️ ⚠️` from the component or component-set name, strips it
