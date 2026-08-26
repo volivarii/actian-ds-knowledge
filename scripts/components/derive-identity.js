@@ -46,8 +46,22 @@ function identityOf(entry) {
 // Entries for components that have left the registries are dropped rather than
 // tombstoned: their history is in git, and a retired slug should stop resolving
 // rather than resolve to something that no longer ships.
-function buildIdentity(registries, previous) {
+// `rekeyedFrom` maps a CURRENT identity to the one it replaces ({newKey:
+// oldKey}), for the case the identity model cannot see on its own: dissolving a
+// component set republishes the same slug under a NEW Figma key, so the old
+// entry would drop and the new one start with an empty history. That silently
+// retires every slug the component used to answer to. `action-bar` carries
+// `previousSlugs: ["sticky-footer"]` and is one of the six components the
+// 2026-08-26 reorg re-keyed, so this is the difference between `sticky-footer`
+// continuing to resolve and it going dark for every consumer.
+//
+// The pairing is supplied rather than inferred here. Deciding two identities
+// are the same component needs the display name as well as the slug, and the
+// ledger stores no name; the classifier already makes that judgement, so this
+// reads its answer instead of guessing a second one.
+function buildIdentity(registries, previous, rekeyedFrom) {
   var prevEntries = (previous && previous.entries) || {};
+  var rekeys = rekeyedFrom || {};
   var entries = {};
 
   (registries || []).forEach(function (reg) {
@@ -57,7 +71,13 @@ function buildIdentity(registries, previous) {
       var id = identityOf(entry);
       if (!id) return;
 
+      // Fall back to the identity this one replaces, so a re-key inherits the
+      // history rather than starting blank. An unknown old identity is simply
+      // absent, which degrades to today's behaviour rather than throwing.
       var was = prevEntries[id];
+      if (!was && Object.prototype.hasOwnProperty.call(rekeys, id)) {
+        was = prevEntries[rekeys[id]];
+      }
       var history = ((was && was.previousSlugs) || []).slice();
       if (was && was.slug && was.slug !== slug) {
         history.push(was.slug);

@@ -85,7 +85,7 @@ function shallowEqualEntry(b, a) {
   return true;
 }
 
-function diffRegistry(before, after) {
+function diffRegistry(before, after, foldedInto) {
   var bC = before.components || {};
   var aC = after.components || {};
   var bSlugs = Object.keys(bC);
@@ -155,10 +155,114 @@ function diffRegistry(before, after) {
     if (!(slug in bC)) added.push({ slug: slug, entry: aC[slug] });
   });
 
+  // A Figma RE-KEY is not a removal.
+  //
+  // Pairing by `key` is what makes a rename safe: the name changes, the key
+  // does not, resolution survives. Dissolving a component SET is the opposite
+  // shape — the child publishes as a NEW node with a NEW key, so the same slug
+  // arrives as a removal plus an addition. The DS Kit reorg of 2026-08-26 did
+  // that six times (`action-bar`, `breadcrumb`, `segmented-control`, `tabs`,
+  // `textfield-buttons`, `glossary-item-hierarchy-diagram`), each keeping its
+  // slug AND its display name, and each reported as a removal that made the
+  // night breaking. Nothing a consumer can observe was lost.
+  //
+  // The test of a removal is what a consumer can still resolve. Same slug plus
+  // same name on both sides means the component is still there; only Figma's
+  // internal identity moved. A slug whose name DIFFERS is left as a removal on
+  // purpose: silently repointing a slug at another component is worse than
+  // removing it, because resolution keeps working and nobody is told.
+  //
+  // Only an `added` entry can pair here, so this cannot disturb the rename
+  // pairing above (those entries never reach `added`).
+  var rekeyed = [];
+  var addedIndexBySlug = {};
+  added.forEach(function (a, i) {
+    addedIndexBySlug[a.slug] = i;
+  });
+  var pairedAdded = {};
+  var stillRemoved = [];
+  removed.forEach(function (r) {
+    var i = addedIndexBySlug[r.slug];
+    var counterpart = i === undefined ? null : added[i];
+    if (
+      counterpart &&
+      !pairedAdded[i] &&
+      r.entry &&
+      counterpart.entry &&
+      r.entry.name != null &&
+      r.entry.name === counterpart.entry.name
+    ) {
+      pairedAdded[i] = true;
+      rekeyed.push({
+        slug: r.slug,
+        name: counterpart.entry.name,
+        fromKey: r.entry.key || null,
+        toKey: counterpart.entry.key || null,
+        entry: counterpart.entry,
+      });
+      // A re-key is an IDENTITY change, and that is all this record says. The
+      // replacing node can also carry a different shape (dissolving a set
+      // drops its variant axis and flips `importMethod` from "set" to
+      // "single", which is a required consumer-facing field), and that is a
+      // MODIFICATION. Two orthogonal facts, each reported by the machinery
+      // that already exists: routing the pair through `modified` means it
+      // inherits the breaking reasons, the additive notes and the `⚠` render,
+      // instead of a second half-copy of all three living here.
+      var rekeyReasons = entryBreakingReasons(r.entry, counterpart.entry);
+      if (
+        rekeyReasons.length > 0 ||
+        !shallowEqualEntry(r.entry, counterpart.entry)
+      ) {
+        modified.push({
+          slug: r.slug,
+          before: r.entry,
+          after: counterpart.entry,
+          breakingReasons: rekeyReasons,
+        });
+      }
+      return;
+    }
+    stillRemoved.push(r);
+  });
+
+  // A FOLD is a removal that went somewhere.
+  //
+  // Retiring a component by folding its artwork into a variant axis of a
+  // surviving one leaves no trace the sync can infer: the variant values do not
+  // carry the old slug (`Empty=Maintenance` is not `maintenance-state`,
+  // `Item type=Topic 1` is not `digram-topic`). So a fold is DECLARED, and an
+  // undeclared removal stays a removal.
+  //
+  // A declared fold is NOT absorbed. It still breaks the night, because the
+  // identity ledger makes resolution survive but cannot make authored
+  // references correct (see rename-preconditions.js): the renderer, the
+  // app-context patterns and the category defaults still name the retired slug,
+  // and an additive verdict would open an auto-merge PR whose checks can never
+  // go green. What changes is only what the report SAYS: "folded into
+  // empty-state" rather than "removed", which is the difference between a
+  // decision a reader can check and artwork they think has been deleted.
+  var folds = foldedInto || {};
+  var folded = [];
+  var notFolded = [];
+  stillRemoved.forEach(function (r) {
+    var into = folds[r.slug];
+    // The destination must actually be in the new registry. A dead or mistyped
+    // declaration must not launder a real removal into a fold.
+    if (into && Object.prototype.hasOwnProperty.call(aC, into)) {
+      folded.push({ slug: r.slug, into: into, entry: r.entry });
+      return;
+    }
+    notFolded.push(r);
+  });
+
   return {
-    added: added,
-    removed: removed,
+    added: added.filter(function (_, i) {
+      return !pairedAdded[i];
+    }),
+    removed: notFolded,
+    folded: folded,
     renamed: renamed,
+    rekeyed: rekeyed,
     modified: modified,
   };
 }
@@ -293,6 +397,53 @@ function buildRegistryChangelog(diff) {
     });
     lines.push("");
   }
+  // Named destinations, so a reader can check the decision instead of reading
+  // "removed" and concluding the artwork is gone.
+  if ((diff.folded || []).length > 0) {
+    lines.push("## Folded (" + diff.folded.length + ")");
+    lines.push(
+      "_Retired into a variant of a surviving component. The artwork is not" +
+        " lost, and the retired slug still resolves through the identity" +
+        " ledger, but consumers addressing it directly need updating._",
+    );
+    diff.folded.forEach(function (e) {
+      lines.push(
+        "- " +
+          (e.entry.name || e.slug) +
+          " (`" +
+          e.slug +
+          "`) → `" +
+          e.into +
+          "`",
+      );
+    });
+    lines.push("");
+  }
+  // Reported, never silent. A re-key is not breaking, but it IS a change to
+  // the Figma node behind a slug, and the reader deciding whether a reorg went
+  // as intended needs to see it.
+  if ((diff.rekeyed || []).length > 0) {
+    lines.push("## Re-keyed (" + diff.rekeyed.length + ")");
+    lines.push(
+      "_Same slug and name under a new Figma node (typically a dissolved" +
+        " component set), so resolution is unaffected. Any change to the" +
+        " component's shape is listed under Modified below._",
+    );
+    diff.rekeyed.forEach(function (e) {
+      lines.push(
+        "- " +
+          e.name +
+          " (`" +
+          e.slug +
+          "`, Figma key " +
+          String(e.fromKey).slice(0, 8) +
+          " → " +
+          String(e.toKey).slice(0, 8) +
+          ")",
+      );
+    });
+    lines.push("");
+  }
   if (diff.renamed.length > 0) {
     lines.push("## Renamed (" + diff.renamed.length + ")");
     diff.renamed.forEach(function (e) {
@@ -366,7 +517,7 @@ function renameBreaksResolution(rename, absorbedRenames) {
   );
 }
 
-function classifyRegistry(before, after, absorbedRenames) {
+function classifyRegistry(before, after, absorbedRenames, foldedInto) {
   if (isRegistryUnchanged(before, after)) {
     return {
       category: "unchanged",
@@ -374,10 +525,19 @@ function classifyRegistry(before, after, absorbedRenames) {
       reasons: [],
     };
   }
-  var diff = diffRegistry(before, after);
+  var diff = diffRegistry(before, after, foldedInto);
   var reasons = [];
   diff.removed.forEach(function (e) {
     reasons.push("removed component '" + (e.entry.name || e.slug) + "'");
+  });
+  (diff.folded || []).forEach(function (e) {
+    reasons.push(
+      "folded component '" +
+        (e.entry.name || e.slug) +
+        "' into '" +
+        e.into +
+        "'",
+    );
   });
   diff.renamed.forEach(function (e) {
     if (!renameBreaksResolution(e, absorbedRenames)) return;
@@ -790,7 +950,12 @@ function classifyMedia(before, after, opts) {
 function classify(input) {
   var fileKind = input.fileKind;
   if (fileKind === "registry")
-    return classifyRegistry(input.before, input.after, input.absorbedRenames);
+    return classifyRegistry(
+      input.before,
+      input.after,
+      input.absorbedRenames,
+      input.foldedInto,
+    );
   if (fileKind === "styles") return classifyStyles(input.before, input.after);
   if (fileKind === "icons")
     return classifyIcons(input.before, input.after, input.degraded);

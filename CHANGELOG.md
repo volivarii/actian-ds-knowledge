@@ -20,6 +20,60 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **A retired component that was folded into another is reported as a fold, naming where it went.**
+  The DS Kit reorg retired six components by folding their artwork into a variant of a surviving
+  one (`confirmation`, `error-state` and `maintenance-state` into `empty-state`'s `Empty=` axis;
+  `digram-topic` into `digram-item-types`; the two lineage nodes into `lineage-individual-node`).
+  Nothing was lost, and the sync said `Removed`, which reads as artwork deleted and cost a
+  round-trip through Figma to disprove. A fold is **declared**, never inferred, because the variant
+  values do not carry the old slug (`Empty=Maintenance` is not `maintenance-state`). The
+  declaration is the identity ledger's `previousSlugs`, which already records where a retired slug
+  went and which `clients/resolve-paths.js` already reads, so the sync and every consumer answer
+  "where did this slug go" from the same code rather than from a second hand-maintained list.
+
+  A declared fold **still breaks the night**: the classifier reports it differently, never absorbs
+  it. The ledger makes resolution survive but cannot make authored references correct, and all six
+  are still named in the renderer, the app-context patterns and the category defaults; an additive
+  verdict there would open an auto-merge pull request whose checks can never go green, which is
+  strictly worse than the breaking path it replaces. A declaration whose destination is absent from
+  the new registry is ignored, so dead config cannot launder a real removal into a fold, and a
+  declaration is scoped to the kit that recorded it, since the kits share slug vocabulary.
+
+  Declaring a fold is not cosmetic, though. `previousSlugs` is a shared ledger: the same entry is
+  what makes the retired slug resolve for consumers, and a one-to-one fold whose authored
+  references have since been cleaned also becomes absorbable by the rename machinery. Declare a
+  fold when the component really went there.
+
+- **A re-key no longer erases a component's slug history.** The ledger keys entries by Figma
+  identity and drops entries whose identity has left the registries, which is right for a
+  retirement and wrong for a re-key: the same slug republished under a new key started a fresh
+  entry with an empty history. `action-bar` carries `previousSlugs: ["sticky-footer"]` and is one
+  of the six components the reorg re-keyed, so `sticky-footer` would have stopped resolving for
+  every consumer still addressing it. The ledger now carries the entry across, using the pairing
+  the classifier already computes rather than guessing a second time from slugs alone.
+
+- **A Figma re-key is no longer reported as a removal.** The sync pairs components by Figma `key`,
+  which is what makes a rename safe (the name moves, the key does not, resolution survives).
+  Dissolving a component *set* is the opposite shape: the child publishes as a new node with a new
+  key, so the same slug arrives as a removal plus an addition. The DS Kit reorg did that six times
+  (`action-bar`, `breadcrumb`, `segmented-control`, `tabs`, `textfield-buttons`,
+  `glossary-item-hierarchy-diagram`), each keeping its slug **and** its display name, and each
+  making the night breaking for something no consumer could observe. A removal is now judged on
+  what a consumer can still resolve: same slug plus same name on both sides is a re-key, reported
+  under its own `Re-keyed` heading rather than silently folded away. A slug whose **name** differs
+  stays a removal on purpose, because silently repointing a slug at a different component is worse
+  than removing it.
+
+  A re-key says "same component, new Figma node". It deliberately does **not** say "nothing
+  changed": the replacing node can carry a smaller contract, so the pair is still checked for
+  removed variant axes and properties and those still break the night. That is not theoretical.
+  On the live reorg all six dropped a variant axis (each holding only `Default`, so no consumer
+  could have chosen otherwise), and `tabs` also dropped a real `Show Avatar` property, which a
+  looser rule would have published as a routine addition.
+
+  On the live reorg this takes the sync from 13 removals to 7, and the 7 that remain are exactly
+  the deliberate retirements that need a decision.
+
 - **Component `status` is read from the component name, not the Figma page.** The DS Kit reorg
   (Figma v2.7.0) moved the status emoji off the page names and onto the components themselves, so
   the sync now parses a leading `✅ ✍️ ⛔️ ⚠️` from the component or component-set name, strips it
