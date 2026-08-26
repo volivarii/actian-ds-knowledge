@@ -494,17 +494,7 @@
             "Custom 8": "Custom 7",
             "Custom 13": "Custom 12",
             "Custom 14": "Custom 12",
-            "Glossary 1": "Use case",
-            "Topic 10": "Category",
-            "Topic 1": "Category",
-            "Topic 2": "Category",
-            "Topic 3": "Category",
-            "Topic 4": "Category",
-            "Topic 5": "Category",
-            "Topic 6": "Category",
-            "Topic 7": "Category",
-            "Topic 8": "Category",
-            "Topic 9": "Category"
+            "Glossary 1": "Use case"
           }
         },
         "Size": {
@@ -828,8 +818,7 @@
             "Connector straight"
           ],
           "rendersAs": {
-            "Individual sub item": "Individual main node",
-            "Group sub item": "Individual main node",
+            "Group sub item": "Individual sub item",
             "Group main item": "Individual main node",
             "Connector up": "Individual main node",
             "Connector down": "Individual main node",

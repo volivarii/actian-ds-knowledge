@@ -55,8 +55,12 @@ Each entry links its pull request. Dates are the merge date (UTC).
 - **A denied Figma page stopped being denied when its name grew a suffix.**
   ([#596](https://github.com/volivarii/actian-ds-knowledge/pull/596)) `DENIED_PAGES` exact-matched
   `"Local components"`. The page became `"Local components + templates"`, `includes` quietly stopped
-  matching, the run stayed green because the stale-list message is a `console.warn` and not a gate,
-  and `Notes/Feedback` published into `dskit.json` under a category of its own. One predicate now
+  matching, and the run stayed green because the stale-list message is a `console.warn` and not a
+  gate. What that cost on `main` is worth stating precisely: the registry never shipped the scratch
+  component, because a breaking sync commits nothing (#519), but **the media phases commit
+  regardless of the verdict**, so `components/dist/media/notes-feedback/default.webp` and its
+  `_index.json` entry did reach consumers. A component the registry rejected shipped its picture.
+  One predicate now
   answers "is this page denied" for both the exclusion and the collision suppressor, which
   previously answered it with two separate expressions, and it matches the exact name or a leading
   whole word. The test fixture carries the name Figma actually reports, so the existing drop

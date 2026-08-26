@@ -8,7 +8,11 @@ test("digram-item-types: known color, no token, renders initials", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
     dsSlug: "digram-item-types",
-    variant: "Item type=Dataset, Size=Default",
+    // Size=SM, the value the registry publishes as this axis's default. It read
+    // "Size=Default" until Figma renamed the axis to XS/SM/MD, which is the same
+    // staleness the renderer had: a test that names a retired value proves
+    // nothing about the component people actually get.
+    variant: "Item type=Dataset, Size=SM",
     props: { Initials: "DS" },
   });
   assert.match(html, /class="ds-item-type"/, "carries the base class");

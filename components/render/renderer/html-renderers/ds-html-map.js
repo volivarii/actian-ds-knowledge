@@ -155,6 +155,20 @@
   // a new injection seam. Custom 1 and Custom 15 have no captured entry;
   // DIGRAM_ITEM_TYPE_COLORS falls back to "Category" for any unmapped value.
   var DIGRAM_ITEM_TYPE_COLORS = {
+    // capture: root.appearance.variants in anatomy/digram-item-types.json.
+    // Topic 1..10 arrived with Figma v2.7.0 and take the axis from 28 to 38
+    // values; unlike every other member of this table they are saturated rather
+    // than pastel, so falling back to Category painted all ten peach.
+    "Topic 1": "#a17ab6",
+    "Topic 2": "#8b00e8",
+    "Topic 3": "#00b6e1",
+    "Topic 4": "#003786",
+    "Topic 5": "#75b86b",
+    "Topic 6": "#299315",
+    "Topic 7": "#eabd34",
+    "Topic 8": "#ef8d00",
+    "Topic 9": "#a82743",
+    "Topic 10": "#b22700",
     Category: "#ffdacf",
     Field: "#d3efcd",
     "Custom 10": "#d3efcd",
@@ -223,7 +237,14 @@
     Field: { color: "#145f04", token: "--zen-color-success-800" },
     Visualisation: { color: "#7900cb", token: null },
   };
+  // The Connector group is captured as `{background: null, radius: null,
+  // border: null}`: connectors are lines between nodes, not boxes, so the
+  // capture is stating an absence rather than failing to record one. Falling
+  // through to the Dataset default painted each of the four a 1.5px blue box
+  // the design does not have. Returning "" renders no border rule at all.
+  var METAMODEL_BORDERLESS = /^Connector /;
   function metamodelBorderStyle(type) {
+    if (METAMODEL_BORDERLESS.test(String(type || ""))) return "";
     var b = METAMODEL_TYPE_BORDERS[type] || METAMODEL_TYPE_BORDERS.Dataset;
     return b.token
       ? "border-color:var(" + b.token + ", " + b.color + ")"
@@ -772,11 +793,13 @@
         case "digram-item-types": {
           var itItemType = v["Item type"] || "Category";
           var itCls = "ds-item-type";
-          // "Default" is the bare state (no modifier, matches ds-item-type's own
-          // size rule); only a non-default Size (e.g. "Small") adds a modifier
-          // class, mirroring the Size handling convention used elsewhere in this
-          // file (compare the button case's `v.Size === "Small"` check above).
-          if (v.Size && v.Size !== "Default") {
+          // The captured default is the bare state, and it is named here rather
+          // than assumed: the axis used to read Small/Default/Large and now
+          // reads XS/SM/MD, so a hardcoded "Default" made the DEFAULT size the
+          // one emitting a modifier, and pointed it at a class ds-base.css has
+          // no rule for. anatomy/digram-item-types.json's variantDefaults says
+          // SM. Every other value gets its own modifier, lowercased.
+          if (v.Size && v.Size !== "SM") {
             itCls += " ds-item-type--" + v.Size.toLowerCase();
           }
           return (
@@ -805,7 +828,20 @@
 
         case "lineage-individual-node": {
           var linCls = "ds-lineage-node";
-          if (v.Type === "Sub item") linCls += " ds-lineage-node--sub";
+          // The Type axis went from Main item/Sub item to seven values when the
+          // lineage components folded together: Individual/Group x main/sub,
+          // plus three Connectors. Matching the retired literal "Sub item" made
+          // .ds-lineage-node--sub unreachable and painted every sub item as a
+          // main node. Matched on the published value's own words, so a value
+          // added to this axis keeps working: both sub shapes end in "sub item".
+          //
+          // The three Connector values are NOT modelled here. They are lines
+          // between nodes rather than nodes, the capture records no appearance
+          // for them, and inventing one is how a wrong value ships looking
+          // right. They render the base node until the artwork is captured.
+          if (/sub item$/i.test(String(v.Type || ""))) {
+            linCls += " ds-lineage-node--sub";
+          }
           if (v.State === "Selected") linCls += " ds-lineage-node--selected";
           if (v.State === "Disabled") linCls += " ds-lineage-node--disabled";
           if (v.Fields === "Expanded") linCls += " ds-lineage-node--expanded";

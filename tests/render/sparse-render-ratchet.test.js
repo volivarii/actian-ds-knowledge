@@ -127,8 +127,10 @@ const ACCEPTED_INVENTED = {
   // base, which still lists these three slots under the old slugs, so the
   // rename alone reads as three brand-new invented slots. Verified, not
   // assumed: inventedSlots holds input-date.Label, input-date.Placeholder text
-  // and metamodel-widget.Item type initials at the merge base, and the total is
-  // unchanged at 95. The renderer's fallbacks are untouched.
+  // and metamodel-widget.Item type initials at the merge base, under the slugs
+  // it knew them by. The renderer's fallbacks are untouched. The total moves
+  // 95 -> 93, which is NOT these three: it is chat-with-ai-steward's two slots
+  // leaving with its retired render leaf.
   //
   // Not permanent cover either: these are the same specimen-vs-runtime question
   // (#543 to #545) as the two above. Remove all five together when it is answered.
