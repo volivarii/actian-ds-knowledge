@@ -145,7 +145,7 @@ function modifierValuesByPrefix(prefix) {
 
 // Subject presence: after the 2026-08-12 tag fold-in, NO render slug owns more
 // than one prefix (tag-stage was the only one, and it retired into
-// tag-default's Type axis). The loop below therefore has nothing to compare
+// tag-read-only's Type axis). The loop below therefore has nothing to compare
 // today, and a `deepEqual(offenders, [])` on an empty walk is a gate reporting
 // success while verifying nothing. So the multi-prefix population is reported
 // by name and the precondition is asserted explicitly: if a future change

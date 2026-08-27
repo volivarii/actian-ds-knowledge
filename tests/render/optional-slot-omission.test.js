@@ -16,7 +16,7 @@
 //
 // The element's own CSS class is what is asserted, not the rendered text: a text
 // match can be satisfied by the same string rendered somewhere else in the same
-// component (input-date's helper and its placeholder both read MM/DD/YYYY). The
+// component (date-input's helper and its placeholder both read MM/DD/YYYY). The
 // class is DERIVED too, by probing the prop with a sentinel and reading the class
 // off the element the sentinel lands in, so no per-slot class is hand-written
 // either. A slot whose class cannot be derived is reported, not skipped.

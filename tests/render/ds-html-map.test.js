@@ -8,7 +8,11 @@ test("digram-item-types: known color, no token, renders initials", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
     dsSlug: "digram-item-types",
-    variant: "Item type=Dataset, Size=Default",
+    // Size=SM, the value the registry publishes as this axis's default. It read
+    // "Size=Default" until Figma renamed the axis to XS/SM/MD, which is the same
+    // staleness the renderer had: a test that names a retired value proves
+    // nothing about the component people actually get.
+    variant: "Item type=Dataset, Size=SM",
     props: { Initials: "DS" },
   });
   assert.match(html, /class="ds-item-type"/, "carries the base class");
@@ -242,10 +246,10 @@ test("lineage-grouped-node: escapes a hostile Label", function () {
   assert.doesNotMatch(html, /<svg onload/, "no raw injection");
 });
 
-test("metamodel-widget: default Type (Dataset) border color, Show Section off", function () {
+test("metamodel: default Type (Dataset) border color, Show Section off", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "metamodel-widget",
+    dsSlug: "metamodel",
     variant: "",
     props: { Title: "customer" },
   });
@@ -256,16 +260,16 @@ test("metamodel-widget: default Type (Dataset) border color, Show Section off", 
   );
   assert.doesNotMatch(
     html,
-    /ds-metamodel-widget__section"/,
+    /ds-metamodel__section"/,
     "no section when Show Section is falsy",
   );
   assert.match(html, />customer</, "renders the title");
 });
 
-test("metamodel-widget: Type=Data Process has no captured token, bare hex", function () {
+test("metamodel: Type=Data Process has no captured token, bare hex", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "metamodel-widget",
+    dsSlug: "metamodel",
     variant: "Type=Data Process",
     props: { Title: "etl_job" },
   });
@@ -276,10 +280,10 @@ test("metamodel-widget: Type=Data Process has no captured token, bare hex", func
   );
 });
 
-test("metamodel-widget: Show Section renders the collapsible section", function () {
+test("metamodel: Show Section renders the collapsible section", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "metamodel-widget",
+    dsSlug: "metamodel",
     variant: "Type=Field",
     props: {
       Title: "email",
@@ -289,16 +293,16 @@ test("metamodel-widget: Show Section renders the collapsible section", function 
   });
   assert.match(
     html,
-    /ds-metamodel-widget__section"/,
+    /ds-metamodel__section"/,
     "section renders when Show Section is truthy",
   );
   assert.match(html, />Validated, unique</, "renders the section body");
 });
 
-test("metamodel-widget: escapes a hostile Title", function () {
+test("metamodel: escapes a hostile Title", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "metamodel-widget",
+    dsSlug: "metamodel",
     variant: "",
     props: { Title: "<img src=x onerror=1>" },
   });
@@ -648,7 +652,7 @@ test("confirmation: escapes hostile Title and Body", function () {
 // hand-copied list of classes. A hand-copied list is what went stale: the old
 // blocks kept passing while their subjects were being deleted upstream.
 var TAG_MATRIX = require("../../components/render/renderer/matrix.js");
-var TAG_DEFAULT_ANATOMY = require("../../components/dist/anatomy/tag-default.json");
+var TAG_DEFAULT_ANATOMY = require("../../components/dist/anatomy/tag-read-only.json");
 var TAG_ITEM_TYPE_ANATOMY = require("../../components/dist/anatomy/tag-item-type.json");
 var TAG_ICONS = require("../../components/dist/icons/icons.json").icons;
 
@@ -730,9 +734,9 @@ function cellsByLabel(fragment) {
   return out;
 }
 
-test("tag-default: every published Type value renders a class the anatomy can be checked against", function () {
+test("tag-read-only: every published Type value renders a class the anatomy can be checked against", function () {
   var DS = require(DS_PATH);
-  var axis = axisOf("tag-default");
+  var axis = axisOf("tag-read-only");
   var groups = appearanceGroups(TAG_DEFAULT_ANATOMY);
   var defaultValue = (TAG_DEFAULT_ANATOMY.variantDefaults || {})[axis.name];
   assert.ok(defaultValue, "the capture records no default for " + axis.name);
@@ -746,7 +750,7 @@ test("tag-default: every published Type value renders a class the anatomy can be
   var checked = 0;
   axis.values.forEach(function (value) {
     var html = DS.renderDSComponent({
-      dsSlug: "tag-default",
+      dsSlug: "tag-read-only",
       variant: axis.name + "=" + value,
       props: { Label: value },
     });
@@ -794,10 +798,10 @@ test("tag-default: every published Type value renders a class the anatomy can be
 // makes the suppression legitimate; if a future capture drops the flag, this
 // test reds instead of the glyph silently coming back. Nothing here names
 // "Shared", so a second flagged value is picked up rather than diverging.
-test("tag-default: a Type the capture flags as structurally reduced renders no leading icon", function () {
+test("tag-read-only: a Type the capture flags as structurally reduced renders no leading icon", function () {
   var RENDERER = require("../../scripts/render/derive-from-renderer.js");
-  var axis = axisOf("tag-default");
-  var comp = TAG_MATRIX.findComponent("tag-default");
+  var axis = axisOf("tag-read-only");
+  var comp = TAG_MATRIX.findComponent("tag-read-only");
   var shortfalls = structuralShortfalls(TAG_DEFAULT_ANATOMY);
   var flagged = Object.keys(shortfalls);
 
@@ -854,7 +858,7 @@ test("tag-default: a Type the capture flags as structurally reduced renders no l
   // structuralVariants: the assertion would now hold even if suppression broke
   // completely. It is deliberately NOT replaced in kind. What replaces it is
   // the surgical-suppression pair below, which can still fail.
-  var cells = cellsByLabel(RENDERER.deriveFragment("tag-default"));
+  var cells = cellsByLabel(RENDERER.deriveFragment("tag-read-only"));
   flagged.forEach(function (value) {
     var cell = cells[value];
     assert.ok(cell, value + " has no cell in the fragment");
@@ -918,7 +922,7 @@ test("tag-default: a Type the capture flags as structurally reduced renders no l
   );
 });
 
-test("tag-default: the Type modifier is shape-clamped before it reaches the class attribute (XSS)", function () {
+test("tag-read-only: the Type modifier is shape-clamped before it reaches the class attribute (XSS)", function () {
   var DS = require(DS_PATH);
   // The payload carries exactly ONE "=" on purpose. parseVariant requires
   // `part.split("=").length === 2`, so a classic `x" onmouseover="alert(1)`
@@ -927,7 +931,7 @@ test("tag-default: the Type modifier is shape-clamped before it reaches the clas
   // not the clamp exists. Confirmed by mutation: with that payload, deleting the
   // clamp reds nothing. This one reaches the clamp.
   var html = DS.renderDSComponent({
-    dsSlug: "tag-default",
+    dsSlug: "tag-read-only",
     variant: 'Type=x"><script>alert(1)</script>',
     props: { Label: "x" },
   });
@@ -945,7 +949,7 @@ test("tag-default: the Type modifier is shape-clamped before it reaches the clas
   );
 });
 
-test("tag-default: the leading icon slug follows the anatomy's per-Type instance swap", function () {
+test("tag-read-only: the leading icon slug follows the anatomy's per-Type instance swap", function () {
   var DS = require(DS_PATH);
   DS.setIcons(TAG_ICONS);
   try {
@@ -968,7 +972,7 @@ test("tag-default: the leading icon slug follows the anatomy's per-Type instance
       "the capture records no per-Type icon swap, so this test proves nothing",
     );
 
-    var axis = axisOf("tag-default");
+    var axis = axisOf("tag-read-only");
     Object.keys(expected).forEach(function (value) {
       var slug = expected[value];
       assert.ok(
@@ -982,7 +986,7 @@ test("tag-default: the leading icon slug follows the anatomy's per-Type instance
             (TAG_DEFAULT_ANATOMY.variantDefaults || {})[axis.name]
           : axis.name + "=" + value;
       var html = DS.renderDSComponent({
-        dsSlug: "tag-default",
+        dsSlug: "tag-read-only",
         variant: variant,
         props: { Label: "x" },
       });
@@ -1001,11 +1005,11 @@ test("tag-default: the leading icon slug follows the anatomy's per-Type instance
   }
 });
 
-test("tag-default: the leading icon is a default-TRUE boolean, and an explicit false omits it", function () {
+test("tag-read-only: the leading icon is a default-TRUE boolean, and an explicit false omits it", function () {
   var DS = require(DS_PATH);
   DS.setIcons(TAG_ICONS);
   try {
-    var comp = TAG_MATRIX.findComponent("tag-default");
+    var comp = TAG_MATRIX.findComponent("tag-read-only");
     var prop = Object.keys(comp.properties || {}).find(function (k) {
       return /^Leading icon show/.test(k);
     });
@@ -1019,7 +1023,7 @@ test("tag-default: the leading icon is a default-TRUE boolean, and an explicit f
       "this test's premise is that the registry default is true",
     );
     var shown = DS.renderDSComponent({
-      dsSlug: "tag-default",
+      dsSlug: "tag-read-only",
       variant: "Type=Default",
       props: { Label: "x" },
     });
@@ -1029,7 +1033,7 @@ test("tag-default: the leading icon is a default-TRUE boolean, and an explicit f
       "absent prop honours the registry default",
     );
     var hidden = DS.renderDSComponent({
-      dsSlug: "tag-default",
+      dsSlug: "tag-read-only",
       variant: "Type=Default",
       props: { Label: "x", "Leading icon show": false },
     });
@@ -1043,10 +1047,10 @@ test("tag-default: the leading icon is a default-TRUE boolean, and an explicit f
   }
 });
 
-test("tag-default: escapes a hostile Label", function () {
+test("tag-read-only: escapes a hostile Label", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "tag-default",
+    dsSlug: "tag-read-only",
     variant: "Type=Default",
     props: { Label: "<img src=x onerror=alert(1)>" },
   });
@@ -1088,7 +1092,7 @@ test("tag-item-type: every published value renders its own modifier class", func
       value + ": renders its label text",
     );
   });
-  // Same split as tag-default: the modifier is emitted for every value, and
+  // Same split as tag-read-only: the modifier is emitted for every value, and
   // WHICH modifiers get a rule is the capture's business. The captured default
   // carries no appearance group of its own -- base .ds-tag-item-type is its
   // paint -- so a rule for it would restate the base.
@@ -1105,7 +1109,7 @@ test("tag-item-type: every published value renders its own modifier class", func
 
 test("tag-item-type: the modifier is shape-clamped before it reaches the class attribute (XSS)", function () {
   var DS = require(DS_PATH);
-  // One "=" only, for the reason spelled out in tag-default's XSS test above:
+  // One "=" only, for the reason spelled out in tag-read-only's XSS test above:
   // parseVariant silently drops a part with two, so a two-"=" payload never
   // reaches the clamp and the assertion holds vacuously.
   var html = DS.renderDSComponent({
@@ -1379,7 +1383,7 @@ test("search-result-card: App=Studio renders the base card with no --studio modi
     props: { Title: "Studio Result" },
   });
   // Studio's structural swaps (button -> progress-bar-small, digram ->
-  // tag-default) are intentionally not built for this leaf -- there is no
+  // tag-read-only) are intentionally not built for this leaf -- there is no
   // CSS delta, so App=Studio renders the BASE card with no root modifier
   // (a modifier must carry a real visual delta, never a no-op namespace
   // hook; see ds-base.css). This asserts it renders without error.

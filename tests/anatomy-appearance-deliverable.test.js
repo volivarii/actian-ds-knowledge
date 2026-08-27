@@ -53,7 +53,7 @@ var rawTag = {
 
 test("buildAnatomyFile emits resolved appearance on root and text child", function () {
   var out = N.buildAnatomyFile(rawTag, {
-    slug: "tag-default",
+    slug: "tag-read-only",
     kit: "dskit",
     syncedAt: "2026-07-03",
     source: { fileKey: "X", nodeId: "7257:3040" },
@@ -70,7 +70,7 @@ test("buildAnatomyFile emits resolved appearance on root and text child", functi
 
 test("enriched anatomy file validates against the schema", function () {
   var out = N.buildAnatomyFile(rawTag, {
-    slug: "tag-default",
+    slug: "tag-read-only",
     kit: "dskit",
     syncedAt: "2026-07-03",
     source: { fileKey: "X", nodeId: "7257:3040" },

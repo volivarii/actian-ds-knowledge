@@ -18,7 +18,14 @@ function fixtureRegistry() {
     fileKey: "abc",
     components: {
       "side-nav": { name: "Side nav", page: "Navigation" },
-      "notes-feedback": { name: "Notes/Feedback", page: "Local components" },
+      // The name Figma reports today. The list still says "Local components",
+      // and an exact-match implementation therefore keeps this component: that
+      // is the leak this fixture exists to reproduce, so every drop assertion
+      // below fails the moment the matcher stops handling a suffixed page.
+      "notes-feedback": {
+        name: "Notes/Feedback",
+        page: "Local components + templates",
+      },
       breadcrumbs: { name: "Breadcrumbs", page: "Navigation" },
     },
   };
@@ -78,5 +85,79 @@ test("excludeDeniedPages leaves componentCount absent when the input had none", 
     "componentCount" in out,
     false,
     "must not invent a componentCount the input never had",
+  );
+});
+
+// ---- A denied page that grows a suffix is still the denied page ----
+//
+// The DS Kit page went from "Local components" to "Local components + templates".
+// `denied.includes(entry.page)` stopped matching, the run still went green (the
+// stale-list message is a console.warn, not a gate), and Notes/Feedback published
+// into dskit.json carrying a "Local components + templates" category of its own.
+
+var isDeniedPage = sync.isDeniedPage;
+var suppressDeniedPageCollisions = sync.suppressDeniedPageCollisions;
+
+test("isDeniedPage matches the exact name and a suffixed one", function () {
+  assert.equal(isDeniedPage("Local components", DENIED_PAGES), true);
+  assert.equal(isDeniedPage("Local components + templates", DENIED_PAGES), true);
+  assert.equal(
+    isDeniedPage("  Local components + templates  ", DENIED_PAGES),
+    true,
+    "an indented page name is the same page",
+  );
+});
+
+test("isDeniedPage requires a word boundary, so it cannot over-match", function () {
+  assert.equal(
+    isDeniedPage("Local componentsX", DENIED_PAGES),
+    false,
+    "a longer word that merely starts with the denied name is a different page",
+  );
+  assert.equal(isDeniedPage("Navigation", DENIED_PAGES), false);
+  assert.equal(isDeniedPage(null, DENIED_PAGES), false);
+  assert.equal(isDeniedPage("Local components", []), false, "an empty list denies nothing");
+  assert.equal(
+    isDeniedPage("anything at all", [""]),
+    false,
+    "an empty entry must not deny every page",
+  );
+});
+
+// The exclusion and the collision suppressor both answer "is this page denied".
+// They used to answer it with two separate expressions, which is one rename away
+// from a registry that drops a component while its collision warning still fires.
+test("the collision suppressor and the exclusion agree on a suffixed page", function () {
+  var page = "Local components + templates";
+  var kept = excludeDeniedPages(fixtureRegistry(), DENIED_PAGES).components;
+  assert.equal(
+    kept["notes-feedback"],
+    undefined,
+    "excluded from the registry",
+  );
+
+  var warnings = suppressDeniedPageCollisions(
+    [
+      {
+        code: "SLUG_COLLISION_DROPPED",
+        slug: "notes-feedback",
+        droppedPage: page,
+        droppedPageRaw: "     " + page,
+      },
+      {
+        code: "SLUG_COLLISION_DROPPED",
+        slug: "snowflake",
+        droppedPage: "Third-party logos",
+        droppedPageRaw: "Third-party logos",
+      },
+    ],
+    DENIED_PAGES,
+  );
+  assert.deepEqual(
+    warnings.map(function (w) {
+      return w.slug;
+    }),
+    ["snowflake"],
+    "a collision on the denied page is suppressed, a real one survives",
   );
 });

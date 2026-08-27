@@ -13,7 +13,7 @@
 // components, of which ~15 overlap with authored slugs.
 //
 // Known debt (NOT solved here): the F1 alias mismatch — 5 _meta slugs
-// alias to multi-key registry entries (e.g. `tag` ↔ `tag-default`,
+// alias to multi-key registry entries (e.g. `tag` ↔ `tag-read-only`,
 // `tag-interactive`, etc.); 6 _meta slugs don't appear in DS Kit
 // registry at all. Ghost rendering is by registry slug; this surfaces
 // the alias question to the author rather than solving it implicitly.

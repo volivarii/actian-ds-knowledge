@@ -692,7 +692,7 @@ function collectDeltas(cNode, vNode, path, acc) {
   var d = diffAppearance(cNode.appearance, vNode.appearance);
   // Instance nodes are R1 leaves whose rendered content IS the referenced
   // component; a variant that points the instance at a different component
-  // (e.g. tag-default swapping the per-Type icon across its Status-error /
+  // (e.g. tag-read-only swapping the per-Type icon across its Status-error /
   // -warning / -success values) is a content delta, not a
   // paint delta. Capture it as a slug swap so consumers can render the right
   // glyph per variant. Only a RESOLVED variant slug is captured: an

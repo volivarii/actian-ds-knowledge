@@ -1356,7 +1356,7 @@ test("run(): an unmatchable family member captures NOTHING and is reported", asy
     fileKey: "FILEKEY",
     components: {
       // "Tag, Default" is called Read-Only in the guidelines: no honest match.
-      "tag-default": {
+      "tag-read-only": {
         name: "Tag, Default",
         nodeId: "1:0",
         page: "Tag: Item type, Read-only, Interactive",
@@ -1387,11 +1387,11 @@ test("run(): an unmatchable family member captures NOTHING and is reported", asy
   });
   assert.deepEqual(result.captured, ["tag-interactive/preview"]);
   assert.ok(
-    !fs.existsSync(path.join(dir, "tag-default")),
+    !fs.existsSync(path.join(dir, "tag-read-only")),
     "no wrong image is written for the unmatched slug",
   );
   assert.ok(
-    result.missing.indexOf("tag-default") !== -1,
+    result.missing.indexOf("tag-read-only") !== -1,
     "the unmatched slug is reported as missing, not silently skipped",
   );
 });

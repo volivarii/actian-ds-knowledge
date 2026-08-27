@@ -79,6 +79,10 @@ function setupDirs() {
     pkgPath: pkgPath,
     opts: {
       keys: { dsKit: "DS_KEY", fmKit: "FM_KEY", metaKit: "META_KEY" },
+      // Confine EVERY path, not just the outputs. Without pluginDir the run
+      // reads the real repo's components/src config (deferrals, page
+      // overrides), which is a producer test driving the real producer.
+      pluginDir: tmpdir,
       outputDir: path.join(tmpdir, "components", "dist", "registries"),
       releaseNotesDir: path.join(tmpdir, "release-notes"),
       artifactsDir: path.join(tmpdir, "tmp-artifacts"),

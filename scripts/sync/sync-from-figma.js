@@ -104,7 +104,27 @@ function filterStandalones(componentsList) {
 // object) instead of surfacing as an orphan "Local components" category.
 var DENIED_PAGES = ["Local components"];
 
-// Remove components whose resolved Figma `page` is in `deniedPages`. Operates on
+// One predicate for "is this page denied", shared by the exclusion below and by
+// suppressDeniedPageCollisions, so the two can never disagree about what the
+// list means.
+//
+// Matches the name exactly, or as a leading whole word. Exact match alone is why
+// this list silently stopped applying: the page grew from "Local components" to
+// "Local components + templates", `includes` stopped matching, and Notes/Feedback
+// published into the registry under a "Local components + templates" category of
+// its own. A denied page that gains a suffix is still the denied page. The word
+// boundary is required (`d + " "`), so "Local components" does not deny a page
+// that merely starts with those characters.
+function isDeniedPage(pageName, deniedPages) {
+  if (pageName == null) return false;
+  var page = String(pageName).trim();
+  return (deniedPages || []).some(function (denied) {
+    var d = String(denied).trim();
+    return d.length > 0 && (page === d || page.indexOf(d + " ") === 0);
+  });
+}
+
+// Remove components whose resolved Figma `page` is denied. Operates on
 // a transformed registry ({ components: { slug: { page, ... } } }) and returns a
 // new object; the input is not mutated. Unknown/missing pages are kept.
 function excludeDeniedPages(registry, deniedPages) {
@@ -113,7 +133,7 @@ function excludeDeniedPages(registry, deniedPages) {
   var kept = {};
   Object.keys(registry.components).forEach(function (slug) {
     var entry = registry.components[slug];
-    if (entry && denied.includes(entry.page)) return;
+    if (entry && isDeniedPage(entry.page, denied)) return;
     kept[slug] = entry;
   });
   var out = Object.assign({}, registry, { components: kept });
@@ -146,9 +166,10 @@ function suppressDeniedPageCollisions(warnings, deniedPages) {
     // night forever. An alarm that shouts about a non-problem is how the section
     // that catches a REAL loss gets scrolled past.
     if (w.severity === "namespaced") return false;
-    return !denied.some(function (p) {
-      return p === w.droppedPage || p === w.droppedPageRaw;
-    });
+    return !(
+      isDeniedPage(w.droppedPage, denied) ||
+      isDeniedPage(w.droppedPageRaw, denied)
+    );
   });
 }
 
@@ -2224,6 +2245,7 @@ module.exports = {
   run: run,
   parseArgs: parseArgs,
   excludeDeniedPages: excludeDeniedPages,
+  isDeniedPage: isDeniedPage,
   suppressDeniedPageCollisions: suppressDeniedPageCollisions,
   DENIED_PAGES: DENIED_PAGES,
   loadPageOverrides: loadPageOverrides,

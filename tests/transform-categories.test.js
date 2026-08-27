@@ -549,7 +549,7 @@ test("transform-registry — multiple components on the same page share the page
   // Simulate a page like "✍️ Tag (Identification key)" with 3 components on it
   var componentSets = [
     {
-      name: "Tag default",
+      name: "Tag, read only",
       key: "k-tag-d",
       node_id: "1:1",
       description: "",
@@ -596,8 +596,8 @@ test("transform-registry — multiple components on the same page share the page
     documentChildren: documentChildren,
   });
 
-  assert.equal(registry.components["tag-default"].category, "Data Display");
-  assert.equal(registry.components["tag-default"].status, undefined);
+  assert.equal(registry.components["tag-read-only"].category, "Data Display");
+  assert.equal(registry.components["tag-read-only"].status, undefined);
   assert.equal(registry.components["tag-interactive"].category, "Data Display");
   assert.equal(registry.components["tag-interactive"].status, undefined);
   assert.equal(registry.components["tag-status"].category, "Data Display");
@@ -737,8 +737,8 @@ test("transform-registry — components get section + group from page", function
   // Tag variants into one navigation node.
   var componentSets = [
     {
-      name: "Tag, Default",
-      key: "k-tag-default",
+      name: "Tag, read only",
+      key: "k-tag-read-only",
       node_id: "1:1",
       description: "",
       containing_frame: { pageName: "✍️ Tag (Identification key)" },
@@ -777,10 +777,10 @@ test("transform-registry — components get section + group from page", function
   });
 
   // Both Tag variants share the same section, category, AND group.
-  assert.equal(registry.components["tag-default"].section, "Components");
-  assert.equal(registry.components["tag-default"].category, "Data Display");
+  assert.equal(registry.components["tag-read-only"].section, "Components");
+  assert.equal(registry.components["tag-read-only"].category, "Data Display");
   assert.equal(
-    registry.components["tag-default"].group,
+    registry.components["tag-read-only"].group,
     "Tag (Identification key)",
   );
 
