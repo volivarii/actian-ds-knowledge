@@ -39,7 +39,7 @@ foundations_refs:
 
 # Data Display — design rationale
 
-Components in this category present information rather than collect it. Members (26): `avatar`, `badge`, `bar-graph`, `card`, `card-for-grouped-content`, `card-for-perimeter`, `collapse-accordion`, `data-viz-legend-item`, `digram-item-types`, `digram-topic`, `glossary-item-hierarchy-diagram`, `line-graph`, `lineage-connecting-line`, `lineage-grouped-node`, `lineage-individual-node`, `metamodel`, `page-header`, `pagination`, `progress-bar-small`, `search-result-card`, `segmented-control`, `table`, `tag-interactive`, `tag-item-type`, `tag-read-only`, `toolbar`.
+Components in this category present information rather than collect it.
 
 ## Reference patterns
 
