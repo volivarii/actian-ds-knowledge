@@ -20,6 +20,26 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The editor's Coverage dashboard counts components, not every asset in the library.**
+  ([#598](https://github.com/volivarii/actian-ds-knowledge/pull/598)) It offered "Start authoring"
+  on 90 partner logos and the five breakpoint grid sizes, and counted them in its denominator: **178
+  eligible where 83 is the real number**, so `54 authored` was reported as 54/178 and every
+  percentage on that screen read as less than half of what it was.
+
+  The predicate was not the problem. `EXCLUDED_CATEGORY_LABELS` named the categories that existed
+  when it was written, so a category Figma added afterwards was silently eligible, and two arrived
+  (`Third-party logos`, `Breakpoint, grid & structure`). It was stale a second way too, excluding
+  `"Local components"` after that page became `"Local components + templates"` -- the same rename
+  that had already stopped `DENIED_PAGES` applying in the sync (#596).
+
+  Eligibility now reads the registry's own `section` field, which Figma maintains and which every
+  `dskit.json` entry carries: Components, versus Foundations for icons and grids, Brand Assets for
+  logos and illustrations. Nothing needs updating when Figma adds a category. The graph rule stays
+  label-based on purpose, because graph component nodes carry no `section`, and that gap is now
+  stated where the two rules sit. The new gate runs against the shipped registry rather than a
+  fixture, since the old rule passed every unit test it had while 95 non-components reached the
+  dashboard.
+
 - **The v2.7.0 reorg is carried through, so the dist stops disagreeing with the code.**
   ([#596](https://github.com/volivarii/actian-ds-knowledge/pull/596)) Since #594 the sync read
   `status` from the component name and refused an emoji in a name, while `main` went on shipping
