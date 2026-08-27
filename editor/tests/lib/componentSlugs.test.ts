@@ -9,7 +9,10 @@ function b64(s: string): string {
 
 function fakeGh(opts: {
   dirs: Array<{ name: string; type: "dir" | "file" }>;
-  registry?: Record<string, { name: string; category?: string }>;
+  registry?: Record<
+    string,
+    { name: string; category?: string; section?: string }
+  >;
 }) {
   return {
     repos: {
@@ -39,9 +42,20 @@ test("loadComponentSlugs: union of authored dirs + registry-eligible slugs, sort
       { name: "guidelines", type: "dir" },
     ],
     registry: {
-      button: { name: "Button", category: "Action" },
-      "data-grid": { name: "Data grid", category: "Data Display" },
-      "icon-arrow-up": { name: "Arrow", category: "Icons" }, // excluded
+      // `section` is what decides eligibility, so the fixtures carry the one the
+      // real registry gives these entries. An icon is Foundations, not a
+      // Components entry with an "Icons" category.
+      button: { name: "Button", category: "Action", section: "Components" },
+      "data-grid": {
+        name: "Data grid",
+        category: "Data Display",
+        section: "Components",
+      },
+      "icon-arrow-up": {
+        name: "Arrow",
+        category: "Icons",
+        section: "Foundations",
+      }, // excluded
     },
   });
   const slugs = await loadComponentSlugs(gh);

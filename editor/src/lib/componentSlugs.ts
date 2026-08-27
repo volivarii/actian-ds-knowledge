@@ -12,7 +12,7 @@
 
 import type { Octokit } from "@octokit/rest";
 import { getTextFile, listDirectories } from "../app/githubApi";
-import { EXCLUDED_CATEGORY_LABELS } from "../substrate/graphEligibility";
+import { isRegistryComponent } from "../substrate/graphEligibility";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const CACHE_KEY = "editor:component-slugs:v1";
@@ -45,12 +45,11 @@ async function loadRegistryEligibleSlugs(gh: Octokit): Promise<string[]> {
   try {
     const text = await getTextFile(gh, DSKIT_REGISTRY_PATH);
     const parsed = JSON.parse(text) as {
-      components?: Record<string, { category?: string }>;
+      components?: Record<string, { section?: string }>;
     };
     const out: string[] = [];
     for (const [slug, entry] of Object.entries(parsed.components ?? {})) {
-      const cat = entry?.category ?? "uncategorized";
-      if (!EXCLUDED_CATEGORY_LABELS.has(cat)) out.push(slug);
+      if (isRegistryComponent(entry)) out.push(slug);
     }
     return out;
   } catch {

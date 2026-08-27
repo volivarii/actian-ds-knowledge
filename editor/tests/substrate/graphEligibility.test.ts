@@ -1,9 +1,12 @@
 // tests/substrate/graphEligibility.test.ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import {
   EXCLUDED_CATEGORY_SLUGS,
-  EXCLUDED_CATEGORY_LABELS,
+  COMPONENT_SECTION,
+  isRegistryComponent,
   excludedNodeIds,
   eligibleSubset,
 } from "../../src/substrate/graphEligibility";
@@ -38,10 +41,63 @@ const edges: GraphEdgeRaw[] = [
   },
 ];
 
-test("policy sets carry both representations of the same exclusion", () => {
+test("the graph rule stays label-based, because graph nodes carry no section", () => {
   assert.ok(EXCLUDED_CATEGORY_SLUGS.has("icons"));
-  assert.ok(EXCLUDED_CATEGORY_LABELS.has("Icons"));
-  assert.ok(EXCLUDED_CATEGORY_LABELS.has("uncategorized"));
+});
+
+test("isRegistryComponent reads the section, not the category", () => {
+  assert.equal(isRegistryComponent({ section: COMPONENT_SECTION }), true);
+  assert.equal(isRegistryComponent({ section: "Foundations" }), false);
+  assert.equal(isRegistryComponent({ section: "Brand Assets" }), false);
+  assert.equal(isRegistryComponent({ section: "Other Resources" }), false);
+  // An entry with no section is not a component. The predecessor defaulted a
+  // missing category to "uncategorized" and excluded that, so this preserves the
+  // one thing the old rule got right.
+  assert.equal(isRegistryComponent({}), false);
+  assert.equal(isRegistryComponent(undefined), false);
+  assert.equal(isRegistryComponent(null), false);
+});
+
+// Against the real registry, not a fixture. The rule this replaced passed every
+// unit test it had while letting 95 non-components into the Coverage dashboard,
+// because the defect was never in the predicate: it was in the list the
+// predicate consulted going stale against data nobody re-read.
+test("no non-component section reaches the eligible set, on the shipped registry", () => {
+  const registryPath = path.join(
+    import.meta.dirname,
+    "../../../components/dist/registries/dskit.json",
+  );
+  const registry = JSON.parse(fs.readFileSync(registryPath, "utf8")) as {
+    components?: Record<string, { section?: string; category?: string }>;
+  };
+  const entries = Object.entries(registry.components ?? {});
+  assert.ok(entries.length > 0, "the registry must not be empty");
+
+  const eligible = entries.filter(([, e]) => isRegistryComponent(e));
+  const leaked = eligible.filter(([, e]) => e.section !== COMPONENT_SECTION);
+  assert.deepEqual(leaked, [], "only the Components section may be eligible");
+
+  // Every entry carries a section, which is what makes the rule total. If Figma
+  // ever ships one without, this fails rather than silently excluding it.
+  const sectionless = entries.filter(([, e]) => !e.section);
+  assert.deepEqual(
+    sectionless.map(([slug]) => slug),
+    [],
+    "every registry entry must carry a section",
+  );
+
+  // The two families that leaked, named so the regression cannot return quietly.
+  const byCategory = (label: string) =>
+    eligible.filter(([, e]) => e.category === label).map(([slug]) => slug);
+  assert.deepEqual(byCategory("Third-party logos"), []);
+  assert.deepEqual(byCategory("Breakpoint, grid & structure"), []);
+  assert.deepEqual(byCategory("Icons"), []);
+
+  // And the set is not vacuously empty: real components still qualify.
+  const slugs = new Set(eligible.map(([slug]) => slug));
+  ["button", "table", "modal"].forEach((slug) =>
+    assert.ok(slugs.has(slug), `${slug} must stay eligible`),
+  );
 });
 
 test("excludedNodeIds drops the asset category AND its in_category members", () => {
