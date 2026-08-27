@@ -79,7 +79,7 @@ test("no non-component section reaches the eligible set, on the shipped registry
 
   // Every entry carries a section, which is what makes the rule total. If Figma
   // ever ships one without, this fails rather than silently excluding it.
-  const sectionless = entries.filter(([slug]) => !registry.components![slug].section);
+  const sectionless = entries.filter(([, e]) => !e.section);
   assert.deepEqual(
     sectionless.map(([slug]) => slug),
     [],
