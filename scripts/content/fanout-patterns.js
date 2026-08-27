@@ -11,7 +11,7 @@
 // Routing is author-controlled via two optional frontmatter fields on each pattern .md:
 //
 //   relatedComponents: [text-input, checkbox, ...]   # explicit slugs
-//   relatedCategories: [form-input-selection]         # all components in a category
+//   relatedCategories: [form]                        # all components in a category
 //
 // Either, both, or neither may be present. Neither = pattern stays global-only
 // (existing behavior — no breaking change for unmodified pattern files).

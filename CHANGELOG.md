@@ -41,11 +41,18 @@ Each entry links its pull request. Dates are the merge date (UTC).
   once the rosters are gone. The other nine are named in genuine rationale or in the renderer
   switch and are unaffected.
 
-  Removing the rosters left the same stale slugs standing in the rationale bullets, which ship in
-  the dist MDs as guidance. `navigation` now names `breadcrumb`, the slug the registry carries.
-  The `form` a11y bullet drops `search-filters`, which no registry carries and which the identity
-  ledger has no successor for, so no replacement is invented. `overlays` still names
-  `chat-with-ai-steward`, held pending the decision on the archived AI steward.
+  Removing the rosters left stale slugs standing in the rationale bullets, which ship in the dist
+  MDs as guidance. `navigation` now names `breadcrumb`, the slug the registry carries.
+  `search-filters` and `chat-with-ai-steward` stay. Neither is in `categories.json`, but both are
+  live authored guidelines under `components/src/` that ship to `components/dist/guidelines/`, and
+  their bullets are the only record of those a11y requirements. Registry membership and authored
+  existence are different questions, and whether guidance is orphaned turns on the second.
+
+  The worked example in `content/src/AUTHORING.md` named `form-input-selection` and `input`, which
+  `resolveFanoutSet` rejects as an unknown category and an unknown component slug, so an author
+  copying the documented example failed a required check. It now reads `form` and `text-input`.
+  `dropdown-select` in that example is valid and stays: the registry key `dropdown-select-default`
+  resolves to it through the alias map.
 
   `components.categoryDefaults` in `paths-manifest.json` carried the same defect in the contract
   consumers read: its description enumerated the six categories and named `form-input-selection`.
