@@ -36,7 +36,7 @@ foundations_refs:
 
 # Navigation — design rationale
 
-Components in this category move the user between contexts (pages, sections, steps). Members: `account-dropdown`, `app-switcher-dropdown`, `breadcrumbs`, `global-header`, `notification-dropdown`, `side-nav`, `stepper`, `tabs`, `whats-new-dropdown`.
+Components in this category move the user between contexts (pages, sections, steps).
 
 ## Reference patterns
 

@@ -20,6 +20,27 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **Category membership is read from the registry, not restated in prose.** Six category files
+  each carried a hand-typed `Members:` roster in the MD body, and that roster shipped in
+  `components/dist/categories/<slug>.md`. It had drifted by **17 slugs**: `form` listed 11 members
+  where the registry carries 20, omitting `checkbox-card`, `checkbox-group`, `dropdown`, `field`,
+  `label`, `message`, `radio-card`, `radio-group`, `text-area`, `text-input` and
+  `textfield-buttons` while still naming `input` and `search-filters`, which the registry does not
+  carry; `navigation` named `breadcrumbs` for `breadcrumb` and omitted `scroll-bar`; `overlays`
+  still named `chat-with-ai-steward`.
+
+  Membership is published in `components/dist/categories.json`, auto-synced from the Figma Pages
+  panel, and the bodies now carry design rationale only. `AUTHORING.md` stated that the rosters
+  were derived and reshuffled automatically; no generator emitted them, so it now states the rule
+  that holds and names the file to read. Its filename table named `form-input-selection.md` where
+  the file is `form.md`.
+
+  The rosters also held the sync back. `rename-preconditions` scans `components/src/categories`, so
+  a slug surviving only in a stale roster kept a rename breaking. Of the eleven renames blocked in
+  the 2026-08-27 sync, `data-viz-legend-item` and `glossary-item-hierarchy-diagram` are absorbable
+  once the rosters are gone. The other nine are named in genuine rationale or in the renderer
+  switch and are unaffected.
+
 - **The editor's Coverage dashboard counts components, not every asset in the library.**
   ([#598](https://github.com/volivarii/actian-ds-knowledge/pull/598)) It offered "Start authoring"
   on 90 partner logos and the five breakpoint grid sizes, and counted them in its denominator: **178

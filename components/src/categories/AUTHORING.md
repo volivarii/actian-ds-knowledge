@@ -11,13 +11,13 @@ Six categories, one MD file each. Filenames match the `slug` in frontmatter.
 | File | Figma category label |
 |---|---|
 | `action.md` | Action |
-| `form-input-selection.md` | Form (input & selection) |
+| `form.md` | Form |
 | `navigation.md` | Navigation |
 | `data-display.md` | Data Display |
 | `feedback.md` | Feedback |
 | `overlays.md` | Overlays |
 
-Membership lists are derived from `components/dist/categories.json` (auto-synced from the Figma Pages panel). If a member moves to a different category in Figma, the membership list reshuffles automatically — but you may want to update the rationale prose in the MD body.
+Membership is published in `components/dist/categories.json`, auto-synced from the Figma Pages panel, and in the per-category `components` array it carries. Read it there. The MD body carries design rationale only and must not restate the member list: a restated list goes stale on the next Figma rename, ships that staleness in `components/dist/categories/<slug>.md`, and blocks the sync from absorbing the rename.
 
 ## Required frontmatter schema
 
@@ -138,7 +138,7 @@ If a needed slug doesn't exist upstream, do one of:
 
 ## Worked example
 
-See `form-input-selection.md` for the canonical worked example. It shows:
+See `form.md` for the canonical worked example. It shows:
 
 - A 7-part anatomy with 2 optional parts
 - 3 variant axes (State / Size / Label position)
