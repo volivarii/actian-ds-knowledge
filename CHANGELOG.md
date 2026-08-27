@@ -20,7 +20,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
-- **Category membership is read from the registry, not restated in prose.** Six category files
+- **Category membership is read from the registry, not restated in prose.**
+  ([#599](https://github.com/volivarii/actian-ds-knowledge/pull/599)) Six category files
   each carried a hand-typed `Members:` roster in the MD body, and that roster shipped in
   `components/dist/categories/<slug>.md`. It had drifted by **17 slugs**: `form` listed 11 members
   where the registry carries 20, omitting `checkbox-card`, `checkbox-group`, `dropdown`, `field`,
