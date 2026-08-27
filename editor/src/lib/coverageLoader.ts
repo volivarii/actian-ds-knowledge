@@ -6,11 +6,12 @@
 // components that have no _meta.yml yet. Ghost rows offer the
 // Start-authoring action (stub _meta.yml → submission cart).
 //
-// Eligibility filter: registry categories in EXCLUDED_CATEGORY_LABELS
-// (shared from src/substrate/graphEligibility.ts — Icons, Product logos,
-// Illustrations & graphics, Local components, White-label services,
-// uncategorized) are excluded — leaves ~74 "eligible non-icon" registry
-// components, of which ~15 overlap with authored slugs.
+// Eligibility filter: `isRegistryComponent` (shared from
+// src/substrate/graphEligibility.ts) keeps only entries whose registry `section`
+// is "Components". Icons and grids are Foundations, logos and illustrations are
+// Brand Assets, and none of them are components awaiting guidance. That is 73
+// eligible registry components today, and the number follows Figma rather than a
+// list somebody has to remember to update.
 //
 // Known debt (NOT solved here): the F1 alias mismatch — 5 _meta slugs
 // alias to multi-key registry entries (e.g. `tag` ↔ `tag-read-only`,
@@ -23,7 +24,7 @@ import { parse as parseYaml } from "yaml";
 import { listDirectories, getTextFile } from "../app/githubApi";
 import { domainFileName } from "./workspaceState";
 import { memoizeByInstance } from "./memoizeByInstance";
-import { EXCLUDED_CATEGORY_LABELS } from "../substrate/graphEligibility";
+import { isRegistryComponent } from "../substrate/graphEligibility";
 
 export const DOMAINS = [
   "content",
@@ -70,6 +71,7 @@ interface DskitEntry {
   name: string;
   category?: string;
   group?: string;
+  section?: string;
 }
 
 // Memoized per Octokit instance. A full load is ~30-90 GitHub API calls,
@@ -126,8 +128,7 @@ async function loadDskitEligible(
     };
     const out: Record<string, DskitEntry> = {};
     for (const [slug, entry] of Object.entries(parsed.components ?? {})) {
-      const cat = entry?.category ?? "uncategorized";
-      if (EXCLUDED_CATEGORY_LABELS.has(cat)) continue;
+      if (!isRegistryComponent(entry)) continue;
       out[slug] = entry;
     }
     return out;

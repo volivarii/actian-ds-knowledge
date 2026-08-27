@@ -5,7 +5,7 @@
 //   1. Category-based: Icons, product logos, illustrations, local components,
 //      and white-label services — and every component wired to them via an
 //      `in_category` edge — are excluded. Same policy as the DS Kit registry
-//      filter (EXCLUDED_CATEGORY_LABELS, shared by coverageLoader).
+//      filter (isRegistryComponent, shared by coverageLoader).
 //
 //   2. Degree-0 component nodes: component nodes that have zero edges (they
 //      appear as neither source nor target of any edge) are excluded. This
@@ -16,7 +16,9 @@
 //
 // Together these rules prevent asset-set noise from flooding the orphan table
 // and the title search. The exported constants are the registry-LABEL
-// representation; EXCLUDED_CATEGORY_SLUGS is the graph `category:<slug>` form.
+// representation. It stays label-based because graph component nodes carry no
+// `section` field, so the registry rule below cannot reach them; that gap is
+// the reason the two rules are not one.
 // Browser-safe: only the baked JSON via taxonomyAssets; never node:fs.
 import {
   graphNodes,
@@ -34,14 +36,31 @@ export const EXCLUDED_CATEGORY_SLUGS: ReadonlySet<string> = new Set([
   "white-label-services",
 ]);
 
-export const EXCLUDED_CATEGORY_LABELS: ReadonlySet<string> = new Set([
-  "Icons",
-  "Product logos",
-  "Illustrations & graphics",
-  "Local components",
-  "White-label services",
-  "uncategorized",
-]);
+// The registry's own answer to "is this a component", for the surfaces that read
+// dskit.json rather than the graph.
+//
+// This replaced a hand-maintained set of excluded category LABELS, which is the
+// wrong shape for the question: it named the categories that existed when it was
+// written, Figma has added categories since, and a category the list does not
+// name is silently eligible. By 2026-08-26 that had put 90 `Third-party logos`
+// and the 5 `Breakpoint, grid & structure` sizes into the Coverage dashboard as
+// components awaiting guidance, taking its denominator from 73 to 168 and
+// understating every coverage percentage by more than half. It was also stale in
+// a second way: it excluded "Local components", and that Figma page had become
+// "Local components + templates".
+//
+// `section` is the field Figma already maintains, it is total (every dskit.json
+// entry carries one), and its four values are Components / Foundations /
+// Brand Assets / Other Resources. Icons and grids are Foundations; logos and
+// illustrations are Brand Assets. Nothing here needs updating when Figma adds a
+// category.
+export const COMPONENT_SECTION = "Components";
+
+export function isRegistryComponent(
+  entry: { section?: string } | null | undefined,
+): boolean {
+  return entry?.section === COMPONENT_SECTION;
+}
 
 export interface GraphSubset {
   nodes: GraphNodeRaw[];

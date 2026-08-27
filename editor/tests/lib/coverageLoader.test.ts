@@ -15,7 +15,10 @@ function b64(s: string): string {
 function fakeGh(opts: {
   dirs: Array<{ name: string; type: "dir" | "file" }>;
   files: Record<string, string>;
-  registry?: Record<string, { name: string; category?: string }>;
+  registry?: Record<
+    string,
+    { name: string; category?: string; section?: string }
+  >;
 }) {
   return {
     repos: {
@@ -209,12 +212,27 @@ test("loadCoverage: merges authored + unstarted from registry, marks origins", a
     files: FIXTURE_FILES,
     registry: {
       // overlaps with authored
-      button: { name: "Button", category: "Action" },
+      button: { name: "Button", category: "Action", section: "Components" },
       // new ghosts
-      "data-grid": { name: "Data grid", category: "Data Display" },
-      tooltip: { name: "Tooltip", category: "Overlays" },
-      // excluded by category
-      "icon-arrow-up": { name: "Arrow up", category: "Icons" },
+      "data-grid": {
+        name: "Data grid",
+        category: "Data Display",
+        section: "Components",
+      },
+      tooltip: { name: "Tooltip", category: "Overlays", section: "Components" },
+      // excluded by SECTION: an icon is Foundations, a logo is Brand Assets.
+      // Both used to be excluded by naming their category in a hand-kept list,
+      // which is what let a category the list did not name through.
+      "icon-arrow-up": {
+        name: "Arrow up",
+        category: "Icons",
+        section: "Foundations",
+      },
+      snowflake: {
+        name: "Snowflake",
+        category: "Third-party logos",
+        section: "Brand Assets",
+      },
     },
   });
   const rows = await loadCoverage(gh);
@@ -262,8 +280,12 @@ test("summarize: counts authored vs unstarted rows separately", async () => {
     dirs: FIXTURE_DIRS,
     files: FIXTURE_FILES,
     registry: {
-      "data-grid": { name: "Data grid", category: "Data Display" },
-      tooltip: { name: "Tooltip", category: "Overlays" },
+      "data-grid": {
+        name: "Data grid",
+        category: "Data Display",
+        section: "Components",
+      },
+      tooltip: { name: "Tooltip", category: "Overlays", section: "Components" },
     },
   });
   const rows = await loadCoverage(gh);
