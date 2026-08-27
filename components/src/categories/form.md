@@ -60,4 +60,4 @@ Inputs and selections converge on Label → Control → Helper → Validation as
 
 * Motion is minimal by design — form interactions should feel instantaneous.
 
-* For `search` + `search-filters`, the `aria-labels` ref should be tightened to live-region announcement of result counts.
+* For `search`, the `aria-labels` ref should be tightened to live-region announcement of result counts.

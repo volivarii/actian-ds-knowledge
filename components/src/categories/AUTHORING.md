@@ -17,7 +17,7 @@ Six categories, one MD file each. Filenames match the `slug` in frontmatter.
 | `feedback.md` | Feedback |
 | `overlays.md` | Overlays |
 
-Membership is published in `components/dist/categories.json`, auto-synced from the Figma Pages panel, and in the per-category `components` array it carries. Read it there. The MD body carries design rationale only and must not restate the member list: a restated list goes stale on the next Figma rename, ships that staleness in `components/dist/categories/<slug>.md`, and blocks the sync from absorbing the rename.
+Membership is published in `components/dist/categories.json`, auto-synced from the Figma Pages panel and keyed by the Figma category label (`Data Display`, `Form`), in the per-category `components` array. Read it there, and note it also carries groups that have no MD file, such as Icons and Third-party logos. The MD body carries design rationale only and must not restate the member list: a restated list goes stale on the next Figma rename, ships that staleness in `components/dist/categories/<slug>.md`, and blocks the sync from absorbing the rename.
 
 ## Required frontmatter schema
 

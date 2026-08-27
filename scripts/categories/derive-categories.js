@@ -235,7 +235,7 @@ function updatePathsManifest(manifestPath, slugs, opts) {
     type: "json",
     origin: "ci",
     description:
-      "Per-category defaults (Phase 2 v2). 6 categories: action, form-input-selection, navigation, data-display, feedback, overlays. See also bundle entry components.categoryDefaults.bundle for the roll-up. Renamed from components.categoryDefaults in v0.5.1 to honor leaf-XOR-namespace manifest convention.",
+      "Per-category defaults (Phase 2 v2), one leaf per authored category. The category set and its membership are published in components/dist/categories.json, auto-synced from the Figma Pages panel; this description does not restate them. See also bundle entry components.categoryDefaults.bundle for the roll-up. Named to honor the leaf-XOR-namespace manifest convention.",
   };
   manifest.collections["components.categoriesSrc"] = {
     dir: "components/src/categories",
