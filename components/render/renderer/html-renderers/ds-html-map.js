@@ -13,6 +13,57 @@
     (typeof window !== "undefined" && window.fmHtmlMap) ||
     (typeof require !== "undefined" && require("./fm-html-map")) ||
     {};
+  // Retired slug -> current slug, derived from the identity ledger by
+  // scripts/render/derive-retired-slugs.js. Same supply idiom as `fm` above,
+  // because this file is UMD and there is no fs in the browser. An empty map is
+  // a legitimate state (no renames recorded yet), so a missing module degrades
+  // to "resolve nothing" rather than throwing: an unresolved slug renders a
+  // chip, which is what it did before this existed.
+  /**
+   * resolveSlug(slug) - the retired name a component answers to now, or the
+   * slug unchanged.
+   *
+   * Exported because renderDSComponent is NOT the only place a slug is keyed.
+   * ds-anatomy-map's collectDsSlugs and collectDsSlugVariants key the injected
+   * doc and variant-style maps by the AUTHORED slug, and the renderer then
+   * looks them up under the RESOLVED one, so unless all three agree a renamed
+   * anatomy-delegated component renders with no doc and no variant colours: it
+   * chips, or it paints the wrong ones, silently. That covers far more slugs
+   * than the switch does, so one shared resolver is the only safe shape.
+   *
+   * hasOwnProperty, not a truthiness test: the generated map is null-prototype,
+   * but it can also arrive through window.dsRetiredSlugs as a plain object,
+   * where "constructor" or "toString" resolve through Object.prototype to
+   * something truthy and put a stringified function in the markup.
+   */
+  function resolveSlug(slug) {
+    if (!slug || typeof slug !== "string") return slug;
+    return Object.prototype.hasOwnProperty.call(RETIRED_SLUGS, slug)
+      ? RETIRED_SLUGS[slug]
+      : slug;
+  }
+
+  // Retired slug -> current slug, derived from the identity ledger by
+  // scripts/render/derive-retired-slugs.js. Same supply idiom as `fm` above,
+  // because this file is UMD and there is no fs in the browser.
+  //
+  // The require is WRAPPED: `require` throws on a missing module before `||` can
+  // fall through, and this file is vendored into consumers that prune their
+  // install trees for size, so an absent sibling would take out the entire
+  // renderer at load rather than one component. An empty map is a legitimate
+  // state (no renames recorded yet) and degrades to resolving nothing, which is
+  // what the renderer did before this existed.
+  var RETIRED_SLUGS = (function () {
+    var supplied = typeof window !== "undefined" && window.dsRetiredSlugs;
+    if (!supplied && typeof require !== "undefined") {
+      try {
+        supplied = require("./ds-retired-slugs");
+      } catch (e) {
+        supplied = null;
+      }
+    }
+    return (supplied && supplied.RETIRED_SLUGS) || {};
+  })();
   // The `esc`/`parseVariant`/`normalizeProps` fallbacks below are intentional
   // inline mirrors of fm-html-map's helpers, kept for the browser-without-
   // preloaded-fm case (no window.fmHtmlMap and no require). Do NOT delete them
@@ -372,6 +423,21 @@
   function renderDSComponent(node) {
     node = node || {};
     var slug = node.dsSlug || "";
+    // A slug is a NAME, not an identity: Figma renames components and the
+    // identity ledger records it. Every consumer that had authored the old name
+    // used to break on the refresh carrying the rename, and each repaired
+    // itself by hand-editing its own copy of the fact (the v0.34.156 refresh
+    // broke 37 tests in the plugin across goldens, worked examples, an fm map
+    // and two allowlists, for three renames). This is the one place every
+    // consumer's slug passes through and the repo that owns the ledger, so it
+    // resolves here, once, for all of them.
+    //
+    // RETIRED_SLUGS holds only retired names, and buildRenameIndex guarantees a
+    // retired name is never also a current one, so this cannot shadow a live
+    // slug and needs no guard. A DELETED component is absent from the map and
+    // still falls to the chip below, which is the honest answer: it has no
+    // successor to resolve to.
+    slug = resolveSlug(slug);
     var name = node.name || slug;
 
     // Graceful labeled chip — used for unmapped slugs (default case) AND as the
@@ -379,6 +445,19 @@
     // bad node must never blank the whole preview, so this interpreter (like
     // fm-html-map's) guarantees it never throws.
     function gracefulChip() {
+      // Deliberately reports the RESOLVED slug, not the authored one.
+      //
+      // A review asked for the authored name to ride along, on the grounds that
+      // a designer debugging a chip for content authored as `old-card` is told
+      // "card", which appears nowhere in their flow. Carrying it breaks the
+      // invariant this whole change rests on, that a retired slug renders
+      // EXACTLY what its current name renders, and the invariant is worth more:
+      // the resolved name is also the one a reader should act on, since it is
+      // what the component is called now and what any leaf would be keyed by.
+      //
+      // The case that argument was really about keeps its own name for free: a
+      // DELETED component resolves to nothing, so authored and resolved are the
+      // same string and the chip already names what was authored.
       return (
         '<span class="ds-component" data-slug="' +
         esc(slug) +
@@ -694,7 +773,8 @@
             (typeof window !== "undefined" && window.__dsVariantStyles) ||
             _serverVariantStyleMap ||
             {};
-          var _tagStyle = _styleMap[anatomyVariantKey("tag-read-only", v)] || "";
+          var _tagStyle =
+            _styleMap[anatomyVariantKey("tag-read-only", v)] || "";
           var _tagStyleAttr = _tagStyle
             ? ' style="' + esc(_tagStyle) + '"'
             : "";
@@ -788,7 +868,6 @@
             "</span></div>"
           );
         }
-
 
         case "digram-item-types": {
           var itItemType = v["Item type"] || "Category";
@@ -1527,7 +1606,6 @@
             "</div>"
           );
         }
-
 
         // ── Hi-Fi Slice 1 (Task 4): transform-target leaves ──────────────
         // These 8 slugs chip-degraded before. Each renders a tokens-only leaf
@@ -3181,6 +3259,7 @@
   ];
 
   exports.renderDSComponent = renderDSComponent;
+  exports.resolveSlug = resolveSlug;
   exports.setAnatomyDocMap = setAnatomyDocMap;
   exports.setVariantStyleMap = setVariantStyleMap;
   exports.renderIcon = renderIcon;

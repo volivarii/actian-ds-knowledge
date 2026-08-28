@@ -20,6 +20,37 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The renderer resolves a retired slug through the identity ledger, so a rename stops breaking
+  every consumer at once.** ([#601](https://github.com/volivarii/actian-ds-knowledge/pull/601)) `renderDSComponent` dispatches on
+  `node.dsSlug`, and a slug is a NAME, not an identity: Figma renames components and
+  `components/dist/identity.json` records it. Until now every consumer that had authored the old name
+  fell to a bare chip on the refresh carrying the rename, and each repaired its own copy of a fact
+  this repo owns. The v0.34.156 refresh (three renames: `tag-default` to `tag-read-only`,
+  `input-date` to `date-input`, `metamodel-widget` to `metamodel`) broke 37 tests in the plugin
+  across goldens, worked examples, an fm-to-ds map and two allowlists. The renderer is the one place
+  every consumer's slug passes through and this repo owns the ledger, so the resolution happens
+  there, once, for all of them: content authored against a retired name renders the component it
+  became. `RETIRED_SLUGS` is DERIVED from the ledger by `scripts/render/derive-retired-slugs.js`
+  through the substrate's own `buildRenameIndex`, because a hand-kept list of renames would be the
+  same defect one layer along; it is a sibling module rather than a ledger read because
+  `ds-html-map.js` is UMD and there is no `fs` in the browser, picked up by the same
+  `window.X || require("./x")` idiom the file already uses. `derive:render` runs it first, since
+  everything downstream renders through the map; `render-derive.yml` now triggers on the ledger,
+  because a rename recorded there is a real input and without that path the map would land stale; a
+  drift test fails when the committed map is not what the generator emits from the committed ledger;
+  and the generator refuses rather than writing an empty map when the ledger is missing, since an
+  empty map un-resolves every rename and looks exactly like "no renames yet". A DELETED component is
+  deliberately NOT absorbed: it has no successor to resolve to, so it still renders a chip carrying
+  the authored slug, and a consumer's own reporting names it. Papering over a deletion would be a
+  false all-clear. The resolution is applied at all THREE places a slug is keyed, not only the
+  renderer's dispatch: `ds-anatomy-map`'s `collectDsSlugs` and `collectDsSlugVariants` build the
+  injected doc and variant-style maps, and keying those by the authored name while the renderer
+  looked them up by the resolved one left a renamed anatomy-delegated component with no doc and no
+  variant colours, silently, across a far larger surface than the switch covers.
+  **Consumers that INLINE the renderer for the browser must add `ds-retired-slugs.js` to their
+  script list**: vendoring the file is not enough, and a host that misses it gets an empty map with
+  no error and no red check, so resolution simply stops.
+
 - **Category membership is read from the registry, not restated in prose.**
   ([#599](https://github.com/volivarii/actian-ds-knowledge/pull/599)) Six category files
   each carried a hand-typed `Members:` roster in the MD body, and that roster shipped in
