@@ -72,6 +72,36 @@ Each entry links its pull request. Dates are the merge date (UTC).
   failed capture phase and a component becoming unreachable in Figma look identical from the absence
   and have opposite fixes.
 
+### Fixed
+
+- **The rename precondition reads structure rather than raw text, so documenting a migration no longer
+  blocks it.** ([#611](https://github.com/volivarii/actian-ds-knowledge/pull/611)) `rename-preconditions.mentions()` scanned whole files, so a slug named in a
+  sentence blocked a rename exactly as a `case` label or a `components[]` entry did. The gate's own
+  rationale is about structured references: a case label feeds `RENDER_SLUGS`, and a `components[]`
+  entry makes `derive-graph` throw. Prose fails neither, so blocking on it prevented nothing while
+  penalising the habit this repo wants, since the more carefully somebody wrote a migration up, the
+  more firmly they blocked it. Closes #562.
+
+  Markdown surfaces are now read as frontmatter only, with the values of prose-bearing keys
+  (`description`, `note`, `when`, `label`, `summary`, `why`) skipped; JavaScript surfaces have their
+  comments stripped before the existing whole-token scan, so commentary about a past rename stops
+  counting while the case labels still do. A file whose frontmatter cannot be found falls back to the
+  old whole-text scan, keeping the property the module already had: unknown must not read as absent.
+
+  🔑 The lists are of PROSE keys, never an allow-list of slug-bearing fields. An unrecognised key is
+  still scanned and still blocks, so a new slug-bearing field cannot arrive as a silent all-clear,
+  which is the one failure this gate exists to prevent. Both guards were verified to still fire by
+  mutating them against the real repo.
+
+  Effect: six renames the ledger has carried since the 2026-08-31 sync stop being re-flagged as
+  breaking on every nightly run (`drawer-side-panel`, `tag-item-type`, `account-dropdown`,
+  `lineage-individual-node`, `notification`, `tag-read-only`). The sync evaluates absorption against
+  the whole identity ledger, not this run's diff, so those verdicts recurred nightly and would have
+  recurred indefinitely. `tooltip` stays blocked, correctly: `role="tooltip"` in `ds-html-map.js` and
+  a `tooltip` variant axis value in `overlays.md` are namespace collisions rather than slug
+  references, and teaching the gate to ignore something shaped exactly like a slug reference is how a
+  false all-clear gets built.
+
 ### Added
 
 - **A captured page recipe is readable in the editor, so the prose a review turns on is no longer
