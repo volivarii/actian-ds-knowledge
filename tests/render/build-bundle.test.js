@@ -157,10 +157,13 @@ test("buildBundle: a component with no guideline doc falls back to a humanized s
   var dir = freshDir();
   var result = buildBundle(dir);
   var accountDropdown = result.assets.find(function (a) {
-    return a.path === findCard(result.written, "account-dropdown");
+    return a.path === findCard(result.written, "global-header-account-dropdown");
   });
-  assert.ok(accountDropdown, "no asset entry for account-dropdown");
-  assert.equal(accountDropdown.name, "Account Dropdown");
+  assert.ok(
+    accountDropdown,
+    "no asset entry for global-header-account-dropdown",
+  );
+  assert.equal(accountDropdown.name, "Global Header Account Dropdown");
   assert.equal(
     accountDropdown.subtitle,
     "",

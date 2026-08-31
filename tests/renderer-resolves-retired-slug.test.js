@@ -90,7 +90,7 @@ test("the assemble-time collectors key by the RESOLVED slug, as the renderer loo
   delete require.cache[ANATOMY];
   try {
     global.window = {
-      dsRetiredSlugs: { RETIRED_SLUGS: { "old-tag": "tag-read-only" } },
+      dsRetiredSlugs: { RETIRED_SLUGS: { "old-tag": "read-only-tag" } },
     };
     var anatomy = require(ANATOMY);
     var authored = {
@@ -98,12 +98,12 @@ test("the assemble-time collectors key by the RESOLVED slug, as the renderer loo
     };
     assert.deepEqual(
       anatomy.collectDsSlugs(authored),
-      ["tag-read-only"],
+      ["read-only-tag"],
       "the doc map must be keyed by the slug the renderer will look up",
     );
     assert.deepEqual(
       anatomy.collectDsSlugVariants(authored),
-      [{ slug: "tag-read-only", variant: { Type: "Shared" } }],
+      [{ slug: "read-only-tag", variant: { Type: "Shared" } }],
       "a renamed delegated component must still be collected for its variant style",
     );
   } finally {

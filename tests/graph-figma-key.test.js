@@ -69,6 +69,17 @@ test("collectComponentsAndCategories: a keyless registry entry omits figmaKey/fi
 // tag-item-type). Not -7/+6: arrow-up (see graph-collisions.test.js) already
 // had a component node via fmkit, so its arrival in dskit only tie-breaks the
 // existing node's key, adding no new node.
+// 613 -> 614 with the 2026-08-31 wave of the same reorg (#589). Counted off the
+// two graphs, not off the release notes: THIRTEEN component nodes go and
+// FOURTEEN arrive, so +1.
+//
+// Only ELEVEN of the departures and TEN of the arrivals are renames, because
+// calendar, collapse and lineage are reoccupied rather than vacated: the name
+// stays in the node set while the component behind it changes, so it neither
+// leaves nor arrives. The renames therefore net -1, not zero, and the rest is
+// bar-graph and tooltip retiring against data-quality-checks-graph,
+// thumbs-up-filled, thumbs-down-filled and tooltip-default arriving.
+//
 // 611 -> 613 with the 2026-08-26 reorg carry-through (#589): FOUR nodes go
 // (chat-with-ai-steward unpublished, plus input-date, metamodel-widget and
 // tag-default, which are renames) and SIX arrive (date-input, metamodel and
@@ -80,7 +91,7 @@ test("graph/dist/graph.json: 613 component nodes carry figmaKey; non-component n
   var comps = g.nodes.filter(function (n) {
     return n.type === "component";
   });
-  assert.equal(comps.length, 613);
+  assert.equal(comps.length, 614);
   assert.ok(
     comps.every(function (n) {
       return (

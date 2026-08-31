@@ -117,7 +117,7 @@ test("digram-topic: escapes hostile Initials", function () {
 test("lineage-individual-node: default state, renders label and badge", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "lineage-individual-node",
+    dsSlug: "lineage",
     variant: "Type=Main item, State=Default, Fields=Collapsed",
     props: { Label: "customer_orders", "Item type initials": "DS" },
   });
@@ -138,7 +138,7 @@ test("lineage-individual-node: default state, renders label and badge", function
 test("lineage-individual-node: State=Selected adds the selected modifier", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "lineage-individual-node",
+    dsSlug: "lineage",
     variant: "Type=Main item, State=Selected, Fields=Collapsed",
     props: { Label: "orders" },
   });
@@ -152,7 +152,7 @@ test("lineage-individual-node: State=Selected adds the selected modifier", funct
 test("lineage-individual-node: Type=Sub item adds the sub modifier", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "lineage-individual-node",
+    dsSlug: "lineage",
     variant: "Type=Sub item, State=Default, Fields=Collapsed",
     props: { Label: "order_id" },
   });
@@ -162,7 +162,7 @@ test("lineage-individual-node: Type=Sub item adds the sub modifier", function ()
 test("lineage-individual-node: missing powerbi/identification-key icons degrade to nothing", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "lineage-individual-node",
+    dsSlug: "lineage",
     variant: "Type=Main item, State=Default, Fields=Collapsed",
     props: { Label: "orders" },
   });
@@ -181,7 +181,7 @@ test("lineage-individual-node: missing powerbi/identification-key icons degrade 
 test("lineage-individual-node: escapes a hostile Label", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "lineage-individual-node",
+    dsSlug: "lineage",
     variant: "Type=Main item, State=Default, Fields=Collapsed",
     props: { Label: "<img src=x onerror=1>" },
   });
@@ -652,8 +652,8 @@ test("confirmation: escapes hostile Title and Body", function () {
 // hand-copied list of classes. A hand-copied list is what went stale: the old
 // blocks kept passing while their subjects were being deleted upstream.
 var TAG_MATRIX = require("../../components/render/renderer/matrix.js");
-var TAG_DEFAULT_ANATOMY = require("../../components/dist/anatomy/tag-read-only.json");
-var TAG_ITEM_TYPE_ANATOMY = require("../../components/dist/anatomy/tag-item-type.json");
+var TAG_DEFAULT_ANATOMY = require("../../components/dist/anatomy/read-only-tag.json");
+var TAG_ITEM_TYPE_ANATOMY = require("../../components/dist/anatomy/item-type-tag.json");
 var TAG_ICONS = require("../../components/dist/icons/icons.json").icons;
 
 // The same normalization fidelity-classify.js applies to a captured variant
@@ -736,7 +736,7 @@ function cellsByLabel(fragment) {
 
 test("tag-read-only: every published Type value renders a class the anatomy can be checked against", function () {
   var DS = require(DS_PATH);
-  var axis = axisOf("tag-read-only");
+  var axis = axisOf("read-only-tag");
   var groups = appearanceGroups(TAG_DEFAULT_ANATOMY);
   var defaultValue = (TAG_DEFAULT_ANATOMY.variantDefaults || {})[axis.name];
   assert.ok(defaultValue, "the capture records no default for " + axis.name);
@@ -750,7 +750,7 @@ test("tag-read-only: every published Type value renders a class the anatomy can 
   var checked = 0;
   axis.values.forEach(function (value) {
     var html = DS.renderDSComponent({
-      dsSlug: "tag-read-only",
+      dsSlug: "read-only-tag",
       variant: axis.name + "=" + value,
       props: { Label: value },
     });
@@ -800,8 +800,8 @@ test("tag-read-only: every published Type value renders a class the anatomy can 
 // "Shared", so a second flagged value is picked up rather than diverging.
 test("tag-read-only: a Type the capture flags as structurally reduced renders no leading icon", function () {
   var RENDERER = require("../../scripts/render/derive-from-renderer.js");
-  var axis = axisOf("tag-read-only");
-  var comp = TAG_MATRIX.findComponent("tag-read-only");
+  var axis = axisOf("read-only-tag");
+  var comp = TAG_MATRIX.findComponent("read-only-tag");
   var shortfalls = structuralShortfalls(TAG_DEFAULT_ANATOMY);
   var flagged = Object.keys(shortfalls);
 
@@ -858,7 +858,7 @@ test("tag-read-only: a Type the capture flags as structurally reduced renders no
   // structuralVariants: the assertion would now hold even if suppression broke
   // completely. It is deliberately NOT replaced in kind. What replaces it is
   // the surgical-suppression pair below, which can still fail.
-  var cells = cellsByLabel(RENDERER.deriveFragment("tag-read-only"));
+  var cells = cellsByLabel(RENDERER.deriveFragment("read-only-tag"));
   flagged.forEach(function (value) {
     var cell = cells[value];
     assert.ok(cell, value + " has no cell in the fragment");
@@ -931,7 +931,7 @@ test("tag-read-only: the Type modifier is shape-clamped before it reaches the cl
   // not the clamp exists. Confirmed by mutation: with that payload, deleting the
   // clamp reds nothing. This one reaches the clamp.
   var html = DS.renderDSComponent({
-    dsSlug: "tag-read-only",
+    dsSlug: "read-only-tag",
     variant: 'Type=x"><script>alert(1)</script>',
     props: { Label: "x" },
   });
@@ -972,7 +972,7 @@ test("tag-read-only: the leading icon slug follows the anatomy's per-Type instan
       "the capture records no per-Type icon swap, so this test proves nothing",
     );
 
-    var axis = axisOf("tag-read-only");
+    var axis = axisOf("read-only-tag");
     Object.keys(expected).forEach(function (value) {
       var slug = expected[value];
       assert.ok(
@@ -986,7 +986,7 @@ test("tag-read-only: the leading icon slug follows the anatomy's per-Type instan
             (TAG_DEFAULT_ANATOMY.variantDefaults || {})[axis.name]
           : axis.name + "=" + value;
       var html = DS.renderDSComponent({
-        dsSlug: "tag-read-only",
+        dsSlug: "read-only-tag",
         variant: variant,
         props: { Label: "x" },
       });
@@ -1009,7 +1009,7 @@ test("tag-read-only: the leading icon is a default-TRUE boolean, and an explicit
   var DS = require(DS_PATH);
   DS.setIcons(TAG_ICONS);
   try {
-    var comp = TAG_MATRIX.findComponent("tag-read-only");
+    var comp = TAG_MATRIX.findComponent("read-only-tag");
     var prop = Object.keys(comp.properties || {}).find(function (k) {
       return /^Leading icon show/.test(k);
     });
@@ -1023,7 +1023,7 @@ test("tag-read-only: the leading icon is a default-TRUE boolean, and an explicit
       "this test's premise is that the registry default is true",
     );
     var shown = DS.renderDSComponent({
-      dsSlug: "tag-read-only",
+      dsSlug: "read-only-tag",
       variant: "Type=Default",
       props: { Label: "x" },
     });
@@ -1033,7 +1033,7 @@ test("tag-read-only: the leading icon is a default-TRUE boolean, and an explicit
       "absent prop honours the registry default",
     );
     var hidden = DS.renderDSComponent({
-      dsSlug: "tag-read-only",
+      dsSlug: "read-only-tag",
       variant: "Type=Default",
       props: { Label: "x", "Leading icon show": false },
     });
@@ -1050,7 +1050,7 @@ test("tag-read-only: the leading icon is a default-TRUE boolean, and an explicit
 test("tag-read-only: escapes a hostile Label", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "tag-read-only",
+    dsSlug: "read-only-tag",
     variant: "Type=Default",
     props: { Label: "<img src=x onerror=alert(1)>" },
   });
@@ -1060,7 +1060,7 @@ test("tag-read-only: escapes a hostile Label", function () {
 
 test("tag-item-type: every published value renders its own modifier class", function () {
   var DS = require(DS_PATH);
-  var axis = axisOf("tag-item-type");
+  var axis = axisOf("item-type-tag");
   var groups = appearanceGroups(TAG_ITEM_TYPE_ANATOMY);
   var defaultValue = (TAG_ITEM_TYPE_ANATOMY.variantDefaults || {})[axis.name];
   assert.ok(defaultValue, "the capture records no default for " + axis.name);
@@ -1072,16 +1072,16 @@ test("tag-item-type: every published value renders its own modifier class", func
 
   axis.values.forEach(function (value) {
     var html = DS.renderDSComponent({
-      dsSlug: "tag-item-type",
+      dsSlug: "item-type-tag",
       variant: axis.name + "=" + value,
       props: { Label: value },
     });
     assert.match(
       html,
-      /class="ds-tag-item-type\b/,
+      /class="ds-item-type-tag\b/,
       value + ": carries the base class",
     );
-    var modifier = "ds-tag-item-type--" + modifierOf(value);
+    var modifier = "ds-item-type-tag--" + modifierOf(value);
     assert.match(
       html,
       new RegExp("\\b" + modifier + "\\b"),
@@ -1094,7 +1094,7 @@ test("tag-item-type: every published value renders its own modifier class", func
   });
   // Same split as tag-read-only: the modifier is emitted for every value, and
   // WHICH modifiers get a rule is the capture's business. The captured default
-  // carries no appearance group of its own -- base .ds-tag-item-type is its
+  // carries no appearance group of its own -- base .ds-item-type-tag is its
   // paint -- so a rule for it would restate the base.
   assert.ok(
     !groups[defaultValue],
@@ -1113,7 +1113,7 @@ test("tag-item-type: the modifier is shape-clamped before it reaches the class a
   // parseVariant silently drops a part with two, so a two-"=" payload never
   // reaches the clamp and the assertion holds vacuously.
   var html = DS.renderDSComponent({
-    dsSlug: "tag-item-type",
+    dsSlug: "item-type-tag",
     variant: 'Property 1=x"><script>alert(1)</script>',
     props: { Label: "x" },
   });
@@ -1124,7 +1124,7 @@ test("tag-item-type: the modifier is shape-clamped before it reaches the class a
   );
   assert.doesNotMatch(
     html,
-    /ds-tag-item-type--x/,
+    /ds-item-type-tag--x/,
     "an ill-shaped value emits no modifier of its own",
   );
 });
@@ -1132,29 +1132,29 @@ test("tag-item-type: the modifier is shape-clamped before it reaches the class a
 test("tag-item-type: counter gating and escapes hostile Label", function () {
   var DS = require(DS_PATH);
   var withCounter = DS.renderDSComponent({
-    dsSlug: "tag-item-type",
+    dsSlug: "item-type-tag",
     variant: "Property 1=Category",
     props: { "Show counter": true, Counter: "42" },
   });
   assert.match(
     withCounter,
-    /<span class="ds-tag-item-type__counter">42<\/span>/,
+    /<span class="ds-item-type-tag__counter">42<\/span>/,
     "counter renders when Show counter is truthy",
   );
 
   var withoutCounter = DS.renderDSComponent({
-    dsSlug: "tag-item-type",
+    dsSlug: "item-type-tag",
     variant: "Property 1=Category",
     props: {},
   });
   assert.doesNotMatch(
     withoutCounter,
-    /ds-tag-item-type__counter/,
+    /ds-item-type-tag__counter/,
     "no counter span when Show counter is absent/false",
   );
 
   var hostile = DS.renderDSComponent({
-    dsSlug: "tag-item-type",
+    dsSlug: "item-type-tag",
     variant: "Property 1=Category",
     props: { Label: "<img src=x onerror=alert(1)>" },
   });
@@ -1722,7 +1722,7 @@ test("whats-new-dropdown: escapes a hostile Title and a hostile Items entry", fu
 test("drawer-side-panel: base class + role=dialog + aria-label present", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "drawer-side-panel",
+    dsSlug: "drawer",
     variant: "App=Studio",
     props: {},
   });
@@ -1734,7 +1734,7 @@ test("drawer-side-panel: base class + role=dialog + aria-label present", functio
 test("drawer-side-panel: hostile Name renders escaped inside __title", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "drawer-side-panel",
+    dsSlug: "drawer",
     variant: "App=Studio",
     props: { Name: "<img src=x onerror=alert(1)>" },
   });
@@ -1745,7 +1745,7 @@ test("drawer-side-panel: hostile Name renders escaped inside __title", function 
 test("drawer-side-panel: App=Explorer adds the modifier, App=Studio (default) does not", function () {
   var DS = require(DS_PATH);
   var htmlExplorer = DS.renderDSComponent({
-    dsSlug: "drawer-side-panel",
+    dsSlug: "drawer",
     variant: "App=Explorer",
     props: {},
   });
@@ -1756,7 +1756,7 @@ test("drawer-side-panel: App=Explorer adds the modifier, App=Studio (default) do
   );
 
   var htmlStudio = DS.renderDSComponent({
-    dsSlug: "drawer-side-panel",
+    dsSlug: "drawer",
     variant: "App=Studio",
     props: {},
   });
@@ -1770,7 +1770,7 @@ test("drawer-side-panel: App=Explorer adds the modifier, App=Studio (default) do
 test("drawer-side-panel: Show Back=false omits the back button; default renders it", function () {
   var DS = require(DS_PATH);
   var htmlDefault = DS.renderDSComponent({
-    dsSlug: "drawer-side-panel",
+    dsSlug: "drawer",
     variant: "App=Studio",
     props: {},
   });
@@ -1781,7 +1781,7 @@ test("drawer-side-panel: Show Back=false omits the back button; default renders 
   );
 
   var htmlNoBack = DS.renderDSComponent({
-    dsSlug: "drawer-side-panel",
+    dsSlug: "drawer",
     variant: "App=Studio",
     props: { "Show Back": false },
   });
@@ -2194,24 +2194,24 @@ test("avatar: escapes hostile Initials", function () {
 test("collapse-accordion: State=Collapsed renders Title, hides --expanded and __body", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "collapse-accordion",
+    dsSlug: "collapse",
     variant: "State=Collapsed",
     props: { Title: "Advanced settings" },
   });
-  assert.match(html, /class="ds-collapse-accordion"/, "carries the base class");
+  assert.match(html, /class="ds-collapse"/, "carries the base class");
   assert.match(
     html,
-    /ds-collapse-accordion__title">Advanced settings/,
+    /ds-collapse__title">Advanced settings/,
     "renders the title",
   );
   assert.doesNotMatch(
     html,
-    /ds-collapse-accordion--expanded/,
+    /ds-collapse--expanded/,
     "collapsed does not carry the expanded modifier",
   );
   assert.doesNotMatch(
     html,
-    /ds-collapse-accordion__body/,
+    /ds-collapse__body/,
     "collapsed hides the body",
   );
 });
@@ -2219,18 +2219,18 @@ test("collapse-accordion: State=Collapsed renders Title, hides --expanded and __
 test('collapse-accordion: State="Expanede" (registry typo) matches -- expanded modifier + body render', function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "collapse-accordion",
+    dsSlug: "collapse",
     variant: "State=Expanede",
     props: { Title: "T", Body: "Hidden detail" },
   });
   assert.match(
     html,
-    /ds-collapse-accordion--expanded/,
+    /ds-collapse--expanded/,
     "the literal registry value 'Expanede' matches the expanded check",
   );
   assert.match(
     html,
-    /ds-collapse-accordion__body">Hidden detail/,
+    /ds-collapse__body">Hidden detail/,
     "renders the body",
   );
 });
@@ -2238,7 +2238,7 @@ test('collapse-accordion: State="Expanede" (registry typo) matches -- expanded m
 test("collapse-accordion: escapes a hostile Title", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
-    dsSlug: "collapse-accordion",
+    dsSlug: "collapse",
     variant: "State=Collapsed",
     props: { Title: "<img src=x onerror=alert(1)>" },
   });
@@ -2259,7 +2259,7 @@ test("family 5: no silent no-op modifiers among the new primitive classes", func
     "utf8",
   );
   var ruleRe =
-    /\.(ds-spinner|ds-loading-skeleton|ds-scroll-bar|ds-link|ds-avatar|ds-collapse-accordion)(--[a-z0-9-]+|\.is-[a-z0-9-]+)\s*(?:\.[a-zA-Z0-9_-]+\s*)?\{([^}]*)\}/g;
+    /\.(ds-spinner|ds-loading-skeleton|ds-scroll-bar|ds-link|ds-avatar|ds-collapse)(--[a-z0-9-]+|\.is-[a-z0-9-]+)\s*(?:\.[a-zA-Z0-9_-]+\s*)?\{([^}]*)\}/g;
   var checked = [];
   var match;
   while ((match = ruleRe.exec(css)) !== null) {

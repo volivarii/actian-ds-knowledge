@@ -160,7 +160,7 @@ function classifyAlternative(alt, prefix) {
 //   bucket (all state, or all element), that bucket is kept -- the real
 //   corpus's own grouped rules are exactly this shape
 //   (`.ds-lineage-node__source, .ds-lineage-node__key` is element+element;
-//   `.ds-calendar__day.is-selected, .ds-calendar__day.is-range-start, ...`
+//   `.ds-calendar-data-selector__day.is-selected, .ds-calendar-data-selector__day.is-range-start, ...`
 //   is state+state+state) -- so their specific `reasons` entry
 //   (element-no-node-mapping / state-unreachable) is preserved rather than
 //   collapsing into the generic "other" just because the rule has more than
@@ -379,7 +379,7 @@ function classifySlug(opts) {
   // tests/render/fidelity-check.test.js.
   //
   // The key is the exact PROPERTY, not the fact kind it maps to. Keying on the
-  // kind collapsed `.ds-notification { border: ...; border-left-color: ... }`,
+  // kind collapsed `.ds-toast { border: ...; border-left-color: ... }`,
   // where both declarations really do paint (the shorthand paints three sides
   // the longhand never touches) and neither overrides the other. Keying on the
   // property can miss a real override written across two different property

@@ -31,7 +31,7 @@ test("bindColor: value-first, token only when it round-trips", function () {
 // count and no axis name is spelled out here, so the next axis change reds
 // only if the two sources genuinely disagree.
 test("readAppearance: tag-read-only's variants are keyed by the axis the registry publishes, and every colour group names published values", function () {
-  var comp = MATRIX.findComponent("tag-read-only");
+  var comp = MATRIX.findComponent("read-only-tag");
   assert.ok(comp && comp.variants, "tag-read-only is absent from every registry");
   var axes = Object.keys(comp.variants);
   assert.equal(
@@ -43,7 +43,7 @@ test("readAppearance: tag-read-only's variants are keyed by the axis the registr
   var axis = axes[0];
   var published = comp.variants[axis];
 
-  var a = A.readAppearance("tag-read-only", ANATOMY);
+  var a = A.readAppearance("read-only-tag", ANATOMY);
   assert.ok(a.variants.length > 0, "the capture records no variants at all");
 
   var offAxis = a.variants

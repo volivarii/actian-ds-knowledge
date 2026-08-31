@@ -28,7 +28,7 @@ test("button matrix comes from the curated override (Intent x Emphasis)", functi
 });
 
 test("findComponent is ds-first-wins for a dual-kit slug", function () {
-  var e = M.findComponent("calendar");
+  var e = M.findComponent("calendar-data-selector");
   assert.ok(
     e && e.variants,
     "calendar resolves to a registry entry with variants",

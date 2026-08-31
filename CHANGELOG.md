@@ -18,6 +18,60 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking Figma sync of 2026-08-31: twelve component renames carried through, and the authored
+  surface follows Figma.** (#589) `account-dropdown` to `global-header-account-dropdown`, `calendar`
+  to `calendar-data-selector`, `collapse-accordion` to `collapse`, `data-viz-legend-item` to
+  `data-viz-legend`, `date-input` to `calendar-date-input`, `drawer-side-panel` to `drawer`,
+  `glossary-item-hierarchy-diagram` to `glossary-item-hierarchy`, `lineage-individual-node` to
+  `lineage`, `notification` to `toast`, `tag-interactive` to `interactive-tag`, `tag-item-type` to
+  `item-type-tag`, `tag-read-only` to `read-only-tag`. Six components arrive
+  (`data-quality-checks-graph`, `thumbs-up-filled`, `thumbs-down-filled`, `tooltip-default`, plus the
+  icon taking the freed `calendar` name and a re-keyed `line-graph`) and two retire (`bar-graph`,
+  `tooltip`). Component nodes 613 to 614, counted off the two graphs.
+
+  **Three slugs change occupant, and that is the part the identity ledger cannot absorb** (#605).
+  `calendar`, `collapse` and `lineage` each survive as a name while the component behind them
+  changes, so `buildRenameIndex` correctly refuses to map them: a retired slug that is also live
+  would otherwise resolve to an arbitrary component. Everything authored against the old meaning was
+  repointed by hand rather than left to resolve. **The rename has to stop at the namespace boundary:** all three
+  names are also icons, the icons are unchanged, and `icon-groups.json`, `icons-svg.auto.json` and
+  the two schema examples that name the icon keep their values. Stated as a rule because it was
+  broken twice while landing this and neither break was caught by a gate: once in the two icon files,
+  and once at `renderIcon("calendar")` inside the date input, which emptied the calendar glyph from
+  every `calendar-date-input` render until a review read the committed fragment.
+
+  `tooltip` follows the registry to `tooltip-default`, because Figma replaced the Tooltip set with a
+  `Tooltip/Default` component. Its guidance is bridged by a `registryAliases` entry rather than
+  moved, the way the card and tag families were. Figma gave the replacement a NEW component key, so
+  the sync sees no rename and the identity ledger would not have resolved it: `tooltip` is recorded
+  by hand in `previousSlugs`, which the ledger documents as history that survives regeneration.
+  Without it, every consumer with an authored `tooltip` would render a chip.
+
+  `bar-graph` leaves `analytics-dashboard` and `data-profiling-sampling`. On 2026-08-18 it was kept
+  there because the product page had not been read to its end and removing it would have been an
+  assertion from absence. It leaves now for a different reason: the component is retired upstream
+  with no replacement, so nothing can realise it whatever the page shows. Both patterns record the
+  resulting gap instead of dropping the fact.
+
+  **Coverage:** checkable colour declarations 78 to 77, oracle coverage 19.1% to 18.9%, accepted with
+  a reason on the record. Seven of the eight per-slug losses are the renames, whose coverage moved to
+  the new names rather than away. The repo-wide -1 is `lineage-grouped-node`, whose anatomy capture
+  the sync deleted while the component remains in `dskit.json`, so the oracle has nothing left to
+  compare for it.
+
+  **That capture loss is wider than the coverage number shows.** Six components still published in
+  `dskit.json` lost their anatomy in this sync, not one: `confirmation`, `digram-topic`,
+  `error-state`, `lineage-connecting-line`, `lineage-grouped-node` and `maintenance-state`. Only
+  `lineage-grouped-node` moves oracle coverage, because the others had nothing checkable to lose, so
+  the gate's number understates it. `lineage-connecting-line` is the one that costs a reader
+  something: it has no hand-written renderer case, so the anatomy fallback was its only render path
+  and it now draws a chip, in the two patterns that name it. Tracked as
+  [#608](https://github.com/volivarii/actian-ds-knowledge/issues/608), not fixed here, because a
+  failed capture phase and a component becoming unreachable in Figma look identical from the absence
+  and have opposite fixes.
+
 ### Added
 
 - **The editor shows the UX patterns app-first, so an app's jobs and the patterns that serve them

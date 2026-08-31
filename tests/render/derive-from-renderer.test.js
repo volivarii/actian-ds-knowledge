@@ -16,7 +16,7 @@ function escLabel(s) {
     .replace(/"/g, "&quot;");
 }
 
-// Phase 1a pinned deriveFragment("button"/"badge"/"tag-interactive") byte-for-byte
+// Phase 1a pinned deriveFragment("button"/"badge"/"interactive-tag") byte-for-byte
 // against the frozen captures in components/render/src/. Those three tests retired
 // with the seeds at renderer-relocation phase 3, for the same reason as the all-35
 // oracle: byte-identity against a historical capture proved the port from the plugin
@@ -36,8 +36,8 @@ function escLabel(s) {
 // cells. The marker is derived from the registry now: whatever the published
 // axis is, the fragment must colour its cells by that axis's own values.
 test("deriveFragment(tag-read-only) colors each cell by a published variant value", function () {
-  var derived = D.deriveFragment("tag-read-only");
-  var comp = M.findComponent("tag-read-only");
+  var derived = D.deriveFragment("read-only-tag");
+  var comp = M.findComponent("read-only-tag");
   var axis = Object.keys(comp.variants)[0];
   var painted = comp.variants[axis].filter(function (value) {
     var mod = "ds-tag--" + String(value).toLowerCase().replace(/\s+/g, "-");
@@ -94,8 +94,8 @@ test("toggle derives a real On state, not the Selected==='Yes' bug", function ()
 // generic 5-cell cap", and the registry is the only place that knows how many
 // values that is.
 test("tag-read-only renders every registry variant value, not the 5-cell generic cap", function () {
-  var html = R.deriveFragment("tag-read-only");
-  var comp = M.findComponent("tag-read-only");
+  var html = R.deriveFragment("read-only-tag");
+  var comp = M.findComponent("read-only-tag");
   var axis = Object.keys(comp.variants)[0];
   var values = comp.variants[axis];
   assert.ok(

@@ -278,7 +278,7 @@ test("classifySlug: a shared base prefix has no single subject", function () {
     css: ".ds-tag { background: var(--zen-bad); }",
     facts: FACTS_PLAIN,
     tokenMap: TOK,
-    sharedPrefixes: { "ds-tag": ["tag-catalog", "tag-read-only", "tag-shared"] },
+    sharedPrefixes: { "ds-tag": ["tag-catalog", "read-only-tag", "tag-shared"] },
   });
   assert.equal(r.mismatch, 0);
   assert.equal(r.reasons["shared-base-no-single-subject"], 1);
@@ -398,7 +398,7 @@ test("classifySlug: a State=Default root is still a comparable subject (the rule
   });
 });
 
-// "States=Enabled" (date-input's real root name) is a DIFFERENT axis that
+// "States=Enabled" (calendar-date-input's real root name) is a DIFFERENT axis that
 // merely starts with the same five letters. Matching it would suppress a root
 // that is a perfectly good subject.
 test("rootIsNonDefaultState reads the State axis only, not an axis that starts like it", function () {
@@ -584,7 +584,7 @@ test("classifySlug: with no captured token name, a wrong hex is still a mismatch
 
 // ---------------------------------------------------------------------------
 // Task 6, cascade resolution. tag-stage shares the .ds-tag--<color> scale with
-// tag-read-only but its capture gives Orange and Yellow different borders, so it
+// read-only-tag but its capture gives Orange and Yellow different borders, so it
 // carries its own .ds-tag-stage--<color> rules AFTER the shared ones. The
 // shared declaration is then not what tag-stage paints, and charging it for
 // one is reporting a defect the render never produces.
@@ -621,7 +621,7 @@ test("classifySlug: a later equal-specificity rule overrides the earlier one for
       ".ds-tag-stage--orange { border-color: var(--zen-color-error-100); }\n",
     facts: FACTS_STAGE,
     tokenMap: TOK_TAG,
-    sharedPrefixes: { "ds-tag": ["tag-read-only", "tag-stage"] },
+    sharedPrefixes: { "ds-tag": ["read-only-tag", "tag-stage"] },
   });
   assert.equal(r.mismatch, 0);
   assert.equal(r.verified, 1, "the winning declaration is still classified");
@@ -649,21 +649,21 @@ test("classifySlug: a wrong value on the overriding rule is still a mismatch", f
       ".ds-tag-stage--orange { border-color: var(--zen-color-error-50); }\n",
     facts: FACTS_STAGE,
     tokenMap: TOK_TAG,
-    sharedPrefixes: { "ds-tag": ["tag-read-only", "tag-stage"] },
+    sharedPrefixes: { "ds-tag": ["read-only-tag", "tag-stage"] },
   });
   assert.equal(r.mismatch, 1);
   assert.match(r.mismatches[0].selector, /ds-tag-stage--orange/);
 });
 
-// The key is the PROPERTY, not the fact kind. `.ds-notification` really does
+// The key is the PROPERTY, not the fact kind. `.ds-toast` really does
 // set `border` and `border-left-color` on the same subject, and both paint:
 // the shorthand paints three sides the longhand never touches. Keying on the
 // kind ("border") collapsed them and silently deleted one from the count.
 test("classifySlug: a shorthand and a longhand on the same subject are both paint, not an override", function () {
   var r = C.classifySlug({
-    slug: "notification",
-    prefixes: ["ds-notification"],
-    css: ".ds-notification { border: 1px solid var(--zen-ok); border-left-color: var(--zen-bad); }",
+    slug: "toast",
+    prefixes: ["ds-toast"],
+    css: ".ds-toast { border: 1px solid var(--zen-ok); border-left-color: var(--zen-bad); }",
     facts: {
       byNode: [
         {
@@ -800,7 +800,7 @@ test("classifySlug: the real tag-stage cross-prefix modifier override still reso
       ".ds-tag-stage--orange { border-color: var(--zen-color-error-100); }\n",
     facts: FACTS_STAGE,
     tokenMap: TOK_TAG,
-    sharedPrefixes: { "ds-tag": ["tag-read-only", "tag-stage"] },
+    sharedPrefixes: { "ds-tag": ["read-only-tag", "tag-stage"] },
   });
   assert.equal(r.mismatch, 0);
   assert.equal(r.overridden, 1);
@@ -901,7 +901,7 @@ test("classifySlug: two DIFFERENT comparable alternatives in one group cannot be
 // `reasons` entry), not collapse into "other" just because it has more than
 // one alternative. This is the real corpus's own shape: ds-base.css's
 // `.ds-lineage-node__source, .ds-lineage-node__key` and
-// `.ds-calendar__day.is-selected, .ds-calendar__day.is-range-start, ...`
+// `.ds-calendar-data-selector__day.is-selected, .ds-calendar-data-selector__day.is-range-start, ...`
 // groups, both already element-only / state-only today.
 test("classifySlug: a group whose alternatives are all the same non-comparable bucket keeps that bucket, not other", function () {
   var elementGroup = C.classifySelector(

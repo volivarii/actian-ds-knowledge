@@ -2304,7 +2304,9 @@
     "b36b2406753f81a38dc29731eb262dda640e83c4": {
       "slug": "tooltip-default",
       "nodeId": "7036:1360",
-      "previousSlugs": []
+      "previousSlugs": [
+        "tooltip"
+      ]
     },
     "b4779a13f4097d682413a669eaaf9ead1b49f115": {
       "slug": "meta-chrome-accessibility-card",
