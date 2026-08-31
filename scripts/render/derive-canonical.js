@@ -193,7 +193,7 @@ function registryEntry(slug) {
   return REGISTRY[slug] || null;
 }
 
-// slug -> PascalCase, e.g. "tag-read-only" -> "TagDefault".
+// slug -> PascalCase, e.g. "read-only-tag" -> "ReadOnlyTag".
 function pascal(slug) {
   return slug.replace(/(^|[-_])([a-z0-9])/g, function (_, __, ch) {
     return ch.toUpperCase();

@@ -40,8 +40,8 @@ function firstCellText(slug) {
 // Each expectation is the string the Figma capture holds for that slot, so a
 // reviewer can check it against the design file rather than against taste.
 const CAPTURED = [
-  ["notification", "Item deleted"],
-  ["tooltip", "Body line text lorem ipsum"],
+  ["toast", "Item deleted"],
+  ["tooltip-default", "Body line text lorem ipsum"],
 ];
 
 CAPTURED.forEach(function (pair) {
@@ -63,7 +63,7 @@ CAPTURED.forEach(function (pair) {
 // contradict any cell and is derived once from the component's own captured
 // vocabulary (a nested "powerbi" tag, a "2 datasets" button label).
 const DERIVED_FIXED = [
-  ["lineage-individual-node", "PB"],
+  ["lineage", "PB"],
   ["lineage-grouped-node", "DS"],
 ];
 
@@ -182,7 +182,7 @@ const RESOLVED = [
   ["modal", "Update the description"],
   ["dropdown-select-default", "A description helps users"],
   ["popover", "Interaction guide"],
-  ["account-dropdown", "account.user@example.com"],
+  ["global-header-account-dropdown", "account.user@example.com"],
 ];
 
 RESOLVED.forEach(function (pair) {
@@ -196,7 +196,7 @@ RESOLVED.forEach(function (pair) {
 });
 
 test("account-dropdown does not ship the captured personal address", function () {
-  const text = firstCellText("account-dropdown");
+  const text = firstCellText("global-header-account-dropdown");
   assert.doesNotMatch(
     text,
     /hcl-software\.com/,
@@ -209,7 +209,7 @@ test("stepper renders its captured body", function () {
 });
 
 test("notification renders its captured action label", function () {
-  assert.match(firstCellText("notification"), /Close/);
+  assert.match(firstCellText("toast"), /Close/);
 });
 
 // Fix round 1: three conditional-omit fills had no assertion that would fail
@@ -235,9 +235,9 @@ function escapeRegExp(s) {
 
 test("date-input renders its resolved helper text in the helper element", function () {
   assert.match(
-    firstCellHtml("date-input"),
+    firstCellHtml("calendar-date-input"),
     new RegExp(
-      '<span class="ds-date-input__helper">' +
+      '<span class="ds-calendar-date-input__helper">' +
         escapeRegExp("Use MM/DD/YYYY.") +
         "</span>",
     ),

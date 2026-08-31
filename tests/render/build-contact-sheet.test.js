@@ -9,11 +9,11 @@ var C = require("../../scripts/render/build-contact-sheet.js");
 test("buildContactSheet: emits a page covering the four improved slugs + their oracles", function () {
   var out = path.join(os.tmpdir(), "contact-" + process.pid + ".html");
   var slugs = C.buildContactSheet(out);
-  ["tag-read-only", "checkbox", "radio", "toggle"].forEach(function (s) {
+  ["read-only-tag", "checkbox", "radio", "toggle"].forEach(function (s) {
     assert.ok(slugs.indexOf(s) >= 0, s + " is in the sign-off sheet");
   });
   var html = fs.readFileSync(out, "utf8");
-  assert.match(html, /tag-read-only/);
+  assert.match(html, /read-only-tag/);
   assert.match(html, /\bradio\b/);
   assert.match(html, /data:image\/webp;base64,/); // at least one oracle embedded
   fs.unlinkSync(out);

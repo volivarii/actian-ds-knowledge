@@ -420,7 +420,7 @@ test("invariant 4: cell count and labels match the variant matrix", function () 
 // even after the byte-identity oracle that used to guard it is gone.
 test("invariant 7: the phase-1b fixes stay fixed", function () {
   var MARKERS = {
-    "tag-read-only": /ds-tag--/,
+    "read-only-tag": /ds-tag--/,
     checkbox: /ds-checkbox--(checked|indeterminate)/,
     "radio": /ds-radio--checked/,
     toggle: /ds-toggle--on/,

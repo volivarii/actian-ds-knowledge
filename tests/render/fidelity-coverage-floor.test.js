@@ -172,7 +172,7 @@ test("coverageRegression: a fall in the checkable count is a regression, and it 
   var prev = report(
     { verified: 15, verifiedViaTokenName: 0, mismatch: 0, examined: 100 },
     {
-      "tag-read-only": slug(7),
+      "read-only-tag": slug(7),
       "tag-stage": slug(7),
       badge: slug(1),
     },
@@ -180,7 +180,7 @@ test("coverageRegression: a fall in the checkable count is a regression, and it 
   var next = report(
     { verified: 2, verifiedViaTokenName: 0, mismatch: 0, examined: 90 },
     {
-      "tag-read-only": slug(0, { blind: true }),
+      "read-only-tag": slug(0, { blind: true }),
       "tag-stage": slug(1),
       badge: slug(1),
     },
@@ -191,7 +191,7 @@ test("coverageRegression: a fall in the checkable count is a regression, and it 
   assert.equal(reg.checkableFrom, 15);
   assert.equal(reg.checkableTo, 2);
   assert.deepEqual(reg.lost, [
-    { slug: "tag-read-only", from: 7, to: 0 },
+    { slug: "read-only-tag", from: 7, to: 0 },
     { slug: "tag-stage", from: 7, to: 1 },
   ]);
 });
@@ -199,18 +199,18 @@ test("coverageRegression: a fall in the checkable count is a regression, and it 
 test("coverageRegression: a slug the capture can no longer say anything about is reported as newly blind", function () {
   var prev = report(
     { verified: 8, verifiedViaTokenName: 0, mismatch: 0 },
-    { "tag-read-only": slug(7), "tag-stage": slug(1, { blind: false }) },
+    { "read-only-tag": slug(7), "tag-stage": slug(1, { blind: false }) },
   );
   var next = report(
     { verified: 1, verifiedViaTokenName: 0, mismatch: 0 },
     {
-      "tag-read-only": slug(0, { blind: true }),
+      "read-only-tag": slug(0, { blind: true }),
       "tag-stage": slug(1, { blind: false }),
     },
   );
 
   var reg = F.coverageRegression(prev, next);
-  assert.deepEqual(reg.newlyBlind, ["tag-read-only"]);
+  assert.deepEqual(reg.newlyBlind, ["read-only-tag"]);
 });
 
 test("coverageRegression: a new blind component lowers the ratio without losing anything, and does NOT block", function () {
@@ -245,10 +245,10 @@ test("coverageFailureMessage: states the direction, the losing slugs, and names 
     coverageFrom: 0.1181,
     coverageTo: 0.0914,
     lost: [
-      { slug: "tag-read-only", from: 7, to: 0 },
+      { slug: "read-only-tag", from: 7, to: 0 },
       { slug: "tag-stage", from: 7, to: 0 },
     ],
-    newlyBlind: ["tag-read-only", "tag-stage"],
+    newlyBlind: ["read-only-tag", "tag-stage"],
   });
 
   // Direction, in both units, because "coverage changed" is the advice that
@@ -258,7 +258,7 @@ test("coverageFailureMessage: states the direction, the losing slugs, and names 
   assert.match(msg, /11\.8%/);
   assert.match(msg, /9\.1%/);
   // The subjects, so the reader does not have to diff two JSON files.
-  assert.match(msg, /tag-read-only/);
+  assert.match(msg, /read-only-tag/);
   assert.match(msg, /tag-stage/);
   // The decision path, by name. A loss can be legitimate; it may not be
   // silent.
@@ -500,17 +500,17 @@ test("coverageRegression: a per-slug loss blocks even when a gain elsewhere keep
   // whenever anything else improved in the same change.
   var prev = report(
     { verified: 14, verifiedViaTokenName: 0, mismatch: 0, examined: 100 },
-    { "tag-read-only": slug(7), badge: slug(7) },
+    { "read-only-tag": slug(7), badge: slug(7) },
   );
   var next = report(
     { verified: 14, verifiedViaTokenName: 0, mismatch: 0, examined: 100 },
-    { "tag-read-only": slug(0, { blind: true }), badge: slug(14) },
+    { "read-only-tag": slug(0, { blind: true }), badge: slug(14) },
   );
 
   var reg = F.coverageRegression(prev, next);
   assert.ok(reg, "a slug going fully blind must block regardless of the total");
-  assert.deepEqual(reg.lost, [{ slug: "tag-read-only", from: 7, to: 0 }]);
-  assert.deepEqual(reg.newlyBlind, ["tag-read-only"]);
+  assert.deepEqual(reg.lost, [{ slug: "read-only-tag", from: 7, to: 0 }]);
+  assert.deepEqual(reg.newlyBlind, ["read-only-tag"]);
 });
 
 test("coverageRegression: a baseline with no oracleCoverage field still reports a real ratio", function () {

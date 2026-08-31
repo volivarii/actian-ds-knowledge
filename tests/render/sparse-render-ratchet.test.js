@@ -123,7 +123,8 @@ const ACCEPTED_INVENTED = {
     "rename of sticky-footer.Secondary (#526); pre-existing fallback, see note above",
 
   // Same shape, one reorg later. Figma v2.7.0 renamed input-date to date-input
-  // and metamodel-widget to metamodel (#589). The baseline is read at the merge
+  // and then date-input to calendar-date-input, and metamodel-widget to metamodel
+  // (#589). The same two slots have therefore moved twice. The baseline is read at the merge
   // base, which still lists these three slots under the old slugs, so the
   // rename alone reads as three brand-new invented slots. Verified, not
   // assumed: inventedSlots holds input-date.Label, input-date.Placeholder text
@@ -134,12 +135,41 @@ const ACCEPTED_INVENTED = {
   //
   // Not permanent cover either: these are the same specimen-vs-runtime question
   // (#543 to #545) as the two above. Remove all five together when it is answered.
-  "date-input.Label":
-    "rename of input-date.Label (#589); pre-existing fallback, see note above",
-  "date-input.Placeholder text":
-    "rename of input-date.Placeholder text (#589); pre-existing fallback, see note above",
+  "calendar-date-input.Label":
+    "rename of input-date.Label, then date-input.Label (#589); pre-existing fallback, see note above",
+  "calendar-date-input.Placeholder text":
+    "rename of input-date.Placeholder text, then date-input.Placeholder text (#589); pre-existing fallback, see note above",
   "metamodel.Item type initials":
     "rename of metamodel-widget.Item type initials (#589); pre-existing fallback, see note above",
+
+  // The 2026-08-31 wave of the same reorganisation (#589), twelve more renames.
+  // Same reasoning as the three above and verified the same way rather than
+  // assumed: each pair below is PRESENT in the merge base's inventedSlots under
+  // its old slug, and the total is unchanged at 93 -> 93, so nothing started
+  // replacing content. Only the names moved. The renderer's fallbacks are
+  // untouched.
+  "calendar-data-selector.Month":
+    "rename of calendar.Month (#589); pre-existing fallback, see note above",
+  "collapse.Title":
+    "rename of collapse-accordion.Title (#589); pre-existing fallback, see note above",
+  "drawer.Name":
+    "rename of drawer-side-panel.Name (#589); pre-existing fallback, see note above",
+  "drawer.Type":
+    "rename of drawer-side-panel.Type (#589); pre-existing fallback, see note above",
+  "global-header-account-dropdown.Items":
+    "rename of account-dropdown.Items (#589); pre-existing fallback, see note above",
+  "global-header-account-dropdown.Name":
+    "rename of account-dropdown.Name (#589); pre-existing fallback, see note above",
+  "lineage.Item type initials":
+    "rename of lineage-individual-node.Item type initials (#589); pre-existing fallback, see note above",
+  "toast.Message":
+    "rename of notification.Message (#589); pre-existing fallback, see note above",
+  // Not one of the twelve renames: Figma replaced the Tooltip SET with a
+  // Tooltip/Default component, so the render slug follows the registry from
+  // tooltip to tooltip-default. Verified the same way: tooltip.Body is present
+  // in the merge base's inventedSlots, and the total is unchanged.
+  "tooltip-default.Body":
+    "rename of tooltip.Body (#589); pre-existing fallback, see note above",
 };
 
 function hasOwn(o, k) {

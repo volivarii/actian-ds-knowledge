@@ -215,27 +215,54 @@ test("deriveCanonical: a slug with no COMPONENT_META gets a registry-derived CEM
 });
 
 test("deriveCanonical: dual-kit slug takes its variant axes from dskit, not an empty fmkit stand-in", function () {
-  // calendar / search / table also exist in fmkit with EMPTY variants. The
-  // registry merge must be ds-first-wins (matching the plugin's findComponent),
-  // or these components derive a zero-attribute CEM while their rendered card
-  // still shows the real dskit variants.
+  // link / search / table exist in BOTH kits, and their fmkit entries carry
+  // EMPTY variants. The registry merge must be ds-first-wins (matching the
+  // plugin's findComponent), or these components derive a zero-attribute CEM
+  // while their rendered card still shows the real dskit variants.
+  //
+  // The subject was `calendar` until 2026-08-31, when the sync renamed that
+  // component to calendar-data-selector and gave the `calendar` slug to the
+  // icon: dskit-only, and no longer a render slug, so it could not exercise
+  // this. The population is derived below rather than named, so the next
+  // rename cannot leave this test asserting nothing.
   var out = D.deriveCanonical();
-  var decl = out.cem.modules
-    .flatMap(function (m) {
-      return m.declarations || [];
-    })
-    .find(function (d) {
-      return d.tagName === "zen-calendar";
-    });
-  assert.ok(decl, "zen-calendar declaration present");
-  var names = (decl.attributes || []).map(function (a) {
-    return a.name;
+  var ds = require("../../components/dist/registries/dskit.json").components;
+  var fm = require("../../components/dist/registries/fmkit.json").components;
+  // variants, not properties: buildDeclaration derives the CEM attributes from
+  // entry.variants. And the fmkit entry must be EMPTY, which is the whole
+  // subject: a dual-kit slug whose fmkit half also carried variants would pass
+  // whichever kit won the merge.
+  var dual = RENDER_SLUGS.filter(function (s) {
+    return (
+      ds[s] &&
+      fm[s] &&
+      Object.keys(ds[s].variants || {}).length > 0 &&
+      Object.keys(fm[s].variants || {}).length === 0
+    );
   });
   assert.ok(
-    names.indexOf("type") >= 0 && names.indexOf("selection") >= 0,
-    "calendar CEM carries dskit's Type + Selection axes, got: " +
-      JSON.stringify(names),
+    dual.length > 0,
+    "a dual-kit render slug with dskit variants must exist, or this proves nothing",
   );
+  dual.forEach(function (slug) {
+    var decl = out.cem.modules
+      .flatMap(function (m) {
+        return m.declarations || [];
+      })
+      .find(function (d) {
+        return d.tagName === "zen-" + slug;
+      });
+    assert.ok(decl, "zen-" + slug + " declaration present");
+    var names = (decl.attributes || []).map(function (a) {
+      return a.name;
+    });
+    assert.ok(
+      names.length > 0,
+      slug +
+        " CEM carries dskit's axes rather than the empty fmkit stand-in, got: " +
+        JSON.stringify(names),
+    );
+  });
 });
 
 test("deriveCanonical: splits its output into one shared css + per-slug fragments", function () {
@@ -355,7 +382,7 @@ test("ds-base.css carries a rule for every captured tag variant delta, and no no
     path.resolve(__dirname, "../../components/render/renderer/ds-base.css"),
     "utf8",
   );
-  var anatomy = require("../../components/dist/anatomy/tag-read-only.json");
+  var anatomy = require("../../components/dist/anatomy/read-only-tag.json");
   var groups = (anatomy.root.appearance || {}).variants || [];
   var axis = Object.keys(anatomy.variantDefaults || {})[0];
   var defaultValue = (anatomy.variantDefaults || {})[axis];
@@ -383,7 +410,7 @@ test("ds-base.css carries a rule for every captured tag variant delta, and no no
   // The other direction: a rule for a value the capture gives no delta is a
   // no-op at best and an invented colour at worst. The captured default and
   // any value with no appearance group (Stage-1 today) must have none.
-  var comp = MATRIX.findComponent("tag-read-only");
+  var comp = MATRIX.findComponent("read-only-tag");
   var noop = (comp.variants[axis] || []).filter(function (value) {
     if (withDelta.has(value)) return false;
     var mod = String(value).toLowerCase().replace(/\s+/g, "-");
@@ -411,7 +438,7 @@ test("templates retired: tag/checkbox derive through the generic renderer, no de
     deriveFragment,
   } = require("../../scripts/render/derive-from-renderer.js");
   var out = deriveCanonical();
-  ["tag-read-only", "checkbox"].forEach(function (slug) {
+  ["read-only-tag", "checkbox"].forEach(function (slug) {
     var r = out.manifest.renders.find(function (x) {
       return x.slug === slug;
     });
@@ -552,7 +579,7 @@ test("deriveCanonical/consumedVars: the 4 new gray-box-to-zero hyphen-prefix pai
   );
 
   // tag-read-only / tag-item-type: "ds-tag" is a genuine hyphen-prefix of
-  // ".ds-tag-item-type", so a regressed guard would make tag-read-only's
+  // ".ds-item-type-tag", so a regressed guard would make tag-read-only's
   // declaration start absorbing tag-item-type's tokens.
   //
   // This pair used to be spelled tag-catalog / tag-catalog-item-type with
@@ -563,12 +590,12 @@ test("deriveCanonical/consumedVars: the 4 new gray-box-to-zero hyphen-prefix pai
   // is computed now: a token that the longer prefix's own rules reference and
   // that appears nowhere else in the sheet. If no such token exists, the test
   // says so instead of passing on a probe that cannot discriminate.
-  var tagItemTypeNames = namesFor("zen-tag-item-type");
-  var tagDefaultNames = namesFor("zen-tag-read-only");
-  var isolator = onlyOwnedToken(cemStyle, "ds-tag-item-type");
+  var tagItemTypeNames = namesFor("zen-item-type-tag");
+  var tagDefaultNames = namesFor("zen-read-only-tag");
+  var isolator = onlyOwnedToken(cemStyle, "ds-item-type-tag");
   assert.ok(
     isolator,
-    "no token is referenced exclusively by .ds-tag-item-type's own rules, so " +
+    "no token is referenced exclusively by .ds-item-type-tag's own rules, so " +
       "absorption by .ds-tag cannot be distinguished from legitimate shared use",
   );
   assert.ok(
@@ -585,7 +612,7 @@ test("deriveCanonical/consumedVars: the 4 new gray-box-to-zero hyphen-prefix pai
 
   // notification / notification-dropdown and search / search-dropdown-menu:
   // the SHORTER slug's real class always matches its registered name
-  // (.ds-notification, .ds-search), so the collision risk on THAT side is
+  // (.ds-toast, .ds-search), so the collision risk on THAT side is
   // checked via its real CEM declaration, same as above. The LONGER slug's
   // registered class does not equal ds-<slug> here either (notification-
   // dropdown emits .ds-notification-menu, search-dropdown-menu emits
@@ -595,7 +622,7 @@ test("deriveCanonical/consumedVars: the 4 new gray-box-to-zero hyphen-prefix pai
   // sanity check the way loader-with-logo's declaration does above. That
   // sanity check is done directly against the real compound class instead,
   // via the same consumedVars() the derive itself uses.
-  var notificationNames = namesFor("zen-notification");
+  var notificationNames = namesFor("zen-toast");
   var notificationMenuTokens = D.consumedVars(cemStyle, "ds-notification-menu");
   assert.ok(
     notificationMenuTokens.indexOf("--zen-shadow-lg") >= 0,

@@ -318,7 +318,10 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
     return inIsland(e.source) || inIsland(e.target);
   });
   assert.equal(islandNodes.length, 97, "app-context island nodes");
-  assert.equal(islandEdges.length, 266, "app-context island edges");
+  // 266 -> 264 on 2026-08-31: analytics-dashboard and data-profiling-sampling
+  // each stopped naming bar-graph, which the sync retired from the Figma library
+  // with no replacement. Two pattern_component edges, no other change.
+  assert.equal(islandEdges.length, 264, "app-context island edges");
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {

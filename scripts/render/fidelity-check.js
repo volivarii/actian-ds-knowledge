@@ -356,7 +356,7 @@ function uncapturedOwnerViolation(selector, slug) {
 // verifies THOSE rules against the same fact-color invariant, extracted by
 // selector (robust to ds-base.css's comment headers moving or changing).
 // `cssText` is ds-base.css's content and `facts` maps a fact-source name
-// (e.g. "tag-read-only", "checkbox") to its readAppearance() result, so the
+// (e.g. "read-only-tag", "checkbox") to its readAppearance() result, so the
 // caller controls which anatomy facts each selector group is checked
 // against. The modifier char class includes `-` so compound modifiers (the
 // grouped tag-status family: status-error/-info/-neutral/-success/-warning)

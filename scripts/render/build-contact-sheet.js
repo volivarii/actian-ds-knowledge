@@ -16,9 +16,9 @@ function buildContactSheet(outPath) {
   var canonical = deriveCanonical();
   // The renderer-relocation slice retired the source:"derived" templates, so the
   // sign-off set is now a fixed list of the slugs whose rendering this slice
-  // changed (tag-read-only colors; checkbox/radio/toggle state). Each renders
+  // changed (read-only-tag colors; checkbox/radio/toggle state). Each renders
   // through the generic renderer and is shown beside its Figma media oracle.
-  var SIGN_OFF_SLUGS = ["tag-read-only", "checkbox", "radio", "toggle"];
+  var SIGN_OFF_SLUGS = ["read-only-tag", "checkbox", "radio", "toggle"];
   var signOff = canonical.manifest.renders.filter(function (r) {
     return SIGN_OFF_SLUGS.indexOf(r.slug) >= 0;
   });
