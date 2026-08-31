@@ -168,7 +168,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 - **The retired-slug map is read when it is used, not when the renderer loads, so a browser host
   cannot lose every rename to script order.**
-  ([#603](https://github.com/volivarii/actian-ds-knowledge/issues/603)) `ds-html-map.js` snapshotted
+  ([#606](https://github.com/volivarii/actian-ds-knowledge/pull/606), closes [#603](https://github.com/volivarii/actian-ds-knowledge/issues/603)) `ds-html-map.js` snapshotted
   `window.dsRetiredSlugs` once at load. A browser has no `require`, so a host that inlines this
   module before `ds-retired-slugs.js`, or sets the global lazily, held an empty map for the life of
   the page: every renamed slug rendered a bare chip, and nothing went red, because an empty map is a
@@ -183,7 +183,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 - **Every `scripts/render` derive that declares inputs now has them asserted against the workflow,
   found by reading the directory rather than listed.**
-  ([#604](https://github.com/volivarii/actian-ds-knowledge/issues/604)) `derive-retired-slugs.js` declared
+  ([#606](https://github.com/volivarii/actian-ds-knowledge/pull/606), closes [#604](https://github.com/volivarii/actian-ds-knowledge/issues/604)) `derive-retired-slugs.js` declared
   `INPUTS` with a comment saying `derive-contract.test.js` asserted a workflow watched them, and
   that test only ever read `derive-contract.js`'s. So the `components/dist/identity.json` trigger was
   unguarded: removing it during a workflow cleanup would have stayed green until the next recorded
