@@ -42,8 +42,13 @@ import { DOMAIN_LABEL } from "../lib/workspaceState";
 import { CoverageDashboard } from "./CoverageDashboard";
 import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
 import { GraphHealthTab } from "./GraphHealthTab";
+import { PatternsDashboard } from "./PatternsDashboard";
 
-export type ExploreTab = "coverage" | "accessibility" | "relationships";
+export type ExploreTab =
+  | "coverage"
+  | "accessibility"
+  | "relationships"
+  | "patterns";
 
 export interface HomeScreenProps {
   octokit: Octokit;
@@ -326,7 +331,8 @@ export function HomeScreen({
       </Heading>
       <Text size="2" color="gray" as="p" mb="3">
         The full picture behind the list above: every component&apos;s status,
-        the accessibility coverage, and the health of the connections.
+        the accessibility coverage, the health of the connections, and the UX
+        patterns each app is described by.
       </Text>
       <Tabs.Root
         value={exploreTab}
@@ -336,6 +342,7 @@ export function HomeScreen({
           <Tabs.Trigger value="coverage">Coverage</Tabs.Trigger>
           <Tabs.Trigger value="accessibility">Accessibility</Tabs.Trigger>
           <Tabs.Trigger value="relationships">Relationships</Tabs.Trigger>
+          <Tabs.Trigger value="patterns">Patterns</Tabs.Trigger>
         </Tabs.List>
         <Tabs.Content value="coverage">
           {/* Self-loads through the memoized loadCoverage — resolves from
@@ -347,6 +354,11 @@ export function HomeScreen({
         </Tabs.Content>
         <Tabs.Content value="relationships">
           <GraphHealthTab onOpenFile={onOpenFile} />
+        </Tabs.Content>
+        <Tabs.Content value="patterns">
+          {/* App-first: an app's use cases name the patterns that serve them,
+              and the rest of what the app claims is listed beneath. */}
+          <PatternsDashboard octokit={octokit} onOpenFile={onOpenFile} />
         </Tabs.Content>
       </Tabs.Root>
     </Box>
