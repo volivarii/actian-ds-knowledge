@@ -74,6 +74,37 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **A guidance link that lands on no page is now caught, which is how a freed component slug goes
+  wrong silently.** (PR_LINK_TODO_605) The 2026-08-31 sync freed `calendar` and handed it to the calendar glyph
+  on the Icons page while the component moved to `calendar-data-selector`. Four links in
+  `calendar-date-input` still said `[calendar](calendar)`, meaning the picker, and pointed at a slug
+  with no guidance page at all. They now point at `calendar-data-selector`. Two further dead links
+  are fixed with them: `notification-toast` becomes `global-toast` in `alert-banner`, and
+  `toggle-control` becomes `toggle` in `segmented-control`. Closes #605.
+
+  `tests/guideline-link-targets.test.js` asserts that every `](slug)` link in `components/src`
+  resolves to a page a reader can land on, across both namespaces a component page may address: its
+  sibling component guidance, and the content patterns (`[form](forms)` reaches
+  `content/src/patterns/forms.md`). Targets resolve **through the identity ledger**, in the same
+  order `clients/resolve-paths.js` uses, so a renamed component needs no edit here. It asserts the
+  JOIN rather than keeping a list of slugs.
+
+  🔑 The namespace is the whole point, and the first version of this gate had it wrong: a `](slug)`
+  link addresses a PAGE, not a registry entry, and those key sets differ (62 guideline pages against
+  324 registry entries, with 55 link targets that have a page and no registry entry). A gate written
+  against the registry judges a namespace the link does not address.
+
+  The scanner asserts it has a corpus before asserting anything about it, because `git ls-files` on a
+  missing path exits 0 with empty output, which would disarm the gate rather than break it. Its
+  positive control runs through the scanner itself rather than its helpers.
+
+  This is the second time this shape has bitten (#588 was `card` / `card-for-items` breaking the docs
+  site), which is what justified a gate over a one-off fix. `collapse` and `lineage` were checked and
+  deliberately left: both were icons before the sync and are components now, so the references naming
+  them resolve to a component for the first time, and both renderer cases were already written for
+  the new occupants. Links in `content/src` are not covered: they address their own target namespace,
+  which would need mapping first.
+
 - **The rename precondition reads structure rather than raw text, so documenting a migration no longer
   blocks it.** ([#611](https://github.com/volivarii/actian-ds-knowledge/pull/611)) `rename-preconditions.mentions()` scanned whole files, so a slug named in a
   sentence blocked a rename exactly as a `case` label or a `components[]` entry did. The gate's own
