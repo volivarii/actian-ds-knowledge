@@ -342,7 +342,7 @@ test("an escaped newline in a default survives as a newline", function () {
   );
 });
 
-test("the derive declares its inputs, and the derive workflow watches all of them", function () {
+test("every scripts/render derive that declares inputs has them watched by the workflow", function () {
   // The committed-vs-fresh test above runs inside the required manifest check on
   // every PR, while only render-derive.yml can repair a drift by regenerating and
   // auto-committing. An input the workflow does not watch therefore reds a
@@ -397,12 +397,72 @@ test("the derive declares its inputs, and the derive workflow watches all of the
     "positive control: the real trigger shape does match",
   );
 
-  D.INPUTS.forEach(function (input) {
-    assert.ok(
-      watchedBy(triggers, input),
-      input + " is a derive input no workflow trigger watches",
-    );
+  // DISCOVERED, not listed. derive-retired-slugs.js declared INPUTS with a
+  // comment saying this test asserted them, and this test only ever read
+  // derive-contract.js's, so its trigger was unguarded: trimming
+  // components/dist/identity.json from the workflow would have stayed green
+  // until the next recorded rename, then redded the required manifest check
+  // with no workflow able to regenerate the map and repair it (#604). A second
+  // hand-kept list here would be the same defect one layer along, so the
+  // modules are found by reading the directory.
+  //
+  // Candidates are found by MENTION and confirmed by EXPORT. A first version of
+  // this matched /\bINPUTS\s*=/ against the source, which a module escapes by
+  // the most natural refactor there is: folding the declaration into
+  // `module.exports = { ..., INPUTS: [...] }`. Doing that to
+  // derive-retired-slugs.js AND deleting its workflow trigger left this test
+  // green, which is the #604 regression back, so the gate could not fail in the
+  // one case it exists for. The export is the contract; the source scan only
+  // decides who to ask.
+  var renderDir = path.join(REPO_ROOT, "scripts", "render");
+  var candidates = fs
+    .readdirSync(renderDir)
+    .filter(function (f) {
+      return f.slice(-3) === ".js";
+    })
+    .filter(function (f) {
+      return /\bINPUTS\b/.test(fs.readFileSync(path.join(renderDir, f), "utf8"));
+    });
+
+  var declaring = candidates.filter(function (file) {
+    var mod = require(path.join(renderDir, file));
+    return Array.isArray(mod.INPUTS);
   });
+
+  // A candidate that names INPUTS and exports none is either a comment (fine,
+  // and it drops out here) or a declaration nothing can read, which is the same
+  // silence as not declaring it. Reported rather than assumed either way.
+  candidates.forEach(function (file) {
+    var mod = require(path.join(renderDir, file));
+    if (!Array.isArray(mod.INPUTS)) return;
+    mod.INPUTS.forEach(function (input) {
+      assert.ok(
+        watchedBy(triggers, input),
+        file +
+          " declares " +
+          input +
+          ", a derive input no workflow trigger watches",
+      );
+    });
+  });
+
+  // The subject has to be present, or the loop above runs zero times and
+  // reports a clean bill of health for nothing. Both modules are named because
+  // a count alone lets the ONE module this gate exists for drop out silently
+  // while three others keep the number up.
+  assert.ok(
+    declaring.indexOf("derive-retired-slugs.js") !== -1,
+    "derive-retired-slugs.js must be discovered: it is the module #604 was about",
+  );
+  assert.ok(
+    declaring.indexOf("derive-contract.js") !== -1,
+    "derive-contract.js must be discovered",
+  );
+  assert.ok(
+    declaring.length >= 2,
+    "expected several scripts/render modules to export INPUTS, found " +
+      declaring.length,
+  );
 });
 
 test("unicode and hex escapes in a default survive as their characters", function () {
