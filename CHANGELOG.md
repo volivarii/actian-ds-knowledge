@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Added
 
 - **The editor shows the UX patterns app-first, so an app's jobs and the patterns that serve them
-  are read together.** A Patterns tab joins Coverage, Accessibility and Relationships on the
+  are read together.** ([#602](https://github.com/volivarii/actian-ds-knowledge/pull/602)) A Patterns tab joins Coverage, Accessibility and Relationships on the
   editor's front door. It is app-first because the substrate is: an app record carries `useCases`
   (an audience, its jobs, and the patterns each names), a pattern claims one or more apps, and a
   captured page recipe names its pattern, its app, and the surface it was taken from. A flat list
