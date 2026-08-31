@@ -166,6 +166,34 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **The retired-slug map is read when it is used, not when the renderer loads, so a browser host
+  cannot lose every rename to script order.**
+  ([#603](https://github.com/volivarii/actian-ds-knowledge/issues/603)) `ds-html-map.js` snapshotted
+  `window.dsRetiredSlugs` once at load. A browser has no `require`, so a host that inlines this
+  module before `ds-retired-slugs.js`, or sets the global lazily, held an empty map for the life of
+  the page: every renamed slug rendered a bare chip, and nothing went red, because an empty map is a
+  legitimate state (no renames recorded yet). That is the failure that made the resolution inert in
+  the plugin's preview, fixed there by correcting one host's script list while the ordering
+  dependency itself stayed undefended and undocumented. The host's map is now read on each lookup,
+  which removes the dependency rather than documenting it, and **consumers inlining the renderer no
+  longer need `ds-retired-slugs.js` in any particular position**. Precedence is explicit: the ledger
+  this repo owns wins, and the host's map fills in only what the ledger does not carry, so a page
+  cannot repoint a recorded rename. Guarded by two tests, one driving a synthetic rename supplied
+  after load (red before this change) and one asserting the ledger still wins over a late host map.
+
+- **Every `scripts/render` derive that declares inputs now has them asserted against the workflow,
+  found by reading the directory rather than listed.**
+  ([#604](https://github.com/volivarii/actian-ds-knowledge/issues/604)) `derive-retired-slugs.js` declared
+  `INPUTS` with a comment saying `derive-contract.test.js` asserted a workflow watched them, and
+  that test only ever read `derive-contract.js`'s. So the `components/dist/identity.json` trigger was
+  unguarded: removing it during a workflow cleanup would have stayed green until the next recorded
+  rename, then redded the drift test inside the **required** manifest check with no workflow able to
+  regenerate the map and repair it. The assertion now discovers every module in `scripts/render/`
+  that declares `INPUTS`, which is why it needs no registration step and why a second hand-kept list
+  did not replace the first. It also fails a module that declares `INPUTS` without exporting them,
+  since nothing can assert what it cannot read. Proved by deleting the ledger trigger from
+  `render-derive.yml`: the test reds naming `derive-retired-slugs.js`.
+
 - **A denied Figma page stopped being denied when its name grew a suffix.**
   ([#596](https://github.com/volivarii/actian-ds-knowledge/pull/596)) `DENIED_PAGES` exact-matched
   `"Local components"`. The page became `"Local components + templates"`, `includes` quietly stopped

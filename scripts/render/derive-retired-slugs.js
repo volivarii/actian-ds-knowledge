@@ -90,7 +90,11 @@ function main() {
     retired
       .map(function (was) {
         return (
-          "  m[" + JSON.stringify(was) + "] = " + JSON.stringify(index[was]) + ";"
+          "  m[" +
+          JSON.stringify(was) +
+          "] = " +
+          JSON.stringify(index[was]) +
+          ";"
         );
       })
       .join("\n") +
@@ -134,9 +138,12 @@ function main() {
 }
 
 if (require.main === module) main();
-// Declared so tests/render/derive-contract.test.js asserts a workflow actually
-// watches this input. The comment in render-derive.yml explaining why the
-// ledger matters is prose; this is the gate.
+// Declared AND exported so tests/render/derive-contract.test.js asserts a
+// workflow actually watches this input. The comment in render-derive.yml
+// explaining why the ledger matters is prose; this is the gate. That test finds
+// this module by reading scripts/render/ for any file declaring INPUTS, so
+// there is nothing to register, and it fails a module that declares INPUTS
+// without exporting them, because nothing can assert what it cannot read.
 var INPUTS = ["components/dist/identity.json"];
 
 module.exports = { main: main, OUT: OUT, LEDGER: LEDGER, INPUTS: INPUTS };

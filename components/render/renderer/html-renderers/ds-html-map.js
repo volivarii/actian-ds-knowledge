@@ -13,12 +13,6 @@
     (typeof window !== "undefined" && window.fmHtmlMap) ||
     (typeof require !== "undefined" && require("./fm-html-map")) ||
     {};
-  // Retired slug -> current slug, derived from the identity ledger by
-  // scripts/render/derive-retired-slugs.js. Same supply idiom as `fm` above,
-  // because this file is UMD and there is no fs in the browser. An empty map is
-  // a legitimate state (no renames recorded yet), so a missing module degrades
-  // to "resolve nothing" rather than throwing: an unresolved slug renders a
-  // chip, which is what it did before this existed.
   /**
    * resolveSlug(slug) - the retired name a component answers to now, or the
    * slug unchanged.
@@ -38,32 +32,57 @@
    */
   function resolveSlug(slug) {
     if (!slug || typeof slug !== "string") return slug;
-    return Object.prototype.hasOwnProperty.call(RETIRED_SLUGS, slug)
-      ? RETIRED_SLUGS[slug]
-      : slug;
+    // The ledger this repo owns is consulted first, then whatever the host
+    // supplied. A consumer must not be able to repoint a recorded rename from
+    // the page: that is the consumer-restates-producer defect wearing a new hat.
+    var own = LEDGER_SLUGS;
+    if (own && Object.prototype.hasOwnProperty.call(own, slug))
+      return own[slug];
+    var host = hostSlugs();
+    if (host && Object.prototype.hasOwnProperty.call(host, slug))
+      return host[slug];
+    return slug;
   }
 
   // Retired slug -> current slug, derived from the identity ledger by
-  // scripts/render/derive-retired-slugs.js. Same supply idiom as `fm` above,
-  // because this file is UMD and there is no fs in the browser.
+  // scripts/render/derive-retired-slugs.js. Two supply paths, because this file
+  // is UMD and there is no fs in the browser.
   //
-  // The require is WRAPPED: `require` throws on a missing module before `||` can
-  // fall through, and this file is vendored into consumers that prune their
-  // install trees for size, so an absent sibling would take out the entire
-  // renderer at load rather than one component. An empty map is a legitimate
-  // state (no renames recorded yet) and degrades to resolving nothing, which is
-  // what the renderer did before this existed.
-  var RETIRED_SLUGS = (function () {
-    var supplied = typeof window !== "undefined" && window.dsRetiredSlugs;
-    if (!supplied && typeof require !== "undefined") {
+  // Path one, the sibling module, resolved ONCE at load: a require cannot change
+  // under us, and this is the ledger's own answer, so it wins in resolveSlug.
+  // The require is WRAPPED because `require` throws on a missing module before
+  // `||` can fall through, and this file is vendored into consumers that prune
+  // their install trees for size, so an absent sibling would take out the entire
+  // renderer at load rather than one component. An absent or empty ledger both
+  // fall through to the host in resolveSlug, and deliberately so: an empty map
+  // is a legitimate state (no renames recorded yet) and is indistinguishable
+  // from a pruned one, so gating the host read on "the ledger is missing" would
+  // make a consumer whose ledger simply has no renames ignore its own map,
+  // which is #603 again in the one state where it cannot be detected.
+  var LEDGER_SLUGS = (function () {
+    var supplied = null;
+    if (typeof require !== "undefined") {
       try {
         supplied = require("./ds-retired-slugs");
       } catch (e) {
         supplied = null;
       }
     }
-    return (supplied && supplied.RETIRED_SLUGS) || {};
+    return (supplied && supplied.RETIRED_SLUGS) || null;
   })();
+
+  // Path two, the host's map, read LAZILY on every lookup rather than
+  // snapshotted at load. A browser has no require, so window is the only supply
+  // path there, and a host inlines its modules in whatever order its list carries.
+  // Snapshotting here meant that a host loading this file before the map module
+  // held an empty map for the life of the page, with every renamed slug chipping
+  // and nothing going red, because an empty map is a legitimate state (no
+  // renames recorded yet). Reading late removes the ordering dependency instead
+  // of documenting it (#603).
+  function hostSlugs() {
+    var supplied = typeof window !== "undefined" && window.dsRetiredSlugs;
+    return (supplied && supplied.RETIRED_SLUGS) || null;
+  }
   // The `esc`/`parseVariant`/`normalizeProps` fallbacks below are intentional
   // inline mirrors of fm-html-map's helpers, kept for the browser-without-
   // preloaded-fm case (no window.fmHtmlMap and no require). Do NOT delete them

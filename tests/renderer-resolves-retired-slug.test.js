@@ -313,3 +313,70 @@ test("a map supplied through window as a PLAIN object still cannot resolve a pro
     delete require.cache[require.resolve(MAP)];
   }
 });
+
+test("a map supplied AFTER the renderer loads is still read (#603)", function () {
+  // The browser case the load-order defect hides in. `ds-html-map.js` is UMD
+  // and a host inlines its modules in whatever order its own list happens to
+  // carry; if the map module lands AFTER this one, a load-time snapshot is
+  // empty for the life of the page and every renamed slug chips, silently,
+  // because an empty map is a legitimate state (no renames recorded yet).
+  //
+  // Driven with a SYNTHETIC rename absent from the committed ledger, so the
+  // require fallback (which exists in Node and does not in a browser) cannot
+  // supply it and mask the read. If the module snapshots at load, this fails.
+  var hadWindow = "window" in global;
+  var prevWindow = global.window;
+  delete require.cache[require.resolve(MAP)];
+  try {
+    // 1. Load with a window present and NO map on it, the browser's ordering.
+    global.window = {};
+    var fresh = require(MAP);
+    // 2. The host supplies the map afterwards, as a late <script> would.
+    global.window.dsRetiredSlugs = {
+      RETIRED_SLUGS: { "zz-synthetic-retired": "button" },
+    };
+    assert.equal(
+      fresh.renderDSComponent({ dsSlug: "zz-synthetic-retired" }),
+      fresh.renderDSComponent({ dsSlug: "button" }),
+      "a rename supplied after load must still resolve",
+    );
+  } finally {
+    if (hadWindow) global.window = prevWindow;
+    else delete global.window;
+    delete require.cache[require.resolve(MAP)];
+  }
+});
+
+test("a late window map does not override the ledger the renderer loaded (#603)", function () {
+  // The lazy read must not let a host silently REPLACE a recorded rename: the
+  // ledger this repo owns wins, and the window map fills in only what the
+  // ledger did not carry. Otherwise "read it late" becomes "anyone can repoint
+  // a component from the page", which is the consumer-restates-producer defect
+  // wearing a new hat.
+  var names = Object.keys(retired);
+  if (!names.length) return; // covered by the "ledger has at least one rename" test
+  var known = names[0];
+  var hadWindow = "window" in global;
+  var prevWindow = global.window;
+  delete require.cache[require.resolve(MAP)];
+  try {
+    global.window = {};
+    var fresh = require(MAP);
+    global.window.dsRetiredSlugs = {
+      RETIRED_SLUGS: (function () {
+        var o = {};
+        o[known] = "zz-not-the-ledgers-answer";
+        return o;
+      })(),
+    };
+    assert.equal(
+      fresh.renderDSComponent({ dsSlug: known }),
+      fresh.renderDSComponent({ dsSlug: retired[known] }),
+      "the ledger's own answer must win over a late window map",
+    );
+  } finally {
+    if (hadWindow) global.window = prevWindow;
+    else delete global.window;
+    delete require.cache[require.resolve(MAP)];
+  }
+});
