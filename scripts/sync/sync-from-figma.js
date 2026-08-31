@@ -1241,6 +1241,20 @@ async function run(opts) {
     pageOverrides: pageOverrides,
   };
   orchOpts.deferrals = deferrals;
+  // Derived HERE, not only in the registries phase. The anatomy phase is
+  // independently addressable (`--phase anatomy`, the ordinary way to re-run it
+  // after a partial night) and the registries assignment below also sits inside
+  // a try that can throw. Without this default, a deferred slug's genuinely
+  // absent Figma node reads as a fetch FAILURE — the outage alarm the deferred
+  // branch exists to avoid — and the deferred report is empty exactly then
+  // (#608). The registries phase refines this from deferralState when it runs.
+  orchOpts.deferredSlugs = (deferrals || [])
+    .filter(function (d) {
+      return d && d.kit === "dsKit";
+    })
+    .map(function (d) {
+      return d.slug;
+    });
   orchOpts.writeJson = writeJson;
   orchOpts.registriesDir = outputDir;
   orchOpts.anatomyDir = path.join(pluginDir, "components", "dist", "anatomy");
@@ -1710,6 +1724,10 @@ async function run(opts) {
           anatomyDir: anatomyDir,
           outputDir: mediaOutputDir,
           rest: rest,
+          // Same list the anatomy phase gets: this phase reads the anatomy dist
+          // that phase carries forward, so it needs the same awareness of which
+          // absences are expected.
+          deferredSlugs: orchOpts.deferredSlugs,
         })
         .then(function (r) {
           var cat = r.captured.length > 0 ? "additive" : "unchanged";

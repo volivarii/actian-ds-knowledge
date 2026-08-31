@@ -74,6 +74,40 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **A deferred slug keeps its anatomy capture, which the prune had been deleting despite two comments
+  saying otherwise.** (PR_LINK_TODO_608) The 2026-08-31 sync deleted the anatomy of all six slugs in
+  `components/src/sync-deferrals.json` at once: `confirmation`, `error-state`, `maintenance-state`,
+  `digram-topic`, `lineage-connecting-line`, `lineage-grouped-node`. Closes #608.
+
+  A deferral carries a component's registry entry forward when Figma has stopped publishing it, so
+  that "consumers see what they always saw". Figma therefore returns no node for such a slug every
+  night, by design. `sync-anatomy.js` collected those slugs into `deferred` and returned early, and
+  the prune protects only the bundle plus the failed list. `deferred` was neither, so the file was
+  deleted, while the branch's own comment said it was "preserved by the prune below either way" and
+  the run's changelog line said "existing anatomy preserved". Both claims were false. A deferred slug
+  is now seeded into the bundle and protected from the prune exactly as a failed one already was, and
+  it needs that protection MORE, since a fetch miss is transient while a deferral lasts weeks.
+
+  The six captures are restored from `39454e81^` in this PR because **nothing can regenerate them**: a
+  deferred slug has no Figma node, which is the whole reason it is deferred, so the code fix alone
+  would have protected an empty space. This is a deliberate hand-edit under `components/dist/`, made
+  because the generator provably cannot produce the files.
+
+  Measured by removing and restoring the six around a fidelity run: checkable colour declarations
+  **77 to 78**, blind slugs **33 to 32**, oracle coverage **18.9% to 19.1%**, and
+  `lineage-grouped-node` returns from blind to one verified declaration. That reverses the whole of
+  the repo-wide coverage loss recorded on the 2026-08-31 sync.
+
+  The phase now also reports its deferred slugs on the result, so a deferral that stops matching
+  reality is visible in the run rather than found later as a coverage dip. That list is derived beside
+  the deferrals it comes from rather than inside the registries phase, because the anatomy phase is
+  independently addressable: `--phase anatomy` on its own used to hand it no list at all, so every
+  deferred slug reported as `⚠️ FAILED ... (no node payload from Figma)`, which is the Figma-outage
+  alarm the deferred branch exists to avoid, and the deferred report was empty exactly when it was
+  needed. `sync-media-default` gets the same list: it reads the anatomy dist this change carries
+  forward, so without it the restored captures would have put six permanent false entries in
+  `missing`, the bucket that module keeps meaningful as a regression signal.
+
 - **The rename precondition reads structure rather than raw text, so documenting a migration no longer
   blocks it.** ([#611](https://github.com/volivarii/actian-ds-knowledge/pull/611)) `rename-preconditions.mentions()` scanned whole files, so a slug named in a
   sentence blocked a rename exactly as a `case` label or a `components[]` entry did. The gate's own
@@ -1857,7 +1891,6 @@ Each entry links its pull request. Dates are the merge date (UTC).
   registry's `categorySlug`, which this very rename had just moved to `form`. So the decision to hold
   the slug still is what left 19 components resolving to nothing in both consumers. Reversed with the
   measurement attached, below.
-
 
 
   **Verified against the category mass-loss tripwire**, which was the real risk of a rename: it keys

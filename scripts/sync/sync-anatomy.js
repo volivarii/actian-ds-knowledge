@@ -245,8 +245,13 @@ async function syncAnatomy(opts, kit) {
       // to carry it forward; Figma really has stopped publishing it, so its node
       // is genuinely gone and will be gone every night the deferral runs.
       // Reporting it as a failure would make a ⚠️ FAILED line indistinguishable
-      // from a real Figma outage, for weeks. Its existing file is preserved by
-      // the prune below either way.
+      // from a real Figma outage, for weeks.
+      //
+      // 🪤 This branch returns EARLY, so the slug lands in neither the bundle
+      // nor `failed`. Its file therefore survives only because `deferred` is
+      // passed to the prune's protect list and seeded into the bundle below.
+      // This comment used to say the file was "preserved by the prune either
+      // way"; it was not, and six captures were deleted at once (#608).
       if ((opts.deferredSlugs || []).indexOf(slug) !== -1) {
         deferred.push(slug);
         return;
@@ -316,16 +321,25 @@ async function syncAnatomy(opts, kit) {
   // from the existing per-slug dist so both manifest surfaces (per-slug files
   // and anatomy.bundle.json) stay consistent through transient failures. A
   // total outage therefore re-emits the prior bundle instead of wiping it.
-  failed.forEach(function (f) {
-    if (bundle.components[f.slug]) return;
-    try {
-      bundle.components[f.slug] = JSON.parse(
-        fs.readFileSync(path.join(anatomyDir, f.slug + ".json"), "utf8"),
-      );
-    } catch (e) {
-      /* no prior file — nothing to preserve */
-    }
-  });
+  // A DEFERRED slug needs this MORE than a failed one, not less: a fetch miss is
+  // transient, while a deferral means Figma has stopped publishing the component
+  // and will return no node every night until the removal is carried through.
+  // Seeding both keeps the two manifest surfaces agreeing.
+  failed
+    .map(function (f) {
+      return f.slug;
+    })
+    .concat(deferred)
+    .forEach(function (slug) {
+      if (bundle.components[slug]) return;
+      try {
+        bundle.components[slug] = JSON.parse(
+          fs.readFileSync(path.join(anatomyDir, slug + ".json"), "utf8"),
+        );
+      } catch (e) {
+        /* no prior file — nothing to preserve */
+      }
+    });
   // Canonical bundle: slug-sorted (registry order is arbitrary pre-migration)
   // and written only when it actually differs from the on-disk bundle.
   var sortedBundleComponents = {};
@@ -351,12 +365,19 @@ async function syncAnatomy(opts, kit) {
   // transient empty/partial Figma response (count 0) must never wipe existing data.
   // Failed slugs are protected: their prior files stay until a clean sync replaces
   // them. Anything actually deleted is a consumer-visible removal → breaking.
+  // 🪤 `deferred` must be protected explicitly. Its branch returns early, so a
+  // deferred slug lands in neither the bundle nor `failed`, and the prune
+  // deleted the file that branch's comment promised was "preserved either way"
+  // — six captures at once on 2026-08-31, unrebuildable because a deferred slug
+  // has no Figma node by definition (#608).
   var deleted = pruneStaleAnatomy(
     anatomyDir,
     Object.keys(bundle.components),
-    failed.map(function (f) {
-      return f.slug;
-    }),
+    failed
+      .map(function (f) {
+        return f.slug;
+      })
+      .concat(deferred),
   );
   var changelog = [];
   if (written > 0 || bundleWrote) {
@@ -427,6 +448,7 @@ async function syncAnatomy(opts, kit) {
     wrote: changed,
   };
   if (failed.length) extra.failed = failed;
+  if (deferred.length) extra.deferred = deferred;
   if (deleted.length) extra.deleted = deleted;
   return result(count, extra);
 }

@@ -72,9 +72,19 @@ async function run(opts) {
   var missing = [];
   var skipped = [];
   var setIdBySlug = {};
+  // A DEFERRED slug is in the registry only because a deferral carries it, and
+  // its anatomy is a capture carried forward. Figma publishes no node for it, by
+  // design and every night, so asking for one and calling the absence a capture
+  // FAILURE would put a permanent false entry in `missing` — the bucket this
+  // module keeps meaningful as a regression signal (#608).
+  var deferred = new Set(opts.deferredSlugs || []);
   slugs.forEach(function (slug) {
     var src = readSource(opts.anatomyDir, slug);
     if (!src) {
+      skipped.push(slug);
+      return;
+    }
+    if (deferred.has(slug)) {
       skipped.push(slug);
       return;
     }
