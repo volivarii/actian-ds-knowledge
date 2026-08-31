@@ -22,6 +22,7 @@ import { groupGraphNeighbors } from "../lib/relationGroups";
 import { GraphView } from "./GraphView";
 import type { Layout } from "../substrate/neighborhoodLayout";
 import { slugOfNodeId } from "../substrate/nodeSlug";
+import { onActivateKey } from "../lib/onActivateKey";
 
 export interface RelationsPanelProps {
   text: string;
@@ -89,17 +90,6 @@ export function writeRelationsPanelCollapsed(collapsed: boolean): void {
   }
 }
 
-/** Wraps a click-equivalent action into a keydown handler so a clickable
- *  div (role="button") also responds to Enter and Space, matching native
- *  button semantics. */
-function onActivateKey(action: () => void) {
-  return (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      action();
-    }
-  };
-}
 
 /** Relation row that navigates (click/Enter/Space) when it has somewhere
  *  to go, and stays a plain box otherwise. The single owner of the
