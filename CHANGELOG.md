@@ -75,7 +75,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Added
 
 - **A captured page recipe is readable in the editor, so the prose a review turns on is no longer
-  reachable only by opening the JSON.** (PR_LINK_TODO) A capture chip on the Patterns tab opens a
+  reachable only by opening the JSON.** ([#610](https://github.com/volivarii/actian-ds-knowledge/pull/610)) A capture chip on the Patterns tab opens a
   read-only panel. Provenance leads (the product surface the capture was taken from, its date, the
   product version), then the description and the `when` clause in full, the named slots with their
   prose, the render notes, and the skeleton as a collapsed outline. `loadRecipes` already parsed
