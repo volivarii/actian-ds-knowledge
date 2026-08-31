@@ -75,7 +75,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **The rename precondition reads structure rather than raw text, so documenting a migration no longer
-  blocks it.** (PR_LINK_TODO_562) `rename-preconditions.mentions()` scanned whole files, so a slug named in a
+  blocks it.** ([#611](https://github.com/volivarii/actian-ds-knowledge/pull/611)) `rename-preconditions.mentions()` scanned whole files, so a slug named in a
   sentence blocked a rename exactly as a `case` label or a `components[]` entry did. The gate's own
   rationale is about structured references: a case label feeds `RENDER_SLUGS`, and a `components[]`
   entry makes `derive-graph` throw. Prose fails neither, so blocking on it prevented nothing while
