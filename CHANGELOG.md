@@ -75,7 +75,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **A deferred slug keeps its anatomy capture, which the prune had been deleting despite two comments
-  saying otherwise.** (PR_LINK_TODO_608) The 2026-08-31 sync deleted the anatomy of all six slugs in
+  saying otherwise.** ([#613](https://github.com/volivarii/actian-ds-knowledge/pull/613)) The 2026-08-31 sync deleted the anatomy of all six slugs in
   `components/src/sync-deferrals.json` at once: `confirmation`, `error-state`, `maintenance-state`,
   `digram-topic`, `lineage-connecting-line`, `lineage-grouped-node`. Closes #608.
 
