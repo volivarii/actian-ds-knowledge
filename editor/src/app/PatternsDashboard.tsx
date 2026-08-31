@@ -6,9 +6,10 @@
 // app and the surface it was taken from. A flat list with an app filter would
 // show only the weakest of those three.
 //
-// Pure read and navigate. A row opens the pattern's source markdown; a capture
-// chip opens the recipe JSON. Nothing here writes, and patterns carry no status
-// field, so there is no promote control to mirror the guidance domains.
+// Pure read. A pattern row opens its source markdown; a capture chip opens a
+// read-only RecipePanel, which routes nowhere because a recipe is JSON and
+// EditorShell has no JSON surface. Nothing here writes, and patterns carry no
+// status field, so there is no promote control to mirror the guidance domains.
 
 import { useEffect, useMemo, useState } from "react";
 import type { Octokit } from "@octokit/rest";
@@ -27,8 +28,12 @@ import {
   loadPatternIndex,
   type AppSection,
   type PatternIndex,
+  type PatternRecipe,
   type PatternRow,
+  recipeSrcPath,
 } from "../lib/patternIndex";
+import { onActivateKey } from "../lib/onActivateKey";
+import { RecipePanel } from "./RecipePanel";
 
 export interface PatternsDashboardProps {
   octokit: Octokit;
@@ -36,7 +41,6 @@ export interface PatternsDashboardProps {
 }
 
 const PATTERN_SRC = (slug: string) => `app-context/src/patterns/${slug}.md`;
-const RECIPE_SRC = (slug: string) => `app-context/src/recipes/${slug}.json`;
 
 function truncate(s: string | null, n: number): string {
   if (!s) return "";
@@ -46,10 +50,12 @@ function truncate(s: string | null, n: number): string {
 function PatternTable({
   rows,
   onOpenFile,
+  onOpenRecipe,
   emptyText,
 }: {
   rows: PatternRow[];
   onOpenFile: (path: string) => void;
+  onOpenRecipe: (recipe: PatternRecipe, trigger: HTMLElement | null) => void;
   emptyText: string;
 }) {
   return (
@@ -121,15 +127,24 @@ function PatternTable({
                       variant="soft"
                       color="green"
                       size="1"
-                      // NOT clickable. A recipe is JSON, and EditorShell routes
-                      // only _meta.yml, the app-context frontmatter forms and
-                      // plain markdown, so opening one lands on the refusal
-                      // banner. A chip that navigates to a dead end reads as
-                      // broken; making recipes openable here is its own change
-                      // (the editor has no JSON surface at all today).
+                      style={{ cursor: "pointer" }}
+                      // A Badge renders a span. Without these a keyboard user
+                      // never reaches the chip and the panel is mouse-only.
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={onActivateKey((e) =>
+                        onOpenRecipe(r, e.currentTarget as HTMLElement),
+                      )}
+                      // Opens a READ-ONLY panel, and still hands no path to the
+                      // router: a recipe is JSON, EditorShell routes only
+                      // _meta.yml, the app-context frontmatter forms and plain
+                      // markdown, so routing here would land on the refusal
+                      // banner. Editing a recipe is the Class C JSON widget,
+                      // still unbuilt.
+                      onClick={(e) => onOpenRecipe(r, e.currentTarget)}
                       title={`${r.surface ?? r.slug}${
                         r.capturedOn ? `, captured ${r.capturedOn}` : ""
-                      }. ${RECIPE_SRC(r.slug)}, not editable in the editor yet.`}
+                      }. ${recipeSrcPath(r.slug)}`}
                     >
                       {/* The surface, not the app: an app-named chip here reads
                           identically to the app badges two columns left, and
@@ -152,9 +167,11 @@ function PatternTable({
 function AppBlock({
   app,
   onOpenFile,
+  onOpenRecipe,
 }: {
   app: AppSection;
   onOpenFile: (path: string) => void;
+  onOpenRecipe: (recipe: PatternRecipe, trigger: HTMLElement | null) => void;
 }) {
   const reached = app.useCases.reduce((n, u) => n + u.patterns.length, 0);
   return (
@@ -213,6 +230,7 @@ function AppBlock({
           <PatternTable
             rows={uc.patterns}
             onOpenFile={onOpenFile}
+            onOpenRecipe={onOpenRecipe}
             emptyText="This use case names no patterns."
           />
         </Box>
@@ -224,6 +242,7 @@ function AppBlock({
       <PatternTable
         rows={app.unreachedPatterns}
         onOpenFile={onOpenFile}
+        onOpenRecipe={onOpenRecipe}
         emptyText="Every pattern claiming this app is named by a use case."
       />
     </Box>
@@ -239,6 +258,28 @@ export function PatternsDashboard({
     | { kind: "ready"; index: PatternIndex }
     | { kind: "error"; message: string }
   >({ kind: "loading" });
+  // The capture a reader has opened, held here rather than per table so the two
+  // tables in an app block (named, and claimed-but-unnamed) share one panel.
+  //
+  // The token counts OPENINGS, not recipes. buildPatternIndex maps the recipes
+  // once, so a recipe claimed by two rows is the SAME object in both, and
+  // setState with it again is a React bail-out: no re-render, no scroll, and a
+  // reader who scrolled away sees nothing move. Keying the panel on the token
+  // also returns the outline to collapsed, which is DOM state on <details> that
+  // would otherwise survive a switch between captures.
+  const [opened, setOpened] = useState<{
+    recipe: PatternRecipe;
+    token: number;
+    // The chip that opened the panel, so closing returns focus there instead of
+    // stranding a keyboard reader on <body> to tab from the top of the page.
+    trigger: HTMLElement | null;
+  } | null>(null);
+  const openRecipe = (recipe: PatternRecipe, trigger: HTMLElement | null) =>
+    setOpened((prev) => ({ recipe, trigger, token: (prev?.token ?? 0) + 1 }));
+  const closeRecipe = () => {
+    opened?.trigger?.focus();
+    setOpened(null);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -311,6 +352,15 @@ export function PatternsDashboard({
       <Heading as="h3" size="5" mb="1">
         Patterns
       </Heading>
+      {opened && (
+        <Box mb="4">
+          <RecipePanel
+            key={opened.token}
+            recipe={opened.recipe}
+            onClose={closeRecipe}
+          />
+        </Box>
+      )}
       <Text size="2" color="gray" mb="4" as="p">
         {summary!.patterns} patterns across {summary!.apps} apps ·{" "}
         {summary!.useCases} use cases naming {summary!.namedByAUseCase} of them
@@ -361,7 +411,11 @@ export function PatternsDashboard({
       {index.apps.map((app, i) => (
         <Box key={app.slug}>
           {i > 0 && <Separator size="4" mb="5" />}
-          <AppBlock app={app} onOpenFile={onOpenFile} />
+          <AppBlock
+            app={app}
+            onOpenFile={onOpenFile}
+            onOpenRecipe={openRecipe}
+          />
         </Box>
       ))}
     </Box>

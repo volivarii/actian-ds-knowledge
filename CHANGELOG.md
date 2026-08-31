@@ -74,6 +74,37 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **A captured page recipe is readable in the editor, so the prose a review turns on is no longer
+  reachable only by opening the JSON.** (PR_LINK_TODO) A capture chip on the Patterns tab opens a
+  read-only panel. Provenance leads (the product surface the capture was taken from, its date, the
+  product version), then the description and the `when` clause in full, the named slots with their
+  prose, the render notes, and the skeleton as a collapsed outline. `loadRecipes` already parsed
+  every one of those fields and the index typed only the join keys, so the panel costs no new fetch.
+
+  The panel reads `app-context/dist/recipes` and points a correction at `app-context/src/recipes`,
+  and says so on screen: a reviewer sent to the generated copy would edit a file CI overwrites. The
+  chip routes nowhere, because a recipe is JSON and `EditorShell` has no JSON surface at all;
+  editing one in place is the Class C JSON widget, still unbuilt.
+
+  The skeleton is read as an outline, never painted. Painting a FRAME/TEXT/INSTANCE tree is the
+  plugin's `render-node.js`, so the outline names each node and, for an INSTANCE, the component it
+  instantiates, its variant and the props it sets. That is where a capture touches the design
+  system: all 73 instance nodes across the four recipes carry a `ref` and none carries a `name`, and
+  49 keep the page's words in `props` (`fmTabs` holds its tab labels there the way a TEXT node holds
+  its string in `content`). Reading only the name renders all 73 as one repeated word. The captures
+  run 30 to 142 nodes at depth 7, which is why the outline opens collapsed behind its node count and
+  returns to collapsed when the reader switches captures.
+
+  A skeleton the walker can read nothing from is reported as a finding rather than rendered as
+  silence: the schema constrains `skeleton` only to `object`, and an unreadable one would otherwise
+  look identical to an absent one. The chip carries `role="button"`, `tabIndex` and Enter/Space
+  activation, and closing the panel returns focus to the chip that opened it, so the panel is
+  reachable without a mouse. The Enter/Space helper moves out of `RelationsPanel` into
+  `lib/onActivateKey.ts` so both callers share one copy.
+
+  Scope worth stating: 4 recipes exist, on 3 of the 31 patterns, and 28 patterns carry no capture at
+  all. The reading surface is wider than the substrate behind it. No schema, derive or dist changes.
+
 - **The editor shows the UX patterns app-first, so an app's jobs and the patterns that serve them
   are read together.** ([#602](https://github.com/volivarii/actian-ds-knowledge/pull/602)) A Patterns tab joins Coverage, Accessibility and Relationships on the
   editor's front door. It is app-first because the substrate is: an app record carries `useCases`
@@ -81,7 +112,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   captured page recipe names its pattern, its app, and the surface it was taken from. A flat list
   filtered by app would show only the weakest of the three. Each app section lists its use cases
   with their patterns, then the patterns that claim the app and no use case names. A row opens the
-  pattern's source markdown, a capture chip opens the recipe JSON. Read and navigate only: patterns
+  pattern's source markdown. Read and navigate only: patterns
   carry no status field, so there is no promote control, and no schema, derive or dist changes.
 
   Every join reports what it cannot resolve rather than dropping it, which is the failure this repo

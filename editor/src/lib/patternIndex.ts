@@ -22,6 +22,15 @@ import { listFilesByGlob, getTextFile } from "../app/githubApi";
 export const APP_CONTEXT_PATH = "app-context/dist/app-context.json";
 export const RECIPES_DIR = "app-context/dist/recipes";
 
+/**
+ * Where a correction to a recipe goes. Distinct from RECIPES_DIR on purpose:
+ * the editor READS the generated copy and must aim every edit at the authored
+ * one, and two hand-written copies of that path is how one of them quietly
+ * starts pointing at a 404.
+ */
+export const RECIPES_SRC_DIR = "app-context/src/recipes";
+export const recipeSrcPath = (slug: string) => `${RECIPES_SRC_DIR}/${slug}.json`;
+
 // ---------------------------------------------------------------- input shapes
 
 export interface SidebarEntry {
@@ -61,14 +70,32 @@ export interface RecipeDoc {
   label?: string;
   apps?: string[];
   patterns?: string[];
+  description?: string;
+  when?: string;
+  tags?: string[];
   derivedFrom?: {
     surface?: string;
     capturedOn?: string;
     productVersion?: string;
   };
+  /** Named regions of the page, each described in prose rather than geometry. */
+  slots?: Record<string, string>;
+  renderNotes?: string[];
+  /**
+   * The captured FRAME/TEXT/INSTANCE tree, carried RAW. Reading it as an
+   * outline is `recipeSkeleton.ts`; PAINTING it needs the plugin's
+   * render-node.js and is deliberately not attempted here.
+   */
+  skeleton?: { chrome?: unknown; appHeader?: unknown; content?: unknown };
 }
 
 // --------------------------------------------------------------- output shapes
+
+/** One named region of a captured page, described in prose. */
+export interface RecipeSlot {
+  name: string;
+  description: string;
+}
 
 export interface PatternRecipe {
   slug: string;
@@ -78,6 +105,19 @@ export interface PatternRecipe {
   names: string[];
   surface: string | null;
   capturedOn: string | null;
+  productVersion: string | null;
+  description: string | null;
+  when: string | null;
+  tags: string[];
+  /**
+   * The reviewable body. Lists are always lists, never undefined: the reader
+   * maps over them, and three of the four recipes on disk predate some of
+   * these fields.
+   */
+  slots: RecipeSlot[];
+  renderNotes: string[];
+  /** Raw, walked into an outline only when a reader opens the capture. */
+  skeleton: RecipeDoc["skeleton"] | null;
 }
 
 export interface PatternRow {
@@ -142,6 +182,19 @@ function toRecipe(doc: RecipeDoc): PatternRecipe {
     names: doc.patterns ?? [],
     surface: doc.derivedFrom?.surface ?? null,
     capturedOn: doc.derivedFrom?.capturedOn ?? null,
+    productVersion: doc.derivedFrom?.productVersion ?? null,
+    description: doc.description ?? null,
+    when: doc.when ?? null,
+    tags: doc.tags ?? [],
+    // Insertion order, which is authoring order: the slots read top to bottom
+    // down the captured page, and sorting them alphabetically would scramble
+    // the one thing their sequence tells a reader.
+    slots: Object.entries(doc.slots ?? {}).map(([name, description]) => ({
+      name,
+      description,
+    })),
+    renderNotes: doc.renderNotes ?? [],
+    skeleton: doc.skeleton ?? null,
   };
 }
 

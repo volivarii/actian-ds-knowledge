@@ -216,3 +216,93 @@ test("a pattern claiming an app the context does not define is reported", () => 
     { pattern: "stray", apps: ["administration"] },
   ]);
 });
+
+// ---------------------------------------------------------------------------
+// The reviewable body of a capture. `loadRecipes` already parses the whole
+// recipe file; until now `RecipeDoc` typed only the join keys, so the prose a
+// Design Lead reviews (the slots, the render notes, the when clause) was read
+// off disk and then dropped on the floor. These assert it reaches the row.
+
+const fullRecipe: RecipeDoc = {
+  slug: "asset-detail-360",
+  label: "Asset detail 360",
+  apps: ["studio"],
+  patterns: ["asset-detail-360"],
+  description: "A detail page for one asset.",
+  when: "Use when the reader needs the whole of one asset in one place.",
+  tags: ["detail", "tabs"],
+  derivedFrom: {
+    surface: "Studio > Catalog > Asset > Overview",
+    capturedOn: "2026-08-19",
+    productVersion: "next.dev.zeenea.app/studio",
+  },
+  slots: {
+    header: "Asset title over the technical path.",
+    tabs: "A tab bar whose labels carry result counts.",
+  },
+  renderNotes: [
+    "Do NOT compose this from fmDialog: it is a stub.",
+    "fmTabs renders no count badge.",
+  ],
+};
+
+test("a capture carries its when clause, description and tags onto the pattern row", () => {
+  const index = buildPatternIndex(ctx, [fullRecipe]);
+  const row = index.patterns.find((p) => p.slug === "asset-detail-360");
+  const capture = row?.recipes.find((r) => r.slug === "asset-detail-360");
+  assert.ok(capture);
+  assert.equal(
+    capture.when,
+    "Use when the reader needs the whole of one asset in one place.",
+  );
+  assert.equal(capture.description, "A detail page for one asset.");
+  assert.deepEqual(capture.tags, ["detail", "tabs"]);
+});
+
+test("a capture carries its slots as an ordered name-and-prose list", () => {
+  const index = buildPatternIndex(ctx, [fullRecipe]);
+  const capture = index.patterns
+    .find((p) => p.slug === "asset-detail-360")
+    ?.recipes.find((r) => r.slug === "asset-detail-360");
+  assert.deepEqual(capture?.slots, [
+    { name: "header", description: "Asset title over the technical path." },
+    { name: "tabs", description: "A tab bar whose labels carry result counts." },
+  ]);
+});
+
+test("a capture carries its render notes, the sharpest prose in the file", () => {
+  const index = buildPatternIndex(ctx, [fullRecipe]);
+  const capture = index.patterns
+    .find((p) => p.slug === "asset-detail-360")
+    ?.recipes.find((r) => r.slug === "asset-detail-360");
+  assert.deepEqual(capture?.renderNotes, [
+    "Do NOT compose this from fmDialog: it is a stub.",
+    "fmTabs renders no count badge.",
+  ]);
+});
+
+test("a capture carries the product version it was taken from", () => {
+  const index = buildPatternIndex(ctx, [fullRecipe]);
+  const capture = index.patterns
+    .find((p) => p.slug === "asset-detail-360")
+    ?.recipes.find((r) => r.slug === "asset-detail-360");
+  assert.equal(capture?.productVersion, "next.dev.zeenea.app/studio");
+});
+
+test("a capture with no slots or render notes yields empty lists, never undefined", () => {
+  // The panel maps over these. An undefined here is a crash in the reader, and
+  // three of the four recipes on disk predate some of these fields.
+  const index = buildPatternIndex(ctx, [
+    { slug: "bare", patterns: ["asset-detail-360"] },
+  ]);
+  const capture = index.patterns
+    .find((p) => p.slug === "asset-detail-360")
+    ?.recipes.find((r) => r.slug === "bare");
+  assert.ok(capture);
+  assert.deepEqual(capture.slots, []);
+  assert.deepEqual(capture.renderNotes, []);
+  assert.deepEqual(capture.tags, []);
+  assert.equal(capture.when, null);
+  assert.equal(capture.description, null);
+  assert.equal(capture.productVersion, null);
+});
