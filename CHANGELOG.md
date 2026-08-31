@@ -18,6 +18,28 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Added
+
+- **The editor shows the UX patterns app-first, so an app's jobs and the patterns that serve them
+  are read together.** A Patterns tab joins Coverage, Accessibility and Relationships on the
+  editor's front door. It is app-first because the substrate is: an app record carries `useCases`
+  (an audience, its jobs, and the patterns each names), a pattern claims one or more apps, and a
+  captured page recipe names its pattern, its app, and the surface it was taken from. A flat list
+  filtered by app would show only the weakest of the three. Each app section lists its use cases
+  with their patterns, then the patterns that claim the app and no use case names. A row opens the
+  pattern's source markdown, a capture chip opens the recipe JSON. Read and navigate only: patterns
+  carry no status field, so there is no promote control, and no schema, derive or dist changes.
+
+  Every join reports what it cannot resolve rather than dropping it, which is the failure this repo
+  keeps re-learning: a use case naming a pattern that does not exist, a capture naming one that does
+  not exist, and a pattern claiming an app the context does not define each surface in place. On the
+  substrate as it stands the three come back empty, and what the view does show is that 4 use cases
+  name 10 of the 31 patterns, that 17 carry no `when` clause (the sentence that tells a pattern from
+  its siblings, and one the schema does not require), that 3 patterns carry a capture and
+  `right-sliding-drawer` carries two (Explorer's and Studio's, one shape told apart by which app
+  asks), and that Explorer's sidebar is recorded as empty where Studio has 7 entries and
+  Administration 8. All of it derived and none of it typed in.
+
 ### Changed
 
 - **The renderer resolves a retired slug through the identity ledger, so a rename stops breaking
