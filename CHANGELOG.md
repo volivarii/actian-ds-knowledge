@@ -75,7 +75,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **A guidance link that lands on no page is now caught, which is how a freed component slug goes
-  wrong silently.** (PR_LINK_TODO_605) The 2026-08-31 sync freed `calendar` and handed it to the calendar glyph
+  wrong silently.** ([#612](https://github.com/volivarii/actian-ds-knowledge/pull/612)) The 2026-08-31 sync freed `calendar` and handed it to the calendar glyph
   on the Icons page while the component moved to `calendar-data-selector`. Four links in
   `calendar-date-input` still said `[calendar](calendar)`, meaning the picker, and pointed at a slug
   with no guidance page at all. They now point at `calendar-data-selector`. Two further dead links
