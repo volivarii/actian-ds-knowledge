@@ -83,6 +83,95 @@ function mentions(text, slug) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// #562: scan STRUCTURE, not raw text.
+//
+// The rationale above is entirely about STRUCTURED references: a `case` label
+// feeds RENDER_SLUGS, a components[] entry makes derive-graph throw. Prose
+// fails neither gate, so blocking on a prose mention prevents nothing and
+// makes every future rename harder. Worse, it penalises the habit this repo
+// wants: the more carefully somebody writes up a migration, the more firmly
+// they block the thing they are documenting.
+//
+// 🔑 The lists below are of PROSE, never of slug-bearing fields. An
+// unrecognised key is still scanned and still blocks. Getting that polarity
+// backwards would turn a new slug-bearing field into a silent all-clear, which
+// is the single failure this module exists to prevent.
+
+// Frontmatter keys whose values are sentences. A slug inside one is being
+// talked ABOUT, not referenced.
+var PROSE_KEYS = ["description", "note", "when", "label", "summary", "why"];
+
+// Comments are commentary, including commentary about a past rename. The case
+// labels are the code and still count.
+function stripJsComments(text) {
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+}
+
+// The frontmatter block, or null when there is none. Null means the caller
+// falls back to scanning everything, because unknown must not read as absent.
+function frontmatterOf(text) {
+  var m = /^---\n([\s\S]*?)\n---/.exec(text);
+  return m ? m[1] : null;
+}
+
+// Blank the VALUES of prose keys, leaving every other line intact.
+//
+// Line-based rather than one regex on purpose: a block scalar's continuation
+// is "the following lines indented deeper than its key", and a regex that
+// guesses the extent can swallow the NEXT key. Swallowing a structured field
+// is a false all-clear, so the rule is written to be readable rather than
+// short.
+function stripProseValues(yaml) {
+  var proseKey = new RegExp("^(\\s*)(?:-\\s*)?(" + PROSE_KEYS.join("|") + "):");
+  // An inline flow map: `- { ref: x, note: a sentence, possibly quoted }`.
+  var inlineProse = new RegExp(
+    "\\b(" +
+      PROSE_KEYS.join("|") +
+      "):\\s*(\"(?:[^\"\\\\]|\\\\.)*\"|'(?:[^'\\\\]|\\\\.)*'|[^,}\\n]*)",
+    "g",
+  );
+  var lines = yaml.split("\n");
+  var out = [];
+  var blockIndent = null;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (blockIndent !== null) {
+      var indent = line.match(/^\s*/)[0].length;
+      // A blank line inside a block scalar belongs to it; anything indented no
+      // deeper than the key ends it.
+      if (line.trim() === "" || indent > blockIndent) {
+        out.push("");
+        continue;
+      }
+      blockIndent = null;
+    }
+    var m = proseKey.exec(line);
+    if (m) {
+      blockIndent = m[1].length;
+      out.push("");
+      continue;
+    }
+    out.push(line.replace(inlineProse, "$1:"));
+  }
+  return out.join("\n");
+}
+
+// What of a file is a slug REFERENCE rather than a sentence about one.
+function scannableText(file, text) {
+  if (/\.js$/.test(file)) return stripJsComments(text);
+  if (/\.md$/.test(file)) {
+    var fm = frontmatterOf(text);
+    // No frontmatter is a shape this module does not understand, so it degrades
+    // to the old whole-text scan and blocks rather than clearing.
+    if (fm === null) return text;
+    return stripProseValues(fm);
+  }
+  return text;
+}
+
 // Authored files that still name `slug`. Empty means the rename is absorbable.
 function authoredReferences(repoRoot, slug) {
   var hits = [];
@@ -97,7 +186,8 @@ function authoredReferences(repoRoot, slug) {
         hits.push({ file: file, why: "unreadable: " + e.message });
         return;
       }
-      if (mentions(text, slug)) hits.push({ file: file, why: surface.why });
+      if (mentions(scannableText(file, text), slug))
+        hits.push({ file: file, why: surface.why });
     });
   });
   return hits;
@@ -119,6 +209,8 @@ function absorbable(repoRoot, renameIndex) {
 
 module.exports = {
   AUTHORED_SURFACES: AUTHORED_SURFACES,
+  PROSE_KEYS: PROSE_KEYS,
+  scannableText: scannableText,
   authoredReferences: authoredReferences,
   absorbable: absorbable,
   mentions: mentions,
