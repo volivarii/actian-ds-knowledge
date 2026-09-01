@@ -29,6 +29,21 @@ export function asSchema(v: unknown): JsonSchema | null {
 
 /** Object branches of a schema: itself if it has `properties`, plus any
  *  `oneOf`/`anyOf` branch that does. An array schema steps into `items`. */
+/** `oneOf`/`anyOf` alternatives of a schema, whether or not they carry
+ *  `properties`. objectBranches drops the ones that do not. */
+function oneOfBranches(schema: JsonSchema): JsonSchema[] {
+  const out: JsonSchema[] = [];
+  for (const key of ["oneOf", "anyOf"]) {
+    const branches = schema[key];
+    if (!Array.isArray(branches)) continue;
+    for (const b of branches) {
+      const s = asSchema(b);
+      if (s) out.push(s);
+    }
+  }
+  return out;
+}
+
 function objectBranches(schema: JsonSchema): JsonSchema[] {
   if (schema.type === "array") {
     const items = asSchema(schema.items);
@@ -112,6 +127,28 @@ export function keyCandidates(
         detail: description ? firstSentence(description) : undefined,
         required: required.has(name),
       });
+    }
+  }
+
+  // An open map with a CLOSED key vocabulary (`propertyNames.enum`) has plenty
+  // to suggest, and suggesting it is the point: while the entity relationship
+  // verb was free text, typing at that key offered nothing and an invented
+  // verb was reported by no one until CI failed the pull request (F8).
+  // Read `here` directly, NOT through objectBranches: that helper only yields
+  // schemas carrying `properties`, and an open map by definition has none, so
+  // going through it would silently suggest nothing.
+  for (const branch of [here, ...oneOfBranches(here)]) {
+    const names = asSchema(branch.propertyNames);
+    if (!names || !Array.isArray(names.enum)) continue;
+    const detail =
+      typeof names.description === "string"
+        ? firstSentence(names.description)
+        : undefined;
+    for (const value of names.enum) {
+      if (typeof value !== "string") continue;
+      if (taken.has(value) || seen.has(value)) continue;
+      seen.add(value);
+      out.push({ label: value, detail, required: false });
     }
   }
   return out;

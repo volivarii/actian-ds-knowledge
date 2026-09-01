@@ -26,10 +26,13 @@ FILES_REQUIRING_SCHEMA_VERSION.forEach(function (relPath) {
     var data = JSON.parse(
       fs.readFileSync(path.resolve(__dirname, "..", relPath), "utf8"),
     );
-    assert.equal(
-      data._schema_version,
-      1,
-      relPath + " missing _schema_version: 1",
+    // Presence and shape, NOT a pinned 1. This file's own purpose is to catch
+    // an artifact emitted without the field; asserting the literal 1 also
+    // forbids every legitimate bump, and app-context/dist went to 2 when a
+    // relationship verb started carrying a list of targets rather than one.
+    assert.ok(
+      Number.isInteger(data._schema_version) && data._schema_version >= 1,
+      relPath + " missing a positive integer _schema_version",
     );
   });
 });

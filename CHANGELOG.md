@@ -20,6 +20,32 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **Entity relationships are picked from lists, and the verbs are a vocabulary**
+  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD)). Both halves of a relationship
+  were free text. Typing offered no verbs and no targets, and an invented target drew no error at
+  all, so an author learned it was wrong when CI failed the pull request they had already opened.
+  Thirty-six verbs had accumulated across 42 relationships, **31 of them used exactly once**
+  (`hasInputs` beside `hasInputPorts`, `contains` beside `containsCatalogObjects`, `linkedTo` beside
+  `relatesTo`), and the verb travels into the graph as each edge's `predicate`, so the sprawl reached
+  consumers rather than staying an authoring quirk. `schemas/app-context-entity.json` now declares a
+  ten-verb vocabulary (`appliesTo`, `belongsTo`, `consumes`, `contains`, `derivedFrom`, `produces`,
+  `relatesTo`, `requires`, `subtypeOf`, `uses`) and the 30 entity records are migrated onto it, with
+  all 42 relationships preserved. A verb now carries a **list** of targets, because one verb
+  routinely has several and saying so with seven near-synonyms is what produced the sprawl: a catalog
+  object `contains` seven things rather than declaring `hasMetadata`, `hasLineage`, `hasSuggestions`
+  and four more. `consumes` and `produces` are kept apart deliberately, since a data process points
+  at the same dataset both ways and one verb for both would delete an edge. In the editor the verb
+  and the target are both chosen from a list, a target that is not an entity cannot be saved, and the
+  YAML pane completes the verbs too, since the completion engine now reads a closed key vocabulary
+  where before it correctly reported that an open map had nothing to suggest. A verb outside the
+  vocabulary is still accepted and saved, marked as new, so introducing one is possible and never
+  accidental: the vocabulary is declared in the authoring schema, which the editor reads, and
+  deliberately not in the dist schema, which CI validates, because failing a build over a verb an
+  author was told they could introduce is the after-the-pull-request surprise this change exists to
+  end. **`app-context/dist/app-context.json` moves to `_schema_version: 2`**, since a verb's value
+  changing from a slug to a list of slugs is a schema-incompatible change to the file shape and that
+  version is the only signal a consumer gets. No consumer switches on verb names; the plugin passes
+  them through as text and its resolver already flattened list-valued targets.
 - **The Knowledge Editor's search reads the guidance, not just the titles**
   ([#621](https://github.com/volivarii/actian-ds-knowledge/pull/621)). The header field
   matched titles only, so `sentence case` — a rule stated verbatim in 24 source documents — returned

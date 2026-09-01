@@ -88,6 +88,10 @@ export interface RJSFFormProps {
   children?: ComponentProps<typeof Form>["children"];
   /** Custom RJSF widgets (e.g. CategorySelectWidget, RelatedMultiSelectWidget). */
   widgets?: ComponentProps<typeof Form>["widgets"];
+  /** Custom RJSF fields (e.g. RelationshipsField). A field replaces the whole
+   *  rendering of one property, which a widget cannot: a widget is only ever
+   *  the input for a scalar. */
+  fields?: ComponentProps<typeof Form>["fields"];
   /** Custom RJSF templates (FieldTemplate / ObjectFieldTemplate). Scoped per-form. */
   templates?: ComponentProps<typeof Form>["templates"];
   /** Arbitrary context threaded into widget props — used by typed
@@ -105,6 +109,7 @@ export function RJSFForm({
   submitLabel,
   children,
   widgets,
+  fields,
   templates,
   formContext,
   className,
@@ -119,6 +124,9 @@ export function RJSFForm({
       ...(templates?.ButtonTemplates ?? {}),
     },
   } as ComponentProps<typeof Form>["templates"];
+  // The Radix theme supplies templates and widgets, not fields, so there is
+  // nothing to merge under: a form's own fields ARE the set.
+  const mergedFields = fields;
   const mergedWidgets = {
     ...radixTheme.widgets,
     ...(widgets ?? {}),
@@ -133,6 +141,7 @@ export function RJSFForm({
       formData={formData}
       disabled={disabled}
       widgets={mergedWidgets}
+      fields={mergedFields}
       templates={mergedTemplates}
       formContext={formContext}
       onChange={(e) => onChange(e.formData)}
