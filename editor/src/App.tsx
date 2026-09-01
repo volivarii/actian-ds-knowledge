@@ -177,9 +177,12 @@ export default function App() {
     };
   }, [headerOctokit]);
 
+  // One set, shared by the title index and the body index: search must not be
+  // able to offer by body text a component it would not offer by name.
+  const authorable = useMemo(() => new Set(knownSlugs), [knownSlugs]);
   const searchIndex = useMemo(
-    () => buildSearchIndex(new Set(knownSlugs), contentFiles),
-    [knownSlugs, contentFiles],
+    () => buildSearchIndex(authorable, contentFiles),
+    [authorable, contentFiles],
   );
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -307,6 +310,7 @@ export default function App() {
             {session && (
               <GlobalSearch
                 index={searchIndex}
+                authorable={authorable}
                 actions={commands}
                 onOpenFile={setActivePath}
                 inputRef={searchInputRef}

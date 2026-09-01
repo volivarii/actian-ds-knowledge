@@ -6,6 +6,19 @@ on:
     paths:
       - editor/**
       - .github/workflows/editor-deploy.yml
+      # The deployed bundle carries knowledge CONTENT, not just editor code:
+      # `npm run build` generates the search body index from these trees
+      # (editor/scripts/gen-search-bodies.ts). Without them a merge that adds
+      # or rewrites guidance never redeploys, so the editor keeps searching the
+      # text as it stood at the last editor/ change and finds nothing for a
+      # sentence that is now on the page. Not committing the index is what
+      # keeps that mechanical diff off content authors' PRs; this is the other
+      # half of that choice.
+      - components/src/**
+      - foundations/src/**
+      - accessibility/src/**
+      - app-context/src/**
+      - content/src/**
   workflow_dispatch:
 
 permissions:

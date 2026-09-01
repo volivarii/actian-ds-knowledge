@@ -3,7 +3,7 @@
 // "Actions" group. Selecting a row either opens a file (onOpenFile) or runs an
 // action's own run(). Rows commit on mousedown so the click lands before the
 // input's blur handler closes the popover.
-import { useMemo, useRef, useState, useCallback } from "react";
+import { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import type { Ref, KeyboardEvent } from "react";
 import { Box, Text } from "@radix-ui/themes";
 import {
@@ -11,6 +11,11 @@ import {
   type SearchItem,
   type SearchKind,
 } from "../lib/searchIndex";
+import {
+  bodyEntries,
+  loadSearchBodies,
+  type SearchBodyDoc,
+} from "../lib/searchBodies";
 import type { CommandItem } from "./CommandPalette";
 import { relationTypeColor } from "../lib/relationTypes";
 
@@ -35,21 +40,31 @@ interface Row {
   label: string;
   color: string;
   chip: string;
+  snippet?: string;
   run: () => void;
 }
 
 export interface GlobalSearchProps {
   index: SearchItem[];
+  /** The authorable component slugs, so a body result cannot offer a component
+   *  the sidebar will not show. Same set `buildSearchIndex` is given. */
+  authorable: ReadonlySet<string>;
   actions: CommandItem[];
   onOpenFile: (path: string) => void;
   inputRef?: Ref<HTMLInputElement>;
+  /** How the body corpus is fetched. Production leaves it out and takes the
+   *  lazily imported chunk; a test passes its own so it can assert that
+   *  nothing is fetched until the author engages with the field. */
+  loadBodies?: () => Promise<readonly SearchBodyDoc[]>;
 }
 
 export function GlobalSearch({
   index,
+  authorable,
   actions,
   onOpenFile,
   inputRef,
+  loadBodies = loadSearchBodies,
 }: GlobalSearchProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -59,6 +74,49 @@ export function GlobalSearch({
   // skip row 0 and land on row 1 instead of highlighting the first result.
   const [active, setActive] = useState(-1);
   const hostRef = useRef<HTMLDivElement>(null);
+
+  // The corpus is ~316 KB of prose. It arrives as its own chunk the first time
+  // the author engages with the field, so a session that never searches never
+  // pays for it, and one that does pays once.
+  const [docs, setDocs] = useState<readonly SearchBodyDoc[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [engaged, setEngaged] = useState(false);
+  // The PROMISE is what is cached, not a "have we started" flag. With a flag,
+  // any second run of this effect — a caller passing an inline `loadBodies`, a
+  // StrictMode double mount — first runs the cleanup that sets `cancelled`,
+  // then returns early on the flag, so nothing ever calls setDocs and the
+  // popover reads "Searching the guidance…" for the rest of the session.
+  // Re-subscribing to the same promise is idempotent, which a flag is not.
+  const inflight = useRef<Promise<readonly SearchBodyDoc[]> | null>(null);
+  useEffect(() => {
+    if (!engaged || docs) return;
+    let cancelled = false;
+    (inflight.current ??= loadBodies()).then(
+      (d) => {
+        if (!cancelled) setDocs(d);
+      },
+      (err: unknown) => {
+        console.warn("[search] guidance index did not load; titles only", err);
+        inflight.current = null;
+        if (!cancelled) {
+          setDocs([]);
+          setFailed(true);
+        }
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [engaged, docs, loadBodies]);
+  const loadingDocs = engaged && docs === null;
+
+  // Rebuilt when the title index changes, because that is where the names come
+  // from: entries built before the component list arrived would be named after
+  // their filenames for the rest of the session.
+  const bodies = useMemo(
+    () => (docs ? bodyEntries(docs, authorable, index) : []),
+    [docs, authorable, index],
+  );
 
   const { groups, rows } = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -80,7 +138,7 @@ export function GlobalSearch({
       }
       groups.push(g);
     }
-    for (const grp of searchCorpus(index, query)) {
+    for (const grp of searchCorpus(index, query, 6, bodies)) {
       const g = { heading: KIND_LABEL[grp.kind], rows: [] as Row[] };
       for (const it of grp.items) {
         const r: Row = {
@@ -88,6 +146,7 @@ export function GlobalSearch({
           label: it.title,
           color: KIND_COLOR[grp.kind],
           chip: it.sub ?? KIND_LABEL[grp.kind].replace(/s$/, ""),
+          snippet: it.snippet,
           run: () => onOpenFile(it.path),
         };
         g.rows.push(r);
@@ -96,7 +155,7 @@ export function GlobalSearch({
       groups.push(g);
     }
     return { groups, rows };
-  }, [query, index, actions, onOpenFile]);
+  }, [query, index, actions, onOpenFile, bodies]);
 
   const runAt = useCallback(
     (i: number) => {
@@ -158,7 +217,10 @@ export function GlobalSearch({
           setActive(-1);
           setOpen(true);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          setOpen(true);
+          setEngaged(true);
+        }}
         onKeyDown={onKeyDown}
         style={{
           width: "100%",
@@ -173,9 +235,13 @@ export function GlobalSearch({
           outline: "none",
         }}
       />
-      {open && rows.length > 0 && (
+      {/* An empty dropdown reads as a broken field rather than an empty one:
+          the whole of finding F2 was a query that matched nothing and said
+          nothing. So the popover opens whenever there is a query, and answers
+          either with rows or with why there are none. */}
+      {open && (rows.length > 0 || query.trim() !== "") && (
         <Box
-          role="listbox"
+          role={rows.length > 0 ? "listbox" : undefined}
           style={{
             position: "absolute",
             top: "calc(100% + 6px)",
@@ -190,6 +256,26 @@ export function GlobalSearch({
             zIndex: 30,
           }}
         >
+          {rows.length === 0 && (
+            <Box role="status" style={{ padding: "12px 14px" }}>
+              <Text as="div" size="2" style={{ color: "var(--gray-12)" }}>
+                {loadingDocs
+                  ? "Searching the guidance\u2026"
+                  : `No matches for \u201c${query.trim()}\u201d`}
+              </Text>
+              {!loadingDocs && (
+                // What was actually searched. Saying "titles and guidance
+                // text" after the index failed to load would be the same
+                // empty-looking answer to a broken question that this panel
+                // exists to replace, one layer down.
+                <Text as="div" size="1" color="gray" style={{ marginTop: 2 }}>
+                  {failed
+                    ? "Titles only \u2014 the guidance index did not load."
+                    : "Search covers titles and guidance text."}
+                </Text>
+              )}
+            </Box>
+          )}
           {groups.map((g) => (
             <Box key={g.heading}>
               <Text
@@ -218,9 +304,6 @@ export function GlobalSearch({
                       runAt(i);
                     }}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
                       padding: "8px 14px",
                       cursor: "pointer",
                       background:
@@ -228,21 +311,47 @@ export function GlobalSearch({
                       borderLeft: `2px solid ${i === active ? "var(--accent-9)" : "transparent"}`,
                     }}
                   >
-                    <span
+                    <Box
                       style={{
-                        width: 9,
-                        height: 9,
-                        borderRadius: "50%",
-                        background: r.color,
-                        flex: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
                       }}
-                    />
-                    <Text size="2" style={{ color: "var(--gray-12)" }}>
-                      {r.label}
-                    </Text>
-                    <Text size="1" color="gray" style={{ marginLeft: "auto" }}>
-                      {r.chip}
-                    </Text>
+                    >
+                      <span
+                        style={{
+                          width: 9,
+                          height: 9,
+                          borderRadius: "50%",
+                          background: r.color,
+                          flex: "none",
+                        }}
+                      />
+                      <Text size="2" style={{ color: "var(--gray-12)" }}>
+                        {r.label}
+                      </Text>
+                      <Text size="1" color="gray" style={{ marginLeft: "auto" }}>
+                        {r.chip}
+                      </Text>
+                    </Box>
+                    {r.snippet && (
+                      // Why this row is here. Indented under the label, past
+                      // the dot and its gap.
+                      <Text
+                        as="div"
+                        size="1"
+                        color="gray"
+                        style={{
+                          marginLeft: 19,
+                          marginTop: 2,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {r.snippet}
+                      </Text>
+                    )}
                   </Box>
                 );
               })}

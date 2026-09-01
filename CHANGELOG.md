@@ -20,6 +20,25 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **The Knowledge Editor's search reads the guidance, not just the titles**
+  ([#621](https://github.com/volivarii/actian-ds-knowledge/pull/621)). The header field
+  matched titles only, so `sentence case` — a rule stated verbatim in 24 source documents — returned
+  nothing, and returned it as an empty dropdown that read as a broken field rather than an empty
+  one. It now searches the text of all 220 documents the editor can open, across components,
+  foundations, accessibility, app-context and content; a matched row shows the phrase in its
+  sentence, so the reason for the row is visible without opening it; and a row opens the exact
+  document the phrase is in (`#/component/button/content`, not the component). A query that matches
+  nothing now says so, and says what was searched — including when the index failed to load and the
+  answer came from titles alone. Frontmatter values count as text, because for the domains the
+  editor edits through a form the frontmatter IS the guidance: `words-to-avoid.md` keeps every word
+  it tells you to avoid there, and all 64 app-context records keep their label, properties and apps
+  there. The corpus is walked from the address table itself, so a file search can find is a file the
+  editor can open, and a section that becomes addressable becomes searchable in the same change; a
+  test joins that derived list to the two workflows' path filters, so a new section cannot be
+  searchable in CI while a content merge under it never redeploys. The index is generated at build
+  time rather than committed — 316 KB of prose regenerating on every content edit would put a large
+  mechanical diff and a command to run in front of content authors — and it loads as its own chunk
+  on first use, so a cold load carries none of it.
 - **Every component, entity and pattern in the Knowledge Editor has an address**
   ([#619](https://github.com/volivarii/actian-ds-knowledge/pull/619)). The editor carries
   its navigation state in the URL hash, so a page can be linked to, bookmarked and reopened, the
