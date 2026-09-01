@@ -373,3 +373,56 @@ test("orchestrator runs media-default phase end-to-end", async function () {
     fs.rmSync(artifactsDir, { recursive: true, force: true });
   }
 });
+
+// #608: a DEFERRED slug has anatomy (restored, carried forward) but Figma
+// publishes no node for it, by design and every night. Without deferral
+// awareness it lands in `missing` — the bucket this module's own header calls
+// "a real gap worth listing… keeps a non-empty `missing` meaningful as a
+// regression signal". Six permanent false entries would blunt exactly that.
+test("run() reports a DEFERRED slug as skipped, not as a capture failure", async function () {
+  var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "mdef-defer-"));
+  try {
+    var anatomyDir = path.join(tmp, "anatomy");
+    fs.mkdirSync(anatomyDir, { recursive: true });
+    // anatomy present (carried forward), but Figma returns no node for it
+    fs.writeFileSync(
+      path.join(anatomyDir, "gone.json"),
+      JSON.stringify({ slug: "gone", source: { nodeId: "404:404" } }) + "\n",
+    );
+    var res = await D.run({
+      registry: { fileKey: "FILEKEY", components: { gone: {} } },
+      anatomyDir: anatomyDir,
+      outputDir: path.join(tmp, "media"),
+      rest: mockRest(),
+      deferredSlugs: ["gone"],
+    });
+    assert.deepEqual(res.missing, [], "a deferral is not a capture failure");
+    assert.deepEqual(res.skipped, ["gone"]);
+    assert.deepEqual(res.captured, []);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("run() without the deferral list still reports a real capture failure as missing", async function () {
+  // The inverse: the new awareness must not blunt the signal it protects.
+  var tmp = fs.mkdtempSync(path.join(os.tmpdir(), "mdef-real-"));
+  try {
+    var anatomyDir = path.join(tmp, "anatomy");
+    fs.mkdirSync(anatomyDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(anatomyDir, "gone.json"),
+      JSON.stringify({ slug: "gone", source: { nodeId: "404:404" } }) + "\n",
+    );
+    var res = await D.run({
+      registry: { fileKey: "FILEKEY", components: { gone: {} } },
+      anatomyDir: anatomyDir,
+      outputDir: path.join(tmp, "media"),
+      rest: mockRest(),
+    });
+    assert.deepEqual(res.missing, ["gone"]);
+    assert.deepEqual(res.skipped, []);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});

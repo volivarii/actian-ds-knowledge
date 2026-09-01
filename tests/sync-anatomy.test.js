@@ -1124,3 +1124,168 @@ test("syncAnatomy: a deletion absorbed by a rename is additive, not breaking", a
   var informed = await syncAnatomy(opts, "dsKit");
   assert.equal(informed.verdict.category, "additive");
 });
+
+// ---------------------------------------------------------------------------
+// #608: a DEFERRED slug must keep its anatomy.
+//
+// A deferral carries a component's registry entry forward when Figma has
+// stopped publishing it, so "consumers see what they always saw" (the
+// contract stated in components/src/sync-deferrals.json). Figma returns no
+// node for such a slug every night, by design.
+//
+// The phase collected those slugs into `deferred` and returned early, and the
+// prune protects only `keptSlugs` (the bundle) and `protectSlugs` (failed).
+// `deferred` was neither, so the file the comment promised was "preserved by
+// the prune below either way" was deleted. On 2026-08-31 that took the anatomy
+// of all six deferred slugs at once, and nothing reported it: the loss showed
+// up later as a coverage dip.
+//
+// Nothing can rebuild these. The slug has no Figma node, which is the whole
+// reason it is deferred, so a deleted capture is gone for good.
+
+function deferredFixture() {
+  var dir = tmpDir();
+  var registriesDir = path.join(dir, "registries");
+  var anatomyDir = path.join(dir, "anatomy");
+  fs.mkdirSync(registriesDir, { recursive: true });
+  fs.mkdirSync(anatomyDir, { recursive: true });
+  writeJsonReal(path.join(anatomyDir, "gone-from-figma.json"), {
+    slug: "gone-from-figma",
+    captured: "last known",
+  });
+  fs.writeFileSync(
+    path.join(registriesDir, "dskit.json"),
+    JSON.stringify({
+      components: {
+        button: { nodeId: "1:1", category: "Action" },
+        // carried forward by a deferral; Figma no longer publishes it
+        "gone-from-figma": { nodeId: "9:9", category: "Feedback" },
+      },
+    }),
+  );
+  return { dir: dir, registriesDir: registriesDir, anatomyDir: anatomyDir };
+}
+
+function restWithoutDeferredNode() {
+  return {
+    getNodes: function () {
+      return Promise.resolve({
+        nodes: { "1:1": { document: wave1ComponentDoc("Button") } },
+      });
+    },
+  };
+}
+
+async function runDeferred(f) {
+  return syncAnatomy(
+    {
+      rest: restWithoutDeferredNode(),
+      registriesDir: f.registriesDir,
+      anatomyDir: f.anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-08-31",
+      deferredSlugs: ["gone-from-figma"],
+    },
+    "dsKit",
+  );
+}
+
+test("a deferred slug's anatomy file survives the prune", async function () {
+  var f = deferredFixture();
+  await runDeferred(f);
+  assert.equal(
+    fs.existsSync(path.join(f.anatomyDir, "gone-from-figma.json")),
+    true,
+    "a deferral carries the component forward, so its capture must survive",
+  );
+});
+
+test("a deferred slug keeps its entry in the anatomy bundle", async function () {
+  // Both manifest surfaces must agree. The phase already seeds the bundle from
+  // disk for FAILED slugs for exactly this reason; a deferral is the more
+  // durable case, not the lesser one.
+  var f = deferredFixture();
+  await runDeferred(f);
+  var bundle = JSON.parse(
+    fs.readFileSync(path.join(f.anatomyDir, "..", "anatomy.bundle.json"), "utf8"),
+  );
+  assert.ok(
+    bundle.components["gone-from-figma"],
+    "a deferred slug must not vanish from the bundle",
+  );
+});
+
+test("a deferred slug is reported, not silently skipped", async function () {
+  // The loss above was invisible for a whole sync because `deferred` was
+  // collected and never reported.
+  var f = deferredFixture();
+  var written = await runDeferred(f);
+  assert.ok(written.deferred, "the phase must report which slugs it deferred");
+  assert.deepEqual(written.deferred, ["gone-from-figma"]);
+  assert.match(written.verdict.changelog, /gone-from-figma/);
+});
+
+test("deferring a slug does not make the phase look like a removal", async function () {
+  // A carried-forward component is not a consumer-visible deletion.
+  var f = deferredFixture();
+  var written = await runDeferred(f);
+  assert.equal(written.verdict.category, "additive");
+});
+
+test("a NON-deferred slug with no node still keeps its file, via failed", async function () {
+  // The inverse, so the deferral protection cannot pass by protecting
+  // everything and disarming the prune.
+  var f = deferredFixture();
+  var written = await syncAnatomy(
+    {
+      rest: restWithoutDeferredNode(),
+      registriesDir: f.registriesDir,
+      anatomyDir: f.anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-08-31",
+      deferredSlugs: [],
+    },
+    "dsKit",
+  );
+  assert.equal(written.failed.length, 1);
+  assert.equal(written.failed[0].slug, "gone-from-figma");
+  assert.equal(
+    fs.existsSync(path.join(f.anatomyDir, "gone-from-figma.json")),
+    true,
+  );
+});
+
+// #608 follow-up: the deferral list must reach the anatomy phase even when the
+// registries phase did not run. `--phase anatomy` on its own is the ordinary way
+// to re-run this phase after a partial night, and the orchestrator assigned
+// deferredSlugs only inside the registries branch, so a standalone run reported
+// every deferred slug as "⚠️ FAILED ... (no node payload from Figma)" — the
+// Figma-outage alarm the deferred branch exists to avoid — and the deferred
+// report was empty exactly when it was needed.
+
+test("syncAnatomy with no deferredSlugs reports a deferred slug as failed (the shape the wiring must avoid)", async function () {
+  var f = deferredFixture();
+  var written = await syncAnatomy(
+    {
+      rest: restWithoutDeferredNode(),
+      registriesDir: f.registriesDir,
+      anatomyDir: f.anatomyDir,
+      keys: { dsKit: "F" },
+      writeJson: writeJsonReal,
+      syncedAt: "2026-08-31",
+      // deferredSlugs deliberately absent: this is what a standalone
+      // --phase anatomy used to hand the phase.
+    },
+    "dsKit",
+  );
+  assert.equal(written.failed.length, 1, "without the list it reads as a failure");
+  assert.equal(written.deferred, undefined, "and nothing reports it as deferred");
+  // The file still survives via the failed path, so this is a SIGNAL defect,
+  // not data loss. That is why it went unnoticed.
+  assert.equal(
+    fs.existsSync(path.join(f.anatomyDir, "gone-from-figma.json")),
+    true,
+  );
+});

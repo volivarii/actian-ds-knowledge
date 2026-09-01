@@ -263,3 +263,53 @@ test("a broken deferral forces the night breaking, so it cannot evaporate", asyn
     fs.rmSync(tmpdir, { recursive: true, force: true });
   }
 });
+
+// #608 follow-up: the deferral list must reach the ANATOMY phase even when the
+// registries phase did not run. `--phase anatomy` on its own is the ordinary way
+// to re-run that phase after a partial night. The orchestrator assigned
+// deferredSlugs only inside the registries branch, so a standalone anatomy run
+// reported every deferred slug as a Figma fetch FAILURE — the outage alarm the
+// deferred branch exists to avoid — for as long as the deferral stood.
+test("a standalone anatomy phase still knows which slugs are deferred", async () => {
+  const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "sync-defer-anatomy-"));
+  try {
+    const outputDir = seedRepo(tmpdir, [DEFERRAL]);
+    // a capture from a prior sync, for the slug Figma no longer publishes
+    const anatomyDir = path.join(tmpdir, "components", "dist", "anatomy");
+    fs.mkdirSync(anatomyDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(anatomyDir, "card-for-items.json"),
+      JSON.stringify({ slug: "card-for-items", captured: "last known" }) + "\n",
+    );
+    const result = await sync.run({
+      rest: restWithoutCard,
+      pluginDir: tmpdir,
+      keys: { dsKit: "DS_KEY", fmKit: "FM_KEY", metaKit: "META_KEY" },
+      outputDir: outputDir,
+      releaseNotesDir: path.join(tmpdir, "release-notes"),
+      artifactsDir: path.join(tmpdir, "tmp-artifacts"),
+      pluginJsonPath: path.join(tmpdir, "package.json"),
+      manifestPath: path.join(tmpdir, "paths-manifest.json"),
+      phase: "anatomy",
+    });
+    const notes = fs.readFileSync(result.releasePath, "utf8");
+    assert.match(
+      notes,
+      /deferred-removal slug\(s\)/i,
+      "a deferred slug must be reported as deferred",
+    );
+    assert.doesNotMatch(
+      notes,
+      /FAILED[^\n]*card-for-items/,
+      "and must NOT be reported as a Figma fetch failure",
+    );
+    // The capture survives either way, which is why this was a silent signal
+    // defect rather than data loss.
+    assert.equal(
+      fs.existsSync(path.join(anatomyDir, "card-for-items.json")),
+      true,
+    );
+  } finally {
+    fs.rmSync(tmpdir, { recursive: true, force: true });
+  }
+});
