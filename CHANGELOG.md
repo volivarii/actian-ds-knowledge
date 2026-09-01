@@ -20,7 +20,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
-- **The Knowledge Editor's search reads the guidance, not just the titles.** The header field
+- **The Knowledge Editor's search reads the guidance, not just the titles**
+  ([#621](https://github.com/volivarii/actian-ds-knowledge/pull/621)). The header field
   matched titles only, so `sentence case` — a rule stated verbatim in 24 source documents — returned
   nothing, and returned it as an empty dropdown that read as a broken field rather than an empty
   one. It now searches the text of all 220 documents the editor can open, across components,
