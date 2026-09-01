@@ -14,8 +14,8 @@ CI does the rest automatically: on your PR it regenerates the `dist/` files, bum
 
 - This repo is the federated knowledge layer for the Actian Design System 2026.
 - Mixed-origin domains use `src/`+`dist/` (visible folder boundary; never edit `dist/`).
-- Flat domains (no `src/`+`dist/`): `app-context/`. `content/` and `accessibility/` are human-authored but have a `src/` → CI `dist/` derive (never edit `dist/`).
-- `tokens/` is interim-flat — human-frozen snapshots until a successor generator lands.
+- Every knowledge domain has a `src/` → CI `dist/` split, `app-context/` included. Never edit a `dist/`.
+- `tokens/` is DERIVED from `foundations/src/`, and its outputs sit at the domain root rather than under `dist/`. Only `tokens/src/figma-bindings-raw.json` is hand-maintained.
 - One hand-edit exception in `dist/`: `metakit.json.templates` block.
 - Consumers reference logical names from `paths-manifest.json` (not physical paths). Generators write only to canonical paths under `dist/`.
 - `paths-manifest.json#knowledge_version` is **derived** from `package.json#version` — stamped by CI (and `npm run sync:version`). Never edit it by hand.
@@ -25,4 +25,5 @@ CI does the rest automatically: on your PR it regenerates the `dist/` files, bum
 1. [llms.txt](llms.txt) — content index
 2. [CONTRIBUTING.md](CONTRIBUTING.md) — `src/`+`dist/` convention + edit-here table
 3. [CLAUDE.md](CLAUDE.md) — full editing rules + don'ts
-4. Per-domain `AUTHORING.md` files (e.g., `foundations/src/AUTHORING.md`, `components/src/guidelines/AUTHORING.md`)
+4. Per-domain `AUTHORING.md` files (e.g., `foundations/src/AUTHORING.md`, `components/src/AUTHORING.md`)
+5. [docs/technical-guide/](docs/technical-guide/README.md) — the full picture, and chapter 11 (Traps) for the failure modes that pass every check

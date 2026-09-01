@@ -6,9 +6,11 @@ the [Actian DS Claude plugin](https://github.com/volivarii/Actian-DS-Claude-plug
 and the docs site, and built to serve future consumers (Storybook, AI surfaces)
 without bending to any one of them.
 
-> **New here? Read [`ARCHITECTURE.md`](ARCHITECTURE.md)** — it maps the top level
-> into layers (knowledge · contract · metadata · tooling) so you can tell the
-> design-system content from the build machinery at a glance.
+> **New here?** [`ARCHITECTURE.md`](ARCHITECTURE.md) maps the top level into layers
+> (knowledge, contract, metadata, tooling) so you can tell the design-system content
+> from the build machinery at a glance. For the whole picture, including why it is
+> shaped this way and what breaks quietly, read the
+> [technical guide](docs/technical-guide/README.md).
 
 ## Quick routes
 
@@ -16,6 +18,7 @@ without bending to any one of them.
 |---|---|
 | **Consume this** (build a reader, Storybook, AI surface) | [`CONSUMING.md`](CONSUMING.md) |
 | **Understand the layout** | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| **Run, extend or inherit this** | [`docs/technical-guide/`](docs/technical-guide/README.md) — philosophy, architecture, pipelines, how-tos, and the failure modes that pass every check |
 | **Understand links, connections & the knowledge graph** | [`RELATIONS.md`](RELATIONS.md) |
 | **Author content** | the `src/AUTHORING.md` in `foundations/`, `components/`, `content/`, `accessibility/` |
 | **See every artifact** | [`paths-manifest.json`](paths-manifest.json) — the contract, keyed + zoned |

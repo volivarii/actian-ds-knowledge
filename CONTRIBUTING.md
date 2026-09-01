@@ -1,143 +1,110 @@
 # Contributing to actian-ds-knowledge
 
-> **First read:** [AUTHORING.md](./AUTHORING.md) — one-page entry doc.
+The federated knowledge layer for the Actian Design System. It feeds the Actian DS
+Claude plugin, the docs site, and any future surface, each taking a pinned
+snapshot.
 
-This file covers contribution workflow (PRs, branches, releases). For authoring details, start with AUTHORING.md.
+> **Authoring content?** Start at [`AUTHORING.md`](./AUTHORING.md).
+> **Working on the machinery?** The full technical guide is
+> [`docs/technical-guide/`](./docs/technical-guide/README.md).
 
-This is the federated knowledge layer for the Actian Design System 2026. It feeds the [Actian DS Claude plugin](https://github.com/volivarii/Actian-DS-Claude-plugin) (vendored snapshot, refreshed nightly) and a future docs site, Storybook, and API clients.
+## The rule that covers most of it
 
-The repo is organized so **a human contributor can tell at a glance what's editable and what's CI-generated** — without reading any file's frontmatter or `_meta` block. The signal is the folder name.
+**Edit only inside a `src/` folder. Never change a version number.**
 
-## The `src/` + `dist/` convention
+CI does the rest on your pull request: it regenerates the `dist/` files, bumps
+`package.json#version` and `paths-manifest.json#knowledge_version` together, and
+commits them back to your branch.
 
-Mixed-origin domains (where humans author content AND CI generates derived artifacts) split into two visible folders:
+So: edit source, commit, open a pull request. If a check complains about the
+version, you edited it by hand. Revert that and let CI bump it.
+
+You need no local toolchain. The GitHub web UI and the Knowledge Editor both work.
+
+## The `src/` and `dist/` convention
+
+The folder name is the signal, so you can tell what is editable without opening a
+file or reading its frontmatter.
 
 ```
 foundations/
-├── src/         ← edit here (Design system lead's MD-as-SoT + AUTHORING guide)
-└── dist/        ← CI-generated, do not edit (8 derived JSONs)
-
-components/
-├── src/         ← edit here (per-component guidelines, hand-curated content)
-└── dist/        ← CI-generated, do not edit (Figma-synced registries + style MDs)
+├── src/    <- edit here
+└── dist/   <- CI-generated, do not edit
 ```
 
-Single-origin domains stay flat (no `src/`+`dist/` nesting) — adding it would be noise:
+Anything in a `dist/` folder is rewritten on the next run, sometimes within
+minutes. Generated files say so about themselves: JSON carries
+`_meta.auto_generated`, markdown carries an auto-generated banner.
 
-```
-tokens/          ← interim: human-frozen (see tokens/README.md)
-```
+**One exception:** the `templates` block of
+`components/dist/registries/metakit.json` is hand-curated and preserved across
+syncs. Everything else in that file comes from Figma.
 
-Derived domains also follow the `src/` + `dist/` split but are shown separately in the table below:
+## Where to edit what
 
-```
-content/
-├── src/         ← edit here (Content lead's content guidelines)
-└── dist/        ← CI-generated, do not edit
+| To change | Edit |
+| --- | --- |
+| A foundation token, rule or scale | `foundations/src/<slug>.md`, ordered by `_order.json` |
+| Per-component guidelines | `components/src/<slug>/`: `_meta.yml` plus `content.md`, `usage.md`, `design.md`, `behavior.md`, `tokens.yml` |
+| Category defaults, shared by every component in a category | `components/src/categories/<slug>.md` |
+| Global content guidance: voice, tone, words to avoid, UX-pattern topics | `content/src/{writing,patterns,product}/<slug>.md` |
+| Accessibility guidance | `accessibility/src/<slug>.md`, ordered by `_order.json` |
+| App context, personas, terminology | `app-context/src/{apps,entities,patterns}/<slug>.md` and `terminology.yml` |
+| A token value | `foundations/src/color-primitives.md` (a palette base or the shade formula) or `foundations/src/tokens.md` (a semantic mapping). `tokens/tokens.json` and `tokens.css` are generated from them and edits there are overwritten |
+| Canonical render styling or markup | `components/render/renderer/`: `ds-base.css` for styling, `html-renderers/ds-html-map.js` for markup |
+| Component registry data: keys, variants, properties | **Not here.** Edit in Figma; the nightly sync brings it in |
+| Component preview images | **Not here.** Edit the `Preview` frame in Figma and republish |
 
-accessibility/
-├── src/         ← edit here (per-section MD files)
-└── dist/        ← CI-generated, do not edit
-
-app-context/
-├── src/         ← edit here (apps/, entities/, patterns/*.md + terminology.yml)
-└── dist/        ← CI-generated via app-context-derive.yml, do not edit
-```
-
-## Edit-here / never-edit table
-
-| If you want to change… | Edit here | What CI does on PR |
-|---|---|---|
-| A foundation token, rule, or scale | `foundations/src/<slug>.md` per-section files (ordered by `_order.json`) | `foundations-derive.yml` regenerates the hierarchical `foundations/dist/` tree (Pattern H — per-leaf JSONs + `_index.json` per directory + `foundations.bundle.json` roll-up + `.md` verbatim concat) |
-| Per-component guidelines (content, usage, design, behavior, tokens) | `components/src/<slug>/` — `_meta.yml` + the per-domain files (`content.md`, …) — see `components/src/AUTHORING.md` | `guidelines-derive.yml` regenerates `components/dist/guidelines/<slug>.json` + `guidelines.bundle.json` + `coverage.md` on PR |
-| Component registry data (key, variants, properties) | **Don't.** Edit upstream in Figma. | `sync-from-figma.yml` (nightly 07:00 UTC) writes `components/dist/registries/*.json` + `components/dist/categories.json` |
-| Canonical render styling or markup | `components/render/renderer/` (hand-authored source, not under a `src/` directory; `origin: human` in `paths-manifest.json`): `ds-base.css` for styling, `html-renderers/ds-html-map.js` for markup | `render-derive.yml` regenerates `components/render/dist/`, then runs the fidelity gate, which blocks the build on a color mismatch **or on a drop in the number of declarations the Figma capture can confirm, per slug as well as in total**; a deliberate loss is landed locally with `npm run derive:render -- --accept-coverage-loss="<why>"` and the regenerated report committed, since CI runs the gate with no arguments; auto-commits the regenerated dist back to the PR branch on success |
-| Component preview images | **Don't.** Edit the `Preview` frame inside the component's `Design guidelines` section in Figma; republish the library. | `sync-from-figma.yml` `media-preview` phase captures the frame as WebP and writes to `components/dist/media/<slug>/preview.webp`. The `media-default` phase additionally captures each component's default variant in isolation as `components/dist/media/<slug>/default.webp` (a visual reference, not the fidelity gate's oracle: the gate is fact-based, comparing CSS color declarations against `components/dist/anatomy/<slug>.json`). Index sidecar at `components/dist/media/_index.json` is regenerated by `guidelines-derive.yml`. |
-| Meta Kit `templates` block | `components/dist/registries/metakit.json` (ONLY this block — hand-curated; CI preserves across syncs) | Same workflow preserves the block |
-| Token value | `tokens/tokens.json` + matching CSS variable in `tokens/tokens.css` | `render-token-reference.js` regenerates `tokens/token-reference.md` |
-| Component content guidelines (UI copy rules) | `components/src/<slug>/content.md` — see `components/src/AUTHORING.md` | `guidelines-derive.yml` regenerates `components/dist/guidelines/<slug>.json` on PR |
-| Global / cross-cutting content guidelines (voice, tone, words to avoid, UX-pattern topics) | `content/src/{writing,patterns,product}/<slug>.md` — see `content/src/AUTHORING.md` and `content/src/content-index.md` | `content-derive.yml` regenerates `content/dist/global.md` + the per-bucket splits (`writing.md`, `patterns.md`, `product.md`) on PR |
-| Accessibility guidance | `accessibility/src/<slug>.md` (per-section, ordered by `_order.json`) | `accessibility-derive.yml` regenerates `accessibility/dist/a11y-index.json` on PR |
-| App context / persona / terminology | `app-context/src/{apps,entities,patterns}/<slug>.md` + `app-context/src/terminology.yml` | `app-context-derive.yml` regenerates `app-context/dist/app-context.json` + `app-context/dist/app-context.bundle.json` on PR |
-
-## The "do not edit `dist/`" rule
-
-Anything in a `dist/` folder is rewritten by CI on the next run. If you edit `dist/` content directly, your changes will be reverted — sometimes within minutes, sometimes overnight. The folder name is the signal.
-
-When CI regenerates `dist/` content, it stamps each generated file with `_meta.auto_generated: true` (JSON) or an `AUTO-GENERATED — DO NOT EDIT` banner (MD).
+Which workflow regenerates what, and what each gate asserts, is in
+[`docs/technical-guide/08-pipelines.md`](./docs/technical-guide/08-pipelines.md).
+The render tier's two ratchets, and how to land a deliberate coverage loss, are in
+[`docs/technical-guide/05-render-and-fidelity.md`](./docs/technical-guide/05-render-and-fidelity.md).
 
 ## Per-domain authoring guides
 
-- [`foundations/src/AUTHORING.md`](foundations/src/AUTHORING.md) — how the Design system lead (and the UX team) edits foundations
-- [`components/src/AUTHORING.md`](components/src/AUTHORING.md) — per-component multi-domain guidelines (the `components/src/<slug>/` layout)
-- [`content/src/AUTHORING.md`](content/src/AUTHORING.md) — global / cross-cutting content guidelines
+- [`foundations/src/AUTHORING.md`](foundations/src/AUTHORING.md)
+- [`components/src/AUTHORING.md`](components/src/AUTHORING.md), the per-component layout and slug naming
+- [`content/src/AUTHORING.md`](content/src/AUTHORING.md)
 
 ## Consumer indirection
 
-Downstream consumers (the plugin, future docs site, Storybook) reference logical names from `paths-manifest.json` at the repo root, not physical file paths. The manifest maps each logical name (e.g., `foundations.color`, `components.registries.dskit`) to its file location. When this repo restructures, only the manifest changes — consumer code keeps working.
+Consumers reference logical names from [`paths-manifest.json`](paths-manifest.json),
+never physical paths. When this repo restructures, only the manifest changes and
+consumer code keeps working. Consumers pull by tag through a semver range, so
+structural changes do not auto-propagate: a consumer bumps its range when it is
+ready.
 
-Plugin's CI pulls knowledge tags via semver range (`vendored.json.knowledge_repo_version_range`), so structural changes upstream don't auto-propagate — the plugin team bumps the range explicitly when ready to consume new versions.
+Details in [`CONSUMING.md`](CONSUMING.md) for the consumer side, and
+[`docs/technical-guide/03-contract.md`](./docs/technical-guide/03-contract.md) for
+the producer side.
 
-## CI
+## Changelog and docs, in the same pull request
 
-Workflows live in `.github/workflows/`. Source of truth is the workflow files themselves; the list below is for orientation.
+On every **notable** change (a new capability, a schema or contract change, a
+breaking sync, anything a consumer must know), update in the same pull request:
 
-**Sync (Figma → dist), nightly + manual:**
-- `sync-from-figma.yml` — Figma REST → registries + categories + text/effect styles + token reference + anatomy. `media-preview` phase captures each component's "Preview" frame as WebP; `media-default` captures each component's default variant in isolation (`default.webp`, a visual reference resolved from the anatomy dist, so it runs after the `anatomy` phase). The fidelity gate (`render-derive.yml`, below) does not read either WebP: it is fact-based, comparing CSS color declarations against the anatomy dist. Auto-bumps patch via the 2-file lockstep (`package.json` + `paths-manifest.json#knowledge_version`), opens PR, auto-merges additive, labels breaking.
+1. [`CHANGELOG.md`](CHANGELOG.md), under `## [Unreleased]`, following [Keep a Changelog](https://keepachangelog.com/), linking the pull request.
+2. [`README.md`](README.md) if the change alters what it states.
+3. Any other doc the change touches, including the technical guide.
+4. A plain-language summary into `actian-ds-ecosystem`, per the standing ecosystem-sync rule.
 
-**Derive (PR-event, regenerate `dist/` on `src/` edits):**
-- `foundations-derive.yml` / `categories-derive.yml` / `guidelines-derive.yml` / `content-derive.yml` / `app-context-derive.yml` / `icons-derive.yml` / `graphics-derive.yml` / `accessibility-derive.yml` — each regenerates the corresponding `dist/` artifacts on PR-touch of its inputs. Auto-bump + auto-commit the regenerated dist back to the PR branch.
-- `graph-derive.yml`: regenerates `graph/dist/graph.json` (+ `.jsonld` + quality report) from the *dist* outputs of the other domains, so it also triggers on their auto-commits, not just its own inputs. Auto-bump + auto-commit.
-- `llms-txt.yml`: regenerates the root `llms.txt` + `llms-full.txt` content index from `foundations/src/**`, `accessibility/src/**`, and `content/dist/global.md`. Auto-bump + auto-commit, like its siblings, so the fresh index lands in the same merge commit `tag-on-merge` tags. It regenerated on push to `main` with no bump until #525, which is why every released tag carried an index describing content other than its own. It runs no test step of its own on purpose (it fires mid-cascade, when another domain's dist can still be stale); the freshness invariant is enforced by the `llms` drift guard in the required `validate-manifest.yml` check.
-- `render-derive.yml`: runs `npm run derive:render` to regenerate `components/render/dist/` + `tokens/dist/` from `components/render/renderer/`, then runs the fidelity gate (`fidelity-check.js`). **A color mismatch fails the build**, not just the dist regen. **So does a coverage regression**: if this run can confirm fewer color declarations against the Figma capture than the committed `fidelity-report.json` could, **for any single slug or in total**, the gate names the slugs that lost and blocks. Oracle coverage fell from 14.6% to 11.8% between 2026-07-24 and 2026-08-11 with `mismatch` at 0 the whole time and nothing said so. Two deliberate properties: a per-slug loss blocks even when a gain elsewhere keeps the total level (a slug can go fully blind while the headline holds), and **on a blocking loss the run leaves `fidelity-report.json` untouched**, so re-running or committing a regenerated report is not a way through. A loss that is the intended consequence of a design change is landed locally with `npm run derive:render -- --accept-coverage-loss="<why>"` plus committing the regenerated report, because CI invokes the gate with no arguments and cannot pass the flag; the reason belongs in the CHANGELOG entry, since that commit is the only place it is recorded. Auto-bump + auto-commit on success. **A second ratchet blocks on invented content**: `tests/render/sparse-render-ratchet.test.js` renders every slug with no props at all and fails when a component produces more visible parts than `components/render/dist/sparse-render.json` recorded at the merge base, per slug or in total, because a literal fallback in the renderer takes away a caller's ability to render the component without that part. It also fails when a `(slug, prop)` pair starts REPLACING content rather than adding it, which is the same defect in the shapes a count cannot see (a literal appended inside an element that already carries text, or carried by an attribute). Content gained by design is landed by naming the slug in `ACCEPTED_RISE` with the exact rise and a reason, or the pair in `ACCEPTED_INVENTED` with a reason.
+Routine automated Figma-sync patch bumps are not listed individually.
 
-### Which authority the canonical render serves
+Never hand-edit a version field. CI owns them.
 
-**Design first, and production once engineering's web components are consumable.** Decided 2026-08-12.
+## Governance
 
-This had never been declared, and the gap mattered: the render inherits **production** values (a token
-resolves through the OKLCH formula in `foundations/src/color-primitives.md`) while the fidelity gate
-judges it against **design** values (Figma stores hand-picked hex). Where those two disagree, nobody had
-said which one is right, so every fidelity number was measuring a seam rather than a quality.
-
-The decision extends doctrine that already existed one layer down. `color-primitives.md` says: *"always
-defer to the Figma file for design decisions and engineering code for production output."* The render
-tier is a design-decision surface until there is a shipped implementation to compare against, so:
-
-- **Today, Figma is the oracle and a divergence from it is a defect, not a documented difference.** That
-  makes the fidelity gate's comparison legitimate, and makes raising its coverage worth doing (see the
-  token-name verification work: asserting that we bound the token Figma bound is sound for the ~90% of
-  declarations where hex equality is not, and lifts the ceiling from about 12% to about 44%).
-- **When the web components exist**, the CEM contract becomes the source-swap bridge and authority moves
-  to the implementation. At that point the number that matters is the design-versus-development drift
-  measure, not fidelity against a capture.
-
-One consequence to settle separately: the colours where the computed OKLCH shade disagrees with Figma's
-hand-picked hex are now, by this decision, on the wrong side of the authority line rather than an
-accepted method divergence. They need either a correction or a named exception with an owner; the shade
-tiers marked "Proposed" in `color-primitives.md` are the likely explanation and are the place to start.
-
-**Validate (PR-event, required gates):**
-- `validate-manifest.yml`: manifest schema + every path resolves + test suite, plus the re-derive-and-`git diff` drift guards (graph, foundations, accessibility, `tokens/token-reference.md`, `llms.txt` + `llms-full.txt`). **Required.**
-- `validate-schemas.yml` — Ajv validates dist JSONs against `schemas/*.json`. Inline reviewdog annotations on the Files-Changed view.
-- `retired-layer-guard.yml` — guards against revival of retired transitional layers.
-
-**Release / housekeeping:**
-- `tag-on-merge.yml` — creates `v$VERSION` git tag on every push to `main`. Consumers' `vendor-snapshot.cjs --range` resolves against these tags.
-
-## Changelog
-
-Notable changes (new capabilities, schema or contract changes, breaking syncs, anything a consumer
-should know) go in [`CHANGELOG.md`](CHANGELOG.md) at the repo root, following
-[Keep a Changelog](https://keepachangelog.com/). Routine automated Figma-sync patch bumps are not
-listed individually; add an entry when a change is notable to a downstream consumer.
+Every change runs through the eight principles and the pass/fail checklist in
+[`GOVERNANCE.md`](GOVERNANCE.md). Additive changes pass freely. Removing, renaming
+or retyping anything a consumer can observe is governed: a major bump, an
+expand-contract migration, a deprecation window, and confirmed consumer awareness.
 
 ## Roles
 
-- Plugin lead — orchestration, plugin maintenance, knowledge-repo CI
-- Content lead — content guidelines
-- Design system lead — foundations
+- **Plugin lead**: orchestration, plugin maintenance, knowledge-repo CI, schemas
+- **Design system lead**: foundations, component anatomy, design conventions
+- **Content lead**: content guidelines, voice, UI copy
 
 ## License
 
-UNLICENSED — internal Actian use only.
+UNLICENSED. Internal Actian use only.

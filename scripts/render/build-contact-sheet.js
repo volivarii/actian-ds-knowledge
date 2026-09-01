@@ -26,6 +26,7 @@ function buildContactSheet(outPath) {
     .map(function (r) {
       var card = selfContainedCard(
         canonical.css,
+        canonical.fontsCss,
         canonical.pageCss,
         canonical.fragments[r.slug],
         r.group,

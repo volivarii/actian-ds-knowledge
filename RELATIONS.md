@@ -63,7 +63,7 @@ These reference **slugs**, never quoted names (`{ref: state-transitions}`, not `
 
 Everything in the frontmatter table above, plus the Figma-synced component registries and the app-context data, gets projected by CI (`scripts/graph/derive-graph.js`) into one typed, validated graph: **`graph/dist/graph.json`**, with a linked-data sibling **`graph/dist/graph.jsonld`** (dereferenceable IRIs, reusing schema.org, SKOS, PROV-O, and WCAG vocabularies via `graph/context.jsonld`) for future tooling.
 
-As of this writing it holds **815 nodes across 10 types** and **1,069 edges across 11 types** (see the reference tables below). It is **read-only in the Editor**: you can't add or edit an edge directly, because every edge is typed and validated against a closed vocabulary (`graph/vocabulary.json`). Each edge type only permits specific source-to-target node-type pairs, which is what keeps the graph queryable instead of a pile of ad-hoc links. Want a new connection in the graph? Author the frontmatter field it's derived from (mechanism 2) and let CI do the rest.
+It holds nodes of 10 types and edges of 11 types, and it is **read-only in the Editor**: you can't add or edit an edge directly, because every edge is typed and validated against a closed vocabulary (`graph/vocabulary.json`). Each edge type only permits specific source-to-target node-type pairs, which is what keeps the graph queryable instead of a pile of ad-hoc links. Want a new connection in the graph? Author the frontmatter field it's derived from (mechanism 2) and let CI do the rest.
 
 **This is also why the Graph group can look "behind."** Inline links and frontmatter refs are rescanned live as you type. The graph reflects the **last CI-merged state**: it updates after your PR merges and the pipeline re-derives `graph.json`, not the instant you save. The panel labels this "as of last merge" for exactly that reason.
 
@@ -90,42 +90,18 @@ flowchart TB
 
 ### The Graph map
 
-A small interactive diagram next to the note: the file you have open sits at the **center** (the "focus node"), and its direct graph-neighbors are placed on a ring around it (one hop out, by default). Click a neighbor to re-center the view on it and keep exploring outward. The legend at the top doubles as a filter: toggle a node type or edge type off to declutter the view. **It is not the whole 815-node graph.** It's a small, bounded neighborhood around whatever you're looking at, on purpose, so it stays readable.
+A small interactive diagram next to the note: the file you have open sits at the **center** (the "focus node"), and its direct graph-neighbors are placed on a ring around it (one hop out, by default). Click a neighbor to re-center the view on it and keep exploring outward. The legend at the top doubles as a filter: toggle a node type or edge type off to declutter the view. **It is not the whole graph.** It's a small, bounded neighborhood around whatever you're looking at, on purpose, so it stays readable.
 
-## Reference: node types
+## Reference: the node and edge types
 
-| Type | Shown as | ID prefix | Real example | Count |
-|---|---|---|---|---|
-| `component` | Component | `component:` | `component:button` | 585 |
-| `category` | Category | `category:` | `category:action` | 11 |
-| `a11y_criterion` | Accessibility criterion | `a11y:` | `a11y:buttons` | 32 |
-| `foundation_section` | Foundation | `foundation:` | `foundation:color-primitives` | 75 |
-| `motion_pattern` | Motion pattern | `motion:` | `motion:accordion-expand-collapse` | 8 |
-| `content_topic` | Content topic | `content:` | `content:empty-and-system-states` | 8 |
-| `app` | Application | `app:` | `app:administration` | 3 |
-| `app_entity` | Entity | `entity:` | `entity:access-request` | 30 |
-| `terminology_term` | Term | `term:` | `term:access-request-policy` | 33 |
-| `ux_pattern` | Pattern | `pattern:` | `pattern:access-request-management` | 30 |
+The graph has 10 kinds of node and 11 kinds of relationship. Rather than restate
+them here with counts that age, they are tabulated with a dated read and the
+command that reproduces it in the technical guide:
+[`docs/technical-guide/06-graph.md`](docs/technical-guide/06-graph.md).
 
-*(Counts as of this writing, from `graph/dist/graph.json`: 815 nodes total. They grow as content grows; the shape doesn't.)*
-
-## Reference: edge types
-
-| Edge | Meaning | Source → Target | Real example | Count |
-|---|---|---|---|---|
-| `in_category` | Component belongs to a category | component → category | `component:button` → `category:action` | 287 |
-| `composed_of` | Source nests target as a child/swappable instance | component → component | `component:button` → `component:spinner` | 325 |
-| `a11y_ref` | Reference to an accessibility criterion. Scope `category` means inherited, scope `component` means specific | category/component → a11y_criterion | `component:button` → `a11y:buttons` | 86 |
-| `foundations_ref` | Reference to a design foundation | category/component → foundation_section | `category:action` → `foundation:design-guidelines` | 14 |
-| `motion_ref` | Reference to a motion pattern | category/component → motion_pattern | `category:action` → `motion:state-transitions` | 13 |
-| `narrower` | Broader/narrower topical hierarchy (SKOS-style, not subclass or part-of) | foundation_section → foundation_section | `foundation:color-primitives` → `foundation:color-primitives/oklch-shade-formula` | 72 |
-| `related` | Non-hierarchical association | content_topic → component | `content:empty-and-system-states` → `component:empty-state` | 27 |
-| `in_app` | Entity or pattern belongs to a product application | app_entity/ux_pattern → app | `entity:access-request` → `app:explorer` | 93 |
-| `entity_related` | Directed relationship between two domain entities. The specific relation rides the edge's `predicate` field (36 distinct predicates share this one type) | app_entity → app_entity | `entity:access-request` → `entity:output-port` (predicate `targetsOutputPort`) | 42 |
-| `uses_component` | A UX pattern is realized by a DS component | ux_pattern → component | `pattern:access-request-management` → `component:button` | 93 |
-| `term_about` | A term is about an entity/app/pattern, often inferred by slug match | terminology_term → app_entity/app/ux_pattern | `term:administration` → `app:administration` | 17 |
-
-*(Counts as of this writing: 1,069 edges total. Every edge also carries `provenance`, which source file it was derived from and how, and most carry a `confidence`: `asserted` for authored facts, `inferred` for pattern-matched ones like slug-matched terms.)*
+The machine-readable version is [`graph/vocabulary.json`](graph/vocabulary.json),
+which is the authority: it declares, for each edge type, exactly which
+source-to-target node-type pairs are permitted.
 
 ## Worked example: following Button through all three mechanisms
 
@@ -174,6 +150,7 @@ A one-hop neighborhood map centered on whatever you have open, not the whole gra
 
 ## Go deeper
 
+- [`docs/technical-guide/06-graph.md`](docs/technical-guide/06-graph.md): the node and edge tables, edge provenance, the quality and collisions reports, and where the graph is thin
 - [`ARCHITECTURE.md`](ARCHITECTURE.md): the repo's four zones (Knowledge, Contract, Metadata, Tooling) and why the graph lives in "Contract"
 - [`AUTHORING.md`](AUTHORING.md): the "Cross-references" section on slug-based refs
 - [`graph/vocabulary.json`](graph/vocabulary.json): the closed node/edge type vocabulary, machine-readable
