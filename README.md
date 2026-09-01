@@ -21,6 +21,7 @@ without bending to any one of them.
 | **See every artifact** | [`paths-manifest.json`](paths-manifest.json) — the contract, keyed + zoned |
 | **Check coverage / debt** | [`components/dist/guidelines/coverage.md`](components/dist/guidelines/coverage.md) |
 | **Check how honest the renders are** (how much of what we paint the Figma capture can verify) | [`components/render/dist/fidelity-report.json`](components/render/dist/fidelity-report.json) |
+| **See whether output quality is improving** (dated, with direction) | [`components/render/dist/quality-trend.md`](components/render/dist/quality-trend.md) |
 | **Contribute / CI** | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 | **See what changed** | [`CHANGELOG.md`](CHANGELOG.md) |
 | **AI-agent guide** | [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md) |

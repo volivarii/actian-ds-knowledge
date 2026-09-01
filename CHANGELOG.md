@@ -20,6 +20,34 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The output-quality measures carry a date and a direction, because every one of them had only a
+  ratchet ([#616](https://github.com/volivarii/actian-ds-knowledge/pull/616)) and all three drifted the wrong way for three weeks with CI green.** A ratchet blocks a
+  regression on a value the baseline already knows and deliberately skips what it cannot recognise, a
+  new slug or a new value, which is right for gating and useless for reporting. Between 2026-08-17 and
+  2026-09-01 unexplained variant collapses went 50 to 54, inline-style hex 28 to 31, and blank boxes
+  61 to 65, and no gate could say so. `components/render/dist/quality-trend.json` and its pasteable
+  `quality-trend.md` now carry each measure with the version and date it was measured at and the
+  direction it has moved.
+
+  **Oracle coverage is carried as verified/examined and never as a ratio.** The ratio rose from 17.81%
+  to 19.12% between 2026-08-12 and 2026-09-01 while the numerator sat FLAT at 78: every point of that
+  "improvement" was declarations leaving the denominator. A measure that improves when its subject
+  shrinks is measuring the wrong end, so the pair is published and the percentage is not.
+
+  Nothing here recomputes a figure a gate already owns. The roll-up calls `variant-collapse.js`, which
+  moved from `tests/` to `scripts/render/lib/` so the gate and the report share ONE implementation, and
+  the by-design exemption record moved with it for the same reason. A naive re-count of the contract's
+  `rendersAs` keys returns **106** where the gate reports **61**, because it knows nothing about
+  State-axis exclusion or equivalence classes, and a roll-up that drifts from its gate is worse than
+  none: it is quotable and wrong. A test asserts the join and was mutated to that naive count to prove
+  it fails.
+
+  The series comes out of git rather than a new store, because both metric artifacts are already
+  committed and their history is a retroactive series for free. The date on the artifact is the newest
+  source revision's, never the wall clock: an artifact stamped with `new Date()` changes every day
+  whether or not anything it measures did, which would turn the derive's own change detection into
+  always-true and take a version bump on every PR for nothing. Two consecutive runs are byte-identical.
+
 - **Breaking Figma sync of 2026-08-31: twelve component renames carried through, and the authored
   surface follows Figma.** (#589) `account-dropdown` to `global-header-account-dropdown`, `calendar`
   to `calendar-data-selector`, `collapse-accordion` to `collapse`, `data-viz-legend-item` to

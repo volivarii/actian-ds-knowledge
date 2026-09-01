@@ -3,7 +3,7 @@
   "_convention": "Fields prefixed with _ are system-managed (auto_generated, source, schema_version, sourceFile, generatedAt, meta). Authored content uses bare keys; system metadata uses _-prefix. Reserved for future extensions.",
   "_naming_convention": "Every key in paths and collections is leaf XOR namespace, never both. A key cannot resolve to a file AND be a prefix of nested children. To add a sibling artifact under an existing leaf, rename the leaf to a sub-key first (e.g., accessibility.guide + accessibility.index, not accessibility + accessibility.index). Enforced by tests/manifest-convention.test.js.",
   "manifest_schema_version": "v1",
-  "knowledge_version": "0.34.165",
+  "knowledge_version": "0.34.166",
   "_zones": {
     "knowledge": [
       "accessibility",
@@ -648,6 +648,20 @@
       "origin": "ci",
       "generator": "scripts/render/derive-canonical.js",
       "description": "Index of the canonical renders: slug, tagName, group, fragment file, tokens consumed."
+    },
+    "components.render.qualityTrend": {
+      "path": "components/render/dist/quality-trend.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/render/derive-quality-trend.js",
+      "description": "The output-quality roll-up: unexplained variant collapses, inline-style hex, and the oracle numerator and denominator, each carrying the date and the version it was measured at plus the direction it has moved. Every figure is produced by calling the gate that owns it (variant-collapse.js, fidelity-check.js) rather than recomputed, because a re-count of the contract's rendersAs keys returns 106 where the gate reports 61 and a roll-up that drifts from its gate is quotable and wrong. Oracle coverage is carried as verified/examined and never as a ratio: the ratio rose from 17.81% to 19.12% between 2026-08-12 and 2026-09-01 with the numerator flat, so the percentage reports attrition as progress. Exists because every one of these measures had only a ratchet, which blocks a regression on a known value and is silent on growth, so all three drifted the wrong way for three weeks with CI green."
+    },
+    "components.render.qualityTrendSummary": {
+      "path": "components/render/dist/quality-trend.md",
+      "type": "markdown",
+      "origin": "ci",
+      "generator": "scripts/render/derive-quality-trend.js",
+      "description": "Pasteable form of components.render.qualityTrend: the measures with their dates and directions, the dated oracle series so a flat numerator reads as flat, and the per-slug inline-hex split so a reader knows which fragment to open. Nothing in the substrate exported before this, so reporting was a screenshot."
     },
     "components.render.schema": {
       "path": "components/render/schema/custom-elements-manifest.schema.json",
