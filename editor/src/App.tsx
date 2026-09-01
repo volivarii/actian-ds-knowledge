@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Box,
@@ -16,6 +16,13 @@ import "./styles/editor-chrome.css";
 import "./styles/base.css";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { EditorShell } from "./app/EditorShell";
+import type { ExploreTab } from "./app/HomeScreen";
+import { useHashRoute } from "./lib/useHashRoute";
+import {
+  DEFAULT_EXPLORE_TAB,
+  stateFromHash,
+  WORKSPACE_RE,
+} from "./lib/routes";
 import { FreshnessChip } from "./app/FreshnessChip";
 import { SignInScreen } from "./app/SignInScreen";
 import { SaveStateIndicator } from "./app/SaveStateIndicator";
@@ -38,7 +45,13 @@ import { loadComponentSlugs } from "./lib/componentSlugs";
 import { loadAnchorIndex } from "./lib/anchorIndex";
 import { buildSearchIndex } from "./lib/searchIndex";
 import { loadContentFiles, type ContentFile } from "./lib/contentFiles";
-import { DOMAINS, DOMAIN_LABEL, type Domain } from "./lib/workspaceState";
+import {
+  DOMAINS,
+  DOMAIN_LABEL,
+  domainPathFor,
+  PROSE_DOMAINS,
+  type Domain,
+} from "./lib/workspaceState";
 import {
   bootstrap as bootstrapAuth,
   getSession,
@@ -50,7 +63,7 @@ import {
 /** Pull `<slug>` from `workspace/<slug>` or `components/src/<slug>/<anything>`. */
 function activeComponentSlug(path: string | null): string | null {
   if (!path) return null;
-  const ws = /^workspace\/([a-z0-9][a-z0-9-]*)$/.exec(path);
+  const ws = WORKSPACE_RE.exec(path);
   if (ws && ws[1]) return ws[1];
   const file = /^components\/src\/([^/]+)\//.exec(path);
   if (file && file[1] && file[1] !== "categories" && file[1] !== "guidelines") {
@@ -80,7 +93,18 @@ function GearIcon() {
 
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [activePath, setActivePath] = useState<string | null>(null);
+  // Seeded from the address during the first render, not corrected by an
+  // effect afterwards, so a deep link is never briefly the wrong screen.
+  const [activePath, setActivePath] = useState<string | null>(
+    () => stateFromHash(window.location.hash).activePath,
+  );
+  // The home screen's data tab lives here rather than in EditorShell because
+  // the URL carries it, and one component owns everything the URL carries.
+  // It still survives navigating into a file and back: App outlives the
+  // HomeScreen that reads it.
+  const [exploreTab, setExploreTab] = useState<ExploreTab>(
+    () => stateFromHash(window.location.hash).exploreTab ?? DEFAULT_EXPLORE_TAB,
+  );
   const [stagingOpen, setStagingOpen] = useState(false);
   const [submissionsOpen, setSubmissionsOpen] = useState(false);
   const [submissionRows, setSubmissionRows] = useState<SubmissionRow[]>([]);
@@ -92,6 +116,22 @@ export default function App() {
     const unsub = subscribe(setSession);
     return unsub;
   }, []);
+
+  // The address and the navigation state stay in step, in both directions.
+  const handleRoute = useCallback(
+    (path: string | null, tab: ExploreTab | null) => {
+      setActivePath(path);
+      if (tab) setExploreTab(tab);
+      // Back now repaints the screen, so a dialog left open would cover a
+      // different file than the one it was opened over, and the press would
+      // read as a no-op.
+      setSettingsOpen(false);
+      setStagingOpen(false);
+      setSubmissionsOpen(false);
+    },
+    [],
+  );
+  useHashRoute({ activePath, exploreTab, onNavigate: handleRoute });
 
   const saveState = useSaveState(activePath, draftStoreSingleton);
   const cartEntries = useCart(submissionCartSingleton);
@@ -215,13 +255,19 @@ export default function App() {
         group: "Current component",
         run: () => setActivePath(`workspace/${activeSlug}`),
       });
-      for (const d of DOMAINS) {
+      // PROSE_DOMAINS, not DOMAINS: tokens is YAML-backed and the dispatch
+      // refuses it, so offering it was a guaranteed dead end that this work
+      // would additionally have made shareable.
+      for (const d of DOMAINS.filter((x) => PROSE_DOMAINS.has(x))) {
         base.push({
           id: `ctx-domain-${d}`,
           label: `Switch to ${DOMAIN_LABEL[d]}`,
-          hint: `${activeSlug}/${d}.md`,
+          // domainPathFor, not a `${d}.md` template: tokens is YAML-backed,
+          // so the template built a path to a file that does not exist, and the
+          // address work turns that into a link somebody can share.
+          hint: domainPathFor(activeSlug, d),
           group: "Current component",
-          run: () => setActivePath(`components/src/${activeSlug}/${d}.md`),
+          run: () => setActivePath(domainPathFor(activeSlug, d)),
         });
       }
       base.push({
@@ -329,6 +375,8 @@ export default function App() {
               setActivePath={setActivePath}
               onOpenStaging={() => setStagingOpen(true)}
               onFocusSearch={() => searchInputRef.current?.focus()}
+              exploreTab={exploreTab}
+              onExploreTabChange={setExploreTab}
             />
           )}
         </Box>

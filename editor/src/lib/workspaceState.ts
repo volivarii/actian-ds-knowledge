@@ -131,7 +131,7 @@ export function domainPathFor(slug: string, domain: Domain): string {
 
 // The prose domains authored as `<domain>.md` (tokens is YAML-backed and not
 // editor-openable, so it is excluded from the in-editor status control).
-const PROSE_DOMAINS = new Set<Domain>([
+export const PROSE_DOMAINS = new Set<Domain>([
   "content",
   "usage",
   "design",

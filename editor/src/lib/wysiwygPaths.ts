@@ -52,3 +52,34 @@ export function shouldUseWysiwyg(path: string): boolean {
     (isAppContextFile(path) || isCategoryFile(path) || isWysiwygSafePath(path))
   );
 }
+
+/**
+ * True for source markdown routed to MarkdownEditScreen (the raw CodeMirror or
+ * WYSIWYG body editor). Matches accessibility and component domain files,
+ * excluding structural meta-files.
+ *
+ * Lives here rather than in EditorShell so that leaf modules can ask what the
+ * dispatch will accept without importing the UI graph. EditorShell re-exports
+ * it, and remains the only place that ACTS on it.
+ *
+ * NOTE: intentionally does NOT match any content/src/**.md or foundations/src/*.md
+ * anymore: ALL of those are form-routed via the frontmatterForms registry (see
+ * `matchFrontmatterForm`, checked BEFORE this function). That includes
+ * root-level content files (global-guidelines.md, format-spec.md); a form-routed
+ * file with no frontmatter still lands in MarkdownEditScreen, but via
+ * FrontmatterBodyEditScreen's no-frontmatter fallback, not through this.
+ */
+export function isPlainMarkdown(path: string): boolean {
+  return (
+    (/^accessibility\/src\/[^/]+\.md$/.test(path) ||
+      /^components\/src\/(?!categories\/|AUTHORING\.md|EDITING-GUIDE\.md)[^/]+\/[^/]+\.md$/.test(
+        path,
+      )) &&
+    !/AUTHORING\.md$/.test(path)
+  );
+}
+
+/** True for a component's `_meta.yml`, which routes to MetaEditScreen. */
+export function isMetaYaml(path: string): boolean {
+  return /^components\/src\/[^/]+\/_meta\.yml$/.test(path);
+}
