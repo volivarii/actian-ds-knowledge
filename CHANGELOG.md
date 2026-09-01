@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Added
 
 - **App-context records open as a form, with the file behind a source view**
-  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD)). Line one of every entity was
+  ([#629](https://github.com/volivarii/actian-ds-knowledge/pull/629)). Line one of every entity was
   `# yaml-language-server: $schema=../../../schemas/app-context-entity.json` and line two was
   `_schema_version: 1`, so the first two things an author read were addressed to a machine, and the
   properties below them were inline flow YAML presented to a design lead as something to hand edit
