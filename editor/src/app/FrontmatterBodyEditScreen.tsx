@@ -150,6 +150,19 @@ export function FrontmatterBodyEditScreen(props: Props) {
   const [formData, setFormData] = useState<unknown>(undefined);
   const [body, setBody] = useState<string>("");
   const [fmText, setFmText] = useState<string>("");
+  // The raw YAML is a SOURCE VIEW now, not the default. Every app-context
+  // record opened with `# yaml-language-server: $schema=…` on line one and
+  // `_schema_version: 1` on line two, so the first two things an author read
+  // were addressed to a machine (F9). The form leads; the file is one click
+  // away for anyone who wants it.
+  const [sourceOpen, setSourceOpen] = useState(false);
+  // Every record opens as a form, including the next one. EditorShell renders
+  // this screen without a `key`, so without this an author who looked at one
+  // record's source would find the following record showing raw YAML, which is
+  // the state this change exists to stop being the default.
+  useEffect(() => {
+    setSourceOpen(false);
+  }, [path]);
   const fmTextRef = useRef(fmText);
   fmTextRef.current = fmText;
   // Latest-value mirrors. The body editors (Milkdown's useEditor([]) and
@@ -214,7 +227,15 @@ export function FrontmatterBodyEditScreen(props: Props) {
   // Frontmatter form visibility: collapsed by default on body-carrying files
   // (the prose editor is the main surface); expanded on bodyless record files
   // whose form is the whole content.
-  const [fmCollapsed, setFmCollapsed] = useState<boolean>(!bodyless);
+  // `formLeads`: this file offers a source view, so the FORM is what it opens
+  // with, and that form is the record's content the same way a bodyless file's
+  // is. Left collapsed it renders with every field hidden by
+  // `form.fm-form.fm-collapsed` in base.css, which is the change having no
+  // visible effect whatsoever.
+  const formLeads = surface === "yaml";
+  const [fmCollapsed, setFmCollapsed] = useState<boolean>(
+    !bodyless && !formLeads,
+  );
 
   // RelationsPanel's collapsed state is owned here (not by the panel
   // itself) so the expensive incoming/counts memos below can be gated to a
@@ -381,6 +402,34 @@ export function FrontmatterBodyEditScreen(props: Props) {
     };
   }, [path, schemaKey, octokit, frontmatterOptional]);
 
+  /** True only while the author is actually looking at the raw YAML. The
+   *  registry's `surface` says a file OFFERS a source view; this says it is on
+   *  screen, and a save must assemble from whichever one the author edited. */
+  const yamlActive = surface === "yaml" && sourceOpen;
+
+  /** The frontmatter text a comment-preserving save merges into. Starts as the
+   *  bytes fetched at load and is refreshed when the author leaves the source
+   *  view, so a comment they typed there is not rebuilt away by the next form
+   *  save. State, not a ref: a debounced flush must close over the donor of the
+   *  file it was armed for, for the same reason `fm` is an argument below. */
+  const [fmDonor, setFmDonor] = useState<string | null>(null);
+
+  /** The one place that decides how a form save assembles a file. The source
+   *  view seeds from this too, so the pane can never show text a save would not
+   *  produce. */
+  const assembleFromForm = useCallback(
+    (fd: unknown, donor: string | null, b: string) =>
+      preserveComments
+        ? assembleFrontmatterFilePreservingComments(fd, donor, b)
+        : assembleFrontmatterFile(
+            fd,
+            donor,
+            b,
+            yamlFlowAtDepth !== undefined ? yamlFlowAtDepth : 2,
+          ),
+    [preserveComments, yamlFlowAtDepth],
+  );
+
   const flushToCart = useCallback(
     (fd: unknown, b: string, fm: string) => {
       if (state.kind !== "ready") return;
@@ -405,21 +454,9 @@ export function FrontmatterBodyEditScreen(props: Props) {
       // lines survive the save. Otherwise the flow-depth path: yamlFlowAtDepth
       // undefined → default (2); null → block-style. assembleFrontmatterFile
       // accepts null; default is 2.
-      const content =
-        surface === "yaml"
-          ? assembleYamlFrontmatterFile(fm, b)
-          : preserveComments
-            ? assembleFrontmatterFilePreservingComments(
-                fd,
-                state.frontmatterText,
-                b,
-              )
-            : assembleFrontmatterFile(
-                fd,
-                state.frontmatterText,
-                b,
-                yamlFlowAtDepth !== undefined ? yamlFlowAtDepth : 2,
-              );
+      const content = yamlActive
+        ? assembleYamlFrontmatterFile(fm, b)
+        : assembleFromForm(fd, fmDonor ?? state.frontmatterText, b);
       submissionCartSingleton.add({
         path,
         content,
@@ -427,7 +464,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
         addedAt: Date.now(),
       });
     },
-    [state, path, yamlFlowAtDepth, preserveComments, surface],
+    [state, path, yamlActive, assembleFromForm, fmDonor],
   );
 
   const scheduleFlush = useCallback(
@@ -623,9 +660,9 @@ export function FrontmatterBodyEditScreen(props: Props) {
       )}
       <Flex gap="2" mt="3">
         <Button
-          type={surface === "yaml" ? "button" : "submit"}
+          type={yamlActive ? "button" : "submit"}
           onClick={
-            surface === "yaml"
+            yamlActive
               ? () =>
                   flushToCart(
                     formDataRef.current,
@@ -651,17 +688,73 @@ export function FrontmatterBodyEditScreen(props: Props) {
         <Text size="2" weight="bold">
           Frontmatter
         </Text>
-        <Button
-          type="button"
-          size="1"
-          variant="ghost"
-          aria-label="Toggle frontmatter"
-          onClick={() => setFmCollapsed((c) => !c)}
-        >
-          {fmCollapsed ? "Show" : "Hide"}
-        </Button>
+        <Flex gap="2" align="center">
+          {surface === "yaml" && (
+            <Button
+              type="button"
+              size="1"
+              variant="ghost"
+              onClick={() => {
+                // Seed the surface being opened from the one being left, so a
+                // toggle never shows a stale snapshot of the other. Both
+                // directions reuse the assemble/split pair the load and save
+                // paths already use, rather than a second serializer.
+                if (!sourceOpen) {
+                  setFmText(
+                    splitFrontmatter(
+                      assembleFromForm(
+                        formDataRef.current,
+                        fmDonor ??
+                          (state.kind === "ready" ? state.frontmatterText : null),
+                        bodyRef.current,
+                      ),
+                    ).frontmatterText ?? "",
+                  );
+                  // Expanding is the point: collapsed, base.css hides the pane
+                  // entirely and the click does nothing but change a label.
+                  setFmCollapsed(false);
+                } else {
+                  const roundTripped = assembleYamlFrontmatterFile(
+                    fmTextRef.current,
+                    bodyRef.current,
+                  );
+                  const back = splitFrontmatter(roundTripped);
+                  // Refuse a PARTIAL parse, not just a total failure. The
+                  // frontmatter regex is non-greedy, so a `---` inside a block
+                  // scalar ends the frontmatter early: the record parses to a
+                  // truncated object, and the next save would delete every key
+                  // after the cut as "removed". The body coming back changed is
+                  // what that truncation looks like from here.
+                  const intact =
+                    back.data !== undefined &&
+                    back.data !== null &&
+                    back.body === bodyRef.current;
+                  if (intact) {
+                    setFormData(back.data);
+                    // The author may have typed comments in the source view;
+                    // this is the text a later form save must merge into.
+                    setFmDonor(back.frontmatterText ?? null);
+                  }
+                  if (!intact) return; // stay in the source view, text intact
+                }
+                setSourceOpen((o) => !o);
+              }}
+            >
+              {sourceOpen ? "Back to form" : "View source"}
+            </Button>
+          )}
+          <Button
+            type="button"
+            size="1"
+            variant="ghost"
+            aria-label="Toggle frontmatter"
+            onClick={() => setFmCollapsed((c) => !c)}
+          >
+            {fmCollapsed ? "Show" : "Hide"}
+          </Button>
+        </Flex>
       </Flex>
-      {surface === "yaml" ? (
+      {yamlActive ? (
         <Box>
           {/* Orientation caption: the schema's own root `description`, plus
               a hint that hovering a key explains it (schemaHover.ts). Comes

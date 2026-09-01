@@ -3,7 +3,11 @@ import "../setup-dom";
 import { test, afterEach, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
+import { render, cleanup, screen, fireEvent, act } from "@testing-library/react";
+// The form surface uses Radix Tooltip, which needs the provider a <Theme>
+// supplies. Production always renders inside one (App wraps the whole editor);
+// only the raw YAML pane happened not to need it.
+import { Theme } from "@radix-ui/themes";
 import { EditorView } from "@codemirror/view";
 import { FrontmatterBodyEditScreen } from "../../src/app/FrontmatterBodyEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
@@ -126,45 +130,73 @@ function fakeOctokitTwoFiles() {
   } as never;
 }
 
-test("an app-context record opens as YAML, not as a form", async () => {
+/** The raw YAML is a SOURCE VIEW now, not what a record opens with (F9): every
+ *  app-context record used to lead with `# yaml-language-server` and
+ *  `_schema_version`. Every test below that exercises the pane opens it first. */
+async function openSource() {
+  const btn = await screen.findByRole(
+    "button",
+    { name: /view source/i },
+    { timeout: 5000 },
+  );
+  await act(async () => {
+    fireEvent.click(btn);
+  });
+  return screen.findByTestId("yaml-frontmatter-editor", {}, { timeout: 5000 });
+}
+
+test("an app-context record opens as a form, with the raw file one click away", async () => {
+  // F9: line one of every entity was `# yaml-language-server: $schema=…` and
+  // line two was `_schema_version: 1`, so the first two things an author read
+  // were addressed to a machine. The form opens; the file is still reachable.
   const { container } = render(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path="app-context/src/entities/dataset.md"
       schemaKey="app-context-entity"
       uiSchema={{}}
       surface="yaml"
       octokit={fakeOctokit()}
-    />,
+    /></Theme>,
   );
-  const yamlPane = await screen.findByTestId(
-    "yaml-frontmatter-editor",
-    {},
-    { timeout: 5000 },
+  await screen.findByRole("button", { name: /view source/i }, { timeout: 5000 });
+  const form = container.querySelector("form");
+  assert.ok(form, "the RJSF form should be what a record opens with");
+  // VISIBLE, not merely mounted. `form.fm-form.fm-collapsed` hides every field
+  // in base.css, so a collapsed form is a record that still opens showing the
+  // author nothing — which is what the first version of this change shipped.
+  // The rule is `form.fm-form.fm-collapsed > *:not(.fm-form-children)`, so the
+  // element to measure is a DIRECT child: jsdom computes an element's own
+  // style and does not inherit a hidden ancestor, which is why asserting on a
+  // nested control passes whether the form is collapsed or not.
+  const hidden = Array.from(form!.children).filter(
+    (el) => !el.classList.contains("fm-form-children"),
   );
-  assert.match(yamlPane.textContent ?? "", /slug: dataset/);
-  // The record's fields must NOT appear as form controls. RJSF's <Form>
-  // always renders a <form> element, so its absence proves the RJSF branch
-  // never mounted alongside the pane. (A queryByLabelText("Entity label")
-  // check would be vacuous here: this test's uiSchema={{}} never sets that
-  // title, so the label can't appear regardless of which branch rendered.)
+  assert.ok(hidden.length > 0, "expected the form to render its own children");
+  assert.ok(
+    hidden.every((el) => getComputedStyle(el).display !== "none"),
+    "the form must open expanded, not collapsed with its fields hidden",
+  );
   assert.equal(
-    container.querySelector("form"),
+    screen.queryByTestId("yaml-frontmatter-editor"),
     null,
-    "no RJSF <form> should render when surface is yaml",
+    "the raw YAML must not be the first thing on screen",
   );
+
+  const pane = await openSource();
+  assert.match(pane.textContent ?? "", /slug: dataset/);
 });
 
 test("staging an untouched record produces byte-identical content", async () => {
   render(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path="app-context/src/entities/dataset.md"
       schemaKey="app-context-entity"
       uiSchema={{}}
       surface="yaml"
       octokit={fakeOctokit()}
-    />,
+    /></Theme>,
   );
-  await screen.findByTestId("yaml-frontmatter-editor", {}, { timeout: 5000 });
+  await openSource();
   const button = await screen.findByRole(
     "button",
     { name: "Add to batch" },
@@ -195,19 +227,15 @@ test("staging an untouched record produces byte-identical content", async () => 
 // and never touches `state` again, so it only passes if the ref is read live.
 test("staging an EDITED record reflects the edit, not a stale fmText closure", async () => {
   render(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path="app-context/src/entities/dataset.md"
       schemaKey="app-context-entity"
       uiSchema={{}}
       surface="yaml"
       octokit={fakeOctokit()}
-    />,
+    /></Theme>,
   );
-  const host = await screen.findByTestId(
-    "yaml-frontmatter-editor",
-    {},
-    { timeout: 5000 },
-  );
+  const host = await openSource();
   const view = EditorView.findFromDOM(host);
   assert.ok(view, "expected a live EditorView attached to the pane");
   view!.dispatch({
@@ -236,24 +264,32 @@ test("staging an EDITED record reflects the edit, not a stale fmText closure", a
 // class actually hides the pane, not just that the class name is present.
 test("the collapse toggle actually hides and shows the YAML pane", async () => {
   const { container } = render(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path="app-context/src/entities/dataset.md"
       schemaKey="app-context-entity"
       uiSchema={{}}
       surface="yaml"
       octokit={fakeOctokit()}
-    />,
+    /></Theme>,
   );
-  await screen.findByTestId("yaml-frontmatter-editor", {}, { timeout: 5000 });
+  await openSource();
   const pane = container.querySelector(".fm-yaml-pane");
   assert.ok(pane, "expected the pane wrapper to carry .fm-yaml-pane");
 
-  // bodyless=false (the config for all three app-context entries) seeds
-  // fmCollapsed to `!bodyless` = true, so the record opens collapsed.
+  // The record opens expanded now, and opening the source view expands too, so
+  // the pane starts VISIBLE and the toggle's job is to hide it.
   const toggle = screen.getByRole("button", {
     name: "Toggle frontmatter",
   });
-  assert.equal(toggle.textContent, "Show", "label reads Show while hidden");
+  assert.equal(toggle.textContent, "Hide", "label reads Hide while visible");
+  assert.notEqual(
+    getComputedStyle(pane as Element).display,
+    "none",
+    "opening the source view must actually show it, not just relabel a button",
+  );
+
+  fireEvent.click(toggle);
+  assert.equal(toggle.textContent, "Show", "label reads Show once hidden");
   assert.equal(
     getComputedStyle(pane as Element).display,
     "none",
@@ -261,7 +297,7 @@ test("the collapse toggle actually hides and shows the YAML pane", async () => {
   );
 
   fireEvent.click(toggle);
-  assert.equal(toggle.textContent, "Hide", "label reads Hide once visible");
+  assert.equal(toggle.textContent, "Hide", "label reads Hide once visible again");
   assert.notEqual(
     getComputedStyle(pane as Element).display,
     "none",
@@ -289,19 +325,15 @@ test("the collapse toggle actually hides and shows the YAML pane", async () => {
 // matching the cross-file test below.
 test("editing the YAML pane debounces the flush via scheduleFlush, not just the button", async () => {
   render(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path={PATH_A}
       schemaKey="app-context-entity"
       uiSchema={{}}
       surface="yaml"
       octokit={fakeOctokit()}
-    />,
+    /></Theme>,
   );
-  const host = await screen.findByTestId(
-    "yaml-frontmatter-editor",
-    {},
-    { timeout: 5000 },
-  );
+  const host = await openSource();
   const view = EditorView.findFromDOM(host);
   assert.ok(view, "expected a live EditorView attached to the pane");
 
@@ -345,19 +377,15 @@ test("editing the YAML pane debounces the flush via scheduleFlush, not just the 
 test("a debounced flush armed on file A survives a switch to file B and stages under A with A's own frontmatter", async () => {
   const octokit = fakeOctokitTwoFiles();
   const { rerender } = render(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path={PATH_A}
       schemaKey="app-context-entity"
       uiSchema={{}}
       surface="yaml"
       octokit={octokit}
-    />,
+    /></Theme>,
   );
-  const hostA = await screen.findByTestId(
-    "yaml-frontmatter-editor",
-    {},
-    { timeout: 5000 },
-  );
+  const hostA = await openSource();
   const viewA = EditorView.findFromDOM(hostA);
   assert.ok(viewA, "expected a live EditorView attached to file A's pane");
 
@@ -370,19 +398,15 @@ test("a debounced flush armed on file A survives a switch to file B and stages u
   // screen without a `key`, so this rerender updates props on the SAME
   // component instance — the pending timer from A's edit is not cancelled.
   rerender(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path={PATH_B}
       schemaKey="app-context-entity"
       uiSchema={{}}
       surface="yaml"
       octokit={octokit}
-    />,
+    /></Theme>,
   );
-  const hostB = await screen.findByTestId(
-    "yaml-frontmatter-editor",
-    {},
-    { timeout: 5000 },
-  );
+  const hostB = await openSource();
   // Sanity: B actually loaded (its own content, not A's).
   assert.match(
     hostB.textContent ?? "",
@@ -441,19 +465,15 @@ test("a debounced flush armed on file A survives a switch to file B and stages u
 test("typing in file B while A's debounce is pending does not cancel A's timer", async () => {
   const octokit = fakeOctokitTwoFiles();
   const { rerender } = render(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path={PATH_A}
       schemaKey="app-context-entity"
       uiSchema={{}}
       surface="yaml"
       octokit={octokit}
-    />,
+    /></Theme>,
   );
-  const hostA = await screen.findByTestId(
-    "yaml-frontmatter-editor",
-    {},
-    { timeout: 5000 },
-  );
+  const hostA = await openSource();
   const viewA = EditorView.findFromDOM(hostA);
   assert.ok(viewA, "expected a live EditorView attached to file A's pane");
 
@@ -465,19 +485,15 @@ test("typing in file B while A's debounce is pending does not cancel A's timer",
   // Navigate to file B within the debounce window (same component instance,
   // no `key` on FrontmatterBodyEditScreen — matches EditorShell's real use).
   rerender(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path={PATH_B}
       schemaKey="app-context-entity"
       uiSchema={{}}
       surface="yaml"
       octokit={octokit}
-    />,
+    /></Theme>,
   );
-  const hostB = await screen.findByTestId(
-    "yaml-frontmatter-editor",
-    {},
-    { timeout: 5000 },
-  );
+  const hostB = await openSource();
   const viewB = EditorView.findFromDOM(hostB);
   assert.ok(viewB, "expected a live EditorView attached to file B's pane");
 
@@ -520,19 +536,15 @@ test("typing in file B while A's debounce is pending does not cancel A's timer",
 // well before the 1000ms debounce would have elapsed on its own.
 test("an edit still reaches the cart when the screen unmounts before the debounce elapses", async () => {
   const { unmount } = render(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path={PATH_A}
       schemaKey="app-context-entity"
       uiSchema={{}}
       surface="yaml"
       octokit={fakeOctokit()}
-    />,
+    /></Theme>,
   );
-  const host = await screen.findByTestId(
-    "yaml-frontmatter-editor",
-    {},
-    { timeout: 5000 },
-  );
+  const host = await openSource();
   const view = EditorView.findFromDOM(host);
   assert.ok(view, "expected a live EditorView attached to the pane");
 
@@ -561,5 +573,88 @@ test("an edit still reaches the cart when the screen unmounts before the debounc
     staged!.content,
     /note: unmounted-mid-debounce/,
     "the flushed content must carry the edit that was still pending at unmount",
+  );
+});
+
+// ── The form path must not eat the file's machinery ─────────────────────────
+
+const RECORD_WITH_DIRECTIVE = [
+  "---",
+  "# yaml-language-server: $schema=../../../schemas/app-context-entity.json",
+  "_schema_version: 1",
+  "slug: dataset",
+  "label: Dataset",
+  "properties:",
+  "  - name",
+  "relationships:",
+  "  contains:",
+  "    - field",
+  "apps:",
+  "  - studio",
+  "---",
+  "A dataset asset.",
+  "",
+].join("\n");
+
+function fakeOctokitWithDirective() {
+  return {
+    repos: {
+      getContent: async ({ path }: { path: string }) => {
+        const text =
+          path === "app-context/src/entities/dataset.md"
+            ? RECORD_WITH_DIRECTIVE
+            : readFileSync(ENTITY_SCHEMA, "utf8");
+        return {
+          data: {
+            content: Buffer.from(text, "utf8").toString("base64"),
+            encoding: "base64",
+            sha: "deadbeef",
+            type: "file",
+          },
+        };
+      },
+    },
+  } as never;
+}
+
+test("staging through the FORM keeps the schema directive the author never sees", async () => {
+  // The directive is a YAML comment, and a form save serialises from parsed
+  // data. Without `preserveComments` on these registry entries, making the form
+  // the default surface would silently strip line one of all 64 records and
+  // unhook every one of them from its schema.
+  render(
+    <Theme><FrontmatterBodyEditScreen
+      path="app-context/src/entities/dataset.md"
+      schemaKey="app-context-entity"
+      uiSchema={{}}
+      surface="yaml"
+      preserveComments
+      octokit={fakeOctokitWithDirective()}
+    /></Theme>,
+  );
+  const button = await screen.findByRole(
+    "button",
+    { name: "Add to batch" },
+    { timeout: 5000 },
+  );
+  fireEvent.click(button);
+  const staged = submissionCartSingleton
+    .list()
+    .find((e) => e.path === "app-context/src/entities/dataset.md");
+  assert.ok(staged, "expected a cart entry");
+  assert.match(
+    staged!.content,
+    /# yaml-language-server: \$schema=/,
+    "the schema directive must survive a save made through the form",
+  );
+  // Identical apart from blank lines. The form path re-serialises where the
+  // YAML path concatenated raw text, so it emits one blank line after the
+  // closing `---` that the source view does not. Recorded rather than hidden:
+  // the first form save of each record will show that one-line diff, and no
+  // other change.
+  const ignoringBlankLines = (t: string) => t.replace(/\n{2,}/g, "\n");
+  assert.equal(
+    ignoringBlankLines(staged!.content),
+    ignoringBlankLines(RECORD_WITH_DIRECTIVE),
   );
 });
