@@ -5,7 +5,7 @@ const assert = require("node:assert");
 const path = require("node:path");
 
 const classify = require(
-  path.join(__dirname, "helpers", "variant-collapse.js"),
+  path.join(__dirname, "..", "..", "scripts", "render", "lib", "variant-collapse.js"),
 );
 
 // A contract slice in the shape derive-contract.js publishes, so these tests run

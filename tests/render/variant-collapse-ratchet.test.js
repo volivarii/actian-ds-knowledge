@@ -4,7 +4,7 @@ const test = require("node:test");
 const assert = require("node:assert");
 const path = require("node:path");
 const mergeBase = require("./helpers/merge-base.js");
-const collapse = require("./helpers/variant-collapse.js");
+const collapse = require("../../scripts/render/lib/variant-collapse.js");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const CONTRACT_REL = "components/render/dist/render-contract.json";
@@ -25,7 +25,7 @@ const BASELINE = mergeBase.jsonAtMergeBase(CONTRACT_REL);
 // State axes are excluded and only reported. Roughly half of their values
 // collapse, but a static fragment cannot show hover or focus without
 // forced-state classes, so gating them would fail on a limitation of the medium
-// rather than a defect. The predicate lives in helpers/variant-collapse.js with
+// rather than a defect. The predicate lives in scripts/render/lib/variant-collapse.js with
 // the set logic that uses it, and has its own unit test there.
 
 // Collapses the renderer makes ON PURPOSE, each with the reason it makes them.
@@ -37,41 +37,7 @@ const BASELINE = mergeBase.jsonAtMergeBase(CONTRACT_REL);
 // figure meaning one thing: values the renderer cannot tell apart and nobody has
 // said why.
 //
-// Keyed by the exact value, not by the slug, so a reason cannot drift onto a
-// different regression in the same component. Every key is asserted below to
-// still name a real collapse AND to carry a usable reason, so one left behind by
-// a fix cannot quietly cover the next one.
-//
-// This is a decision record, not a tally: it must never grow a count, a
-// threshold, or an entry whose reason is "known issue". A Figma value rename is
-// a legitimate entry, but its reason must name the key it replaces.
-const BY_DESIGN = {
-  // ds-html-map.js, case "spinner": "Complete = 25%|50%|75%|100% is the
-  // animation's own arc-fill cycle, not a chooseable variant (usage guideline),
-  // so it is ignored here."
-  "spinner Complete=25%": "an animation keyframe, not a chooseable variant",
-  "spinner Complete=75%": "an animation keyframe, not a chooseable variant",
-  "spinner Complete=100%": "an animation keyframe, not a chooseable variant",
-  // ds-html-map.js, case "loader": "Registry axis: Percent (auto-named
-  // variants). 'loader' is the indeterminate activity spinner (determinate
-  // progress is the progress-bar-small leaf)."
-  "loader Percent=10%":
-    "loader is the INDETERMINATE spinner; determinate progress is progress-bar-small",
-  "loader Percent=50":
-    "loader is the INDETERMINATE spinner; Percent=50 renders the same spinner as every other Percent value",
-  // ds-html-map.js, case "search-result-card": "Studio's structural swaps
-  // (button -> progress-bar-small, digram -> tag-read-only) are intentionally NOT
-  // built here, per the spec. App=Studio therefore renders the BASE card with no
-  // root modifier -- there is no built CSS delta for it, and a modifier class
-  // must not be emitted without one."
-  "search-result-card App=Studio":
-    "Studio's structural swaps are not built, and a modifier class must not be emitted with no CSS delta",
-  // ds-html-map.js, case "whats-new-dropdown": "The guideline collapses
-  // Drilldown1+Drilldown2 into one 'Drilldown' concept, so normalize both onto a
-  // single wnMode."
-  "whats-new-dropdown Property 1=Drilldown2":
-    "the guideline folds Drilldown1 and Drilldown2 into one Drilldown concept",
-};
+const BY_DESIGN = require("../../scripts/render/lib/variant-collapse-by-design.js");
 
 function requireBaseline() {
   if (!BASELINE.json) {
