@@ -67,16 +67,18 @@ const SCREENS: ReadonlyArray<readonly [string, string]> = [
  * A component's authorable files, by the segment that names each one.
  *
  * Closed on purpose. An unrecognised file inside a component folder takes the
- * raw-path fallback rather than being guessed into an extension: `tokens` is
- * `.yml` and `content` is `.md`, so a rule that inferred the extension would
- * round-trip one of them into a file that does not exist.
+ * raw-path fallback rather than being guessed into an extension.
+ *
+ * `tokens` is absent deliberately. It is YAML-backed and the dispatch refuses
+ * it, so an entry here would resolve an address to a screen that shows the
+ * refusal banner, which is exactly what this module promises never to do. Add
+ * it back the day tokens.yml becomes openable.
  */
 const COMPONENT_DOMAINS: ReadonlyArray<readonly [string, string]> = [
   ["content", "content.md"],
   ["usage", "usage.md"],
   ["design", "design.md"],
   ["behavior", "behavior.md"],
-  ["tokens", "tokens.yml"],
   ["meta", "_meta.yml"],
 ];
 
@@ -109,10 +111,15 @@ const DIRS: ReadonlyArray<readonly [string, string]> = [
 /** The one definition of a workspace address. EditorShell imports it rather
  *  than keeping a second copy: a looser pattern here would mint addresses the
  *  dispatch refuses, which reads to a person as a link that goes nowhere. */
-export /** The shape of every slug the app mints. An address carrying anything else was
- *  not produced by this app, so it resolves to home rather than to a path the
- *  dispatch will refuse: `#/component/Button` used to become `workspace/Button`,
- *  which rendered the refusal banner AND got rewritten over the reader's link. */
+export /**
+ * The shape of every slug the app mints.
+ *
+ * BOTH directions check it. An address carrying anything else was not produced
+ * by this app, so it resolves to home rather than to a path the dispatch will
+ * refuse. And a file whose basename is not this shape gets no name, because a
+ * name it could mint but not read back is worse than the fallback: the reader's
+ * link would resolve to nothing and be silently replaced with home.
+ */
 const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
 
 /** The one definition of a workspace address. EditorShell imports it rather
@@ -178,11 +185,11 @@ export function hashFor(
   if (isOpenable(activePath)) {
     for (const [segment, matcher] of DIR_MATCHERS) {
       const m = matcher.exec(activePath);
-      if (m) return `#/${segment}/${m[1]}`;
+      if (m && m[1] && SLUG_RE.test(m[1])) return `#/${segment}/${m[1]}`;
     }
 
     const cf = COMPONENT_FILE_RE.exec(activePath);
-    if (cf) {
+    if (cf && cf[1] && SLUG_RE.test(cf[1])) {
       const domain = COMPONENT_DOMAINS.find(([, file]) => file === cf[2]);
       if (domain) return `#/component/${cf[1]}/${domain[0]}`;
     }
@@ -199,10 +206,20 @@ export function pathFromHash(hash: string): string | null {
   // client appending a slash, or an analytics wrapper appending a query, used
   // to resolve to home or to a file name with the query inside it, and in both
   // cases the write effect then overwrote the address the reader was sent.
-  const body = hash
+  // Decoded for the same reason `sameAddress` decodes: what comes back from
+  // `location.hash`, or out of an auto-linker, is the encoded form of what was
+  // written. Without this a path with a space in it resolves to one containing
+  // a literal %20.
+  let body = hash
     .replace(/^#\/?/, "")
     .replace(/[?#].*$/, "")
     .replace(/\/+$/, "");
+  try {
+    body = decodeURIComponent(body);
+  } catch {
+    // A malformed escape is not an address this app minted.
+    return null;
+  }
   if (body === "") return null;
 
   const parts = body.split("/");

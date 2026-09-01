@@ -49,6 +49,7 @@ import {
   DOMAINS,
   DOMAIN_LABEL,
   domainPathFor,
+  PROSE_DOMAINS,
   type Domain,
 } from "./lib/workspaceState";
 import {
@@ -254,7 +255,10 @@ export default function App() {
         group: "Current component",
         run: () => setActivePath(`workspace/${activeSlug}`),
       });
-      for (const d of DOMAINS) {
+      // PROSE_DOMAINS, not DOMAINS: tokens is YAML-backed and the dispatch
+      // refuses it, so offering it was a guaranteed dead end that this work
+      // would additionally have made shareable.
+      for (const d of DOMAINS.filter((x) => PROSE_DOMAINS.has(x))) {
         base.push({
           id: `ctx-domain-${d}`,
           label: `Switch to ${DOMAIN_LABEL[d]}`,

@@ -61,17 +61,15 @@ for (const [path, hash] of PAIRS) {
 
 test("hashFor: a file the editor cannot open gets no named address", () => {
   // tokens.yml is YAML-backed and not editor-openable, so naming it promised a
-  // link that renders the refusal banner for whoever received it. The reverse
-  // direction still resolves, so an address shared before this keeps working
-  // and starts being minted again if the file ever becomes openable.
+  // link that renders the refusal banner for whoever received it.
   assert.equal(
     hashFor("components/src/button/tokens.yml"),
     "#/file/components/src/button/tokens.yml",
   );
-  assert.equal(
-    pathFromHash("#/component/button/tokens"),
-    "components/src/button/tokens.yml",
-  );
+  // And it is not readable in the other direction either. Resolving it would
+  // land the reader on the refusal banner and then rewrite their address; home
+  // is the honest answer until tokens.yml becomes openable.
+  assert.equal(pathFromHash("#/component/button/tokens"), null);
 });
 
 test("hashFor: a path no segment claims falls back to the raw path", () => {
@@ -354,4 +352,60 @@ test("corpus: a named address always resolves to something the editor opens", ()
     (p) => !hashFor(p).startsWith("#/file/") && !openable(p),
   );
   assert.deepEqual(refused, [], "these have an address the editor refuses");
+});
+
+// ---------------------------------------------------------------------------
+// The inverse property, over generated input rather than the corpus.
+//
+// Three rounds of review found the same defect three times: hashFor and
+// pathFromHash are meant to be inverses, and validation kept landing on one
+// side only. The corpus gates cannot see it, because they only ever walk the
+// 301 files that exist today. These generate the shapes that do not exist yet.
+// ---------------------------------------------------------------------------
+
+const SYNTHETIC_PATHS: readonly string[] = [
+  // Basenames that are not bare lowercase slugs. None exist today; all are
+  // plausible, and each used to mint an address that did not resolve back.
+  "accessibility/src/color-contrast-1.4.3.md",
+  "accessibility/src/WCAG.md",
+  "accessibility/src/focus_order.md",
+  "content/src/writing/tone of voice.md",
+  "content/src/patterns/café.md",
+  "components/src/Button/content.md",
+  "components/src/text_input/usage.md",
+  "app-context/src/entities/data.product.md",
+  // Shapes the table does model, as a control.
+  "components/src/button/content.md",
+  "content/src/patterns/forms.md",
+];
+
+test("inverse: every path either round-trips or takes the fallback, never neither", () => {
+  const broken = SYNTHETIC_PATHS.filter((p) => pathFromHash(hashFor(p)) !== p);
+  assert.deepEqual(broken, [], "these paths do not survive their own address");
+});
+
+test("inverse: a named address always resolves back to the path that minted it", () => {
+  // The asymmetry that keeps recurring: hashFor names something pathFromHash
+  // then refuses, so the reader's link is silently replaced with home.
+  const lying = SYNTHETIC_PATHS.filter((p) => {
+    const h = hashFor(p);
+    return !h.startsWith("#/file/") && pathFromHash(h) !== p;
+  });
+  assert.deepEqual(lying, [], "these get a name that does not resolve back");
+});
+
+test("inverse: every address the app can mint survives being re-read", () => {
+  const unstable = [...corpus(), ...SYNTHETIC_PATHS].filter((p) => {
+    const once = hashFor(p);
+    const twice = hashFor(pathFromHash(once) ?? "");
+    return once !== twice;
+  });
+  assert.deepEqual(unstable, [], "these addresses change when re-read");
+});
+
+test("pathFromHash: an address that arrives percent-encoded still resolves", () => {
+  assert.equal(
+    pathFromHash(encodeURI("#/file/content/src/writing/tone of voice.md")),
+    "content/src/writing/tone of voice.md",
+  );
 });

@@ -37,6 +37,13 @@ function MdLink(
   const swallow = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (!href || /^[a-z][a-z0-9+.-]*:/i.test(href)) return;
     e.preventDefault();
+    // An in-document anchor is a table of contents link, and scrolling to the
+    // heading is the whole point of it. Doing it here rather than letting the
+    // browser do it keeps the address out of it.
+    if (href.startsWith("#")) {
+      const id = decodeURIComponent(href.slice(1));
+      if (id) e.currentTarget.ownerDocument.getElementById(id)?.scrollIntoView();
+    }
   };
   if (!ref) {
     return (
