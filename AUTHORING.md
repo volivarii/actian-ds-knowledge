@@ -1,100 +1,99 @@
-# Authoring guide — actian-ds-knowledge
+# Authoring guide
 
-> One-page entry doc. Read this first; deep-dive into sub-guides as needed.
+How to change what the Actian Design System says. Written for the person writing
+the guidance, not for the person maintaining the machinery.
 
-## What this repo is
+> **No local setup needed.** Edit through the [Knowledge Editor](https://volivarii.github.io/actian-ds-knowledge/editor/)
+> or the GitHub web UI. CI validates, regenerates and versions everything for you.
 
-The Actian Design System knowledge layer: tokens, content guidelines, accessibility patterns, component metadata. Consumed by the Actian DS Claude plugin today; future consumers planned (docs site, MCP server, partner integrations).
+## The one rule
 
-## What lives where
+**Edit only inside a `src/` folder, and never touch a version number.**
 
-| Domain | Source (you edit here) | Generated (CI writes) |
-|---|---|---|
-| **Foundations** (color/type/spacing/motion/elevation/icons) | `foundations/src/<slug>.md` per-section files (ordered by `_order.json`) | `foundations/dist/*.json` (8 derived) + `foundations/dist/foundations.md` (verbatim concat) |
-| **Tokens** | `tokens/tokens.json` (frozen snapshot) | `tokens/tokens.css`, `tokens/token-reference.md` |
-| **Components** | `components/src/<slug>/{_meta.yml,content.md,usage.md,design.md,behavior.md,tokens.yml}` (per-component multi-domain authoring) + `components/src/categories/*.md` (6 category defaults) | `components/dist/guidelines/<slug>.json` (per-component merged docs, `domains.*` shape) + `components/dist/registries/*` (3, Figma sync) + `components/dist/categories/*.json` (6) + `components/dist/categories.json` |
-| **Content guidelines** | `content/src/{writing,patterns,product}/*.md` + root-level meta files (Phase 2c sub-buckets) | `content/dist/global.md` (component-scoped content lives per-component in `components/dist/guidelines/<slug>.json` `domains.content`) |
-| **Accessibility** | `accessibility/src/<slug>.md` per-section files (ordered by `_order.json`, with stable `{#slug}` anchors) | `accessibility/dist/a11y-index.json` (slug→WCAG map) |
-| **App context** | `app-context/src/{apps,entities,patterns}/<slug>.md` + `app-context/src/terminology.yml` | `app-context/dist/app-context.json` + `app-context/dist/app-context.bundle.json` (via `app-context-derive.yml`) |
+A `dist/` folder is built by a machine and rewritten on the next run, so an edit
+there disappears. The folder name is the only signal you need.
 
-## Roles (who owns what)
+## What you can author, and where
 
-- **Plugin lead** — orchestration, CI, plugin-side integration, schemas
-- **Design system lead** — foundations (tokens, scales) + component anatomy + design conventions
-- **Content lead** — content guidelines + voice + UI copy
+| Domain | You edit |
+| --- | --- |
+| **Foundations**: color, type, spacing, motion, elevation, icons | `foundations/src/<slug>.md`, ordered by `_order.json` |
+| **Components**: per-component guidance | `components/src/<slug>/`: `_meta.yml` plus `content.md`, `usage.md`, `design.md`, `behavior.md`, `tokens.yml` |
+| **Category defaults**: shared by every component in a category | `components/src/categories/<slug>.md` |
+| **Content**: voice, tone, words to avoid, UX-pattern topics | `content/src/{writing,patterns,product}/<slug>.md` |
+| **Accessibility** | `accessibility/src/<slug>.md`, with stable `{#slug}` anchors |
+| **App context**: products, entities, features, terminology | `app-context/src/{apps,entities,patterns}/<slug>.md` and `terminology.yml` |
+| **Tokens** | `foundations/src/color-primitives.md` for a palette base or the shade formula, `foundations/src/tokens.md` for a semantic mapping. Everything in `tokens/` is generated from these |
 
-(Sub-`AUTHORING.md` files in each domain dive deeper.)
+**Not authored here:** component registry data (keys, variants, properties) and
+preview images. Both come from Figma through the nightly sync. If a token or a
+component's structure needs to change, that happens in Figma first.
 
-## How edits propagate
+Each domain has a deeper guide beside its source:
+[`foundations/src/AUTHORING.md`](foundations/src/AUTHORING.md),
+[`components/src/AUTHORING.md`](components/src/AUTHORING.md),
+[`content/src/AUTHORING.md`](content/src/AUTHORING.md).
 
-```
-Your edit in src/ MD or JSON
-    ↓ (open PR; CI validates via JSON Schema)
-PR merged on knowledge repo
-    ↓ (tag auto-created; nightly cron + manual trigger available)
-Plugin's vendor-snapshot.yml pulls the new version
-    ↓ (opens auto-merging PR via actian-ds-bot App)
-Plugin main updated with new vendor data
-    ↓ (marketplace cache propagates)
-Designers using the plugin see new content
-```
+## Markdown conventions
 
-Typical lag end-to-end: <24 hours via nightly cron; ~10 min if you trigger vendor-snapshot manually.
+These apply to every domain, because every body round-trips through the Editor's
+rich-text mode and a strict guard rejects a lossy round-trip.
 
-## Validation
-
-You don't need a local toolchain. Edit via the GitHub web UI; CI does the rest.
-
-**On every PR**, automated schema validation runs:
-
-1. **Schema validation** (`validate-schemas.yml`) — Ajv validates every relevant JSON against `schemas/*.json`. Any violation appears as an **inline annotation on the PR Files-Changed view** (red gutter, hover to see the message). No need to scroll through Action logs.
-
-A "derive-diff bot comment" (showing which dist files your PR will change in plain language) is planned as a follow-up enhancement.
-
-**Schema files** live at `schemas/`:
-- `guideline-component.json` — `components/dist/guidelines/<slug>.json` (per-component merged docs, current canonical shape)
-- `guideline-meta.json` — `components/src/<slug>/_meta.yml` (per-component domain-status frontmatter)
-- `guideline-tokens.json` — `components/src/<slug>/tokens.yml`
-- `guideline.json` — legacy scraped layer (retired in Phase 5; kept for spec-archaeology)
-- `section.json` — `foundations/dist/**/*.json` (post-derive)
-- `manifest.json` — `paths-manifest.json` structural shape
-- `category-defaults.json` — Phase 2 v2 category frontmatter for `components/src/categories/*.md`
-- `registry.json` — `components/dist/registries/*.json` (post-sync)
-- `media-index.json` — `components/dist/media/_index.json` (slug → role-keyed media map, CI-derived)
-
-Don't worry about the technical bits — focus on the content; CI will surface anything structural.
-
-If you DO use an IDE: every schema property carries `description` + `examples`, so tooling that consumes JSON Schema (VSCode `json.schemas` settings, YAML language server) can power autocomplete + hover docs. This is opt-in.
-
-## Reserved field conventions
-
-Fields prefixed with `_` are system-managed (`_schema_version`, `_meta`, `_sourceFile`, `_generatedAt`). Authored content uses bare keys. Don't name new content fields with `_`-prefix.
-
-## Markdown body conventions
-
-These apply to every domain's markdown body — tables appear in content, components, foundations, and accessibility — so they live here rather than in any single domain guide.
-
-- **Tables must not have empty cells.** Use `—` (em-dash, U+2014) for a no-entry / not-applicable cell. An empty cell round-trips through the WYSIWYG editor to `<br />`, which the fail-closed drift guard rejects (and which would leak literal HTML into the derived dist).
-- **No Jekyll/Kramdown attribute lists** (e.g. `{: .do-dont-table}`) in source. They are a docs-renderer concern, not source-of-truth content — see `GOVERNANCE.md` P1 — and corrupt the WYSIWYG round-trip. Styling is the consumer's job.
-- **Wrap literal values in backticks.** Identifiers, filenames, URLs, emails, and placeholders (e.g. `` `Q4_sales_report` ``, `` `http://example.com` ``, `` `[term]` ``) belong in code spans. Left bare, the WYSIWYG round-trip escapes or autolinks them (`\_`, `\[`, `<http://…>`) — rendered-identical but byte-different, so it trips the strict drift guard. Backticks also read better in docs.
+- **No empty table cells.** An empty cell round-trips to `<br />` and is rejected. Put an explicit no-entry marker in the cell.
+- **No Jekyll or Kramdown attribute lists**, such as `{: .do-dont-table}`. Styling is the reading surface's job, not the source's.
+- **Wrap literal values in backticks.** Identifiers, filenames, URLs, emails, placeholders. Left bare they get escaped or autolinked, which looks identical and differs byte for byte.
+- **Do not start a new field name with an underscore.** That prefix is reserved for system-managed fields such as `_schema_version` and `_meta`.
 
 ## Cross-references
 
-Cross-domain references use **slugs**, not quoted names:
-- `motion_refs: [{ref: state-transitions}]` resolves to `foundations/dist/tokens/motion.json` pattern by slug
-- `accessibility: [{ref: label-association}]` resolves to `accessibility/dist/a11y-index.json` by slug
+Point at other domains by **slug**, never by quoted name. Slugs survive a rename;
+display names do not.
 
-The slug system protects against name drift; canonical names live in their authored source.
+```yaml
+a11y_refs:
+  - { ref: focus-keyboard, note: "must be operable with Enter and Space" }
+motion_refs:
+  - { ref: state-transitions }
+foundations_refs:
+  - { ref: tokens }
+```
 
-## Adding new content
+The slug has to exist in the target domain, and the build fails immediately if it
+does not. Put a reference on the **category** when it applies to everything in
+that category: one edit then covers every component in it.
 
-- New component guideline: create `components/src/<slug>/_meta.yml` + the per-domain files you want to author (`content.md`, `usage.md`, `design.md`, `behavior.md`, `tokens.yml`). See `components/src/AUTHORING.md`.
-- New foundation token: edit the relevant file under `foundations/src/` (typically `tokens.md`); CI regenerates the hierarchical `foundations/dist/` tree (Pattern H) on PR
-- New category default content: edit `components/src/categories/<slug>.md`; CI regenerates dist
-- New domain (rare): consult the plugin lead; new directory + paths-manifest entry + CI workflow
+What each reference means, and how they assemble into the knowledge graph, is in
+[`RELATIONS.md`](RELATIONS.md).
 
-## When in doubt
+## Adding something new
 
-- `paths-manifest.json` is the machine-readable contract
-- Sub-`AUTHORING.md` per domain has details
-- Open an issue or ask in chat
+- **A component's guidelines:** create `components/src/<slug>/_meta.yml` plus the domain files you want to write. Every domain file is optional. See [`components/src/AUTHORING.md`](components/src/AUTHORING.md).
+- **A foundation section:** add the file under `foundations/src/` and add its slug to `_order.json`. A section missing from that file falls back to alphabetical order.
+- **A category default:** edit `components/src/categories/<slug>.md`.
+- **A whole new domain:** rare, and it touches nine other things. See [`docs/technical-guide/09-how-to-author.md`](./docs/technical-guide/09-how-to-author.md).
+
+## What happens after you submit
+
+Your edits become one pull request. Automated checks validate the change, the
+derived files are regenerated and added to it, and once a reviewer merges it every
+surface picks it up on its own schedule. Under a day on the automatic schedule,
+about ten minutes if someone triggers it by hand.
+
+Submitting is not publishing. The honest way to tell whether your change has
+landed is to follow the pull request from open to merged.
+
+## Roles
+
+- **Design system lead**: foundations, component anatomy, design conventions
+- **Content lead**: content guidelines, voice, UI copy
+- **Plugin lead**: orchestration, CI, schemas, consumer integration
+
+## Where to go next
+
+| You want | Read |
+| --- | --- |
+| The connections between things | [`RELATIONS.md`](RELATIONS.md) |
+| To contribute code or change the machinery | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
+| How any of it actually works | [`docs/technical-guide/`](./docs/technical-guide/README.md) |
+| To build a surface that reads this | [`CONSUMING.md`](CONSUMING.md) |
+| What may and may not change | [`GOVERNANCE.md`](GOVERNANCE.md) |
