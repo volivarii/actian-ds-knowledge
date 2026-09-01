@@ -13,11 +13,9 @@ function readJSON(rel) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, rel), "utf8"));
 }
 
-var REGISTRY_FILES = [
-  "components/dist/registries/dskit.json",
-  "components/dist/registries/fmkit.json",
-  "components/dist/registries/metakit.json",
-];
+// Sourced from a dependency-free leaf module so a gate can read the list without
+// loading this deriver; see scripts/lib/registry-files.js for why that matters.
+var REGISTRY_FILES = require("../lib/registry-files.js");
 
 // Component nodes + category nodes (all distinct labels, slugified, figma-dskit) + in_category edges.
 function collectComponentsAndCategories(g, registries, categoryOverrides) {
@@ -408,17 +406,24 @@ function collectAppContext(g, ac) {
   Object.keys(entities).forEach(function (slug) {
     var rels = (entities[slug] && entities[slug].relationships) || {};
     Object.keys(rels).forEach(function (predicate) {
-      g.addEdge({
-        source: M.nodeId("app_entity", slug),
-        target: M.nodeId("app_entity", rels[predicate]),
-        type: "entity_related",
-        predicate: predicate,
-        confidence: "asserted",
-        provenance: {
-          source_file: APP_CONTEXT_SOURCE,
-          deriver: "derive-graph.js",
-          method: "entities.relationships",
-        },
+      // One verb, many targets: one edge each. A bare string is still read, so
+      // a record in the old shape projects rather than silently contributing
+      // no edges at all.
+      var value = rels[predicate];
+      var targets = Array.isArray(value) ? value : [value];
+      targets.forEach(function (target) {
+        g.addEdge({
+          source: M.nodeId("app_entity", slug),
+          target: M.nodeId("app_entity", target),
+          type: "entity_related",
+          predicate: predicate,
+          confidence: "asserted",
+          provenance: {
+            source_file: APP_CONTEXT_SOURCE,
+            deriver: "derive-graph.js",
+            method: "entities.relationships",
+          },
+        });
       });
     });
   });
@@ -671,6 +676,9 @@ if (require.main === module) {
 
 module.exports = {
   derive: derive,
+  // Exported so the shipped-graph tests join against the SAME registry list the
+  // derive reads, rather than restating it and drifting from it.
+  REGISTRY_FILES: REGISTRY_FILES,
   bundleToTree: bundleToTree,
   collectComponentsAndCategories: collectComponentsAndCategories,
   collectComponentComposition: collectComponentComposition,

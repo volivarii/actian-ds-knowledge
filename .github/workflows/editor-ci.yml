@@ -25,6 +25,10 @@ on:
       - 'foundations/src/**'
       - 'accessibility/src/**'
       - 'content/src/**'
+      # routes.test.ts walks this tree too. Without it, a rename under
+      # app-context never triggers this lane, so the address round-trip and
+      # collision gates never run and every #/feature/ address can die green.
+      - 'app-context/src/**'
       - 'components/src/**'
       - 'domains.json'
       - 'scripts/lib/wysiwyg-registry.js'
@@ -49,6 +53,12 @@ jobs:
 
       - name: Install deps
         run: npm install --no-audit --no-fund
+
+      - name: Generate the search body index
+        # Not committed (see .gitignore), so every lane that reads editor/src
+        # has to produce it first. Typecheck is the earliest such lane: the
+        # corpus is imported for its type, so tsc fails without it.
+        run: npm run gen:search-bodies
 
       - name: Typecheck
         run: npx tsc --noEmit

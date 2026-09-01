@@ -6,7 +6,12 @@ import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
-import { isAppContextFile, isCategoryFile } from "../lib/wysiwygPaths";
+import {
+  isAppContextFile,
+  isCategoryFile,
+  isMetaYaml,
+  isPlainMarkdown,
+} from "../lib/wysiwygPaths";
 import { matchFrontmatterForm } from "../lib/frontmatterForms";
 import { RefusalBanner } from "./RefusalBanner";
 import { HomeScreen, type ExploreTab } from "./HomeScreen";
@@ -14,6 +19,7 @@ import { AuthoringWorkspace } from "./AuthoringWorkspace";
 import { DraftInbox } from "./DraftInbox";
 import { draftStoreSingleton } from "../drafts/store-instance";
 import { isWysiwygEnabled, setWysiwygEnabled } from "../lib/editorFlags";
+import { WORKSPACE_RE } from "../lib/routes";
 
 /** Section currently under the editor caret. MarkdownEditScreen renders
  *  the Section Inspector as a right-side panel alongside the body editor
@@ -39,41 +45,30 @@ interface EditorShellProps {
 }
 
 /**
- * True for source markdown files routed to MarkdownEditScreen (the raw CodeMirror
- * or WYSIWYG body editor). Matches accessibility and component domain files,
- * excluding structural meta-files.
+ * Which Explore data view the home screen shows. Owned by App, because the URL
+ * carries it and one component owns everything the URL carries. It still
+ * survives navigating into a file and back, since App outlives the HomeScreen
+ * that reads it.
  *
- * NOTE: intentionally does NOT match any content/src/**.md or foundations/src/*.md
- * anymore — ALL of those are form-routed via the frontmatterForms registry (see
- * `matchFrontmatterForm`, checked BEFORE this function). That now includes
- * root-level content files (global-guidelines.md, format-spec.md); a form-routed
- * file with no frontmatter still lands in MarkdownEditScreen, but via
- * FrontmatterBodyEditScreen's no-frontmatter fallback, not through this function.
+ * Controlled as a pair or not at all, because HomeScreen resolves the value and
+ * the setter independently: supplying only the value gives a tab strip that
+ * renders and then ignores every click.
  */
-export function isPlainMarkdown(path: string): boolean {
-  return (
-    (/^accessibility\/src\/[^/]+\.md$/.test(path) ||
-      /^components\/src\/(?!categories\/|AUTHORING\.md|EDITING-GUIDE\.md)[^/]+\/[^/]+\.md$/.test(
-        path,
-      )) &&
-    !/AUTHORING\.md$/.test(path)
-  );
-}
+type ExploreTabControl =
+  | { exploreTab: ExploreTab; onExploreTabChange: (tab: ExploreTab) => void }
+  | { exploreTab?: undefined; onExploreTabChange?: undefined };
+
+type EditorShellPropsWithTab = EditorShellProps & ExploreTabControl;
 
 // Re-exported from lib/wysiwygPaths so existing importers (and tests) keep
 // working; the canonical definitions live there to avoid a circular import.
-export { isAppContextFile, isCategoryFile };
+export { isAppContextFile, isCategoryFile, isMetaYaml, isPlainMarkdown };
 
 // Category files (components/src/categories/<slug>.md) route to the
 // frontmatter form editor, not the raw markdown editor — so they are
 // deliberately excluded from isPlainMarkdown above. isCategoryFile is
 // imported from lib/wysiwygPaths and re-exported above.
 
-function isMetaYaml(path: string): boolean {
-  return /^components\/src\/[^/]+\/_meta\.yml$/.test(path);
-}
-
-const WORKSPACE_RE = /^workspace\/([a-z0-9][a-z0-9-]*)$/;
 function workspaceSlug(path: string): string | null {
   const m = WORKSPACE_RE.exec(path);
   return m && m[1] ? m[1] : null;
@@ -96,7 +91,13 @@ export function EditorShell({
   setActivePath,
   onOpenStaging,
   onFocusSearch,
-}: EditorShellProps) {
+  // Passed straight through, undefined included: HomeScreen falls back to its
+  // own state when nothing supplies these, so a shell rendered without them
+  // (tests, and any future embedding) still has a working tab strip. Defaulting
+  // `exploreTab` here would hand HomeScreen a value with no setter behind it.
+  exploreTab,
+  onExploreTabChange,
+}: EditorShellPropsWithTab) {
   const setActivePathSafe = setActivePath ?? (() => {});
   const [ghError, setGhError] = useState<string | null>(null);
   const gh = useMemo<Octokit | null>(() => {
@@ -110,13 +111,6 @@ export function EditorShell({
       return null;
     }
   }, [octokit]);
-
-  // Owned here (not in HomeScreen) so the chosen Explore tab survives
-  // navigating into a file and back — HomeScreen unmounts on every open.
-  // Rule of thumb: navigation context (which data view) persists at this
-  // level; transient help state (the how-it-works disclosure) deliberately
-  // stays local to HomeScreen and resets.
-  const [exploreTab, setExploreTab] = useState<ExploreTab>("coverage");
 
   const [pendingPaths, setPendingPaths] = useState<Set<string>>(() =>
     draftStoreSingleton.allPaths(),
@@ -175,7 +169,7 @@ export function EditorShell({
         onOpenFile={setActivePathSafe}
         onFindComponent={onFocusSearch}
         exploreTab={exploreTab}
-        onExploreTabChange={setExploreTab}
+        onExploreTabChange={onExploreTabChange}
       />
     );
   } else if (activePath === "inbox") {

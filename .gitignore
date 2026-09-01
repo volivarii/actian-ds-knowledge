@@ -38,3 +38,7 @@ tokens/src/figma-export/
 # committed and vendored. Only the self-contained @dsCard bundle projection is a
 # local, on-demand build output (Claude Design derives it at /design-sync time).
 components/render/dist/bundle/
+
+# Generated at build time (predev / prebuild / pretest), never committed: ~316 KB
+# of prose that changes with every content edit. See editor/scripts/gen-search-bodies.ts.
+editor/src/generated/search-bodies.json

@@ -43,11 +43,23 @@ test("a candidate carries the schema description as its detail", () => {
 // this schema.") that must NOT leak into `detail`, so this pins the trim
 // itself rather than just its no-op case.
 test("a multi-sentence description is trimmed to its first sentence", () => {
+  // Derived from the schema, not quoted from it. The literal this used to
+  // assert ("…target entity slug.") broke the moment the description gained an
+  // "s", which pins the wording rather than the trimming, and its companion
+  // doesNotMatch went vacuous when the sentence it named was rewritten away.
+  const full = (
+    (ENTITY.properties as Record<string, { description?: string }>)
+      .relationships ?? {}
+  ).description;
+  assert.ok(full, "precondition: relationships carries a description");
+  const stop = full!.indexOf(". ");
+  assert.ok(stop > 0, "precondition: the description has more than one sentence");
+  const firstSentence = full!.slice(0, stop + 1);
+
   const relationships = keyCandidates(ENTITY, [], []).find(
     (c) => c.label === "relationships",
   );
-  assert.match(relationships?.detail ?? "", /target entity slug\.$/);
-  assert.doesNotMatch(relationships?.detail ?? "", /Referential integrity/);
+  assert.equal(relationships?.detail, firstSentence);
 });
 
 test("keys inside an array of objects come from items, through oneOf", () => {
@@ -85,15 +97,27 @@ test("schemaAtPath returns null for a path the schema does not define", () => {
 // where the fallback's SUCCESS path, and that current-vs-schema distinction,
 // actually get tested.
 test("the additionalProperties fallback resolves through an open map two steps down", () => {
-  assert.deepEqual(schemaAtPath(ENTITY, ["relationships", "owns"]), {
-    type: "string",
-  });
+  const at = schemaAtPath(ENTITY, ["relationships", "owns"]);
+  assert.equal(at?.type, "array", "a verb holds a list of target slugs");
+  assert.deepEqual((at?.items as { type?: string } | undefined)?.type, "string");
 });
 
-test("an open map offers no key candidates and does not throw", () => {
-  // `relationships` is additionalProperties:{type:string}: any verb is legal,
-  // so the schema has nothing to suggest.
-  assert.deepEqual(keyCandidates(ENTITY, ["relationships"], []), []);
+test("an open map with a closed key vocabulary suggests its verbs", () => {
+  // `relationships` accepts any KEY shape structurally, but propertyNames pins
+  // the vocabulary, so the schema has plenty to suggest. Before it did, typing
+  // at a relationship key offered nothing at all (F8).
+  const got = keyCandidates(ENTITY, ["relationships"], []).map((c) => c.label);
+  assert.ok(got.includes("contains"), got.join(","));
+  assert.ok(got.includes("belongsTo"), got.join(","));
+  assert.equal(got.length, 10, "the whole vocabulary, once each");
+});
+
+test("a verb already used is not suggested again", () => {
+  const got = keyCandidates(ENTITY, ["relationships"], ["contains"]).map(
+    (c) => c.label,
+  );
+  assert.ok(!got.includes("contains"));
+  assert.equal(got.length, 9);
 });
 
 test("value candidates come from const", () => {

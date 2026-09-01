@@ -8,12 +8,13 @@ import {
   listDirectories,
   getTextFile,
 } from "../app/githubApi";
+import { stripFencedCode } from "./searchBodyText";
 
 const HEADING_ANCHOR_RE = /^#{1,6}\s+.+?\s+\{#([a-z][a-z0-9-]*)\}\s*$/gm;
 const BOLD_PARA_ANCHOR_RE = /^\*\*[^*]+\*\*\s+\{#([a-z][a-z0-9-]*)\}\s*$/gm;
 const YAML_REF_RE = /\{\s*ref\s*:\s*([a-z][a-z0-9-]*)/g;
 const LINK_ANCHOR_RE = /\[[^\]]+\]\((?!https?:\/\/)[^)]*#([a-z][a-z0-9-]*)\)/g;
-const FENCED_CODE_RE = /(?:```|~~~)[\s\S]*?(?:```|~~~)/g;
+
 // Matches `"ref":"<slug>"` and `"ref": "<slug>"` in JSON substrate files
 // (e.g. components/dist/guidelines/*.json a11y_refs / motion_refs arrays).
 const JSON_REF_RE = /"ref"\s*:\s*"([a-z][a-z0-9-]*)"/g;
@@ -27,13 +28,12 @@ export interface AnchorEntry {
 /** Strip fenced code blocks from `text`, preserving line count (each fence
  *  collapses to the same number of blank lines it spanned) so callers that
  *  rely on line-accurate offsets into the ORIGINAL text still line up.
- *  Exported so snippetExtract.ts's paragraph splitter reuses the identical
- *  regex instead of carrying its own copy. */
-export function stripFencedCode(text: string): string {
-  return text.replace(FENCED_CODE_RE, (m) =>
-    "\n".repeat(m.split("\n").length - 1),
-  );
-}
+ *
+ *  The definition moved to lib/searchBodyText, which the search corpus
+ *  generator also runs under Node; re-exported here so this module's callers
+ *  (snippetExtract) keep one import and there stays exactly one answer to
+ *  "what is a code fence". */
+export { stripFencedCode };
 
 export interface AnchorIndex {
   entries: Map<string, AnchorEntry>;

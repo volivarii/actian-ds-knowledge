@@ -84,7 +84,15 @@ test("assembleAppRecord defaults useCases to [] when absent", () => {
 
 test("derive(src) carries expected _meta shape", () => {
   const derived = deriveToObject(srcDir);
-  assert.equal(derived._schema_version, 1);
+  // Joined to the schema that governs the artifact rather than restated here,
+  // so a bump is made in one place and this test cannot disagree with it.
+  const pinned = JSON.parse(
+    require("node:fs").readFileSync(
+      require("node:path").join(__dirname, "..", "schemas", "app-context.json"),
+      "utf8",
+    ),
+  ).properties._schema_version.const;
+  assert.equal(derived._schema_version, pinned);
   assert.equal(derived._meta.auto_generated, true);
   assert.equal(typeof derived._meta.do_not_edit, "string");
 });

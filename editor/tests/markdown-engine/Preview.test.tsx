@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import "../setup-dom";
-import { render } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import { Preview } from "../../src/markdown-engine/Preview";
 
 test("Preview: renders headings", () => {
@@ -71,4 +71,43 @@ test("Preview: a link to a real component becomes a typed reference with a dot; 
   const dropdownLink = links.find((a) => a.textContent?.includes("dropdown"))!;
   assert.equal(dropdownLink.getAttribute("data-node-type"), null);
   assert.equal(dropdownLink.querySelector(".md-ref-dot"), null);
+});
+
+test("an in-document anchor scrolls the preview instead of navigating the app", () => {
+  // The hash is load-bearing now, so letting the default action run would set
+  // location.hash and take the whole app to the home screen, unmounting the
+  // file being edited. Swallowing it outright was the first fix, and it removed
+  // the scroll, which is the behaviour the link is FOR.
+  const { container } = render(
+    <Preview text={"## Radio button\n\nSee [radio](#radio-button).\n"} />,
+  );
+  const link = container.querySelector('a[href="#radio-button"]');
+  assert.ok(link, "the anchor rendered");
+  // rehype-slug put the id on the heading itself, which is what the browser
+  // would scroll to; stub there rather than on a duplicate id.
+  const heading = document.getElementById("radio-button");
+  assert.ok(heading, "rehype-slug gave the heading an id");
+  let scrolled = false;
+  (heading as HTMLElement).scrollIntoView = () => {
+    scrolled = true;
+  };
+  // Assert on defaultPrevented rather than on location.hash: happy-dom does
+  // not perform fragment navigation on click, so a hash comparison passes
+  // whether or not the default action was actually stopped. It was, and
+  // deleting the preventDefault left the test green until this changed.
+  // Read defaultPrevented from a listener on the document, which is above
+  // React's root container and so runs after React's handler.
+  let prevented = false;
+  const spy = (e: Event) => {
+    prevented = e.defaultPrevented;
+  };
+  document.addEventListener("click", spy);
+  fireEvent.click(link as Element);
+  document.removeEventListener("click", spy);
+  assert.equal(
+    prevented,
+    true,
+    "the click was left to navigate the app away from the file",
+  );
+  assert.equal(scrolled, true, "the click did not scroll to the heading");
 });

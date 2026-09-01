@@ -17,7 +17,7 @@ test("entity round-trips: description ↔ body, structured fields ↔ frontmatte
     label: "Data Product",
     description: "Curated, business-ready asset. Published to marketplace.",
     properties: ["name", "status"],
-    relationships: { hasInputPorts: "input-port", hasDatasets: "dataset" },
+    relationships: { contains: ["input-port", "dataset"] },
     apps: ["studio", "explorer"],
   };
   const md = recordToMarkdown(rec, {

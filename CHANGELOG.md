@@ -20,6 +20,63 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **Entity relationships are picked from lists, and the verbs are a vocabulary**
+  ([#627](https://github.com/volivarii/actian-ds-knowledge/pull/627)). Both halves of a relationship
+  were free text. Typing offered no verbs and no targets, and an invented target drew no error at
+  all, so an author learned it was wrong when CI failed the pull request they had already opened.
+  Thirty-six verbs had accumulated across 42 relationships, **31 of them used exactly once**
+  (`hasInputs` beside `hasInputPorts`, `contains` beside `containsCatalogObjects`, `linkedTo` beside
+  `relatesTo`), and the verb travels into the graph as each edge's `predicate`, so the sprawl reached
+  consumers rather than staying an authoring quirk. `schemas/app-context-entity.json` now declares a
+  ten-verb vocabulary (`appliesTo`, `belongsTo`, `consumes`, `contains`, `derivedFrom`, `produces`,
+  `relatesTo`, `requires`, `subtypeOf`, `uses`) and the 30 entity records are migrated onto it, with
+  all 42 relationships preserved. A verb now carries a **list** of targets, because one verb
+  routinely has several and saying so with seven near-synonyms is what produced the sprawl: a catalog
+  object `contains` seven things rather than declaring `hasMetadata`, `hasLineage`, `hasSuggestions`
+  and four more. `consumes` and `produces` are kept apart deliberately, since a data process points
+  at the same dataset both ways and one verb for both would delete an edge. In the editor the verb
+  and the target are both chosen from a list, a target that is not an entity cannot be saved, and the
+  YAML pane completes the verbs too, since the completion engine now reads a closed key vocabulary
+  where before it correctly reported that an open map had nothing to suggest. A verb outside the
+  vocabulary is still accepted and saved, marked as new, so introducing one is possible and never
+  accidental: the vocabulary is declared in the authoring schema, which the editor reads, and
+  deliberately not in the dist schema, which CI validates, because failing a build over a verb an
+  author was told they could introduce is the after-the-pull-request surprise this change exists to
+  end. **`app-context/dist/app-context.json` moves to `_schema_version: 2`**, since a verb's value
+  changing from a slug to a list of slugs is a schema-incompatible change to the file shape and that
+  version is the only signal a consumer gets. No consumer switches on verb names; the plugin passes
+  them through as text and its resolver already flattened list-valued targets.
+- **The Knowledge Editor's search reads the guidance, not just the titles**
+  ([#621](https://github.com/volivarii/actian-ds-knowledge/pull/621)). The header field
+  matched titles only, so `sentence case` — a rule stated verbatim in 24 source documents — returned
+  nothing, and returned it as an empty dropdown that read as a broken field rather than an empty
+  one. It now searches the text of all 220 documents the editor can open, across components,
+  foundations, accessibility, app-context and content; a matched row shows the phrase in its
+  sentence, so the reason for the row is visible without opening it; and a row opens the exact
+  document the phrase is in (`#/component/button/content`, not the component). A query that matches
+  nothing now says so, and says what was searched — including when the index failed to load and the
+  answer came from titles alone. Frontmatter values count as text, because for the domains the
+  editor edits through a form the frontmatter IS the guidance: `words-to-avoid.md` keeps every word
+  it tells you to avoid there, and all 64 app-context records keep their label, properties and apps
+  there. The corpus is walked from the address table itself, so a file search can find is a file the
+  editor can open, and a section that becomes addressable becomes searchable in the same change; a
+  test joins that derived list to the two workflows' path filters, so a new section cannot be
+  searchable in CI while a content merge under it never redeploys. The index is generated at build
+  time rather than committed — 316 KB of prose regenerating on every content edit would put a large
+  mechanical diff and a command to run in front of content authors — and it loads as its own chunk
+  on first use, so a cold load carries none of it.
+- **Every component, entity and pattern in the Knowledge Editor has an address**
+  ([#619](https://github.com/volivarii/actian-ds-knowledge/pull/619)). The editor carries
+  its navigation state in the URL hash, so a page can be linked to, bookmarked and reopened, the
+  browser's Back and Forward buttons move through it, and the tab title names the page rather than
+  the product. The address speaks the navigation's language (`#/component/button/content`,
+  `#/entity/data-product`, `#/pattern/forms`, `#/explore/patterns`) rather than the repository's, so
+  it survives a later change to the page model; anything the segment table does not claim takes a
+  `#/file/<repo path>` fallback that still round-trips. A hash rather than a path because the editor
+  is served from static GitHub Pages with no `404.html`, where a real path would 404 on exactly the
+  deep load the address exists to serve. Three gates walk the real corpus rather than a list: every
+  file round-trips through its hash, no two files share an address, and everything the editor's own
+  dispatch can open has a named one.
 - **A complete technical guide, in `docs/technical-guide/`.** Twelve chapters for anyone who has to
   run, extend or inherit the substrate: the philosophy and the eight principles in working form, the
   architecture and the four zones, the manifest contract, every domain end to end, the render tier and
@@ -34,6 +91,32 @@ Each entry links its pull request. Dates are the merge date (UTC).
   workflow list and the `src`/`dist` rule stop existing in four versions that disagree.
 
 ### Fixed
+
+- **Graph gates pinned counts instead of joining, so a clean additive sync could not pass**
+  ([#628](https://github.com/volivarii/actian-ds-knowledge/pull/628)). The 2026-09-01 nightly added
+  eight icons, removed nothing, and failed the suite on `622 !== 614`: the graph's component-node
+  count and two collision counts beside it were literals kept by hand. They are now derived — the
+  graph's component nodes must equal the union of component slugs across the deriver's registries,
+  and the `slug_collisions` metric is joined to the sidecar it restates. `REGISTRY_FILES` is exported
+  and frozen so every gate depending on that list reads it instead of restating it, including the one
+  deciding whether a registry edit re-triggers the derive.
+- The checks that compare registries against what is derived from them — the graph's component
+  nodes, the registry coverage, and the collisions sidecar's freshness — run as `validate-manifest` steps
+  (the registry-coverage half is new ground: a committed kit the deriver never reads produces no drift
+  at all; the union and freshness halves report by slug a divergence the drift guard also catches, but
+  only as a stale artifact)
+  (`scripts/validate/validate-graph-registry-union.js`), not in `npm test`, for the reason already
+  documented on the llms guard: a sync commits registries before the regenerated graph, so that pair
+  is transiently unequal on every registry-changing PR, and the sibling derive workflows run the suite
+  before their auto-commit — inside it, an assertion on that pair blocks them from committing the dist
+  they exist to produce.
+- The gates read committed artifacts rather than the working tree, because `derive()` rewrites the
+  graph in place, several tests call it unconfined, and `node --test` runs files in parallel, so a
+  real divergence could be healed before an assertion saw it (#624). The graph drift guard now also
+  covers `graph.jsonld`, which nothing else validated once the schema check moved to the committed
+  copy. Magnitude coverage, which the literals were the only source of, becomes bounds with enough
+  slack that ordinary syncs never approach them; the real gap — `classifyRegistry` auto-merging an
+  addition of any size — is #625. No dist or schema change; consumers are unaffected.
 
 - **`CLAUDE.md` and `AGENTS.md` described domains that no longer match the repository.** `AGENTS.md`
   called `app-context/` a flat domain; it has a `src`/`dist` split. Both called `tokens/` interim-flat

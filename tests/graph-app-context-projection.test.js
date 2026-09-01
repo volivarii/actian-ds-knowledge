@@ -148,21 +148,41 @@ test("collectAppContext: entity_related carries the predicate name; endpoints ar
     assert.equal(e.confidence, "asserted");
     assert.equal(e.provenance.method, "entities.relationships");
   });
-  var preds = new Set(
-    rel.map(function (e) {
-      return e.predicate;
-    }),
+  // Read the vocabulary, never a count. The count this used to assert (36) was
+  // the number of verbs that had accumulated while the field was free text, so
+  // it went red on every curation and green on every new typo.
+  var vocabulary = new Set(
+    JSON.parse(
+      require("fs").readFileSync(
+        require("path").join(__dirname, "..", "schemas", "app-context-entity.json"),
+        "utf8",
+      ),
+    ).properties.relationships.propertyNames.enum,
   );
-  assert.equal(preds.size, 36);
+  var offVocabulary = rel
+    .map(function (e) {
+      return e.predicate;
+    })
+    .filter(function (p) {
+      return !vocabulary.has(p);
+    });
+  assert.deepEqual(offVocabulary, [], "predicates outside the schema's vocabulary");
+
   assert.ok(
     rel.some(function (e) {
       return (
         e.source === "entity:data-product" &&
-        e.predicate === "hasInputPorts" &&
+        e.predicate === "contains" &&
         e.target === "entity:input-port"
       );
     }),
   );
+  // One verb, many targets: the shape this projection had to learn. Without
+  // it a record's second and later targets contribute no edge at all.
+  var contains = rel.filter(function (e) {
+    return e.source === "entity:data-product" && e.predicate === "contains";
+  });
+  assert.ok(contains.length > 1, "a multi-target verb projects one edge per target");
 });
 
 test("collectAppContext: term_about bridges (11 entity + 3 app + 3 pattern), inferred", function () {

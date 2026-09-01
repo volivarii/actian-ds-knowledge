@@ -34,7 +34,12 @@ function deriveFieldRecord(text, bodyField) {
   return rec;
 }
 
-const SCHEMA_VERSION = 1;
+// 2 as of the relationship-vocabulary change: `entities[*].relationships[verb]`
+// went from a target slug to a LIST of target slugs, which is a
+// schema-incompatible change to the file shape, and the dist schema's own rule
+// is to bump on exactly that. A consumer reading a verb's value as a string
+// needs a signal, and this is the only one it gets.
+const SCHEMA_VERSION = 2;
 const META = {
   auto_generated: true,
   source: "scripts/app-context/derive-app-context.js",

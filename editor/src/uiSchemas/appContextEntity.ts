@@ -1,7 +1,8 @@
 import type { UiSchema } from "@rjsf/utils";
 
-// `description` is the markdown body, not a form field. relationships/apps use
-// default RJSF inputs (ref-pickers are a Phase-1 enrichment).
+// `description` is the markdown body, not a form field. `relationships` uses a
+// custom field (both halves picked from a list, F8); `apps` still uses the
+// default input.
 export const appContextEntityUiSchema: UiSchema = {
   "ui:order": [
     "label",
@@ -29,6 +30,6 @@ export const appContextEntityUiSchema: UiSchema = {
     "ui:title": "Properties",
     "ui:options": { addLabel: "property" },
   },
-  relationships: { "ui:title": "Relationships (verb → entity slug)" },
+  relationships: { "ui:field": "Relationships" },
   apps: { "ui:title": "Surfaced in apps", "ui:options": { addLabel: "app" } },
 };

@@ -9348,7 +9348,7 @@
       "edgeType": "entity_related",
       "source": "entity:access-request",
       "target": "entity:output-port",
-      "predicate": "targetsOutputPort",
+      "predicate": "uses",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9361,7 +9361,7 @@
       "edgeType": "entity_related",
       "source": "entity:access-request",
       "target": "entity:use-case",
-      "predicate": "requiresJustification",
+      "predicate": "requires",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9374,7 +9374,7 @@
       "edgeType": "entity_related",
       "source": "entity:catalog-object",
       "target": "entity:connection",
-      "predicate": "discoveredVia",
+      "predicate": "uses",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9387,7 +9387,7 @@
       "edgeType": "entity_related",
       "source": "entity:catalog-object",
       "target": "entity:discussion-thread",
-      "predicate": "hasDiscussionThreads",
+      "predicate": "contains",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9413,7 +9413,7 @@
       "edgeType": "entity_related",
       "source": "entity:catalog-object",
       "target": "entity:glossary-item",
-      "predicate": "hasGlossaryItems",
+      "predicate": "relatesTo",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9426,7 +9426,7 @@
       "edgeType": "entity_related",
       "source": "entity:catalog-object",
       "target": "entity:governance-policy",
-      "predicate": "hasGovernancePolicies",
+      "predicate": "relatesTo",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9439,7 +9439,7 @@
       "edgeType": "entity_related",
       "source": "entity:catalog-object",
       "target": "entity:lineage",
-      "predicate": "hasLineage",
+      "predicate": "contains",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9452,7 +9452,7 @@
       "edgeType": "entity_related",
       "source": "entity:catalog-object",
       "target": "entity:metadata",
-      "predicate": "hasMetadata",
+      "predicate": "contains",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9465,7 +9465,7 @@
       "edgeType": "entity_related",
       "source": "entity:catalog-object",
       "target": "entity:observability-signal",
-      "predicate": "hasObservabilitySignals",
+      "predicate": "contains",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9478,7 +9478,7 @@
       "edgeType": "entity_related",
       "source": "entity:catalog-object",
       "target": "entity:suggestion",
-      "predicate": "hasSuggestions",
+      "predicate": "contains",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9491,7 +9491,7 @@
       "edgeType": "entity_related",
       "source": "entity:connection",
       "target": "entity:catalog-object",
-      "predicate": "discoversCatalogObjects",
+      "predicate": "produces",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9504,7 +9504,7 @@
       "edgeType": "entity_related",
       "source": "entity:contact",
       "target": "entity:responsibility",
-      "predicate": "hasResponsibility",
+      "predicate": "relatesTo",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9517,7 +9517,7 @@
       "edgeType": "entity_related",
       "source": "entity:data-contract",
       "target": "entity:output-port",
-      "predicate": "attachedTo",
+      "predicate": "belongsTo",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9530,7 +9530,7 @@
       "edgeType": "entity_related",
       "source": "entity:data-process",
       "target": "entity:dataset",
-      "predicate": "hasInputs",
+      "predicate": "consumes",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9543,7 +9543,7 @@
       "edgeType": "entity_related",
       "source": "entity:data-process",
       "target": "entity:dataset",
-      "predicate": "hasOutputs",
+      "predicate": "produces",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9569,7 +9569,7 @@
       "edgeType": "entity_related",
       "source": "entity:data-product",
       "target": "entity:dataset",
-      "predicate": "hasDatasets",
+      "predicate": "contains",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9582,7 +9582,7 @@
       "edgeType": "entity_related",
       "source": "entity:data-product",
       "target": "entity:input-port",
-      "predicate": "hasInputPorts",
+      "predicate": "contains",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9595,7 +9595,7 @@
       "edgeType": "entity_related",
       "source": "entity:data-product",
       "target": "entity:output-port",
-      "predicate": "hasOutputPorts",
+      "predicate": "contains",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9608,7 +9608,7 @@
       "edgeType": "entity_related",
       "source": "entity:dataset",
       "target": "entity:connection",
-      "predicate": "discoveredVia",
+      "predicate": "uses",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9621,7 +9621,7 @@
       "edgeType": "entity_related",
       "source": "entity:dataset",
       "target": "entity:field",
-      "predicate": "hasFields",
+      "predicate": "contains",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9634,7 +9634,7 @@
       "edgeType": "entity_related",
       "source": "entity:dataset",
       "target": "entity:output-port",
-      "predicate": "exposedVia",
+      "predicate": "uses",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9647,7 +9647,7 @@
       "edgeType": "entity_related",
       "source": "entity:discussion-thread",
       "target": "entity:catalog-object",
-      "predicate": "on",
+      "predicate": "belongsTo",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9660,7 +9660,7 @@
       "edgeType": "entity_related",
       "source": "entity:domain",
       "target": "entity:catalog-object",
-      "predicate": "containsCatalogObjects",
+      "predicate": "contains",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9699,7 +9699,7 @@
       "edgeType": "entity_related",
       "source": "entity:glossary-item",
       "target": "entity:catalog-object",
-      "predicate": "linkedTo",
+      "predicate": "relatesTo",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9712,7 +9712,7 @@
       "edgeType": "entity_related",
       "source": "entity:glossary-item",
       "target": "entity:glossary-item",
-      "predicate": "parentItem",
+      "predicate": "subtypeOf",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9738,7 +9738,7 @@
       "edgeType": "entity_related",
       "source": "entity:governance-policy",
       "target": "entity:user-group",
-      "predicate": "assignedTo",
+      "predicate": "appliesTo",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9751,7 +9751,7 @@
       "edgeType": "entity_related",
       "source": "entity:observability-signal",
       "target": "entity:catalog-object",
-      "predicate": "attachedTo",
+      "predicate": "belongsTo",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9764,7 +9764,7 @@
       "edgeType": "entity_related",
       "source": "entity:property",
       "target": "entity:template",
-      "predicate": "partOf",
+      "predicate": "belongsTo",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9777,7 +9777,7 @@
       "edgeType": "entity_related",
       "source": "entity:responsibility",
       "target": "entity:contact",
-      "predicate": "assignedTo",
+      "predicate": "appliesTo",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9790,7 +9790,7 @@
       "edgeType": "entity_related",
       "source": "entity:scanner",
       "target": "entity:connection",
-      "predicate": "usesConnection",
+      "predicate": "uses",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9816,7 +9816,7 @@
       "edgeType": "entity_related",
       "source": "entity:topic",
       "target": "entity:catalog-object",
-      "predicate": "groups",
+      "predicate": "contains",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9829,7 +9829,7 @@
       "edgeType": "entity_related",
       "source": "entity:use-case",
       "target": "entity:access-request",
-      "predicate": "justifies",
+      "predicate": "relatesTo",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9855,7 +9855,7 @@
       "edgeType": "entity_related",
       "source": "entity:user-group",
       "target": "entity:governance-policy",
-      "predicate": "hasGovernancePolicies",
+      "predicate": "relatesTo",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9868,7 +9868,7 @@
       "edgeType": "entity_related",
       "source": "entity:visualization",
       "target": "entity:connection",
-      "predicate": "discoveredVia",
+      "predicate": "uses",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
@@ -9881,7 +9881,7 @@
       "edgeType": "entity_related",
       "source": "entity:visualization",
       "target": "entity:dataset",
-      "predicate": "builtFrom",
+      "predicate": "derivedFrom",
       "confidence": "asserted",
       "provenance": {
         "source_file": "app-context/dist/app-context.json",
