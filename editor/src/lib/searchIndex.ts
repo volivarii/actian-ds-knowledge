@@ -10,6 +10,7 @@ import {
 } from "../substrate/taxonomyAssets";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
 import type { ContentFile } from "./contentFiles";
+import { bodySnippet, type BodyEntry } from "./searchBodies";
 
 export type SearchKind =
   "component" | "foundation" | "content" | "accessibility" | "app-context";
@@ -19,6 +20,10 @@ export interface SearchItem {
   kind: SearchKind;
   path: string;
   sub?: string;
+  /** Present only on a row matched by its body: the matched phrase in its
+   *  sentence. A row the author cannot see the reason for is a row they have
+   *  to open to understand. */
+  snippet?: string;
 }
 
 const KIND_ORDER: SearchKind[] = [
@@ -104,22 +109,43 @@ export function buildSearchIndex(
   return items;
 }
 
+/** Title-prefix beats title-substring beats body. A body match is still a
+ *  match — it is just never the thing the author most likely meant when the
+ *  same word is somebody's name. */
+const TITLE_PREFIX = 0;
+const TITLE_SUBSTRING = 1;
+const BODY = 2;
+
 function score(title: string, q: string): number {
   const t = title.toLowerCase();
-  return t.startsWith(q) ? 0 : t.includes(q) ? 1 : -1;
+  return t.startsWith(q) ? TITLE_PREFIX : t.includes(q) ? TITLE_SUBSTRING : -1;
 }
 
 export function searchCorpus(
   index: SearchItem[],
   query: string,
   perGroupLimit = 6,
+  bodies: readonly BodyEntry[] = [],
 ): { kind: SearchKind; items: SearchItem[] }[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
-  const scored = index
+  const titleHits = index
     .map((it) => ({ it, s: score(it.title, q) }))
-    .filter((x) => x.s >= 0)
-    .sort((a, b) => a.s - b.s || a.it.title.localeCompare(b.it.title));
+    .filter((x) => x.s >= 0);
+
+  // A document already offered by name does not need a second row for the same
+  // words appearing inside it.
+  const named = new Set(titleHits.map((x) => x.it.path));
+  const bodyHits = bodies
+    .filter((b) => !named.has(b.item.path) && b.lower.includes(q))
+    .map((b) => ({
+      it: { ...b.item, snippet: bodySnippet(b, q) ?? undefined },
+      s: BODY,
+    }));
+
+  const scored = [...titleHits, ...bodyHits].sort(
+    (a, b) => a.s - b.s || a.it.title.localeCompare(b.it.title),
+  );
   const byKind = new Map<SearchKind, SearchItem[]>();
   for (const { it } of scored) {
     const arr = byKind.get(it.kind) ?? [];

@@ -54,6 +54,12 @@ jobs:
       - name: Install deps
         run: npm install --no-audit --no-fund
 
+      - name: Generate the search body index
+        # Not committed (see .gitignore), so every lane that reads editor/src
+        # has to produce it first. Typecheck is the earliest such lane: the
+        # corpus is imported for its type, so tsc fails without it.
+        run: npm run gen:search-bodies
+
       - name: Typecheck
         run: npx tsc --noEmit
 

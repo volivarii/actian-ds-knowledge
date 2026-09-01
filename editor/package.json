@@ -6,15 +6,16 @@
   "description": "Schema-driven editor for the actian-ds-knowledge substrate. Authors edit canonical files locally; the editor packages each change as a PR against main.",
   "scripts": {
     "build:tokens": "node scripts/build-tokens.mjs",
-    "predev": "npm run build:tokens",
-    "prebuild": "npm run build:tokens",
+    "predev": "npm run build:tokens && npm run gen:search-bodies",
+    "prebuild": "npm run build:tokens && npm run gen:search-bodies",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "baseline:wysiwyg": "node --import tsx scripts/baseline-wysiwyg.ts",
     "pregen:safe-paths": "test -d ../node_modules/marked || npm --prefix .. install --no-audit --no-fund",
     "gen:safe-paths": "tsx scripts/gen-wysiwyg-safe-paths.ts",
-    "pretest": "test -d ../node_modules/yaml || npm --prefix .. install --no-audit --no-fund",
+    "gen:search-bodies": "tsx scripts/gen-search-bodies.ts",
+    "pretest": "test -d ../node_modules/yaml || npm --prefix .. install --no-audit --no-fund && npm run gen:search-bodies",
     "test": "node --test --test-timeout=60000 --import tsx tests/**/*.test.ts tests/**/*.test.tsx"
   },
   "dependencies": {

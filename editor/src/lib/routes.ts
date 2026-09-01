@@ -26,6 +26,12 @@ import { matchFrontmatterForm } from "./frontmatterForms";
 
 export const HOME_HASH = "#/";
 
+/** The component tree. Named once: the address table's dir list, the component
+ *  file matcher and the corpus walk all mean this same directory. */
+const COMPONENT_DIR = "components/src";
+const COMPONENT_SEGMENT = "component";
+const FILE_SEGMENT = "file";
+
 export const PRODUCT_NAME = "Actian DS Knowledge Editor";
 
 /** The home screen's data tabs. `coverage` is the default and stays
@@ -95,7 +101,7 @@ const COMPONENT_DOMAINS: ReadonlyArray<readonly [string, string]> = [
  * Ordered so `components/src/categories` is claimed before the component rule,
  * which would otherwise read `categories` as a component slug.
  */
-const DIRS: ReadonlyArray<readonly [string, string]> = [
+const DIRS = [
   ["category", "components/src/categories"],
   ["writing", "content/src/writing"],
   ["pattern", "content/src/patterns"],
@@ -106,6 +112,29 @@ const DIRS: ReadonlyArray<readonly [string, string]> = [
   ["foundations", "foundations/src"],
   ["accessibility", "accessibility/src"],
   ["content", "content/src"],
+] as const satisfies ReadonlyArray<readonly [string, string]>;
+
+/**
+ * Every segment an address can start with.
+ *
+ * `as const satisfies` above, rather than an annotation: the annotation widens
+ * the literals back to `string`, which would make this type `string` and let
+ * anything that reads it claim to be exhaustive while covering nothing. That is
+ * the same widening that made the explore-tab check hold for any contents.
+ */
+export type AddressSegment =
+  | (typeof DIRS)[number][0]
+  | typeof COMPONENT_SEGMENT
+  | typeof FILE_SEGMENT;
+
+/**
+ * The directories the address table names, which is also the set worth reading
+ * for anything that wants the addressable corpus (the search body index walks
+ * exactly these). Derived from the table rather than restated beside it, so a
+ * new section cannot be addressable and unsearchable at the same time.
+ */
+export const ADDRESSED_DIRS: readonly string[] = [
+  ...new Set([COMPONENT_DIR, ...DIRS.map(([, dir]) => dir)]),
 ];
 
 /** The one definition of a workspace address. EditorShell imports it rather
@@ -151,7 +180,7 @@ function isOpenable(path: string): boolean {
     isMetaYaml(path)
   );
 }
-const COMPONENT_FILE_RE = /^components\/src\/([^/]+)\/([^/]+)$/;
+const COMPONENT_FILE_RE = new RegExp(`^${COMPONENT_DIR}/([^/]+)/([^/]+)$`);
 
 /** Compiled once. `hashFor` runs on every navigation and again for every title,
  *  so building ten regexes per call is work with no reason. */
