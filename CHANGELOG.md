@@ -20,6 +20,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **App-context records open as a form, with the file behind a source view**
+  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD)). Line one of every entity was
+  `# yaml-language-server: $schema=../../../schemas/app-context-entity.json` and line two was
+  `_schema_version: 1`, so the first two things an author read were addressed to a machine, and the
+  properties below them were inline flow YAML presented to a design lead as something to hand edit
+  correctly. All 64 app-context records now open as the form their schema already describes, with
+  identity and format fields collapsed into "Managed by the system", and the raw file one click away
+  behind **View source**. The source view is seeded from whichever surface is being left, so a toggle
+  never shows a stale snapshot, and it resets per record, so looking at one file's source does not
+  make the next one open as YAML. Because a form save serialises from parsed data while the schema
+  directive is a YAML *comment*, these records now save through the comment-preserving path; a test
+  asserts that on the registry rather than on a screen handed the flag by hand. This is also what
+  makes the relationship picker from the entry below reachable: it lives in the form, which these
+  records never rendered.
+
 - **Entity relationships are picked from lists, and the verbs are a vocabulary**
   ([#627](https://github.com/volivarii/actian-ds-knowledge/pull/627)). Both halves of a relationship
   were free text. Typing offered no verbs and no targets, and an invented target drew no error at
@@ -34,10 +49,12 @@ Each entry links its pull request. Dates are the merge date (UTC).
   routinely has several and saying so with seven near-synonyms is what produced the sprawl: a catalog
   object `contains` seven things rather than declaring `hasMetadata`, `hasLineage`, `hasSuggestions`
   and four more. `consumes` and `produces` are kept apart deliberately, since a data process points
-  at the same dataset both ways and one verb for both would delete an edge. In the editor the verb
-  and the target are both chosen from a list, a target that is not an entity cannot be saved, and the
-  YAML pane completes the verbs too, since the completion engine now reads a closed key vocabulary
-  where before it correctly reported that an open map had nothing to suggest. A verb outside the
+  at the same dataset both ways and one verb for both would delete an edge. In the editor the YAML pane
+  completes the verbs, since the completion engine now reads a closed key vocabulary where before it
+  correctly reported that an open map had nothing to suggest, and an off-vocabulary verb is reported
+  as you type rather than by a failing build. A verb-and-target picker also ships, and became the
+  surface an author actually meets one change later: app-context records opened as raw YAML, so the
+  form the picker lives in did not render for them until the source-view change below. A verb outside the
   vocabulary is still accepted and saved, marked as new, so introducing one is possible and never
   accidental: the vocabulary is declared in the authoring schema, which the editor reads, and
   deliberately not in the dist schema, which CI validates, because failing a build over a verb an

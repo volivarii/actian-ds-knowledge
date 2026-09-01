@@ -27,7 +27,8 @@ export interface FrontmatterFormConfig {
    *  (app-context/categories/words-to-avoid) OMIT it — a missing fence there is
    *  an error and keeps the missing-frontmatter warning. */
   frontmatterOptional?: boolean;
-  /** Which editing surface this path gets. `"yaml"` edits the frontmatter
+  /** Whether this path offers a raw YAML SOURCE VIEW behind a toggle. The form
+   *  is what opens; `"yaml"` edits the frontmatter
    *  text directly (the target state, see the 2026-07-24 spec); omitted keeps
    *  the RJSF form until slice 3 migrates the remaining domains. */
   surface?: "yaml";
@@ -53,6 +54,7 @@ const REGISTRY: Entry[] = [
     uiSchema: appContextAppUiSchema,
     bodyless: false,
     surface: "yaml",
+    preserveComments: true,
     dir: "app-context/src/apps",
   },
   {
@@ -61,6 +63,7 @@ const REGISTRY: Entry[] = [
     uiSchema: appContextEntityUiSchema,
     bodyless: false,
     surface: "yaml",
+    preserveComments: true,
     dir: "app-context/src/entities",
   },
   {
@@ -69,6 +72,7 @@ const REGISTRY: Entry[] = [
     uiSchema: appContextPatternUiSchema,
     bodyless: false,
     surface: "yaml",
+    preserveComments: true,
     dir: "app-context/src/patterns",
   },
   {

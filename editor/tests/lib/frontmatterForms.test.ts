@@ -57,3 +57,26 @@ test("every other domain keeps the form surface in this slice", () => {
     assert.notEqual(cfg!.surface, "yaml", p);
   }
 });
+
+test("every record that opens as a form preserves its file's comments", () => {
+  // The form is now the default surface for app-context records, and a form
+  // save serialises from parsed data. The schema directive on line one of all
+  // 64 records is a YAML COMMENT, so without this flag on the registry entry
+  // the first save of each record would silently unhook it from its schema.
+  // Asserted on the REGISTRY, not on a screen given the prop by hand: the
+  // screen honouring `preserveComments` proves nothing about whether anything
+  // sets it.
+  for (const path of [
+    "app-context/src/entities/dataset.md",
+    "app-context/src/apps/studio.md",
+    "app-context/src/patterns/search-filtered-table.md",
+  ]) {
+    const form = matchFrontmatterForm(path);
+    assert.ok(form, `${path} should route to a form`);
+    assert.equal(
+      form!.preserveComments,
+      true,
+      `${path} opens as a form, so its comments must survive a save`,
+    );
+  }
+});

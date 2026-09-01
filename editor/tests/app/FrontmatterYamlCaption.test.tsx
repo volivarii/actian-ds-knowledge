@@ -4,6 +4,10 @@ import { test, afterEach, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
+// The form surface uses Radix Tooltip, which needs the provider a <Theme>
+// supplies. Production always renders inside one (App wraps the whole editor);
+// only the raw YAML pane happened not to need it.
+import { Theme } from "@radix-ui/themes";
 import { FrontmatterBodyEditScreen } from "../../src/app/FrontmatterBodyEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
 import { setWysiwygFlag } from "../helpers/editorSurface";
@@ -85,11 +89,18 @@ function fakeOctokit(recordPath: string, record: string, schemaPath: string) {
   } as never;
 }
 
-/** Every app-context record opens with the YAML pane collapsed (bodyless:
- *  false seeds fmCollapsed to true) — click the "Toggle frontmatter" button
- *  to expand it, the state the caption is actually meant to be read in. */
+/** Idempotent: app-context records now OPEN expanded (the form is what they
+ *  lead with, so leaving it collapsed would hide every field), and opening the
+ *  source view expands too. Clicking unconditionally would collapse it. */
 function expandFrontmatter() {
-  fireEvent.click(screen.getByRole("button", { name: "Toggle frontmatter" }));
+  const btn = screen.getByRole("button", { name: "Toggle frontmatter" });
+  if (btn.textContent === "Show") fireEvent.click(btn);
+}
+
+/** The opposite, for the one test that needs a collapsed pane on purpose. */
+function collapseFrontmatter() {
+  const btn = screen.getByRole("button", { name: "Toggle frontmatter" });
+  if (btn.textContent === "Hide") fireEvent.click(btn);
 }
 
 // Catches: a caption that renders a hardcoded per-domain string instead of
@@ -97,9 +108,21 @@ function expandFrontmatter() {
 // text (even a plausible-looking one), it could not simultaneously match
 // both this app-schema wording AND the differently-worded entity-schema
 // assertion below.
+/** The raw YAML is a source view now, not what a record opens with (F9), so
+ *  every caption assertion below opens the pane first. */
+async function openSource() {
+  const btn = await screen.findByRole(
+    "button",
+    { name: /view source/i },
+    { timeout: 5000 },
+  );
+  fireEvent.click(btn);
+  return screen.findByTestId("yaml-frontmatter-editor", {}, { timeout: 5000 });
+}
+
 test("the YAML pane caption shows the app schema's own root description, not a hardcoded string, once expanded", async () => {
   const { container } = render(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path="app-context/src/apps/studio.md"
       schemaKey="app-context-app"
       uiSchema={{}}
@@ -109,9 +132,9 @@ test("the YAML pane caption shows the app schema's own root description, not a h
         APP_RECORD,
         APP_SCHEMA_PATH,
       )}
-    />,
+    /></Theme>,
   );
-  await screen.findByTestId("yaml-frontmatter-editor", {}, { timeout: 5000 });
+  await openSource();
   expandFrontmatter();
 
   assert.ok(
@@ -134,7 +157,7 @@ test("the YAML pane caption shows the app schema's own root description, not a h
 // two.
 test("the YAML pane caption shows the entity schema's own root description for an entity record, once expanded", async () => {
   const { container } = render(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path="app-context/src/entities/dataset.md"
       schemaKey="app-context-entity"
       uiSchema={{}}
@@ -144,9 +167,9 @@ test("the YAML pane caption shows the entity schema's own root description for a
         ENTITY_RECORD,
         ENTITY_SCHEMA_PATH,
       )}
-    />,
+    /></Theme>,
   );
-  await screen.findByTestId("yaml-frontmatter-editor", {}, { timeout: 5000 });
+  await openSource();
   expandFrontmatter();
 
   assert.ok(
@@ -184,15 +207,15 @@ test("no caption (and no orphan hover hint) renders when the schema has no root 
   } as never;
 
   const { container } = render(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path="app-context/src/apps/bare.md"
       schemaKey="app-context-app-bare-test"
       uiSchema={{}}
       surface="yaml"
       octokit={octokit}
-    />,
+    /></Theme>,
   );
-  await screen.findByTestId("yaml-frontmatter-editor", {}, { timeout: 5000 });
+  await openSource();
   expandFrontmatter();
 
   assert.ok(
@@ -207,14 +230,14 @@ test("no caption (and no orphan hover hint) renders when the schema has no root 
 
 // The actual defect this task fixes: every test above now expands the pane
 // first, which is necessary because — before the fix — the caption rendered
-// regardless of fmCollapsed. Every app-context record OPENS collapsed
-// (bodyless: false seeds fmCollapsed to true), so without this test the
+// regardless of fmCollapsed. A record no longer opens collapsed, so this test
+// collapses the pane itself; without it the
 // orphan-hint regression (caption text, including "Hover a key", sitting
 // above a hidden pane with nothing to hover) would go uncaught by this
 // entire file, exactly as it did before.
-test("the caption does not render while the pane starts collapsed (no orphan hover hint above nothing hoverable)", async () => {
+test("the caption does not render while the pane is collapsed (no orphan hover hint above nothing hoverable)", async () => {
   const { container } = render(
-    <FrontmatterBodyEditScreen
+    <Theme><FrontmatterBodyEditScreen
       path="app-context/src/apps/studio.md"
       schemaKey="app-context-app"
       uiSchema={{}}
@@ -224,14 +247,15 @@ test("the caption does not render while the pane starts collapsed (no orphan hov
         APP_RECORD,
         APP_SCHEMA_PATH,
       )}
-    />,
+    /></Theme>,
   );
-  await screen.findByTestId("yaml-frontmatter-editor", {}, { timeout: 5000 });
+  await openSource();
+  collapseFrontmatter();
 
   assert.equal(
     screen.getByRole("button", { name: "Toggle frontmatter" }).textContent,
     "Show",
-    "sanity: the pane must actually be collapsed by default here",
+    "sanity: the pane must actually be collapsed for this assertion to mean anything",
   );
   assert.ok(
     !container.textContent?.includes(APP_DESCRIPTION),
