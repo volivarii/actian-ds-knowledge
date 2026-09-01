@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Changed
 
 - **The output-quality measures carry a date and a direction, because every one of them had only a
-  ratchet and all three drifted the wrong way for three weeks with CI green.** A ratchet blocks a
+  ratchet ([#616](https://github.com/volivarii/actian-ds-knowledge/pull/616)) and all three drifted the wrong way for three weeks with CI green.** A ratchet blocks a
   regression on a value the baseline already knows and deliberately skips what it cannot recognise, a
   new slug or a new value, which is right for gating and useless for reporting. Between 2026-08-17 and
   2026-09-01 unexplained variant collapses went 50 to 54, inline-style hex 28 to 31, and blank boxes
