@@ -14,6 +14,7 @@ import { AuthoringWorkspace } from "./AuthoringWorkspace";
 import { DraftInbox } from "./DraftInbox";
 import { draftStoreSingleton } from "../drafts/store-instance";
 import { isWysiwygEnabled, setWysiwygEnabled } from "../lib/editorFlags";
+import { WORKSPACE_RE } from "../lib/routes";
 
 /** Section currently under the editor caret. MarkdownEditScreen renders
  *  the Section Inspector as a right-side panel alongside the body editor
@@ -36,13 +37,23 @@ interface EditorShellProps {
   /** Focuses the header's GlobalSearch input (owned by App). Used by the
    *  HomeScreen's "Find a component" action. */
   onFocusSearch?: () => void;
-  /** Which Explore data view the home screen shows. Owned by App, because the
-   *  URL carries it and one component owns everything the URL carries. It
-   *  still survives navigating into a file and back, since App outlives the
-   *  HomeScreen that reads it. */
-  exploreTab?: ExploreTab;
-  onExploreTabChange?: (tab: ExploreTab) => void;
 }
+
+/**
+ * Which Explore data view the home screen shows. Owned by App, because the URL
+ * carries it and one component owns everything the URL carries. It still
+ * survives navigating into a file and back, since App outlives the HomeScreen
+ * that reads it.
+ *
+ * Controlled as a pair or not at all, because HomeScreen resolves the value and
+ * the setter independently: supplying only the value gives a tab strip that
+ * renders and then ignores every click.
+ */
+type ExploreTabControl =
+  | { exploreTab: ExploreTab; onExploreTabChange: (tab: ExploreTab) => void }
+  | { exploreTab?: undefined; onExploreTabChange?: undefined };
+
+type EditorShellPropsWithTab = EditorShellProps & ExploreTabControl;
 
 /**
  * True for source markdown files routed to MarkdownEditScreen (the raw CodeMirror
@@ -79,7 +90,6 @@ function isMetaYaml(path: string): boolean {
   return /^components\/src\/[^/]+\/_meta\.yml$/.test(path);
 }
 
-const WORKSPACE_RE = /^workspace\/([a-z0-9][a-z0-9-]*)$/;
 function workspaceSlug(path: string): string | null {
   const m = WORKSPACE_RE.exec(path);
   return m && m[1] ? m[1] : null;
@@ -108,7 +118,7 @@ export function EditorShell({
   // `exploreTab` here would hand HomeScreen a value with no setter behind it.
   exploreTab,
   onExploreTabChange,
-}: EditorShellProps) {
+}: EditorShellPropsWithTab) {
   const setActivePathSafe = setActivePath ?? (() => {});
   const [ghError, setGhError] = useState<string | null>(null);
   const gh = useMemo<Octokit | null>(() => {

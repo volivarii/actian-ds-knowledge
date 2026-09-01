@@ -18,6 +18,7 @@ import { SettingsPanel } from "./settings/SettingsPanel";
 import { EditorShell } from "./app/EditorShell";
 import type { ExploreTab } from "./app/HomeScreen";
 import { useHashRoute } from "./lib/useHashRoute";
+import { DEFAULT_EXPLORE_TAB, stateFromHash } from "./lib/routes";
 import { FreshnessChip } from "./app/FreshnessChip";
 import { SignInScreen } from "./app/SignInScreen";
 import { SaveStateIndicator } from "./app/SaveStateIndicator";
@@ -82,12 +83,18 @@ function GearIcon() {
 
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [activePath, setActivePath] = useState<string | null>(null);
+  // Seeded from the address during the first render, not corrected by an
+  // effect afterwards, so a deep link is never briefly the wrong screen.
+  const [activePath, setActivePath] = useState<string | null>(
+    () => stateFromHash(window.location.hash).activePath,
+  );
   // The home screen's data tab lives here rather than in EditorShell because
   // the URL carries it, and one component owns everything the URL carries.
   // It still survives navigating into a file and back: App outlives the
   // HomeScreen that reads it.
-  const [exploreTab, setExploreTab] = useState<ExploreTab>("coverage");
+  const [exploreTab, setExploreTab] = useState<ExploreTab>(
+    () => stateFromHash(window.location.hash).exploreTab ?? DEFAULT_EXPLORE_TAB,
+  );
   const [stagingOpen, setStagingOpen] = useState(false);
   const [submissionsOpen, setSubmissionsOpen] = useState(false);
   const [submissionRows, setSubmissionRows] = useState<SubmissionRow[]>([]);

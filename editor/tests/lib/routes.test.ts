@@ -6,6 +6,7 @@ import {
   hashFor,
   pathFromHash,
   exploreTabFromHash,
+  stateFromHash,
   titleFor,
 } from "../../src/lib/routes";
 import { matchFrontmatterForm } from "../../src/lib/frontmatterForms";
@@ -106,6 +107,17 @@ function corpus(): string[] {
   return out;
 }
 
+test("corpus: the walk finds the corpus at all", () => {
+  // Without this, narrowing SRC_DIRS or the extension filter would leave the
+  // three gates below filtering an empty list and passing while checking
+  // nothing. 301 files on 2026-09-01; the floor is loose enough to survive
+  // ordinary pruning and tight enough to catch a walk that found nothing.
+  assert.ok(
+    corpus().length > 200,
+    `corpus walk found ${corpus().length} files, expected the whole src tree`,
+  );
+});
+
 test("corpus: every authorable file round-trips through its hash", () => {
   const broken = corpus().filter((p) => pathFromHash(hashFor(p)) !== p);
   assert.deepEqual(broken, [], "these paths do not survive the round trip");
@@ -139,9 +151,13 @@ test("corpus: everything the editor can open has a readable address", () => {
 
 test("corpus: the gate can fail (positive control)", () => {
   // Proof the three gates above are not tautological: a path shape the table
-  // does not claim takes the fallback, and the fallback is detectable.
+  // does not claim takes the fallback, and one it does claim does not.
+  // `notEqual` against the bare "#/file/" prefix would pass for every input,
+  // mapped or not, so the discriminating form is startsWith.
   assert.ok(hashFor("some/unmapped/place/thing.md").startsWith("#/file/"));
-  assert.notEqual(hashFor("components/src/button/content.md"), "#/file/");
+  assert.ok(
+    !hashFor("components/src/button/content.md").startsWith("#/file/"),
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -201,4 +217,37 @@ test("titleFor: a record reads as its own name", () => {
 test("pathFromHash: a fallback address with no path is home, not an empty file", () => {
   assert.equal(pathFromHash("#/file/"), null);
   assert.equal(pathFromHash("#/file"), null);
+});
+
+// ---------------------------------------------------------------------------
+// stateFromHash: the whole screen an address names, read in one go, so App can
+// seed its state synchronously rather than correcting it after first paint.
+// ---------------------------------------------------------------------------
+
+test("stateFromHash: a home address names the default tab, not no tab", () => {
+  assert.deepEqual(stateFromHash("#/"), {
+    activePath: null,
+    exploreTab: "coverage",
+  });
+});
+
+test("stateFromHash: an explore address names its tab", () => {
+  assert.deepEqual(stateFromHash("#/explore/patterns"), {
+    activePath: null,
+    exploreTab: "patterns",
+  });
+});
+
+test("stateFromHash: a file address says nothing about the tab", () => {
+  assert.deepEqual(stateFromHash("#/component/button/content"), {
+    activePath: "components/src/button/content.md",
+    exploreTab: null,
+  });
+});
+
+test("stateFromHash: an unreadable address is home with the default tab", () => {
+  assert.deepEqual(stateFromHash("#/nonsense/xyz"), {
+    activePath: null,
+    exploreTab: "coverage",
+  });
 });

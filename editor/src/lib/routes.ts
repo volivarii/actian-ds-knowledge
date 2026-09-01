@@ -38,7 +38,7 @@ const EXPLORE_TABS = [
   "relationships",
   "patterns",
 ] as const;
-const DEFAULT_EXPLORE_TAB: ExploreTab = "coverage";
+export const DEFAULT_EXPLORE_TAB: ExploreTab = "coverage";
 /** Nothing here that HomeScreen does not offer. */
 type _TabsAreReal = (typeof EXPLORE_TABS)[number] extends ExploreTab
   ? true
@@ -101,7 +101,10 @@ const DIRS: ReadonlyArray<readonly [string, string]> = [
   ["content", "content/src"],
 ];
 
-const WORKSPACE_RE = /^workspace\/([^/]+)$/;
+/** The one definition of a workspace address. EditorShell imports it rather
+ *  than keeping a second copy: a looser pattern here would mint addresses the
+ *  dispatch refuses, which reads to a person as a link that goes nowhere. */
+export const WORKSPACE_RE = /^workspace\/([a-z0-9][a-z0-9-]*)$/;
 const COMPONENT_FILE_RE = /^components\/src\/([^/]+)\/([^/]+)$/;
 
 /** Compiled once. `hashFor` runs on every navigation and again for every title,
@@ -211,4 +214,33 @@ export function titleFor(activePath: string | null): string {
       : titleCase(segments[1] ?? segments[0] ?? "");
 
   return name ? `${name} \u00b7 ${PRODUCT_NAME}` : PRODUCT_NAME;
+}
+
+/**
+ * The whole screen an address names, read in one go.
+ *
+ * `App` seeds its state from this synchronously, during the first render, so
+ * the app is never briefly on the wrong screen. An effect that read the address
+ * after mount would have to be guarded against overwriting the deep link before
+ * its navigation committed, and every run-count guard for that is defeated by
+ * StrictMode's double mount, which is a development-only symptom of a design
+ * that was correcting itself instead of starting correct.
+ *
+ * `exploreTab` is `null` only when the address names a file and so says nothing
+ * about the tab. A home address always names one, falling back to the default,
+ * so that going Back to plain `#/` restores the default tab rather than leaving
+ * the tab strip showing something the address does not say.
+ */
+export function stateFromHash(hash: string): {
+  activePath: string | null;
+  exploreTab: ExploreTab | null;
+} {
+  const activePath = pathFromHash(hash);
+  return {
+    activePath,
+    exploreTab:
+      activePath === null
+        ? (exploreTabFromHash(hash) ?? DEFAULT_EXPLORE_TAB)
+        : null,
+  };
 }
