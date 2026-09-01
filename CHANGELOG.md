@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Changed
 
 - **The embedded font faces are their own artifact, because they were 70% of the component
-  stylesheet.** `render.css` was 478 KB, of which **336 KB was six base64 woff2 subsets**. It now
+  stylesheet.** ([#617](https://github.com/volivarii/actian-ds-knowledge/pull/617)) `render.css` was 478 KB, of which **336 KB was six base64 woff2 subsets**. It now
   emits as `render.css` (141 KB of component CSS) plus `render-fonts.css` (337 KB of type). A
   consumer with its own font pipeline, such as the docs site, takes the component sheet alone instead
   of downloading the whole type library to show one button.
