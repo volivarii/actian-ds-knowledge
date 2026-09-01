@@ -108,6 +108,54 @@ Each entry links its pull request. Dates are the merge date (UTC).
   forward, so without it the restored captures would have put six permanent false entries in
   `missing`, the bucket that module keeps meaningful as a regression signal.
 
+- **A guidance link that lands on no page is now caught, which is how a freed component slug goes
+  wrong silently.** ([#612](https://github.com/volivarii/actian-ds-knowledge/pull/612)) The 2026-08-31 sync freed `calendar` and handed it to the calendar glyph
+  on the Icons page while the component moved to `calendar-data-selector`. Four links in
+  `calendar-date-input` still said `[calendar](calendar)`, meaning the picker, and pointed at a slug
+  with no guidance page at all. They now point at `calendar-data-selector`. Two further dead links
+  are fixed with them: `notification-toast` becomes `global-toast` in `alert-banner`, and
+  `toggle-control` becomes `toggle` in `segmented-control`. Closes #605.
+
+  `tests/guideline-link-targets.test.js` asserts that every `](slug)` link naming a component
+  guidance page reaches one. Its corpus is `components/src` **and** `content/src`, because content
+  prose is concatenated INTO the component guideline pages: a single `](date-input)` authored in
+  `content/src/patterns/validation-messages.md` reached five published component pages, and a corpus
+  of `components/src` alone could not see it. It asserts the JOIN rather than keeping a list of slugs,
+  and it accepts an authored `components/src/<slug>/` as a page so a PR adding a component does not
+  report its own new page as dead before the derive bot catches up.
+
+  It deliberately does NOT judge a target naming a content SECTION. `content-derive` concatenates
+  `content/src/{patterns,writing,product}/*.md` into four dist pages, so `forms` is a heading rather
+  than a page; whether such a link should become an anchor is a content-routing decision, filed as
+  #615 rather than guessed at. Stale guidance titles on three renamed components are #614.
+
+  🔑🔑 **The identity ledger is deliberately NOT part of resolving a link.** `clients/resolve-paths.js`
+  redirects a retired slug for a consumer that CALLS it; the docs site does not, because it generates
+  one page per authored slug and resolves a relative markdown link by PATH. So
+  `[drawer](drawer-side-panel)` 404s however complete the ledger is. Twenty-one such links took the
+  published docs deploy red on the 2026-08-31 vendor refresh, and all twenty-one are repointed here:
+  `drawer-side-panel` to `drawer` (7), `date-input` to `calendar-date-input` (6), `calendar` to
+  `calendar-data-selector` (4), `notification` to `toast` (4). Four labels are reworded with them,
+  because the rename made "the [notification](toast) keeps the durable record; the toast only
+  announces" describe one component twice.
+
+  🔑 The namespace is the whole point, and the first version of this gate had it wrong twice: a
+  `](slug)` link addresses a PAGE, not a registry entry (62 guideline pages against 324 registry
+  entries, with 55 link targets that have a page and no registry entry), and a page the ledger
+  redirects to is not a page the link reaches. Both corrections came from a consumer breaking, not
+  from the gate.
+
+  The scanner asserts it has a corpus before asserting anything about it, because `git ls-files` on a
+  missing path exits 0 with empty output, which would disarm the gate rather than break it. Its
+  positive control runs through the scanner itself rather than its helpers.
+
+  This is the second time this shape has bitten (#588 was `card` / `card-for-items` breaking the docs
+  site), which is what justified a gate over a one-off fix. `collapse` and `lineage` were checked and
+  deliberately left: both were icons before the sync and are components now, so the references naming
+  them resolve to a component for the first time, and both renderer cases were already written for
+  the new occupants. Links in `content/src` are not covered: they address their own target namespace,
+  which would need mapping first.
+
 - **The rename precondition reads structure rather than raw text, so documenting a migration no longer
   blocks it.** ([#611](https://github.com/volivarii/actian-ds-knowledge/pull/611)) `rename-preconditions.mentions()` scanned whole files, so a slug named in a
   sentence blocked a rename exactly as a `case` label or a `components[]` entry did. The gate's own
