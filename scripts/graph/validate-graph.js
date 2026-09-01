@@ -3,6 +3,10 @@
 var fs = require("node:fs");
 var path = require("node:path");
 var Ajv = require("ajv/dist/2020");
+// Compiled the same way the suite compiles this schema. Under strict:false Ajv
+// silently ignores an unknown format, so without this a `"format"` added to
+// schemas/graph-jsonld.json would be enforced by the test and not by the gate.
+var addFormats = require("ajv-formats");
 
 var ROOT = path.resolve(__dirname, "..", "..");
 
@@ -156,6 +160,63 @@ function schemaErrors(graph) {
   });
 }
 
+// The emitted JSON-LD against its schema. It runs here, on the file derive:graph
+// just wrote, because nothing else validates the FRESH document: the graph drift
+// guard catches a bad one only as "stale, regenerate and commit", which points the
+// author at the wrong fix, and the suite's schema test reads the committed copy so
+// it would still be validating the last good one.
+// `doc` is for tests; production passes nothing and the document is read from
+// disk, after derive:graph wrote it in the workflows that run them in that order.
+//
+// Be exact about the reach, because it is narrower than it looks. graph.jsonld is
+// a COMMITTED artifact, so the missing-file branch only fires if it is deleted or
+// relocated. A deriver that silently stopped emitting it leaves the stale
+// committed copy on disk: this validates that copy, finds it schema-valid, and
+// passes -- and the drift guard sees an unmodified file and says nothing either.
+// What catches that is graph-jsonld-emit's losslessness assertion, and only once
+// the graph's content next changes.
+//
+// What this DOES cover, and nothing else did before it: a to-jsonld or context
+// change that emits a schema-violating document, reported as a schema violation
+// rather than as "the artifact is stale, regenerate it".
+function jsonldSchemaErrors(doc) {
+  var schemaPath = path.join(ROOT, "schemas", "graph-jsonld.json");
+  if (!fs.existsSync(schemaPath)) {
+    return ["graph.jsonld: schemas/graph-jsonld.json is missing"];
+  }
+  var ld = doc;
+  if (ld === undefined) {
+    var ldPath = path.join(ROOT, "graph", "dist", "graph.jsonld");
+    if (!fs.existsSync(ldPath)) {
+      return [
+        "graph.jsonld: graph/dist/graph.jsonld is missing — derive:graph did not emit it",
+      ];
+    }
+    try {
+      ld = JSON.parse(fs.readFileSync(ldPath, "utf8"));
+    } catch (e) {
+      // Guarded because this is the artifact derive-graph adopted writeAtomic
+      // for, after "Unexpected end of JSON input" was seen in CI. Unguarded, a
+      // truncated file threw a SyntaxError out of main() -- which has no
+      // try/catch -- naming neither the artifact nor the fix, and aborting
+      // before quality-report.json was written and before the dangling-ref and
+      // type-violation classes were collected.
+      return [
+        "graph.jsonld: not parseable as JSON (" +
+          e.message +
+          ") — regenerate with `npm run derive:graph`",
+      ];
+    }
+  }
+  var ajv = new Ajv({ allErrors: true, strict: false });
+  addFormats(ajv);
+  var validate = ajv.compile(JSON.parse(fs.readFileSync(schemaPath, "utf8")));
+  if (validate(ld)) return [];
+  return (validate.errors || []).map(function (e) {
+    return "graph.jsonld: " + (e.instancePath || "(root)") + " " + e.message;
+  });
+}
+
 // Pure: fold analysis + coverage into a DQV-shaped report array. `timestamp` is
 // always null in the artifact (deterministic; the CI run supplies temporal context).
 function buildQualityReport(analysis, coverage, schemaErrorCount) {
@@ -235,6 +296,23 @@ function main() {
     fs.readFileSync(path.join(ROOT, "graph", "vocabulary.json"), "utf8"),
   );
   var schemaErrs = schemaErrors(graph);
+  // Computed HERE, with the other failure classes, not after their exit. A change
+  // that breaks both -- a to-jsonld edit that also introduces a dangling ref --
+  // used to report only the first, so the author fixed it, re-ran, and met the
+  // second on the next round.
+  var ldErrors = jsonldSchemaErrors();
+  // Deliberately NOT in quality-report.json, neither folded into `schema_errors`
+  // nor as a sibling metric.
+  //
+  // Folding conflates subjects: that metric names schemas/graph.json and
+  // graph.json, so counting graph.jsonld violations in it points a reader at the
+  // wrong schema and the wrong document. A sibling metric would be honest, but it
+  // changes a dist artifact that ships to consumers, which this change otherwise
+  // does not touch -- a report shape change wants its own PR and its own bump.
+  //
+  // So the report stays SCOPED to graph.json, which makes it accurate rather than
+  // under-counting, and graph.jsonld validity is reported by this gate's own
+  // failure output. Worth revisiting when the report next changes shape.
   var r = analyze(graph, vocabulary);
   var coverage = coverageMod.computeCoverage(ROOT, graph);
   var qualityReport = buildQualityReport(r, coverage, schemaErrs.length);
@@ -300,7 +378,12 @@ function main() {
     });
   }
 
-  if (schemaErrs.length || r.dangling.length || r.typeViolations.length) {
+  if (
+    schemaErrs.length ||
+    r.dangling.length ||
+    r.typeViolations.length ||
+    ldErrors.length
+  ) {
     var failParts = [];
     if (schemaErrs.length) {
       failParts.push(
@@ -338,6 +421,16 @@ function main() {
             .join("\n"),
       );
     }
+    if (ldErrors.length) {
+      failParts.push(
+        "### validate-graph: graph.jsonld violates schemas/graph-jsonld.json\n" +
+          ldErrors
+            .map(function (e) {
+              return "- " + e;
+            })
+            .join("\n"),
+      );
+    }
     var failLine = failParts.join("\n");
     if (summary) {
       try {
@@ -364,9 +457,19 @@ function main() {
         console.error("  - " + v);
       });
     }
+    if (ldErrors.length) {
+      console.error(
+        "validate-graph FAILED — the emitted graph.jsonld violates schemas/graph-jsonld.json:",
+      );
+      ldErrors.forEach(function (e) {
+        console.error("  - " + e);
+      });
+    }
     process.exit(1);
   }
-  console.log("validate-graph: OK (no dangling refs)");
+  console.log(
+    "validate-graph: OK (no dangling refs, graph.jsonld schema-valid)",
+  );
 }
 
 if (require.main === module) main();
@@ -374,5 +477,6 @@ if (require.main === module) main();
 module.exports = {
   analyze: analyze,
   schemaErrors: schemaErrors,
+  jsonldSchemaErrors: jsonldSchemaErrors,
   buildQualityReport: buildQualityReport,
 };

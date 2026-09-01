@@ -345,7 +345,7 @@ quoting any ratio. `quality-trend.md` does this deliberately.
 
 | Number | Reads as | Actually is |
 | --- | --- | --- |
-| 614 graph `component` nodes | Components | Every registry entry across three kits, icons included |
+| The graph's `component` node count | Components | Every registry entry across three kits, icons included |
 | 268 orphan nodes | Authoring debt | Mostly registry entries never meant to carry guidance |
 | `inherited` in coverage | A gap | The correct answer, resolving to category defaults |
 | A green check list | This commit passed | Possibly the previous commit. Confirm against the head SHA |
