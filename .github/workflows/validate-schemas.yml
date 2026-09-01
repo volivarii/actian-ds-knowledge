@@ -24,6 +24,10 @@ on:
       - 'components/src/*/tokens.yml'
       - 'components/dist/guidelines/**/*.json'
       - 'components/dist/registries/**/*.json'
+      # validate-registries derives WHICH registries it validates from this list,
+      # so editing it alone changes the gate's subject. Without this trigger that
+      # change would never re-run the schema gate.
+      - 'scripts/lib/registry-files.js'
       - 'paths-manifest.json'
       - 'domains.json'
       - 'foundations/dist/**/*.json'

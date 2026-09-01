@@ -13,11 +13,9 @@ function readJSON(rel) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, rel), "utf8"));
 }
 
-var REGISTRY_FILES = [
-  "components/dist/registries/dskit.json",
-  "components/dist/registries/fmkit.json",
-  "components/dist/registries/metakit.json",
-];
+// Sourced from a dependency-free leaf module so a gate can read the list without
+// loading this deriver; see scripts/lib/registry-files.js for why that matters.
+var REGISTRY_FILES = require("../lib/registry-files.js");
 
 // Component nodes + category nodes (all distinct labels, slugified, figma-dskit) + in_category edges.
 function collectComponentsAndCategories(g, registries, categoryOverrides) {
@@ -678,6 +676,9 @@ if (require.main === module) {
 
 module.exports = {
   derive: derive,
+  // Exported so the shipped-graph tests join against the SAME registry list the
+  // derive reads, rather than restating it and drifting from it.
+  REGISTRY_FILES: REGISTRY_FILES,
   bundleToTree: bundleToTree,
   collectComponentsAndCategories: collectComponentsAndCategories,
   collectComponentComposition: collectComponentComposition,

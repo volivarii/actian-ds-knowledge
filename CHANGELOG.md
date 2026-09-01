@@ -92,6 +92,32 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **Graph gates pinned counts instead of joining, so a clean additive sync could not pass**
+  ([#628](https://github.com/volivarii/actian-ds-knowledge/pull/628)). The 2026-09-01 nightly added
+  eight icons, removed nothing, and failed the suite on `622 !== 614`: the graph's component-node
+  count and two collision counts beside it were literals kept by hand. They are now derived — the
+  graph's component nodes must equal the union of component slugs across the deriver's registries,
+  and the `slug_collisions` metric is joined to the sidecar it restates. `REGISTRY_FILES` is exported
+  and frozen so every gate depending on that list reads it instead of restating it, including the one
+  deciding whether a registry edit re-triggers the derive.
+- The checks that compare registries against what is derived from them — the graph's component
+  nodes, the registry coverage, and the collisions sidecar's freshness — run as `validate-manifest` steps
+  (the registry-coverage half is new ground: a committed kit the deriver never reads produces no drift
+  at all; the union and freshness halves report by slug a divergence the drift guard also catches, but
+  only as a stale artifact)
+  (`scripts/validate/validate-graph-registry-union.js`), not in `npm test`, for the reason already
+  documented on the llms guard: a sync commits registries before the regenerated graph, so that pair
+  is transiently unequal on every registry-changing PR, and the sibling derive workflows run the suite
+  before their auto-commit — inside it, an assertion on that pair blocks them from committing the dist
+  they exist to produce.
+- The gates read committed artifacts rather than the working tree, because `derive()` rewrites the
+  graph in place, several tests call it unconfined, and `node --test` runs files in parallel, so a
+  real divergence could be healed before an assertion saw it (#624). The graph drift guard now also
+  covers `graph.jsonld`, which nothing else validated once the schema check moved to the committed
+  copy. Magnitude coverage, which the literals were the only source of, becomes bounds with enough
+  slack that ordinary syncs never approach them; the real gap — `classifyRegistry` auto-merging an
+  addition of any size — is #625. No dist or schema change; consumers are unaffected.
+
 - **`CLAUDE.md` and `AGENTS.md` described domains that no longer match the repository.** `AGENTS.md`
   called `app-context/` a flat domain; it has a `src`/`dist` split. Both called `tokens/` interim-flat
   human-frozen snapshots; `tokens/{tokens.json,tokens.css,token-reference.md}` and

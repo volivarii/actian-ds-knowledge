@@ -71,6 +71,11 @@ on:
       - 'scripts/lib/graph/**'
       - 'scripts/lib/frontmatter.js'
       - 'scripts/lib/dist-io.js'
+      # The kit list itself. It lives outside scripts/graph/** so that gates can
+      # read it without loading the deriver; without this line, adding or retiring
+      # a kit here would not re-trigger the derive and the committed graph would
+      # go stale with no self-healing path.
+      - 'scripts/lib/registry-files.js'
       - 'schemas/graph.json'
       # hand-authored JSON-LD @context (governs graph/dist/graph.jsonld)
       - 'graph/context.jsonld'
