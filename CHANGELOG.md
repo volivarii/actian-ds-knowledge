@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Added
 
 - **Entity relationships are picked from lists, and the verbs are a vocabulary**
-  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD)). Both halves of a relationship
+  ([#627](https://github.com/volivarii/actian-ds-knowledge/pull/627)). Both halves of a relationship
   were free text. Typing offered no verbs and no targets, and an invented target drew no error at
   all, so an author learned it was wrong when CI failed the pull request they had already opened.
   Thirty-six verbs had accumulated across 42 relationships, **31 of them used exactly once**
