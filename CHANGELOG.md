@@ -20,7 +20,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
-- **Every component, entity and pattern in the Knowledge Editor has an address.** The editor carries
+- **Every component, entity and pattern in the Knowledge Editor has an address**
+  ([#619](https://github.com/volivarii/actian-ds-knowledge/pull/619)). The editor carries
   its navigation state in the URL hash, so a page can be linked to, bookmarked and reopened, the
   browser's Back and Forward buttons move through it, and the tab title names the page rather than
   the product. The address speaks the navigation's language (`#/component/button/content`,
