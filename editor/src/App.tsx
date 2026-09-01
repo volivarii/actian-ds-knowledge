@@ -18,7 +18,11 @@ import { SettingsPanel } from "./settings/SettingsPanel";
 import { EditorShell } from "./app/EditorShell";
 import type { ExploreTab } from "./app/HomeScreen";
 import { useHashRoute } from "./lib/useHashRoute";
-import { DEFAULT_EXPLORE_TAB, stateFromHash } from "./lib/routes";
+import {
+  DEFAULT_EXPLORE_TAB,
+  stateFromHash,
+  WORKSPACE_RE,
+} from "./lib/routes";
 import { FreshnessChip } from "./app/FreshnessChip";
 import { SignInScreen } from "./app/SignInScreen";
 import { SaveStateIndicator } from "./app/SaveStateIndicator";
@@ -53,7 +57,7 @@ import {
 /** Pull `<slug>` from `workspace/<slug>` or `components/src/<slug>/<anything>`. */
 function activeComponentSlug(path: string | null): string | null {
   if (!path) return null;
-  const ws = /^workspace\/([a-z0-9][a-z0-9-]*)$/.exec(path);
+  const ws = WORKSPACE_RE.exec(path);
   if (ws && ws[1]) return ws[1];
   const file = /^components\/src\/([^/]+)\//.exec(path);
   if (file && file[1] && file[1] !== "categories" && file[1] !== "guidelines") {
