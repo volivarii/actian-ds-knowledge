@@ -20,7 +20,7 @@ test("entity schema accepts a valid entity record, rejects a bad one", () => {
       slug: "data-product",
       label: "Data Product",
       properties: ["name"],
-      relationships: { hasDatasets: "dataset" },
+      relationships: { contains: ["dataset", "input-port"] },
       apps: ["studio"],
     }),
     JSON.stringify(v.errors),
@@ -29,6 +29,28 @@ test("entity schema accepts a valid entity record, rejects a bad one", () => {
     v({ _schema_version: 1, slug: "X bad slug", label: "x" }),
     false,
   );
+});
+
+test("entity schema holds the relationship vocabulary closed", () => {
+  // Reuse the instance the test above registered: Ajv refuses to compile the
+  // same $id twice, and a second `new Ajv()` here would silently diverge from
+  // the options the rest of this file validates under.
+  const schema = load("app-context-entity.json");
+  const v = ajv.getSchema(schema.$id) ?? ajv.compile(schema);
+  const record = (relationships) => ({
+    _schema_version: 1,
+    slug: "data-product",
+    label: "Data Product",
+    properties: ["name"],
+    relationships,
+    apps: ["studio"],
+  });
+  // A verb outside the vocabulary is the thing that produced 36 verbs, 30 of
+  // them used once, while the field was free text.
+  assert.equal(v(record({ hasDatasets: ["dataset"] })), false, "off-vocabulary verb");
+  assert.equal(v(record({ contains: "dataset" })), false, "bare string, not a list");
+  assert.equal(v(record({ contains: [] })), false, "a verb with no target says nothing");
+  assert.ok(v(record({ contains: ["dataset"], belongsTo: ["domain"] })), JSON.stringify(v.errors));
 });
 
 test("app schema accepts a valid app record", () => {
@@ -227,4 +249,34 @@ test("app-context.json $defs.pattern: accepts optional components[]", () => {
   const pat = schema.$defs.pattern;
   assert.ok(pat.properties.components, "$defs.pattern declares components");
   assert.equal(pat.additionalProperties, false);
+});
+
+test("every property example validates against the property it illustrates", () => {
+  // A wrong example is invisible: nothing validates it, and the editor shows it
+  // to the author in the hover card as the model to copy. Caught for real when
+  // `relationships` changed from a verb->slug map to verb->list and its own
+  // example kept saying `contains: "dataset"`, a shape the same schema rejects.
+  const bad = [];
+  for (const file of [
+    "app-context-entity.json",
+    "app-context-app.json",
+    "app-context-pattern.json",
+  ]) {
+    const schema = load(file);
+    for (const [name, sub] of Object.entries(schema.properties || {})) {
+      if (!Array.isArray(sub.examples)) continue;
+      // Compile the property's subschema alone: $id belongs to the parent, and
+      // reusing it here would collide with the whole-schema compile above.
+      const { $id, ...bare } = sub;
+      void $id;
+      const check = new Ajv({ strict: false, allowUnionTypes: true }).compile(
+        bare,
+      );
+      sub.examples.forEach((example, i) => {
+        if (!check(example))
+          bad.push(`${file} ${name}.examples[${i}]: ${JSON.stringify(check.errors)}`);
+      });
+    }
+  }
+  assert.deepEqual(bad, []);
 });

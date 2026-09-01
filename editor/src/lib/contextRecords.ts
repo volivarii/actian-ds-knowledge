@@ -53,6 +53,20 @@ export function listProducts(): GraphPick[] {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
+/** Entities an entity can point at, as of the last merge.
+ *
+ *  Read from the baked graph like `listProducts` above, and with the same
+ *  limitation: an entity created in the current batch is NOT here yet. The
+ *  caller must not present absence from this list as an authoring error, only
+ *  as absence from the published set, or it reports a red state for a record
+ *  the author has legitimately just created. */
+export function listEntities(): GraphPick[] {
+  return graphNodes
+    .filter((n) => n.type === "app_entity")
+    .map((n) => ({ slug: slugOf(n.id), label: n.title }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
 /** DS components a feature can declare it composes. */
 export function listComponents(): GraphPick[] {
   return graphNodes

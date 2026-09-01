@@ -4,11 +4,18 @@ function validateAppContext(dist) {
   const entityKeys = new Set(Object.keys(dist.entities || {}));
   const appKeys = new Set(Object.keys(dist.apps || {}));
   for (const [slug, e] of Object.entries(dist.entities || {})) {
-    for (const [verb, target] of Object.entries(e.relationships || {})) {
-      if (!entityKeys.has(target))
-        errors.push(
-          `entity "${slug}".relationships.${verb} → "${target}" is not an entity`,
-        );
+    for (const [verb, value] of Object.entries(e.relationships || {})) {
+      // A verb carries a LIST of targets. A bare string is still read rather
+      // than skipped: skipping would make an old-shaped record validate clean
+      // while its targets went unchecked, which is the silent pass this file
+      // exists to prevent.
+      const targets = Array.isArray(value) ? value : [value];
+      for (const target of targets) {
+        if (!entityKeys.has(target))
+          errors.push(
+            `entity "${slug}".relationships.${verb} → "${target}" is not an entity`,
+          );
+      }
     }
     for (const app of e.apps || [])
       if (!appKeys.has(app))

@@ -54,7 +54,7 @@ Certain relationships are important enough to be structured data instead of pros
 | `a11y_refs` | category / component pages | an accessibility criterion |
 | `motion_refs` | category / component pages | a motion pattern |
 | `foundations_refs` | category / component pages | a foundation section |
-| `relationships` | app-context entities | another entity, with a named predicate (e.g. `targetsOutputPort`) |
+| `relationships` | app-context entities | another entity, with a verb from the vocabulary (e.g. `contains`, `belongsTo`) |
 | `components[]` | UX patterns | the components that realize the pattern |
 
 These reference **slugs**, never quoted names (`{ref: state-transitions}`, not `"State Transitions"`): slugs survive renames, display names don't.

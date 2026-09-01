@@ -19,7 +19,8 @@ const VALID = [
   "properties:",
   "  - name",
   "relationships:",
-  "  hasFields: field",
+  "  contains:",
+  "    - field",
   "apps:",
   "  - studio",
 ].join("\n");
@@ -160,4 +161,17 @@ test("a schema Ajv cannot compile is reported as a diagnostic, not thrown", () =
   const firstLineEnd = VALID.indexOf("\n") + 1;
   assert.equal(diags[0]!.from, 0);
   assert.equal(diags[0]!.to, firstLineEnd);
+});
+
+test("a verb outside the vocabulary is reported", () => {
+  // The F8 defect at the source pane: while the verb was free text, an
+  // invented one drew no error anywhere until CI failed the pull request.
+  const yaml = VALID.replace("  contains:", "  hasFields:");
+  const found = frontmatterDiagnostics(yaml, ENTITY);
+  assert.ok(found.length > 0, "an off-vocabulary verb should be reported");
+  assert.ok(
+    found.some((d) => d.message.toLowerCase().includes("hasfields") ||
+      /vocab|enum|allowed|propertyNames/i.test(d.message)),
+    `expected the message to name the problem, got: ${JSON.stringify(found)}`,
+  );
 });
