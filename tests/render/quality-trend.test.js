@@ -33,6 +33,16 @@ const trend = require(
   path.join(REPO_ROOT, "scripts", "render", "derive-quality-trend.js"),
 );
 
+// Built ONCE. Each build shells out to git per revision and re-derives the
+// contract, so rebuilding per test cost ~1.5s a time and made this file half
+// the suite's runtime. The roll-up is a pure function of the tree, so one build
+// is as honest as eight.
+let ROLLUP = null;
+function rollupOnce() {
+  if (!ROLLUP) ROLLUP = trend.buildRollup();
+  return ROLLUP;
+}
+
 test("the roll-up's collapse figure is the gate's own classification", function () {
   const gateFigure = collapse.classify(deriveContract(), BY_DESIGN).unexplained
     .length;
@@ -165,17 +175,22 @@ test("the roll-up is dated, versioned, and carries a direction per measure", fun
   // graph/dist/quality-report.json carry a non-null timestamp, and
   // fidelity-report._meta has no date and no version at all. A number without a
   // date is not reportable.
-  const rollup = trend.buildRollup();
+  const rollup = rollupOnce();
 
   assert.match(
-    rollup._meta.measuredAt,
+    rollup._meta.sourcesLastChangedAt,
     /^\d{4}-\d{2}-\d{2}$/,
     "the roll-up is dated",
   );
-  assert.match(
-    rollup._meta.version,
-    /^\d+\.\d+\.\d+$/,
-    "the roll-up names the version it measured",
+  // No version stamp. package.json is read during the derive and
+  // render-derive.yml bumps it AFTER, committing both together, so the file
+  // released as v0.34.166 would state v0.34.165. Worse, the series points read
+  // package.json at each commit, i.e. POST-bump, so a header version and a
+  // series version would be two different conventions side by side. The date
+  // and the series carry the identity instead.
+  assert.ok(
+    !("version" in rollup._meta),
+    "no header version: it would always be one bump behind the tag it ships under",
   );
   assert.ok(rollup._meta.auto_generated, "stamped as generated");
 
@@ -193,7 +208,7 @@ test("the roll-up is dated, versioned, and carries a direction per measure", fun
 });
 
 test("the roll-up reports the oracle numerator and denominator apart", function () {
-  const rollup = trend.buildRollup();
+  const rollup = rollupOnce();
   assert.strictEqual(
     rollup.measures.oracleVerified.value,
     trend.currentMeasures().oracleCoverage.verified,
@@ -212,9 +227,18 @@ test("the markdown summary states the date and every measure's direction", funct
   // Reporting today is a screenshot: nothing in the substrate exports. This is
   // the pasteable artifact, so the date has to be IN it, not implied by when
   // someone happened to open the file.
-  const md = trend.renderMarkdown(trend.buildRollup());
+  const md = trend.renderMarkdown(rollupOnce());
 
-  assert.match(md, /AUTO-GENERATED/, "carries the generated banner");
+  // VISIBLE, not an HTML comment. This artifact exists to be pasted into a
+  // report, and a comment banner vanishes on render: the reader then has no way
+  // to know the numbers are generated or that hand edits are overwritten. The
+  // sibling coverage.md states it in a blockquote for the same reason.
+  const firstLines = md.split("\n").slice(0, 6).join("\n");
+  assert.match(
+    firstLines,
+    /^> .*[Aa]uto-generated/m,
+    "the banner is visible when rendered, got: " + JSON.stringify(firstLines),
+  );
   assert.match(md, /\d{4}-\d{2}-\d{2}/, "states the date it was measured");
   assert.match(md, /unexplained variant collapses/i);
   assert.match(md, /verified declarations/i);
@@ -224,8 +248,8 @@ test("the markdown summary states the date and every measure's direction", funct
 test("the markdown reports the oracle pair, never a bare percentage", function () {
   // A bare percentage is the one form this measure must not be published in:
   // it rose from 17.81% to 19.12% while nothing more became verifiable.
-  const md = trend.renderMarkdown(trend.buildRollup());
-  const rollup = trend.buildRollup();
+  const md = trend.renderMarkdown(rollupOnce());
+  const rollup = rollupOnce();
 
   assert.match(
     md,
@@ -243,7 +267,7 @@ test("the markdown shows the dated series, not only the latest delta", function 
   // verified reads "improving (was 77)" when it has been 78 since 2026-08-12
   // and 77 was a single transient dip. The arc has to be visible or the reader
   // draws the same wrong conclusion the bare ratio produced.
-  const rollup = trend.buildRollup();
+  const rollup = rollupOnce();
   const md = trend.renderMarkdown(rollup);
   const oldest = rollup.oracleSeries[rollup.oracleSeries.length - 1];
 
@@ -265,16 +289,14 @@ test("the roll-up is byte-stable when its inputs have not changed", function () 
   // change" gate into always-true, so every PR takes a version bump for nothing
   // and the drift guard stops meaning anything. The date must come from the
   // measurement's source, not from now.
-  const first = trend.renderMarkdown(trend.buildRollup());
-  const second = trend.renderMarkdown(trend.buildRollup());
+  const first = trend.renderMarkdown(rollupOnce());
+  const second = trend.renderMarkdown(rollupOnce());
   assert.strictEqual(first, second, "two runs agree");
 
-  const rollup = trend.buildRollup();
-  const newest = rollup.oracleSeries[0];
-  assert.strictEqual(
-    rollup._meta.measuredAt,
-    newest.date,
-    "the date is the newest source revision's date, not today's wall clock",
+  const rollup = rollupOnce();
+  assert.ok(
+    rollup._meta.sourcesLastChangedAt >= rollup.oracleSeries[0].date,
+    "the date is a source revision's, not today's wall clock",
   );
 });
 
@@ -304,5 +326,122 @@ test("the oracle reader reads the file, so it cannot serve a cached copy", funct
     trend.readOracle(tmp),
     { verified: 5, examined: 10 },
     "a second read must see the rewritten file",
+  );
+});
+
+test("every measure can carry a direction, not just the oracle", function () {
+  // The artifact's promise is that each measure carries a direction. Leaving
+  // collapses and hex permanently at "no baseline yet" delivers half of that,
+  // and they are the two measures a person would act on first. Both sources
+  // (render-contract.json, fragments/) are committed, so the baseline exists.
+  const series = trend.collapseSeries({ limit: 4 });
+  assert.ok(series.length > 0, "the collapse series must not be empty");
+  for (const point of series) {
+    assert.match(point.date, /^\d{4}-\d{2}-\d{2}$/, "dated");
+    assert.strictEqual(typeof point.unexplained, "number", "carries the figure");
+  }
+});
+
+test("the historical collapse figure uses the gate's classifier too", function () {
+  // Same join as the current figure: a historical point computed by a second
+  // method would make the trend disagree with the gate at every older point.
+  //
+  // 🪤 Compared against the blob AT THAT REVISION, never against the working
+  // tree. render-derive.yml regenerates the dist and THEN runs the suite, so a
+  // working-tree comparison fails on every run that actually changes the
+  // contract, and it fails BEFORE the commit step, so the regenerated dist can
+  // never land: the derive deadlocks with no path forward.
+  const { execFileSync } = require("node:child_process");
+  const series = trend.collapseSeries({ limit: 1 });
+  const atRevision = JSON.parse(
+    execFileSync(
+      "git",
+      [
+        "show",
+        series[0].sha + ":components/render/dist/render-contract.json",
+      ],
+      { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 },
+    ),
+  );
+
+  assert.strictEqual(
+    series[0].unexplained,
+    collapse.classify(atRevision, BY_DESIGN).unexplained.length,
+    "the newest point equals the gate's classification of that same revision",
+  );
+});
+
+test("previous is the LAST COMMITTED value, because current is the fresh tree", function () {
+  // The derive regenerates the dist and THEN this runs, so `current` is not yet
+  // in the series: series[0] is the last committed measurement. Taking series[1]
+  // skips a revision and misreports the direction outright. With the real
+  // history 43 -> 65 -> 54, a fresh 54 against series[1]=43 reads "worse" when
+  // the measure improved 65 -> 54, which is the exact failure this artifact
+  // exists to prevent.
+  const oracle = [{ verified: 78, examined: 408 }, { verified: 77, examined: 408 }];
+  const collapses = [{ unexplained: 65 }, { unexplained: 43 }];
+
+  const prev = trend.previousValues(oracle, collapses);
+
+  assert.strictEqual(prev.oracleVerified, 78, "the last committed verified");
+  assert.strictEqual(prev.unexplainedCollapses, 65, "the last committed collapses");
+});
+
+test("inline hex counts a single-quoted style attribute too", function () {
+  // No fragment uses single quotes today, so this is a false-clean waiting on a
+  // renderer change rather than a wrong number now. A measure that silently
+  // misses a case reads as progress when the renderer starts emitting it.
+  assert.strictEqual(
+    trend.countInlineHex("<div style='color:#ff0000'>x</div>"),
+    1,
+    "a single-quoted style attribute is still theming",
+  );
+});
+
+test("the series refuses to publish an empty history rather than reporting null", function () {
+  // In a shallow clone `git log` succeeds with zero matching commits, so the
+  // series comes back empty and the markdown would publish "Measured at null"
+  // with every direction "no baseline yet", silently. Absence must be loud.
+  assert.throws(
+    function () {
+      trend.assertSeries([], "oracle");
+    },
+    /empty/i,
+    "an empty series names itself rather than being published",
+  );
+  assert.doesNotThrow(function () {
+    trend.assertSeries([{ date: "2026-01-01" }], "oracle");
+  });
+});
+
+test("the date covers every source consulted, not just the oracle's", function () {
+  // measuredAt was the newest fidelity-report revision alone, which has no
+  // relationship to the collapse or hex figures at all, yet the table presented
+  // it as covering the whole thing. It is now the newest revision of ANY source
+  // read, which is both honest and still byte-stable.
+  const rollup = rollupOnce();
+  const oracleNewest = rollup.oracleSeries[0].date;
+  const collapseNewest = rollup.collapseSeries[0].date;
+  const expected =
+    oracleNewest > collapseNewest ? oracleNewest : collapseNewest;
+
+  assert.strictEqual(rollup._meta.sourcesLastChangedAt, expected);
+  assert.match(rollup._meta.sourcesLastChangedAt, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test("the markdown shows the collapse arc too, not just the oracle's", function () {
+  // The oracle table exists because a single-step delta misled. The collapse
+  // figure swings harder in real history (43 -> 65 -> 54 across three weeks)
+  // and is the measure a reader would act on FIRST, so showing it only as
+  // "flat (was 54)" reproduces the same defect for the worse case.
+  const rollup = rollupOnce();
+  const md = trend.renderMarkdown(rollup);
+  const oldest = rollup.collapseSeries[rollup.collapseSeries.length - 1];
+
+  assert.match(md, /unexplained collapses over time/i, "the arc is printed");
+  assert.match(
+    md,
+    new RegExp(oldest.date),
+    "including the oldest point in the window",
   );
 });

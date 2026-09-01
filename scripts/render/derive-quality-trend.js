@@ -73,7 +73,9 @@ function countInlineHex(html) {
     "",
   );
   let n = 0;
-  const styles = withoutArtwork.match(/style="[^"]*"/gi) || [];
+  // Both quote styles. No fragment uses single quotes today, so missing them
+  // would be a false-clean waiting on a renderer change, not a wrong number now.
+  const styles = withoutArtwork.match(/style=("[^"]*"|'[^']*')/gi) || [];
   for (const attr of styles) {
     n += (attr.match(/#[0-9a-fA-F]{3,8}\b/g) || []).length;
   }
@@ -150,6 +152,32 @@ function git(args) {
 // would come back empty and every direction would read "unknown" rather than
 // failing. The non-empty assertion in tests/render/quality-trend.test.js is what
 // makes that loud, and it is the reason that test exists.
+// %cd, the COMMIT date, because that is what `git log` orders by. %ad is the
+// author date, and the derive bots push with `git pull --rebase --autostash`,
+// which moves commit dates relative to author dates. One rebased artifact commit
+// is enough to emit a point whose date precedes its predecessor's and turn the
+// ordering assertion red for a reason nobody can fix in the diff.
+function commitDate(sha) {
+  return git(["show", "-s", "--format=%cd", "--date=short", sha]).trim();
+}
+
+// A series that came back empty must say so. `git log` in a shallow clone
+// SUCCEEDS with zero matching commits, so the soft failure is the dangerous
+// one: the artifact would publish "Measured at null" with every direction
+// "no baseline yet" and read as merely new rather than broken.
+function assertSeries(series, name) {
+  if (!series || series.length === 0) {
+    throw new Error(
+      "[quality-trend] the " +
+        name +
+        " series is EMPTY, so no measurement can be dated. This needs the full " +
+        "history: a shallow checkout (fetch-depth 1) makes `git log` succeed " +
+        "with no matching commits.",
+    );
+  }
+  return series;
+}
+
 function showJson(sha, rel) {
   try {
     return JSON.parse(git(["show", sha + ":" + rel]));
@@ -168,13 +196,7 @@ function oracleSeries(opts) {
     const report = showJson(sha, FIDELITY_REL);
     if (!report || !report.totals) continue;
     const pkg = showJson(sha, "package.json") || {};
-    const date = git([
-      "show",
-      "-s",
-      "--format=%ad",
-      "--date=short",
-      sha,
-    ]).trim();
+    const date = commitDate(sha);
     const t = report.totals;
     points.push({
       date: date,
@@ -197,31 +219,67 @@ function currentMeasures() {
   };
 }
 
+// The collapse figure at each committed revision of the contract, computed by
+// running TODAY's classifier over the historical artifact. Same helper as the
+// current figure and as the gate, so a point in the series can never disagree
+// with what the gate would have said about that tree.
+const CONTRACT_REL = "components/render/dist/render-contract.json";
+
+function collapseSeries(opts) {
+  const limit = (opts && opts.limit) || 12;
+  const shas = git(["log", "--format=%H", "-" + limit, "--", CONTRACT_REL])
+    .split("\n")
+    .filter(Boolean);
+  const points = [];
+  for (const sha of shas) {
+    const contract = showJson(sha, CONTRACT_REL);
+    if (!contract) continue;
+    const pkg = showJson(sha, "package.json") || {};
+    const date = commitDate(sha);
+    points.push({
+      date: date,
+      version: pkg.version || "0.0.0",
+      sha: sha.slice(0, 8),
+      unexplained: collapse.classify(contract, BY_DESIGN).unexplained.length,
+    });
+  }
+  return points;
+}
+
 // Previous committed value of each measure, so `direction` has something to
 // compare against. Oracle comes from its own artifact's history; the other two
 // come from the contract and the fragments at the same revisions.
-function previousValues() {
-  const series = oracleSeries({ limit: 2 });
-  const prev = series.length > 1 ? series[1] : null;
+// Takes the series it needs rather than re-running git for them: buildRollup
+// already has both, and each call is a subprocess per revision.
+// 🔑 [0], not [1]. This runs AFTER the derive has regenerated the dist, so the
+// value being reported is the fresh working tree and is NOT yet in the series:
+// series[0] is the last COMMITTED measurement, which is exactly what "previous"
+// means here. Taking [1] skipped a revision, and with the real collapse history
+// 43 -> 65 -> 54 a fresh 54 against [1]=43 reported "worse" for a measure that
+// had improved 65 -> 54. Reporting a regression as progress is the one thing
+// this artifact must never do.
+function previousValues(oracle, collapses) {
+  const prev = oracle.length > 0 ? oracle[0] : null;
+  const prevCollapse = collapses.length > 0 ? collapses[0] : null;
   return {
     oracleVerified: prev ? prev.verified : null,
     oracleExamined: prev ? prev.examined : null,
-    // Collapses and hex are derived from artifacts whose history is shallower
-    // and whose helpers must run against a historical tree. v1 leaves them
-    // unknown rather than guessing: "unknown" is honest and visible, and a
-    // fabricated baseline would make the first report read as progress.
-    unexplainedCollapses: null,
+    unexplainedCollapses: prevCollapse ? prevCollapse.unexplained : null,
+    // Inline hex needs every fragment at a historical revision rather than one
+    // file, so it stays unknown until that read exists. "unknown" is honest and
+    // visible; a fabricated baseline would make the first report read as
+    // progress. Tracked rather than pretended.
     inlineHex: null,
   };
 }
 
 function buildRollup() {
-  const pkg = JSON.parse(
-    require("node:fs").readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
-  );
-  const series = oracleSeries({ limit: 12 });
+  const series = assertSeries(oracleSeries({ limit: 12 }), "oracle");
+  const collapses = assertSeries(collapseSeries({ limit: 12 }), "collapse");
+  const newestSourceDate =
+    series[0].date > collapses[0].date ? series[0].date : collapses[0].date;
   const current = currentMeasures();
-  const prev = previousValues();
+  const prev = previousValues(series, collapses);
 
   const values = {
     unexplainedCollapses: current.unexplainedCollapses.value,
@@ -246,19 +304,29 @@ function buildRollup() {
       do_not_edit:
         "Regenerate with `npm run derive:render`. Hand edits are overwritten.",
       // The rule this artifact serves: a reported number must be DERIVED and
-      // DATED. The date is the newest SOURCE revision's, never the wall clock:
-      // an artifact stamped with `new Date()` changes every day whether or not
-      // anything it measures did, which turns the derive's "did the dist
-      // change" gate into always-true and takes a version bump on every PR for
-      // nothing. Stable inputs must produce byte-identical output.
-      measuredAt: series.length ? series[0].date : null,
-      version: pkg.version,
+      // DATED. Never the wall clock: an artifact stamped with `new Date()`
+      // changes every day whether or not anything it measures did, which turns
+      // the derive's "did the dist change" gate into always-true and takes a
+      // version bump on every PR for nothing.
+      //
+      // The newest revision of ANY source read, not the oracle's alone: the
+      // collapse and hex figures come from the contract and the fragments and
+      // have no relationship to the fidelity report's commit, so dating the
+      // whole table by that one was wrong.
+      //
+      // NO version field. package.json is read here, and render-derive.yml
+      // bumps it AFTER this runs and commits both together, so the file
+      // released as vN+1 would state vN. The series points read package.json at
+      // each commit, i.e. post-bump, so the two would be different conventions
+      // printed side by side.
+      sourcesLastChangedAt: newestSourceDate,
     },
     measures: measures,
     detail: {
       inlineHexBySlug: current.inlineHex.bySlug,
     },
     oracleSeries: series,
+    collapseSeries: collapses,
   };
 }
 
@@ -283,16 +351,21 @@ const ARROW = {
 function renderMarkdown(rollup) {
   const m = rollup.measures;
   const lines = [];
-  lines.push("<!-- AUTO-GENERATED - DO NOT EDIT. Regenerate with `npm run derive:render`. -->");
-  lines.push("");
   lines.push("# Output quality");
   lines.push("");
+  // Visible, matching components/dist/guidelines/coverage.md. An HTML comment
+  // disappears on render, and this file exists to be PASTED into a report: the
+  // reader has to be able to see that the numbers are generated and that a hand
+  // edit will be overwritten.
   lines.push(
-    "Measured at **" +
-      rollup._meta.measuredAt +
-      "**, knowledge **v" +
-      rollup._meta.version +
-      "**.",
+    "> Auto-generated by `scripts/render/derive-quality-trend.js`. Do not edit. " +
+      "Regenerate with `npm run derive:render`.",
+  );
+  lines.push("");
+  lines.push(
+    "Sources last changed **" +
+      rollup._meta.sourcesLastChangedAt +
+      "**. Values are derived from the tree this ran against.",
   );
   lines.push("");
   lines.push("| Measure | Value | Since last change |");
@@ -344,6 +417,23 @@ function renderMarkdown(rollup) {
     lines.push("");
   }
 
+  // The collapse arc, for the same reason as the oracle's: this measure swings
+  // hardest in real history (43 -> 65 -> 54 across three weeks) and is the one a
+  // reader acts on first, so a single-step delta misleads worst here.
+  const collapses = rollup.collapseSeries || [];
+  if (collapses.length) {
+    lines.push("## Unexplained collapses over time");
+    lines.push("");
+    lines.push("| Date | Version | Unexplained |");
+    lines.push("| --- | --- | --- |");
+    for (const p of collapses) {
+      lines.push(
+        "| " + p.date + " | v" + p.version + " | " + p.unexplained + " |",
+      );
+    }
+    lines.push("");
+  }
+
   const hex = rollup.detail.inlineHexBySlug || {};
   const slugs = Object.keys(hex).sort(function (a, b) {
     return hex[b] - hex[a];
@@ -363,9 +453,12 @@ module.exports = {
   REPO_ROOT: REPO_ROOT,
   currentMeasures: currentMeasures,
   countInlineHex: countInlineHex,
+  assertSeries: assertSeries,
   readOracle: readOracle,
+  previousValues: previousValues,
   direction: direction,
   oracleSeries: oracleSeries,
+  collapseSeries: collapseSeries,
   buildRollup: buildRollup,
   renderMarkdown: renderMarkdown,
   GOOD_DIRECTION: GOOD_DIRECTION,
@@ -392,10 +485,8 @@ if (require.main === module) {
 
   const m = rollup.measures;
   process.stdout.write(
-    "[quality-trend] " +
-      rollup._meta.measuredAt +
-      " v" +
-      rollup._meta.version +
+    "[quality-trend] sources last changed " +
+      rollup._meta.sourcesLastChangedAt +
       ": " +
       m.unexplainedCollapses.value +
       " unexplained collapses, " +
