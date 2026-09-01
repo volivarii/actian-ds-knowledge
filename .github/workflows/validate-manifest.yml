@@ -120,7 +120,27 @@ jobs:
       - name: Validate knowledge graph
         run: npm run validate:graph
 
-      - name: Graph drift guard (committed graph.json + quality-report.json + collisions.json must match regeneration)
+      # The graph's component nodes vs the registries they are derived from, in
+      # both directions, naming the slug that diverged.
+      #
+      # BEFORE the drift guard, deliberately. The guard exits 1 on a stale graph,
+      # which aborts the job, so downstream of it this step would never run in the
+      # one case it exists to explain -- and upstream of nothing it would be
+      # tautological, because once the guard passes the committed graph IS a fresh
+      # derive of the registries. It reads both sides from HEAD and needs no
+      # derive, so it can run first and answer with the slug that moved instead of
+      # a git diff of a 400 KB JSON.
+      #
+      # A step here rather than a test in `npm test`, for the same reason as the
+      # llms guard below: a sync commits registries before the regenerated graph,
+      # so this pair is transiently unequal on every registry-changing PR, and the
+      # sibling derive workflows run `npm test` before their auto-commit. Inside
+      # the suite it would block them from committing the dist they exist to
+      # produce, and on a fork PR it would never converge.
+      - name: Graph/registry union (every registry component is a graph node, and nothing else is)
+        run: node scripts/validate/validate-graph-registry-union.js
+
+      - name: Graph drift guard (committed graph.json + quality-report.json + collisions.json + graph.jsonld must match regeneration)
         run: |
           # 🚨 Capture and check git's own exit status BEFORE testing the value.
           # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
@@ -129,16 +149,16 @@ jobs:
           # The `if ! git diff --quiet` this replaced exited 128, which `!` inverted,
           # so it fired loudly. Converting without this traded one false all-clear for
           # another.
-          DRIFT="$(git status --porcelain --untracked-files=all -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/collisions.json)" || {
+          DRIFT="$(git status --porcelain --untracked-files=all -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/collisions.json graph/dist/graph.jsonld)" || {
             echo "::error::git status failed while checking drift"
             exit 1
           }
           if [ -n "$DRIFT" ]; then
-            echo "::error::graph/dist/{graph,quality-report,collisions}.json is stale — run 'npm run derive:graph && npm run validate:graph' and commit."
+            echo "::error::graph/dist/{graph,quality-report,collisions}.json or graph.jsonld is stale — run 'npm run derive:graph && npm run validate:graph' and commit."
             # The captured list, because `git diff` prints NOTHING for the
             # untracked leaf these guards were converted to catch.
             printf '%s\n' "$DRIFT"
-            git diff -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/collisions.json
+            git diff -- graph/dist/graph.json graph/dist/quality-report.json graph/dist/collisions.json graph/dist/graph.jsonld
             exit 1
           fi
 

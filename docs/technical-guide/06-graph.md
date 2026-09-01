@@ -5,6 +5,13 @@ it, nobody edits it, and every edge in it is derived from something a person
 authored somewhere else.
 
 *Counts read at knowledge v0.34.166 on 2026-09-01 from `graph/dist/graph.json`.*
+*Every number in this chapter is a reading of that revision, not a contract. They all
+move with each Figma sync — an additive nightly is enough to change the component
+count — and no exact count is pinned anywhere, by design: the gates that once
+did were replaced with a union join against the registries plus order-of-magnitude
+bounds, because a hand-kept count blocks a clean sync without being able to say what
+changed. Wide bounds and the join will still stop a collapse or a mass ingestion. Re-read them with
+`node -e` against the dist rather than trusting the value here.*
 
 ## What it is for
 
@@ -48,9 +55,10 @@ than typed data and there is nothing structured to carry.
 | `motion_pattern` | 8 | Anchored motion patterns |
 | `app` | 3 | Studio, Explorer, Administration |
 
-The 614 is the number that surprises people. It counts every entry in `dskit`,
-`fmkit` and `metakit`, including icons, not the 54 components someone has written
-guidance for. Read it as the registry's size, never as coverage.
+That component count is the number that surprises people. It counts every entry in
+`dskit`, `fmkit` and `metakit`, including icons, not the 54 components someone has
+written guidance for. Read it as the registry's size, never as coverage — and read
+it from the dist rather than from here, since an additive nightly moves it.
 
 ## Edge types
 
@@ -156,8 +164,15 @@ a slug and gets a component it did not expect.
 
 The graph is derived from other domains' **dist**, so `graph-derive.yml` triggers on
 their auto-commits and not only on its own inputs. The required check re-derives it
-and fails if the committed `graph.json`, `quality-report.json` or `collisions.json`
-differs.
+and fails if the committed `graph.json`, `quality-report.json`, `collisions.json` or
+`graph.jsonld` differs. Before that guard it runs
+`scripts/validate/validate-graph-registry-union.js`, which compares the committed
+registries against what was derived from them — the graph's component nodes, and
+the collisions sidecar — and names the slug that diverged, where the guard can only
+say the artifact is stale. Those comparisons are steps rather than tests because a
+sync commits registries before the regenerated dist, so the pair is transiently
+unequal on every registry-changing PR, and the sibling derive workflows run
+`npm test` before their own auto-commit.
 
 The consequence for anyone reading the Editor: the graph reflects the last merged
 state, not what you just typed. Frontmatter refs and prose links are rescanned live;
