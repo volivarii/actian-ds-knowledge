@@ -27,12 +27,28 @@ function MdLink(
 ) {
   const { href, children } = props;
   const ref = href ? resolveReference(href) : null;
+  // The preview renders inside the editor, and the hash is load-bearing now.
+  // An in-document anchor (`#radio-button`, which rehype-slug generates ids for
+  // and which content/src/patterns/forms.md already uses) would set the hash
+  // and navigate the whole app to the home screen, unmounting the file being
+  // edited. A bare slug href is worse: it is a relative path, so the click
+  // leaves the SPA for a Pages 404 and takes unflushed draft state with it.
+  // Neither is a navigation the author asked for, so neither happens.
+  const swallow = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!href || /^[a-z][a-z0-9+.-]*:/i.test(href)) return;
+    e.preventDefault();
+  };
   if (!ref) {
-    return <a href={href}>{children}</a>;
+    return (
+      <a href={href} onClick={swallow}>
+        {children}
+      </a>
+    );
   }
   return (
     <a
       href={href}
+      onClick={swallow}
       className="md-ref"
       data-ref={ref.slug}
       data-node-type={ref.type}

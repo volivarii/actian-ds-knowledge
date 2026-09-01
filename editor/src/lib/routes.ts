@@ -18,6 +18,11 @@
  */
 
 import type { ExploreTab } from "../app/HomeScreen";
+import {
+  isMetaYaml,
+  isPlainMarkdown,
+} from "./wysiwygPaths";
+import { matchFrontmatterForm } from "./frontmatterForms";
 
 export const HOME_HASH = "#/";
 
@@ -104,7 +109,41 @@ const DIRS: ReadonlyArray<readonly [string, string]> = [
 /** The one definition of a workspace address. EditorShell imports it rather
  *  than keeping a second copy: a looser pattern here would mint addresses the
  *  dispatch refuses, which reads to a person as a link that goes nowhere. */
+export /** The shape of every slug the app mints. An address carrying anything else was
+ *  not produced by this app, so it resolves to home rather than to a path the
+ *  dispatch will refuse: `#/component/Button` used to become `workspace/Button`,
+ *  which rendered the refusal banner AND got rewritten over the reader's link. */
+const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
+
+/** The one definition of a workspace address. EditorShell imports it rather
+ *  than keeping a second copy: a looser pattern here would mint addresses the
+ *  dispatch refuses, which reads to a person as a link that goes nowhere. */
 export const WORKSPACE_RE = /^workspace\/([a-z0-9][a-z0-9-]*)$/;
+
+/** A repo-relative path that cannot escape the repository. `..` is rejected
+ *  outright rather than resolved, because the browser collapses it before the
+ *  request leaves: the path the editor displays and the file it would commit to
+ *  would be different strings. */
+function isSafeRepoPath(path: string): boolean {
+  return (
+    path !== "" &&
+    !path.startsWith("/") &&
+    !path.includes("//") &&
+    !path.split("/").includes("..") &&
+    !path.split("/").includes(".")
+  );
+}
+
+/** True when the editor's dispatch will render an edit screen for this path.
+ *  `hashFor` names only these, so an address is never minted for a file that
+ *  answers with the refusal banner. */
+function isOpenable(path: string): boolean {
+  return (
+    matchFrontmatterForm(path) != null ||
+    isPlainMarkdown(path) ||
+    isMetaYaml(path)
+  );
+}
 const COMPONENT_FILE_RE = /^components\/src\/([^/]+)\/([^/]+)$/;
 
 /** Compiled once. `hashFor` runs on every navigation and again for every title,
@@ -132,15 +171,21 @@ export function hashFor(
   const ws = WORKSPACE_RE.exec(activePath);
   if (ws) return `#/component/${ws[1]}`;
 
-  for (const [segment, matcher] of DIR_MATCHERS) {
-    const m = matcher.exec(activePath);
-    if (m) return `#/${segment}/${m[1]}`;
-  }
+  // Only a file the dispatch will actually open earns a named address. A name
+  // is a promise that the link works for whoever receives it, and 17 files
+  // (every tokens.yml, the AUTHORING and README notes) had one while rendering
+  // the refusal banner.
+  if (isOpenable(activePath)) {
+    for (const [segment, matcher] of DIR_MATCHERS) {
+      const m = matcher.exec(activePath);
+      if (m) return `#/${segment}/${m[1]}`;
+    }
 
-  const cf = COMPONENT_FILE_RE.exec(activePath);
-  if (cf) {
-    const domain = COMPONENT_DOMAINS.find(([, file]) => file === cf[2]);
-    if (domain) return `#/component/${cf[1]}/${domain[0]}`;
+    const cf = COMPONENT_FILE_RE.exec(activePath);
+    if (cf) {
+      const domain = COMPONENT_DOMAINS.find(([, file]) => file === cf[2]);
+      if (domain) return `#/component/${cf[1]}/${domain[0]}`;
+    }
   }
 
   return `#/file/${activePath}`;
@@ -150,21 +195,31 @@ export function hashFor(
  *  an unreadable hash resolves to: a link that no longer parses lands the
  *  reader somewhere real rather than on a blank pane. */
 export function pathFromHash(hash: string): string | null {
-  const body = hash.replace(/^#\/?/, "");
+  // Normalise what real senders do to a link before validating it. A chat
+  // client appending a slash, or an analytics wrapper appending a query, used
+  // to resolve to home or to a file name with the query inside it, and in both
+  // cases the write effect then overwrote the address the reader was sent.
+  const body = hash
+    .replace(/^#\/?/, "")
+    .replace(/[?#].*$/, "")
+    .replace(/\/+$/, "");
   if (body === "") return null;
-
-  for (const [value, screenHash] of SCREENS) {
-    if (hash === screenHash) return value;
-  }
 
   const parts = body.split("/");
   const [head, ...rest] = parts;
 
-  if (head === "file") return rest.join("/") || null;
+  for (const [value, screenHash] of SCREENS) {
+    if (`#/${head}` === screenHash && rest.length === 0) return value;
+  }
+
+  if (head === "file") {
+    const path = rest.join("/");
+    return isSafeRepoPath(path) ? path : null;
+  }
 
   if (head === "component") {
     const [slug, domain] = rest;
-    if (!slug) return null;
+    if (!slug || !SLUG_RE.test(slug)) return null;
     if (rest.length === 1) return `workspace/${slug}`;
     if (rest.length === 2) {
       const match = COMPONENT_DOMAINS.find(([seg]) => seg === domain);
@@ -174,13 +229,16 @@ export function pathFromHash(hash: string): string | null {
   }
 
   if (rest.length !== 1) return null;
+  const slug = rest[0];
+  if (!slug || !SLUG_RE.test(slug)) return null;
   const dir = DIRS.find(([segment]) => segment === head);
-  return dir ? `${dir[1]}/${rest[0]}.md` : null;
+  return dir ? `${dir[1]}/${slug}.md` : null;
 }
 
 /** The home data tab a hash names, or `null` if it names none. */
 export function exploreTabFromHash(hash: string): ExploreTab | null {
-  const m = /^#\/explore\/([^/]+)$/.exec(hash);
+  const normalised = hash.replace(/[?#](?!\/).*$/, "").replace(/\/+$/, "");
+  const m = /^#\/explore\/([^/]+)$/.exec(normalised);
   const tab = m?.[1];
   return tab && (EXPLORE_TABS as readonly string[]).includes(tab)
     ? (tab as ExploreTab)
@@ -195,23 +253,41 @@ function titleCase(slug: string): string {
     .join(" ");
 }
 
-/** The document title for an `activePath`.
+/**
+ * The document title for a screen.
  *
- *  The name comes from the slug rather than the registry's display name,
- *  because the registry arrives asynchronously and a tab title that changes
- *  under the reader is worse than one that says "Data Product" instead of
- *  "Data product". */
-export function titleFor(activePath: string | null): string {
-  const hash = hashFor(activePath);
-  const segments = hash.replace(/^#\/?/, "").split("/").filter(Boolean);
+ * Takes the tab as well as the path, because the home data views are
+ * addressable and were otherwise all called "Actian DS Knowledge Editor", which
+ * makes four distinct pages indistinguishable in the tab strip, in history and
+ * in bookmarks. A component's domain is named too, for the same reason: an
+ * author cross-referencing Content and Usage in two tabs could not tell them
+ * apart.
+ *
+ * The name comes from the slug rather than the registry's display name, because
+ * the registry arrives asynchronously and a tab title that changes under the
+ * reader is worse than one that says "Data Product" instead of "Data product".
+ */
+export function titleFor(
+  activePath: string | null,
+  exploreTab: ExploreTab = DEFAULT_EXPLORE_TAB,
+): string {
+  const segments = hashFor(activePath, exploreTab)
+    .replace(/^#\/?/, "")
+    .split("/")
+    .filter(Boolean);
   if (segments.length === 0) return PRODUCT_NAME;
 
-  const name =
-    segments[0] === "file"
-      ? titleCase(
-          (segments[segments.length - 1] ?? "").replace(/\.(md|yml)$/, ""),
-        )
-      : titleCase(segments[1] ?? segments[0] ?? "");
+  const [head, second, third] = segments;
+  let name: string;
+  if (head === "file") {
+    name = titleCase((segments[segments.length - 1] ?? "").replace(/\.(md|yml)$/, ""));
+  } else if (segments.length === 1) {
+    name = titleCase(head ?? "");
+  } else if (head === "explore") {
+    name = titleCase(second ?? "");
+  } else {
+    name = titleCase(second ?? "") + (third ? ` ${third}` : "");
+  }
 
   return name ? `${name} \u00b7 ${PRODUCT_NAME}` : PRODUCT_NAME;
 }

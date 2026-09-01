@@ -45,7 +45,12 @@ import { loadComponentSlugs } from "./lib/componentSlugs";
 import { loadAnchorIndex } from "./lib/anchorIndex";
 import { buildSearchIndex } from "./lib/searchIndex";
 import { loadContentFiles, type ContentFile } from "./lib/contentFiles";
-import { DOMAINS, DOMAIN_LABEL, type Domain } from "./lib/workspaceState";
+import {
+  DOMAINS,
+  DOMAIN_LABEL,
+  domainPathFor,
+  type Domain,
+} from "./lib/workspaceState";
 import {
   bootstrap as bootstrapAuth,
   getSession,
@@ -116,6 +121,12 @@ export default function App() {
     (path: string | null, tab: ExploreTab | null) => {
       setActivePath(path);
       if (tab) setExploreTab(tab);
+      // Back now repaints the screen, so a dialog left open would cover a
+      // different file than the one it was opened over, and the press would
+      // read as a no-op.
+      setSettingsOpen(false);
+      setStagingOpen(false);
+      setSubmissionsOpen(false);
     },
     [],
   );
@@ -247,9 +258,12 @@ export default function App() {
         base.push({
           id: `ctx-domain-${d}`,
           label: `Switch to ${DOMAIN_LABEL[d]}`,
-          hint: `${activeSlug}/${d}.md`,
+          // domainPathFor, not a `${d}.md` template: tokens is YAML-backed,
+          // so the template built a path to a file that does not exist, and the
+          // address work turns that into a link somebody can share.
+          hint: domainPathFor(activeSlug, d),
           group: "Current component",
-          run: () => setActivePath(`components/src/${activeSlug}/${d}.md`),
+          run: () => setActivePath(domainPathFor(activeSlug, d)),
         });
       }
       base.push({

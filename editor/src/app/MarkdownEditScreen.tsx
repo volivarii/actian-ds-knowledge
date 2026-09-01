@@ -644,7 +644,18 @@ export function MarkdownEditScreen({
         <Callout.Text>
           {ghError}{" "}
           {onOpenSettings && (
-            <Link href="#" onClick={onOpenSettings}>
+            <Link
+              href="#"
+              onClick={(e) => {
+                // Without this the default action clears the fragment, and the
+                // hash is load-bearing now: the author would be ejected from
+                // the file to the home screen at the moment an error is being
+                // surfaced. MetaEditScreen's identical call site already does
+                // this.
+                e.preventDefault();
+                onOpenSettings();
+              }}
+            >
               Open settings →
             </Link>
           )}

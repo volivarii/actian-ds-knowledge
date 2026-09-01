@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   hashFor,
   pathFromHash,
@@ -24,7 +25,6 @@ const PAIRS: ReadonlyArray<readonly [string | null, string]> = [
   ["components/src/button/usage.md", "#/component/button/usage"],
   ["components/src/button/design.md", "#/component/button/design"],
   ["components/src/button/behavior.md", "#/component/button/behavior"],
-  ["components/src/button/tokens.yml", "#/component/button/tokens"],
   ["components/src/button/_meta.yml", "#/component/button/meta"],
 
   // Categories sit inside components/src but are not a component.
@@ -59,6 +59,21 @@ for (const [path, hash] of PAIRS) {
   });
 }
 
+test("hashFor: a file the editor cannot open gets no named address", () => {
+  // tokens.yml is YAML-backed and not editor-openable, so naming it promised a
+  // link that renders the refusal banner for whoever received it. The reverse
+  // direction still resolves, so an address shared before this keeps working
+  // and starts being minted again if the file ever becomes openable.
+  assert.equal(
+    hashFor("components/src/button/tokens.yml"),
+    "#/file/components/src/button/tokens.yml",
+  );
+  assert.equal(
+    pathFromHash("#/component/button/tokens"),
+    "components/src/button/tokens.yml",
+  );
+});
+
 test("hashFor: a path no segment claims falls back to the raw path", () => {
   assert.equal(
     hashFor("app-context/src/recipes/catalog-browse.md"),
@@ -85,7 +100,7 @@ test("pathFromHash: an unreadable hash lands on home, not on a blank pane", () =
 // a link that quietly opens the wrong thing.
 // ---------------------------------------------------------------------------
 
-const REPO = new URL("../../../", import.meta.url).pathname;
+const REPO = fileURLToPath(new URL("../../../", import.meta.url));
 const SRC_DIRS = [
   "components/src",
   "foundations/src",
@@ -94,7 +109,9 @@ const SRC_DIRS = [
   "app-context/src",
 ];
 
+let corpusCache: string[] | null = null;
 function corpus(): string[] {
+  if (corpusCache) return corpusCache;
   const out: string[] = [];
   const walk = (rel: string) => {
     for (const e of readdirSync(join(REPO, rel), { withFileTypes: true })) {
@@ -104,6 +121,7 @@ function corpus(): string[] {
     }
   };
   for (const d of SRC_DIRS) walk(d);
+  corpusCache = out;
   return out;
 }
 
@@ -198,6 +216,10 @@ test("pathFromHash: an explore address is still the home screen", () => {
 test("titleFor: a component reads as its name, not its slug", () => {
   assert.equal(
     titleFor("components/src/data-product/content.md"),
+    "Data Product content · Actian DS Knowledge Editor",
+  );
+  assert.equal(
+    titleFor("workspace/data-product"),
     "Data Product · Actian DS Knowledge Editor",
   );
 });
@@ -250,4 +272,86 @@ test("stateFromHash: an unreadable address is home with the default tab", () => 
     activePath: null,
     exploreTab: "coverage",
   });
+});
+
+// ---------------------------------------------------------------------------
+// Addresses as they actually arrive: from a chat client, a wiki, a person
+// retyping one. Every case below was a real defect found in review.
+// ---------------------------------------------------------------------------
+
+test("pathFromHash: a trailing slash still resolves", () => {
+  // A chat client or wiki auto-linker appending a slash was enough to send the
+  // reader to home, and the write effect then overwrote the address they were
+  // given, so they could not even read it back.
+  assert.equal(pathFromHash("#/pattern/forms/"), "content/src/patterns/forms.md");
+  assert.equal(pathFromHash("#/component/button/"), "workspace/button");
+  assert.equal(
+    pathFromHash("#/component/button/content/"),
+    "components/src/button/content.md",
+  );
+  assert.equal(pathFromHash("#/drafts/"), "inbox");
+});
+
+test("pathFromHash: a tracking query is ignored, not made part of the name", () => {
+  assert.equal(
+    pathFromHash("#/pattern/forms?utm_source=slack"),
+    "content/src/patterns/forms.md",
+  );
+  assert.equal(
+    pathFromHash("#/entity/data-product?x=1"),
+    "app-context/src/entities/data-product.md",
+  );
+});
+
+test("pathFromHash: a slug the app would never mint resolves to home", () => {
+  // Not a file that happens to be missing: a shape the app cannot produce. It
+  // used to mint `workspace/Button`, which the dispatch refuses, and the write
+  // effect then pushed a different broken address over the reader's link.
+  assert.equal(pathFromHash("#/component/Button"), null);
+  assert.equal(pathFromHash("#/component/foo_bar"), null);
+  assert.equal(pathFromHash("#/component/.."), null);
+  assert.equal(pathFromHash("#/pattern/Forms"), null);
+});
+
+test("pathFromHash: the fallback refuses to escape the repository", () => {
+  assert.equal(pathFromHash("#/file/components/src/../README.md"), null);
+  assert.equal(pathFromHash("#/file/../secrets"), null);
+  assert.equal(pathFromHash("#/file//etc/passwd"), null);
+  assert.equal(
+    pathFromHash("#/file/components/src/button/tokens.yml"),
+    "components/src/button/tokens.yml",
+  );
+});
+
+test("titleFor: two domains of one component are not the same title", () => {
+  assert.equal(
+    titleFor("components/src/button/content.md"),
+    "Button content · Actian DS Knowledge Editor",
+  );
+  assert.equal(
+    titleFor("components/src/button/usage.md"),
+    "Button usage · Actian DS Knowledge Editor",
+  );
+});
+
+test("titleFor: a home data view names itself", () => {
+  assert.equal(
+    titleFor(null, "patterns"),
+    "Patterns · Actian DS Knowledge Editor",
+  );
+  assert.equal(titleFor(null, "coverage"), "Actian DS Knowledge Editor");
+});
+
+test("corpus: a named address always resolves to something the editor opens", () => {
+  // The opposite direction of the gate below it. Without this, the table minted
+  // 17 addresses that render the refusal banner, and sharing one handed the
+  // reader a link that refuses for everybody.
+  const openable = (p: string) =>
+    matchFrontmatterForm(p) != null ||
+    isPlainMarkdown(p) ||
+    /^components\/src\/[^/]+\/_meta\.yml$/.test(p);
+  const refused = corpus().filter(
+    (p) => !hashFor(p).startsWith("#/file/") && !openable(p),
+  );
+  assert.deepEqual(refused, [], "these have an address the editor refuses");
 });

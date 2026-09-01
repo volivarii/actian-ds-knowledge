@@ -6,7 +6,12 @@ import { Sidebar } from "./Sidebar";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
-import { isAppContextFile, isCategoryFile } from "../lib/wysiwygPaths";
+import {
+  isAppContextFile,
+  isCategoryFile,
+  isMetaYaml,
+  isPlainMarkdown,
+} from "../lib/wysiwygPaths";
 import { matchFrontmatterForm } from "../lib/frontmatterForms";
 import { RefusalBanner } from "./RefusalBanner";
 import { HomeScreen, type ExploreTab } from "./HomeScreen";
@@ -55,40 +60,14 @@ type ExploreTabControl =
 
 type EditorShellPropsWithTab = EditorShellProps & ExploreTabControl;
 
-/**
- * True for source markdown files routed to MarkdownEditScreen (the raw CodeMirror
- * or WYSIWYG body editor). Matches accessibility and component domain files,
- * excluding structural meta-files.
- *
- * NOTE: intentionally does NOT match any content/src/**.md or foundations/src/*.md
- * anymore — ALL of those are form-routed via the frontmatterForms registry (see
- * `matchFrontmatterForm`, checked BEFORE this function). That now includes
- * root-level content files (global-guidelines.md, format-spec.md); a form-routed
- * file with no frontmatter still lands in MarkdownEditScreen, but via
- * FrontmatterBodyEditScreen's no-frontmatter fallback, not through this function.
- */
-export function isPlainMarkdown(path: string): boolean {
-  return (
-    (/^accessibility\/src\/[^/]+\.md$/.test(path) ||
-      /^components\/src\/(?!categories\/|AUTHORING\.md|EDITING-GUIDE\.md)[^/]+\/[^/]+\.md$/.test(
-        path,
-      )) &&
-    !/AUTHORING\.md$/.test(path)
-  );
-}
-
 // Re-exported from lib/wysiwygPaths so existing importers (and tests) keep
 // working; the canonical definitions live there to avoid a circular import.
-export { isAppContextFile, isCategoryFile };
+export { isAppContextFile, isCategoryFile, isMetaYaml, isPlainMarkdown };
 
 // Category files (components/src/categories/<slug>.md) route to the
 // frontmatter form editor, not the raw markdown editor — so they are
 // deliberately excluded from isPlainMarkdown above. isCategoryFile is
 // imported from lib/wysiwygPaths and re-exported above.
-
-function isMetaYaml(path: string): boolean {
-  return /^components\/src\/[^/]+\/_meta\.yml$/.test(path);
-}
 
 function workspaceSlug(path: string): string | null {
   const m = WORKSPACE_RE.exec(path);

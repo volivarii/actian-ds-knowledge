@@ -25,6 +25,10 @@ on:
       - 'foundations/src/**'
       - 'accessibility/src/**'
       - 'content/src/**'
+      # routes.test.ts walks this tree too. Without it, a rename under
+      # app-context never triggers this lane, so the address round-trip and
+      # collision gates never run and every #/feature/ address can die green.
+      - 'app-context/src/**'
       - 'components/src/**'
       - 'domains.json'
       - 'scripts/lib/wysiwyg-registry.js'
