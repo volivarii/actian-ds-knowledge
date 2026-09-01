@@ -10,9 +10,12 @@
 // relocated styling assets, and every fragment from deriveFragment.
 //
 // deriveCanonical() takes no argument and returns
-// { css, pageCss, fragments, cem, manifest }:
-//   css: the shared stylesheet, concat(tokens.css, ds-fonts.css, ds-base.css)
-//     in the order the render read path uses.
+// { css, fontsCss, pageCss, fragments, cem, manifest }:
+//   css: the shared component stylesheet, concat(tokens.css, ds-base.css) in the
+//     order the render read path uses. Carries NO font payload.
+//   fontsCss: the embedded faces (ds-fonts.css verbatim), emitted separately as
+//     render-fonts.css. A caller building standalone offline files inlines this
+//     alongside css; one with its own font pipeline takes css alone.
 //   pageCss: the standalone-preview page chrome build-bundle's @dsCard
 //     projection re-adds around a fragment (see PAGE_CSS).
 //   fragments: { slug: html }, each slug's markup from the relocated renderer
@@ -44,7 +47,10 @@ var matrix = require("../../components/render/renderer/matrix.js");
 var RENDER_SLUGS = matrix.RENDER_SLUGS;
 var groupFor = matrix.groupFor;
 
-var MANIFEST_SCHEMA_VERSION = "1.0.0";
+// 1.1.0: the envelope gained `fontsCss`. Additive, so a consumer reading 1.0.0
+// keeps working; the bump is what lets one DETECT the new artifact instead of
+// probing for a file.
+var MANIFEST_SCHEMA_VERSION = "1.1.0";
 var CEM_SCHEMA_VERSION = "1.0.0";
 var DIST_DIR_REL = "components/render/dist";
 var REPO_ROOT = path.resolve(__dirname, "..", "..");
@@ -269,19 +275,30 @@ function buildDeclaration(slug, styleText) {
 // switch: same 35 slugs, and groupFor matched the seeds' @dsCard group marker
 // for all 35 with zero differences.
 function deriveCanonical() {
-  // render.css is built from the assets knowledge owns: tokens.css + ds-fonts.css
-  // + ds-base.css, in the order the render read path uses. Phase 0's byte-identity
+  // render.css is built from the assets knowledge owns: tokens.css + ds-base.css,
+  // in the order the render read path uses. ds-fonts.css is read here too but
+  // emitted separately, see the note on fontsCss below. Phase 0's byte-identity
   // guard against the deduped seed stylesheet retired with the seeds at phase 3:
   // its claim ("the relocated assets still match the frozen capture") was
   // migration safety, and the migration completed and was verified end-to-end at
   // phase 2.
+  // ds-fonts.css is emitted SEPARATELY. It is six base64 woff2 subsets, 336 KB
+  // of the 478 KB this sheet used to be: 70% of the stylesheet was type, not
+  // component CSS. That is what broke the 256 KiB card cap, and splitting the
+  // sheet per component would not have touched it, because every per-component
+  // slice would still have carried the fonts.
+  //
+  // The offline contract ("NO network font loads") is kept, as an OPT-IN: a
+  // consumer needing standalone files inlines both artifacts, which is what
+  // build-bundle.js does. A consumer with its own font pipeline, such as the
+  // docs site, takes render.css alone and no longer downloads the type library
+  // to show one button.
+  var fontsCss = fs.readFileSync(
+    path.join(REPO_ROOT, "components", "render", "renderer", "ds-fonts.css"),
+    "utf8",
+  );
   var assetBase =
     fs.readFileSync(path.join(REPO_ROOT, "tokens", "tokens.css"), "utf8") +
-    "\n" +
-    fs.readFileSync(
-      path.join(REPO_ROOT, "components", "render", "renderer", "ds-fonts.css"),
-      "utf8",
-    ) +
     "\n" +
     fs.readFileSync(
       path.join(REPO_ROOT, "components", "render", "renderer", "ds-base.css"),
@@ -293,7 +310,15 @@ function deriveCanonical() {
   // seeds' extractStyle produced: every <style> block joined, then comments
   // stripped. The seeds' first block is now the asset base, their second the page
   // chrome. Measured dist-neutral: 0 of 35 slugs change their token set.
-  var cemStyle = stripComments(assetBase + "\n" + PAGE_CSS);
+  // The CEM scan reads the same BYTES it always did, though no longer in the
+  // same order: it was tokens + fonts + ds-base, it is now tokens + ds-base +
+  // fonts. custom-elements.json is byte-identical across the change, and it can
+  // be, because buildDeclaration's scan is order-insensitive. Stated rather than
+  // implied: the guarantee rests on that property, so anyone making the scan
+  // order-sensitive has to revisit this line.
+  var cemStyle = stripComments(
+    assetBase + "\n" + fontsCss + "\n" + PAGE_CSS,
+  );
 
   var fragments = {};
   var modules = [];
@@ -360,11 +385,13 @@ function deriveCanonical() {
     generatedBy: "scripts/render/derive-canonical.js",
     cem: "custom-elements.json",
     css: "render.css",
+    fontsCss: "render-fonts.css",
     renders: renderIndex,
   };
 
   return {
     css: css,
+    fontsCss: fontsCss,
     pageCss: PAGE_CSS,
     fragments: fragments,
     cem: cem,
@@ -379,6 +406,7 @@ function writeDist(distDir) {
   var out = deriveCanonical();
   fs.mkdirSync(path.join(distDir, "fragments"), { recursive: true });
   fs.writeFileSync(path.join(distDir, "render.css"), out.css);
+  fs.writeFileSync(path.join(distDir, "render-fonts.css"), out.fontsCss);
   Object.keys(out.fragments).forEach(function (slug) {
     fs.writeFileSync(
       path.join(distDir, "fragments", slug + ".html"),

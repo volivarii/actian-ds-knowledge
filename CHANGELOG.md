@@ -20,6 +20,29 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The embedded font faces are their own artifact, because they were 70% of the component
+  stylesheet.** ([#617](https://github.com/volivarii/actian-ds-knowledge/pull/617)) `render.css` was 478 KB, of which **336 KB was six base64 woff2 subsets**. It now
+  emits as `render.css` (141 KB of component CSS) plus `render-fonts.css` (337 KB of type). A
+  consumer with its own font pipeline, such as the docs site, takes the component sheet alone instead
+  of downloading the whole type library to show one button.
+
+  This corrects the recorded plan rather than executing it. The move on the roadmap was to split the
+  sheet PER COMPONENT, and that would not have touched the weight: every per-component slice would
+  still have carried the fonts, so the total would have grown. Measuring the file first is what found
+  that, and the split itself was nearly free because `render.css` was already `tokens.css +
+  ds-fonts.css + ds-base.css` concatenated.
+
+  The offline contract (`NO network font loads`) is kept and made opt-in rather than dropped:
+  `selfContainedCard` takes the faces as an explicit parameter and inlines both, so a standalone card
+  is byte-for-byte what it was. That test was mutated to drop the payload and watched to fail, after
+  a first version of it passed for the wrong reason: five arguments were passed to a four-parameter
+  function, so the payload landed in the `pageCss` slot and the assertion held against a card that
+  was accidentally correct.
+
+  **This does not clear the 256 KiB standalone-card cap.** A card that keeps the offline faces
+  measures 479 KB against 142 KB without them, so clearing the cap needs a decision about whether a
+  standalone card keeps that contract. That is the bundle's call and is not made here.
+
 - **The output-quality measures carry a date and a direction, because every one of them had only a
   ratchet ([#616](https://github.com/volivarii/actian-ds-knowledge/pull/616)) and all three drifted the wrong way for three weeks with CI green.** A ratchet blocks a
   regression on a value the baseline already knows and deliberately skips what it cannot recognise, a
