@@ -36,6 +36,12 @@ interface EditorShellProps {
   /** Focuses the header's GlobalSearch input (owned by App). Used by the
    *  HomeScreen's "Find a component" action. */
   onFocusSearch?: () => void;
+  /** Which Explore data view the home screen shows. Owned by App, because the
+   *  URL carries it and one component owns everything the URL carries. It
+   *  still survives navigating into a file and back, since App outlives the
+   *  HomeScreen that reads it. */
+  exploreTab?: ExploreTab;
+  onExploreTabChange?: (tab: ExploreTab) => void;
 }
 
 /**
@@ -96,6 +102,12 @@ export function EditorShell({
   setActivePath,
   onOpenStaging,
   onFocusSearch,
+  // Passed straight through, undefined included: HomeScreen falls back to its
+  // own state when nothing supplies these, so a shell rendered without them
+  // (tests, and any future embedding) still has a working tab strip. Defaulting
+  // `exploreTab` here would hand HomeScreen a value with no setter behind it.
+  exploreTab,
+  onExploreTabChange,
 }: EditorShellProps) {
   const setActivePathSafe = setActivePath ?? (() => {});
   const [ghError, setGhError] = useState<string | null>(null);
@@ -110,13 +122,6 @@ export function EditorShell({
       return null;
     }
   }, [octokit]);
-
-  // Owned here (not in HomeScreen) so the chosen Explore tab survives
-  // navigating into a file and back — HomeScreen unmounts on every open.
-  // Rule of thumb: navigation context (which data view) persists at this
-  // level; transient help state (the how-it-works disclosure) deliberately
-  // stays local to HomeScreen and resets.
-  const [exploreTab, setExploreTab] = useState<ExploreTab>("coverage");
 
   const [pendingPaths, setPendingPaths] = useState<Set<string>>(() =>
     draftStoreSingleton.allPaths(),
@@ -175,7 +180,7 @@ export function EditorShell({
         onOpenFile={setActivePathSafe}
         onFindComponent={onFocusSearch}
         exploreTab={exploreTab}
-        onExploreTabChange={setExploreTab}
+        onExploreTabChange={onExploreTabChange}
       />
     );
   } else if (activePath === "inbox") {

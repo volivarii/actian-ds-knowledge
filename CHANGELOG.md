@@ -18,6 +18,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Added
+
+- **Every component, entity and pattern in the Knowledge Editor has an address.** The editor carries
+  its navigation state in the URL hash, so a page can be linked to, bookmarked and reopened, the
+  browser's Back and Forward buttons move through it, and the tab title names the page rather than
+  the product. The address speaks the navigation's language (`#/component/button/content`,
+  `#/entity/data-product`, `#/pattern/forms`, `#/explore/patterns`) rather than the repository's, so
+  it survives a later change to the page model; anything the segment table does not claim takes a
+  `#/file/<repo path>` fallback that still round-trips. A hash rather than a path because the editor
+  is served from static GitHub Pages with no `404.html`, where a real path would 404 on exactly the
+  deep load the address exists to serve. Three gates walk the real corpus rather than a list: every
+  file round-trips through its hash, no two files share an address, and everything the editor's own
+  dispatch can open has a named one.
+
 ### Changed
 
 - **The output-quality measures carry a date and a direction, because every one of them had only a

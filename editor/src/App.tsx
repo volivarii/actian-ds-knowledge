@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Box,
@@ -16,6 +16,8 @@ import "./styles/editor-chrome.css";
 import "./styles/base.css";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { EditorShell } from "./app/EditorShell";
+import type { ExploreTab } from "./app/HomeScreen";
+import { useHashRoute } from "./lib/useHashRoute";
 import { FreshnessChip } from "./app/FreshnessChip";
 import { SignInScreen } from "./app/SignInScreen";
 import { SaveStateIndicator } from "./app/SaveStateIndicator";
@@ -81,6 +83,11 @@ function GearIcon() {
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activePath, setActivePath] = useState<string | null>(null);
+  // The home screen's data tab lives here rather than in EditorShell because
+  // the URL carries it, and one component owns everything the URL carries.
+  // It still survives navigating into a file and back: App outlives the
+  // HomeScreen that reads it.
+  const [exploreTab, setExploreTab] = useState<ExploreTab>("coverage");
   const [stagingOpen, setStagingOpen] = useState(false);
   const [submissionsOpen, setSubmissionsOpen] = useState(false);
   const [submissionRows, setSubmissionRows] = useState<SubmissionRow[]>([]);
@@ -92,6 +99,16 @@ export default function App() {
     const unsub = subscribe(setSession);
     return unsub;
   }, []);
+
+  // The address and the navigation state stay in step, in both directions.
+  const handleRoute = useCallback(
+    (path: string | null, tab: ExploreTab | null) => {
+      setActivePath(path);
+      if (tab) setExploreTab(tab);
+    },
+    [],
+  );
+  useHashRoute({ activePath, exploreTab, onNavigate: handleRoute });
 
   const saveState = useSaveState(activePath, draftStoreSingleton);
   const cartEntries = useCart(submissionCartSingleton);
@@ -329,6 +346,8 @@ export default function App() {
               setActivePath={setActivePath}
               onOpenStaging={() => setStagingOpen(true)}
               onFocusSearch={() => searchInputRef.current?.focus()}
+              exploreTab={exploreTab}
+              onExploreTabChange={setExploreTab}
             />
           )}
         </Box>
