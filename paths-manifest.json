@@ -635,6 +635,13 @@
       "generator": "scripts/render/derive-canonical.js",
       "description": "The shared canonical-render stylesheet, inlined once and combined with each component fragment."
     },
+    "components.render.fontsCss": {
+      "path": "components/render/dist/render-fonts.css",
+      "type": "css",
+      "origin": "ci",
+      "generator": "scripts/render/derive-canonical.js",
+      "description": "The embedded latin woff2 subsets (Roboto for the DS hi-fi text face, Inter for the FM tier) as base64 data URIs, held apart from the component stylesheet: it is 337 KB of type against render.css's 141 KB of CSS. A consumer that needs standalone offline files inlines this alongside render.css, which is what build-bundle.js does, and a card built that way measures about 479 KB. A consumer with its own font pipeline, such as a docs site, takes render.css alone and the type falls back to the system stack."
+    },
     "components.render.fidelityReport": {
       "path": "components/render/dist/fidelity-report.json",
       "type": "json",
