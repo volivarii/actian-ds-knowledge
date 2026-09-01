@@ -246,7 +246,26 @@ function writeFile(outDir, rel, contents) {
 // the derive's own PAGE_CSS constant), so nothing is hardcoded here.
 // render.css deliberately excludes the page chrome, because consumers embed
 // render.css into their own page and must not inherit this body framing.
-function selfContainedCard(css, pageCss, fragment, group) {
+// fontsCss is a SEPARATE parameter because render.css no longer carries the
+// font payload: it is 336 KB of base64 woff2 that no consumer with its own
+// font pipeline should download to show one component. A standalone card is
+// exactly the consumer that still needs it, so it inlines both and the
+// offline contract ("NO network font loads") is unchanged here.
+function selfContainedCard(css, fontsCss, pageCss, fragment, group) {
+  // Arity guard. Inserting a parameter into a 4-argument call shifts every
+  // later one silently, and it already happened once: build-contact-sheet.js
+  // kept the old call, so pageCss landed here, the fragment landed in pageCss,
+  // and every sign-off card emitted group="undefined" with the component markup
+  // injected inside <style>. Its test stayed green because it only grepped slug
+  // names, which appear in the headings either way. A shifted call now says so.
+  if (typeof fontsCss !== "string") {
+    throw new TypeError(
+      "selfContainedCard(css, fontsCss, pageCss, fragment, group): fontsCss must " +
+        "be a string, got " +
+        typeof fontsCss +
+        ". A 4-argument call is the pre-split signature and its arguments are shifted.",
+    );
+  }
   return (
     '<!-- @dsCard group="' +
     group +
@@ -254,6 +273,8 @@ function selfContainedCard(css, pageCss, fragment, group) {
     '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
     "<style>" +
+    fontsCss +
+    "\n" +
     css +
     "\n" +
     pageCss +
@@ -292,6 +313,7 @@ function buildBundle(outDir, opts) {
     var htmlRel = path.join(r.group, r.slug + ".html");
     var card = selfContainedCard(
       canonical.css,
+      canonical.fontsCss,
       canonical.pageCss,
       canonical.fragments[r.slug],
       r.group,

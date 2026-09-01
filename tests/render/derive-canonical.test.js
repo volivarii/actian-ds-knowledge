@@ -330,7 +330,7 @@ test('deriveCanonical: templates retired, no render is source "derived"', functi
   assert.equal(bySlug["button"].source, "rendered");
 });
 
-test("deriveCanonical: render.css base is exactly concat(tokens, fonts, ds-base) from the relocated assets", function () {
+test("deriveCanonical: render.css base is exactly concat(tokens, ds-base), with the fonts in their own artifact", function () {
   // Phase 0 (renderer relocation): the shared render.css base is sourced from
   // components/render/renderer/{ds-fonts,ds-base}.css (+ tokens.css), in the
   // order the render read path uses. This is the assertion that keeps the derive
@@ -348,26 +348,34 @@ test("deriveCanonical: render.css base is exactly concat(tokens, fonts, ds-base)
       ? out.css.slice(0, out.css.indexOf(marker))
       : out.css;
   var root = path.resolve(__dirname, "../..");
+  // ds-fonts.css is NO LONGER part of this sheet: it was 336 KB of the 478 KB,
+  // so 70% of the component stylesheet was type. It is asserted below as its own
+  // artifact, so the split stays a partition rather than a quiet deletion.
   var expect =
     fs.readFileSync(path.join(root, "tokens/tokens.css"), "utf8") +
-    "\n" +
-    fs.readFileSync(
-      path.join(root, "components/render/renderer/ds-fonts.css"),
-      "utf8",
-    ) +
     "\n" +
     fs.readFileSync(
       path.join(root, "components/render/renderer/ds-base.css"),
       "utf8",
     );
+  assert.equal(base, expect, "render.css base equals concat(tokens, ds-base)");
+  // Non-vacuity: an empty read on both assets would make the equality above
+  // trivially true while shipping a blank stylesheet. The threshold is lower
+  // than it was because the fonts left, and it is still an order of magnitude
+  // above an empty read.
+  assert.ok(base.length > 50000, "the asset-derived base is non-trivial");
+
+  // The other half of the partition, asserted here so no future edit can drop
+  // the payload and still satisfy the equality above.
   assert.equal(
-    base,
-    expect,
-    "render.css base equals concat(tokens, fonts, ds-base)",
+    out.fontsCss,
+    fs.readFileSync(
+      path.join(root, "components/render/renderer/ds-fonts.css"),
+      "utf8",
+    ),
+    "the fonts artifact is exactly ds-fonts.css",
   );
-  // Non-vacuity: an empty read on all three assets would make the equality above
-  // trivially true while shipping a blank stylesheet.
-  assert.ok(base.length > 100000, "the asset-derived base is non-trivial");
+  assert.ok(out.fontsCss.length > 100000, "the fonts payload is non-trivial");
 });
 
 // ds-base.css must carry a rule for every tag-read-only variant value the CAPTURE
