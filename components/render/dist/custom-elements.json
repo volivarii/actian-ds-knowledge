@@ -1628,6 +1628,15 @@
               "name": "--zen-color-icon-error"
             },
             {
+              "name": "--zen-color-neutral-50"
+            },
+            {
+              "name": "--zen-color-primary-25"
+            },
+            {
+              "name": "--zen-color-primary-50"
+            },
+            {
               "name": "--zen-color-text-default"
             },
             {
@@ -2799,6 +2808,9 @@
             },
             {
               "name": "--zen-color-icon-default"
+            },
+            {
+              "name": "--zen-color-icon-primary"
             },
             {
               "name": "--zen-color-text-secondary"

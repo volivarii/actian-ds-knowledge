@@ -6,14 +6,14 @@ Sources last changed **2026-09-02**. Values are derived from the tree this ran a
 
 | Measure | Value | Since last change |
 | --- | --- | --- |
-| Unexplained variant collapses | 54 | flat (was 54) |
+| Unexplained variant collapses | 44 | improving (was 54) |
 | FM variant values that render alike (unexplained) | 55 | flat (was 55) |
 | FM modifier classes with no rule | 56 | flat (was 56) |
-| Inline-style hex (cannot re-theme) | 31 | no baseline yet |
-| Verified declarations (oracle numerator) | 80 | flat (was 80) |
-| Examined declarations (oracle denominator) | 410 | flat (was 410) |
+| Inline-style hex (cannot re-theme) | 39 | no baseline yet |
+| Verified declarations (oracle numerator) | 85 | improving (was 80) |
+| Examined declarations (oracle denominator) | 417 | changed (was 410) |
 
-Oracle coverage is **80 of 410** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
+Oracle coverage is **85 of 417** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
 
 ## Oracle numerator over time
 
@@ -48,11 +48,11 @@ Oracle coverage is **80 of 410** declarations. It is stated as a pair on purpose
 
 ## Where the inline hex is
 
+- `digram-item-types` 10
 - `metamodel` 10
 - `lineage` 6
-- `digram-item-types` 5
 - `digram-topic` 5
+- `search-result-card` 4
+- `card-for-perimeter` 2
 - `lineage-grouped-node` 2
-- `search-result-card` 2
-- `card-for-perimeter` 1
 

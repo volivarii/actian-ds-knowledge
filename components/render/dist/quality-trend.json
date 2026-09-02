@@ -7,8 +7,8 @@
   },
   "measures": {
     "unexplainedCollapses": {
-      "value": 54,
-      "direction": "unchanged",
+      "value": 44,
+      "direction": "better",
       "previous": 54
     },
     "fmUnexplainedCollapses": {
@@ -22,30 +22,30 @@
       "previous": 56
     },
     "inlineHex": {
-      "value": 31,
+      "value": 39,
       "direction": "unknown",
       "previous": null
     },
     "oracleVerified": {
-      "value": 80,
-      "direction": "unchanged",
+      "value": 85,
+      "direction": "better",
       "previous": 80
     },
     "oracleExamined": {
-      "value": 410,
-      "direction": "unchanged",
+      "value": 417,
+      "direction": "changed",
       "previous": 410
     }
   },
   "detail": {
     "inlineHexBySlug": {
-      "card-for-perimeter": 1,
-      "digram-item-types": 5,
+      "card-for-perimeter": 2,
+      "digram-item-types": 10,
       "digram-topic": 5,
       "lineage": 6,
       "lineage-grouped-node": 2,
       "metamodel": 10,
-      "search-result-card": 2
+      "search-result-card": 4
     },
     "fmUnownedModifiers": [
       {
