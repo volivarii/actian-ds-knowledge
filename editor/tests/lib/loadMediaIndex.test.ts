@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import "../setup-dom";
-import { loadMediaRoles, AUTHOR_ROLES } from "../../src/lib/loadMediaIndex";
+import { loadMediaRoles, loadMediaPreviewPath, AUTHOR_ROLES } from "../../src/lib/loadMediaIndex";
 
 const INDEX = {
   _schema_version: 1,
@@ -124,4 +124,34 @@ test("loadMediaRoles: normalizes a single-string role value (multi=false)", asyn
   assert.equal(entry.role, "parts");
   assert.equal(entry.multi, false);
   assert.deepEqual(entry.paths, ["components/dist/media/widget/parts.webp"]);
+});
+
+test("loadMediaPreviewPath: the preview frame first, the default capture second, null when neither", async () => {
+  globalThis.sessionStorage.clear();
+  assert.equal(
+    await loadMediaPreviewPath(fakeGh(INDEX), "alert-banner"),
+    "components/dist/media/alert-banner/preview.webp",
+  );
+  globalThis.sessionStorage.clear();
+  const defaultOnly = { _schema_version: 1, media: { chip: { default: "components/dist/media/chip/default.webp" } } };
+  assert.equal(await loadMediaPreviewPath(fakeGh(defaultOnly), "chip"), "components/dist/media/chip/default.webp");
+  globalThis.sessionStorage.clear();
+  assert.equal(await loadMediaPreviewPath(fakeGh(INDEX), "no-such"), null);
+});
+
+test("loadMediaPreviewPath: an index that cannot be read rejects naming the index, it does not read as absence", async () => {
+  globalThis.sessionStorage.clear();
+  const gh = {
+    repos: {
+      getContent: async () => {
+        const err = new Error("rate limited") as Error & { status: number };
+        err.status = 403;
+        throw err;
+      },
+    },
+  } as any;
+  await assert.rejects(
+    () => loadMediaPreviewPath(gh, "button"),
+    (err: Error) => /_index\.json/.test(err.message),
+  );
 });

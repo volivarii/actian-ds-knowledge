@@ -113,7 +113,7 @@ test("the render manifest names the fonts artifact", function () {
   assert.strictEqual(out.manifest.css, "render.css");
   assert.match(
     out.manifest.schemaVersion,
-    /^1\.1\./,
-    "the envelope version moved when the envelope gained a key",
+    /^1\.2\./,
+    "the envelope version moved when the envelope gained a key (1.1 for fontsCss, 1.2 for pageCss)",
   );
 });

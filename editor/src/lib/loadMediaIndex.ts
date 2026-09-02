@@ -10,7 +10,8 @@ import { getTextFile } from "../app/githubApi";
 
 // The roles an author may place in a guideline (schema enum at
 // schemas/guideline-component.json). preview/default are consumer-side
-// (hero thumbnail / fidelity oracle) and are intentionally excluded.
+// (hero thumbnail / fidelity oracle) and are intentionally excluded here;
+// loadMediaPreviewPath below is the consumer-side read of them.
 export const AUTHOR_ROLES = [
   "parts",
   "variations",
@@ -44,7 +45,12 @@ export async function loadMediaRoles(
   slug: string,
 ): Promise<MediaRoleEntry[]> {
   if (!slug) return [];
-  const media = await loadIndex(gh);
+  let media: MediaMap;
+  try {
+    media = await loadIndex(gh);
+  } catch {
+    return []; // the picker offers nothing rather than blocking authoring
+  }
   const entry = media[slug];
   if (!entry) return [];
   const out: MediaRoleEntry[] = [];
@@ -60,18 +66,29 @@ export async function loadMediaRoles(
   return out;
 }
 
+// Throws, naming the index, when it cannot be read: a failed read must not
+// come back as "this component has no media". loadMediaRoles keeps its lenient
+// shape (an empty picker), the consumer-side read below propagates.
 async function loadIndex(gh: Octokit): Promise<MediaMap> {
   const cached = readCache();
   if (cached) return cached.media;
+  let text: string;
   try {
-    const text = await getTextFile(gh, INDEX_PATH);
-    const json = JSON.parse(text) as { media?: MediaMap };
-    const media = json.media ?? {};
-    writeCache(media);
-    return media;
-  } catch {
-    return {};
+    text = await getTextFile(gh, INDEX_PATH);
+  } catch (err) {
+    const why =
+      (err as { status?: number }).status === 404 ? "not found" : (err as Error).message;
+    throw new Error(`Could not read ${INDEX_PATH}: ${why}`);
   }
+  let json: { media?: MediaMap };
+  try {
+    json = JSON.parse(text) as { media?: MediaMap };
+  } catch (err) {
+    throw new Error(`${INDEX_PATH} is not JSON: ${(err as Error).message}`);
+  }
+  const media = json.media ?? {};
+  writeCache(media);
+  return media;
 }
 
 function readCache(): CachedEntry | null {
@@ -101,4 +118,21 @@ function writeCache(media: MediaMap): void {
   } catch {
     /* silent */
   }
+}
+
+/**
+ * Consumer-side: the Figma capture to show beside a component's render.
+ * The `preview` frame first, the isolated `default` variant second, null when
+ * the index holds neither. Same session cache as the author roles.
+ */
+export async function loadMediaPreviewPath(
+  gh: Octokit,
+  slug: string,
+): Promise<string | null> {
+  if (!slug) return null;
+  const media = await loadIndex(gh);
+  const entry = media[slug];
+  if (!entry) return null;
+  const pick = entry.preview ?? entry.default;
+  return typeof pick === "string" && pick.length > 0 ? pick : null;
 }

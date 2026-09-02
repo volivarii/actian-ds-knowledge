@@ -26,6 +26,7 @@ import {
 } from "@radix-ui/themes";
 import * as Accordion from "@radix-ui/react-accordion";
 import { WorkspaceDomainEditor } from "./WorkspaceDomainEditor";
+import { CanonicalRenderPanel } from "./CanonicalRenderPanel";
 import {
   DOMAIN_HINT,
   DOMAIN_LABEL,
@@ -183,6 +184,15 @@ export function AuthoringWorkspace({
       </Callout.Root>
 
       <Heading size="3" mt="4" mb="2">
+        Render
+      </Heading>
+      <Text size="1" color="gray" as="p" mb="3">
+        The component as the design system draws it, beside the Figma capture
+        it is checked against.
+      </Text>
+      <CanonicalRenderPanel slug={slug} octokit={octokit} />
+
+      <Heading size="3" mt="5" mb="2">
         Authoring tasks
       </Heading>
       <Text size="1" color="gray" as="p" mb="3">
