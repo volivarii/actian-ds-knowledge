@@ -20,6 +20,44 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **The canonical render ships the component, not the photo harness**
+  ([#637](https://github.com/volivarii/actian-ds-knowledge/pull/637)). `deriveFragment` emitted the
+  plugin's `capture-seed.js` gallery — a flex-wrap row of columns, each holding the component plus a
+  caption `<span>` — markup built to be screenshotted, which had since become the artifact the
+  plugin, the Claude Design bundle and the editor's render panel all ship. The nested flex sizing
+  shrink-wrapped every non-inline component: `.ds-action-bar` drew at content width while its own
+  rule says `width:100%`, and 33 of 61 component roots are non-inline, including all 7 that declare
+  `width:100%` (`action-bar`, `appearance`, `collapse`, `drawer`, `graphic`, `modal`, `table`). A
+  cell is now a bare block-level `<div data-render-cell="label">` inside a column root, so a
+  component's own rule decides its width, and the unthemed `font:12px/1.4 sans-serif` caption no
+  longer ships. Every matrix cell is preserved — `fidelity-check.js` reads the class set off the
+  whole fragment, so dropping cells would orphan the CSS owners that claim those modifiers.
+  **Consumer-visible:** the 56 vendored fragments change shape on the next vendor sync. No consumer
+  parses them today; the plugin's fidelity harness builds its own `#fidelity-root`, which this
+  preserves.
+
+- **alert-banner's four types are four colours again**
+  ([#637](https://github.com/volivarii/actian-ds-knowledge/pull/637)). Every `.ds-alert--*` modifier
+  set only `border-left-color`, with success pointing at `--zen-color-icon-primary` and warning at
+  `--zen-color-icon-error`, so Success rendered as Info's blue and Warning as Danger's red — asking
+  for one variant returned another, #550's silent-substitution shape one layer down in tokens. Both
+  substitutions carried a comment claiming the right token did not exist; `--zen-color-icon-success`,
+  `--zen-color-icon-warning` and the whole `--zen-color-bg-{info,success,warning,error}` set are
+  defined in `tokens.css` and always were. Each type now tints the band with its own background and
+  colours its icon with its own token, and the accent strip that existed only to carry the type
+  colour is gone.
+
+- **The editor's render panel compares against the isolated default variant**
+  ([#637](https://github.com/volivarii/actian-ds-knowledge/pull/637)). The panel picked
+  `entry.preview ?? entry.default`, so it put the render beside the component's Figma *doc page* —
+  many variants at page scale — rather than beside the default variant captured on its own. 198
+  slugs carry a `default` and 88 carry a `preview`, so the same column meant two different things
+  depending on which component was open, while the caption claimed the render was always what needed
+  fixing. `loadMediaPreviewPath` becomes `loadMediaCapture`, prefers `default`, and returns the role
+  so the column names what it is showing and only makes the like-for-like claim when it is one.
+
+### Fixed
+
 - **The canonical derive prunes a fragment whose slug left the manifest**
   ([#635](https://github.com/volivarii/actian-ds-knowledge/pull/635), closes #520, the fragments half
   of #572). `derive-canonical.js` wrote one fragment per rendered slug and never deleted one, so a
