@@ -7,11 +7,19 @@
 // workspace and "ready" in the coverage table one screen apart, and how one
 // record type ended up called Features, Patterns and `#/feature/` at once.
 //
-// Keys are the substrate's own identifiers (graph node types, graph edge
-// types, domain status values), so this file is a translation layer and never
-// a second source of truth. `tests/lib/nomenclature.test.ts` asserts the join
-// against the real graph in both directions: a node or edge type with no word
+// THING_LABEL and LINK_FAMILY are keyed by the substrate's own identifiers
+// (graph node and edge types), so for those this file is a translation layer
+// and never a second source of truth: `tests/lib/nomenclature.test.ts` asserts
+// the join against the real graph in BOTH directions — a type with no word
 // fails, and a word declared for a type the graph never emits fails too.
+//
+// STATE_LABEL is the exception, and it is worth being honest about. Its keys
+// (`empty`, `draft`) are NOT substrate identifiers: the substrate says
+// `not-started` and, depending on which loader you read, `authored` or `draft`.
+// So this map is a genuine second vocabulary, and the join it needs is to the
+// TYPES that consume it — enforced below by a compile-time exhaustiveness
+// check against both status unions, because a runtime graph join is not
+// available for something the graph does not carry.
 
 /** Graph node types, from `graph/dist/graph.json`. */
 export type ThingKey =
@@ -62,6 +70,30 @@ export const STATE_LABEL: Record<StateKey, string> = {
   draft: "Draft",
   approved: "Approved",
   inherited: "Inherited",
+};
+
+/**
+ * The substrate's own status values, from the two loaders that carry them.
+ * Restated here ONLY so the mapping below can be checked at compile time; if a
+ * loader gains a status, `STATE_FOR_STATUS` stops being exhaustive and the
+ * build fails rather than a screen rendering a blank badge.
+ */
+export type SubstrateStatus =
+  | "not-started"
+  | "authored"
+  | "draft"
+  | "approved"
+  | "inherited";
+
+/** Every substrate status, mapped to the one word a reader sees. Consumers
+ *  read THIS rather than building their own Record, which is how one state
+ *  came to render as "Approved" on one screen and "ready" on the next. */
+export const STATE_FOR_STATUS: Record<SubstrateStatus, string> = {
+  "not-started": STATE_LABEL.empty,
+  authored: STATE_LABEL.draft,
+  draft: STATE_LABEL.draft,
+  approved: STATE_LABEL.approved,
+  inherited: STATE_LABEL.inherited,
 };
 
 // NOTE: the Action verbs (Open · Edit · Stage · Submit · Reveal · Jump) are

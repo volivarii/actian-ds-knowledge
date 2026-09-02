@@ -165,7 +165,7 @@ test("renders CodeMirror (not RichBodyEditor) when the wysiwyg flag is off", asy
 // (frontmatterForms.ts). Kept because it still guards the RJSF disclosure
 // template, which the other three form domains still use; not coverage of
 // what app-context users actually get.
-test("structured fields collapse under an App settings disclosure", async () => {
+test("structured fields collapse under a Product settings disclosure", async () => {
   cleanup();
   setWysiwygFlag("source");
   const gh = fakeGh({
@@ -186,8 +186,8 @@ test("structured fields collapse under an App settings disclosure", async () => 
   await waitFor(
     () =>
       assert.ok(
-        screen.queryByText("App settings"),
-        "App settings disclosure present",
+        screen.queryByText("Product settings"),
+        "Product settings disclosure present",
       ),
     { timeout: 5000 },
   );

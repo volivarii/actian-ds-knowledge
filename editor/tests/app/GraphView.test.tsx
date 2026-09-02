@@ -487,3 +487,66 @@ test("compact mode hides the filter toolbar but still renders the graph", () => 
   assert.ok(container.querySelector("svg"), "svg still renders");
   cleanup();
 });
+
+test("the relationship filter offers one toggle per word, never duplicates", () => {
+  // The regression this locks out. The legend used to render one chip per RAW
+  // edge type while labelling them with the collapsed vocabulary, so a node
+  // with a11y_ref + foundations_ref + motion_ref showed three separate buttons
+  // all reading "Must follow", with identical accessible names, and sorted
+  // non-adjacently. 51 of the graph's nodes hit that.
+  const multi = buildGraphIndex({
+    nodes: [
+      { id: "component:button", type: "component", title: "Button" },
+      { id: "a11y:contrast", type: "a11y_criterion", title: "Contrast" },
+      { id: "foundation:spacing", type: "foundation_section", title: "Spacing" },
+      { id: "motion:fade", type: "motion_pattern", title: "Fade" },
+    ],
+    edges: [
+      { source: "component:button", target: "a11y:contrast", type: "a11y_ref" },
+      { source: "component:button", target: "foundation:spacing", type: "foundations_ref" },
+      { source: "component:button", target: "motion:fade", type: "motion_ref" },
+    ],
+  });
+  const r = render(
+    <Theme>
+      <GraphView layout={layoutNeighborhood("component:button", multi, { depth: 1 })} />
+    </Theme>,
+  );
+  const names = r
+    .getAllByRole("button")
+    .map((el) => el.getAttribute("aria-label"))
+    .filter((n): n is string => !!n && n.endsWith("relationships"));
+  assert.deepEqual(
+    names,
+    ["Toggle Must follow relationships"],
+    `three compliance edge types must collapse to ONE toggle, got ${names.join(" | ")}`,
+  );
+  cleanup();
+});
+
+test("hiding a relationship hides every edge type that shares its word", () => {
+  const multi = buildGraphIndex({
+    nodes: [
+      { id: "component:button", type: "component", title: "Button" },
+      { id: "a11y:contrast", type: "a11y_criterion", title: "Contrast" },
+      { id: "foundation:spacing", type: "foundation_section", title: "Spacing" },
+    ],
+    edges: [
+      { source: "component:button", target: "a11y:contrast", type: "a11y_ref" },
+      { source: "component:button", target: "foundation:spacing", type: "foundations_ref" },
+    ],
+  });
+  const r = render(
+    <Theme>
+      <GraphView layout={layoutNeighborhood("component:button", multi, { depth: 1 })} />
+    </Theme>,
+  );
+  assert.equal(r.container.querySelectorAll("line").length, 2);
+  fireEvent.click(r.getByRole("button", { name: /Toggle Must follow relationships/i }));
+  assert.equal(
+    r.container.querySelectorAll("line").length,
+    0,
+    "one click on the word must hide both edge types it names",
+  );
+  cleanup();
+});

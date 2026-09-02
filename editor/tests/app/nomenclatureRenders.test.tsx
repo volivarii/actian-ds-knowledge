@@ -47,7 +47,7 @@ if (!globalThis.sessionStorage) {
   });
 }
 
-const teardown = cleanup;
+
 
 async function renderRecord(path: string, schemaFile: string, file: string) {
   const form = matchFrontmatterForm(path)!;
@@ -82,6 +82,7 @@ async function renderRecord(path: string, schemaFile: string, file: string) {
 
 test("a Pattern's products render under the word Part of, not 'Appears in apps'", async () => {
   cleanup();
+  try {
   const { container } = await renderRecord(
     "app-context/src/patterns/asset-detail-360.md",
     "app-context-pattern.json",
@@ -93,13 +94,19 @@ test("a Pattern's products render under the word Part of, not 'Appears in apps'"
   const txt = container.textContent!;
   assert.ok(!txt.includes("Appears in apps"), "retired label must not render");
   assert.ok(!txt.includes("Surfaced in apps"), "the Entity variant must not render either");
-  teardown();
+  } finally {
+    // In a finally, not as the last statement: a failing assertion used to
+    // leave the tree mounted, and this file's whole reason for existing is
+    // that a leaked handle reads as a 60s hang rather than a message.
+    cleanup();
+  }
 });
 
 test("an Entity's products render under the same word as a Pattern's", async () => {
   // The defect: one field, two labels. A reader learning "Part of" on a Pattern
   // met "Surfaced in apps" on an Entity and had to learn it twice.
   cleanup();
+  try {
   const { container } = await renderRecord(
     "app-context/src/entities/data-product.md",
     "app-context-entity.json",
@@ -109,11 +116,17 @@ test("an Entity's products render under the same word as a Pattern's", async () 
     timeout: 5000,
   });
   assert.ok(!container.textContent!.includes("Surfaced in apps"));
-  teardown();
+  } finally {
+    // In a finally, not as the last statement: a failing assertion used to
+    // leave the tree mounted, and this file's whole reason for existing is
+    // that a leaked handle reads as a 60s hang rather than a message.
+    cleanup();
+  }
 });
 
 test("a Product's name field says Product, not App", async () => {
   cleanup();
+  try {
   const { container } = await renderRecord(
     "app-context/src/apps/studio.md",
     "app-context-app.json",
@@ -126,5 +139,10 @@ test("a Product's name field says Product, not App", async () => {
     !container.textContent!.includes("App label"),
     "the retired 'App label' must not render",
   );
-  teardown();
+  } finally {
+    // In a finally, not as the last statement: a failing assertion used to
+    // leave the tree mounted, and this file's whole reason for existing is
+    // that a leaked handle reads as a 60s hang rather than a message.
+    cleanup();
+  }
 });

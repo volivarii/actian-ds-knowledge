@@ -11,6 +11,8 @@ import {
   STATE_LABEL,
   LINK_LABEL,
   LINK_FAMILY,
+  STATE_FOR_STATUS,
+  type SubstrateStatus,
   linkLabel,
   thingLabel,
 } from "../../src/lib/nomenclature";
@@ -130,8 +132,8 @@ test("the workspace and the coverage table use the same word for a state", () =>
     assert.notEqual(start, -1, `${name} has no STATUS_LABEL to check`);
     const block = src.slice(start, src.indexOf("};", start) + 2);
     assert.ok(
-      block.includes("STATE_LABEL."),
-      `${name}'s STATUS_LABEL does not read STATE_LABEL`,
+      block.includes("STATE_FOR_STATUS"),
+      `${name}'s STATUS_LABEL does not read STATE_FOR_STATUS`,
     );
     for (const stale of [
       '"ready"',
@@ -149,45 +151,120 @@ test("the workspace and the coverage table use the same word for a state", () =>
   }
 });
 
-test("no editor source calls an app-context pattern a Feature", () => {
-  // WALKS THE TREE. The first version of this guard iterated a hand-written
-  // list of six paths — the files the author had already fixed — and gave a
-  // false all-clear while `src/lib/searchIndex.ts` still labelled every
-  // app-context pattern "Feature" in the global search dropdown. That is
-  // exactly `feedback_replace_the_list_with_the_read`: a stale list iterated
-  // against real data does not go red, it makes the loop body never run.
-  //
-  // Comments are stripped first: the guard's subject is what the editor CALLS
-  // things, and Sidebar keeps a note recording the retired word on purpose.
+/**
+ * Retired PHRASES, and the word that replaced each.
+ *
+ * One guard over the whole tree, rather than a per-file check per rename. Two
+ * review rounds found the same shape of defect five times — searchIndex still
+ * said "Feature", the app uiSchema still said "App settings",
+ * WorkspaceDomainEditor still said "Not started" — each time because the
+ * guard's subject was a file someone had already fixed rather than the word.
+ *
+ * WHAT THIS CANNOT COVER, stated rather than implied: a bare lowercase `app`,
+ * `authored` or `unstarted` is not checkable from source, because those are the
+ * substrate's OWN identifiers — the `apps:` frontmatter key, the
+ * `app-context/src/apps` directory, the `authored` domain status — and appear
+ * in paths, object keys and types far more often than in copy. Every phrase
+ * below is one a reader sees and a compiler never needs. The rendered-text
+ * check that would cover the rest is `tests/app/nomenclatureRenders.test.tsx`,
+ * which asserts on `container.textContent` and cannot be fooled by an
+ * identifier; it covers the app-context record screens today.
+ */
+const RETIRED_PHRASES: ReadonlyArray<
+  readonly [pattern: RegExp, use: string]
+> = [
+  [/\bFeatures?\b/, "Pattern"],
+  [/\bApp settings\b/, "Product settings"],
+  [/\bNot started\b/, "Empty"],
+  [/\bAccessibility criterion\b/, "Criterion"],
+  [/\bContent topic\b/, "Topic"],
+  [/\bMotion pattern\b/, "Motion"],
+  // "Application context" is the domain's own name — the sidebar dimension —
+  // not the Thing word, so it is excluded rather than exempted per-file.
+  [/\bApplication\b(?! context)/, "Product"],
+];
+
+/**
+ * Where a retired phrase may still legitimately appear. Each entry names a file
+ * AND a reason — an exemption is a decision, not a convenience.
+ */
+const PHRASE_EXEMPT: ReadonlyArray<readonly [rel: string, why: string]> = [
+  [
+    "lib/routes.ts",
+    "carries the retired #/feature/ alias so links shared before the rename keep resolving",
+  ],
+  ["lib/nomenclature.ts", "declares the vocabulary, so it names what it retired"],
+];
+
+test("the retired-phrase patterns actually match what they ban", () => {
+  // Proving the guard is not vacuous WITHOUT requiring a defect to exist. The
+  // first version asserted that some file still matched, which fails the moment
+  // the tree is clean — a check that only passes while broken.
+  const shouldMatch: ReadonlyArray<readonly [string, string]> = [
+    ['const label = "Features";', "Pattern"],
+    ['title: "App settings",', "Product settings"],
+    ["<Badge>Not started</Badge>", "Empty"],
+    ["Accessibility criterion", "Criterion"],
+    ["Content topic", "Topic"],
+    ["Motion pattern", "Motion"],
+    ['relationTypeLabel(t) === "Application"', "Product"],
+  ];
+  for (const [sample, use] of shouldMatch) {
+    const hit = RETIRED_PHRASES.find(([re]) => re.test(sample));
+    assert.ok(hit, `no pattern matches ${sample}`);
+    assert.equal(hit![1], use, `${sample} should be corrected to ${use}`);
+  }
+  // And the exclusions hold: these must NOT match.
+  for (const ok of [
+    "Application context",           // the domain's own name
+    "buildFeatureStub(opts)",        // camelCase identifier
+    "app-context/src/apps",          // a repository path
+    'status === "not-started"', // the substrate's own identifier
+  ]) {
+    const hit = RETIRED_PHRASES.find(([re]) => re.test(ok));
+    assert.equal(hit, undefined, `"${ok}" must not be flagged (matched ${hit?.[0]})`);
+  }
+});
+
+test("no editor source shows a retired phrase to a reader", () => {
   const SRC = join(REPO, "editor", "src");
-  const EXEMPT = new Set([
-    // Carries a RETIRED_DIRS alias that must literally contain "feature", so a
-    // link shared before the rename keeps resolving. routes.test.ts asserts it
-    // still resolves and is never minted.
-    join(SRC, "lib", "routes.ts"),
-    // Generated substrate prose, not editor copy.
-    join(SRC, "generated", "search-bodies.json"),
-  ]);
+  const exemptRel = new Set(PHRASE_EXEMPT.map(([rel]) => rel));
+
   const files: string[] = [];
   (function walk(dir: string) {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
       const full = join(dir, e.name);
-      if (e.isDirectory()) walk(full);
-      else if (/\.(ts|tsx)$/.test(e.name)) files.push(full);
+      if (e.isDirectory()) {
+        if (e.name !== "generated") walk(full);
+      } else if (/\.(ts|tsx)$/.test(e.name)) files.push(full);
     }
   })(SRC);
   assert.ok(files.length > 40, `walked only ${files.length} files — vacuous`);
-
+  // Every exemption must name a file the walk actually produced, or the list
+  // rots into an allow-all as files move.
+  for (const [rel] of PHRASE_EXEMPT) {
+    assert.ok(
+      files.includes(join(SRC, rel)),
+      `PHRASE_EXEMPT names ${rel}, which the walk never produced`,
+    );
+  }
   const offenders: string[] = [];
   for (const f of files) {
-    if (EXEMPT.has(f)) continue;
+    const rel = f.slice(SRC.length + 1);
     const src = readFileSync(f, "utf8")
       .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/^\s*\/\/.*$/gm, "");
-    const hits = src.match(/\bfeatures?\b/gi) ?? [];
-    if (hits.length) offenders.push(`${f.slice(SRC.length + 1)}: "${hits[0]}"`);
+      .replace(/\/\/.*$/gm, "");
+    for (const [re, use] of RETIRED_PHRASES) {
+      if (exemptRel.has(rel)) continue;
+      const hit = src.match(re);
+      if (hit) offenders.push(`${rel}: "${hit[0]}" — say "${use}"`);
+    }
   }
-  assert.deepEqual(offenders, [], `sources still saying Feature:\n${offenders.join("\n")}`);
+  assert.deepEqual(
+    offenders,
+    [],
+    `sources still showing a retired phrase:\n${offenders.join("\n")}`,
+  );
 });
 
 test("membership orientation is checked against the graph's own shape", () => {
@@ -231,4 +308,28 @@ test("an inherited key cannot crash or leak a Function", () => {
     assert.equal(linkLabel(evil, "out"), LINK_LABEL.association.out);
     assert.equal(linkLabel(evil, "in"), LINK_LABEL.association.in);
   }
+});
+
+test("every substrate status has a word, and it is the same word everywhere", () => {
+  // STATE_LABEL is the one map with no graph to join to — its keys are
+  // invented, not substrate identifiers. This is the join it CAN have: every
+  // status either loader emits maps to a word, and both consuming screens read
+  // the same map rather than each building a Record of their own.
+  const statuses: SubstrateStatus[] = [
+    "not-started",
+    "authored",
+    "draft",
+    "approved",
+    "inherited",
+  ];
+  for (const st of statuses) {
+    assert.equal(typeof STATE_FOR_STATUS[st], "string", `${st} has no word`);
+    assert.ok(
+      Object.values(STATE_LABEL).includes(STATE_FOR_STATUS[st]),
+      `${st} maps to "${STATE_FOR_STATUS[st]}", which is not one of the four States`,
+    );
+  }
+  // authored and draft are the two loaders' names for the same thing.
+  assert.equal(STATE_FOR_STATUS.authored, STATE_FOR_STATUS.draft);
+  assert.equal(STATE_FOR_STATUS["not-started"], STATE_LABEL.empty);
 });

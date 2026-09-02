@@ -150,7 +150,7 @@ test("CoverageDashboard: shows per-domain counts strip", async () => {
   );
   await waitFor(() => screen.getByText("Button"));
   // both fixture components have content=approved → 2/2
-  assert.ok(screen.getByText(/2\/2 authored/));
+  assert.ok(screen.getByText(/2\/2 draft/));
 });
 
 test("CoverageDashboard: shows error callout when load fails", async () => {

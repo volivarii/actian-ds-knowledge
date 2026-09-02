@@ -7,10 +7,10 @@ export const appContextAppUiSchema: UiSchema = {
   "ui:options": {
     groups: [
       {
-        title: "App settings",
+        title: "Product settings",
         fields: ["header", "sidebar", "slug", "_schema_version"],
         collapsed: true,
-        note: "Structured app settings — header variant and sidebar navigation. The app's description lives in the markdown body below.",
+        note: "Structured settings — header variant and sidebar navigation. The product's description lives in the markdown body below.",
       },
     ],
   },

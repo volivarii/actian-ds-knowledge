@@ -11,7 +11,7 @@
 // motion_pattern, ux_pattern, app, app_entity, terminology_term. `unknown` is
 // the fallback for any future/unmapped type.
 
-import { THING_LABEL, thingLabel } from "./nomenclature";
+import { thingLabel } from "./nomenclature";
 
 export const NODE_TYPE_COLOR: Record<string, string> = {
   component: "var(--indigo-9)",
@@ -26,14 +26,6 @@ export const NODE_TYPE_COLOR: Record<string, string> = {
   terminology_term: "var(--plum-9)",
   unknown: "var(--gray-8)",
 };
-
-/**
- * Re-exported so existing importers keep working. The words themselves live in
- * `nomenclature.ts`, which is the only place a concept gets named — this file
- * used to declare a second copy, which is how "Application" survived here after
- * the vocabulary settled on "Product".
- */
-export const NODE_TYPE_LABEL = THING_LABEL;
 
 /** Radix color var for a node type; neutral gray for anything unmapped. */
 export function relationTypeColor(type: string): string {

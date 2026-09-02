@@ -30,18 +30,23 @@ import {
 import { layoutNeighborhood } from "../substrate/neighborhoodLayout";
 import { GraphView } from "./GraphView";
 import { relationTypeLabel } from "../lib/relationTypes";
+import { linkLabel } from "../lib/nomenclature";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
 
 const CONNECTIVITY_LABEL: Record<string, string> = {
   orphan_nodes: "Orphan nodes",
   components_without_category: "Components without a category",
-  categories_without_a11y: "Categories without accessibility refs",
-  criteria_unreferenced: "Unreferenced a11y criteria",
+  categories_without_a11y: "Categories with no accessibility rule",
+  criteria_unreferenced: "Criteria nothing must follow",
 };
+// Names each coverage metric by the RELATIONSHIP it measures, so this strip,
+// the edge legend and the node legend on the same tab agree. `a11y_ref` used to
+// read "Accessibility refs" here, "Must follow" in the legend, and its Thing
+// word is "Criterion" — three names for one edge on one screen.
 const COVERAGE_LABEL: Record<string, string> = {
-  a11y_ref: "Accessibility refs",
-  foundations_ref: "Foundation refs",
-  motion_ref: "Motion refs",
+  a11y_ref: `${linkLabel("a11y_ref", "out")} · accessibility`,
+  foundations_ref: `${linkLabel("foundations_ref", "out")} · foundations`,
+  motion_ref: `${linkLabel("motion_ref", "out")} · motion`,
   overall: "Overall",
 };
 

@@ -32,15 +32,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
   only place a user-visible concept is named: **10 Things** (one noun each), **4 reciprocal Link
   pairs** replacing the 24 phrases (`Built from`/`Used in`, `Part of`/`Contains`,
   `Must follow`/`Required by`, `Related to`), **4 States** (`Empty` · `Draft` · `Approved` ·
-  `Inherited`) read by both screens, and **6 Actions**. An app-context record is a **Pattern** —
+  `Inherited`) read by both screens through one `STATE_FOR_STATUS` map rather than a Record each.
+  The Action verbs are deliberately NOT declared yet: six words no screen renders would be dead
+  config carrying a docstring for a rename that had not happened, which is the same thing this
+  change deletes elsewhere. An app-context record is a **Pattern** —
   what the directory, the dist key, the schema title, the graph node type and every consumer already
   called it; "Features" existed only inside the editor. `#/ux-pattern/<slug>` is minted and `#/feature/<slug>` still
   resolves (MIGRATIONS Rule 1, parallel change). `#/pattern/` keeps naming
   `content/src/patterns`, because an address may differ from its label but must never change
   occupant — the same reason `app-context/src/apps` has always been `#/app/`. Also deletes a dead `uses_pattern` mapping for
   a relationship nothing emits. **Editor-only and version-neutral** — no dist, no substrate, no
-  schema, no consumer, and no layout change; this phase settles only the words. Three guards assert
-  the join against the real `graph/dist/graph.json` in both directions, and every new guard was
+  schema, no consumer, and no layout change; this phase settles only the words. Four guards assert
+  the join against the real `graph/dist/graph.json` — including edge ORIENTATION, checked from the
+  hierarchy in the ids rather than restated — and `editor-ci.yml` now watches `graph/dist/**`, without
+  which those guards could never fire on the PR that invalidates them, and every new guard was
   proved able to fail by mutation. 1387 editor tests pass, up from 1368.
 
 ### Fixed

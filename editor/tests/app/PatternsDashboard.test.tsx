@@ -336,11 +336,11 @@ test("a long capture surface is truncated on the chip and kept in full on hover"
   assert.ok((chip.textContent ?? "").endsWith("…"));
 });
 
-test("the summary states that per-app counts overlap rather than summing them", async () => {
+test("the summary states that per-product counts overlap rather than summing them", async () => {
   render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
   await waitFor(() => screen.getByText("Studio"));
   assert.ok(
-    screen.getByText(/per-app counts below overlap and do not sum to 2/),
+    screen.getByText(/per-product counts below overlap and do not sum to 2/),
   );
 });
 

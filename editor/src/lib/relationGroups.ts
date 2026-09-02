@@ -38,7 +38,7 @@ export interface RelationGroup {
 // Products now share a rank. The old list ranked them 1st and 9th. Composition
 // leads because it answers what a record is MADE OF, which is what an author
 // opened it to change.
-export const GROUP_ORDER: readonly string[] = [
+const GROUP_ORDER: readonly string[] = [
   LINK_LABEL.composition.out, // Built from
   LINK_LABEL.membership.out, // Part of
   LINK_LABEL.compliance.out, // Must follow
@@ -48,9 +48,12 @@ export const GROUP_ORDER: readonly string[] = [
   LINK_LABEL.compliance.in, // Required by
 ];
 
-/** The ranked words, in order. Exported so a test can assert the ranking
- *  COVERS the vocabulary — without that, adding a fifth family silently sorts
- *  it last, which is the failure the old hand-copied list was warned about. */
+/** The ranked words, in order — the ONE public name for this value.
+ *
+ *  `GROUP_ORDER` stays module-private: exporting both it and this function gave
+ *  two names for one value inside the module whose whole thesis is one name per
+ *  concept, and would let a future edit add logic here that the raw
+ *  `GROUP_ORDER.indexOf` sort below silently ignored. */
 export function rankedLabels(): readonly string[] {
   return GROUP_ORDER;
 }

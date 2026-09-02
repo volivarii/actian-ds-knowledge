@@ -12,7 +12,7 @@ import {
   type Neighbor,
 } from "../substrate/graphIndex";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
-import { relationGroupLabel } from "../lib/relationGroups";
+import { relationGroupLabel, rankedLabels } from "../lib/relationGroups";
 
 // The word for an INCOMING edge. Delegates to the nomenclature rather than
 // keeping a fourth copy of the relation vocabulary: this map used to say
@@ -165,5 +165,13 @@ function groupByRelationship(refs: Neighbor[]): Array<[string, Neighbor[]]> {
     g.push(r);
     groups.set(label, g);
   }
-  return [...groups.entries()];
+  // Ranked like the relations rail, not left in Map insertion order. Insertion
+  // order is whatever the graph index happened to emit, so the same seven words
+  // rendered in a different sequence on the two surfaces — and shifted between
+  // nodes with the same families.
+  const rank = (label: string) => {
+    const i = rankedLabels().indexOf(label);
+    return i === -1 ? rankedLabels().length : i;
+  };
+  return [...groups.entries()].sort(([a], [b]) => rank(a) - rank(b));
 }

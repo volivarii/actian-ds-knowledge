@@ -771,7 +771,11 @@ export function Sidebar({
   ) {
     const collapsed = sectionCollapsed[key];
     const headerId = `sidebar-section-${key}-header`;
-    const accessibleName = within ? `${label}, in ${within}` : label;
+    // Only the ambiguous headers get an explicit name. Setting aria-label
+    // unconditionally REPLACED name-from-contents on every section, which
+    // dropped the item count ("Components, 54") out of the announced name for
+    // ~20 headers to disambiguate two — a fix wider than its defect.
+    const accessibleName = within ? `${label}, in ${within}, ${count}` : undefined;
     return (
       <Flex
         id={headerId}

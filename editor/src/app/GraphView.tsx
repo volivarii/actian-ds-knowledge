@@ -73,14 +73,23 @@ export function GraphView({
     new Set(),
   );
 
-  // ── Edge-type filter ────────────────────────────────────────────────────
-  const presentEdgeTypes = useMemo(
-    () => [...new Set(layout.edges.map((e) => e.type))].sort(),
+  // ── Relationship filter ─────────────────────────────────────────────────
+  //
+  // One toggle per RELATIONSHIP, not per raw edge type. The vocabulary maps 11
+  // edge types onto 5 words, so a chip per edge type put three buttons all
+  // reading "Must follow" in the same toolbar, non-adjacent and with identical
+  // accessible names — 51 of the graph's nodes hit that. The filter now hides
+  // every edge type that shares a word, which is also what a reader clicking
+  // "Must follow" means.
+  const presentRelationships = useMemo(
+    () => [...new Set(layout.edges.map((e) => edgeLabel(e.type)))].sort(),
     [layout],
   );
-  const [hiddenEdgeTypes, setHiddenEdgeTypes] = useState<Set<string>>(
+  const [hiddenRelationships, setHiddenRelationships] = useState<Set<string>>(
     new Set(),
   );
+  /** True when this edge's relationship is filtered out. */
+  const edgeHidden = (type: string) => hiddenRelationships.has(edgeLabel(type));
 
   // ── Visibility computation ───────────────────────────────────────────────
   // 1. Candidate edges: edge type not hidden AND both endpoints pass node-type filter.
@@ -96,7 +105,7 @@ export function GraphView({
 
     const candidateEdges = layout.edges.filter(
       (e) =>
-        !hiddenEdgeTypes.has(e.type) &&
+        !edgeHidden(e.type) &&
         typePassingIds.has(e.source) &&
         typePassingIds.has(e.target),
     );
@@ -112,7 +121,7 @@ export function GraphView({
     );
 
     return { visibleNodes: vNodes, visibleEdges: candidateEdges };
-  }, [layout, hiddenNodeTypes, hiddenEdgeTypes]);
+  }, [layout, hiddenNodeTypes, hiddenRelationships]);
 
   // ── Roving tabindex (Feature B) ──────────────────────────────────────────
   const [activeIndex, setActiveIndex] = useState(0);
@@ -135,18 +144,18 @@ export function GraphView({
     });
   }
 
-  function toggleEdgeType(type: string) {
-    setHiddenEdgeTypes((prev) => {
+  function toggleRelationship(label: string) {
+    setHiddenRelationships((prev) => {
       const next = new Set(prev);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
       return next;
     });
   }
 
   function handleReset() {
     setHiddenNodeTypes(new Set());
-    setHiddenEdgeTypes(new Set());
+    setHiddenRelationships(new Set());
     onReset?.();
   }
 
@@ -249,7 +258,7 @@ export function GraphView({
           </Flex>
 
           {/* Edge-type toggles */}
-          {presentEdgeTypes.length > 0 && (
+          {presentRelationships.length > 0 && (
             <Flex
               gap="2"
               wrap="wrap"
@@ -257,16 +266,15 @@ export function GraphView({
               role="group"
               aria-label="Filter by relationship type"
             >
-              {presentEdgeTypes.map((t) => {
-                const off = hiddenEdgeTypes.has(t);
-                const label = edgeLabel(t);
+              {presentRelationships.map((label) => {
+                const off = hiddenRelationships.has(label);
                 return (
                   <button
-                    key={t}
+                    key={label}
                     type="button"
                     aria-pressed={!off}
                     aria-label={`Toggle ${label} relationships`}
-                    onClick={() => toggleEdgeType(t)}
+                    onClick={() => toggleRelationship(label)}
                     style={{
                       background: "none",
                       border: 0,

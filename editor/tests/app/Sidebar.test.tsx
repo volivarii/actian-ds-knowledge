@@ -870,6 +870,33 @@ test("Sidebar: the two Patterns sections have distinct accessible names", async 
     2,
     `both Patterns sections announce as "${named[0]}" — indistinguishable`,
   );
-  assert.ok(named.includes("Patterns, in Content"));
-  assert.ok(named.includes("Patterns, in Application context"));
+  assert.ok(named.some((n) => n.startsWith("Patterns, in Content")));
+  assert.ok(named.some((n) => n.startsWith("Patterns, in Application context")));
+});
+
+test("Sidebar: unambiguous headers keep their count in the accessible name", async () => {
+  // The first fix set aria-label on EVERY header, which replaces
+  // name-from-contents — so ~20 sections silently lost the item count a
+  // screen-reader user used to hear, to disambiguate two that needed it.
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(LISTINGS)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Foundations"));
+  const header = document.getElementById("sidebar-section-foundations-header")!;
+  assert.equal(
+    header.getAttribute("aria-label"),
+    null,
+    "an unambiguous header must keep name-from-contents, which carries its count",
+  );
+  assert.ok(
+    (header.textContent ?? "").includes("Foundations"),
+    "and its name still comes from its contents",
+  );
 });
