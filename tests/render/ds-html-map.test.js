@@ -1217,10 +1217,15 @@ test("card-for-perimeter: badge color is data-derived (Dataset -> #cfeafd), not 
     variant: "Property 1=Default",
     props: { "Item type": "Dataset", "Item type initials": "DS" },
   });
+  // Both halves are captured: the background from DIGRAM_ITEM_TYPE_COLORS and
+  // the text colour from DIGRAM_ITEM_TYPE_TEXT, each read out of
+  // anatomy/digram-item-types.json. The text colour joined the style when the
+  // background alone was found not to separate the family -- six backgrounds
+  // are shared by two or three item types (#550, #641).
   assert.match(
     html,
-    /<span class="ds-item-type" style="background:#cfeafd">DS<\/span>/,
-    "digramItemTypeStyle produces the captured Dataset color",
+    /<span class="ds-item-type" style="background:#cfeafd;color:#00547d">DS<\/span>/,
+    "digramItemTypeStyle produces the captured Dataset background AND text colour",
   );
 });
 
