@@ -18,6 +18,30 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Changed
+
+- **The editor speaks one controlled vocabulary**
+  ([#643](https://github.com/volivarii/actian-ds-knowledge/pull/643), phase 1 of the editor
+  nomenclature design). Every screen used to invent its own words. One state was called two things
+  one screen apart — `approved` read **"Approved"** in the component workspace and **"ready"** in the
+  coverage table, `not-started` read **"Not started"** and an **em-dash**. One record type had three
+  names: sidebar "Features", dashboard "Patterns", URL `#/feature/`. Twelve graph edge types mapped
+  to **24 distinct phrases**, one per side of each edge, so a relationship read "Built from these
+  components" on one screen and "Used in patterns" on another; `GraphHealthTab` showed the raw keys.
+  Four separate copies of that vocabulary existed. New `editor/src/lib/nomenclature.ts` is now the
+  only place a user-visible concept is named: **10 Things** (one noun each), **4 reciprocal Link
+  pairs** replacing the 24 phrases (`Built from`/`Used in`, `Part of`/`Contains`,
+  `Must follow`/`Required by`, `Related to`), **4 States** (`Empty` · `Draft` · `Approved` ·
+  `Inherited`) read by both screens, and **6 Actions**. An app-context record is a **Pattern** —
+  what the directory, the dist key, the schema title, the graph node type and every consumer already
+  called it; "Features" existed only inside the editor. `#/pattern/<slug>` is minted and
+  `#/feature/<slug>` still resolves (MIGRATIONS Rule 1, parallel change); content's 8
+  writing-guidance records take `#/content-pattern/`. Also deletes a dead `uses_pattern` mapping for
+  a relationship nothing emits. **Editor-only and version-neutral** — no dist, no substrate, no
+  schema, no consumer, and no layout change; this phase settles only the words. Three guards assert
+  the join against the real `graph/dist/graph.json` in both directions, and every new guard was
+  proved able to fail by mutation. 1387 editor tests pass, up from 1368.
+
 ### Fixed
 
 - **A fragment's layout follows the component's own display**
