@@ -20,6 +20,20 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **A fragment's layout follows the component's own display**
+  ([#639](https://github.com/volivarii/actian-ds-knowledge/pull/639), first half of #638). #637 gave
+  every fragment one full-width column, a cell per variant — right for a component that fills its
+  container, wrong for one that does not, and the deciding fact was already in `ds-base.css`. 24 of
+  the 56 slugs are inline-rooted and were stacking one variant per row (`item-type-tag` 28 rows,
+  `read-only-tag` 14). `deriveFragment` now renders the cells first and picks the layout from what
+  came back: a wrapping row when every cell is inline-rooted, the full-width column otherwise, with
+  mixed taking the column because guessing toward the row is the regression #637 fixed. Display is
+  read from the stylesheet, falling back to the tag's own HTML default for the two roots that declare
+  none (`.ds-table`, `.ds-scroll-bar`); anything unrecognised is block-level. **24 fragments change
+  shape, 32 keep the column**, and no list of component names exists anywhere in it. The guard
+  asserts the join — the layout agrees with each slug's own cell roots — with two hand-known controls
+  and an explicit failure for any root it cannot classify.
+
 - **The canonical render ships the component, not the photo harness**
   ([#637](https://github.com/volivarii/actian-ds-knowledge/pull/637)). `deriveFragment` emitted the
   plugin's `capture-seed.js` gallery — a flex-wrap row of columns, each holding the component plus a
