@@ -20,7 +20,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
-- **Secondary and Destructive FM buttons render styled** ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD), closes #554).
+- **Secondary and Destructive FM buttons render styled** ([#633](https://github.com/volivarii/actian-ds-knowledge/pull/633), closes #554).
   `fmButton` emitted `fm-button--secondary` and `fm-button--destructive` with no rule behind either,
   so both rendered as an unstyled div at 1.03:1 and a destructive action was invisible text. Both
   own a rule now, token-bound to the kit's own palette: 9.8:1 and 4.8:1 against their backgrounds.
@@ -28,7 +28,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Added
 
 - **The FM tier's variant collapses are dated measures in the quality roll-up**
-  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD)). The css-owner gate covered the DS
+  ([#633](https://github.com/volivarii/actian-ds-knowledge/pull/633)). The css-owner gate covered the DS
   tier only, and sizing the FM tier before writing its twin found dozens of emitted modifier classes
   with no rule and dozens of axis values that render alike once the unstyled classes are removed,
   so a hard gate would have been red on arrival. `scripts/render/lib/fm-collapse.js` drives the FM
