@@ -7,8 +7,8 @@ Sources last changed **2026-09-02**. Values are derived from the tree this ran a
 | Measure | Value | Since last change |
 | --- | --- | --- |
 | Unexplained variant collapses | 54 | flat (was 54) |
-| FM variant values that render alike (unexplained) | 55 | no baseline yet |
-| FM modifier classes with no rule | 56 | no baseline yet |
+| FM variant values that render alike (unexplained) | 55 | flat (was 55) |
+| FM modifier classes with no rule | 56 | flat (was 56) |
 | Inline-style hex (cannot re-theme) | 31 | no baseline yet |
 | Verified declarations (oracle numerator) | 78 | flat (was 78) |
 | Examined declarations (oracle denominator) | 408 | flat (was 408) |
