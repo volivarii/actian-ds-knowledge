@@ -5,6 +5,9 @@
 // editor's token doctrine.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { join, dirname } from "node:path";
 import {
   relationTypeColor,
   relationTypeLabel,
@@ -46,13 +49,31 @@ test("an unrecognized type falls back to the neutral gray var", () => {
   assert.equal(fallback, "var(--gray-8)");
 });
 
-test("relationTypeLabel gives human singular labels; unknown falls back to Node", () => {
+test("relationTypeLabel speaks the nomenclature, not its own copy", () => {
+  // Four labels changed with the nomenclature: each was a category phrase
+  // ("Application", "Accessibility criterion", "Content topic", "Motion
+  // pattern") where the vocabulary wants a single noun.
   assert.equal(relationTypeLabel("component"), "Component");
   assert.equal(relationTypeLabel("ux_pattern"), "Pattern");
-  assert.equal(relationTypeLabel("a11y_criterion"), "Accessibility criterion");
+  assert.equal(relationTypeLabel("app"), "Product");
+  assert.equal(relationTypeLabel("a11y_criterion"), "Criterion");
+  assert.equal(relationTypeLabel("content_topic"), "Topic");
+  assert.equal(relationTypeLabel("motion_pattern"), "Motion");
   assert.equal(relationTypeLabel("app_entity"), "Entity");
   assert.equal(relationTypeLabel("terminology_term"), "Term");
   assert.equal(relationTypeLabel("something-unknown"), "Node");
+});
+
+test("relationTypes declares no label of its own", () => {
+  // The point of the refactor: one declaration, not two that can drift.
+  const src = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "..", "..", "src", "lib", "relationTypes.ts"),
+    "utf8",
+  );
+  assert.ok(
+    /NODE_TYPE_LABEL\s*=\s*THING_LABEL/.test(src),
+    "NODE_TYPE_LABEL should re-export THING_LABEL, not restate it",
+  );
 });
 
 test("labels never leak internal snake_case keys", () => {

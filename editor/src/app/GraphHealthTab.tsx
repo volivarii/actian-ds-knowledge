@@ -28,7 +28,8 @@ import {
   eligibleGraphIndex,
 } from "../substrate/graphEligibility";
 import { layoutNeighborhood } from "../substrate/neighborhoodLayout";
-import { GraphView, NODE_TYPE_LABEL } from "./GraphView";
+import { GraphView } from "./GraphView";
+import { relationTypeLabel } from "../lib/relationTypes";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
 
 const CONNECTIVITY_LABEL: Record<string, string> = {
@@ -44,9 +45,10 @@ const COVERAGE_LABEL: Record<string, string> = {
   overall: "Overall",
 };
 
-function typeLabel(t: string): string {
-  return NODE_TYPE_LABEL[t] ?? "Node";
-}
+// Delegates rather than re-deriving: the word for a node type is the
+// nomenclature's to give, and a local copy here is how two screens end up
+// naming the same type differently.
+const typeLabel = relationTypeLabel;
 
 export interface GraphHealthTabProps {
   onOpenFile: (path: string) => void;
