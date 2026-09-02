@@ -91,12 +91,18 @@ const COMPONENT_DOMAINS: ReadonlyArray<readonly [string, string]> = [
 /**
  * One segment per section of the navigation, named as the navigation names it.
  *
- * `app-context/src/patterns` is `#/pattern/` because that is what the
- * substrate, the schema title, the graph node type and every consumer already
- * call those records. `content/src/patterns` — 8 files of writing guidance —
- * takes `content-pattern`, because it is the narrower meaning and the smaller
- * set. `app-context/src/apps` stays `#/app/` because `#/product/` is taken by
- * `content/src/product`.
+ * Two entries have a segment that is not their label, for the same reason.
+ * `app-context/src/apps` is `#/app/` because `#/product/` is taken by
+ * `content/src/product`. And `app-context/src/patterns` is `#/ux-pattern/`
+ * even though the navigation calls those records Patterns, because
+ * `#/pattern/` has named `content/src/patterns` since before this table
+ * existed and is a published address (see CHANGELOG). Two sections a reader
+ * would call Patterns, and the URL cannot have both.
+ *
+ * The segment does not have to match the label — the address is a permanent
+ * identifier, the label is copy. What it must never do is CHANGE OCCUPANT: a
+ * previously-shared `#/pattern/forms` has to keep opening the file it named,
+ * and no alias can restore it once another directory claims the segment.
  *
  * Ordered so `components/src/categories` is claimed before the component rule,
  * which would otherwise read `categories` as a component slug.
@@ -104,11 +110,11 @@ const COMPONENT_DOMAINS: ReadonlyArray<readonly [string, string]> = [
 const DIRS = [
   ["category", "components/src/categories"],
   ["writing", "content/src/writing"],
-  ["content-pattern", "content/src/patterns"],
+  ["pattern", "content/src/patterns"],
   ["product", "content/src/product"],
   ["app", "app-context/src/apps"],
   ["entity", "app-context/src/entities"],
-  ["pattern", "app-context/src/patterns"],
+  ["ux-pattern", "app-context/src/patterns"],
   ["foundations", "foundations/src"],
   ["accessibility", "accessibility/src"],
   ["content", "content/src"],

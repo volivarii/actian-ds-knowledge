@@ -58,18 +58,18 @@ export function NeighborhoodPanel({
           Nothing references this yet.
         </Text>
       ) : (
-        groupByEdgeType(refs).map(([edgeType, items]) => {
-          const isOpen = expanded.has(edgeType);
+        groupByRelationship(refs).map(([label, items]) => {
+          const isOpen = expanded.has(label);
           const shown = isOpen ? items : items.slice(0, GROUP_CAP);
           return (
-            <Box key={edgeType} mt="2">
+            <Box key={label} mt="2">
               <Text size="1" color="gray">
-                {labelFor(edgeType)}
+                {label}
               </Text>
               <Flex direction="column" gap="1" mt="1" align="start">
                 {shown.map((n) => (
                   <NeighborTitle
-                    key={`${edgeType}:${n.id}`}
+                    key={`${label}:${n.id}`}
                     neighbor={n}
                     onNavigate={onNavigate}
                   />
@@ -81,8 +81,8 @@ export function NeighborhoodPanel({
                     onClick={() =>
                       setExpanded((prev) => {
                         const next = new Set(prev);
-                        if (next.has(edgeType)) next.delete(edgeType);
-                        else next.add(edgeType);
+                        if (next.has(label)) next.delete(label);
+                        else next.add(label);
                         return next;
                       })
                     }
@@ -147,12 +147,23 @@ function NeighborTitle({
   );
 }
 
-function groupByEdgeType(refs: Neighbor[]): Array<[string, Neighbor[]]> {
+/**
+ * Buckets by the WORD, not by the edge type.
+ *
+ * The vocabulary collapsed several edge types onto one word — `composed_of`
+ * and `uses_component` are both "Used in" inbound — so grouping by edge type
+ * rendered two separate sections carrying the identical heading, each with its
+ * own "Show all". A component like Button has both, and 20 nodes in the current
+ * graph do. `relationGroups.groupGraphNeighbors` already buckets by label; this
+ * panel was pointed at the new vocabulary without being given the same merge.
+ */
+function groupByRelationship(refs: Neighbor[]): Array<[string, Neighbor[]]> {
   const groups = new Map<string, Neighbor[]>();
   for (const r of refs) {
-    const g = groups.get(r.edgeType) ?? [];
+    const label = labelFor(r.edgeType);
+    const g = groups.get(label) ?? [];
     g.push(r);
-    groups.set(r.edgeType, g);
+    groups.set(label, g);
   }
   return [...groups.entries()];
 }

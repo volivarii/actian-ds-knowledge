@@ -63,7 +63,7 @@ function PatternTable({
       <Table.Header>
         <Table.Row>
           <Table.ColumnHeaderCell>Pattern</Table.ColumnHeaderCell>
-          <Table.ColumnHeaderCell>Apps</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Products</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>When to use it</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Components</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Captures</Table.ColumnHeaderCell>
@@ -399,8 +399,8 @@ export function PatternsDashboard({
         <Callout.Root color="red" mb="4">
           <Callout.Text>
             {index.patternsClaimingUnknownApps.length} pattern
-            {index.patternsClaimingUnknownApps.length === 1 ? "" : "s"} claim an
-            app the context does not define:{" "}
+            {index.patternsClaimingUnknownApps.length === 1 ? "" : "s"} claim a
+            product the context does not define:{" "}
             {index.patternsClaimingUnknownApps
               .map((e) => `${e.pattern} → ${e.apps.join(", ")}`)
               .join("; ")}

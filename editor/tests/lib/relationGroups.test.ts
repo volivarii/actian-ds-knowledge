@@ -14,6 +14,7 @@ import {
   groupGraphNeighbors,
 } from "../../src/lib/relationGroups";
 import { LINK_LABEL } from "../../src/lib/nomenclature";
+import { rankedLabels } from "../../src/lib/relationGroups";
 import type { Neighbor } from "../../src/substrate/graphIndex";
 
 function neighbor(
@@ -48,8 +49,13 @@ test("relationGroupLabel returns one of eight words, reciprocal by direction", (
 
   assert.equal(relationGroupLabel("in_category", "out"), "Part of");
   assert.equal(relationGroupLabel("in_category", "in"), "Contains");
-  assert.equal(relationGroupLabel("narrower", "out"), "Part of");
-  assert.equal(relationGroupLabel("narrower", "in"), "Contains");
+  // narrower runs parent -> child, the OPPOSITE way from in_category and
+  // in_app, so its outbound neighbours are what this record CONTAINS. The
+  // first implementation had this inverted and a test locked it in; the
+  // orientation is now asserted against the graph's own ids in
+  // tests/lib/nomenclature.test.ts.
+  assert.equal(relationGroupLabel("narrower", "out"), "Contains");
+  assert.equal(relationGroupLabel("narrower", "in"), "Part of");
 
   assert.equal(relationGroupLabel("a11y_ref", "out"), "Must follow");
   assert.equal(relationGroupLabel("a11y_ref", "in"), "Required by");
@@ -158,18 +164,37 @@ test("groups are ordered by author priority: what this record IS before the inco
   );
 });
 
-test("the group order is keyed off the nomenclature, not a hand-copied list", () => {
-  // The old GROUP_ORDER was a list of literal strings with a comment warning
-  // that renaming a label without editing the list would silently unrank it.
-  // Ranking off LINK_LABEL removes the coupling rather than documenting it.
-  const neighbors: Neighbor[] = Object.values(LINK_LABEL).flatMap((_, i) => [
-    neighbor(`n${i}`, "component", "composed_of", "out"),
-  ]);
-  const groups = groupGraphNeighbors(neighbors);
-  for (const g of groups) {
-    const allowed = new Set(
-      Object.values(LINK_LABEL).flatMap((p) => [p.out, p.in]),
-    );
-    assert.ok(allowed.has(g.label), `unranked group label ${g.label}`);
+test("GROUP_ORDER covers every word the vocabulary can produce", () => {
+  // The first version of this test built four neighbours that ALL had the same
+  // edge type and direction, so they bucketed into one group and it asserted
+  // that single label was allowed. Deleting an entry from GROUP_ORDER, or
+  // reordering it entirely, left it green — a guard that cannot fail.
+  //
+  // This is the check that actually holds: every word LINK_LABEL can produce
+  // must be ranked, or adding a fifth family silently sorts it last, which is
+  // precisely the coupling the old hand-copied list was warned about.
+  const words = new Set(
+    Object.values(LINK_LABEL).flatMap((p) => [p.out, p.in]),
+  );
+  const ranked = new Set(rankedLabels());
+  for (const w of words) {
+    assert.ok(ranked.has(w), `"${w}" is produced by the vocabulary but unranked`);
   }
+});
+
+test("groups sort by rank, proved with a mix of families and directions", () => {
+  // Mixed on purpose: one neighbour per family per direction, shuffled, so the
+  // assertion is about ORDER and not about which single bucket they land in.
+  const neighbors: Neighbor[] = [
+    neighbor("a", "component", "composed_of", "in"), // Used in
+    neighbor("b", "a11y_criterion", "a11y_ref", "out"), // Must follow
+    neighbor("c", "category", "in_category", "out"), // Part of
+    neighbor("d", "component", "composed_of", "out"), // Built from
+    neighbor("e", "component", "related", "out"), // Related to
+    neighbor("f", "component", "in_category", "in"), // Contains
+  ];
+  const got = groupGraphNeighbors(neighbors).map((g) => g.label);
+  const want = rankedLabels().filter((l) => got.includes(l));
+  assert.deepEqual(got, want, "groups must come back in GROUP_ORDER order");
+  assert.ok(got.length >= 5, `expected several distinct groups, got ${got.join(", ")}`);
 });

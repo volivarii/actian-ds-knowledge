@@ -26,7 +26,9 @@ test("an entity shows the products it is part of", () => {
 });
 
 // Belonging and dependency are different questions and must not be one list.
-test("a feature separates what it is part of from what it is built from", () => {
+// This is the test that caught in_app being mapped to composition, where a
+// Pattern would have read "built from Studio".
+test("a pattern separates what it is part of from what it is built from", () => {
   const l = labels("app-context/src/patterns/lineage-graph.md");
   assert.ok(l.includes("Part of"));
   assert.ok(l.includes("Built from"));
@@ -38,7 +40,7 @@ test("a record that belongs to no product simply has no belonging group", () => 
 
 // The ranking list is keyed by label, so a relabel that forgets it drops these
 // groups to the tail among unknown edge types. Pin the order the panel promises.
-test("a feature's own facets rank ahead of the crowds that point at it", () => {
+test("a pattern's own facets rank ahead of the crowds that point at it", () => {
   const order = groupGraphNeighbors(
     graphNeighborsForFile("app-context/src/patterns/lineage-graph.md"),
   ).map((g) => g.label);

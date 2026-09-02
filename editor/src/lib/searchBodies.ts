@@ -49,9 +49,9 @@ const KIND_FOR_SEGMENT = {
   accessibility: "accessibility",
   app: "app-context",
   entity: "app-context",
-  pattern: "app-context",
+  "ux-pattern": "app-context",
   writing: "content",
-  "content-pattern": "content",
+  pattern: "content",
   product: "content",
   content: "content",
 } as const satisfies Record<

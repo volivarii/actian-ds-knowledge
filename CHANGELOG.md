@@ -34,9 +34,10 @@ Each entry links its pull request. Dates are the merge date (UTC).
   `Must follow`/`Required by`, `Related to`), **4 States** (`Empty` · `Draft` · `Approved` ·
   `Inherited`) read by both screens, and **6 Actions**. An app-context record is a **Pattern** —
   what the directory, the dist key, the schema title, the graph node type and every consumer already
-  called it; "Features" existed only inside the editor. `#/pattern/<slug>` is minted and
-  `#/feature/<slug>` still resolves (MIGRATIONS Rule 1, parallel change); content's 8
-  writing-guidance records take `#/content-pattern/`. Also deletes a dead `uses_pattern` mapping for
+  called it; "Features" existed only inside the editor. `#/ux-pattern/<slug>` is minted and `#/feature/<slug>` still
+  resolves (MIGRATIONS Rule 1, parallel change). `#/pattern/` keeps naming
+  `content/src/patterns`, because an address may differ from its label but must never change
+  occupant — the same reason `app-context/src/apps` has always been `#/app/`. Also deletes a dead `uses_pattern` mapping for
   a relationship nothing emits. **Editor-only and version-neutral** — no dist, no substrate, no
   schema, no consumer, and no layout change; this phase settles only the words. Three guards assert
   the join against the real `graph/dist/graph.json` in both directions, and every new guard was

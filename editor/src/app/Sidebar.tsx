@@ -762,9 +762,16 @@ export function Sidebar({
     onAdd: (() => void) | null,
     /** Overrides the add affordance's wording; sections default to "section". */
     addLabel?: string,
+    /** Names the dimension this section sits in, for the accessible name only.
+     *  Two sections are both called "Patterns" — Content's writing guidance and
+     *  Application context's UX patterns — and sighted readers tell them apart
+     *  by the parent they are nested under. A screen-reader user hearing
+     *  "Patterns, button" twice has nothing. */
+    within?: string,
   ) {
     const collapsed = sectionCollapsed[key];
     const headerId = `sidebar-section-${key}-header`;
+    const accessibleName = within ? `${label}, in ${within}` : label;
     return (
       <Flex
         id={headerId}
@@ -775,6 +782,7 @@ export function Sidebar({
         py="2"
         role="button"
         tabIndex={0}
+        aria-label={accessibleName}
         aria-expanded={!collapsed}
         aria-controls={listId}
         style={{ cursor: "pointer", userSelect: "none" }}
@@ -1085,14 +1093,22 @@ export function Sidebar({
                 const listId = `list-${group}`;
                 return (
                   <Box key={group}>
-                    {sectionHeader(group, label, items.length, listId, () => {
-                      const existingSlugs = items.map(slugFromPath);
-                      setAddDialog({
-                        domain: "content",
-                        subDir: group,
-                        existingSlugs,
-                      });
-                    })}
+                    {sectionHeader(
+                      group,
+                      label,
+                      items.length,
+                      listId,
+                      () => {
+                        const existingSlugs = items.map(slugFromPath);
+                        setAddDialog({
+                          domain: "content",
+                          subDir: group,
+                          existingSlugs,
+                        });
+                      },
+                      undefined,
+                      "Content",
+                    )}
                     {!collapsed && (
                       <Box
                         id={listId}
@@ -1256,6 +1272,7 @@ export function Sidebar({
               listId,
               () => add.open(),
               add.label,
+              "Application context",
             )}
             {!collapsed && (
               <Box

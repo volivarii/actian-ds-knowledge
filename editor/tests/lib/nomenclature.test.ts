@@ -3,15 +3,16 @@
 // already has one fails here rather than reaching a screen.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
 import {
   THING_LABEL,
   STATE_LABEL,
-  ACTION_LABEL,
   LINK_LABEL,
   LINK_FAMILY,
+  linkLabel,
+  thingLabel,
 } from "../../src/lib/nomenclature";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -44,16 +45,6 @@ test("states are the one vocabulary, not two", () => {
   ]);
 });
 
-test("actions are six verbs", () => {
-  assert.deepEqual(Object.values(ACTION_LABEL).sort(), [
-    "Edit",
-    "Jump",
-    "Open",
-    "Reveal",
-    "Stage",
-    "Submit",
-  ]);
-});
 
 test("links are reciprocal pairs, so each edge reads from either end", () => {
   assert.deepEqual(LINK_LABEL.composition, { out: "Built from", in: "Used in" });
@@ -74,13 +65,18 @@ test("no word is used for two different concepts", () => {
   // this module exists to prevent.
   const things = new Set(Object.values(THING_LABEL));
   const states = new Set(Object.values(STATE_LABEL));
-  const actions = new Set(Object.values(ACTION_LABEL));
-  for (const s of states)
-    assert.ok(!things.has(s), `"${s}" is both a Thing and a State`);
-  for (const a of actions)
-    assert.ok(!things.has(a), `"${a}" is both a Thing and an Action`);
-  for (const a of actions)
-    assert.ok(!states.has(a), `"${a}" is both a State and an Action`);
+  const links = new Set(
+    Object.values(LINK_LABEL).flatMap((p) => [p.out, p.in]),
+  );
+  for (const w of states)
+    assert.ok(!things.has(w), `"${w}" is both a Thing and a State`);
+  // Links were NOT compared against Things before, so the Thing rename to
+  // "Motion" could collide with an edge label of the same word and the check
+  // stayed green.
+  for (const w of links)
+    assert.ok(!things.has(w), `"${w}" is both a Thing and a Link`);
+  for (const w of links)
+    assert.ok(!states.has(w), `"${w}" is both a State and a Link`);
 });
 
 test("Thing words are singular and carry no qualifier", () => {
@@ -154,39 +150,85 @@ test("the workspace and the coverage table use the same word for a state", () =>
 });
 
 test("no editor source calls an app-context pattern a Feature", () => {
-  // The rename that stops at the namespace boundary: the display label was one
-  // line, the concept was seven files. This walks the source so the next one
-  // cannot stop halfway.
+  // WALKS THE TREE. The first version of this guard iterated a hand-written
+  // list of six paths — the files the author had already fixed — and gave a
+  // false all-clear while `src/lib/searchIndex.ts` still labelled every
+  // app-context pattern "Feature" in the global search dropdown. That is
+  // exactly `feedback_replace_the_list_with_the_read`: a stale list iterated
+  // against real data does not go red, it makes the loop body never run.
   //
-  // `src/lib/routes.ts` is deliberately ABSENT: it carries a RETIRED_DIRS
-  // entry that must literally contain "feature", because a parallel-change
-  // alias is the whole point. routes.test.ts covers it instead, asserting that
-  // #/feature/ still RESOLVES and is never MINTED.
-  const roots = [
-    ["src", "lib", "createContextRecord.ts"],
-    ["src", "lib", "contextRecords.ts"],
-    ["src", "lib", "appContextCreate.ts"],
-    ["src", "app", "Sidebar.tsx"],
-    ["src", "app", "NewContextRecordDialog.tsx"],
-    ["src", "app", "NewProductDialog.tsx"],
-  ];
-  for (const parts of roots) {
-    const raw = readFileSync(join(REPO, "editor", ...parts), "utf8");
-    // Comments are stripped first. The guard's subject is what the editor
-    // CALLS things — identifiers and copy — not what a note explains. Sidebar
-    // keeps a comment recording that "Features" was a word the editor invented
-    // for itself, and that history is worth keeping; a guard that forbids
-    // naming the thing it retired makes the record impossible to write.
-    const src = raw
+  // Comments are stripped first: the guard's subject is what the editor CALLS
+  // things, and Sidebar keeps a note recording the retired word on purpose.
+  const SRC = join(REPO, "editor", "src");
+  const EXEMPT = new Set([
+    // Carries a RETIRED_DIRS alias that must literally contain "feature", so a
+    // link shared before the rename keeps resolving. routes.test.ts asserts it
+    // still resolves and is never minted.
+    join(SRC, "lib", "routes.ts"),
+    // Generated substrate prose, not editor copy.
+    join(SRC, "generated", "search-bodies.json"),
+  ]);
+  const files: string[] = [];
+  (function walk(dir: string) {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (/\.(ts|tsx)$/.test(e.name)) files.push(full);
+    }
+  })(SRC);
+  assert.ok(files.length > 40, `walked only ${files.length} files — vacuous`);
+
+  const offenders: string[] = [];
+  for (const f of files) {
+    if (EXEMPT.has(f)) continue;
+    const src = readFileSync(f, "utf8")
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/^\s*\/\/.*$/gm, "");
-    // Whole word only, case-insensitively: substrate content such as
-    // `featured-properties` is unrelated and must not trip this.
     const hits = src.match(/\bfeatures?\b/gi) ?? [];
-    assert.deepEqual(
-      hits,
-      [],
-      `${parts.join("/")} still says "${hits[0]}" for an app-context pattern`,
-    );
+    if (hits.length) offenders.push(`${f.slice(SRC.length + 1)}: "${hits[0]}"`);
+  }
+  assert.deepEqual(offenders, [], `sources still saying Feature:\n${offenders.join("\n")}`);
+});
+
+test("membership orientation is checked against the graph's own shape", () => {
+  // Orientation was got wrong twice: `in_app` in the design doc, `narrower` in
+  // the first implementation, both because a plain edgeType -> family map
+  // assumes every edge in a family points the same way. Membership edges do
+  // not. This asserts the direction from the DATA rather than restating the
+  // claim: `narrower` ids are hierarchical, so a parent -> child edge has the
+  // target prefixed by the source.
+  const edges = graph().edges as Array<{ type: string; from?: string; to?: string; source?: string; target?: string }>;
+  const narrower = edges.filter((e) => e.type === "narrower");
+  assert.ok(narrower.length > 0, "no narrower edges — the check is vacuous");
+  const parentToChild = narrower.filter((e) => {
+    const from = e.from ?? e.source ?? "";
+    const to = e.to ?? e.target ?? "";
+    return to.startsWith(`${from}/`);
+  });
+  assert.equal(
+    parentToChild.length,
+    narrower.length,
+    "every narrower edge should run parent -> child",
+  );
+  // Parent -> child means the SOURCE contains the target, so from the source's
+  // side the outbound word is Contains, not Part of.
+  assert.equal(linkLabel("narrower", "out"), LINK_LABEL.membership.in);
+  assert.equal(linkLabel("narrower", "in"), LINK_LABEL.membership.out);
+  assert.ok(LINK_FAMILY.narrower!.flipped, "narrower must be marked flipped");
+
+  // in_category runs the other way (component -> category), so it is NOT
+  // flipped and reads Part of outbound.
+  assert.equal(linkLabel("in_category", "out"), LINK_LABEL.membership.out);
+  assert.ok(!LINK_FAMILY.in_category!.flipped);
+});
+
+test("an inherited key cannot crash or leak a Function", () => {
+  // LINK_FAMILY["constructor"] is truthy by inheritance, so a `??` fallback
+  // never fired and linkLabel threw instead of returning "Related to".
+  for (const evil of ["constructor", "toString", "valueOf", "hasOwnProperty", "__proto__"]) {
+    assert.equal(typeof thingLabel(evil), "string", `thingLabel(${evil})`);
+    assert.equal(thingLabel(evil), "Node");
+    assert.equal(linkLabel(evil, "out"), LINK_LABEL.association.out);
+    assert.equal(linkLabel(evil, "in"), LINK_LABEL.association.in);
   }
 });

@@ -36,7 +36,7 @@ const KIND_ORDER: SearchKind[] = [
 const APP_SUB: Record<string, string> = {
   app: "Product",
   entity: "Entity",
-  pattern: "Feature",
+  pattern: "Pattern",
 };
 
 // a11y-index.json sections carry a `tier`. Only "foundation" and "header"

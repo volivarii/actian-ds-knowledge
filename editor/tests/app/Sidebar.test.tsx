@@ -842,3 +842,34 @@ test("anchorIndex — findReferences returns empty array when cache is null (Iss
     "findReferences must return [] when cache is null (the silent-bypass risk that preload fixes)",
   );
 });
+
+test("Sidebar: the two Patterns sections have distinct accessible names", async () => {
+  // Content's writing guidance and Application context's UX patterns are both
+  // labelled "Patterns". A sighted reader tells them apart by the parent they
+  // sit under; a screen-reader user heard "Patterns, button" twice with
+  // nothing to distinguish them. The accessible name now carries the parent.
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(LISTINGS)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Content"));
+  toggleSection("Content");
+  const named = screen
+    .getAllByRole("button")
+    .map((el) => el.getAttribute("aria-label"))
+    .filter((n): n is string => !!n && n.startsWith("Patterns"));
+  assert.equal(named.length, 2, `expected two Patterns sections, got ${named}`);
+  assert.equal(
+    new Set(named).size,
+    2,
+    `both Patterns sections announce as "${named[0]}" — indistinguishable`,
+  );
+  assert.ok(named.includes("Patterns, in Content"));
+  assert.ok(named.includes("Patterns, in Application context"));
+});

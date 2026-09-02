@@ -38,7 +38,7 @@ export interface RelationGroup {
 // Products now share a rank. The old list ranked them 1st and 9th. Composition
 // leads because it answers what a record is MADE OF, which is what an author
 // opened it to change.
-const GROUP_ORDER: readonly string[] = [
+export const GROUP_ORDER: readonly string[] = [
   LINK_LABEL.composition.out, // Built from
   LINK_LABEL.membership.out, // Part of
   LINK_LABEL.compliance.out, // Must follow
@@ -47,6 +47,13 @@ const GROUP_ORDER: readonly string[] = [
   LINK_LABEL.membership.in, // Contains
   LINK_LABEL.compliance.in, // Required by
 ];
+
+/** The ranked words, in order. Exported so a test can assert the ranking
+ *  COVERS the vocabulary — without that, adding a fifth family silently sorts
+ *  it last, which is the failure the old hand-copied list was warned about. */
+export function rankedLabels(): readonly string[] {
+  return GROUP_ORDER;
+}
 
 /** Bucket neighbours under their human relationship, groups ordered by author
  *  priority, neighbours kept in their incoming order within each group. */

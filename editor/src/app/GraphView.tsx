@@ -10,28 +10,19 @@ import { Badge, Box, Button, Flex } from "@radix-ui/themes";
 import type { Layout, PlacedNode } from "../substrate/neighborhoodLayout";
 import {
   NODE_TYPE_COLOR,
-  NODE_TYPE_LABEL,
   relationTypeColor,
   relationTypeLabel,
 } from "../lib/relationTypes";
+import { linkLabel } from "../lib/nomenclature";
 import { slugOfNodeId } from "../substrate/nodeSlug";
 
 // Re-exported so existing importers (GraphHealthTab) keep resolving these from
 // GraphView; the canonical definitions now live in the shared relationTypes
 // module so the graph map, the relations rail, and inline chips share one
 // typed-color language.
-export { NODE_TYPE_COLOR, NODE_TYPE_LABEL };
+export { NODE_TYPE_COLOR };
 
 const MAX_LABEL_LEN = 18;
-
-export const EDGE_TYPE_LABEL: Record<string, string> = {
-  a11y_ref: "Accessibility",
-  foundations_ref: "Foundation",
-  motion_ref: "Motion",
-  related: "Related",
-  in_category: "Category",
-  narrower: "Narrower",
-};
 
 function typeColor(t: string): string {
   return relationTypeColor(t);
@@ -39,8 +30,23 @@ function typeColor(t: string): string {
 function typeLabel(t: string): string {
   return relationTypeLabel(t);
 }
+
+/**
+ * The word for an edge in the filter legend.
+ *
+ * This was a fifth private copy of the relation vocabulary — six of the eleven
+ * real edge types missing (so several filters read an indistinguishable
+ * "Related"), a fallback of "Related" against the nomenclature's "Related to",
+ * and `motion_ref: "Motion"` colliding with the Thing word for
+ * `motion_pattern`, which put two different controls called "Motion" in the
+ * two legends of this same view.
+ *
+ * The legend is direction-agnostic — it filters an edge, not one side of it —
+ * so it takes the outbound word, which is the one that names what the
+ * relationship IS.
+ */
 function edgeLabel(t: string): string {
-  return EDGE_TYPE_LABEL[t] ?? "Related";
+  return linkLabel(t, "out");
 }
 
 export interface GraphViewProps {

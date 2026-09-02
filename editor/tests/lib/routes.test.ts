@@ -36,18 +36,18 @@ const PAIRS: ReadonlyArray<readonly [string | null, string]> = [
 
   // Content, named as the sidebar names it.
   ["content/src/writing/capitalization.md", "#/writing/capitalization"],
-  ["content/src/patterns/forms.md", "#/content-pattern/forms"],
+  ["content/src/patterns/forms.md", "#/pattern/forms"],
   [
     "content/src/product/related-content-panels.md",
     "#/product/related-content-panels",
   ],
   ["content/src/global-guidelines.md", "#/content/global-guidelines"],
 
-  // Application context. `patterns/` is labelled Features in the nav, which is
-  // what keeps it from colliding with the content patterns above.
-  ["app-context/src/apps/studio.md", "#/app/studio"],
+  // `content/src/patterns` keeps `#/pattern/` because it is a published
+  // address; app-context's Patterns take `#/ux-pattern/` rather than move it.
+    ["app-context/src/apps/studio.md", "#/app/studio"],
   ["app-context/src/entities/data-product.md", "#/entity/data-product"],
-  ["app-context/src/patterns/import-wizard.md", "#/pattern/import-wizard"],
+  ["app-context/src/patterns/import-wizard.md", "#/ux-pattern/import-wizard"],
 ];
 
 for (const [path, hash] of PAIRS) {
@@ -282,7 +282,7 @@ test("pathFromHash: a trailing slash still resolves", () => {
   // reader to home, and the write effect then overwrote the address they were
   // given, so they could not even read it back.
   assert.equal(
-    pathFromHash("#/content-pattern/forms/"),
+    pathFromHash("#/pattern/forms/"),
     "content/src/patterns/forms.md",
   );
   assert.equal(pathFromHash("#/component/button/"), "workspace/button");
@@ -295,7 +295,7 @@ test("pathFromHash: a trailing slash still resolves", () => {
 
 test("pathFromHash: a tracking query is ignored, not made part of the name", () => {
   assert.equal(
-    pathFromHash("#/content-pattern/forms?utm_source=slack"),
+    pathFromHash("#/pattern/forms?utm_source=slack"),
     "content/src/patterns/forms.md",
   );
   assert.equal(
@@ -421,12 +421,8 @@ test("old addresses keep resolving after the segment swap", () => {
     "app-context/src/patterns/import-wizard.md",
   );
   assert.equal(
-    pathFromHash("#/pattern/import-wizard"),
+    pathFromHash("#/ux-pattern/import-wizard"),
     "app-context/src/patterns/import-wizard.md",
-  );
-  assert.equal(
-    pathFromHash("#/content-pattern/forms"),
-    "content/src/patterns/forms.md",
   );
 });
 
@@ -437,7 +433,7 @@ test("a retired segment is never MINTED, only resolved", () => {
   // hashFor reads DIRS only; pathFromHash reads both.
   assert.equal(
     hashFor("app-context/src/patterns/import-wizard.md"),
-    "#/pattern/import-wizard",
+    "#/ux-pattern/import-wizard",
   );
   assert.notEqual(
     hashFor("app-context/src/patterns/import-wizard.md"),
@@ -445,12 +441,12 @@ test("a retired segment is never MINTED, only resolved", () => {
   );
 });
 
-test("`pattern` now names app-context only, never content", () => {
-  // `pattern` used to mean content/src/patterns. One segment cannot name two
-  // directories without the resolver guessing, so content took its own segment
-  // and `pattern` belongs to app-context outright.
-  assert.equal(
-    pathFromHash("#/pattern/forms"),
-    "app-context/src/patterns/forms.md",
-  );
+test("no address changes occupant: #/pattern/ still means content", () => {
+  // The regression this locks out. `#/pattern/forms` is a published address
+  // (CHANGELOG). Handing the segment to app-context would have resolved every
+  // previously-shared link to a file that does not exist — silently, since
+  // hashFor mapped the bad path straight back to the same address, so it could
+  // not even self-correct. No alias can undo that: DIRS is consulted first.
+  assert.equal(pathFromHash("#/pattern/forms"), "content/src/patterns/forms.md");
+  assert.equal(hashFor("content/src/patterns/forms.md"), "#/pattern/forms");
 });

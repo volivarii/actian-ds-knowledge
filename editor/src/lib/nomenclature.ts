@@ -64,24 +64,13 @@ export const STATE_LABEL: Record<StateKey, string> = {
   inherited: "Inherited",
 };
 
-export type ActionKey =
-  | "open"
-  | "edit"
-  | "stage"
-  | "submit"
-  | "reveal"
-  | "jump";
+// NOTE: the Action verbs (Open · Edit · Stage · Submit · Reveal · Jump) are
+// part of the agreed vocabulary but are NOT declared here yet. Declaring them
+// while every screen still renders "Add to batch", "Open in full editor" and
+// "View source" would be config nothing reads, carrying a docstring that
+// claimed a rename which had not happened — the same dead config this module
+// deletes elsewhere. They land in the phase that applies them.
 
-/** Six verbs. "Add to batch" became Stage, "Open in full editor" became Edit,
- *  and Show/Hide, View source and the bare `▸` all became Reveal. */
-export const ACTION_LABEL: Record<ActionKey, string> = {
-  open: "Open",
-  edit: "Edit",
-  stage: "Stage",
-  submit: "Submit",
-  reveal: "Reveal",
-  jump: "Jump",
-};
 
 /**
  * Link families. Each is a reciprocal pair so one relationship reads correctly
@@ -127,23 +116,54 @@ export const LINK_LABEL: Record<LinkKey, LinkPair> = {
  * relationship nothing in the graph emits; the test that would have caught it
  * did not exist.
  */
-export const LINK_FAMILY: Record<string, LinkKey> = {
-  composed_of: "composition",
-  uses_component: "composition",
-  in_category: "membership",
-  in_app: "membership",
-  narrower: "membership",
-  a11y_ref: "compliance",
-  foundations_ref: "compliance",
-  motion_ref: "compliance",
-  related: "association",
-  entity_related: "association",
-  term_about: "association",
+export interface LinkBinding {
+  family: LinkKey;
+  /**
+   * True when the edge runs the opposite way from the family's natural reading
+   * — the edge points from the CONTAINER to the CONTAINED, so this record's
+   * OUTBOUND neighbours are what it contains rather than what it belongs to.
+   *
+   * This flag exists because the orientation was got wrong twice. A plain
+   * `edgeType -> family` map silently assumes every edge in a family points the
+   * same way, and membership edges do not: `in_category` and `in_app` point
+   * child -> parent, while `narrower` points parent -> child. Without the flag,
+   * a Foundation's own sub-sections read "Part of" instead of "Contains".
+   */
+  flipped?: true;
+}
+
+export const LINK_FAMILY: Record<string, LinkBinding> = {
+  // Composition: the edge points at what this record is made of.
+  composed_of: { family: "composition" },
+  uses_component: { family: "composition" },
+  // Membership, child -> parent: the edge points at what this record belongs to.
+  in_category: { family: "membership" },
+  in_app: { family: "membership" },
+  // Membership, parent -> child. `foundation:color-primitives --narrower-->
+  // foundation:color-primitives/primitives` — the source CONTAINS the target,
+  // so this record's outbound neighbours are its children.
+  narrower: { family: "membership", flipped: true },
+  // Compliance: the edge points at the rule this record must meet.
+  a11y_ref: { family: "compliance" },
+  foundations_ref: { family: "compliance" },
+  motion_ref: { family: "compliance" },
+  // Association is symmetric, so orientation cannot be wrong.
+  related: { family: "association" },
+  entity_related: { family: "association" },
+  term_about: { family: "association" },
 };
 
-/** The word for a Thing; "Node" for anything unmapped. */
+/** The word for a Thing; "Node" for anything unmapped.
+ *
+ *  `Object.hasOwn`, not `??`: an inherited key like `constructor` or `toString`
+ *  is truthy, so the nullish fallback never fires and the function returns a
+ *  Function where its signature promises a string. The map this replaced was
+ *  keyed on a composite `"type:direction"` string that could never collide with
+ *  a prototype name; these plainer keys can. */
 export function thingLabel(type: string): string {
-  return THING_LABEL[type as ThingKey] ?? "Node";
+  return Object.hasOwn(THING_LABEL, type)
+    ? THING_LABEL[type as ThingKey]
+    : "Node";
 }
 
 /**
@@ -155,6 +175,16 @@ export function thingLabel(type: string): string {
  * `composition_edges` into "Composition edges" and put it on screen.
  */
 export function linkLabel(edgeType: string, direction: "in" | "out"): string {
-  const family = LINK_FAMILY[edgeType] ?? "association";
-  return LINK_LABEL[family][direction];
+  // Object.hasOwn for the same reason as thingLabel: LINK_FAMILY["constructor"]
+  // is truthy-by-inheritance, so `??` left it unguarded and the next line threw
+  // instead of returning the documented fallback.
+  const binding: LinkBinding = Object.hasOwn(LINK_FAMILY, edgeType)
+    ? LINK_FAMILY[edgeType]!
+    : { family: "association" };
+  const side = binding.flipped
+    ? direction === "out"
+      ? "in"
+      : "out"
+    : direction;
+  return LINK_LABEL[binding.family][side];
 }
