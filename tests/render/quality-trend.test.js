@@ -194,7 +194,7 @@ test("the roll-up is dated, versioned, and carries a direction per measure", fun
   );
   assert.ok(rollup._meta.auto_generated, "stamped as generated");
 
-  for (const name of ["unexplainedCollapses", "inlineHex", "oracleVerified", "fmCollapsedValueGroups"]) {
+  for (const name of ["unexplainedCollapses", "inlineHex", "oracleVerified", "fmUnexplainedCollapses", "fmUnownedModifiers"]) {
     const m = rollup.measures[name];
     assert.ok(m, name + " is present");
     assert.strictEqual(typeof m.value, "number", name + " has a value");
@@ -422,8 +422,10 @@ test("the date covers every source consulted, not just the oracle's", function (
   const rollup = rollupOnce();
   const oracleNewest = rollup.oracleSeries[0].date;
   const collapseNewest = rollup.collapseSeries[0].date;
-  const expected =
-    oracleNewest > collapseNewest ? oracleNewest : collapseNewest;
+  // The FM tier's sources (fm-base.css, the FM renderer, fmkit.json) are read
+  // too, and moved a figure on a day neither of the other two files changed.
+  const fmNewest = trend.fmSourcesDate();
+  const expected = [oracleNewest, collapseNewest, fmNewest].sort().pop();
 
   assert.strictEqual(rollup._meta.sourcesLastChangedAt, expected);
   assert.match(rollup._meta.sourcesLastChangedAt, /^\d{4}-\d{2}-\d{2}$/);
@@ -447,27 +449,46 @@ test("the markdown shows the collapse arc too, not just the oracle's", function 
 });
 
 // The FM tier joins the roll-up the same way the DS tier did: the figure is
-// the census helper's own, never a re-count (#554 sized the tier at 35 groups
-// the day it joined, and a hard gate would have been red on arrival).
+// the DS classifier's own verdict over the FM census, never a re-count.
 const fmCollapse = require(
   path.join(REPO_ROOT, "scripts", "render", "lib", "fm-collapse.js"),
 );
+const FM_BY_DESIGN = require(
+  path.join(REPO_ROOT, "scripts", "render", "lib", "fm-collapse-by-design.js"),
+);
 
-test("the roll-up's FM collapse figure is the census helper's own", function () {
+test("the roll-up's FM figures are the census's own, through the shared classifier", function () {
   const rollup = rollupOnce();
+  const c = fmCollapse.census();
   assert.strictEqual(
-    rollup.measures.fmCollapsedValueGroups.value,
-    fmCollapse.census().collapsedGroups.length,
-    "the roll-up must report the census's count, not its own",
+    rollup.measures.fmUnexplainedCollapses.value,
+    collapse.classify(c.contract, FM_BY_DESIGN).unexplained.length,
   );
+  assert.strictEqual(rollup.measures.fmUnownedModifiers.value, c.unownedModifiers.length);
+  assert.deepEqual(rollup.detail.fmUnownedModifiers.map((u) => u.class), c.unownedModifiers.map((u) => u.class));
 });
 
-test("direction knows fewer FM collapsed groups is progress", function () {
-  assert.strictEqual(trend.direction("fmCollapsedValueGroups", 30, 35), "better");
-  assert.strictEqual(trend.direction("fmCollapsedValueGroups", 35, 30), "worse");
+test("direction knows fewer FM collapses and fewer unowned modifiers are progress", function () {
+  assert.strictEqual(trend.direction("fmUnexplainedCollapses", 30, 35), "better");
+  assert.strictEqual(trend.direction("fmUnownedModifiers", 60, 50), "worse");
 });
 
-test("the markdown names the FM measure", function () {
+test("previousValues carries the FM baselines from the merge base, not from this run's own write", function () {
+  const prev = trend.previousValues(trend.oracleSeries({ limit: 2 }), trend.collapseSeries({ limit: 2 }));
+  assert.ok("fmUnexplainedCollapses" in prev && "fmUnownedModifiers" in prev, "one definition of previous, inside previousValues");
+  const base = trend.fmBaselineRef();
+  assert.ok(typeof base === "string" && base.length > 0, "a baseline ref is named");
+});
+
+test("the roll-up is dated by every source it reads, the FM tier's included", function () {
+  const rollup = rollupOnce();
+  const fmDate = trend.fmSourcesDate();
+  assert.match(fmDate, /^\d{4}-\d{2}-\d{2}$/);
+  assert.ok(rollup._meta.sourcesLastChangedAt >= fmDate, "sourcesLastChangedAt covers fm-base.css, the FM renderer and fmkit.json");
+});
+
+test("the markdown names both FM measures", function () {
   const md = trend.renderMarkdown(rollupOnce());
-  assert.match(md, /FM axis values that render alike/);
+  assert.match(md, /FM variant values that render alike/);
+  assert.match(md, /FM modifier classes with no rule/);
 });

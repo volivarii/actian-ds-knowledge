@@ -27,14 +27,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
-- **The FM tier's variant collapses are a dated measure in the quality roll-up.** The css-owner
-  gate covered the DS tier only, and sizing the FM tier before writing its twin found 54 emitted
-  modifier classes with no rule and 35 axis-value groups that render alike once the unstyled classes
-  are removed, so a hard gate would have been red on arrival. `scripts/render/lib/fm-collapse.js`
-  computes the census from the registry's own axes, the renderer and the stylesheet (no list), and
-  `quality-trend.{json,md}` carries `fmCollapsedValueGroups` with a direction, 34 after this change;
-  a regression test pins the button's Type axis, and an owned rule counts only when it carries a
-  declaration.
+- **The FM tier's variant collapses are dated measures in the quality roll-up**
+  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD)). The css-owner gate covered the DS
+  tier only, and sizing the FM tier before writing its twin found dozens of emitted modifier classes
+  with no rule and dozens of axis values that render alike once the unstyled classes are removed,
+  so a hard gate would have been red on arrival. `scripts/render/lib/fm-collapse.js` drives the FM
+  renderer with the registry's own axes and values (no list), reads which classes `fm-base.css`
+  styles with a declaration, and emits the DS tier's own contract shape, so `variant-collapse.js`
+  judges both tiers with one classifier, one State-axis rule and one ledger shape
+  (`fm-collapse-by-design.js`, empty on arrival). `quality-trend.{json,md}` carries
+  `fmUnexplainedCollapses` and `fmUnownedModifiers` with a direction whose baseline is read at
+  the merge base with main, never from the run's own write, and the roll-up is dated by the FM
+  sources too. Two owned classes with identical declarations count as one look, a class named
+  in a comment owns nothing, a component with no renderer case is listed as unrendered rather
+  than as a collapse, and owned rules the renderer never emits are listed. `fmButton` now draws
+  its Disabled state, which had a rule and no reader.
 
 ### Fixed
 

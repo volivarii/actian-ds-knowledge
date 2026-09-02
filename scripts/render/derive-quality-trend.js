@@ -28,6 +28,7 @@ const BY_DESIGN = require(
 );
 const { deriveContract } = require(path.join(__dirname, "derive-contract.js"));
 const fmCollapse = require(path.join(__dirname, "lib", "fm-collapse.js"));
+const FM_BY_DESIGN = require(path.join(__dirname, "lib", "fm-collapse-by-design.js"));
 
 // Unexplained variant collapses: values the renderer cannot tell apart and
 // nobody has said why. A clamp hands back a different component than the caller
@@ -43,8 +44,19 @@ function unexplainedCollapses() {
 // arrival, and the number nobody could see is how Secondary and Destructive
 // buttons shipped unstyled. Same helper as the FM tests, so the roll-up and the
 // tests cannot disagree.
-function fmCollapsedValueGroups() {
-  return fmCollapse.census().collapsedGroups.length;
+let fmCensusOnce = null;
+function fmCensus() {
+  if (!fmCensusOnce) fmCensusOnce = fmCollapse.census();
+  return fmCensusOnce;
+}
+function fmUnexplainedCollapses() {
+  return collapse.classify(fmCensus().contract, FM_BY_DESIGN).unexplained.length;
+}
+// The direct #554 signal: modifier classes the FM renderer emits from a
+// registry value with no rule that styles them. Published beside the collapse
+// figure because a new unstyled value can leave the collapse count flat.
+function fmUnownedModifiers() {
+  return fmCensus().unownedModifiers.length;
 }
 
 // Oracle coverage, carried as the pair rather than the ratio.
@@ -121,7 +133,8 @@ function inlineHex() {
 // when the denominator shrinks.
 const GOOD_DIRECTION = {
   unexplainedCollapses: "down",
-  fmCollapsedValueGroups: "down",
+  fmUnexplainedCollapses: "down",
+  fmUnownedModifiers: "down",
   inlineHex: "down",
   oracleVerified: "up",
   oracleExamined: null, // neither direction is progress; it is context for the numerator
@@ -227,8 +240,11 @@ function currentMeasures() {
     unexplainedCollapses: {
       value: unexplainedCollapses(),
     },
-    fmCollapsedValueGroups: {
-      value: fmCollapsedValueGroups(),
+    fmUnexplainedCollapses: {
+      value: fmUnexplainedCollapses(),
+    },
+    fmUnownedModifiers: {
+      value: fmUnownedModifiers(),
     },
     oracleCoverage: oracleCoverage(),
     inlineHex: inlineHex(),
@@ -274,10 +290,36 @@ function collapseSeries(opts) {
 // 43 -> 65 -> 54 a fresh 54 against [1]=43 reported "worse" for a measure that
 // had improved 65 -> 54. Reporting a regression as progress is the one thing
 // this artifact must never do.
+// The FM figures' previous values come from this artifact as committed at the
+// MERGE BASE with main, never from the latest commit: render-derive's own bot
+// commit is the latest commit on the second run of a PR, so "last commit" would
+// hand this run its own output back and report every change as "unchanged".
+// The FM tier's three sources have no single historical file to recompute
+// from, and the roll-up is committed, so its history IS the series. "unknown"
+// on the first run is honest.
+const TREND_REL = "components/render/dist/quality-trend.json";
+function fmBaselineRef() {
+  const base = git(["merge-base", "HEAD", "origin/main"]).trim();
+  return base || "HEAD";
+}
+function fmPreviousMeasure(name) {
+  const committed = showJson(fmBaselineRef(), TREND_REL);
+  const m = committed && committed.measures && committed.measures[name];
+  return m && typeof m.value === "number" ? m.value : null;
+}
+// The FM tier is dated by its own sources, not by the oracle's or the
+// contract's commits: fm-base.css moved the figure 35 -> 34 on a day neither of
+// those files changed.
+function fmSourcesDate() {
+  return git(["log", "-1", "--format=%cs", "--"].concat(fmCollapse.SOURCES)).trim();
+}
+
 function previousValues(oracle, collapses) {
   const prev = oracle.length > 0 ? oracle[0] : null;
   const prevCollapse = collapses.length > 0 ? collapses[0] : null;
   return {
+    fmUnexplainedCollapses: fmPreviousMeasure("fmUnexplainedCollapses"),
+    fmUnownedModifiers: fmPreviousMeasure("fmUnownedModifiers"),
     oracleVerified: prev ? prev.verified : null,
     oracleExamined: prev ? prev.examined : null,
     unexplainedCollapses: prevCollapse ? prevCollapse.unexplained : null,
@@ -289,31 +331,21 @@ function previousValues(oracle, collapses) {
   };
 }
 
-// The FM figure's previous value comes from this artifact's own last committed
-// revision: its three sources (the FM renderer, fm-base.css, fmkit.json) have
-// no single historical file to recompute from, and the roll-up is committed,
-// so its history IS the series. "unknown" on the first run is honest.
-const TREND_REL = "components/render/dist/quality-trend.json";
-function fmPrevious() {
-  const sha = git(["log", "--format=%H", "-1", "--", TREND_REL]).trim();
-  if (!sha) return null;
-  const committed = showJson(sha, TREND_REL);
-  const m = committed && committed.measures && committed.measures.fmCollapsedValueGroups;
-  return m && typeof m.value === "number" ? m.value : null;
-}
-
 function buildRollup() {
   const series = assertSeries(oracleSeries({ limit: 12 }), "oracle");
   const collapses = assertSeries(collapseSeries({ limit: 12 }), "collapse");
-  const newestSourceDate =
-    series[0].date > collapses[0].date ? series[0].date : collapses[0].date;
+  const fmDate = fmSourcesDate();
+  const newestSourceDate = [series[0].date, collapses[0].date, fmDate]
+    .filter(Boolean)
+    .sort()
+    .pop();
   const current = currentMeasures();
   const prev = previousValues(series, collapses);
-  prev.fmCollapsedValueGroups = fmPrevious();
 
   const values = {
     unexplainedCollapses: current.unexplainedCollapses.value,
-    fmCollapsedValueGroups: current.fmCollapsedValueGroups.value,
+    fmUnexplainedCollapses: current.fmUnexplainedCollapses.value,
+    fmUnownedModifiers: current.fmUnownedModifiers.value,
     inlineHex: current.inlineHex.value,
     oracleVerified: current.oracleCoverage.verified,
     oracleExamined: current.oracleCoverage.examined,
@@ -355,6 +387,9 @@ function buildRollup() {
     measures: measures,
     detail: {
       inlineHexBySlug: current.inlineHex.bySlug,
+      fmUnownedModifiers: fmCensus().unownedModifiers,
+      fmOwnedNotEmitted: fmCensus().ownedNotEmitted,
+      fmUnrendered: fmCensus().unrendered,
     },
     oracleSeries: series,
     collapseSeries: collapses,
@@ -363,7 +398,8 @@ function buildRollup() {
 
 const LABELS = {
   unexplainedCollapses: "Unexplained variant collapses",
-  fmCollapsedValueGroups: "FM axis values that render alike (collapsed groups)",
+  fmUnexplainedCollapses: "FM variant values that render alike (unexplained)",
+  fmUnownedModifiers: "FM modifier classes with no rule",
   inlineHex: "Inline-style hex (cannot re-theme)",
   oracleVerified: "Verified declarations (oracle numerator)",
   oracleExamined: "Examined declarations (oracle denominator)",
@@ -488,6 +524,8 @@ module.exports = {
   assertSeries: assertSeries,
   readOracle: readOracle,
   previousValues: previousValues,
+  fmBaselineRef: fmBaselineRef,
+  fmSourcesDate: fmSourcesDate,
   direction: direction,
   oracleSeries: oracleSeries,
   collapseSeries: collapseSeries,
@@ -522,8 +560,10 @@ if (require.main === module) {
       ": " +
       m.unexplainedCollapses.value +
       " unexplained collapses, " +
-      m.fmCollapsedValueGroups.value +
+      m.fmUnexplainedCollapses.value +
       " FM collapsed groups, " +
+      m.fmUnownedModifiers.value +
+      " FM unowned modifiers, " +
       m.inlineHex.value +
       " inline hex, oracle " +
       m.oracleVerified.value +
