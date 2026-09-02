@@ -6,12 +6,12 @@ Sources last changed **2026-09-02**. Values are derived from the tree this ran a
 
 | Measure | Value | Since last change |
 | --- | --- | --- |
-| Unexplained variant collapses | 44 | improving (was 54) |
+| Unexplained variant collapses | 44 | flat (was 44) |
 | FM variant values that render alike (unexplained) | 55 | flat (was 55) |
 | FM modifier classes with no rule | 56 | flat (was 56) |
 | Inline-style hex (cannot re-theme) | 39 | no baseline yet |
-| Verified declarations (oracle numerator) | 85 | improving (was 80) |
-| Examined declarations (oracle denominator) | 417 | changed (was 410) |
+| Verified declarations (oracle numerator) | 85 | flat (was 85) |
+| Examined declarations (oracle denominator) | 417 | flat (was 417) |
 
 Oracle coverage is **85 of 417** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
 
@@ -19,6 +19,7 @@ Oracle coverage is **85 of 417** declarations. It is stated as a pair on purpose
 
 | Date | Version | Verified | Examined |
 | --- | --- | --- | --- |
+| 2026-09-02 | v0.34.177 | 85 | 417 |
 | 2026-09-02 | v0.34.173 | 80 | 410 |
 | 2026-08-31 | v0.34.161 | 78 | 408 |
 | 2026-08-31 | v0.34.159 | 77 | 408 |
@@ -30,12 +31,12 @@ Oracle coverage is **85 of 417** declarations. It is stated as a pair on purpose
 | 2026-07-24 | v0.34.117 | 65 | 445 |
 | 2026-07-24 | v0.34.117 | 65 | 445 |
 | 2026-07-24 | v0.34.117 | 59 | 445 |
-| 2026-07-24 | v0.34.117 | 59 | 445 |
 
 ## Unexplained collapses over time
 
 | Date | Version | Unexplained |
 | --- | --- | --- |
+| 2026-09-02 | v0.34.177 | 44 |
 | 2026-08-31 | v0.34.159 | 54 |
 | 2026-08-26 | v0.34.155 | 54 |
 | 2026-08-26 | v0.34.154 | 65 |

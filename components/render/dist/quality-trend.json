@@ -8,8 +8,8 @@
   "measures": {
     "unexplainedCollapses": {
       "value": 44,
-      "direction": "better",
-      "previous": 54
+      "direction": "unchanged",
+      "previous": 44
     },
     "fmUnexplainedCollapses": {
       "value": 55,
@@ -28,13 +28,13 @@
     },
     "oracleVerified": {
       "value": 85,
-      "direction": "better",
-      "previous": 80
+      "direction": "unchanged",
+      "previous": 85
     },
     "oracleExamined": {
       "value": 417,
-      "direction": "changed",
-      "previous": 410
+      "direction": "unchanged",
+      "previous": 417
     }
   },
   "detail": {
@@ -288,6 +288,13 @@
   "oracleSeries": [
     {
       "date": "2026-09-02",
+      "version": "0.34.177",
+      "sha": "a9ca5179",
+      "verified": 85,
+      "examined": 417
+    },
+    {
+      "date": "2026-09-02",
       "version": "0.34.173",
       "sha": "39f1dd87",
       "verified": 80,
@@ -362,16 +369,15 @@
       "sha": "25fe8fa2",
       "verified": 59,
       "examined": 445
-    },
-    {
-      "date": "2026-07-24",
-      "version": "0.34.117",
-      "sha": "87e441f5",
-      "verified": 59,
-      "examined": 445
     }
   ],
   "collapseSeries": [
+    {
+      "date": "2026-09-02",
+      "version": "0.34.177",
+      "sha": "a9ca5179",
+      "unexplained": 44
+    },
     {
       "date": "2026-08-31",
       "version": "0.34.159",
