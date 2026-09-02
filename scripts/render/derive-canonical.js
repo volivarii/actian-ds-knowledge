@@ -405,12 +405,46 @@ function deriveCanonical() {
   };
 }
 
-// CLI: write the derived fragments + css + CEM + manifest into components/render/dist/.
-// dist is a build output: it is written locally to prove the chain but is never
-// committed (the CI derive workflow that ships it to consumers is slice 1b).
+// Prune: a fragment whose slug the manifest no longer lists is a fossil, and
+// this producer used to leave it tracked, shipped and vendored (#520, #572),
+// exactly as a usage note once fossilised through a rename (#567). The guards
+// (wipe, ceiling, decide-before-write) live in lib/prune.js, shared with the
+// usage-notes producer. The keep set is the manifest this run publishes: what
+// a consumer can reach through the index is what the directory holds.
+var prune = require("./lib/prune.js");
+var PRUNE_CEILING = prune.PRUNE_CEILING;
+
+function fragmentsToPrune(fragmentsDir, knownSlugs) {
+  return prune.vetPrune(
+    fragmentsDir,
+    knownSlugs.map(function (slug) {
+      return slug + ".html";
+    }),
+    { label: "pruneFragments", noun: "fragments", ext: ".html" },
+  );
+}
+
+function pruneFragments(fragmentsDir, doomed) {
+  return prune.deleteFiles(fragmentsDir, doomed);
+}
+
+// Write the derived fragments + css + CEM + manifest into components/render/dist/.
+// The dist is committed by render-derive.yml and vendored by every consumer, so
+// what this writes and what it prunes both ship.
 function writeDist(distDir) {
   var out = deriveCanonical();
-  fs.mkdirSync(path.join(distDir, "fragments"), { recursive: true });
+  var fragmentsDir = path.join(distDir, "fragments");
+  // Vet against the manifest before the first write, and delete before it too:
+  // a refused run leaves the dist untouched, and a deletion that fails leaves
+  // nothing half-written behind a manifest that already claims the new shape.
+  var doomed = fragmentsToPrune(
+    fragmentsDir,
+    out.manifest.renders.map(function (r) {
+      return path.basename(r.fragment, ".html");
+    }),
+  );
+  out.pruned = pruneFragments(fragmentsDir, doomed);
+  fs.mkdirSync(fragmentsDir, { recursive: true });
   fs.writeFileSync(path.join(distDir, "render.css"), out.css);
   fs.writeFileSync(path.join(distDir, "render-fonts.css"), out.fontsCss);
   Object.keys(out.fragments).forEach(function (slug) {
@@ -439,6 +473,9 @@ if (require.main === module) {
       out.manifest.renders.length +
       " render(s) -> " +
       distDir +
+      (out.pruned.length
+        ? ", pruned " + out.pruned.length + " stale fragment(s): " + out.pruned.join(", ")
+        : "") +
       "\n",
   );
   out.manifest.renders.forEach(function (r) {
@@ -451,6 +488,9 @@ if (require.main === module) {
 module.exports = {
   deriveCanonical: deriveCanonical,
   writeDist: writeDist,
+  fragmentsToPrune: fragmentsToPrune,
+  pruneFragments: pruneFragments,
+  PRUNE_CEILING: PRUNE_CEILING,
   referencedVars: referencedVars,
   definedVars: definedVars,
   consumedVars: consumedVars,

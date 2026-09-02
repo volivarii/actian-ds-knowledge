@@ -19,6 +19,7 @@
 // worse than no roll-up: it is quotable and wrong.
 
 const path = require("node:path");
+const fs = require("node:fs");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 
@@ -108,19 +109,25 @@ function countInlineHex(html) {
 
 // Summed across every committed fragment, with the per-fragment split kept so a
 // reader knows WHERE to go rather than only how bad it is.
-function inlineHex() {
-  const fs = require("node:fs");
-  const dir = path.join(REPO_ROOT, "components", "render", "dist", "fragments");
+function inlineHex(distDir) {
+  // Over the fragments the manifest LISTS, never over whatever the directory
+  // holds: a fossil fragment counted here would make its eventual prune read
+  // as "improving" (#520 review), the attrition shape the oracle pair exists
+  // to expose. distDir is a parameter so the reader is testable without the
+  // committed dist.
+  const dist = distDir || path.join(REPO_ROOT, "components", "render", "dist");
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(dist, "render-manifest.json"), "utf8"),
+  );
   const bySlug = {};
   let total = 0;
-  for (const file of fs.readdirSync(dir).sort()) {
-    if (!/\.html?$/i.test(file)) continue;
-    const n = countInlineHex(fs.readFileSync(path.join(dir, file), "utf8"));
-    if (n > 0) {
-      bySlug[file.replace(/\.html?$/i, "")] = n;
-      total += n;
-    }
-  }
+  (manifest.renders || []).forEach((r) => {
+    const n = countInlineHex(
+      fs.readFileSync(path.join(dist, r.fragment), "utf8"),
+    );
+    if (n > 0) bySlug[r.slug] = n;
+    total += n;
+  });
   return { value: total, bySlug: bySlug };
 }
 
@@ -521,6 +528,7 @@ module.exports = {
   REPO_ROOT: REPO_ROOT,
   currentMeasures: currentMeasures,
   countInlineHex: countInlineHex,
+  inlineHex: inlineHex,
   assertSeries: assertSeries,
   readOracle: readOracle,
   previousValues: previousValues,

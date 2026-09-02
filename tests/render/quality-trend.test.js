@@ -492,3 +492,16 @@ test("the markdown names both FM measures", function () {
   assert.match(md, /FM variant values that render alike/);
   assert.match(md, /FM modifier classes with no rule/);
 });
+
+test("inline hex counts the fragments the manifest lists, never a stray file in the directory", function () {
+  const fs = require("node:fs");
+  const os = require("node:os");
+  const dist = fs.mkdtempSync(path.join(os.tmpdir(), "hex-dist-"));
+  fs.mkdirSync(path.join(dist, "fragments"));
+  fs.writeFileSync(path.join(dist, "fragments", "listed.html"), '<div style="color:#ff0000">x</div>');
+  fs.writeFileSync(path.join(dist, "fragments", "fossil.html"), '<div style="color:#00ff00">y</div>');
+  fs.writeFileSync(path.join(dist, "render-manifest.json"), JSON.stringify({ renders: [{ slug: "listed", fragment: "fragments/listed.html" }] }));
+  const hex = trend.inlineHex(dist);
+  fs.rmSync(dist, { recursive: true, force: true });
+  assert.deepEqual(hex, { value: 1, bySlug: { listed: 1 } }, "a fossil's hex must not count, or its prune reads as progress");
+});

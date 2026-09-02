@@ -13,13 +13,13 @@
     },
     "fmUnexplainedCollapses": {
       "value": 55,
-      "direction": "unknown",
-      "previous": null
+      "direction": "unchanged",
+      "previous": 55
     },
     "fmUnownedModifiers": {
       "value": 56,
-      "direction": "unknown",
-      "previous": null
+      "direction": "unchanged",
+      "previous": 56
     },
     "inlineHex": {
       "value": 31,
@@ -42,8 +42,8 @@
       "card-for-perimeter": 1,
       "digram-item-types": 5,
       "digram-topic": 5,
-      "lineage-grouped-node": 2,
       "lineage": 6,
+      "lineage-grouped-node": 2,
       "metamodel": 10,
       "search-result-card": 2
     },

@@ -26,7 +26,8 @@ var INPUTS = [GUIDELINES_DIR, CATEGORIES_DIR].map(function (d) {
 // A rename or a retirement moves a handful of slugs. Anything bulk is a broken
 // input, and the cost of stopping is one reviewed commit raising this number,
 // against a silent tagged-and-vendored deletion if it is wrong.
-var PRUNE_CEILING = 10;
+var prune = require("./lib/prune.js");
+var PRUNE_CEILING = prune.PRUNE_CEILING;
 
 var PERMISSIVE = ["approved", "draft", "inherited", "synthesized"];
 var STRICT = ["approved"];
@@ -311,41 +312,21 @@ function deriveAll(opts) {
 // Takes outDir explicitly so it can be tested against a temp directory. The CLI
 // block below hardcodes REPO_ROOT, and a prune driven at the real tree is how 179
 // committed anatomy files were once deleted by a test.
-function checkPruneSize(doomed) {
-  if (doomed.length > PRUNE_CEILING) {
-    throw new Error(
-      "pruneNotes: refusing to delete " + doomed.length + " notes in one run " +
-        "(ceiling " + PRUNE_CEILING + "). This is a partial or broken guidelines dist, " +
-        "not a retirement. Nothing was written or deleted. Slugs: " + doomed.join(", "),
-    );
-  }
-  return doomed;
-}
-
 // What pruneNotes WOULD delete, without deleting it, so the caller can refuse
-// before it writes anything.
+// before it writes anything. The guards live in lib/prune.js, shared with
+// every other render producer.
 function notesToPrune(outDir, knownSlugs) {
-  if (!knownSlugs.length) throw new Error("pruneNotes: refusing to prune against an empty slug set");
-  var keep = Object.create(null);
-  knownSlugs.forEach(function (s) {
-    keep[s + ".md"] = true;
-  });
-  return checkPruneSize(
-    fs.readdirSync(outDir).filter(function (f) {
-      return f.endsWith(".md") && !keep[f];
+  return prune.vetPrune(
+    outDir,
+    knownSlugs.map(function (s) {
+      return s + ".md";
     }),
+    { label: "pruneNotes", noun: "notes", ext: ".md" },
   );
 }
 
-// Delete a list already vetted by notesToPrune. Split from the decision so the
-// CLI can refuse BEFORE it writes: one filter and one keep-set, built once, so a
-// future exclusion cannot be added to the vetting copy and missed by the acting
-// copy, leaving the run to vet one set and delete another.
 function deleteNotes(outDir, doomed) {
-  return doomed.map(function (f) {
-    fs.unlinkSync(path.join(outDir, f));
-    return f;
-  });
+  return prune.deleteFiles(outDir, doomed);
 }
 
 function pruneNotes(outDir, knownSlugs) {
