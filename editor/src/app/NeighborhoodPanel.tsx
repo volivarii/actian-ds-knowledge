@@ -12,19 +12,14 @@ import {
   type Neighbor,
 } from "../substrate/graphIndex";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
+import { relationGroupLabel } from "../lib/relationGroups";
 
-// Human, doctrine-safe labels for INCOMING edges (describe the citing relationship).
-// Wording is first-pass — refine in the dogfood pass.
-const INCOMING_LABEL: Record<string, string> = {
-  a11y_ref: "Cited as an accessibility requirement by",
-  foundations_ref: "Cited as a foundation by",
-  motion_ref: "Cited as a motion pattern by",
-  related: "Related content",
-  in_category: "Components in this category",
-  narrower: "Broader topic",
-};
+// The word for an INCOMING edge. Delegates to the nomenclature rather than
+// keeping a fourth copy of the relation vocabulary: this map used to say
+// "Cited as an accessibility requirement by" where the relations rail said
+// "Accessibility for" and the graph tab said `a11y_ref`, all for one edge.
 function labelFor(edgeType: string): string {
-  return INCOMING_LABEL[edgeType] ?? "Referenced by";
+  return relationGroupLabel(edgeType, "in");
 }
 
 /** Rows shown per group before "Show all". Tuned so only true hubs

@@ -112,8 +112,10 @@ test("incoming row responds to an Enter keydown the same as a click", () => {
 test("graph section reads as a human relationship group and keeps the honest staleness note", () => {
   const { container } = renderPanel();
   const txt = container.textContent!;
-  // in_category-out now reads as the human group "Category", not a raw badge
-  assert.ok(txt.includes("Category"), "shows the Category group label");
+  // in_category-out reads as "Part of" — the membership pair's outbound word,
+  // shared with in_app so a Component's Category and a Pattern's Products are
+  // the same question asked at two scales.
+  assert.ok(txt.includes("Part of"), "shows the Part of group label");
   assert.ok(!txt.includes("in_category"), "raw edge key must not leak");
   assert.ok(!txt.includes("in category"), "spaced edge key is gone too");
   assert.ok(txt.includes("Action"), "neighbour title still shown");
@@ -186,10 +188,11 @@ test("graph neighbours group under human relationship labels with a typed dot pe
   ];
   const { container } = renderPanel({ graphNeighbors: neighbors });
   const txt = container.textContent!;
-  // human group labels
-  assert.ok(txt.includes("Category"), "shows Category group");
-  assert.ok(txt.includes("Appears in"), "shows Appears in group");
-  assert.ok(txt.includes("Used in patterns"), "shows Used in patterns group");
+  // human group labels — four reciprocal pairs, so composed_of:in and
+  // uses_component:in share one "Used in" group instead of splitting into
+  // "Appears in" and "Used in patterns".
+  assert.ok(txt.includes("Part of"), "shows Part of group");
+  assert.ok(txt.includes("Used in"), "shows Used in group");
   // neighbour titles
   assert.ok(txt.includes("Action") && txt.includes("Modal"));
   assert.ok(txt.includes("Import wizard"));

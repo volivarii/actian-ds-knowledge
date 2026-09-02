@@ -75,7 +75,7 @@ test("renders each placed node's title", () => {
 test("nodes are focusable buttons whose accessible name includes the type, not color", () => {
   const { getByRole } = renderView();
   // aria-label carries the type → non-color encoding (WCAG 1.4.1)
-  getByRole("button", { name: /Contrast.*Accessibility criterion/i });
+  getByRole("button", { name: /Contrast.*Criterion/i });
   cleanup();
 });
 
@@ -91,7 +91,7 @@ test("toggling a node-type legend filter hides that type's nodes", () => {
   const { getByRole, queryAllByText, container } = renderView();
   // legend toggle is labeled with the human type label
   fireEvent.click(
-    getByRole("button", { name: /Toggle Accessibility criterion/i }),
+    getByRole("button", { name: /Toggle Criterion/i }),
   );
   // After toggle, no SVG <text> element should render "Contrast"
   const svgTexts = Array.from(container.querySelectorAll("svg text"));
@@ -163,9 +163,9 @@ test("Reset view button clears the legend filter (hidden node reappears)", () =>
       (el) => el.textContent,
     );
   }
-  // hide Accessibility criterion nodes
+  // hide Criterion nodes
   fireEvent.click(
-    getByRole("button", { name: /Toggle Accessibility criterion/i }),
+    getByRole("button", { name: /Toggle Criterion/i }),
   );
   assert.ok(
     !getSvgTextContents().includes("Contrast"),
@@ -195,9 +195,9 @@ test("toggling a node type removes edges touching that type's nodes", () => {
   const { getByRole, container } = renderView();
   const linesBefore = container.querySelectorAll("line").length;
   assert.ok(linesBefore > 0, "there should be edges initially");
-  // hide Accessibility criterion → removes edges to/from the a11y node
+  // hide Criterion → removes edges to/from the a11y node
   fireEvent.click(
-    getByRole("button", { name: /Toggle Accessibility criterion/i }),
+    getByRole("button", { name: /Toggle Criterion/i }),
   );
   const linesAfter = container.querySelectorAll("line").length;
   assert.ok(

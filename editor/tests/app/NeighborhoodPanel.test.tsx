@@ -88,8 +88,10 @@ test("groups multiple incoming edge types under distinct human labels", () => {
       <NeighborhoodPanel nodeId="a11y:contrast" index={ix} />
     </Theme>,
   );
-  getByText(/Cited as an accessibility requirement by/i);
-  getByText(/Related content/i);
+  // One vocabulary: an inbound a11y_ref is "Required by" and an inbound
+  // `related` is "Related to", the same words the relations rail uses.
+  getByText(/Required by/i);
+  getByText(/Related to/i);
   getByText("Button");
   getByText("Loading states");
   cleanup();

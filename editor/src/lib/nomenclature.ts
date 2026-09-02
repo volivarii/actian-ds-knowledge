@@ -115,8 +115,12 @@ export const LINK_LABEL: Record<LinkKey, LinkPair> = {
 /**
  * Graph edge type -> Link family.
  *
- * `in_app` sits in `composition` on purpose: a Component is Used in a Pattern
- * and a Pattern is Used in a Product — one relationship, one word, two scales.
+ * `in_app` is `membership`, not composition, and the distinction is
+ * load-bearing. The edge points Pattern -> Product, so from the Pattern's side
+ * "out" means "belongs to Studio", not "built from Studio". Structurally it is
+ * the same shape as `in_category`: this belongs to that. Folding it into
+ * composition merged two different questions — what am I part of, and what am
+ * I made of — into one list.
  *
  * Every edge type present in `graph/dist/graph.json` must appear here, and
  * nothing else may. The old map carried a `uses_pattern` entry for a
@@ -126,8 +130,8 @@ export const LINK_LABEL: Record<LinkKey, LinkPair> = {
 export const LINK_FAMILY: Record<string, LinkKey> = {
   composed_of: "composition",
   uses_component: "composition",
-  in_app: "composition",
   in_category: "membership",
+  in_app: "membership",
   narrower: "membership",
   a11y_ref: "compliance",
   foundations_ref: "compliance",
