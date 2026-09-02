@@ -31,7 +31,6 @@ var fs = require("node:fs");
 var path = require("node:path");
 
 var C = require("../../scripts/render/lib/variant-collapse.js");
-var BD = require("../../scripts/render/lib/variant-collapse-by-design.js");
 var dsMap = require("../../components/render/renderer/html-renderers/ds-html-map.js");
 
 var REPO_ROOT = path.resolve(__dirname, "..", "..");
@@ -78,28 +77,49 @@ function signature(slug, axis, value) {
   return out;
 }
 
-/** Every {slug, axis, a, b} the capture says should look different. */
+/**
+ * Every {slug, axis, a, b} the capture says should look different.
+ *
+ * 🪤 This used to enumerate from the CURRENT collapse set, and that gate could
+ * only ever pass while the defect existed: fixing the pairs emptied
+ * collapseKeys, which emptied the subject, which reddened the
+ * subject-presence check below. A gate whose subject is the defect it guards
+ * disappears the moment it succeeds.
+ *
+ * So the subject comes from the capture instead, which is stable: for every
+ * axis, every pair of values that BOTH carry captured facts and whose facts
+ * differ. That set does not shrink when the renderer improves -- it only
+ * changes when Figma changes -- and it keeps covering the pairs already fixed,
+ * which is what stops a later edit quietly re-merging them.
+ */
 function provenDifferentPairs() {
-  var exempt = new Set(Object.keys(BD.BY_DESIGN || BD.byDesign || BD || {}));
-  var identical = C.identicalSets(CONTRACT);
   var pairs = [];
-  [...C.collapseKeys(CONTRACT)]
-    .filter(function (k) { return !exempt.has(k); })
-    .forEach(function (key) {
-      var slug = C.slugOf(key);
-      var rest = key.slice(slug.length + 1);
-      var axis = rest.slice(0, rest.indexOf("="));
-      var value = rest.slice(rest.indexOf("=") + 1);
-      var mine = signature(slug, axis, value);
-      if (!Object.keys(mine).length) return;
-      (identical.get(key) || []).forEach(function (twin) {
-        var theirs = signature(slug, axis, twin);
-        var differs = Object.keys(mine).some(function (n) {
-          return theirs[n] !== undefined && theirs[n] !== mine[n];
-        });
-        if (differs) pairs.push({ slug: slug, axis: axis, a: value, b: twin });
+  var slugs = (CONTRACT && CONTRACT.slugs) || {};
+  Object.keys(slugs).forEach(function (slug) {
+    var variants = (slugs[slug] || {}).variants || {};
+    Object.keys(variants).forEach(function (axis) {
+      if (C.isStateAxis(axis)) return;
+      var values = (variants[axis] || {}).values || [];
+      var sigs = {};
+      values.forEach(function (v) {
+        var sig = signature(slug, axis, v);
+        if (Object.keys(sig).length) sigs[v] = sig;
       });
+      var named = Object.keys(sigs);
+      for (var i = 0; i < named.length; i++) {
+        for (var j = i + 1; j < named.length; j++) {
+          var a = sigs[named[i]];
+          var b = sigs[named[j]];
+          var differs = Object.keys(a).some(function (node) {
+            return b[node] !== undefined && b[node] !== a[node];
+          });
+          if (differs) {
+            pairs.push({ slug: slug, axis: axis, a: named[i], b: named[j] });
+          }
+        }
+      }
     });
+  });
   return pairs;
 }
 
