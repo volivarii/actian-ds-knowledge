@@ -69,7 +69,19 @@
               "name": "--zen-border-radius-xs"
             },
             {
+              "name": "--zen-color-bg-error"
+            },
+            {
+              "name": "--zen-color-bg-info"
+            },
+            {
               "name": "--zen-color-bg-subtle"
+            },
+            {
+              "name": "--zen-color-bg-success"
+            },
+            {
+              "name": "--zen-color-bg-warning"
             },
             {
               "name": "--zen-color-icon-default"
@@ -79,6 +91,12 @@
             },
             {
               "name": "--zen-color-icon-primary"
+            },
+            {
+              "name": "--zen-color-icon-success"
+            },
+            {
+              "name": "--zen-color-icon-warning"
             },
             {
               "name": "--zen-color-text-default"

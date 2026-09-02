@@ -6,19 +6,19 @@
   },
   "totals": {
     "verified": 75,
-    "verifiedViaTokenName": 3,
+    "verifiedViaTokenName": 5,
     "mismatch": 0,
     "unverifiable": 330,
     "overridden": 0,
-    "oracleCoverage": 0.1912,
-    "verifiedFidelity": 0.9615,
-    "examined": 408
+    "oracleCoverage": 0.1951,
+    "verifiedFidelity": 0.9375,
+    "examined": 410
   },
   "reasons": {
     "root-is-variant-instance": 21,
     "no-matching-variant": 14,
-    "no-fact-of-kind": 23,
-    "element-no-node-mapping": 229,
+    "element-no-node-mapping": 231,
+    "no-fact-of-kind": 21,
     "root-is-non-default-state": 4,
     "state-unreachable": 37,
     "selector-not-attributable": 2
@@ -40,11 +40,11 @@
         "ds-alert"
       ],
       "verified": 0,
-      "verifiedViaTokenName": 0,
+      "verifiedViaTokenName": 2,
       "mismatch": 0,
       "unverifiable": 11,
       "overridden": 0,
-      "blind": true
+      "blind": false
     },
     "app-switcher-dropdown": {
       "prefixes": [
@@ -642,7 +642,6 @@
     }
   },
   "blind": [
-    "alert-banner",
     "avatar",
     "breadcrumb",
     "calendar-date-input",
@@ -677,6 +676,24 @@
   ],
   "mismatches": [],
   "tokenNameAgreements": [
+    {
+      "slug": "alert-banner",
+      "selector": ".ds-alert--success",
+      "property": "background",
+      "token": "--zen-color-bg-success",
+      "ourValue": "#f3f6f3",
+      "capturedValue": "#f0ffec",
+      "message": "alert-banner .ds-alert--success {background}: binds --zen-color-bg-success, which the capture also names, but the resolved hexes differ (ours #f3f6f3, capture says #f0ffec). The binding agrees; the divergence points at the token snapshot (tokens/tokens.css), not the CSS."
+    },
+    {
+      "slug": "alert-banner",
+      "selector": ".ds-alert--warning",
+      "property": "background",
+      "token": "--zen-color-bg-warning",
+      "ourValue": "#f7f4f2",
+      "capturedValue": "#fff9e5",
+      "message": "alert-banner .ds-alert--warning {background}: binds --zen-color-bg-warning, which the capture also names, but the resolved hexes differ (ours #f7f4f2, capture says #fff9e5). The binding agrees; the divergence points at the token snapshot (tokens/tokens.css), not the CSS."
+    },
     {
       "slug": "badge",
       "selector": ".ds-badge",
