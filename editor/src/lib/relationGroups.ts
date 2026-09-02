@@ -25,7 +25,6 @@ export interface RelationGroup {
   items: Neighbor[];
 }
 
-
 // Author priority: what this record IS and is BUILT FROM, before the
 // potentially large incoming crowds.
 //
