@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **The canonical derive prunes a fragment whose slug left the manifest**
-  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD), closes #520, the fragments half
+  ([#635](https://github.com/volivarii/actian-ds-knowledge/pull/635), closes #520, the fragments half
   of #572). `derive-canonical.js` wrote one fragment per rendered slug and never deleted one, so a
   retired or renamed slug left its fragment tracked, shipped and vendored, the way a usage note once
   fossilised through a rename. The prune has the same three guards as the usage-notes one: an empty
