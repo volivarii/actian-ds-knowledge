@@ -15,8 +15,23 @@ var os = require("node:os");
 var path = require("node:path");
 var D = require("../../scripts/render/derive-canonical.js");
 
+// Every temp directory is removed after the run: the writeDist case writes a
+// whole render dist (fonts included), and a leaked one per run is megabytes
+// nobody would find.
+var tmpDirs = [];
+test.after(function () {
+  tmpDirs.forEach(function (d) {
+    fs.rmSync(d, { recursive: true, force: true });
+  });
+});
+function tmpDir(prefix) {
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  tmpDirs.push(dir);
+  return dir;
+}
+
 function tmpFragmentsDir(files) {
-  var dir = fs.mkdtempSync(path.join(os.tmpdir(), "fragments-"));
+  var dir = tmpDir("fragments-");
   Object.keys(files).forEach(function (f) {
     fs.writeFileSync(path.join(dir, f), files[f]);
   });
@@ -51,7 +66,7 @@ test("fragmentsToPrune: refuses a prune above the ceiling, naming the slugs", fu
 });
 
 test("writeDist prunes a fossil fragment beside the ones it writes, and says so", function () {
-  var dist = fs.mkdtempSync(path.join(os.tmpdir(), "render-dist-"));
+  var dist = tmpDir("render-dist-");
   fs.mkdirSync(path.join(dist, "fragments"));
   fs.writeFileSync(path.join(dist, "fragments", "no-such-component.html"), "fossil");
   var out = D.writeDist(dist);
@@ -63,4 +78,14 @@ test("writeDist prunes a fossil fragment beside the ones it writes, and says so"
     out.manifest.renders.length,
     "the directory holds exactly what the manifest lists",
   );
+});
+
+test("both render producers prune through the one shared helper", function () {
+  var lib = require("../../scripts/render/lib/prune.js");
+  var notes = require("../../scripts/render/derive-usage-notes.js");
+  assert.strictEqual(D.PRUNE_CEILING, lib.PRUNE_CEILING, "one ceiling, not a copy");
+  var dir = tmpDir("notes-");
+  fs.writeFileSync(path.join(dir, "radio.md"), "kept");
+  fs.writeFileSync(path.join(dir, "radio-button.md"), "fossil");
+  assert.deepEqual(notes.notesToPrune(dir, ["radio"]), ["radio-button.md"], "the notes producer still vets the same way");
 });

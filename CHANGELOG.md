@@ -27,8 +27,11 @@ Each entry links its pull request. Dates are the merge date (UTC).
   fossilised through a rename. The prune has the same three guards as the usage-notes one: an empty
   slug set is a missing input and refuses, more than ten deletions in one run is a broken derive and
   refuses, and the decision is vetted before the first write so a refused run leaves the dist
-  untouched. The command names what it pruned. The other producers under `scripts/render/` still
-  do not prune, which is what #572 keeps open.
+  untouched, and the deletion runs before the first write. The guards live in one shared helper
+  (`scripts/render/lib/prune.js`) that the usage-notes producer uses too, and the inline-hex measure
+  now counts the fragments the manifest lists rather than whatever the directory holds, so pruning a
+  fossil cannot read as progress. The command names what it pruned. The other producers under
+  `scripts/render/` still do not prune, which is what #572 keeps open.
 
 ### Fixed
 

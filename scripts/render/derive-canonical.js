@@ -407,58 +407,43 @@ function deriveCanonical() {
 
 // Prune: a fragment whose slug the manifest no longer lists is a fossil, and
 // this producer used to leave it tracked, shipped and vendored (#520, #572),
-// exactly as a usage note once fossilised through a rename (#567). Same three
-// guards as pruneNotes there. The wipe guard: an empty slug set is a missing
-// input, not a retirement, and "derive produced nothing so delete everything"
-// is the shape that once removed 179 committed anatomy files. The ceiling: a
-// partial or broken derive is not a mass retirement. The split: the decision
-// is vetted BEFORE anything is written, so a refused run leaves the dist
-// untouched rather than half-written.
-var PRUNE_CEILING = 10;
+// exactly as a usage note once fossilised through a rename (#567). The guards
+// (wipe, ceiling, decide-before-write) live in lib/prune.js, shared with the
+// usage-notes producer. The keep set is the manifest this run publishes: what
+// a consumer can reach through the index is what the directory holds.
+var prune = require("./lib/prune.js");
+var PRUNE_CEILING = prune.PRUNE_CEILING;
 
 function fragmentsToPrune(fragmentsDir, knownSlugs) {
-  if (!knownSlugs.length) {
-    throw new Error("pruneFragments: refusing to prune against an empty slug set");
-  }
-  var keep = Object.create(null);
-  knownSlugs.forEach(function (slug) {
-    keep[slug + ".html"] = true;
-  });
-  var doomed = fs.existsSync(fragmentsDir)
-    ? fs.readdirSync(fragmentsDir).filter(function (f) {
-        return f.endsWith(".html") && !keep[f];
-      })
-    : [];
-  if (doomed.length > PRUNE_CEILING) {
-    throw new Error(
-      "pruneFragments: refusing to delete " + doomed.length + " fragments in one run " +
-        "(ceiling " + PRUNE_CEILING + "). This is a partial or broken derive, not a " +
-        "retirement. Nothing was written or deleted. Files: " + doomed.join(", "),
-    );
-  }
-  return doomed.sort();
+  return prune.vetPrune(
+    fragmentsDir,
+    knownSlugs.map(function (slug) {
+      return slug + ".html";
+    }),
+    { label: "pruneFragments", noun: "fragments", ext: ".html" },
+  );
 }
 
 function pruneFragments(fragmentsDir, doomed) {
-  return doomed.map(function (f) {
-    fs.unlinkSync(path.join(fragmentsDir, f));
-    return f;
-  });
+  return prune.deleteFiles(fragmentsDir, doomed);
 }
 
-// CLI: write the derived fragments + css + CEM + manifest into components/render/dist/.
-// dist is a build output: it is written locally to prove the chain but is never
-// committed (the CI derive workflow that ships it to consumers is slice 1b).
+// Write the derived fragments + css + CEM + manifest into components/render/dist/.
+// The dist is committed by render-derive.yml and vendored by every consumer, so
+// what this writes and what it prunes both ship.
 function writeDist(distDir) {
   var out = deriveCanonical();
   var fragmentsDir = path.join(distDir, "fragments");
-  // Vet the prune against the manifest before the first write.
+  // Vet against the manifest before the first write, and delete before it too:
+  // a refused run leaves the dist untouched, and a deletion that fails leaves
+  // nothing half-written behind a manifest that already claims the new shape.
   var doomed = fragmentsToPrune(
     fragmentsDir,
     out.manifest.renders.map(function (r) {
-      return r.slug;
+      return path.basename(r.fragment, ".html");
     }),
   );
+  out.pruned = pruneFragments(fragmentsDir, doomed);
   fs.mkdirSync(fragmentsDir, { recursive: true });
   fs.writeFileSync(path.join(distDir, "render.css"), out.css);
   fs.writeFileSync(path.join(distDir, "render-fonts.css"), out.fontsCss);
@@ -476,7 +461,6 @@ function writeDist(distDir) {
     path.join(distDir, "render-manifest.json"),
     JSON.stringify(out.manifest, null, 2) + "\n",
   );
-  out.pruned = pruneFragments(fragmentsDir, doomed);
   return out;
 }
 
