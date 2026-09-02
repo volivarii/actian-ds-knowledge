@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **Opening a file in the Knowledge Editor no longer stages it**
-  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD)). Since every page gained an
+  ([#632](https://github.com/volivarii/actian-ds-knowledge/pull/632)). Since every page gained an
   address (#619) a deep link opened far more files, and every content file opened landed in the
   author's batch without a keystroke. The form no longer fills a missing list with an empty value or
   a `minItems` list with nulls at mount (a default that carries a value still applies), and the
