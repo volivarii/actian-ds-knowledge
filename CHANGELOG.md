@@ -20,6 +20,31 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **Secondary and Destructive FM buttons render styled** ([#633](https://github.com/volivarii/actian-ds-knowledge/pull/633), closes #554).
+  `fmButton` emitted `fm-button--secondary` and `fm-button--destructive` with no rule behind either,
+  so both rendered as an unstyled div at 1.03:1 and a destructive action was invisible text. Both
+  own a rule now, token-bound to the kit's own palette: 9.8:1 and 4.8:1 against their backgrounds.
+
+### Added
+
+- **The FM tier's variant collapses are dated measures in the quality roll-up**
+  ([#633](https://github.com/volivarii/actian-ds-knowledge/pull/633)). The css-owner gate covered the DS
+  tier only, and sizing the FM tier before writing its twin found dozens of emitted modifier classes
+  with no rule and dozens of axis values that render alike once the unstyled classes are removed,
+  so a hard gate would have been red on arrival. `scripts/render/lib/fm-collapse.js` drives the FM
+  renderer with the registry's own axes and values (no list), reads which classes `fm-base.css`
+  styles with a declaration, and emits the DS tier's own contract shape, so `variant-collapse.js`
+  judges both tiers with one classifier, one State-axis rule and one ledger shape
+  (`fm-collapse-by-design.js`, empty on arrival). `quality-trend.{json,md}` carries
+  `fmUnexplainedCollapses` and `fmUnownedModifiers` with a direction whose baseline is read at
+  the merge base with main, never from the run's own write, and the roll-up is dated by the FM
+  sources too. Two owned classes with identical declarations count as one look, a class named
+  in a comment owns nothing, a component with no renderer case is listed as unrendered rather
+  than as a collapse, and owned rules the renderer never emits are listed. `fmButton` now draws
+  its Disabled state, which had a rule and no reader.
+
+### Fixed
+
 - **Opening a file in the Knowledge Editor no longer stages it**
   ([#632](https://github.com/volivarii/actian-ds-knowledge/pull/632)). Since every page gained an
   address (#619) a deep link opened far more files, and every content file opened landed in the
