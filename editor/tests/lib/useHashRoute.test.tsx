@@ -112,7 +112,7 @@ test("the app navigating pushes, so Back returns to where it was", () => {
       api?.setActivePath("content/src/patterns/forms.md");
     });
   });
-  assert.deepEqual(pushed, ["#/pattern/forms"]);
+  assert.deepEqual(pushed, ["#/content-pattern/forms"]);
   assert.deepEqual(replaced, [], "a real navigation must not replace history");
   cleanup();
 });
@@ -149,11 +149,11 @@ test("arriving on a non-canonical address corrects it without spending history",
   // A chat client appended a slash. The reader should end up on the right
   // screen at the canonical address, and their first Back should still leave
   // the editor rather than landing on the rejected entry.
-  setHash("#/pattern/forms/");
+  setHash("#/content-pattern/forms/");
   const { pushed, replaced } = recordWrites(() => {
     render(<Harness seen={[]} />);
   });
-  assert.deepEqual(replaced, ["#/pattern/forms"]);
+  assert.deepEqual(replaced, ["#/content-pattern/forms"]);
   assert.deepEqual(pushed, [], "correcting an address must not push");
   cleanup();
 });
@@ -212,7 +212,7 @@ test("going back navigates the app rather than leaving it", () => {
   render(<Harness seen={seen} />);
   seen.length = 0;
   act(() => {
-    setHash("#/pattern/forms");
+    setHash("#/content-pattern/forms");
     window.dispatchEvent(new Event("hashchange"));
   });
   assert.deepEqual(seen, ["content/src/patterns/forms.md"]);

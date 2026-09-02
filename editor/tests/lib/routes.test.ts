@@ -36,7 +36,7 @@ const PAIRS: ReadonlyArray<readonly [string | null, string]> = [
 
   // Content, named as the sidebar names it.
   ["content/src/writing/capitalization.md", "#/writing/capitalization"],
-  ["content/src/patterns/forms.md", "#/pattern/forms"],
+  ["content/src/patterns/forms.md", "#/content-pattern/forms"],
   [
     "content/src/product/related-content-panels.md",
     "#/product/related-content-panels",
@@ -47,7 +47,7 @@ const PAIRS: ReadonlyArray<readonly [string | null, string]> = [
   // what keeps it from colliding with the content patterns above.
   ["app-context/src/apps/studio.md", "#/app/studio"],
   ["app-context/src/entities/data-product.md", "#/entity/data-product"],
-  ["app-context/src/patterns/import-wizard.md", "#/feature/import-wizard"],
+  ["app-context/src/patterns/import-wizard.md", "#/pattern/import-wizard"],
 ];
 
 for (const [path, hash] of PAIRS) {
@@ -281,7 +281,10 @@ test("pathFromHash: a trailing slash still resolves", () => {
   // A chat client or wiki auto-linker appending a slash was enough to send the
   // reader to home, and the write effect then overwrote the address they were
   // given, so they could not even read it back.
-  assert.equal(pathFromHash("#/pattern/forms/"), "content/src/patterns/forms.md");
+  assert.equal(
+    pathFromHash("#/content-pattern/forms/"),
+    "content/src/patterns/forms.md",
+  );
   assert.equal(pathFromHash("#/component/button/"), "workspace/button");
   assert.equal(
     pathFromHash("#/component/button/content/"),
@@ -292,7 +295,7 @@ test("pathFromHash: a trailing slash still resolves", () => {
 
 test("pathFromHash: a tracking query is ignored, not made part of the name", () => {
   assert.equal(
-    pathFromHash("#/pattern/forms?utm_source=slack"),
+    pathFromHash("#/content-pattern/forms?utm_source=slack"),
     "content/src/patterns/forms.md",
   );
   assert.equal(
@@ -407,5 +410,47 @@ test("pathFromHash: an address that arrives percent-encoded still resolves", () 
   assert.equal(
     pathFromHash(encodeURI("#/file/content/src/writing/tone of voice.md")),
     "content/src/writing/tone of voice.md",
+  );
+});
+
+test("old addresses keep resolving after the segment swap", () => {
+  // MIGRATIONS.md Rule 1, parallel change: a link someone pasted into Slack
+  // before the rename must still open the record it named.
+  assert.equal(
+    pathFromHash("#/feature/import-wizard"),
+    "app-context/src/patterns/import-wizard.md",
+  );
+  assert.equal(
+    pathFromHash("#/pattern/import-wizard"),
+    "app-context/src/patterns/import-wizard.md",
+  );
+  assert.equal(
+    pathFromHash("#/content-pattern/forms"),
+    "content/src/patterns/forms.md",
+  );
+});
+
+test("a retired segment is never MINTED, only resolved", () => {
+  // The trap a single table would create: if `feature` sat in DIRS it would
+  // resolve AND mint, so two segments would name one directory and the address
+  // the app writes back would differ from the one the reader arrived on.
+  // hashFor reads DIRS only; pathFromHash reads both.
+  assert.equal(
+    hashFor("app-context/src/patterns/import-wizard.md"),
+    "#/pattern/import-wizard",
+  );
+  assert.notEqual(
+    hashFor("app-context/src/patterns/import-wizard.md"),
+    "#/feature/import-wizard",
+  );
+});
+
+test("`pattern` now names app-context only, never content", () => {
+  // `pattern` used to mean content/src/patterns. One segment cannot name two
+  // directories without the resolver guessing, so content took its own segment
+  // and `pattern` belongs to app-context outright.
+  assert.equal(
+    pathFromHash("#/pattern/forms"),
+    "app-context/src/patterns/forms.md",
   );
 });
