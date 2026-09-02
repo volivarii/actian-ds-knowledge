@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Added
 
 - **The Knowledge Editor shows a component's canonical render beside its Figma capture**
-  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD)).
+  ([#630](https://github.com/volivarii/actian-ds-knowledge/pull/630)).
   Every consumer of the render dist (the plugin, the Claude Design bundle, the docs site) assembles
   the same three files, `render.css`, `render-fonts.css` and one `fragments/<slug>.html`, and until
   now no human surface showed the result: the output-quality measures said collapses, bare colours
