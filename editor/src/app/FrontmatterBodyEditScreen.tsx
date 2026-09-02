@@ -15,7 +15,7 @@ import { RJSFForm } from "../form-engine/RJSFForm";
 import { frontmatterTemplates } from "../form-engine/templates";
 import {
   stringifyYaml,
-  assembleFrontmatterFilePreservingComments,
+  assembleFrontmatterFilePreservingComments, preserveFenceSeparator,
 } from "../form-engine/yamlSerializer";
 import {
   splitFrontmatter,
@@ -86,7 +86,9 @@ export function assembleFrontmatterFile(
     flowAtDepth: flowAtDepth === null ? undefined : flowAtDepth,
   });
   const fm = yaml.endsWith("\n") ? yaml : yaml + "\n";
-  return `---\n${fm}---\n${body.startsWith("\n") ? body : "\n" + body}`;
+  // The body is emitted as it was split (see yamlSerializer.ts for why a
+  // forced blank line after the fence was a change the author never made).
+  return `---\n${fm}---\n${body}`;
 }
 
 interface Props {
@@ -132,6 +134,10 @@ type Loaded =
       frontmatterText: string | null;
       body: string;
       basedOnSha: string;
+      /** The bytes on main as loaded, or null when the text came from the
+       *  batch (already a real change) or the file is new. A save whose
+       *  assembled file equals this is not a change and stages nothing. */
+      baseline: string | null;
     };
 
 export function FrontmatterBodyEditScreen(props: Props) {
@@ -325,6 +331,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
           .find((e) => e.path === path);
         let text: string;
         let basedOnSha = "";
+        let baseline: string | null = null;
         if (cartHit) {
           text = cartHit.content;
           basedOnSha = cartHit.basedOnSha;
@@ -338,6 +345,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
             const loaded = await getTextFileWithSha(octokit, path);
             text = loaded.text;
             basedOnSha = loaded.sha;
+            baseline = loaded.text;
           } catch (err) {
             if ((err as { status?: number }).status !== 404) throw err;
             text = ""; // new file — no frontmatter yet → raw fallback to start it
@@ -391,6 +399,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
           frontmatterText: split.frontmatterText,
           body: split.body,
           basedOnSha,
+          baseline,
         });
       } catch (err) {
         if (!cancelled)
@@ -431,7 +440,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
   );
 
   const flushToCart = useCallback(
-    (fd: unknown, b: string, fm: string) => {
+    (fd: unknown, b: string, fm: string, explicit = false) => {
       if (state.kind !== "ready") return;
       // surface === "yaml": the pane edits the frontmatter TEXT directly, so
       // assembly is plain concatenation of that text (never a re-serialized
@@ -454,9 +463,20 @@ export function FrontmatterBodyEditScreen(props: Props) {
       // lines survive the save. Otherwise the flow-depth path: yamlFlowAtDepth
       // undefined → default (2); null → block-style. assembleFrontmatterFile
       // accepts null; default is 2.
+      const bodyOut = preserveFenceSeparator(state.body, b);
       const content = yamlActive
-        ? assembleYamlFrontmatterFile(fm, b)
-        : assembleFromForm(fd, fmDonor ?? state.frontmatterText, b);
+        ? assembleYamlFrontmatterFile(fm, bodyOut)
+        : assembleFromForm(fd, fmDonor ?? state.frontmatterText, bodyOut);
+      // A real change only (sub-task 1114, F15). On the automatic path (the
+      // debounce behind every keystroke) the bytes as loaded from main are not
+      // an edit, and a file typed back to those bytes has no change left to
+      // submit: it leaves the batch rather than sitting there as a no-op PR.
+      // An explicit "Add to batch" is the author's own call and still stages,
+      // byte-identical content included (the stale-base guard rides on it).
+      if (!explicit && state.baseline !== null && content === state.baseline) {
+        submissionCartSingleton.remove(path);
+        return;
+      }
       submissionCartSingleton.add({
         path,
         content,
@@ -668,6 +688,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
                     formDataRef.current,
                     bodyRef.current,
                     fmTextRef.current,
+                    true,
                   )
               : undefined
           }
@@ -825,7 +846,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
             scheduleFlush(next, bodyRef.current, fmTextRef.current);
           }}
           onSubmit={(next) =>
-            flushToCart(next, bodyRef.current, fmTextRef.current)
+            flushToCart(next, bodyRef.current, fmTextRef.current, true)
           }
           submitLabel="Add to batch"
         >

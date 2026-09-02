@@ -18,6 +18,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Opening a file in the Knowledge Editor no longer stages it** ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD)).
+  Since every page gained an address (#619) a deep link opened far more files, and every content
+  file opened landed in the author's batch without a keystroke, carrying a `wordsToAvoid: []` line
+  and a blank line the author never wrote. Two producers of that "change": the form filled every
+  array property the file lacked with an empty list at mount and reported it as an edit, and the
+  assembler forced a blank line after the closing fence that 87 of the 97 frontmatter files in this
+  repo do not have. The form now applies only defaults that carry a value, the assembler emits the
+  body as it was split and restores a blank line only where the loaded file had one, and the
+  automatic save stages nothing whose bytes equal the file as loaded: a file typed back to what it
+  was leaves the batch instead of sitting there as a no-op pull request. An explicit "Add to batch"
+  keeps its meaning and still stages byte-identical content. Reproduced first with production's own
+  routing, schema and file, after a toy schema had passed. Jira sub-task 1114, finding F15.
+
 ### Added
 
 - **The Knowledge Editor shows a component's canonical render beside its Figma capture**

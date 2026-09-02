@@ -148,7 +148,12 @@ export function assembleFrontmatterFilePreservingComments(
     fm = doc.toString({ lineWidth: 0, flowCollectionPadding: false });
   }
   const fenced = fm.endsWith("\n") ? fm : fm + "\n";
-  return `---\n${fenced}---\n${body.startsWith("\n") ? body : "\n" + body}`;
+  // The body is emitted as it was split: whether a blank line follows the
+  // closing fence is the file's own shape (87 of 97 files in this repo have
+  // none). Forcing one made every save of those files a one-byte "change" the
+  // author never typed, so an untouched file could not stage nothing and a
+  // reverted one could not leave the batch (sub-task 1114, F15).
+  return `---\n${fenced}---\n${body}`;
 }
 
 /**
@@ -197,4 +202,16 @@ function extractLeadingHeader(text: string): string {
   }
   if (out.length === 0) return "";
   return out.join("\n") + "\n";
+}
+
+/**
+ * Whether a blank line follows the closing fence is the loaded file's own
+ * shape. The rich editor's round trip drops one at the top of the body, so a
+ * save restores it where the file HAD it; it never adds one where the file
+ * had none (that was a change the author never made, sub-task 1114), and it
+ * never strips one the author typed.
+ */
+export function preserveFenceSeparator(loadedBody: string, editedBody: string): string {
+  if (loadedBody.startsWith("\n") && !editedBody.startsWith("\n")) return "\n" + editedBody;
+  return editedBody;
 }
