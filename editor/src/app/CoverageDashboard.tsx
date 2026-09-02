@@ -40,6 +40,7 @@ import {
   type Domain,
   type Status,
 } from "../lib/coverageLoader";
+import { STATE_LABEL } from "../lib/nomenclature";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 
@@ -55,11 +56,13 @@ const STATUS_COLOR: Record<Status, "gray" | "amber" | "blue" | "green"> = {
   inherited: "blue",
 };
 
+// One vocabulary with the workspace. `not-started` used to render as an
+// em-dash here, which is a state a reader cannot read.
 const STATUS_LABEL: Record<Status, string> = {
-  "not-started": "—",
-  draft: "draft",
-  approved: "ready",
-  inherited: "inherited",
+  "not-started": STATE_LABEL.empty,
+  draft: STATE_LABEL.draft,
+  approved: STATE_LABEL.approved,
+  inherited: STATE_LABEL.inherited,
 };
 
 const DOMAIN_LABEL: Record<Domain, string> = {

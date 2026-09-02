@@ -39,6 +39,7 @@ import {
   type WorkspaceState,
 } from "../lib/workspaceState";
 import { formatRelativeTime, type CommitInfo } from "../lib/derivedFields";
+import { STATE_LABEL } from "../lib/nomenclature";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 
@@ -49,11 +50,14 @@ export interface AuthoringWorkspaceProps {
   onBack: () => void;
 }
 
+// Keyed by the substrate's own status values; the words come from the
+// nomenclature so this screen and the coverage table can never disagree. They
+// used to: `approved` read "Approved" here and "ready" there.
 const STATUS_LABEL: Record<WorkspaceDomainStatus, string> = {
-  "not-started": "Not started",
-  authored: "Authored — in batch / remote",
-  inherited: "Inherited from category",
-  approved: "Approved",
+  "not-started": STATE_LABEL.empty,
+  authored: STATE_LABEL.draft,
+  inherited: STATE_LABEL.inherited,
+  approved: STATE_LABEL.approved,
 };
 
 const STATUS_COLOR: Record<

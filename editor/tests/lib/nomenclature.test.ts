@@ -113,3 +113,42 @@ test("every node type the real graph emits has a Thing word", () => {
   const missing = [...real].filter((t) => !(t in THING_LABEL));
   assert.deepEqual(missing, [], `node types with no Thing word: ${missing}`);
 });
+
+test("the workspace and the coverage table use the same word for a state", () => {
+  // The defect this closes: `approved` rendered as "Approved" in
+  // AuthoringWorkspace and "ready" in CoverageDashboard; `not-started` as
+  // "Not started" and as "—". Both files now read the same map, so the two
+  // can no longer drift.
+  //
+  // Scoped to the STATUS_LABEL declaration rather than the whole file. A
+  // whole-file scan matched AuthoringWorkspace's `kind: "ready"` loading
+  // discriminant, which has nothing to do with a domain status — a guard that
+  // fails on the wrong subject teaches people to weaken it.
+  const files = [
+    ["AuthoringWorkspace", join(REPO, "editor", "src", "app", "AuthoringWorkspace.tsx")],
+    ["CoverageDashboard", join(REPO, "editor", "src", "app", "CoverageDashboard.tsx")],
+  ] as const;
+  for (const [name, path] of files) {
+    const src = readFileSync(path, "utf8");
+    const start = src.indexOf("const STATUS_LABEL");
+    assert.notEqual(start, -1, `${name} has no STATUS_LABEL to check`);
+    const block = src.slice(start, src.indexOf("};", start) + 2);
+    assert.ok(
+      block.includes("STATE_LABEL."),
+      `${name}'s STATUS_LABEL does not read STATE_LABEL`,
+    );
+    for (const stale of [
+      '"ready"',
+      '"draft"',
+      '"Not started"',
+      '"Authored — in batch / remote"',
+      '"Inherited from category"',
+      '"—"',
+    ]) {
+      assert.ok(
+        !block.includes(stale),
+        `${name}'s STATUS_LABEL still declares the retired label ${stale}`,
+      );
+    }
+  }
+});
