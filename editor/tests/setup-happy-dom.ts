@@ -64,3 +64,38 @@ if (!("getComputedStyle" in globalThis)) {
     win as unknown as { getComputedStyle: unknown }
   ).getComputedStyle;
 }
+
+// happy-dom lacks Web Storage and the observers Radix widgets touch. One copy
+// here, guarded, so screen tests under happy-dom need no local stubs.
+for (const key of ["sessionStorage", "localStorage"] as const) {
+  if (!(g as Record<string, unknown>)[key]) {
+    const store: Record<string, string> = {};
+    Object.defineProperty(globalThis, key, {
+      configurable: true,
+      writable: true,
+      value: {
+        getItem: (k: string) => store[k] ?? null,
+        setItem: (k: string, v: string) => {
+          store[k] = v;
+        },
+        removeItem: (k: string) => {
+          delete store[k];
+        },
+        clear: () => {
+          for (const k of Object.keys(store)) delete store[k];
+        },
+      },
+    });
+  }
+}
+class NoopObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() {
+    return [];
+  }
+}
+for (const name of ["ResizeObserver", "IntersectionObserver"] as const) {
+  if (!(g as Record<string, unknown>)[name]) (g as Record<string, unknown>)[name] = NoopObserver;
+}

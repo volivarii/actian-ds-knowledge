@@ -18,6 +18,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Opening a file in the Knowledge Editor no longer stages it**
+  ([#632](https://github.com/volivarii/actian-ds-knowledge/pull/632)). Since every page gained an
+  address (#619) a deep link opened far more files, and every content file opened landed in the
+  author's batch without a keystroke. The form no longer fills a missing list with an empty value or
+  a `minItems` list with nulls at mount (a default that carries a value still applies), and the
+  assembler no longer forces a blank line after the closing fence; where a file has one, the rich
+  editor's save keeps it. The automatic save stages nothing whose bytes equal the file on main, and
+  a form-edited file typed back to those bytes leaves the batch, also when reopened from the batch;
+  a plain markdown file typed back to what was loaded keeps no draft. This holds for files that
+  round-trip their own save path byte for byte; the 30 that do not are
+  [#631](https://github.com/volivarii/actian-ds-knowledge/issues/631). An explicit "Add to batch" is the author's call and still stages, byte-identical
+  content included. Jira sub-task 1114, finding F15.
+
 ### Added
 
 - **The Knowledge Editor shows a component's canonical render beside its Figma capture**

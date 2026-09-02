@@ -22,6 +22,7 @@
 // package's CST API supports it, but the document-mutate-via-JSON path is
 // non-trivial and lands in PR 2 if authors hit a case where it bites.
 
+import { joinFrontmatter } from "../frontmatter-engine/assembleYaml";
 import yaml from "yaml";
 
 export interface StringifyOptions {
@@ -147,8 +148,7 @@ export function assembleFrontmatterFilePreservingComments(
     // style-stable. Semantic parse is unaffected either way (dist-safe).
     fm = doc.toString({ lineWidth: 0, flowCollectionPadding: false });
   }
-  const fenced = fm.endsWith("\n") ? fm : fm + "\n";
-  return `---\n${fenced}---\n${body.startsWith("\n") ? body : "\n" + body}`;
+  return joinFrontmatter(fm, body);
 }
 
 /**
@@ -197,4 +197,16 @@ function extractLeadingHeader(text: string): string {
   }
   if (out.length === 0) return "";
   return out.join("\n") + "\n";
+}
+
+/**
+ * Whether a blank line follows the closing fence is the loaded file's own
+ * shape. The rich editor's round trip drops one at the top of the body, so a
+ * save restores it where the file HAD it; it never adds one where the file
+ * had none (that was a change the author never made, sub-task 1114), and it
+ * never strips one the author typed.
+ */
+export function preserveFenceSeparator(loadedBody: string, editedBody: string): string {
+  if (loadedBody.startsWith("\n") && !editedBody.startsWith("\n")) return "\n" + editedBody;
+  return editedBody;
 }

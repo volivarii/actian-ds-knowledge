@@ -146,6 +146,19 @@ export function RJSFForm({
       formContext={formContext}
       onChange={(e) => onChange(e.formData)}
       onSubmit={(e) => onSubmit?.(e.formData)}
+      // Mounting a form is not an edit. With the default behaviour RJSF fills
+      // every array or object property the data lacks with [] / {} at mount
+      // and reports that as a change, so opening a content file that never
+      // had `wordsToAvoid` staged it with a line the author never wrote
+      // (sub-task 1114, F15). A default with a VALUE in the schema is still
+      // applied and still reported: that one is a real fill-in.
+      experimental_defaultFormStateBehavior={{
+        emptyObjectFields: "skipEmptyDefaults",
+        // `minItems` is met at mount with `[null, null]` under the default
+        // `populate: "all"`, which is the same phantom edit in a schema-invalid
+        // form (app-context patterns' `tags`). The author adds the rows.
+        arrayMinItems: { populate: "never" },
+      }}
       showErrorList="bottom"
     >
       {children ?? (

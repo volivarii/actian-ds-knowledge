@@ -1,3 +1,4 @@
+import { preserveFenceSeparator } from "../../src/form-engine/yamlSerializer";
 import "../setup-happy-dom";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -26,15 +27,18 @@ function categoryFiles(): string[] {
 
 // Model the REAL editor save: split frontmatter (standard yaml lib), round-trip
 // the body through Milkdown, reassemble via assembleFrontmatterFile (which
-// re-serializes the frontmatter and injects the leading blank line). A canonical
+// re-serializes the frontmatter; the leading blank line is restored where the
+// file had one). A canonical
 // source file is a fixed point of this cycle — so a no-op WYSIWYG edit produces
 // byte-identical output (no churn) and the verbatim dist copy stays stable.
 async function editSaveCycle(text: string): Promise<string> {
   const { data, body, frontmatterText } = splitFrontmatter(text);
+  // The screen restores the blank line after the fence where the loaded file
+  // had one (the round trip drops it); the assembler itself adds none.
   return assembleFrontmatterFile(
     data,
     frontmatterText,
-    await roundTripMarkdown(body),
+    preserveFenceSeparator(body, await roundTripMarkdown(body)),
   );
 }
 

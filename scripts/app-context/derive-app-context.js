@@ -16,8 +16,9 @@ const {
 // Reverse the WYSIWYG editor's serializer artifacts as the body is derived into
 // the consumer-facing dist: unescape CommonMark punctuation escapes
 // (`data\_product` → `data_product`) and trim surrounding whitespace. The trim
-// must be symmetric: the editor save (assembleFrontmatterFile) injects a blank
-// line AFTER the frontmatter fence, so the verbatim field body arrives with a
+// must be symmetric: a file that has a blank line after its frontmatter fence
+// keeps it across an editor save (the assembler adds none, the screen restores
+// the one that was there), so the verbatim field body can arrive with a
 // LEADING newline a trailing-only strip would leak into the dist. Field bodies
 // are single-block prose, so trimming both ends is safe and keeps the dist
 // stable across authoring tools. No-op on hand-authored sources.

@@ -354,9 +354,13 @@ export function MarkdownEditScreen({
   const handleChange = useCallback(
     (next: string) => {
       setText(next);
-      if (sha) saveText(next);
+      if (!sha) return;
+      // A real change only (sub-task 1114): text typed back to what was
+      // loaded is no draft, and must not raise the restore prompt next time.
+      if (load.kind === "ready" && next === load.remoteText) clearDraft();
+      else saveText(next);
     },
-    [sha, saveText],
+    [sha, saveText, clearDraft, load],
   );
 
   // Cursor tracking is preserved for analytics / future use ONLY — it no
