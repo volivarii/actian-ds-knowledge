@@ -5,7 +5,6 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { AuthoringWorkspace } from "../../src/app/AuthoringWorkspace";
-import { resetCanonicalRenderCache } from "../../src/lib/loadCanonicalRender";
 
 // A component test proves the panel works. This one proves the workspace
 // RENDERS it, on the page, outside any collapsed section: the two ways a
@@ -37,7 +36,8 @@ const FILES: Record<string, string> = {
   [`${DIST}/render-fonts.css`]: "@font-face{font-family:T}",
   [`${DIST}/fragments/button.html`]:
     '<div id="fidelity-root" data-slug="button"><button class="ds-button">Primary</button></div>',
-  "package.json": JSON.stringify({ version: "0.34.169" }),
+  "paths-manifest.json": JSON.stringify({ knowledge_version: "0.34.169" }),
+  "components/dist/identity.json": JSON.stringify({ schemaVersion: "1.0.0", entries: {} }),
   "components/dist/media/_index.json": JSON.stringify({ _schema_version: 1, media: {} }),
 };
 
@@ -64,10 +64,7 @@ function fakeGh() {
   } as any;
 }
 
-beforeEach(() => {
-  resetCanonicalRenderCache();
-  globalThis.sessionStorage.clear();
-});
+beforeEach(() => globalThis.sessionStorage.clear());
 afterEach(() => cleanup());
 
 test("the workspace renders the canonical render frame, outside any collapsed section", async () => {

@@ -20,7 +20,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
-- **The Knowledge Editor shows a component's canonical render beside its Figma capture.**
+- **The Knowledge Editor shows a component's canonical render beside its Figma capture**
+  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD)).
   Every consumer of the render dist (the plugin, the Claude Design bundle, the docs site) assembles
   the same three files, `render.css`, `render-fonts.css` and one `fragments/<slug>.html`, and until
   now no human surface showed the result: the output-quality measures said collapses, bare colours
@@ -34,6 +35,16 @@ Each entry links its pull request. Dates are the merge date (UTC).
   session and shared across components. Decided 2026-09-02: the editor is the human surface for the
   render, not the documentation site, because the author who can fix a drawing is the one looking
   at it there. Roadmap item 14, Jira sub-task 405.
+
+  Two things the panel needed the substrate to state rather than restate. `render-manifest.json`
+  now carries `pageCss`, the one-rule body framing a standalone consumer applies last in the
+  cascade (envelope 1.1.0 to 1.2.0, `schemas/canonical-render.json`): the derive had owned it since
+  slice 1b so `build-bundle.js` would stop keeping a copy, but never wrote it to dist, so the first
+  consumer that was not `build-bundle.js` copied it by hand with a different padding and a
+  different place in the cascade. And the panel resolves the authored slug through the identity
+  ledger before it reads the render dist or the media index, because both file a renamed component
+  under its current slug while the authored directory keeps the old one: without it, `tooltip`
+  reads "no render" beside a capture that exists under `tooltip-default`.
 
 - **App-context records open as a form, with the file behind a source view**
   ([#629](https://github.com/volivarii/actian-ds-knowledge/pull/629)). Line one of every entity was

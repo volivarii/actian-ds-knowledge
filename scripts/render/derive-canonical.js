@@ -50,7 +50,7 @@ var groupFor = matrix.groupFor;
 // 1.1.0: the envelope gained `fontsCss`. Additive, so a consumer reading 1.0.0
 // keeps working; the bump is what lets one DETECT the new artifact instead of
 // probing for a file.
-var MANIFEST_SCHEMA_VERSION = "1.1.0";
+var MANIFEST_SCHEMA_VERSION = "1.2.0";
 var CEM_SCHEMA_VERSION = "1.0.0";
 var DIST_DIR_REL = "components/render/dist";
 var REPO_ROOT = path.resolve(__dirname, "..", "..");
@@ -386,6 +386,12 @@ function deriveCanonical() {
     cem: "custom-elements.json",
     css: "render.css",
     fontsCss: "render-fonts.css",
+    // The page framing a standalone consumer applies LAST, as CSS text (one
+    // body rule). Shipped in the manifest so a consumer that is not
+    // build-bundle can read it instead of restating it: the editor's render
+    // panel was the first to need it and had copied it by hand, with a
+    // different padding and a different place in the cascade.
+    pageCss: PAGE_CSS,
     renders: renderIndex,
   };
 

@@ -45,7 +45,12 @@ export async function loadMediaRoles(
   slug: string,
 ): Promise<MediaRoleEntry[]> {
   if (!slug) return [];
-  const media = await loadIndex(gh);
+  let media: MediaMap;
+  try {
+    media = await loadIndex(gh);
+  } catch {
+    return []; // the picker offers nothing rather than blocking authoring
+  }
   const entry = media[slug];
   if (!entry) return [];
   const out: MediaRoleEntry[] = [];
@@ -61,18 +66,29 @@ export async function loadMediaRoles(
   return out;
 }
 
+// Throws, naming the index, when it cannot be read: a failed read must not
+// come back as "this component has no media". loadMediaRoles keeps its lenient
+// shape (an empty picker), the consumer-side read below propagates.
 async function loadIndex(gh: Octokit): Promise<MediaMap> {
   const cached = readCache();
   if (cached) return cached.media;
+  let text: string;
   try {
-    const text = await getTextFile(gh, INDEX_PATH);
-    const json = JSON.parse(text) as { media?: MediaMap };
-    const media = json.media ?? {};
-    writeCache(media);
-    return media;
-  } catch {
-    return {};
+    text = await getTextFile(gh, INDEX_PATH);
+  } catch (err) {
+    const why =
+      (err as { status?: number }).status === 404 ? "not found" : (err as Error).message;
+    throw new Error(`Could not read ${INDEX_PATH}: ${why}`);
   }
+  let json: { media?: MediaMap };
+  try {
+    json = JSON.parse(text) as { media?: MediaMap };
+  } catch (err) {
+    throw new Error(`${INDEX_PATH} is not JSON: ${(err as Error).message}`);
+  }
+  const media = json.media ?? {};
+  writeCache(media);
+  return media;
 }
 
 function readCache(): CachedEntry | null {
