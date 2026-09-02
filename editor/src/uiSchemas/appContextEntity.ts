@@ -31,5 +31,7 @@ export const appContextEntityUiSchema: UiSchema = {
     "ui:options": { addLabel: "property" },
   },
   relationships: { "ui:field": "Relationships" },
-  apps: { "ui:title": "Surfaced in apps", "ui:options": { addLabel: "app" } },
+  // Same field, same edge, same word as the Pattern form. These read
+  // "Appears in apps" and "Surfaced in apps" — two labels for one thing.
+  apps: { "ui:title": "Part of", "ui:options": { addLabel: "product" } },
 };

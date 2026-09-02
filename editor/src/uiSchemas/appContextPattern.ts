@@ -16,5 +16,8 @@ export const appContextPatternUiSchema: UiSchema = {
   _schema_version: { "ui:readonly": true },
   slug: { "ui:title": "Slug", "ui:readonly": true },
   label: { "ui:title": "Pattern label" },
-  apps: { "ui:title": "Appears in apps", "ui:options": { addLabel: "app" } },
+  // `apps` is the in_app edge seen from this record: it says which Products
+  // this Pattern belongs to. "Part of" is the nomenclature's word for that
+  // side, and it is the same word the relations rail uses.
+  apps: { "ui:title": "Part of", "ui:options": { addLabel: "product" } },
 };

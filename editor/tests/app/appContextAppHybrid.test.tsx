@@ -85,7 +85,7 @@ test("app renders the markdown body editor (not bodyless)", async () => {
       />
     </Theme>,
   );
-  await waitFor(() => assert.ok(screen.queryByText("App label")), {
+  await waitFor(() => assert.ok(screen.queryByText("Product label")), {
     timeout: 5000,
   });
   assert.ok(
@@ -192,7 +192,7 @@ test("structured fields collapse under an App settings disclosure", async () => 
     { timeout: 5000 },
   );
   assert.ok(
-    screen.queryByText("App label"),
+    screen.queryByText("Product label"),
     "label stays visible outside the disclosure",
   );
   cleanup();

@@ -16,7 +16,7 @@ export const appContextAppUiSchema: UiSchema = {
   },
   _schema_version: { "ui:readonly": true },
   slug: { "ui:title": "Slug", "ui:readonly": true },
-  label: { "ui:title": "App label" },
+  label: { "ui:title": "Product label" },
   useCases: {
     "ui:options": { addLabel: "use case" },
     items: {
