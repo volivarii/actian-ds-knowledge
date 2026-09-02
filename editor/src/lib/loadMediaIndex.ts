@@ -11,7 +11,7 @@ import { getTextFile } from "../app/githubApi";
 // The roles an author may place in a guideline (schema enum at
 // schemas/guideline-component.json). preview/default are consumer-side
 // (hero thumbnail / fidelity oracle) and are intentionally excluded here;
-// loadMediaPreviewPath below is the consumer-side read of them.
+// loadMediaCapture below is the consumer-side read of them.
 export const AUTHOR_ROLES = [
   "parts",
   "variations",
@@ -77,7 +77,9 @@ async function loadIndex(gh: Octokit): Promise<MediaMap> {
     text = await getTextFile(gh, INDEX_PATH);
   } catch (err) {
     const why =
-      (err as { status?: number }).status === 404 ? "not found" : (err as Error).message;
+      (err as { status?: number }).status === 404
+        ? "not found"
+        : (err as Error).message;
     throw new Error(`Could not read ${INDEX_PATH}: ${why}`);
   }
   let json: { media?: MediaMap };
@@ -120,19 +122,43 @@ function writeCache(media: MediaMap): void {
   }
 }
 
+/** Which capture loadMediaCapture found, so the caller can name what it shows. */
+export type CaptureRole = "default" | "preview";
+
+export interface MediaCapture {
+  /** Repo-relative .webp path. */
+  path: string;
+  role: CaptureRole;
+}
+
 /**
  * Consumer-side: the Figma capture to show beside a component's render.
- * The `preview` frame first, the isolated `default` variant second, null when
- * the index holds neither. Same session cache as the author roles.
+ * The isolated `default` variant first, the doc page's `preview` frame second,
+ * null when the index holds neither. Same session cache as the author roles.
+ *
+ * The order matters and used to be the other way round. The panel puts this
+ * beside the canonical render and tells the author that where the two disagree,
+ * the render is what needs fixing — a claim that only holds if both show the
+ * same subject. `default` is the component's default variant captured in
+ * isolation: the fidelity oracle, and the render's like-for-like counterpart.
+ * `preview` is the component's Figma doc page, a whole page of variants at page
+ * scale, so a render compared against it disagrees for reasons that are not
+ * defects. 198 slugs carry `default` and 88 carry `preview`, so preferring
+ * `preview` meant the same column silently meant two different things depending
+ * on which component was open. The role comes back so the panel can say which.
  */
-export async function loadMediaPreviewPath(
+export async function loadMediaCapture(
   gh: Octokit,
   slug: string,
-): Promise<string | null> {
+): Promise<MediaCapture | null> {
   if (!slug) return null;
   const media = await loadIndex(gh);
   const entry = media[slug];
   if (!entry) return null;
-  const pick = entry.preview ?? entry.default;
-  return typeof pick === "string" && pick.length > 0 ? pick : null;
+  for (const role of ["default", "preview"] as const) {
+    const pick = entry[role];
+    if (typeof pick === "string" && pick.length > 0)
+      return { path: pick, role };
+  }
+  return null;
 }

@@ -25,8 +25,8 @@
 //
 // Asserted PER CELL, on the component's own root markup, never over the
 // whole fragment string. A fragment-level check is vacuous here: the derive
-// harness's grid wrapper and per-cell caption <span> are emitted regardless
-// of whether the component itself rendered anything, and the renderer's own
+// harness's root wrapper and per-cell <div> are emitted regardless of
+// whether the component itself rendered anything, and the renderer's own
 // graceful-chip fallback carries the class "ds-component", which satisfies a
 // naive "emits a ds- class" check trivially. See
 // .superpowers/sdd/task-1-brief.md for the full rejection analysis of the
@@ -48,15 +48,14 @@ var groupFor = M.groupFor;
 var deriveFragment = D.deriveFragment;
 
 // Harness delimiters, copied EXACTLY from
-// scripts/render/derive-from-renderer.js:51-63 (renderCell). Not imported:
+// scripts/render/derive-from-renderer.js (renderCell/deriveFragment). Not imported:
 // the derive module does not export them, and an exact copy is the point --
 // if a future refactor changes the harness markup, invariant 6 below must
 // fail loudly rather than the per-cell split silently degrading to "one cell
 // that is the whole fragment", which would quietly weaken invariants 1-4.
-var CELL_OPEN =
-  '<div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">';
-var CAPTION_OPEN = '<span style="font:12px/1.4 sans-serif;opacity:0.55">';
-var CAPTION_CLOSE = "</span>";
+var CELL_OPEN_PREFIX = '<div data-render-cell="';
+var CELL_OPEN_SUFFIX = '">';
+var CELL_CLOSE = "</div>";
 
 // The renderer's graceful chip, verbatim from
 // components/render/renderer/html-renderers/ds-html-map.js:233-239.
@@ -84,33 +83,43 @@ function stripGracefulChips(html) {
 }
 
 // Split a derived fragment into its per-cell {component, label} pairs, in
-// document order. Per cell the markup is CELL_OPEN + <rendered component> +
-// CAPTION_OPEN + <label> + CAPTION_CLOSE + </div>; "component" below is
-// everything between the cell-wrapper open tag and the caption span's open
-// tag, per the harness markup in task-1-brief.md.
+// document order. Per cell the markup is
+// CELL_OPEN_PREFIX + <label> + CELL_OPEN_SUFFIX + <rendered component> + </div>.
+//
+// A cell's component markup nests arbitrarily, so its own closing tag cannot
+// be found by scanning forward for the first </div>. It is found by bound
+// instead: a cell ends where the NEXT cell begins, and the last cell ends at
+// the root wrapper's closing tag -- the fragment's final </div>, since the
+// ready-signal <script> that follows contains none. What is left is the cell's
+// own closer, stripped from the tail.
 function splitCells(fragment) {
-  var cells = [];
-  var searchFrom = 0;
-  while (true) {
-    var cellStart = fragment.indexOf(CELL_OPEN, searchFrom);
-    if (cellStart === -1) break;
-    var contentStart = cellStart + CELL_OPEN.length;
-    var captionStart = fragment.indexOf(CAPTION_OPEN, contentStart);
-    if (captionStart === -1) {
-      // A cell wrapper with no caption span after it: stop rather than loop
-      // forever. Invariant 4's cell-count check catches the shortfall.
-      break;
-    }
-    var component = fragment.slice(contentStart, captionStart);
-    var labelStart = captionStart + CAPTION_OPEN.length;
-    var labelEnd = fragment.indexOf(CAPTION_CLOSE, labelStart);
-    var label = labelEnd === -1 ? "" : fragment.slice(labelStart, labelEnd);
-    cells.push({ component: component, label: label });
-    searchFrom =
-      labelEnd === -1
-        ? captionStart + CAPTION_OPEN.length
-        : labelEnd + CAPTION_CLOSE.length;
+  var starts = [];
+  var at = fragment.indexOf(CELL_OPEN_PREFIX);
+  while (at !== -1) {
+    starts.push(at);
+    at = fragment.indexOf(CELL_OPEN_PREFIX, at + 1);
   }
+  var rootClose = fragment.lastIndexOf(CELL_CLOSE);
+  var cells = [];
+  starts.forEach(function (start, n) {
+    var labelStart = start + CELL_OPEN_PREFIX.length;
+    var labelEnd = fragment.indexOf(CELL_OPEN_SUFFIX, labelStart);
+    if (labelEnd === -1) {
+      // An unterminated cell open tag: skip rather than mis-slice. Invariant
+      // 4's cell-count check catches the shortfall.
+      return;
+    }
+    var contentStart = labelEnd + CELL_OPEN_SUFFIX.length;
+    var contentEnd = n + 1 < starts.length ? starts[n + 1] : rootClose;
+    var component = fragment.slice(contentStart, contentEnd);
+    if (component.slice(-CELL_CLOSE.length) === CELL_CLOSE) {
+      component = component.slice(0, -CELL_CLOSE.length);
+    }
+    cells.push({
+      component: component,
+      label: fragment.slice(labelStart, labelEnd),
+    });
+  });
   return cells;
 }
 
@@ -213,13 +222,14 @@ test("invariant 6: the harness shape is still what this gate assumes", function 
   assert.ok(
     totalCells > 0,
     "total cell-wrapper count across all render slugs is 0 -- the per-cell split " +
-      "found nothing; either the harness markup changed or CELL_OPEN/CAPTION_OPEN " +
+      "found nothing; either the harness markup changed or CELL_OPEN_PREFIX/" +
+      "CELL_OPEN_SUFFIX " +
       "in this file are stale",
   );
 });
 
 // Invariant 9: the same self-guarding principle invariant 6 already applies
-// to the harness constants (CELL_OPEN, CAPTION_OPEN), applied here to the
+// to the harness constants (CELL_OPEN_PREFIX, CELL_OPEN_SUFFIX), applied here to the
 // graceful-chip constants above (GRACEFUL_CHIP_MARKER, REAL_DS_CLASS,
 // CHIP_ELEMENT). All three are copied verbatim from gracefulChip() in
 // ds-html-map.js rather than imported, and until this test nothing pinned
@@ -286,8 +296,8 @@ test("invariant 1: zero cells degrade to a graceful chip", function () {
 });
 
 // Invariant 2: a cell that renders empty string is invisible to a
-// fragment-level length or "contains X" check, since the wrapper div and the
-// caption span are emitted either way. Judged after stripping any embedded
+// fragment-level length or "contains X" check, since the cell wrapper div is
+// emitted either way. Judged after stripping any embedded
 // graceful chip, so a cell that is ENTIRELY the chip (the full-degrade
 // mutation) has nothing real left and fails here too, not only under
 // invariants 1 and 3.
@@ -422,7 +432,7 @@ test("invariant 7: the phase-1b fixes stay fixed", function () {
   var MARKERS = {
     "read-only-tag": /ds-tag--/,
     checkbox: /ds-checkbox--(checked|indeterminate)/,
-    "radio": /ds-radio--checked/,
+    radio: /ds-radio--checked/,
     toggle: /ds-toggle--on/,
   };
   var failures = [];

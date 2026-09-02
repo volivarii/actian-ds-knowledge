@@ -6,13 +6,21 @@
 // can fix it, rather than a number in a JSON nobody reads.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Octokit } from "@octokit/rest";
-import { Box, Callout, Card, Flex, Grid, Spinner, Text } from "@radix-ui/themes";
+import {
+  Box,
+  Callout,
+  Card,
+  Flex,
+  Grid,
+  Spinner,
+  Text,
+} from "@radix-ui/themes";
 import {
   loadCanonicalRender,
   RENDER_HEIGHT_MESSAGE,
   type CanonicalRender,
 } from "../lib/loadCanonicalRender";
-import { loadMediaPreviewPath } from "../lib/loadMediaIndex";
+import { loadMediaCapture, type CaptureRole } from "../lib/loadMediaIndex";
 import { resolveCurrentSlug } from "../lib/identityLedger";
 import { getBinaryFileAsDataUrl } from "./githubApi";
 
@@ -34,21 +42,51 @@ function track<T>(
 ): void {
   promise.then(
     (value) => isLive() && set({ kind: "ready", value }),
-    (err) => isLive() && set({ kind: "error", message: (err as Error).message }),
+    (err) =>
+      isLive() && set({ kind: "error", message: (err as Error).message }),
   );
 }
 
 const MIN_FRAME_HEIGHT = 120;
 const MAX_FRAME_HEIGHT = 1200;
 
-async function loadCapture(gh: Octokit, slug: string): Promise<string | null> {
-  const path = await loadMediaPreviewPath(gh, slug);
-  return path ? getBinaryFileAsDataUrl(gh, path) : null;
+interface Capture {
+  src: string;
+  role: CaptureRole;
 }
 
-export function CanonicalRenderPanel({ slug, octokit }: CanonicalRenderPanelProps) {
-  const [render, setRender] = useState<Remote<CanonicalRender>>({ kind: "loading" });
-  const [capture, setCapture] = useState<Remote<string | null>>({ kind: "loading" });
+async function loadCapture(gh: Octokit, slug: string): Promise<Capture | null> {
+  const found = await loadMediaCapture(gh, slug);
+  if (!found) return null;
+  return {
+    src: await getBinaryFileAsDataUrl(gh, found.path),
+    role: found.role,
+  };
+}
+
+// What the right-hand column is actually showing, said out loud. A `default`
+// capture is the render's like-for-like counterpart, so a disagreement is a
+// defect in the render. A `preview` is the component's whole doc page, so a
+// disagreement there may only mean the two are showing different subjects —
+// claiming "the render is what needs fixing" over that would send an author
+// chasing gaps that are not defects.
+const CAPTURE_CAPTION: Record<CaptureRole, string> = {
+  default:
+    "The default variant, captured on its own — the render's like-for-like counterpart. Where the two disagree, the render is what needs fixing.",
+  preview:
+    "This component's whole documentation page in Figma, not an isolated variant, so expect it to show more than the render does.",
+};
+
+export function CanonicalRenderPanel({
+  slug,
+  octokit,
+}: CanonicalRenderPanelProps) {
+  const [render, setRender] = useState<Remote<CanonicalRender>>({
+    kind: "loading",
+  });
+  const [capture, setCapture] = useState<Remote<Capture | null>>({
+    kind: "loading",
+  });
   const [frameHeight, setFrameHeight] = useState(MIN_FRAME_HEIGHT);
   const frameRef = useRef<HTMLIFrameElement>(null);
 
@@ -63,8 +101,16 @@ export function CanonicalRenderPanel({ slug, octokit }: CanonicalRenderPanelProp
     // read both with the same target. The loader resolves too (memoized, no
     // extra request); passing the resolved slug keeps the two reads in step.
     const target = resolveCurrentSlug(octokit, slug);
-    track(target.then((t) => loadCanonicalRender(octokit, t)), setRender, isLive);
-    track(target.then((t) => loadCapture(octokit, t)), setCapture, isLive);
+    track(
+      target.then((t) => loadCanonicalRender(octokit, t)),
+      setRender,
+      isLive,
+    );
+    track(
+      target.then((t) => loadCapture(octokit, t)),
+      setCapture,
+      isLive,
+    );
     return () => {
       live = false;
     };
@@ -82,7 +128,10 @@ export function CanonicalRenderPanel({ slug, octokit }: CanonicalRenderPanelProp
       if (!data || data.type !== RENDER_HEIGHT_MESSAGE) return;
       if (typeof data.height !== "number" || !(data.height > 0)) return;
       setFrameHeight(
-        Math.min(MAX_FRAME_HEIGHT, Math.max(MIN_FRAME_HEIGHT, Math.ceil(data.height))),
+        Math.min(
+          MAX_FRAME_HEIGHT,
+          Math.max(MIN_FRAME_HEIGHT, Math.ceil(data.height)),
+        ),
       );
     };
     window.addEventListener("message", onMessage);
@@ -90,7 +139,16 @@ export function CanonicalRenderPanel({ slug, octokit }: CanonicalRenderPanelProp
   }, []);
 
   const version =
-    render.kind === "ready" && render.value.kind === "rendered" ? render.value.version : null;
+    render.kind === "ready" && render.value.kind === "rendered"
+      ? render.value.version
+      : null;
+  // Only claim what the loaded capture supports. While it is still loading, or
+  // failed, or absent, the column says what it IS and nothing about what a
+  // disagreement would mean.
+  const captureCaption =
+    capture.kind === "ready" && capture.value !== null
+      ? CAPTURE_CAPTION[capture.value.role]
+      : "What Figma publishes for this component.";
 
   return (
     <Card variant="surface">
@@ -99,7 +157,8 @@ export function CanonicalRenderPanel({ slug, octokit }: CanonicalRenderPanelProp
           title="Canonical render"
           caption={
             <>
-              The HTML the plugin and the Claude Design bundle ship for this component
+              The HTML the plugin and the Claude Design bundle ship for this
+              component
               {version && <>, read at v{version}</>}.
             </>
           }
@@ -110,8 +169,8 @@ export function CanonicalRenderPanel({ slug, octokit }: CanonicalRenderPanelProp
             value.kind === "absent" ? (
               <Callout.Root color="gray" size="1">
                 <Callout.Text>
-                  No canonical render for <code>{slug}</code> yet. {value.rendered} components
-                  have one.
+                  No canonical render for <code>{slug}</code> yet.{" "}
+                  {value.rendered} components have one.
                 </Callout.Text>
               </Callout.Root>
             ) : (
@@ -134,18 +193,20 @@ export function CanonicalRenderPanel({ slug, octokit }: CanonicalRenderPanelProp
         </Column>
         <Column
           title="Figma capture"
-          caption="What Figma publishes. Where the two disagree, the render is what needs fixing."
+          caption={captureCaption}
           remote={capture}
           noun="capture"
         >
-          {(src) =>
-            src === null ? (
+          {(value) =>
+            value === null ? (
               <Callout.Root color="gray" size="1">
-                <Callout.Text>No Figma capture for this component.</Callout.Text>
+                <Callout.Text>
+                  No Figma capture for this component.
+                </Callout.Text>
               </Callout.Root>
             ) : (
               <img
-                src={src}
+                src={value.src}
                 alt={`Figma capture of ${slug}`}
                 style={{
                   display: "block",

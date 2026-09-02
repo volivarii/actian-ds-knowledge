@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import "../setup-dom";
-import { loadMediaRoles, loadMediaPreviewPath, AUTHOR_ROLES } from "../../src/lib/loadMediaIndex";
+import { loadMediaRoles, loadMediaCapture, AUTHOR_ROLES } from "../../src/lib/loadMediaIndex";
 
 const INDEX = {
   _schema_version: 1,
@@ -126,20 +126,41 @@ test("loadMediaRoles: normalizes a single-string role value (multi=false)", asyn
   assert.deepEqual(entry.paths, ["components/dist/media/widget/parts.webp"]);
 });
 
-test("loadMediaPreviewPath: the preview frame first, the default capture second, null when neither", async () => {
+// The panel that consumes this puts the capture BESIDE the canonical render and
+// tells the author the render is what needs fixing where they disagree. That
+// only holds if the two show the same subject. `default` is the component's
+// default variant captured in isolation -- the fidelity oracle, and the render's
+// like-for-like counterpart. `preview` is the Figma doc page's Preview frame: a
+// page of many variants at page scale. 198 slugs have `default` and 88 have
+// `preview`, so preferring `preview` made the same column mean two different
+// things depending on which component was open, with nothing saying which. Hence
+// `default` first, and the role reported so the caller can name what it shows.
+test("loadMediaCapture: the isolated default variant first, the doc preview second", async () => {
   globalThis.sessionStorage.clear();
-  assert.equal(
-    await loadMediaPreviewPath(fakeGh(INDEX), "alert-banner"),
-    "components/dist/media/alert-banner/preview.webp",
-  );
-  globalThis.sessionStorage.clear();
-  const defaultOnly = { _schema_version: 1, media: { chip: { default: "components/dist/media/chip/default.webp" } } };
-  assert.equal(await loadMediaPreviewPath(fakeGh(defaultOnly), "chip"), "components/dist/media/chip/default.webp");
-  globalThis.sessionStorage.clear();
-  assert.equal(await loadMediaPreviewPath(fakeGh(INDEX), "no-such"), null);
+  assert.deepEqual(await loadMediaCapture(fakeGh(INDEX), "alert-banner"), {
+    path: "components/dist/media/alert-banner/default.webp",
+    role: "default",
+  });
 });
 
-test("loadMediaPreviewPath: an index that cannot be read rejects naming the index, it does not read as absence", async () => {
+test("loadMediaCapture: falls back to the preview frame when there is no default", async () => {
+  globalThis.sessionStorage.clear();
+  const previewOnly = {
+    _schema_version: 1,
+    media: { chip: { preview: "components/dist/media/chip/preview.webp" } },
+  };
+  assert.deepEqual(await loadMediaCapture(fakeGh(previewOnly), "chip"), {
+    path: "components/dist/media/chip/preview.webp",
+    role: "preview",
+  });
+});
+
+test("loadMediaCapture: null when the slug has neither capture", async () => {
+  globalThis.sessionStorage.clear();
+  assert.equal(await loadMediaCapture(fakeGh(INDEX), "no-such"), null);
+});
+
+test("loadMediaCapture: an index that cannot be read rejects naming the index, it does not read as absence", async () => {
   globalThis.sessionStorage.clear();
   const gh = {
     repos: {
@@ -151,7 +172,7 @@ test("loadMediaPreviewPath: an index that cannot be read rejects naming the inde
     },
   } as any;
   await assert.rejects(
-    () => loadMediaPreviewPath(gh, "button"),
+    () => loadMediaCapture(gh, "button"),
     (err: Error) => /_index\.json/.test(err.message),
   );
 });

@@ -711,26 +711,34 @@ function structuralShortfalls(anatomy) {
 // shape copied from derive-from-renderer.js's renderCell, deliberately not
 // imported, for the same oracle-independence reason fragment-invariants.test.js
 // states about these constants.
-var CELL_OPEN =
-  '<div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">';
-var CAPTION_OPEN = '<span style="font:12px/1.4 sans-serif;opacity:0.55">';
+var CELL_OPEN_PREFIX = '<div data-render-cell="';
+var CELL_OPEN_SUFFIX = '">';
+var CELL_CLOSE = "</div>";
+// A cell's markup nests, so its own closer is found by bound, not by scanning
+// for the first </div>: a cell ends where the next begins, and the last ends
+// at the root wrapper's closer -- the fragment's final </div>, the ready-signal
+// <script> after it containing none. Same reasoning as fragment-invariants.js.
 function cellsByLabel(fragment) {
-  var out = {};
-  var from = 0;
-  while (true) {
-    var start = fragment.indexOf(CELL_OPEN, from);
-    if (start === -1) break;
-    var contentStart = start + CELL_OPEN.length;
-    var captionStart = fragment.indexOf(CAPTION_OPEN, contentStart);
-    if (captionStart === -1) break;
-    var labelStart = captionStart + CAPTION_OPEN.length;
-    var labelEnd = fragment.indexOf("</span>", labelStart);
-    out[fragment.slice(labelStart, labelEnd)] = fragment.slice(
-      contentStart,
-      captionStart,
-    );
-    from = labelEnd + 1;
+  var starts = [];
+  var at = fragment.indexOf(CELL_OPEN_PREFIX);
+  while (at !== -1) {
+    starts.push(at);
+    at = fragment.indexOf(CELL_OPEN_PREFIX, at + 1);
   }
+  var rootClose = fragment.lastIndexOf(CELL_CLOSE);
+  var out = {};
+  starts.forEach(function (start, n) {
+    var labelStart = start + CELL_OPEN_PREFIX.length;
+    var labelEnd = fragment.indexOf(CELL_OPEN_SUFFIX, labelStart);
+    if (labelEnd === -1) return;
+    var contentStart = labelEnd + CELL_OPEN_SUFFIX.length;
+    var contentEnd = n + 1 < starts.length ? starts[n + 1] : rootClose;
+    var component = fragment.slice(contentStart, contentEnd);
+    if (component.slice(-CELL_CLOSE.length) === CELL_CLOSE) {
+      component = component.slice(0, -CELL_CLOSE.length);
+    }
+    out[fragment.slice(labelStart, labelEnd)] = component;
+  });
   return out;
 }
 

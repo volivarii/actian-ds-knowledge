@@ -37,7 +37,8 @@ function files(over: Record<string, string | undefined> = {}) {
         },
       },
     }),
-    "components/dist/media/button/preview.webp": "RIFF-webp-bytes",
+    "components/dist/media/button/preview.webp": "RIFF-webp-preview",
+    "components/dist/media/button/default.webp": "RIFF-webp-default",
   };
   return { ...base, ...over };
 }
@@ -92,6 +93,29 @@ test("the Figma capture sits beside the render, named for what it is", async () 
   assert.ok((img.getAttribute("src") ?? "").startsWith("data:image/webp;base64,"));
   assert.ok(screen.getByText(/canonical render/i));
   assert.ok(screen.getByText(/figma capture/i));
+});
+
+// Which capture is on the right changes what a disagreement MEANS: the
+// isolated default variant is the render's like-for-like counterpart, the doc
+// page's preview frame is a page of many variants. 198 slugs have a default and
+// 88 have a preview, so without saying which, the same column meant two
+// different things depending on the component.
+test("the capture column says it is showing the isolated default variant", async () => {
+  show(fakeGh(files()));
+  await screen.findByAltText(/figma capture of button/i);
+  assert.ok(screen.getByText(/default variant, captured on its own/i));
+});
+
+test("a slug with only a doc preview says so instead of claiming a default", async () => {
+  const previewOnly = files({
+    "components/dist/media/_index.json": JSON.stringify({
+      _schema_version: 1,
+      media: { button: { preview: "components/dist/media/button/preview.webp" } },
+    }),
+  });
+  show(fakeGh(previewOnly));
+  await screen.findByAltText(/figma capture of button/i);
+  assert.ok(screen.getByText(/whole documentation page/i));
 });
 
 test("the panel says which version the render was read at", async () => {
