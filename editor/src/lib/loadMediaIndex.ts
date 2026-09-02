@@ -10,7 +10,8 @@ import { getTextFile } from "../app/githubApi";
 
 // The roles an author may place in a guideline (schema enum at
 // schemas/guideline-component.json). preview/default are consumer-side
-// (hero thumbnail / fidelity oracle) and are intentionally excluded.
+// (hero thumbnail / fidelity oracle) and are intentionally excluded here;
+// loadMediaPreviewPath below is the consumer-side read of them.
 export const AUTHOR_ROLES = [
   "parts",
   "variations",
@@ -101,4 +102,21 @@ function writeCache(media: MediaMap): void {
   } catch {
     /* silent */
   }
+}
+
+/**
+ * Consumer-side: the Figma capture to show beside a component's render.
+ * The `preview` frame first, the isolated `default` variant second, null when
+ * the index holds neither. Same session cache as the author roles.
+ */
+export async function loadMediaPreviewPath(
+  gh: Octokit,
+  slug: string,
+): Promise<string | null> {
+  if (!slug) return null;
+  const media = await loadIndex(gh);
+  const entry = media[slug];
+  if (!entry) return null;
+  const pick = entry.preview ?? entry.default;
+  return typeof pick === "string" && pick.length > 0 ? pick : null;
 }

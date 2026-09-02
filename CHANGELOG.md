@@ -20,6 +20,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **The Knowledge Editor shows a component's canonical render beside its Figma capture.**
+  Every consumer of the render dist (the plugin, the Claude Design bundle, the docs site) assembles
+  the same three files, `render.css`, `render-fonts.css` and one `fragments/<slug>.html`, and until
+  now no human surface showed the result: the output-quality measures said collapses, bare colours
+  and blank boxes were all rising while every gate stayed green, and nobody could see one. The
+  component's Authoring Workspace now has a Render section: the canonical render in a sandboxed
+  frame that fits its own content, the Figma capture from the media index beside it, and the
+  knowledge version the files were read at. Where the two disagree, the render is what needs
+  fixing. A component with no fragment says so and says how many have one; a component with no
+  capture says so instead of leaving a blank; a stylesheet that cannot be read is an error, never
+  an unstyled render. The manifest, the stylesheet, the fonts and the version are read once per
+  session and shared across components. Decided 2026-09-02: the editor is the human surface for the
+  render, not the documentation site, because the author who can fix a drawing is the one looking
+  at it there. Roadmap item 14, Jira sub-task 405.
+
 - **App-context records open as a form, with the file behind a source view**
   ([#629](https://github.com/volivarii/actian-ds-knowledge/pull/629)). Line one of every entity was
   `# yaml-language-server: $schema=../../../schemas/app-context-entity.json` and line two was
