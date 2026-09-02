@@ -20,6 +20,18 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **The canonical derive prunes a fragment whose slug left the manifest**
+  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD), closes #520, the fragments half
+  of #572). `derive-canonical.js` wrote one fragment per rendered slug and never deleted one, so a
+  retired or renamed slug left its fragment tracked, shipped and vendored, the way a usage note once
+  fossilised through a rename. The prune has the same three guards as the usage-notes one: an empty
+  slug set is a missing input and refuses, more than ten deletions in one run is a broken derive and
+  refuses, and the decision is vetted before the first write so a refused run leaves the dist
+  untouched. The command names what it pruned. The other producers under `scripts/render/` still
+  do not prune, which is what #572 keeps open.
+
+### Fixed
+
 - **Secondary and Destructive FM buttons render styled** ([#633](https://github.com/volivarii/actian-ds-knowledge/pull/633), closes #554).
   `fmButton` emitted `fm-button--secondary` and `fm-button--destructive` with no rule behind either,
   so both rendered as an unstyled div at 1.03:1 and a destructive action was invisible text. Both
