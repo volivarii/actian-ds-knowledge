@@ -152,3 +152,41 @@ test("the workspace and the coverage table use the same word for a state", () =>
     }
   }
 });
+
+test("no editor source calls an app-context pattern a Feature", () => {
+  // The rename that stops at the namespace boundary: the display label was one
+  // line, the concept was seven files. This walks the source so the next one
+  // cannot stop halfway.
+  //
+  // `src/lib/routes.ts` is deliberately ABSENT: it carries a RETIRED_DIRS
+  // entry that must literally contain "feature", because a parallel-change
+  // alias is the whole point. routes.test.ts covers it instead, asserting that
+  // #/feature/ still RESOLVES and is never MINTED.
+  const roots = [
+    ["src", "lib", "createContextRecord.ts"],
+    ["src", "lib", "contextRecords.ts"],
+    ["src", "lib", "appContextCreate.ts"],
+    ["src", "app", "Sidebar.tsx"],
+    ["src", "app", "NewContextRecordDialog.tsx"],
+    ["src", "app", "NewProductDialog.tsx"],
+  ];
+  for (const parts of roots) {
+    const raw = readFileSync(join(REPO, "editor", ...parts), "utf8");
+    // Comments are stripped first. The guard's subject is what the editor
+    // CALLS things — identifiers and copy — not what a note explains. Sidebar
+    // keeps a comment recording that "Features" was a word the editor invented
+    // for itself, and that history is worth keeping; a guard that forbids
+    // naming the thing it retired makes the record impossible to write.
+    const src = raw
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+    // Whole word only, case-insensitively: substrate content such as
+    // `featured-properties` is unrelated and must not trip this.
+    const hits = src.match(/\bfeatures?\b/gi) ?? [];
+    assert.deepEqual(
+      hits,
+      [],
+      `${parts.join("/")} still says "${hits[0]}" for an app-context pattern`,
+    );
+  }
+});

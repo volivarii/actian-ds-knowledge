@@ -84,6 +84,15 @@ function toggleSection(label: string) {
   fireEvent.click(header);
 }
 
+/** Toggle by section KEY rather than label. Two sections legitimately share
+ *  the label "Patterns" now — Content's writing guidance and Application
+ *  context's UX patterns — and the parent is what tells them apart, exactly as
+ *  it does for a reader. getByText would match both and throw. */
+function toggleSectionKey(key: string) {
+  const header = document.getElementById(`sidebar-section-${key}-header`)!;
+  fireEvent.click(header.closest('[role="button"]') ?? header);
+}
+
 test("Sidebar: renders Foundations + Accessibility entries (after expand)", async () => {
   render(
     wrap(
@@ -202,9 +211,9 @@ test("Sidebar: Content nests Writing rules/Patterns/Product children (after expa
   assert.equal(screen.queryByText("Writing rules"), null);
   toggleSection("Content");
   assert.ok(screen.getByText("Writing rules"));
-  assert.ok(screen.getByText("Patterns"));
+  assert.ok(document.getElementById("sidebar-section-patterns-header"));
   assert.ok(screen.getByText("Product"));
-  toggleSection("Patterns");
+  toggleSectionKey("patterns");
   toggleSection("Product");
   toggleSection("Writing rules");
   assert.ok(screen.getByText("Forms"));
@@ -228,7 +237,7 @@ test("Sidebar: clicking content/src entry dispatches full path", async () => {
   );
   await waitFor(() => screen.getByText("Content"));
   toggleSection("Content");
-  toggleSection("Patterns");
+  toggleSectionKey("patterns");
   fireEvent.click(screen.getByText("Forms"));
   assert.deepEqual(calls, ["content/src/patterns/forms.md"]);
 });
@@ -306,9 +315,9 @@ test("Sidebar: two dimension groups — Design system, then Application context"
   assert.ok(
     follows(
       screen.getByText("Application context"),
-      screen.getByText("Features"),
+      document.getElementById("sidebar-section-appContextPatterns-header")!,
     ),
-    "Features should sit inside Application context",
+    "Patterns should sit inside Application context",
   );
 });
 
@@ -450,7 +459,9 @@ test("Sidebar: hides empty content/src groups (e.g. 404 dirs)", async () => {
   await waitFor(() => screen.getByText("Foundations"));
   // No content groups at all → the Content parent itself is hidden.
   assert.equal(screen.queryByText("Content"), null);
-  assert.equal(screen.queryByText("Patterns"), null);
+  // Content's Patterns section is gone; Application context's always renders,
+  // so scope by key rather than by the shared label.
+  assert.equal(document.getElementById("sidebar-section-patterns-header"), null);
   assert.equal(screen.queryByText("Product"), null);
   assert.equal(screen.queryByText("Writing rules"), null);
 });

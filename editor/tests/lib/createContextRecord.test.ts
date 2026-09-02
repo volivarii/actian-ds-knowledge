@@ -61,11 +61,11 @@ test("creating an entity stages it as a new file under entities/", () => {
   assert.match(h.staged[0]!.content, /^apps:\n {2}- studio$/m);
 });
 
-test("creating a feature stages it under patterns/ with its components", () => {
+test("creating a pattern stages it under patterns/ with its components", () => {
   const h = harness();
   const result = createContextRecord(
     {
-      kind: "feature",
+      kind: "pattern",
       slug: "import-wizard",
       label: "Import wizard",
       apps: ["studio"],

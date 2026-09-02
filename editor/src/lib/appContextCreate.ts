@@ -3,7 +3,7 @@
 //
 // Two pure text transforms, no IO:
 //   buildAppStub: the new app-context/src/apps/<slug>.md file
-//   addAppToApps: appends an app slug to an entity's or a feature's
+//   addAppToApps: appends an app slug to an entity's or a pattern's
 //                  frontmatter `apps:` list
 //
 // addAppToApps is frontmatter-scoped by construction: it splits the file at
@@ -76,7 +76,7 @@ export interface ContextRecordStubOptions {
   label: string;
   /** Product slugs this record belongs to. */
   apps: string[];
-  /** Features only: the DS components the feature composes. */
+  /** Patterns only: the DS components the pattern composes. */
   components?: string[];
 }
 
@@ -99,7 +99,7 @@ function blockList(
 }
 
 /**
- * The starting file for a new entity or feature.
+ * The starting file for a new entity or pattern.
  *
  * The body ships EMPTY, and for these two kinds that matters even more than it
  * does for a product: derive-app-context.js reads the whole body as the record's
@@ -133,7 +133,7 @@ export function buildEntityStub(opts: ContextRecordStubOptions): string {
   ]);
 }
 
-export function buildFeatureStub(opts: ContextRecordStubOptions): string {
+export function buildPatternStub(opts: ContextRecordStubOptions): string {
   return buildRecordStub(
     "app-context-pattern.json",
     opts,

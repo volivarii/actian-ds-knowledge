@@ -1,7 +1,7 @@
-// Create an entity or a feature in the application-context layer.
+// Create an entity or a pattern in the application-context layer.
 //
 // The collision case is the point of this dialog, not an error branch it
-// tolerates. Entity and feature names are one flat namespace shared by every
+// tolerates. Entity and pattern names are one flat namespace shared by every
 // product, so a team naming their "Dataset" will usually find one already
 // there, belonging to somebody else's product. Creating a second file would
 // split the vocabulary, which is exactly the fragmentation this layer exists to
@@ -61,10 +61,10 @@ const KIND_COPY: Record<
       "An entity is a thing your product works with: a dataset, a contract, a connection. Name it, say which products use it, and describe it in the page that opens.",
     namePlaceholder: "Data Contract",
   },
-  feature: {
-    title: "New feature",
+  pattern: {
+    title: "New pattern",
     blurb:
-      "A feature is something people do in your product: an import wizard, a lineage graph. Name it, say which products have it, and tick the design-system components it is built from.",
+      "A pattern is a recurring arrangement of components in your product: an import wizard, a lineage graph, a detail page. Name it, say which products use it, and tick the design-system components it is built from.",
     namePlaceholder: "Import wizard",
   },
 };
@@ -102,9 +102,9 @@ export function NewContextRecordDialog({
   }, [label]);
 
   // Matched across BOTH kinds on purpose. The namespace this dialog protects is
-  // one flat list, so an entity called Dataset and a feature called Dataset are
+  // one flat list, so an entity called Dataset and a pattern called Dataset are
   // the collision, not two unrelated records. Same kind can be joined; a
-  // different kind cannot (an entity does not become a feature), so that one is
+  // different kind cannot (an entity does not become a pattern), so that one is
   // refused rather than offered.
   const clash = useMemo(() => records.find((r) => r.slug === slug), [
     records,
@@ -178,9 +178,9 @@ export function NewContextRecordDialog({
           {crossKind && (
             <Callout.Root color="red" size="1" role="alert" data-testid="cross-kind">
               <Callout.Text>
-                {crossKind.kind === "entity" ? "An entity" : "A feature"} is
+                {crossKind.kind === "entity" ? "An entity" : "A pattern"} is
                 already called <strong>{crossKind.label}</strong>. Entities and
-                features share one set of names, so pick a different one.
+                patterns share one set of names, so pick a different one.
               </Callout.Text>
             </Callout.Root>
           )}
@@ -247,13 +247,13 @@ export function NewContextRecordDialog({
             )}
           </Box>
 
-          {kind === "feature" && !existing && (
+          {kind === "pattern" && !existing && (
             <Box>
               <Text as="div" size="2" weight="bold" mb="1">
                 Components it is built from
               </Text>
               <Text as="div" size="1" color="gray" mb="2">
-                Optional. This is what connects your feature to the design
+                Optional. This is what connects your pattern to the design
                 system.
               </Text>
               <TextField.Root
@@ -320,7 +320,7 @@ export function NewContextRecordDialog({
                       label: trimmedLabel,
                       apps: chosenApps,
                       components:
-                        kind === "feature"
+                        kind === "pattern"
                           ? components
                               .filter((c) => picked.has(c.slug))
                               .map((c) => c.slug)

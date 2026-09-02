@@ -103,8 +103,9 @@ const SECTION_KEYS: ReadonlyArray<SectionKey> = [
 // (2026-07-11): Content is a nested parent, so its children read plainly
 // ("Writing rules", "Patterns", "Product") without needing "copy"
 // disambiguators; the application-context trio is "Products / Entities /
-// Features" ("Features" matches what those files actually are:
-// import-wizard, lineage-graph, marketplace-browsing…).
+// Patterns" — which is what the substrate directory, the dist key, the schema
+// title and the graph node type have always called them. "Features" was a word
+// the editor invented for itself, and the only place it existed.
 const CONTENT_GROUP_LABEL: Record<"patterns" | "product" | "writing", string> =
   {
     patterns: "Patterns",
@@ -115,7 +116,7 @@ const CONTENT_GROUP_LABEL: Record<"patterns" | "product" | "writing", string> =
 const APP_CONTEXT_LABEL: Record<"apps" | "entities" | "patterns", string> = {
   apps: "Products",
   entities: "Entities",
-  patterns: "Features",
+  patterns: "Patterns",
 };
 
 /** The Content parent's children, in display order — single source for the
@@ -252,7 +253,7 @@ export function Sidebar({
     const pending: ContextRecord[] = [];
     for (const [kind, key] of [
       ["entity", "appContextEntities"],
-      ["feature", "appContextPatterns"],
+      ["pattern", "appContextPatterns"],
     ] as const) {
       for (const file of entries?.[key] ?? []) {
         const slug = slugFromPath(file);
@@ -289,7 +290,7 @@ export function Sidebar({
   > = {
     apps: { label: "New product", open: () => setNewProductOpen(true) },
     entities: { label: "New entity", open: () => setNewRecordKind("entity") },
-    patterns: { label: "New feature", open: () => setNewRecordKind("feature") },
+    patterns: { label: "New pattern", open: () => setNewRecordKind("pattern") },
   };
   const [deleteDialog, setDeleteDialog] = useState<{
     domain: EntriesKey;
