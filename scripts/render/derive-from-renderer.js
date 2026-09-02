@@ -12,11 +12,17 @@
 // tests/render/fragment-invariants.test.js asserts its output is structurally
 // sound from facts rather than against a historical capture.
 //
-// The wrapper shape below (fidelity-root div + grid + per-cell wrapper + ready
-// signal) is reproduced verbatim from the plugin's render/capture-seed.js
-// (captureMatrix, renderCell) and render-leaf.js (readySignalScript), which were
-// NOT copied to knowledge; only their exact output shape is needed here. See
-// .superpowers/sdd/task-5-prep.md for the verified source citations.
+// The wrapper shape below WAS reproduced verbatim from the plugin's
+// render/capture-seed.js (captureMatrix, renderCell) and render-leaf.js
+// (readySignalScript), which were NOT copied to knowledge; only their exact
+// output shape was needed here. See .superpowers/sdd/task-5-prep.md for the
+// verified source citations. The ready signal still is verbatim. The gallery
+// wrapper is NOT: capture-seed built markup to be photographed, and once this
+// dist became the artifact the plugin, the Claude Design bundle and the
+// editor's render panel ship, the gallery's nested flex sizing was
+// shrink-wrapping every non-inline component and its caption <span> was
+// shipping as unthemed furniture. See renderCell below and
+// tests/render/fragment-is-the-component.test.js.
 
 var path = require("node:path");
 
@@ -71,19 +77,35 @@ function loadGraphicMap() {
   return _graphicMap;
 }
 
-// capture-seed.js renderCell(slug, cell): one variant cell = the rendered
-// component + its label caption, stacked in a column.
+// One variant cell = the rendered component inside a bare block-level wrapper
+// that names the variant as DATA.
+//
+// It used to be the component plus a visible caption <span>, inside a column
+// with align-items:flex-start, inside a flex-wrap row -- the gallery the
+// plugin's capture-seed.js built to be SCREENSHOTTED. Shipping that harness as
+// the artifact had two costs: the nested flex sizing shrink-wrapped every
+// non-inline component (.ds-action-bar drew at content width despite its own
+// width:100%), and the caption rode along into the plugin, the Claude Design
+// bundle and the editor panel as unthemed "font:12px/1.4 sans-serif" furniture.
+//
+// So the wrapper carries no class -- fidelity-check.js's fragmentClasses()
+// reads every class off this markup, and a harness class would enter the
+// css-owners analysis -- and no inline style, which is what did the
+// shrink-wrapping. Block-level and unstyled, it lets a component's own rule
+// decide its width. The label stays as data-render-cell so the variant a cell
+// renders is still recoverable from the fragment alone, which is what
+// fragment-invariants.test.js splits on.
 function renderCell(slug, cell) {
   return (
-    '<div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">' +
+    '<div data-render-cell="' +
+    dsMap.esc(cell.label) +
+    '">' +
     dsMap.renderDSComponent({
       dsSlug: slug,
       variant: cell.variant,
       props: cell.props || {},
     }) +
-    '<span style="font:12px/1.4 sans-serif;opacity:0.55">' +
-    dsMap.esc(cell.label) +
-    "</span></div>"
+    "</div>"
   );
 }
 
@@ -93,19 +115,20 @@ function deriveFragment(slug) {
   dsMap.setIcons(loadIconMap());
   dsMap.setGraphics(loadGraphicMap());
   try {
-    var grid =
-      '<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">' +
-      M.variantMatrix(slug)
-        .map(function (cell) {
-          return renderCell(slug, cell);
-        })
-        .join("") +
-      "</div>";
+    // A column, not a flex-wrap row. align-items defaults to `stretch`, so a
+    // cell fills the root's width and a component that says width:100% finally
+    // gets it; `gap` separates the cells without leaving a trailing margin the
+    // way per-cell margins would.
+    var cells = M.variantMatrix(slug)
+      .map(function (cell) {
+        return renderCell(slug, cell);
+      })
+      .join("");
     return (
       '<div id="fidelity-root" data-slug="' +
       dsMap.esc(slug) +
-      '">' +
-      grid +
+      '" style="display:flex;flex-direction:column;gap:24px">' +
+      cells +
       "</div>" +
       READY_SIGNAL
     );
