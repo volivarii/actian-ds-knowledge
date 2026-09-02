@@ -29,8 +29,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
   editor's save keeps it. The automatic save stages nothing whose bytes equal the file on main, and
   a form-edited file typed back to those bytes leaves the batch, also when reopened from the batch;
   a plain markdown file typed back to what was loaded keeps no draft. This holds for files that
-  round-trip their own save path byte for byte; the ones that do not are a separate defect, filed
-  with this change. An explicit "Add to batch" is the author's call and still stages, byte-identical
+  round-trip their own save path byte for byte; the 30 that do not are
+  [#631](https://github.com/volivarii/actian-ds-knowledge/issues/631). An explicit "Add to batch" is the author's call and still stages, byte-identical
   content included. Jira sub-task 1114, finding F15.
 
 ### Added
