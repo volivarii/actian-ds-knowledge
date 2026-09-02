@@ -20,18 +20,18 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
-- **Opening a file in the Knowledge Editor no longer stages it** ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD)).
-  Since every page gained an address (#619) a deep link opened far more files, and every content
-  file opened landed in the author's batch without a keystroke, carrying a `wordsToAvoid: []` line
-  and a blank line the author never wrote. Two producers of that "change": the form filled every
-  array property the file lacked with an empty list at mount and reported it as an edit, and the
-  assembler forced a blank line after the closing fence that 87 of the 97 frontmatter files in this
-  repo do not have. The form now applies only defaults that carry a value, the assembler emits the
-  body as it was split and restores a blank line only where the loaded file had one, and the
-  automatic save stages nothing whose bytes equal the file as loaded: a file typed back to what it
-  was leaves the batch instead of sitting there as a no-op pull request. An explicit "Add to batch"
-  keeps its meaning and still stages byte-identical content. Reproduced first with production's own
-  routing, schema and file, after a toy schema had passed. Jira sub-task 1114, finding F15.
+- **Opening a file in the Knowledge Editor no longer stages it**
+  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD)). Since every page gained an
+  address (#619) a deep link opened far more files, and every content file opened landed in the
+  author's batch without a keystroke. The form no longer fills a missing list with an empty value or
+  a `minItems` list with nulls at mount (a default that carries a value still applies), and the
+  assembler no longer forces a blank line after the closing fence; where a file has one, the rich
+  editor's save keeps it. The automatic save stages nothing whose bytes equal the file on main, and
+  a form-edited file typed back to those bytes leaves the batch, also when reopened from the batch;
+  a plain markdown file typed back to what was loaded keeps no draft. This holds for files that
+  round-trip their own save path byte for byte; the ones that do not are a separate defect, filed
+  with this change. An explicit "Add to batch" is the author's call and still stages, byte-identical
+  content included. Jira sub-task 1114, finding F15.
 
 ### Added
 

@@ -22,6 +22,7 @@
 // package's CST API supports it, but the document-mutate-via-JSON path is
 // non-trivial and lands in PR 2 if authors hit a case where it bites.
 
+import { joinFrontmatter } from "../frontmatter-engine/assembleYaml";
 import yaml from "yaml";
 
 export interface StringifyOptions {
@@ -147,13 +148,7 @@ export function assembleFrontmatterFilePreservingComments(
     // style-stable. Semantic parse is unaffected either way (dist-safe).
     fm = doc.toString({ lineWidth: 0, flowCollectionPadding: false });
   }
-  const fenced = fm.endsWith("\n") ? fm : fm + "\n";
-  // The body is emitted as it was split: whether a blank line follows the
-  // closing fence is the file's own shape (87 of 97 files in this repo have
-  // none). Forcing one made every save of those files a one-byte "change" the
-  // author never typed, so an untouched file could not stage nothing and a
-  // reverted one could not leave the batch (sub-task 1114, F15).
-  return `---\n${fenced}---\n${body}`;
+  return joinFrontmatter(fm, body);
 }
 
 /**

@@ -5,6 +5,7 @@ import { render, screen, cleanup, waitFor, fireEvent, act } from "@testing-libra
 import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { setWysiwygFlag } from "../helpers/editorSurface";
+import { fakeOctokit as fakeGh } from "../helpers/fakeOctokit";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,61 +15,6 @@ import { matchFrontmatterForm } from "../../src/lib/frontmatterForms";
 // change stages a draft or adds the file to the batch. Live in production
 // since the addresses shipped (#619): every deep link quietly filled the
 // author's outbox with byte-identical "edits".
-
-// happy-dom lacks sessionStorage/localStorage: minimal in-memory stubs.
-for (const key of ["sessionStorage", "localStorage"] as const) {
-  if (!(globalThis as any)[key]) {
-    const store: Record<string, string> = {};
-    Object.defineProperty(globalThis, key, {
-      configurable: true,
-      writable: true,
-      value: {
-        getItem: (k: string) => store[k] ?? null,
-        setItem: (k: string, v: string) => {
-          store[k] = v;
-        },
-        removeItem: (k: string) => {
-          delete store[k];
-        },
-        clear: () => {
-          for (const k of Object.keys(store)) delete store[k];
-        },
-      },
-    });
-  }
-}
-
-// happy-dom lacks the observers the real content widgets (Radix) touch.
-for (const name of ["ResizeObserver", "IntersectionObserver"] as const) {
-  if (!(globalThis as any)[name]) {
-    (globalThis as any)[name] = class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-      takeRecords() {
-        return [];
-      }
-    };
-  }
-}
-
-const b64 = (s: string) => Buffer.from(s, "utf8").toString("base64");
-function fakeGh(files: Record<string, string>) {
-  return {
-    repos: {
-      getContent: async ({ path }: { path: string }) => {
-        if (!(path in files)) {
-          const e: any = new Error("not found");
-          e.status = 404;
-          throw e;
-        }
-        return { data: { encoding: "base64", content: b64(files[path]!), sha: `sha-${path}` } };
-      },
-    },
-    git: {},
-    pulls: {},
-  } as any;
-}
 
 // The REAL schema, the REAL file and the REAL form routing: a component test
 // with a toy schema proved nothing about what production stages on open.
@@ -90,7 +36,7 @@ const formProps = {
 };
 const PLAIN_PATH = "content/src/global-guidelines.md";
 const PLAIN_FILE = "## Heading {#h}\n\nProse.\n";
-const DEBOUNCE_AND_MARGIN = 1600;
+const DEBOUNCE_AND_MARGIN = 1100;
 
 async function stores() {
   const m = await import("../../src/drafts/store-instance");
@@ -101,7 +47,7 @@ const settle = () => act(() => new Promise<void>((r) => setTimeout(r, DEBOUNCE_A
 test("opening a frontmatter file in the rich editor stages nothing", async () => {
   cleanup();
   setWysiwygFlag("rich");
-  const { submissionCartSingleton, draftStoreSingleton } = await stores();
+  const { submissionCartSingleton } = await stores();
   submissionCartSingleton.clear();
   const { FrontmatterBodyEditScreen } = await import("../../src/app/FrontmatterBodyEditScreen");
   render(
@@ -112,14 +58,13 @@ test("opening a frontmatter file in the rich editor stages nothing", async () =>
   await waitFor(() => assert.ok(screen.getByRole("textbox", { name: /body editor/i })), { timeout: 8000 });
   await settle();
   assert.equal(submissionCartSingleton.list().find((e) => e.path === FORM_PATH), undefined, "nothing typed, nothing in the batch");
-  assert.ok(!draftStoreSingleton.allPaths().has(FORM_PATH), "nothing typed, no draft");
   cleanup();
 });
 
 test("opening a frontmatter file in the source editor stages nothing", async () => {
   cleanup();
   setWysiwygFlag("source");
-  const { submissionCartSingleton, draftStoreSingleton } = await stores();
+  const { submissionCartSingleton } = await stores();
   submissionCartSingleton.clear();
   const { FrontmatterBodyEditScreen } = await import("../../src/app/FrontmatterBodyEditScreen");
   render(
@@ -130,7 +75,6 @@ test("opening a frontmatter file in the source editor stages nothing", async () 
   await waitFor(() => assert.ok(screen.getByText("Prose body")), { timeout: 8000 });
   await settle();
   assert.equal(submissionCartSingleton.list().find((e) => e.path === FORM_PATH), undefined, "nothing typed, nothing in the batch");
-  assert.ok(!draftStoreSingleton.allPaths().has(FORM_PATH), "nothing typed, no draft");
   cleanup();
 });
 

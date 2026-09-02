@@ -59,3 +59,28 @@ test("a real default is still applied and reported (control)", async () => {
   );
   cleanup();
 });
+
+test("mounting a form over data that lacks an array with minItems reports no change either", async () => {
+  cleanup();
+  const calls: unknown[] = [];
+  render(
+    <Theme>
+      <RJSFForm
+        schema={{
+          type: "object",
+          properties: {
+            title: { type: "string", title: "Title" },
+            tags: { type: "array", items: { type: "string" }, minItems: 2, title: "Tags" },
+          },
+        }}
+        uiSchema={{}}
+        formData={{ title: "MCP server" }}
+        onChange={(next) => calls.push(next)}
+      />
+    </Theme>,
+  );
+  await act(() => new Promise<void>((r) => setTimeout(r, 50)));
+  const changed = calls.filter((c) => JSON.stringify(c) !== JSON.stringify({ title: "MCP server" }));
+  assert.deepEqual(changed, [], "minItems must not be met with nulls at mount and reported as an edit");
+  cleanup();
+});

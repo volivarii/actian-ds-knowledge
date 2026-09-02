@@ -101,12 +101,14 @@ test("verbatim description survives a Milkdown round-trip with snake_case / * te
   assert.equal(roundtripped.description, body);
 });
 
-// The REAL editor save path: assembleFrontmatterFile injects a blank line after
-// the frontmatter fence (`---\n<fm>---\n\n<body>`). For field-mode records the
-// body is the verbatim `description`, so the derive must absorb that leading
-// whitespace or the dist drifts on the first editor save (even a no-op edit).
+// The REAL editor save path for a file that HAS a blank line after the
+// frontmatter fence (`---\n<fm>---\n\n<body>`, 10 of the repo's 97): the screen
+// restores that blank line after the rich editor's round trip, so for
+// field-mode records the verbatim `description` still arrives with a leading
+// newline, and the derive must absorb it or the dist drifts on the first save.
+// The assembler itself adds none (sub-task 1114), so the fixture states it.
 function deriveFieldViaSave(body: string) {
-  const file = assembleFrontmatterFile({ slug: "fixture" }, null, body);
+  const file = assembleFrontmatterFile({ slug: "fixture" }, null, "\n" + body);
   return deriveFieldRecord(file, "description");
 }
 

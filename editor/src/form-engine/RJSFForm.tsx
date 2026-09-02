@@ -152,7 +152,13 @@ export function RJSFForm({
       // had `wordsToAvoid` staged it with a line the author never wrote
       // (sub-task 1114, F15). A default with a VALUE in the schema is still
       // applied and still reported: that one is a real fill-in.
-      experimental_defaultFormStateBehavior={{ emptyObjectFields: "skipEmptyDefaults" }}
+      experimental_defaultFormStateBehavior={{
+        emptyObjectFields: "skipEmptyDefaults",
+        // `minItems` is met at mount with `[null, null]` under the default
+        // `populate: "all"`, which is the same phantom edit in a schema-invalid
+        // form (app-context patterns' `tags`). The author adds the rows.
+        arrayMinItems: { populate: "never" },
+      }}
       showErrorList="bottom"
     >
       {children ?? (

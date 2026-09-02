@@ -15,13 +15,14 @@ import { RJSFForm } from "../form-engine/RJSFForm";
 import { frontmatterTemplates } from "../form-engine/templates";
 import {
   stringifyYaml,
-  assembleFrontmatterFilePreservingComments, preserveFenceSeparator,
+  assembleFrontmatterFilePreservingComments,
+  preserveFenceSeparator,
 } from "../form-engine/yamlSerializer";
 import {
   splitFrontmatter,
   routeNoFrontmatter,
 } from "../substrate/splitFrontmatter";
-import { assembleYamlFrontmatterFile } from "../frontmatter-engine/assembleYaml";
+import { assembleYamlFrontmatterFile, joinFrontmatter } from "../frontmatter-engine/assembleYaml";
 import { YamlFrontmatterEditor } from "../frontmatter-engine/YamlFrontmatterEditor";
 import { EditorView } from "@codemirror/view";
 import { CodeMirrorEditor } from "../markdown-engine/CodeMirrorEditor";
@@ -85,10 +86,7 @@ export function assembleFrontmatterFile(
     originalText: frontmatterText ?? undefined,
     flowAtDepth: flowAtDepth === null ? undefined : flowAtDepth,
   });
-  const fm = yaml.endsWith("\n") ? yaml : yaml + "\n";
-  // The body is emitted as it was split (see yamlSerializer.ts for why a
-  // forced blank line after the fence was a change the author never made).
-  return `---\n${fm}---\n${body}`;
+  return joinFrontmatter(yaml, body);
 }
 
 interface Props {
@@ -196,8 +194,8 @@ export function FrontmatterBodyEditScreen(props: Props) {
     Map<string, { timer: ReturnType<typeof setTimeout>; run: () => void }>
   >(new Map());
   // A pending debounce at unmount still holds up to a second of the user's
-  // most recent edit. flushToCart's only effect is
-  // `submissionCartSingleton.add(...)` — a module-level, localStorage-backed
+  // most recent edit. flushToCart's only effects are
+  // `submissionCartSingleton.add(...)` / `.remove(...)` — a module-level, localStorage-backed
   // singleton (store-instance.ts) that outlives this screen (EditorShell
   // swaps this component out the moment the user opens a different file, or
   // any other screen) and performs no React state write. That makes firing
@@ -335,6 +333,15 @@ export function FrontmatterBodyEditScreen(props: Props) {
         if (cartHit) {
           text = cartHit.content;
           basedOnSha = cartHit.basedOnSha;
+          // The batch supplied the text; main still supplies the baseline, so
+          // a file reopened from the batch and typed back to main's bytes can
+          // leave it. A 404 means a new file: nothing to be back to.
+          try {
+            baseline = (await getTextFileWithSha(octokit, path)).text;
+          } catch (err) {
+            if ((err as { status?: number }).status !== 404) throw err;
+            baseline = null;
+          }
         } else {
           try {
             // Capture the blob sha alongside content so staged edits carry a
@@ -442,6 +449,16 @@ export function FrontmatterBodyEditScreen(props: Props) {
   const flushToCart = useCallback(
     (fd: unknown, b: string, fm: string, explicit = false) => {
       if (state.kind !== "ready") return;
+      if (explicit) {
+        // The author's click is the last word: a debounce armed just before
+        // it (typed, then deleted) must not fire afterwards and remove what
+        // they staged because the bytes equal the file.
+        const pending = debounceRef.current.get(path);
+        if (pending) {
+          clearTimeout(pending.timer);
+          debounceRef.current.delete(path);
+        }
+      }
       // surface === "yaml": the pane edits the frontmatter TEXT directly, so
       // assembly is plain concatenation of that text (never a re-serialized
       // `fd`) — see assembleYaml.ts. `fm` is a SNAPSHOT taken at the moment
@@ -463,10 +480,9 @@ export function FrontmatterBodyEditScreen(props: Props) {
       // lines survive the save. Otherwise the flow-depth path: yamlFlowAtDepth
       // undefined → default (2); null → block-style. assembleFrontmatterFile
       // accepts null; default is 2.
-      const bodyOut = preserveFenceSeparator(state.body, b);
       const content = yamlActive
-        ? assembleYamlFrontmatterFile(fm, bodyOut)
-        : assembleFromForm(fd, fmDonor ?? state.frontmatterText, bodyOut);
+        ? assembleYamlFrontmatterFile(fm, b)
+        : assembleFromForm(fd, fmDonor ?? state.frontmatterText, b);
       // A real change only (sub-task 1114, F15). On the automatic path (the
       // debounce behind every keystroke) the bytes as loaded from main are not
       // an edit, and a file typed back to those bytes has no change left to
@@ -648,8 +664,13 @@ export function FrontmatterBodyEditScreen(props: Props) {
                       key={path}
                       initialText={body}
                       onChange={(t) => {
-                        setBody(t);
-                        scheduleFlush(formData, t, fmTextRef.current);
+                        // Milkdown drops a blank line at the top of the body;
+                        // put back the one the loaded file had, here and only
+                        // here. In the source editor a missing blank line is
+                        // the author's own deletion and stays deleted.
+                        const kept = preserveFenceSeparator(state.body, t);
+                        setBody(kept);
+                        scheduleFlush(formData, kept, fmTextRef.current);
                       }}
                       filename={path.split("/").pop()}
                       componentSlug={componentSlugFromPath(path)}

@@ -28,3 +28,16 @@ export function assembleYamlFrontmatterFile(
 ): string {
   return `---\n${yamlText}\n---\n${body}`;
 }
+
+/**
+ * Join frontmatter TEXT (a serialised YAML block, with or without its trailing
+ * newline) and a body into a complete file. The body is emitted as given:
+ * whether a blank line follows the closing fence is the file's own shape
+ * (87 of the repo's 97 frontmatter files have none), never the joiner's to
+ * add (sub-task 1114). Both form assemblers route through here so the fence
+ * decision is made once.
+ */
+export function joinFrontmatter(frontmatterText: string, body: string): string {
+  const fenced = frontmatterText.endsWith("\n") ? frontmatterText : frontmatterText + "\n";
+  return `---\n${fenced}---\n${body}`;
+}
