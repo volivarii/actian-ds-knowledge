@@ -198,12 +198,21 @@ direction rather than a bare number, which is what a report usually wants.
 
 It states oracle coverage as a pair, dates every row, and marks a measure with no
 baseline as having none rather than implying stability. At the last source change
-it read: 54 unexplained variant collapses (flat), 31 inline-style hex values that
-cannot be re-themed (no baseline yet), 78 verified of 408 examined (flat).
+it read: 54 unexplained variant collapses (flat), 34 FM axis-value groups that
+render alike (no baseline yet), 31 inline-style hex values that cannot be re-themed
+(no baseline yet), 78 verified of 408 examined (flat).
+
+The FM figure comes from `scripts/render/lib/fm-collapse.js`, which drives the FM
+renderer with the FM registry's own axes and values, strips every modifier class
+`fm-base.css` does not style with a declaration, and counts the values of an axis
+that then read alike. It joined as a measure rather than a gate because the tier
+was sized at 35 groups on the day the DS tier's css-owner rule was found to have
+no FM twin (#554).
 
 ## Known gaps
 
 - **Oracle coverage is 78 of 408.** Most of what the renderer paints cannot be checked against Figma at all, and `element-no-node-mapping` is 229 of the 330.
 - **31 inline hex values cannot be re-themed.** They bypass tokens entirely.
 - **54 variant collapses are unexplained.** A component asked for by one variant can render as another, which is a correctness defect rather than a cosmetic one.
+- **34 FM axis-value groups render alike.** The fat-marker renderer emits a class for nearly every registry value and the stylesheet styles few of them, so Size, Shape and most State axes draw the same thing. The two buttons a reader could not see at all (#554) are fixed; the rest is the measure's burndown.
 - **Measurement is not looking.** Fixing a mismatch once made `segmented-control` white on white while every number improved. Render the thing and look at it.

@@ -194,7 +194,7 @@ test("the roll-up is dated, versioned, and carries a direction per measure", fun
   );
   assert.ok(rollup._meta.auto_generated, "stamped as generated");
 
-  for (const name of ["unexplainedCollapses", "inlineHex", "oracleVerified"]) {
+  for (const name of ["unexplainedCollapses", "inlineHex", "oracleVerified", "fmCollapsedValueGroups"]) {
     const m = rollup.measures[name];
     assert.ok(m, name + " is present");
     assert.strictEqual(typeof m.value, "number", name + " has a value");
@@ -444,4 +444,30 @@ test("the markdown shows the collapse arc too, not just the oracle's", function 
     new RegExp(oldest.date),
     "including the oldest point in the window",
   );
+});
+
+// The FM tier joins the roll-up the same way the DS tier did: the figure is
+// the census helper's own, never a re-count (#554 sized the tier at 35 groups
+// the day it joined, and a hard gate would have been red on arrival).
+const fmCollapse = require(
+  path.join(REPO_ROOT, "scripts", "render", "lib", "fm-collapse.js"),
+);
+
+test("the roll-up's FM collapse figure is the census helper's own", function () {
+  const rollup = rollupOnce();
+  assert.strictEqual(
+    rollup.measures.fmCollapsedValueGroups.value,
+    fmCollapse.census().collapsedGroups.length,
+    "the roll-up must report the census's count, not its own",
+  );
+});
+
+test("direction knows fewer FM collapsed groups is progress", function () {
+  assert.strictEqual(trend.direction("fmCollapsedValueGroups", 30, 35), "better");
+  assert.strictEqual(trend.direction("fmCollapsedValueGroups", 35, 30), "worse");
+});
+
+test("the markdown names the FM measure", function () {
+  const md = trend.renderMarkdown(rollupOnce());
+  assert.match(md, /FM axis values that render alike/);
 });

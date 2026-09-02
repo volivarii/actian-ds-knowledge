@@ -20,6 +20,24 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Fixed
 
+- **Secondary and Destructive FM buttons render styled** ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD), closes #554).
+  `fmButton` emitted `fm-button--secondary` and `fm-button--destructive` with no rule behind either,
+  so both rendered as an unstyled div at 1.03:1 and a destructive action was invisible text. Both
+  own a rule now, token-bound to the kit's own palette: 9.8:1 and 4.8:1 against their backgrounds.
+
+### Added
+
+- **The FM tier's variant collapses are a dated measure in the quality roll-up.** The css-owner
+  gate covered the DS tier only, and sizing the FM tier before writing its twin found 54 emitted
+  modifier classes with no rule and 35 axis-value groups that render alike once the unstyled classes
+  are removed, so a hard gate would have been red on arrival. `scripts/render/lib/fm-collapse.js`
+  computes the census from the registry's own axes, the renderer and the stylesheet (no list), and
+  `quality-trend.{json,md}` carries `fmCollapsedValueGroups` with a direction, 34 after this change;
+  a regression test pins the button's Type axis, and an owned rule counts only when it carries a
+  declaration.
+
+### Fixed
+
 - **Opening a file in the Knowledge Editor no longer stages it**
   ([#632](https://github.com/volivarii/actian-ds-knowledge/pull/632)). Since every page gained an
   address (#619) a deep link opened far more files, and every content file opened landed in the

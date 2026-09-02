@@ -27,12 +27,24 @@ const BY_DESIGN = require(
   path.join(__dirname, "lib", "variant-collapse-by-design.js"),
 );
 const { deriveContract } = require(path.join(__dirname, "derive-contract.js"));
+const fmCollapse = require(path.join(__dirname, "lib", "fm-collapse.js"));
 
 // Unexplained variant collapses: values the renderer cannot tell apart and
 // nobody has said why. A clamp hands back a different component than the caller
 // asked for, so this is a correctness figure, not a polish one.
 function unexplainedCollapses() {
   return collapse.classify(deriveContract(), BY_DESIGN).unexplained.length;
+}
+
+// The FM tier's collapses: axis values the FM renderer emits that read alike
+// once the modifier classes fm-base.css does not style are removed. Sized at 35
+// groups the day it joined (#554), which is why it is a dated measure with a
+// direction here and not a gate: a gate over the tier would have been red on
+// arrival, and the number nobody could see is how Secondary and Destructive
+// buttons shipped unstyled. Same helper as the FM tests, so the roll-up and the
+// tests cannot disagree.
+function fmCollapsedValueGroups() {
+  return fmCollapse.census().collapsedGroups.length;
 }
 
 // Oracle coverage, carried as the pair rather than the ratio.
@@ -109,6 +121,7 @@ function inlineHex() {
 // when the denominator shrinks.
 const GOOD_DIRECTION = {
   unexplainedCollapses: "down",
+  fmCollapsedValueGroups: "down",
   inlineHex: "down",
   oracleVerified: "up",
   oracleExamined: null, // neither direction is progress; it is context for the numerator
@@ -214,6 +227,9 @@ function currentMeasures() {
     unexplainedCollapses: {
       value: unexplainedCollapses(),
     },
+    fmCollapsedValueGroups: {
+      value: fmCollapsedValueGroups(),
+    },
     oracleCoverage: oracleCoverage(),
     inlineHex: inlineHex(),
   };
@@ -273,6 +289,19 @@ function previousValues(oracle, collapses) {
   };
 }
 
+// The FM figure's previous value comes from this artifact's own last committed
+// revision: its three sources (the FM renderer, fm-base.css, fmkit.json) have
+// no single historical file to recompute from, and the roll-up is committed,
+// so its history IS the series. "unknown" on the first run is honest.
+const TREND_REL = "components/render/dist/quality-trend.json";
+function fmPrevious() {
+  const sha = git(["log", "--format=%H", "-1", "--", TREND_REL]).trim();
+  if (!sha) return null;
+  const committed = showJson(sha, TREND_REL);
+  const m = committed && committed.measures && committed.measures.fmCollapsedValueGroups;
+  return m && typeof m.value === "number" ? m.value : null;
+}
+
 function buildRollup() {
   const series = assertSeries(oracleSeries({ limit: 12 }), "oracle");
   const collapses = assertSeries(collapseSeries({ limit: 12 }), "collapse");
@@ -280,9 +309,11 @@ function buildRollup() {
     series[0].date > collapses[0].date ? series[0].date : collapses[0].date;
   const current = currentMeasures();
   const prev = previousValues(series, collapses);
+  prev.fmCollapsedValueGroups = fmPrevious();
 
   const values = {
     unexplainedCollapses: current.unexplainedCollapses.value,
+    fmCollapsedValueGroups: current.fmCollapsedValueGroups.value,
     inlineHex: current.inlineHex.value,
     oracleVerified: current.oracleCoverage.verified,
     oracleExamined: current.oracleCoverage.examined,
@@ -332,6 +363,7 @@ function buildRollup() {
 
 const LABELS = {
   unexplainedCollapses: "Unexplained variant collapses",
+  fmCollapsedValueGroups: "FM axis values that render alike (collapsed groups)",
   inlineHex: "Inline-style hex (cannot re-theme)",
   oracleVerified: "Verified declarations (oracle numerator)",
   oracleExamined: "Examined declarations (oracle denominator)",
@@ -490,6 +522,8 @@ if (require.main === module) {
       ": " +
       m.unexplainedCollapses.value +
       " unexplained collapses, " +
+      m.fmCollapsedValueGroups.value +
+      " FM collapsed groups, " +
       m.inlineHex.value +
       " inline hex, oracle " +
       m.oracleVerified.value +
