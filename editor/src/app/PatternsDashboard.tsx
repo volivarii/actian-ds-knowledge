@@ -33,6 +33,19 @@ import {
   recipeSrcPath,
 } from "../lib/patternIndex";
 import { onActivateKey } from "../lib/onActivateKey";
+import { THING_LABEL } from "../lib/nomenclature";
+import { measure } from "../lib/measure";
+import {
+  PATTERN_SLOTS,
+  ENTITY_SLOTS,
+  PRODUCT_SLOTS,
+  TERM_SLOTS,
+  patternSlotRecords,
+  entitySlotRecords,
+  productSlotRecords,
+  termSlotRecords,
+} from "../lib/slots";
+import { MeterList } from "./MeterList";
 import { RecipePanel } from "./RecipePanel";
 
 export interface PatternsDashboardProps {
@@ -297,30 +310,48 @@ export function PatternsDashboard({
     };
   }, [octokit]);
 
-  const summary = useMemo(() => {
+  const meters = useMemo(() => {
     if (state.kind !== "ready") return null;
+    const index = state.index;
+    // The read time. The editor reads a baked dist, so this says when the
+    // measurement was taken and the data itself is as of the last merge.
+    const at = new Date().toISOString().slice(0, 10);
+    return {
+      pattern: measure(patternSlotRecords(index), PATTERN_SLOTS, at),
+      entity: measure(entitySlotRecords(index.doc), ENTITY_SLOTS, at),
+      product: measure(productSlotRecords(index.doc), PRODUCT_SLOTS, at),
+      term: measure(termSlotRecords(index.doc), TERM_SLOTS, at),
+    };
+  }, [state]);
+
+  const summary = useMemo(() => {
+    if (state.kind !== "ready" || !meters) return null;
     const { patterns, apps } = state.index;
     const captures = patterns.reduce((n, p) => n + p.recipes.length, 0);
-    const withCapture = patterns.filter((p) => p.recipes.length > 0).length;
     const useCases = apps.reduce((n, a) => n + a.useCases.length, 0);
-    const namedByAUseCase = new Set(
-      apps.flatMap((a) =>
-        a.useCases.flatMap((u) => u.patterns.map((p) => p.slug)),
-      ),
-    ).size;
+    // These three used to be counted here as well as in the Slot tables. Two
+    // derivations of one number is what the Slot model exists to remove, so the
+    // prose now reads the Meters and `patternsAgree.test` asserts they cannot
+    // drift apart.
+    const meterFor = (key: string) => {
+      const m = meters.pattern.find((x) => x.key === key);
+      if (!m) throw new Error(`no Pattern meter ${key}`);
+      return m;
+    };
+    const rule = meterFor("rule");
     return {
       patterns: patterns.length,
       apps: apps.length,
       useCases,
       captures,
-      withCapture,
-      namedByAUseCase,
+      withCapture: meterFor("capture").filled,
+      namedByAUseCase: meterFor("job").filled,
       // The `when` clause is what tells a pattern from its siblings, and the
       // schema does not require it, so its absence is the gap most worth
       // counting on the front door rather than finding by scanning.
-      noWhen: patterns.filter((p) => !p.when).length,
+      noWhen: rule.total - rule.filled,
     };
-  }, [state]);
+  }, [state, meters]);
 
   if (state.kind === "loading") {
     return (
@@ -352,6 +383,17 @@ export function PatternsDashboard({
       <Heading as="h3" size="5" mb="1">
         Patterns
       </Heading>
+      {meters && (
+        <Flex gap="6" wrap="wrap" mb="5" mt="3">
+          <MeterList title={THING_LABEL.ux_pattern} meters={meters.pattern} />
+          <MeterList title={THING_LABEL.app_entity} meters={meters.entity} />
+          <MeterList title={THING_LABEL.app} meters={meters.product} />
+          <MeterList
+            title={THING_LABEL.terminology_term}
+            meters={meters.term}
+          />
+        </Flex>
+      )}
       {opened && (
         <Box mb="4">
           <RecipePanel

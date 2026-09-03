@@ -212,6 +212,13 @@ export interface PatternIndex {
   recipesNamingNoPattern: PatternRecipe[];
   /** Patterns claiming an app the context does not define. */
   patternsClaimingUnknownApps: { pattern: string; apps: string[] }[];
+  /**
+   * The parsed source document, kept so a caller measuring Entities, Products
+   * and Terms does not fetch and parse the same file a second time. The index
+   * itself only needs apps and patterns; the other two collections are in the
+   * same file and there is no second request to make for them.
+   */
+  doc: AppContextDoc;
 }
 
 // --------------------------------------------------------------------- joining
@@ -333,6 +340,7 @@ export function buildPatternIndex(
     recipesNamingMissingPatterns,
     recipesNamingNoPattern,
     patternsClaimingUnknownApps,
+    doc: ctx,
   };
 }
 
