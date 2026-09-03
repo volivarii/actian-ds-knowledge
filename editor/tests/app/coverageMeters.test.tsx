@@ -96,15 +96,23 @@ test("the Component Usage meter and the loader's own summary agree", () => {
 });
 
 /** Serves just enough for loadCoverage + loadCapturedSlugs. */
-function fakeGhServingCoverage(opts: { mediaOk: boolean }) {
+function fakeGhServingCoverage(opts: {
+  mediaOk: boolean;
+  mediaShape?: "normal" | "rekeyed";
+}) {
   const meta = (slug: string) =>
     `component: "${slug}"\ndomains:\n  content: { status: approved }\n  usage: { status: not-started }\n  design: { status: not-started }\n  behavior: { status: not-started }\n  tokens: { status: not-started }\n`;
   const slugs = ["alpha", "beta"];
   const files: Record<string, string> = {
     "components/dist/registries/dskit.json": JSON.stringify({ components: {} }),
-    "components/dist/media/_index.json": JSON.stringify({
-      media: { alpha: { default: "components/dist/media/alpha/default.webp" } },
-    }),
+    "components/dist/media/_index.json": JSON.stringify(
+      opts.mediaShape === "rekeyed"
+        ? // A well-formed index under a DIFFERENT top-level key: loadIndex
+          // resolves with {} for this, which used to read as "measured, and
+          // nothing has a capture".
+          { entries: { alpha: { default: "x.webp" } } }
+        : { media: { alpha: { default: "components/dist/media/alpha/default.webp" } } },
+    ),
   };
   for (const s of slugs) files[`components/src/${s}/_meta.yml`] = meta(s);
   return {
@@ -171,8 +179,8 @@ test("an unreadable media index leaves the table standing and drops only Capture
   // `assert.equal(node, null)` SIGKILLs the runner when it fails, because the
   // diff walks a live DOM node. Compare a boolean so a failure reads as a
   // failure.
-  assert.equal(container.querySelector('[data-meter="capture"]') === null, true);
-  assert.ok(container.querySelector('[data-meter="usage"]'));
+  assert.equal(container.querySelector('[data-meter="component:capture"]') === null, true);
+  assert.ok(container.querySelector('[data-meter="component:usage"]'));
 });
 
 test("the Meters wait for the media index rather than dropping Capture mid-flight", async () => {
@@ -213,7 +221,31 @@ test("the Meters wait for the media index rather than dropping Capture mid-fligh
 
   releaseIndex!();
   await waitFor(() => {
-    assert.ok(container.querySelector('[data-meter="capture"]'));
+    assert.ok(container.querySelector('[data-meter="component:capture"]'));
   });
-  assert.ok(container.querySelector('[data-meter="usage"]'));
+  assert.ok(container.querySelector('[data-meter="component:usage"]'));
+});
+
+test("an index that parses but carries no media is unmeasurable, not empty", () => {
+  // `loadIndex` returns `json.media ?? {}`, so it RESOLVES for a well-formed
+  // index re-derived under another key. A resolved empty set would render
+  // `Capture 0 of 73` across the whole registry — the lie with a number on it
+  // that dropping the Slot exists to avoid.
+  return (async () => {
+    const { CoverageDashboard } = await import("../../src/app/CoverageDashboard");
+    const { container } = mount(
+      <CoverageDashboard
+        octokit={fakeGhServingCoverage({ mediaOk: true, mediaShape: "rekeyed" })}
+        onOpenFile={() => {}}
+      />,
+    );
+    await waitFor(() => {
+      assert.ok(container.querySelector('[data-meter="component:usage"]'));
+    });
+    assert.equal(
+      container.querySelector('[data-meter="component:capture"]') === null,
+      true,
+      "a re-keyed index reported captures as measured-and-zero",
+    );
+  })();
 });

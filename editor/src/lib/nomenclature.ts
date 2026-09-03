@@ -291,6 +291,8 @@ export const SLOT_LABEL: Record<SlotKey, string> = {
   must_follow: LINK_LABEL.compliance.out,
 };
 
-export function slotLabel(key: SlotKey): string {
-  return SLOT_LABEL[key];
-}
+// NOTE: a `slotLabel(key)` accessor was written here and removed before merge —
+// every caller reads SLOT_LABEL directly and an exported function with no
+// caller is config nothing reads. `thingLabel` and `linkLabel` exist because
+// they do real work (a fallback for an unmapped type, and side selection);
+// this one only indexed a Record.

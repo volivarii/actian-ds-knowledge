@@ -142,7 +142,8 @@ export function CoverageDashboard({
     // Wait for BOTH. Rendering while the index is still in flight shows a table
     // of Meters that silently excludes one and then changes shape.
     if (state.kind !== "ready" || captures.kind === "loading") return null;
-    const at = new Date().toISOString().slice(0, 10);
+    // Local date, not UTC — see the note in PatternsDashboard.
+    const at = new Date().toLocaleDateString("en-CA");
     return measure(
       componentSlotRecords(
         state.rows,
@@ -192,7 +193,11 @@ export function CoverageDashboard({
       </Heading>
       {meters && (
         <Box mb="4" mt="3">
-          <MeterList title={THING_LABEL.component} meters={meters} />
+          <MeterList
+            groupKey="component"
+            title={THING_LABEL.component}
+            meters={meters}
+          />
         </Box>
       )}
       <Text size="2" color="gray" mb="3" as="p">

@@ -28,7 +28,14 @@ export interface Slot<R> {
   filled: (record: R) => boolean;
   /** What it is, why it matters, and the best real example in the substrate. */
   help: string;
-  /** The verb an author acts on. */
+  /**
+   * The verb an author acts on.
+   *
+   * Authored alongside `help` because the pair is one sentence to a reader, but
+   * NOTHING renders it yet — the record-scope surface that will is phase 3. It
+   * is deliberately NOT copied onto `Meter`, which would carry it through the
+   * whole roll-up to no reader; see the note in `measure.ts`.
+   */
   action: string;
 }
 
@@ -85,12 +92,17 @@ export function patternSlotRecords(index: PatternIndex): PatternSlotRecord[] {
       for (const p of uc.patterns) reached.add(p.slug);
     }
   }
+  const known = new Set(index.apps.map((a) => a.slug));
   return index.patterns.map((row) => ({
     slug: row.slug,
     label: row.label,
     when: row.when,
     components: row.components,
-    apps: row.apps,
+    // Only apps the context actually defines. Counting a claimed-but-unknown
+    // app as filled would let the same screen say "Used in 31 of 31, complete"
+    // while its own callout reports that this pattern claims an app which does
+    // not exist. Zero patterns hit this today; one typo'd slug is enough.
+    apps: row.apps.filter((a) => known.has(a)),
     tags: row.tags,
     description: row.description,
     captureCount: row.recipes.length,
@@ -403,8 +415,13 @@ const DOMAIN_HELP: Record<Domain, string> = {
 export const COMPONENT_SLOTS: Slot<ComponentSlotRecord>[] = [
   ...DOMAINS.map(
     (d): Slot<ComponentSlotRecord> => ({
-      key: d as SlotKey,
-      name: SLOT_LABEL[d as SlotKey],
+      // No cast. `Domain` is a subtype of `SlotKey`, so this assignment IS the
+      // join: add a domain to the loader without giving it a Slot word and tsc
+      // fails here. The cast this replaces silenced exactly that, and would
+      // have shipped a Meter with `name: undefined` — a blank label on the
+      // dashboard with the whole suite green.
+      key: d,
+      name: SLOT_LABEL[d],
       // Any status but not-started: `inherited` means the guidance exists on
       // the category, which is a deliberate answer and not a gap.
       filled: (r) => r.domains[d],

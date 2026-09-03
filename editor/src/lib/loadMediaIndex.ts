@@ -174,6 +174,19 @@ export async function loadMediaCapture(
  */
 export async function loadCapturedSlugs(gh: Octokit): Promise<Set<string>> {
   const media = await loadIndex(gh);
+  // `loadIndex` returns `json.media ?? {}`, so it RESOLVES for any well-formed
+  // JSON — including an index re-derived under a different top-level key, or
+  // shipped as a bare map. That would hand back an empty set, the caller would
+  // read it as "measured", and the Capture Meter would render `Capture 0 of 73`
+  // for every component in the registry: exactly the lie with a number on it
+  // that dropping the Slot exists to avoid. Only a THROW drops the Slot, so an
+  // index carrying no entries at all has to throw.
+  if (Object.keys(media).length === 0) {
+    throw new Error(
+      `${INDEX_PATH} carried no media entries — the index cannot be read, ` +
+        `which is not the same as no component having a capture`,
+    );
+  }
   return new Set(
     Object.entries(media)
       // `MediaMap` values are `string | string[]`. `default` is a single

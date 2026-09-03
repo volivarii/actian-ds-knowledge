@@ -582,3 +582,15 @@ form.fm-form.fm-collapsed > *:not(.fm-form-children) {
   font-family: var(--zen-font-family-mono), ui-monospace, monospace;
   color: var(--gray-12);
 }
+
+/* A complete Meter is dimmed, not hidden — a measure that disappears when
+   healthy cannot be seen to regress.
+   ONE signal, not two: an earlier version combined `opacity: 0.55` with Radix's
+   muted `gray` on the same text, compounding two contrast reductions to roughly
+   2:1 on a count anyone might still want to read. This uses the secondary text
+   token alone, which is what the token layer is for, and it lives here rather
+   than inline so `data-complete` is a real styling hook instead of a test-only
+   attribute that could be deleted with the suite still green. */
+.meter-row[data-complete="true"] {
+  color: var(--zen-color-text-secondary);
+}

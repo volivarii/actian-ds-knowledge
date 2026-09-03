@@ -23,8 +23,12 @@ export interface Meter {
   /** Passed in by the caller, never stamped here. */
   measuredAt: string;
   help: string;
-  action: string;
 }
+
+// `Slot.action` is deliberately NOT carried here. Copying a verb through the
+// whole roll-up when no surface renders it is config nothing reads — the same
+// rule that deleted `ACTION_LABEL` in phase 1 and that defers the `state`
+// schema field to phase 3. It lands with the surface that shows it.
 
 // NOTE: there is deliberately no `percent` on Meter, and no helper that
 // computes one. A bare ratio is exactly how oracle coverage came to read as
@@ -46,16 +50,12 @@ export function measure<R>(
       complete: records.length > 0 && filled === records.length,
       measuredAt,
       help: slot.help,
-      action: slot.action,
     };
   });
 }
 
-/** The Slots this record has not filled, in table order — the record-scope
- *  reading of the same data a Meter counts. */
-export function emptySlots<R>(
-  record: R,
-  slots: readonly Slot<R>[],
-): Slot<R>[] {
-  return slots.filter((s) => !s.filled(record));
-}
+// NOTE: `emptySlots(record, slots)` — the record-scope reading of this same
+// data — was written here and REMOVED before merge. Nothing calls it: the
+// record-scope surface is phase 3. An exported helper with no caller is the
+// same dead config as a declared verb no screen renders, and it lands with the
+// screen that needs it.

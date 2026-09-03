@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { measure, emptySlots } from "../../src/lib/measure";
+import { measure } from "../../src/lib/measure";
 import type { Slot } from "../../src/lib/slots";
 
 interface Row {
@@ -64,6 +64,9 @@ test("a Meter carries no percentage", () => {
       !/percent|ratio|pct/i.test(key),
       `Meter carries a ${key} field`,
     );
+    // ...nor an Action verb. Carrying one through the roll-up when no surface
+    // renders it is the dead config phase 1 deleted ACTION_LABEL for.
+    assert.notEqual(key, "action", "Meter carries an action nothing renders");
   }
 });
 
@@ -100,14 +103,3 @@ test("an empty scope reports 0 of 0 and is not complete", () => {
   );
 });
 
-test("emptySlots names what a record is missing, in table order", () => {
-  assert.deepEqual(
-    emptySlots(ROWS[1]!, SLOTS).map((s) => s.key),
-    ["tags"],
-  );
-  assert.deepEqual(emptySlots(ROWS[0]!, SLOTS), []);
-  assert.deepEqual(
-    emptySlots(ROWS[2]!, SLOTS).map((s) => s.key),
-    ["rule", "tags"],
-  );
-});

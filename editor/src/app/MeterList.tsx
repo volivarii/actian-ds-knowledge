@@ -6,14 +6,19 @@
 // Rule 4: a full Meter is DIMMED, not hidden — a measure that disappears when
 //         healthy cannot be seen to regress.
 //
-// `data-complete` sits on the row itself rather than on a wrapper, because a
-// test cannot read an inherited computed style: the attribute has to be on the
-// element the styling keys off.
+// `data-complete` is a real styling hook, not a test-only attribute: the rule
+// that dims a complete row lives in base.css keyed on
+// `.meter-row[data-complete="true"]`. That matters — while the dimming was an
+// inline `opacity`, the test asserting "dimmed, not hidden" only read the
+// attribute, so deleting the styling left complete Meters looking identical to
+// incomplete ones with the gate still green.
 
 import { Box, Flex, Heading, Text, Tooltip } from "@radix-ui/themes";
 import type { Meter } from "../lib/measure";
 
 export interface MeterListProps {
+  /** Stable id for this group, used to namespace `data-meter`. */
+  groupKey: string;
   title: string;
   meters: Meter[];
   /**
@@ -28,7 +33,12 @@ export interface MeterListProps {
   showDate?: boolean;
 }
 
-export function MeterList({ title, meters, showDate = true }: MeterListProps) {
+export function MeterList({
+  groupKey,
+  title,
+  meters,
+  showDate = true,
+}: MeterListProps) {
   const measuredAt = showDate ? meters[0]?.measuredAt : undefined;
   return (
     <Box>
@@ -44,18 +54,22 @@ export function MeterList({ title, meters, showDate = true }: MeterListProps) {
         {meters.map((m) => (
           <Flex
             key={m.key}
-            data-meter={m.key}
+            className="meter-row"
+            // Namespaced by group: `rule` is a Slot of both Pattern and Term,
+            // and `used_in` of both Pattern and Entity, so four MeterLists in
+            // one container gave `[data-meter="rule"]` two matches and
+            // querySelector silently returned the Pattern row.
+            data-meter={`${groupKey}:${m.key}`}
             data-complete={m.complete ? "true" : "false"}
             align="center"
             gap="3"
-            style={{ opacity: m.complete ? 0.55 : 1 }}
           >
             <Tooltip content={m.help}>
               <Text size="2" style={{ minWidth: "8rem" }}>
                 {m.name}
               </Text>
             </Tooltip>
-            <Text size="2" color={m.complete ? "gray" : undefined}>
+            <Text size="2">
               {m.filled} of {m.total}
             </Text>
           </Flex>

@@ -59,11 +59,19 @@ test("an app carries the three fields AppRecord did not declare", () => {
 });
 
 test("the app schema does not declare three fields every app file carries", () => {
-  // Not this plan's to fix, but asserted so it cannot be forgotten: the
-  // schema's `properties` omits purpose, users and signals while all three are
-  // authored in every app and carried through the derive. Same family as the
-  // doc-type gap above. If a later change adds them, this test fails and gets
-  // deleted, which is the correct outcome.
+  // Tracked as #647. Asserted so it cannot be forgotten: the schema's
+  // `properties` omits purpose, users and signals while all three are authored
+  // in every app and carried through the derive.
+  //
+  // TWO honest limits, stated rather than implied:
+  //  1. This asserts a DEFECT PERSISTS, so it goes red on the PR that fixes it
+  //     correctly. That is intended — the failure message says to delete it —
+  //     but it means the test is a reminder, not a gate.
+  //  2. `schemas/**` is NOT in editor-ci.yml's paths filter, so this lane does
+  //     not run on the PR that edits the schema. It will fire later, on an
+  //     unrelated editor PR whose author did not cause it. Adding `schemas/**`
+  //     to that filter for a reminder would run the whole editor suite on every
+  //     schema change, which is the wrong trade; #647 carries the note instead.
   const schema = JSON.parse(
     readFileSync(join(REPO, "schemas", "app-context-app.json"), "utf8"),
   ) as { properties?: Record<string, unknown> };
@@ -72,7 +80,7 @@ test("the app schema does not declare three fields every app file carries", () =
   for (const field of ["purpose", "users", "signals"]) {
     assert.ok(
       !declared.includes(field),
-      `schema now declares ${field} — good; delete this test and see #NNN`,
+      `schema now declares ${field} — that is the fix #647 asks for. Delete this test.`,
     );
   }
 });

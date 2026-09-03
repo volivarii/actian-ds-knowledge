@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
 import { Theme } from "@radix-ui/themes";
 import { MeterList } from "../../src/app/MeterList";
+import { PatternsDashboard } from "../../src/app/PatternsDashboard";
 import type { Meter } from "../../src/lib/measure";
 import { b64 } from "../helpers/fakeOctokit";
 import { buildPatternIndex, type AppContextDoc, type RecipeDoc } from "../../src/lib/patternIndex";
@@ -26,7 +27,6 @@ import {
   componentSlotRecords,
   componentSlotsFor,
 } from "../../src/lib/slots";
-import { summarize, type CoverageRow } from "../../src/lib/coverageLoader";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -60,7 +60,6 @@ const METERS: Meter[] = [
     complete: false,
     measuredAt: "2026-09-03",
     help: "h",
-    action: "Write",
   },
   {
     key: "used_in",
@@ -70,7 +69,6 @@ const METERS: Meter[] = [
     complete: true,
     measuredAt: "2026-09-03",
     help: "h",
-    action: "Attach",
   },
 ];
 
@@ -85,20 +83,20 @@ function mount(ui: React.ReactElement) {
 }
 
 test("a Meter renders the pair, never a bare percentage", () => {
-  const { container } = mount(<MeterList title="Pattern" meters={METERS} />);
+  const { container } = mount(<MeterList groupKey="pattern" title="Pattern" meters={METERS} />);
   const text = container.textContent ?? "";
   assert.ok(text.includes("14 of 31"), `no pair in: ${text}`);
   assert.ok(!/\d+\s*%/.test(text), `a bare percentage reached the screen: ${text}`);
 });
 
 test("a Meter renders the date it was measured", () => {
-  const { container } = mount(<MeterList title="Pattern" meters={METERS} />);
+  const { container } = mount(<MeterList groupKey="pattern" title="Pattern" meters={METERS} />);
   assert.ok((container.textContent ?? "").includes("2026-09-03"));
 });
 
 test("showDate=false drops the stamp, for a caller that states it once", () => {
   const { container } = mount(
-    <MeterList title="Pattern" meters={METERS} showDate={false} />,
+    <MeterList groupKey="pattern" title="Pattern" meters={METERS} showDate={false} />,
   );
   const text = container.textContent ?? "";
   assert.ok(!text.includes("2026-09-03"), "the per-group stamp is still there");
@@ -107,23 +105,41 @@ test("showDate=false drops the stamp, for a caller that states it once", () => {
 });
 
 test("a complete Meter is dimmed, not hidden", () => {
-  const { container } = mount(<MeterList title="Pattern" meters={METERS} />);
+  const { container } = mount(<MeterList groupKey="pattern" title="Pattern" meters={METERS} />);
   const text = container.textContent ?? "";
   assert.ok(text.includes("Used in"), "a full Meter was dropped from the list");
   assert.ok(text.includes("31 of 31"));
-  const row = container.querySelector('[data-meter="used_in"]');
+  const row = container.querySelector('[data-meter="pattern:used_in"]');
   assert.ok(row, "no row for the complete Meter");
-  // Read the attribute on the element the styling keys off, not on an
-  // ancestor: happy-dom does not inherit a parent's computed style, so an
-  // assertion one level up passes whatever the rule actually targets.
   assert.equal(row.getAttribute("data-complete"), "true");
-  const incomplete = container.querySelector('[data-meter="rule"]');
+  const incomplete = container.querySelector('[data-meter="pattern:rule"]');
   assert.equal(incomplete?.getAttribute("data-complete"), "false");
+
+  // The attribute alone proves nothing about DIMMING. While the dimming was an
+  // inline opacity, deleting it left complete Meters looking identical to
+  // incomplete ones and this test stayed green — a gate that cannot fail on the
+  // thing it names. The row carries the class the rule is written against...
+  assert.ok(
+    row.classList.contains("meter-row"),
+    "the row does not carry the class the dimming rule targets",
+  );
+  // ...and the rule exists in the stylesheet the app loads. Asserting the JOIN,
+  // because the test environment does not load base.css and a computed style
+  // here would read the default either way.
+  const css = readFileSync(
+    join(REPO, "editor", "src", "styles", "base.css"),
+    "utf8",
+  );
+  assert.ok(
+    /\.meter-row\[data-complete="true"\]\s*\{[^}]*color:/.test(css),
+    "base.css has no rule dimming a complete meter row",
+  );
 });
 
 test("an empty scope says 0 of 0 rather than reading as done", () => {
   const { container } = mount(
     <MeterList
+      groupKey="pattern"
       title="Pattern"
       meters={[{ ...METERS[0]!, filled: 0, total: 0, complete: false }]}
     />,
@@ -178,7 +194,6 @@ function fakeGhServingRealAppContext() {
 test("the patterns dashboard renders the meters from the real corpus", async () => {
   // Not a MeterList test: this proves something RENDERS one. A passing
   // component test says nothing about whether any screen calls it.
-  const { PatternsDashboard } = await import("../../src/app/PatternsDashboard");
   const { container } = mount(
     <PatternsDashboard
       octokit={fakeGhServingRealAppContext()}
@@ -209,48 +224,105 @@ test("the patterns dashboard renders the meters from the real corpus", async () 
   assert.ok(!/\d+\s*%/.test(text), `a bare percentage reached the dashboard: ${text}`);
 });
 
-test("the dashboard prose and the Pattern meters cannot drift apart", () => {
+/** Mounts the real dashboard against an arbitrary in-memory app-context. */
+function PatternsDashboardHarness({ doc }: { doc: AppContextDoc }) {
+  const gh = {
+    repos: {
+      getContent: async ({ path }: { path: string }) => {
+        if (path === "app-context/dist/recipes") return { data: [] };
+        if (path === "app-context/dist/app-context.json") {
+          return {
+            data: {
+              encoding: "base64",
+              content: b64(JSON.stringify(doc)),
+              sha: "sha",
+            },
+          };
+        }
+        const e = new Error("not found") as Error & { status: number };
+        e.status = 404;
+        throw e;
+      },
+      listCommits: async () => ({ data: [] }),
+    },
+    git: {},
+    pulls: {},
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+  return <PatternsDashboard octokit={gh} onOpenFile={() => {}} />;
+}
+
+test("the dashboard prose is DERIVED from the meters, not counted again", async () => {
   // The dashboard used to count "no when clause", "named by a use case" and
   // "patterns with a capture" itself, beside the Slot tables counting the same
-  // three things. Two derivations of one number is precisely what the Slot
-  // model exists to remove, so the prose now reads the Meters — and this
-  // asserts the join rather than trusting the refactor.
-  const doc = JSON.parse(
-    readFileSync(join(REPO, "app-context", "dist", "app-context.json"), "utf8"),
-  ) as AppContextDoc;
-  const recipeDir = join(REPO, "app-context", "dist", "recipes");
-  const recipes: RecipeDoc[] = readdirSync(recipeDir)
-    .filter((f) => f.endsWith(".json"))
-    .map((f) => JSON.parse(readFileSync(join(recipeDir, f), "utf8")) as RecipeDoc);
-  const index = buildPatternIndex(doc, recipes);
+  // three things.
+  //
+  // An earlier version of this test asserted SOURCE SUBSTRINGS of
+  // PatternsDashboard.tsx, which broke on any reformat and never actually
+  // asserted the join. This drives the screen with a fixture whose numbers
+  // differ from the real corpus, so a figure counted a second time — or
+  // hard-coded — produces the real corpus's number and fails here.
+  const doc: AppContextDoc = {
+    apps: {
+      studio: {
+        label: "Studio",
+        sidebar: [{ label: "Catalog", id: "catalog" }],
+        useCases: [
+          { audience: ["Steward"], jobs: ["Govern"], patterns: ["alpha"] },
+        ],
+      },
+    },
+    patterns: {
+      alpha: {
+        label: "Alpha",
+        apps: ["studio"],
+        tags: ["a"],
+        when: "Use for alpha.",
+        components: ["button"],
+        description: "Alpha.",
+      },
+      beta: {
+        label: "Beta",
+        apps: ["studio"],
+        tags: ["b"],
+        components: ["button"],
+        description: "Beta.",
+      },
+      gamma: {
+        label: "Gamma",
+        apps: ["studio"],
+        tags: ["c"],
+        components: ["button"],
+        description: "Gamma.",
+      },
+    },
+    entities: {},
+    terminology: {},
+  };
+  const index = buildPatternIndex(doc, []);
   const meters = measure(patternSlotRecords(index), PATTERN_SLOTS, "2026-09-03");
   const m = (key: string) => {
     const found = meters.find((x) => x.key === key);
     assert.ok(found, `no meter ${key}`);
     return found;
   };
+  // The fixture deliberately differs from the real corpus (17 / 10 / 3).
   const rule = m("rule");
+  assert.equal(rule.total - rule.filled, 2);
+  assert.equal(m("job").filled, 1);
+  assert.equal(m("capture").filled, 0);
 
-  const src = readFileSync(
-    join(REPO, "editor", "src", "app", "PatternsDashboard.tsx"),
-    "utf8",
-  );
-  // The three figures must be DERIVED from a meter in the source, not counted
-  // again. Checking the rendered number alone would pass on a coincidence.
-  assert.ok(
-    src.includes("withCapture: meterFor(\"capture\").filled"),
-    "withCapture no longer reads the Capture meter",
-  );
-  assert.ok(
-    src.includes("namedByAUseCase: meterFor(\"job\").filled"),
-    "namedByAUseCase no longer reads the Job meter",
-  );
-  assert.ok(
-    src.includes("noWhen: rule.total - rule.filled"),
-    "noWhen no longer reads the Rule meter",
-  );
-  // And the values they produce are the ones the corpus actually has.
-  assert.equal(rule.total - rule.filled, 17);
-  assert.equal(m("job").filled, 10);
-  assert.equal(m("capture").filled, 3);
+  const { container } = mount(<PatternsDashboardHarness doc={doc} />);
+  await waitFor(() => {
+    assert.ok((container.textContent ?? "").includes("with no when clause"));
+  });
+  const text = container.textContent ?? "";
+  assert.ok(text.includes("2 with no when clause"), `prose noWhen wrong in: ${text.slice(0, 500)}`);
+  assert.ok(text.includes("naming 1 of them"), "prose namedByAUseCase wrong");
+  assert.ok(text.includes("on 0 patterns"), "prose withCapture wrong");
+  // ...and the real corpus's figures must NOT appear, which is what a
+  // hard-coded or separately-counted figure would produce.
+  assert.ok(!text.includes("17 with no when clause"), "noWhen is not derived");
+  assert.ok(!text.includes("naming 10 of them"), "namedByAUseCase is not derived");
 });
+

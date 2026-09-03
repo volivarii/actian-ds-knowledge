@@ -31,7 +31,12 @@ import {
   componentSlotRecords,
   componentSlotsFor,
 } from "../../src/lib/slots";
-import { DOMAINS, type CoverageRow } from "../../src/lib/coverageLoader";
+import {
+  DOMAINS,
+  type CoverageRow,
+  type Domain,
+} from "../../src/lib/coverageLoader";
+import { domainFileName } from "../../src/lib/workspaceState";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -85,6 +90,33 @@ function authoredComponentSlugs(): string[] {
     .map((e) => e.name);
 }
 
+/**
+ * A Slot that is genuinely partial today must be neither never-true nor
+ * always-true over the corpus.
+ *
+ * This replaces exact counts (14, 13, 29, 10, 3, 26, 22 …). Those asserted the
+ * SHAPE OF THE CORPUS, not the correctness of the predicate, and
+ * `editor-ci.yml` lists `app-context/src/**` in its paths filter — so an author
+ * adding one `when:` clause, the exact action the Rule Slot's help tells them
+ * to take, re-triggered this lane and turned it red on `14`. **A gate must not
+ * fail on the improvement it exists to encourage.**
+ *
+ * The predicate itself is pinned by the known-filled / known-empty record
+ * assertions above each of these; this only catches a degenerate one.
+ */
+function partial<R>(
+  records: R[],
+  slot: { key: string; filled: (r: R) => boolean },
+): void {
+  const n = records.filter((r) => slot.filled(r)).length;
+  assert.ok(records.length > 0, `${slot.key}: empty corpus, check is vacuous`);
+  assert.ok(n > 0, `${slot.key} is filled by NOTHING — the predicate is broken`);
+  assert.ok(
+    n < records.length,
+    `${slot.key} is filled by EVERYTHING (${n}/${records.length}) — the predicate is broken`,
+  );
+}
+
 function slot(key: string) {
   const s = PATTERN_SLOTS.find((x) => x.key === key);
   assert.ok(s, `no Pattern Slot keyed ${key}`);
@@ -96,7 +128,7 @@ test("Rule is filled by a when clause, and empty without one", () => {
   const s = slot("rule");
   assert.equal(s.filled(bySlug(rs, "access-request-management")), true);
   assert.equal(s.filled(bySlug(rs, "access-request-workflow")), false);
-  assert.equal(rs.filter((r) => s.filled(r)).length, 14);
+  partial(rs, s);
 });
 
 test("Description is filled at 40 words, the gap the corpus already has", () => {
@@ -111,13 +143,20 @@ test("Description is filled at 40 words, the gap the corpus already has", () => 
     Math.max(...below) < Math.min(...above) - 15,
     `the gap has closed: ${Math.max(...below)} then ${Math.min(...above)} — re-derive the bar rather than keeping it`,
   );
-  assert.equal(rs.filter((r) => s.filled(r)).length, 13);
+  partial(rs, s);
 });
 
 test("Built from and Used in read the pattern's own lists", () => {
   const rs = records();
-  assert.equal(rs.filter((r) => slot("built_from").filled(r)).length, 29);
-  assert.equal(rs.filter((r) => slot("used_in").filled(r)).length, 31);
+  partial(rs, slot("built_from"));
+  // Used in is at total today. Asserting `=== 31` would break the day a pattern
+  // is added without an app, which is a finding for the SCREEN, not a test
+  // failure. What must hold is that the predicate reads the list.
+  assert.equal(slot("used_in").filled(bySlug(rs, "asset-detail-360")), true);
+  assert.equal(
+    slot("used_in").filled({ ...bySlug(rs, "asset-detail-360"), apps: [] }),
+    false,
+  );
 });
 
 test("Job is a cross-file join: a Product's use case must name the pattern", () => {
@@ -127,7 +166,7 @@ test("Job is a cross-file join: a Product's use case must name the pattern", () 
   // claims an app but no use case reaches it.
   assert.equal(s.filled(bySlug(rs, "search-filtered-table")), true);
   assert.equal(s.filled(bySlug(rs, "ai-analyst-panel")), false);
-  assert.equal(rs.filter((r) => s.filled(r)).length, 10);
+  partial(rs, s);
 });
 
 test("Job is not the same question as Used in", () => {
@@ -147,17 +186,38 @@ test("Capture reads the recipe's declared pattern, not its filename", () => {
   // a different surface. A filename join would miss it, and would go on
   // reporting the right total by coincidence.
   assert.equal(s.filled(bySlug(rs, "right-sliding-drawer")), true);
-  assert.equal(bySlug(rs, "right-sliding-drawer").captureCount, 2);
   assert.equal(s.filled(bySlug(rs, "activity-timeline")), false);
-  assert.equal(rs.filter((r) => s.filled(r)).length, 3);
-  // Four recipes, three patterns covered. Asserting both keeps the difference
-  // visible instead of letting one number stand for the other.
-  assert.equal(realRecipes().length, 4);
+  partial(rs, s);
+
+  // The join property, stated so it survives a fifth recipe: at least one
+  // counted capture is a recipe whose OWN slug differs from the pattern's.
+  // That is precisely what a filename join drops, and asserting
+  // `captureCount === 2` instead would have broken the day someone captured
+  // right-sliding-drawer a third time.
+  const recipes = realRecipes();
+  const crossNamed = recipes.filter(
+    (r) => (r.patterns ?? []).some((name) => name !== r.slug),
+  );
+  assert.ok(
+    crossNamed.length > 0,
+    "no recipe names a pattern other than itself — the filename join would now pass, so this check is vacuous",
+  );
+  for (const r of crossNamed) {
+    for (const name of r.patterns ?? []) {
+      if (name === r.slug) continue;
+      const row = rs.find((x) => x.slug === name);
+      if (!row) continue;
+      assert.ok(
+        row.captureCount >= 1,
+        `${name} is captured by ${r.slug}.json but counts ${row.captureCount} captures — the join is reading filenames`,
+      );
+    }
+  }
 });
 
 test("Tags is filled by a non-empty tag list", () => {
   const rs = records();
-  assert.equal(rs.filter((r) => slot("tags").filled(r)).length, 30);
+  partial(rs, slot("tags"));
 });
 
 test("every Pattern Slot takes its name from the vocabulary", () => {
@@ -229,9 +289,8 @@ test("Entity Slots are filled and empty on known real records", () => {
   assert.equal(s("link").filled(find("api-key")), false);
   assert.equal(s("used_in").filled(find("access-request")), true);
 
-  assert.equal(rs.filter((r) => s("properties").filled(r)).length, 26);
-  assert.equal(rs.filter((r) => s("link").filled(r)).length, 22);
-  assert.equal(rs.filter((r) => s("used_in").filled(r)).length, 30);
+  partial(rs, s("properties"));
+  partial(rs, s("link"));
 });
 
 test("Entity Link counts a relationship map with any verb", () => {
@@ -256,12 +315,14 @@ test("Product Navigation is the one Product Slot that is not full", () => {
   };
   assert.equal(nav.filled(find("studio")), true);
   assert.equal(nav.filled(find("explorer")), false);
-  assert.equal(rs.filter((r) => nav.filled(r)).length, 2);
-  // Every other Product Slot is 3/3 today. Asserting that keeps a regression
-  // visible rather than only tracking the one known gap.
-  for (const s of PRODUCT_SLOTS) {
-    if (s.key === "navigation") continue;
-    assert.equal(rs.filter((r) => s.filled(r)).length, 3, `${s.key} moved`);
+  // Every Product Slot must be read by SOMETHING; a predicate filled by
+  // nothing is broken. Exact counts are deliberately not asserted — three
+  // products is a corpus fact, not a contract.
+  for (const slotDef of PRODUCT_SLOTS) {
+    assert.ok(
+      rs.some((r) => slotDef.filled(r)),
+      `${slotDef.key} is filled by no product — the predicate is broken`,
+    );
   }
 });
 
@@ -288,9 +349,9 @@ test("Term Slots are full, and the predicate still rejects an empty record", () 
   // only the count would leave a predicate that returns true unconditionally
   // looking correct. The synthetic half is stated here on purpose.
   const rs = termSlotRecords(realDoc());
-  assert.equal(rs.length, 33);
+  assert.ok(rs.length > 0, "no terms — vacuous");
   for (const s of TERM_SLOTS) {
-    assert.equal(rs.filter((r) => s.filled(r)).length, 33, `${s.key} is no longer full`);
+    assert.ok(rs.every((r) => s.filled(r)), `${s.key} is no longer full`);
     assert.equal(
       s.filled({ slug: "synthetic", label: "Synthetic", meaning: "", notUse: [] }),
       false,
@@ -300,9 +361,22 @@ test("Term Slots are full, and the predicate still rejects an empty record", () 
 });
 
 test("every Slot in every table takes its name from the vocabulary", () => {
-  for (const table of [PATTERN_SLOTS, ENTITY_SLOTS, PRODUCT_SLOTS, TERM_SLOTS]) {
+  // COMPONENT_SLOTS was omitted here while the title said "every table" — the
+  // one table built by MAPPING a list rather than written out, and so the one
+  // where a missing word would ship as `name: undefined` and render a blank
+  // label. That is the third time in two days a guard's subject has been
+  // narrower than its name.
+  for (const table of [
+    PATTERN_SLOTS,
+    ENTITY_SLOTS,
+    PRODUCT_SLOTS,
+    TERM_SLOTS,
+    COMPONENT_SLOTS,
+  ] as Array<Array<{ key: keyof typeof SLOT_LABEL; name: string }>>) {
     for (const s of table) {
       assert.equal(s.name, SLOT_LABEL[s.key], `${s.key} restates its own name`);
+      assert.equal(typeof s.name, "string");
+      assert.ok(s.name.length > 0, `${s.key} renders an empty label`);
     }
   }
 });
@@ -406,8 +480,10 @@ test("a domain Slot's help names a component whose THAT domain is authored", () 
   //
   // This is the part that IS checkable: join the example against the file the
   // domain is actually authored in.
-  const authored = (domain: string): string[] => {
-    const file = domain === "tokens" ? "tokens.yml" : `${domain}.md`;
+  const authored = (domain: Domain): string[] => {
+    // Imported, not re-derived: a hand-copy of this mapping is the list the
+    // repo's standing rule says to replace with the read.
+    const file = domainFileName(domain);
     return authoredComponentSlugs().filter((slug) =>
       existsSync(join(REPO, "components", "src", slug, file)),
     );
@@ -416,7 +492,7 @@ test("a domain Slot's help names a component whose THAT domain is authored", () 
     (DOMAINS as readonly string[]).includes(s.key),
   );
   assert.equal(domainSlots.length, DOMAINS.length, "domain Slots went missing");
-  for (const slot of domainSlots) {
+  for (const slot of domainSlots as Array<{ key: Domain; help: string }>) {
     const withFile = authored(slot.key);
     assert.ok(
       withFile.length > 0,

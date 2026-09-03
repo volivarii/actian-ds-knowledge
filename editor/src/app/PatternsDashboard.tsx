@@ -313,9 +313,11 @@ export function PatternsDashboard({
   const meters = useMemo(() => {
     if (state.kind !== "ready") return null;
     const index = state.index;
-    // The read time. The editor reads a baked dist, so this says when the
-    // measurement was taken and the data itself is as of the last merge.
-    const at = new Date().toISOString().slice(0, 10);
+    // The read time, in the READER's timezone. `toISOString()` is UTC, so a
+    // reader at UTC-7 opening this at 18:00 saw tomorrow's date on a
+    // measurement taken today — which defeats the point of a dated number.
+    // "en-CA" is ISO-shaped (YYYY-MM-DD) and locale-stable for that shape.
+    const at = new Date().toLocaleDateString("en-CA");
     return {
       pattern: measure(patternSlotRecords(index), PATTERN_SLOTS, at),
       entity: measure(entitySlotRecords(index.doc), ENTITY_SLOTS, at),
@@ -393,21 +395,25 @@ export function PatternsDashboard({
           </Text>
           <Flex gap="6" wrap="wrap">
             <MeterList
+              groupKey="pattern"
               title={THING_LABEL.ux_pattern}
               meters={meters.pattern}
               showDate={false}
             />
             <MeterList
+              groupKey="entity"
               title={THING_LABEL.app_entity}
               meters={meters.entity}
               showDate={false}
             />
             <MeterList
+              groupKey="product"
               title={THING_LABEL.app}
               meters={meters.product}
               showDate={false}
             />
             <MeterList
+              groupKey="term"
               title={THING_LABEL.terminology_term}
               meters={meters.term}
               showDate={false}
