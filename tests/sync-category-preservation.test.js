@@ -342,3 +342,59 @@ test("preserveKnownCategories: the slug fallback refuses a slug that CHANGED OCC
   assert.deepEqual(drift, [], "no restore across an occupant change");
   assert.equal(after.components.calendar.section, undefined);
 });
+
+// ---- assertNoAttributionLoss ----------------------------------------------
+//
+// The carry-forward is ONE-SHOT, and that is what made the 2026-09-03
+// `illustration` case unrecoverable from CI: it reads the previous dist as its
+// baseline, so once a bad value is committed it BECOMES the last-known-good and
+// the repair can never fire again. Re-running the sync after fixing the lookup
+// reported `verdict=unchanged` and pushed nothing, because the broken value was
+// by then the thing it was comparing against. Recovering it meant replaying the
+// generator by hand over a pre-sync commit.
+//
+// So the real protection is a precondition: never COMMIT an entry that lost its
+// section, rather than trying to restore one afterwards.
+
+test("assertNoAttributionLoss: an entry that had a section and now has none is refused", function () {
+  var before = {
+    components: { illustration: comp("k1", "Illustrations & graphics", { section: "Brand Assets" }) },
+  };
+  var after = { components: { illustration: comp("k2", "Playground") } };
+  assert.throws(
+    function () {
+      S.assertNoAttributionLoss(before, after);
+    },
+    /illustration/,
+    "the message must name the slug",
+  );
+});
+
+test("assertNoAttributionLoss: a genuinely new entry with no section is not a loss", function () {
+  // Nothing was lost — there was nothing there. This must not become a gate on
+  // Figma's hygiene in general; it gates REGRESSION only.
+  assert.doesNotThrow(function () {
+    S.assertNoAttributionLoss(
+      { components: {} },
+      { components: { brandnew: comp("k9", "Playground") } },
+    );
+  });
+});
+
+test("assertNoAttributionLoss: an entry that keeps its section passes", function () {
+  var before = { components: { toast: comp("k1", "Feedback", { section: "Components" }) } };
+  var after = { components: { toast: comp("k1", "Feedback", { section: "Components" }) } };
+  assert.doesNotThrow(function () {
+    S.assertNoAttributionLoss(before, after);
+  });
+});
+
+test("assertNoAttributionLoss: a component REMOVED from Figma is not an attribution loss", function () {
+  // Removal is assertNoCategoryMassLoss's subject, and deferred-removal handling
+  // lives elsewhere. Two gates reporting one event would make the message lie
+  // about what happened.
+  var before = { components: { gone: comp("k1", "Feedback", { section: "Components" }) } };
+  assert.doesNotThrow(function () {
+    S.assertNoAttributionLoss(before, { components: {} });
+  });
+});

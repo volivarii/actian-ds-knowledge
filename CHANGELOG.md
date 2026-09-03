@@ -61,6 +61,18 @@ Each entry links its pull request. Dates are the merge date (UTC).
   `Playground`, and no registry entry is left without a section. The editor's
   `no non-component section reaches the eligible set` gate is what surfaced it.
 
+  **And the repair is one-shot, which is worse than the bug it repairs.** Re-running the sync after
+  fixing the lookup reported `verdict=unchanged` and pushed nothing: `preserveKnownCategories` reads
+  the *previous dist* as its baseline, so the sectionless value committed by the first run had
+  already become the new last-known-good. Recovering it meant replaying the generator by hand over
+  the pre-sync commit. A new `assertNoAttributionLoss` therefore gates the **commit** instead —
+  a surviving component (matched by slug, because a re-key is exactly what defeats identity
+  matching) that had a section and comes back without one refuses the emit. Scope is deliberately
+  narrow: a genuinely new entry with no section is not a loss, and a removed component belongs to
+  `assertNoCategoryMassLoss`, because two gates reporting one event would make both messages lie.
+  Proven against the real artifacts: the gate throws on the registry the first run produced and
+  passes on the repaired one.
+
   **This sync is also the first proof that #648's producer change works on real Figma data.** The
   regenerated anatomy now carries `layout.size` on **115 nodes across 51 slugs**, **62
   `layout.variants` entries across 30 slugs**, and **143 of 152** structural entries naming what

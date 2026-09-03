@@ -389,12 +389,6 @@
       "provenance": "figma-dskit"
     },
     {
-      "id": "category:playground",
-      "type": "category",
-      "title": "Playground",
-      "provenance": "figma-dskit"
-    },
-    {
       "id": "category:product-logos",
       "type": "category",
       "title": "Product logos",
@@ -11339,7 +11333,7 @@
     },
     {
       "source": "component:illustration",
-      "target": "category:playground",
+      "target": "category:illustrations-graphics",
       "type": "in_category"
     },
     {

@@ -296,6 +296,48 @@ function preserveKnownCategories(before, after) {
   return drift;
 }
 
+// Refuse to emit a registry where a surviving component LOST its section.
+//
+// preserveKnownCategories above is the repair, and it is ONE-SHOT: it reads the
+// previous dist as its baseline, so once a bad value is committed it BECOMES the
+// last-known-good and the repair can never fire again. On 2026-09-03 that is
+// exactly what happened -- `illustration` was re-keyed onto a page called
+// "Playground", the identity lookup missed its twin, the sectionless entry was
+// committed, and re-running the sync after fixing the lookup reported
+// "verdict=unchanged" and pushed nothing, because the broken value was by then
+// the thing it compared against. Recovering it meant replaying the generator by
+// hand over a pre-sync commit.
+//
+// So this gates the COMMIT rather than trying to restore afterwards. Scope is
+// deliberately narrow: only a SURVIVOR (present on both sides, by slug) that HAD
+// a section and now has none. A genuinely new entry with no section is not a
+// loss -- there was nothing to lose -- and a REMOVED component belongs to
+// assertNoCategoryMassLoss, because two gates reporting one event would make
+// both messages lie about what happened.
+//
+// Matched by SLUG, not by identity: a re-key is precisely the case that defeats
+// identity matching, and it is the case this exists for.
+function assertNoAttributionLoss(before, after) {
+  var beforeComps = (before && before.components) || {};
+  var afterComps = (after && after.components) || {};
+  var lost = Object.keys(beforeComps).filter(function (slug) {
+    var b = beforeComps[slug];
+    var a = afterComps[slug];
+    return b && b.section && a && !a.section;
+  });
+  if (lost.length) {
+    throw new Error(
+      "[sync] attribution loss: " +
+        lost.join(", ") +
+        " had a section and came back without one. The page-attribution repair " +
+        "reads the PREVIOUS dist as its baseline, so committing this would make " +
+        "the empty value the new last-known-good and the repair could never fire " +
+        "again. Fix the Figma page attribution, or accept the move in " +
+        "components/src/category-page-overrides.json. Refusing to emit it.",
+    );
+  }
+}
+
 // Refuse to emit a registry that genuinely LOST components. A category counts
 // as a mass loss only when >= FLOOR of its previous members are ABSENT by
 // stable identity (removed from Figma), NOT when the category merely emptied
@@ -684,6 +726,8 @@ async function computeRegistry(opts, kitId) {
       })
       .filter(Boolean);
     assertNoCategoryMassLoss(before, after, { allow: allowedLoss });
+    // After the repair, so it gates what would actually be COMMITTED.
+    assertNoAttributionLoss(before, after);
   }
 
   // Every kit, not just dsKit: `name` ships as the display name from all three
@@ -2289,6 +2333,7 @@ module.exports = {
   preserveKnownCategories: preserveKnownCategories,
   assertNoEmojiInNames: assertNoEmojiInNames,
   assertNoCategoryMassLoss: assertNoCategoryMassLoss,
+  assertNoAttributionLoss: assertNoAttributionLoss,
   isAuthError: isAuthError,
   failureKind: failureKind,
 };

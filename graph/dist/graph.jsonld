@@ -445,12 +445,6 @@
       "provenance": "figma-dskit"
     },
     {
-      "@id": "category:playground",
-      "@type": "Category",
-      "title": "Playground",
-      "provenance": "figma-dskit"
-    },
-    {
       "@id": "category:product-logos",
       "@type": "Category",
       "title": "Product logos",
@@ -12172,7 +12166,7 @@
       "@type": "Edge",
       "edgeType": "in_category",
       "source": "component:illustration",
-      "target": "category:playground"
+      "target": "category:illustrations-graphics"
     },
     {
       "@type": "Edge",

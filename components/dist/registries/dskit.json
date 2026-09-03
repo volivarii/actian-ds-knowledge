@@ -3332,9 +3332,10 @@
       "properties": {},
       "nestedComponents": [],
       "documentationLinks": [],
-      "category": "Playground",
-      "categorySlug": "playground",
-      "group": "Playground",
+      "section": "Brand Assets",
+      "category": "Illustrations & graphics",
+      "categorySlug": "illustrations-graphics",
+      "group": "Illustrations",
       "variants": {
         "Type": [
           "Empty state large",
