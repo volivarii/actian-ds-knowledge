@@ -818,7 +818,12 @@ test("collectDeltas keeps an aligned sibling delta while flagging a kind-mismatc
     { path: [0], appearance: { border: { color: "#dc3514", width: "1px" } } },
   ]);
   assert.deepEqual(a.structural, [
-    { path: [1], reason: "kind:text!=container" },
+    {
+      path: [1],
+      reason: "kind:text!=container",
+      base: ["text:"],
+      variant: ["container:"],
+    },
   ]);
 });
 
@@ -841,7 +846,14 @@ test("collectDeltas flags a child-count mismatch and keeps the root delta (butto
   var a = acc();
   N.collectDeltas(c, v, [], a);
   assert.deepEqual(a.deltas, []); // bg identical -> no root delta
-  assert.deepEqual(a.structural, [{ path: [], reason: "childCount:3!=4" }]);
+  assert.deepEqual(a.structural, [
+    {
+      path: [],
+      reason: "childCount:3!=4",
+      base: ["vector:", "text:", "vector:"],
+      variant: ["container:", "vector:", "text:", "vector:"],
+    },
+  ]);
 });
 
 test("collectDeltas aligns children whose names differ (tag status icons)", function () {
@@ -1293,8 +1305,22 @@ test("buildAnatomyFile emits structuralVariants sorted deterministically regardl
   var isoZ = withChild("Z=Bee, A=Default");
   var isoA = withChild("Z=Default, A=Foo");
   var expected = [
-    { prop: "A", value: "Foo", path: "", reason: "childCount:0!=1" },
-    { prop: "Z", value: "Bee", path: "", reason: "childCount:0!=1" },
+    {
+      prop: "A",
+      value: "Foo",
+      path: "",
+      reason: "childCount:0!=1",
+      base: [],
+      variant: ["text:t"],
+    },
+    {
+      prop: "Z",
+      value: "Bee",
+      path: "",
+      reason: "childCount:0!=1",
+      base: [],
+      variant: ["text:t"],
+    },
   ];
   var outA = N.buildAnatomyFile(def, {
     slug: "banner",
@@ -1419,4 +1445,290 @@ test("buildAnatomyFile output unchanged when no variants passed (P1A byte-compat
   });
   assert.equal("variantDefaults" in a, false);
   assert.equal("variants" in a.root.appearance, false);
+});
+
+// ---------------------------------------------------------------------------
+// #641: the per-variant evidence the substrate already fetches but discards.
+//
+// Measured on v0.34.178: of the 44 unexplained variant collapses, 20 belong to
+// values whose ISOLATED VARIANT WAS FETCHED, NORMALIZED AND DIFFED — and the
+// diff came out empty, because collectDeltas compares paint only and
+// normalizeLayout records no dimension. 14 of those 20 carry a bare
+// "childCount:1!=5" in quality.structuralVariants: a signal that something
+// differs, with the what discarded. These tests pin the three producer gaps.
+// ---------------------------------------------------------------------------
+
+test("normalizeLayout records an AUTHORED fixed width, not a hugged one", function () {
+  var node = {
+    layoutMode: "VERTICAL",
+    itemSpacing: 0,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    layoutSizingHorizontal: "FIXED",
+    layoutSizingVertical: "HUG",
+    absoluteBoundingBox: { x: 0, y: 0, width: 450, height: 171 },
+    children: [],
+  };
+  var out = N.normalizeLayout(node);
+  // The fixed axis is a design decision and is recorded; the hug axis is a
+  // consequence of content, and recording it would invite a consumer to pin a
+  // height that must grow with its text.
+  assert.deepEqual(out.size, { w: "450px" });
+});
+
+test("normalizeLayout omits size entirely when neither axis is authored fixed", function () {
+  var node = {
+    layoutMode: "HORIZONTAL",
+    itemSpacing: 8,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    layoutSizingHorizontal: "HUG",
+    layoutSizingVertical: "HUG",
+    absoluteBoundingBox: { x: 0, y: 0, width: 88, height: 24 },
+    children: [],
+  };
+  assert.equal("size" in N.normalizeLayout(node), false);
+});
+
+test("normalizeLayout omits size when the bounding box is absent, however it sizes", function () {
+  var node = {
+    layoutMode: "HORIZONTAL",
+    itemSpacing: 0,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    layoutSizingHorizontal: "FIXED",
+    layoutSizingVertical: "FIXED",
+    children: [],
+  };
+  assert.equal("size" in N.normalizeLayout(node), false);
+});
+
+test("normalizeLayout records both dimensions when both are authored fixed", function () {
+  var node = {
+    layoutMode: "HORIZONTAL",
+    itemSpacing: 0,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    layoutSizingHorizontal: "FIXED",
+    layoutSizingVertical: "FIXED",
+    absoluteBoundingBox: { x: 0, y: 0, width: 320.5, height: 40 },
+    children: [],
+  };
+  assert.deepEqual(N.normalizeLayout(node).size, { w: "320.5px", h: "40px" });
+});
+
+test("a degraded node's rawHint carries the size, not only the origin", function () {
+  var ctx = {
+    nodeIdToSlug: {},
+    varNameById: {},
+    total: 0,
+    normalized: 0,
+    degraded: [],
+  };
+  var out = N.normalizeNode(
+    {
+      type: "FRAME",
+      name: "Badge overlay",
+      absoluteBoundingBox: { x: 12, y: -4, width: 24, height: 24 },
+      children: [{ type: "TEXT", name: "n", characters: "3" }],
+    },
+    ctx,
+  );
+  assert.equal(out.normalizable, false);
+  assert.deepEqual(out.rawHint, {
+    layoutMode: "NONE",
+    x: 12,
+    y: -4,
+    w: 24,
+    h: 24,
+  });
+});
+
+test("diffLayout returns only the differing keys, null when the layout is identical", function () {
+  var base = {
+    axis: "row",
+    gap: "8px",
+    padding: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
+    align: { main: "start", cross: "start" },
+    sizing: { h: "hug", v: "hug" },
+  };
+  assert.equal(N.diffLayout(base, JSON.parse(JSON.stringify(base))), null);
+  var wider = JSON.parse(JSON.stringify(base));
+  wider.gap = "16px";
+  wider.size = { w: "450px" };
+  assert.deepEqual(N.diffLayout(base, wider), {
+    gap: "16px",
+    size: { w: "450px" },
+  });
+});
+
+test("diffLayout records a removal as null, the way diffAppearance does", function () {
+  var base = { axis: "row", gap: "8px", size: { w: "1200px" } };
+  var variant = { axis: "row", gap: "8px" };
+  assert.deepEqual(N.diffLayout(base, variant), { size: null });
+});
+
+test("collectDeltas records a layout delta (modal's size axis), separate from paint", function () {
+  var lay = function (w) {
+    var l = {
+      axis: "column",
+      gap: "24px",
+      padding: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
+      align: { main: "start", cross: "start" },
+      sizing: { h: "fixed", v: "hug" },
+    };
+    if (w) l.size = { w: w };
+    return l;
+  };
+  var c = { kind: "container", layout: lay("1200px"), children: [] };
+  var v = { kind: "container", layout: lay("450px"), children: [] };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.deltas, []); // paint is identical
+  assert.deepEqual(a.layoutDeltas, [
+    { path: [], layout: { size: { w: "450px" } } },
+  ]);
+  assert.deepEqual(a.structural, []);
+});
+
+test("collectDeltas flags a layout that appears or disappears as structural, not as a delta", function () {
+  var c = {
+    kind: "container",
+    layout: {
+      axis: "row",
+      gap: "0px",
+      padding: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
+      align: { main: "start", cross: "start" },
+      sizing: { h: "hug", v: "hug" },
+    },
+    children: [],
+  };
+  var v = { kind: "container", children: [] }; // degraded in this variant
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.layoutDeltas, []);
+  assert.deepEqual(a.structural, [{ path: [], reason: "layout:row!=none" }]);
+});
+
+test("a child-count mismatch names what sits on each side, not just how many", function () {
+  var c = {
+    kind: "container",
+    children: [
+      { kind: "container", name: "Header" },
+      { kind: "container", name: "Body" },
+      { kind: "container", name: "Footer" },
+    ],
+  };
+  var v = {
+    kind: "container",
+    children: [{ kind: "text", name: "Message" }],
+  };
+  var a = acc();
+  N.collectDeltas(c, v, [], a);
+  assert.deepEqual(a.structural, [
+    {
+      path: [],
+      reason: "childCount:3!=1",
+      base: ["container:Header", "container:Body", "container:Footer"],
+      variant: ["text:Message"],
+    },
+  ]);
+});
+
+test("a kind mismatch names the node on each side", function () {
+  var a = acc();
+  N.collectDeltas(
+    { kind: "container", name: "Title" },
+    { kind: "text", name: "Title" },
+    [1],
+    a,
+  );
+  assert.deepEqual(a.structural, [
+    {
+      path: [1],
+      reason: "kind:container!=text",
+      base: ["container:Title"],
+      variant: ["text:Title"],
+    },
+  ]);
+});
+
+test("buildAnatomyFile attaches per-variant layout deltas under layout.variants", function () {
+  var mk = function (name, width) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "VERTICAL",
+      itemSpacing: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      layoutSizingHorizontal: "FIXED",
+      layoutSizingVertical: "HUG",
+      absoluteBoundingBox: { x: 0, y: 0, width: width, height: 171 },
+      children: [],
+    };
+  };
+  var variants = [
+    mk("Size=1200px", 1200),
+    mk("Size=450px warning", 450),
+    mk("Size=450px confirm", 450),
+  ];
+  var out = N.buildAnatomyFile(variants[0], {
+    slug: "modal",
+    kit: "dskit",
+    syncedAt: "2026-09-03",
+    source: {},
+    variants: variants,
+    defaultVariantName: "Size=1200px",
+  });
+  assert.deepEqual(out.root.layout.size, { w: "1200px" });
+  // Both 450px values carry the SAME delta, so they merge into one entry —
+  // the same grouping appearance.variants uses.
+  assert.deepEqual(out.root.layout.variants, [
+    {
+      prop: "Size",
+      values: ["450px confirm", "450px warning"],
+      size: { w: "450px" },
+    },
+  ]);
+});
+
+test("buildAnatomyFile emits no layout.variants when every variant lays out alike (byte-compat)", function () {
+  var mk = function (name, bg) {
+    return {
+      type: "COMPONENT",
+      name: name,
+      layoutMode: "HORIZONTAL",
+      itemSpacing: 8,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      fills: [{ type: "SOLID", color: bg }],
+      children: [],
+    };
+  };
+  var out = N.buildAnatomyFile(mk("Type=Default", { r: 1, g: 1, b: 1, a: 1 }), {
+    slug: "banner",
+    kit: "dskit",
+    syncedAt: "d",
+    source: {},
+    variants: [
+      mk("Type=Default", { r: 1, g: 1, b: 1, a: 1 }),
+      mk("Type=Danger", { r: 0.863, g: 0.208, b: 0.078, a: 1 }),
+    ],
+    defaultVariantName: "Type=Default",
+  });
+  assert.equal("variants" in out.root.layout, false);
+  assert.equal(out.root.appearance.variants.length, 1); // paint delta still lands
 });

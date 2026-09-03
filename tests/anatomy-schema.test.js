@@ -398,3 +398,180 @@ test("schema accepts a well-formed variant border and a null variant border", fu
   };
   assert.ok(v(doc), JSON.stringify(v.errors));
 });
+
+// ---------------------------------------------------------------------------
+// #641: layout facts the producer now records. The last three tests here are
+// the JOIN — buildAnatomyFile's real output validated against this schema —
+// because the two drifting apart is invisible until a nightly sync writes a
+// dist that validate-anatomy then rejects.
+// ---------------------------------------------------------------------------
+
+test("schema accepts an authored fixed size and per-variant layout deltas", function () {
+  var v = makeValidator();
+  var ok = minimalFile({
+    variantDefaults: { "Size & Type": "1200px" },
+    root: {
+      name: "Modal",
+      kind: "container",
+      layout: {
+        axis: "column",
+        gap: "24px",
+        padding: { top: "24px", right: "24px", bottom: "24px", left: "24px" },
+        align: { main: "start", cross: "start" },
+        sizing: { h: "fixed", v: "hug" },
+        size: { w: "1200px" },
+        variants: [
+          {
+            prop: "Size & Type",
+            values: ["450px confirm", "450px warning"],
+            size: { w: "450px" },
+          },
+          { prop: "Size & Type", values: ["700px create"], size: null },
+          { prop: "Size & Type", values: ["900px edit"], gap: "16px" },
+        ],
+      },
+    },
+  });
+  assert.ok(v(ok), JSON.stringify(v.errors));
+});
+
+test("schema rejects an unknown key in a layout variant delta", function () {
+  var v = makeValidator();
+  var bad = minimalFile({
+    root: {
+      name: "Modal",
+      kind: "container",
+      layout: {
+        axis: "column",
+        gap: "24px",
+        padding: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
+        align: { main: "start", cross: "start" },
+        sizing: { h: "fixed", v: "hug" },
+        variants: [{ prop: "Size", values: ["450px"], width: "450px" }],
+      },
+    },
+  });
+  assert.equal(v(bad), false);
+});
+
+test("schema accepts a structural variant naming both sides", function () {
+  var v = makeValidator();
+  var ok = minimalFile({
+    quality: {
+      nodesTotal: 1,
+      nodesNormalized: 1,
+      ratio: 1,
+      degraded: [],
+      structuralVariants: [
+        {
+          prop: "Size & Type",
+          value: "700px create",
+          path: "1",
+          reason: "childCount:5!=1",
+          base: ["container:Header", "container:Body"],
+          variant: ["text:Message"],
+        },
+        {
+          prop: "Type",
+          value: "Group",
+          path: "",
+          reason: "layout:column!=none",
+        },
+      ],
+    },
+  });
+  assert.ok(v(ok), JSON.stringify(v.errors));
+});
+
+test("schema rejects a structural variant whose sides are not strings", function () {
+  var v = makeValidator();
+  var bad = minimalFile({
+    quality: {
+      nodesTotal: 1,
+      nodesNormalized: 1,
+      ratio: 1,
+      degraded: [],
+      structuralVariants: [
+        {
+          prop: "Type",
+          value: "Group",
+          path: "",
+          reason: "childCount:1!=2",
+          base: [{ kind: "container" }],
+          variant: ["text:x"],
+        },
+      ],
+    },
+  });
+  assert.equal(v(bad), false);
+});
+
+// --- the join: what the producer writes must be what the schema accepts ----
+
+var N = require("../scripts/sync/normalize-anatomy");
+
+function modalVariant(name, width) {
+  return {
+    type: "COMPONENT",
+    name: name,
+    layoutMode: "VERTICAL",
+    itemSpacing: 24,
+    paddingTop: 24,
+    paddingRight: 24,
+    paddingBottom: 24,
+    paddingLeft: 24,
+    layoutSizingHorizontal: "FIXED",
+    layoutSizingVertical: "HUG",
+    absoluteBoundingBox: { x: 0, y: 0, width: width, height: 171 },
+    fills: [{ type: "SOLID", color: { r: 1, g: 1, b: 1, a: 1 } }],
+    children: [{ type: "TEXT", name: "Title", characters: "Delete?" }],
+  };
+}
+
+test("buildAnatomyFile's layout output validates against this schema", function () {
+  var v = makeValidator();
+  var variants = [
+    modalVariant("Size & Type=1200px", 1200),
+    modalVariant("Size & Type=450px confirm", 450),
+    modalVariant("Size & Type=450px warning", 450),
+  ];
+  var out = N.buildAnatomyFile(variants[0], {
+    slug: "modal",
+    kit: "dskit",
+    syncedAt: "2026-09-03",
+    source: { fileKey: "X", nodeId: "1:1" },
+    variants: variants,
+    defaultVariantName: "Size & Type=1200px",
+  });
+  // The fixture is chosen so the producer actually emits both new shapes —
+  // a test that validates an artifact carrying neither would pass forever.
+  assert.deepEqual(out.root.layout.size, { w: "1200px" });
+  assert.equal(out.root.layout.variants.length, 1);
+  assert.ok(v(out), JSON.stringify(v.errors));
+});
+
+test("buildAnatomyFile's structural-variant output validates against this schema", function () {
+  var v = makeValidator();
+  var def = modalVariant("Size & Type=1200px", 1200);
+  var stripped = modalVariant("Size & Type=700px create", 700);
+  stripped.children = []; // the divergence: 1 child in the default, 0 here
+  var out = N.buildAnatomyFile(def, {
+    slug: "modal",
+    kit: "dskit",
+    syncedAt: "2026-09-03",
+    source: { fileKey: "X", nodeId: "1:1" },
+    variants: [def, stripped],
+    defaultVariantName: "Size & Type=1200px",
+  });
+  assert.deepEqual(out.quality.structuralVariants, [
+    {
+      prop: "Size & Type",
+      value: "700px create",
+      path: "",
+      reason: "childCount:1!=0",
+      base: ["text:Title"],
+      variant: [],
+    },
+  ]);
+  assert.ok(v(out), JSON.stringify(v.errors));
+});

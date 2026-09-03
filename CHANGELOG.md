@@ -20,6 +20,153 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The 2026-09-03 breaking Figma sync, carried through** (#636). Four renames, one of which moves a
+  slug between namespaces. `calendar-date-input` → **`calendar`**, taking the slug the `calendar`
+  **icon** used to hold in the components map — the icon itself survives in the icons map, and
+  `renderIcon("calendar")` (the glyph inside the date field) was checked directly rather than
+  trusted, because a rename crossing that boundary has emptied a glyph before with the whole suite
+  green. `rich-text` → **`rich-text-froala`**, `dropdown` → `menu-dropdown` (no authored surface),
+  `icon` → `new-conversation` (icon namespace only). Option A throughout: where Figma renames, the
+  authored surface follows — two guidance directories, two renderer cases and their BEM prefixes,
+  `matrix.js`, the manifest's guideline entries, the content index, two content patterns'
+  `relatedComponents`, two app-context patterns, and the tests. `_meta.yml` for the date field also
+  drops a `related: [calendar]` that had pointed at the **icon** since the 2026-08-31 sync; it now
+  names `calendar-data-selector`, which is what the prose always meant.
+
+  `calendar-data-selector` loses its `Selection` axis and its `Type` values change to
+  `Dates | Months | Years`. The renderer keeps reading `v.Selection` deliberately — it is flow data
+  as well as registry data, so a flow authored against the retired axis keeps its range rendering
+  instead of silently losing it, the same reason `alert-banner` keeps its Primary/Danger aliases.
+  The date field's `States` values are renamed upstream (`Enabled`→`Default` and four more); only
+  `Disabled` is read here and it is unchanged. Its new default-TRUE `Show message` BOOLEAN is now
+  read, gating the helper the caller names.
+
+  **Accepted coverage move**, recorded here because the reason lives only in the commit that took
+  it: *rich-text became rich-text-froala and calendar-date-input became calendar in the 2026-09-03
+  Figma sync. rich-text's 2 checkable declarations move to rich-text-froala with its class prefix;
+  the repo-wide total is unchanged at 85, which is what a move looks like and a loss does not.*
+  Verified per slug: `rich-text-froala` reports `verified: 2, unverifiable: 5` — byte-identical to
+  what `rich-text` reported — and `calendar` reports `verified: 0, unverifiable: 7, blind: true`,
+  identical to `calendar-date-input`.
+
+  **A re-key defeated the category carry-forward, and that is fixed here.** `illustration` came
+  back on a Figma page called `Playground` with **no section at all** — and
+  `preserveKnownCategories` did not fire, because Figma had also *re-keyed* it, so the identity
+  lookup (key, then nodeId, then slug) found no twin. The sync's own diff already reports a re-key
+  as "same slug and name under a new Figma node"; that fact is now used, as a slug fallback gated on
+  the name matching. The name gate is what makes it safe: a slug can **change occupant** — this very
+  sync moved `calendar` from an icon to the date field — and without it the new occupant would
+  inherit the old one's page attribution. Verified against the real registries: `illustration`
+  returns to `Brand Assets` / `Illustrations & graphics` / `Illustrations`, its factual `page` stays
+  `Playground`, and no registry entry is left without a section. The editor's
+  `no non-component section reaches the eligible set` gate is what surfaced it.
+
+  **And the repair is one-shot, which is worse than the bug it repairs.** Re-running the sync after
+  fixing the lookup reported `verdict=unchanged` and pushed nothing: `preserveKnownCategories` reads
+  the *previous dist* as its baseline, so the sectionless value committed by the first run had
+  already become the new last-known-good. Recovering it meant replaying the generator by hand over
+  the pre-sync commit. A new `assertNoAttributionLoss` therefore gates the **commit** instead —
+  a surviving component (matched by slug, because a re-key is exactly what defeats identity
+  matching) that had a section and comes back without one refuses the emit. Scope is deliberately
+  narrow: a genuinely new entry with no section is not a loss, and a removed component belongs to
+  `assertNoCategoryMassLoss`, because two gates reporting one event would make both messages lie.
+  Proven against the real artifacts: the gate throws on the registry the first run produced and
+  passes on the repaired one.
+
+  **This sync is also the first proof that #648's producer change works on real Figma data.** The
+  regenerated anatomy now carries `layout.size` on **115 nodes across 51 slugs**, **62
+  `layout.variants` entries across 30 slugs**, and **143 of 152** structural entries naming what
+  sits at the path on each side. `modal`'s root records `size: {w: 1200px, h: 482px}` — the
+  dimension #641 said the substrate could not know — and its `450px confirm`/`450px warning` values
+  now carry a real layout delta. Measured against the collapse census: of **42** unexplained
+  collapses, **28 now have usable evidence** (up from about 10 before), 8 have no isolated variant
+  in Figma, and 6 remain empty — three of those being the captured default itself. That is the
+  number #550 can work from.
+
+### Added
+
+- **alert-banner, action-bar and breadcrumb render the slots Figma documents**
+  ([#648](https://github.com/volivarii/actian-ds-knowledge/pull/648), #638 part 2). Checked against `components/dist/media/<slug>/default.webp`, the isolated
+  default-variant capture. Two of the three are not invention: the registry publishes
+  `Show Icon`, `Show close button` and `Show action` as **default-TRUE BOOLEAN** component
+  properties on `alert-banner`, and publishes `digram-item-types` as a **nested component** of
+  `breadcrumb`. The renderer implemented none of them — it drew the icon unconditionally and
+  nothing else. Now: the alert carries a trailing action and a labelled dismiss, each gated by its
+  published boolean; `action-bar` takes a leading destructive action (`.ds-action-bar__leading`
+  with `margin-right:auto`, so a bar without one lays out exactly as before rather than depending
+  on the slot being filled); and a breadcrumb crumb can carry the leading item-type badge the
+  capture shows. Every slot is optional and only the published booleans default on. **The action's
+  LABEL is not defaulted**: Figma's own default reads "Button", which is placeholder text, and a
+  literal fallback would hand that word to every caller who asked for no optional parts — the
+  sparse-render ratchet caught exactly that and the label moved to `matrix.js`, where specimen
+  content belongs. The three booleans are read as literal `props["…"]` accesses so
+  `derive-contract`'s `BRACKET_READ` carries them into the published contract rather than leaving
+  them visible only in the code.
+
+  Two follow-on corrections came out of it. `.ds-alert__title` is **not** unreachable as #638
+  states — the branch has always rendered it from `props.Title`; the Figma default simply has no
+  title, so no fragment shows one. And `derive-contract` scanned raw source, so a **prop cited in a
+  comment** was published as a real prop: `propsOf` now strips comments first, conservatively
+  (block comments whole, line comments only where `//` opens the line, so a `//` inside a string on
+  a code line cannot eat the rest of it).
+
+  Measured cost, stated because the metric is tracked and it moved the wrong way: inline-style hex
+  rises **39 → 51**, all twelve from `breadcrumb`'s six badges. It is not new un-themability — it is
+  more instances of `digram-item-types`' Dataset colours, which Figma binds to no variable (see the
+  #551 entry). The oracle denominator moves 417 → 418; the numerator is unchanged at 85.
+
+- **The render tier's inline colours are joined back to the capture that owns them**
+
+- **The render tier's inline colours are joined back to the capture that owns them**
+  ([#648](https://github.com/volivarii/actian-ds-knowledge/pull/648), #551). Three tables in `ds-html-map.js` restate, by hand, colours and token bindings the anatomy
+  capture already holds — 37 `digram-item-types` backgrounds, 26 of its text colours, 10
+  `digram-topic` fills, 5 `metamodel` border colours. They agree with the capture exactly today
+  (measured: zero drift). Nothing joined them, so the first Figma recolour would have left the
+  tables answering with the old value and every gate green. Four tests now render each captured
+  value through the **public** renderer and assert the emitted declaration is what the capture
+  states, `var(--token, value)` where a token is bound and the bare value where none is — five
+  mutations confirm each can fail. Each test also asserts a minimum count, because a stale
+  iteration source does not go red, it makes the loop body never run.
+
+### Changed
+
+- **`item-type-tag`'s Data process / Custom-2 collision is recorded as by design, at the source**
+  ([#648](https://github.com/volivarii/actian-ds-knowledge/pull/648), #640). The two types share both `#ffd6d8` and `#932139`, and the component renders no icon, so
+  a reader cannot tell them apart. Design-lead verdict, 2026-09-03: **by design** — the custom-N
+  slots cycle a fixed palette the named types also draw from, which is why five further pairs share
+  a background and differ only in name colour. The verdict is recorded in `ds-base.css` beside both
+  rules rather than in `variant-collapse-by-design.js`, because that ledger asserts every key still
+  names a real collapse and this pair is not one: the two emit different class names, so the
+  markup-hashing census never aliases them. The note says explicitly not to invent a colour here —
+  neither value is oracle-backed, and inventing one is the move that put Info's blue behind Success
+  (#637).
+
+- **The anatomy capture keeps the per-variant evidence it was already fetching**
+  ([#648](https://github.com/volivarii/actian-ds-knowledge/pull/648), #641). The substrate looked as though it captured one variant per component. It does not: for
+  every axis value with an isolated variant, `sync-anatomy` already fetches that variant's node,
+  normalizes it and diffs it against the default — and then discarded most of what it found.
+  `collectDeltas` compared **paint only** (`background`, `backgroundToken`, `radius`, `border`,
+  `text`), so a variant differing in size, spacing or alignment produced an empty delta; and
+  `rawHintFor` read `absoluteBoundingBox` and kept **`x` and `y`, dropping `width` and `height`**,
+  which is why no dimension for any variant existed anywhere in the dist and `modal`'s seven Size
+  values were indistinguishable. Measured on v0.34.178: of the 44 unexplained variant collapses,
+  **20 were exactly this** — evidence fetched, diffed, and thrown away — and 14 of those carried
+  only a bare `childCount:1!=5` in `quality.structuralVariants`, a signal that something differs
+  with the *what* discarded. Three additions, all in `scripts/sync/normalize-anatomy.js`:
+  `layout.size` records an **authored** fixed dimension (a side appears only where its
+  `layoutSizing` is `FIXED` — a hug dimension is a consequence of content, and recording it would
+  invite a consumer to pin a size that must grow); `layout.variants` carries per-variant layout
+  deltas, the structural counterpart to `appearance.variants`, grouped and null-for-removed exactly
+  as paint deltas are; and a `structuralVariants` entry now names **what sits at the path on each
+  side** (`base`/`variant`, as `"<kind>:<name>"`) instead of only how many children there were. A
+  layout that appears or disappears is recorded as a divergence rather than forced into a delta the
+  schema cannot express. `schemas/anatomy.json` gains all three, and `layout` and
+  `structuralVariants.items` are now **closed** (`additionalProperties: false`), so the next
+  undeclared field is a validation failure rather than silent extra data — without which the
+  "schema accepts …" tests would have been passing on an open object and proving nothing. Two tests
+  assert the **join**: what `buildAnatomyFile` actually writes validates against the schema, on a
+  fixture chosen so the producer emits both new shapes. The dist itself does not move until the
+  next nightly Figma sync; nothing downstream reads `node.layout` today.
 - **Every Thing in the editor has a table of Slots, and a Meter that counts them**
   ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD), phase 2 of the editor
   nomenclature design; closes [#644](https://github.com/volivarii/actian-ds-knowledge/issues/644)).

@@ -233,15 +233,19 @@ function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-test("date-input renders its resolved helper text in the helper element", function () {
+test("the date field renders its resolved helper text in the helper element", function () {
+  // Drives the LIVE slug: variantMatrix is registry-keyed, so a retired name
+  // yields the bare fallback cell and no specimen helper. The slug is `calendar`
+  // as of the 2026-09-03 sync (was calendar-date-input, was date-input,
+  // was input-date). Retired-name resolution is ds-retired-slugs' own test.
   assert.match(
-    firstCellHtml("calendar-date-input"),
+    firstCellHtml("calendar"),
     new RegExp(
-      '<span class="ds-calendar-date-input__helper">' +
+      '<span class="ds-calendar__helper">' +
         escapeRegExp("Use MM/DD/YYYY.") +
         "</span>",
     ),
-    "date-input must render its helper slot rather than omitting the element",
+    "the date field must render its helper slot rather than omitting the element",
   );
 });
 
