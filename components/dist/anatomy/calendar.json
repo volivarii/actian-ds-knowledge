@@ -1,0 +1,199 @@
+{
+  "_schema_version": 1,
+  "slug": "calendar",
+  "kit": "dskit",
+  "synced_at": "2026-09-03T15:32:36.959Z",
+  "source": {
+    "fileKey": "l8biHxfarNi1I2RMvVxVOK",
+    "nodeId": "8194:7305",
+    "variant": "Type=Single date, States=Default"
+  },
+  "quality": {
+    "nodesTotal": 4,
+    "nodesNormalized": 4,
+    "ratio": 1,
+    "degraded": [],
+    "structuralVariants": [
+      {
+        "prop": "States",
+        "value": "Hover",
+        "path": "",
+        "reason": "childCount:3!=4",
+        "base": [
+          "instance:Label",
+          "instance:Field",
+          "instance:Message"
+        ],
+        "variant": [
+          "instance:Label",
+          "instance:Field",
+          "instance:Message",
+          "instance:Message"
+        ]
+      },
+      {
+        "prop": "Type",
+        "value": "Date range",
+        "path": "1",
+        "reason": "kind:instance!=container",
+        "base": [
+          "instance:Field"
+        ],
+        "variant": [
+          "container:Fields"
+        ]
+      }
+    ]
+  },
+  "root": {
+    "name": "Type=Single date, States=Default",
+    "kind": "container",
+    "id": "8194:7392",
+    "layout": {
+      "axis": "column",
+      "gap": "4px",
+      "padding": {
+        "top": "0px",
+        "right": "0px",
+        "bottom": "0px",
+        "left": "0px"
+      },
+      "align": {
+        "main": "start",
+        "cross": "start"
+      },
+      "sizing": {
+        "h": "fixed",
+        "v": "hug"
+      },
+      "size": {
+        "w": "320px"
+      },
+      "gapToken": "--zen-spacing-2xs",
+      "variants": [
+        {
+          "prop": "States",
+          "values": [
+            "Active"
+          ],
+          "gapToken": null,
+          "align": {
+            "main": "center",
+            "cross": "start"
+          }
+        },
+        {
+          "prop": "States",
+          "values": [
+            "Disabled",
+            "Error",
+            "Filled",
+            "Focus",
+            "Hover"
+          ],
+          "gapToken": null
+        }
+      ]
+    },
+    "children": [
+      {
+        "name": "Label",
+        "kind": "instance",
+        "slug": "label",
+        "props": {
+          "Description text": "A description helps users to define and understand the purpose of the input.",
+          "Label text": "Single date",
+          "* (Asterisk)": false,
+          "Description": false,
+          "Info icon": false,
+          "Label": true,
+          "State": "Default"
+        },
+        "id": "22330:2407"
+      },
+      {
+        "name": "Field",
+        "kind": "instance",
+        "slug": "field",
+        "props": {
+          "Show clear button": false,
+          "Show leading icon": false,
+          "Show trailing icon": true,
+          "Size": "Default",
+          "State": "Default"
+        },
+        "tokenRefs": [
+          "--zen-border-subtle"
+        ],
+        "id": "22330:2410",
+        "appearance": {
+          "background": "#ffffff",
+          "border": {
+            "color": "#e1e1e6",
+            "colorToken": "--zen-border-subtle",
+            "width": "1px"
+          },
+          "radius": "6px",
+          "variants": [
+            {
+              "prop": "States",
+              "values": [
+                "Active"
+              ],
+              "border": {
+                "color": "#0f5fdc",
+                "width": "1px"
+              }
+            },
+            {
+              "prop": "States",
+              "values": [
+                "Disabled"
+              ],
+              "background": "#e1e1e6",
+              "border": {
+                "color": "#c7c7ce",
+                "colorToken": "--zen-border-disabled",
+                "width": "1px"
+              }
+            },
+            {
+              "prop": "States",
+              "values": [
+                "Error"
+              ],
+              "border": {
+                "color": "#c12c11",
+                "width": "1px"
+              }
+            },
+            {
+              "prop": "States",
+              "values": [
+                "Focus"
+              ],
+              "border": {
+                "color": "#0f5fdc",
+                "colorToken": "--zen-focus-ring-primary",
+                "width": "2px"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "Message",
+        "kind": "instance",
+        "slug": "message",
+        "props": {
+          "Type": "Helper text"
+        },
+        "id": "22330:3100"
+      }
+    ]
+  },
+  "variantDefaults": {
+    "Type": "Single date",
+    "States": "Default"
+  }
+}
