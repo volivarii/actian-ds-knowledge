@@ -18,6 +18,19 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Added
+
+- **The render tier's inline colours are joined back to the capture that owns them**
+  (#551). Three tables in `ds-html-map.js` restate, by hand, colours and token bindings the anatomy
+  capture already holds — 37 `digram-item-types` backgrounds, 26 of its text colours, 10
+  `digram-topic` fills, 5 `metamodel` border colours. They agree with the capture exactly today
+  (measured: zero drift). Nothing joined them, so the first Figma recolour would have left the
+  tables answering with the old value and every gate green. Four tests now render each captured
+  value through the **public** renderer and assert the emitted declaration is what the capture
+  states, `var(--token, value)` where a token is bound and the bare value where none is — five
+  mutations confirm each can fail. Each test also asserts a minimum count, because a stale
+  iteration source does not go red, it makes the loop body never run.
+
 ### Changed
 
 - **`item-type-tag`'s Data process / Custom-2 collision is recorded as by design, at the source**
