@@ -289,6 +289,67 @@ test("the patterns dashboard renders the meters from the real corpus", async () 
   assert.ok(!/\d+\s*%/.test(text), `a bare percentage reached the dashboard: ${text}`);
 });
 
+test("an unreadable captures directory hides the Meter, it does not blank the app", async () => {
+  // This path had NO test, and it crashed. `patternSlotsFor` drops the Capture
+  // Slot when the captures cannot be read, and the summary looked it up with a
+  // helper that THROWS when a Meter is missing — inside useMemo, during render.
+  // There is no ErrorBoundary in the editor, so React 18 unmounted the whole
+  // root: a 403 on the recipes directory blanked the entire app rather than
+  // hiding one Meter. The degraded path the branch added a note for was the
+  // path that crashed.
+  const doc = realDoc();
+  const gh = {
+    repos: {
+      getContent: async ({ path }: { path: string }) => {
+        if (path === "app-context/dist/recipes") {
+          const e = new Error("forbidden") as Error & { status: number };
+          e.status = 403;
+          throw e;
+        }
+        if (path === "app-context/dist/app-context.json") {
+          return {
+            data: {
+              encoding: "base64",
+              content: b64(JSON.stringify(doc)),
+              sha: "sha",
+            },
+          };
+        }
+        const e = new Error("not found") as Error & { status: number };
+        e.status = 404;
+        throw e;
+      },
+      listCommits: async () => ({ data: [] }),
+    },
+    git: {},
+    pulls: {},
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+
+  const { container } = mount(
+    <PatternsDashboard octokit={gh} onOpenFile={() => {}} />,
+  );
+  await waitFor(() => {
+    assert.ok(container.querySelector('[data-meter="pattern:rule"]'));
+  });
+  const text = container.textContent ?? "";
+  // The app is still there...
+  assert.ok(text.length > 200, "the dashboard rendered empty");
+  assert.ok(container.querySelector('[data-meter="pattern:job"]'));
+  // ...the Capture Meter is gone rather than reporting a zero...
+  assert.equal(
+    container.querySelector('[data-meter="pattern:capture"]') === null,
+    true,
+  );
+  // ...the reader is told why...
+  assert.ok(text.includes("not measured"), "nothing said about the missing Meter");
+  // ...and the prose does not claim zero captures either.
+  assert.ok(
+    !/\b0 captured page recipes\b/.test(text),
+    `prose reported a count for a measurement that never happened: ${text.slice(0, 400)}`,
+  );
+});
+
 /** Mounts the real dashboard against an arbitrary in-memory app-context. */
 function PatternsDashboardHarness({ doc }: { doc: AppContextDoc }) {
   const gh = {

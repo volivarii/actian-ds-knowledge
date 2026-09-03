@@ -450,16 +450,6 @@ export const COMPONENT_SLOTS: Slot<ComponentSlotRecord>[] = [
 ];
 
 /**
- * The Component table for a given measurement state.
- *
- * When the media index cannot be read, Capture is DROPPED rather than reported
- * as zero. `loadMediaIndex`'s own rule is that a failed read must not come back
- * as "this component has no media", and a Meter reading `Capture 0 of 73` is
- * that lie with a number on it — worse than silence, because it reads as a gap
- * somebody should go and fill. Every other Slot survives: one unreadable index
- * must not blank the rest of the table.
- */
-/**
  * The Pattern table for a given measurement state, mirroring
  * `componentSlotsFor`. When the recipes directory could not be listed, Capture
  * is DROPPED rather than reported as zero — the same rule, because it is the
@@ -473,6 +463,16 @@ export function patternSlotsFor(
     : PATTERN_SLOTS.filter((s) => s.key !== "capture");
 }
 
+/**
+ * The Component table for a given measurement state.
+ *
+ * When the media index cannot be read, Capture is DROPPED rather than reported
+ * as zero. `loadMediaIndex`'s own rule is that a failed read must not come back
+ * as "this component has no media", and a Meter reading `Capture 0 of 73` is
+ * that lie with a number on it — worse than silence, because it reads as a gap
+ * somebody should go and fill. Every other Slot survives: one unreadable index
+ * must not blank the rest of the table.
+ */
 export function componentSlotsFor(
   capturesMeasured: boolean,
 ): Slot<ComponentSlotRecord>[] {

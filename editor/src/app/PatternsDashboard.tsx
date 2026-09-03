@@ -337,20 +337,29 @@ export function PatternsDashboard({
     const useCases = apps.reduce((n, a) => n + a.useCases.length, 0);
     // These three used to be counted here as well as in the Slot tables. Two
     // derivations of one number is what the Slot model exists to remove, so the
-    // prose now reads the Meters and `patternsAgree.test` asserts they cannot
+    // prose now reads the Meters and `tests/app/meters.test.tsx` asserts they cannot
     // drift apart.
     const meterFor = (key: string) => {
       const m = meters.pattern.find((x) => x.key === key);
       if (!m) throw new Error(`no Pattern meter ${key}`);
       return m;
     };
+    // Capture is the one Slot that can be ABSENT: `patternSlotsFor` drops it
+    // when the captures could not be read. Looking it up with `meterFor` threw
+    // inside useMemo — during render, with no ErrorBoundary anywhere in the
+    // editor — so a 403 on the recipes directory blanked the entire app rather
+    // than hiding one Meter. The degraded path this branch added the note for
+    // was the path that crashed.
+    const captureMeter = meters.pattern.find((x) => x.key === "capture");
     const rule = meterFor("rule");
     return {
       patterns: patterns.length,
       apps: apps.length,
       useCases,
-      captures,
-      withCapture: meterFor("capture").filled,
+      // null, not 0: an unread directory has no count, and rendering "0
+      // captured page recipes" for it is the lie the Slot is dropped to avoid.
+      captures: captureMeter ? captures : null,
+      withCapture: captureMeter?.filled ?? null,
       namedByAUseCase: meterFor("job").filled,
       // The `when` clause is what tells a pattern from its siblings, and the
       // schema does not require it, so its absence is the gap most worth
@@ -401,8 +410,9 @@ export function PatternsDashboard({
             // Say why the Meter is absent. Dropping it in silence is the same
             // omission as reporting a zero nobody can explain.
             <Text size="1" color="gray" as="p" mb="2">
-              {SLOT_LABEL.capture} not measured — the captures directory could
-              not be listed.
+              {SLOT_LABEL.capture} not measured — the captures could not be
+              read completely. Either the directory would not list, or a file
+              in it would not read.
             </Text>
           )}
           <Flex gap="6" wrap="wrap">
@@ -445,8 +455,14 @@ export function PatternsDashboard({
       <Text size="2" color="gray" mb="4" as="p">
         {summary!.patterns} patterns across {summary!.apps} products ·{" "}
         {summary!.useCases} use cases naming {summary!.namedByAUseCase} of them
-        · {summary!.captures} captured page recipes on {summary!.withCapture}{" "}
-        patterns · {summary!.noWhen} with no when clause, the sentence that
+        {summary!.captures !== null && (
+          <>
+            {" · "}
+            {summary!.captures} captured page recipes on {summary!.withCapture}{" "}
+            patterns
+          </>
+        )}{" "}
+        · {summary!.noWhen} with no when clause, the sentence that
         tells a pattern from its siblings. A pattern claiming two products is
         listed under both, so the per-product counts below overlap and do not
         sum to{" "}
