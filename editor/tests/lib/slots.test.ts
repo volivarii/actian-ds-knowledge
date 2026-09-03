@@ -596,3 +596,18 @@ test("an entity's products are filtered against the context, like a pattern's", 
     "an entity claiming a product that does not exist counts as filled",
   );
 });
+
+test("a listing that succeeds while its files fail is NOT a complete read", () => {
+  // The directory-listing failure was guarded; the per-FILE failure was not.
+  // A listing that returns four recipes whose reads are all rate-limited yields
+  // zero docs, and reporting `readable: true` for that is the same lie one
+  // level down: "Capture 0 of 31" from a measurement that never happened.
+  const idx = buildPatternIndex(realDoc(), [], false);
+  assert.equal(idx.recipesReadable, false);
+  // And the readable path still reports the captures it read.
+  const ok = buildPatternIndex(realDoc(), realRecipes(), true);
+  assert.ok(
+    ok.patterns.some((p) => p.recipes.length > 0),
+    "no pattern resolved a capture — the join is vacuous",
+  );
+});

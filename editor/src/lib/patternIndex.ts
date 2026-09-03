@@ -220,9 +220,10 @@ export interface PatternIndex {
    */
   doc: AppContextDoc;
   /**
-   * False when the recipes directory could not be listed.
+   * False when the captures could not be read completely — the directory would
+   * not list, or a file it listed would not read.
    *
-   * `loadRecipes` returns [] for a failed listing, which was harmless while
+   * `loadRecipes` used to return [] for a failed listing, which was harmless while
    * captures were only chips on a row. As a MEASURE it is a lie with a number
    * on it: a rate limit or a transient 5xx makes every `captureCount` zero and
    * the dashboard reports "Capture 0 of 31" with nothing said. The Component
@@ -359,15 +360,21 @@ export function buildPatternIndex(
 
 // --------------------------------------------------------------------- loading
 
-/** Read every captured page recipe. A directory that cannot be listed yields none. */
-export async function loadRecipes(gh: Octokit): Promise<RecipeDoc[]> {
-  return (await loadRecipesChecked(gh)).docs;
-}
-
-/** As `loadRecipes`, but says whether the DIRECTORY could be listed at all.
- *  A caller turning captures into a number needs to tell "no captures" from
- *  "could not look". */
-export async function loadRecipesChecked(
+/**
+ * Read every captured page recipe, and say whether the read was COMPLETE.
+ *
+ * A caller turning captures into a number has to tell "no captures" from "could
+ * not look", so `readable` is false when the directory cannot be listed AND
+ * when any file it listed failed to read. The second half matters as much as
+ * the first: a listing that succeeds while every file read is rate-limited
+ * yields zero docs and would otherwise report `readable: true`, which is the
+ * same lie one level down.
+ *
+ * There is deliberately no plain `loadRecipes` wrapper returning only the docs.
+ * It had no caller — every consumer of captures now needs the readability —
+ * and an export nothing calls is the dead config this branch removed three of.
+ */
+export async function loadRecipes(
   gh: Octokit,
 ): Promise<{ docs: RecipeDoc[]; readable: boolean }> {
   let files: string[];
@@ -383,18 +390,18 @@ export async function loadRecipesChecked(
       const json = JSON.parse(text) as RecipeDoc;
       docs.push({ ...json, slug: json.slug ?? f.replace(/\.json$/, "") });
     } catch {
-      // A capture that cannot be read is not a capture that does not exist, but
-      // the index has nothing to show for it either; the unclaimed list stays
-      // the place a join failure surfaces.
+      // A capture that cannot be read is not a capture that does not exist.
+      // Counted below rather than swallowed: an incomplete read must not be
+      // presented as a complete measurement.
     }
   }
-  return { docs, readable: true };
+  return { docs, readable: docs.length === files.length };
 }
 
 export async function loadPatternIndex(gh: Octokit): Promise<PatternIndex> {
   const [ctxText, recipes] = await Promise.all([
     getTextFile(gh, APP_CONTEXT_PATH),
-    loadRecipesChecked(gh),
+    loadRecipes(gh),
   ]);
   const ctx = JSON.parse(ctxText) as AppContextDoc;
   return buildPatternIndex(ctx, recipes.docs, recipes.readable);
