@@ -244,7 +244,7 @@ export type SlotKey =
   | "rule"
   | "description"
   | "built_from"
-  | "used_in"
+  | "part_of"
   | "job"
   | "tags"
   | "capture"
@@ -271,7 +271,14 @@ export const SLOT_LABEL: Record<SlotKey, string> = {
   rule: "Rule",
   description: "Description",
   built_from: LINK_LABEL.composition.out,
-  used_in: LINK_LABEL.composition.in,
+  // `apps` is the graph's `in_app` edge, which THIS FILE classifies as
+  // membership — see LINK_FAMILY below and the docstring explaining that
+  // folding `in_app` into composition "merged two different questions".
+  // Naming the Slot `composition.in` ("Used in") made a Pattern's relations
+  // panel say "Part of — Studio" while the Meter for the same edge said
+  // "Used in": a second word for one concept, in the module that exists to
+  // prevent exactly that. Third time this edge's family has been got wrong.
+  part_of: LINK_LABEL.membership.out,
   job: "Job",
   tags: "Tags",
   capture: "Capture",

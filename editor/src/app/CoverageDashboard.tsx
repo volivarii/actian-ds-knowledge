@@ -40,7 +40,12 @@ import {
   type Domain,
   type Status,
 } from "../lib/coverageLoader";
-import { STATE_FOR_STATUS, STATE_LABEL, THING_LABEL } from "../lib/nomenclature";
+import {
+  STATE_FOR_STATUS,
+  STATE_LABEL,
+  THING_LABEL,
+  SLOT_LABEL,
+} from "../lib/nomenclature";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 import { measure } from "../lib/measure";
@@ -198,6 +203,17 @@ export function CoverageDashboard({
             title={THING_LABEL.component}
             meters={meters}
           />
+          {captures.kind === "failed" && (
+            // The comment on `captures` says omitting a measure without saying
+            // why is the same defect as reporting `0 of 73`. Dropping the Slot
+            // silently WAS that omission: a reader who saw a Capture Meter
+            // yesterday and not today could not tell a measure that failed from
+            // one that was deleted.
+            <Text size="1" color="gray" as="p" mt="2">
+              {SLOT_LABEL.capture} not measured — the media index could not be
+              read.
+            </Text>
+          )}
         </Box>
       )}
       <Text size="2" color="gray" mb="3" as="p">

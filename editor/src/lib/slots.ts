@@ -133,10 +133,10 @@ export const PATTERN_SLOTS: Slot<PatternSlotRecord>[] = [
     action: "Attach",
   },
   {
-    key: "used_in",
-    name: SLOT_LABEL.used_in,
+    key: "part_of",
+    name: SLOT_LABEL.part_of,
     filled: (r) => r.apps.length > 0,
-    help: "The products this pattern appears in. right-sliding-drawer claims both Studio and Explorer, which is why it has two captures that differ.",
+    help: "The products this pattern belongs to. right-sliding-drawer is part of both Studio and Explorer, which is why it has two captures that differ.",
     action: "Attach",
   },
   {
@@ -216,10 +216,10 @@ export const ENTITY_SLOTS: Slot<EntitySlotRecord>[] = [
     action: "Attach",
   },
   {
-    key: "used_in",
-    name: SLOT_LABEL.used_in,
+    key: "part_of",
+    name: SLOT_LABEL.part_of,
     filled: (r) => r.apps.length > 0,
-    help: "The products this entity appears in. access-request is in both Studio and Explorer, which is why its states have to read for two audiences.",
+    help: "The products this entity belongs to. access-request is part of both Studio and Explorer, which is why its states have to read for two audiences.",
     action: "Attach",
   },
 ];

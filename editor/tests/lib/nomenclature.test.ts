@@ -346,8 +346,26 @@ test("every Slot word is declared once, and never restates a Link word", () => {
   assert.ok(keys.length > 0, "no Slots declared — the check is vacuous");
 
   assert.equal(SLOT_LABEL.built_from, LINK_LABEL.composition.out);
-  assert.equal(SLOT_LABEL.used_in, LINK_LABEL.composition.in);
+  assert.equal(SLOT_LABEL.part_of, LINK_LABEL.membership.out);
   assert.equal(SLOT_LABEL.must_follow, LINK_LABEL.compliance.out);
+
+  // The join that matters, and the one that was missing: a Slot naming a graph
+  // edge must render the SAME word that edge's family does. `part_of` names the
+  // `apps` list, which is `in_app`; deriving it from composition made the
+  // relations panel say "Part of — Studio" and the Meter say "Used in" for one
+  // relationship. Read the words from linkLabel rather than restating them.
+  const edgeForSlot = [
+    ["part_of", "in_app"],
+    ["built_from", "uses_component"],
+    ["must_follow", "a11y_ref"],
+  ] as const;
+  for (const [slotKey, edgeType] of edgeForSlot) {
+    assert.equal(
+      SLOT_LABEL[slotKey],
+      linkLabel(edgeType, "out"),
+      `Slot "${slotKey}" and edge "${edgeType}" render different words for one relationship`,
+    );
+  }
 
   // The three assertions above compare VALUES, so they stay green if someone
   // writes the literal "Built from" instead of referencing the Link word — they
@@ -365,7 +383,7 @@ test("every Slot word is declared once, and never restates a Link word", () => {
   const block = src.slice(start, src.indexOf("};", start) + 2);
   for (const [key, expr] of [
     ["built_from", "LINK_LABEL.composition.out"],
-    ["used_in", "LINK_LABEL.composition.in"],
+    ["part_of", "LINK_LABEL.membership.out"],
     ["must_follow", "LINK_LABEL.compliance.out"],
   ] as const) {
     assert.ok(

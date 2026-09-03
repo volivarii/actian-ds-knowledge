@@ -22,13 +22,29 @@ import { buildPatternIndex, type AppContextDoc, type RecipeDoc } from "../../src
 import { measure } from "../../src/lib/measure";
 import {
   PATTERN_SLOTS,
-  COMPONENT_SLOTS,
+  ENTITY_SLOTS,
+  PRODUCT_SLOTS,
+  TERM_SLOTS,
   patternSlotRecords,
-  componentSlotRecords,
-  componentSlotsFor,
+  entitySlotRecords,
+  productSlotRecords,
+  termSlotRecords,
 } from "../../src/lib/slots";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+
+function realDoc(): AppContextDoc {
+  return JSON.parse(
+    readFileSync(join(REPO, "app-context", "dist", "app-context.json"), "utf8"),
+  ) as AppContextDoc;
+}
+
+function realRecipes(): RecipeDoc[] {
+  const dir = join(REPO, "app-context", "dist", "recipes");
+  return readdirSync(dir)
+    .filter((f) => f.endsWith(".json"))
+    .map((f) => JSON.parse(readFileSync(join(dir, f), "utf8")) as RecipeDoc);
+}
 
 // happy-dom doesn't install sessionStorage; provide a minimal in-memory stub.
 if (!globalThis.sessionStorage) {
@@ -62,8 +78,8 @@ const METERS: Meter[] = [
     help: "h",
   },
   {
-    key: "used_in",
-    name: "Used in",
+    key: "part_of",
+    name: "Part of",
     filled: 31,
     total: 31,
     complete: true,
@@ -107,9 +123,9 @@ test("showDate=false drops the stamp, for a caller that states it once", () => {
 test("a complete Meter is dimmed, not hidden", () => {
   const { container } = mount(<MeterList groupKey="pattern" title="Pattern" meters={METERS} />);
   const text = container.textContent ?? "";
-  assert.ok(text.includes("Used in"), "a full Meter was dropped from the list");
+  assert.ok(text.includes("Part of"), "a full Meter was dropped from the list");
   assert.ok(text.includes("31 of 31"));
-  const row = container.querySelector('[data-meter="pattern:used_in"]');
+  const row = container.querySelector('[data-meter="pattern:part_of"]');
   assert.ok(row, "no row for the complete Meter");
   assert.equal(row.getAttribute("data-complete"), "true");
   const incomplete = container.querySelector('[data-meter="pattern:rule"]');
@@ -200,8 +216,21 @@ test("the patterns dashboard renders the meters from the real corpus", async () 
       onOpenFile={() => {}}
     />,
   );
+  const index = buildPatternIndex(realDoc(), realRecipes());
+  const at = "2026-01-01";
+  const expected = {
+    pattern: measure(patternSlotRecords(index), PATTERN_SLOTS, at),
+    entity: measure(entitySlotRecords(index.doc), ENTITY_SLOTS, at),
+    product: measure(productSlotRecords(index.doc), PRODUCT_SLOTS, at),
+    term: measure(termSlotRecords(index.doc), TERM_SLOTS, at),
+  };
+  const ruleMeter = expected.pattern.find((x) => x.key === "rule")!;
   await waitFor(() => {
-    assert.ok((container.textContent ?? "").includes("14 of 31"));
+    assert.ok(
+      (container.textContent ?? "").includes(
+        `${ruleMeter.filled} of ${ruleMeter.total}`,
+      ),
+    );
   });
   const text = container.textContent ?? "";
   assert.ok(text.includes("26 of 30"), "Entity Properties meter missing");
@@ -209,7 +238,10 @@ test("the patterns dashboard renders the meters from the real corpus", async () 
   assert.ok(text.includes("33 of 33"), "Term meters missing");
   // Rule 2 is satisfied once for the row, not four times: looking at it, four
   // identical stamps read as four measurements that happen to agree.
-  const today = new Date().toISOString().slice(0, 10);
+  // Built the same way the screen builds it. Using `toISOString()` here — the
+  // UTC form the screen deliberately does NOT use — made this test fail for
+  // any contributor whose local date differs from UTC.
+  const today = new Date().toLocaleDateString("en-CA");
   assert.equal(
     text.split(`measured ${today}`).length - 1,
     1,

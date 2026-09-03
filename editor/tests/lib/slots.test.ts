@@ -91,31 +91,48 @@ function authoredComponentSlugs(): string[] {
 }
 
 /**
- * A Slot that is genuinely partial today must be neither never-true nor
- * always-true over the corpus.
+ * A Slot's predicate must be neither never-true nor always-true.
  *
- * This replaces exact counts (14, 13, 29, 10, 3, 26, 22 …). Those asserted the
- * SHAPE OF THE CORPUS, not the correctness of the predicate, and
- * `editor-ci.yml` lists `app-context/src/**` in its paths filter — so an author
- * adding one `when:` clause, the exact action the Rule Slot's help tells them
- * to take, re-triggered this lane and turned it red on `14`. **A gate must not
- * fail on the improvement it exists to encourage.**
+ * Both halves are proved WITHOUT reading the shape of the corpus. An earlier
+ * version asserted `filled < records.length` for the always-true half, and that
+ * was the same defect it was written to replace: `tags` is 30 of 31 today, so
+ * adding tags to the one pattern missing them — an ordinary, desirable edit
+ * under `app-context/src/**`, which triggers this lane — failed with "tags is
+ * filled by EVERYTHING, the predicate is broken" while nothing was broken.
  *
- * The predicate itself is pinned by the known-filled / known-empty record
- * assertions above each of these; this only catches a degenerate one.
+ * The always-true half needs a record that IS empty, not a corpus that happens
+ * to contain one. Exact counts are never asserted: `editor-ci.yml` lists
+ * `app-context/src/**` and app-context-derive commits the regenerated dist back
+ * to the branch, so **a gate must not fail on the improvement it encourages.**
  */
-function partial<R>(
+function predicateReads<R>(
   records: R[],
   slot: { key: string; filled: (r: R) => boolean },
+  empty: R,
 ): void {
-  const n = records.filter((r) => slot.filled(r)).length;
   assert.ok(records.length > 0, `${slot.key}: empty corpus, check is vacuous`);
-  assert.ok(n > 0, `${slot.key} is filled by NOTHING — the predicate is broken`);
   assert.ok(
-    n < records.length,
-    `${slot.key} is filled by EVERYTHING (${n}/${records.length}) — the predicate is broken`,
+    records.some((r) => slot.filled(r)),
+    `${slot.key} is filled by NOTHING — the predicate is broken`,
+  );
+  assert.equal(
+    slot.filled(empty),
+    false,
+    `${slot.key} returns true for an empty record — the predicate is broken`,
   );
 }
+
+const EMPTY_PATTERN: PatternSlotRecord = {
+  slug: "synthetic",
+  label: "Synthetic",
+  when: null,
+  components: [],
+  apps: [],
+  tags: [],
+  description: null,
+  captureCount: 0,
+  namedByJob: false,
+};
 
 function slot(key: string) {
   const s = PATTERN_SLOTS.find((x) => x.key === key);
@@ -128,7 +145,7 @@ test("Rule is filled by a when clause, and empty without one", () => {
   const s = slot("rule");
   assert.equal(s.filled(bySlug(rs, "access-request-management")), true);
   assert.equal(s.filled(bySlug(rs, "access-request-workflow")), false);
-  partial(rs, s);
+  predicateReads(rs, s, EMPTY_PATTERN);
 });
 
 test("Description is filled at 40 words, the gap the corpus already has", () => {
@@ -143,18 +160,18 @@ test("Description is filled at 40 words, the gap the corpus already has", () => 
     Math.max(...below) < Math.min(...above) - 15,
     `the gap has closed: ${Math.max(...below)} then ${Math.min(...above)} — re-derive the bar rather than keeping it`,
   );
-  partial(rs, s);
+  predicateReads(rs, s, EMPTY_PATTERN);
 });
 
 test("Built from and Used in read the pattern's own lists", () => {
   const rs = records();
-  partial(rs, slot("built_from"));
+  predicateReads(rs, slot("built_from"), EMPTY_PATTERN);
   // Used in is at total today. Asserting `=== 31` would break the day a pattern
   // is added without an app, which is a finding for the SCREEN, not a test
   // failure. What must hold is that the predicate reads the list.
-  assert.equal(slot("used_in").filled(bySlug(rs, "asset-detail-360")), true);
+  assert.equal(slot("part_of").filled(bySlug(rs, "asset-detail-360")), true);
   assert.equal(
-    slot("used_in").filled({ ...bySlug(rs, "asset-detail-360"), apps: [] }),
+    slot("part_of").filled({ ...bySlug(rs, "asset-detail-360"), apps: [] }),
     false,
   );
 });
@@ -166,7 +183,7 @@ test("Job is a cross-file join: a Product's use case must name the pattern", () 
   // claims an app but no use case reaches it.
   assert.equal(s.filled(bySlug(rs, "search-filtered-table")), true);
   assert.equal(s.filled(bySlug(rs, "ai-analyst-panel")), false);
-  partial(rs, s);
+  predicateReads(rs, s, EMPTY_PATTERN);
 });
 
 test("Job is not the same question as Used in", () => {
@@ -174,7 +191,7 @@ test("Job is not the same question as Used in", () => {
   // app (Used in) while no use case in that app names it (Job) — that gap IS
   // the finding, and a Slot table that merged them would report it as filled.
   const rs = records();
-  const claimed = rs.filter((r) => slot("used_in").filled(r)).length;
+  const claimed = rs.filter((r) => slot("part_of").filled(r)).length;
   const reached = rs.filter((r) => slot("job").filled(r)).length;
   assert.ok(reached < claimed, "Job and Used in have collapsed into one measure");
 });
@@ -187,7 +204,7 @@ test("Capture reads the recipe's declared pattern, not its filename", () => {
   // reporting the right total by coincidence.
   assert.equal(s.filled(bySlug(rs, "right-sliding-drawer")), true);
   assert.equal(s.filled(bySlug(rs, "activity-timeline")), false);
-  partial(rs, s);
+  predicateReads(rs, s, EMPTY_PATTERN);
 
   // The join property, stated so it survives a fifth recipe: at least one
   // counted capture is a recipe whose OWN slug differs from the pattern's.
@@ -217,7 +234,7 @@ test("Capture reads the recipe's declared pattern, not its filename", () => {
 
 test("Tags is filled by a non-empty tag list", () => {
   const rs = records();
-  partial(rs, slot("tags"));
+  predicateReads(rs, slot("tags"), EMPTY_PATTERN);
 });
 
 test("every Pattern Slot takes its name from the vocabulary", () => {
@@ -262,7 +279,7 @@ test("Entity has exactly three Slots, and no Description", () => {
   // read as a system-wide failure rather than a measurement.
   assert.deepEqual(
     ENTITY_SLOTS.map((s) => s.key),
-    ["properties", "link", "used_in"],
+    ["properties", "link", "part_of"],
   );
   assert.ok(
     !ENTITY_SLOTS.some((s) => s.key === "description"),
@@ -287,10 +304,18 @@ test("Entity Slots are filled and empty on known real records", () => {
   assert.equal(s("properties").filled(find("input-port")), false);
   assert.equal(s("link").filled(find("access-request")), true);
   assert.equal(s("link").filled(find("api-key")), false);
-  assert.equal(s("used_in").filled(find("access-request")), true);
+  assert.equal(s("part_of").filled(find("access-request")), true);
 
-  partial(rs, s("properties"));
-  partial(rs, s("link"));
+  const emptyEntity = {
+    slug: "synthetic",
+    label: "Synthetic",
+    propertyCount: 0,
+    relationshipVerbs: [],
+    apps: [],
+  };
+  predicateReads(rs, s("properties"), emptyEntity);
+  predicateReads(rs, s("link"), emptyEntity);
+  predicateReads(rs, s("part_of"), emptyEntity);
 });
 
 test("Entity Link counts a relationship map with any verb", () => {
@@ -321,14 +346,18 @@ test("Product Navigation reads the sidebar, filled and empty", () => {
   };
   assert.equal(nav.filled(find("studio")), true);
   assert.equal(nav.filled(find("explorer")), false);
-  // Every Product Slot must be read by SOMETHING; a predicate filled by
-  // nothing is broken. Exact counts are deliberately not asserted — three
-  // products is a corpus fact, not a contract.
+  const emptyProduct = {
+    slug: "synthetic",
+    label: "Synthetic",
+    purpose: "",
+    sidebarCount: 0,
+    signals: [],
+    useCaseCount: 0,
+    everyUseCaseHasAudience: false,
+    everyUseCaseHasJobs: false,
+  };
   for (const slotDef of PRODUCT_SLOTS) {
-    assert.ok(
-      rs.some((r) => slotDef.filled(r)),
-      `${slotDef.key} is filled by no product — the predicate is broken`,
-    );
+    predicateReads(rs, slotDef, emptyProduct);
   }
 });
 

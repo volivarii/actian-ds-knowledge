@@ -58,29 +58,28 @@ test("an app carries the three fields AppRecord did not declare", () => {
   assert.equal(typeof a.purpose, "string");
 });
 
-test("the app schema does not declare three fields every app file carries", () => {
-  // Tracked as #647. Asserted so it cannot be forgotten: the schema's
-  // `properties` omits purpose, users and signals while all three are authored
-  // in every app and carried through the derive.
+test("the app schema's undeclared fields are reported, not enforced (#647)", (t) => {
+  // `schemas/app-context-app.json` omits purpose, users and signals while every
+  // app file carries all three — tracked as #647.
   //
-  // TWO honest limits, stated rather than implied:
-  //  1. This asserts a DEFECT PERSISTS, so it goes red on the PR that fixes it
-  //     correctly. That is intended — the failure message says to delete it —
-  //     but it means the test is a reminder, not a gate.
-  //  2. `schemas/**` is NOT in editor-ci.yml's paths filter, so this lane does
-  //     not run on the PR that edits the schema. It will fire later, on an
-  //     unrelated editor PR whose author did not cause it. Adding `schemas/**`
-  //     to that filter for a reminder would run the whole editor suite on every
-  //     schema change, which is the wrong trade; #647 carries the note instead.
+  // This REPORTS rather than asserts, and that is the whole point. As an
+  // assertion it failed the day someone fixed the schema correctly; and since
+  // `schemas/**` is not in editor-ci.yml's paths filter, that failure would not
+  // even land on the PR that made the change — it would surface later on an
+  // unrelated editor PR whose author never touched a schema. A gate that fails
+  // the wrong person for someone else's correct change teaches people to
+  // weaken gates.
   const schema = JSON.parse(
     readFileSync(join(REPO, "schemas", "app-context-app.json"), "utf8"),
   ) as { properties?: Record<string, unknown> };
   const declared = Object.keys(schema.properties ?? {});
   assert.ok(declared.length > 0, "schema declares no properties — vacuous");
-  for (const field of ["purpose", "users", "signals"]) {
-    assert.ok(
-      !declared.includes(field),
-      `schema now declares ${field} — that is the fix #647 asks for. Delete this test.`,
-    );
-  }
+  const missing = ["purpose", "users", "signals"].filter(
+    (f) => !declared.includes(f),
+  );
+  t.diagnostic(
+    missing.length
+      ? `#647 still open: schemas/app-context-app.json does not declare ${missing.join(", ")}`
+      : "#647 appears fixed — the schema now declares purpose, users and signals; this test can go",
+  );
 });

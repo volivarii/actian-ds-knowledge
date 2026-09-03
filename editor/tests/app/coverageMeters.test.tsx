@@ -1,14 +1,18 @@
 // Component Meters on the coverage dashboard.
 //
-// Split from meters.test.tsx and on JSDOM, not happy-dom, deliberately: mounting
-// CoverageDashboard under happy-dom leaks a handle, and the file dies with a
-// 30s SIGKILL that reads as a hang rather than as a failure. Its sibling
-// CoverageDashboard.test.tsx has always used setup-dom for the same screen, so
-// this follows the line the suite already draws — app-context screens on
-// happy-dom, this one on JSDOM.
+// Split from meters.test.tsx only to keep the app-context screens and this one
+// in separate files; both environments work. An earlier header here claimed
+// this file was "on JSDOM, not happy-dom, deliberately" because mounting
+// CoverageDashboard under happy-dom "leaks a handle and the file dies with a
+// 30s SIGKILL" — while the file imported happy-dom, and while the SIGKILL had
+// nothing to do with the environment. It was two stacked bugs in the tests
+// themselves: loadMediaIndex caches in sessionStorage so one test poisoned the
+// next, and `assert.equal` on a live DOM node kills the runner when it fails,
+// so an ordinary assertion failure presented as a hang. Both are fixed below.
+// setup-dom matches the sibling CoverageDashboard.test.tsx.
 import test, { afterEach } from "node:test";
 import assert from "node:assert/strict";
-import "../setup-happy-dom";
+import "../setup-dom";
 import { render, cleanup, waitFor } from "@testing-library/react";
 import React from "react";
 import { Theme } from "@radix-ui/themes";
@@ -20,7 +24,8 @@ import {
 } from "../../src/lib/slots";
 import { summarize, type CoverageRow } from "../../src/lib/coverageLoader";
 
-// happy-dom doesn't install sessionStorage; loadMediaIndex caches through it.
+// JSDOM installs sessionStorage; this stub is the fallback if the environment
+// ever changes, and loadMediaIndex caches through it either way.
 if (!globalThis.sessionStorage) {
   const store: Record<string, string> = {};
   Object.defineProperty(globalThis, "sessionStorage", {
@@ -246,6 +251,32 @@ test("an index that parses but carries no media is unmeasurable, not empty", () 
       container.querySelector('[data-meter="component:capture"]') === null,
       true,
       "a re-keyed index reported captures as measured-and-zero",
+    );
+  })();
+});
+
+test("a failed capture read says so, rather than silently dropping the Meter", () => {
+  // Dropping the Slot without a word is the same omission the three-state
+  // design says it exists to avoid: a reader who saw a Capture Meter yesterday
+  // and not today cannot tell a measure that failed from one that was deleted.
+  return (async () => {
+    const { CoverageDashboard } = await import("../../src/app/CoverageDashboard");
+    const { container } = mount(
+      <CoverageDashboard
+        octokit={fakeGhServingCoverage({ mediaOk: false })}
+        onOpenFile={() => {}}
+      />,
+    );
+    await waitFor(() => {
+      assert.ok(container.querySelector('[data-meter="component:usage"]'));
+    });
+    assert.equal(
+      container.querySelector('[data-meter="component:capture"]') === null,
+      true,
+    );
+    assert.ok(
+      (container.textContent ?? "").includes("not measured"),
+      "the Capture Meter vanished with nothing said about why",
     );
   })();
 });
