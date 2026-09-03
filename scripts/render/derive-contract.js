@@ -229,7 +229,33 @@ function collect(re, block, onMatch) {
   while ((m = re.exec(block)) !== null) onMatch(m);
 }
 
-function propsOf(block) {
+// A prop CITED in a comment is not a prop the branch reads. The renderer's
+// comments quote prop reads routinely ("see props[\"Leading icon show\"] on
+// text-input"), and scanning raw source published those citations as real
+// props: a consumer could set one and get nothing back.
+//
+// Conservative on purpose. Block comments go whole; a line comment is stripped
+// only when `//` is the first non-space thing on the line, so a `//` inside a
+// string literal or a regex on a CODE line cannot be mistaken for one and eat
+// the rest of that line. The residue that leaves is a TRAILING comment citing a
+// prop, which no branch in the renderer has today (asserted in
+// tests/render/derive-contract.test.js) — and the failure mode of the greedy
+// alternative is deleting real code, which is strictly worse than publishing
+// one phantom name.
+//
+// The one dangerous edge is the block strip, which is NOT string-aware: a `/*`
+// inside a string literal would swallow to the next `*/` and make real prop
+// reads VANISH from the contract, the silent direction. Measured: zero string
+// literals in the renderer open one, and a test asserts that stays true rather
+// than trusting it.
+function stripComments(block) {
+  return String(block)
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/^[ \t]*\/\/.*$/gm, "");
+}
+
+function propsOf(rawBlock) {
+  var block = stripComments(rawBlock);
   var names = Object.create(null);
   collect(DOT_READ, block, function (m) {
     names[m[1]] = true;

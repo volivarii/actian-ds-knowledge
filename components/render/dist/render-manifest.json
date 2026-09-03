@@ -19,7 +19,7 @@
       "tagName": "zen-alert-banner",
       "group": "Feedback",
       "fragment": "fragments/alert-banner.html",
-      "tokensConsumed": 22,
+      "tokensConsumed": 23,
       "source": "rendered"
     },
     {

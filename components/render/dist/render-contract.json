@@ -11,6 +11,9 @@
       "group": "Action",
       "props": [
         {
+          "name": "Destructive"
+        },
+        {
           "name": "Primary",
           "default": "Save"
         },
@@ -25,8 +28,20 @@
       "group": "Feedback",
       "props": [
         {
+          "name": "Action"
+        },
+        {
           "name": "Message",
           "default": "Info"
+        },
+        {
+          "name": "Show Icon"
+        },
+        {
+          "name": "Show action"
+        },
+        {
+          "name": "Show close button"
         },
         {
           "name": "Title"
@@ -121,6 +136,12 @@
     "breadcrumb": {
       "group": "Navigation",
       "props": [
+        {
+          "name": "BadgeType"
+        },
+        {
+          "name": "Badges"
+        },
         {
           "name": "Items"
         }

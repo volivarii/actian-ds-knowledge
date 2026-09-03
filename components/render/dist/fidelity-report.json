@@ -8,16 +8,16 @@
     "verified": 79,
     "verifiedViaTokenName": 6,
     "mismatch": 0,
-    "unverifiable": 332,
+    "unverifiable": 333,
     "overridden": 0,
-    "oracleCoverage": 0.2038,
+    "oracleCoverage": 0.2033,
     "verifiedFidelity": 0.9294,
-    "examined": 417
+    "examined": 418
   },
   "reasons": {
     "root-is-variant-instance": 21,
     "no-matching-variant": 16,
-    "element-no-node-mapping": 231,
+    "element-no-node-mapping": 232,
     "no-fact-of-kind": 21,
     "root-is-non-default-state": 4,
     "state-unreachable": 37,
@@ -42,7 +42,7 @@
       "verified": 0,
       "verifiedViaTokenName": 2,
       "mismatch": 0,
-      "unverifiable": 11,
+      "unverifiable": 12,
       "overridden": 0,
       "blind": false
     },

@@ -60,8 +60,18 @@ test("a slug's props are exactly the ones its renderer branch reads", function (
   var names = entry("alert-banner").props.map(function (p) {
     return p.name;
   });
-  // alert-banner's branch reads props.Title and props.Message and nothing else.
-  assert.deepEqual(names.slice().sort(), ["Message", "Title"]);
+  // alert-banner's branch reads props.Title, props.Message, props.Action and
+  // the three default-TRUE booleans the registry publishes for it -- and
+  // nothing else. The booleans are read as literal bracket accesses precisely
+  // so BRACKET_READ carries them into the published contract.
+  assert.deepEqual(names.slice().sort(), [
+    "Action",
+    "Message",
+    "Show Icon",
+    "Show action",
+    "Show close button",
+    "Title",
+  ]);
 });
 
 test("a prop carries the renderer's own fallback as its default", function () {
@@ -94,23 +104,52 @@ test("a prop with no literal fallback carries no invented default", function () 
 
 test("every prop the contract lists actually reaches the rendered markup", function () {
   // Behavioural, not textual: a prop extracted from a comment or a dead branch
-  // would pass a regex check and fail here. Scoped to the string-valued props of
-  // one slug, because boolean and enum props legitimately do not echo their value.
-  var probe = "ZZPROBEZZ";
-  entry("alert-banner").props.forEach(function (p) {
-    var props = {};
-    props[p.name] = probe;
-    var html = dsMap.renderDSComponent({
-      dsSlug: "alert-banner",
-      variant: "Type=Info",
-      props: props,
+  // would pass a regex check and fail here.
+  //
+  // A BOOLEAN prop legitimately does not echo its value — it gates a part. The
+  // set of them is read from the registry's own published component properties
+  // rather than named here, so a new Figma boolean is excluded automatically and
+  // a new STRING prop is not quietly excluded with it. Their behaviour is
+  // asserted in tests/render/component-slots.test.js, by turning each off and
+  // checking the part it gates disappears.
+  var registry = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, "components", "dist", "registries", "dskit.json"),
+      "utf8",
+    ),
+  );
+  var published = (registry.components["alert-banner"] || {}).properties || {};
+  var booleans = Object.keys(published)
+    .filter(function (k) {
+      return published[k] && published[k].type === "BOOLEAN";
+    })
+    .map(function (k) {
+      return k.split("#")[0]; // normalizeProps aliases the raw Figma key
     });
-    assert.match(
-      html,
-      new RegExp(probe),
-      "props." + p.name + " is claimed by the contract but never rendered",
-    );
-  });
+  assert.ok(booleans.length >= 3, "published booleans: " + booleans.length);
+  var probe = "ZZPROBEZZ";
+  var probed = 0;
+  entry("alert-banner")
+    .props.filter(function (p) {
+      return booleans.indexOf(p.name) === -1;
+    })
+    .forEach(function (p) {
+      probed++;
+      var props = {};
+      props[p.name] = probe;
+      var html = dsMap.renderDSComponent({
+        dsSlug: "alert-banner",
+        variant: "Type=Info",
+        props: props,
+      });
+      assert.match(
+        html,
+        new RegExp(probe),
+        "props." + p.name + " is claimed by the contract but never rendered",
+      );
+    });
+  // A filter that excluded everything would pass by never entering the loop.
+  assert.ok(probed >= 3, "string props probed: " + probed);
 });
 
 test("variant axes and values are the registry's, verbatim", function () {
@@ -549,11 +588,16 @@ test("consecutive fall-through case labels both get a block", function () {
 });
 
 test("a malformed escape is left as written, and does not crash the derive", function () {
-  // The extractor scans comments as plain text, so a Windows path in a comment
-  // puts a lone \u before non-hex characters. That fell through to the bare
+  // A lone \u before non-hex characters fell through to the bare
   // single-character branch with seq === "u", making parseInt("") NaN and
-  // String.fromCodePoint(NaN) throw, turning a documentation comment into a hard
-  // derive failure whose message names neither the file nor the literal.
+  // String.fromCodePoint(NaN) throw — a hard derive failure whose message names
+  // neither the file nor the literal.
+  //
+  // The original carrier was a Windows path in a COMMENT, which propsOf no
+  // longer scans (see "a prop cited in a comment does not reach the contract").
+  // The carrier moved into real code because the escape handling is the subject
+  // here: a default literal containing a backslash still reaches unescapeLiteral
+  // and still must not throw.
   var D = require(
     path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
   );
@@ -562,7 +606,7 @@ test("a malformed escape is left as written, and does not crash the derive", fun
   // `return ""` keeps every test green while silently deleting text from a
   // default, which is the "stops throwing, starts producing garbage" case.
   assert.equal(
-    D.propsOf('case "x": { /* props.Path || "C:\\users\\bin" */ }')[0].default,
+    D.propsOf('case "x": { esc(props.Path || "C:\\users\\bin"); }')[0].default,
     "C:users\bin",
     "a malformed \\u is left as the bare letter, and \\b is a real backspace",
   );
@@ -571,4 +615,75 @@ test("a malformed escape is left as written, and does not crash the derive", fun
     "au{110000}b",
     "an out-of-range codepoint is left as written, and nothing around it is lost",
   );
+});
+
+// A prop named only in a comment is not a prop. The renderer's comments cite
+// prop reads routinely -- "see props[\"Leading icon show\"] on text-input" -- and
+// the extractor scanned raw source, so a citation published a prop the branch
+// never reads. A consumer setting it gets nothing, and the "every prop reaches
+// the markup" probe below is the only thing that would ever notice.
+test("a prop cited in a comment does not reach the contract", function () {
+  var block = [
+    '// Mirrors props["Leading icon show"] on text-input, and props.Ghost.',
+    "/* props.BlockCommentPhantom is discussed here, not read. */",
+    "var real = props.Message;",
+    'var alsoReal = props["Show close button"] !== false;',
+  ].join("\n");
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  assert.deepEqual(
+    D.propsOf(block)
+      .map(function (p) {
+        return p.name;
+      })
+      .sort(),
+    ["Message", "Show close button"],
+  );
+});
+
+test("a // inside a string literal is not treated as a comment", function () {
+  // The strip must not eat code: only a line whose first non-space characters
+  // are `//` is a line comment here, so a URL or a protocol-relative path in a
+  // string survives with the prop read that follows it on the same line.
+  var D = require(
+    path.join(REPO_ROOT, "scripts", "render", "derive-contract.js"),
+  );
+  var block = 'var u = "https://example.com/" + props.Slug;';
+  assert.deepEqual(
+    D.propsOf(block).map(function (p) {
+      return p.name;
+    }),
+    ["Slug"],
+  );
+});
+
+test("no string literal in the renderer opens a block comment", function () {
+  // propsOf strips block comments without tracking string state, so a `/*`
+  // inside a string literal would swallow to the next `*/` and make real prop
+  // reads VANISH from the published contract — the silent direction, where the
+  // phantom-prop case at least announced itself. Zero today; asserted rather
+  // than trusted, because the cost of it becoming non-zero is invisible.
+  var src = fs.readFileSync(
+    path.join(
+      REPO_ROOT,
+      "components",
+      "render",
+      "renderer",
+      "html-renderers",
+      "ds-html-map.js",
+    ),
+    "utf8",
+  );
+  var offenders = [];
+  src.split("\n").forEach(function (line, i) {
+    var at = line.indexOf("/*");
+    if (at < 0) return;
+    var before = line.slice(0, at);
+    var doubles = (before.match(/"/g) || []).length;
+    var singles = (before.match(/'/g) || []).length;
+    if (doubles % 2 === 1 || singles % 2 === 1)
+      offenders.push(i + 1 + ": " + line.trim().slice(0, 80));
+  });
+  assert.deepEqual(offenders, []);
 });
