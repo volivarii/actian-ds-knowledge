@@ -40,13 +40,12 @@ import {
   type Domain,
   type Status,
 } from "../lib/coverageLoader";
-import { STATE_FOR_STATUS, STATE_LABEL } from "../lib/nomenclature";
+import { STATE_FOR_STATUS, STATE_LABEL, THING_LABEL } from "../lib/nomenclature";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 import { measure } from "../lib/measure";
 import { componentSlotRecords, componentSlotsFor } from "../lib/slots";
 import { loadCapturedSlugs } from "../lib/loadMediaIndex";
-import { THING_LABEL } from "../lib/nomenclature";
 import { MeterList } from "./MeterList";
 
 export interface CoverageDashboardProps {
@@ -88,10 +87,17 @@ export function CoverageDashboard({
     [cartEntries],
   );
 
-  // null means NOT MEASURED, which is different from "measured and empty".
-  // A failed media-index read drops the Capture Meter rather than reporting
-  // zero captures across the whole registry.
-  const [captured, setCaptured] = useState<Set<string> | null>(null);
+  // Three states, not two. "Loading" and "cannot be measured" are different
+  // facts and a nullable Set conflates them: the Meters render as soon as the
+  // coverage rows are ready, which can be BEFORE the media index resolves, so a
+  // two-state version dropped the Capture Meter for a transient reason and
+  // popped it in a moment later with nothing said. Omitting a measure without
+  // saying why is the same defect as reporting `0 of 73`.
+  const [captures, setCaptures] = useState<
+    | { kind: "loading" }
+    | { kind: "ready"; slugs: Set<string> }
+    | { kind: "failed" }
+  >({ kind: "loading" });
 
   useEffect(() => {
     let cancelled = false;
@@ -112,13 +118,14 @@ export function CoverageDashboard({
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setCaptures({ kind: "loading" });
       try {
         const slugs = await loadCapturedSlugs(octokit);
-        if (!cancelled) setCaptured(slugs);
+        if (!cancelled) setCaptures({ kind: "ready", slugs });
       } catch {
-        // Left null. The table is the point of this screen and must still
-        // render; the Capture Meter simply does not appear.
-        if (!cancelled) setCaptured(null);
+        // The table is the point of this screen and must still render; only
+        // the Capture Meter drops out.
+        if (!cancelled) setCaptures({ kind: "failed" });
       }
     })();
     return () => {
@@ -132,14 +139,19 @@ export function CoverageDashboard({
   );
 
   const meters = useMemo(() => {
-    if (state.kind !== "ready") return null;
+    // Wait for BOTH. Rendering while the index is still in flight shows a table
+    // of Meters that silently excludes one and then changes shape.
+    if (state.kind !== "ready" || captures.kind === "loading") return null;
     const at = new Date().toISOString().slice(0, 10);
     return measure(
-      componentSlotRecords(state.rows, captured ?? new Set()),
-      componentSlotsFor(captured !== null),
+      componentSlotRecords(
+        state.rows,
+        captures.kind === "ready" ? captures.slugs : new Set<string>(),
+      ),
+      componentSlotsFor(captures.kind === "ready"),
       at,
     );
-  }, [state, captured]);
+  }, [state, captures]);
 
   if (state.kind === "loading") {
     return (

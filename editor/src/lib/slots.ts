@@ -318,14 +318,14 @@ export const TERM_SLOTS: Slot<TermSlotRecord>[] = [
     key: "meaning",
     name: SLOT_LABEL.meaning,
     filled: (r) => wordCount(r.meaning) > 0,
-    help: "What the word denotes here. studio means the product, not a room.",
+    help: "What the word denotes here. studio means the governance and catalog app.",
     action: "Write",
   },
   {
     key: "rule",
     name: SLOT_LABEL.rule,
     filled: (r) => r.notUse.length > 0,
-    help: "The words to avoid in its place. data-intelligence-platform rules out 'the tool' and 'the app'.",
+    help: "The words to avoid in its place. studio rules out 'admin panel' and 'backend'; data-intelligence-platform rules out 'the tool' and 'the app'.",
     action: "Write",
   },
 ];
@@ -368,17 +368,29 @@ export function componentSlotRecords(
   }));
 }
 
+/**
+ * Every example named here must be a component whose THAT domain is authored on
+ * disk, which `slots.test.ts` asserts by joining against
+ * `components/src/<slug>/<domainFileName>`.
+ *
+ * That join exists because the rule-5 guard only proves a help NAMES a real
+ * record, not that what it says is true — and three of these were false on
+ * first writing. "drawer is the one with real focus management to copy" pointed
+ * at a component whose behavior is INHERITED with no file, so an author
+ * following it found nothing. Naming an example whose guidance does not exist
+ * is worse than naming none.
+ */
 const DOMAIN_HELP: Record<Domain, string> = {
   content:
-    "The words in and around the component — labels, empty states, errors. alert-banner carries one line per status.",
+    "The words in and around the component — labels, empty states, errors. alert-banner covers all four severities and the prefixes not to write.",
   usage:
     "When to reach for it and when not to. The guidance designers ask for most, and the one most often missing; button is the one to read first.",
   design:
-    "How it looks and why: anatomy, spacing, the variants and what each is for. badge shows the shape-carries-kind rule at its smallest.",
+    "How it looks and why: anatomy, spacing, the variants and what each is for. Three components have it; button is the fullest.",
   behavior:
-    "What it does when touched — states, focus, keyboard, motion. drawer is the one with real focus management to copy.",
+    "What it does when touched — states, focus, keyboard, motion. button is the ONLY component with authored behavior guidance today, which is what makes this the emptiest column.",
   tokens:
-    "Which design tokens it binds, so a theme change reaches it. button binds every interactive family.",
+    "Which design tokens it binds, so a theme change reaches it. button names 19 bindings and the part each one paints.",
 };
 
 /**
@@ -404,7 +416,7 @@ export const COMPONENT_SLOTS: Slot<ComponentSlotRecord>[] = [
     key: "must_follow",
     name: SLOT_LABEL.must_follow,
     filled: (r) => r.hasA11yRefs,
-    help: "The accessibility criteria this component has to meet. alert-banner names the ones a status colour has to survive.",
+    help: "The accessibility criteria this component has to meet. alert-banner names alerts-toasts-banners.",
     action: "Attach",
   },
   {

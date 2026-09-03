@@ -176,7 +176,13 @@ export async function loadCapturedSlugs(gh: Octokit): Promise<Set<string>> {
   const media = await loadIndex(gh);
   return new Set(
     Object.entries(media)
-      .filter(([, roles]) => typeof roles?.default === "string")
+      // `MediaMap` values are `string | string[]`. `default` is a single
+      // capture today, but reading only the string form would silently report
+      // "no capture" if it ever became a list.
+      .filter(([, roles]) => {
+        const d = roles?.default;
+        return typeof d === "string" ? d.length > 0 : Array.isArray(d) && d.length > 0;
+      })
       .map(([slug]) => slug),
   );
 }

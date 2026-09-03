@@ -4,7 +4,7 @@
 // afford: it would report a healthy substrate by measuring nothing.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
 import {
@@ -394,4 +394,38 @@ test("an unmeasurable capture index DROPS the Slot rather than reporting zero", 
     unmeasured,
     measured.filter((k) => k !== "capture"),
   );
+});
+
+test("a domain Slot's help names a component whose THAT domain is authored", () => {
+  // The rule-5 guard proves a help NAMES a real record. It cannot prove what
+  // the help SAYS about it is true, and three of these were false on first
+  // writing — "drawer is the one with real focus management to copy" pointed at
+  // a component whose behavior is INHERITED with no file, so an author
+  // following the help found nothing. Naming an example whose guidance does not
+  // exist is worse than naming none.
+  //
+  // This is the part that IS checkable: join the example against the file the
+  // domain is actually authored in.
+  const authored = (domain: string): string[] => {
+    const file = domain === "tokens" ? "tokens.yml" : `${domain}.md`;
+    return authoredComponentSlugs().filter((slug) =>
+      existsSync(join(REPO, "components", "src", slug, file)),
+    );
+  };
+  const domainSlots = COMPONENT_SLOTS.filter((s) =>
+    (DOMAINS as readonly string[]).includes(s.key),
+  );
+  assert.equal(domainSlots.length, DOMAINS.length, "domain Slots went missing");
+  for (const slot of domainSlots) {
+    const withFile = authored(slot.key);
+    assert.ok(
+      withFile.length > 0,
+      `no component authors ${slot.key} — the check is vacuous`,
+    );
+    assert.ok(
+      withFile.some((slug) => namesRecord(slot.help, slug)),
+      `${slot.key}'s help names no component that actually authors ${slot.key}. ` +
+        `Authored by: ${withFile.join(", ")}. Help: "${slot.help}"`,
+    );
+  }
 });

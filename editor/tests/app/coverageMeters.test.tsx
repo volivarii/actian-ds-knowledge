@@ -174,3 +174,46 @@ test("an unreadable media index leaves the table standing and drops only Capture
   assert.equal(container.querySelector('[data-meter="capture"]') === null, true);
   assert.ok(container.querySelector('[data-meter="usage"]'));
 });
+
+test("the Meters wait for the media index rather than dropping Capture mid-flight", async () => {
+  // A two-state (Set | null) version rendered as soon as the coverage rows were
+  // ready, so a slow media index meant the Capture Meter was silently absent and
+  // then appeared. "Loading" and "cannot be measured" are different facts.
+  let releaseIndex: (() => void) | null = null;
+  const gate = new Promise<void>((r) => {
+    releaseIndex = r;
+  });
+  const base = fakeGhServingCoverage({ mediaOk: true });
+  const gh = {
+    ...base,
+    repos: {
+      ...base.repos,
+      getContent: async (args: { path: string }) => {
+        if (args.path === "components/dist/media/_index.json") await gate;
+        return base.repos.getContent(args);
+      },
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+
+  const { CoverageDashboard } = await import("../../src/app/CoverageDashboard");
+  const { container } = mount(
+    <CoverageDashboard octokit={gh} onOpenFile={() => {}} />,
+  );
+  // The rows land first; no Meter block may appear yet, because the shape of it
+  // is not known until the index settles.
+  await waitFor(() => {
+    assert.ok((container.textContent ?? "").includes("Start authoring"));
+  });
+  assert.equal(
+    container.querySelector("[data-meter]") === null,
+    true,
+    "Meters rendered before the media index settled, so Capture would pop in",
+  );
+
+  releaseIndex!();
+  await waitFor(() => {
+    assert.ok(container.querySelector('[data-meter="capture"]'));
+  });
+  assert.ok(container.querySelector('[data-meter="usage"]'));
+});
