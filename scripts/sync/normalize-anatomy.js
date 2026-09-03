@@ -304,6 +304,23 @@ function normalizeLayout(node, lengthNameById) {
   // Tokens ride ONLY beside their captured value, and only when the binding
   // survives the length gate. Absent everywhere -> value-only, byte-identical
   // to pre-P2 (and to today, while the id export is empty).
+  // #641: the size Figma already sends, kept only where it is a DESIGN
+  // DECISION. `absoluteBoundingBox` rides in every node payload the anatomy
+  // phase fetches; nothing recorded it, which is why modal's seven Size values
+  // carried no dimension anywhere in the substrate and rendered alike. A HUG
+  // axis is a consequence of its content, so recording that number would invite
+  // a consumer to pin a dimension that must grow with its text — only a FIXED
+  // axis is authored, and only a FIXED axis is captured.
+  var box = node.absoluteBoundingBox;
+  if (box) {
+    var size = {};
+    if (out.sizing.h === "fixed" && typeof box.width === "number")
+      size.w = round3(box.width) + "px";
+    if (out.sizing.v === "fixed" && typeof box.height === "number")
+      size.h = round3(box.height) + "px";
+    if (Object.keys(size).length) out.size = size;
+  }
+
   var gapTok = spacingToken(node, "itemSpacing", lengthNameById);
   if (gapTok) out.gapToken = gapTok;
   var paddingTokens = null;
@@ -365,6 +382,12 @@ function rawHintFor(node) {
   if (node.absoluteBoundingBox) {
     hint.x = node.absoluteBoundingBox.x;
     hint.y = node.absoluteBoundingBox.y;
+    // A raw hint is explicitly raw, so the box is kept whole here: an
+    // absolutely-positioned node cannot be placed from its origin alone.
+    if (typeof node.absoluteBoundingBox.width === "number")
+      hint.w = node.absoluteBoundingBox.width;
+    if (typeof node.absoluteBoundingBox.height === "number")
+      hint.h = node.absoluteBoundingBox.height;
   }
   if (node.constraints) hint.constraints = node.constraints;
   return hint;
@@ -506,6 +529,35 @@ function attachVariantDeltas(root, allDeltas) {
   sortVariants(root);
 }
 
+// The layout mirror of attachVariantDeltas. Kept as a second pass rather than
+// folded into the appearance entries: `appearance` is paint, and a consumer
+// asking "what colour is this variant" must not have to skip past a width.
+function attachVariantLayoutDeltas(root, allDeltas) {
+  // allDeltas: [{ path:number[], prop, value, layout }]
+  var groups = {};
+  allDeltas.forEach(function (d) {
+    var key = d.path.join(".") + "|" + d.prop + "|" + JSON.stringify(d.layout);
+    if (!groups[key])
+      groups[key] = { path: d.path, prop: d.prop, layout: d.layout, values: [] };
+    if (groups[key].values.indexOf(d.value) === -1)
+      groups[key].values.push(d.value);
+  });
+  Object.keys(groups).forEach(function (key) {
+    var g = groups[key];
+    var node = nodeAtPath(root, g.path);
+    // A layout delta is only ever emitted where BOTH sides carry a layout, so
+    // the base node has one; the guard is for a malformed path, not a shape.
+    if (!node || !node.layout) return;
+    if (!node.layout.variants) node.layout.variants = [];
+    var entry = { prop: g.prop, values: g.values.slice().sort() };
+    Object.keys(g.layout).forEach(function (k) {
+      entry[k] = g.layout[k];
+    });
+    node.layout.variants.push(entry);
+  });
+  sortVariants(root);
+}
+
 // Total-order 3-way compare on the JSON.stringify form of two plain-object
 // entries: -1 / 0 / 1, with 0 on equal (byte-identical) entries. A comparator
 // that returns 1 on ties (rather than 0) is not a valid total order and can
@@ -520,6 +572,8 @@ function jsonCompare(a, b) {
 function sortVariants(node) {
   if (node && node.appearance && Array.isArray(node.appearance.variants))
     node.appearance.variants.sort(jsonCompare);
+  if (node && node.layout && Array.isArray(node.layout.variants))
+    node.layout.variants.sort(jsonCompare);
   if (node && Array.isArray(node.children)) node.children.forEach(sortVariants);
 }
 
@@ -577,6 +631,7 @@ function buildAnatomyFile(rootNode, opts) {
       });
     var sel = selectIsolatedVariants(parsed, variantDefaults);
     var allDeltas = [];
+    var allLayoutDeltas = [];
     var structural = [];
     sel.isolated.forEach(function (iso) {
       var vctx = {
@@ -592,7 +647,7 @@ function buildAnatomyFile(rootNode, opts) {
         degraded: [],
       };
       var vroot = normalizeNode(iso.node, vctx);
-      var a = { deltas: [], structural: [] };
+      var a = { deltas: [], layoutDeltas: [], structural: [] };
       collectDeltas(root, vroot, [], a);
       a.deltas.forEach(function (dd) {
         allDeltas.push({
@@ -602,13 +657,26 @@ function buildAnatomyFile(rootNode, opts) {
           appearance: dd.appearance,
         });
       });
+      a.layoutDeltas.forEach(function (dd) {
+        allLayoutDeltas.push({
+          path: dd.path,
+          prop: iso.prop,
+          value: iso.value,
+          layout: dd.layout,
+        });
+      });
       a.structural.forEach(function (s) {
-        structural.push({
+        var entry = {
           prop: iso.prop,
           value: iso.value,
           path: s.path.join("."),
           reason: s.reason,
-        });
+        };
+        // Only the alignment-stopping reasons describe two sides; a layout
+        // presence mismatch is fully stated by its reason.
+        if (s.base) entry.base = s.base;
+        if (s.variant) entry.variant = s.variant;
+        structural.push(entry);
       });
       // Finding D4: an isolated variant's own vctx.degraded was discarded here,
       // so a gradient/unnormalizable node appearing ONLY in a non-default
@@ -626,6 +694,7 @@ function buildAnatomyFile(rootNode, opts) {
       });
     });
     attachVariantDeltas(root, allDeltas);
+    attachVariantLayoutDeltas(root, allLayoutDeltas);
     variantExtras.variantDefaults = variantDefaults;
     if (structural.length)
       variantExtras.structuralVariants = sortByJson(structural);
@@ -680,12 +749,65 @@ function diffAppearance(base, variant) {
   return Object.keys(diff).length ? diff : null;
 }
 
+// #641: the LAYOUT half of a per-variant delta. collectDeltas compared paint
+// only, so a variant differing solely in size, spacing or alignment produced an
+// empty delta and read downstream as "no captured evidence". Measured on
+// v0.34.178: 20 of the 44 unexplained variant collapses were exactly this — the
+// isolated variant had been fetched, normalized and diffed, and the diff was
+// not looking at the axis that moved.
+//
+// `variants` is deliberately absent from the key list: it is attached AFTER
+// diffing and would otherwise fold a node's own deltas back into itself.
+var LAYOUT_KEYS = [
+  "axis",
+  "gap",
+  "gapToken",
+  "padding",
+  "paddingTokens",
+  "align",
+  "sizing",
+  "size",
+];
+
+function diffLayout(base, variant) {
+  base = base || {};
+  variant = variant || {};
+  var diff = {};
+  LAYOUT_KEYS.forEach(function (k) {
+    var bv = base[k],
+      vv = variant[k];
+    // normalizeLayout inserts these keys in one fixed order, so the same
+    // order-stable stringify comparison diffAppearance relies on holds here.
+    var sameJson =
+      JSON.stringify(bv === undefined ? null : bv) ===
+      JSON.stringify(vv === undefined ? null : vv);
+    if (sameJson) return;
+    diff[k] = vv === undefined ? null : vv; // null = removed relative to base
+  });
+  return Object.keys(diff).length ? diff : null;
+}
+
+// "<kind>:<name>" for one node — what a reader needs to know sits at a path.
+// A structural entry used to carry only "childCount:1!=5", which says that
+// something differs and not what, so the 14 collapses whose only evidence was
+// such an entry could not be acted on.
+function describeNode(n) {
+  return (n && n.kind ? n.kind : "?") + ":" + ((n && n.name) || "");
+}
+
+function describeChildren(n) {
+  return (Array.isArray(n && n.children) ? n.children : []).map(describeNode);
+}
+
 function collectDeltas(cNode, vNode, path, acc) {
   if (!cNode || !vNode) return;
+  acc.layoutDeltas = acc.layoutDeltas || [];
   if (cNode.kind !== vNode.kind) {
     acc.structural.push({
       path: path.slice(),
       reason: "kind:" + cNode.kind + "!=" + vNode.kind,
+      base: [describeNode(cNode)],
+      variant: [describeNode(vNode)],
     });
     return;
   }
@@ -703,6 +825,22 @@ function collectDeltas(cNode, vNode, path, acc) {
     d.slug = vNode.slug;
   }
   if (d) acc.deltas.push({ path: path.slice(), appearance: d });
+  // A layout that appears or disappears is not a delta the model can express
+  // (the schema requires a complete layout object), so it is recorded as a
+  // divergence. Descent continues: the subtree below may still align.
+  if (!!cNode.layout !== !!vNode.layout) {
+    acc.structural.push({
+      path: path.slice(),
+      reason:
+        "layout:" +
+        (cNode.layout ? cNode.layout.axis : "none") +
+        "!=" +
+        (vNode.layout ? vNode.layout.axis : "none"),
+    });
+  } else if (cNode.layout) {
+    var dl = diffLayout(cNode.layout, vNode.layout);
+    if (dl) acc.layoutDeltas.push({ path: path.slice(), layout: dl });
+  }
   var cc = Array.isArray(cNode.children) ? cNode.children : [];
   var vc = Array.isArray(vNode.children) ? vNode.children : [];
   if (cc.length !== vc.length) {
@@ -710,6 +848,8 @@ function collectDeltas(cNode, vNode, path, acc) {
       acc.structural.push({
         path: path.slice(),
         reason: "childCount:" + cc.length + "!=" + vc.length,
+        base: describeChildren(cNode),
+        variant: describeChildren(vNode),
       });
     return; // indices no longer correspond -> stop, own delta already kept
   }
@@ -768,6 +908,7 @@ module.exports = {
   cornerRadiusCss,
   resolveAppearance,
   diffAppearance,
+  diffLayout,
   collectDeltas,
   selectIsolatedVariants,
   __spacingValue: spacingValue,

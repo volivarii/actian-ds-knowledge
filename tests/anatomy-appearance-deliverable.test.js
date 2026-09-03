@@ -217,6 +217,13 @@ test("deliverable: button Intent recolors root; Hover overlay flags structural",
     { prop: "Intent", values: ["Critical"], background: "#dc3514" },
   ]);
   assert.deepEqual(out.quality.structuralVariants, [
-    { prop: "State", value: "Hover", path: "", reason: "childCount:0!=1" },
+    {
+      prop: "State",
+      value: "Hover",
+      path: "",
+      reason: "childCount:0!=1",
+      base: [],
+      variant: ["container:State"],
+    },
   ]);
 });

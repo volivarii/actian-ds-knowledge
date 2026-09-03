@@ -20,6 +20,33 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The anatomy capture keeps the per-variant evidence it was already fetching**
+  (#641). The substrate looked as though it captured one variant per component. It does not: for
+  every axis value with an isolated variant, `sync-anatomy` already fetches that variant's node,
+  normalizes it and diffs it against the default — and then discarded most of what it found.
+  `collectDeltas` compared **paint only** (`background`, `backgroundToken`, `radius`, `border`,
+  `text`), so a variant differing in size, spacing or alignment produced an empty delta; and
+  `rawHintFor` read `absoluteBoundingBox` and kept **`x` and `y`, dropping `width` and `height`**,
+  which is why no dimension for any variant existed anywhere in the dist and `modal`'s seven Size
+  values were indistinguishable. Measured on v0.34.178: of the 44 unexplained variant collapses,
+  **20 were exactly this** — evidence fetched, diffed, and thrown away — and 14 of those carried
+  only a bare `childCount:1!=5` in `quality.structuralVariants`, a signal that something differs
+  with the *what* discarded. Three additions, all in `scripts/sync/normalize-anatomy.js`:
+  `layout.size` records an **authored** fixed dimension (a side appears only where its
+  `layoutSizing` is `FIXED` — a hug dimension is a consequence of content, and recording it would
+  invite a consumer to pin a size that must grow); `layout.variants` carries per-variant layout
+  deltas, the structural counterpart to `appearance.variants`, grouped and null-for-removed exactly
+  as paint deltas are; and a `structuralVariants` entry now names **what sits at the path on each
+  side** (`base`/`variant`, as `"<kind>:<name>"`) instead of only how many children there were. A
+  layout that appears or disappears is recorded as a divergence rather than forced into a delta the
+  schema cannot express. `schemas/anatomy.json` gains all three, and `layout` and
+  `structuralVariants.items` are now **closed** (`additionalProperties: false`), so the next
+  undeclared field is a validation failure rather than silent extra data — without which the
+  "schema accepts …" tests would have been passing on an open object and proving nothing. Two tests
+  assert the **join**: what `buildAnatomyFile` actually writes validates against the schema, on a
+  fixture chosen so the producer emits both new shapes. The dist itself does not move until the
+  next nightly Figma sync; nothing downstream reads `node.layout` today.
+
 - **The editor speaks one controlled vocabulary**
   ([#643](https://github.com/volivarii/actian-ds-knowledge/pull/643), phase 1 of the editor
   nomenclature design). Every screen used to invent its own words. One state was called two things
