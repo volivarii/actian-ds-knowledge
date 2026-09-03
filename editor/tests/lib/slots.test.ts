@@ -26,6 +26,11 @@ import {
   type PatternSlotRecord,
 } from "../../src/lib/slots";
 import { SLOT_LABEL } from "../../src/lib/nomenclature";
+import {
+  COMPONENT_SLOTS,
+  componentSlotRecords,
+} from "../../src/lib/slots";
+import { DOMAINS, type CoverageRow } from "../../src/lib/coverageLoader";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -71,6 +76,12 @@ function bySlug(rs: PatternSlotRecord[], slug: string): PatternSlotRecord {
 function namesRecord(help: string, slug: string): boolean {
   const escaped = slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`(?<![\\w-])${escaped}(?![\\w-])`).test(help);
+}
+
+function authoredComponentSlugs(): string[] {
+  return readdirSync(join(REPO, "components", "src"), { withFileTypes: true })
+    .filter((e) => e.isDirectory() && e.name !== "categories" && e.name !== "guidelines")
+    .map((e) => e.name);
 }
 
 function slot(key: string) {
@@ -167,6 +178,10 @@ test("every Slot's help names a real record, in every table", () => {
     ["Entity", entitySlotRecords(doc).map((r) => r.slug), ENTITY_SLOTS],
     ["Product", productSlotRecords(doc).map((r) => r.slug), PRODUCT_SLOTS],
     ["Term", termSlotRecords(doc).map((r) => r.slug), TERM_SLOTS],
+    // The Component corpus is the authored directories on disk. Included so
+    // the guard's subject is every table, not the four whose helps happened to
+    // be written first.
+    ["Component", authoredComponentSlugs(), COMPONENT_SLOTS],
   ];
   for (const [thing, slugs, table] of corpora) {
     assert.ok(slugs.length > 0, `${thing} corpus is empty — the check is vacuous`);
@@ -289,4 +304,79 @@ test("every Slot in every table takes its name from the vocabulary", () => {
       assert.equal(s.name, SLOT_LABEL[s.key], `${s.key} restates its own name`);
     }
   }
+});
+
+function fixtureCoverageRows(): CoverageRow[] {
+  return [
+    {
+      slug: "button",
+      component: "Button",
+      origin: "authored",
+      a11yRefs: ["1.4.3"],
+      domains: {
+        content: { status: "approved" },
+        usage: { status: "draft" },
+        design: { status: "inherited" },
+        behavior: { status: "not-started" },
+        tokens: { status: "not-started" },
+      },
+    },
+    {
+      slug: "ghost",
+      component: "Ghost",
+      origin: "unstarted",
+      a11yRefs: [],
+      domains: {
+        content: { status: "not-started" },
+        usage: { status: "not-started" },
+        design: { status: "not-started" },
+        behavior: { status: "not-started" },
+        tokens: { status: "not-started" },
+      },
+    },
+  ];
+}
+
+test("a Component domain Slot is filled by any status but not-started", () => {
+  const rs = componentSlotRecords(fixtureCoverageRows(), new Set(["button"]));
+  const s = (k: string) => {
+    const f = COMPONENT_SLOTS.find((x) => x.key === k);
+    assert.ok(f, `no Component Slot ${k}`);
+    return f;
+  };
+  const button = rs.find((r) => r.slug === "button");
+  const ghost = rs.find((r) => r.slug === "ghost");
+  assert.ok(button && ghost);
+
+  // `inherited` counts as filled: the guidance exists, it just lives on the
+  // category. Counting it as a gap would send an author to write a file the
+  // system deliberately does not want.
+  assert.equal(s("design").filled(button), true);
+  assert.equal(s("content").filled(button), true);
+  assert.equal(s("usage").filled(button), true);
+  assert.equal(s("behavior").filled(button), false);
+  assert.equal(s("content").filled(ghost), false);
+
+  assert.equal(s("must_follow").filled(button), true);
+  assert.equal(s("must_follow").filled(ghost), false);
+  assert.equal(s("capture").filled(button), true);
+  assert.equal(s("capture").filled(ghost), false);
+});
+
+test("the Component table covers every domain the loader knows", () => {
+  // A hand-written Slot list that falls behind DOMAINS would silently stop
+  // measuring a domain. Assert the join rather than the list.
+  const domainKeys = COMPONENT_SLOTS.map((s) => s.key).filter((k) =>
+    (DOMAINS as readonly string[]).includes(k),
+  );
+  assert.deepEqual([...domainKeys].sort(), [...DOMAINS].sort());
+});
+
+test("an unreadable media index reports no captures rather than all of them", () => {
+  // The empty set is the honest default: an index that could not be read is
+  // not evidence that a capture exists.
+  const rs = componentSlotRecords(fixtureCoverageRows(), new Set());
+  const capture = COMPONENT_SLOTS.find((s) => s.key === "capture");
+  assert.ok(capture);
+  assert.equal(rs.filter((r) => capture.filled(r)).length, 0);
 });

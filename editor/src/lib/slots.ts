@@ -11,6 +11,7 @@
 // honesty rule 3 — a stored score is a number that drifts from its subject.
 
 import { SLOT_LABEL, type SlotKey } from "./nomenclature";
+import { DOMAINS, type CoverageRow, type Domain } from "./coverageLoader";
 import type {
   AppContextDoc,
   AppRecord,
@@ -326,5 +327,91 @@ export const TERM_SLOTS: Slot<TermSlotRecord>[] = [
     filled: (r) => r.notUse.length > 0,
     help: "The words to avoid in its place. data-intelligence-platform rules out 'the tool' and 'the app'.",
     action: "Write",
+  },
+];
+
+// ----------------------------------------------------------------- Component
+
+export interface ComponentSlotRecord {
+  slug: string;
+  label: string;
+  domains: Record<Domain, boolean>;
+  hasA11yRefs: boolean;
+  hasCapture: boolean;
+}
+
+/**
+ * `capturedSlugs` is the set of slugs with a
+ * `components/dist/media/<slug>/default.webp`. An empty set is the honest
+ * default when the media index cannot be read: an index that failed to load is
+ * not evidence that a capture exists.
+ *
+ * Open question 4 in the design doc asks whether Capture should instead require
+ * the canonical render to AGREE with the Figma capture. It is deliberately not
+ * answered here: agreement is the fidelity oracle's measurement, it is produced
+ * by another derive entirely, and a Slot depending on it would report a gap no
+ * author could close from this screen. Presence is the honest test for this
+ * surface.
+ */
+export function componentSlotRecords(
+  rows: CoverageRow[],
+  capturedSlugs: ReadonlySet<string>,
+): ComponentSlotRecord[] {
+  return rows.map((row) => ({
+    slug: row.slug,
+    label: row.component,
+    domains: Object.fromEntries(
+      DOMAINS.map((d) => [d, row.domains[d].status !== "not-started"]),
+    ) as Record<Domain, boolean>,
+    hasA11yRefs: row.a11yRefs.length > 0,
+    hasCapture: capturedSlugs.has(row.slug),
+  }));
+}
+
+const DOMAIN_HELP: Record<Domain, string> = {
+  content:
+    "The words in and around the component — labels, empty states, errors. alert-banner carries one line per status.",
+  usage:
+    "When to reach for it and when not to. The guidance designers ask for most, and the one most often missing; button is the one to read first.",
+  design:
+    "How it looks and why: anatomy, spacing, the variants and what each is for. badge shows the shape-carries-kind rule at its smallest.",
+  behavior:
+    "What it does when touched — states, focus, keyboard, motion. drawer is the one with real focus management to copy.",
+  tokens:
+    "Which design tokens it binds, so a theme change reaches it. button binds every interactive family.",
+};
+
+/**
+ * The five guidance domains become Slots, so the workspace's task cards and a
+ * Meter are the same data rather than two counts that can disagree.
+ *
+ * Built by mapping DOMAINS rather than by listing the five, so a domain added
+ * to the loader cannot silently stop being measured.
+ */
+export const COMPONENT_SLOTS: Slot<ComponentSlotRecord>[] = [
+  ...DOMAINS.map(
+    (d): Slot<ComponentSlotRecord> => ({
+      key: d as SlotKey,
+      name: SLOT_LABEL[d as SlotKey],
+      // Any status but not-started: `inherited` means the guidance exists on
+      // the category, which is a deliberate answer and not a gap.
+      filled: (r) => r.domains[d],
+      help: DOMAIN_HELP[d],
+      action: "Write",
+    }),
+  ),
+  {
+    key: "must_follow",
+    name: SLOT_LABEL.must_follow,
+    filled: (r) => r.hasA11yRefs,
+    help: "The accessibility criteria this component has to meet. alert-banner names the ones a status colour has to survive.",
+    action: "Attach",
+  },
+  {
+    key: "capture",
+    name: SLOT_LABEL.capture,
+    filled: (r) => r.hasCapture,
+    help: "A captured image of the component's default variant, which is what a render can be checked against. button has one; a component without it cannot be checked at all.",
+    action: "Capture",
   },
 ];
