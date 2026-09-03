@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Added
 
 - **alert-banner, action-bar and breadcrumb render the slots Figma documents**
-  (#638 part 2). Checked against `components/dist/media/<slug>/default.webp`, the isolated
+  ([#648](https://github.com/volivarii/actian-ds-knowledge/pull/648), #638 part 2). Checked against `components/dist/media/<slug>/default.webp`, the isolated
   default-variant capture. Two of the three are not invention: the registry publishes
   `Show Icon`, `Show close button` and `Show action` as **default-TRUE BOOLEAN** component
   properties on `alert-banner`, and publishes `digram-item-types` as a **nested component** of
@@ -53,7 +53,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 - **The render tier's inline colours are joined back to the capture that owns them**
 
 - **The render tier's inline colours are joined back to the capture that owns them**
-  (#551). Three tables in `ds-html-map.js` restate, by hand, colours and token bindings the anatomy
+  ([#648](https://github.com/volivarii/actian-ds-knowledge/pull/648), #551). Three tables in `ds-html-map.js` restate, by hand, colours and token bindings the anatomy
   capture already holds — 37 `digram-item-types` backgrounds, 26 of its text colours, 10
   `digram-topic` fills, 5 `metamodel` border colours. They agree with the capture exactly today
   (measured: zero drift). Nothing joined them, so the first Figma recolour would have left the
@@ -66,7 +66,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Changed
 
 - **`item-type-tag`'s Data process / Custom-2 collision is recorded as by design, at the source**
-  (#640). The two types share both `#ffd6d8` and `#932139`, and the component renders no icon, so
+  ([#648](https://github.com/volivarii/actian-ds-knowledge/pull/648), #640). The two types share both `#ffd6d8` and `#932139`, and the component renders no icon, so
   a reader cannot tell them apart. Design-lead verdict, 2026-09-03: **by design** — the custom-N
   slots cycle a fixed palette the named types also draw from, which is why five further pairs share
   a background and differ only in name colour. The verdict is recorded in `ds-base.css` beside both
@@ -77,7 +77,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   (#637).
 
 - **The anatomy capture keeps the per-variant evidence it was already fetching**
-  (#641). The substrate looked as though it captured one variant per component. It does not: for
+  ([#648](https://github.com/volivarii/actian-ds-knowledge/pull/648), #641). The substrate looked as though it captured one variant per component. It does not: for
   every axis value with an isolated variant, `sync-anatomy` already fetches that variant's node,
   normalizes it and diffs it against the default — and then discarded most of what it found.
   `collectDeltas` compared **paint only** (`background`, `backgroundToken`, `radius`, `border`,
