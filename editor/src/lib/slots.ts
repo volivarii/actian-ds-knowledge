@@ -49,8 +49,15 @@ export function wordCount(s: string | null | undefined): number {
 /**
  * Pattern bodies are bimodal with a real gap: 8-18 words, then nothing until
  * 40. The bar sits IN the gap the corpus already has rather than at a number
- * somebody liked. `slots.test.ts` re-derives the gap and fails if it closes,
- * because a threshold whose justification has gone is a guessed threshold.
+ * somebody liked.
+ *
+ * `slots.test.ts` re-derives the gap and REPORTS it as a diagnostic — it does
+ * NOT fail. An earlier version of this docstring claimed it failed, which was
+ * false once the test was deliberately softened: an author widening one body
+ * from 12 words to 25 closes the gap, and failing CI on a PR that only improved
+ * prose is the thing `predicateReads` refuses to do. The cost is real and worth
+ * stating rather than hiding: the bar's justification can quietly stop holding,
+ * and only the diagnostic in the test output will say so.
  *
  * This reasoning does NOT transfer. Entity bodies run 5-38 words with no gap
  * anywhere, so Entity has no Description Slot at all — decided on #644.

@@ -363,6 +363,87 @@ test("an unreadable captures directory hides the Meter, it does not blank the ap
   );
 });
 
+test("a PARTIAL capture read keeps the chips that loaded", async () => {
+  // The degraded-path test above 403s the whole DIRECTORY, so every row has
+  // zero recipes and a blanket `!recipesReadable ? "?"` behaves identically.
+  // The case that distinguishes them is one BAD FILE among good ones: the read
+  // is incomplete, so the Meter is rightly withheld, but the captures that DID
+  // load must still be reachable. A blanket check erased them and made
+  // RecipePanel unreachable for patterns whose recipes were fine.
+  const doc = realDoc();
+  const recipes = realRecipes();
+  const good = recipes.find((r) => (r.patterns ?? []).length > 0)!;
+  const gh = {
+    repos: {
+      getContent: async ({ path }: { path: string }) => {
+        if (path === "app-context/dist/recipes") {
+          return {
+            data: [
+              { name: `${good.slug}.json`, type: "file" },
+              { name: "broken.json", type: "file" },
+            ],
+          };
+        }
+        if (path === "app-context/dist/recipes/broken.json") {
+          const e = new Error("throttled") as Error & { status: number };
+          e.status = 429;
+          throw e;
+        }
+        if (path === `app-context/dist/recipes/${good.slug}.json`) {
+          return {
+            data: {
+              encoding: "base64",
+              content: b64(JSON.stringify(good)),
+              sha: "sha",
+            },
+          };
+        }
+        if (path === "app-context/dist/app-context.json") {
+          return {
+            data: {
+              encoding: "base64",
+              content: b64(JSON.stringify(doc)),
+              sha: "sha",
+            },
+          };
+        }
+        const e = new Error("not found") as Error & { status: number };
+        e.status = 404;
+        throw e;
+      },
+      listCommits: async () => ({ data: [] }),
+    },
+    git: {},
+    pulls: {},
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+
+  const { container } = mount(
+    <PatternsDashboard octokit={gh} onOpenFile={() => {}} />,
+  );
+  await waitFor(() => {
+    assert.ok(container.querySelector('[data-meter="pattern:rule"]'));
+  });
+  const text = container.textContent ?? "";
+  // The read was incomplete, so the Meter is withheld and the note explains.
+  assert.equal(
+    container.querySelector('[data-meter="pattern:capture"]') === null,
+    true,
+  );
+  assert.ok(text.includes("not measured"));
+  // ...but the capture that loaded is still REACHABLE. Asserting on the chip,
+  // not on the slug: the pattern's slug appears in the Pattern column whether
+  // or not its capture survived, so an earlier version of this assertion passed
+  // under the very regression it was written for.
+  const chips = [...container.querySelectorAll('[role="button"]')].filter(
+    (el) => (el.getAttribute("title") ?? "").length > 0,
+  );
+  assert.ok(
+    chips.length > 0,
+    `the capture that loaded was erased: no capture chip rendered. ${text.slice(0, 300)}`,
+  );
+});
+
 /** Mounts the real dashboard against an arbitrary in-memory app-context. */
 function PatternsDashboardHarness({ doc }: { doc: AppContextDoc }) {
   const gh = {

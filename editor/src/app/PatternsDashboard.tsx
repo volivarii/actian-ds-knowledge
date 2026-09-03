@@ -137,8 +137,17 @@ function PatternTable({
                   could be read. The Meter and the prose already withhold on a
                   failed read; the column has to as well, or the screen states
                   in a table what it just declined to state above it. */}
-              {!recipesReadable ? (
-                <Text size="1" color="gray">
+              {!recipesReadable && p.recipes.length === 0 ? (
+                // A bare "?" is cryptic on its own, and this cell is the only
+                // place a reader meets the distinction. The title and the
+                // accessible label carry the reason, so it does not depend on
+                // having read the note above the table.
+                <Text
+                  size="1"
+                  color="gray"
+                  title="Not measured — the captures could not be read"
+                  aria-label="Captures not measured"
+                >
                   ?
                 </Text>
               ) : p.recipes.length === 0 ? (
@@ -350,7 +359,14 @@ export function PatternsDashboard({
   const summary = useMemo(() => {
     if (state.kind !== "ready" || !meters) return null;
     const { patterns, apps } = state.index;
-    const captures = patterns.reduce((n, p) => n + p.recipes.length, 0);
+    // DISTINCT recipes, because the prose says "captured page recipes". The
+    // old sum counted pattern-recipe PAIRS, and read correctly only while every
+    // recipe named exactly one pattern: one recipe naming two would have said
+    // "5 captured page recipes" with four files on disk. The last hand-count in
+    // this object, and the one that was wrong.
+    const captures = new Set(
+      patterns.flatMap((p) => p.recipes.map((r) => r.slug)),
+    ).size;
     const useCases = apps.reduce((n, a) => n + a.useCases.length, 0);
     // These three used to be counted here as well as in the Slot tables. Two
     // derivations of one number is what the Slot model exists to remove, so the

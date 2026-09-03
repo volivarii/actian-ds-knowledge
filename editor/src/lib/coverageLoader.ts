@@ -61,6 +61,13 @@ export interface CoverageRow {
   origin: RowOrigin;
   /** registry key (when origin === "unstarted") — used for stub generation */
   registryKey?: string;
+  /**
+   * True when the row's `_meta.yml` could not be READ (403/500/rate limit/bad
+   * YAML) as opposed to not existing. Such a row carries blank domains that are
+   * a placeholder, not a measurement, so anything counting rows must exclude it
+   * rather than count it as empty.
+   */
+  unreadable?: boolean;
 }
 
 const SKIP_DIRS = new Set(["categories", "guidelines"]);
@@ -155,13 +162,22 @@ async function loadOne(gh: Octokit, slug: string): Promise<CoverageRow> {
     const yamlText = await getTextFile(gh, `components/src/${slug}/_meta.yml`);
     const parsed = parseYaml(yamlText) as Record<string, unknown>;
     return parseRow(slug, parsed);
-  } catch {
+  } catch (err) {
+    // A 404 is a real state: the directory exists and nobody has written a
+    // _meta.yml yet, which IS five empty domains. Anything else — 403, 500, a
+    // rate limit, malformed YAML — means the row could not be READ, and
+    // reporting that as five empty domains puts a number on a measurement that
+    // never happened. The Meters on the coverage dashboard count these rows, so
+    // one throttled request used to render "Behavior 0 of 73" with a measured
+    // date beside it.
+    const status = (err as { status?: number }).status;
     return {
       slug,
       component: slug,
       domains: blankDomains(),
       a11yRefs: [],
       origin: "authored",
+      unreadable: status !== 404,
     };
   }
 }

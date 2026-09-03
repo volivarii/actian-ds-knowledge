@@ -104,6 +104,8 @@ test("the Component Usage meter and the loader's own summary agree", () => {
 function fakeGhServingCoverage(opts: {
   mediaOk: boolean;
   mediaShape?: "normal" | "rekeyed";
+  /** slugs whose _meta.yml answers 403 rather than 404 */
+  throttle?: string[];
 }) {
   const meta = (slug: string) =>
     `component: "${slug}"\ndomains:\n  content: { status: approved }\n  usage: { status: not-started }\n  design: { status: not-started }\n  behavior: { status: not-started }\n  tokens: { status: not-started }\n`;
@@ -129,6 +131,14 @@ function fakeGhServingCoverage(opts: {
         if (path === "components/dist/media/_index.json" && !opts.mediaOk) {
           const e = new Error("not found") as Error & { status: number };
           e.status = 404;
+          throw e;
+        }
+        const throttled = (opts.throttle ?? []).some(
+          (s) => path === `components/src/${s}/_meta.yml`,
+        );
+        if (throttled) {
+          const e = new Error("forbidden") as Error & { status: number };
+          e.status = 403;
           throw e;
         }
         if (!(path in files)) {
@@ -277,6 +287,38 @@ test("a failed capture read says so, rather than silently dropping the Meter", (
     assert.ok(
       (container.textContent ?? "").includes("not measured"),
       "the Capture Meter vanished with nothing said about why",
+    );
+  })();
+});
+
+test("a component whose _meta.yml cannot be READ is excluded, not counted as empty", () => {
+  // coverageLoader.loadOne caught ANY failure and returned five blank domains,
+  // so one 403 or rate limit reported a component as wholly unauthored and the
+  // Meters rendered "Behavior 0 of N" with a measured date beside it. A 404 is
+  // different: the directory exists and nobody has written _meta.yml, which
+  // genuinely IS five empty domains.
+  return (async () => {
+    const { CoverageDashboard } = await import("../../src/app/CoverageDashboard");
+    const { container } = mount(
+      <CoverageDashboard
+        octokit={fakeGhServingCoverage({ mediaOk: true, throttle: ["beta"] })}
+        onOpenFile={() => {}}
+      />,
+    );
+    await waitFor(() => {
+      assert.ok(container.querySelector('[data-meter="component:content"]'));
+    });
+    const content = container.querySelector('[data-meter="component:content"]');
+    assert.ok(content);
+    // alpha read fine and is content-approved; beta was throttled and is out of
+    // BOTH halves rather than dragging the denominator down as a false zero.
+    assert.ok(
+      (content.textContent ?? "").includes("1 of 1"),
+      `throttled row counted as empty: "${content.textContent}"`,
+    );
+    assert.ok(
+      (container.textContent ?? "").includes("could not be read"),
+      "a row was dropped from the count with nothing said",
     );
   })();
 });

@@ -141,14 +141,23 @@ export function CoverageDashboard({
     if (state.kind !== "ready" || captures.kind === "loading") return null;
     // Local date, not UTC — see the note in PatternsDashboard.
     const at = new Date().toLocaleDateString("en-CA");
-    return measure(
-      componentSlotRecords(
-        state.rows,
-        captures.kind === "ready" ? captures.slugs : new Set<string>(),
+    // A row whose _meta.yml could not be READ carries blank domains as a
+    // placeholder, not as a measurement. Counting it would report
+    // "Behavior 0 of 73" off the back of one throttled request. Excluded from
+    // BOTH halves, and the count is shown below so the denominator is not
+    // quietly smaller than the table.
+    const readable = state.rows.filter((r) => !r.unreadable);
+    return {
+      meters: measure(
+        componentSlotRecords(
+          readable,
+          captures.kind === "ready" ? captures.slugs : new Set<string>(),
+        ),
+        componentSlotsFor(captures.kind === "ready"),
+        at,
       ),
-      componentSlotsFor(captures.kind === "ready"),
-      at,
-    );
+      unreadable: state.rows.length - readable.length,
+    };
   }, [state, captures]);
 
   if (state.kind === "loading") {
@@ -193,8 +202,15 @@ export function CoverageDashboard({
           <MeterList
             groupKey="component"
             title={THING_LABEL.component}
-            meters={meters}
+            meters={meters.meters}
           />
+          {meters.unreadable > 0 && (
+            <Text size="1" color="gray" as="p" mt="2">
+              {meters.unreadable} component
+              {meters.unreadable === 1 ? "" : "s"} could not be read and{" "}
+              {meters.unreadable === 1 ? "is" : "are"} not counted above.
+            </Text>
+          )}
           {captures.kind === "failed" && (
             // The comment on `captures` says omitting a measure without saying
             // why is the same defect as reporting `0 of 73`. Dropping the Slot
