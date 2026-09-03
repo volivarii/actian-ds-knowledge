@@ -49,6 +49,43 @@ export interface AppRecord {
   purpose?: string;
   sidebar?: SidebarEntry[];
   useCases?: UseCaseRecord[];
+  /** The audiences this product serves, as authored under `## Users`. */
+  users?: string[];
+  /**
+   * Routing keywords, NOT prose: "steward", "govern", "curate", "lineage".
+   * These are the words that mean "you want Studio" — the same job Pattern
+   * `tags` does. The field name reads like UI feedback and is not that.
+   */
+  signals?: string[];
+}
+
+/** An entity property is either a bare name or a typed declaration. Slots only
+ *  count them, so the union stays loose on purpose. */
+export type EntityProperty =
+  | string
+  | { name: string; type?: string; states?: string[] };
+
+export interface EntityRecord {
+  label?: string;
+  properties?: EntityProperty[];
+  /**
+   * Verb -> entity slugs. The verbs are OPEN (`contains`, `belongsTo`,
+   * `relatesTo`, `subtypeOf`, `derivedFrom`, `uses`, `requires`, `produces`,
+   * `consumes`, `appliesTo`), so this is a map and never a union: a parse keyed
+   * to a closed lowercase verb list read 11 of the 30 records as having
+   * relationships when 22 do, because 16 of them use camelCase verbs.
+   */
+  relationships?: Record<string, string[]>;
+  apps?: string[];
+  description?: string;
+}
+
+export interface TermRecord {
+  /** The word to use. */
+  use?: string;
+  meaning?: string;
+  /** The words to avoid in its place. */
+  notUse?: string[];
 }
 
 export interface PatternRecord {
@@ -63,6 +100,15 @@ export interface PatternRecord {
 export interface AppContextDoc {
   apps: Record<string, AppRecord>;
   patterns: Record<string, PatternRecord>;
+  /**
+   * Optional on the TYPE because `buildPatternIndex`'s fixtures do not carry
+   * them; the real file always does, which `tests/lib/appContextDoc.test.ts`
+   * asserts against the file rather than against the type. Both collections
+   * were carried by app-context.json from the day it shipped and declared by
+   * nothing, so no consumer could reach them.
+   */
+  entities?: Record<string, EntityRecord>;
+  terminology?: Record<string, TermRecord>;
 }
 
 export interface RecipeDoc {
