@@ -10,28 +10,19 @@ import { Badge, Box, Button, Flex } from "@radix-ui/themes";
 import type { Layout, PlacedNode } from "../substrate/neighborhoodLayout";
 import {
   NODE_TYPE_COLOR,
-  NODE_TYPE_LABEL,
   relationTypeColor,
   relationTypeLabel,
 } from "../lib/relationTypes";
+import { linkLabel } from "../lib/nomenclature";
 import { slugOfNodeId } from "../substrate/nodeSlug";
 
 // Re-exported so existing importers (GraphHealthTab) keep resolving these from
 // GraphView; the canonical definitions now live in the shared relationTypes
 // module so the graph map, the relations rail, and inline chips share one
 // typed-color language.
-export { NODE_TYPE_COLOR, NODE_TYPE_LABEL };
+export { NODE_TYPE_COLOR };
 
 const MAX_LABEL_LEN = 18;
-
-export const EDGE_TYPE_LABEL: Record<string, string> = {
-  a11y_ref: "Accessibility",
-  foundations_ref: "Foundation",
-  motion_ref: "Motion",
-  related: "Related",
-  in_category: "Category",
-  narrower: "Narrower",
-};
 
 function typeColor(t: string): string {
   return relationTypeColor(t);
@@ -39,8 +30,23 @@ function typeColor(t: string): string {
 function typeLabel(t: string): string {
   return relationTypeLabel(t);
 }
+
+/**
+ * The word for an edge in the filter legend.
+ *
+ * This was a fifth private copy of the relation vocabulary — six of the eleven
+ * real edge types missing (so several filters read an indistinguishable
+ * "Related"), a fallback of "Related" against the nomenclature's "Related to",
+ * and `motion_ref: "Motion"` colliding with the Thing word for
+ * `motion_pattern`, which put two different controls called "Motion" in the
+ * two legends of this same view.
+ *
+ * The legend is direction-agnostic — it filters an edge, not one side of it —
+ * so it takes the outbound word, which is the one that names what the
+ * relationship IS.
+ */
 function edgeLabel(t: string): string {
-  return EDGE_TYPE_LABEL[t] ?? "Related";
+  return linkLabel(t, "out");
 }
 
 export interface GraphViewProps {
@@ -67,14 +73,23 @@ export function GraphView({
     new Set(),
   );
 
-  // ── Edge-type filter ────────────────────────────────────────────────────
-  const presentEdgeTypes = useMemo(
-    () => [...new Set(layout.edges.map((e) => e.type))].sort(),
+  // ── Relationship filter ─────────────────────────────────────────────────
+  //
+  // One toggle per RELATIONSHIP, not per raw edge type. The vocabulary maps 11
+  // edge types onto 5 words, so a chip per edge type put three buttons all
+  // reading "Must follow" in the same toolbar, non-adjacent and with identical
+  // accessible names — 51 of the graph's nodes hit that. The filter now hides
+  // every edge type that shares a word, which is also what a reader clicking
+  // "Must follow" means.
+  const presentRelationships = useMemo(
+    () => [...new Set(layout.edges.map((e) => edgeLabel(e.type)))].sort(),
     [layout],
   );
-  const [hiddenEdgeTypes, setHiddenEdgeTypes] = useState<Set<string>>(
+  const [hiddenRelationships, setHiddenRelationships] = useState<Set<string>>(
     new Set(),
   );
+  /** True when this edge's relationship is filtered out. */
+  const edgeHidden = (type: string) => hiddenRelationships.has(edgeLabel(type));
 
   // ── Visibility computation ───────────────────────────────────────────────
   // 1. Candidate edges: edge type not hidden AND both endpoints pass node-type filter.
@@ -90,7 +105,7 @@ export function GraphView({
 
     const candidateEdges = layout.edges.filter(
       (e) =>
-        !hiddenEdgeTypes.has(e.type) &&
+        !edgeHidden(e.type) &&
         typePassingIds.has(e.source) &&
         typePassingIds.has(e.target),
     );
@@ -106,7 +121,7 @@ export function GraphView({
     );
 
     return { visibleNodes: vNodes, visibleEdges: candidateEdges };
-  }, [layout, hiddenNodeTypes, hiddenEdgeTypes]);
+  }, [layout, hiddenNodeTypes, hiddenRelationships]);
 
   // ── Roving tabindex (Feature B) ──────────────────────────────────────────
   const [activeIndex, setActiveIndex] = useState(0);
@@ -129,18 +144,18 @@ export function GraphView({
     });
   }
 
-  function toggleEdgeType(type: string) {
-    setHiddenEdgeTypes((prev) => {
+  function toggleRelationship(label: string) {
+    setHiddenRelationships((prev) => {
       const next = new Set(prev);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
       return next;
     });
   }
 
   function handleReset() {
     setHiddenNodeTypes(new Set());
-    setHiddenEdgeTypes(new Set());
+    setHiddenRelationships(new Set());
     onReset?.();
   }
 
@@ -243,7 +258,7 @@ export function GraphView({
           </Flex>
 
           {/* Edge-type toggles */}
-          {presentEdgeTypes.length > 0 && (
+          {presentRelationships.length > 0 && (
             <Flex
               gap="2"
               wrap="wrap"
@@ -251,16 +266,15 @@ export function GraphView({
               role="group"
               aria-label="Filter by relationship type"
             >
-              {presentEdgeTypes.map((t) => {
-                const off = hiddenEdgeTypes.has(t);
-                const label = edgeLabel(t);
+              {presentRelationships.map((label) => {
+                const off = hiddenRelationships.has(label);
                 return (
                   <button
-                    key={t}
+                    key={label}
                     type="button"
                     aria-pressed={!off}
                     aria-label={`Toggle ${label} relationships`}
-                    onClick={() => toggleEdgeType(t)}
+                    onClick={() => toggleRelationship(label)}
                     style={{
                       background: "none",
                       border: 0,

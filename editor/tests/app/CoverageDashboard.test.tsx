@@ -113,7 +113,7 @@ test("CoverageDashboard: clicking approved cell opens domain.md", async () => {
   await waitFor(() => screen.getByText("Button"));
   // 'ready' = the user-facing label for approved status. Two components
   // each have content=approved, so there are two 'ready' cells; click the first.
-  const readyCells = screen.getAllByText("ready");
+  const readyCells = screen.getAllByText("Approved");
   fireEvent.click(readyCells[0]!);
   assert.equal(calls.length, 1);
   assert.match(calls[0]!, /^components\/src\/(button|tabs)\/content\.md$/);
@@ -130,7 +130,7 @@ test("CoverageDashboard: clicking inherited cell opens category file", async () 
     ),
   );
   await waitFor(() => screen.getByText("Button"));
-  const inheritedCells = screen.getAllByText("inherited");
+  const inheritedCells = screen.getAllByText("Inherited");
   fireEvent.click(inheritedCells[0]!);
   assert.equal(calls.length, 1);
   assert.match(
@@ -150,7 +150,7 @@ test("CoverageDashboard: shows per-domain counts strip", async () => {
   );
   await waitFor(() => screen.getByText("Button"));
   // both fixture components have content=approved → 2/2
-  assert.ok(screen.getByText(/2\/2 authored/));
+  assert.ok(screen.getByText(/2\/2 draft/));
 });
 
 test("CoverageDashboard: shows error callout when load fails", async () => {

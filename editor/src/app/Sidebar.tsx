@@ -103,8 +103,9 @@ const SECTION_KEYS: ReadonlyArray<SectionKey> = [
 // (2026-07-11): Content is a nested parent, so its children read plainly
 // ("Writing rules", "Patterns", "Product") without needing "copy"
 // disambiguators; the application-context trio is "Products / Entities /
-// Features" ("Features" matches what those files actually are:
-// import-wizard, lineage-graph, marketplace-browsing…).
+// Patterns" — which is what the substrate directory, the dist key, the schema
+// title and the graph node type have always called them. "Features" was a word
+// the editor invented for itself, and the only place it existed.
 const CONTENT_GROUP_LABEL: Record<"patterns" | "product" | "writing", string> =
   {
     patterns: "Patterns",
@@ -115,7 +116,7 @@ const CONTENT_GROUP_LABEL: Record<"patterns" | "product" | "writing", string> =
 const APP_CONTEXT_LABEL: Record<"apps" | "entities" | "patterns", string> = {
   apps: "Products",
   entities: "Entities",
-  patterns: "Features",
+  patterns: "Patterns",
 };
 
 /** The Content parent's children, in display order — single source for the
@@ -252,7 +253,7 @@ export function Sidebar({
     const pending: ContextRecord[] = [];
     for (const [kind, key] of [
       ["entity", "appContextEntities"],
-      ["feature", "appContextPatterns"],
+      ["pattern", "appContextPatterns"],
     ] as const) {
       for (const file of entries?.[key] ?? []) {
         const slug = slugFromPath(file);
@@ -289,7 +290,7 @@ export function Sidebar({
   > = {
     apps: { label: "New product", open: () => setNewProductOpen(true) },
     entities: { label: "New entity", open: () => setNewRecordKind("entity") },
-    patterns: { label: "New feature", open: () => setNewRecordKind("feature") },
+    patterns: { label: "New pattern", open: () => setNewRecordKind("pattern") },
   };
   const [deleteDialog, setDeleteDialog] = useState<{
     domain: EntriesKey;
@@ -761,9 +762,20 @@ export function Sidebar({
     onAdd: (() => void) | null,
     /** Overrides the add affordance's wording; sections default to "section". */
     addLabel?: string,
+    /** Names the dimension this section sits in, for the accessible name only.
+     *  Two sections are both called "Patterns" — Content's writing guidance and
+     *  Application context's UX patterns — and sighted readers tell them apart
+     *  by the parent they are nested under. A screen-reader user hearing
+     *  "Patterns, button" twice has nothing. */
+    within?: string,
   ) {
     const collapsed = sectionCollapsed[key];
     const headerId = `sidebar-section-${key}-header`;
+    // Only the ambiguous headers get an explicit name. Setting aria-label
+    // unconditionally REPLACED name-from-contents on every section, which
+    // dropped the item count ("Components, 54") out of the announced name for
+    // ~20 headers to disambiguate two — a fix wider than its defect.
+    const accessibleName = within ? `${label}, in ${within}, ${count}` : undefined;
     return (
       <Flex
         id={headerId}
@@ -774,6 +786,7 @@ export function Sidebar({
         py="2"
         role="button"
         tabIndex={0}
+        aria-label={accessibleName}
         aria-expanded={!collapsed}
         aria-controls={listId}
         style={{ cursor: "pointer", userSelect: "none" }}
@@ -1084,14 +1097,22 @@ export function Sidebar({
                 const listId = `list-${group}`;
                 return (
                   <Box key={group}>
-                    {sectionHeader(group, label, items.length, listId, () => {
-                      const existingSlugs = items.map(slugFromPath);
-                      setAddDialog({
-                        domain: "content",
-                        subDir: group,
-                        existingSlugs,
-                      });
-                    })}
+                    {sectionHeader(
+                      group,
+                      label,
+                      items.length,
+                      listId,
+                      () => {
+                        const existingSlugs = items.map(slugFromPath);
+                        setAddDialog({
+                          domain: "content",
+                          subDir: group,
+                          existingSlugs,
+                        });
+                      },
+                      undefined,
+                      "Content",
+                    )}
                     {!collapsed && (
                       <Box
                         id={listId}
@@ -1255,6 +1276,7 @@ export function Sidebar({
               listId,
               () => add.open(),
               add.label,
+              "Application context",
             )}
             {!collapsed && (
               <Box

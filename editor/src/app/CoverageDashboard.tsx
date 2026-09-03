@@ -40,6 +40,7 @@ import {
   type Domain,
   type Status,
 } from "../lib/coverageLoader";
+import { STATE_FOR_STATUS, STATE_LABEL } from "../lib/nomenclature";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 
@@ -55,12 +56,9 @@ const STATUS_COLOR: Record<Status, "gray" | "amber" | "blue" | "green"> = {
   inherited: "blue",
 };
 
-const STATUS_LABEL: Record<Status, string> = {
-  "not-started": "—",
-  draft: "draft",
-  approved: "ready",
-  inherited: "inherited",
-};
+// One vocabulary with the workspace. `not-started` used to render as an
+// em-dash here, which is a state a reader cannot read.
+const STATUS_LABEL: Record<Status, string> = STATE_FOR_STATUS;
 
 const DOMAIN_LABEL: Record<Domain, string> = {
   content: "Content",
@@ -144,7 +142,8 @@ export function CoverageDashboard({
         Coverage
       </Heading>
       <Text size="2" color="gray" mb="3" as="p">
-        {counts!.authored} authored · {counts!.unstarted} unstarted ·{" "}
+        {counts!.authored} {STATE_LABEL.draft.toLowerCase()} ·{" "}
+        {counts!.unstarted} {STATE_LABEL.empty.toLowerCase()} ·{" "}
         {counts!.total} eligible components. Click a component name to open its
         details, click a status cell to edit that guidance, or click{" "}
         <em>Start authoring</em> on an unstarted row to begin.
@@ -158,8 +157,10 @@ export function CoverageDashboard({
               <Text weight="medium">{DOMAIN_LABEL[d]}</Text>
               <Text>
                 {" · "}
-                {c.authored}/{counts!.total} authored
-                {c.inherited > 0 ? ` · ${c.inherited} inherited` : ""}
+                {c.authored}/{counts!.total} {STATE_LABEL.draft.toLowerCase()}
+                {c.inherited > 0
+                  ? ` · ${c.inherited} ${STATE_LABEL.inherited.toLowerCase()}`
+                  : ""}
               </Text>
             </Badge>
           );
@@ -229,7 +230,9 @@ export function CoverageDashboard({
                       title={
                         isGhost
                           ? "Click Start authoring to add a stub _meta.yml"
-                          : `Status: ${entry.status} → ${target}`
+                          : // The raw substrate key used to reach the tooltip
+                            // of the very cell whose badge says "Empty".
+                            `Status: ${STATUS_LABEL[entry.status] ?? entry.status} → ${target}`
                       }
                     >
                       <Badge

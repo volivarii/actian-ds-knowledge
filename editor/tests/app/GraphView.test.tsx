@@ -5,7 +5,8 @@ import "../setup-dom";
 import { render, cleanup, fireEvent } from "@testing-library/react";
 import React from "react";
 import { Theme } from "@radix-ui/themes";
-import { GraphView, EDGE_TYPE_LABEL } from "../../src/app/GraphView";
+import { GraphView } from "../../src/app/GraphView";
+import { linkLabel, THING_LABEL, LINK_LABEL } from "../../src/lib/nomenclature";
 import { layoutNeighborhood } from "../../src/substrate/neighborhoodLayout";
 import { buildGraphIndex } from "../../src/substrate/graphIndex";
 
@@ -75,7 +76,7 @@ test("renders each placed node's title", () => {
 test("nodes are focusable buttons whose accessible name includes the type, not color", () => {
   const { getByRole } = renderView();
   // aria-label carries the type → non-color encoding (WCAG 1.4.1)
-  getByRole("button", { name: /Contrast.*Accessibility criterion/i });
+  getByRole("button", { name: /Contrast.*Criterion/i });
   cleanup();
 });
 
@@ -91,7 +92,7 @@ test("toggling a node-type legend filter hides that type's nodes", () => {
   const { getByRole, queryAllByText, container } = renderView();
   // legend toggle is labeled with the human type label
   fireEvent.click(
-    getByRole("button", { name: /Toggle Accessibility criterion/i }),
+    getByRole("button", { name: /Toggle Criterion/i }),
   );
   // After toggle, no SVG <text> element should render "Contrast"
   const svgTexts = Array.from(container.querySelectorAll("svg text"));
@@ -163,9 +164,9 @@ test("Reset view button clears the legend filter (hidden node reappears)", () =>
       (el) => el.textContent,
     );
   }
-  // hide Accessibility criterion nodes
+  // hide Criterion nodes
   fireEvent.click(
-    getByRole("button", { name: /Toggle Accessibility criterion/i }),
+    getByRole("button", { name: /Toggle Criterion/i }),
   );
   assert.ok(
     !getSvgTextContents().includes("Contrast"),
@@ -195,9 +196,9 @@ test("toggling a node type removes edges touching that type's nodes", () => {
   const { getByRole, container } = renderView();
   const linesBefore = container.querySelectorAll("line").length;
   assert.ok(linesBefore > 0, "there should be edges initially");
-  // hide Accessibility criterion → removes edges to/from the a11y node
+  // hide Criterion → removes edges to/from the a11y node
   fireEvent.click(
-    getByRole("button", { name: /Toggle Accessibility criterion/i }),
+    getByRole("button", { name: /Toggle Criterion/i }),
   );
   const linesAfter = container.querySelectorAll("line").length;
   assert.ok(
@@ -212,13 +213,22 @@ test("toggling a node type removes edges touching that type's nodes", () => {
 // Build a multi-edge-type fixture: button→contrast (a11y_ref) + button→action (in_category)
 // These are the same as the shared `index` / `layout` used above.
 
-test("EDGE_TYPE_LABEL exports human labels for known edge types", () => {
-  assert.equal(EDGE_TYPE_LABEL["a11y_ref"], "Accessibility");
-  assert.equal(EDGE_TYPE_LABEL["foundations_ref"], "Foundation");
-  assert.equal(EDGE_TYPE_LABEL["motion_ref"], "Motion");
-  assert.equal(EDGE_TYPE_LABEL["related"], "Related");
-  assert.equal(EDGE_TYPE_LABEL["in_category"], "Category");
-  assert.equal(EDGE_TYPE_LABEL["narrower"], "Narrower");
+test("the edge legend speaks the nomenclature, not a private copy", () => {
+  // EDGE_TYPE_LABEL was a fifth copy: six of the eleven real edge types were
+  // missing so several filters read an indistinguishable "Related", and
+  // motion_ref: "Motion" collided with the Thing word for motion_pattern —
+  // putting two different controls called "Motion" in this view's two legends.
+  assert.equal(linkLabel("a11y_ref", "out"), LINK_LABEL.compliance.out);
+  assert.equal(linkLabel("in_category", "out"), LINK_LABEL.membership.out);
+  assert.equal(linkLabel("related", "out"), LINK_LABEL.association.out);
+  // The collision is gone: no edge word equals a Thing word.
+  const things = new Set(Object.values(THING_LABEL));
+  for (const t of ["a11y_ref", "foundations_ref", "motion_ref", "related", "in_category", "narrower"]) {
+    assert.ok(
+      !things.has(linkLabel(t, "out")),
+      `edge "${t}" renders "${linkLabel(t, "out")}", which is also a Thing word`,
+    );
+  }
 });
 
 test("edge-type legend section renders with human labels, not raw keys", () => {
@@ -228,8 +238,8 @@ test("edge-type legend section renders with human labels, not raw keys", () => {
   const toolbarText = toolbar!.textContent ?? "";
   // Human labels should be present
   assert.ok(
-    toolbarText.includes("Accessibility"),
-    'should show "Accessibility" label',
+    toolbarText.includes("Must follow"),
+    'should show the compliance edge word',
   );
   assert.ok(toolbarText.includes("Category"), 'should show "Category" label');
   // Raw keys must NOT appear
@@ -247,7 +257,7 @@ test("toggling an edge-type chip removes that type's lines", () => {
   assert.ok(linesBefore > 0, "there should be edges initially");
   // toggle Accessibility (a11y_ref) edges off
   const btn = getAllByRole("button", {
-    name: /Toggle Accessibility relationships/i,
+    name: /Toggle Must follow relationships/i,
   });
   assert.ok(btn.length > 0, "edge-type toggle button should exist");
   fireEvent.click(btn[0]!);
@@ -266,7 +276,7 @@ test("toggling an edge type hides floating (non-focus) nodes with no remaining e
   const { getAllByRole, container } = renderView();
   // Hide a11y_ref edges
   const btn = getAllByRole("button", {
-    name: /Toggle Accessibility relationships/i,
+    name: /Toggle Must follow relationships/i,
   });
   fireEvent.click(btn[0]!);
   const svgTexts = Array.from(container.querySelectorAll("svg text")).map(
@@ -289,7 +299,7 @@ test("Reset clears edge-type filter so hidden edge and its node reappear", () =>
   }
   // Hide a11y_ref
   const btn = getAllByRole("button", {
-    name: /Toggle Accessibility relationships/i,
+    name: /Toggle Must follow relationships/i,
   });
   fireEvent.click(btn[0]!);
   assert.ok(
@@ -379,8 +389,10 @@ test("clamps the active node when the visible set shrinks after a filter toggle"
   // Hiding the 'category' node type removes the Action node, shrinking the
   // visible set; the clamp must leave exactly one tabIndex=0 (no stale/
   // out-of-range active index, no element with multiple actives).
-  // Anchored: the node-type chip is exactly "Toggle Category" (the edge-type
-  // chip is "Toggle Category relationships" — don't match that one).
+  // The two legends no longer share a word at all: the node-type chip is
+  // "Toggle Category" and the edge chip is now "Toggle Part of relationships".
+  // Before the nomenclature they were "Category" and "Category relationships",
+  // and motion_ref/motion_pattern collided outright on "Motion".
   fireEvent.click(r.getByRole("button", { name: /^Toggle Category$/i }));
   gs = getNodeGs(r.container);
   const zeros = gs.filter((g) => g.tabIndex === 0);
@@ -473,5 +485,68 @@ test("compact mode hides the filter toolbar but still renders the graph", () => 
     "no filter toolbar in compact mode",
   );
   assert.ok(container.querySelector("svg"), "svg still renders");
+  cleanup();
+});
+
+test("the relationship filter offers one toggle per word, never duplicates", () => {
+  // The regression this locks out. The legend used to render one chip per RAW
+  // edge type while labelling them with the collapsed vocabulary, so a node
+  // with a11y_ref + foundations_ref + motion_ref showed three separate buttons
+  // all reading "Must follow", with identical accessible names, and sorted
+  // non-adjacently. 51 of the graph's nodes hit that.
+  const multi = buildGraphIndex({
+    nodes: [
+      { id: "component:button", type: "component", title: "Button" },
+      { id: "a11y:contrast", type: "a11y_criterion", title: "Contrast" },
+      { id: "foundation:spacing", type: "foundation_section", title: "Spacing" },
+      { id: "motion:fade", type: "motion_pattern", title: "Fade" },
+    ],
+    edges: [
+      { source: "component:button", target: "a11y:contrast", type: "a11y_ref" },
+      { source: "component:button", target: "foundation:spacing", type: "foundations_ref" },
+      { source: "component:button", target: "motion:fade", type: "motion_ref" },
+    ],
+  });
+  const r = render(
+    <Theme>
+      <GraphView layout={layoutNeighborhood("component:button", multi, { depth: 1 })} />
+    </Theme>,
+  );
+  const names = r
+    .getAllByRole("button")
+    .map((el) => el.getAttribute("aria-label"))
+    .filter((n): n is string => !!n && n.endsWith("relationships"));
+  assert.deepEqual(
+    names,
+    ["Toggle Must follow relationships"],
+    `three compliance edge types must collapse to ONE toggle, got ${names.join(" | ")}`,
+  );
+  cleanup();
+});
+
+test("hiding a relationship hides every edge type that shares its word", () => {
+  const multi = buildGraphIndex({
+    nodes: [
+      { id: "component:button", type: "component", title: "Button" },
+      { id: "a11y:contrast", type: "a11y_criterion", title: "Contrast" },
+      { id: "foundation:spacing", type: "foundation_section", title: "Spacing" },
+    ],
+    edges: [
+      { source: "component:button", target: "a11y:contrast", type: "a11y_ref" },
+      { source: "component:button", target: "foundation:spacing", type: "foundations_ref" },
+    ],
+  });
+  const r = render(
+    <Theme>
+      <GraphView layout={layoutNeighborhood("component:button", multi, { depth: 1 })} />
+    </Theme>,
+  );
+  assert.equal(r.container.querySelectorAll("line").length, 2);
+  fireEvent.click(r.getByRole("button", { name: /Toggle Must follow relationships/i }));
+  assert.equal(
+    r.container.querySelectorAll("line").length,
+    0,
+    "one click on the word must hide both edge types it names",
+  );
   cleanup();
 });

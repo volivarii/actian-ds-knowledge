@@ -89,14 +89,20 @@ const COMPONENT_DOMAINS: ReadonlyArray<readonly [string, string]> = [
 ];
 
 /**
- * One segment per section of the navigation, named as the sidebar names it.
+ * One segment per section of the navigation, named as the navigation names it.
  *
- * Two entries need their reason recorded. `app-context/src/patterns` is
- * `#/feature/` because the navigation calls those records Features, which is
- * also what keeps them from colliding with the content patterns. And
+ * Two entries have a segment that is not their label, for the same reason.
  * `app-context/src/apps` is `#/app/` because `#/product/` is taken by
- * `content/src/product`: the product has two sections a reader would call
- * Product, and the URL cannot.
+ * `content/src/product`. And `app-context/src/patterns` is `#/ux-pattern/`
+ * even though the navigation calls those records Patterns, because
+ * `#/pattern/` has named `content/src/patterns` since before this table
+ * existed and is a published address (see CHANGELOG). Two sections a reader
+ * would call Patterns, and the URL cannot have both.
+ *
+ * The segment does not have to match the label — the address is a permanent
+ * identifier, the label is copy. What it must never do is CHANGE OCCUPANT: a
+ * previously-shared `#/pattern/forms` has to keep opening the file it named,
+ * and no alias can restore it once another directory claims the segment.
  *
  * Ordered so `components/src/categories` is claimed before the component rule,
  * which would otherwise read `categories` as a component slug.
@@ -108,11 +114,25 @@ const DIRS = [
   ["product", "content/src/product"],
   ["app", "app-context/src/apps"],
   ["entity", "app-context/src/entities"],
-  ["feature", "app-context/src/patterns"],
+  ["ux-pattern", "app-context/src/patterns"],
   ["foundations", "foundations/src"],
   ["accessibility", "accessibility/src"],
   ["content", "content/src"],
 ] as const satisfies ReadonlyArray<readonly [string, string]>;
+
+/**
+ * Addresses this app no longer MINTS but must still RESOLVE.
+ *
+ * MIGRATIONS.md Rule 1, parallel change: a link pasted into Slack before the
+ * rename has to keep opening the record it named. Read by `pathFromHash` only,
+ * never by `hashFor`, so nothing new is minted with a retired segment and the
+ * two tables cannot drift into minting an address the resolver would send
+ * somewhere else.
+ */
+const RETIRED_DIRS: ReadonlyArray<readonly [string, string]> = [
+  // The editor called app-context patterns "Features" until 2026-09-02.
+  ["feature", "app-context/src/patterns"],
+];
 
 /**
  * Every segment an address can start with.
@@ -277,7 +297,9 @@ export function pathFromHash(hash: string): string | null {
   if (rest.length !== 1) return null;
   const slug = rest[0];
   if (!slug || !SLUG_RE.test(slug)) return null;
-  const dir = DIRS.find(([segment]) => segment === head);
+  const dir =
+    DIRS.find(([segment]) => segment === head) ??
+    RETIRED_DIRS.find(([segment]) => segment === head);
   return dir ? `${dir[1]}/${slug}.md` : null;
 }
 

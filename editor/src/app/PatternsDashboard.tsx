@@ -63,7 +63,7 @@ function PatternTable({
       <Table.Header>
         <Table.Row>
           <Table.ColumnHeaderCell>Pattern</Table.ColumnHeaderCell>
-          <Table.ColumnHeaderCell>Apps</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Products</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>When to use it</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Components</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Captures</Table.ColumnHeaderCell>
@@ -243,7 +243,7 @@ function AppBlock({
         rows={app.unreachedPatterns}
         onOpenFile={onOpenFile}
         onOpenRecipe={onOpenRecipe}
-        emptyText="Every pattern claiming this app is named by a use case."
+        emptyText="Every pattern claiming this product is named by a use case."
       />
     </Box>
   );
@@ -362,12 +362,13 @@ export function PatternsDashboard({
         </Box>
       )}
       <Text size="2" color="gray" mb="4" as="p">
-        {summary!.patterns} patterns across {summary!.apps} apps ·{" "}
+        {summary!.patterns} patterns across {summary!.apps} products ·{" "}
         {summary!.useCases} use cases naming {summary!.namedByAUseCase} of them
         · {summary!.captures} captured page recipes on {summary!.withCapture}{" "}
         patterns · {summary!.noWhen} with no when clause, the sentence that
-        tells a pattern from its siblings. A pattern claiming two apps is listed
-        under both, so the per-app counts below overlap and do not sum to{" "}
+        tells a pattern from its siblings. A pattern claiming two products is
+        listed under both, so the per-product counts below overlap and do not
+        sum to{" "}
         {summary!.patterns}.
       </Text>
 
@@ -389,7 +390,7 @@ export function PatternsDashboard({
           <Callout.Text>
             {index.recipesNamingNoPattern.length} captured recipe
             {index.recipesNamingNoPattern.length === 1 ? "" : "s"} declare no
-            pattern, so nothing links them to an app:{" "}
+            pattern, so nothing links them to a product:{" "}
             {index.recipesNamingNoPattern.map((r) => r.slug).join(", ")}
           </Callout.Text>
         </Callout.Root>
@@ -399,8 +400,8 @@ export function PatternsDashboard({
         <Callout.Root color="red" mb="4">
           <Callout.Text>
             {index.patternsClaimingUnknownApps.length} pattern
-            {index.patternsClaimingUnknownApps.length === 1 ? "" : "s"} claim an
-            app the context does not define:{" "}
+            {index.patternsClaimingUnknownApps.length === 1 ? "" : "s"} claim a
+            product the context does not define:{" "}
             {index.patternsClaimingUnknownApps
               .map((e) => `${e.pattern} → ${e.apps.join(", ")}`)
               .join("; ")}

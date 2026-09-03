@@ -6,9 +6,9 @@ import { listContextRecords } from "../../src/lib/contextRecords";
 // snapshot: the counts move whenever a product ships, the shape must not.
 const records = listContextRecords();
 
-test("lists both entities and features", () => {
+test("lists both entities and patterns", () => {
   assert.ok(records.some((r) => r.kind === "entity"));
-  assert.ok(records.some((r) => r.kind === "feature"));
+  assert.ok(records.some((r) => r.kind === "pattern"));
 });
 
 test("every record carries a label and an authorable source path", () => {
@@ -41,7 +41,7 @@ test("a known shared record reports the products that depend on it", () => {
 });
 
 test("records are sorted by label within kind, for a stable picker", () => {
-  for (const kind of ["entity", "feature"] as const) {
+  for (const kind of ["entity", "pattern"] as const) {
     const labels = records.filter((r) => r.kind === kind).map((r) => r.label);
     assert.deepEqual(labels, [...labels].sort((a, b) => a.localeCompare(b)));
   }

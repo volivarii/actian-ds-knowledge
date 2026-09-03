@@ -226,7 +226,7 @@ test("Sidebar: a record that cannot be joined is reported, product still staged"
   }
 });
 
-// Entities and Features carry their own create affordance, and like Products
+// Entities and Patterns carry their own create affordance, and like Products
 // they must be reachable when the layer is still empty.
 test("Sidebar: every application-context section offers a way to create one", async () => {
   render(
@@ -246,10 +246,12 @@ test("Sidebar: every application-context section offers a way to create one", as
   );
   await waitFor(() => screen.getByText("Products"));
   assert.ok(screen.getByText("Entities"));
-  assert.ok(screen.getByText("Features"));
+  // Scoped by key: "Patterns" is now the label of two sections — Content's
+  // and Application context's — and the parent is what tells them apart.
+  assert.ok(document.getElementById("sidebar-section-appContextPatterns-header"));
   assert.ok(screen.getByRole("button", { name: "New product" }));
   assert.ok(screen.getByRole("button", { name: "New entity" }));
-  assert.ok(screen.getByRole("button", { name: "New feature" }));
+  assert.ok(screen.getByRole("button", { name: "New pattern" }));
 });
 
 test("Sidebar: creating an entity stages it against the chosen product", async () => {

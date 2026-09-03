@@ -30,7 +30,7 @@ const RECORDS: ContextRecord[] = [
     usedBySlugs: [],
   },
   {
-    kind: "feature",
+    kind: "pattern",
     slug: "lineage-graph",
     label: "Lineage graph",
     path: "app-context/src/patterns/lineage-graph.md",
@@ -38,7 +38,7 @@ const RECORDS: ContextRecord[] = [
     usedBySlugs: ["studio"],
   },
   {
-    kind: "feature",
+    kind: "pattern",
     slug: "import-wizard",
     label: "Import wizard",
     path: "app-context/src/patterns/import-wizard.md",
@@ -150,7 +150,7 @@ test("NewProductDialog: confirming returns the product and its claimed records",
 
 test("NewProductDialog: the filter narrows the record list", () => {
   const r = renderDialog();
-  fireEvent.change(r.getByLabelText("Filter features and entities"), {
+  fireEvent.change(r.getByLabelText("Filter patterns and entities"), {
     target: { value: "lineage" },
   });
   assert.ok(r.queryByRole("checkbox", { name: /^Lineage graph/ }));
@@ -183,6 +183,6 @@ test("NewProductDialog: two records used by one product reads correctly", () => 
 
 test("NewProductDialog: an empty corpus says so instead of blaming the filter", () => {
   const r = renderDialog({ records: [] });
-  assert.ok(r.getByText(/No features or entities have been authored yet/i));
+  assert.ok(r.getByText(/No patterns or entities have been authored yet/i));
   assert.equal(r.queryByText(/Nothing matches that filter/i), null);
 });

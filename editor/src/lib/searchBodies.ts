@@ -49,7 +49,7 @@ const KIND_FOR_SEGMENT = {
   accessibility: "accessibility",
   app: "app-context",
   entity: "app-context",
-  feature: "app-context",
+  "ux-pattern": "app-context",
   writing: "content",
   pattern: "content",
   product: "content",

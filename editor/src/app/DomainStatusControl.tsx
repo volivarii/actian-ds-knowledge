@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import { Badge, Button, Flex, Text } from "@radix-ui/themes";
+import { STATE_LABEL } from "../lib/nomenclature";
 import {
   readDeclaredStatus,
   setDomainStatus,
@@ -78,7 +79,7 @@ export function DomainStatusControl({
       {view === "approved" ? (
         <>
           <Badge color="green" variant="soft">
-            Approved
+            {STATE_LABEL.approved}
           </Badge>
           <Button
             size="1"
@@ -94,7 +95,7 @@ export function DomainStatusControl({
       ) : (
         <>
           <Badge color="amber" variant="soft">
-            Draft
+            {STATE_LABEL.draft}
           </Badge>
           <Button
             size="1"

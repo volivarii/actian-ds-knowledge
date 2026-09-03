@@ -22,7 +22,7 @@ const RECORDS: ContextRecord[] = [
     usedBySlugs: ["explorer", "studio"],
   },
   {
-    kind: "feature",
+    kind: "pattern",
     slug: "lineage-graph",
     label: "Lineage graph",
     path: "app-context/src/patterns/lineage-graph.md",
@@ -94,7 +94,7 @@ test("NewContextRecordDialog: creating returns the record and its products", () 
   assert.deepEqual(v.apps, ["studio"]);
 });
 
-// The collision path is the feature, not an error branch.
+// The collision path is the flow, not an error branch.
 test("NewContextRecordDialog: a taken name offers the existing record instead", () => {
   const r = renderDialog();
   typeName(r, "Dataset");
@@ -125,23 +125,23 @@ test("NewContextRecordDialog: a product already listed is marked as such", () =>
   assert.ok(r.getByText("already listed"));
 });
 
-test("NewContextRecordDialog: only features offer the components picker", () => {
+test("NewContextRecordDialog: only patterns offer the components picker", () => {
   const entity = renderDialog();
   assert.equal(entity.queryByLabelText("Filter components"), null);
   cleanup();
 
-  const feature = renderDialog({ kind: "feature" });
-  assert.ok(feature.getByLabelText("Filter components"));
-  assert.ok(feature.getByRole("checkbox", { name: "Button" }));
+  const pattern = renderDialog({ kind: "pattern" });
+  assert.ok(pattern.getByLabelText("Filter components"));
+  assert.ok(pattern.getByRole("checkbox", { name: "Button" }));
 });
 
-test("NewContextRecordDialog: a feature carries its picked components", () => {
+test("NewContextRecordDialog: a pattern carries its picked components", () => {
   let got: NewContextRecordValue | null = null;
-  const r = renderDialog({ kind: "feature", onConfirm: (v) => (got = v) });
+  const r = renderDialog({ kind: "pattern", onConfirm: (v) => (got = v) });
   typeName(r, "Import wizard");
   fireEvent.click(r.getByRole("checkbox", { name: "Studio" }));
   fireEvent.click(r.getByRole("checkbox", { name: "Table" }));
-  fireEvent.click(r.getByRole("button", { name: "New feature" }));
+  fireEvent.click(r.getByRole("button", { name: "New pattern" }));
 
   assert.ok(got);
   const v: NewContextRecordValue = got;
@@ -154,10 +154,10 @@ test("NewContextRecordDialog: with no products it says so instead of offering no
   assert.ok(r.getByText(/No products yet/i));
 });
 
-// An entity and a feature cannot share a name: they are one namespace, and the
+// An entity and a pattern cannot share a name: they are one namespace, and the
 // dialog exists to stop exactly this kind of quiet forking.
 test("NewContextRecordDialog: a name taken by the other kind is refused, not joined", () => {
-  const r = renderDialog({ kind: "feature" });
+  const r = renderDialog({ kind: "pattern" });
   typeName(r, "Dataset");
   const note = r.getByTestId("cross-kind").textContent ?? "";
   assert.match(note, /entity is\s+already called/);
@@ -166,7 +166,7 @@ test("NewContextRecordDialog: a name taken by the other kind is refused, not joi
   assert.equal(r.queryByRole("button", { name: "Use the existing one" }), null);
   fireEvent.click(r.getByRole("checkbox", { name: "Studio" }));
   assert.equal(
-    (r.getByRole("button", { name: "New feature" }) as HTMLButtonElement)
+    (r.getByRole("button", { name: "New pattern" }) as HTMLButtonElement)
       .disabled,
     true,
     "a cross-kind clash must not be submittable",

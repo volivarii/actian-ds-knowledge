@@ -1,5 +1,5 @@
 // The application-context records a new product can reuse: the entities and
-// features already authored, each with the products that depend on them.
+// patterns already authored, each with the products that depend on them.
 //
 // Read from the baked graph, so this is "as of the last merge" like every
 // other graph-derived surface in the editor. A record authored in an open PR
@@ -9,7 +9,7 @@ import { graphNodes } from "../substrate/taxonomyAssets";
 import { bakedGraphIndex } from "../substrate/graphIndex";
 
 export interface ContextRecord {
-  kind: "entity" | "feature";
+  kind: "entity" | "pattern";
   slug: string;
   label: string;
   /** Authorable source file. */
@@ -23,14 +23,14 @@ export interface ContextRecord {
   pending?: boolean;
 }
 
-const KIND_BY_NODE_TYPE: Record<string, "entity" | "feature"> = {
+const KIND_BY_NODE_TYPE: Record<string, "entity" | "pattern"> = {
   app_entity: "entity",
-  ux_pattern: "feature",
+  ux_pattern: "pattern",
 };
 
-const DIR_BY_KIND: Record<"entity" | "feature", string> = {
+const DIR_BY_KIND: Record<"entity" | "pattern", string> = {
   entity: "entities",
-  feature: "patterns",
+  pattern: "patterns",
 };
 
 /** Strips the `entity:` / `pattern:` node-id prefix. */
@@ -67,7 +67,7 @@ export function listEntities(): GraphPick[] {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-/** DS components a feature can declare it composes. */
+/** DS components a pattern can declare it composes. */
 export function listComponents(): GraphPick[] {
   return graphNodes
     .filter((n) => n.type === "component")

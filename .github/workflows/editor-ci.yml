@@ -29,6 +29,14 @@ on:
       # app-context never triggers this lane, so the address round-trip and
       # collision gates never run and every #/feature/ address can die green.
       - 'app-context/src/**'
+      # nomenclature.test.ts joins the editor's vocabulary to the baked graph in
+      # BOTH directions: every edge/node type the graph emits must have a word,
+      # and no word may be declared for a type the graph never emits. A graph
+      # re-derive that adds or drops an edge type touches no editor/ file, so
+      # without this the guards can only go red weeks later on an unrelated
+      # PR whose author did not cause it — the same vacuity this list already
+      # exists to prevent for the rich-safe set.
+      - 'graph/dist/**'
       - 'components/src/**'
       - 'domains.json'
       - 'scripts/lib/wysiwyg-registry.js'

@@ -12,19 +12,14 @@ import {
   type Neighbor,
 } from "../substrate/graphIndex";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
+import { relationGroupLabel, rankedLabels } from "../lib/relationGroups";
 
-// Human, doctrine-safe labels for INCOMING edges (describe the citing relationship).
-// Wording is first-pass — refine in the dogfood pass.
-const INCOMING_LABEL: Record<string, string> = {
-  a11y_ref: "Cited as an accessibility requirement by",
-  foundations_ref: "Cited as a foundation by",
-  motion_ref: "Cited as a motion pattern by",
-  related: "Related content",
-  in_category: "Components in this category",
-  narrower: "Broader topic",
-};
+// The word for an INCOMING edge. Delegates to the nomenclature rather than
+// keeping a fourth copy of the relation vocabulary: this map used to say
+// "Cited as an accessibility requirement by" where the relations rail said
+// "Accessibility for" and the graph tab said `a11y_ref`, all for one edge.
 function labelFor(edgeType: string): string {
-  return INCOMING_LABEL[edgeType] ?? "Referenced by";
+  return relationGroupLabel(edgeType, "in");
 }
 
 /** Rows shown per group before "Show all". Tuned so only true hubs
@@ -63,18 +58,18 @@ export function NeighborhoodPanel({
           Nothing references this yet.
         </Text>
       ) : (
-        groupByEdgeType(refs).map(([edgeType, items]) => {
-          const isOpen = expanded.has(edgeType);
+        groupByRelationship(refs).map(([label, items]) => {
+          const isOpen = expanded.has(label);
           const shown = isOpen ? items : items.slice(0, GROUP_CAP);
           return (
-            <Box key={edgeType} mt="2">
+            <Box key={label} mt="2">
               <Text size="1" color="gray">
-                {labelFor(edgeType)}
+                {label}
               </Text>
               <Flex direction="column" gap="1" mt="1" align="start">
                 {shown.map((n) => (
                   <NeighborTitle
-                    key={`${edgeType}:${n.id}`}
+                    key={`${label}:${n.id}`}
                     neighbor={n}
                     onNavigate={onNavigate}
                   />
@@ -86,8 +81,8 @@ export function NeighborhoodPanel({
                     onClick={() =>
                       setExpanded((prev) => {
                         const next = new Set(prev);
-                        if (next.has(edgeType)) next.delete(edgeType);
-                        else next.add(edgeType);
+                        if (next.has(label)) next.delete(label);
+                        else next.add(label);
                         return next;
                       })
                     }
@@ -152,12 +147,31 @@ function NeighborTitle({
   );
 }
 
-function groupByEdgeType(refs: Neighbor[]): Array<[string, Neighbor[]]> {
+/**
+ * Buckets by the WORD, not by the edge type.
+ *
+ * The vocabulary collapsed several edge types onto one word — `composed_of`
+ * and `uses_component` are both "Used in" inbound — so grouping by edge type
+ * rendered two separate sections carrying the identical heading, each with its
+ * own "Show all". A component like Button has both, and 20 nodes in the current
+ * graph do. `relationGroups.groupGraphNeighbors` already buckets by label; this
+ * panel was pointed at the new vocabulary without being given the same merge.
+ */
+function groupByRelationship(refs: Neighbor[]): Array<[string, Neighbor[]]> {
   const groups = new Map<string, Neighbor[]>();
   for (const r of refs) {
-    const g = groups.get(r.edgeType) ?? [];
+    const label = labelFor(r.edgeType);
+    const g = groups.get(label) ?? [];
     g.push(r);
-    groups.set(r.edgeType, g);
+    groups.set(label, g);
   }
-  return [...groups.entries()];
+  // Ranked like the relations rail, not left in Map insertion order. Insertion
+  // order is whatever the graph index happened to emit, so the same seven words
+  // rendered in a different sequence on the two surfaces — and shifted between
+  // nodes with the same families.
+  const rank = (label: string) => {
+    const i = rankedLabels().indexOf(label);
+    return i === -1 ? rankedLabels().length : i;
+  };
+  return [...groups.entries()].sort(([a], [b]) => rank(a) - rank(b));
 }

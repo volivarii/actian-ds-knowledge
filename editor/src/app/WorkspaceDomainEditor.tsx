@@ -32,6 +32,7 @@ import { useCart } from "../drafts/useCart";
 import { buildMarkdownStub } from "../lib/markdownStubs";
 import { loadAnchorIndex } from "../lib/anchorIndex";
 import { computeRenameWarnings } from "../markdown-engine/anchorLinter";
+import { STATE_LABEL } from "../lib/nomenclature";
 import {
   domainFileName,
   domainPathFor,
@@ -361,7 +362,7 @@ function SaveIndicator({ state, inCart }: SaveIndicatorProps) {
   }
   return (
     <Badge color="gray" variant="soft" size="1">
-      Not started
+      {STATE_LABEL.empty}
     </Badge>
   );
 }

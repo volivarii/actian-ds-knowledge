@@ -2,7 +2,7 @@
 //
 // The dialog is where the common-vs-context boundary becomes visible. Naming a
 // product and giving it a header and navigation is entirely the team's own
-// business. Reusing a feature or an entity that other products already depend
+// business. Reusing a pattern or an entity that other products already depend
 // on is not: that write lands in a shared file. Both happen in one pull
 // request, and the dialog says plainly which is which rather than hiding the
 // second behind the first.
@@ -46,7 +46,7 @@ export interface NewProductDialogProps {
 
 const KIND_LABEL: Record<ContextRecord["kind"], string> = {
   entity: "Entity",
-  feature: "Feature",
+  pattern: "Pattern",
 };
 
 /** "Studio", "Studio and Explorer", "Studio, Explorer and Administration". */
@@ -128,7 +128,7 @@ export function NewProductDialog({
         <Dialog.Title>New product</Dialog.Title>
         <Dialog.Description size="2" color="gray" mb="3">
           A product is your app&apos;s own context: what it is, who uses it, and
-          the features and entities it works with. It sits alongside the design
+          the patterns and entities it works with. It sits alongside the design
           system rather than inside it.
         </Dialog.Description>
 
@@ -204,13 +204,13 @@ export function NewProductDialog({
 
           <Box>
             <Text as="div" size="2" weight="bold" mb="1">
-              Features and entities it uses
+              Patterns and entities it uses
             </Text>
             <Text as="div" size="1" color="gray" mb="2">
               Optional, and you can add more later. Shown as of the last merge.
             </Text>
             <TextField.Root
-              aria-label="Filter features and entities"
+              aria-label="Filter patterns and entities"
               placeholder="Filter"
               value={filter}
               mb="2"
@@ -245,7 +245,7 @@ export function NewProductDialog({
                 {visible.length === 0 && (
                   <Text size="1" color="gray">
                     {records.length === 0
-                      ? "No features or entities have been authored yet."
+                      ? "No patterns or entities have been authored yet."
                       : "Nothing matches that filter."}
                   </Text>
                 )}

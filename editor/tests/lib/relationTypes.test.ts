@@ -46,14 +46,21 @@ test("an unrecognized type falls back to the neutral gray var", () => {
   assert.equal(fallback, "var(--gray-8)");
 });
 
-test("relationTypeLabel gives human singular labels; unknown falls back to Node", () => {
+test("relationTypeLabel speaks the nomenclature, not its own copy", () => {
+  // Four labels changed with the nomenclature: each was a category phrase
+  // ("Application", "Accessibility criterion", "Content topic", "Motion
+  // pattern") where the vocabulary wants a single noun.
   assert.equal(relationTypeLabel("component"), "Component");
   assert.equal(relationTypeLabel("ux_pattern"), "Pattern");
-  assert.equal(relationTypeLabel("a11y_criterion"), "Accessibility criterion");
+  assert.equal(relationTypeLabel("app"), "Product");
+  assert.equal(relationTypeLabel("a11y_criterion"), "Criterion");
+  assert.equal(relationTypeLabel("content_topic"), "Topic");
+  assert.equal(relationTypeLabel("motion_pattern"), "Motion");
   assert.equal(relationTypeLabel("app_entity"), "Entity");
   assert.equal(relationTypeLabel("terminology_term"), "Term");
   assert.equal(relationTypeLabel("something-unknown"), "Node");
 });
+
 
 test("labels never leak internal snake_case keys", () => {
   for (const t of KNOWN_TYPES) {
