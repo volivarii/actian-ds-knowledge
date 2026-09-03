@@ -13,6 +13,7 @@ import {
   type RecipeDoc,
 } from "../../src/lib/patternIndex";
 import {
+  patternSlotsFor,
   PATTERN_SLOTS,
   ENTITY_SLOTS,
   PRODUCT_SLOTS,
@@ -550,4 +551,48 @@ test("a domain Slot's help names a component whose THAT domain is authored", () 
         `Authored by: ${withFile.join(", ")}. Help: "${slot.help}"`,
     );
   }
+});
+
+test("an unlistable captures directory drops the Pattern Capture Slot", () => {
+  // The Component Capture Slot already drops out when its index cannot be read.
+  // `loadRecipes` returned [] for a failed DIRECTORY LISTING, so a rate limit or
+  // a transient 5xx made every captureCount zero and the dashboard reported
+  // "Capture 0 of 31" with nothing said — the same lie, in the other half of
+  // one model.
+  const measured = patternSlotsFor(true).map((x) => x.key);
+  const unmeasured = patternSlotsFor(false).map((x) => x.key);
+  assert.ok(measured.includes("capture"));
+  assert.ok(!unmeasured.includes("capture"));
+  assert.deepEqual(unmeasured, measured.filter((k) => k !== "capture"));
+
+  // And the flag reaches the index from the loader's own signal.
+  const readable = buildPatternIndex(realDoc(), realRecipes(), true);
+  const unreadable = buildPatternIndex(realDoc(), [], false);
+  assert.equal(readable.recipesReadable, true);
+  assert.equal(unreadable.recipesReadable, false);
+  // Default is readable, so an existing caller is unaffected.
+  assert.equal(buildPatternIndex(realDoc(), []).recipesReadable, true);
+});
+
+test("an entity's products are filtered against the context, like a pattern's", () => {
+  // patternSlotRecords filters `apps` against the products the context defines,
+  // so a typo'd slug cannot count as a resolved link. The Entity Slot read the
+  // raw list, so the same typo would have counted as filled there.
+  const doc = {
+    apps: { studio: { label: "Studio" } },
+    patterns: {},
+    entities: {
+      real: { label: "Real", apps: ["studio"] },
+      typo: { label: "Typo", apps: ["studioo"] },
+    },
+  } as unknown as AppContextDoc;
+  const rs = entitySlotRecords(doc);
+  const partOf = ENTITY_SLOTS.find((x) => x.key === "part_of");
+  assert.ok(partOf);
+  assert.equal(partOf.filled(rs.find((r) => r.slug === "real")!), true);
+  assert.equal(
+    partOf.filled(rs.find((r) => r.slug === "typo")!),
+    false,
+    "an entity claiming a product that does not exist counts as filled",
+  );
 });

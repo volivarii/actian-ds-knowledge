@@ -219,6 +219,17 @@ export interface PatternIndex {
    * same file and there is no second request to make for them.
    */
   doc: AppContextDoc;
+  /**
+   * False when the recipes directory could not be listed.
+   *
+   * `loadRecipes` returns [] for a failed listing, which was harmless while
+   * captures were only chips on a row. As a MEASURE it is a lie with a number
+   * on it: a rate limit or a transient 5xx makes every `captureCount` zero and
+   * the dashboard reports "Capture 0 of 31" with nothing said. The Component
+   * Capture Slot already drops out when its index cannot be read; without this
+   * flag the two halves of one model behave differently on the same failure.
+   */
+  recipesReadable: boolean;
 }
 
 // --------------------------------------------------------------------- joining
@@ -254,6 +265,7 @@ function toRecipe(doc: RecipeDoc): PatternRecipe {
 export function buildPatternIndex(
   ctx: AppContextDoc,
   recipeDocs: RecipeDoc[],
+  recipesReadable = true,
 ): PatternIndex {
   const patternSlugs = new Set(Object.keys(ctx.patterns ?? {}));
   const recipes = (recipeDocs ?? []).map(toRecipe);
@@ -341,6 +353,7 @@ export function buildPatternIndex(
     recipesNamingNoPattern,
     patternsClaimingUnknownApps,
     doc: ctx,
+    recipesReadable,
   };
 }
 
@@ -348,11 +361,20 @@ export function buildPatternIndex(
 
 /** Read every captured page recipe. A directory that cannot be listed yields none. */
 export async function loadRecipes(gh: Octokit): Promise<RecipeDoc[]> {
+  return (await loadRecipesChecked(gh)).docs;
+}
+
+/** As `loadRecipes`, but says whether the DIRECTORY could be listed at all.
+ *  A caller turning captures into a number needs to tell "no captures" from
+ *  "could not look". */
+export async function loadRecipesChecked(
+  gh: Octokit,
+): Promise<{ docs: RecipeDoc[]; readable: boolean }> {
   let files: string[];
   try {
     files = await listFilesByGlob(gh, RECIPES_DIR, { extension: ".json" });
   } catch {
-    return [];
+    return { docs: [], readable: false };
   }
   const docs: RecipeDoc[] = [];
   for (const f of files) {
@@ -366,14 +388,14 @@ export async function loadRecipes(gh: Octokit): Promise<RecipeDoc[]> {
       // the place a join failure surfaces.
     }
   }
-  return docs;
+  return { docs, readable: true };
 }
 
 export async function loadPatternIndex(gh: Octokit): Promise<PatternIndex> {
   const [ctxText, recipes] = await Promise.all([
     getTextFile(gh, APP_CONTEXT_PATH),
-    loadRecipes(gh),
+    loadRecipesChecked(gh),
   ]);
   const ctx = JSON.parse(ctxText) as AppContextDoc;
-  return buildPatternIndex(ctx, recipes);
+  return buildPatternIndex(ctx, recipes.docs, recipes.readable);
 }

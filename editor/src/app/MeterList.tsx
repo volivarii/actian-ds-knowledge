@@ -13,7 +13,14 @@
 // attribute, so deleting the styling left complete Meters looking identical to
 // incomplete ones with the gate still green.
 
-import { Box, Flex, Heading, Text, Tooltip } from "@radix-ui/themes";
+import {
+  Box,
+  Flex,
+  Heading,
+  Text,
+  Tooltip,
+  VisuallyHidden,
+} from "@radix-ui/themes";
 import type { Meter } from "../lib/measure";
 
 export interface MeterListProps {
@@ -56,7 +63,7 @@ export function MeterList({
             key={m.key}
             className="meter-row"
             // Namespaced by group: `rule` is a Slot of both Pattern and Term,
-            // and `used_in` of both Pattern and Entity, so four MeterLists in
+            // and `part_of` of both Pattern and Entity, so four MeterLists in
             // one container gave `[data-meter="rule"]` two matches and
             // querySelector silently returned the Pattern row.
             data-meter={`${groupKey}:${m.key}`}
@@ -64,11 +71,27 @@ export function MeterList({
             align="center"
             gap="3"
           >
+            {/* The name is the tooltip trigger AND carries the help as its
+                accessible description. A Radix `Text` renders a plain span, so
+                a Tooltip alone left `Slot.help` — the only place a Slot's
+                meaning and its worked example are written — reachable by hover
+                only: a keyboard or screen-reader user read "Rule 14 of 31" with
+                no way to find out what Rule means. `tabIndex={0}` makes it
+                focusable so the tooltip opens on focus, and the description is
+                announced whether or not the tooltip ever renders. */}
             <Tooltip content={m.help}>
-              <Text size="2" style={{ minWidth: "8rem" }}>
+              <Text
+                size="2"
+                tabIndex={0}
+                aria-describedby={`meter-help-${groupKey}-${m.key}`}
+                style={{ minWidth: "8rem" }}
+              >
                 {m.name}
               </Text>
             </Tooltip>
+            <VisuallyHidden id={`meter-help-${groupKey}-${m.key}`}>
+              {m.help}
+            </VisuallyHidden>
             <Text size="2">
               {m.filled} of {m.total}
             </Text>

@@ -18,6 +18,7 @@ import { stringifyYaml } from "../form-engine/yamlSerializer";
 import { getTextFile, getTextFileWithSha } from "../app/githubApi";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import type { SubmissionCart } from "../drafts/SubmissionCart";
+import { SLOT_LABEL } from "./nomenclature";
 import { fetchLatestCommit, type CommitInfo } from "./derivedFields";
 
 export const DOMAINS = [
@@ -29,13 +30,21 @@ export const DOMAINS = [
 ] as const;
 export type Domain = (typeof DOMAINS)[number];
 
-export const DOMAIN_LABEL: Record<Domain, string> = {
-  content: "Content",
-  usage: "Usage",
-  design: "Design",
-  behavior: "Behavior",
-  tokens: "Tokens",
-};
+/**
+ * The five guidance domains, named from the controlled vocabulary.
+ *
+ * DERIVED, not restated: each domain is also a Component Slot, and the Meter on
+ * the coverage dashboard renders `SLOT_LABEL[domain]` a few lines from the
+ * badge that renders this. While these were two independent literal maps —
+ * three, counting a file-local copy in CoverageDashboard — changing "Behavior"
+ * in the vocabulary would have left the Meter saying one word and the badge and
+ * table header beside it saying another. That is the drift `nomenclature.ts`
+ * exists to prevent, and it had been reintroduced by the change that added the
+ * Slot words.
+ */
+export const DOMAIN_LABEL: Record<Domain, string> = Object.fromEntries(
+  DOMAINS.map((d) => [d, SLOT_LABEL[d]]),
+) as Record<Domain, string>;
 
 export const DOMAIN_HINT: Record<Domain, string> = {
   content: "Voice, tone, words to use, words to avoid for this component.",

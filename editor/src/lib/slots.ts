@@ -175,13 +175,17 @@ export interface EntitySlotRecord {
 }
 
 export function entitySlotRecords(doc: AppContextDoc): EntitySlotRecord[] {
+  const known = new Set(Object.keys(doc.apps ?? {}));
   return Object.entries(doc.entities ?? {})
     .map(([slug, e]) => ({
       slug,
       label: e.label ?? slug,
       propertyCount: (e.properties ?? []).length,
       relationshipVerbs: Object.keys(e.relationships ?? {}),
-      apps: e.apps ?? [],
+      // Filtered against the products the context defines, for the same reason
+      // patternSlotRecords filters: a typo'd slug would otherwise count as a
+      // resolved link and let the Meter report complete.
+      apps: (e.apps ?? []).filter((a) => known.has(a)),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 }
@@ -455,6 +459,20 @@ export const COMPONENT_SLOTS: Slot<ComponentSlotRecord>[] = [
  * somebody should go and fill. Every other Slot survives: one unreadable index
  * must not blank the rest of the table.
  */
+/**
+ * The Pattern table for a given measurement state, mirroring
+ * `componentSlotsFor`. When the recipes directory could not be listed, Capture
+ * is DROPPED rather than reported as zero — the same rule, because it is the
+ * same model.
+ */
+export function patternSlotsFor(
+  capturesMeasured: boolean,
+): Slot<PatternSlotRecord>[] {
+  return capturesMeasured
+    ? PATTERN_SLOTS
+    : PATTERN_SLOTS.filter((s) => s.key !== "capture");
+}
+
 export function componentSlotsFor(
   capturesMeasured: boolean,
 ): Slot<ComponentSlotRecord>[] {

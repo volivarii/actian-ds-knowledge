@@ -51,6 +51,7 @@ import { useCart } from "../drafts/useCart";
 import { measure } from "../lib/measure";
 import { componentSlotRecords, componentSlotsFor } from "../lib/slots";
 import { loadCapturedSlugs } from "../lib/loadMediaIndex";
+import { DOMAIN_LABEL } from "../lib/workspaceState";
 import { MeterList } from "./MeterList";
 
 export interface CoverageDashboardProps {
@@ -68,14 +69,6 @@ const STATUS_COLOR: Record<Status, "gray" | "amber" | "blue" | "green"> = {
 // One vocabulary with the workspace. `not-started` used to render as an
 // em-dash here, which is a state a reader cannot read.
 const STATUS_LABEL: Record<Status, string> = STATE_FOR_STATUS;
-
-const DOMAIN_LABEL: Record<Domain, string> = {
-  content: "Content",
-  usage: "Usage",
-  design: "Design",
-  behavior: "Behavior",
-  tokens: "Tokens",
-};
 
 export function CoverageDashboard({
   octokit,

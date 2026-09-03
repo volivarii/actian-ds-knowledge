@@ -233,9 +233,32 @@ test("the patterns dashboard renders the meters from the real corpus", async () 
     );
   });
   const text = container.textContent ?? "";
-  assert.ok(text.includes("26 of 30"), "Entity Properties meter missing");
-  assert.ok(text.includes("2 of 3"), "Product Navigation meter missing");
-  assert.ok(text.includes("33 of 33"), "Term meters missing");
+
+  // Every Meter, DERIVED from the corpus and matched on its own ROW, never with
+  // `text.includes` over the whole screen. Two failures made this necessary:
+  // the figures were pinned ("26 of 30", "2 of 3", "33 of 33"), so an author
+  // giving Explorer a sidebar turned the lane red on the improvement; and
+  // `"22 of 30".includes("2 of 3")` is TRUE, so the only Product-specific
+  // assertion in this file was satisfied by the Entity Link meter and could not
+  // fail on its subject — deleting the whole Product MeterList left it green.
+  for (const [group, meters] of [
+    ["pattern", expected.pattern],
+    ["entity", expected.entity],
+    ["product", expected.product],
+    ["term", expected.term],
+  ] as const) {
+    for (const meter of meters) {
+      const row = container.querySelector(
+        `[data-meter="${group}:${meter.key}"]`,
+      );
+      assert.ok(row, `no row rendered for ${group}:${meter.key}`);
+      assert.equal(
+        (row.textContent ?? "").includes(`${meter.filled} of ${meter.total}`),
+        true,
+        `${group}:${meter.key} should read "${meter.filled} of ${meter.total}", got "${row.textContent}"`,
+      );
+    }
+  }
   // Rule 2 is satisfied once for the row, not four times: looking at it, four
   // identical stamps read as four measurements that happen to agree.
   // Built the same way the screen builds it. Using `toISOString()` here — the
@@ -247,12 +270,22 @@ test("the patterns dashboard renders the meters from the real corpus", async () 
     1,
     "the measurement date must appear exactly once for the row",
   );
-  // The prose figures are derived from the same meters, so they must appear
-  // with the values the corpus has. Rule is 14 of 31, so 17 have no when
-  // clause; Job is 10; Capture is 3.
-  assert.ok(text.includes("17 with no when clause"), `prose noWhen wrong in: ${text.slice(0, 600)}`);
-  assert.ok(text.includes("naming 10 of them"), "prose namedByAUseCase wrong");
-  assert.ok(text.includes("on 3 patterns"), "prose withCapture wrong");
+  // The prose figures, also derived rather than pinned.
+  const rule = expected.pattern.find((x) => x.key === "rule")!;
+  const job = expected.pattern.find((x) => x.key === "job")!;
+  const capture = expected.pattern.find((x) => x.key === "capture")!;
+  assert.ok(
+    text.includes(`${rule.total - rule.filled} with no when clause`),
+    `prose noWhen wrong in: ${text.slice(0, 600)}`,
+  );
+  assert.ok(
+    text.includes(`naming ${job.filled} of them`),
+    "prose namedByAUseCase wrong",
+  );
+  assert.ok(
+    text.includes(`on ${capture.filled} patterns`),
+    "prose withCapture wrong",
+  );
   assert.ok(!/\d+\s*%/.test(text), `a bare percentage reached the dashboard: ${text}`);
 });
 
@@ -352,9 +385,48 @@ test("the dashboard prose is DERIVED from the meters, not counted again", async 
   assert.ok(text.includes("2 with no when clause"), `prose noWhen wrong in: ${text.slice(0, 500)}`);
   assert.ok(text.includes("naming 1 of them"), "prose namedByAUseCase wrong");
   assert.ok(text.includes("on 0 patterns"), "prose withCapture wrong");
-  // ...and the real corpus's figures must NOT appear, which is what a
-  // hard-coded or separately-counted figure would produce.
-  assert.ok(!text.includes("17 with no when clause"), "noWhen is not derived");
-  assert.ok(!text.includes("naming 10 of them"), "namedByAUseCase is not derived");
+  // ...and the REAL corpus's figures must not appear, which is what a
+  // hard-coded or separately-counted figure would produce. Derived from the
+  // real corpus rather than written as literals, so this stays correct as the
+  // corpus moves.
+  const realIdx = buildPatternIndex(realDoc(), realRecipes());
+  const realMeters = measure(
+    patternSlotRecords(realIdx),
+    PATTERN_SLOTS,
+    "2026-01-01",
+  );
+  const realRule = realMeters.find((x) => x.key === "rule")!;
+  const realJob = realMeters.find((x) => x.key === "job")!;
+  assert.notEqual(
+    realRule.total - realRule.filled,
+    rule.total - rule.filled,
+    "fixture and real corpus agree on noWhen — this test can no longer tell derived from hard-coded",
+  );
+  assert.ok(
+    !text.includes(`${realRule.total - realRule.filled} with no when clause`),
+    "noWhen is not derived",
+  );
+  assert.ok(
+    !text.includes(`naming ${realJob.filled} of them`),
+    "namedByAUseCase is not derived",
+  );
 });
 
+
+test("a Slot's help is reachable without a mouse", () => {
+  // `Slot.help` is the only place a Slot's meaning and its worked example are
+  // written. Behind a hover-only Tooltip on a plain span, a keyboard or
+  // screen-reader user read "Rule 14 of 31" with no way to learn what Rule is.
+  const { container } = mount(
+    <MeterList groupKey="pattern" title="Pattern" meters={METERS} />,
+  );
+  const row = container.querySelector('[data-meter="pattern:rule"]');
+  assert.ok(row);
+  const name = row.querySelector("[aria-describedby]");
+  assert.ok(name, "the Slot name carries no accessible description");
+  assert.equal(name.getAttribute("tabindex"), "0", "the name is not focusable");
+  const describedBy = name.getAttribute("aria-describedby")!;
+  const help = container.querySelector(`#${describedBy}`);
+  assert.ok(help, `aria-describedby points at #${describedBy}, which is absent`);
+  assert.equal((help.textContent ?? "").trim(), METERS[0]!.help);
+});

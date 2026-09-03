@@ -182,6 +182,17 @@ export async function loadCapturedSlugs(gh: Octokit): Promise<Set<string>> {
   // that dropping the Slot exists to avoid. Only a THROW drops the Slot, so an
   // index carrying no entries at all has to throw.
   if (Object.keys(media).length === 0) {
+    // `loadIndex` wrote this to sessionStorage before returning it, so without
+    // this the bad index is cached for the whole 5-minute TTL: loadCapturedSlugs
+    // correctly drops the Capture Slot, while loadMediaCapture and
+    // loadMediaRoles go on reporting "no media" for every component — and keep
+    // doing so after the index is fixed upstream. The function that detects the
+    // condition is the one that has to clear what it poisoned.
+    try {
+      globalThis.sessionStorage?.removeItem(CACHE_KEY);
+    } catch {
+      // A storage that cannot be written cannot be stale either.
+    }
     throw new Error(
       `${INDEX_PATH} carried no media entries — the index cannot be read, ` +
         `which is not the same as no component having a capture`,

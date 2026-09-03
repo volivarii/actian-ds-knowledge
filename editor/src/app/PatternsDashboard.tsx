@@ -33,10 +33,10 @@ import {
   recipeSrcPath,
 } from "../lib/patternIndex";
 import { onActivateKey } from "../lib/onActivateKey";
-import { THING_LABEL } from "../lib/nomenclature";
+import { THING_LABEL, SLOT_LABEL } from "../lib/nomenclature";
 import { measure } from "../lib/measure";
 import {
-  PATTERN_SLOTS,
+  patternSlotsFor,
   ENTITY_SLOTS,
   PRODUCT_SLOTS,
   TERM_SLOTS,
@@ -319,7 +319,11 @@ export function PatternsDashboard({
     // "en-CA" is ISO-shaped (YYYY-MM-DD) and locale-stable for that shape.
     const at = new Date().toLocaleDateString("en-CA");
     return {
-      pattern: measure(patternSlotRecords(index), PATTERN_SLOTS, at),
+      pattern: measure(
+        patternSlotRecords(index),
+        patternSlotsFor(index.recipesReadable),
+        at,
+      ),
       entity: measure(entitySlotRecords(index.doc), ENTITY_SLOTS, at),
       product: measure(productSlotRecords(index.doc), PRODUCT_SLOTS, at),
       term: measure(termSlotRecords(index.doc), TERM_SLOTS, at),
@@ -393,6 +397,14 @@ export function PatternsDashboard({
           <Text size="1" color="gray" as="p" mb="2">
             measured {meters.pattern[0]?.measuredAt}
           </Text>
+          {!index.recipesReadable && (
+            // Say why the Meter is absent. Dropping it in silence is the same
+            // omission as reporting a zero nobody can explain.
+            <Text size="1" color="gray" as="p" mb="2">
+              {SLOT_LABEL.capture} not measured — the captures directory could
+              not be listed.
+            </Text>
+          )}
           <Flex gap="6" wrap="wrap">
             <MeterList
               groupKey="pattern"
