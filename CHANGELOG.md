@@ -20,6 +20,38 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Added
 
+- **alert-banner, action-bar and breadcrumb render the slots Figma documents**
+  (#638 part 2). Checked against `components/dist/media/<slug>/default.webp`, the isolated
+  default-variant capture. Two of the three are not invention: the registry publishes
+  `Show Icon`, `Show close button` and `Show action` as **default-TRUE BOOLEAN** component
+  properties on `alert-banner`, and publishes `digram-item-types` as a **nested component** of
+  `breadcrumb`. The renderer implemented none of them — it drew the icon unconditionally and
+  nothing else. Now: the alert carries a trailing action and a labelled dismiss, each gated by its
+  published boolean; `action-bar` takes a leading destructive action (`.ds-action-bar__leading`
+  with `margin-right:auto`, so a bar without one lays out exactly as before rather than depending
+  on the slot being filled); and a breadcrumb crumb can carry the leading item-type badge the
+  capture shows. Every slot is optional and only the published booleans default on. **The action's
+  LABEL is not defaulted**: Figma's own default reads "Button", which is placeholder text, and a
+  literal fallback would hand that word to every caller who asked for no optional parts — the
+  sparse-render ratchet caught exactly that and the label moved to `matrix.js`, where specimen
+  content belongs. The three booleans are read as literal `props["…"]` accesses so
+  `derive-contract`'s `BRACKET_READ` carries them into the published contract rather than leaving
+  them visible only in the code.
+
+  Two follow-on corrections came out of it. `.ds-alert__title` is **not** unreachable as #638
+  states — the branch has always rendered it from `props.Title`; the Figma default simply has no
+  title, so no fragment shows one. And `derive-contract` scanned raw source, so a **prop cited in a
+  comment** was published as a real prop: `propsOf` now strips comments first, conservatively
+  (block comments whole, line comments only where `//` opens the line, so a `//` inside a string on
+  a code line cannot eat the rest of it).
+
+  Measured cost, stated because the metric is tracked and it moved the wrong way: inline-style hex
+  rises **39 → 51**, all twelve from `breadcrumb`'s six badges. It is not new un-themability — it is
+  more instances of `digram-item-types`' Dataset colours, which Figma binds to no variable (see the
+  #551 entry). The oracle denominator moves 417 → 418; the numerator is unchanged at 85.
+
+- **The render tier's inline colours are joined back to the capture that owns them**
+
 - **The render tier's inline colours are joined back to the capture that owns them**
   (#551). Three tables in `ds-html-map.js` restate, by hand, colours and token bindings the anatomy
   capture already holds — 37 `digram-item-types` backgrounds, 26 of its text colours, 10

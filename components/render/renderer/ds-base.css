@@ -1091,6 +1091,12 @@
   letter-spacing: var(--zen-font-letterspacing-wide-2); /* 0.2 */
 }
 .ds-breadcrumbs__crumb {
+  /* inline-flex + gap so a crumb can carry the leading item-type badge the
+   * default capture shows beside its label; with no badge it lays out exactly
+   * as the inline text it was. */
+  display: inline-flex;
+  align-items: center;
+  gap: var(--zen-spacing-2xs);
   color: var(--zen-color-text-primary);
   font-weight: var(--zen-font-weight-regular);
   text-decoration: none;
@@ -1361,6 +1367,34 @@
   color: var(--zen-color-text-secondary);
   margin: 0;
   line-height: var(--zen-font-lineheight-lg);
+}
+/* The trailing slots the registry publishes as default-TRUE booleans
+ * (`Show action`, `Show close button`) and the default capture shows: a text
+ * action, then a dismiss, both pinned right of the message. `flex: none` keeps
+ * them at content width while __content takes the slack. */
+.ds-alert__actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--zen-spacing-sm);
+}
+/* Icon-only dismiss. Sized to the icon rather than to .ds-button's 32px height
+ * so it does not grow the banner. */
+.ds-alert__close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--zen-color-icon-default);
+  cursor: pointer;
+}
+.ds-alert__close svg {
+  width: var(--zen-size-md);
+  height: var(--zen-size-md);
+  display: block;
 }
 
 /* ============ Graceful fallback chip ============ */
@@ -2225,6 +2259,16 @@
   display: inline-flex;
   align-items: center;
   gap: var(--zen-spacing-sm);
+}
+/* The leading slot the default capture pins left (a destructive `Delete`).
+ * `margin-right: auto` rather than switching the bar to space-between: with no
+ * leading slot present, space-between would leave a lone trailing group sitting
+ * at the LEFT edge, so the bar would depend on the slot being filled. */
+.ds-action-bar__leading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--zen-spacing-sm);
+  margin-right: auto;
 }
 
 /* ===================================================================== */

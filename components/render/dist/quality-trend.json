@@ -22,7 +22,7 @@
       "previous": 56
     },
     "inlineHex": {
-      "value": 39,
+      "value": 51,
       "direction": "unknown",
       "previous": null
     },
@@ -32,13 +32,14 @@
       "previous": 85
     },
     "oracleExamined": {
-      "value": 417,
-      "direction": "unchanged",
+      "value": 418,
+      "direction": "changed",
       "previous": 417
     }
   },
   "detail": {
     "inlineHexBySlug": {
+      "breadcrumb": 12,
       "card-for-perimeter": 2,
       "digram-item-types": 10,
       "digram-topic": 5,

@@ -9,11 +9,11 @@ Sources last changed **2026-09-02**. Values are derived from the tree this ran a
 | Unexplained variant collapses | 44 | flat (was 44) |
 | FM variant values that render alike (unexplained) | 55 | flat (was 55) |
 | FM modifier classes with no rule | 56 | flat (was 56) |
-| Inline-style hex (cannot re-theme) | 39 | no baseline yet |
+| Inline-style hex (cannot re-theme) | 51 | no baseline yet |
 | Verified declarations (oracle numerator) | 85 | flat (was 85) |
-| Examined declarations (oracle denominator) | 417 | flat (was 417) |
+| Examined declarations (oracle denominator) | 418 | changed (was 417) |
 
-Oracle coverage is **85 of 417** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
+Oracle coverage is **85 of 418** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
 
 ## Oracle numerator over time
 
@@ -49,6 +49,7 @@ Oracle coverage is **85 of 417** declarations. It is stated as a pair on purpose
 
 ## Where the inline hex is
 
+- `breadcrumb` 12
 - `digram-item-types` 10
 - `metamodel` 10
 - `lineage` 6

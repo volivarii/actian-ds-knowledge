@@ -1434,6 +1434,27 @@
 
         case "breadcrumb": {
           var crumbItems = parseItems(props.Items, "Home, Section, Page");
+          // The registry publishes digram-item-types as a nested component of
+          // breadcrumb, and the default capture shows one per crumb but the
+          // first: a small item-type badge carrying the record's initials. It is
+          // per-crumb CONTENT (which record each crumb names), so it is supplied
+          // positionally and an empty entry means that crumb has none. No
+          // badges given -> the crumbs render exactly as the plain links they
+          // were.
+          // Positional, one entry per crumb. An ARRAY is accepted alongside the
+          // comma string (the shape `table`'s Rows already uses) because
+          // parseItems drops empty entries, so only the array form can say "this
+          // crumb has no badge" -- which the default capture needs: `Home`
+          // carries none and every crumb after it does.
+          var crumbBadges = Array.isArray(props.Badges)
+            ? props.Badges
+            : props.Badges === undefined
+              ? []
+              : parseItems(props.Badges, "");
+          // One item type for the row, not one per crumb: in the capture every
+          // badge is the same type. Absent -> digram-item-types' own documented
+          // fallback, rather than a type invented here.
+          var crumbBadgeType = props.BadgeType ? String(props.BadgeType) : "";
           var crumbSep =
             '<span class="ds-breadcrumbs__sep">' +
             renderIcon("arrow-left", { rotate: 180 }) +
@@ -1444,12 +1465,23 @@
               var crumbCls = "ds-breadcrumbs__crumb";
               if (isLast) crumbCls += " ds-breadcrumbs__crumb--current";
               var tag = isLast ? "span" : "a";
+              var badge = (crumbBadges[i] || "").trim();
+              var badgeHtml = badge
+                ? renderDSComponent({
+                    dsSlug: "digram-item-types",
+                    variant:
+                      "Size=XS" +
+                      (crumbBadgeType ? ", Item type=" + crumbBadgeType : ""),
+                    props: { Initials: badge },
+                  })
+                : "";
               return (
                 "<" +
                 tag +
                 ' class="' +
                 crumbCls +
                 '">' +
+                badgeHtml +
                 esc(label) +
                 "</" +
                 tag +
@@ -1669,21 +1701,67 @@
           // default variant (Type=Info), so the message mirrors the type name.
           // matrix.js supplies the per-Type value; this is the no-props fallback.
           var alertMsg = esc(props.Message || "Info");
+          // The registry publishes `Show Icon`, `Show action` and
+          // `Show close button` as BOOLEAN component properties, all defaulting
+          // to true, and the isolated default capture shows all three. The
+          // renderer implemented only the icon, and that one unconditionally.
+          // Reading the published default means a caller passing no props gets
+          // what Figma documents, and a caller turning one off gets the
+          // component without it -- a slot, not a fixture.
+          // `!== false` is this renderer's default-TRUE idiom (see
+          // props["Leading icon show"] on text-input), and the literal bracket
+          // reads are what derive-contract's BRACKET_READ picks up, so all three
+          // appear in the published contract rather than only in the code.
+          var alertIconHtml =
+            props["Show Icon"] !== false
+              ? '<span class="ds-alert__icon">' +
+                renderIcon(alertIconSlug) +
+                "</span>"
+              : "";
+          // An ordinary DS button: it needs no positional CSS of its own, and a
+          // modifier class with no rule behind it is the thing this renderer
+          // already refuses to emit elsewhere.
+          //
+          // The LABEL is not defaulted. Figma's own default reads "Button",
+          // which is placeholder text, and a literal fallback here would hand
+          // that word to every caller who asked for no optional parts -- the
+          // specimen-vs-runtime defect the sparse-render ratchet exists to
+          // block. So the boolean gates the slot and the caller names it; the
+          // gallery's "Button" lives in matrix.js, where the specimen belongs
+          // and the caller keeps the choice.
+          var alertActionHtml =
+            props["Show action"] !== false && props.Action
+              ? '<button class="ds-button ds-button--tertiary">' +
+                esc(props.Action) +
+                "</button>"
+              : "";
+          var alertCloseHtml =
+            props["Show close button"] !== false
+            ? '<button class="ds-alert__close" aria-label="Dismiss">' +
+              renderIcon("close") +
+              "</button>"
+            : "";
+          var alertActionsHtml =
+            alertActionHtml || alertCloseHtml
+              ? '<div class="ds-alert__actions">' +
+                alertActionHtml +
+                alertCloseHtml +
+                "</div>"
+              : "";
           return (
             '<div class="' +
             alertCls +
             '" role="' +
             alertRole +
             '">' +
-            '<span class="ds-alert__icon">' +
-            renderIcon(alertIconSlug) +
-            "</span>" +
+            alertIconHtml +
             '<div class="ds-alert__content">' +
             alertTitleHtml +
             '<p class="ds-alert__message">' +
             alertMsg +
             "</p>" +
             "</div>" +
+            alertActionsHtml +
             "</div>"
           );
         }
@@ -2753,8 +2831,22 @@
           // props override the labels.
           var sfPrimary = esc(props.Primary || "Save");
           var sfSecondary = esc(props.Secondary || "Cancel");
+          // The default capture pins a destructive action to the leading edge.
+          // The registry publishes no boolean for it, so it is CONTENT, not a
+          // documented toggle: the slot renders only when a caller supplies a
+          // label. .ds-action-bar's justify-content stays flex-end and the slot
+          // carries margin-right:auto, so a bar with no destructive action lays
+          // out exactly as before.
+          var sfLeading = props.Destructive
+            ? '<div class="ds-action-bar__leading">' +
+              '<button class="ds-button ds-button--critical-secondary">' +
+              esc(props.Destructive) +
+              "</button>" +
+              "</div>"
+            : "";
           return (
             '<div class="ds-action-bar">' +
+            sfLeading +
             '<div class="ds-action-bar__actions">' +
             '<button class="ds-button ds-button--secondary">' +
             sfSecondary +

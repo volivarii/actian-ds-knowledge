@@ -120,6 +120,9 @@
               "name": "--zen-font-weight-semibold"
             },
             {
+              "name": "--zen-size-md"
+            },
+            {
               "name": "--zen-spacing-md"
             },
             {
