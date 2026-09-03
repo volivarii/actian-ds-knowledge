@@ -20,6 +20,40 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **Every Thing in the editor has a table of Slots, and a Meter that counts them**
+  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD), phase 2 of the editor
+  nomenclature design; closes [#644](https://github.com/volivarii/actian-ds-knowledge/issues/644)).
+  A **Slot** is a named, measurable part of a Thing — a Pattern's `Rule`, an Entity's `Link`, a
+  Product's `Navigation` — with an honest `filled()` test that runs against the substrate at read
+  time, so no score is ever stored. New `editor/src/lib/slots.ts` holds five tables (Pattern,
+  Entity, Product, Term, Component) and `editor/src/lib/measure.ts` rolls any set of records up
+  into Meters. **A scope IS the array of records passed in**, so record scope, product scope and
+  substrate scope are three calls to one function rather than three counts that can disagree.
+  Meters render on the patterns and coverage dashboards, where the numbers report for the first
+  time what the app-context corpus actually contains: Pattern `Rule` **14 of 31**, `Description`
+  **13 of 31**, `Job` **10 of 31**, `Capture` **3 of 31**; Entity `Properties` 26/30, `Link` 22/30;
+  Product `Navigation` **2 of 3** (Explorer has no sidebar); Term 33/33 on both. Four honesty rules
+  are enforced structurally rather than by convention: a Meter **carries no percentage field and no
+  helper computes one** (a bare ratio is how oracle coverage came to read as progress with a flat
+  numerator); an **empty scope is `0 of 0` and never "complete"**, because measuring nothing is not
+  success; a **full Meter is dimmed, not hidden**, since a measure that disappears when healthy
+  cannot be seen to regress; and an **unreadable media index drops the `Capture` Meter** rather
+  than reporting `0 of 73`, because a lie with a number on it reads as a gap somebody should go and
+  fill. Per **#644**, an **Entity has no `Description` Slot at any threshold**: entity bodies run
+  5–38 words with no gap anywhere in the distribution, so every word-count bar is chosen rather
+  than derived, and the Pattern bar would report `0 of 30` and read as a system-wide failure. The
+  accepted cost is recorded in the module — an entity with nine relationships and a six-word gloss
+  now reports as complete. Also corrects the design doc in three places the corpus disproved:
+  `Capture` reads the **recipe's declared pattern**, not a filename (a capture is named for the
+  surface it was taken from as often as for the pattern it shows); `signals` is a list of **routing
+  keywords**, not prose about UI feedback; and `AppContextDoc` now declares the `entities` and
+  `terminology` collections its own file has always carried. The patterns dashboard stops counting
+  three figures a second time and reads them from the Meters instead. **Editor-only and
+  version-neutral** — no dist, no substrate, no schema, no consumer. The `state` schema addition
+  the design doc placed in this phase is deferred to phase 3, where the governance question of who
+  may set `Approved` ([#645](https://github.com/volivarii/actian-ds-knowledge/issues/645)) is
+  settled: a contract field with no writer is dead config that reaches consumers.
+
 - **The editor speaks one controlled vocabulary**
   ([#643](https://github.com/volivarii/actian-ds-knowledge/pull/643), phase 1 of the editor
   nomenclature design). Every screen used to invent its own words. One state was called two things
