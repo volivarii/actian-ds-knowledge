@@ -65,11 +65,15 @@ function PatternTable({
   onOpenFile,
   onOpenRecipe,
   emptyText,
+  recipesReadable,
 }: {
   rows: PatternRow[];
   onOpenFile: (path: string) => void;
   onOpenRecipe: (recipe: PatternRecipe, trigger: HTMLElement | null) => void;
   emptyText: string;
+  /** False when the captures could not be read, so an empty cell means
+   *  "not looked at", not "none". */
+  recipesReadable: boolean;
 }) {
   return (
     <Table.Root variant="surface" size="1">
@@ -128,7 +132,16 @@ function PatternTable({
               </Text>
             </Table.Cell>
             <Table.Cell>
-              {p.recipes.length === 0 ? (
+              {/* An em-dash reads as an authored fact — "this pattern has no
+                  capture" — for all 31 rows when the truth is that nothing
+                  could be read. The Meter and the prose already withhold on a
+                  failed read; the column has to as well, or the screen states
+                  in a table what it just declined to state above it. */}
+              {!recipesReadable ? (
+                <Text size="1" color="gray">
+                  ?
+                </Text>
+              ) : p.recipes.length === 0 ? (
                 <Text size="1" color="gray">
                   —
                 </Text>
@@ -181,10 +194,12 @@ function AppBlock({
   app,
   onOpenFile,
   onOpenRecipe,
+  recipesReadable,
 }: {
   app: AppSection;
   onOpenFile: (path: string) => void;
   onOpenRecipe: (recipe: PatternRecipe, trigger: HTMLElement | null) => void;
+  recipesReadable: boolean;
 }) {
   const reached = app.useCases.reduce((n, u) => n + u.patterns.length, 0);
   return (
@@ -245,6 +260,7 @@ function AppBlock({
             onOpenFile={onOpenFile}
             onOpenRecipe={onOpenRecipe}
             emptyText="This use case names no patterns."
+            recipesReadable={recipesReadable}
           />
         </Box>
       ))}
@@ -257,6 +273,7 @@ function AppBlock({
         onOpenFile={onOpenFile}
         onOpenRecipe={onOpenRecipe}
         emptyText="Every pattern claiming this product is named by a use case."
+        recipesReadable={recipesReadable}
       />
     </Box>
   );
@@ -513,6 +530,7 @@ export function PatternsDashboard({
             app={app}
             onOpenFile={onOpenFile}
             onOpenRecipe={openRecipe}
+            recipesReadable={index.recipesReadable}
           />
         </Box>
       ))}

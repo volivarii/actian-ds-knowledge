@@ -37,7 +37,6 @@ import {
   loadCoverage,
   summarize,
   type CoverageRow,
-  type Domain,
   type Status,
 } from "../lib/coverageLoader";
 import {

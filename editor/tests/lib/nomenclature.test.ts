@@ -450,15 +450,27 @@ test("the domain words live in ONE place, and every screen reads it", () => {
         if (e.name !== "generated") walk(full);
       } else if (/\.(ts|tsx)$/.test(e.name)) {
         const rel = full.slice(SRC.length + 1);
-        if (rel === "lib/workspaceState.ts") continue;
+        // The two legitimate homes: this module DECLARES the words, and
+      // workspaceState DERIVES the domain map from it. Everything else reads.
+      if (rel === "lib/workspaceState.ts" || rel === "lib/nomenclature.ts") {
+        continue;
+      }
         const src = readFileSync(full, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-        // A `Record<Domain, string>` is a legitimate shape for other
-        // per-domain data — `DOMAIN_HELP` in slots.ts is one. What must not be
-        // duplicated is the WORDS, so flag only a literal that restates them.
-        const literal = src.match(/Record<Domain,\s*string>\s*=\s*\{[^}]*\}/);
-        if (!literal) continue;
+        // Match the WORDS, not a type annotation.
+        //
+        // The first version keyed on `Record<Domain, string>` and so could not
+        // see markdownStubs.ts, which declared the same five words as
+        // `Record<string, string>` — and that copy named the heading and the
+        // placeholder comment written into every newly stubbed substrate file,
+        // making it the most damaging of the four. A guard whose subject is a
+        // type cannot protect a vocabulary.
+        //
+        // Two further weaknesses in that version, both fixed here: it used
+        // `String.match` without /g, so only the FIRST candidate literal per
+        // file was inspected, and `[^}]*` stopped at the first `}`, so a nested
+        // object truncated the scan.
         const restated = DOMAINS.filter((d) =>
-          literal[0].includes(`"${DOMAIN_LABEL[d]}"`),
+          new RegExp(`\\b${d}\\s*:\\s*"${DOMAIN_LABEL[d]}"`).test(src),
         );
         if (restated.length >= 3) offenders.push(rel);
       }

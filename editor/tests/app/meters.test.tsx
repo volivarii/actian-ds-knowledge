@@ -348,6 +348,19 @@ test("an unreadable captures directory hides the Meter, it does not blank the ap
     !/\b0 captured page recipes\b/.test(text),
     `prose reported a count for a measurement that never happened: ${text.slice(0, 400)}`,
   );
+
+  // ...nor does the TABLE. An em-dash in the Captures column reads as an
+  // authored fact — "this pattern has no capture" — for every row, which is
+  // the same claim the Meter and the prose just declined to make. The screen
+  // must not state in a table what it withheld above it.
+  const dashes = [...container.querySelectorAll("td")].filter(
+    (c) => (c.textContent ?? "").trim() === "—",
+  );
+  assert.equal(
+    dashes.length,
+    0,
+    `${dashes.length} rows claim "no capture" while the captures could not be read`,
+  );
 });
 
 /** Mounts the real dashboard against an arbitrary in-memory app-context. */

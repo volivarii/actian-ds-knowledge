@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
 import {
   buildPatternIndex,
+  loadRecipes,
   type AppContextDoc,
   type RecipeDoc,
 } from "../../src/lib/patternIndex";
@@ -149,25 +150,35 @@ test("Rule is filled by a when clause, and empty without one", () => {
   predicateReads(rs, s, EMPTY_PATTERN);
 });
 
-test("Description is filled at 40 words, the gap the corpus already has", () => {
+test("Description is filled at 40 words, the gap the corpus already has", (t) => {
   const rs = records();
   const s = slot("description");
   // The bar is not arbitrary: bodies run 8-18 words, then nothing until 40.
   const lengths = rs.map((r) => wordCount(r.description)).sort((a, b) => a - b);
   const below = lengths.filter((n) => n > 0 && n < DESCRIPTION_MIN_WORDS);
   const above = lengths.filter((n) => n >= DESCRIPTION_MIN_WORDS);
-  assert.ok(below.length > 0 && above.length > 0, "corpus is not bimodal any more");
-  assert.ok(
-    Math.max(...below) < Math.min(...above) - 15,
-    `the gap has closed: ${Math.max(...below)} then ${Math.min(...above)} — re-derive the bar rather than keeping it`,
-  );
+  // REPORTED, not asserted. The bar's justification is the gap, so a closed gap
+  // matters — but an author expanding one body from 12 words to 25 closes it,
+  // and failing Editor CI on a PR that only improved prose is precisely what
+  // `predicateReads` above refuses to do. The diagnostic says the bar needs
+  // re-deriving without punishing the person who made the corpus better.
+  if (below.length > 0 && above.length > 0) {
+    const gap = Math.min(...above) - Math.max(...below);
+    t.diagnostic(
+      gap > 15
+        ? `Description bar OK: bodies run to ${Math.max(...below)} words, then resume at ${Math.min(...above)}`
+        : `Description bar needs re-deriving: the gap has narrowed to ${gap} words (${Math.max(...below)} then ${Math.min(...above)})`,
+    );
+  } else {
+    t.diagnostic("Description corpus is no longer bimodal — re-derive the bar");
+  }
   predicateReads(rs, s, EMPTY_PATTERN);
 });
 
-test("Built from and Used in read the pattern's own lists", () => {
+test("Built from and Part of read the pattern's own lists", () => {
   const rs = records();
   predicateReads(rs, slot("built_from"), EMPTY_PATTERN);
-  // Used in is at total today. Asserting `=== 31` would break the day a pattern
+  // Part of is at total today. Asserting `=== 31` would break the day a pattern
   // is added without an app, which is a finding for the SCREEN, not a test
   // failure. What must hold is that the predicate reads the list.
   assert.equal(slot("part_of").filled(bySlug(rs, "asset-detail-360")), true);
@@ -187,7 +198,7 @@ test("Job is a cross-file join: a Product's use case must name the pattern", () 
   predicateReads(rs, s, EMPTY_PATTERN);
 });
 
-test("Job is not the same question as Used in", () => {
+test("Job is not the same question as Part of", () => {
   // Both are about apps, and conflating them is easy. A pattern can claim an
   // app (Used in) while no use case in that app names it (Job) — that gap IS
   // the finding, and a Slot table that merged them would report it as filled.
@@ -597,17 +608,65 @@ test("an entity's products are filtered against the context, like a pattern's", 
   );
 });
 
-test("a listing that succeeds while its files fail is NOT a complete read", () => {
-  // The directory-listing failure was guarded; the per-FILE failure was not.
-  // A listing that returns four recipes whose reads are all rate-limited yields
-  // zero docs, and reporting `readable: true` for that is the same lie one
-  // level down: "Capture 0 of 31" from a measurement that never happened.
-  const idx = buildPatternIndex(realDoc(), [], false);
-  assert.equal(idx.recipesReadable, false);
-  // And the readable path still reports the captures it read.
-  const ok = buildPatternIndex(realDoc(), realRecipes(), true);
-  assert.ok(
-    ok.patterns.some((p) => p.recipes.length > 0),
-    "no pattern resolved a capture — the join is vacuous",
+test("loadRecipes reports an INCOMPLETE read, not an empty one", async () => {
+  // The previous version of this test only checked that a manually-passed
+  // `false` propagated through buildPatternIndex. The actual subject —
+  // `readable: docs.length === files.length` in loadRecipes — had ZERO callers
+  // in the tests: changing it to `readable: true` left the whole suite green
+  // while the lie it exists to prevent came straight back.
+  const dir = "app-context/dist/recipes";
+  const gh = (opts: {
+    listThrows?: boolean;
+    unreadable?: string[];
+  }) =>
+    ({
+      repos: {
+        getContent: async ({ path }: { path: string }) => {
+          if (path === dir) {
+            if (opts.listThrows) throw new Error("403");
+            return {
+              data: [
+                { name: "a.json", type: "file" },
+                { name: "b.json", type: "file" },
+              ],
+            };
+          }
+          const name = path.slice(dir.length + 1);
+          if ((opts.unreadable ?? []).includes(name)) throw new Error("429");
+          return {
+            data: {
+              encoding: "base64",
+              content: Buffer.from(
+                JSON.stringify({ slug: name.replace(/\.json$/, ""), patterns: [] }),
+                "utf8",
+              ).toString("base64"),
+            },
+          };
+        },
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as any;
+
+  // The directory would not list at all.
+  const listFailed = await loadRecipes(gh({ listThrows: true }));
+  assert.equal(listFailed.readable, false);
+  assert.deepEqual(listFailed.docs, []);
+
+  // The directory listed, but one of its files would not read. This is the
+  // half that had no coverage: two listed, one readable, so the read is
+  // INCOMPLETE and reporting a capture count from it would be a measurement
+  // that never happened.
+  const partial = await loadRecipes(gh({ unreadable: ["b.json"] }));
+  assert.equal(partial.docs.length, 1);
+  assert.equal(
+    partial.readable,
+    false,
+    "a listing whose files failed to read reported a complete measurement",
   );
+
+  // Everything read.
+  const whole = await loadRecipes(gh({}));
+  assert.equal(whole.docs.length, 2);
+  assert.equal(whole.readable, true);
 });
+
