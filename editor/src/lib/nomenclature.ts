@@ -220,3 +220,77 @@ export function linkLabel(edgeType: string, direction: "in" | "out"): string {
     : direction;
   return LINK_LABEL[binding.family][side];
 }
+
+/**
+ * Slots — the named, measurable parts of a Thing.
+ *
+ * A Slot is not a schema field: several Slots read the same field, and `Job`
+ * reads across files entirely. What is declared HERE is only the WORD, for the
+ * same reason every other word is here — a Meter renders it, so it is a
+ * user-visible concept and it gets exactly one home. The tables and the
+ * `filled` tests live in `lib/slots.ts`.
+ *
+ * Three of these ARE Link words seen from one end, and they are DERIVED from
+ * LINK_LABEL rather than repeated. A Pattern's `Built from` is the composition
+ * edge read outbound; if that word ever changes it must change in one place.
+ *
+ * `job` and `jobs` are deliberately different words for different things: a
+ * Product HAS jobs, a Pattern SERVES one. `rule` is one key used by two tables
+ * — a Pattern's `when` and a Term's `notUse` are the same question asked of
+ * two Things — which is the point of keying on the word rather than the field.
+ */
+export type SlotKey =
+  // Pattern
+  | "rule"
+  | "description"
+  | "built_from"
+  | "used_in"
+  | "job"
+  | "tags"
+  | "capture"
+  // Entity
+  | "properties"
+  | "link"
+  // Product
+  | "purpose"
+  | "audience"
+  | "jobs"
+  | "navigation"
+  | "signals"
+  // Term
+  | "meaning"
+  // Component — the five guidance domains, plus what they are checked against
+  | "content"
+  | "usage"
+  | "design"
+  | "behavior"
+  | "tokens"
+  | "must_follow";
+
+export const SLOT_LABEL: Record<SlotKey, string> = {
+  rule: "Rule",
+  description: "Description",
+  built_from: LINK_LABEL.composition.out,
+  used_in: LINK_LABEL.composition.in,
+  job: "Job",
+  tags: "Tags",
+  capture: "Capture",
+  properties: "Properties",
+  link: "Link",
+  purpose: "Purpose",
+  audience: "Audience",
+  jobs: "Jobs",
+  navigation: "Navigation",
+  signals: "Signals",
+  meaning: "Meaning",
+  content: "Content",
+  usage: "Usage",
+  design: "Design",
+  behavior: "Behavior",
+  tokens: "Tokens",
+  must_follow: LINK_LABEL.compliance.out,
+};
+
+export function slotLabel(key: SlotKey): string {
+  return SLOT_LABEL[key];
+}

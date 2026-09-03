@@ -11,8 +11,10 @@ import {
   STATE_LABEL,
   LINK_LABEL,
   LINK_FAMILY,
+  SLOT_LABEL,
   STATE_FOR_STATUS,
   type SubstrateStatus,
+  type SlotKey,
   linkLabel,
   thingLabel,
 } from "../../src/lib/nomenclature";
@@ -332,4 +334,66 @@ test("every substrate status has a word, and it is the same word everywhere", ()
   // authored and draft are the two loaders' names for the same thing.
   assert.equal(STATE_FOR_STATUS.authored, STATE_FOR_STATUS.draft);
   assert.equal(STATE_FOR_STATUS["not-started"], STATE_LABEL.empty);
+});
+
+test("every Slot word is declared once, and never restates a Link word", () => {
+  // A Slot name is a user-visible concept, so it belongs here with the rest of
+  // the vocabulary. Three Slots ARE Link words — a Pattern's `Built from` is
+  // the composition edge read outbound — and those must reference LINK_LABEL
+  // rather than repeat the string, or the tree gains a sixth copy of a word
+  // the last round found in five places.
+  const keys = Object.keys(SLOT_LABEL) as SlotKey[];
+  assert.ok(keys.length > 0, "no Slots declared — the check is vacuous");
+
+  assert.equal(SLOT_LABEL.built_from, LINK_LABEL.composition.out);
+  assert.equal(SLOT_LABEL.used_in, LINK_LABEL.composition.in);
+  assert.equal(SLOT_LABEL.must_follow, LINK_LABEL.compliance.out);
+
+  // The three assertions above compare VALUES, so they stay green if someone
+  // writes the literal "Built from" instead of referencing the Link word — they
+  // only fire later, once the Link word changes and the copy does not. Proved
+  // by mutation: swapping the reference for the literal did not turn them red.
+  // So also check the DECLARATION, scoped to the SLOT_LABEL block the way the
+  // STATUS_LABEL check above is scoped, because a copy that agrees today is
+  // still a second place the word lives.
+  const src = readFileSync(
+    join(REPO, "editor", "src", "lib", "nomenclature.ts"),
+    "utf8",
+  );
+  const start = src.indexOf("export const SLOT_LABEL");
+  assert.notEqual(start, -1, "no SLOT_LABEL declaration to check");
+  const block = src.slice(start, src.indexOf("};", start) + 2);
+  for (const [key, expr] of [
+    ["built_from", "LINK_LABEL.composition.out"],
+    ["used_in", "LINK_LABEL.composition.in"],
+    ["must_follow", "LINK_LABEL.compliance.out"],
+  ] as const) {
+    assert.ok(
+      block.includes(`${key}: ${expr},`),
+      `SLOT_LABEL.${key} must read ${expr}, not restate its word`,
+    );
+  }
+
+  // No two Slots share a word. Two Meters reading "Rule" on one page cannot be
+  // told apart, which is the defect the collapsed GraphView legend shipped.
+  const seen = new Map<string, SlotKey>();
+  for (const k of keys) {
+    const word = SLOT_LABEL[k];
+    const prior = seen.get(word);
+    assert.equal(prior, undefined, `"${word}" names both ${prior} and ${k}`);
+    seen.set(word, k);
+  }
+});
+
+test("a Slot word never collides with a Thing or State word", () => {
+  // The synonym check in P1 compared Things to States and Links but never
+  // Things to Links, and `motion_ref: "Motion"` collided with the Thing word.
+  // Slots are the fourth axis; check it against the other three.
+  const slotWords = new Set(Object.values(SLOT_LABEL));
+  for (const w of Object.values(THING_LABEL)) {
+    assert.ok(!slotWords.has(w), `"${w}" is both a Thing and a Slot`);
+  }
+  for (const w of Object.values(STATE_LABEL)) {
+    assert.ok(!slotWords.has(w), `"${w}" is both a State and a Slot`);
+  }
 });
