@@ -303,9 +303,15 @@ test("Entity Link counts a relationship map with any verb", () => {
   assert.ok(verbs.has("belongsTo"), "camelCase verbs are being dropped");
 });
 
-test("Product Navigation is the one Product Slot that is not full", () => {
+test("Product Navigation reads the sidebar, filled and empty", () => {
+  // Named for the predicate, not for a corpus fact. The old name said
+  // Navigation is "the one Product Slot that is not full", which stops being
+  // true the moment another Slot gains a gap — and `assert.equal(rs.length, 3)`
+  // beside it broke on a FOURTH product, which is a thing the roadmap expects
+  // to happen. Neither is a contract; both were CI failures waiting on ordinary
+  // authoring.
   const rs = productSlotRecords(realDoc());
-  assert.equal(rs.length, 3);
+  assert.ok(rs.length > 0, "no products — vacuous");
   const nav = PRODUCT_SLOTS.find((s) => s.key === "navigation");
   assert.ok(nav);
   const find = (slug: string) => {
@@ -344,16 +350,27 @@ test("Product Signals is a keyword list, and its help says so", () => {
   );
 });
 
-test("Term Slots are full, and the predicate still rejects an empty record", () => {
-  // Both Term Slots are 33/33, so no known-empty REAL record exists. Asserting
-  // only the count would leave a predicate that returns true unconditionally
-  // looking correct. The synthetic half is stated here on purpose.
+test("Term predicates read their field, in both directions", () => {
+  // Every Term Slot is filled across the corpus today, so no known-empty REAL
+  // record exists and the empty half has to be synthetic. That is stated rather
+  // than skipped: asserting only that the count is full would leave a predicate
+  // returning true unconditionally looking correct.
+  //
+  // What is NOT asserted is that every term stays filled. An earlier version
+  // did (`rs.every(...)`, "is no longer full") and that is the same defect the
+  // exact counts had — a term authored without a `notUse` list is a legitimate
+  // state and a finding for the SCREEN, not a CI failure on the lane that
+  // `app-context/src/**` triggers.
   const rs = termSlotRecords(realDoc());
   assert.ok(rs.length > 0, "no terms — vacuous");
+  const empty = { slug: "synthetic", label: "Synthetic", meaning: "", notUse: [] };
   for (const s of TERM_SLOTS) {
-    assert.ok(rs.every((r) => s.filled(r)), `${s.key} is no longer full`);
+    assert.ok(
+      rs.some((r) => s.filled(r)),
+      `${s.key} is filled by no term — the predicate is broken`,
+    );
     assert.equal(
-      s.filled({ slug: "synthetic", label: "Synthetic", meaning: "", notUse: [] }),
+      s.filled(empty),
       false,
       `${s.key} returns true for an empty record`,
     );
