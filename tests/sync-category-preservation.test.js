@@ -277,3 +277,68 @@ test("a page name masquerading as a category is still reverted", function () {
   );
   assert.equal(drift.length, 1);
 });
+
+test("preserveKnownCategories: a RE-KEYED survivor still carries its attribution forward", function () {
+  // 2026-09-03: `illustration` came back on a Figma page called "Playground"
+  // with NO section, and the carry-forward did not fire — because Figma had also
+  // re-keyed it, so identityOf() (key, then nodeId, then slug) looked up a twin
+  // that did not exist. The sync's own diff reported the re-key as "Same slug
+  // and name under a new Figma node, so resolution is unaffected", which is
+  // exactly the fact this lookup was not using.
+  //
+  // The slug fallback is safe here precisely because a rename is not a re-key:
+  // renames are resolved before this runs, so a slug present on both sides is
+  // the same component by the registry's own definition.
+  var before = {
+    components: {
+      illustration: comp("oldkey", "Illustrations & graphics", {
+        name: "Illustration",
+        categorySlug: "illustrations-graphics",
+        section: "Brand Assets",
+        group: "Illustrations",
+      }),
+    },
+  };
+  var after = {
+    components: {
+      illustration: comp("newkey", "Playground", { name: "Illustration" }),
+    },
+  };
+  var drift = S.preserveKnownCategories(before, after);
+  assert.equal(after.components.illustration.category, "Illustrations & graphics");
+  assert.equal(after.components.illustration.section, "Brand Assets");
+  assert.equal(after.components.illustration.group, "Illustrations");
+  assert.equal(drift.length, 1, "the restore is reported, not silent");
+  assert.equal(drift[0].observed, "Playground");
+});
+
+test("preserveKnownCategories: the slug fallback does not resurrect a category for a genuinely new component", function () {
+  // The fallback must not turn "never seen before" into "restore something":
+  // a slug absent from `before` has no twin under either key.
+  var after = { components: { brandnew: comp("k9", "Playground") } };
+  var drift = S.preserveKnownCategories({ components: {} }, after);
+  assert.deepEqual(drift, []);
+  assert.equal(after.components.brandnew.category, "Playground");
+});
+
+test("preserveKnownCategories: the slug fallback refuses a slug that CHANGED OCCUPANT", function () {
+  // 2026-09-03: `calendar` stopped being an icon and became the date field. Same
+  // slug, different component — so the new occupant must NOT inherit the old
+  // one's page attribution. Same slug AND same name is the same component; same
+  // slug alone is not.
+  var before = {
+    components: {
+      calendar: comp("iconkey", "Icons", {
+        name: "calendar",
+        section: "Other Resources",
+        group: "Icons",
+      }),
+    },
+  };
+  var after = {
+    components: { calendar: comp("fieldkey", "Playground", { name: "Calendar" }) },
+  };
+  var drift = S.preserveKnownCategories(before, after);
+  assert.deepEqual(drift, [], "no restore across an occupant change");
+  assert.equal(after.components.calendar.section, undefined);
+});

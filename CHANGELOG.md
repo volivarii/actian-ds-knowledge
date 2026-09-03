@@ -49,6 +49,18 @@ Each entry links its pull request. Dates are the merge date (UTC).
   what `rich-text` reported — and `calendar` reports `verified: 0, unverifiable: 7, blind: true`,
   identical to `calendar-date-input`.
 
+  **A re-key defeated the category carry-forward, and that is fixed here.** `illustration` came
+  back on a Figma page called `Playground` with **no section at all** — and
+  `preserveKnownCategories` did not fire, because Figma had also *re-keyed* it, so the identity
+  lookup (key, then nodeId, then slug) found no twin. The sync's own diff already reports a re-key
+  as "same slug and name under a new Figma node"; that fact is now used, as a slug fallback gated on
+  the name matching. The name gate is what makes it safe: a slug can **change occupant** — this very
+  sync moved `calendar` from an icon to the date field — and without it the new occupant would
+  inherit the old one's page attribution. Verified against the real registries: `illustration`
+  returns to `Brand Assets` / `Illustrations & graphics` / `Illustrations`, its factual `page` stays
+  `Playground`, and no registry entry is left without a section. The editor's
+  `no non-component section reaches the eligible set` gate is what surfaced it.
+
   **This sync is also the first proof that #648's producer change works on real Figma data.** The
   regenerated anatomy now carries `layout.size` on **115 nodes across 51 slugs**, **62
   `layout.variants` entries across 30 slugs**, and **143 of 152** structural entries naming what

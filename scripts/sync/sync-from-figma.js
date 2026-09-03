@@ -249,7 +249,24 @@ function preserveKnownCategories(before, after) {
     ) {
       return;
     }
+    // Identity first, then the SLUG as a fallback. A component Figma re-keys
+    // (a dissolved component set, a master replaced in place) keeps its slug and
+    // its name but gets a new key, so identityOf finds no twin and the restore
+    // silently does not fire -- which is how `illustration` shipped attributed
+    // to a page called "Playground" with no section at all on 2026-09-03. The
+    // sync's own diff already calls a re-key "same slug and name under a new
+    // Figma node"; this is that fact, used.
+    //
+    // The name gate is what makes the fallback safe. A slug can CHANGE OCCUPANT
+    // (2026-09-03: `calendar` went from an icon to the date field), and without
+    // it the new occupant would inherit the old one's page attribution. Same
+    // slug AND same name is the same component; same slug alone is not.
     var twin = byIdentity[identityOf(slug, c)];
+    if (!twin) {
+      var bySlug = beforeComps[slug];
+      if (bySlug && bySlug.name && c.name && bySlug.name === c.name)
+        twin = bySlug;
+    }
     if (!twin || !twin.category) return; // genuinely new / never categorized
     drift.push({
       slug: slug,
