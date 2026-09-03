@@ -20,6 +20,17 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **`item-type-tag`'s Data process / Custom-2 collision is recorded as by design, at the source**
+  (#640). The two types share both `#ffd6d8` and `#932139`, and the component renders no icon, so
+  a reader cannot tell them apart. Design-lead verdict, 2026-09-03: **by design** — the custom-N
+  slots cycle a fixed palette the named types also draw from, which is why five further pairs share
+  a background and differ only in name colour. The verdict is recorded in `ds-base.css` beside both
+  rules rather than in `variant-collapse-by-design.js`, because that ledger asserts every key still
+  names a real collapse and this pair is not one: the two emit different class names, so the
+  markup-hashing census never aliases them. The note says explicitly not to invent a colour here —
+  neither value is oracle-backed, and inventing one is the move that put Info's blue behind Success
+  (#637).
+
 - **The anatomy capture keeps the per-variant evidence it was already fetching**
   (#641). The substrate looked as though it captured one variant per component. It does not: for
   every axis value with an isolated variant, `sync-anatomy` already fetches that variant's node,

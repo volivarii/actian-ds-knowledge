@@ -2709,8 +2709,19 @@
 .ds-item-type-tag--custom-1 {
   background: #ffd5dd; /* no captured token */
 }
+/* #640, verdict 2026-09-03 (design lead): custom-2 and data-process share this
+ * fill AND #932139 below, so the two tags are indistinguishable. That is BY
+ * DESIGN -- the custom-N slots cycle a fixed palette the named types also draw
+ * from, which is why five further pairs share a background (custom-5 with
+ * data-product, custom-7 with custom-9, custom-10/12/13, glossary-2 with -4,
+ * glossary-3 with -5) and differ only in name colour. Do not "fix" this by
+ * inventing a colour: neither value is oracle-backed, so an invented one is the
+ * move that put Info's blue behind Success (#637). It is recorded here rather
+ * than in variant-collapse-by-design.js because that ledger asserts every key
+ * still names a real collapse, and this pair is not one: the two emit different
+ * class names, so the markup-hashing census never aliases them. */
 .ds-item-type-tag--custom-2 {
-  background: #ffd6d8; /* no captured token */
+  background: #ffd6d8; /* no captured token; = data-process, by design (#640) */
 }
 .ds-item-type-tag--custom-3 {
   background: #e7e0ee; /* no captured token */
@@ -2752,7 +2763,7 @@
   background: #e2e4dd; /* no captured token */
 }
 .ds-item-type-tag--data-process {
-  background: #ffd6d8; /* no captured token */
+  background: #ffd6d8; /* no captured token; = custom-2, by design (#640) */
 }
 .ds-item-type-tag--data-product {
   background: #cadcf7; /* no captured token */
@@ -2792,7 +2803,7 @@
   color: #771a34; /* no captured token */
 }
 .ds-item-type-tag--custom-2 .ds-item-type-tag__name {
-  color: #932139; /* no captured token */
+  color: #932139; /* no captured token; = data-process, by design (#640) */
 }
 .ds-item-type-tag--custom-3 .ds-item-type-tag__name {
   color: #644f77; /* no captured token */
@@ -2834,7 +2845,7 @@
   color: #555947; /* no captured token */
 }
 .ds-item-type-tag--data-process .ds-item-type-tag__name {
-  color: #932139; /* no captured token */
+  color: #932139; /* no captured token; = custom-2, by design (#640) */
 }
 .ds-item-type-tag--data-product .ds-item-type-tag__name {
   color: #00255a; /* no captured token */
