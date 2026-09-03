@@ -29,6 +29,7 @@ import { SLOT_LABEL } from "../../src/lib/nomenclature";
 import {
   COMPONENT_SLOTS,
   componentSlotRecords,
+  componentSlotsFor,
 } from "../../src/lib/slots";
 import { DOMAINS, type CoverageRow } from "../../src/lib/coverageLoader";
 
@@ -372,11 +373,25 @@ test("the Component table covers every domain the loader knows", () => {
   assert.deepEqual([...domainKeys].sort(), [...DOMAINS].sort());
 });
 
-test("an unreadable media index reports no captures rather than all of them", () => {
-  // The empty set is the honest default: an index that could not be read is
-  // not evidence that a capture exists.
+test("an empty capture set means no captures are known", () => {
   const rs = componentSlotRecords(fixtureCoverageRows(), new Set());
   const capture = COMPONENT_SLOTS.find((s) => s.key === "capture");
   assert.ok(capture);
   assert.equal(rs.filter((r) => capture.filled(r)).length, 0);
+});
+
+test("an unmeasurable capture index DROPS the Slot rather than reporting zero", () => {
+  // loadMediaIndex's own rule: a failed read must not come back as "this
+  // component has no media". Passing an empty set on failure would report
+  // `Capture 0 of 73`, which is a lie with a number on it — worse than saying
+  // nothing, because it reads as a gap somebody should go and fill.
+  const measured = componentSlotsFor(true).map((s) => s.key);
+  const unmeasured = componentSlotsFor(false).map((s) => s.key);
+  assert.ok(measured.includes("capture"));
+  assert.ok(!unmeasured.includes("capture"));
+  // Everything else survives: one unreadable index must not blank the rest.
+  assert.deepEqual(
+    unmeasured,
+    measured.filter((k) => k !== "capture"),
+  );
 });

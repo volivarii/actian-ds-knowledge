@@ -162,3 +162,21 @@ export async function loadMediaCapture(
   }
   return null;
 }
+
+/**
+ * The slugs with an isolated `default` capture — the set the Component Capture
+ * Slot measures against.
+ *
+ * Propagates rather than returning an empty set, on purpose and consistently
+ * with `loadMediaCapture` above: a failed read is not evidence that no
+ * component has a capture. The caller decides what an unmeasurable index means
+ * for its surface; here it is `componentSlotsFor(false)`, which drops the Slot.
+ */
+export async function loadCapturedSlugs(gh: Octokit): Promise<Set<string>> {
+  const media = await loadIndex(gh);
+  return new Set(
+    Object.entries(media)
+      .filter(([, roles]) => typeof roles?.default === "string")
+      .map(([slug]) => slug),
+  );
+}

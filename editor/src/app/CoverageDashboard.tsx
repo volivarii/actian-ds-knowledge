@@ -43,6 +43,11 @@ import {
 import { STATE_FOR_STATUS, STATE_LABEL } from "../lib/nomenclature";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
+import { measure } from "../lib/measure";
+import { componentSlotRecords, componentSlotsFor } from "../lib/slots";
+import { loadCapturedSlugs } from "../lib/loadMediaIndex";
+import { THING_LABEL } from "../lib/nomenclature";
+import { MeterList } from "./MeterList";
 
 export interface CoverageDashboardProps {
   octokit: Octokit;
@@ -83,6 +88,11 @@ export function CoverageDashboard({
     [cartEntries],
   );
 
+  // null means NOT MEASURED, which is different from "measured and empty".
+  // A failed media-index read drops the Capture Meter rather than reporting
+  // zero captures across the whole registry.
+  const [captured, setCaptured] = useState<Set<string> | null>(null);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -99,10 +109,37 @@ export function CoverageDashboard({
     };
   }, [octokit]);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const slugs = await loadCapturedSlugs(octokit);
+        if (!cancelled) setCaptured(slugs);
+      } catch {
+        // Left null. The table is the point of this screen and must still
+        // render; the Capture Meter simply does not appear.
+        if (!cancelled) setCaptured(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [octokit]);
+
   const counts = useMemo(
     () => (state.kind === "ready" ? summarize(state.rows) : null),
     [state],
   );
+
+  const meters = useMemo(() => {
+    if (state.kind !== "ready") return null;
+    const at = new Date().toISOString().slice(0, 10);
+    return measure(
+      componentSlotRecords(state.rows, captured ?? new Set()),
+      componentSlotsFor(captured !== null),
+      at,
+    );
+  }, [state, captured]);
 
   if (state.kind === "loading") {
     return (
@@ -141,6 +178,11 @@ export function CoverageDashboard({
       <Heading as="h3" size="5" mb="1">
         Coverage
       </Heading>
+      {meters && (
+        <Box mb="4" mt="3">
+          <MeterList title={THING_LABEL.component} meters={meters} />
+        </Box>
+      )}
       <Text size="2" color="gray" mb="3" as="p">
         {counts!.authored} {STATE_LABEL.draft.toLowerCase()} ·{" "}
         {counts!.unstarted} {STATE_LABEL.empty.toLowerCase()} ·{" "}

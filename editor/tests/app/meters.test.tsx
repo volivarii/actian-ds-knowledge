@@ -6,7 +6,7 @@
 // actually calls it. Shipping into a surface that does not render happened
 // twice in one day on this codebase.
 import "../setup-happy-dom";
-import test from "node:test";
+import test, { afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { render, cleanup, waitFor } from "@testing-library/react";
 import React from "react";
@@ -19,7 +19,14 @@ import type { Meter } from "../../src/lib/measure";
 import { b64 } from "../helpers/fakeOctokit";
 import { buildPatternIndex, type AppContextDoc, type RecipeDoc } from "../../src/lib/patternIndex";
 import { measure } from "../../src/lib/measure";
-import { PATTERN_SLOTS, patternSlotRecords } from "../../src/lib/slots";
+import {
+  PATTERN_SLOTS,
+  COMPONENT_SLOTS,
+  patternSlotRecords,
+  componentSlotRecords,
+  componentSlotsFor,
+} from "../../src/lib/slots";
+import { summarize, type CoverageRow } from "../../src/lib/coverageLoader";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -67,6 +74,12 @@ const METERS: Meter[] = [
   },
 ];
 
+// Teardown as afterEach, not as each test's last statement: a trailing
+// cleanup() is skipped when an assertion throws, which leaks the mount and
+// turns the next failure into a 30s SIGKILL that reads as a hang rather than
+// as the assertion that actually failed.
+afterEach(() => cleanup());
+
 function mount(ui: React.ReactElement) {
   return render(<Theme>{ui}</Theme>);
 }
@@ -76,13 +89,11 @@ test("a Meter renders the pair, never a bare percentage", () => {
   const text = container.textContent ?? "";
   assert.ok(text.includes("14 of 31"), `no pair in: ${text}`);
   assert.ok(!/\d+\s*%/.test(text), `a bare percentage reached the screen: ${text}`);
-  cleanup();
 });
 
 test("a Meter renders the date it was measured", () => {
   const { container } = mount(<MeterList title="Pattern" meters={METERS} />);
   assert.ok((container.textContent ?? "").includes("2026-09-03"));
-  cleanup();
 });
 
 test("a complete Meter is dimmed, not hidden", () => {
@@ -98,7 +109,6 @@ test("a complete Meter is dimmed, not hidden", () => {
   assert.equal(row.getAttribute("data-complete"), "true");
   const incomplete = container.querySelector('[data-meter="rule"]');
   assert.equal(incomplete?.getAttribute("data-complete"), "false");
-  cleanup();
 });
 
 test("an empty scope says 0 of 0 rather than reading as done", () => {
@@ -109,7 +119,6 @@ test("an empty scope says 0 of 0 rather than reading as done", () => {
     />,
   );
   assert.ok((container.textContent ?? "").includes("0 of 0"));
-  cleanup();
 });
 
 // ---------------------------------------------------------------- the screen
@@ -180,7 +189,6 @@ test("the patterns dashboard renders the meters from the real corpus", async () 
   assert.ok(text.includes("naming 10 of them"), "prose namedByAUseCase wrong");
   assert.ok(text.includes("on 3 patterns"), "prose withCapture wrong");
   assert.ok(!/\d+\s*%/.test(text), `a bare percentage reached the dashboard: ${text}`);
-  cleanup();
 });
 
 test("the dashboard prose and the Pattern meters cannot drift apart", () => {
