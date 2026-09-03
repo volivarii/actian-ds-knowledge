@@ -6,7 +6,7 @@ Sources last changed **2026-09-03**. Values are derived from the tree this ran a
 
 | Measure | Value | Since last change |
 | --- | --- | --- |
-| Unexplained variant collapses | 44 | flat (was 44) |
+| Unexplained variant collapses | 42 | flat (was 42) |
 | FM variant values that render alike (unexplained) | 55 | flat (was 55) |
 | FM modifier classes with no rule | 56 | flat (was 56) |
 | Inline-style hex (cannot re-theme) | 51 | no baseline yet |
@@ -19,6 +19,7 @@ Oracle coverage is **85 of 418** declarations. It is stated as a pair on purpose
 
 | Date | Version | Verified | Examined |
 | --- | --- | --- | --- |
+| 2026-09-03 | v0.34.180 | 85 | 418 |
 | 2026-09-03 | v0.34.178 | 85 | 418 |
 | 2026-09-02 | v0.34.177 | 85 | 417 |
 | 2026-09-02 | v0.34.173 | 80 | 410 |
@@ -30,12 +31,12 @@ Oracle coverage is **85 of 418** declarations. It is stated as a pair on purpose
 | 2026-07-24 | v0.34.118 | 49 | 415 |
 | 2026-07-24 | v0.34.118 | 49 | 417 |
 | 2026-07-24 | v0.34.117 | 65 | 445 |
-| 2026-07-24 | v0.34.117 | 65 | 445 |
 
 ## Unexplained collapses over time
 
 | Date | Version | Unexplained |
 | --- | --- | --- |
+| 2026-09-03 | v0.34.180 | 42 |
 | 2026-09-03 | v0.34.178 | 44 |
 | 2026-09-02 | v0.34.177 | 44 |
 | 2026-08-31 | v0.34.159 | 54 |

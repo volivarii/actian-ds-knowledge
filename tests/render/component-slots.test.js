@@ -225,3 +225,16 @@ test("breadcrumb survives a badge entry that is not a string", function () {
   assert.equal((html.match(/class="ds-item-type[^"]*"/g) || []).length, 2);
   assert.match(html, />42</, "a numeric entry renders as its text");
 });
+
+test("the date field's Show message switch turns its helper off", function () {
+  // A default-TRUE BOOLEAN published by the 2026-09-03 sync. Default on, so a
+  // caller who names a helper still gets one; explicitly off removes it.
+  var on = render("calendar", { Helper: "Use MM/DD/YYYY." });
+  assert.match(on, /class="ds-calendar__helper">Use MM\/DD\/YYYY\.</);
+  var off = render("calendar", {
+    Helper: "Use MM/DD/YYYY.",
+    "Show message": false,
+  });
+  assert.equal(/ds-calendar__helper/.test(off), false);
+  assert.match(off, /class="ds-calendar"/, "the field itself is unaffected");
+});

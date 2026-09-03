@@ -2,7 +2,7 @@
   "_schema_version": 1,
   "slug": "text-input",
   "kit": "dskit",
-  "synced_at": "2026-08-12T12:00:22.180Z",
+  "synced_at": "2026-09-03T15:32:36.959Z",
   "source": {
     "fileKey": "l8biHxfarNi1I2RMvVxVOK",
     "nodeId": "7238:2487",
@@ -18,13 +18,28 @@
         "prop": "States",
         "value": "Active",
         "path": "1",
-        "reason": "kind:instance!=container"
+        "reason": "kind:instance!=container",
+        "base": [
+          "instance:Field"
+        ],
+        "variant": [
+          "container:Input"
+        ]
       },
       {
         "prop": "States",
         "value": "Read-only",
         "path": "",
-        "reason": "childCount:3!=2"
+        "reason": "childCount:3!=2",
+        "base": [
+          "instance:Label",
+          "instance:Field",
+          "instance:Helper text"
+        ],
+        "variant": [
+          "instance:Label",
+          "instance:Field"
+        ]
       }
     ]
   },
@@ -48,6 +63,9 @@
       "sizing": {
         "h": "fixed",
         "v": "hug"
+      },
+      "size": {
+        "w": "328px"
       },
       "gapToken": "--zen-spacing-2xs"
     },

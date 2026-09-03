@@ -808,7 +808,7 @@ var SPECIMEN_PROPS = {
   stepper: { Body: "Optional body" },
 
   // authored: the capture holds "Date", "*" and "mm/dd/yyyy" but no helper layer
-  "calendar-date-input": { Helper: "Use MM/DD/YYYY." },
+  "calendar": { Helper: "Use MM/DD/YYYY." },
 
   "dropdown-select-default": {
     // capture: anatomy/dropdown-select-default.json layer "description"

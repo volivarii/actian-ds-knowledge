@@ -18,6 +18,71 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Changed
+
+- **The 2026-09-03 breaking Figma sync, carried through** (#636). Four renames, one of which moves a
+  slug between namespaces. `calendar-date-input` → **`calendar`**, taking the slug the `calendar`
+  **icon** used to hold in the components map — the icon itself survives in the icons map, and
+  `renderIcon("calendar")` (the glyph inside the date field) was checked directly rather than
+  trusted, because a rename crossing that boundary has emptied a glyph before with the whole suite
+  green. `rich-text` → **`rich-text-froala`**, `dropdown` → `menu-dropdown` (no authored surface),
+  `icon` → `new-conversation` (icon namespace only). Option A throughout: where Figma renames, the
+  authored surface follows — two guidance directories, two renderer cases and their BEM prefixes,
+  `matrix.js`, the manifest's guideline entries, the content index, two content patterns'
+  `relatedComponents`, two app-context patterns, and the tests. `_meta.yml` for the date field also
+  drops a `related: [calendar]` that had pointed at the **icon** since the 2026-08-31 sync; it now
+  names `calendar-data-selector`, which is what the prose always meant.
+
+  `calendar-data-selector` loses its `Selection` axis and its `Type` values change to
+  `Dates | Months | Years`. The renderer keeps reading `v.Selection` deliberately — it is flow data
+  as well as registry data, so a flow authored against the retired axis keeps its range rendering
+  instead of silently losing it, the same reason `alert-banner` keeps its Primary/Danger aliases.
+  The date field's `States` values are renamed upstream (`Enabled`→`Default` and four more); only
+  `Disabled` is read here and it is unchanged. Its new default-TRUE `Show message` BOOLEAN is now
+  read, gating the helper the caller names.
+
+  **Accepted coverage move**, recorded here because the reason lives only in the commit that took
+  it: *rich-text became rich-text-froala and calendar-date-input became calendar in the 2026-09-03
+  Figma sync. rich-text's 2 checkable declarations move to rich-text-froala with its class prefix;
+  the repo-wide total is unchanged at 85, which is what a move looks like and a loss does not.*
+  Verified per slug: `rich-text-froala` reports `verified: 2, unverifiable: 5` — byte-identical to
+  what `rich-text` reported — and `calendar` reports `verified: 0, unverifiable: 7, blind: true`,
+  identical to `calendar-date-input`.
+
+  **A re-key defeated the category carry-forward, and that is fixed here.** `illustration` came
+  back on a Figma page called `Playground` with **no section at all** — and
+  `preserveKnownCategories` did not fire, because Figma had also *re-keyed* it, so the identity
+  lookup (key, then nodeId, then slug) found no twin. The sync's own diff already reports a re-key
+  as "same slug and name under a new Figma node"; that fact is now used, as a slug fallback gated on
+  the name matching. The name gate is what makes it safe: a slug can **change occupant** — this very
+  sync moved `calendar` from an icon to the date field — and without it the new occupant would
+  inherit the old one's page attribution. Verified against the real registries: `illustration`
+  returns to `Brand Assets` / `Illustrations & graphics` / `Illustrations`, its factual `page` stays
+  `Playground`, and no registry entry is left without a section. The editor's
+  `no non-component section reaches the eligible set` gate is what surfaced it.
+
+  **And the repair is one-shot, which is worse than the bug it repairs.** Re-running the sync after
+  fixing the lookup reported `verdict=unchanged` and pushed nothing: `preserveKnownCategories` reads
+  the *previous dist* as its baseline, so the sectionless value committed by the first run had
+  already become the new last-known-good. Recovering it meant replaying the generator by hand over
+  the pre-sync commit. A new `assertNoAttributionLoss` therefore gates the **commit** instead —
+  a surviving component (matched by slug, because a re-key is exactly what defeats identity
+  matching) that had a section and comes back without one refuses the emit. Scope is deliberately
+  narrow: a genuinely new entry with no section is not a loss, and a removed component belongs to
+  `assertNoCategoryMassLoss`, because two gates reporting one event would make both messages lie.
+  Proven against the real artifacts: the gate throws on the registry the first run produced and
+  passes on the repaired one.
+
+  **This sync is also the first proof that #648's producer change works on real Figma data.** The
+  regenerated anatomy now carries `layout.size` on **115 nodes across 51 slugs**, **62
+  `layout.variants` entries across 30 slugs**, and **143 of 152** structural entries naming what
+  sits at the path on each side. `modal`'s root records `size: {w: 1200px, h: 482px}` — the
+  dimension #641 said the substrate could not know — and its `450px confirm`/`450px warning` values
+  now carry a real layout delta. Measured against the collapse census: of **42** unexplained
+  collapses, **28 now have usable evidence** (up from about 10 before), 8 have no isolated variant
+  in Figma, and 6 remain empty — three of those being the captured default itself. That is the
+  number #550 can work from.
+
 ### Added
 
 - **alert-banner, action-bar and breadcrumb render the slots Figma documents**
