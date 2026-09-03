@@ -96,6 +96,16 @@ test("a Meter renders the date it was measured", () => {
   assert.ok((container.textContent ?? "").includes("2026-09-03"));
 });
 
+test("showDate=false drops the stamp, for a caller that states it once", () => {
+  const { container } = mount(
+    <MeterList title="Pattern" meters={METERS} showDate={false} />,
+  );
+  const text = container.textContent ?? "";
+  assert.ok(!text.includes("2026-09-03"), "the per-group stamp is still there");
+  // The measurement itself is untouched — only this group's stamp is hidden.
+  assert.ok(text.includes("14 of 31"));
+});
+
 test("a complete Meter is dimmed, not hidden", () => {
   const { container } = mount(<MeterList title="Pattern" meters={METERS} />);
   const text = container.textContent ?? "";
@@ -182,6 +192,14 @@ test("the patterns dashboard renders the meters from the real corpus", async () 
   assert.ok(text.includes("26 of 30"), "Entity Properties meter missing");
   assert.ok(text.includes("2 of 3"), "Product Navigation meter missing");
   assert.ok(text.includes("33 of 33"), "Term meters missing");
+  // Rule 2 is satisfied once for the row, not four times: looking at it, four
+  // identical stamps read as four measurements that happen to agree.
+  const today = new Date().toISOString().slice(0, 10);
+  assert.equal(
+    text.split(`measured ${today}`).length - 1,
+    1,
+    "the measurement date must appear exactly once for the row",
+  );
   // The prose figures are derived from the same meters, so they must appear
   // with the values the corpus has. Rule is 14 of 31, so 17 have no when
   // clause; Job is 10; Capture is 3.

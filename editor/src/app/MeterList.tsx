@@ -16,10 +16,20 @@ import type { Meter } from "../lib/measure";
 export interface MeterListProps {
   title: string;
   meters: Meter[];
+  /**
+   * Show "measured <date>" beside the title. Default true, so a MeterList used
+   * on its own always satisfies rule 2.
+   *
+   * A caller rendering SEVERAL groups from one measurement sets this false and
+   * states the date once for the row. Four identical stamps across four
+   * columns measured at the same instant is noise, and it reads as four
+   * separate measurements that happen to agree.
+   */
+  showDate?: boolean;
 }
 
-export function MeterList({ title, meters }: MeterListProps) {
-  const measuredAt = meters[0]?.measuredAt;
+export function MeterList({ title, meters, showDate = true }: MeterListProps) {
+  const measuredAt = showDate ? meters[0]?.measuredAt : undefined;
   return (
     <Box>
       <Flex align="baseline" gap="2" mb="2">

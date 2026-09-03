@@ -384,15 +384,36 @@ export function PatternsDashboard({
         Patterns
       </Heading>
       {meters && (
-        <Flex gap="6" wrap="wrap" mb="5" mt="3">
-          <MeterList title={THING_LABEL.ux_pattern} meters={meters.pattern} />
-          <MeterList title={THING_LABEL.app_entity} meters={meters.entity} />
-          <MeterList title={THING_LABEL.app} meters={meters.product} />
-          <MeterList
-            title={THING_LABEL.terminology_term}
-            meters={meters.term}
-          />
-        </Flex>
+        <Box mb="5" mt="3">
+          {/* One date for the row: all four groups come from a single
+              measurement, so stamping each of them says it four times and
+              reads as four measurements that happen to agree. */}
+          <Text size="1" color="gray" as="p" mb="2">
+            measured {meters.pattern[0]?.measuredAt}
+          </Text>
+          <Flex gap="6" wrap="wrap">
+            <MeterList
+              title={THING_LABEL.ux_pattern}
+              meters={meters.pattern}
+              showDate={false}
+            />
+            <MeterList
+              title={THING_LABEL.app_entity}
+              meters={meters.entity}
+              showDate={false}
+            />
+            <MeterList
+              title={THING_LABEL.app}
+              meters={meters.product}
+              showDate={false}
+            />
+            <MeterList
+              title={THING_LABEL.terminology_term}
+              meters={meters.term}
+              showDate={false}
+            />
+          </Flex>
+        </Box>
       )}
       {opened && (
         <Box mb="4">
