@@ -6,7 +6,7 @@ Sources last changed **2026-09-03**. Values are derived from the tree this ran a
 
 | Measure | Value | Since last change |
 | --- | --- | --- |
-| Unexplained variant collapses | 44 | flat (was 44) |
+| Unexplained variant collapses | 42 | improving (was 44) |
 | FM variant values that render alike (unexplained) | 55 | flat (was 55) |
 | FM modifier classes with no rule | 56 | flat (was 56) |
 | Inline-style hex (cannot re-theme) | 51 | no baseline yet |

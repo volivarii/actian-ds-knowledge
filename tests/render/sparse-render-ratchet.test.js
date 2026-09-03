@@ -122,8 +122,9 @@ const ACCEPTED_INVENTED = {
   "action-bar.Secondary":
     "rename of sticky-footer.Secondary (#526); pre-existing fallback, see note above",
 
-  // Same shape, one reorg later. Figma v2.7.0 renamed input-date to date-input
-  // and then date-input to calendar-date-input, and metamodel-widget to metamodel
+  // Same shape, one reorg later. Figma v2.7.0 renamed input-date to date-input,
+  // then date-input to calendar-date-input, then (2026-09-03) calendar-date-input
+  // to calendar as the old `calendar` icon vacated the slug; and metamodel-widget to metamodel
   // (#589). The same two slots have therefore moved twice. The baseline is read at the merge
   // base, which still lists these three slots under the old slugs, so the
   // rename alone reads as three brand-new invented slots. Verified, not
@@ -135,10 +136,10 @@ const ACCEPTED_INVENTED = {
   //
   // Not permanent cover either: these are the same specimen-vs-runtime question
   // (#543 to #545) as the two above. Remove all five together when it is answered.
-  "calendar-date-input.Label":
-    "rename of input-date.Label, then date-input.Label (#589); pre-existing fallback, see note above",
-  "calendar-date-input.Placeholder text":
-    "rename of input-date.Placeholder text, then date-input.Placeholder text (#589); pre-existing fallback, see note above",
+  "calendar.Label":
+    "rename of input-date.Label, then date-input.Label, then calendar-date-input.Label (#589, 2026-09-03 sync); pre-existing fallback, see note above",
+  "calendar.Placeholder text":
+    "rename of input-date.Placeholder text, then date-input.Placeholder text, then calendar-date-input.Placeholder text (#589, 2026-09-03 sync); pre-existing fallback, see note above",
   "metamodel.Item type initials":
     "rename of metamodel-widget.Item type initials (#589); pre-existing fallback, see note above",
 

@@ -398,7 +398,8 @@ test("classifySlug: a State=Default root is still a comparable subject (the rule
   });
 });
 
-// "States=Enabled" (calendar-date-input's real root name) is a DIFFERENT axis that
+// "States=Enabled" (the date field's real root name, slug `calendar` since the
+// 2026-09-03 sync) is a DIFFERENT axis that
 // merely starts with the same five letters. Matching it would suppress a root
 // that is a perfectly good subject.
 test("rootIsNonDefaultState reads the State axis only, not an axis that starts like it", function () {

@@ -1918,25 +1918,28 @@
           );
         }
 
-        case "calendar-date-input": {
-          // Registry axes: Type = Single date | Date range; States = Enabled |
-          // Disabled | Error | … . Anatomy: container{ container[Label]{text},
+        case "calendar": {
+          // Registry axes: Type = Single date | Date range; States = Default |
+          // Hover | Focus | Active | Filled | Error | Disabled (the 2026-09-03
+          // sync renamed Enabled/Hovered/Focused/Activ/Fille to the first five;
+          // Error and Disabled are unchanged, and Disabled is the only one this
+          // branch reads). Anatomy: container{ container[Label]{text},
           // container[Input + icon button]{ inputfield, instance[Button] } } —
           // a labeled date input with a trailing calendar icon button. Mirrors
           // the .ds-field/.ds-input idiom; Date range adds a second input.
           var dateRange = v.Type === "Date range";
           var dateDisabled = v.States === "Disabled";
-          var dateCls = "ds-calendar-date-input";
-          if (dateRange) dateCls += " ds-calendar-date-input--range";
+          var dateCls = "ds-calendar";
+          if (dateRange) dateCls += " ds-calendar--range";
           if (dateDisabled) dateCls += " is-disabled";
           var datePlaceholder = esc(props["Placeholder text"] || "MM/DD/YYYY");
           function dateInput() {
             return (
-              '<div class="ds-calendar-date-input__field">' +
-              '<span class="ds-calendar-date-input__value">' +
+              '<div class="ds-calendar__field">' +
+              '<span class="ds-calendar__value">' +
               datePlaceholder +
               "</span>" +
-              '<span class="ds-calendar-date-input__calendar" aria-hidden="true">' +
+              '<span class="ds-calendar__calendar" aria-hidden="true">' +
               renderIcon("calendar") +
               "</span>" +
               "</div>"
@@ -1944,13 +1947,18 @@
           }
           var dateInputs = dateRange
             ? dateInput() +
-              '<span class="ds-calendar-date-input__sep">–</span>' +
+              '<span class="ds-calendar__sep">–</span>' +
               dateInput()
             : dateInput();
           // Optional slot: the capture holds no helper layer at all. The
           // gallery's helper string lives in matrix.js SPECIMEN_PROPS.
-          var dateHelper = props.Helper
-            ? '<span class="ds-calendar-date-input__helper">' +
+          // `Show message` arrived as a default-TRUE BOOLEAN in the 2026-09-03
+          // sync. Read as a literal bracket access so derive-contract's
+          // BRACKET_READ publishes it, and gating rather than defaulting: the
+          // caller still names the message, the switch only turns it off.
+          var dateHelper =
+            props.Helper && props["Show message"] !== false
+            ? '<span class="ds-calendar__helper">' +
               esc(props.Helper) +
               "</span>"
             : "";
@@ -1958,10 +1966,10 @@
             '<div class="' +
             dateCls +
             '">' +
-            '<div class="ds-calendar-date-input__label-row"><span class="ds-calendar-date-input__label">' +
+            '<div class="ds-calendar__label-row"><span class="ds-calendar__label">' +
             esc(props.Label || "Date") +
             "</span></div>" +
-            '<div class="ds-calendar-date-input__inputs">' +
+            '<div class="ds-calendar__inputs">' +
             dateInputs +
             "</div>" +
             dateHelper +
@@ -1969,17 +1977,17 @@
           );
         }
 
-        case "rich-text": {
+        case "rich-text-froala": {
           // Registry axis: State = Default | Expanded. Anatomy: container[State]{
           // container[Toolbar]{ container[Left toolbar], container[Right toolbar]
           // } } — an editor toolbar shell with grouped controls. Expanded shows
           // a content area below the toolbar.
           var rtExpanded = v.State === "Expanded";
           var rtCls =
-            "ds-rich-text" + (rtExpanded ? " ds-rich-text--expanded" : "");
+            "ds-rich-text-froala" + (rtExpanded ? " ds-rich-text-froala--expanded" : "");
           function rtBtn(iconSlug, label) {
             return (
-              '<button class="ds-rich-text__btn" type="button" aria-label="' +
+              '<button class="ds-rich-text-froala__btn" type="button" aria-label="' +
               esc(label) +
               '">' +
               renderIcon(iconSlug) +
@@ -1987,23 +1995,23 @@
             );
           }
           var rtLeft =
-            '<div class="ds-rich-text__group ds-rich-text__group--left">' +
+            '<div class="ds-rich-text-froala__group ds-rich-text-froala__group--left">' +
             rtBtn("text-type", "Text style") +
             rtBtn("list-bullets", "Bulleted list") +
             rtBtn("list-numbers", "Numbered list") +
             "</div>";
           var rtRight =
-            '<div class="ds-rich-text__group ds-rich-text__group--right">' +
+            '<div class="ds-rich-text-froala__group ds-rich-text-froala__group--right">' +
             rtBtn("link-type", "Insert link") +
             "</div>";
           var rtBody = rtExpanded
-            ? '<div class="ds-rich-text__content" aria-label="Editor"></div>'
+            ? '<div class="ds-rich-text-froala__content" aria-label="Editor"></div>'
             : "";
           return (
             '<div class="' +
             rtCls +
             '">' +
-            '<div class="ds-rich-text__toolbar">' +
+            '<div class="ds-rich-text-froala__toolbar">' +
             rtLeft +
             rtRight +
             "</div>" +
@@ -2937,8 +2945,15 @@
         }
 
         case "calendar-data-selector": {
-          // Registry axes: Type = Single date select | Date | Month | Single;
-          // Selection = Single | Range | Year. A static month grid
+          // Registry axis: Type = Dates | Months | Years (the 2026-09-03 sync
+          // replaced Single date select | Date | Month | Single and RETIRED the
+          // Selection axis entirely). `v.Selection` is still read below: it is
+          // flow data as well as registry data, so a flow authored against the
+          // retired axis keeps its range rendering rather than silently losing
+          // it — the same reason alert-banner keeps its Primary/Danger aliases.
+          // Months and Years render as Dates today; both now carry captured
+          // evidence (layout + structural), so they are workable under #550
+          // rather than needing an invented appearance. A static month grid
           // (DETERMINISTIC — no Date()): header (month/year + prev/next nav) +
           // weekday row + day cells. Range renders a start→end band; else a
           // single selected day. Month label is overridable via props.Month.
@@ -3411,8 +3426,8 @@
     "toast",
     "stepper",
     "tooltip-default",
-    "calendar-date-input",
-    "rich-text",
+    "calendar",
+    "rich-text-froala",
     "dropdown-select-default",
     "progress-bar-small",
     "interactive-tag",

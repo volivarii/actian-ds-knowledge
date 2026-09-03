@@ -7,8 +7,8 @@
   },
   "measures": {
     "unexplainedCollapses": {
-      "value": 44,
-      "direction": "unchanged",
+      "value": 42,
+      "direction": "better",
       "previous": 44
     },
     "fmUnexplainedCollapses": {
