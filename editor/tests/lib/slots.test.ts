@@ -14,7 +14,13 @@ import {
 } from "../../src/lib/patternIndex";
 import {
   PATTERN_SLOTS,
+  ENTITY_SLOTS,
+  PRODUCT_SLOTS,
+  TERM_SLOTS,
   patternSlotRecords,
+  entitySlotRecords,
+  productSlotRecords,
+  termSlotRecords,
   wordCount,
   DESCRIPTION_MIN_WORDS,
   type PatternSlotRecord,
@@ -46,6 +52,25 @@ function bySlug(rs: PatternSlotRecord[], slug: string): PatternSlotRecord {
   const r = rs.find((x) => x.slug === slug);
   assert.ok(r, `${slug} is not in the corpus — this test names a record that left`);
   return r;
+}
+
+/**
+ * Does this help text name that record?
+ *
+ * A whole-token match, NOT `String.includes`. Substring matching made this
+ * check tautological: "The fields this entity carries" matches the entity slug
+ * `field`, so every help string containing an ordinary English word that
+ * happens to be a slug passed — proved by injecting a bogus example and
+ * watching the guard stay green. Eight entity slugs are short common words
+ * (field, domain, topic, contact, dataset, lineage, scanner, api-key).
+ *
+ * Hyphens count as part of the token, so `access-request` does not match
+ * inside `access-request-management` — a help text should name the record it
+ * actually means.
+ */
+function namesRecord(help: string, slug: string): boolean {
+  const escaped = slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\w-])${escaped}(?![\\w-])`).test(help);
 }
 
 function slot(key: string) {
@@ -129,16 +154,139 @@ test("every Pattern Slot takes its name from the vocabulary", () => {
   }
 });
 
-test("every Pattern Slot's help names a real record", () => {
+test("every Slot's help names a real record, in every table", () => {
   // Honesty rule 5: help must point at an example that exists. A help string
   // naming a record that has left the corpus is worse than none.
-  const rs = records();
-  const slugs = new Set(rs.map((r) => r.slug));
-  for (const s of PATTERN_SLOTS) {
-    const named = [...slugs].filter((slug) => s.help.includes(slug));
-    assert.ok(
-      named.length > 0,
-      `${s.key}'s help names no record in the corpus: "${s.help}"`,
+  //
+  // Over ALL four tables, not just the one where the rule was first written
+  // down. A guard whose subject is the place a defect was last seen is how the
+  // same vocabulary drift recurred five times in P1.
+  const doc = realDoc();
+  const corpora: ReadonlyArray<readonly [string, string[], { key: string; help: string }[]]> = [
+    ["Pattern", records().map((r) => r.slug), PATTERN_SLOTS],
+    ["Entity", entitySlotRecords(doc).map((r) => r.slug), ENTITY_SLOTS],
+    ["Product", productSlotRecords(doc).map((r) => r.slug), PRODUCT_SLOTS],
+    ["Term", termSlotRecords(doc).map((r) => r.slug), TERM_SLOTS],
+  ];
+  for (const [thing, slugs, table] of corpora) {
+    assert.ok(slugs.length > 0, `${thing} corpus is empty — the check is vacuous`);
+    assert.ok(table.length > 0, `${thing} has no Slots — the check is vacuous`);
+    for (const s of table) {
+      assert.ok(
+        slugs.some((slug) => namesRecord(s.help, slug)),
+        `${thing}.${s.key}'s help names no record in its corpus: "${s.help}"`,
+      );
+    }
+  }
+});
+
+test("Entity has exactly three Slots, and no Description", () => {
+  // Decided on #644: Entity bodies run 5-38 words with no gap anywhere, so
+  // every word-count bar is a guess. The Pattern bar would report 0 of 30 and
+  // read as a system-wide failure rather than a measurement.
+  assert.deepEqual(
+    ENTITY_SLOTS.map((s) => s.key),
+    ["properties", "link", "used_in"],
+  );
+  assert.ok(
+    !ENTITY_SLOTS.some((s) => s.key === "description"),
+    "Entity must not gain a Description Slot without reopening #644",
+  );
+});
+
+test("Entity Slots are filled and empty on known real records", () => {
+  const rs = entitySlotRecords(realDoc());
+  assert.ok(rs.length > 0, "no Entity records — vacuous");
+  const find = (slug: string) => {
+    const r = rs.find((x) => x.slug === slug);
+    assert.ok(r, `${slug} left the corpus`);
+    return r;
+  };
+  const s = (k: string) => {
+    const f = ENTITY_SLOTS.find((x) => x.key === k);
+    assert.ok(f, `no Entity Slot ${k}`);
+    return f;
+  };
+  assert.equal(s("properties").filled(find("access-request")), true);
+  assert.equal(s("properties").filled(find("input-port")), false);
+  assert.equal(s("link").filled(find("access-request")), true);
+  assert.equal(s("link").filled(find("api-key")), false);
+  assert.equal(s("used_in").filled(find("access-request")), true);
+
+  assert.equal(rs.filter((r) => s("properties").filled(r)).length, 26);
+  assert.equal(rs.filter((r) => s("link").filled(r)).length, 22);
+  assert.equal(rs.filter((r) => s("used_in").filled(r)).length, 30);
+});
+
+test("Entity Link counts a relationship map with any verb", () => {
+  // The verbs are open. A parse keyed to a closed lowercase list read 11 of 30
+  // instead of 22, because belongsTo, relatesTo, appliesTo, subtypeOf and
+  // derivedFrom are camelCase and the pattern only matched lowercase.
+  const rs = entitySlotRecords(realDoc());
+  const verbs = new Set(rs.flatMap((r) => r.relationshipVerbs));
+  assert.ok(verbs.size > 5, `only ${verbs.size} verbs seen — the parse is narrow`);
+  assert.ok(verbs.has("belongsTo"), "camelCase verbs are being dropped");
+});
+
+test("Product Navigation is the one Product Slot that is not full", () => {
+  const rs = productSlotRecords(realDoc());
+  assert.equal(rs.length, 3);
+  const nav = PRODUCT_SLOTS.find((s) => s.key === "navigation");
+  assert.ok(nav);
+  const find = (slug: string) => {
+    const r = rs.find((x) => x.slug === slug);
+    assert.ok(r, `${slug} left the corpus`);
+    return r;
+  };
+  assert.equal(nav.filled(find("studio")), true);
+  assert.equal(nav.filled(find("explorer")), false);
+  assert.equal(rs.filter((r) => nav.filled(r)).length, 2);
+  // Every other Product Slot is 3/3 today. Asserting that keeps a regression
+  // visible rather than only tracking the one known gap.
+  for (const s of PRODUCT_SLOTS) {
+    if (s.key === "navigation") continue;
+    assert.equal(rs.filter((r) => s.filled(r)).length, 3, `${s.key} moved`);
+  }
+});
+
+test("Product Signals is a keyword list, and its help says so", () => {
+  // The design doc read the field name as "behavioural signals" and described
+  // it as how a product tells a user something happened. The corpus says
+  // otherwise: studio carries steward, govern, curate, lineage — the words that
+  // route a request to this product, the same job Pattern tags do. Help text is
+  // read by an author, so the shape decides the wording.
+  const rs = productSlotRecords(realDoc());
+  const studio = rs.find((r) => r.slug === "studio");
+  assert.ok(studio);
+  assert.ok(studio.signals.includes("steward"), "signals is not the keyword list");
+  const s = PRODUCT_SLOTS.find((x) => x.key === "signals");
+  assert.ok(s);
+  assert.ok(
+    !/tells a user|feedback|happened/i.test(s.help),
+    `Signals help still describes UI feedback: "${s.help}"`,
+  );
+});
+
+test("Term Slots are full, and the predicate still rejects an empty record", () => {
+  // Both Term Slots are 33/33, so no known-empty REAL record exists. Asserting
+  // only the count would leave a predicate that returns true unconditionally
+  // looking correct. The synthetic half is stated here on purpose.
+  const rs = termSlotRecords(realDoc());
+  assert.equal(rs.length, 33);
+  for (const s of TERM_SLOTS) {
+    assert.equal(rs.filter((r) => s.filled(r)).length, 33, `${s.key} is no longer full`);
+    assert.equal(
+      s.filled({ slug: "synthetic", label: "Synthetic", meaning: "", notUse: [] }),
+      false,
+      `${s.key} returns true for an empty record`,
     );
+  }
+});
+
+test("every Slot in every table takes its name from the vocabulary", () => {
+  for (const table of [PATTERN_SLOTS, ENTITY_SLOTS, PRODUCT_SLOTS, TERM_SLOTS]) {
+    for (const s of table) {
+      assert.equal(s.name, SLOT_LABEL[s.key], `${s.key} restates its own name`);
+    }
   }
 });
