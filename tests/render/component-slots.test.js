@@ -212,3 +212,16 @@ test("every class the new slots emit has a rule in ds-base.css", function () {
   });
   assert.deepEqual(unowned, [], "classes with no CSS rule: " + unowned);
 });
+
+test("breadcrumb survives a badge entry that is not a string", function () {
+  // Badges is flow data. A non-string entry used to throw on .trim(), which the
+  // interpreter's never-throws seam catches — but at the cost of degrading the
+  // whole breadcrumb to a graceful chip over one bad cell.
+  var html = render("breadcrumb", {
+    Items: "Home, Link, Page",
+    Badges: [null, 42, "Ds"],
+  });
+  assert.match(html, /class="ds-breadcrumbs"/, "still a breadcrumb, not a chip");
+  assert.equal((html.match(/class="ds-item-type[^"]*"/g) || []).length, 2);
+  assert.match(html, />42</, "a numeric entry renders as its text");
+});

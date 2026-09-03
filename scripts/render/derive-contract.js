@@ -242,6 +242,12 @@ function collect(re, block, onMatch) {
 // tests/render/derive-contract.test.js) — and the failure mode of the greedy
 // alternative is deleting real code, which is strictly worse than publishing
 // one phantom name.
+//
+// The one dangerous edge is the block strip, which is NOT string-aware: a `/*`
+// inside a string literal would swallow to the next `*/` and make real prop
+// reads VANISH from the contract, the silent direction. Measured: zero string
+// literals in the renderer open one, and a test asserts that stays true rather
+// than trusting it.
 function stripComments(block) {
   return String(block)
     .replace(/\/\*[\s\S]*?\*\//g, " ")

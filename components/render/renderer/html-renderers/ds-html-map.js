@@ -1437,15 +1437,16 @@
           // The registry publishes digram-item-types as a nested component of
           // breadcrumb, and the default capture shows one per crumb but the
           // first: a small item-type badge carrying the record's initials. It is
-          // per-crumb CONTENT (which record each crumb names), so it is supplied
-          // positionally and an empty entry means that crumb has none. No
-          // badges given -> the crumbs render exactly as the plain links they
-          // were.
-          // Positional, one entry per crumb. An ARRAY is accepted alongside the
-          // comma string (the shape `table`'s Rows already uses) because
-          // parseItems drops empty entries, so only the array form can say "this
-          // crumb has no badge" -- which the default capture needs: `Home`
-          // carries none and every crumb after it does.
+          // per-crumb CONTENT (which record each crumb names), so it is
+          // positional, one entry per crumb, and an empty entry means that crumb
+          // has none. No badges given -> the crumbs render exactly as the plain
+          // links they were.
+          //
+          // An ARRAY is accepted alongside the comma string (the shape `table`'s
+          // Rows already uses) because parseItems drops empty entries, so only
+          // the array form can say "this crumb has no badge" -- which the
+          // default capture needs: `Home` carries none and every crumb after it
+          // does.
           var crumbBadges = Array.isArray(props.Badges)
             ? props.Badges
             : props.Badges === undefined
@@ -1465,7 +1466,11 @@
               var crumbCls = "ds-breadcrumbs__crumb";
               if (isLast) crumbCls += " ds-breadcrumbs__crumb--current";
               var tag = isLast ? "span" : "a";
-              var badge = (crumbBadges[i] || "").trim();
+              // String(): Badges is flow data, and a non-string entry would
+              // throw on .trim() -- caught by the interpreter's never-throws
+              // seam, but at the cost of degrading the whole breadcrumb to a
+              // graceful chip over one bad cell.
+              var badge = String(crumbBadges[i] || "").trim();
               var badgeHtml = badge
                 ? renderDSComponent({
                     dsSlug: "digram-item-types",
@@ -1737,10 +1742,10 @@
               : "";
           var alertCloseHtml =
             props["Show close button"] !== false
-            ? '<button class="ds-alert__close" aria-label="Dismiss">' +
-              renderIcon("close") +
-              "</button>"
-            : "";
+              ? '<button class="ds-alert__close" aria-label="Dismiss">' +
+                renderIcon("close") +
+                "</button>"
+              : "";
           var alertActionsHtml =
             alertActionHtml || alertCloseHtml
               ? '<div class="ds-alert__actions">' +

@@ -301,9 +301,6 @@ function normalizeLayout(node, lengthNameById) {
       v: SIZING[node.layoutSizingVertical] || "fixed",
     },
   };
-  // Tokens ride ONLY beside their captured value, and only when the binding
-  // survives the length gate. Absent everywhere -> value-only, byte-identical
-  // to pre-P2 (and to today, while the id export is empty).
   // #641: the size Figma already sends, kept only where it is a DESIGN
   // DECISION. `absoluteBoundingBox` rides in every node payload the anatomy
   // phase fetches; nothing recorded it, which is why modal's seven Size values
@@ -321,6 +318,9 @@ function normalizeLayout(node, lengthNameById) {
     if (Object.keys(size).length) out.size = size;
   }
 
+  // Tokens ride ONLY beside their captured value, and only when the binding
+  // survives the length gate. Absent everywhere -> value-only, byte-identical
+  // to pre-P2 (and to today, while the id export is empty).
   var gapTok = spacingToken(node, "itemSpacing", lengthNameById);
   if (gapTok) out.gapToken = gapTok;
   var paddingTokens = null;

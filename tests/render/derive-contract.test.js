@@ -657,3 +657,33 @@ test("a // inside a string literal is not treated as a comment", function () {
     ["Slug"],
   );
 });
+
+test("no string literal in the renderer opens a block comment", function () {
+  // propsOf strips block comments without tracking string state, so a `/*`
+  // inside a string literal would swallow to the next `*/` and make real prop
+  // reads VANISH from the published contract — the silent direction, where the
+  // phantom-prop case at least announced itself. Zero today; asserted rather
+  // than trusted, because the cost of it becoming non-zero is invisible.
+  var src = fs.readFileSync(
+    path.join(
+      REPO_ROOT,
+      "components",
+      "render",
+      "renderer",
+      "html-renderers",
+      "ds-html-map.js",
+    ),
+    "utf8",
+  );
+  var offenders = [];
+  src.split("\n").forEach(function (line, i) {
+    var at = line.indexOf("/*");
+    if (at < 0) return;
+    var before = line.slice(0, at);
+    var doubles = (before.match(/"/g) || []).length;
+    var singles = (before.match(/'/g) || []).length;
+    if (doubles % 2 === 1 || singles % 2 === 1)
+      offenders.push(i + 1 + ": " + line.trim().slice(0, 80));
+  });
+  assert.deepEqual(offenders, []);
+});
