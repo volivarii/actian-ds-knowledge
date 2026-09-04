@@ -23,6 +23,7 @@ import { frontmatterTemplates } from "../form-engine/templates";
 import {
   stringifyYaml,
   assembleFrontmatterFilePreservingComments,
+  isUnchangedFromSource,
   preserveFenceSeparator,
 } from "../form-engine/yamlSerializer";
 import {
@@ -89,6 +90,12 @@ export function assembleFrontmatterFile(
   body: string,
   flowAtDepth: number | null = 2,
 ): string {
+  // Nothing edited: emit what the author wrote (#631). Without this,
+  // words-to-avoid.md came back with the quotes stripped from its title, so
+  // the file could never equal itself through its own save path.
+  if (isUnchangedFromSource(formData, frontmatterText)) {
+    return joinFrontmatter(frontmatterText!, body);
+  }
   const yaml = stringifyYaml(formData, {
     originalText: frontmatterText ?? undefined,
     flowAtDepth: flowAtDepth === null ? undefined : flowAtDepth,
@@ -496,6 +503,10 @@ export function FrontmatterBodyEditScreen(props: Props) {
       // submit: it leaves the batch rather than sitting there as a no-op PR.
       // An explicit "Add to batch" is the author's own call and still stages,
       // byte-identical content included (the stale-base guard rides on it).
+      // This test can only fire because every routed file is a byte fixed
+      // point of its own save path (#631, guarded by formSaveFixedPoint.test):
+      // while 30 of them were not, a file typed back to what was loaded still
+      // assembled to a reformat and sat in the batch as a whitespace-only PR.
       if (!explicit && state.baseline !== null && content === state.baseline) {
         submissionCartSingleton.remove(path);
         return;

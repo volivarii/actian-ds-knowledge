@@ -88,6 +88,47 @@ function markFlowAtDepth(
 }
 
 /**
+ * Did the author change anything, compared with the frontmatter as authored?
+ *
+ * #631: 30 of the 96 form-routed files were not byte fixed points of their own
+ * save path. app-context records are authored with padded flow maps
+ * (`{ name: x }`) beside unpadded flow seqs (`[A, B]`), and yaml's
+ * `flowCollectionPadding` is ONE boolean for both, so no setting of it can
+ * reproduce those bytes; `words-to-avoid.md` loses the quotes around its
+ * title. Re-emitting an unedited document therefore produced a file that
+ * differed from main by a reformat, which the editor then had to treat as an
+ * edit. The cheapest honest answer is not to re-emit it at all: when nothing
+ * changed, the author's own bytes ARE the correct output.
+ *
+ * Compares against the document's own parse (not the caller's `formData`
+ * origin), so a form that never touched a key agrees with the source by
+ * construction. Any doubt resolves to `false`, i.e. serialize as before:
+ * emitting a reformat is a cosmetic defect, dropping an edit is data loss.
+ */
+export function isUnchangedFromSource(
+  formData: unknown,
+  frontmatterText: string | null,
+): boolean {
+  if (!frontmatterText) return false;
+  let original: Record<string, unknown>;
+  try {
+    original = (yaml.parseDocument(frontmatterText).toJS() ?? {}) as Record<string, unknown>;
+  } catch {
+    return false;
+  }
+  if (formData === null || typeof formData !== "object" || Array.isArray(formData)) return false;
+  const data = formData as Record<string, unknown>;
+  const originalKeys = Object.keys(original);
+  const dataKeys = Object.keys(data);
+  if (originalKeys.length !== dataKeys.length) return false;
+  for (const key of originalKeys) {
+    if (!(key in data)) return false;
+    if (!deepEqual(original[key], data[key])) return false;
+  }
+  return true;
+}
+
+/**
  * Re-serialize form frontmatter into a full `---`-fenced file while preserving
  * EVERY `#` comment in the original block — including comments interleaved
  * BETWEEN data lines (which `stringifyYaml`'s `originalText` path drops, since
@@ -124,6 +165,11 @@ export function assembleFrontmatterFilePreservingComments(
   frontmatterText: string | null,
   body: string,
 ): string {
+  // Nothing edited: the author's bytes are already the right answer, and
+  // re-emitting them is what made 29 of these files unreachable fixed points.
+  if (isUnchangedFromSource(formData, frontmatterText)) {
+    return joinFrontmatter(frontmatterText!, body);
+  }
   let fm: string;
   if (!frontmatterText) {
     fm = stringifyYaml(formData);
