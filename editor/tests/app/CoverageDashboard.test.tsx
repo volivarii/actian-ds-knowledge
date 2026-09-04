@@ -146,8 +146,11 @@ test("CoverageDashboard: clicking inherited cell opens category file", async () 
   );
 });
 
-test("CoverageDashboard: shows per-domain counts strip", async () => {
-  render(
+test("CoverageDashboard: the per-domain counts are the matrix, stated once", async () => {
+  // This asserted a strip of "2/2 draft" badges beneath the Meters. The matrix
+  // replaced both, so the counts moved into the figure's own rows: the subject
+  // is the same, the place it lives is not.
+  const { container } = render(
     wrap(
       <CoverageDashboard
         octokit={fakeGh({ dirs: DIRS, files: FILES })}
@@ -156,8 +159,14 @@ test("CoverageDashboard: shows per-domain counts strip", async () => {
     ),
   );
   await waitFor(() => screen.getByText("Button"));
-  // both fixture components have content=approved → 2/2
-  assert.ok(screen.getByText(/2\/2 draft/));
+  const content = container.querySelector('[data-domain="content"]');
+  assert.ok(content, "the matrix has no Content row");
+  // Both fixture components have content=approved.
+  assert.match(
+    content.getAttribute("aria-label") ?? "",
+    /across 2 components: 2 Approved/,
+  );
+  assert.equal(screen.queryByText(/2\/2 draft/), null, "the badge strip is back");
 });
 
 test("CoverageDashboard: shows error callout when load fails", async () => {

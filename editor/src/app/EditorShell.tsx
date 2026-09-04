@@ -16,6 +16,7 @@ import {
 import { matchFrontmatterForm } from "../lib/frontmatterForms";
 import { RefusalBanner } from "./RefusalBanner";
 import { HomeScreen } from "./HomeScreen";
+import { COMPONENT_PARENT } from "./scopes";
 import { CoverageDashboard } from "./CoverageDashboard";
 import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
 import { GraphHealthTab } from "./GraphHealthTab";
@@ -184,7 +185,10 @@ export function EditorShell({
         slug={wsSlug}
         octokit={gh}
         onNavigate={setActivePathSafe}
-        onBack={() => setActivePathSafe(null)}
+        // Up the tree, not back through history: a component's parent is the
+        // Components scope. The label the workspace renders comes from this
+        // same constant, so the two cannot drift.
+        onBack={() => setActivePathSafe(COMPONENT_PARENT.path)}
       />
     );
   } else if (isMetaYaml(activePath)) {

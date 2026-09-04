@@ -104,11 +104,19 @@ test("HomeScreen: the backlog in a sentence, and the list ranked usage-first", a
   screen.getByText(/Author the design system/i);
 
   // The backlog sentence is DERIVED: the fixture leaves tokens not-started on
-  // every row, so tokens is the largest gap and the sentence has to name it.
-  // A hard-coded sentence would pass this with the wrong domain.
-  await waitFor(() => screen.getByText(/is the backlog: \d+ of \d+/i));
-  const sentence = screen.getByText(/is the backlog: \d+ of \d+/i);
-  assert.match(sentence.textContent ?? "", /^Tokens is the backlog/);
+  // every started row, so tokens is the largest gap and the sentence has to
+  // name it. A hard-coded sentence would pass this with the wrong domain.
+  await waitFor(() => screen.getByText(/is the backlog: \d+ have none/i));
+  const sentence = screen.getByText(/is the backlog: \d+ have none/i);
+  assert.match(
+    sentence.textContent ?? "",
+    /Of the \d+ started, Tokens is the backlog/,
+    `sentence reads: ${sentence.textContent}`,
+  );
+  // A component nobody has started is missing all five domains, not one, so
+  // it must not be folded into a per-domain gap. The fixture has no ghosts,
+  // so no "no guidance at all" clause may appear.
+  assert.equal(screen.queryByText(/no guidance at all/i), null);
 
   // Each row carries one readout, not one badge per absent domain.
   const readouts = document.querySelectorAll('[data-testid="coverage-cells"]');
@@ -159,8 +167,12 @@ test("HomeScreen: a component that could not be read is named, not counted", asy
       d.name !== "tabs" &&
       !["categories", "guidelines"].includes(d.name),
   ).length;
-  const sentence = screen.getByText(/is the backlog: \d+ of \d+/i);
-  assert.match(sentence.textContent ?? "", new RegExp(`of ${readable} components`));
+  const sentence = screen.getByText(/is the backlog: \d+ have none/i);
+  assert.match(
+    sentence.textContent ?? "",
+    new RegExp(`Of the ${readable} started`),
+    `sentence reads: ${sentence.textContent}`,
+  );
 });
 
 test("HomeScreen: zero gaps shows the all-covered state, not a zero count", async () => {
@@ -187,11 +199,12 @@ domains:
       />,
     ),
   );
-  await waitFor(() => screen.getByText(/Nothing is unwritten/i));
+  await waitFor(() => screen.getByText(/have every domain underway/i));
   screen.getByText(/Nothing is missing/i);
-  // "0 of 1" is a sentence about a backlog that does not exist. The hub says
-  // nothing is open rather than putting a zero on screen.
+  // "0 have none authored" is a sentence about a backlog that does not exist.
+  // The hub says nothing is open rather than putting a zero on screen.
   assert.equal(screen.queryByText(/is the backlog/i), null);
+  assert.equal(screen.queryByText(/no guidance at all/i), null);
 });
 
 test("HomeScreen: Find a component opens the palette callback", async () => {

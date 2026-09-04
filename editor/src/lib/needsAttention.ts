@@ -89,6 +89,33 @@ export function largestGap(
   return worst;
 }
 
+/**
+ * The two facts the front door needs, told apart.
+ *
+ * A component nobody has started is not "missing tokens", it is missing
+ * everything, and counting it in a per-domain gap makes every domain look
+ * equally bad. Measured over the whole set the sentence read "Tokens is the
+ * backlog: 73 of 85", while the list directly beneath it showed eight
+ * components with nothing authored at all: the sentence promised one job and
+ * the list offered another.
+ *
+ * `unstarted` is the count of components with no `_meta.yml`. `backlog` is the
+ * largest gap among the ones somebody HAS started, which is the number the
+ * derived coverage docs also report.
+ */
+export function backlogShape(rows: CoverageRow[]): {
+  unstarted: number;
+  started: number;
+  backlog: { domain: Domain; open: number; total: number } | null;
+} {
+  const started = rows.filter((r) => r.origin === "authored");
+  return {
+    unstarted: rows.length - started.length,
+    started: started.length,
+    backlog: largestGap(started),
+  };
+}
+
 export function topGaps(rows: CoverageRow[], limit: number): AttentionItem[] {
   return rows
     .map((row) => {

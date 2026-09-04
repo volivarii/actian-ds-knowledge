@@ -1,5 +1,8 @@
 // src/app/GraphHealthTab.tsx
-// The "Relationships" landing tab. Table-first (accessible, exact-value
+// Substrate health, reached at `#/health`. Not scoped to anything: orphans,
+// edge counts and the graph are questions about the whole substrate at once,
+// which is why this is not one of the scope overviews and why the address
+// says health rather than relationships. Table-first (accessible, exact-value
 // primary): connectivity metric cards + coverage-by-kind + hub/orphan tables;
 // every row opens its file. A depth-1 SVG explorer (GraphView) is the accent,
 // re-rooted by the "Explore" row action or search. Asset nodes (icons/logos/

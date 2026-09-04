@@ -10,6 +10,8 @@ import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { EditorShell } from "../../src/app/EditorShell";
 import { hashFor, pathFromHash } from "../../src/lib/routes";
+import { COMPONENT_PARENT } from "../../src/app/scopes";
+import { A11Y_SCREEN_TITLE } from "../../src/app/A11yCoverageView";
 
 // A minimal Octokit stub. The health view's data is baked, not fetched.
 const octokit = {} as never;
@@ -48,11 +50,15 @@ test("home no longer renders an overview it also links to", () => {
   cleanup();
 });
 
-test("every overview screen owns exactly one h1", () => {
+test("every overview screen owns exactly one h1 while it is still loading", () => {
   // These four rendered INSIDE the home screen, under home's h1, so they each
   // started at h3. Promoting them to screens without shifting the outline left
   // four pages with no h1 at all and a heading level skipped from the start.
   // Found by reading the markup after the promotion, not by any existing test.
+  //
+  // The stub never resolves, so this covers the WAITING state, which is the
+  // one the defect lived in. The loaded state is asserted where a fixture
+  // actually serves data: see coverageMeters.test.tsx.
   for (const path of ["coverage", "accessibility", "patterns", "health"]) {
     const { container, unmount } = render(
       <Theme>
@@ -77,5 +83,42 @@ test("every overview screen owns exactly one h1", () => {
     );
     unmount();
   }
+  cleanup();
+});
+
+test("a component's parent is one fact, so its label and its address agree", () => {
+  // The workspace read "Back to coverage" while calling setActivePath(null),
+  // which was true only for as long as home WAS the coverage dashboard. Two
+  // independent strings is the defect; this asserts they are now one.
+  assert.equal(
+    pathFromHash(hashFor(COMPONENT_PARENT.path)),
+    COMPONENT_PARENT.path,
+    "the parent address does not resolve to a screen",
+  );
+  assert.equal(
+    COMPONENT_PARENT.label.toLowerCase(),
+    COMPONENT_PARENT.path,
+    "the words the workspace renders no longer name the screen it opens",
+  );
+});
+
+test("a screen keeps its name across the fetch that fills it", () => {
+  // The accessibility screen was called "Accessibility" while loading and
+  // "Accessibility coverage" once the data landed, so the page renamed itself
+  // under the reader the moment the fetch resolved.
+  const { container } = render(
+    <Theme>
+      <EditorShell
+        octokit={octokit}
+        activePath="accessibility"
+        setActivePath={() => {}}
+      />
+    </Theme>,
+  );
+  assert.equal(
+    container.querySelector("h1")?.textContent,
+    A11Y_SCREEN_TITLE,
+    "the waiting state uses a different name than the loaded one",
+  );
   cleanup();
 });

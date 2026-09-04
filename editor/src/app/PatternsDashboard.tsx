@@ -1,4 +1,5 @@
-// Patterns tab on the editor's front door.
+// The overview on top of the Application context tree, reached at
+// `#/patterns`.
 //
 // App-first, because that is how the substrate is shaped: an app defines use
 // cases (an audience, its jobs, and the patterns that serve them), a pattern

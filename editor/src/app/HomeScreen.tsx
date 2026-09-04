@@ -35,14 +35,14 @@ import {
   type CoverageRow,
 } from "../lib/coverageLoader";
 import {
+  backlogShape,
   gapCount,
-  largestGap,
   topGaps,
   type AttentionBand,
 } from "../lib/needsAttention";
 import { DOMAIN_LABEL } from "../lib/workspaceState";
 import { CoverageCells } from "./CoverageCells";
-import { SCOPES, SUBSTRATE_HEALTH } from "./scopes";
+import { COMPONENT_PARENT, SCOPES, SUBSTRATE_HEALTH } from "./scopes";
 
 export interface HomeScreenProps {
   octokit: Octokit;
@@ -97,7 +97,7 @@ export function HomeScreen({
         ? {
             counts: summarize(rows),
             gaps: topGaps(rows, GAP_LIST_LIMIT),
-            backlog: largestGap(rows),
+            backlog: backlogShape(rows),
             totalGaps: gapCount(rows),
           }
         : { counts: null, gaps: [], backlog: null, totalGaps: 0 },
@@ -129,9 +129,18 @@ export function HomeScreen({
         )}
         {counts && (
           <Text size="3" color="gray" as="p">
-            {backlog
-              ? `${DOMAIN_LABEL[backlog.domain]} is the backlog: ${backlog.open} of ${backlog.total} components have none authored.`
-              : `Nothing is unwritten. All ${counts.total} components have every domain started.`}
+            {/* Two facts, told apart. A component nobody has started is not
+                missing one domain, it is missing all five, and folding the two
+                together made the sentence promise a job the list below does
+                not offer. */}
+            {backlog && backlog.unstarted > 0
+              ? `${backlog.unstarted} components have no guidance at all. `
+              : ""}
+            {backlog?.backlog
+              ? `Of the ${backlog.started} started, ${DOMAIN_LABEL[backlog.backlog.domain]} is the backlog: ${backlog.backlog.open} have none authored.`
+              : backlog && backlog.started > 0
+                ? `The ${backlog.started} started have every domain underway.`
+                : `Nothing is unwritten. All ${counts.total} components have every domain started.`}
           </Text>
         )}
         {coverage.kind === "ready" && coverage.unreadable.length > 0 && (
@@ -199,16 +208,20 @@ export function HomeScreen({
               </Flex>
             ))}
             {totalGaps > gaps.length && (
-              <Text size="2" color="gray" as="p" mt="3">
-                {totalGaps - gaps.length} more.{" "}
+              // A control and a sentence on one line rendered as small text
+              // jammed after a full stop, so the control did not read as one.
+              <Flex align="center" gap="3" mt="3" wrap="wrap">
+                <Text size="2" color="gray">
+                  {totalGaps - gaps.length} more
+                </Text>
                 <Button
-                  variant="ghost"
+                  variant="soft"
                   size="1"
-                  onClick={() => onOpenFile("coverage")}
+                  onClick={() => onOpenFile(COMPONENT_PARENT.path)}
                 >
                   See the whole matrix
                 </Button>
-              </Text>
+              </Flex>
             )}
           </Box>
         )}
@@ -223,7 +236,9 @@ export function HomeScreen({
           Each holds one part of the substrate. Its overview sits on top of its
           tree.
         </Text>
-        {SCOPES.map((scope) => (
+        {SCOPES.map((scope) => {
+          const overview = scope.overview;
+          return (
           <Flex
             key={scope.key}
             align="center"
@@ -241,11 +256,11 @@ export function HomeScreen({
                 {scope.holds}
               </Text>
             </Box>
-            {scope.overview ? (
+            {overview ? (
               <Button
                 variant="soft"
                 size="1"
-                onClick={() => onOpenFile(scope.overview as string)}
+                onClick={() => onOpenFile(overview)}
               >
                 Open the overview
               </Button>
@@ -258,7 +273,8 @@ export function HomeScreen({
               </Text>
             )}
           </Flex>
-        ))}
+          );
+        })}
         <Flex
           align="center"
           justify="between"

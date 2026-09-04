@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  backlogShape,
   gapCount,
   topGaps,
   type AttentionItem,
@@ -113,4 +114,42 @@ test("inherited and draft statuses are not gaps", () => {
     }),
   ];
   assert.deepEqual(topGaps(rows, 10), []);
+});
+
+test("backlogShape tells an unstarted component apart from a missing domain", () => {
+  // Measured over everything, the sentence read "Tokens is the backlog: 73 of
+  // 85" while the list beneath it showed eight components with nothing
+  // authored at all. A component nobody has started is missing all five
+  // domains, not one, and folding the two together made every domain look
+  // equally bad.
+  const rows: CoverageRow[] = [
+    row("started-a", "authored", {
+      design: "inherited",
+      behavior: "inherited",
+      tokens: "not-started",
+    }),
+    row("started-b", "authored", {
+      design: "inherited",
+      behavior: "inherited",
+      tokens: "not-started",
+    }),
+    row("ghost", "unstarted"),
+  ];
+  const shape = backlogShape(rows);
+  assert.equal(shape.unstarted, 1);
+  assert.equal(shape.started, 2);
+  assert.equal(shape.backlog?.domain, "tokens");
+  // 2, not 3: the ghost is counted once as unstarted, never five times as a
+  // per-domain gap.
+  assert.equal(shape.backlog?.open, 2);
+  assert.equal(shape.backlog?.total, 2);
+});
+
+test("backlogShape reports no backlog when every started component is underway", () => {
+  const rows: CoverageRow[] = [
+    row("done", "authored"),
+  ];
+  const shape = backlogShape(rows);
+  assert.equal(shape.backlog, null, "a zero was reported as a backlog");
+  assert.equal(shape.unstarted, 0);
 });

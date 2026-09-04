@@ -69,7 +69,8 @@ interface SidebarProps {
   octokit: Octokit;
   pendingPaths: Set<string>;
   activePath: string | null;
-  // `null` selects the Coverage dashboard (the landing surface).
+  // `null` selects the hub. Coverage is a screen of its own now, addressed
+  // like any other destination.
   onSelect: (path: string | null) => void;
   wysiwygOn?: boolean;
   onToggleWysiwyg?: () => void;
@@ -986,7 +987,7 @@ export function Sidebar({
     ? entries.components
     : entries.components.slice(0, COMPONENT_VISIBLE_CAP);
 
-  const coverageActive = activePath == null;
+  const homeActive = activePath == null;
   return (
     // The rail is the page's one <nav>. `asChild` hands Flex's layout to the
     // nav element itself, rather than wrapping it in a div a screen reader
@@ -1017,16 +1018,16 @@ export function Sidebar({
           py="2"
           style={{
             cursor: "pointer",
-            background: coverageActive ? "var(--accent-3)" : "transparent",
+            background: homeActive ? "var(--accent-3)" : "transparent",
           }}
           role="button"
           tabIndex={0}
           onClick={() => onSelect(null)}
           onKeyDown={activateOnKey(() => onSelect(null))}
-          aria-current={coverageActive ? "page" : undefined}
+          aria-current={homeActive ? "page" : undefined}
         >
           <span aria-hidden="true">🏠</span>
-          <Text size="2" weight={coverageActive ? "bold" : "medium"}>
+          <Text size="2" weight={homeActive ? "bold" : "medium"}>
             Home
           </Text>
         </Flex>

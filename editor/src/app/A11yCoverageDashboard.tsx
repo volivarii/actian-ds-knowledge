@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import { Box, Callout, Flex, Heading, Spinner, Text } from "@radix-ui/themes";
 import { loadCoverage } from "../lib/coverageLoader";
+import { A11Y_SCREEN_TITLE } from "./A11yCoverageView";
 import {
   computeTopicCoverage,
   loadCategoryPatternRefs,
@@ -50,7 +51,7 @@ export function A11yCoverageDashboard({ octokit, onOpenFile }: A11yCoverageDashb
   // fetch used to find a page with no h1 at all.
   const heading = (
     <Heading as="h1" size="5" mb="1">
-      Accessibility
+      {A11Y_SCREEN_TITLE}
     </Heading>
   );
 

@@ -368,3 +368,29 @@ test("a component whose _meta.yml cannot be READ is excluded, not counted as emp
     );
   })();
 });
+
+test("no domain is stated twice on the coverage screen", async () => {
+  // The Meters were removed and the badge row beneath them was not, so the
+  // figure was still followed by the very ratios it had replaced. The suite
+  // was green throughout; a screenshot is what caught it. This is the guard
+  // that would have.
+  const { CoverageDashboard } = await import("../../src/app/CoverageDashboard");
+  const { container } = mount(
+    <CoverageDashboard
+      octokit={fakeGhServingCoverage({ mediaOk: true })}
+      onOpenFile={() => {}}
+    />,
+  );
+  await waitFor(() => {
+    assert.ok(container.querySelector('[data-testid="coverage-matrix"]'));
+  });
+  const text = container.textContent ?? "";
+  for (const label of ["Content", "Usage", "Design", "Behavior", "Tokens"]) {
+    // The matrix row is the one statement of a domain's totals. A ratio beside
+    // the same word is a second one.
+    assert.ok(
+      !new RegExp(`${label}\\s*·?\\s*\\d+\\s*/\\s*\\d+`).test(text),
+      `${label} is stated as a ratio as well as a matrix row`,
+    );
+  }
+});

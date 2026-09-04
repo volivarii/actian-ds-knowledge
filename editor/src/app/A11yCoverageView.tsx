@@ -28,11 +28,16 @@ export interface A11yCoverageViewProps {
   onOpenFile: (path: string) => void;
 }
 
+/** The page's name. Shared with A11yCoverageDashboard, which owns the states
+ *  that render before this view has data: while these were two literals the
+ *  page renamed itself the moment the fetch resolved. */
+export const A11Y_SCREEN_TITLE = "Accessibility coverage";
+
 export function A11yCoverageView({ topics, thin, onOpenFile }: A11yCoverageViewProps) {
   return (
     <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
       <Heading as="h1" size="5" mb="1">
-        Accessibility coverage
+        {A11Y_SCREEN_TITLE}
       </Heading>
       <Text size="2" color="gray" mb="3" as="p">
         Per-component a11y topic coverage. Click a component to edit its accessibility topics.

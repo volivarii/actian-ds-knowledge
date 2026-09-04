@@ -40,6 +40,7 @@ import {
 } from "../lib/workspaceState";
 import { formatRelativeTime, type CommitInfo } from "../lib/derivedFields";
 import { STATE_FOR_STATUS, STATE_LABEL } from "../lib/nomenclature";
+import { COMPONENT_PARENT } from "./scopes";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 
@@ -141,7 +142,7 @@ export function AuthoringWorkspace({
         <Box>
           <Text size="1" color="gray" as="div" mb="1">
             <Button variant="ghost" size="1" onClick={onBack}>
-              ← Back to coverage
+              ← Back to {COMPONENT_PARENT.label.toLowerCase()}
             </Button>
           </Text>
           <Heading as="h1" size="6">

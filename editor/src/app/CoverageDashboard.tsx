@@ -1,9 +1,10 @@
-// Landing dashboard — per-domain × per-component status matrix.
+// The overview on top of the Components tree: per-domain, per-component
+// status, as a figure first and a table second.
 //
-// Renders when EditorShell.activePath is null. Replaces the prior
-// "Choose a file…" empty-state callout. Pure read+navigate; the only
-// write affordance is "Start authoring" on ghost rows, which adds a
-// stub _meta.yml to the submission cart for batch PR.
+// Reached at `#/coverage`, from the sidebar above the component list and from
+// the hub. Pure read and navigate; the only write affordance is "Start
+// authoring" on ghost rows, which adds a stub _meta.yml to the submission
+// cart for batch PR.
 //
 // Row sources (T1.5):
 //   - authored (origin="authored"): every components/src/<slug>/_meta.yml
@@ -262,31 +263,16 @@ export function CoverageDashboard({
           )}
         </Box>
       )}
+      {/* One badge per domain, each restating its matrix row as a ratio, used
+          to sit here. Looking at the screen is what caught it: the Meters were
+          removed and these were not, so the figure was still followed by the
+          numbers it had just replaced. What survives is the sentence that says
+          how to USE the table, which the figure does not say. */}
       <Text size="2" color="gray" mb="3" as="p">
-        {counts!.authored} {STATE_LABEL.draft.toLowerCase()} ·{" "}
-        {counts!.unstarted} {STATE_LABEL.empty.toLowerCase()} ·{" "}
-        {counts!.total} eligible components. Click a component name to open its
-        details, click a status cell to edit that guidance, or click{" "}
-        <em>Start authoring</em> on an unstarted row to begin.
+        Click a component name to open its details, click a status cell to edit
+        that guidance, or click <em>Start authoring</em> on an unstarted row to
+        begin.
       </Text>
-
-      <Flex gap="3" wrap="wrap" mb="4">
-        {DOMAINS.map((d) => {
-          const c = counts!.perDomain[d];
-          return (
-            <Badge key={d} variant="soft" color="gray" size="2">
-              <Text weight="medium">{DOMAIN_LABEL[d]}</Text>
-              <Text>
-                {" · "}
-                {c.authored}/{counts!.total} {STATE_LABEL.draft.toLowerCase()}
-                {c.inherited > 0
-                  ? ` · ${c.inherited} ${STATE_LABEL.inherited.toLowerCase()}`
-                  : ""}
-              </Text>
-            </Badge>
-          );
-        })}
-      </Flex>
 
       <Table.Root variant="surface" size="1">
         <Table.Header>

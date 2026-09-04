@@ -57,6 +57,20 @@ export const SCOPES: readonly Scope[] = [
 ];
 
 /**
+ * Where a component's page goes when you go up.
+ *
+ * One object, because the label and the destination were two independent
+ * strings: the workspace read "Back to coverage" while calling
+ * setActivePath(null), which was true only for as long as home WAS the
+ * coverage dashboard. Deriving the words from the address is what stops them
+ * disagreeing again.
+ */
+export const COMPONENT_PARENT = {
+  path: "coverage",
+  label: "Coverage",
+} as const;
+
+/**
  * Diagnostics over the whole substrate: orphans, edge counts, the graph.
  *
  * Not a scope. It answers "is the substrate wired up", which is a question
