@@ -1,4 +1,5 @@
-// Coverage loader for the editor's landing dashboard.
+// Coverage loader. Three surfaces share it: the hub's needs-attention list,
+// the Coverage overview, and the Accessibility overview.
 //
 // Reads every `components/src/<slug>/_meta.yml` (the 26 "authored" set)
 // AND the DS Kit registry (`components/dist/registries/dskit.json`) to

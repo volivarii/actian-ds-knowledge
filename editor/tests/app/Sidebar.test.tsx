@@ -900,3 +900,119 @@ test("Sidebar: unambiguous headers keep their count in the accessible name", asy
     "and its name still comes from its contents",
   );
 });
+
+test("the coverage overview sits on top of the components tree and opens from the keyboard", async () => {
+  // Round 5 of the landmarks work found Home and Drafts shipped MOUSE-ONLY on
+  // an accessibility branch: a div with role="button" does not activate on
+  // Enter by itself. This row is that same shape, so it gets that same guard.
+  const selected: (string | null)[] = [];
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(LISTINGS)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={(p) => selected.push(p)}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Components"));
+  toggleSectionKey("components");
+  const row = await waitFor(() =>
+    screen.getByRole("button", { name: /^Coverage$/i }),
+  );
+
+  // On top of the tree: the overview precedes the first component in the DOM,
+  // which is what "on top of components" means for a screen reader too.
+  // Matched on the row marker rather than a label, so renaming a component
+  // cannot quietly turn this into a test of nothing.
+  const firstComponent = document.querySelector('[data-detail="path"]');
+  assert.ok(firstComponent, "the components tree rendered no rows");
+  assert.ok(
+    row.compareDocumentPosition(firstComponent) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    "the overview renders after the components it summarises",
+  );
+
+  fireEvent.keyDown(row, { key: "Enter" });
+  assert.deepEqual(selected, ["coverage"], "Enter did not open the overview");
+  fireEvent.keyDown(row, { key: " " });
+  fireEvent.click(row);
+  assert.deepEqual(selected, ["coverage", "coverage", "coverage"]);
+});
+
+test("the coverage overview marks itself the current page when it is open", async () => {
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(LISTINGS)}
+        pendingPaths={new Set()}
+        activePath="coverage"
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Components"));
+  toggleSectionKey("components");
+  const row = await waitFor(() =>
+    screen.getByRole("button", { name: /^Coverage$/i }),
+  );
+  assert.equal(row.getAttribute("aria-current"), "page");
+});
+
+test("two overviews in one tree do not share an accessible name", () => {
+  // The file already works around exactly this: two sections are both called
+  // "Patterns" and sectionHeader takes a `within` to tell them apart. Adding a
+  // second row called "Coverage" would have reintroduced it one section away.
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(LISTINGS)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  return waitFor(() => screen.getByText("Components")).then(() => {
+    toggleSectionKey("components");
+    toggleSectionKey("accessibility");
+    const names = [...document.querySelectorAll('[data-detail="overview"]')].map(
+      (el) => (el.textContent ?? "").trim(),
+    );
+    assert.ok(names.length >= 2, `expected two overview rows, got ${names.length}`);
+    assert.equal(
+      new Set(names).size,
+      names.length,
+      `two overview rows share a name: ${names.join(" | ")}`,
+    );
+  });
+});
+
+test("the current row carries the signal marker and aria-current together", () => {
+  // The instrument layer's one accent means "here". It was declared and
+  // applied to nothing, which makes it config rather than design. Both
+  // channels move together: the colour for the eye, the attribute for
+  // assistive tech.
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(LISTINGS)}
+        pendingPaths={new Set()}
+        activePath="coverage"
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  return waitFor(() => screen.getByText("Components")).then(() => {
+    toggleSectionKey("components");
+    return waitFor(() => {
+      const row = screen.getByRole("button", { name: /^Coverage$/i });
+      assert.ok(
+        row.classList.contains("ed-here"),
+        "the current row has no signal marker",
+      );
+      assert.equal(row.getAttribute("aria-current"), "page");
+    });
+  });
+});

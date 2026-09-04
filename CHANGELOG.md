@@ -20,6 +20,31 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The editor's front door is a hub, and each scope has its own overview screen**
+  (PR pending). Coverage, Accessibility, Relationships and Patterns sat in one `ExploreTab` union
+  and rendered as four panels beneath the home screen. That grouping produced most of the clutter,
+  because it forced four unrelated things into one shape (a run of statistics, chips restating those
+  statistics, then the table they were counted from) and left the switcher below the fold, so
+  changing lens scrolled the reader back to the top. They were never four of the same thing: three
+  are the overview on top of a scope's tree, and the fourth is a diagnostic over the whole substrate,
+  so it is addressed as `#/health` rather than Relationships. All four are screens now, which makes
+  every one of them deep linkable for the first time; `#/explore/<tab>` is kept as a read-only alias
+  so links already in people's history still land on what replaced them. Home keeps one rule that
+  stops it re-accreting: it links, it never analyses, so a number needing a sentence of explanation
+  belongs on the scope's overview instead. Coverage now sits in the sidebar on top of the components
+  tree, leads with a figure (five rows, one cell per component, the whole authoring state in one
+  view) rather than with statistics about itself, and exports per component as CSV. Editor-only: no
+  consumer reads any of this.
+- **The editor has its own visual namespace, separate from the design system's tokens**
+  (PR pending). `--zen-*` is the design system's vocabulary, generated from `tokens/tokens.json` and
+  vendored into the editor so the preview pane can render design-system content in design-system
+  colours. The tool around that pane was wearing it too, which makes the two impossible to tell
+  apart at a glance. `styles/instrument.css` holds the editor's own layer, and its one accent means
+  position (the current item, the active scope, focus) rather than status, so the interface still
+  reads with the colour removed. Status is carried by a five cell readout, one per guidance domain,
+  which replaced 40 badges on the front door and distinguishes authored from inherited from
+  unwritten, which the badges could not.
+
 - **A form save writes the author's own bytes back when nothing changed**
   ([#657](https://github.com/volivarii/actian-ds-knowledge/pull/657), closes
   [#631](https://github.com/volivarii/actian-ds-knowledge/issues/631)). 30 of the 96 files the editor

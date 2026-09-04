@@ -4,12 +4,10 @@ import assert from "node:assert/strict";
 import { render, cleanup, act } from "@testing-library/react";
 import React, { StrictMode, useCallback, useEffect, useState } from "react";
 import { useHashRoute } from "../../src/lib/useHashRoute";
-import { stateFromHash, hashFor, DEFAULT_EXPLORE_TAB } from "../../src/lib/routes";
-import type { ExploreTab } from "../../src/app/HomeScreen";
+import { stateFromHash, hashFor } from "../../src/lib/routes";
 
 interface Api {
   setActivePath: (p: string | null) => void;
-  setExploreTab: (t: ExploreTab) => void;
 }
 
 /**
@@ -25,31 +23,24 @@ interface Api {
 function Harness({
   seen,
   onReady,
-  report,
 }: {
   seen: (string | null)[];
   onReady?: (api: Api) => void;
-  report?: (tab: ExploreTab) => void;
 }) {
   const [activePath, setActivePath] = useState<string | null>(
     () => stateFromHash(window.location.hash).activePath,
   );
-  const [exploreTab, setExploreTab] = useState<ExploreTab>(
-    () => stateFromHash(window.location.hash).exploreTab ?? DEFAULT_EXPLORE_TAB,
-  );
   const onNavigate = useCallback(
-    (p: string | null, tab: ExploreTab | null) => {
+    (p: string | null) => {
       seen.push(p);
       setActivePath(p);
-      if (tab) setExploreTab(tab);
     },
     [seen],
   );
-  useHashRoute({ activePath, exploreTab, onNavigate });
+  useHashRoute({ activePath, onNavigate });
   useEffect(() => {
-    onReady?.({ setActivePath, setExploreTab });
+    onReady?.({ setActivePath });
   }, [onReady]);
-  report?.(exploreTab);
   return null;
 }
 
@@ -117,15 +108,31 @@ test("the app navigating pushes, so Back returns to where it was", () => {
   cleanup();
 });
 
-test("choosing a home data view writes its address", () => {
+test("opening an overview screen writes its address and names the tab", () => {
   setHash("#/");
   let api: Api | null = null;
   render(<Harness seen={[]} onReady={(a) => (api = a)} />);
   act(() => {
-    api?.setExploreTab("patterns");
+    api?.setActivePath("patterns");
   });
-  assert.equal(window.location.hash, "#/explore/patterns");
+  assert.equal(window.location.hash, "#/patterns");
   assert.equal(document.title, "Patterns · Actian DS Knowledge Editor");
+  cleanup();
+});
+
+test("a retired explore address navigates to the screen that replaced it", () => {
+  // A link out of somebody's history. The hook has to move the reader to the
+  // real screen AND correct the address, or the bar keeps offering a link that
+  // will need translating again next time.
+  setHash("#/");
+  const seen: (string | null)[] = [];
+  render(<Harness seen={seen} />);
+  act(() => {
+    setHash("#/explore/relationships");
+    window.dispatchEvent(new Event("hashchange"));
+  });
+  assert.deepEqual(seen, ["health"]);
+  assert.equal(window.location.hash, "#/health");
   cleanup();
 });
 
@@ -219,16 +226,20 @@ test("going back navigates the app rather than leaving it", () => {
   cleanup();
 });
 
-test("going back off a home tab restores the default tab", () => {
-  setHash("#/explore/patterns");
-  let tab: ExploreTab | null = null;
-  render(<Harness seen={[]} report={(t) => (tab = t)} />);
-  assert.equal(tab, "patterns");
+test("going back off an overview screen lands on home", () => {
+  // While the overviews were tabs, home had to be taught to restore the
+  // default tab on the way back. As screens, home is just the screen the
+  // address names, and Back has nothing extra to undo.
+  setHash("#/patterns");
+  const seen: (string | null)[] = [];
+  render(<Harness seen={seen} />);
+  seen.length = 0;
   act(() => {
     setHash("#/");
     window.dispatchEvent(new Event("hashchange"));
   });
-  assert.equal(tab, "coverage", "the address said home, the tab did not follow");
+  assert.deepEqual(seen, [null]);
+  assert.equal(window.location.hash, "#/");
   cleanup();
 });
 

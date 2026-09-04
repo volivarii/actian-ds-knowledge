@@ -6,6 +6,7 @@ import { render, cleanup, fireEvent } from "@testing-library/react";
 import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { GraphHealthTab } from "../../src/app/GraphHealthTab";
+import { SCREEN_TITLE } from "../../src/lib/routes";
 
 function renderTab(onOpenFile: (p: string) => void = () => {}) {
   return render(
@@ -18,7 +19,7 @@ function renderTab(onOpenFile: (p: string) => void = () => {}) {
 test("renders the connectivity metrics from the baked quality report", () => {
   const { getByText } = renderTab();
   getByText(/Orphan nodes/i);
-  getByText(/Relationships/i); // the tab heading
+  getByText(SCREEN_TITLE.health); // the screen heading, from the one map
   cleanup();
 });
 

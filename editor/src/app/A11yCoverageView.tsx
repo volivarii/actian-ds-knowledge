@@ -7,6 +7,7 @@
 
 import { Box, Badge, Flex, Heading, Table, Text } from "@radix-ui/themes";
 import type { TopicCoverage, ThinComponent, TopicState } from "../lib/a11yCoverage";
+import { SCREEN_TITLE } from "../lib/routes";
 
 const STATE_COLOR: Record<TopicState, "gray" | "amber" | "red" | "green"> = {
   "well-hosted": "green",
@@ -31,8 +32,8 @@ export interface A11yCoverageViewProps {
 export function A11yCoverageView({ topics, thin, onOpenFile }: A11yCoverageViewProps) {
   return (
     <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <Heading as="h3" size="5" mb="1">
-        Accessibility coverage
+      <Heading as="h1" size="5" mb="1">
+        {SCREEN_TITLE.accessibility}
       </Heading>
       <Text size="2" color="gray" mb="3" as="p">
         Per-component a11y topic coverage. Click a component to edit its accessibility topics.
@@ -93,7 +94,7 @@ export function A11yCoverageView({ topics, thin, onOpenFile }: A11yCoverageViewP
         </Table.Body>
       </Table.Root>
 
-      <Heading as="h4" size="3" mt="5" mb="2">
+      <Heading as="h2" size="3" mt="5" mb="2">
         Needs attention
       </Heading>
       {thin.length > 0 ? (

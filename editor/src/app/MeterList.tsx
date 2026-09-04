@@ -53,7 +53,7 @@ export function MeterList({
         {/* `as` is not optional: Radix Heading defaults it to h1, and four
             groups on the patterns dashboard rendered four page-level h1s under
             the page's h3, which a heading list reads as four pages. */}
-        <Heading as="h4" size="3">
+        <Heading as="h2" size="3">
           {title}
         </Heading>
         {measuredAt && (

@@ -23,6 +23,7 @@ import {
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 import type { CartEntry } from "../drafts/SubmissionCart";
+import { SCREEN_TITLE } from "../lib/routes";
 
 export interface DraftInboxProps {
   onOpenFile: (path: string) => void;
@@ -118,7 +119,7 @@ export function DraftInbox({ onOpenFile, onOpenStaging }: DraftInboxProps) {
       <Flex align="center" justify="between" gap="2" mb="3" wrap="wrap">
         <Box>
           <Heading as="h1" size="5" mb="1">
-            Draft inbox
+            {SCREEN_TITLE.inbox}
           </Heading>
           <Text size="2" color="gray" as="p">
             {entries.length} file{entries.length === 1 ? "" : "s"} staged

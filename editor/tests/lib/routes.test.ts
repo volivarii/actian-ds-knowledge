@@ -6,9 +6,9 @@ import { fileURLToPath } from "node:url";
 import {
   hashFor,
   pathFromHash,
-  exploreTabFromHash,
   stateFromHash,
   titleFor,
+  SCREEN_TITLE,
 } from "../../src/lib/routes";
 import { matchFrontmatterForm } from "../../src/lib/frontmatterForms";
 import { isPlainMarkdown } from "../../src/app/EditorShell";
@@ -177,38 +177,52 @@ test("corpus: the gate can fail (positive control)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// The home screen's data tab, and the document title.
+// The overview screens, the addresses they replaced, and the document title.
 // ---------------------------------------------------------------------------
 
-test("hashFor: the default home tab keeps the bare home address", () => {
-  assert.equal(hashFor(null, "coverage"), "#/");
+test("hashFor: home is home, with nothing qualifying it", () => {
+  assert.equal(hashFor(null), "#/");
+  assert.equal(hashFor(""), "#/");
 });
 
-test("hashFor: a chosen home tab is addressable", () => {
-  assert.equal(hashFor(null, "patterns"), "#/explore/patterns");
-  assert.equal(hashFor(null, "relationships"), "#/explore/relationships");
+test("every overview screen has an address that round-trips", () => {
+  for (const screen of ["coverage", "accessibility", "patterns", "health"]) {
+    const hash = hashFor(screen);
+    assert.equal(hash, `#/${screen}`, `${screen} minted ${hash}`);
+    assert.equal(
+      pathFromHash(hash),
+      screen,
+      `${screen} did not survive the round trip`,
+    );
+  }
 });
 
-test("hashFor: a file ignores the tab, which only qualifies home", () => {
-  assert.equal(
-    hashFor("components/src/button/content.md", "patterns"),
-    "#/component/button/content",
-  );
+test("the addresses the tabs used to mint still land on what replaced them", () => {
+  // These are in people's history and in chat threads. Resolving them to home
+  // would land a reader on a screen that no longer holds what they were sent.
+  assert.equal(pathFromHash("#/explore/coverage"), "coverage");
+  assert.equal(pathFromHash("#/explore/accessibility"), "accessibility");
+  assert.equal(pathFromHash("#/explore/patterns"), "patterns");
+  // Relationships was renamed: it is a diagnostic over the whole substrate,
+  // not a scope, so the old address has to be told where its content went.
+  assert.equal(pathFromHash("#/explore/relationships"), "health");
 });
 
-test("exploreTabFromHash: an explore address names its tab", () => {
-  assert.equal(exploreTabFromHash("#/explore/patterns"), "patterns");
-  assert.equal(exploreTabFromHash("#/explore/accessibility"), "accessibility");
+test("a legacy address is read, never minted", () => {
+  // If hashFor ever returned one, the write effect would rewrite a reader's
+  // canonical address back to the retired form on every navigation.
+  for (const screen of ["coverage", "accessibility", "patterns", "health"]) {
+    assert.ok(
+      !hashFor(screen).startsWith("#/explore/"),
+      `${screen} minted a retired address`,
+    );
+  }
 });
 
-test("exploreTabFromHash: anything else names no tab", () => {
-  assert.equal(exploreTabFromHash("#/"), null);
-  assert.equal(exploreTabFromHash("#/accessibility/color-contrast"), null);
-  assert.equal(exploreTabFromHash("#/explore/nonsense"), null);
-});
-
-test("pathFromHash: an explore address is still the home screen", () => {
-  assert.equal(pathFromHash("#/explore/patterns"), null);
+test("an explore address naming nothing real is not a screen", () => {
+  assert.equal(pathFromHash("#/explore/nonsense"), null);
+  assert.equal(pathFromHash("#/explore"), null);
+  assert.equal(pathFromHash("#/explore/patterns/extra"), null);
 });
 
 test("titleFor: a component reads as its name, not its slug", () => {
@@ -244,32 +258,23 @@ test("pathFromHash: a fallback address with no path is home, not an empty file",
 // seed its state synchronously rather than correcting it after first paint.
 // ---------------------------------------------------------------------------
 
-test("stateFromHash: a home address names the default tab, not no tab", () => {
-  assert.deepEqual(stateFromHash("#/"), {
-    activePath: null,
-    exploreTab: "coverage",
-  });
+test("stateFromHash: a home address is the home screen", () => {
+  assert.deepEqual(stateFromHash("#/"), { activePath: null });
 });
 
-test("stateFromHash: an explore address names its tab", () => {
-  assert.deepEqual(stateFromHash("#/explore/patterns"), {
-    activePath: null,
-    exploreTab: "patterns",
-  });
+test("stateFromHash: an overview address is that screen", () => {
+  assert.deepEqual(stateFromHash("#/patterns"), { activePath: "patterns" });
+  assert.deepEqual(stateFromHash("#/health"), { activePath: "health" });
 });
 
-test("stateFromHash: a file address says nothing about the tab", () => {
+test("stateFromHash: a file address is that file", () => {
   assert.deepEqual(stateFromHash("#/component/button/content"), {
     activePath: "components/src/button/content.md",
-    exploreTab: null,
   });
 });
 
-test("stateFromHash: an unreadable address is home with the default tab", () => {
-  assert.deepEqual(stateFromHash("#/nonsense/xyz"), {
-    activePath: null,
-    exploreTab: "coverage",
-  });
+test("stateFromHash: an unreadable address is home", () => {
+  assert.deepEqual(stateFromHash("#/nonsense/xyz"), { activePath: null });
 });
 
 // ---------------------------------------------------------------------------
@@ -335,12 +340,20 @@ test("titleFor: two domains of one component are not the same title", () => {
   );
 });
 
-test("titleFor: a home data view names itself", () => {
-  assert.equal(
-    titleFor(null, "patterns"),
-    "Patterns · Actian DS Knowledge Editor",
-  );
-  assert.equal(titleFor(null, "coverage"), "Actian DS Knowledge Editor");
+test("titleFor: a screen is NAMED, not derived from its address", () => {
+  // Title-casing the URL segment put "Health" in the browser tab above a page
+  // headed "Substrate health", and "Accessibility" above "Accessibility
+  // coverage". The name comes from SCREEN_TITLE now, and asserting against
+  // that map rather than against literals is what keeps this test honest when
+  // a screen is renamed.
+  for (const [path, title] of Object.entries(SCREEN_TITLE)) {
+    assert.equal(
+      titleFor(path),
+      `${title} \u00b7 Actian DS Knowledge Editor`,
+      `${path} is titled from its address rather than its name`,
+    );
+  }
+  assert.equal(titleFor(null), "Actian DS Knowledge Editor");
 });
 
 test("corpus: a named address always resolves to something the editor opens", () => {

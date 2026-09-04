@@ -156,10 +156,15 @@ test("a Meter group title is a heading below the page heading, not an h1", () =>
   // Radix `Heading` defaults `as` to h1. Four groups on the patterns dashboard
   // rendered four page-level h1s under the page's h3, which a screen reader's
   // heading list presents as four pages.
+  //
+  // h4 was right while both consumers were tab panels nested under home's h1.
+  // They are screens now, each with its own h1, so h4 skipped two levels and
+  // the group title moved to h2. What must never change is that it is not an
+  // h1: the page owns that.
   const { container } = mount(
     <MeterList groupKey="g" title="Pattern" meters={METERS} />,
   );
-  assert.ok(container.querySelector("h4"), "the group title should be an h4");
+  assert.ok(container.querySelector("h2"), "the group title should be an h2");
   assert.equal(
     container.querySelector("h1") === null,
     true,

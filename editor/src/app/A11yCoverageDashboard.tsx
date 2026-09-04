@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { Octokit } from "@octokit/rest";
-import { Box, Callout, Flex, Spinner, Text } from "@radix-ui/themes";
+import { Box, Callout, Flex, Heading, Spinner, Text } from "@radix-ui/themes";
 import { loadCoverage } from "../lib/coverageLoader";
+import { SCREEN_TITLE } from "../lib/routes";
 import {
   computeTopicCoverage,
   loadCategoryPatternRefs,
@@ -46,10 +47,19 @@ export function A11yCoverageDashboard({ octokit, onOpenFile }: A11yCoverageDashb
     };
   }, [octokit]);
 
+  // The page's name renders in every state: a reader arriving during the
+  // fetch used to find a page with no h1 at all.
+  const heading = (
+    <Heading as="h1" size="5" mb="1">
+      {SCREEN_TITLE.accessibility}
+    </Heading>
+  );
+
   if (state.kind === "loading") {
     return (
-      <Box p="6">
-        <Flex align="center" gap="2">
+      <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {heading}
+        <Flex align="center" gap="2" mt="3">
           <Spinner />
           <Text size="2" color="gray">Loading a11y coverage…</Text>
         </Flex>
@@ -58,8 +68,9 @@ export function A11yCoverageDashboard({ octokit, onOpenFile }: A11yCoverageDashb
   }
   if (state.kind === "error") {
     return (
-      <Box p="6">
-        <Callout.Root color="red" role="alert">
+      <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {heading}
+        <Callout.Root color="red" role="alert" mt="3">
           <Callout.Text>Failed to load a11y coverage: {state.message}</Callout.Text>
         </Callout.Root>
       </Box>

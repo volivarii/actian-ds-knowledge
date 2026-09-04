@@ -21,6 +21,7 @@ import {
   listFilesByGlob,
 } from "./githubApi";
 import { loadOrderManifest } from "../lib/orderManifestLoader";
+import { SCREEN_TITLE } from "../lib/routes";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 import { AddSectionDialog } from "./AddSectionDialog";
@@ -69,7 +70,8 @@ interface SidebarProps {
   octokit: Octokit;
   pendingPaths: Set<string>;
   activePath: string | null;
-  // `null` selects the Coverage dashboard (the landing surface).
+  // `null` selects the hub. Coverage is a screen of its own now, addressed
+  // like any other destination.
   onSelect: (path: string | null) => void;
   wysiwygOn?: boolean;
   onToggleWysiwyg?: () => void;
@@ -869,6 +871,45 @@ export function Sidebar({
   // Preserves: active-row highlight, draft-pending dot, onClick navigation.
   // leftHandle: drag grip element for ordered groups; null for unordered groups.
   // trashable: all groups except components (registry-driven, not author-curated).
+  /**
+   * The overview on top of a scope's tree.
+   *
+   * Not a `renderRow`: that renders a FILE, and carries the draft dot, the
+   * trash affordance and a slug parsed out of a repo path. An overview is a
+   * screen, so it has none of those and must not pretend to.
+   *
+   * Keyboard activation is explicit for the same reason it is on Home and
+   * Drafts: this is a div with role="button", and a div does not activate on
+   * Enter by itself. Two rows here shipped mouse-only once already.
+   */
+  function overviewRow(label: string, screenPath: string) {
+    const active = activePath === screenPath;
+    return (
+      <Flex
+        align="center"
+        gap="2"
+        px="3"
+        py="1"
+        style={{
+          cursor: "pointer",
+          background: active ? "var(--accent-3)" : "transparent",
+          borderRadius: 4,
+        }}
+        role="button"
+        tabIndex={0}
+        className={active ? "ed-here" : undefined}
+        onClick={() => onSelect(screenPath)}
+        onKeyDown={activateOnKey(() => onSelect(screenPath))}
+        aria-current={active ? "page" : undefined}
+        data-detail="overview"
+      >
+        <Text size="2" weight={active ? "bold" : "medium"}>
+          {label}
+        </Text>
+      </Flex>
+    );
+  }
+
   function renderRow({
     path,
     domain,
@@ -948,7 +989,7 @@ export function Sidebar({
     ? entries.components
     : entries.components.slice(0, COMPONENT_VISIBLE_CAP);
 
-  const coverageActive = activePath == null;
+  const homeActive = activePath == null;
   return (
     // The rail is the page's one <nav>. `asChild` hands Flex's layout to the
     // nav element itself, rather than wrapping it in a div a screen reader
@@ -979,16 +1020,17 @@ export function Sidebar({
           py="2"
           style={{
             cursor: "pointer",
-            background: coverageActive ? "var(--accent-3)" : "transparent",
+            background: homeActive ? "var(--accent-3)" : "transparent",
           }}
           role="button"
           tabIndex={0}
+          className={homeActive ? "ed-here" : undefined}
           onClick={() => onSelect(null)}
           onKeyDown={activateOnKey(() => onSelect(null))}
-          aria-current={coverageActive ? "page" : undefined}
+          aria-current={homeActive ? "page" : undefined}
         >
           <span aria-hidden="true">🏠</span>
-          <Text size="2" weight={coverageActive ? "bold" : "medium"}>
+          <Text size="2" weight={homeActive ? "bold" : "medium"}>
             Home
           </Text>
         </Flex>
@@ -1005,6 +1047,7 @@ export function Sidebar({
           }}
           role="button"
           tabIndex={0}
+          className={inboxActive ? "ed-here" : undefined}
           onClick={() => onSelect("inbox")}
           onKeyDown={activateOnKey(() => onSelect("inbox"))}
           aria-current={inboxActive ? "page" : undefined}
@@ -1187,6 +1230,10 @@ export function Sidebar({
                 role="group"
                 aria-labelledby="sidebar-section-accessibility-header"
               >
+                {/* The hub tells the reader an overview sits on top of each
+                    scope's tree. It has to be true of every scope that
+                    declares one, not only of Components. */}
+                {overviewRow(SCREEN_TITLE.accessibility, "accessibility")}
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -1240,6 +1287,10 @@ export function Sidebar({
                 role="group"
                 aria-labelledby="sidebar-section-components-header"
               >
+                {/* On top of the tree, not inside it: coverage is the
+                    overview of every component at once, and it was a tab on
+                    the front door where it could not be linked to. */}
+                {overviewRow(SCREEN_TITLE.coverage, "coverage")}
                 <ul
                   role="list"
                   style={{ listStyle: "none", padding: 0, margin: 0 }}

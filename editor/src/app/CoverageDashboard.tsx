@@ -1,9 +1,10 @@
-// Landing dashboard — per-domain × per-component status matrix.
+// The overview on top of the Components tree: per-domain, per-component
+// status, as a figure first and a table second.
 //
-// Renders when EditorShell.activePath is null. Replaces the prior
-// "Choose a file…" empty-state callout. Pure read+navigate; the only
-// write affordance is "Start authoring" on ghost rows, which adds a
-// stub _meta.yml to the submission cart for batch PR.
+// Reached at `#/coverage`, from the sidebar above the component list and from
+// the hub. Pure read and navigate; the only write affordance is "Start
+// authoring" on ghost rows, which adds a stub _meta.yml to the submission
+// cart for batch PR.
 //
 // Row sources (T1.5):
 //   - authored (origin="authored"): every components/src/<slug>/_meta.yml
@@ -41,7 +42,6 @@ import {
 } from "../lib/coverageLoader";
 import {
   STATE_FOR_STATUS,
-  STATE_LABEL,
   THING_LABEL,
   SLOT_LABEL,
 } from "../lib/nomenclature";
@@ -51,7 +51,11 @@ import { measure, measuredToday } from "../lib/measure";
 import { componentSlotRecords, componentSlotsFor } from "../lib/slots";
 import { loadCapturedSlugs } from "../lib/loadMediaIndex";
 import { DOMAIN_LABEL } from "../lib/workspaceState";
+import { largestGap } from "../lib/needsAttention";
 import { MeterList } from "./MeterList";
+import { CoverageMatrix, coverageCsv } from "./CoverageMatrix";
+import { SCREEN_TITLE } from "../lib/routes";
+import { downloadCsv } from "../lib/download";
 
 export interface CoverageDashboardProps {
   octokit: Octokit;
@@ -143,20 +147,36 @@ export function CoverageDashboard({
     // unreadable `_meta.yml` into `state.unreadable` before any screen sees
     // it, so this count and the table below it cannot disagree about the
     // denominator. The note under the Meters names what was left out.
+    // Only what the matrix does not already show. The five guidance domains
+    // are the matrix, cell for cell, and rendering them again as ratios
+    // directly beneath it is the restatement this screen is being cleared of.
+    // Capture is a different measure, so it stays.
     return measure(
       componentSlotRecords(
         state.rows,
         captures.kind === "ready" ? captures.slugs : new Set<string>(),
       ),
-      componentSlotsFor(captures.kind === "ready"),
+      componentSlotsFor(captures.kind === "ready").filter(
+        (slot) => slot.key === "capture",
+      ),
       measuredToday(),
     );
   }, [state, captures]);
 
+  // The page's name renders in every state. While it lived below the early
+  // returns, a reader arriving during the fetch found a page with no h1, and
+  // the fetch here is 30 to 90 GitHub calls.
+  const heading = (
+    <Heading as="h1" size="5" mb="1">
+      {SCREEN_TITLE.coverage}
+    </Heading>
+  );
+
   if (state.kind === "loading") {
     return (
-      <Box p="6">
-        <Flex align="center" gap="2">
+      <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {heading}
+        <Flex align="center" gap="2" mt="3">
           <Spinner />
           <Text size="2" color="gray">
             Loading coverage…
@@ -168,8 +188,9 @@ export function CoverageDashboard({
 
   if (state.kind === "error") {
     return (
-      <Box p="6">
-        <Callout.Root color="red" role="alert">
+      <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {heading}
+        <Callout.Root color="red" role="alert" mt="3">
           <Callout.Text>Failed to load coverage: {state.message}</Callout.Text>
         </Callout.Root>
       </Box>
@@ -187,9 +208,31 @@ export function CoverageDashboard({
 
   return (
     <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <Heading as="h3" size="5" mb="1">
-        Coverage
-      </Heading>
+      {heading}
+      <Text size="2" color="gray" as="p" mb="4">
+        {(() => {
+          const worst = largestGap(rows);
+          return worst
+            ? `${rows.length} components. ${DOMAIN_LABEL[worst.domain]} is the backlog: ${worst.open} have none authored.`
+            : `${rows.length} components, every domain started.`;
+        })()}
+      </Text>
+
+      {/* The figure, before any number that describes it. */}
+      <Box mb="4">
+        <CoverageMatrix rows={rows} />
+      </Box>
+
+      <Flex gap="2" mb="4" wrap="wrap">
+        <Button
+          variant="soft"
+          size="1"
+          onClick={() => downloadCsv(coverageCsv(rows), "component-coverage")}
+        >
+          Export as CSV
+        </Button>
+      </Flex>
+
       {meters && (
         <Box mb="4" mt="3">
           <MeterList
@@ -220,31 +263,16 @@ export function CoverageDashboard({
           )}
         </Box>
       )}
+      {/* One badge per domain, each restating its matrix row as a ratio, used
+          to sit here. Looking at the screen is what caught it: the Meters were
+          removed and these were not, so the figure was still followed by the
+          numbers it had just replaced. What survives is the sentence that says
+          how to USE the table, which the figure does not say. */}
       <Text size="2" color="gray" mb="3" as="p">
-        {counts!.authored} {STATE_LABEL.draft.toLowerCase()} ·{" "}
-        {counts!.unstarted} {STATE_LABEL.empty.toLowerCase()} ·{" "}
-        {counts!.total} eligible components. Click a component name to open its
-        details, click a status cell to edit that guidance, or click{" "}
-        <em>Start authoring</em> on an unstarted row to begin.
+        Click a component name to open its details, click a status cell to edit
+        that guidance, or click <em>Start authoring</em> on an unstarted row to
+        begin.
       </Text>
-
-      <Flex gap="3" wrap="wrap" mb="4">
-        {DOMAINS.map((d) => {
-          const c = counts!.perDomain[d];
-          return (
-            <Badge key={d} variant="soft" color="gray" size="2">
-              <Text weight="medium">{DOMAIN_LABEL[d]}</Text>
-              <Text>
-                {" · "}
-                {c.authored}/{counts!.total} {STATE_LABEL.draft.toLowerCase()}
-                {c.inherited > 0
-                  ? ` · ${c.inherited} ${STATE_LABEL.inherited.toLowerCase()}`
-                  : ""}
-              </Text>
-            </Badge>
-          );
-        })}
-      </Flex>
 
       <Table.Root variant="surface" size="1">
         <Table.Header>
