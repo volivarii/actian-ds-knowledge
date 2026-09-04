@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Fixed
 
 - **The editor's status readout has rendered inverted in every build that ever shipped**
-  (PR pending). `instrument.css` overrode the readout palette under `[data-theme="dark"]`, and
+  ([#659](https://github.com/volivarii/actian-ds-knowledge/pull/659)). `instrument.css` overrode the readout palette under `[data-theme="dark"]`, and
   nothing in the editor sets `data-theme`: Radix Themes applies `appearance` as a class on the Theme
   element (`class="radix-themes dark"`). So the block matched nothing, `--ed-lit` stayed at its light
   value `#101010`, and an authored cell drew near-black on a near-black ground while an empty cell
@@ -37,7 +37,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Changed
 
 - **The Coverage screen states one number for one thing, and offers the verb for the finding it
-  states** (PR pending). It opened with "85 components" while the sidebar two inches away said 54,
+  states** ([#659](https://github.com/volivarii/actian-ds-knowledge/pull/659)). It opened with "85 components" while the sidebar two inches away said 54,
   because the 85 counted registry components nobody has started. The sentence is now derived by a
   pure `coverageSentence`, which separates the authored set from the registry, names the domains
   that are complete, and measures the backlog against the authored total: a component with no
