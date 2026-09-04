@@ -121,9 +121,14 @@ export function CoverageMatrix({ rows }: CoverageMatrixProps) {
             size="1"
             color="gray"
             style={{
-              width: 168,
+              // Wide enough for the longest tally the data can produce, and
+              // nowrap so it cannot break: "53 Approved, 1 Draft, 31 Empty"
+              // wrapped onto two lines at 168px, which left every row's right
+              // edge ragged and made a five row figure eight lines tall.
+              width: 210,
               flex: "none",
               textAlign: "right",
+              whiteSpace: "nowrap",
               fontVariantNumeric: "tabular-nums",
             }}
           >

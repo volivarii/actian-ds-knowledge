@@ -153,6 +153,71 @@ export function backlogSentence(shape: {
   return parts.join(" ");
 }
 
+/**
+ * The Coverage page's one sentence, which is deliberately NOT the hub's.
+ *
+ * The hub asks "what should I do next", so `backlogSentence` leads with what
+ * is unwritten. This page answers "where does the design system stand", so it
+ * leads with what is DONE. That is the fact a reader from outside the team
+ * most needs, and it is the one the screen was not saying: it opened with
+ * "85 components" while the sidebar two inches away said 54, because the 85
+ * counts registry components nobody has started. Two numbers for one thing,
+ * a hand's width apart.
+ *
+ * Complete is measured over the AUTHORED set only, for the reason given on
+ * `backlogShape`: a component with no `_meta.yml` is missing every domain, so
+ * counting it makes every domain look like a backlog.
+ */
+export function coverageSentence(rows: CoverageRow[]): string {
+  const authored = rows.filter((r) => r.origin === "authored");
+  const ghosts = rows.length - authored.length;
+  const parts: string[] = [];
+
+  if (authored.length === 0) {
+    // Not "0 components": a registry full of unstarted components is a real
+    // state and the reader needs to know the set is not empty.
+    return ghosts > 0
+      ? `Nothing authored yet. ${ghosts} component${ghosts === 1 ? " in the registry is" : "s in the registry are"} waiting.`
+      : "No components found.";
+  }
+
+  parts.push(
+    ghosts > 0
+      ? `${authored.length} components authored, ${ghosts} more in the registry with nothing yet.`
+      : `${authored.length} components.`,
+  );
+
+  const complete = DOMAINS.filter((d) =>
+    authored.every((r) => r.domains[d].status !== "not-started"),
+  );
+  if (complete.length > 0) {
+    parts.push(
+      `${joinWords(complete.map((d) => DOMAIN_LABEL[d]))} ${complete.length === 1 ? "is" : "are"} complete.`,
+    );
+  }
+
+  const worst = largestGap(authored);
+  if (worst) {
+    parts.push(
+      `${DOMAIN_LABEL[worst.domain]} is the backlog: ${worst.open} of the ${authored.length} have none.`,
+    );
+  } else if (complete.length < DOMAINS.length) {
+    // largestGap returned null with domains still incomplete: unreachable by
+    // construction, but saying nothing here would silently drop the clause.
+    parts.push("Every domain is underway.");
+  }
+
+  return parts.join(" ");
+}
+
+/** "Content and Usage", "Content, Usage and Design". Written out rather than
+ *  reached for from Intl, because the list is three words long and a locale
+ *  that reorders them would change what the sentence claims. */
+function joinWords(words: string[]): string {
+  if (words.length <= 1) return words[0] ?? "";
+  return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+}
+
 export function topGaps(rows: CoverageRow[], limit: number): AttentionItem[] {
   return rows
     .map((row) => {

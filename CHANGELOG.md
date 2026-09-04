@@ -18,10 +18,41 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The editor's status readout has rendered inverted in every build that ever shipped**
+  ([#659](https://github.com/volivarii/actian-ds-knowledge/pull/659)). `instrument.css` overrode the readout palette under `[data-theme="dark"]`, and
+  nothing in the editor sets `data-theme`: Radix Themes applies `appearance` as a class on the Theme
+  element (`class="radix-themes dark"`). So the block matched nothing, `--ed-lit` stayed at its light
+  value `#101010`, and an authored cell drew near-black on a near-black ground while an empty cell
+  kept its light `--ed-well-edge` border. What was written was the invisible half and what was
+  missing was the prominent half, which is the opposite of what the instrument exists to say. No
+  rendering test could see it, because jsdom applies no stylesheet and the cascade it depends on does
+  not exist in the suite; 1558 tests were green over it and it was found by looking at the screen.
+  The override now keys on `:is(.dark, [data-theme="dark"])`, and a source guard asserts the join
+  between the selector the stylesheet uses and the appearance `App.tsx` asks for, since a stylesheet
+  keyed on a class nobody emits is exactly as dead as one keyed on an attribute nobody sets.
+  Editor-only: no dist, no schema, no consumer.
+
 ### Changed
 
+- **The Coverage screen states one number for one thing, and offers the verb for the finding it
+  states** ([#659](https://github.com/volivarii/actian-ds-knowledge/pull/659)). It opened with "85 components" while the sidebar two inches away said 54,
+  because the 85 counted registry components nobody has started. The sentence is now derived by a
+  pure `coverageSentence`, which separates the authored set from the registry, names the domains
+  that are complete, and measures the backlog against the authored total: a component with no
+  `_meta.yml` is missing every domain, so counting it made every domain look like a backlog. Beside
+  Export, the page now offers `Start the <domain> pass`, derived from the same `largestGap` over the
+  same rows so the button and the sentence cannot name different domains; a page that says "Tokens
+  is the backlog" and then offers only a CSV has named a job and handed the reader a spreadsheet.
+  The per-component table moved behind a closed disclosure: it restated the figure above it cell for
+  cell, 425 coloured badges under a drawing of the same rows, but it is not deleted because a 9px
+  matrix cell is below the 24px target floor (WCAG 2.5.8) and can never be the thing you click to
+  open one component's guidance. The per-domain tallies no longer wrap to two lines.
+  Editor-only: no dist, no schema, no consumer.
+
 - **The editor's front door is a hub, and each scope has its own overview screen**
-  (PR pending). Coverage, Accessibility, Relationships and Patterns sat in one `ExploreTab` union
+  ([#658](https://github.com/volivarii/actian-ds-knowledge/pull/658)). Coverage, Accessibility, Relationships and Patterns sat in one `ExploreTab` union
   and rendered as four panels beneath the home screen. That grouping produced most of the clutter,
   because it forced four unrelated things into one shape (a run of statistics, chips restating those
   statistics, then the table they were counted from) and left the switcher below the fold, so
@@ -36,7 +67,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   view) rather than with statistics about itself, and exports per component as CSV. Editor-only: no
   consumer reads any of this.
 - **The editor has its own visual namespace, separate from the design system's tokens**
-  (PR pending). `--zen-*` is the design system's vocabulary, generated from `tokens/tokens.json` and
+  ([#658](https://github.com/volivarii/actian-ds-knowledge/pull/658)). `--zen-*` is the design system's vocabulary, generated from `tokens/tokens.json` and
   vendored into the editor so the preview pane can render design-system content in design-system
   colours. The tool around that pane was wearing it too, which makes the two impossible to tell
   apart at a glance. `styles/instrument.css` holds the editor's own layer, and its one accent means

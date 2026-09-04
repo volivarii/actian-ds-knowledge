@@ -44,7 +44,19 @@
   --ed-cell-radius: 1px;
 }
 
-[data-theme="dark"] {
+/* Radix Themes applies `appearance` as a CLASS on the Theme element
+   (`class="radix-themes dark"`), never as `data-theme`. Keyed on
+   `[data-theme="dark"]` alone this whole block matched nothing, in every build
+   that has ever shipped: `--ed-lit` stayed #101010, so an AUTHORED cell drew
+   near-black on a near-black ground while an ABSENT cell kept its light
+   `--ed-well-edge` border. The readout rendered inverted, and what is written
+   was the invisible half.
+
+   No test could see it: jsdom applies no stylesheet, so the cascade this
+   depends on does not exist in the suite. It was found by looking at the
+   screen. `.dark` is what the app produces today; `[data-theme="dark"]` is
+   kept so a future root-level theme switch also lands. */
+:is(.dark, [data-theme="dark"]) {
   --ed-signal: #ff5c1a;
   --ed-lit: #f2f0eb;
   --ed-half: #7e7e78;
