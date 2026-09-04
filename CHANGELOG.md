@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Changed
 
 - **A form save writes the author's own bytes back when nothing changed**
-  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD), closes
+  ([#657](https://github.com/volivarii/actian-ds-knowledge/pull/657), closes
   [#631](https://github.com/volivarii/actian-ds-knowledge/issues/631)). 30 of the 96 files the editor
   routes to a form were not byte fixed points of their own save path: re-serializing an unedited
   document came back as a reformat, so a file typed and then typed BACK still differed from `main`
