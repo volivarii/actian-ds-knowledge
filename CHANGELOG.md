@@ -26,8 +26,10 @@ Each entry links its pull request. Dates are the merge date (UTC).
   [#653](https://github.com/volivarii/actian-ds-knowledge/issues/653)). The top bar is a `<header>`
   whose first focusable element is a "Skip to content" link to the one `<main>`; the sidebar is the one
   `<nav>`, and its seven section labels are labels rather than headings. Every Radix `Heading` in
-  `editor/src` carries an explicit level, so each screen has exactly one h1: the deployed Home page had
-  nine, eight of them from the shell, because Radix defaults the level to h1. A polite live region in
+  `editor/src` carries an explicit level, so each screen's chrome has exactly one h1 (the deployed Home
+  page had nine, eight of them from the shell, because Radix defaults the level to h1). A document
+  being edited may still carry its own `# Title` as an h1 inside the editing surface; naming the page
+  after that title is 1110's job. A polite live region in
   the header speaks a draft save once it follows a change (not on opening a drafted file, and at most
   once a minute while typing), a write that never completes, and every file added to or removed from
   the batch as one sentence per change; every red callout declares what it is (`role="alert"` for a

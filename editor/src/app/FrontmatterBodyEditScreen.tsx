@@ -580,7 +580,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
   if (state.kind === "raw")
     return (
       <Box>
-        <Callout.Root color="amber" mb="2">
+        <Callout.Root color="amber" mb="2" role="alert">
           <Callout.Text>
             Couldn't parse this file's frontmatter — editing as raw text.
           </Callout.Text>

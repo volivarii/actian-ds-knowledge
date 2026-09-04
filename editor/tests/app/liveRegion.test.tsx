@@ -67,7 +67,23 @@ test("a cart change becomes one sentence naming files, not paths", () => {
     describeCartChange([], [e("a/b/one.md"), e("a/b/two.md")]),
     "Added one.md and two.md to the batch",
   );
-  assert.equal(describeCartChange([e("a/one.md"), e("a/two.md")], []), "Batch cleared");
+  // Two removals at once are two removals; "Batch cleared" and "Pull request
+  // opened" are said by the actor that clears, because the diff cannot tell
+  // a submit from a discard.
+  assert.equal(
+    describeCartChange([e("a/one.md"), e("a/two.md")], []),
+    "Removed one.md and two.md from the batch",
+  );
+  // The delete flow re-adds the SAME path with deleted: true; membership
+  // alone made that silent.
+  assert.equal(
+    describeCartChange([e("f/color.md")], [e("f/color.md", { deleted: true })]),
+    "Staged the deletion of color.md",
+  );
+  assert.equal(
+    describeCartChange([e("f/color.md", { deleted: true })], [e("f/color.md")]),
+    "Added color.md to the batch",
+  );
 });
 
 function Harness({ cart }: { cart: SubmissionCart }) {
@@ -89,6 +105,13 @@ test("the cart hook speaks one sentence per commit, through the live region", as
     cart.add({ path: "x/one.md", content: "typed", basedOnSha: "", addedAt: 1 });
   });
   assert.equal(region.textContent, "Added one.md and two.md to the batch");
+  // A clear is the actor's sentence ("Pull request opened", "Batch cleared"),
+  // so the diff stays quiet rather than announcing a removal over it.
+  await act(async () => {
+    announce("Pull request opened");
+    cart.clear();
+  });
+  assert.equal(region.textContent, "Pull request opened");
 });
 
 test("the save-state indicator announces a real save once, never on opening a draft", async () => {
@@ -97,39 +120,73 @@ test("the save-state indicator announces a real save once, never on opening a dr
   const { container, rerender } = render(
     <Theme>
       <LiveRegion />
-      <SaveStateIndicator state={{ kind: "saved", savedAt: 1 }} />
+      <SaveStateIndicator path="a.md" state={{ kind: "saved", savedAt: 1 }} />
     </Theme>,
   );
   const region = container.querySelector('[aria-live="polite"]')!;
   assert.equal(getAnnouncement().seq, seqBefore, "opening a drafted file announced a save");
-  const show = async (state: SaveState) =>
+  const show = async (path: string, state: SaveState) =>
     act(async () => {
       rerender(
         <Theme>
           <LiveRegion />
-          <SaveStateIndicator state={state} />
+          <SaveStateIndicator path={path} state={state} />
         </Theme>,
       );
     });
-  await show({ kind: "unsaved" });
-  await show({ kind: "saved", savedAt: 2 });
+  await show("a.md", { kind: "unsaved" });
+  await show("a.md", { kind: "saved", savedAt: 2 });
   assert.match(region.textContent ?? "", /draft saved/i);
   const afterFirst = getAnnouncement().seq;
   // Every typing pause writes again. That is not news a minute later, let
   // alone every second.
-  await show({ kind: "unsaved" });
-  await show({ kind: "saved", savedAt: 3 });
+  await show("a.md", { kind: "unsaved" });
+  await show("a.md", { kind: "saved", savedAt: 3 });
   assert.equal(getAnnouncement().seq, afterFirst, "a second save inside the quiet window was announced");
 });
 
-test("a write that never reports saved is announced as a failure", async () => {
-  // DraftStore emits writing and saved synchronously, so a committed "saving"
-  // state only ever means the write threw (storage quota) and "saved" never
-  // came. The badge used to sit on "Saving…" forever and say nothing.
+test("switching files is not a save, and the quiet window is per file", async () => {
+  // The indicator is mounted once in the header. Typing in A then clicking B
+  // produces unsaved -> saved with no write when B has an old draft, and the
+  // quiet window for A must not silence B's first real save.
+  const { rerender } = render(
+    <Theme>
+      <LiveRegion />
+      <SaveStateIndicator path="a.md" state={{ kind: "unsaved" }} />
+    </Theme>,
+  );
+  const show = async (path: string, state: SaveState) =>
+    act(async () => {
+      rerender(
+        <Theme>
+          <LiveRegion />
+          <SaveStateIndicator path={path} state={state} />
+        </Theme>,
+      );
+    });
+  const seqBefore = getAnnouncement().seq;
+  await show("b.md", { kind: "saved", savedAt: 1 });
+  assert.equal(getAnnouncement().seq, seqBefore, "switching to a drafted file announced a save");
+  await show("b.md", { kind: "unsaved" });
+  await show("b.md", { kind: "saved", savedAt: 2 });
+  const afterB = getAnnouncement().seq;
+  assert.equal(afterB, seqBefore + 1, "B's first real save was not announced");
+  assert.match(getAnnouncement().text, /draft saved/i);
+  // ...and A, opened again a moment later, gets its own first save spoken.
+  await show("a.md", { kind: "saved", savedAt: 2 });
+  await show("a.md", { kind: "unsaved" });
+  await show("a.md", { kind: "saved", savedAt: 3 });
+  assert.equal(getAnnouncement().seq, afterB + 1, "A's save was silenced by B's quiet window");
+});
+
+test("a failed write is shown and announced from the store's own fact", async () => {
+  // DraftStore.save catches the setItem throw. It used to return false and
+  // emit nothing, so the badge sat on "Saving…" and the failure was
+  // reconstructed from a timer. Now the store says "failed", once.
   const { container, rerender } = render(
     <Theme>
       <LiveRegion />
-      <SaveStateIndicator state={{ kind: "unsaved" }} failureAfterMs={30} />
+      <SaveStateIndicator path="a.md" state={{ kind: "unsaved" }} />
     </Theme>,
   );
   const region = container.querySelector('[aria-live="polite"]')!;
@@ -137,14 +194,12 @@ test("a write that never reports saved is announced as a failure", async () => {
     rerender(
       <Theme>
         <LiveRegion />
-        <SaveStateIndicator state={{ kind: "saving" }} failureAfterMs={30} />
+        <SaveStateIndicator path="a.md" state={{ kind: "failed" }} />
       </Theme>,
     );
   });
-  await act(async () => {
-    await new Promise((r) => setTimeout(r, 80));
-  });
   assert.match(region.textContent ?? "", /could not be saved/i);
+  assert.match(container.textContent ?? "", /not saved/i, "the badge still claims a save is in progress");
 });
 
 test("announcing the same sentence twice replaces the node, so it is read again", async () => {

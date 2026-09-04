@@ -58,6 +58,42 @@ function openTags(source: string, name: string): { line: number; tag: string }[]
   return out;
 }
 
+/**
+ * The local names under which a file imports Radix's Heading: `Heading`, or
+ * whatever `Heading as X` renamed it to. Empty when the file does not import
+ * it from `@radix-ui/themes` at all, so a `Heading` type from headingScan is
+ * not mistaken for the component.
+ */
+function radixHeadingNames(source: string): string[] {
+  const out: string[] = [];
+  const re = /import\s*\{([^}]*)\}\s*from\s*"@radix-ui\/themes"/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(source))) {
+    for (const spec of m[1]!.split(",")) {
+      const [imported, local] = spec.trim().split(/\s+as\s+/);
+      if (imported?.trim() === "Heading") out.push((local ?? imported).trim());
+    }
+  }
+  return out;
+}
+
+/** Like `offenders`, for a component whose local name each file decides. */
+function offendersByImport(
+  namesOf: (source: string) => string[],
+  ok: (tag: string) => boolean,
+): string[] {
+  const out: string[] = [];
+  for (const f of walk(SRC)) {
+    const source = readFileSync(f, "utf8");
+    for (const name of namesOf(source)) {
+      for (const { line, tag } of openTags(source, name)) {
+        if (!ok(tag)) out.push(`${relative(SRC, f)}:${line}`);
+      }
+    }
+  }
+  return out;
+}
+
 function offenders(name: string, ok: (tag: string) => boolean): string[] {
   const out: string[] = [];
   for (const f of walk(SRC)) {
@@ -78,7 +114,8 @@ const hasLevel = (tag: string) => /\bas=["{]/.test(tag);
  */
 const declaresLiveness = (tag: string) =>
   /\brole="(alert|status)"/.test(tag) || /\baria-live="off"/.test(tag);
-const mayBeRed = (tag: string) => /\bcolor="red"/.test(tag) || /\bcolor=\{/.test(tag);
+const maySignal = (tag: string) =>
+  /\bcolor="(red|amber)"/.test(tag) || /\bcolor=\{/.test(tag);
 
 test("the matchers see what they are for (pattern self-test)", () => {
   // A guard that cannot fail is the failure mode this file exists to avoid.
@@ -93,24 +130,42 @@ test("the matchers see what they are for (pattern self-test)", () => {
     '<Callout.Root title="a > b" color="red" role="status">',
     '<Callout.Root color={tone}>',
     '<Callout.Root color="red" aria-live="off">',
+    '<Callout.Root color="amber">',
   ].join("\n");
   const headings = openTags(src, "Heading");
   assert.equal(headings.length, 3, "HeadingLike must not match");
+  // An aliased import is the same component under another name, and this
+  // branch introduced one (`Heading as RadixHeading`, because a screen already
+  // imports an outline type called Heading). The guard follows the import.
+  const aliased = 'import { Box, Heading as RadixHeading } from "@radix-ui/themes";\n<RadixHeading size="2">x</RadixHeading>\n<Heading size="1">y</Heading>';
+  assert.deepEqual(radixHeadingNames(aliased), ["RadixHeading"]);
+  assert.deepEqual(
+    radixHeadingNames('import { Heading } from "@radix-ui/themes";'),
+    ["Heading"],
+  );
+  assert.equal(
+    radixHeadingNames('import { Heading } from "../lib/headingScan";').length,
+    0,
+    "a Heading from elsewhere is not the Radix one",
+  );
   assert.deepEqual(headings.map((h) => hasLevel(h.tag)), [false, true, true]);
   const callouts = openTags(src, "Callout.Root");
-  assert.equal(callouts.length, 6);
+  assert.equal(callouts.length, 7);
   // The arrow function and the quoted `>` must not end the tag early.
   assert.ok(callouts[2]!.tag.endsWith('color="red">'), callouts[2]!.tag);
   assert.ok(callouts[3]!.tag.endsWith('role="status">'), callouts[3]!.tag);
-  assert.deepEqual(callouts.map((c) => mayBeRed(c.tag)), [true, true, true, true, true, true]);
+  assert.deepEqual(
+    callouts.map((c) => maySignal(c.tag)),
+    [true, true, true, true, true, true, true],
+  );
   assert.deepEqual(
     callouts.map((c) => declaresLiveness(c.tag)),
-    [false, true, false, true, false, true],
+    [false, true, false, true, false, true, false],
   );
 });
 
 test("every Radix Heading in editor/src carries an explicit level", () => {
-  const bad = offenders("Heading", hasLevel);
+  const bad = offendersByImport(radixHeadingNames, hasLevel);
   assert.deepEqual(
     bad,
     [],
@@ -118,12 +173,15 @@ test("every Radix Heading in editor/src carries an explicit level", () => {
   );
 });
 
-test("every Callout that may be red declares what it is to assistive technology", () => {
-  const bad = offenders("Callout.Root", (tag) => !mayBeRed(tag) || declaresLiveness(tag));
+test("every Callout that may signal declares what it is to assistive technology", () => {
+  // Red is a failure, amber is a warning, and a colour expression may be
+  // either: a GitHub error rendered amber with no role was told to nobody
+  // while a static tier notice rendered as an alert on every open.
+  const bad = offenders("Callout.Root", (tag) => !maySignal(tag) || declaresLiveness(tag));
   assert.deepEqual(
     bad,
     [],
-    `red or dynamically coloured Callout without role="alert", role="status" or aria-live="off":\n  ${bad.join("\n  ")}`,
+    `red, amber or dynamically coloured Callout without role="alert", role="status" or aria-live="off":\n  ${bad.join("\n  ")}`,
   );
 });
 

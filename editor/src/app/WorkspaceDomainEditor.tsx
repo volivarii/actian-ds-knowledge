@@ -271,7 +271,7 @@ export function WorkspaceDomainEditor({
         </Button>
       </Flex>
       {renameWarnings.length > 0 && (
-        <Callout.Root color="amber" size="1" mb="2">
+        <Callout.Root color="amber" size="1" mb="2" role="status">
           <Callout.Text>
             {renameWarnings
               .map(

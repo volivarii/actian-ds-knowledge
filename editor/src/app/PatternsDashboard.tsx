@@ -522,7 +522,7 @@ export function PatternsDashboard({
       )}
 
       {index.recipesNamingNoPattern.length > 0 && (
-        <Callout.Root color="amber" mb="4">
+        <Callout.Root color="amber" mb="4" aria-live="off">
           <Callout.Text>
             {index.recipesNamingNoPattern.length} captured recipe
             {index.recipesNamingNoPattern.length === 1 ? "" : "s"} declare no

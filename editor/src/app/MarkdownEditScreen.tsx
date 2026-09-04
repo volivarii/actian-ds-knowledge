@@ -644,7 +644,7 @@ export function MarkdownEditScreen({
 
   if (ghError) {
     return (
-      <Callout.Root color="amber">
+      <Callout.Root color="amber" role="alert">
         <Callout.Text>
           {ghError}{" "}
           {onOpenSettings && (
@@ -786,7 +786,7 @@ export function MarkdownEditScreen({
         </Flex>
       </Flex>
       {renameWarnings.length > 0 && (
-        <Callout.Root color="amber" size="1">
+        <Callout.Root color="amber" size="1" role="status">
           <Callout.Text>
             {renameWarnings
               .map(

@@ -73,9 +73,17 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   // Seeded from the address during the first render, not corrected by an
   // effect afterwards, so a deep link is never briefly the wrong screen.
-  const [activePath, setActivePath] = useState<string | null>(
+  const [activePath, setActivePathState] = useState<string | null>(
     () => stateFromHash(window.location.hash).activePath,
   );
+  // Every navigation, including one that lands where the app already is,
+  // bumps this so the screen error boundary resets (see EditorShell). The
+  // state setter alone bails out on an unchanged path and nothing re-renders.
+  const [navigationSerial, setNavigationSerial] = useState(0);
+  const setActivePath = useCallback((path: string | null) => {
+    setNavigationSerial((n) => n + 1);
+    setActivePathState(path);
+  }, []);
   // The home screen's data tab lives here rather than in EditorShell because
   // the URL carries it, and one component owns everything the URL carries.
   // It still survives navigating into a file and back: App outlives the
@@ -281,6 +289,7 @@ export default function App() {
           }
           freshness={headerOctokit ? <FreshnessChip octokit={headerOctokit} /> : null}
           saveState={saveState}
+          savePath={activePath}
           submissions={
             headerOctokit
               ? {
@@ -306,6 +315,7 @@ export default function App() {
             />
           ) : (
             <EditorShell
+              navigationSerial={navigationSerial}
               onOpenSettings={() => setSettingsOpen(true)}
               octokit={headerOctokit ?? undefined}
               activePath={activePath}

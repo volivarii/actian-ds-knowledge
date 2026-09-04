@@ -18,11 +18,11 @@ import { announce } from "../lib/announcer";
 export interface SaveStateIndicatorProps {
   state: SaveState;
   /**
-   * How long "saving" may last before it is announced as a failure. The
-   * store emits writing and saved in one synchronous pass, so a committed
-   * "saving" state only ever means the write threw and "saved" never came.
+   * The file the state is about. The indicator is mounted once in the
+   * header, so without it a file switch reads as a transition of one file:
+   * typing in A then opening drafted B is unsaved -> saved with no write.
    */
-  failureAfterMs?: number;
+  path?: string | null;
 }
 
 /** A save is announced at most this often per mount; autosave writes at every
@@ -43,7 +43,7 @@ function relativeTime(ts: number, now: number): string {
 
 export function SaveStateIndicator({
   state,
-  failureAfterMs = 3000,
+  path = null,
 }: SaveStateIndicatorProps) {
   // Tick every second so the relative timestamp re-renders.
   const [now, setNow] = useState(Date.now());
@@ -64,22 +64,30 @@ export function SaveStateIndicator({
   // at "saved" with no write), at most once per QUIET_MS (autosave writes at
   // every typing pause), and a "saving" that never becomes "saved" is a
   // failed write and is said so.
+  // Per FILE: the indicator is mounted once in the header, so a file switch
+  // must not read as a transition of either file, and one file's quiet
+  // window must not silence another's first save. A failed write is spoken
+  // from the store's own "failed" event, not guessed from a timer.
   const previousKind = useRef(state.kind);
-  const lastSpokenAt = useRef(0);
+  const previousPath = useRef(path);
+  const lastSpokenAt = useRef(new Map<string | null, number>());
   useEffect(() => {
     const was = previousKind.current;
     previousKind.current = state.kind;
+    if (previousPath.current !== path) {
+      previousPath.current = path;
+      return;
+    }
     if (state.kind === "saved" && was === "unsaved") {
       const now = Date.now();
-      if (now - lastSpokenAt.current >= QUIET_MS) {
-        lastSpokenAt.current = now;
+      if (now - (lastSpokenAt.current.get(path) ?? 0) >= QUIET_MS) {
+        lastSpokenAt.current.set(path, now);
         announce("Draft saved");
       }
+    } else if (state.kind === "failed" && was !== "failed") {
+      announce("Draft could not be saved");
     }
-    if (state.kind !== "saving") return;
-    const id = setTimeout(() => announce("Draft could not be saved"), failureAfterMs);
-    return () => clearTimeout(id);
-  }, [state.kind, failureAfterMs]);
+  }, [state.kind, path]);
 
   if (state.kind === "idle") return null;
 
@@ -88,6 +96,15 @@ export function SaveStateIndicator({
       <Badge variant="soft" color="amber" radius="full">
         <Dot color="var(--zen-color-icon-warning, #EF8D00)" />
         <Text size="1">Unsaved changes</Text>
+      </Badge>
+    );
+  }
+
+  if (state.kind === "failed") {
+    return (
+      <Badge variant="soft" color="red" radius="full">
+        <Dot color="var(--zen-color-icon-error, #DC3514)" />
+        <Text size="1">Draft not saved</Text>
       </Badge>
     );
   }

@@ -13,7 +13,7 @@ export function TierBanner({ path }: TierBannerProps) {
   if (info.severity === "none") return null;
   const color = info.severity === "red" ? "red" : "amber";
   return (
-    <Callout.Root color={color} size="1" role="alert">
+    <Callout.Root color={color} size="1" aria-live="off">
       <Flex direction="column" gap="1">
         <Text size="2" weight="bold">
           {info.label}

@@ -97,7 +97,7 @@ export function AnchorRenamePopover({
             {`${sameFileCount} link${sameFileCount === 1 ? "" : "s"} in this file will be updated.`}
           </Text>
           {crossFileReferrers.length > 0 && (
-            <Callout.Root color="amber" size="1">
+            <Callout.Root color="amber" size="1" role="status">
               <Callout.Text>
                 <Text as="div" size="1">
                   {`${crossFileReferrers.length} other file${crossFileReferrers.length === 1 ? "" : "s"} reference${crossFileReferrers.length === 1 ? "s" : ""} this anchor and will not be auto-updated:`}

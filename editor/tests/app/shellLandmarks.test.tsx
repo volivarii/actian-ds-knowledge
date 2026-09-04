@@ -38,14 +38,22 @@ function fakeGh() {
   } as any;
 }
 
-function mountShell(activePath: string | null) {
+function mountShell(activePath: string | null, navigationSerial = 0) {
   localStorage.clear();
   sessionStorage.clear(); // the sidebar's collapse state lives here
-  return render(
+  const gh = fakeGh();
+  const ui = (serial: number) => (
     <Theme>
-      <EditorShell octokit={fakeGh()} activePath={activePath} setActivePath={() => {}} />
-    </Theme>,
+      <EditorShell
+        octokit={gh}
+        activePath={activePath}
+        setActivePath={() => {}}
+        navigationSerial={serial}
+      />
+    </Theme>
   );
+  const r = render(ui(navigationSerial));
+  return { ...r, renavigate: (serial: number) => r.rerender(ui(serial)) };
 }
 
 test("the shell has one nav and one main, and the main can be skipped to", async () => {
@@ -100,4 +108,17 @@ test("the draft inbox in the shell has exactly one h1", async () => {
   await waitFor(() => assert.ok(container.querySelector("nav")));
   const h1s = [...container.querySelectorAll("h1")].map((h) => h.textContent);
   assert.equal(h1s.length, 1, `h1s: ${h1s.join(" | ")}`);
+});
+
+test("every navigation resets the screen boundary, not only a path change", async () => {
+  // Home again, the same file from search or the palette, or a hash route
+  // change none of which alter the path. App bumps a serial on every
+  // navigation; the shell folds it into the boundary's reset key.
+  const { container, renavigate } = mountShell(null, 1);
+  await waitFor(() => assert.ok(container.querySelector("nav")));
+  const key1 = container.querySelector("[data-screen-boundary]")!.getAttribute("data-reset-key");
+  assert.ok(key1, "the boundary does not expose its reset key");
+  renavigate(2);
+  const key2 = container.querySelector("[data-screen-boundary]")!.getAttribute("data-reset-key");
+  assert.notEqual(key2, key1, "re-selecting the same screen did not change the reset key");
 });

@@ -15,7 +15,9 @@ export type SaveState =
   | { kind: "idle" }
   | { kind: "unsaved" }
   | { kind: "saving" }
-  | { kind: "saved"; savedAt: number };
+  | { kind: "saved"; savedAt: number }
+  /** The last write threw; the draft on screen is not in storage. */
+  | { kind: "failed" };
 
 export function useSaveState(
   path: string | null,
@@ -47,6 +49,8 @@ export function useSaveState(
           kind: "saved",
           savedAt: refreshed?.ts ?? Date.now(),
         });
+      } else if (event.kind === "failed") {
+        setState({ kind: "failed" });
       } else if (event.kind === "cleared") {
         setState({ kind: "idle" });
       }

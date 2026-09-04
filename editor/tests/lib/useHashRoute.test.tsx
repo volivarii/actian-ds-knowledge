@@ -242,3 +242,20 @@ test("arriving at the bare URL does not spend a history entry", () => {
   assert.deepEqual(pushed, []);
   cleanup();
 });
+
+test("a plain fragment is not a navigation", async () => {
+  // Every address this app mints starts with "#/". A skip link's "#main" or a
+  // heading anchor's "#slug" is an in-page fragment, and reading it as a route
+  // sent the reader Home with the fragment erased.
+  cleanup();
+  setHash("#/workspace/button");
+  const seen: (string | null)[] = [];
+  render(<Harness seen={seen} />);
+  const before = seen.length;
+  await act(async () => {
+    setHash("#main");
+    window.dispatchEvent(new window.HashChangeEvent("hashchange"));
+  });
+  assert.equal(seen.length, before, "a fragment was read as a route");
+  assert.equal(window.location.hash, "#main", "the fragment was rewritten");
+});

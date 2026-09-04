@@ -89,6 +89,11 @@ export function useHashRoute({
     const onHashChange = () => {
       const hash = window.location.hash;
       if (sameAddress(hash, written.current)) return;
+      // Every address this app mints starts with "#/". Anything else is an
+      // in-page fragment (a skip link's "#main", a heading anchor's "#slug"),
+      // and reading it as a route sent the reader Home with the fragment
+      // erased. The bare "#" and "" still mean home.
+      if (hash !== "" && hash !== "#" && !hash.startsWith("#/")) return;
       written.current = hash;
       const next = stateFromHash(hash);
       onNavigate(next.activePath, next.exploreTab);

@@ -59,17 +59,28 @@ function joinNames(names: string[]): string {
  * nothing a reader would care about did (an entry replaced by autosave). A
  * burst of changes in one commit is one sentence rather than the last of
  * several, because the live region holds a single slot.
+ *
+ * Keyed on path AND the deleted flag: the delete flow re-adds the same path
+ * with `deleted: true`, which membership alone read as no change. A clear is
+ * the actor's sentence ("Pull request opened", "Batch cleared"), spoken by
+ * whoever cleared, because this diff cannot tell a submit from a discard.
  */
 export function describeCartChange(
   previous: readonly CartEntry[],
   next: readonly CartEntry[],
 ): string | null {
-  const before = new Set(previous.map((e) => e.path));
-  const after = new Set(next.map((e) => e.path));
-  const added = next.filter((e) => !before.has(e.path) && !e.deleted).map((e) => cartEntryLabel(e.path));
-  const staged = next.filter((e) => !before.has(e.path) && e.deleted).map((e) => cartEntryLabel(e.path));
-  const removed = previous.filter((e) => !after.has(e.path)).map((e) => cartEntryLabel(e.path));
-  if (previous.length > 1 && next.length === 0) return "Batch cleared";
+  const before = new Map(previous.map((e) => [e.path, Boolean(e.deleted)]));
+  const after = new Map(next.map((e) => [e.path, Boolean(e.deleted)]));
+  const added: string[] = [];
+  const staged: string[] = [];
+  const removed: string[] = [];
+  for (const [path, deleted] of after) {
+    if (before.get(path) === deleted) continue; // present before, same state
+    (deleted ? staged : added).push(cartEntryLabel(path));
+  }
+  for (const path of before.keys()) {
+    if (!after.has(path)) removed.push(cartEntryLabel(path));
+  }
   const parts: string[] = [];
   if (added.length) parts.push(`Added ${joinNames(added)} to the batch`);
   if (staged.length) parts.push(`Staged the deletion of ${joinNames(staged)}`);

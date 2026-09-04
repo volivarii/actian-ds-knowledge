@@ -43,6 +43,14 @@ interface EditorShellProps {
   /** Focuses the header's GlobalSearch input (owned by App). Used by the
    *  HomeScreen's "Find a component" action. */
   onFocusSearch?: () => void;
+  /**
+   * Bumped by App on EVERY navigation, including one that lands on the
+   * screen already shown (Home again, the same file from search or the
+   * palette, a hash route). It resets the screen error boundary, which a
+   * path change alone cannot: the same path is no change, and the explore
+   * tab strip sits inside the fallen pane.
+   */
+  navigationSerial?: number;
 }
 
 /**
@@ -92,6 +100,7 @@ export function EditorShell({
   setActivePath,
   onOpenStaging,
   onFocusSearch,
+  navigationSerial = 0,
   // Passed straight through, undefined included: HomeScreen falls back to its
   // own state when nothing supplies these, so a shell rendered without them
   // (tests, and any future embedding) still has a working tab strip. Defaulting
@@ -100,14 +109,6 @@ export function EditorShell({
   onExploreTabChange,
 }: EditorShellPropsWithTab) {
   const setActivePathSafe = setActivePath ?? (() => {});
-  // Every selection, including re-selecting the current screen, resets the
-  // screen error boundary; a path change alone cannot, because Home again is
-  // the same path and the explore tab strip lives inside the fallen pane.
-  const [selectionCount, setSelectionCount] = useState(0);
-  const select = (path: string | null) => {
-    setSelectionCount((n) => n + 1);
-    setActivePathSafe(path);
-  };
   const [ghError, setGhError] = useState<string | null>(null);
   const gh = useMemo<Octokit | null>(() => {
     if (octokit) return octokit;
@@ -165,7 +166,7 @@ export function EditorShell({
   let pane: React.ReactNode;
   if (ghError) {
     pane = (
-      <Callout.Root color="amber">
+      <Callout.Root color="amber" role="alert">
         <Callout.Text>{ghError}</Callout.Text>
       </Callout.Root>
     );
@@ -255,7 +256,7 @@ export function EditorShell({
         octokit={gh}
         pendingPaths={pendingPaths}
         activePath={activePath}
-        onSelect={select}
+        onSelect={setActivePathSafe}
         wysiwygOn={wysiwygOn}
         onToggleWysiwyg={() => {
           const next = !wysiwygOn;
@@ -273,11 +274,13 @@ export function EditorShell({
         style={{ overflow: "auto", minWidth: 0, minHeight: 0 }}
       >
         <main id="main" tabIndex={-1}>
+          {/* Outside the boundary: the one exit from a failed child screen
+              must not fall with it. */}
+          {breadcrumb}
           <ScreenErrorBoundary
             path={activePath ?? "home"}
-            resetKey={`${exploreTab ?? "coverage"}:${selectionCount}`}
+            resetKey={`${exploreTab ?? "coverage"}:${navigationSerial}`}
           >
-            {breadcrumb}
             {pane}
           </ScreenErrorBoundary>
         </main>

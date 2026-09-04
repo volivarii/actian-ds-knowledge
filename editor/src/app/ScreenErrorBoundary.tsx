@@ -69,7 +69,11 @@ export class ScreenErrorBoundary extends Component<Props, State> {
     // `display: contents` so the marker element takes no part in layout: the
     // screen's own root keeps sizing against the main pane.
     return (
-      <div data-screen-boundary="" style={{ display: "contents" }}>
+      <div
+        data-screen-boundary=""
+        data-reset-key={this.props.resetKey ?? ""}
+        style={{ display: "contents" }}
+      >
         {this.props.children}
       </div>
     );
