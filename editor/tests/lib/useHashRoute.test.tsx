@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { render, cleanup, act } from "@testing-library/react";
 import React, { StrictMode, useCallback, useEffect, useState } from "react";
 import { useHashRoute } from "../../src/lib/useHashRoute";
-import { stateFromHash, DEFAULT_EXPLORE_TAB } from "../../src/lib/routes";
+import { stateFromHash, hashFor, DEFAULT_EXPLORE_TAB } from "../../src/lib/routes";
 import type { ExploreTab } from "../../src/app/HomeScreen";
 
 interface Api {
@@ -248,7 +248,8 @@ test("a plain fragment is not a navigation", async () => {
   // heading anchor's "#slug" is an in-page fragment, and reading it as a route
   // sent the reader Home with the fragment erased.
   cleanup();
-  setHash("#/workspace/button");
+  const address = hashFor("inbox", DEFAULT_EXPLORE_TAB);
+  setHash(address);
   const seen: (string | null)[] = [];
   render(<Harness seen={seen} />);
   const before = seen.length;
@@ -257,7 +258,21 @@ test("a plain fragment is not a navigation", async () => {
     window.dispatchEvent(new window.HashChangeEvent("hashchange"));
   });
   assert.equal(seen.length, before, "a fragment was read as a route");
-  assert.equal(window.location.hash, "#main", "the fragment was rewritten");
+  assert.equal(window.location.hash, address, "the bar was left on the fragment");
+});
+
+test("a slashless alias the parser resolves still navigates on hashchange", async () => {
+  cleanup();
+  setHash("#/");
+  const seen: (string | null)[] = [];
+  render(<Harness seen={seen} />);
+  const before = seen.length;
+  await act(async () => {
+    setHash("#drafts");
+    window.dispatchEvent(new window.HashChangeEvent("hashchange"));
+  });
+  assert.equal(seen.length, before + 1, "#drafts was dropped as a fragment");
+  assert.equal(seen[seen.length - 1], stateFromHash("#drafts").activePath);
 });
 
 test("an address with a slash still navigates on hashchange, slashless spelling included", async () => {

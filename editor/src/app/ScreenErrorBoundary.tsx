@@ -7,7 +7,7 @@
 // render error. `path` resets the boundary: navigating to another screen must
 // not show the last screen's failure.
 import { Component, type ReactNode } from "react";
-import { Box, Button, Callout, Code, Flex, Text } from "@radix-ui/themes";
+import { Box, Button, Callout, Code, Flex, Heading, Text } from "@radix-ui/themes";
 
 interface Props {
   /** What was being drawn, so the failure names its subject. */
@@ -56,6 +56,10 @@ export class ScreenErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return (
         <Box p="4" data-screen-boundary="">
+          {/* The screen's own h1 fell with it; the page still needs one. */}
+          <Heading as="h1" size="3" mb="2">
+            This screen could not be drawn
+          </Heading>
           <Callout.Root color="red" role="alert" mb="3">
             <Callout.Text>
               This screen could not be drawn: {this.state.error.message}

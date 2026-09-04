@@ -93,10 +93,16 @@ export function useHashRoute({
       // in-page fragment (a skip link's "#main", a heading anchor's "#slug"),
       // and reading it as a route sent the reader Home with the fragment
       // erased. The bare "#" and "" still mean home.
-      // Only a single segment with no slash is a fragment; an address with
-      // slashes navigates, including the slashless spelling `pathFromHash`
-      // tolerates, or it would load fresh and be ignored in the tab.
-      if (/^#[^/]+$/.test(hash)) return;
+      // A single segment the parser cannot resolve is an in-page fragment (a
+      // skip link's "#main", a heading anchor's "#slug"); one it can (the
+      // "#drafts" alias) is an address and navigates, so hashchange and a
+      // fresh load agree. The bar is put back on the screen's own address,
+      // because a fragment left there is a link that lands elsewhere when
+      // shared, and a Back press that changes nothing but the bar.
+      if (/^#[^/]+$/.test(hash) && stateFromHash(hash).activePath === null) {
+        window.history.replaceState(null, "", written.current ?? "#/");
+        return;
+      }
       written.current = hash;
       const next = stateFromHash(hash);
       onNavigate(next.activePath, next.exploreTab);

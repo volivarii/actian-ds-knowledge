@@ -63,7 +63,9 @@ test("the shell has one nav and one main, and the main can be skipped to", async
   await waitFor(() => assert.ok(container.querySelector("nav")));
   const navs = container.querySelectorAll("nav");
   assert.equal(navs.length, 1, `expected one nav, found ${navs.length}`);
-  assert.ok(navs[0]!.getAttribute("aria-label"), "the nav has no accessible name");
+  // Named for what it spans (Home, Drafts, the design system AND the
+  // application context), not for its first dimension.
+  assert.equal(navs[0]!.getAttribute("aria-label"), "Repository sections");
   const mains = container.querySelectorAll("main");
   assert.equal(mains.length, 1, `expected one main, found ${mains.length}`);
   assert.equal(mains[0]!.id, "main", "the skip link target is #main");

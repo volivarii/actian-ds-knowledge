@@ -957,7 +957,7 @@ export function Sidebar({
         overflow: "auto",
       }}
     >
-      <nav aria-label="Design system">
+      <nav aria-label="Repository sections">
         <style>{`
           .sidebar-row-trash { opacity: 0; transition: opacity 80ms; }
           li:hover .sidebar-row-trash { opacity: 0.7; }

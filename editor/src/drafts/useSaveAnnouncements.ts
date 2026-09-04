@@ -23,6 +23,9 @@ export function useSaveAnnouncements(store: DraftStore, quietMs = SAVE_QUIET_MS)
       if (event.kind === "pending") {
         changed.add(event.path);
       } else if (event.kind === "failed") {
+        // Once per file until a save succeeds: autosave retries at every
+        // typing pause, and a quota error would otherwise be read at each.
+        if (failed.has(event.path)) return;
         failed.add(event.path);
         announce("Draft could not be saved");
       } else if (event.kind === "saved") {

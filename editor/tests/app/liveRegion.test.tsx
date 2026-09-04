@@ -186,6 +186,12 @@ test("a failed write is spoken, and the save that recovers from it is spoken reg
   });
   assert.equal(getAnnouncement().seq, seq1 + 1);
   assert.match(getAnnouncement().text, /could not be saved/i);
+  // The next failed retry is not read again.
+  await act(async () => {
+    store.markPending("a.md");
+    store.save("a.md", draft);
+  });
+  assert.equal(getAnnouncement().seq, seq1 + 1, "a repeated failure was announced again");
   fail = false;
   await act(async () => {
     store.markPending("a.md");

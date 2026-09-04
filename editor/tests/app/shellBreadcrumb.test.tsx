@@ -13,26 +13,6 @@ import { setWysiwygFlag } from "../helpers/editorSurface";
 
 afterEach(cleanup);
 
-if (!globalThis.sessionStorage) {
-  const store: Record<string, string> = {};
-  Object.defineProperty(globalThis, "sessionStorage", {
-    configurable: true,
-    writable: true,
-    value: {
-      getItem: (k: string) => store[k] ?? null,
-      setItem: (k: string, v: string) => {
-        store[k] = v;
-      },
-      removeItem: (k: string) => {
-        delete store[k];
-      },
-      clear: () => {
-        for (const k of Object.keys(store)) delete store[k];
-      },
-    },
-  });
-}
-
 function fakeGh() {
   return {
     repos: {

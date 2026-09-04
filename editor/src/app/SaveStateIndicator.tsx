@@ -1,6 +1,6 @@
 // Header-bar badge surfacing draft-save state to the author.
 //
-// Three visible states (idle is hidden):
+// Four visible states (idle is hidden):
 //   ● Unsaved changes    (warning amber, while a debounce timer pends)
 //   ● Saving…            (neutral spinner, very briefly during the write)
 //   ✓ Draft saved · …    (success green, with relative timestamp)
@@ -44,12 +44,6 @@ export function SaveStateIndicator({ state }: SaveStateIndicatorProps) {
     return () => clearInterval(id);
   }, [state.kind]);
 
-  // The badge is visual only; the header's live region speaks (F20). Three
-  // rules keep it from being noise: a save is announced only when it follows
-  // a change in this session (opening a file that already has a draft starts
-  // at "saved" with no write), at most once per QUIET_MS (autosave writes at
-  // every typing pause), and a "saving" that never becomes "saved" is a
-  // failed write and is said so.
   // Visual only. What a screen reader hears about saves comes from the
   // store's events (useSaveAnnouncements), not from this badge's state: the
   // badge is mounted once for whichever file is open, so its transitions

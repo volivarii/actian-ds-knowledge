@@ -32,6 +32,7 @@ test("a throw in the screen renders the error and the path, not a blank page", (
     assert.match(text, /recipes directory answered 403/);
     assert.match(text, /app-context\/src\/patterns\/forms\.md/);
     assert.ok(container.querySelector('[role="alert"]'), "the failure is not an alert");
+    assert.equal(container.querySelectorAll("h1").length, 1, "the fallback leaves the page without an h1");
   } finally {
     console.error = originalError;
   }
