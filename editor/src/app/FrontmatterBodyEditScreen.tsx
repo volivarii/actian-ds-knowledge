@@ -23,6 +23,7 @@ import { frontmatterTemplates } from "../form-engine/templates";
 import {
   stringifyYaml,
   assembleFrontmatterFilePreservingComments,
+  isUnchangedFromSource,
   preserveFenceSeparator,
 } from "../form-engine/yamlSerializer";
 import {
@@ -89,11 +90,54 @@ export function assembleFrontmatterFile(
   body: string,
   flowAtDepth: number | null = 2,
 ): string {
+  // Nothing edited: emit what the author wrote (#631). Without this,
+  // words-to-avoid.md came back with the quotes stripped from its title, so
+  // the file could never equal itself through its own save path.
+  if (isUnchangedFromSource(formData, frontmatterText)) {
+    return joinFrontmatter(frontmatterText!, body);
+  }
   const yaml = stringifyYaml(formData, {
     originalText: frontmatterText ?? undefined,
     flowAtDepth: flowAtDepth === null ? undefined : flowAtDepth,
   });
   return joinFrontmatter(yaml, body);
+}
+
+/**
+ * Is there nothing to submit for this file?
+ *
+ * Two ways, because the text the screen was seeded with is not always main's.
+ * A file reopened from the batch loads the CART's bytes as its donor, so after
+ * a revert the assembled file still carries whatever reformat first staged it
+ * and can never equal main byte for byte again (#631). So: either what we would
+ * write IS main's bytes, or the author's values and prose are back to main's.
+ *
+ * The body is half the question. A prose edit leaves every frontmatter value
+ * equal to main's, and dropping such a file from the batch would discard the
+ * author's writing behind a green save badge.
+ */
+export function nothingToSubmit(args: {
+  /** The file this save would write. */
+  content: string;
+  /** The bytes on main, or null when the file is new. */
+  baseline: string | null;
+  /** The prose body as it stands. */
+  body: string;
+  /** The form's current values (the form surface). */
+  formData: unknown;
+  /** The frontmatter text as it stands (the YAML source surface). */
+  frontmatterText: string;
+  /** True when the YAML source pane, not the form, is the surface in use. */
+  yamlActive: boolean;
+}): boolean {
+  const { content, baseline, body, formData, frontmatterText, yamlActive } = args;
+  if (baseline === null) return false;
+  if (content === baseline) return true;
+  const fromMain = splitFrontmatter(baseline);
+  if (body !== fromMain.body) return false;
+  return yamlActive
+    ? frontmatterText === (fromMain.frontmatterText ?? "")
+    : isUnchangedFromSource(formData, fromMain.frontmatterText);
 }
 
 interface Props {
@@ -496,7 +540,17 @@ export function FrontmatterBodyEditScreen(props: Props) {
       // submit: it leaves the batch rather than sitting there as a no-op PR.
       // An explicit "Add to batch" is the author's own call and still stages,
       // byte-identical content included (the stale-base guard rides on it).
-      if (!explicit && state.baseline !== null && content === state.baseline) {
+      if (
+        !explicit &&
+        nothingToSubmit({
+          content,
+          baseline: state.baseline,
+          body: b,
+          formData: fd,
+          frontmatterText: fm,
+          yamlActive,
+        })
+      ) {
         submissionCartSingleton.remove(path);
         return;
       }

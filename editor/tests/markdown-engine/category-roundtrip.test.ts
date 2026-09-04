@@ -26,11 +26,16 @@ function categoryFiles(): string[] {
 }
 
 // Model the REAL editor save: split frontmatter (standard yaml lib), round-trip
-// the body through Milkdown, reassemble via assembleFrontmatterFile (which
-// re-serializes the frontmatter; the leading blank line is restored where the
-// file had one). A canonical
-// source file is a fixed point of this cycle — so a no-op WYSIWYG edit produces
+// the body through Milkdown, reassemble via assembleFrontmatterFile (the
+// leading blank line is restored where the file had one). A canonical source
+// file is a fixed point of this cycle — so a no-op WYSIWYG edit produces
 // byte-identical output (no churn) and the verbatim dist copy stays stable.
+//
+// Scope, because it moved: the frontmatter is NOT re-serialized here. Since
+// #631 an unedited document is returned as the author's own bytes, so what
+// this cycle exercises is the BODY round trip and the fence separator. The
+// frontmatter serializer is covered on an EDITED document by the test below,
+// which is the only shape that reaches it.
 async function editSaveCycle(text: string): Promise<string> {
   const { data, body, frontmatterText } = splitFrontmatter(text);
   // The screen restores the blank line after the fence where the loaded file
@@ -74,6 +79,34 @@ test("the editor save cycle preserves the derive-parser view (no silent dist dri
       before,
       `editor save changes what the derive parser reads for ${f} — the dist would drift`,
     );
+  }
+});
+
+test("an EDITED category save keeps the derive-parser view of what it did not touch", async () => {
+  // The frontmatter serializer is only reached once something changed, so the
+  // dist-drift question has to be asked about an edited document: everything
+  // the author did NOT touch must still parse to what it parsed to before.
+  for (const f of categoryFiles()) {
+    const text = readFileSync(CAT_DIR + f, "utf8");
+    const { data, body, frontmatterText } = splitFrontmatter(text);
+    assert.ok(data, `${f} has no parseable frontmatter`);
+    const edited = { ...(data as Record<string, unknown>), label: "Edited label" };
+    const saved = assembleFrontmatterFile(
+      edited,
+      frontmatterText,
+      preserveFenceSeparator(body, await roundTripMarkdown(body)),
+    );
+    const before = deriveView(text) as Record<string, unknown>;
+    const after = deriveView(saved) as Record<string, unknown>;
+    for (const key of Object.keys(before)) {
+      if (key === "label") continue; // the one thing this save changed
+      assert.deepEqual(
+        after[key],
+        before[key],
+        `an edit to ${f} changed what the derive parser reads for "${key}"`,
+      );
+    }
+    assert.equal(after.label, "Edited label", `the edit did not reach the derive view for ${f}`);
   }
 });
 

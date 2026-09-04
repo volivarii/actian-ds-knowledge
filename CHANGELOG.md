@@ -20,6 +20,26 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **A form save writes the author's own bytes back when nothing changed**
+  ([#657](https://github.com/volivarii/actian-ds-knowledge/pull/657), closes
+  [#631](https://github.com/volivarii/actian-ds-knowledge/issues/631)). 30 of the 96 files the editor
+  routes to a form were not byte fixed points of their own save path: re-serializing an unedited
+  document came back as a reformat, so a file typed and then typed BACK still differed from `main`
+  and stayed in the batch as a whitespace-only pull request. The cause is not a setting that was
+  chosen wrongly. app-context records are authored with padded flow maps (`{ name: orphan }`) beside
+  unpadded flow seqs (`[Present, Orphan]`), and yaml's `flowCollectionPadding` is one boolean for
+  both, so no value of it reproduces those bytes; measured across the corpus, the best available
+  combination still left 28 files unreachable and 19 were reproduced by no combination at all. Both
+  assemblers now ask one question first: if the form data equals the document's own parse, the
+  author changed nothing and their bytes are returned untouched. Any doubt (an unparseable source, a
+  non-object form, a key count that differs) serializes as before, because emitting a reformat is a
+  cosmetic defect while dropping an edit is data loss. Leaving the batch is decided on the same
+  question rather than on bytes alone, because a file REOPENED from the batch is seeded with the
+  cart's own bytes: once a reformat had staged it, the assembled file could never equal `main` again,
+  so the whitespace-only pull request survived navigating away and back. A corpus guard walks every
+  routed `.md` file and asserts it survives its own save byte for byte; removing either shortcut
+  turns it red with the original 29 and 1. Editor-only: no dist, no schema, no consumer, and no
+  content was reformatted.
 - **The editor has landmarks, one h1 per page, a skip link, a live region and an error boundary**
   ([#656](https://github.com/volivarii/actian-ds-knowledge/pull/656), Story 1100 sub-task 1118; closes
   [#651](https://github.com/volivarii/actian-ds-knowledge/issues/651) and
