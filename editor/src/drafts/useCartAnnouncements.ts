@@ -8,12 +8,12 @@
 // opened", "Batch cleared"), and a removal sentence from this diff would
 // overwrite it. The "cleared" event marks the next diff as already spoken.
 import { useEffect, useRef } from "react";
-import type { SubmissionCart } from "./SubmissionCart";
-import { useCart } from "./useCart";
+import type { CartEntry, SubmissionCart } from "./SubmissionCart";
 import { announce, describeCartChange } from "../lib/announcer";
 
-export function useCartAnnouncements(cart: SubmissionCart): void {
-  const entries = useCart(cart);
+/** `entries` is the caller's own `useCart(cart)` result: App already holds
+ *  one, and a second subscription re-parsed the whole cart on every event. */
+export function useCartAnnouncements(cart: SubmissionCart, entries: CartEntry[]): void {
   const previous = useRef(entries);
   const clearedByActor = useRef(false);
   useEffect(

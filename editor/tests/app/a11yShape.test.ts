@@ -81,27 +81,33 @@ function radixHeadingNames(source: string): string[] {
 function offendersByImport(
   namesOf: (source: string) => string[],
   ok: (tag: string) => boolean,
-): string[] {
-  const out: string[] = [];
+): { bad: string[]; seen: number } {
+  // `seen` is how many tags the guard judged: a renamed import or tag would
+  // otherwise make the guard pass on nothing.
+  const bad: string[] = [];
+  let seen = 0;
   for (const f of walk(SRC)) {
     const source = readFileSync(f, "utf8");
     for (const name of namesOf(source)) {
       for (const { line, tag } of openTags(source, name)) {
-        if (!ok(tag)) out.push(`${relative(SRC, f)}:${line}`);
+        seen += 1;
+        if (!ok(tag)) bad.push(`${relative(SRC, f)}:${line}`);
       }
     }
   }
-  return out;
+  return { bad, seen };
 }
 
-function offenders(name: string, ok: (tag: string) => boolean): string[] {
-  const out: string[] = [];
+function offenders(name: string, ok: (tag: string) => boolean): { bad: string[]; seen: number } {
+  const bad: string[] = [];
+  let seen = 0;
   for (const f of walk(SRC)) {
     for (const { line, tag } of openTags(readFileSync(f, "utf8"), name)) {
-      if (!ok(tag)) out.push(`${relative(SRC, f)}:${line}`);
+      seen += 1;
+      if (!ok(tag)) bad.push(`${relative(SRC, f)}:${line}`);
     }
   }
-  return out;
+  return { bad, seen };
 }
 
 const hasLevel = (tag: string) => /\bas=["{]/.test(tag);
@@ -165,7 +171,8 @@ test("the matchers see what they are for (pattern self-test)", () => {
 });
 
 test("every Radix Heading in editor/src carries an explicit level", () => {
-  const bad = offendersByImport(radixHeadingNames, hasLevel);
+  const { bad, seen } = offendersByImport(radixHeadingNames, hasLevel);
+  assert.ok(seen > 10, `only ${seen} Radix Heading tags judged; the import or tag was renamed`);
   assert.deepEqual(
     bad,
     [],
@@ -177,7 +184,8 @@ test("every Callout that may signal declares what it is to assistive technology"
   // Red is a failure, amber is a warning, and a colour expression may be
   // either: a GitHub error rendered amber with no role was told to nobody
   // while a static tier notice rendered as an alert on every open.
-  const bad = offenders("Callout.Root", (tag) => !maySignal(tag) || declaresLiveness(tag));
+  const { bad, seen } = offenders("Callout.Root", (tag) => !maySignal(tag) || declaresLiveness(tag));
+  assert.ok(seen > 10, `only ${seen} Callout.Root tags judged; the tag was renamed`);
   assert.deepEqual(
     bad,
     [],

@@ -24,22 +24,32 @@ interface Props {
 
 interface State {
   error: Error | null;
+  /** The props the error was caught under, so a change AFTER it resets and
+   *  the update that threw does not clear its own fallback. */
+  at: string | null;
 }
 
-export class ScreenErrorBoundary extends Component<Props, State> {
-  state: State = { error: null };
+const keyOf = (p: Props) => `${p.path}\u0000${p.resetKey ?? ""}`;
 
-  static getDerivedStateFromError(error: Error): State {
+export class ScreenErrorBoundary extends Component<Props, State> {
+  state: State = { error: null, at: null };
+
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
   }
 
-  componentDidUpdate(prev: Props) {
-    if (
-      (prev.path !== this.props.path || prev.resetKey !== this.props.resetKey) &&
-      this.state.error
-    ) {
-      this.setState({ error: null });
+  componentDidCatch() {
+    this.setState({ at: keyOf(this.props) });
+  }
+
+  static getDerivedStateFromProps(props: Props, state: State): Partial<State> | null {
+    // Compared with the props at the catch, not the last committed ones:
+    // comparing with committed props cleared a fallback the same update had
+    // just produced, and the screen threw twice per navigation.
+    if (state.error && state.at !== null && state.at !== keyOf(props)) {
+      return { error: null, at: null };
     }
+    return null;
   }
 
   render() {
@@ -58,7 +68,7 @@ export class ScreenErrorBoundary extends Component<Props, State> {
             <Button
               size="1"
               variant="solid"
-              onClick={() => this.setState({ error: null })}
+              onClick={() => this.setState({ error: null, at: null })}
             >
               Try again
             </Button>

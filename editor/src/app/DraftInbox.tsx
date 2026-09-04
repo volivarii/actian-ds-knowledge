@@ -8,6 +8,7 @@
 // Routed via the sentinel path `inbox` recognized by EditorShell.
 
 import { useMemo } from "react";
+import { announce } from "../lib/announcer";
 import {
   Badge,
   Box,
@@ -131,7 +132,11 @@ export function DraftInbox({ onOpenFile, onOpenStaging }: DraftInboxProps) {
             variant="soft"
             color="gray"
             disabled={entries.length === 0}
-            onClick={() => submissionCartSingleton.clear()}
+            onClick={() => {
+              submissionCartSingleton.clear();
+              // The cart announcer stays quiet on a clear; the actor says why.
+              announce("Batch cleared");
+            }}
           >
             Clear all
           </Button>

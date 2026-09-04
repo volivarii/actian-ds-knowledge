@@ -259,3 +259,19 @@ test("a plain fragment is not a navigation", async () => {
   assert.equal(seen.length, before, "a fragment was read as a route");
   assert.equal(window.location.hash, "#main", "the fragment was rewritten");
 });
+
+test("an address with a slash still navigates on hashchange, slashless spelling included", async () => {
+  cleanup();
+  setHash("#/");
+  const seen: (string | null)[] = [];
+  render(<Harness seen={seen} />);
+  const before = seen.length;
+  await act(async () => {
+    setHash("#components/src/button/usage.md");
+    window.dispatchEvent(new window.HashChangeEvent("hashchange"));
+  });
+  // Whatever the parser makes of the slashless spelling, hashchange and a
+  // fresh load must agree; the guard drops single-segment fragments only.
+  assert.equal(seen.length, before + 1, "a slashed address was dropped as a fragment");
+  assert.equal(seen[seen.length - 1], stateFromHash("#components/src/button/usage.md").activePath);
+});

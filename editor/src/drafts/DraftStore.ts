@@ -69,14 +69,16 @@ export class DraftStore {
     this.emit({ kind: "writing", path });
     try {
       this.storage.setItem(PREFIX + path, JSON.stringify(draft));
-      this.emit({ kind: "saved", path });
-      return true;
     } catch {
       // Said, not swallowed: a caught write with no event left the indicator
       // on "Saving…" for good, and the failure was guessed from a timer.
       this.emit({ kind: "failed", path });
       return false;
     }
+    // Outside the try: a listener that throws on "saved" is not a failed
+    // write, and reporting it as one turned a stored draft into "not saved".
+    this.emit({ kind: "saved", path });
+    return true;
   }
 
   clear(path: string): void {

@@ -93,7 +93,10 @@ export function useHashRoute({
       // in-page fragment (a skip link's "#main", a heading anchor's "#slug"),
       // and reading it as a route sent the reader Home with the fragment
       // erased. The bare "#" and "" still mean home.
-      if (hash !== "" && hash !== "#" && !hash.startsWith("#/")) return;
+      // Only a single segment with no slash is a fragment; an address with
+      // slashes navigates, including the slashless spelling `pathFromHash`
+      // tolerates, or it would load fresh and be ignored in the tab.
+      if (/^#[^/]+$/.test(hash)) return;
       written.current = hash;
       const next = stateFromHash(hash);
       onNavigate(next.activePath, next.exploreTab);

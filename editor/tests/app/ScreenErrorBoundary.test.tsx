@@ -89,3 +89,32 @@ test("Try again re-renders the screen", () => {
     console.error = originalError;
   }
 });
+
+test("the fallback stays across a re-render with the same path and reset key", () => {
+  // Resetting is a response to a CHANGE after the catch; a re-render of the
+  // same screen (React's own retry, a parent state change) must not clear it.
+  explode = true;
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    const { container, rerender } = render(
+      <Theme>
+        <ScreenErrorBoundary path="b" resetKey="k">
+          <Screen />
+        </ScreenErrorBoundary>
+      </Theme>,
+    );
+    assert.ok(container.querySelector('[role="alert"]'));
+    explode = false;
+    rerender(
+      <Theme>
+        <ScreenErrorBoundary path="b" resetKey="k">
+          <Screen />
+        </ScreenErrorBoundary>
+      </Theme>,
+    );
+    assert.ok(container.querySelector('[role="alert"]'), "a same-props re-render cleared the fallback");
+  } finally {
+    console.error = originalError;
+  }
+});

@@ -22,6 +22,7 @@ import { FreshnessChip } from "./app/FreshnessChip";
 import { SignInScreen } from "./app/SignInScreen";
 import { AppHeader } from "./app/AppHeader";
 import { useCartAnnouncements } from "./drafts/useCartAnnouncements";
+import { useSaveAnnouncements } from "./drafts/useSaveAnnouncements";
 import { SubmissionStaging } from "./app/SubmissionStaging";
 import {
   RecentSubmissions,
@@ -123,7 +124,8 @@ export default function App() {
   const cartEntries = useCart(submissionCartSingleton);
   // Staging is silent on screen except for a counter; the live region says
   // which file went in or out (F20).
-  useCartAnnouncements(submissionCartSingleton);
+  useCartAnnouncements(submissionCartSingleton, cartEntries);
+  useSaveAnnouncements(draftStoreSingleton);
   // The header's Submit-batch button + the staging dialog need an Octokit
   // instance. createOctokit throws when no session; recompute when the
   // session changes so that signing in re-activates the dependent UI
@@ -289,7 +291,6 @@ export default function App() {
           }
           freshness={headerOctokit ? <FreshnessChip octokit={headerOctokit} /> : null}
           saveState={saveState}
-          savePath={activePath}
           submissions={
             headerOctokit
               ? {

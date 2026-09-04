@@ -6,6 +6,7 @@ import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { DraftInbox } from "../../src/app/DraftInbox";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
+import { getAnnouncement } from "../../src/lib/announcer";
 
 afterEach(() => cleanup());
 
@@ -156,4 +157,17 @@ test("DraftInbox: 'Open submission batch' calls onOpenStaging", () => {
   );
   fireEvent.click(screen.getByText(/Open submission batch/));
   assert.equal(opened, true);
+});
+
+test("DraftInbox: Clear all is announced, because the cart announcer stays quiet on a clear", () => {
+  submissionCartSingleton.add({
+    path: "components/src/button/usage.md",
+    content: "x",
+    basedOnSha: "",
+    addedAt: 0,
+  });
+  render(wrap(<DraftInbox onOpenFile={() => {}} onOpenStaging={() => {}} />));
+  const clear = screen.getByRole("button", { name: /clear all/i });
+  fireEvent.click(clear);
+  assert.equal(getAnnouncement().text, "Batch cleared");
 });

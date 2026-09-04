@@ -102,3 +102,16 @@ test("DraftStore.save emits failed when the storage write throws", () => {
   assert.equal(ok, false);
   assert.deepEqual(seen, ["writing", "failed"]);
 });
+
+test("DraftStore.save does not report failed when a saved listener throws", () => {
+  // The write succeeded; only a subscriber misbehaved. Reporting that as a
+  // failed write turned a stored draft into "Draft not saved".
+  const seen: string[] = [];
+  store.subscribe((e) => {
+    seen.push(e.kind);
+    if (e.kind === "saved") throw new Error("listener bug");
+  });
+  assert.throws(() => store.save("foundations.md", { text: "x", basedOnSha: "", ts: 1 }));
+  assert.ok(!seen.includes("failed"), `failed was reported: ${seen.join(",")}`);
+  assert.ok(store.load("foundations.md"), "the draft was not stored");
+});

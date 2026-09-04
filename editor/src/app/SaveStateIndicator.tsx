@@ -10,24 +10,13 @@
 // assume the file is pushed to GitHub; "Draft saved" makes the local
 // scope explicit.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge, Flex, Text } from "@radix-ui/themes";
 import type { SaveState } from "../drafts/useSaveState";
-import { announce } from "../lib/announcer";
 
 export interface SaveStateIndicatorProps {
   state: SaveState;
-  /**
-   * The file the state is about. The indicator is mounted once in the
-   * header, so without it a file switch reads as a transition of one file:
-   * typing in A then opening drafted B is unsaved -> saved with no write.
-   */
-  path?: string | null;
 }
-
-/** A save is announced at most this often per mount; autosave writes at every
- *  typing pause, and "Draft saved" every second is noise, not news. */
-const QUIET_MS = 60_000;
 
 function relativeTime(ts: number, now: number): string {
   const diffSec = Math.floor((now - ts) / 1000);
@@ -41,10 +30,7 @@ function relativeTime(ts: number, now: number): string {
   return `${diffDay}d ago`;
 }
 
-export function SaveStateIndicator({
-  state,
-  path = null,
-}: SaveStateIndicatorProps) {
+export function SaveStateIndicator({ state }: SaveStateIndicatorProps) {
   // Tick every second so the relative timestamp re-renders.
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -64,31 +50,10 @@ export function SaveStateIndicator({
   // at "saved" with no write), at most once per QUIET_MS (autosave writes at
   // every typing pause), and a "saving" that never becomes "saved" is a
   // failed write and is said so.
-  // Per FILE: the indicator is mounted once in the header, so a file switch
-  // must not read as a transition of either file, and one file's quiet
-  // window must not silence another's first save. A failed write is spoken
-  // from the store's own "failed" event, not guessed from a timer.
-  const previousKind = useRef(state.kind);
-  const previousPath = useRef(path);
-  const lastSpokenAt = useRef(new Map<string | null, number>());
-  useEffect(() => {
-    const was = previousKind.current;
-    previousKind.current = state.kind;
-    if (previousPath.current !== path) {
-      previousPath.current = path;
-      return;
-    }
-    if (state.kind === "saved" && was === "unsaved") {
-      const now = Date.now();
-      if (now - (lastSpokenAt.current.get(path) ?? 0) >= QUIET_MS) {
-        lastSpokenAt.current.set(path, now);
-        announce("Draft saved");
-      }
-    } else if (state.kind === "failed" && was !== "failed") {
-      announce("Draft could not be saved");
-    }
-  }, [state.kind, path]);
-
+  // Visual only. What a screen reader hears about saves comes from the
+  // store's events (useSaveAnnouncements), not from this badge's state: the
+  // badge is mounted once for whichever file is open, so its transitions
+  // are not the files' transitions.
   if (state.kind === "idle") return null;
 
   if (state.kind === "unsaved") {

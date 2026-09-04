@@ -16,8 +16,6 @@ export interface AppHeaderProps {
   /** The freshness chip, when there is a session; App owns its Octokit. */
   freshness?: ReactNode;
   saveState: SaveState;
-  /** The file `saveState` is about; see SaveStateIndicator. */
-  savePath?: string | null;
   /** The Submissions button, when there is a session. */
   submissions?: { failing: boolean; onOpen: () => void } | null;
   batchCount: number;
@@ -31,7 +29,6 @@ export function AppHeader({
   search,
   freshness,
   saveState,
-  savePath = null,
   submissions,
   batchCount,
   mainPresent,
@@ -87,7 +84,7 @@ export function AppHeader({
         <Box flexGrow="1">{search}</Box>
         <Flex align="center" gap="3" flexShrink="0">
           {freshness}
-          <SaveStateIndicator state={saveState} path={savePath} />
+          <SaveStateIndicator state={saveState} />
           <LiveRegion />
           {submissions && (
             <Button
