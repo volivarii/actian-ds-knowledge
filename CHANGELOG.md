@@ -21,7 +21,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 ### Changed
 
 - **The editor has landmarks, one h1 per page, a skip link, a live region and an error boundary**
-  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD), Story 1100 sub-task 1118; closes
+  ([#656](https://github.com/volivarii/actian-ds-knowledge/pull/656), Story 1100 sub-task 1118; closes
   [#651](https://github.com/volivarii/actian-ds-knowledge/issues/651) and
   [#653](https://github.com/volivarii/actian-ds-knowledge/issues/653)). The top bar is a `<header>`
   whose first focusable element is a "Skip to content" link to the one `<main>`; the sidebar is the one
