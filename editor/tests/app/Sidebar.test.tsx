@@ -900,3 +900,62 @@ test("Sidebar: unambiguous headers keep their count in the accessible name", asy
     "and its name still comes from its contents",
   );
 });
+
+test("the coverage overview sits on top of the components tree and opens from the keyboard", async () => {
+  // Round 5 of the landmarks work found Home and Drafts shipped MOUSE-ONLY on
+  // an accessibility branch: a div with role="button" does not activate on
+  // Enter by itself. This row is that same shape, so it gets that same guard.
+  const selected: (string | null)[] = [];
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(LISTINGS)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={(p) => selected.push(p)}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Components"));
+  toggleSectionKey("components");
+  const row = await waitFor(() =>
+    screen.getByRole("button", { name: /^Coverage$/i }),
+  );
+
+  // On top of the tree: the overview precedes the first component in the DOM,
+  // which is what "on top of components" means for a screen reader too.
+  // Matched on the row marker rather than a label, so renaming a component
+  // cannot quietly turn this into a test of nothing.
+  const firstComponent = document.querySelector('[data-detail="path"]');
+  assert.ok(firstComponent, "the components tree rendered no rows");
+  assert.ok(
+    row.compareDocumentPosition(firstComponent) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    "the overview renders after the components it summarises",
+  );
+
+  fireEvent.keyDown(row, { key: "Enter" });
+  assert.deepEqual(selected, ["coverage"], "Enter did not open the overview");
+  fireEvent.keyDown(row, { key: " " });
+  fireEvent.click(row);
+  assert.deepEqual(selected, ["coverage", "coverage", "coverage"]);
+});
+
+test("the coverage overview marks itself the current page when it is open", async () => {
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(LISTINGS)}
+        pendingPaths={new Set()}
+        activePath="coverage"
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Components"));
+  toggleSectionKey("components");
+  const row = await waitFor(() =>
+    screen.getByRole("button", { name: /^Coverage$/i }),
+  );
+  assert.equal(row.getAttribute("aria-current"), "page");
+});

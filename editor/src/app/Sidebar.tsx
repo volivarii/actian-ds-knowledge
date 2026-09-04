@@ -869,6 +869,44 @@ export function Sidebar({
   // Preserves: active-row highlight, draft-pending dot, onClick navigation.
   // leftHandle: drag grip element for ordered groups; null for unordered groups.
   // trashable: all groups except components (registry-driven, not author-curated).
+  /**
+   * The overview on top of a scope's tree.
+   *
+   * Not a `renderRow`: that renders a FILE, and carries the draft dot, the
+   * trash affordance and a slug parsed out of a repo path. An overview is a
+   * screen, so it has none of those and must not pretend to.
+   *
+   * Keyboard activation is explicit for the same reason it is on Home and
+   * Drafts: this is a div with role="button", and a div does not activate on
+   * Enter by itself. Two rows here shipped mouse-only once already.
+   */
+  function overviewRow(label: string, screenPath: string) {
+    const active = activePath === screenPath;
+    return (
+      <Flex
+        align="center"
+        gap="2"
+        px="3"
+        py="1"
+        style={{
+          cursor: "pointer",
+          background: active ? "var(--accent-3)" : "transparent",
+          borderRadius: 4,
+        }}
+        role="button"
+        tabIndex={0}
+        onClick={() => onSelect(screenPath)}
+        onKeyDown={activateOnKey(() => onSelect(screenPath))}
+        aria-current={active ? "page" : undefined}
+        data-detail="overview"
+      >
+        <Text size="2" weight={active ? "bold" : "medium"}>
+          {label}
+        </Text>
+      </Flex>
+    );
+  }
+
   function renderRow({
     path,
     domain,
@@ -1240,6 +1278,10 @@ export function Sidebar({
                 role="group"
                 aria-labelledby="sidebar-section-components-header"
               >
+                {/* On top of the tree, not inside it: coverage is the
+                    overview of every component at once, and it was a tab on
+                    the front door where it could not be linked to. */}
+                {overviewRow("Coverage", "coverage")}
                 <ul
                   role="list"
                   style={{ listStyle: "none", padding: 0, margin: 0 }}
