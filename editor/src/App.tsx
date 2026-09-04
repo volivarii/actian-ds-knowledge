@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
-  Button,
   Flex,
   Theme,
 } from "@radix-ui/themes";
@@ -22,7 +21,7 @@ import {
 import { FreshnessChip } from "./app/FreshnessChip";
 import { SignInScreen } from "./app/SignInScreen";
 import { AppHeader } from "./app/AppHeader";
-import { announce, cartEventMessage } from "./lib/announcer";
+import { useCartAnnouncements } from "./drafts/useCartAnnouncements";
 import { SubmissionStaging } from "./app/SubmissionStaging";
 import {
   RecentSubmissions,
@@ -116,13 +115,7 @@ export default function App() {
   const cartEntries = useCart(submissionCartSingleton);
   // Staging is silent on screen except for a counter; the live region says
   // which file went in or out (F20).
-  useEffect(
-    () =>
-      submissionCartSingleton.subscribe((event) =>
-        announce(cartEventMessage(event)),
-      ),
-    [],
-  );
+  useCartAnnouncements(submissionCartSingleton);
   // The header's Submit-batch button + the staging dialog need an Octokit
   // instance. createOctokit throws when no session; recompute when the
   // session changes so that signing in re-activates the dependent UI
@@ -297,6 +290,7 @@ export default function App() {
               : null
           }
           batchCount={cartEntries.length}
+          mainPresent={session != null}
           onOpenStaging={() => setStagingOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
         />

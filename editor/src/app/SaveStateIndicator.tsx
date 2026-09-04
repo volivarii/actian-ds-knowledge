@@ -10,14 +10,24 @@
 // assume the file is pushed to GitHub; "Draft saved" makes the local
 // scope explicit.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge, Flex, Text } from "@radix-ui/themes";
 import type { SaveState } from "../drafts/useSaveState";
 import { announce } from "../lib/announcer";
 
 export interface SaveStateIndicatorProps {
   state: SaveState;
+  /**
+   * How long "saving" may last before it is announced as a failure. The
+   * store emits writing and saved in one synchronous pass, so a committed
+   * "saving" state only ever means the write threw and "saved" never came.
+   */
+  failureAfterMs?: number;
 }
+
+/** A save is announced at most this often per mount; autosave writes at every
+ *  typing pause, and "Draft saved" every second is noise, not news. */
+const QUIET_MS = 60_000;
 
 function relativeTime(ts: number, now: number): string {
   const diffSec = Math.floor((now - ts) / 1000);
@@ -31,7 +41,10 @@ function relativeTime(ts: number, now: number): string {
   return `${diffDay}d ago`;
 }
 
-export function SaveStateIndicator({ state }: SaveStateIndicatorProps) {
+export function SaveStateIndicator({
+  state,
+  failureAfterMs = 3000,
+}: SaveStateIndicatorProps) {
   // Tick every second so the relative timestamp re-renders.
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -45,13 +58,28 @@ export function SaveStateIndicator({ state }: SaveStateIndicatorProps) {
     return () => clearInterval(id);
   }, [state.kind]);
 
-  // The badge is visual only. The same transitions are spoken through the
-  // header's live region, so a screen-reader user hears that the draft was
-  // saved rather than wondering whether typing did anything (F20).
+  // The badge is visual only; the header's live region speaks (F20). Three
+  // rules keep it from being noise: a save is announced only when it follows
+  // a change in this session (opening a file that already has a draft starts
+  // at "saved" with no write), at most once per QUIET_MS (autosave writes at
+  // every typing pause), and a "saving" that never becomes "saved" is a
+  // failed write and is said so.
+  const previousKind = useRef(state.kind);
+  const lastSpokenAt = useRef(0);
   useEffect(() => {
-    if (state.kind === "saving") announce("Saving draft");
-    else if (state.kind === "saved") announce("Draft saved");
-  }, [state.kind]);
+    const was = previousKind.current;
+    previousKind.current = state.kind;
+    if (state.kind === "saved" && was === "unsaved") {
+      const now = Date.now();
+      if (now - lastSpokenAt.current >= QUIET_MS) {
+        lastSpokenAt.current = now;
+        announce("Draft saved");
+      }
+    }
+    if (state.kind !== "saving") return;
+    const id = setTimeout(() => announce("Draft could not be saved"), failureAfterMs);
+    return () => clearTimeout(id);
+  }, [state.kind, failureAfterMs]);
 
   if (state.kind === "idle") return null;
 

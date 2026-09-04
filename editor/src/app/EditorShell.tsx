@@ -100,6 +100,14 @@ export function EditorShell({
   onExploreTabChange,
 }: EditorShellPropsWithTab) {
   const setActivePathSafe = setActivePath ?? (() => {});
+  // Every selection, including re-selecting the current screen, resets the
+  // screen error boundary; a path change alone cannot, because Home again is
+  // the same path and the explore tab strip lives inside the fallen pane.
+  const [selectionCount, setSelectionCount] = useState(0);
+  const select = (path: string | null) => {
+    setSelectionCount((n) => n + 1);
+    setActivePathSafe(path);
+  };
   const [ghError, setGhError] = useState<string | null>(null);
   const gh = useMemo<Octokit | null>(() => {
     if (octokit) return octokit;
@@ -247,7 +255,7 @@ export function EditorShell({
         octokit={gh}
         pendingPaths={pendingPaths}
         activePath={activePath}
-        onSelect={setActivePathSafe}
+        onSelect={select}
         wysiwygOn={wysiwygOn}
         onToggleWysiwyg={() => {
           const next = !wysiwygOn;
@@ -265,7 +273,10 @@ export function EditorShell({
         style={{ overflow: "auto", minWidth: 0, minHeight: 0 }}
       >
         <main id="main" tabIndex={-1}>
-          <ScreenErrorBoundary path={activePath ?? "home"}>
+          <ScreenErrorBoundary
+            path={activePath ?? "home"}
+            resetKey={`${exploreTab ?? "coverage"}:${selectionCount}`}
+          >
             {breadcrumb}
             {pane}
           </ScreenErrorBoundary>

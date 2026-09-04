@@ -37,6 +37,39 @@ test("a throw in the screen renders the error and the path, not a blank page", (
   }
 });
 
+test("a new resetKey recovers the screen without a path change", () => {
+  // Re-selecting the same screen (Home again, the same file) changes no
+  // path, and the tab strip that would change the explore tab lives inside
+  // the fallen pane. The shell bumps a key on every selection instead.
+  explode = true;
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    const { container, rerender } = render(
+      <Theme>
+        <ScreenErrorBoundary path="home" resetKey="coverage:1">
+          <Screen />
+        </ScreenErrorBoundary>
+      </Theme>,
+    );
+    assert.ok(
+      container.querySelector("[data-screen-boundary]"),
+      "the fallback carries no boundary marker",
+    );
+    explode = false;
+    rerender(
+      <Theme>
+        <ScreenErrorBoundary path="home" resetKey="coverage:2">
+          <Screen />
+        </ScreenErrorBoundary>
+      </Theme>,
+    );
+    assert.match(container.textContent ?? "", /the screen/);
+  } finally {
+    console.error = originalError;
+  }
+});
+
 test("Try again re-renders the screen", () => {
   explode = true;
   const originalError = console.error;

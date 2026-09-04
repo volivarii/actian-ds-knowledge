@@ -19,6 +19,8 @@ export interface AppHeaderProps {
   /** The Submissions button, when there is a session. */
   submissions?: { failing: boolean; onOpen: () => void } | null;
   batchCount: number;
+  /** Whether a <main id="main"> is on the page. Signed out, there is none. */
+  mainPresent: boolean;
   onOpenStaging: () => void;
   onOpenSettings: () => void;
 }
@@ -29,6 +31,7 @@ export function AppHeader({
   saveState,
   submissions,
   batchCount,
+  mainPresent,
   onOpenStaging,
   onOpenSettings,
 }: AppHeaderProps) {
@@ -42,10 +45,25 @@ export function AppHeader({
     >
       <header>
         {/* First focusable thing on the page: the way past a 54-item sidebar
-            for a keyboard or screen-reader user. Visible only on focus. */}
-        <a href="#main" className="skip-link">
-          Skip to content
-        </a>
+            for a keyboard or screen-reader user. Visible only on focus, and
+            only when there is a main to reach (signed out, there is none). */}
+        {mainPresent && (
+          <a
+            href="#main"
+            className="skip-link"
+            onClick={(e) => {
+              // The editor routes on the hash. Letting this link navigate
+              // would fire hashchange with `#main`, an address the router
+              // never minted, and land the reader on Home. Focus moves; the
+              // address stays. The href is kept so assistive technology still
+              // lists it as a same-page link.
+              e.preventDefault();
+              document.getElementById("main")?.focus();
+            }}
+          >
+            Skip to content
+          </a>
+        )}
         <Flex align="center" gap="2" flexShrink="0">
           <img
             src="/actian-ds-knowledge/editor/favicon.svg"

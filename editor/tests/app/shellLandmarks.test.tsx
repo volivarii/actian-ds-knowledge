@@ -4,18 +4,17 @@
 import "../setup-dom";
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { render, cleanup, waitFor } from "@testing-library/react";
+import { render, cleanup, waitFor, fireEvent } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { EditorShell } from "../../src/app/EditorShell";
 
 afterEach(cleanup);
 
-function b64(s: string): string {
-  return Buffer.from(s, "utf8").toString("base64");
-}
+import { b64 } from "../helpers/fakeOctokit";
 
-/** Every directory lists empty, the registry is empty, every file is 404. */
+/** One component directory, an empty registry, every file 404, every other
+ *  directory empty. One entry is what makes a sidebar section renderable. */
 function fakeGh() {
   return {
     repos: {
@@ -25,6 +24,7 @@ function fakeGh() {
             data: { content: b64(JSON.stringify({ components: {} })), encoding: "base64" },
           };
         }
+        if (path === "components/src") return { data: [{ name: "button", type: "dir" }] };
         if (!/\.[a-z]+$/.test(path)) return { data: [] };
         const err = new Error("not found") as Error & { status: number };
         err.status = 404;
@@ -40,6 +40,7 @@ function fakeGh() {
 
 function mountShell(activePath: string | null) {
   localStorage.clear();
+  sessionStorage.clear(); // the sidebar's collapse state lives here
   return render(
     <Theme>
       <EditorShell octokit={fakeGh()} activePath={activePath} setActivePath={() => {}} />
@@ -49,7 +50,9 @@ function mountShell(activePath: string | null) {
 
 test("the shell has one nav and one main, and the main can be skipped to", async () => {
   const { container } = mountShell(null);
-  await waitFor(() => assert.ok(container.querySelector("h1")));
+  // Wait for the NAV: Home's h1 renders synchronously, so waiting on it
+  // proved nothing about the sidebar, which appears only after its loaders.
+  await waitFor(() => assert.ok(container.querySelector("nav")));
   const navs = container.querySelectorAll("nav");
   assert.equal(navs.length, 1, `expected one nav, found ${navs.length}`);
   assert.ok(navs[0]!.getAttribute("aria-label"), "the nav has no accessible name");
@@ -66,7 +69,7 @@ test("the shell has one nav and one main, and the main can be skipped to", async
 
 test("Home in the shell has exactly one h1, and the sidebar labels are not headings", async () => {
   const { container } = mountShell(null);
-  await waitFor(() => assert.ok(container.querySelector("h1")));
+  await waitFor(() => assert.ok(container.querySelector("nav")));
   const h1s = [...container.querySelectorAll("h1")].map((h) => h.textContent);
   assert.deepEqual(h1s, ["Browse and edit the design system."], `h1s: ${h1s.join(" | ")}`);
   const nav = container.querySelector("nav")!;
@@ -75,17 +78,26 @@ test("Home in the shell has exactly one h1, and the sidebar labels are not headi
     0,
     "sidebar section labels render as headings",
   );
-  // ...and the labels still name their groups.
+  // ...and the labels still name their groups. Sections start collapsed and
+  // a collapsed section renders no group, so one is opened first; a loop over
+  // zero groups proved nothing (and `CSS.escape` does not exist in jsdom).
+  fireEvent.click(container.querySelector("#sidebar-section-components-header")!);
+  await waitFor(() =>
+    assert.ok(nav.querySelector('[role="group"][aria-labelledby]'), "no group rendered"),
+  );
   const groups = nav.querySelectorAll('[role="group"][aria-labelledby]');
+  assert.ok(groups.length > 0);
   for (const g of groups) {
     const id = g.getAttribute("aria-labelledby")!;
-    assert.ok(container.querySelector(`#${CSS.escape(id)}`), `group label #${id} is missing`);
+    const label = document.getElementById(id);
+    assert.ok(label, `group label #${id} is missing`);
+    assert.ok((label.textContent ?? "").trim().length > 0, `group label #${id} is empty`);
   }
 });
 
 test("the draft inbox in the shell has exactly one h1", async () => {
   const { container } = mountShell("inbox");
-  await waitFor(() => assert.ok(container.querySelector("h1")));
+  await waitFor(() => assert.ok(container.querySelector("nav")));
   const h1s = [...container.querySelectorAll("h1")].map((h) => h.textContent);
   assert.equal(h1s.length, 1, `h1s: ${h1s.join(" | ")}`);
 });

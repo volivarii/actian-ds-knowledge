@@ -12,6 +12,13 @@ import { Box, Button, Callout, Code, Flex, Text } from "@radix-ui/themes";
 interface Props {
   /** What was being drawn, so the failure names its subject. */
   path: string;
+  /**
+   * Any change clears the failure, so a reader can recover by selecting the
+   * SAME screen again (Home again, the same file) or switching an explore
+   * tab: the path does not change in those cases, and the tab strip itself
+   * sits inside the fallen pane.
+   */
+  resetKey?: string;
   children: ReactNode;
 }
 
@@ -27,7 +34,10 @@ export class ScreenErrorBoundary extends Component<Props, State> {
   }
 
   componentDidUpdate(prev: Props) {
-    if (prev.path !== this.props.path && this.state.error) {
+    if (
+      (prev.path !== this.props.path || prev.resetKey !== this.props.resetKey) &&
+      this.state.error
+    ) {
       this.setState({ error: null });
     }
   }

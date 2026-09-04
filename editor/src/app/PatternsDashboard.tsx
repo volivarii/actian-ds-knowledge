@@ -262,7 +262,7 @@ function AppBlock({
             </Text>
           )}
           {uc.missingPatterns.length > 0 && (
-            <Callout.Root color="red" role="alert" size="1" mb="2">
+            <Callout.Root color="red" aria-live="off" size="1" mb="2">
               <Callout.Text>
                 Names {uc.missingPatterns.length} pattern
                 {uc.missingPatterns.length === 1 ? "" : "s"} that do not exist:{" "}
@@ -504,8 +504,12 @@ export function PatternsDashboard({
         {summary!.patterns}.
       </Text>
 
+      {/* Standing data-integrity diagnostics, rendered from the index on
+          every mount: content to read, not events to announce. `aria-live`
+          off says so explicitly, which is how a deliberate choice stays
+          distinguishable from a forgotten role. */}
       {index.recipesNamingMissingPatterns.length > 0 && (
-        <Callout.Root color="red" role="alert" mb="4">
+        <Callout.Root color="red" aria-live="off" mb="4">
           <Callout.Text>
             {index.recipesNamingMissingPatterns.length} captured recipe
             {index.recipesNamingMissingPatterns.length === 1 ? "" : "s"} name a
@@ -529,7 +533,7 @@ export function PatternsDashboard({
       )}
 
       {index.patternsClaimingUnknownApps.length > 0 && (
-        <Callout.Root color="red" role="alert" mb="4">
+        <Callout.Root color="red" aria-live="off" mb="4">
           <Callout.Text>
             {index.patternsClaimingUnknownApps.length} pattern
             {index.patternsClaimingUnknownApps.length === 1 ? "" : "s"} claim a

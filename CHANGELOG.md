@@ -28,10 +28,12 @@ Each entry links its pull request. Dates are the merge date (UTC).
   `<nav>`, and its seven section labels are labels rather than headings. Every Radix `Heading` in
   `editor/src` carries an explicit level, so each screen has exactly one h1: the deployed Home page had
   nine, eight of them from the shell, because Radix defaults the level to h1. A polite live region in
-  the header speaks the save state (saving, draft saved) and every file added to or removed from the
-  batch, and every red callout is `role="alert"`. One error boundary around the screen keeps the header
-  and sidebar usable when a render throws, shows the message and the path, and offers **Try again**; a
-  403 on one directory used to blank the whole app. Two tree-wide guards keep it so: a source test that
+  the header speaks a draft save once it follows a change (not on opening a drafted file, and at most
+  once a minute while typing), a write that never completes, and every file added to or removed from
+  the batch as one sentence per change; every red callout declares what it is (`role="alert"` for a
+  failure, `aria-live="off"` for a standing diagnostic). One error boundary around the screen keeps the
+  header and sidebar usable when a screen throws, shows the message and the path, offers **Try again**,
+  and resets on any selection; a 403 on one directory used to blank the whole app. Two tree-wide guards keep it so: a source test that
   fails on any `Heading` without a level or any red callout without an alert role, with a pattern
   self-test, and a page-level test that mounts the real shell with the sidebar and asserts one h1, one
   nav and one main. Editor-only and version-neutral: no dist, no schema, no consumer.

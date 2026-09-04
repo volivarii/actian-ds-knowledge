@@ -6,7 +6,7 @@
 // (the save-state indicator, the cart) sit at different depths and one of
 // them is not a component at all.
 
-import type { CartEvent } from "../drafts/SubmissionCart";
+import type { CartEntry } from "../drafts/SubmissionCart";
 
 export interface Announcement {
   text: string;
@@ -34,17 +34,45 @@ export function subscribeAnnouncements(listener: () => void): () => void {
 }
 
 /**
- * A cart event as a sentence naming the FILE, not the path: "Added forms.md
- * to the batch". A sidecar such as `_meta.yml` names its component too,
- * because every component has one and the file name alone says nothing.
+ * A batch entry as a reader would name it: the FILE, not the path. A
+ * `_meta.yml` names its component too (every component has one), and an
+ * `_order.json` is "the foundations section order", because "_order.json for
+ * src" says nothing to anyone.
  */
-export function cartEventMessage(event: CartEvent): string {
-  if (event.kind === "cleared") return "Batch cleared";
-  const parts = event.path.split("/");
-  const file = parts[parts.length - 1] ?? event.path;
-  const parent = parts.length >= 2 ? parts[parts.length - 2] : null;
-  const subject = file.startsWith("_") && parent ? `${file} for ${parent}` : file;
-  return event.kind === "added"
-    ? `Added ${subject} to the batch`
-    : `Removed ${subject} from the batch`;
+export function cartEntryLabel(path: string): string {
+  const parts = path.split("/");
+  const file = parts[parts.length - 1] ?? path;
+  if (file === "_order.json") return `the ${parts[0] ?? "section"} section order`;
+  if (file === "_meta.yml" && parts.length >= 2) {
+    return `${file} for ${parts[parts.length - 2]}`;
+  }
+  return file;
+}
+
+function joinNames(names: string[]): string {
+  if (names.length <= 1) return names.join("");
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+/**
+ * One sentence for what changed between two states of the batch, or null when
+ * nothing a reader would care about did (an entry replaced by autosave). A
+ * burst of changes in one commit is one sentence rather than the last of
+ * several, because the live region holds a single slot.
+ */
+export function describeCartChange(
+  previous: readonly CartEntry[],
+  next: readonly CartEntry[],
+): string | null {
+  const before = new Set(previous.map((e) => e.path));
+  const after = new Set(next.map((e) => e.path));
+  const added = next.filter((e) => !before.has(e.path) && !e.deleted).map((e) => cartEntryLabel(e.path));
+  const staged = next.filter((e) => !before.has(e.path) && e.deleted).map((e) => cartEntryLabel(e.path));
+  const removed = previous.filter((e) => !after.has(e.path)).map((e) => cartEntryLabel(e.path));
+  if (previous.length > 1 && next.length === 0) return "Batch cleared";
+  const parts: string[] = [];
+  if (added.length) parts.push(`Added ${joinNames(added)} to the batch`);
+  if (staged.length) parts.push(`Staged the deletion of ${joinNames(staged)}`);
+  if (removed.length) parts.push(`Removed ${joinNames(removed)} from the batch`);
+  return parts.length ? parts.join(". ") : null;
 }

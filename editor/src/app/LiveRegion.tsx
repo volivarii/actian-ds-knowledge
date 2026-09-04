@@ -2,6 +2,7 @@
 // should reach a screen reader without stealing focus goes through
 // `announce()` and lands here.
 import { useSyncExternalStore } from "react";
+import { VisuallyHidden } from "@radix-ui/themes";
 import { getAnnouncement, subscribeAnnouncements } from "../lib/announcer";
 
 export function LiveRegion() {
@@ -14,8 +15,8 @@ export function LiveRegion() {
   // saved", then "Draft saved" a minute later) replaces the node rather than
   // leaving the text untouched, and assistive technology reads it again.
   return (
-    <div className="sr-only" aria-live="polite" aria-atomic="true">
+    <VisuallyHidden aria-live="polite" aria-atomic="true">
       <span key={seq}>{text}</span>
-    </div>
+    </VisuallyHidden>
   );
 }

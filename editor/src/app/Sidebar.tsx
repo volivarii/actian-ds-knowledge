@@ -957,474 +957,474 @@ export function Sidebar({
         overflow: "auto",
       }}
     >
-    <nav aria-label="Design system">
-      <style>{`
-        .sidebar-row-trash { opacity: 0; transition: opacity 80ms; }
-        li:hover .sidebar-row-trash { opacity: 0.7; }
-        li .sidebar-row-trash:hover { opacity: 1; }
-      `}</style>
-      <Flex
-        align="center"
-        gap="2"
-        px="3"
-        py="2"
-        style={{
-          cursor: "pointer",
-          background: coverageActive ? "var(--accent-3)" : "transparent",
-        }}
-        onClick={() => onSelect(null)}
-        aria-current={coverageActive ? "page" : undefined}
-      >
-        <span aria-hidden="true">🏠</span>
-        <Text size="2" weight={coverageActive ? "bold" : "medium"}>
-          Home
-        </Text>
-      </Flex>
-      <Flex
-        align="center"
-        justify="between"
-        gap="2"
-        px="3"
-        py="2"
-        style={{
-          cursor: "pointer",
-          background: inboxActive ? "var(--accent-3)" : "transparent",
-          borderBottom: "1px solid var(--gray-4)",
-        }}
-        onClick={() => onSelect("inbox")}
-        aria-current={inboxActive ? "page" : undefined}
-      >
-        <Flex align="center" gap="2">
-          <span aria-hidden="true">📥</span>
-          <Text size="2" weight={inboxActive ? "bold" : "medium"}>
-            Drafts
-          </Text>
-        </Flex>
-        {cartEntries.length > 0 && (
-          <Badge color="indigo" variant="soft" size="1">
-            {cartEntries.length}
-          </Badge>
-        )}
-      </Flex>
-
-      {/* Two dimensions, one tree: what the design system PRESCRIBES
-          (foundations, components, writing rules, accessibility) vs what
-          the products ARE (apps, entities, UX patterns — the app-context
-          domain). Group headers make the ontology visible without adding
-          a nav surface or route. The design-system header hides when its
-          dimension has no sections, matching the per-section empty guards;
-          the application-context one always shows (see below). */}
-      {[
-        entries.foundations,
-        entries.accessibility,
-        entries.patterns,
-        entries.product,
-        entries.writing,
-        entries.components,
-      ].some((e) => e.length > 0) && (
-        <DimensionHeader>Design system</DimensionHeader>
-      )}
-
-      {entries.foundations.length > 0 && (
-        <Box>
-          {sectionHeader(
-            "foundations",
-            "Foundations",
-            entries.foundations.length,
-            "list-foundations",
-            () => {
-              const existingSlugs = entries.foundations.map(slugFromPath);
-              setAddDialog({ domain: "foundations", existingSlugs });
-            },
-          )}
-          {!sectionCollapsed.foundations && (
-            <Box
-              id="list-foundations"
-              role="group"
-              aria-labelledby="sidebar-section-foundations-header"
-            >
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={(event) => handleReorderDrop("foundations", event)}
-              >
-                <SortableContext
-                  items={entries.foundations.map(slugFromPath)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <ul
-                    role="list"
-                    style={{ listStyle: "none", padding: 0, margin: 0 }}
-                  >
-                    {entries.foundations.map((name) => {
-                      const slug = slugFromPath(name);
-                      const fullPath = `foundations/src/${name}`;
-                      return (
-                        <ReorderHandle key={slug} id={slug}>
-                          {({ setNodeRef, style, handle }) => (
-                            <li ref={setNodeRef} style={style}>
-                              {renderRow({
-                                path: fullPath,
-                                domain: "foundations",
-                                leftHandle: handle,
-                              })}
-                            </li>
-                          )}
-                        </ReorderHandle>
-                      );
-                    })}
-                  </ul>
-                </SortableContext>
-              </DndContext>
-            </Box>
-          )}
-        </Box>
-      )}
-
-      {/* Content is a nested parent: one "Content" section whose children
-          (Writing rules / Patterns / Product) are indented beneath it —
-          Vincent's IA, 2026-07-11. */}
-      {CONTENT_GROUPS.some((g) => entries[g].length > 0) && (
-        <Box>
-          {sectionHeader(
-            "content",
-            "Content",
-            CONTENT_GROUPS.reduce((n, g) => n + entries[g].length, 0),
-            "list-content",
-            null,
-          )}
-          {!sectionCollapsed.content && (
-            <Box
-              id="list-content"
-              role="group"
-              aria-labelledby="sidebar-section-content-header"
-              pl="3"
-            >
-              {CONTENT_GROUPS.map((group) => {
-                const items = entries[group];
-                if (items.length === 0) return null;
-                const label = CONTENT_GROUP_LABEL[group];
-                const collapsed = sectionCollapsed[group];
-                const listId = `list-${group}`;
-                return (
-                  <Box key={group}>
-                    {sectionHeader(
-                      group,
-                      label,
-                      items.length,
-                      listId,
-                      () => {
-                        const existingSlugs = items.map(slugFromPath);
-                        setAddDialog({
-                          domain: "content",
-                          subDir: group,
-                          existingSlugs,
-                        });
-                      },
-                      undefined,
-                      "Content",
-                    )}
-                    {!collapsed && (
-                      <Box
-                        id={listId}
-                        role="group"
-                        aria-labelledby={`sidebar-section-${group}-header`}
-                      >
-                        <ul
-                          role="list"
-                          style={{ listStyle: "none", padding: 0, margin: 0 }}
-                        >
-                          {items.map((path) => (
-                            <li key={path}>
-                              {renderRow({
-                                path: `content/src/${group}/${path}`,
-                                domain: group,
-                                leftHandle: null,
-                              })}
-                            </li>
-                          ))}
-                        </ul>
-                      </Box>
-                    )}
-                  </Box>
-                );
-              })}
-            </Box>
-          )}
-        </Box>
-      )}
-
-      {entries.accessibility.length > 0 && (
-        <Box>
-          {sectionHeader(
-            "accessibility",
-            "Accessibility",
-            entries.accessibility.length,
-            "list-accessibility",
-            () => {
-              const existingSlugs = entries.accessibility.map(slugFromPath);
-              setAddDialog({ domain: "accessibility", existingSlugs });
-            },
-          )}
-          {!sectionCollapsed.accessibility && (
-            <Box
-              id="list-accessibility"
-              role="group"
-              aria-labelledby="sidebar-section-accessibility-header"
-            >
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={(event) => handleReorderDrop("accessibility", event)}
-              >
-                <SortableContext
-                  items={entries.accessibility.map(slugFromPath)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <ul
-                    role="list"
-                    style={{ listStyle: "none", padding: 0, margin: 0 }}
-                  >
-                    {entries.accessibility.map((name) => {
-                      const slug = slugFromPath(name);
-                      const fullPath = `accessibility/src/${name}`;
-                      return (
-                        <ReorderHandle key={slug} id={slug}>
-                          {({ setNodeRef, style, handle }) => (
-                            <li ref={setNodeRef} style={style}>
-                              {renderRow({
-                                path: fullPath,
-                                domain: "accessibility",
-                                leftHandle: handle,
-                              })}
-                            </li>
-                          )}
-                        </ReorderHandle>
-                      );
-                    })}
-                  </ul>
-                </SortableContext>
-              </DndContext>
-            </Box>
-          )}
-        </Box>
-      )}
-
-      {entries.components.length > 0 && (
-        <Box>
-          {sectionHeader(
-            "components",
-            "Components",
-            entries.components.length,
-            "list-components",
-            null,
-          )}
-          {!sectionCollapsed.components && (
-            <Box
-              id="list-components"
-              role="group"
-              aria-labelledby="sidebar-section-components-header"
-            >
-              <ul
-                role="list"
-                style={{ listStyle: "none", padding: 0, margin: 0 }}
-              >
-                {componentsVisible.map((slug) => (
-                  <li key={slug}>
-                    {renderRow({
-                      path: `workspace/${slug}`,
-                      domain: "components",
-                      leftHandle: null,
-                    })}
-                  </li>
-                ))}
-              </ul>
-              {!expanded &&
-                entries.components.length > COMPONENT_VISIBLE_CAP && (
-                  <Box px="3" py="1">
-                    <Text
-                      size="1"
-                      style={{
-                        cursor: "pointer",
-                        textDecoration: "underline",
-                      }}
-                      onClick={() => setExpanded(true)}
-                    >
-                      Show all ({entries.components.length})
-                    </Text>
-                  </Box>
-                )}
-            </Box>
-          )}
-        </Box>
-      )}
-
-      {/* Always shown: Products carries the "+" that creates one, so an empty
-          application-context layer must still offer its own way in. */}
-      <DimensionHeader>Application context</DimensionHeader>
-
-      {(
-        [
-          ["appContextApps", "apps"],
-          ["appContextEntities", "entities"],
-          ["appContextPatterns", "patterns"],
-        ] as const
-      ).map(([entriesKey, kind]) => {
-        // All three always render, empty or not: each one carries the "+" that
-        // creates its first record, so hiding an empty section would hide the
-        // only way in.
-        const items = entries[entriesKey];
-        const label = APP_CONTEXT_LABEL[kind];
-        const listId = `list-appcontext-${kind}`;
-        const collapsed = sectionCollapsed[entriesKey];
-        const add = appContextAdd[kind];
-        return (
-          <Box key={entriesKey}>
-            {sectionHeader(
-              entriesKey,
-              label,
-              items.length,
-              listId,
-              () => add.open(),
-              add.label,
-              "Application context",
-            )}
-            {!collapsed && (
-              <Box
-                id={listId}
-                role="group"
-                aria-labelledby={`sidebar-section-${entriesKey}-header`}
-              >
-                <ul
-                  role="list"
-                  style={{ listStyle: "none", padding: 0, margin: 0 }}
-                >
-                  {items.map((file) => (
-                    <li key={file}>
-                      {renderRow({
-                        path: `app-context/src/${kind}/${file}`,
-                        domain: entriesKey,
-                        leftHandle: null,
-                      })}
-                    </li>
-                  ))}
-                </ul>
-              </Box>
-            )}
-          </Box>
-        );
-      })}
-
-      {addDialog && (
-        <AddSectionDialog
-          open
-          domain={
-            addDialog.subDir
-              ? `${addDialog.domain}/${addDialog.subDir}`
-              : addDialog.domain
-          }
-          pathPrefix={
-            addDialog.subDir
-              ? `${addDialog.domain}/src/${addDialog.subDir}`
-              : `${addDialog.domain}/src`
-          }
-          existingSlugs={addDialog.existingSlugs}
-          onCancel={() => setAddDialog(null)}
-          onConfirm={async ({ title, slug }) => {
-            const ctx = addDialog;
-            setAddDialog(null);
-            try {
-              await handleAddSection(ctx, slug, title);
-            } catch (err) {
-              console.error("Add section failed:", err);
-              window.alert(
-                `Couldn't add section: ${err instanceof Error ? err.message : String(err)}`,
-              );
-            }
-          }}
-        />
-      )}
-      {newProductOpen && (
-        <NewProductDialog
-          open
-          existingSlugs={entries.appContextApps.map(slugFromPath)}
-          records={contextRecords}
-          onCancel={() => setNewProductOpen(false)}
-          onConfirm={async (value) => {
-            setNewProductOpen(false);
-            try {
-              await handleCreateProduct(value);
-            } catch (err) {
-              console.error("Create product failed:", err);
-              window.alert(
-                `Couldn't create the product: ${err instanceof Error ? err.message : String(err)}`,
-              );
-            }
-          }}
-        />
-      )}
-      {newRecordKind && (
-        <NewContextRecordDialog
-          open
-          kind={newRecordKind}
-          records={contextRecords}
-          products={products}
-          components={graphComponents}
-          onCancel={() => setNewRecordKind(null)}
-          onConfirm={async (value) => {
-            setNewRecordKind(null);
-            try {
-              await handleCreateContextRecord(value);
-            } catch (err) {
-              console.error("Create context record failed:", err);
-              window.alert(
-                `Couldn't save that: ${err instanceof Error ? err.message : String(err)}`,
-              );
-            }
-          }}
-        />
-      )}
-      {deleteDialog && (
-        <DeleteSectionDialog
-          open
-          slug={deleteDialog.slug}
-          title={deleteDialog.title}
-          domain={deleteDialog.domain}
-          refCount={deleteDialog.refCount}
-          sampleRefs={deleteDialog.sampleRefs}
-          loading={deleteDialog.loading}
-          onCancel={() => setDeleteDialog(null)}
-          onConfirm={handleDeleteConfirm}
-        />
-      )}
-      {onToggleWysiwyg && (
+      <nav aria-label="Design system">
+        <style>{`
+          .sidebar-row-trash { opacity: 0; transition: opacity 80ms; }
+          li:hover .sidebar-row-trash { opacity: 0.7; }
+          li .sidebar-row-trash:hover { opacity: 1; }
+        `}</style>
         <Flex
           align="center"
           gap="2"
           px="3"
           py="2"
-          style={{ borderTop: "1px solid var(--gray-4)", marginTop: "auto" }}
+          style={{
+            cursor: "pointer",
+            background: coverageActive ? "var(--accent-3)" : "transparent",
+          }}
+          onClick={() => onSelect(null)}
+          aria-current={coverageActive ? "page" : undefined}
         >
-          <Switch
-            id="wysiwyg-toggle"
-            size="1"
-            checked={wysiwygOn}
-            onCheckedChange={onToggleWysiwyg}
-            aria-label="Toggle rich text editor"
-          />
-          <Text
-            as="label"
-            htmlFor="wysiwyg-toggle"
-            size="1"
-            color="gray"
-            style={{ cursor: "pointer" }}
-            title="On by default. Turn off to edit raw markdown. Files whose formatting cannot be round-tripped safely always open as markdown."
-          >
-            Rich text editor
+          <span aria-hidden="true">🏠</span>
+          <Text size="2" weight={coverageActive ? "bold" : "medium"}>
+            Home
           </Text>
         </Flex>
-      )}
-    </nav>
+        <Flex
+          align="center"
+          justify="between"
+          gap="2"
+          px="3"
+          py="2"
+          style={{
+            cursor: "pointer",
+            background: inboxActive ? "var(--accent-3)" : "transparent",
+            borderBottom: "1px solid var(--gray-4)",
+          }}
+          onClick={() => onSelect("inbox")}
+          aria-current={inboxActive ? "page" : undefined}
+        >
+          <Flex align="center" gap="2">
+            <span aria-hidden="true">📥</span>
+            <Text size="2" weight={inboxActive ? "bold" : "medium"}>
+              Drafts
+            </Text>
+          </Flex>
+          {cartEntries.length > 0 && (
+            <Badge color="indigo" variant="soft" size="1">
+              {cartEntries.length}
+            </Badge>
+          )}
+        </Flex>
+
+        {/* Two dimensions, one tree: what the design system PRESCRIBES
+            (foundations, components, writing rules, accessibility) vs what
+            the products ARE (apps, entities, UX patterns — the app-context
+            domain). Group headers make the ontology visible without adding
+            a nav surface or route. The design-system header hides when its
+            dimension has no sections, matching the per-section empty guards;
+            the application-context one always shows (see below). */}
+        {[
+          entries.foundations,
+          entries.accessibility,
+          entries.patterns,
+          entries.product,
+          entries.writing,
+          entries.components,
+        ].some((e) => e.length > 0) && (
+          <DimensionHeader>Design system</DimensionHeader>
+        )}
+
+        {entries.foundations.length > 0 && (
+          <Box>
+            {sectionHeader(
+              "foundations",
+              "Foundations",
+              entries.foundations.length,
+              "list-foundations",
+              () => {
+                const existingSlugs = entries.foundations.map(slugFromPath);
+                setAddDialog({ domain: "foundations", existingSlugs });
+              },
+            )}
+            {!sectionCollapsed.foundations && (
+              <Box
+                id="list-foundations"
+                role="group"
+                aria-labelledby="sidebar-section-foundations-header"
+              >
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event) => handleReorderDrop("foundations", event)}
+                >
+                  <SortableContext
+                    items={entries.foundations.map(slugFromPath)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <ul
+                      role="list"
+                      style={{ listStyle: "none", padding: 0, margin: 0 }}
+                    >
+                      {entries.foundations.map((name) => {
+                        const slug = slugFromPath(name);
+                        const fullPath = `foundations/src/${name}`;
+                        return (
+                          <ReorderHandle key={slug} id={slug}>
+                            {({ setNodeRef, style, handle }) => (
+                              <li ref={setNodeRef} style={style}>
+                                {renderRow({
+                                  path: fullPath,
+                                  domain: "foundations",
+                                  leftHandle: handle,
+                                })}
+                              </li>
+                            )}
+                          </ReorderHandle>
+                        );
+                      })}
+                    </ul>
+                  </SortableContext>
+                </DndContext>
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {/* Content is a nested parent: one "Content" section whose children
+            (Writing rules / Patterns / Product) are indented beneath it —
+            Vincent's IA, 2026-07-11. */}
+        {CONTENT_GROUPS.some((g) => entries[g].length > 0) && (
+          <Box>
+            {sectionHeader(
+              "content",
+              "Content",
+              CONTENT_GROUPS.reduce((n, g) => n + entries[g].length, 0),
+              "list-content",
+              null,
+            )}
+            {!sectionCollapsed.content && (
+              <Box
+                id="list-content"
+                role="group"
+                aria-labelledby="sidebar-section-content-header"
+                pl="3"
+              >
+                {CONTENT_GROUPS.map((group) => {
+                  const items = entries[group];
+                  if (items.length === 0) return null;
+                  const label = CONTENT_GROUP_LABEL[group];
+                  const collapsed = sectionCollapsed[group];
+                  const listId = `list-${group}`;
+                  return (
+                    <Box key={group}>
+                      {sectionHeader(
+                        group,
+                        label,
+                        items.length,
+                        listId,
+                        () => {
+                          const existingSlugs = items.map(slugFromPath);
+                          setAddDialog({
+                            domain: "content",
+                            subDir: group,
+                            existingSlugs,
+                          });
+                        },
+                        undefined,
+                        "Content",
+                      )}
+                      {!collapsed && (
+                        <Box
+                          id={listId}
+                          role="group"
+                          aria-labelledby={`sidebar-section-${group}-header`}
+                        >
+                          <ul
+                            role="list"
+                            style={{ listStyle: "none", padding: 0, margin: 0 }}
+                          >
+                            {items.map((path) => (
+                              <li key={path}>
+                                {renderRow({
+                                  path: `content/src/${group}/${path}`,
+                                  domain: group,
+                                  leftHandle: null,
+                                })}
+                              </li>
+                            ))}
+                          </ul>
+                        </Box>
+                      )}
+                    </Box>
+                  );
+                })}
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {entries.accessibility.length > 0 && (
+          <Box>
+            {sectionHeader(
+              "accessibility",
+              "Accessibility",
+              entries.accessibility.length,
+              "list-accessibility",
+              () => {
+                const existingSlugs = entries.accessibility.map(slugFromPath);
+                setAddDialog({ domain: "accessibility", existingSlugs });
+              },
+            )}
+            {!sectionCollapsed.accessibility && (
+              <Box
+                id="list-accessibility"
+                role="group"
+                aria-labelledby="sidebar-section-accessibility-header"
+              >
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event) => handleReorderDrop("accessibility", event)}
+                >
+                  <SortableContext
+                    items={entries.accessibility.map(slugFromPath)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <ul
+                      role="list"
+                      style={{ listStyle: "none", padding: 0, margin: 0 }}
+                    >
+                      {entries.accessibility.map((name) => {
+                        const slug = slugFromPath(name);
+                        const fullPath = `accessibility/src/${name}`;
+                        return (
+                          <ReorderHandle key={slug} id={slug}>
+                            {({ setNodeRef, style, handle }) => (
+                              <li ref={setNodeRef} style={style}>
+                                {renderRow({
+                                  path: fullPath,
+                                  domain: "accessibility",
+                                  leftHandle: handle,
+                                })}
+                              </li>
+                            )}
+                          </ReorderHandle>
+                        );
+                      })}
+                    </ul>
+                  </SortableContext>
+                </DndContext>
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {entries.components.length > 0 && (
+          <Box>
+            {sectionHeader(
+              "components",
+              "Components",
+              entries.components.length,
+              "list-components",
+              null,
+            )}
+            {!sectionCollapsed.components && (
+              <Box
+                id="list-components"
+                role="group"
+                aria-labelledby="sidebar-section-components-header"
+              >
+                <ul
+                  role="list"
+                  style={{ listStyle: "none", padding: 0, margin: 0 }}
+                >
+                  {componentsVisible.map((slug) => (
+                    <li key={slug}>
+                      {renderRow({
+                        path: `workspace/${slug}`,
+                        domain: "components",
+                        leftHandle: null,
+                      })}
+                    </li>
+                  ))}
+                </ul>
+                {!expanded &&
+                  entries.components.length > COMPONENT_VISIBLE_CAP && (
+                    <Box px="3" py="1">
+                      <Text
+                        size="1"
+                        style={{
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
+                        onClick={() => setExpanded(true)}
+                      >
+                        Show all ({entries.components.length})
+                      </Text>
+                    </Box>
+                  )}
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {/* Always shown: Products carries the "+" that creates one, so an empty
+            application-context layer must still offer its own way in. */}
+        <DimensionHeader>Application context</DimensionHeader>
+
+        {(
+          [
+            ["appContextApps", "apps"],
+            ["appContextEntities", "entities"],
+            ["appContextPatterns", "patterns"],
+          ] as const
+        ).map(([entriesKey, kind]) => {
+          // All three always render, empty or not: each one carries the "+" that
+          // creates its first record, so hiding an empty section would hide the
+          // only way in.
+          const items = entries[entriesKey];
+          const label = APP_CONTEXT_LABEL[kind];
+          const listId = `list-appcontext-${kind}`;
+          const collapsed = sectionCollapsed[entriesKey];
+          const add = appContextAdd[kind];
+          return (
+            <Box key={entriesKey}>
+              {sectionHeader(
+                entriesKey,
+                label,
+                items.length,
+                listId,
+                () => add.open(),
+                add.label,
+                "Application context",
+              )}
+              {!collapsed && (
+                <Box
+                  id={listId}
+                  role="group"
+                  aria-labelledby={`sidebar-section-${entriesKey}-header`}
+                >
+                  <ul
+                    role="list"
+                    style={{ listStyle: "none", padding: 0, margin: 0 }}
+                  >
+                    {items.map((file) => (
+                      <li key={file}>
+                        {renderRow({
+                          path: `app-context/src/${kind}/${file}`,
+                          domain: entriesKey,
+                          leftHandle: null,
+                        })}
+                      </li>
+                    ))}
+                  </ul>
+                </Box>
+              )}
+            </Box>
+          );
+        })}
+
+        {addDialog && (
+          <AddSectionDialog
+            open
+            domain={
+              addDialog.subDir
+                ? `${addDialog.domain}/${addDialog.subDir}`
+                : addDialog.domain
+            }
+            pathPrefix={
+              addDialog.subDir
+                ? `${addDialog.domain}/src/${addDialog.subDir}`
+                : `${addDialog.domain}/src`
+            }
+            existingSlugs={addDialog.existingSlugs}
+            onCancel={() => setAddDialog(null)}
+            onConfirm={async ({ title, slug }) => {
+              const ctx = addDialog;
+              setAddDialog(null);
+              try {
+                await handleAddSection(ctx, slug, title);
+              } catch (err) {
+                console.error("Add section failed:", err);
+                window.alert(
+                  `Couldn't add section: ${err instanceof Error ? err.message : String(err)}`,
+                );
+              }
+            }}
+          />
+        )}
+        {newProductOpen && (
+          <NewProductDialog
+            open
+            existingSlugs={entries.appContextApps.map(slugFromPath)}
+            records={contextRecords}
+            onCancel={() => setNewProductOpen(false)}
+            onConfirm={async (value) => {
+              setNewProductOpen(false);
+              try {
+                await handleCreateProduct(value);
+              } catch (err) {
+                console.error("Create product failed:", err);
+                window.alert(
+                  `Couldn't create the product: ${err instanceof Error ? err.message : String(err)}`,
+                );
+              }
+            }}
+          />
+        )}
+        {newRecordKind && (
+          <NewContextRecordDialog
+            open
+            kind={newRecordKind}
+            records={contextRecords}
+            products={products}
+            components={graphComponents}
+            onCancel={() => setNewRecordKind(null)}
+            onConfirm={async (value) => {
+              setNewRecordKind(null);
+              try {
+                await handleCreateContextRecord(value);
+              } catch (err) {
+                console.error("Create context record failed:", err);
+                window.alert(
+                  `Couldn't save that: ${err instanceof Error ? err.message : String(err)}`,
+                );
+              }
+            }}
+          />
+        )}
+        {deleteDialog && (
+          <DeleteSectionDialog
+            open
+            slug={deleteDialog.slug}
+            title={deleteDialog.title}
+            domain={deleteDialog.domain}
+            refCount={deleteDialog.refCount}
+            sampleRefs={deleteDialog.sampleRefs}
+            loading={deleteDialog.loading}
+            onCancel={() => setDeleteDialog(null)}
+            onConfirm={handleDeleteConfirm}
+          />
+        )}
+        {onToggleWysiwyg && (
+          <Flex
+            align="center"
+            gap="2"
+            px="3"
+            py="2"
+            style={{ borderTop: "1px solid var(--gray-4)", marginTop: "auto" }}
+          >
+            <Switch
+              id="wysiwyg-toggle"
+              size="1"
+              checked={wysiwygOn}
+              onCheckedChange={onToggleWysiwyg}
+              aria-label="Toggle rich text editor"
+            />
+            <Text
+              as="label"
+              htmlFor="wysiwyg-toggle"
+              size="1"
+              color="gray"
+              style={{ cursor: "pointer" }}
+              title="On by default. Turn off to edit raw markdown. Files whose formatting cannot be round-tripped safely always open as markdown."
+            >
+              Rich text editor
+            </Text>
+          </Flex>
+        )}
+      </nav>
     </Flex>
   );
 }
