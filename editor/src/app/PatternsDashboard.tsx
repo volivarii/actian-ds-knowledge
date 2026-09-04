@@ -220,7 +220,7 @@ function AppBlock({
   return (
     <Box mb="6">
       <Flex align="baseline" gap="3" mb="1" wrap="wrap">
-        <Heading as="h4" size="4">
+        <Heading as="h2" size="4">
           {app.label}
         </Heading>
         <Text
@@ -403,10 +403,19 @@ export function PatternsDashboard({
     };
   }, [state, meters]);
 
+  // The page's name renders in every state: a reader arriving during the
+  // fetch used to find a page with no h1 at all.
+  const heading = (
+    <Heading as="h1" size="5" mb="1">
+      Patterns
+    </Heading>
+  );
+
   if (state.kind === "loading") {
     return (
-      <Box p="6">
-        <Flex align="center" gap="2">
+      <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {heading}
+        <Flex align="center" gap="2" mt="3">
           <Spinner />
           <Text size="2" color="gray">
             Loading patterns…
@@ -418,8 +427,9 @@ export function PatternsDashboard({
 
   if (state.kind === "error") {
     return (
-      <Box p="6">
-        <Callout.Root color="red" role="alert">
+      <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {heading}
+        <Callout.Root color="red" role="alert" mt="3">
           <Callout.Text>Failed to load patterns: {state.message}</Callout.Text>
         </Callout.Root>
       </Box>
@@ -430,9 +440,7 @@ export function PatternsDashboard({
 
   return (
     <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <Heading as="h3" size="5" mb="1">
-        Patterns
-      </Heading>
+      {heading}
       {meters && (
         <Box mb="5" mt="3">
           {/* One date for the row: all four groups come from a single

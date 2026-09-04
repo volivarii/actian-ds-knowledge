@@ -47,3 +47,35 @@ test("home no longer renders an overview it also links to", () => {
   assert.equal(queryByText(/Substrate relationship health/i), null);
   cleanup();
 });
+
+test("every overview screen owns exactly one h1", () => {
+  // These four rendered INSIDE the home screen, under home's h1, so they each
+  // started at h3. Promoting them to screens without shifting the outline left
+  // four pages with no h1 at all and a heading level skipped from the start.
+  // Found by reading the markup after the promotion, not by any existing test.
+  for (const path of ["coverage", "accessibility", "patterns", "health"]) {
+    const { container, unmount } = render(
+      <Theme>
+        <EditorShell
+          octokit={octokit}
+          activePath={path}
+          setActivePath={() => {}}
+        />
+      </Theme>,
+    );
+    const h1s = container.querySelectorAll("h1");
+    assert.equal(
+      h1s.length,
+      1,
+      `${path} has ${h1s.length} h1s: ${[...h1s].map((h) => h.textContent).join(" | ")}`,
+    );
+    // And nothing skips a level down from it.
+    assert.equal(
+      container.querySelectorAll("h3, h4, h5, h6").length,
+      0,
+      `${path} skips from h1 past h2`,
+    );
+    unmount();
+  }
+  cleanup();
+});

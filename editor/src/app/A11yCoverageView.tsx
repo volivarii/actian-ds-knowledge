@@ -31,7 +31,7 @@ export interface A11yCoverageViewProps {
 export function A11yCoverageView({ topics, thin, onOpenFile }: A11yCoverageViewProps) {
   return (
     <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <Heading as="h3" size="5" mb="1">
+      <Heading as="h1" size="5" mb="1">
         Accessibility coverage
       </Heading>
       <Text size="2" color="gray" mb="3" as="p">
@@ -93,7 +93,7 @@ export function A11yCoverageView({ topics, thin, onOpenFile }: A11yCoverageViewP
         </Table.Body>
       </Table.Root>
 
-      <Heading as="h4" size="3" mt="5" mb="2">
+      <Heading as="h2" size="3" mt="5" mb="2">
         Needs attention
       </Heading>
       {thin.length > 0 ? (

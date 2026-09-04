@@ -51,7 +51,10 @@ import { measure, measuredToday } from "../lib/measure";
 import { componentSlotRecords, componentSlotsFor } from "../lib/slots";
 import { loadCapturedSlugs } from "../lib/loadMediaIndex";
 import { DOMAIN_LABEL } from "../lib/workspaceState";
+import { largestGap } from "../lib/needsAttention";
 import { MeterList } from "./MeterList";
+import { CoverageMatrix, coverageCsv } from "./CoverageMatrix";
+import { downloadCsv } from "../lib/download";
 
 export interface CoverageDashboardProps {
   octokit: Octokit;
@@ -143,20 +146,36 @@ export function CoverageDashboard({
     // unreadable `_meta.yml` into `state.unreadable` before any screen sees
     // it, so this count and the table below it cannot disagree about the
     // denominator. The note under the Meters names what was left out.
+    // Only what the matrix does not already show. The five guidance domains
+    // are the matrix, cell for cell, and rendering them again as ratios
+    // directly beneath it is the restatement this screen is being cleared of.
+    // Capture is a different measure, so it stays.
     return measure(
       componentSlotRecords(
         state.rows,
         captures.kind === "ready" ? captures.slugs : new Set<string>(),
       ),
-      componentSlotsFor(captures.kind === "ready"),
+      componentSlotsFor(captures.kind === "ready").filter(
+        (slot) => slot.key === "capture",
+      ),
       measuredToday(),
     );
   }, [state, captures]);
 
+  // The page's name renders in every state. While it lived below the early
+  // returns, a reader arriving during the fetch found a page with no h1, and
+  // the fetch here is 30 to 90 GitHub calls.
+  const heading = (
+    <Heading as="h1" size="5" mb="1">
+      Coverage
+    </Heading>
+  );
+
   if (state.kind === "loading") {
     return (
-      <Box p="6">
-        <Flex align="center" gap="2">
+      <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {heading}
+        <Flex align="center" gap="2" mt="3">
           <Spinner />
           <Text size="2" color="gray">
             Loading coverage…
@@ -168,8 +187,9 @@ export function CoverageDashboard({
 
   if (state.kind === "error") {
     return (
-      <Box p="6">
-        <Callout.Root color="red" role="alert">
+      <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {heading}
+        <Callout.Root color="red" role="alert" mt="3">
           <Callout.Text>Failed to load coverage: {state.message}</Callout.Text>
         </Callout.Root>
       </Box>
@@ -187,9 +207,31 @@ export function CoverageDashboard({
 
   return (
     <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <Heading as="h3" size="5" mb="1">
-        Coverage
-      </Heading>
+      {heading}
+      <Text size="2" color="gray" as="p" mb="4">
+        {(() => {
+          const worst = largestGap(rows);
+          return worst
+            ? `${rows.length} components. ${DOMAIN_LABEL[worst.domain]} is the backlog: ${worst.open} have none authored.`
+            : `${rows.length} components, every domain started.`;
+        })()}
+      </Text>
+
+      {/* The figure, before any number that describes it. */}
+      <Box mb="4">
+        <CoverageMatrix rows={rows} />
+      </Box>
+
+      <Flex gap="2" mb="4" wrap="wrap">
+        <Button
+          variant="soft"
+          size="1"
+          onClick={() => downloadCsv(coverageCsv(rows), "component-coverage")}
+        >
+          Export as CSV
+        </Button>
+      </Flex>
+
       {meters && (
         <Box mb="4" mt="3">
           <MeterList

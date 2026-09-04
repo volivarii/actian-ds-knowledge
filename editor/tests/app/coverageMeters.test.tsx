@@ -158,7 +158,10 @@ function fakeGhServingCoverage(opts: {
   } as any;
 }
 
-test("the coverage dashboard renders the Component meters", async () => {
+test("the coverage screen shows the five domains as the matrix, and Capture as a meter", async () => {
+  // The five domain Meters and the matrix counted the same thing, so the
+  // Meters went and the matrix stayed. Capture measures something the matrix
+  // does not, so it is the one Meter left.
   const { CoverageDashboard } = await import("../../src/app/CoverageDashboard");
   const { container } = mount(
     <CoverageDashboard
@@ -167,14 +170,35 @@ test("the coverage dashboard renders the Component meters", async () => {
     />,
   );
   await waitFor(() => {
-    assert.ok((container.textContent ?? "").includes("Content"));
+    assert.ok(container.querySelector('[data-testid="coverage-matrix"]'));
   });
   const text = container.textContent ?? "";
-  // Two components, both content-approved, neither with usage.
-  assert.ok(text.includes("2 of 2"), `Content meter missing from: ${text.slice(0, 500)}`);
-  assert.ok(text.includes("0 of 2"), "Usage meter missing");
+  // Two components, both content-approved, neither with usage. The matrix
+  // states each domain's real statuses, not a ratio.
+  assert.ok(text.includes("2 Approved"), `Content row missing from: ${text.slice(0, 400)}`);
+  assert.ok(text.includes("2 Empty"), "the unwritten domains are not named");
   assert.ok(text.includes("1 of 2"), "Capture meter missing (alpha has one)");
-  assert.ok(!/\d+\s*%/.test(text), "a bare percentage reached the coverage dashboard");
+  // No domain is counted twice on one screen.
+  for (const domain of ["content", "usage", "design", "behavior", "tokens"]) {
+    assert.equal(
+      container.querySelector(`[data-meter="component:${domain}"]`) === null,
+      true,
+      `${domain} is a Meter AND a matrix row on the same screen`,
+    );
+  }
+  assert.ok(!/\d+\s*%/.test(text), "a bare percentage reached the coverage screen");
+
+  // One h1 in the READY state too. The shell-level guard renders with a stub
+  // that never resolves, so on its own it only ever proved the loading state:
+  // hoisting the heading could have left a second one behind down here and
+  // that guard would have stayed green.
+  const h1s = container.querySelectorAll("h1");
+  assert.equal(
+    h1s.length,
+    1,
+    `ready state has ${h1s.length} h1s: ${[...h1s].map((h) => h.textContent).join(" | ")}`,
+  );
+  assert.equal(container.querySelectorAll("h3, h4, h5, h6").length, 0);
 });
 
 test("an unreadable media index leaves the table standing and drops only Capture", async () => {
@@ -188,14 +212,14 @@ test("an unreadable media index leaves the table standing and drops only Capture
   await waitFor(() => {
     assert.ok((container.textContent ?? "").includes("Content"));
   });
-  // The other Meters still render...
-  assert.ok((container.textContent ?? "").includes("2 of 2"));
+  // The matrix still renders...
+  assert.ok(container.querySelector('[data-testid="coverage-matrix"]'));
+  assert.ok((container.textContent ?? "").includes("2 Approved"));
   // ...and Capture is absent rather than claiming zero across the registry.
   // `assert.equal(node, null)` SIGKILLs the runner when it fails, because the
   // diff walks a live DOM node. Compare a boolean so a failure reads as a
   // failure.
   assert.equal(container.querySelector('[data-meter="component:capture"]') === null, true);
-  assert.ok(container.querySelector('[data-meter="component:usage"]'));
 });
 
 test("the Meters wait for the media index rather than dropping Capture mid-flight", async () => {
@@ -238,7 +262,6 @@ test("the Meters wait for the media index rather than dropping Capture mid-fligh
   await waitFor(() => {
     assert.ok(container.querySelector('[data-meter="component:capture"]'));
   });
-  assert.ok(container.querySelector('[data-meter="component:usage"]'));
 });
 
 test("an index that parses but carries no media is unmeasurable, not empty", () => {
@@ -255,7 +278,7 @@ test("an index that parses but carries no media is unmeasurable, not empty", () 
       />,
     );
     await waitFor(() => {
-      assert.ok(container.querySelector('[data-meter="component:usage"]'));
+      assert.ok(container.querySelector('[data-testid="coverage-matrix"]'));
     });
     assert.equal(
       container.querySelector('[data-meter="component:capture"]') === null,
@@ -278,7 +301,7 @@ test("a failed capture read says so, rather than silently dropping the Meter", (
       />,
     );
     await waitFor(() => {
-      assert.ok(container.querySelector('[data-meter="component:usage"]'));
+      assert.ok(container.querySelector('[data-testid="coverage-matrix"]'));
     });
     assert.equal(
       container.querySelector('[data-meter="component:capture"]') === null,
@@ -306,15 +329,24 @@ test("a component whose _meta.yml cannot be READ is excluded, not counted as emp
       />,
     );
     await waitFor(() => {
-      assert.ok(container.querySelector('[data-meter="component:content"]'));
+      assert.ok(container.querySelector('[data-testid="coverage-matrix"]'));
     });
-    const content = container.querySelector('[data-meter="component:content"]');
-    assert.ok(content);
+    const content = container.querySelector('[data-domain="content"]');
+    assert.ok(content, "the matrix has no Content row");
     // alpha read fine and is content-approved; beta was throttled and is out of
-    // BOTH halves rather than dragging the denominator down as a false zero.
-    assert.ok(
-      (content.textContent ?? "").includes("1 of 1"),
-      `throttled row counted as empty: "${content.textContent}"`,
+    // the figure entirely rather than dragging it down as a false zero. The
+    // accessible name carries the count, which is where a reader who cannot
+    // see the cells gets it.
+    assert.match(
+      content.getAttribute("aria-label") ?? "",
+      /across 1 components: 1 Approved/,
+      `throttled row counted as empty: "${content.getAttribute("aria-label")}"`,
+    );
+    // One cell, not two: a row that could not be read must not occupy a cell.
+    assert.equal(
+      content.querySelectorAll("[data-fill]").length,
+      1,
+      "the figure drew a cell for a component it could not measure",
     );
     assert.ok(
       (container.textContent ?? "").includes("could not be read"),
