@@ -3332,7 +3332,6 @@
       "properties": {},
       "nestedComponents": [],
       "documentationLinks": [],
-      "section": "Brand Assets",
       "category": "Illustrations & graphics",
       "categorySlug": "illustrations-graphics",
       "group": "Illustrations",
@@ -3346,7 +3345,8 @@
           "Success",
           "Error state medium"
         ]
-      }
+      },
+      "section": "Brand Assets"
     },
     "impala": {
       "name": "impala",
