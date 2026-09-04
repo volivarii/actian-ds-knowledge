@@ -242,7 +242,7 @@ export function WorkspaceDomainEditor({
   if (load.kind === "error") {
     return (
       <Box p="3">
-        <Callout.Root color="red">
+        <Callout.Root color="red" role="alert">
           <Callout.Text>Failed to load: {load.message}</Callout.Text>
         </Callout.Root>
       </Box>

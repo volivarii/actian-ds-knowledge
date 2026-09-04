@@ -3,6 +3,7 @@ import type { Octokit } from "@octokit/rest";
 import { Box, Button, Callout, Flex } from "@radix-ui/themes";
 import { createOctokit, MissingPATError } from "../core/octokit";
 import { Sidebar } from "./Sidebar";
+import { ScreenErrorBoundary } from "./ScreenErrorBoundary";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
@@ -254,13 +255,21 @@ export function EditorShell({
           setWysiwygOn(next);
         }}
       />
+      {/* The one <main>, and the skip link's target. tabIndex -1 so a
+          fragment navigation to #main actually moves focus in every browser,
+          not only the ones that focus a non-focusable target. */}
       <Box
+        asChild
         flexGrow="1"
         p="3"
         style={{ overflow: "auto", minWidth: 0, minHeight: 0 }}
       >
-        {breadcrumb}
-        {pane}
+        <main id="main" tabIndex={-1}>
+          <ScreenErrorBoundary path={activePath ?? "home"}>
+            {breadcrumb}
+            {pane}
+          </ScreenErrorBoundary>
+        </main>
       </Box>
     </Flex>
   );

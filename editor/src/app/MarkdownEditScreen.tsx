@@ -670,7 +670,7 @@ export function MarkdownEditScreen({
   if (load.kind === "loading" || load.kind === "idle") return <Spinner />;
   if (load.kind === "error") {
     return (
-      <Callout.Root color="red">
+      <Callout.Root color="red" role="alert">
         <Callout.Text>{load.message}</Callout.Text>
       </Callout.Root>
     );
@@ -740,7 +740,9 @@ export function MarkdownEditScreen({
     <Flex ref={attachHighlightRoot} direction="column" height="100%" gap="2">
       <TierBanner path={path} />
       <Flex align="center" justify="between" gap="2" wrap="wrap">
-        <Heading size="3">{path}</Heading>
+        <Heading as="h1" size="3">
+          {path}
+        </Heading>
         <Flex gap="2" align="center">
           {(() => {
             const df = domainFileForPath(path);

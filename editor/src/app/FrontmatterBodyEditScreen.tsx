@@ -532,7 +532,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
   if (state.kind === "loading") return <Text>Loading…</Text>;
   if (state.kind === "error")
     return (
-      <Callout.Root color="red">
+      <Callout.Root color="red" role="alert">
         <Callout.Text>{state.message}</Callout.Text>
       </Callout.Root>
     );

@@ -63,7 +63,7 @@ export function SectionInspector(props: SectionInspectorProps) {
       >
         Currently editing
       </Text>
-      <Heading size="3" mt="1">
+      <Heading as="h3" size="3" mt="1">
         {sectionTitle}
       </Heading>
 

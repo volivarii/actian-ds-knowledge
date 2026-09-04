@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Octokit } from "@octokit/rest";
-import { Badge, Box, Flex, Heading, Switch, Text } from "@radix-ui/themes";
+import { Badge, Box, Flex, Switch, Text } from "@radix-ui/themes";
 import {
   DndContext,
   closestCenter,
@@ -817,7 +817,13 @@ export function Sidebar({
           >
             ▼
           </span>
-          <Heading size="2">{label}</Heading>
+          {/* A label, not a heading: seven section labels rendered as h1s
+              (Radix Heading's default) put seven page titles in every
+              screen's outline (#653). The group carries aria-labelledby
+              pointing at this row, so the name still reaches the list. */}
+          <Text size="2" weight="bold">
+            {label}
+          </Text>
         </Flex>
         <Flex align="center" gap="2">
           {onAdd != null && (
@@ -935,7 +941,11 @@ export function Sidebar({
 
   const coverageActive = activePath == null;
   return (
+    // The rail is the page's one <nav>. `asChild` hands Flex's layout to the
+    // nav element itself, rather than wrapping it in a div a screen reader
+    // would have to step through.
     <Flex
+      asChild
       direction="column"
       gap="2"
       style={{
@@ -947,6 +957,7 @@ export function Sidebar({
         overflow: "auto",
       }}
     >
+    <nav aria-label="Design system">
       <style>{`
         .sidebar-row-trash { opacity: 0; transition: opacity 80ms; }
         li:hover .sidebar-row-trash { opacity: 0.7; }
@@ -1413,6 +1424,7 @@ export function Sidebar({
           </Text>
         </Flex>
       )}
+    </nav>
     </Flex>
   );
 }

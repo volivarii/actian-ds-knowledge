@@ -117,7 +117,7 @@ export function RecentSubmissions({
         )}
 
         {loadState === "error" && (
-          <Callout.Root color="red" mb="3">
+          <Callout.Root color="red" role="alert" mb="3">
             <Callout.Text>{errorMessage}</Callout.Text>
           </Callout.Root>
         )}

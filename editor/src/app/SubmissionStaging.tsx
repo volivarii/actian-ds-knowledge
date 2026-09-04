@@ -267,7 +267,7 @@ export function SubmissionStaging({
             </Callout.Root>
           )}
           {error && (
-            <Callout.Root color="red" mb="3">
+            <Callout.Root color="red" role="alert" mb="3">
               <Callout.Text>{error}</Callout.Text>
             </Callout.Root>
           )}

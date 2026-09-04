@@ -251,7 +251,7 @@ function Column<T>({ title, caption, remote, noun, children }: ColumnProps<T>) {
         </Flex>
       )}
       {remote.kind === "error" && (
-        <Callout.Root color="red" size="1">
+        <Callout.Root color="red" role="alert" size="1">
           <Callout.Text>
             Could not load the {noun}: {remote.message}
           </Callout.Text>

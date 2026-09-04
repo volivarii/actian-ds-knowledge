@@ -123,7 +123,7 @@ export function AuthoringWorkspace({
   if (state.kind === "error") {
     return (
       <Box p="6">
-        <Callout.Root color="red">
+        <Callout.Root color="red" role="alert">
           <Callout.Text>Failed to load workspace: {state.message}</Callout.Text>
         </Callout.Root>
       </Box>
@@ -144,7 +144,9 @@ export function AuthoringWorkspace({
               ← Back to coverage
             </Button>
           </Text>
-          <Heading size="6">{ws.componentName}</Heading>
+          <Heading as="h1" size="6">
+            {ws.componentName}
+          </Heading>
           <Text size="2" color="gray" as="div">
             {ws.category && <>category: {ws.category} · </>}
             slug: <code>{slug}</code>
@@ -182,7 +184,7 @@ export function AuthoringWorkspace({
         </Callout.Text>
       </Callout.Root>
 
-      <Heading size="3" mt="4" mb="2">
+      <Heading as="h2" size="3" mt="4" mb="2">
         Render
       </Heading>
       <Text size="1" color="gray" as="p" mb="3">
@@ -191,7 +193,7 @@ export function AuthoringWorkspace({
       </Text>
       <CanonicalRenderPanel slug={slug} octokit={octokit} />
 
-      <Heading size="3" mt="5" mb="2">
+      <Heading as="h2" size="3" mt="5" mb="2">
         Authoring tasks
       </Heading>
       <Text size="1" color="gray" as="p" mb="3">
@@ -226,7 +228,7 @@ export function AuthoringWorkspace({
         </Flex>
       </Accordion.Root>
 
-      <Heading size="3" mt="5" mb="2">
+      <Heading as="h2" size="3" mt="5" mb="2">
         Metadata
       </Heading>
       <Card variant="surface">

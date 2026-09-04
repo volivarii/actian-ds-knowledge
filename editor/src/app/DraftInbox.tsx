@@ -116,7 +116,7 @@ export function DraftInbox({ onOpenFile, onOpenStaging }: DraftInboxProps) {
     <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
       <Flex align="center" justify="between" gap="2" mb="3" wrap="wrap">
         <Box>
-          <Heading size="5" mb="1">
+          <Heading as="h1" size="5" mb="1">
             Draft inbox
           </Heading>
           <Text size="2" color="gray" as="p">
@@ -157,7 +157,9 @@ export function DraftInbox({ onOpenFile, onOpenStaging }: DraftInboxProps) {
             <Box p="3">
               <Flex align="center" justify="between" gap="2" mb="2" wrap="wrap">
                 <Flex align="center" gap="2">
-                  <Heading size="3">{g.label}</Heading>
+                  <Heading as="h2" size="3">
+                    {g.label}
+                  </Heading>
                   <Badge color="gray" variant="soft" size="1">
                     {g.entries.length} file
                     {g.entries.length === 1 ? "" : "s"}

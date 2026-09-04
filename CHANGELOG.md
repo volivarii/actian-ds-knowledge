@@ -20,6 +20,21 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 ### Changed
 
+- **The editor has landmarks, one h1 per page, a skip link, a live region and an error boundary**
+  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD), Story 1100 sub-task 1118; closes
+  [#651](https://github.com/volivarii/actian-ds-knowledge/issues/651) and
+  [#653](https://github.com/volivarii/actian-ds-knowledge/issues/653)). The top bar is a `<header>`
+  whose first focusable element is a "Skip to content" link to the one `<main>`; the sidebar is the one
+  `<nav>`, and its seven section labels are labels rather than headings. Every Radix `Heading` in
+  `editor/src` carries an explicit level, so each screen has exactly one h1: the deployed Home page had
+  nine, eight of them from the shell, because Radix defaults the level to h1. A polite live region in
+  the header speaks the save state (saving, draft saved) and every file added to or removed from the
+  batch, and every red callout is `role="alert"`. One error boundary around the screen keeps the header
+  and sidebar usable when a render throws, shows the message and the path, and offers **Try again**; a
+  403 on one directory used to blank the whole app. Two tree-wide guards keep it so: a source test that
+  fails on any `Heading` without a level or any red callout without an alert role, with a pattern
+  self-test, and a page-level test that mounts the real shell with the sidebar and asserts one h1, one
+  nav and one main. Editor-only and version-neutral: no dist, no schema, no consumer.
 - **The 2026-09-03 breaking Figma sync, carried through** (#636). Four renames, one of which moves a
   slug between namespaces. `calendar-date-input` → **`calendar`**, taking the slug the `calendar`
   **icon** used to hold in the components map — the icon itself survives in the icons map, and

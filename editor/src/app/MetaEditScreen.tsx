@@ -322,7 +322,9 @@ export function MetaEditScreen({
       <Flex direction="column" gap="3" p="3">
         {path && <TierBanner path={path} />}
         <Flex align="center" justify="between" gap="2" wrap="wrap">
-          <Heading size="3">{path}</Heading>
+          <Heading as="h1" size="3">
+            {path}
+          </Heading>
           <Flex gap="2" align="center">
             {isNew && (
               <Badge color="amber" variant="soft">

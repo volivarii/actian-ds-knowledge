@@ -67,7 +67,7 @@ export function AnchorRenamePopover({
       </Popover.Anchor>
       <Popover.Content size="2" style={{ maxWidth: 340 }}>
         <Flex direction="column" gap="2">
-          <Heading size="2">{`Rename #${slug}`}</Heading>
+          <Heading as="h3" size="2">{`Rename #${slug}`}</Heading>
           <label>
             <Text as="div" size="1" mb="1" color="gray">
               New anchor slug

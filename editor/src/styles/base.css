@@ -594,3 +594,39 @@ form.fm-form.fm-collapsed > *:not(.fm-form-children) {
 .meter-row[data-complete="true"] {
   color: var(--zen-color-text-secondary);
 }
+
+/* Visually hidden, still read: the live region and any text that exists for
+   assistive technology only. The standard recipe; `display: none` or
+   `visibility: hidden` would remove it from the accessibility tree too. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The skip link: first in tab order, invisible until it has focus, then a
+   solid tab at the top left so the keyboard user sees where they are. */
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -100px;
+  z-index: 1000;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--zen-color-bg-emphasis, #1f2937);
+  color: var(--zen-color-text-reverse, #fff);
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 8px;
+  outline: 2px solid var(--zen-color-border-focus, #4f86ff);
+  outline-offset: 2px;
+}

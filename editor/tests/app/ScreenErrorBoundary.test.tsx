@@ -1,0 +1,58 @@
+// #651: React 18 unmounts the whole root when a render throws, and the editor
+// had no boundary anywhere, so a 403 on one directory blanked the app.
+import "../setup-dom";
+import { test, afterEach } from "node:test";
+import assert from "node:assert/strict";
+import { render, cleanup, fireEvent } from "@testing-library/react";
+import { Theme } from "@radix-ui/themes";
+import React from "react";
+import { ScreenErrorBoundary } from "../../src/app/ScreenErrorBoundary";
+
+afterEach(cleanup);
+
+let explode = true;
+function Screen() {
+  if (explode) throw new Error("recipes directory answered 403");
+  return <p>the screen</p>;
+}
+
+test("a throw in the screen renders the error and the path, not a blank page", () => {
+  explode = true;
+  const originalError = console.error;
+  console.error = () => {}; // React logs the caught error; the test is about the DOM
+  try {
+    const { container } = render(
+      <Theme>
+        <ScreenErrorBoundary path="app-context/src/patterns/forms.md">
+          <Screen />
+        </ScreenErrorBoundary>
+      </Theme>,
+    );
+    const text = container.textContent ?? "";
+    assert.match(text, /recipes directory answered 403/);
+    assert.match(text, /app-context\/src\/patterns\/forms\.md/);
+    assert.ok(container.querySelector('[role="alert"]'), "the failure is not an alert");
+  } finally {
+    console.error = originalError;
+  }
+});
+
+test("Try again re-renders the screen", () => {
+  explode = true;
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    const { container, getByRole } = render(
+      <Theme>
+        <ScreenErrorBoundary path="x">
+          <Screen />
+        </ScreenErrorBoundary>
+      </Theme>,
+    );
+    explode = false;
+    fireEvent.click(getByRole("button", { name: /try again/i }));
+    assert.match(container.textContent ?? "", /the screen/);
+  } finally {
+    console.error = originalError;
+  }
+});

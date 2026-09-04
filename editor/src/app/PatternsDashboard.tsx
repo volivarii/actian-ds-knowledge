@@ -262,7 +262,7 @@ function AppBlock({
             </Text>
           )}
           {uc.missingPatterns.length > 0 && (
-            <Callout.Root color="red" size="1" mb="2">
+            <Callout.Root color="red" role="alert" size="1" mb="2">
               <Callout.Text>
                 Names {uc.missingPatterns.length} pattern
                 {uc.missingPatterns.length === 1 ? "" : "s"} that do not exist:{" "}
@@ -419,7 +419,7 @@ export function PatternsDashboard({
   if (state.kind === "error") {
     return (
       <Box p="6">
-        <Callout.Root color="red">
+        <Callout.Root color="red" role="alert">
           <Callout.Text>Failed to load patterns: {state.message}</Callout.Text>
         </Callout.Root>
       </Box>
@@ -505,7 +505,7 @@ export function PatternsDashboard({
       </Text>
 
       {index.recipesNamingMissingPatterns.length > 0 && (
-        <Callout.Root color="red" mb="4">
+        <Callout.Root color="red" role="alert" mb="4">
           <Callout.Text>
             {index.recipesNamingMissingPatterns.length} captured recipe
             {index.recipesNamingMissingPatterns.length === 1 ? "" : "s"} name a
@@ -529,7 +529,7 @@ export function PatternsDashboard({
       )}
 
       {index.patternsClaimingUnknownApps.length > 0 && (
-        <Callout.Root color="red" mb="4">
+        <Callout.Root color="red" role="alert" mb="4">
           <Callout.Text>
             {index.patternsClaimingUnknownApps.length} pattern
             {index.patternsClaimingUnknownApps.length === 1 ? "" : "s"} claim a

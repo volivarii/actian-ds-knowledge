@@ -59,7 +59,7 @@ export function A11yCoverageDashboard({ octokit, onOpenFile }: A11yCoverageDashb
   if (state.kind === "error") {
     return (
       <Box p="6">
-        <Callout.Root color="red">
+        <Callout.Root color="red" role="alert">
           <Callout.Text>Failed to load a11y coverage: {state.message}</Callout.Text>
         </Callout.Root>
       </Box>

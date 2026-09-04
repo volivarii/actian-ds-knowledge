@@ -13,6 +13,7 @@
 import { useEffect, useState } from "react";
 import { Badge, Flex, Text } from "@radix-ui/themes";
 import type { SaveState } from "../drafts/useSaveState";
+import { announce } from "../lib/announcer";
 
 export interface SaveStateIndicatorProps {
   state: SaveState;
@@ -42,6 +43,14 @@ export function SaveStateIndicator({ state }: SaveStateIndicatorProps) {
       (id as unknown as { unref: () => void }).unref();
     }
     return () => clearInterval(id);
+  }, [state.kind]);
+
+  // The badge is visual only. The same transitions are spoken through the
+  // header's live region, so a screen-reader user hears that the draft was
+  // saved rather than wondering whether typing did anything (F20).
+  useEffect(() => {
+    if (state.kind === "saving") announce("Saving draft");
+    else if (state.kind === "saved") announce("Draft saved");
   }, [state.kind]);
 
   if (state.kind === "idle") return null;
