@@ -67,6 +67,14 @@ test("a field edited and typed back leaves the batch, for a record the serialize
   );
   const originalLabel = label.value;
   assert.equal(originalLabel, "Dataset", `unexpected fixture label: ${originalLabel}`);
+  // The premise this test rests on: re-emitting this record does NOT reproduce
+  // it, so the revert genuinely exercises #631 rather than the trivial case.
+  // Without this, a future reformat of the fixture would leave the test green
+  // and covering nothing.
+  assert.ok(
+    FILE.includes("- { name: orphan"),
+    "the fixture lost its padded flow map, so it no longer reproduces the #631 case",
+  );
 
   // A real edit stages it.
   fireEvent.change(label, { target: { value: "Datasets" } });
@@ -83,6 +91,63 @@ test("a field edited and typed back leaves the batch, for a record the serialize
     submissionCart.list().find((e) => e.path === PATH),
     undefined,
     "a reverted edit stayed in the batch as a whitespace-only reflow (#631)",
+  );
+  cleanup();
+});
+
+test("a file REOPENED from the batch and typed back to main also leaves it", async () => {
+  // The load path seeds a staged file from the CART's bytes, not from main, so
+  // after a reformat first staged it the assembled file can never equal main
+  // byte for byte again. Deciding on the author's VALUES is what closes it:
+  // otherwise the whitespace-only PR survives a navigate-away-and-back, which
+  // is exactly how an author would meet it.
+  cleanup();
+  setWysiwygFlag("source");
+  const submissionCart = await cart();
+  submissionCart.clear();
+  const { FrontmatterBodyEditScreen } = await import("../../src/app/FrontmatterBodyEditScreen");
+  const gh = fakeGh({ "schemas/app-context-entity.json": SCHEMA, [PATH]: FILE });
+  const screenFor = () => (
+    <Theme>
+      <FrontmatterBodyEditScreen path={PATH} {...formProps} octokit={gh} />
+    </Theme>
+  );
+  const findLabel = async () =>
+    await waitFor(
+      () => {
+        const el = document.getElementById("root_label") as HTMLInputElement | null;
+        assert.ok(el, "the entity form never rendered its label field");
+        return el!;
+      },
+      { timeout: 8000 },
+    );
+
+  // Session one: stage a real edit.
+  render(screenFor());
+  fireEvent.change(await findLabel(), { target: { value: "Datasets" } });
+  await settle();
+  const staged = submissionCart.list().find((e) => e.path === PATH);
+  assert.ok(staged, "a real edit did not reach the batch");
+  // The staged bytes really are a reformat of main, not just an edit: the
+  // untouched `properties` lines lost their flow padding. Asserted so this
+  // test cannot quietly stop covering the case it exists for.
+  assert.ok(
+    staged!.content.includes("{name: orphan"),
+    "the staged file is not a reformat, so this test no longer reproduces the reopen case",
+  );
+
+  // Session two: the screen remounts and loads the file FROM THE BATCH.
+  cleanup();
+  render(screenFor());
+  const reopened = await findLabel();
+  assert.equal(reopened.value, "Datasets", "the reopened screen did not load the staged edit");
+
+  fireEvent.change(reopened, { target: { value: "Dataset" } });
+  await settle();
+  assert.equal(
+    submissionCart.list().find((e) => e.path === PATH),
+    undefined,
+    "a file reopened from the batch and typed back to main stayed staged (#631)",
   );
   cleanup();
 });

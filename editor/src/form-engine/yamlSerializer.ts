@@ -110,19 +110,35 @@ export function isUnchangedFromSource(
   frontmatterText: string | null,
 ): boolean {
   if (!frontmatterText) return false;
-  let original: Record<string, unknown>;
-  try {
-    original = (yaml.parseDocument(frontmatterText).toJS() ?? {}) as Record<string, unknown>;
-  } catch {
-    return false;
-  }
+  return isUnchangedAgainst(yaml.parseDocument(frontmatterText), formData);
+}
+
+/** The same question asked of a document the caller has already parsed, so the
+ *  save path does not parse the frontmatter twice on every debounced keystroke. */
+function isUnchangedAgainst(doc: yaml.Document, formData: unknown): boolean {
+  // `parseDocument` does NOT throw on malformed YAML: it returns a document
+  // carrying `errors` and a best-effort parse (": : not yaml [" comes back as
+  // `{"": {"": "not yaml ["}}`). Reading `errors` is the only way to refuse it;
+  // a try/catch here would be dead code that looks like a guard.
+  if (doc.errors.length > 0) return false;
+  const original = (doc.toJS() ?? {}) as Record<string, unknown>;
   if (formData === null || typeof formData !== "object" || Array.isArray(formData)) return false;
   const data = formData as Record<string, unknown>;
   const originalKeys = Object.keys(original);
   const dataKeys = Object.keys(data);
+  // Key ORDER is deliberately NOT compared. This path merges values into the
+  // author's document; it never moves a pair, because `doc.set` on an existing
+  // key replaces the value in place. So a reordered `formData` produces the
+  // author's original order whether or not the comparison notices, and
+  // treating it as an edit would only cost a reformat that changes nothing.
+  // The surface that CAN reorder keys is the YAML source view, and it writes
+  // the author's text verbatim (assembleYamlFrontmatterFile).
   if (originalKeys.length !== dataKeys.length) return false;
   for (const key of originalKeys) {
-    if (!(key in data)) return false;
+    // `hasOwnProperty`, not `in`: `"toString" in {}` is true, so `in` would
+    // pass a key the form actually dropped through to a comparison against an
+    // inherited function. Matches deepEqual's own membership test below.
+    if (!Object.prototype.hasOwnProperty.call(data, key)) return false;
     if (!deepEqual(original[key], data[key])) return false;
   }
   return true;
@@ -165,11 +181,6 @@ export function assembleFrontmatterFilePreservingComments(
   frontmatterText: string | null,
   body: string,
 ): string {
-  // Nothing edited: the author's bytes are already the right answer, and
-  // re-emitting them is what made 29 of these files unreachable fixed points.
-  if (isUnchangedFromSource(formData, frontmatterText)) {
-    return joinFrontmatter(frontmatterText!, body);
-  }
   let fm: string;
   if (!frontmatterText) {
     fm = stringifyYaml(formData);
@@ -177,6 +188,12 @@ export function assembleFrontmatterFilePreservingComments(
     // Re-parse from TEXT (not from the caller's parsed JS): comments only exist
     // in the source bytes, and a `yaml.Document` retains them as node props.
     const doc = yaml.parseDocument(frontmatterText);
+    // Nothing edited: the author's bytes are already the right answer, and
+    // re-emitting them is what made 29 of these files unreachable fixed
+    // points. Asked of the document just parsed, not of the text again.
+    if (isUnchangedAgainst(doc, formData)) {
+      return joinFrontmatter(frontmatterText, body);
+    }
     const data = (formData ?? {}) as Record<string, unknown>;
     const original = (doc.toJS() ?? {}) as Record<string, unknown>;
     // Delete removed keys via a pre-collected list + key-lookup deletion —

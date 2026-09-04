@@ -103,6 +103,43 @@ export function assembleFrontmatterFile(
   return joinFrontmatter(yaml, body);
 }
 
+/**
+ * Is there nothing to submit for this file?
+ *
+ * Two ways, because the text the screen was seeded with is not always main's.
+ * A file reopened from the batch loads the CART's bytes as its donor, so after
+ * a revert the assembled file still carries whatever reformat first staged it
+ * and can never equal main byte for byte again (#631). So: either what we would
+ * write IS main's bytes, or the author's values and prose are back to main's.
+ *
+ * The body is half the question. A prose edit leaves every frontmatter value
+ * equal to main's, and dropping such a file from the batch would discard the
+ * author's writing behind a green save badge.
+ */
+export function nothingToSubmit(args: {
+  /** The file this save would write. */
+  content: string;
+  /** The bytes on main, or null when the file is new. */
+  baseline: string | null;
+  /** The prose body as it stands. */
+  body: string;
+  /** The form's current values (the form surface). */
+  formData: unknown;
+  /** The frontmatter text as it stands (the YAML source surface). */
+  frontmatterText: string;
+  /** True when the YAML source pane, not the form, is the surface in use. */
+  yamlActive: boolean;
+}): boolean {
+  const { content, baseline, body, formData, frontmatterText, yamlActive } = args;
+  if (baseline === null) return false;
+  if (content === baseline) return true;
+  const fromMain = splitFrontmatter(baseline);
+  if (body !== fromMain.body) return false;
+  return yamlActive
+    ? frontmatterText === (fromMain.frontmatterText ?? "")
+    : isUnchangedFromSource(formData, fromMain.frontmatterText);
+}
+
 interface Props {
   path: string;
   schemaKey: string;
@@ -503,11 +540,17 @@ export function FrontmatterBodyEditScreen(props: Props) {
       // submit: it leaves the batch rather than sitting there as a no-op PR.
       // An explicit "Add to batch" is the author's own call and still stages,
       // byte-identical content included (the stale-base guard rides on it).
-      // This test can only fire because every routed file is a byte fixed
-      // point of its own save path (#631, guarded by formSaveFixedPoint.test):
-      // while 30 of them were not, a file typed back to what was loaded still
-      // assembled to a reformat and sat in the batch as a whitespace-only PR.
-      if (!explicit && state.baseline !== null && content === state.baseline) {
+      if (
+        !explicit &&
+        nothingToSubmit({
+          content,
+          baseline: state.baseline,
+          body: b,
+          formData: fd,
+          frontmatterText: fm,
+          yamlActive,
+        })
+      ) {
         submissionCartSingleton.remove(path);
         return;
       }

@@ -28,7 +28,9 @@ test("round-trips frontmatter semantically and preserves the body", () => {
 test("preserves a leading yaml-language-server comment", () => {
   const original =
     "# yaml-language-server: $schema=../../../schemas/category-defaults.json\nslug: action";
-  const out = assembleFrontmatterFile({ slug: "action" }, original, "\nbody\n");
+  // A CHANGED document: an unedited one comes back verbatim (#631), which
+  // would keep the directive without `extractLeadingHeader` doing anything.
+  const out = assembleFrontmatterFile({ slug: "action", label: "Action" }, original, "\nbody\n");
   assert.ok(
     out.includes(
       "# yaml-language-server: $schema=../../../schemas/category-defaults.json",
@@ -77,14 +79,21 @@ test("1114: an unchanged file with no blank line after the fence reassembles to 
     file,
     "comment-preserving path is byte-stable",
   );
-  // The plain path re-serialises YAML (quotes are its own call), so its
-  // byte-stability is asserted on a fixture it would write itself.
+  // The plain path re-serialises YAML (quotes are its own call). Asserted on
+  // an EDITED document: an unedited one is returned verbatim (#631), so the
+  // fence-separator claim would hold without the serializer being reached.
   const plain = "---\ntitle: Forms\nnav_order: 14\n---\n# Forms\n\nProse.\n";
   const p = splitFrontmatter(plain);
   assert.equal(
+    assembleFrontmatterFile({ title: "Forms", nav_order: 15 }, p.frontmatterText, p.body, 2),
+    "---\ntitle: Forms\nnav_order: 15\n---\n# Forms\n\nProse.\n",
+    "plain path adds no blank line after the fence",
+  );
+  // ...and unedited, the author's own bytes come back (the #631 contract).
+  assert.equal(
     assembleFrontmatterFile(p.data, p.frontmatterText, p.body, 2),
     plain,
-    "plain path adds no blank line after the fence",
+    "an unedited plain-path save rewrote the file",
   );
 });
 

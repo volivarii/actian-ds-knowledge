@@ -10,6 +10,7 @@ import {
   isUnchangedFromSource,
 } from "../../src/form-engine/yamlSerializer";
 import { assembleFrontmatterFile } from "../../src/app/FrontmatterBodyEditScreen";
+import { parseDocument as yamlParseForTest } from "yaml";
 
 // #631: every file the registry routes to a form must be a BYTE fixed point of
 // its own save path. It was 66 of 96; the 30 others came back reformatted, so
@@ -61,7 +62,12 @@ function saveUnedited(rel: string, cfg: NonNullable<ReturnType<typeof matchFront
   return { original, rebuilt };
 }
 
-test("every form-routed file is a byte fixed point of its own save path (#631)", () => {
+// Scope: the `.md` files `matchFrontmatterForm` routes, which is #631's own
+// subject. `components/src/*/_meta.yml` is edited by a DIFFERENT screen
+// (MetaEditScreen -> stringifyYaml) that has no such shortcut and whose files
+// are CRLF; none of them is a fixed point today, and nothing here would go red
+// for them.
+test("every form-routed .md file is a byte fixed point of its own save path (#631)", () => {
   const files = routedFiles();
   // The floor is the guard's own subject: a walk that stopped finding files
   // would otherwise pass by iterating nothing.
@@ -104,7 +110,41 @@ test("an edit is never swallowed by the unchanged shortcut", () => {
     assert.equal(isUnchangedFromSource(data, source), false, `${what} was read as unchanged`);
     const out = assembleFrontmatterFilePreservingComments(data, source, "body\n");
     assert.notEqual(out, `---\n${source}---\nbody\n`, `${what} was written back as the original bytes`);
+    // Differing bytes are not enough: a save that reformatted the document
+    // while dropping the edit would pass that. Assert the edit is IN there,
+    // which is what a resurrected removed key would fail.
+    assert.deepEqual(
+      splitFrontmatter(out).data,
+      data,
+      `${what} did not survive into the saved file`,
+    );
   }
+});
+
+test("a reorder cannot be written by this path, so it is not treated as an edit", () => {
+  // Asserted because it looks like data loss and is not: `doc.set` replaces a
+  // value in place and never moves a pair, so the merge path emits the
+  // author's original order too. Calling a reorder an edit would buy a
+  // reformat that changes nothing. The surface that CAN reorder is the YAML
+  // source view, which writes the author's text verbatim.
+  const source = "b: 2\na: 1\n";
+  const reordered = { a: 1, b: 2 };
+  assert.equal(isUnchangedFromSource(reordered, source), true, "a reorder was treated as an edit");
+  const viaMerge = assembleFrontmatterFilePreservingComments(reordered, source, "body\n");
+  assert.equal(viaMerge, "---\nb: 2\na: 1\n---\nbody\n", "the source order did not survive");
+  // And the value edit that rides along with a reorder still lands.
+  const alsoEdited = assembleFrontmatterFilePreservingComments({ a: 9, b: 2 }, source, "body\n");
+  assert.equal(splitFrontmatter(alsoEdited).data!.a, 9, "an edit alongside a reorder was dropped");
+});
+
+test("a document yaml could not parse is refused, errors and all", () => {
+  // `parseDocument` never throws: it returns a best-effort parse plus errors.
+  // ": : not yaml [" comes back as {"": {"": "not yaml ["}}, so without
+  // reading `doc.errors` a broken document is a valid comparison basis.
+  const broken = ": : not yaml [";
+  const doc = yamlParseForTest(broken);
+  assert.ok(doc.errors.length > 0, "the fixture is not actually malformed any more");
+  assert.equal(isUnchangedFromSource(doc.toJS(), broken), false, "a document with parse errors was accepted");
 });
 
 test("the shortcut refuses anything it cannot compare, rather than guessing", () => {

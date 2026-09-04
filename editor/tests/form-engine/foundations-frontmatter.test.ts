@@ -32,16 +32,22 @@ test("foundations files route to the foundations form via the preserveComments p
 test("block-style serialize is semantically identical (dist-safe)", () => {
   const { data, frontmatterText, body } = splitFrontmatter(FILE);
   assert.ok(data); // parses under the yaml lib
-  const out = assembleFrontmatterFile(data, frontmatterText, body, null);
+  // An EDITED document, because an unedited one is returned verbatim (#631)
+  // and this guard would compare the file with itself.
+  const edited = { ...(data as Record<string, unknown>), _fixture_edit: "x" };
+  const out = assembleFrontmatterFile(edited, frontmatterText, body, null);
   const reparsed = splitFrontmatter(out);
   // foundations-derive parses frontmatter via YAML.parse (scripts/lib/frontmatter.js),
   // so semantic equality of parsed data proves dist output is unchanged.
-  assert.deepEqual(reparsed.data, data);
+  assert.deepEqual(reparsed.data, edited);
 });
 
 test("leading comment block is preserved verbatim on save", () => {
   const { data, frontmatterText, body } = splitFrontmatter(FILE);
-  const out = assembleFrontmatterFile(data, frontmatterText, body, null);
+  // Edited, so the header is preserved by `extractLeadingHeader` rather than
+  // by the unedited shortcut handing the bytes back untouched.
+  const edited = { ...(data as Record<string, unknown>), _fixture_edit: "x" };
+  const out = assembleFrontmatterFile(edited, frontmatterText, body, null);
   assert.ok(out.includes("# P8 transversal refs - file-scoped (Option A)"));
 });
 
