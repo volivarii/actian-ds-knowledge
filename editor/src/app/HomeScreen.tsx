@@ -38,8 +38,8 @@ import {
   topGaps,
   type AttentionBand,
 } from "../lib/needsAttention";
-import { DOMAIN_LABEL } from "../lib/workspaceState";
 import { CoverageDashboard } from "./CoverageDashboard";
+import { CoverageCells } from "./CoverageCells";
 import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
 import { GraphHealthTab } from "./GraphHealthTab";
 import { PatternsDashboard } from "./PatternsDashboard";
@@ -309,13 +309,17 @@ export function HomeScreen({
                     <Text weight="medium" as="div">
                       {item.component}
                     </Text>
-                    <Flex gap="1" mt="1" wrap="wrap">
-                      {item.missing.map((d) => (
-                        <Badge key={d} variant="soft" color="gray" size="1">
-                          {DOMAIN_LABEL[d]} missing
-                        </Badge>
-                      ))}
-                    </Flex>
+                    {/* One readout, not one badge per absent domain. The
+                        badges said the same word five times and could not
+                        tell a draft from a category default; the cells can,
+                        and the accessible name still spells every status
+                        out. */}
+                    <Box mt="2">
+                      <CoverageCells
+                        statuses={item.statuses}
+                        subject={item.component}
+                      />
+                    </Box>
                   </Box>
                   <Button
                     variant="soft"

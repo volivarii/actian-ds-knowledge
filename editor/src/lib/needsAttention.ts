@@ -9,7 +9,12 @@
 //   2 — authored components with any other not-started domain
 // Alphabetical by slug within a band. Pure data transform, no I/O.
 
-import { DOMAINS, type CoverageRow, type Domain } from "./coverageLoader";
+import {
+  DOMAINS,
+  type CoverageRow,
+  type Domain,
+  type Status,
+} from "./coverageLoader";
 
 /** Priority band. Rides each AttentionItem so UI copy keyed by it (an
  *  exhaustive Record<AttentionBand, …> — see HomeScreen.BAND_ACTION_LABEL)
@@ -22,6 +27,16 @@ export interface AttentionItem {
   band: AttentionBand;
   /** Domains with status "not-started", in canonical DOMAINS order. */
   missing: Domain[];
+  /**
+   * Every domain's status, not just the absent ones.
+   *
+   * `missing` answers "what is unwritten", which is what the ranking needs.
+   * The readout beside each row has to distinguish written from
+   * half-written from unwritten, and a list of absences cannot tell the
+   * first two apart. Carried here rather than re-read from the row so the
+   * item stays the whole answer for one line of the list.
+   */
+  statuses: Record<Domain, Status>;
   /** Navigation target — the component's authoring workspace. */
   target: string;
 }
@@ -39,6 +54,13 @@ export function authoredUsageGapCount(rows: CoverageRow[]): number {
  *  without paying topGaps' sort. */
 export function gapCount(rows: CoverageRow[]): number {
   return rows.filter((r) => missingDomains(r).length > 0).length;
+}
+
+/** The row's five statuses, flattened out of its DomainEntry map. */
+function statusesOf(row: CoverageRow): Record<Domain, Status> {
+  return Object.fromEntries(
+    DOMAINS.map((d) => [d, row.domains[d].status]),
+  ) as Record<Domain, Status>;
 }
 
 function missingDomains(row: CoverageRow): Domain[] {
@@ -68,6 +90,7 @@ export function topGaps(rows: CoverageRow[], limit: number): AttentionItem[] {
       component: row.component,
       band,
       missing,
+      statuses: statusesOf(row),
       target: `workspace/${row.slug}`,
     }));
 }

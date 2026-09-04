@@ -1,0 +1,127 @@
+/* ----------------------------------------------------------------------------
+ * The instrument layer: the editor's OWN visual identity.
+ *
+ * Two vocabularies live in this app and they must not be confused.
+ *
+ *   --zen-*  (tokens.css, generated from tokens/tokens.json)
+ *            is the DESIGN SYSTEM's vocabulary. It is vendored in so the
+ *            preview pane can render design-system content in the design
+ *            system's own colours. It is the material on the workbench.
+ *
+ *   --ed-*   (this file, hand-owned)
+ *            is the workbench. The editor is a tool FOR authoring the design
+ *            system, and dressing the tool in the system it edits makes it
+ *            impossible to tell, at a glance, which surface you are looking
+ *            at. Keeping them apart is the point, not an oversight.
+ *
+ * The look is an instrument panel: a readout you scan, legends you read when
+ * you need them, and exactly one hot colour.
+ *
+ * --ed-signal means HERE AND NOW: the current item, the active scope, the
+ * thing focus is on. It is never a status. Status is carried by how lit a
+ * cell is, so the panel can be read with the signal colour removed entirely.
+ * ------------------------------------------------------------------------- */
+
+:root {
+  /* The one hot colour. Position, not condition. */
+  --ed-signal: #ff4e00;
+
+  /* The readout. Three lit levels, and the well an unlit cell sits in. */
+  --ed-lit: #101010;
+  --ed-half: #8a8a84;
+  --ed-well-edge: #b4b4ae;
+
+  /* The tiny legend under a control, and the face it is set in. */
+  --ed-legend: #6e6e68;
+  --ed-font-legend: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
+    monospace;
+
+  /* Readout geometry. One scale, so a strip in a list and a strip in a
+     matrix are the same instrument at two sizes. */
+  --ed-cell-w: 9px;
+  --ed-cell-h: 14px;
+  --ed-cell-gap: 3px;
+  --ed-cell-radius: 1px;
+}
+
+[data-theme="dark"] {
+  --ed-signal: #ff5c1a;
+  --ed-lit: #f2f0eb;
+  --ed-half: #7e7e78;
+  --ed-well-edge: #55554f;
+  --ed-legend: #97978f;
+}
+
+/* ---- the readout ------------------------------------------------------- */
+
+.ed-readout {
+  display: inline-flex;
+  gap: var(--ed-cell-gap);
+  align-items: center;
+  vertical-align: -2px;
+}
+
+.ed-cell {
+  width: var(--ed-cell-w);
+  height: var(--ed-cell-h);
+  flex: none;
+  border-radius: var(--ed-cell-radius);
+  border: 1px solid var(--ed-well-edge);
+  background: transparent;
+}
+
+/* Lit: the domain is authored. */
+.ed-cell--authored {
+  background: var(--ed-lit);
+  border-color: var(--ed-lit);
+}
+
+/* Half lit: started but not approved, or standing on a category default.
+   The bottom half stays an unlit well, so the difference from an authored
+   cell survives greyscale, low vision and a monochrome screenshot. */
+.ed-cell--partial {
+  background: linear-gradient(
+    to bottom,
+    var(--ed-half) 0 50%,
+    transparent 50% 100%
+  );
+  border-color: var(--ed-half);
+}
+
+/* Unlit: nothing written. Left as an open well on purpose. */
+.ed-cell--absent {
+  background: transparent;
+}
+
+/* The matrix packs one cell per component, so it runs narrower and taller
+   than the inline strip. Same instrument, different density. */
+.ed-readout--matrix {
+  --ed-cell-w: 7px;
+  --ed-cell-h: 16px;
+  --ed-cell-gap: 2px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+/* ---- legends ----------------------------------------------------------- */
+
+.ed-legend {
+  font-family: var(--ed-font-legend);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ed-legend);
+}
+
+/* ---- position, never condition ----------------------------------------- */
+
+.ed-here {
+  color: var(--ed-signal);
+}
+
+.ed-readout:focus-visible,
+.ed-here:focus-visible {
+  outline: 2px solid var(--ed-signal);
+  outline-offset: 2px;
+}

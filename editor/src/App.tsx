@@ -9,6 +9,7 @@ import "./styles/tokens.css";
 import "./styles/dark-theme.css";
 import "./styles/editor-chrome.css";
 import "./styles/base.css";
+import "./styles/instrument.css";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { EditorShell } from "./app/EditorShell";
 import type { ExploreTab } from "./app/HomeScreen";
