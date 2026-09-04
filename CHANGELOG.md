@@ -51,7 +51,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
   open one component's guidance. The per-domain tallies no longer wrap to two lines.
   Editor-only: no dist, no schema, no consumer.
 
-- **The editor's front door states no statistics** (PR pending). Home carried a derived sentence
+- **The editor's front door states no statistics**
+  ([#660](https://github.com/volivarii/actian-ds-knowledge/pull/660)). Home carried a derived sentence
   under its h1: "31 components have no guidance at all. Of the 54 started, Tokens is the backlog: 42
   have none authored." Every clause was true, and it broke the one rule the screen was given in the
   change that gave it: the hub links, it never analyses. Its two clauses also described a population
