@@ -617,13 +617,21 @@ test("loadRecipes reports an INCOMPLETE read, not an empty one", async () => {
   const dir = "app-context/dist/recipes";
   const gh = (opts: {
     listThrows?: boolean;
+    /** the status the listing fails with; undefined = a bare Error */
+    listStatus?: number;
     unreadable?: string[];
   }) =>
     ({
       repos: {
         getContent: async ({ path }: { path: string }) => {
           if (path === dir) {
-            if (opts.listThrows) throw new Error("403");
+            if (opts.listThrows) {
+              const e = new Error("listing failed") as Error & {
+                status?: number;
+              };
+              e.status = opts.listStatus;
+              throw e;
+            }
             return {
               data: [
                 { name: "a.json", type: "file" },
@@ -668,5 +676,15 @@ test("loadRecipes reports an INCOMPLETE read, not an empty one", async () => {
   const whole = await loadRecipes(gh({}));
   assert.equal(whole.docs.length, 2);
   assert.equal(whole.readable, true);
+
+  // The directory does not exist. git cannot hold an empty directory, so this
+  // IS "zero recipes": a measured fact, the same split loadOne makes for a
+  // missing _meta.yml. Reporting it as "not measured" was the stronger and
+  // wrong claim, in the one state the repository cannot tell from it.
+  const absent = await loadRecipes(gh({ listThrows: true, listStatus: 404 }));
+  assert.deepEqual(absent, { docs: [], readable: true });
+  // ...while a listing that FAILED is still not a measurement.
+  const forbidden = await loadRecipes(gh({ listThrows: true, listStatus: 403 }));
+  assert.equal(forbidden.readable, false);
 });
 

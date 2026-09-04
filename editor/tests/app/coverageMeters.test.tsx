@@ -320,5 +320,19 @@ test("a component whose _meta.yml cannot be READ is excluded, not counted as emp
       (container.textContent ?? "").includes("could not be read"),
       "a row was dropped from the count with nothing said",
     );
+    // Named, not just counted: a reader should not have to scan the table for
+    // the row that is missing...
+    assert.ok(
+      (container.textContent ?? "").includes("beta"),
+      "the unreadable slug is not named",
+    );
+    // ...and it is missing from the table too, rather than sitting there as
+    // five clickable Empty cells. The loader excludes it once; the Meters and
+    // the table read the same rows, so they cannot disagree about it.
+    assert.equal(
+      container.querySelectorAll("tbody tr").length,
+      1,
+      "the unreadable row was rendered as an empty component",
+    );
   })();
 });

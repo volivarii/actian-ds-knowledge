@@ -201,6 +201,12 @@ Each entry links its pull request. Dates are the merge date (UTC).
   may set `Approved` ([#645](https://github.com/volivarii/actian-ds-knowledge/issues/645)) is
   settled: a contract field with no writer is dead config that reaches consumers.
 
+  The coverage loader rejects, naming the file, when the DS Kit registry cannot be read (it
+  used to shrink every Meter's denominator from 74 to 54 and say nothing), and it moves a
+  `_meta.yml` that could not be read out of the rows it returns and names it, so the Meters,
+  the summary, the table, the front door and the a11y list all count the same rows. An index
+  with no media entries rejects for every reader before it is cached, and a missing recipes
+  directory reads as zero captures rather than as unmeasured.
 - **The editor speaks one controlled vocabulary**
   ([#643](https://github.com/volivarii/actian-ds-knowledge/pull/643), phase 1 of the editor
   nomenclature design). Every screen used to invent its own words. One state was called two things

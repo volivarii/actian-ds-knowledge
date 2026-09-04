@@ -35,6 +35,18 @@ export interface Meter {
 // progress while its numerator sat flat at 78 for three weeks — the pair is the
 // honest report, so the type carries only the pair.
 
+/**
+ * The date a measurement is stamped with: LOCAL and ISO-shaped (YYYY-MM-DD).
+ * `toISOString()` is UTC, and a reader at UTC-7 opening a dashboard at 18:00
+ * saw tomorrow's date on a measurement taken today, which defeats the point of
+ * a dated number. "en-CA" is ISO-shaped and locale-stable for that shape. One
+ * helper, because two screens had each restated this reasoning beside their
+ * own copy of the call.
+ */
+export function measuredToday(): string {
+  return new Date().toLocaleDateString("en-CA");
+}
+
 export function measure<R>(
   records: readonly R[],
   slots: readonly Slot<R>[],

@@ -176,3 +176,24 @@ test("loadMediaCapture: an index that cannot be read rejects naming the index, i
     (err: Error) => /_index\.json/.test(err.message),
   );
 });
+
+test("loadMediaCapture: an index with no entries rejects for every reader, and caches nothing", async () => {
+  // The empty-index rule used to live in loadCapturedSlugs alone, AFTER
+  // loadIndex had cached the empty map: the render panel and the media picker
+  // reported "no media" for every component for the TTL while the coverage
+  // dashboard cleared the cache, and the next panel open re-poisoned it.
+  globalThis.sessionStorage.clear();
+  const gh = fakeGh({ _schema_version: 1, entries: INDEX.media });
+  await assert.rejects(
+    () => loadMediaCapture(gh, "button"),
+    (err: Error) => /no media entries/.test(err.message),
+  );
+  assert.equal(globalThis.sessionStorage.length, 0, "the empty index was cached");
+  // The picker is lenient by design: nothing offered, no throw.
+  assert.deepEqual(await loadMediaRoles(gh, "alert-banner"), []);
+  // Positive control for the cache assertion: a real index IS cached, so the
+  // zero above is about the empty index and not about caching being absent.
+  const good = await loadMediaCapture(fakeGh(INDEX), "button");
+  assert.ok(good);
+  assert.equal(globalThis.sessionStorage.length, 1);
+});

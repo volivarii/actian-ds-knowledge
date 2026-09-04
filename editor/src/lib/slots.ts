@@ -122,7 +122,7 @@ export const PATTERN_SLOTS: Slot<PatternSlotRecord>[] = [
     key: "rule",
     name: SLOT_LABEL.rule,
     filled: (r) => wordCount(r.when) > 0,
-    help: "When to reach for this pattern and what to use instead — the sentence that stops it being applied to the wrong problem. access-request-management names the pattern it must not be confused with.",
+    help: "When to reach for this pattern and what to use instead: the sentence that stops it being applied to the wrong problem. access-request-management names the pattern it must not be confused with.",
     action: "Write",
   },
   {
@@ -223,7 +223,7 @@ export const ENTITY_SLOTS: Slot<EntitySlotRecord>[] = [
     key: "link",
     name: SLOT_LABEL.link,
     filled: (r) => r.relationshipVerbs.length > 0,
-    help: "How this entity sits in the model — what it contains, belongs to or uses. access-request uses an output-port and requires a use-case; api-key stands alone.",
+    help: "How this entity sits in the model: what it contains, belongs to or uses. access-request uses an output-port and requires a use-case; api-key stands alone.",
     action: "Attach",
   },
   {
@@ -405,13 +405,13 @@ export function componentSlotRecords(
  */
 const DOMAIN_HELP: Record<Domain, string> = {
   content:
-    "The words in and around the component — labels, empty states, errors. alert-banner covers all four severities and the prefixes not to write.",
+    "The words in and around the component: labels, empty states, errors. alert-banner covers all four severities and the prefixes not to write.",
   usage:
     "When to reach for it and when not to. The guidance designers ask for most, and the one most often missing; button is the one to read first.",
   design:
     "How it looks and why: anatomy, spacing, the variants and what each is for. Three components have it; button is the fullest.",
   behavior:
-    "What it does when touched — states, focus, keyboard, motion. button is the ONLY component with authored behavior guidance today, which is what makes this the emptiest column.",
+    "What it does when touched: states, focus, keyboard, motion. button is the ONLY component with authored behavior guidance today, which is what makes this the emptiest column.",
   tokens:
     "Which design tokens it binds, so a theme change reaches it. button names 19 bindings and the part each one paints.",
 };
@@ -451,7 +451,13 @@ export const COMPONENT_SLOTS: Slot<ComponentSlotRecord>[] = [
     key: "capture",
     name: SLOT_LABEL.capture,
     filled: (r) => r.hasCapture,
-    help: "A captured image of the component's default variant, which is what a render can be checked against. button has one; a component without it cannot be checked at all.",
+    // "Matched by slug" is stated because it is the join, and the join has a
+    // known gap: nine authored folders (tag, combo-box, upload-file, ...) are
+    // not registry keys, so they read as uncaptured while the registry entries
+    // they alias to are captured. That IS a gap, in the name rather than the
+    // image, and the help says which so the number is not read as nine
+    // missing screenshots.
+    help: "A captured image of the component's default variant, which is what a render can be checked against. button has one; a component without it cannot be checked at all. Matched by slug, so an authored component whose folder name is not a registry key reads as uncaptured until the two agree.",
     action: "Capture",
   },
 ];

@@ -47,7 +47,7 @@ import {
 } from "../lib/nomenclature";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
-import { measure } from "../lib/measure";
+import { measure, measuredToday } from "../lib/measure";
 import { componentSlotRecords, componentSlotsFor } from "../lib/slots";
 import { loadCapturedSlugs } from "../lib/loadMediaIndex";
 import { DOMAIN_LABEL } from "../lib/workspaceState";
@@ -75,7 +75,7 @@ export function CoverageDashboard({
 }: CoverageDashboardProps) {
   const [state, setState] = useState<
     | { kind: "loading" }
-    | { kind: "ready"; rows: CoverageRow[] }
+    | { kind: "ready"; rows: CoverageRow[]; unreadable: string[] }
     | { kind: "error"; message: string }
   >({ kind: "loading" });
   const cartEntries = useCart(submissionCartSingleton);
@@ -100,8 +100,8 @@ export function CoverageDashboard({
     let cancelled = false;
     (async () => {
       try {
-        const rows = await loadCoverage(octokit);
-        if (!cancelled) setState({ kind: "ready", rows });
+        const { rows, unreadable } = await loadCoverage(octokit);
+        if (!cancelled) setState({ kind: "ready", rows, unreadable });
       } catch (err) {
         if (!cancelled)
           setState({ kind: "error", message: (err as Error).message });
@@ -139,25 +139,18 @@ export function CoverageDashboard({
     // Wait for BOTH. Rendering while the index is still in flight shows a table
     // of Meters that silently excludes one and then changes shape.
     if (state.kind !== "ready" || captures.kind === "loading") return null;
-    // Local date, not UTC — see the note in PatternsDashboard.
-    const at = new Date().toLocaleDateString("en-CA");
-    // A row whose _meta.yml could not be READ carries blank domains as a
-    // placeholder, not as a measurement. Counting it would report
-    // "Behavior 0 of 73" off the back of one throttled request. Excluded from
-    // BOTH halves, and the count is shown below so the denominator is not
-    // quietly smaller than the table.
-    const readable = state.rows.filter((r) => !r.unreadable);
-    return {
-      meters: measure(
-        componentSlotRecords(
-          readable,
-          captures.kind === "ready" ? captures.slugs : new Set<string>(),
-        ),
-        componentSlotsFor(captures.kind === "ready"),
-        at,
+    // `state.rows` holds only rows that were READ: the loader moves an
+    // unreadable `_meta.yml` into `state.unreadable` before any screen sees
+    // it, so this count and the table below it cannot disagree about the
+    // denominator. The note under the Meters names what was left out.
+    return measure(
+      componentSlotRecords(
+        state.rows,
+        captures.kind === "ready" ? captures.slugs : new Set<string>(),
       ),
-      unreadable: state.rows.length - readable.length,
-    };
+      componentSlotsFor(captures.kind === "ready"),
+      measuredToday(),
+    );
   }, [state, captures]);
 
   if (state.kind === "loading") {
@@ -202,13 +195,16 @@ export function CoverageDashboard({
           <MeterList
             groupKey="component"
             title={THING_LABEL.component}
-            meters={meters.meters}
+            meters={meters}
           />
-          {meters.unreadable > 0 && (
+          {state.unreadable.length > 0 && (
+            // Named, not counted: "1 component could not be read" sends a
+            // reader to scan 73 rows for the one that is missing.
             <Text size="1" color="gray" as="p" mt="2">
-              {meters.unreadable} component
-              {meters.unreadable === 1 ? "" : "s"} could not be read and{" "}
-              {meters.unreadable === 1 ? "is" : "are"} not counted above.
+              {state.unreadable.length} component
+              {state.unreadable.length === 1 ? "" : "s"} could not be read and{" "}
+              {state.unreadable.length === 1 ? "is" : "are"} not counted above
+              or in the table: {state.unreadable.join(", ")}.
             </Text>
           )}
           {captures.kind === "failed" && (
@@ -218,7 +214,7 @@ export function CoverageDashboard({
             // yesterday and not today could not tell a measure that failed from
             // one that was deleted.
             <Text size="1" color="gray" as="p" mt="2">
-              {SLOT_LABEL.capture} not measured — the media index could not be
+              {SLOT_LABEL.capture} not measured: the media index could not be
               read.
             </Text>
           )}

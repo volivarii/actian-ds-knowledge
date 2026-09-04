@@ -380,7 +380,14 @@ export async function loadRecipes(
   let files: string[];
   try {
     files = await listFilesByGlob(gh, RECIPES_DIR, { extension: ".json" });
-  } catch {
+  } catch (err) {
+    // git cannot hold an empty directory, so "no recipe exists" IS a 404 on
+    // the directory: a measured zero, the same split loadOne makes for a
+    // missing _meta.yml. Anything else (403, 429, 5xx) is a listing that
+    // failed, and "not measured" is the honest report for that.
+    if ((err as { status?: number }).status === 404) {
+      return { docs: [], readable: true };
+    }
     return { docs: [], readable: false };
   }
   const docs: RecipeDoc[] = [];

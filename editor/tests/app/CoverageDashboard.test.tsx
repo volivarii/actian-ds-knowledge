@@ -30,6 +30,13 @@ function fakeGh(opts: {
     repos: {
       getContent: async ({ path }: { path: string }) => {
         if (path === "components/src") return { data: opts.dirs };
+        if (path === "components/dist/registries/dskit.json") {
+          // A load that cannot read the registry now rejects; these screens
+          // are not the subject of that rule, so the fake serves an empty one.
+          return {
+            data: { content: b64(JSON.stringify({ components: {} })), encoding: "base64" },
+          };
+        }
         const content = opts.files[path];
         if (content === undefined) {
           const err = new Error("not found") as Error & { status: number };

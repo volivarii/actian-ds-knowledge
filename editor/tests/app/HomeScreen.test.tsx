@@ -26,11 +26,27 @@ function b64(s: string): string {
 function fakeGh(opts: {
   dirs: Array<{ name: string; type: "dir" | "file" }>;
   files: Record<string, string>;
+  /** slugs whose _meta.yml answers 403 rather than 404 */
+  throttle?: string[];
 }) {
   return {
     repos: {
       getContent: async ({ path }: { path: string }) => {
         if (path === "components/src") return { data: opts.dirs };
+        if (path === "components/dist/registries/dskit.json") {
+          // A load that cannot read the registry now rejects; these screens
+          // are not the subject of that rule, so the fake serves an empty one.
+          return {
+            data: { content: b64(JSON.stringify({ components: {} })), encoding: "base64" },
+          };
+        }
+        if (
+          (opts.throttle ?? []).some((s) => path === `components/src/${s}/_meta.yml`)
+        ) {
+          const err = new Error("forbidden") as Error & { status: number };
+          err.status = 403;
+          throw err;
+        }
         const content = opts.files[path];
         if (content === undefined) {
           const err = new Error("not found") as Error & { status: number };
@@ -103,6 +119,41 @@ test("HomeScreen: hero, honest counts, and the needs-attention list ranked usage
   });
   fireEvent.click(continueBtn);
   assert.deepEqual(opened, ["workspace/tabs", "workspace/button"]);
+});
+
+test("HomeScreen: a component that could not be read is named, not counted", async () => {
+  // The loader moves an unreadable _meta.yml out of the rows every consumer
+  // counts. Home shows the count those rows feed, so it has to say what was
+  // left out, or "N components" is a quietly smaller number than the
+  // repository holds.
+  render(
+    wrap(
+      <HomeScreen
+        octokit={fakeGh({ dirs: DIRS, files: FILES, throttle: ["tabs"] })}
+        onOpenFile={() => {}}
+      />,
+    ),
+  );
+  // The HERO's note, beside the count it qualifies. The phrasing is matched
+  // exactly because two other notes on this page also say "could not be
+  // read": the embedded coverage dashboard's row note ("not counted above or
+  // in the table") and its media-index note, which names no slug. A looser
+  // match stayed green with the hero note deleted.
+  const note = await waitFor(() =>
+    screen.getByText(/could not be read and (is|are) not counted: /i),
+  );
+  assert.match(note.textContent ?? "", /\btabs\b/, "the unreadable slug is not named");
+  // The count is derived from the fixture, not pinned: every readable dir is
+  // an authored row (the fake registry is empty, so there are no ghosts).
+  const readable = DIRS.filter(
+    (d) =>
+      d.type === "dir" &&
+      d.name !== "tabs" &&
+      !["categories", "guidelines"].includes(d.name),
+  ).length;
+  screen.getByText(
+    new RegExp(`${readable} of ${readable} components have authored`, "i"),
+  );
 });
 
 test("HomeScreen: zero gaps shows the all-covered state, not a zero count", async () => {

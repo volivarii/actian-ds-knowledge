@@ -23,6 +23,7 @@ import {
   Spinner,
   Table,
   Text,
+  VisuallyHidden,
 } from "@radix-ui/themes";
 import {
   loadPatternIndex,
@@ -34,7 +35,7 @@ import {
 } from "../lib/patternIndex";
 import { onActivateKey } from "../lib/onActivateKey";
 import { THING_LABEL, SLOT_LABEL } from "../lib/nomenclature";
-import { measure } from "../lib/measure";
+import { measure, measuredToday } from "../lib/measure";
 import {
   patternSlotsFor,
   ENTITY_SLOTS,
@@ -140,15 +141,20 @@ function PatternTable({
               {!recipesReadable && p.recipes.length === 0 ? (
                 // A bare "?" is cryptic on its own, and this cell is the only
                 // place a reader meets the distinction. The title and the
-                // accessible label carry the reason, so it does not depend on
-                // having read the note above the table.
+                // visually hidden text carry the reason, so it does not depend
+                // on having read the note above the table. Hidden TEXT and not
+                // `aria-label`: a Radix Text is a span with no role, and ARIA
+                // 1.2 prohibits naming a generic element, so assistive
+                // technology dropped the label and announced "?".
                 <Text
                   size="1"
                   color="gray"
-                  title="Not measured — the captures could not be read"
-                  aria-label="Captures not measured"
+                  title="Not measured: the captures could not be read"
                 >
-                  ?
+                  <span aria-hidden="true">?</span>
+                  <VisuallyHidden>
+                    Captures not measured: they could not be read
+                  </VisuallyHidden>
                 </Text>
               ) : p.recipes.length === 0 ? (
                 <Text size="1" color="gray">
@@ -339,11 +345,7 @@ export function PatternsDashboard({
   const meters = useMemo(() => {
     if (state.kind !== "ready") return null;
     const index = state.index;
-    // The read time, in the READER's timezone. `toISOString()` is UTC, so a
-    // reader at UTC-7 opening this at 18:00 saw tomorrow's date on a
-    // measurement taken today — which defeats the point of a dated number.
-    // "en-CA" is ISO-shaped (YYYY-MM-DD) and locale-stable for that shape.
-    const at = new Date().toLocaleDateString("en-CA");
+    const at = measuredToday();
     return {
       pattern: measure(
         patternSlotRecords(index),
@@ -443,7 +445,7 @@ export function PatternsDashboard({
             // Say why the Meter is absent. Dropping it in silence is the same
             // omission as reporting a zero nobody can explain.
             <Text size="1" color="gray" as="p" mb="2">
-              {SLOT_LABEL.capture} not measured — the captures could not be
+              {SLOT_LABEL.capture} not measured: the captures could not be
               read completely. Either the directory would not list, or a file
               in it would not read.
             </Text>

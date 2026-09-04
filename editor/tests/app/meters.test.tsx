@@ -152,6 +152,21 @@ test("a complete Meter is dimmed, not hidden", () => {
   );
 });
 
+test("a Meter group title is a heading below the page heading, not an h1", () => {
+  // Radix `Heading` defaults `as` to h1. Four groups on the patterns dashboard
+  // rendered four page-level h1s under the page's h3, which a screen reader's
+  // heading list presents as four pages.
+  const { container } = mount(
+    <MeterList groupKey="g" title="Pattern" meters={METERS} />,
+  );
+  assert.ok(container.querySelector("h4"), "the group title should be an h4");
+  assert.equal(
+    container.querySelector("h1") === null,
+    true,
+    "the group title rendered as a page-level h1",
+  );
+});
+
 test("an empty scope says 0 of 0 rather than reading as done", () => {
   const { container } = mount(
     <MeterList
@@ -343,6 +358,19 @@ test("an unreadable captures directory hides the Meter, it does not blank the ap
   );
   // ...the reader is told why...
   assert.ok(text.includes("not measured"), "nothing said about the missing Meter");
+  // The "?" cell carries its reason as TEXT a screen reader announces. It
+  // used to carry it as `aria-label` on a span, which ARIA prohibits and
+  // assistive technology drops; "Captures" plural is the cell, the note above
+  // the table says "Capture".
+  assert.ok(
+    text.includes("Captures not measured"),
+    "the ? cell has no accessible text",
+  );
+  assert.equal(
+    container.querySelector("td span[aria-label]") === null,
+    true,
+    "a table cell still names itself with aria-label on a span",
+  );
   // ...and the prose does not claim zero captures either.
   assert.ok(
     !/\b0 captured page recipes\b/.test(text),
@@ -441,6 +469,59 @@ test("a PARTIAL capture read keeps the chips that loaded", async () => {
   assert.ok(
     chips.length > 0,
     `the capture that loaded was erased: no capture chip rendered. ${text.slice(0, 300)}`,
+  );
+});
+
+test("the prose counts DISTINCT captured recipes, not pattern-recipe pairs", async () => {
+  // Every recipe on disk names exactly one pattern, so the corpus cannot tell
+  // a count of recipes from a count of pattern-recipe pairs: both read 4. The
+  // derivation was changed from pairs to distinct recipes and no test could go
+  // red on it (proved by mutation), so this one serves a SYNTHETIC recipe
+  // naming two patterns. Distinct is 1; the pair count would say 2.
+  const doc = realDoc();
+  const named = Object.keys(doc.patterns ?? {}).slice(0, 2);
+  assert.equal(named.length, 2, "need two real patterns to name");
+  const recipe: RecipeDoc = { slug: "two-patterns", patterns: named, apps: [] };
+  const gh = {
+    repos: {
+      getContent: async ({ path }: { path: string }) => {
+        if (path === "app-context/dist/recipes") {
+          return { data: [{ name: "two-patterns.json", type: "file" }] };
+        }
+        if (path === "app-context/dist/recipes/two-patterns.json") {
+          return {
+            data: { encoding: "base64", content: b64(JSON.stringify(recipe)), sha: "sha" },
+          };
+        }
+        if (path === "app-context/dist/app-context.json") {
+          return {
+            data: { encoding: "base64", content: b64(JSON.stringify(doc)), sha: "sha" },
+          };
+        }
+        const e = new Error("not found") as Error & { status: number };
+        e.status = 404;
+        throw e;
+      },
+      listCommits: async () => ({ data: [] }),
+    },
+    git: {},
+    pulls: {},
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+  const { container } = mount(
+    <PatternsDashboard octokit={gh} onOpenFile={() => {}} />,
+  );
+  await waitFor(() => {
+    assert.ok(container.querySelector('[data-meter="pattern:capture"]'));
+  });
+  const text = container.textContent ?? "";
+  assert.ok(
+    /\b1 captured page recipes? on 2 patterns\b/.test(text),
+    `prose should count one recipe on two patterns: ${text.slice(0, 500)}`,
+  );
+  assert.ok(
+    !/\b2 captured page recipes?\b/.test(text),
+    "the prose counted pattern-recipe pairs, not recipes",
   );
 });
 

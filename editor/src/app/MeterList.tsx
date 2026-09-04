@@ -50,7 +50,12 @@ export function MeterList({
   return (
     <Box>
       <Flex align="baseline" gap="2" mb="2">
-        <Heading size="3">{title}</Heading>
+        {/* `as` is not optional: Radix Heading defaults it to h1, and four
+            groups on the patterns dashboard rendered four page-level h1s under
+            the page's h3, which a heading list reads as four pages. */}
+        <Heading as="h4" size="3">
+          {title}
+        </Heading>
         {measuredAt && (
           <Text size="1" color="gray">
             measured {measuredAt}

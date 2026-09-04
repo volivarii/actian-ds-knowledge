@@ -27,7 +27,7 @@ export function A11yCoverageDashboard({ octokit, onOpenFile }: A11yCoverageDashb
     let cancelled = false;
     (async () => {
       try {
-        const [rows, categoryRefs] = await Promise.all([
+        const [{ rows }, categoryRefs] = await Promise.all([
           loadCoverage(octokit),
           loadCategoryPatternRefs(octokit),
         ]);
