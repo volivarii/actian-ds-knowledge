@@ -168,7 +168,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   fixture chosen so the producer emits both new shapes. The dist itself does not move until the
   next nightly Figma sync; nothing downstream reads `node.layout` today.
 - **Every Thing in the editor has a table of Slots, and a Meter that counts them**
-  ([#TBD](https://github.com/volivarii/actian-ds-knowledge/pull/TBD), phase 2 of the editor
+  ([#652](https://github.com/volivarii/actian-ds-knowledge/pull/652), phase 2 of the editor
   nomenclature design; closes [#644](https://github.com/volivarii/actian-ds-knowledge/issues/644)).
   A **Slot** is a named, measurable part of a Thing — a Pattern's `Rule`, an Entity's `Link`, a
   Product's `Navigation` — with an honest `filled()` test that runs against the substrate at read
