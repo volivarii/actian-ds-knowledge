@@ -959,3 +959,60 @@ test("the coverage overview marks itself the current page when it is open", asyn
   );
   assert.equal(row.getAttribute("aria-current"), "page");
 });
+
+test("two overviews in one tree do not share an accessible name", () => {
+  // The file already works around exactly this: two sections are both called
+  // "Patterns" and sectionHeader takes a `within` to tell them apart. Adding a
+  // second row called "Coverage" would have reintroduced it one section away.
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(LISTINGS)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  return waitFor(() => screen.getByText("Components")).then(() => {
+    toggleSectionKey("components");
+    toggleSectionKey("accessibility");
+    const names = [...document.querySelectorAll('[data-detail="overview"]')].map(
+      (el) => (el.textContent ?? "").trim(),
+    );
+    assert.ok(names.length >= 2, `expected two overview rows, got ${names.length}`);
+    assert.equal(
+      new Set(names).size,
+      names.length,
+      `two overview rows share a name: ${names.join(" | ")}`,
+    );
+  });
+});
+
+test("the current row carries the signal marker and aria-current together", () => {
+  // The instrument layer's one accent means "here". It was declared and
+  // applied to nothing, which makes it config rather than design. Both
+  // channels move together: the colour for the eye, the attribute for
+  // assistive tech.
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGh(LISTINGS)}
+        pendingPaths={new Set()}
+        activePath="coverage"
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  return waitFor(() => screen.getByText("Components")).then(() => {
+    toggleSectionKey("components");
+    return waitFor(() => {
+      const row = screen.getByRole("button", { name: /^Coverage$/i });
+      assert.ok(
+        row.classList.contains("ed-here"),
+        "the current row has no signal marker",
+      );
+      assert.equal(row.getAttribute("aria-current"), "page");
+    });
+  });
+});

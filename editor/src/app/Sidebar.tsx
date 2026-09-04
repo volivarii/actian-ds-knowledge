@@ -21,6 +21,8 @@ import {
   listFilesByGlob,
 } from "./githubApi";
 import { loadOrderManifest } from "../lib/orderManifestLoader";
+import { A11Y_SCREEN_TITLE } from "./A11yCoverageView";
+import { COVERAGE_SCREEN_TITLE } from "./CoverageDashboard";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 import { AddSectionDialog } from "./AddSectionDialog";
@@ -896,6 +898,7 @@ export function Sidebar({
         }}
         role="button"
         tabIndex={0}
+        className={active ? "ed-here" : undefined}
         onClick={() => onSelect(screenPath)}
         onKeyDown={activateOnKey(() => onSelect(screenPath))}
         aria-current={active ? "page" : undefined}
@@ -1022,6 +1025,7 @@ export function Sidebar({
           }}
           role="button"
           tabIndex={0}
+          className={homeActive ? "ed-here" : undefined}
           onClick={() => onSelect(null)}
           onKeyDown={activateOnKey(() => onSelect(null))}
           aria-current={homeActive ? "page" : undefined}
@@ -1044,6 +1048,7 @@ export function Sidebar({
           }}
           role="button"
           tabIndex={0}
+          className={inboxActive ? "ed-here" : undefined}
           onClick={() => onSelect("inbox")}
           onKeyDown={activateOnKey(() => onSelect("inbox"))}
           aria-current={inboxActive ? "page" : undefined}
@@ -1226,6 +1231,10 @@ export function Sidebar({
                 role="group"
                 aria-labelledby="sidebar-section-accessibility-header"
               >
+                {/* The hub tells the reader an overview sits on top of each
+                    scope's tree. It has to be true of every scope that
+                    declares one, not only of Components. */}
+                {overviewRow(A11Y_SCREEN_TITLE, "accessibility")}
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -1282,7 +1291,7 @@ export function Sidebar({
                 {/* On top of the tree, not inside it: coverage is the
                     overview of every component at once, and it was a tab on
                     the front door where it could not be linked to. */}
-                {overviewRow("Coverage", "coverage")}
+                {overviewRow(COVERAGE_SCREEN_TITLE, "coverage")}
                 <ul
                   role="list"
                   style={{ listStyle: "none", padding: 0, margin: 0 }}

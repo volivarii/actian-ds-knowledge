@@ -35,6 +35,7 @@ import {
   type CoverageRow,
 } from "../lib/coverageLoader";
 import {
+  backlogSentence,
   backlogShape,
   gapCount,
   topGaps,
@@ -129,18 +130,11 @@ export function HomeScreen({
         )}
         {counts && (
           <Text size="3" color="gray" as="p">
-            {/* Two facts, told apart. A component nobody has started is not
-                missing one domain, it is missing all five, and folding the two
-                together made the sentence promise a job the list below does
-                not offer. */}
-            {backlog && backlog.unstarted > 0
-              ? `${backlog.unstarted} components have no guidance at all. `
-              : ""}
-            {backlog?.backlog
-              ? `Of the ${backlog.started} started, ${DOMAIN_LABEL[backlog.backlog.domain]} is the backlog: ${backlog.backlog.open} have none authored.`
-              : backlog && backlog.started > 0
-                ? `The ${backlog.started} started have every domain underway.`
-                : `Nothing is unwritten. All ${counts.total} components have every domain started.`}
+            {/* Two facts, told apart, and assembled in one pure function. A
+                component nobody has started is not missing one domain, it is
+                missing all five, and folding the two together made the
+                sentence promise a job the list below does not offer. */}
+            {backlog ? backlogSentence(backlog) : null}
           </Text>
         )}
         {coverage.kind === "ready" && coverage.unreadable.length > 0 && (
@@ -233,8 +227,7 @@ export function HomeScreen({
           Scopes
         </Heading>
         <Text size="2" color="gray" as="p" mb="3">
-          Each holds one part of the substrate. Its overview sits on top of its
-          tree.
+          Each holds one part of the substrate.
         </Text>
         {SCOPES.map((scope) => {
           const overview = scope.overview;

@@ -9,6 +9,7 @@
 //   2 — authored components with any other not-started domain
 // Alphabetical by slug within a band. Pure data transform, no I/O.
 
+import { DOMAIN_LABEL } from "./workspaceState";
 import {
   DOMAINS,
   type CoverageRow,
@@ -114,6 +115,42 @@ export function backlogShape(rows: CoverageRow[]): {
     started: started.length,
     backlog: largestGap(started),
   };
+}
+
+/**
+ * The front door's one sentence about the state of the substrate.
+ *
+ * Pure, and separate from the screen, because assembling it inline produced a
+ * sentence that contradicted itself: with nothing started, the clauses read
+ * "2 components have no guidance at all. Nothing is unwritten." Two
+ * independent ternaries, each correct on its own, and no test could see it
+ * because the fixture always had started rows.
+ */
+export function backlogSentence(shape: {
+  unstarted: number;
+  started: number;
+  backlog: { domain: Domain; open: number } | null;
+}): string {
+  const parts: string[] = [];
+  if (shape.unstarted > 0) {
+    parts.push(
+      `${shape.unstarted} component${shape.unstarted === 1 ? " has" : "s have"} no guidance at all.`,
+    );
+  }
+  if (shape.backlog) {
+    parts.push(
+      `Of the ${shape.started} started, ${DOMAIN_LABEL[shape.backlog.domain]} is the backlog: ${shape.backlog.open} have none authored.`,
+    );
+  } else if (shape.started > 0) {
+    parts.push(
+      shape.unstarted > 0
+        ? `The other ${shape.started} have every domain underway.`
+        : `All ${shape.started} components have every domain underway.`,
+    );
+  }
+  // Nothing started AND nothing unstarted is an empty substrate, which the
+  // caller does not render at all. Anything else has said its piece above.
+  return parts.join(" ");
 }
 
 export function topGaps(rows: CoverageRow[], limit: number): AttentionItem[] {
