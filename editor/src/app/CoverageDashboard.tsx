@@ -37,12 +37,21 @@ import {
   loadCoverage,
   summarize,
   type CoverageRow,
-  type Domain,
   type Status,
 } from "../lib/coverageLoader";
-import { STATE_FOR_STATUS, STATE_LABEL } from "../lib/nomenclature";
+import {
+  STATE_FOR_STATUS,
+  STATE_LABEL,
+  THING_LABEL,
+  SLOT_LABEL,
+} from "../lib/nomenclature";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
+import { measure, measuredToday } from "../lib/measure";
+import { componentSlotRecords, componentSlotsFor } from "../lib/slots";
+import { loadCapturedSlugs } from "../lib/loadMediaIndex";
+import { DOMAIN_LABEL } from "../lib/workspaceState";
+import { MeterList } from "./MeterList";
 
 export interface CoverageDashboardProps {
   octokit: Octokit;
@@ -60,21 +69,13 @@ const STATUS_COLOR: Record<Status, "gray" | "amber" | "blue" | "green"> = {
 // em-dash here, which is a state a reader cannot read.
 const STATUS_LABEL: Record<Status, string> = STATE_FOR_STATUS;
 
-const DOMAIN_LABEL: Record<Domain, string> = {
-  content: "Content",
-  usage: "Usage",
-  design: "Design",
-  behavior: "Behavior",
-  tokens: "Tokens",
-};
-
 export function CoverageDashboard({
   octokit,
   onOpenFile,
 }: CoverageDashboardProps) {
   const [state, setState] = useState<
     | { kind: "loading" }
-    | { kind: "ready"; rows: CoverageRow[] }
+    | { kind: "ready"; rows: CoverageRow[]; unreadable: string[] }
     | { kind: "error"; message: string }
   >({ kind: "loading" });
   const cartEntries = useCart(submissionCartSingleton);
@@ -83,15 +84,45 @@ export function CoverageDashboard({
     [cartEntries],
   );
 
+  // Three states, not two. "Loading" and "cannot be measured" are different
+  // facts and a nullable Set conflates them: the Meters render as soon as the
+  // coverage rows are ready, which can be BEFORE the media index resolves, so a
+  // two-state version dropped the Capture Meter for a transient reason and
+  // popped it in a moment later with nothing said. Omitting a measure without
+  // saying why is the same defect as reporting `0 of 73`.
+  const [captures, setCaptures] = useState<
+    | { kind: "loading" }
+    | { kind: "ready"; slugs: Set<string> }
+    | { kind: "failed" }
+  >({ kind: "loading" });
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const rows = await loadCoverage(octokit);
-        if (!cancelled) setState({ kind: "ready", rows });
+        const { rows, unreadable } = await loadCoverage(octokit);
+        if (!cancelled) setState({ kind: "ready", rows, unreadable });
       } catch (err) {
         if (!cancelled)
           setState({ kind: "error", message: (err as Error).message });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [octokit]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setCaptures({ kind: "loading" });
+      try {
+        const slugs = await loadCapturedSlugs(octokit);
+        if (!cancelled) setCaptures({ kind: "ready", slugs });
+      } catch {
+        // The table is the point of this screen and must still render; only
+        // the Capture Meter drops out.
+        if (!cancelled) setCaptures({ kind: "failed" });
       }
     })();
     return () => {
@@ -103,6 +134,24 @@ export function CoverageDashboard({
     () => (state.kind === "ready" ? summarize(state.rows) : null),
     [state],
   );
+
+  const meters = useMemo(() => {
+    // Wait for BOTH. Rendering while the index is still in flight shows a table
+    // of Meters that silently excludes one and then changes shape.
+    if (state.kind !== "ready" || captures.kind === "loading") return null;
+    // `state.rows` holds only rows that were READ: the loader moves an
+    // unreadable `_meta.yml` into `state.unreadable` before any screen sees
+    // it, so this count and the table below it cannot disagree about the
+    // denominator. The note under the Meters names what was left out.
+    return measure(
+      componentSlotRecords(
+        state.rows,
+        captures.kind === "ready" ? captures.slugs : new Set<string>(),
+      ),
+      componentSlotsFor(captures.kind === "ready"),
+      measuredToday(),
+    );
+  }, [state, captures]);
 
   if (state.kind === "loading") {
     return (
@@ -141,6 +190,36 @@ export function CoverageDashboard({
       <Heading as="h3" size="5" mb="1">
         Coverage
       </Heading>
+      {meters && (
+        <Box mb="4" mt="3">
+          <MeterList
+            groupKey="component"
+            title={THING_LABEL.component}
+            meters={meters}
+          />
+          {state.unreadable.length > 0 && (
+            // Named, not counted: "1 component could not be read" sends a
+            // reader to scan 73 rows for the one that is missing.
+            <Text size="1" color="gray" as="p" mt="2">
+              {state.unreadable.length} component
+              {state.unreadable.length === 1 ? "" : "s"} could not be read and{" "}
+              {state.unreadable.length === 1 ? "is" : "are"} not counted above
+              or in the table: {state.unreadable.join(", ")}.
+            </Text>
+          )}
+          {captures.kind === "failed" && (
+            // The comment on `captures` says omitting a measure without saying
+            // why is the same defect as reporting `0 of 73`. Dropping the Slot
+            // silently WAS that omission: a reader who saw a Capture Meter
+            // yesterday and not today could not tell a measure that failed from
+            // one that was deleted.
+            <Text size="1" color="gray" as="p" mt="2">
+              {SLOT_LABEL.capture} not measured: the media index could not be
+              read.
+            </Text>
+          )}
+        </Box>
+      )}
       <Text size="2" color="gray" mb="3" as="p">
         {counts!.authored} {STATE_LABEL.draft.toLowerCase()} ·{" "}
         {counts!.unstarted} {STATE_LABEL.empty.toLowerCase()} ·{" "}

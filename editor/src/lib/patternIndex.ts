@@ -49,6 +49,43 @@ export interface AppRecord {
   purpose?: string;
   sidebar?: SidebarEntry[];
   useCases?: UseCaseRecord[];
+  /** The audiences this product serves, as authored under `## Users`. */
+  users?: string[];
+  /**
+   * Routing keywords, NOT prose: "steward", "govern", "curate", "lineage".
+   * These are the words that mean "you want Studio" — the same job Pattern
+   * `tags` does. The field name reads like UI feedback and is not that.
+   */
+  signals?: string[];
+}
+
+/** An entity property is either a bare name or a typed declaration. Slots only
+ *  count them, so the union stays loose on purpose. */
+export type EntityProperty =
+  | string
+  | { name: string; type?: string; states?: string[] };
+
+export interface EntityRecord {
+  label?: string;
+  properties?: EntityProperty[];
+  /**
+   * Verb -> entity slugs. The verbs are OPEN (`contains`, `belongsTo`,
+   * `relatesTo`, `subtypeOf`, `derivedFrom`, `uses`, `requires`, `produces`,
+   * `consumes`, `appliesTo`), so this is a map and never a union: a parse keyed
+   * to a closed lowercase verb list read 11 of the 30 records as having
+   * relationships when 22 do, because 16 of them use camelCase verbs.
+   */
+  relationships?: Record<string, string[]>;
+  apps?: string[];
+  description?: string;
+}
+
+export interface TermRecord {
+  /** The word to use. */
+  use?: string;
+  meaning?: string;
+  /** The words to avoid in its place. */
+  notUse?: string[];
 }
 
 export interface PatternRecord {
@@ -63,6 +100,15 @@ export interface PatternRecord {
 export interface AppContextDoc {
   apps: Record<string, AppRecord>;
   patterns: Record<string, PatternRecord>;
+  /**
+   * Optional on the TYPE because `buildPatternIndex`'s fixtures do not carry
+   * them; the real file always does, which `tests/lib/appContextDoc.test.ts`
+   * asserts against the file rather than against the type. Both collections
+   * were carried by app-context.json from the day it shipped and declared by
+   * nothing, so no consumer could reach them.
+   */
+  entities?: Record<string, EntityRecord>;
+  terminology?: Record<string, TermRecord>;
 }
 
 export interface RecipeDoc {
@@ -166,6 +212,25 @@ export interface PatternIndex {
   recipesNamingNoPattern: PatternRecipe[];
   /** Patterns claiming an app the context does not define. */
   patternsClaimingUnknownApps: { pattern: string; apps: string[] }[];
+  /**
+   * The parsed source document, kept so a caller measuring Entities, Products
+   * and Terms does not fetch and parse the same file a second time. The index
+   * itself only needs apps and patterns; the other two collections are in the
+   * same file and there is no second request to make for them.
+   */
+  doc: AppContextDoc;
+  /**
+   * False when the captures could not be read completely — the directory would
+   * not list, or a file it listed would not read.
+   *
+   * `loadRecipes` used to return [] for a failed listing, which was harmless while
+   * captures were only chips on a row. As a MEASURE it is a lie with a number
+   * on it: a rate limit or a transient 5xx makes every `captureCount` zero and
+   * the dashboard reports "Capture 0 of 31" with nothing said. The Component
+   * Capture Slot already drops out when its index cannot be read; without this
+   * flag the two halves of one model behave differently on the same failure.
+   */
+  recipesReadable: boolean;
 }
 
 // --------------------------------------------------------------------- joining
@@ -201,6 +266,7 @@ function toRecipe(doc: RecipeDoc): PatternRecipe {
 export function buildPatternIndex(
   ctx: AppContextDoc,
   recipeDocs: RecipeDoc[],
+  recipesReadable = true,
 ): PatternIndex {
   const patternSlugs = new Set(Object.keys(ctx.patterns ?? {}));
   const recipes = (recipeDocs ?? []).map(toRecipe);
@@ -287,18 +353,42 @@ export function buildPatternIndex(
     recipesNamingMissingPatterns,
     recipesNamingNoPattern,
     patternsClaimingUnknownApps,
+    doc: ctx,
+    recipesReadable,
   };
 }
 
 // --------------------------------------------------------------------- loading
 
-/** Read every captured page recipe. A directory that cannot be listed yields none. */
-export async function loadRecipes(gh: Octokit): Promise<RecipeDoc[]> {
+/**
+ * Read every captured page recipe, and say whether the read was COMPLETE.
+ *
+ * A caller turning captures into a number has to tell "no captures" from "could
+ * not look", so `readable` is false when the directory cannot be listed AND
+ * when any file it listed failed to read. The second half matters as much as
+ * the first: a listing that succeeds while every file read is rate-limited
+ * yields zero docs and would otherwise report `readable: true`, which is the
+ * same lie one level down.
+ *
+ * There is deliberately no plain `loadRecipes` wrapper returning only the docs.
+ * It had no caller — every consumer of captures now needs the readability —
+ * and an export nothing calls is the dead config this branch removed three of.
+ */
+export async function loadRecipes(
+  gh: Octokit,
+): Promise<{ docs: RecipeDoc[]; readable: boolean }> {
   let files: string[];
   try {
     files = await listFilesByGlob(gh, RECIPES_DIR, { extension: ".json" });
-  } catch {
-    return [];
+  } catch (err) {
+    // git cannot hold an empty directory, so "no recipe exists" IS a 404 on
+    // the directory: a measured zero, the same split loadOne makes for a
+    // missing _meta.yml. Anything else (403, 429, 5xx) is a listing that
+    // failed, and "not measured" is the honest report for that.
+    if ((err as { status?: number }).status === 404) {
+      return { docs: [], readable: true };
+    }
+    return { docs: [], readable: false };
   }
   const docs: RecipeDoc[] = [];
   for (const f of files) {
@@ -307,12 +397,12 @@ export async function loadRecipes(gh: Octokit): Promise<RecipeDoc[]> {
       const json = JSON.parse(text) as RecipeDoc;
       docs.push({ ...json, slug: json.slug ?? f.replace(/\.json$/, "") });
     } catch {
-      // A capture that cannot be read is not a capture that does not exist, but
-      // the index has nothing to show for it either; the unclaimed list stays
-      // the place a join failure surfaces.
+      // A capture that cannot be read is not a capture that does not exist.
+      // Counted below rather than swallowed: an incomplete read must not be
+      // presented as a complete measurement.
     }
   }
-  return docs;
+  return { docs, readable: docs.length === files.length };
 }
 
 export async function loadPatternIndex(gh: Octokit): Promise<PatternIndex> {
@@ -321,5 +411,5 @@ export async function loadPatternIndex(gh: Octokit): Promise<PatternIndex> {
     loadRecipes(gh),
   ]);
   const ctx = JSON.parse(ctxText) as AppContextDoc;
-  return buildPatternIndex(ctx, recipes);
+  return buildPatternIndex(ctx, recipes.docs, recipes.readable);
 }

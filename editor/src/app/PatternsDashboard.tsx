@@ -23,6 +23,7 @@ import {
   Spinner,
   Table,
   Text,
+  VisuallyHidden,
 } from "@radix-ui/themes";
 import {
   loadPatternIndex,
@@ -33,6 +34,19 @@ import {
   recipeSrcPath,
 } from "../lib/patternIndex";
 import { onActivateKey } from "../lib/onActivateKey";
+import { THING_LABEL, SLOT_LABEL } from "../lib/nomenclature";
+import { measure, measuredToday } from "../lib/measure";
+import {
+  patternSlotsFor,
+  ENTITY_SLOTS,
+  PRODUCT_SLOTS,
+  TERM_SLOTS,
+  patternSlotRecords,
+  entitySlotRecords,
+  productSlotRecords,
+  termSlotRecords,
+} from "../lib/slots";
+import { MeterList } from "./MeterList";
 import { RecipePanel } from "./RecipePanel";
 
 export interface PatternsDashboardProps {
@@ -52,11 +66,15 @@ function PatternTable({
   onOpenFile,
   onOpenRecipe,
   emptyText,
+  recipesReadable,
 }: {
   rows: PatternRow[];
   onOpenFile: (path: string) => void;
   onOpenRecipe: (recipe: PatternRecipe, trigger: HTMLElement | null) => void;
   emptyText: string;
+  /** False when the captures could not be read, so an empty cell means
+   *  "not looked at", not "none". */
+  recipesReadable: boolean;
 }) {
   return (
     <Table.Root variant="surface" size="1">
@@ -115,7 +133,30 @@ function PatternTable({
               </Text>
             </Table.Cell>
             <Table.Cell>
-              {p.recipes.length === 0 ? (
+              {/* An em-dash reads as an authored fact — "this pattern has no
+                  capture" — for all 31 rows when the truth is that nothing
+                  could be read. The Meter and the prose already withhold on a
+                  failed read; the column has to as well, or the screen states
+                  in a table what it just declined to state above it. */}
+              {!recipesReadable && p.recipes.length === 0 ? (
+                // A bare "?" is cryptic on its own, and this cell is the only
+                // place a reader meets the distinction. The title and the
+                // visually hidden text carry the reason, so it does not depend
+                // on having read the note above the table. Hidden TEXT and not
+                // `aria-label`: a Radix Text is a span with no role, and ARIA
+                // 1.2 prohibits naming a generic element, so assistive
+                // technology dropped the label and announced "?".
+                <Text
+                  size="1"
+                  color="gray"
+                  title="Not measured: the captures could not be read"
+                >
+                  <span aria-hidden="true">?</span>
+                  <VisuallyHidden>
+                    Captures not measured: they could not be read
+                  </VisuallyHidden>
+                </Text>
+              ) : p.recipes.length === 0 ? (
                 <Text size="1" color="gray">
                   —
                 </Text>
@@ -168,10 +209,12 @@ function AppBlock({
   app,
   onOpenFile,
   onOpenRecipe,
+  recipesReadable,
 }: {
   app: AppSection;
   onOpenFile: (path: string) => void;
   onOpenRecipe: (recipe: PatternRecipe, trigger: HTMLElement | null) => void;
+  recipesReadable: boolean;
 }) {
   const reached = app.useCases.reduce((n, u) => n + u.patterns.length, 0);
   return (
@@ -232,6 +275,7 @@ function AppBlock({
             onOpenFile={onOpenFile}
             onOpenRecipe={onOpenRecipe}
             emptyText="This use case names no patterns."
+            recipesReadable={recipesReadable}
           />
         </Box>
       ))}
@@ -244,6 +288,7 @@ function AppBlock({
         onOpenFile={onOpenFile}
         onOpenRecipe={onOpenRecipe}
         emptyText="Every pattern claiming this product is named by a use case."
+        recipesReadable={recipesReadable}
       />
     </Box>
   );
@@ -297,30 +342,66 @@ export function PatternsDashboard({
     };
   }, [octokit]);
 
-  const summary = useMemo(() => {
+  const meters = useMemo(() => {
     if (state.kind !== "ready") return null;
-    const { patterns, apps } = state.index;
-    const captures = patterns.reduce((n, p) => n + p.recipes.length, 0);
-    const withCapture = patterns.filter((p) => p.recipes.length > 0).length;
-    const useCases = apps.reduce((n, a) => n + a.useCases.length, 0);
-    const namedByAUseCase = new Set(
-      apps.flatMap((a) =>
-        a.useCases.flatMap((u) => u.patterns.map((p) => p.slug)),
+    const index = state.index;
+    const at = measuredToday();
+    return {
+      pattern: measure(
+        patternSlotRecords(index),
+        patternSlotsFor(index.recipesReadable),
+        at,
       ),
+      entity: measure(entitySlotRecords(index.doc), ENTITY_SLOTS, at),
+      product: measure(productSlotRecords(index.doc), PRODUCT_SLOTS, at),
+      term: measure(termSlotRecords(index.doc), TERM_SLOTS, at),
+    };
+  }, [state]);
+
+  const summary = useMemo(() => {
+    if (state.kind !== "ready" || !meters) return null;
+    const { patterns, apps } = state.index;
+    // DISTINCT recipes, because the prose says "captured page recipes". The
+    // old sum counted pattern-recipe PAIRS, and read correctly only while every
+    // recipe named exactly one pattern: one recipe naming two would have said
+    // "5 captured page recipes" with four files on disk. The last hand-count in
+    // this object, and the one that was wrong.
+    const captures = new Set(
+      patterns.flatMap((p) => p.recipes.map((r) => r.slug)),
     ).size;
+    const useCases = apps.reduce((n, a) => n + a.useCases.length, 0);
+    // These three used to be counted here as well as in the Slot tables. Two
+    // derivations of one number is what the Slot model exists to remove, so the
+    // prose now reads the Meters and `tests/app/meters.test.tsx` asserts they cannot
+    // drift apart.
+    const meterFor = (key: string) => {
+      const m = meters.pattern.find((x) => x.key === key);
+      if (!m) throw new Error(`no Pattern meter ${key}`);
+      return m;
+    };
+    // Capture is the one Slot that can be ABSENT: `patternSlotsFor` drops it
+    // when the captures could not be read. Looking it up with `meterFor` threw
+    // inside useMemo — during render, with no ErrorBoundary anywhere in the
+    // editor — so a 403 on the recipes directory blanked the entire app rather
+    // than hiding one Meter. The degraded path this branch added the note for
+    // was the path that crashed.
+    const captureMeter = meters.pattern.find((x) => x.key === "capture");
+    const rule = meterFor("rule");
     return {
       patterns: patterns.length,
       apps: apps.length,
       useCases,
-      captures,
-      withCapture,
-      namedByAUseCase,
+      // null, not 0: an unread directory has no count, and rendering "0
+      // captured page recipes" for it is the lie the Slot is dropped to avoid.
+      captures: captureMeter ? captures : null,
+      withCapture: captureMeter?.filled ?? null,
+      namedByAUseCase: meterFor("job").filled,
       // The `when` clause is what tells a pattern from its siblings, and the
       // schema does not require it, so its absence is the gap most worth
       // counting on the front door rather than finding by scanning.
-      noWhen: patterns.filter((p) => !p.when).length,
+      noWhen: rule.total - rule.filled,
     };
-  }, [state]);
+  }, [state, meters]);
 
   if (state.kind === "loading") {
     return (
@@ -352,6 +433,51 @@ export function PatternsDashboard({
       <Heading as="h3" size="5" mb="1">
         Patterns
       </Heading>
+      {meters && (
+        <Box mb="5" mt="3">
+          {/* One date for the row: all four groups come from a single
+              measurement, so stamping each of them says it four times and
+              reads as four measurements that happen to agree. */}
+          <Text size="1" color="gray" as="p" mb="2">
+            measured {meters.pattern[0]?.measuredAt}
+          </Text>
+          {!index.recipesReadable && (
+            // Say why the Meter is absent. Dropping it in silence is the same
+            // omission as reporting a zero nobody can explain.
+            <Text size="1" color="gray" as="p" mb="2">
+              {SLOT_LABEL.capture} not measured: the captures could not be
+              read completely. Either the directory would not list, or a file
+              in it would not read.
+            </Text>
+          )}
+          <Flex gap="6" wrap="wrap">
+            <MeterList
+              groupKey="pattern"
+              title={THING_LABEL.ux_pattern}
+              meters={meters.pattern}
+              showDate={false}
+            />
+            <MeterList
+              groupKey="entity"
+              title={THING_LABEL.app_entity}
+              meters={meters.entity}
+              showDate={false}
+            />
+            <MeterList
+              groupKey="product"
+              title={THING_LABEL.app}
+              meters={meters.product}
+              showDate={false}
+            />
+            <MeterList
+              groupKey="term"
+              title={THING_LABEL.terminology_term}
+              meters={meters.term}
+              showDate={false}
+            />
+          </Flex>
+        </Box>
+      )}
       {opened && (
         <Box mb="4">
           <RecipePanel
@@ -364,8 +490,14 @@ export function PatternsDashboard({
       <Text size="2" color="gray" mb="4" as="p">
         {summary!.patterns} patterns across {summary!.apps} products ·{" "}
         {summary!.useCases} use cases naming {summary!.namedByAUseCase} of them
-        · {summary!.captures} captured page recipes on {summary!.withCapture}{" "}
-        patterns · {summary!.noWhen} with no when clause, the sentence that
+        {summary!.captures !== null && (
+          <>
+            {" · "}
+            {summary!.captures} captured page recipes on {summary!.withCapture}{" "}
+            patterns
+          </>
+        )}{" "}
+        · {summary!.noWhen} with no when clause, the sentence that
         tells a pattern from its siblings. A pattern claiming two products is
         listed under both, so the per-product counts below overlap and do not
         sum to{" "}
@@ -416,6 +548,7 @@ export function PatternsDashboard({
             app={app}
             onOpenFile={onOpenFile}
             onOpenRecipe={openRecipe}
+            recipesReadable={index.recipesReadable}
           />
         </Box>
       ))}

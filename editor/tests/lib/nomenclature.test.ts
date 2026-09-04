@@ -11,11 +11,15 @@ import {
   STATE_LABEL,
   LINK_LABEL,
   LINK_FAMILY,
+  SLOT_LABEL,
   STATE_FOR_STATUS,
   type SubstrateStatus,
+  type SlotKey,
   linkLabel,
   thingLabel,
 } from "../../src/lib/nomenclature";
+import { DOMAINS } from "../../src/lib/coverageLoader";
+import { DOMAIN_LABEL } from "../../src/lib/workspaceState";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -130,7 +134,13 @@ test("the workspace and the coverage table use the same word for a state", () =>
     const src = readFileSync(path, "utf8");
     const start = src.indexOf("const STATUS_LABEL");
     assert.notEqual(start, -1, `${name} has no STATUS_LABEL to check`);
-    const block = src.slice(start, src.indexOf("};", start) + 2);
+    // To the end of the STATEMENT, not to the next `};`. STATUS_LABEL is a
+    // one-liner (`= STATE_FOR_STATUS;`) in both files, so slicing to a closing
+    // brace ran past it into whatever object came next — and when the block
+    // that happened to follow it in CoverageDashboard was deleted, the slice
+    // reached the component body and matched `kind: "ready"`, a loading
+    // discriminant. The guard had been passing on the wrong text.
+    const block = src.slice(start, src.indexOf(";", start) + 1);
     assert.ok(
       block.includes("STATE_FOR_STATUS"),
       `${name}'s STATUS_LABEL does not read STATE_FOR_STATUS`,
@@ -332,4 +342,143 @@ test("every substrate status has a word, and it is the same word everywhere", ()
   // authored and draft are the two loaders' names for the same thing.
   assert.equal(STATE_FOR_STATUS.authored, STATE_FOR_STATUS.draft);
   assert.equal(STATE_FOR_STATUS["not-started"], STATE_LABEL.empty);
+});
+
+test("every Slot word is declared once, and never restates a Link word", () => {
+  // A Slot name is a user-visible concept, so it belongs here with the rest of
+  // the vocabulary. Three Slots ARE Link words — a Pattern's `Built from` is
+  // the composition edge read outbound — and those must reference LINK_LABEL
+  // rather than repeat the string, or the tree gains a sixth copy of a word
+  // the last round found in five places.
+  const keys = Object.keys(SLOT_LABEL) as SlotKey[];
+  assert.ok(keys.length > 0, "no Slots declared — the check is vacuous");
+
+  assert.equal(SLOT_LABEL.built_from, LINK_LABEL.composition.out);
+  assert.equal(SLOT_LABEL.part_of, LINK_LABEL.membership.out);
+  assert.equal(SLOT_LABEL.must_follow, LINK_LABEL.compliance.out);
+
+  // The join that matters, and the one that was missing: a Slot naming a graph
+  // edge must render the SAME word that edge's family does. `part_of` names the
+  // `apps` list, which is `in_app`; deriving it from composition made the
+  // relations panel say "Part of — Studio" and the Meter say "Used in" for one
+  // relationship. Read the words from linkLabel rather than restating them.
+  const edgeForSlot = [
+    ["part_of", "in_app"],
+    ["built_from", "uses_component"],
+    ["must_follow", "a11y_ref"],
+  ] as const;
+  for (const [slotKey, edgeType] of edgeForSlot) {
+    assert.equal(
+      SLOT_LABEL[slotKey],
+      linkLabel(edgeType, "out"),
+      `Slot "${slotKey}" and edge "${edgeType}" render different words for one relationship`,
+    );
+  }
+
+  // The three assertions above compare VALUES, so they stay green if someone
+  // writes the literal "Built from" instead of referencing the Link word — they
+  // only fire later, once the Link word changes and the copy does not. Proved
+  // by mutation: swapping the reference for the literal did not turn them red.
+  // So also check the DECLARATION, scoped to the SLOT_LABEL block the way the
+  // STATUS_LABEL check above is scoped, because a copy that agrees today is
+  // still a second place the word lives.
+  const src = readFileSync(
+    join(REPO, "editor", "src", "lib", "nomenclature.ts"),
+    "utf8",
+  );
+  const start = src.indexOf("export const SLOT_LABEL");
+  assert.notEqual(start, -1, "no SLOT_LABEL declaration to check");
+  const block = src.slice(start, src.indexOf("};", start) + 2);
+  for (const [key, expr] of [
+    ["built_from", "LINK_LABEL.composition.out"],
+    ["part_of", "LINK_LABEL.membership.out"],
+    ["must_follow", "LINK_LABEL.compliance.out"],
+  ] as const) {
+    assert.ok(
+      block.includes(`${key}: ${expr},`),
+      `SLOT_LABEL.${key} must read ${expr}, not restate its word`,
+    );
+  }
+
+  // No two Slots share a word. Two Meters reading "Rule" on one page cannot be
+  // told apart, which is the defect the collapsed GraphView legend shipped.
+  const seen = new Map<string, SlotKey>();
+  for (const k of keys) {
+    const word = SLOT_LABEL[k];
+    const prior = seen.get(word);
+    assert.equal(prior, undefined, `"${word}" names both ${prior} and ${k}`);
+    seen.set(word, k);
+  }
+});
+
+test("a Slot word never collides with a Thing or State word", () => {
+  // The synonym check in P1 compared Things to States and Links but never
+  // Things to Links, and `motion_ref: "Motion"` collided with the Thing word.
+  // Slots are the fourth axis; check it against the other three.
+  const slotWords = new Set(Object.values(SLOT_LABEL));
+  for (const w of Object.values(THING_LABEL)) {
+    assert.ok(!slotWords.has(w), `"${w}" is both a Thing and a Slot`);
+  }
+  for (const w of Object.values(STATE_LABEL)) {
+    assert.ok(!slotWords.has(w), `"${w}" is both a State and a Slot`);
+  }
+});
+
+test("the domain words live in ONE place, and every screen reads it", () => {
+  // The coverage dashboard renders a domain twice within a few lines: the Meter
+  // from SLOT_LABEL and the badge from DOMAIN_LABEL. While those were
+  // independent literal maps — three of them, counting a file-local copy in
+  // CoverageDashboard — changing "Behavior" here left the Meter saying the new
+  // word and the badge and table header beside it saying the old one. That is
+  // the drift this module exists to prevent, reintroduced by the change that
+  // added the Slot words.
+  for (const d of DOMAINS) {
+    assert.equal(
+      DOMAIN_LABEL[d],
+      SLOT_LABEL[d],
+      `domain "${d}" is named twice and the two disagree`,
+    );
+  }
+  // And no screen may declare its own copy. Scoped to a Record<Domain, string>
+  // literal so it names the shape rather than banning the words.
+  const SRC = join(REPO, "editor", "src");
+  const offenders: string[] = [];
+  (function walk(dir: string) {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, e.name);
+      if (e.isDirectory()) {
+        if (e.name !== "generated") walk(full);
+      } else if (/\.(ts|tsx)$/.test(e.name)) {
+        const rel = full.slice(SRC.length + 1);
+        // The two legitimate homes: this module DECLARES the words, and
+      // workspaceState DERIVES the domain map from it. Everything else reads.
+      if (rel === "lib/workspaceState.ts" || rel === "lib/nomenclature.ts") {
+        continue;
+      }
+        const src = readFileSync(full, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+        // Match the WORDS, not a type annotation.
+        //
+        // The first version keyed on `Record<Domain, string>` and so could not
+        // see markdownStubs.ts, which declared the same five words as
+        // `Record<string, string>` — and that copy named the heading and the
+        // placeholder comment written into every newly stubbed substrate file,
+        // making it the most damaging of the four. A guard whose subject is a
+        // type cannot protect a vocabulary.
+        //
+        // Two further weaknesses in that version, both fixed here: it used
+        // `String.match` without /g, so only the FIRST candidate literal per
+        // file was inspected, and `[^}]*` stopped at the first `}`, so a nested
+        // object truncated the scan.
+        const restated = DOMAINS.filter((d) =>
+          new RegExp(`\\b${d}\\s*:\\s*"${DOMAIN_LABEL[d]}"`).test(src),
+        );
+        if (restated.length >= 3) offenders.push(rel);
+      }
+    }
+  })(SRC);
+  assert.deepEqual(
+    offenders,
+    [],
+    `these declare their own domain word map instead of reading DOMAIN_LABEL:\n${offenders.join("\n")}`,
+  );
 });

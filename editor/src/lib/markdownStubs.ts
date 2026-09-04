@@ -9,18 +9,24 @@
 
 import canonicalSectionsRaw from "../../../components/dist/canonical-sections.json";
 import { SECTION_TEMPLATES } from "./sectionTemplates";
+import { DOMAIN_LABEL } from "./workspaceState";
+import type { Domain } from "./coverageLoader";
 
 const COMPONENT_DOMAIN_RE =
   /^components\/src\/([^/]+)\/(content|usage|design|behavior|tokens)\.md$/;
 const CATEGORY_RE = /^components\/src\/categories\/([^/]+)\.md$/;
 
-const DOMAIN_LABEL: Record<string, string> = {
-  content: "Content",
-  usage: "Usage",
-  design: "Design",
-  behavior: "Behavior",
-  tokens: "Tokens",
-};
+// Imported, not restated. This was a FOURTH copy of the domain words, and the
+// most damaging one: it names the `# Button — Behavior` heading and the
+// "Replace this with the behavior guidance" comment written into every new
+// components/src/<slug>/<domain>.md, so a rename in the vocabulary would have
+// left the Meter, the badge and the table header saying one word while every
+// newly stubbed SUBSTRATE FILE carried the old one.
+//
+// It was invisible to the guard that was supposed to catch exactly this,
+// because the guard matched the type annotation `Record<Domain, string>` and
+// this was declared `Record<string, string>`. The guard's subject was a type,
+// not the words.
 
 interface CanonicalSection {
   key: string;
@@ -64,9 +70,12 @@ export function buildMarkdownStub(path: string, opts?: { title?: string }): stri
   const compDomain = COMPONENT_DOMAIN_RE.exec(path);
   if (compDomain) {
     const slug = compDomain[1]!;
-    const domain = compDomain[2]!;
+    // The capture group is the five domains and nothing else — see
+    // COMPONENT_DOMAIN_RE above — so this is the one place the narrowing is
+    // guaranteed by the pattern rather than by a cast of convenience.
+    const domain = compDomain[2]! as Domain;
     const comp = humanize(slug);
-    const label = DOMAIN_LABEL[domain] ?? humanize(domain);
+    const label = DOMAIN_LABEL[domain];
     const head = [`# ${comp} — ${label}`, ""];
 
     if (domain === "design") {

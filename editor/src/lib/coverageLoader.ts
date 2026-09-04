@@ -22,18 +22,14 @@
 import type { Octokit } from "@octokit/rest";
 import { parse as parseYaml } from "yaml";
 import { listDirectories, getTextFile } from "../app/githubApi";
-import { domainFileName } from "./workspaceState";
+import { DOMAINS, domainFileName, type Domain } from "./workspaceState";
 import { memoizeByInstance } from "./memoizeByInstance";
 import { isRegistryComponent } from "../substrate/graphEligibility";
 
-export const DOMAINS = [
-  "content",
-  "usage",
-  "design",
-  "behavior",
-  "tokens",
-] as const;
-export type Domain = (typeof DOMAINS)[number];
+// One tuple, owned by workspaceState, which also names the file each domain
+// lives in. A second copy here compiled and passed every guard, while a domain
+// added on one side would have gone unmeasured on the other.
+export { DOMAINS, type Domain } from "./workspaceState";
 
 export const STATUSES = [
   "not-started",
@@ -61,6 +57,25 @@ export interface CoverageRow {
   origin: RowOrigin;
   /** registry key (when origin === "unstarted") — used for stub generation */
   registryKey?: string;
+  /**
+   * True when the row's `_meta.yml` could not be READ (403/500/rate limit/bad
+   * YAML) as opposed to not existing. Such a row carries blank domains that are
+   * a placeholder, not a measurement. It never leaves the loader: `fetchCoverage`
+   * moves it out of `rows` and into `CoverageResult.unreadable`, so no consumer
+   * has to remember to exclude it. Six of them count rows; one remembered.
+   */
+  unreadable?: boolean;
+}
+
+export interface CoverageResult {
+  /** Every row whose facts were READ: authored rows plus registry ghosts. */
+  rows: CoverageRow[];
+  /**
+   * Slugs whose `_meta.yml` answered anything but 404, sorted. Not in `rows`,
+   * so a screen counting rows cannot count one as five empty domains. Named,
+   * so the screen can say which file to go and look at.
+   */
+  unreadable: string[];
 }
 
 const SKIP_DIRS = new Set(["categories", "guidelines"]);
@@ -79,18 +94,20 @@ interface DskitEntry {
 // A11yCoverageDashboard) — same TTL precedent as categoriesLoader.
 // Coverage is merge-driven data, so the TTL is the whole staleness story:
 // no force/invalidation hook (a refresh right after submitting would show
-// nothing new — the PR isn't merged). An EMPTY result is retryable: empty
-// almost always means a degraded crawl (rate limit, transient 404
-// swallowed by the per-file fallbacks below), not a truly empty repo.
-export const loadCoverage = memoizeByInstance<Octokit, CoverageRow[]>(
+// nothing new — the PR isn't merged). A DEGRADED crawl is retryable and must
+// not be pinned: an empty result almost always means a rate limit rather than
+// a truly empty repo, and a crawl with unreadable rows is the same event
+// caught one file at a time. Pinning either served the "N could not be read"
+// note, and the smaller denominators behind it, for the whole TTL.
+export const loadCoverage = memoizeByInstance<Octokit, CoverageResult>(
   fetchCoverage,
   {
     ttlMs: 5 * 60 * 1000,
-    isRetryable: (rows) => rows.length === 0,
+    isRetryable: (r) => r.rows.length === 0 || r.unreadable.length > 0,
   },
 );
 
-async function fetchCoverage(gh: Octokit): Promise<CoverageRow[]> {
+async function fetchCoverage(gh: Octokit): Promise<CoverageResult> {
   const [dirs, registry] = await Promise.all([
     listDirectories(gh, "components/src"),
     loadDskitEligible(gh),
@@ -98,9 +115,18 @@ async function fetchCoverage(gh: Octokit): Promise<CoverageRow[]> {
   const componentDirs = dirs.filter((d) => !SKIP_DIRS.has(d));
   const authoredSlugs = new Set(componentDirs);
 
-  const authored = await Promise.all(
+  const loaded = await Promise.all(
     componentDirs.map((slug) => loadOne(gh, slug)),
   );
+  // Partitioned ONCE, here. A row that could not be read is not a row with
+  // five empty domains, and every consumer that counts rows (the Meters,
+  // summarize, the front door's gap list, the a11y thin list, the table) would
+  // otherwise have to remember that on its own. One did.
+  const unreadable = loaded
+    .filter((r) => r.unreadable)
+    .map((r) => r.slug)
+    .sort();
+  const authored = loaded.filter((r) => !r.unreadable);
 
   const ghosts: CoverageRow[] = Object.entries(registry)
     .filter(([slug]) => !authoredSlugs.has(slug))
@@ -115,26 +141,43 @@ async function fetchCoverage(gh: Octokit): Promise<CoverageRow[]> {
     }));
 
   const merged: CoverageRow[] = [...authored, ...ghosts];
-  return merged.sort((a, b) => a.slug.localeCompare(b.slug));
+  return {
+    rows: merged.sort((a, b) => a.slug.localeCompare(b.slug)),
+    unreadable,
+  };
 }
 
 async function loadDskitEligible(
   gh: Octokit,
 ): Promise<Record<string, DskitEntry>> {
+  // No fallback. The registry IS the eligible set, the denominator of every
+  // Component Meter, and this used to return {} on any failure: a 403 on one
+  // file shrank "of 74" to "of 54" with a measured date beside it and nothing
+  // said, one call above the per-row fallback that had just been fixed for
+  // the same lie. A load that cannot read the registry has not measured
+  // coverage; it rejects, naming the file, and the screens show that.
+  let text: string;
   try {
-    const text = await getTextFile(gh, DSKIT_REGISTRY_PATH);
-    const parsed = JSON.parse(text) as {
-      components?: Record<string, DskitEntry>;
-    };
-    const out: Record<string, DskitEntry> = {};
-    for (const [slug, entry] of Object.entries(parsed.components ?? {})) {
-      if (!isRegistryComponent(entry)) continue;
-      out[slug] = entry;
-    }
-    return out;
-  } catch {
-    return {};
+    text = await getTextFile(gh, DSKIT_REGISTRY_PATH);
+  } catch (err) {
+    throw new Error(
+      `Could not read ${DSKIT_REGISTRY_PATH}: ${(err as Error).message}`,
+    );
   }
+  let parsed: { components?: Record<string, DskitEntry> };
+  try {
+    parsed = JSON.parse(text) as { components?: Record<string, DskitEntry> };
+  } catch (err) {
+    throw new Error(
+      `${DSKIT_REGISTRY_PATH} is not JSON: ${(err as Error).message}`,
+    );
+  }
+  const out: Record<string, DskitEntry> = {};
+  for (const [slug, entry] of Object.entries(parsed.components ?? {})) {
+    if (!isRegistryComponent(entry)) continue;
+    out[slug] = entry;
+  }
+  return out;
 }
 
 // Registry categories are human-readable (e.g. "Form (input & selection)").
@@ -153,15 +196,29 @@ function deriveCategorySlug(cat?: string): string | undefined {
 async function loadOne(gh: Octokit, slug: string): Promise<CoverageRow> {
   try {
     const yamlText = await getTextFile(gh, `components/src/${slug}/_meta.yml`);
-    const parsed = parseYaml(yamlText) as Record<string, unknown>;
+    // An empty or comment-only file parses to null. That is a file somebody
+    // created and wrote nothing into: the same fact as a 404, five empty
+    // domains, and not a read that failed. Without the fallback `parseRow`
+    // threw on it and the row was reported as unreadable, permanently, for a
+    // file that read fine.
+    const parsed = (parseYaml(yamlText) ?? {}) as Record<string, unknown>;
     return parseRow(slug, parsed);
-  } catch {
+  } catch (err) {
+    // A 404 is a real state: the directory exists and nobody has written a
+    // _meta.yml yet, which IS five empty domains. Anything else — 403, 500, a
+    // rate limit, malformed YAML — means the row could not be READ, and
+    // reporting that as five empty domains puts a number on a measurement that
+    // never happened. The Meters on the coverage dashboard count these rows, so
+    // one throttled request used to render "Behavior 0 of 73" with a measured
+    // date beside it.
+    const status = (err as { status?: number }).status;
     return {
       slug,
       component: slug,
       domains: blankDomains(),
       a11yRefs: [],
       origin: "authored",
+      unreadable: status !== 404,
     };
   }
 }

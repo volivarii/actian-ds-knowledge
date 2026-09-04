@@ -67,7 +67,7 @@ const GAP_LIST_LIMIT = 8;
 
 type CoverageState =
   | { kind: "loading" }
-  | { kind: "ready"; rows: CoverageRow[] }
+  | { kind: "ready"; rows: CoverageRow[]; unreadable: string[] }
   | { kind: "error"; message: string };
 
 // Labels keyed by the ranking band itself (see needsAttention.band) so the
@@ -97,8 +97,8 @@ export function HomeScreen({
     let cancelled = false;
     (async () => {
       try {
-        const rows = await loadCoverage(octokit);
-        if (!cancelled) setCoverage({ kind: "ready", rows });
+        const { rows, unreadable } = await loadCoverage(octokit);
+        if (!cancelled) setCoverage({ kind: "ready", rows, unreadable });
       } catch (err) {
         if (!cancelled)
           setCoverage({ kind: "error", message: (err as Error).message });
@@ -150,6 +150,17 @@ export function HomeScreen({
               guidance
             </Badge>
           </Flex>
+        )}
+        {coverage.kind === "ready" && coverage.unreadable.length > 0 && (
+          // The count above and the gap list below both leave these out. Saying
+          // so here is what keeps "N components" from being a quietly smaller
+          // number than the repository holds.
+          <Text size="1" color="gray" as="p" mt="2">
+            {coverage.unreadable.length} component
+            {coverage.unreadable.length === 1 ? "" : "s"} could not be read and{" "}
+            {coverage.unreadable.length === 1 ? "is" : "are"} not counted:{" "}
+            {coverage.unreadable.join(", ")}.
+          </Text>
         )}
       </Box>
 

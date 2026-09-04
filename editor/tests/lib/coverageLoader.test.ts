@@ -19,16 +19,28 @@ function fakeGh(opts: {
     string,
     { name: string; category?: string; section?: string }
   >;
+  /** slugs whose _meta.yml answers 403 rather than 404 */
+  throttle?: string[];
+  /** counts every directory listing, to see whether the memo re-crawled */
+  onList?: () => void;
 }) {
   return {
     repos: {
       getContent: async ({ path }: { path: string }) => {
         if (path === "components/src") {
+          opts.onList?.();
           return { data: opts.dirs };
         }
         if (path === "components/dist/registries/dskit.json") {
           const body = JSON.stringify({ components: opts.registry ?? {} });
           return { data: { content: b64(body), encoding: "base64" } };
+        }
+        if (
+          (opts.throttle ?? []).some((s) => path === `components/src/${s}/_meta.yml`)
+        ) {
+          const err = new Error("forbidden") as Error & { status: number };
+          err.status = 403;
+          throw err;
         }
         const content = opts.files[path];
         if (content === undefined) {
@@ -75,7 +87,7 @@ domains:
 
 test("loadCoverage: returns one row per non-skipped component dir", async () => {
   const gh = fakeGh({ dirs: FIXTURE_DIRS, files: FIXTURE_FILES });
-  const rows = await loadCoverage(gh);
+  const { rows } = await loadCoverage(gh);
   assert.equal(rows.length, 2);
   assert.deepEqual(
     rows.map((r) => r.slug),
@@ -85,7 +97,7 @@ test("loadCoverage: returns one row per non-skipped component dir", async () => 
 
 test("loadCoverage: parses domain statuses from YAML", async () => {
   const gh = fakeGh({ dirs: FIXTURE_DIRS, files: FIXTURE_FILES });
-  const rows = await loadCoverage(gh);
+  const { rows } = await loadCoverage(gh);
   const button = rows.find((r) => r.slug === "button")!;
   assert.equal(button.component, "Button");
   assert.equal(button.category, "action");
@@ -101,7 +113,7 @@ test("loadCoverage: missing _meta.yml falls back to all-not-started", async () =
     dirs: [{ name: "orphan", type: "dir" }],
     files: {},
   });
-  const rows = await loadCoverage(gh);
+  const { rows } = await loadCoverage(gh);
   assert.equal(rows.length, 1);
   assert.equal(rows[0]!.slug, "orphan");
   assert.equal(rows[0]!.component, "orphan");
@@ -110,14 +122,14 @@ test("loadCoverage: missing _meta.yml falls back to all-not-started", async () =
 
 test("loadCoverage: skips categories/ and guidelines/", async () => {
   const gh = fakeGh({ dirs: FIXTURE_DIRS, files: FIXTURE_FILES });
-  const rows = await loadCoverage(gh);
+  const { rows } = await loadCoverage(gh);
   assert.ok(!rows.some((r) => r.slug === "categories"));
   assert.ok(!rows.some((r) => r.slug === "guidelines"));
 });
 
 test("summarize: counts authored (draft+approved) and inherited per domain", async () => {
   const gh = fakeGh({ dirs: FIXTURE_DIRS, files: FIXTURE_FILES });
-  const rows = await loadCoverage(gh);
+  const { rows } = await loadCoverage(gh);
   const counts = summarize(rows);
   assert.equal(counts.total, 2);
   // both buttons + tabs have content=approved → 2 authored
@@ -235,7 +247,7 @@ test("loadCoverage: merges authored + unstarted from registry, marks origins", a
       },
     },
   });
-  const rows = await loadCoverage(gh);
+  const { rows } = await loadCoverage(gh);
   const slugs = rows.map((r) => r.slug);
   assert.ok(slugs.includes("button"));
   assert.ok(slugs.includes("tabs"));
@@ -255,7 +267,11 @@ test("loadCoverage: merges authored + unstarted from registry, marks origins", a
   assert.equal(dg.category, "data-display");
 });
 
-test("loadCoverage: registry fetch failure → authored-only (graceful)", async () => {
+test("loadCoverage: a registry that cannot be read REJECTS, naming the registry", async () => {
+  // This used to resolve with the authored rows alone and call it graceful.
+  // The registry is the eligible set, the denominator of every Component
+  // Meter, so that grace rendered "Capture 45 of 54" with a measured date on a
+  // 403 that should have said nothing, and the memo pinned it for five minutes.
   const gh = {
     repos: {
       getContent: async ({ path }: { path: string }) => {
@@ -269,10 +285,66 @@ test("loadCoverage: registry fetch failure → authored-only (graceful)", async 
       },
     },
   } as any;
-  const rows = await loadCoverage(gh);
-  // Only authored rows present.
-  assert.equal(rows.length, 2);
-  assert.ok(rows.every((r) => r.origin === "authored"));
+  await assert.rejects(
+    loadCoverage(gh),
+    (err: Error) =>
+      /dskit\.json/.test(err.message) && /registry fetch failed/.test(err.message),
+  );
+});
+
+test("loadCoverage: an unreadable _meta.yml leaves the rows and is named", async () => {
+  const gh = fakeGh({ dirs: FIXTURE_DIRS, files: FIXTURE_FILES, throttle: ["tabs"] });
+  const { rows, unreadable } = await loadCoverage(gh);
+  // Out of `rows` entirely, so no consumer can count it as five empty domains,
+  // and named so a screen can say which file to look at.
+  assert.deepEqual(unreadable, ["tabs"]);
+  assert.deepEqual(rows.map((r) => r.slug), ["button"]);
+});
+
+test("loadCoverage: an empty _meta.yml is five empty domains, not an unreadable row", async () => {
+  // A file somebody created and wrote nothing into parses to null. That is the
+  // same fact as a 404 (nothing written yet), and it used to throw inside
+  // parseRow and be reported as "could not be read" for a file that read fine.
+  const gh = fakeGh({
+    dirs: FIXTURE_DIRS,
+    files: { ...FIXTURE_FILES, "components/src/tabs/_meta.yml": "# nothing yet\n" },
+  });
+  const { rows, unreadable } = await loadCoverage(gh);
+  assert.deepEqual(unreadable, []);
+  const tabs = rows.find((r) => r.slug === "tabs");
+  assert.ok(tabs);
+  assert.ok(
+    Object.values(tabs.domains).every((d) => d.status === "not-started"),
+    "an empty file should read as five not-started domains",
+  );
+});
+
+test("loadCoverage: a degraded crawl is not pinned for the TTL", async () => {
+  // The memo evicted only an EMPTY result. A crawl with one unreadable row is
+  // the same event caught one file at a time, and pinning it served the
+  // "could not be read" note, and the smaller denominators behind it, for
+  // five minutes with no invalidation hook.
+  let listings = 0;
+  const degraded = fakeGh({
+    dirs: FIXTURE_DIRS,
+    files: FIXTURE_FILES,
+    throttle: ["tabs"],
+    onList: () => (listings += 1),
+  });
+  await loadCoverage(degraded);
+  await loadCoverage(degraded);
+  assert.equal(listings, 2, "a degraded crawl was served from the memo");
+  // Positive control: a clean crawl IS memoized, so the assertion above is
+  // about the eviction and not about the memo being absent.
+  listings = 0;
+  const clean = fakeGh({
+    dirs: FIXTURE_DIRS,
+    files: FIXTURE_FILES,
+    onList: () => (listings += 1),
+  });
+  await loadCoverage(clean);
+  await loadCoverage(clean);
+  assert.equal(listings, 1, "a clean crawl should be served from the memo");
 });
 
 test("summarize: counts authored vs unstarted rows separately", async () => {
@@ -288,7 +360,7 @@ test("summarize: counts authored vs unstarted rows separately", async () => {
       tooltip: { name: "Tooltip", category: "Overlays", section: "Components" },
     },
   });
-  const rows = await loadCoverage(gh);
+  const { rows } = await loadCoverage(gh);
   const c = summarize(rows);
   assert.equal(c.total, 4);
   assert.equal(c.authored, 2);

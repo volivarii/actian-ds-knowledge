@@ -89,6 +89,19 @@ async function loadIndex(gh: Octokit): Promise<MediaMap> {
     throw new Error(`${INDEX_PATH} is not JSON: ${(err as Error).message}`);
   }
   const media = json.media ?? {};
+  // A well-formed index carrying no entries at all (re-derived under another
+  // top-level key, or shipped as a bare map) is not "no component has media".
+  // Checked HERE, before the cache, so every reader meets the same failure.
+  // When only loadCapturedSlugs checked, it dropped the Capture Meter while
+  // the render panel and the media picker had already cached the empty map
+  // and went on reporting "no capture" for every component, and the two
+  // then alternated between clearing the cache and re-poisoning it.
+  if (Object.keys(media).length === 0) {
+    throw new Error(
+      `${INDEX_PATH} carried no media entries, so the index cannot be read; ` +
+        `that is not the same as no component having a capture`,
+    );
+  }
   writeCache(media);
   return media;
 }
@@ -161,4 +174,31 @@ export async function loadMediaCapture(
       return { path: pick, role };
   }
   return null;
+}
+
+/**
+ * The slugs with an isolated `default` capture — the set the Component Capture
+ * Slot measures against.
+ *
+ * Propagates rather than returning an empty set, on purpose and consistently
+ * with `loadMediaCapture` above: a failed read is not evidence that no
+ * component has a capture. The caller decides what an unmeasurable index means
+ * for its surface; here it is `componentSlotsFor(false)`, which drops the Slot.
+ */
+export async function loadCapturedSlugs(gh: Octokit): Promise<Set<string>> {
+  // An index carrying no entries at all throws inside `loadIndex`, before it
+  // is cached, so the Slot is dropped here and the other two readers see the
+  // same failure instead of a cached "no media". Only a THROW drops the Slot.
+  const media = await loadIndex(gh);
+  return new Set(
+    Object.entries(media)
+      // `MediaMap` values are `string | string[]`. `default` is a single
+      // capture today, but reading only the string form would silently report
+      // "no capture" if it ever became a list.
+      .filter(([, roles]) => {
+        const d = roles?.default;
+        return typeof d === "string" ? d.length > 0 : Array.isArray(d) && d.length > 0;
+      })
+      .map(([slug]) => slug),
+  );
 }

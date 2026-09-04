@@ -162,6 +162,29 @@ test("a component with no render fragment says so, and shows no frame", async ()
 });
 
 test("a component with no Figma capture says so instead of leaving a blank", async () => {
+  // An index that HAS entries, none of them button. An index with no entries
+  // at all is not "no capture", it is an index that cannot be read (see the
+  // next test), so the fixture has to carry somebody else's capture for this
+  // to be about button.
+  show(
+    fakeGh(
+      files({
+        "components/dist/media/_index.json": JSON.stringify({
+          _schema_version: 1,
+          media: { "alert-banner": { default: "components/dist/media/alert-banner/default.webp" } },
+        }),
+      }),
+    ),
+  );
+  await screen.findByTitle(/canonical render of button/i);
+  assert.ok(await screen.findByText(/no figma capture/i));
+  assert.equal(screen.queryByAltText(/figma capture of button/i), null);
+});
+
+test("an index with no entries at all is a capture error, never 'no capture'", async () => {
+  // The rule lives in loadIndex, before the cache, so this panel meets it too:
+  // when only the coverage dashboard checked, this panel cached the empty map
+  // and showed "no Figma capture" for every component for the TTL.
   show(
     fakeGh(
       files({
@@ -170,8 +193,8 @@ test("a component with no Figma capture says so instead of leaving a blank", asy
     ),
   );
   await screen.findByTitle(/canonical render of button/i);
-  assert.ok(await screen.findByText(/no figma capture/i));
-  assert.equal(screen.queryByAltText(/figma capture of button/i), null);
+  assert.ok(await screen.findByText(/could not load the capture.*no media entries/i));
+  assert.equal(screen.queryByText(/no figma capture/i), null, "an entry-less index read as an absence");
 });
 
 test("a media index that cannot be read is a capture error, never 'no capture'", async () => {

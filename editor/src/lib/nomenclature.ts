@@ -220,3 +220,86 @@ export function linkLabel(edgeType: string, direction: "in" | "out"): string {
     : direction;
   return LINK_LABEL[binding.family][side];
 }
+
+/**
+ * Slots — the named, measurable parts of a Thing.
+ *
+ * A Slot is not a schema field: several Slots read the same field, and `Job`
+ * reads across files entirely. What is declared HERE is only the WORD, for the
+ * same reason every other word is here — a Meter renders it, so it is a
+ * user-visible concept and it gets exactly one home. The tables and the
+ * `filled` tests live in `lib/slots.ts`.
+ *
+ * Three of these ARE Link words seen from one end, and they are DERIVED from
+ * LINK_LABEL rather than repeated. A Pattern's `Built from` is the composition
+ * edge read outbound; if that word ever changes it must change in one place.
+ *
+ * `job` and `jobs` are deliberately different words for different things: a
+ * Product HAS jobs, a Pattern SERVES one. `rule` is one key used by two tables
+ * — a Pattern's `when` and a Term's `notUse` are the same question asked of
+ * two Things — which is the point of keying on the word rather than the field.
+ */
+export type SlotKey =
+  // Pattern
+  | "rule"
+  | "description"
+  | "built_from"
+  | "part_of"
+  | "job"
+  | "tags"
+  | "capture"
+  // Entity
+  | "properties"
+  | "link"
+  // Product
+  | "purpose"
+  | "audience"
+  | "jobs"
+  | "navigation"
+  | "signals"
+  // Term
+  | "meaning"
+  // Component — the five guidance domains, plus what they are checked against
+  | "content"
+  | "usage"
+  | "design"
+  | "behavior"
+  | "tokens"
+  | "must_follow";
+
+export const SLOT_LABEL: Record<SlotKey, string> = {
+  rule: "Rule",
+  description: "Description",
+  built_from: LINK_LABEL.composition.out,
+  // `apps` is the graph's `in_app` edge, which THIS FILE classifies as
+  // membership — see LINK_FAMILY below and the docstring explaining that
+  // folding `in_app` into composition "merged two different questions".
+  // Naming the Slot `composition.in` ("Used in") made a Pattern's relations
+  // panel say "Part of — Studio" while the Meter for the same edge said
+  // "Used in": a second word for one concept, in the module that exists to
+  // prevent exactly that. Third time this edge's family has been got wrong.
+  part_of: LINK_LABEL.membership.out,
+  job: "Job",
+  tags: "Tags",
+  capture: "Capture",
+  properties: "Properties",
+  link: "Link",
+  purpose: "Purpose",
+  audience: "Audience",
+  jobs: "Jobs",
+  navigation: "Navigation",
+  signals: "Signals",
+  meaning: "Meaning",
+  content: "Content",
+  usage: "Usage",
+  design: "Design",
+  behavior: "Behavior",
+  tokens: "Tokens",
+  must_follow: LINK_LABEL.compliance.out,
+};
+
+// NOTE: a `slotLabel(key)` accessor was written here and removed before merge —
+// every caller reads SLOT_LABEL directly and an exported function with no
+// caller is config nothing reads. `thingLabel` and `linkLabel` exist because
+// they do real work (a fallback for an unmapped type, and side selection);
+// this one only indexed a Record.
