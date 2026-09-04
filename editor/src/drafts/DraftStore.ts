@@ -19,7 +19,9 @@ export type DraftStoreEvent =
   | { kind: "saved"; path: string }
   | { kind: "cleared"; path: string }
   | { kind: "pending"; path: string }
-  | { kind: "writing"; path: string };
+  | { kind: "writing"; path: string }
+  /** The storage write threw (quota, private mode). The draft is NOT saved. */
+  | { kind: "failed"; path: string };
 
 export type DraftStoreListener = (event: DraftStoreEvent) => void;
 
@@ -67,11 +69,16 @@ export class DraftStore {
     this.emit({ kind: "writing", path });
     try {
       this.storage.setItem(PREFIX + path, JSON.stringify(draft));
-      this.emit({ kind: "saved", path });
-      return true;
     } catch {
+      // Said, not swallowed: a caught write with no event left the indicator
+      // on "Saving…" for good, and the failure was guessed from a timer.
+      this.emit({ kind: "failed", path });
       return false;
     }
+    // Outside the try: a listener that throws on "saved" is not a failed
+    // write, and reporting it as one turned a stored draft into "not saved".
+    this.emit({ kind: "saved", path });
+    return true;
   }
 
   clear(path: string): void {

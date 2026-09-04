@@ -85,3 +85,33 @@ test("DraftStore.has returns true iff a draft exists", () => {
   store.save("foo.md", { text: "x", basedOnSha: "s", ts: 1 });
   assert.equal(store.has("foo.md"), true);
 });
+
+test("DraftStore.save emits failed when the storage write throws", () => {
+  // A quota error used to be swallowed into `return false` with no event, so
+  // nothing downstream could tell a stuck write from a slow one.
+  const throwing: Storage = {
+    ...storage,
+    setItem: () => {
+      throw new Error("QuotaExceededError");
+    },
+  };
+  const s = new DraftStore(throwing);
+  const seen: string[] = [];
+  s.subscribe((e) => seen.push(e.kind));
+  const ok = s.save("foundations.md", { text: "x", basedOnSha: "", ts: 1 } as Draft);
+  assert.equal(ok, false);
+  assert.deepEqual(seen, ["writing", "failed"]);
+});
+
+test("DraftStore.save does not report failed when a saved listener throws", () => {
+  // The write succeeded; only a subscriber misbehaved. Reporting that as a
+  // failed write turned a stored draft into "Draft not saved".
+  const seen: string[] = [];
+  store.subscribe((e) => {
+    seen.push(e.kind);
+    if (e.kind === "saved") throw new Error("listener bug");
+  });
+  assert.throws(() => store.save("foundations.md", { text: "x", basedOnSha: "", ts: 1 }));
+  assert.ok(!seen.includes("failed"), `failed was reported: ${seen.join(",")}`);
+  assert.ok(store.load("foundations.md"), "the draft was not stored");
+});

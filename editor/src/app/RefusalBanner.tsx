@@ -21,7 +21,7 @@ export function RefusalBanner({ path, onBack }: RefusalBannerProps) {
     REASONS.find((r) => r.pattern.test(path))?.message ??
     "This file isn't in the PR 2a editable set.";
   return (
-    <Callout.Root color="amber">
+    <Callout.Root color="amber" aria-live="off">
       <Flex direction="column" gap="2">
         <Text>This file type isn't editable yet.</Text>
         <Text size="2">{reason}</Text>

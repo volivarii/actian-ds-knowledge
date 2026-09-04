@@ -10,7 +10,14 @@ import {
 import type { UiSchema } from "@rjsf/utils";
 import type { Octokit } from "@octokit/rest";
 import type { RJSFSchema } from "@rjsf/utils";
-import { Box, Flex, Button, Text, Callout } from "@radix-ui/themes";
+import {
+  Box,
+  Flex,
+  Button,
+  Text,
+  Callout,
+  Heading as RadixHeading,
+} from "@radix-ui/themes";
 import { RJSFForm } from "../form-engine/RJSFForm";
 import { frontmatterTemplates } from "../form-engine/templates";
 import {
@@ -532,7 +539,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
   if (state.kind === "loading") return <Text>Loading…</Text>;
   if (state.kind === "error")
     return (
-      <Callout.Root color="red">
+      <Callout.Root color="red" role="alert">
         <Callout.Text>{state.message}</Callout.Text>
       </Callout.Root>
     );
@@ -573,7 +580,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
   if (state.kind === "raw")
     return (
       <Box>
-        <Callout.Root color="amber" mb="2">
+        <Callout.Root color="amber" mb="2" role="alert">
           <Callout.Text>
             Couldn't parse this file's frontmatter — editing as raw text.
           </Callout.Text>
@@ -723,6 +730,12 @@ export function FrontmatterBodyEditScreen(props: Props) {
   return (
     <Box>
       <TierBanner path={path} />
+      {/* The screen's one h1. This screen had none, so app-context and
+          category records had no page title in the outline. The path, as on
+          the markdown screen, until 1110 names the page after its subject. */}
+      <RadixHeading as="h1" size="3" mb="2">
+        {path}
+      </RadixHeading>
       {/* Frontmatter starts collapsed on body-carrying files so the prose
           editor gets the viewport; bodyless record files (pure forms) start
           expanded, since the form IS their content. */}

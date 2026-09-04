@@ -71,6 +71,11 @@ test("MarkdownEditScreen: loads remote and shows file path heading", async () =>
     () => assert.ok(screen.getByText("foundations/src/color-primitives.md")),
     { timeout: 5000 },
   );
+  // The path is the screen's ONE h1 (the shell adds none; that is tested on
+  // the shell). Radix Heading defaults to h1, so this checks the level was
+  // chosen, not inherited.
+  const h1s = document.querySelectorAll("h1");
+  assert.equal(h1s.length, 1, `h1s: ${[...h1s].map((h) => h.textContent).join(" | ")}`);
 });
 
 // The direct "Submit as PR" path was removed (a real incident: using both

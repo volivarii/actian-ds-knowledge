@@ -57,6 +57,32 @@ test("bodyless hides the Prose body editor", async () => {
   cleanup();
 });
 
+test("the screen titles itself with one h1", async () => {
+  // This screen had no heading at all, so app-context and category records
+  // had no page title in the outline while every other screen had one.
+  cleanup();
+  globalThis.sessionStorage.clear();
+  const gh = fakeGh({
+    "schemas/app-context-app.json": SCHEMA,
+    "app-context/src/apps/studio.md": "---\nlabel: Studio\n---\n",
+  });
+  render(
+    <Theme>
+      <FrontmatterBodyEditScreen
+        path="app-context/src/apps/studio.md"
+        schemaKey="app-context-app"
+        uiSchema={{}}
+        octokit={gh}
+        bodyless
+      />
+    </Theme>,
+  );
+  await waitFor(() => assert.ok(document.querySelector("h1")), { timeout: 5000 });
+  const h1s = document.querySelectorAll("h1");
+  assert.equal(h1s.length, 1);
+  assert.match(h1s[0]!.textContent ?? "", /studio\.md/);
+});
+
 test("default (bodyless false) shows the Prose body editor", async () => {
   cleanup();
   globalThis.sessionStorage.clear();

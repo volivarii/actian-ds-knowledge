@@ -9,6 +9,7 @@
 // On success: clears the cart + closes drawer + shows the PR URL.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { announce } from "../lib/announcer";
 import type { Octokit } from "@octokit/rest";
 import { DEFAULT_COORDS } from "../config/coords";
 import {
@@ -131,6 +132,9 @@ export function SubmissionStaging({
         );
         setPrUrl(result.prUrl);
         cart.clear();
+        // The clear is silent in the cart announcer; the outcome is what the
+        // reader needs to hear.
+        announce("Pull request opened");
       } catch (err) {
         if (err instanceof StaleBaseError) {
           setConflicts(err.conflicts);
@@ -218,7 +222,7 @@ export function SubmissionStaging({
           )}
 
           {mismatches.length > 0 && (
-            <Callout.Root color="amber" mb="3">
+            <Callout.Root color="amber" mb="3" role="status">
               <Callout.Text>
                 <strong>Metadata ↔ content mismatch.</strong> Submission is
                 blocked until each declared domain has its content file in the
@@ -267,7 +271,7 @@ export function SubmissionStaging({
             </Callout.Root>
           )}
           {error && (
-            <Callout.Root color="red" mb="3">
+            <Callout.Root color="red" role="alert" mb="3">
               <Callout.Text>{error}</Callout.Text>
             </Callout.Root>
           )}
@@ -358,6 +362,7 @@ export function SubmissionStaging({
                 color="red"
                 onClick={() => {
                   cart.clear();
+                  announce("Batch cleared");
                   setConfirmClear(false);
                 }}
               >

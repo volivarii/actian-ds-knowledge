@@ -43,7 +43,7 @@ export function SignInScreen({
       style={{ minHeight: "100vh", padding: "24px" }}
     >
       <Box style={{ maxWidth: 420, width: "100%" }}>
-        <Heading size="6" mb="2">
+        <Heading as="h1" size="6" mb="2">
           Actian DS Knowledge Editor
         </Heading>
         <Text size="2" color="gray" mb="5" as="p">
@@ -60,7 +60,7 @@ export function SignInScreen({
         </Button>
 
         {oauthError && (
-          <Callout.Root color="red" size="1" mt="3">
+          <Callout.Root color="red" role="alert" size="1" mt="3">
             <Callout.Text>{oauthError}</Callout.Text>
           </Callout.Root>
         )}

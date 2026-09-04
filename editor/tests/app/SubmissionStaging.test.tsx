@@ -34,6 +34,7 @@ import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { buildResolvedFiles } from "../../src/app/submissionStagingHelpers";
 import { droppedAnchors } from "../../src/core/anchorPreservation";
+import { getAnnouncement } from "../../src/lib/announcer";
 import {
   SubmissionCart,
   type CartEntry,
@@ -287,6 +288,8 @@ test("SubmissionStaging: two synchronous clicks on 'Submit batch' open only ONE 
   });
 
   await waitFor(() => assert.ok(screen.queryByText(/PR opened/i)));
+  // The reader hears the outcome, not the cart emptying underneath it.
+  assert.match(getAnnouncement().text, /pull request opened/i);
 
   assert.equal(
     calls.create.length,

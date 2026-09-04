@@ -211,7 +211,7 @@ export function ConnectionsPopover(props: ConnectionsPopoverProps) {
               </Button>
             </Flex>
             {repointing ? (
-              <Callout.Root color="amber" size="1" mb="2">
+              <Callout.Root color="amber" size="1" mb="2" role="status">
                 <Callout.Text>
                   Pick a replacement topic. The current connection will be
                   swapped atomically.

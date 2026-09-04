@@ -287,7 +287,7 @@ export function HomeScreen({
           </Flex>
         )}
         {coverage.kind === "error" && (
-          <Callout.Root color="amber">
+          <Callout.Root color="amber" role="alert">
             <Callout.Text>
               Couldn&apos;t load the guidance status: {coverage.message}
             </Callout.Text>

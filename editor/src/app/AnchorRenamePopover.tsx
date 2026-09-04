@@ -67,7 +67,7 @@ export function AnchorRenamePopover({
       </Popover.Anchor>
       <Popover.Content size="2" style={{ maxWidth: 340 }}>
         <Flex direction="column" gap="2">
-          <Heading size="2">{`Rename #${slug}`}</Heading>
+          <Heading as="h2" size="2">{`Rename #${slug}`}</Heading>
           <label>
             <Text as="div" size="1" mb="1" color="gray">
               New anchor slug
@@ -97,7 +97,7 @@ export function AnchorRenamePopover({
             {`${sameFileCount} link${sameFileCount === 1 ? "" : "s"} in this file will be updated.`}
           </Text>
           {crossFileReferrers.length > 0 && (
-            <Callout.Root color="amber" size="1">
+            <Callout.Root color="amber" size="1" role="status">
               <Callout.Text>
                 <Text as="div" size="1">
                   {`${crossFileReferrers.length} other file${crossFileReferrers.length === 1 ? "" : "s"} reference${crossFileReferrers.length === 1 ? "s" : ""} this anchor and will not be auto-updated:`}

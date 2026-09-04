@@ -3,6 +3,7 @@ import type { Octokit } from "@octokit/rest";
 import { Box, Button, Callout, Flex } from "@radix-ui/themes";
 import { createOctokit, MissingPATError } from "../core/octokit";
 import { Sidebar } from "./Sidebar";
+import { ScreenErrorBoundary } from "./ScreenErrorBoundary";
 import { MetaEditScreen } from "./MetaEditScreen";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { FrontmatterBodyEditScreen } from "./FrontmatterBodyEditScreen";
@@ -42,6 +43,14 @@ interface EditorShellProps {
   /** Focuses the header's GlobalSearch input (owned by App). Used by the
    *  HomeScreen's "Find a component" action. */
   onFocusSearch?: () => void;
+  /**
+   * Bumped by App on EVERY navigation, including one that lands on the
+   * screen already shown (Home again, the same file from search or the
+   * palette, a hash route). It resets the screen error boundary, which a
+   * path change alone cannot: the same path is no change, and the explore
+   * tab strip sits inside the fallen pane.
+   */
+  navigationSerial?: number;
 }
 
 /**
@@ -91,6 +100,7 @@ export function EditorShell({
   setActivePath,
   onOpenStaging,
   onFocusSearch,
+  navigationSerial = 0,
   // Passed straight through, undefined included: HomeScreen falls back to its
   // own state when nothing supplies these, so a shell rendered without them
   // (tests, and any future embedding) still has a working tab strip. Defaulting
@@ -156,7 +166,7 @@ export function EditorShell({
   let pane: React.ReactNode;
   if (ghError) {
     pane = (
-      <Callout.Root color="amber">
+      <Callout.Root color="amber" role="alert">
         <Callout.Text>{ghError}</Callout.Text>
       </Callout.Root>
     );
@@ -254,13 +264,26 @@ export function EditorShell({
           setWysiwygOn(next);
         }}
       />
+      {/* The one <main>, and the skip link's target. tabIndex -1 so a
+          fragment navigation to #main actually moves focus in every browser,
+          not only the ones that focus a non-focusable target. */}
       <Box
+        asChild
         flexGrow="1"
         p="3"
         style={{ overflow: "auto", minWidth: 0, minHeight: 0 }}
       >
-        {breadcrumb}
-        {pane}
+        <main id="main" tabIndex={-1}>
+          {/* Outside the boundary: the one exit from a failed child screen
+              must not fall with it. */}
+          {breadcrumb}
+          <ScreenErrorBoundary
+            path={activePath ?? "home"}
+            resetKey={`${exploreTab ?? "coverage"}:${navigationSerial}`}
+          >
+            {pane}
+          </ScreenErrorBoundary>
+        </main>
       </Box>
     </Flex>
   );

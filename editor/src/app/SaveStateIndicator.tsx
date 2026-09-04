@@ -1,9 +1,10 @@
 // Header-bar badge surfacing draft-save state to the author.
 //
-// Three visible states (idle is hidden):
+// Four visible states (idle is hidden):
 //   ● Unsaved changes    (warning amber, while a debounce timer pends)
 //   ● Saving…            (neutral spinner, very briefly during the write)
 //   ✓ Draft saved · …    (success green, with relative timestamp)
+//   ⚠ Draft not saved    (red, the write threw and the draft is only in memory)
 //
 // Wording note: "Draft saved" — NOT "Saved". Removes ambiguity between
 // local draft and remote commit. Authors who see "Saved" sometimes
@@ -44,6 +45,10 @@ export function SaveStateIndicator({ state }: SaveStateIndicatorProps) {
     return () => clearInterval(id);
   }, [state.kind]);
 
+  // Visual only. What a screen reader hears about saves comes from the
+  // store's events (useSaveAnnouncements), not from this badge's state: the
+  // badge is mounted once for whichever file is open, so its transitions
+  // are not the files' transitions.
   if (state.kind === "idle") return null;
 
   if (state.kind === "unsaved") {
@@ -51,6 +56,15 @@ export function SaveStateIndicator({ state }: SaveStateIndicatorProps) {
       <Badge variant="soft" color="amber" radius="full">
         <Dot color="var(--zen-color-icon-warning, #EF8D00)" />
         <Text size="1">Unsaved changes</Text>
+      </Badge>
+    );
+  }
+
+  if (state.kind === "failed") {
+    return (
+      <Badge variant="soft" color="red" radius="full">
+        <Dot color="var(--zen-color-icon-error, #DC3514)" />
+        <Text size="1">Draft not saved</Text>
       </Badge>
     );
   }

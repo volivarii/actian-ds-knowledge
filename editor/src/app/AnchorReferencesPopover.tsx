@@ -40,13 +40,13 @@ export function AnchorReferencesPopover({
       </Popover.Anchor>
       <Popover.Content size="2">
         <Flex direction="column" gap="2">
-          <Heading size="2">{`#${slug}`}</Heading>
+          <Heading as="h2" size="2">{`#${slug}`}</Heading>
           {defs.length > 0 && (
             <Text size="1" color="gray">
               defined in {defs.join(", ")}
             </Text>
           )}
-          <Heading size="1">
+          <Heading as="h3" size="1">
             {refs.length === 0
               ? "No references in the substrate."
               : `Referenced by ${refs.length} file${refs.length === 1 ? "" : "s"}`}

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { render, cleanup, act } from "@testing-library/react";
 import React, { StrictMode, useCallback, useEffect, useState } from "react";
 import { useHashRoute } from "../../src/lib/useHashRoute";
-import { stateFromHash, DEFAULT_EXPLORE_TAB } from "../../src/lib/routes";
+import { stateFromHash, hashFor, DEFAULT_EXPLORE_TAB } from "../../src/lib/routes";
 import type { ExploreTab } from "../../src/app/HomeScreen";
 
 interface Api {
@@ -241,4 +241,62 @@ test("arriving at the bare URL does not spend a history entry", () => {
   assert.deepEqual(replaced, ["#/"]);
   assert.deepEqual(pushed, []);
   cleanup();
+});
+
+test("a plain fragment is not a navigation", async () => {
+  // Every address this app mints starts with "#/". A skip link's "#main" or a
+  // heading anchor's "#slug" is an in-page fragment, and reading it as a route
+  // sent the reader Home with the fragment erased.
+  cleanup();
+  // No tab argument: `hashFor` returns the SCREENS entry for "inbox" before
+  // the tab is consulted at all, so passing one implies a coupling that
+  // does not exist.
+  const address = hashFor("inbox");
+  setHash(address);
+  const seen: (string | null)[] = [];
+  render(<Harness seen={seen} />);
+  const before = seen.length;
+  await act(async () => {
+    setHash("#main");
+    window.dispatchEvent(new window.HashChangeEvent("hashchange"));
+  });
+  assert.equal(seen.length, before, "a fragment was read as a route");
+  // Left where the browser put it. Replacing it with the screen's address
+  // rewrites the history entry instead of removing it, so the reader's next
+  // Back press lands on a byte-identical URL and does nothing at all.
+  assert.equal(window.location.hash, "#main", "the fragment entry was rewritten");
+});
+
+test("a slashless alias the parser resolves still navigates on hashchange", async () => {
+  cleanup();
+  setHash("#/");
+  const seen: (string | null)[] = [];
+  render(<Harness seen={seen} />);
+  const before = seen.length;
+  await act(async () => {
+    setHash("#drafts");
+    window.dispatchEvent(new window.HashChangeEvent("hashchange"));
+  });
+  assert.equal(seen.length, before + 1, "#drafts was dropped as a fragment");
+  assert.equal(seen[seen.length - 1], stateFromHash("#drafts").activePath);
+  // And the bar ends on the canonical spelling, which is the half that makes
+  // the alias safe to copy back out: the write effect cannot correct it,
+  // because React bails out on the unchanged path.
+  assert.equal(window.location.hash, "#/drafts", "the alias was left uncanonical in the bar");
+});
+
+test("an address with a slash still navigates on hashchange, slashless spelling included", async () => {
+  cleanup();
+  setHash("#/");
+  const seen: (string | null)[] = [];
+  render(<Harness seen={seen} />);
+  const before = seen.length;
+  await act(async () => {
+    setHash("#components/src/button/usage.md");
+    window.dispatchEvent(new window.HashChangeEvent("hashchange"));
+  });
+  // Whatever the parser makes of the slashless spelling, hashchange and a
+  // fresh load must agree; the guard drops single-segment fragments only.
+  assert.equal(seen.length, before + 1, "a slashed address was dropped as a fragment");
+  assert.equal(seen[seen.length - 1], stateFromHash("#components/src/button/usage.md").activePath);
 });

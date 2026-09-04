@@ -134,7 +134,9 @@ export function RecipePanel({ recipe, onClose }: RecipePanelProps) {
         <Flex direction="column" gap="3">
           <Flex justify="between" align="start" gap="3">
             <Box>
-              <Heading size="4">{recipe.label ?? recipe.slug}</Heading>
+              <Heading as="h2" size="4">
+                {recipe.label ?? recipe.slug}
+              </Heading>
               {/* Provenance leads: a capture's credibility is where and when it
                   was taken, and prose without it invites a reviewer to correct a
                   page that no longer exists. */}

@@ -594,3 +594,24 @@ form.fm-form.fm-collapsed > *:not(.fm-form-children) {
 .meter-row[data-complete="true"] {
   color: var(--zen-color-text-secondary);
 }
+
+/* The skip link: first in tab order, invisible until it has focus, then a
+   solid tab at the top left so the keyboard user sees where they are. */
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -100px;
+  z-index: 1000;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--zen-color-bg-emphasis, #1f2937);
+  color: var(--zen-color-text-reverse, #fff);
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 8px;
+  outline: 2px solid var(--zen-focus-ring-primary, #0f5fdc);
+  outline-offset: 2px;
+}

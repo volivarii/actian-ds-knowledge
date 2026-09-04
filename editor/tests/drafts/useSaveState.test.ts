@@ -110,3 +110,18 @@ test("useSaveState: transitions through unsaved → saving → saved on full cyc
   // final observed state is "saved".
   assert.equal(result.current.kind, "saved");
 });
+
+test("useSaveState: a failed write reads as failed, not as saving", () => {
+  const throwing: Storage = {
+    ...makeMemoryStorage(),
+    setItem: () => {
+      throw new Error("QuotaExceededError");
+    },
+  };
+  const failing = new DraftStore(throwing);
+  const { result } = renderHook(() => useSaveState("foundations.md", failing));
+  act(() => {
+    failing.save("foundations.md", { text: "x", basedOnSha: "", ts: 1 });
+  });
+  assert.equal(result.current.kind, "failed");
+});

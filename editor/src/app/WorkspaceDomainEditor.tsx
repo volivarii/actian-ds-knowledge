@@ -242,7 +242,7 @@ export function WorkspaceDomainEditor({
   if (load.kind === "error") {
     return (
       <Box p="3">
-        <Callout.Root color="red">
+        <Callout.Root color="red" role="alert">
           <Callout.Text>Failed to load: {load.message}</Callout.Text>
         </Callout.Root>
       </Box>
@@ -271,7 +271,7 @@ export function WorkspaceDomainEditor({
         </Button>
       </Flex>
       {renameWarnings.length > 0 && (
-        <Callout.Root color="amber" size="1" mb="2">
+        <Callout.Root color="amber" size="1" mb="2" role="status">
           <Callout.Text>
             {renameWarnings
               .map(
