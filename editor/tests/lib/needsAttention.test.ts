@@ -1,8 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  backlogSentence,
-  backlogShape,
   gapCount,
   topGaps,
   type AttentionItem,
@@ -115,92 +113,4 @@ test("inherited and draft statuses are not gaps", () => {
     }),
   ];
   assert.deepEqual(topGaps(rows, 10), []);
-});
-
-test("backlogShape tells an unstarted component apart from a missing domain", () => {
-  // Measured over everything, the sentence read "Tokens is the backlog: 73 of
-  // 85" while the list beneath it showed eight components with nothing
-  // authored at all. A component nobody has started is missing all five
-  // domains, not one, and folding the two together made every domain look
-  // equally bad.
-  const rows: CoverageRow[] = [
-    row("started-a", "authored", {
-      design: "inherited",
-      behavior: "inherited",
-      tokens: "not-started",
-    }),
-    row("started-b", "authored", {
-      design: "inherited",
-      behavior: "inherited",
-      tokens: "not-started",
-    }),
-    row("ghost", "unstarted"),
-  ];
-  const shape = backlogShape(rows);
-  assert.equal(shape.unstarted, 1);
-  assert.equal(shape.started, 2);
-  assert.equal(shape.backlog?.domain, "tokens");
-  // 2, not 3: the ghost is counted once as unstarted, never five times as a
-  // per-domain gap.
-  assert.equal(shape.backlog?.open, 2);
-  assert.equal(shape.backlog?.total, 2);
-});
-
-test("backlogShape reports no backlog when every started component is underway", () => {
-  const rows: CoverageRow[] = [
-    row("done", "authored"),
-  ];
-  const shape = backlogShape(rows);
-  assert.equal(shape.backlog, null, "a zero was reported as a backlog");
-  assert.equal(shape.unstarted, 0);
-});
-
-test("backlogSentence never contradicts itself", () => {
-  // Assembled inline from two independent ternaries, each correct on its own,
-  // it read "2 components have no guidance at all. Nothing is unwritten." with
-  // nothing started. No fixture in the suite had that shape.
-  const nothingStarted = backlogSentence({
-    unstarted: 2,
-    started: 0,
-    backlog: null,
-  });
-  assert.equal(nothingStarted, "2 components have no guidance at all.");
-  assert.ok(
-    !/nothing is unwritten|every domain/i.test(nothingStarted),
-    `contradicts itself: ${nothingStarted}`,
-  );
-});
-
-test("backlogSentence says both facts when both are true", () => {
-  const both = backlogSentence({
-    unstarted: 31,
-    started: 54,
-    backlog: { domain: "tokens", open: 42 },
-  });
-  assert.equal(
-    both,
-    "31 components have no guidance at all. Of the 54 started, Tokens is the backlog: 42 have none authored.",
-  );
-});
-
-test("backlogSentence does not say 'the other' when there is no other", () => {
-  assert.equal(
-    backlogSentence({ unstarted: 0, started: 7, backlog: null }),
-    "All 7 components have every domain underway.",
-  );
-  assert.equal(
-    backlogSentence({ unstarted: 3, started: 7, backlog: null }),
-    "3 components have no guidance at all. The other 7 have every domain underway.",
-  );
-});
-
-test("backlogSentence counts one component in the singular", () => {
-  assert.match(
-    backlogSentence({ unstarted: 1, started: 0, backlog: null }),
-    /^1 component has no guidance at all\.$/,
-  );
-});
-
-test("backlogSentence on an empty substrate says nothing rather than a zero", () => {
-  assert.equal(backlogSentence({ unstarted: 0, started: 0, backlog: null }), "");
 });

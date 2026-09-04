@@ -51,6 +51,25 @@ Each entry links its pull request. Dates are the merge date (UTC).
   open one component's guidance. The per-domain tallies no longer wrap to two lines.
   Editor-only: no dist, no schema, no consumer.
 
+- **The editor's front door states no statistics** (PR pending). Home carried a derived sentence
+  under its h1: "31 components have no guidance at all. Of the 54 started, Tokens is the backlog: 42
+  have none authored." Every clause was true, and it broke the one rule the screen was given in the
+  change that gave it: the hub links, it never analyses. Its two clauses also described a population
+  of 85 while the components tree beside it listed 54, because the 31 are registry entries nobody has
+  started. Diagnosis is the Coverage overview's job and Coverage now says it properly, so the
+  sentence is gone rather than moved, and `backlogShape` and `backlogSentence` are deleted with it.
+  Three smaller restatements went with it: each row in the work list spelled out "Content, Usage,
+  Design, Behavior, Tokens not started" beside the readout that already drew exactly that, the same
+  status told twice in two languages on every row; the note about files that could not be read now
+  sits with the list it qualifies instead of under the h1, since the count it qualified has left the
+  screen; and the spinner and the load error moved into the work section, so the Scopes list, which
+  renders from a static list and needs no fetch, is usable before the coverage crawl returns. A guard
+  now holds the rule in two halves, on shape rather than on the removed phrasing: the block holding
+  the h1 must hold the h1's own words and nothing else, and no proportion ("42 of the 54", "Of the 54
+  started", a percentage) may appear anywhere on the screen. The two numbers the hub may state are a
+  remainder and a fault count, and neither is a proportion.
+  Editor-only: no dist, no schema, no consumer.
+
 - **The editor's front door is a hub, and each scope has its own overview screen**
   ([#658](https://github.com/volivarii/actian-ds-knowledge/pull/658)). Coverage, Accessibility, Relationships and Patterns sat in one `ExploreTab` union
   and rendered as four panels beneath the home screen. That grouping produced most of the clutter,

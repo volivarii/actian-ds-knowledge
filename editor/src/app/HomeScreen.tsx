@@ -1,7 +1,7 @@
 // The editor's front door: a hub, not a dashboard.
 //
-// It holds three things and nothing else: the shape of the backlog in one
-// derived sentence, the work worth doing next, and one way into each scope.
+// It holds two things and nothing else: the work worth doing next, and one way
+// into each scope.
 //
 // THE RULE THAT KEEPS IT A HUB: this screen links, it never analyses. If a
 // number needs a sentence to explain it, that sentence belongs on the scope's
@@ -9,6 +9,18 @@
 // badge, three action cards, a needs-attention list AND four tab panels, each
 // of which restated the statistics above it before showing the table they came
 // from.
+//
+// The rule was written here and then broken here. A derived backlog sentence
+// sat under the h1 reading "31 components have no guidance at all. Of the 54
+// started, Tokens is the backlog: 42 have none authored." Every clause of it
+// was true and none of it belongs on a front door: it is diagnostic prose, it
+// contradicted the sidebar's own count of 54 for anyone who read both, and it
+// is already said properly on the Coverage overview, which is the screen whose
+// job that is. Analysis lives on dashboards.
+//
+// Scopes renders from a static list and needs no fetch, so the hub is usable
+// before the coverage crawl returns. Only the work list waits, so the spinner
+// and the error belong to it rather than to the page.
 //
 // The four "Explore the data" tabs are gone. Coverage, accessibility, patterns
 // and substrate health are screens now (see SCREENS in lib/routes.ts), because
@@ -29,19 +41,12 @@ import {
   Spinner,
   Text,
 } from "@radix-ui/themes";
+import { loadCoverage, type CoverageRow } from "../lib/coverageLoader";
 import {
-  loadCoverage,
-  summarize,
-  type CoverageRow,
-} from "../lib/coverageLoader";
-import {
-  backlogSentence,
-  backlogShape,
   gapCount,
   topGaps,
   type AttentionBand,
 } from "../lib/needsAttention";
-import { DOMAIN_LABEL } from "../lib/workspaceState";
 import { CoverageCells } from "./CoverageCells";
 import { COMPONENT_PARENT, SCOPES, SUBSTRATE_HEALTH } from "./scopes";
 
@@ -96,22 +101,27 @@ export function HomeScreen({
     () =>
       rows
         ? {
-            counts: summarize(rows),
             gaps: topGaps(rows, GAP_LIST_LIMIT),
-            backlog: backlogShape(rows),
             totalGaps: gapCount(rows),
           }
-        : { counts: null, gaps: [], backlog: null, totalGaps: 0 },
+        : { gaps: [], totalGaps: 0 },
     [rows],
   );
-  const { counts, gaps, backlog, totalGaps } = derived;
+  const { gaps, totalGaps } = derived;
 
   return (
     <Box p="5" style={{ maxWidth: 900, margin: "0 auto" }}>
-      {/* ── The shape of the backlog, in one derived sentence ──────────── */}
+      {/* ── The one thing this page asserts ────────────────────────────── */}
       <Box mb="5" style={{ maxWidth: 620 }}>
-        <Heading as="h1" size="7" mb="2">
+        <Heading as="h1" size="7">
           Author the design system.
+        </Heading>
+      </Box>
+
+      {/* ── Worth doing next ───────────────────────────────────────────── */}
+      <Box mb="5">
+        <Heading as="h2" size="4" mb="3">
+          Worth doing next
         </Heading>
         {coverage.kind === "loading" && (
           <Flex align="center" gap="2" py="2">
@@ -128,33 +138,18 @@ export function HomeScreen({
             </Callout.Text>
           </Callout.Root>
         )}
-        {counts && (
-          <Text size="3" color="gray" as="p">
-            {/* Two facts, told apart, and assembled in one pure function. A
-                component nobody has started is not missing one domain, it is
-                missing all five, and folding the two together made the
-                sentence promise a job the list below does not offer. */}
-            {backlog ? backlogSentence(backlog) : null}
-          </Text>
-        )}
         {coverage.kind === "ready" && coverage.unreadable.length > 0 && (
-          // The counts above and the list below both leave these out. Saying so
-          // here is what keeps "N components" from being a quietly smaller
-          // number than the repository holds.
-          <Text size="1" color="gray" as="p" mt="2">
+          // Kept, and kept next to the list it qualifies. It is a fault
+          // report rather than a statistic: it only renders when a file
+          // could not be read, and suppressing it would hide the reason the
+          // list below is shorter than the repository.
+          <Text size="1" color="gray" as="p" mb="2">
             {coverage.unreadable.length} component
             {coverage.unreadable.length === 1 ? "" : "s"} could not be read and{" "}
-            {coverage.unreadable.length === 1 ? "is" : "are"} not counted:{" "}
+            {coverage.unreadable.length === 1 ? "is" : "are"} not listed:{" "}
             {coverage.unreadable.join(", ")}.
           </Text>
         )}
-      </Box>
-
-      {/* ── Worth doing next ───────────────────────────────────────────── */}
-      <Box mb="5">
-        <Heading as="h2" size="4" mb="3">
-          Worth doing next
-        </Heading>
         {coverage.kind === "ready" && gaps.length === 0 && (
           <Callout.Root color="green">
             <Callout.Text>
@@ -182,15 +177,16 @@ export function HomeScreen({
                   >
                     {item.component}
                   </Text>
-                  {/* One readout, not one badge per absent domain. */}
+                  {/* One readout, and nothing restating it. This row used to
+                      carry "Content, Usage, Design, Behavior, Tokens not
+                      started" beside the cells that already said exactly that,
+                      which is the same status told twice in two languages, on
+                      every row, eight times over. What tells the rows apart is
+                      the action, and the action is the button. */}
                   <CoverageCells
                     statuses={item.statuses}
                     subject={item.component}
                   />
-                  <Text size="1" color="gray">
-                    {item.missing.map((d) => DOMAIN_LABEL[d]).join(", ")} not
-                    started
-                  </Text>
                 </Flex>
                 <Button
                   variant="soft"

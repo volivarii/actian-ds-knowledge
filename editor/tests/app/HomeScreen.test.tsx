@@ -16,6 +16,18 @@ import { SCOPES } from "../../src/app/scopes";
 
 afterEach(() => cleanup());
 
+/** Asserts a query found nothing.
+ *
+ *  `assert.equal(node, null)` looks equivalent and is not: when it FAILS, node
+ *  builds its diff by walking the actual value, and walking a DOM element's
+ *  cyclic graph takes the process out with a SIGKILL after ~26s. The run then
+ *  reports the FILE as failed with no assertion name and no location, and
+ *  every test after it in the file never runs. Found by mutating the guard
+ *  below and reading a green line for a test that had not executed. */
+function assertAbsent(node: unknown, message: string) {
+  assert.ok(node === null, message);
+}
+
 function wrap(node: React.ReactNode) {
   return <Theme>{node}</Theme>;
 }
@@ -89,7 +101,7 @@ domains:
 `,
 };
 
-test("HomeScreen: the backlog in a sentence, and the list ranked usage-first", async () => {
+test("HomeScreen: the list is ranked usage-first and each row carries one readout", async () => {
   const opened: string[] = [];
   render(
     wrap(
@@ -103,24 +115,13 @@ test("HomeScreen: the backlog in a sentence, and the list ranked usage-first", a
   // The heading renders synchronously, before the coverage fetch resolves.
   screen.getByText(/Author the design system/i);
 
-  // The backlog sentence is DERIVED: the fixture leaves tokens not-started on
-  // every started row, so tokens is the largest gap and the sentence has to
-  // name it. A hard-coded sentence would pass this with the wrong domain.
-  await waitFor(() => screen.getByText(/is the backlog: \d+ have none/i));
-  const sentence = screen.getByText(/is the backlog: \d+ have none/i);
-  assert.match(
-    sentence.textContent ?? "",
-    /Of the \d+ started, Tokens is the backlog/,
-    `sentence reads: ${sentence.textContent}`,
-  );
-  // A component nobody has started is missing all five domains, not one, so
-  // it must not be folded into a per-domain gap. The fixture has no ghosts,
-  // so no "no guidance at all" clause may appear.
-  assert.equal(screen.queryByText(/no guidance at all/i), null);
-
   // Each row carries one readout, not one badge per absent domain.
-  const readouts = document.querySelectorAll('[data-testid="coverage-cells"]');
-  assert.ok(readouts.length > 0, "the needs-attention rows carry no readout");
+  await waitFor(() =>
+    assert.ok(
+      document.querySelectorAll('[data-testid="coverage-cells"]').length > 0,
+      "the needs-attention rows carry no readout",
+    ),
+  );
 
   // Tabs (usage not-started) outranks Button (only behavior/tokens missing).
   const writeUsage = screen.getByRole("button", {
@@ -149,30 +150,16 @@ test("HomeScreen: a component that could not be read is named, not counted", asy
       />,
     ),
   );
-  // The HERO's note, beside the count it qualifies. The phrasing is matched
-  // exactly because two other notes on this page also say "could not be
-  // read": the embedded coverage dashboard's row note ("not counted above or
-  // in the table") and its media-index note, which names no slug. A looser
-  // match stayed green with the hero note deleted.
+  // The note now sits with the list it qualifies rather than under the h1,
+  // because the count it used to qualify has left this screen. It is a fault
+  // report, not a statistic: it renders only when a file could not be read.
   const note = await waitFor(() =>
-    screen.getByText(/could not be read and (is|are) not counted: /i),
+    screen.getByText(/could not be read and (is|are) not listed: /i),
   );
   assert.match(note.textContent ?? "", /\btabs\b/, "the unreadable slug is not named");
-  // The denominator in the backlog sentence is derived from the rows that
-  // were READ, so it must not count the throttled one. Pinning the number
-  // here would let the sentence keep counting a row it could not measure.
-  const readable = DIRS.filter(
-    (d) =>
-      d.type === "dir" &&
-      d.name !== "tabs" &&
-      !["categories", "guidelines"].includes(d.name),
-  ).length;
-  const sentence = screen.getByText(/is the backlog: \d+ have none/i);
-  assert.match(
-    sentence.textContent ?? "",
-    new RegExp(`Of the ${readable} started`),
-    `sentence reads: ${sentence.textContent}`,
-  );
+  // And the component it could not read is absent from the work list, rather
+  // than listed with five blank domains as though it were unwritten.
+  assertAbsent(screen.queryByText(/^Tabs$/), "an unreadable row was listed as work");
 });
 
 test("HomeScreen: zero gaps shows the all-covered state, not a zero count", async () => {
@@ -199,12 +186,10 @@ domains:
       />,
     ),
   );
-  await waitFor(() => screen.getByText(/have every domain underway/i));
-  screen.getByText(/Nothing is missing/i);
-  // "0 have none authored" is a sentence about a backlog that does not exist.
-  // The hub says nothing is open rather than putting a zero on screen.
-  assert.equal(screen.queryByText(/is the backlog/i), null);
-  assert.equal(screen.queryByText(/no guidance at all/i), null);
+  await waitFor(() => screen.getByText(/Nothing is missing/i));
+  // A backlog that does not exist gets no sentence at all, and one that does
+  // gets none either: see the dashboard-prose guard below.
+  assertAbsent(screen.queryByText(/is the backlog/i), "a backlog sentence is back");
 });
 
 test("HomeScreen: Find a component opens the palette callback", async () => {
@@ -280,4 +265,54 @@ test("HomeScreen: a scope with no overview yet says so rather than hiding", () =
     pending.length,
     "a scope without an overview vanished, which makes the structure look finished",
   );
+});
+
+test("HomeScreen: the hub links, it never analyses", async () => {
+  // The rule in this screen's own header comment, made enforceable. It was
+  // written there and then broken there: a derived sentence sat under the h1
+  // reading "31 components have no guidance at all. Of the 54 started, Tokens
+  // is the backlog: 42 have none authored." Every clause was true, it
+  // contradicted the sidebar's count of 54 for anyone who read both, and the
+  // Coverage overview already says it properly. Nothing in the suite objected,
+  // because the tests asserted that the sentence was CORRECT rather than that
+  // it did not belong.
+  render(
+    wrap(
+      <HomeScreen
+        octokit={fakeGh({ dirs: DIRS, files: FILES })}
+        onOpenFile={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Button"));
+
+  // The structural half: the front door asserts ONE thing, so the block
+  // holding the h1 holds the h1's own words and nothing else. Any sentence
+  // added beneath the heading fails here whatever it says.
+  const h1 = screen.getByRole("heading", { level: 1 });
+  const hero = h1.parentElement!;
+  assert.equal(
+    hero.textContent?.trim(),
+    h1.textContent?.trim(),
+    `prose is back under the h1: ${hero.textContent}`,
+  );
+
+  // The vocabulary half, matched on the SHAPE of a diagnosis rather than on
+  // the phrasing that was removed. A proportion ("42 of the 54", "of the 54
+  // started", "78%") is a measurement, and measurement is what dashboards do.
+  // The two numbers this screen may state are a remainder ("6 more") and a
+  // fault count, and neither is a proportion.
+  const text = document.body.textContent ?? "";
+  const PROPORTION = [
+    /\b\d+\s+of\s+(the\s+)?\d+\b/i, // "42 of the 54"
+    /\bof the \d+\b/i, // "Of the 54 started": a denominator with no numerator
+    /\d+\s?%/,
+  ];
+  for (const shape of PROPORTION) {
+    assert.equal(
+      shape.test(text),
+      false,
+      `a proportion reached the hub: ${text.match(shape)?.[0]}`,
+    );
+  }
 });
