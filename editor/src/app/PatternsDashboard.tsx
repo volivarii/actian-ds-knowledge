@@ -49,6 +49,7 @@ import {
 } from "../lib/slots";
 import { MeterList } from "./MeterList";
 import { RecipePanel } from "./RecipePanel";
+import { SCREEN_TITLE } from "../lib/routes";
 
 export interface PatternsDashboardProps {
   octokit: Octokit;
@@ -408,7 +409,7 @@ export function PatternsDashboard({
   // fetch used to find a page with no h1 at all.
   const heading = (
     <Heading as="h1" size="5" mb="1">
-      Patterns
+      {SCREEN_TITLE.patterns}
     </Heading>
   );
 

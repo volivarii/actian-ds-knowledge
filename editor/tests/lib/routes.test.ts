@@ -8,6 +8,7 @@ import {
   pathFromHash,
   stateFromHash,
   titleFor,
+  SCREEN_TITLE,
 } from "../../src/lib/routes";
 import { matchFrontmatterForm } from "../../src/lib/frontmatterForms";
 import { isPlainMarkdown } from "../../src/app/EditorShell";
@@ -339,10 +340,19 @@ test("titleFor: two domains of one component are not the same title", () => {
   );
 });
 
-test("titleFor: an overview screen names itself, and home does not", () => {
-  assert.equal(titleFor("patterns"), "Patterns · Actian DS Knowledge Editor");
-  assert.equal(titleFor("coverage"), "Coverage · Actian DS Knowledge Editor");
-  assert.equal(titleFor("health"), "Health · Actian DS Knowledge Editor");
+test("titleFor: a screen is NAMED, not derived from its address", () => {
+  // Title-casing the URL segment put "Health" in the browser tab above a page
+  // headed "Substrate health", and "Accessibility" above "Accessibility
+  // coverage". The name comes from SCREEN_TITLE now, and asserting against
+  // that map rather than against literals is what keeps this test honest when
+  // a screen is renamed.
+  for (const [path, title] of Object.entries(SCREEN_TITLE)) {
+    assert.equal(
+      titleFor(path),
+      `${title} \u00b7 Actian DS Knowledge Editor`,
+      `${path} is titled from its address rather than its name`,
+    );
+  }
   assert.equal(titleFor(null), "Actian DS Knowledge Editor");
 });
 

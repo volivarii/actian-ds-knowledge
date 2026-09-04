@@ -21,8 +21,7 @@ import {
   listFilesByGlob,
 } from "./githubApi";
 import { loadOrderManifest } from "../lib/orderManifestLoader";
-import { A11Y_SCREEN_TITLE } from "./A11yCoverageView";
-import { COVERAGE_SCREEN_TITLE } from "./CoverageDashboard";
+import { SCREEN_TITLE } from "../lib/routes";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
 import { AddSectionDialog } from "./AddSectionDialog";
@@ -1234,7 +1233,7 @@ export function Sidebar({
                 {/* The hub tells the reader an overview sits on top of each
                     scope's tree. It has to be true of every scope that
                     declares one, not only of Components. */}
-                {overviewRow(A11Y_SCREEN_TITLE, "accessibility")}
+                {overviewRow(SCREEN_TITLE.accessibility, "accessibility")}
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -1291,7 +1290,7 @@ export function Sidebar({
                 {/* On top of the tree, not inside it: coverage is the
                     overview of every component at once, and it was a tab on
                     the front door where it could not be linked to. */}
-                {overviewRow(COVERAGE_SCREEN_TITLE, "coverage")}
+                {overviewRow(SCREEN_TITLE.coverage, "coverage")}
                 <ul
                   role="list"
                   style={{ listStyle: "none", padding: 0, margin: 0 }}

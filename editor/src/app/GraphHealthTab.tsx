@@ -35,6 +35,7 @@ import { GraphView } from "./GraphView";
 import { relationTypeLabel } from "../lib/relationTypes";
 import { linkLabel } from "../lib/nomenclature";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
+import { SCREEN_TITLE } from "../lib/routes";
 
 const CONNECTIVITY_LABEL: Record<string, string> = {
   orphan_nodes: "Orphan nodes",
@@ -100,7 +101,7 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
   return (
     <Box p="5" style={{ maxWidth: 1200, margin: "0 auto" }}>
       <Heading as="h1" size="5" mb="1">
-        Relationships
+        {SCREEN_TITLE.health}
       </Heading>
       <Text size="2" color="gray" mb="4" as="p">
         Substrate relationship health and a focused graph explorer. Visual

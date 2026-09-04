@@ -9,9 +9,8 @@ import { render, cleanup } from "@testing-library/react";
 import React from "react";
 import { Theme } from "@radix-ui/themes";
 import { EditorShell } from "../../src/app/EditorShell";
-import { hashFor, pathFromHash } from "../../src/lib/routes";
+import { hashFor, pathFromHash, SCREEN_TITLE } from "../../src/lib/routes";
 import { COMPONENT_PARENT } from "../../src/app/scopes";
-import { A11Y_SCREEN_TITLE } from "../../src/app/A11yCoverageView";
 
 // A minimal Octokit stub. The health view's data is baked, not fetched.
 const octokit = {} as never;
@@ -121,8 +120,36 @@ test("a screen keeps its name across the fetch that fills it", () => {
   );
   assert.equal(
     container.querySelector("h1")?.textContent,
-    A11Y_SCREEN_TITLE,
+    SCREEN_TITLE.accessibility,
     "the waiting state uses a different name than the loaded one",
   );
+  cleanup();
+});
+
+test("every overview screen's heading is the title the sidebar links it by", () => {
+  // The heading and the sidebar label were two literals, then two constants
+  // living inside the screens, which made the sidebar import two of the app's
+  // heaviest modules for a string. They are one map in the IA module now, and
+  // this asserts the screens actually render from it.
+  for (const [path, title] of Object.entries(SCREEN_TITLE)) {
+    // No skips. Skipping two of the four is what hid the health screen still
+    // heading itself "Relationships", the name the address and the sidebar had
+    // both already stopped using.
+    const { container, unmount } = render(
+      <Theme>
+        <EditorShell
+          octokit={octokit}
+          activePath={path}
+          setActivePath={() => {}}
+        />
+      </Theme>,
+    );
+    assert.equal(
+      container.querySelector("h1")?.textContent,
+      title,
+      `${path} renders a heading that is not its title`,
+    );
+    unmount();
+  }
   cleanup();
 });

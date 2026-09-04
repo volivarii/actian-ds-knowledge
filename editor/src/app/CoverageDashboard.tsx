@@ -54,6 +54,7 @@ import { DOMAIN_LABEL } from "../lib/workspaceState";
 import { largestGap } from "../lib/needsAttention";
 import { MeterList } from "./MeterList";
 import { CoverageMatrix, coverageCsv } from "./CoverageMatrix";
+import { SCREEN_TITLE } from "../lib/routes";
 import { downloadCsv } from "../lib/download";
 
 export interface CoverageDashboardProps {
@@ -71,10 +72,6 @@ const STATUS_COLOR: Record<Status, "gray" | "amber" | "blue" | "green"> = {
 // One vocabulary with the workspace. `not-started` used to render as an
 // em-dash here, which is a state a reader cannot read.
 const STATUS_LABEL: Record<Status, string> = STATE_FOR_STATUS;
-
-/** The screen's name, shared with the sidebar row that opens it so the link
- *  text keeps predicting the page heading. */
-export const COVERAGE_SCREEN_TITLE = "Coverage";
 
 export function CoverageDashboard({
   octokit,
@@ -171,7 +168,7 @@ export function CoverageDashboard({
   // the fetch here is 30 to 90 GitHub calls.
   const heading = (
     <Heading as="h1" size="5" mb="1">
-      {COVERAGE_SCREEN_TITLE}
+      {SCREEN_TITLE.coverage}
     </Heading>
   );
 

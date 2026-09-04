@@ -13,6 +13,8 @@
 // and visible: a scope with no overview still appears here, so the gap is on
 // screen rather than in somebody's head.
 
+import { SCREEN_TITLE } from "../lib/routes";
+
 export interface Scope {
   /** Stable key, and the sort order the hub renders in. */
   key: string;
@@ -67,7 +69,7 @@ export const SCOPES: readonly Scope[] = [
  */
 export const COMPONENT_PARENT = {
   path: "coverage",
-  label: "Coverage",
+  label: SCREEN_TITLE.coverage,
 } as const;
 
 /**
@@ -79,7 +81,7 @@ export const COMPONENT_PARENT = {
  * a daily surface for a question nobody asks daily.
  */
 export const SUBSTRATE_HEALTH = {
-  label: "Substrate health",
+  label: SCREEN_TITLE.health,
   holds: "Orphans, connections, and what nothing links to",
   overview: "health",
 } as const;

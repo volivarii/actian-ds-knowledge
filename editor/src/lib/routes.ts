@@ -35,20 +35,38 @@ export const PRODUCT_NAME = "Actian DS Knowledge Editor";
 
 
 /** `activePath` values that name a screen rather than a file. */
-const SCREENS: ReadonlyArray<readonly [string, string]> = [
-  ["inbox", "#/drafts"],
+/**
+ * Every screen that is not a file: its `activePath`, its address, and its name.
+ *
+ * The name lives HERE, beside the address, because it was drifting everywhere
+ * else. `titleFor` used to title-case the URL segment, so `#/health` put
+ * "Health" in the browser tab while the page headed itself "Substrate health"
+ * and the sidebar row said something else again. One screen had four names.
+ */
+const SCREENS = [
+  ["inbox", "#/drafts", "Drafts"],
   // The overview on top of each scope's tree. These were four tabs beneath the
   // home screen, which forced four unrelated things into one shape (statistics,
   // chips restating the statistics, a table) and left the switcher below the
   // fold, so changing lens scrolled the reader back to the top. They are
   // screens now, and home is free to be a hub.
-  ["coverage", "#/coverage"],
-  ["accessibility", "#/accessibility"],
-  ["patterns", "#/patterns"],
+  ["coverage", "#/coverage", "Coverage"],
+  ["accessibility", "#/accessibility", "Accessibility coverage"],
+  ["patterns", "#/patterns", "Patterns"],
   // Orphans, edge counts and the graph are not scoped to anything: they are
   // diagnostics over the whole substrate, so the name says so.
-  ["health", "#/health"],
-];
+  ["health", "#/health", "Substrate health"],
+] as const;
+
+/** The `activePath` of a screen that is not a file. */
+export type ScreenPath = (typeof SCREENS)[number][0];
+
+/** Screen `activePath` to the one name it is called, everywhere. Typed on the
+ *  literal paths, so reading a name for a screen that does not exist is a
+ *  compile error rather than `undefined` reaching a heading. */
+export const SCREEN_TITLE = Object.fromEntries(
+  SCREENS.map(([value, , title]) => [value, title]),
+) as Record<ScreenPath, string>;
 
 /**
  * Addresses this app used to mint, mapped to the screen that replaced them.
@@ -325,6 +343,14 @@ export function titleFor(activePath: string | null): string {
     .split("/")
     .filter(Boolean);
   if (segments.length === 0) return PRODUCT_NAME;
+
+  // A screen is named, not derived from its address: title-casing the segment
+  // is what put "Health" in the tab above a page headed "Substrate health".
+  const screenTitle =
+    activePath == null
+      ? undefined
+      : SCREEN_TITLE[activePath as ScreenPath];
+  if (screenTitle) return `${screenTitle} \u00b7 ${PRODUCT_NAME}`;
 
   const [head, second, third] = segments;
   let name: string;
