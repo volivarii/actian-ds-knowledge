@@ -51,7 +51,7 @@ import { measure, measuredToday } from "../lib/measure";
 import { componentSlotRecords, componentSlotsFor } from "../lib/slots";
 import { loadCapturedSlugs } from "../lib/loadMediaIndex";
 import { DOMAIN_LABEL } from "../lib/workspaceState";
-import { largestGap } from "../lib/needsAttention";
+import { coverageSentence, largestGap } from "../lib/needsAttention";
 import { MeterList } from "./MeterList";
 import { CoverageMatrix, coverageCsv } from "./CoverageMatrix";
 import { SCREEN_TITLE } from "../lib/routes";
@@ -163,6 +163,30 @@ export function CoverageDashboard({
     );
   }, [state, captures]);
 
+  // The verb for the finding the sentence states. A page that says "Tokens is
+  // the backlog" and then offers only "Export as CSV" has named a job and
+  // handed the reader a spreadsheet: export is a verb about the data, not
+  // about the work. Derived from the same `largestGap` over the same authored
+  // rows, so the button and the sentence cannot name different domains.
+  const pass = useMemo(() => {
+    if (state.kind !== "ready") return null;
+    const authored = state.rows.filter((r) => r.origin === "authored");
+    const worst = largestGap(authored);
+    if (!worst) return null;
+    const first = authored.find(
+      (r) => r.domains[worst.domain].status === "not-started",
+    );
+    // largestGap counts them, so one exists; if the two ever disagree, offer
+    // nothing rather than a button that opens the wrong file.
+    if (!first) return null;
+    return {
+      domain: worst.domain,
+      open: worst.open,
+      component: first.component,
+      target: cellTarget(first, worst.domain),
+    };
+  }, [state]);
+
   // The page's name renders in every state. While it lived below the early
   // returns, a reader arriving during the fetch found a page with no h1, and
   // the fetch here is 30 to 90 GitHub calls.
@@ -210,12 +234,7 @@ export function CoverageDashboard({
     <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
       {heading}
       <Text size="2" color="gray" as="p" mb="4">
-        {(() => {
-          const worst = largestGap(rows);
-          return worst
-            ? `${rows.length} components. ${DOMAIN_LABEL[worst.domain]} is the backlog: ${worst.open} have none authored.`
-            : `${rows.length} components, every domain started.`;
-        })()}
+        {coverageSentence(rows)}
       </Text>
 
       {/* The figure, before any number that describes it. */}
@@ -224,6 +243,15 @@ export function CoverageDashboard({
       </Box>
 
       <Flex gap="2" mb="4" wrap="wrap">
+        {pass && (
+          <Button
+            size="1"
+            onClick={() => onOpenFile(pass.target)}
+            title={`Opens ${pass.component}, the first of ${pass.open} with no ${DOMAIN_LABEL[pass.domain]} guidance`}
+          >
+            Start the {DOMAIN_LABEL[pass.domain]} pass
+          </Button>
+        )}
         <Button
           variant="soft"
           size="1"
@@ -263,118 +291,136 @@ export function CoverageDashboard({
           )}
         </Box>
       )}
-      {/* One badge per domain, each restating its matrix row as a ratio, used
-          to sit here. Looking at the screen is what caught it: the Meters were
-          removed and these were not, so the figure was still followed by the
-          numbers it had just replaced. What survives is the sentence that says
-          how to USE the table, which the figure does not say. */}
-      <Text size="2" color="gray" mb="3" as="p">
-        Click a component name to open its details, click a status cell to edit
-        that guidance, or click <em>Start authoring</em> on an unstarted row to
-        begin.
-      </Text>
+      {/* The table is closed at rest, and that is the whole point of this
+          screen now.
 
-      <Table.Root variant="surface" size="1">
-        <Table.Header>
-          <Table.Row>
-            <Table.ColumnHeaderCell>Component</Table.ColumnHeaderCell>
-            {DOMAINS.map((d) => (
-              <Table.ColumnHeaderCell key={d}>
-                {DOMAIN_LABEL[d]}
-              </Table.ColumnHeaderCell>
-            ))}
-            <Table.ColumnHeaderCell />
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {rows.length === 0 && (
+          It restates the figure above it cell for cell: five columns of
+          coloured words for five rows of cells, 425 badges under a drawing of
+          the same 85 rows. The badges are not deleted, because they carry
+          affordances the figure cannot: a 9px matrix cell is below the 24px
+          target floor (WCAG 2.5.8), so the figure can never be the thing you
+          click to open one component's Design guidance. Closed by default is
+          the honest resolution: the page at rest is the figure, and the
+          per-cell route is one keystroke away for whoever wants it.
+
+          Native details/summary rather than a Radix disclosure: it is keyboard
+          operable and announced as expandable with no JavaScript and no state
+          of ours to get wrong. */}
+      <details data-testid="coverage-table-disclosure">
+        <summary style={{ cursor: "pointer" }}>
+          <Text size="2" color="gray">
+            All {rows.length} components, one row each
+          </Text>
+        </summary>
+
+        <Text size="2" color="gray" mb="3" mt="3" as="p">
+          Click a component name to open its details, click a status cell to
+          edit that guidance, or click <em>Start authoring</em> on an unstarted
+          row to begin.
+        </Text>
+
+        <Table.Root variant="surface" size="1">
+          <Table.Header>
             <Table.Row>
-              <Table.Cell colSpan={2 + DOMAINS.length}>
-                <Text color="gray">No components found.</Text>
-              </Table.Cell>
+              <Table.ColumnHeaderCell>Component</Table.ColumnHeaderCell>
+              {DOMAINS.map((d) => (
+                <Table.ColumnHeaderCell key={d}>
+                  {DOMAIN_LABEL[d]}
+                </Table.ColumnHeaderCell>
+              ))}
+              <Table.ColumnHeaderCell />
             </Table.Row>
-          )}
-          {rows.map((row) => {
-            const isGhost = row.origin === "unstarted";
-            const metaPath = `components/src/${row.slug}/_meta.yml`;
-            const staged = cartedPaths.has(metaPath);
-            return (
-              <Table.Row key={row.slug} style={{ opacity: isGhost ? 0.78 : 1 }}>
-                <Table.RowHeaderCell>
-                  <Text
-                    weight="medium"
-                    style={{
-                      cursor: isGhost ? "default" : "pointer",
-                      fontStyle: isGhost ? "italic" : "normal",
-                    }}
-                    onClick={() => {
-                      if (!isGhost) onOpenFile(metaPath);
-                    }}
-                    title={
-                      isGhost
-                        ? `Unstarted (registry: ${row.registryKey})`
-                        : `Open ${row.slug}/_meta.yml`
-                    }
-                  >
-                    {row.component}
-                  </Text>
-                  {row.category && (
-                    <Text size="1" color="gray" as="div">
-                      {row.category}
-                    </Text>
-                  )}
-                </Table.RowHeaderCell>
-                {DOMAINS.map((d) => {
-                  const entry = row.domains[d];
-                  const target = cellTarget(row, d);
-                  return (
-                    <Table.Cell
-                      key={d}
-                      style={{ cursor: isGhost ? "default" : "pointer" }}
+          </Table.Header>
+          <Table.Body>
+            {rows.length === 0 && (
+              <Table.Row>
+                <Table.Cell colSpan={2 + DOMAINS.length}>
+                  <Text color="gray">No components found.</Text>
+                </Table.Cell>
+              </Table.Row>
+            )}
+            {rows.map((row) => {
+              const isGhost = row.origin === "unstarted";
+              const metaPath = `components/src/${row.slug}/_meta.yml`;
+              const staged = cartedPaths.has(metaPath);
+              return (
+                <Table.Row key={row.slug} style={{ opacity: isGhost ? 0.78 : 1 }}>
+                  <Table.RowHeaderCell>
+                    <Text
+                      weight="medium"
+                      style={{
+                        cursor: isGhost ? "default" : "pointer",
+                        fontStyle: isGhost ? "italic" : "normal",
+                      }}
                       onClick={() => {
-                        if (!isGhost) onOpenFile(target);
+                        if (!isGhost) onOpenFile(metaPath);
                       }}
                       title={
                         isGhost
-                          ? "Click Start authoring to add a stub _meta.yml"
-                          : // The raw substrate key used to reach the tooltip
-                            // of the very cell whose badge says "Empty".
-                            `Status: ${STATUS_LABEL[entry.status] ?? entry.status} → ${target}`
+                          ? `Unstarted (registry: ${row.registryKey})`
+                          : `Open ${row.slug}/_meta.yml`
                       }
                     >
-                      <Badge
-                        color={STATUS_COLOR[entry.status]}
-                        variant="soft"
-                        size="1"
+                      {row.component}
+                    </Text>
+                    {row.category && (
+                      <Text size="1" color="gray" as="div">
+                        {row.category}
+                      </Text>
+                    )}
+                  </Table.RowHeaderCell>
+                  {DOMAINS.map((d) => {
+                    const entry = row.domains[d];
+                    const target = cellTarget(row, d);
+                    return (
+                      <Table.Cell
+                        key={d}
+                        style={{ cursor: isGhost ? "default" : "pointer" }}
+                        onClick={() => {
+                          if (!isGhost) onOpenFile(target);
+                        }}
+                        title={
+                          isGhost
+                            ? "Click Start authoring to add a stub _meta.yml"
+                            : // The raw substrate key used to reach the tooltip
+                              // of the very cell whose badge says "Empty".
+                              `Status: ${STATUS_LABEL[entry.status] ?? entry.status} → ${target}`
+                        }
                       >
-                        {STATUS_LABEL[entry.status]}
-                      </Badge>
-                    </Table.Cell>
-                  );
-                })}
-                <Table.Cell>
-                  {isGhost && (
-                    <Button
-                      size="1"
-                      variant={staged ? "soft" : "outline"}
-                      color={staged ? "gray" : "indigo"}
-                      disabled={staged}
-                      onClick={() => startAuthoring(row)}
-                      title={
-                        staged
-                          ? "Already staged in the batch"
-                          : "Stage a stub _meta.yml in the submission batch"
-                      }
-                    >
-                      {staged ? "Staged" : "Start authoring"}
-                    </Button>
-                  )}
-                </Table.Cell>
-              </Table.Row>
-            );
-          })}
-        </Table.Body>
-      </Table.Root>
+                        <Badge
+                          color={STATUS_COLOR[entry.status]}
+                          variant="soft"
+                          size="1"
+                        >
+                          {STATUS_LABEL[entry.status]}
+                        </Badge>
+                      </Table.Cell>
+                    );
+                  })}
+                  <Table.Cell>
+                    {isGhost && (
+                      <Button
+                        size="1"
+                        variant={staged ? "soft" : "outline"}
+                        color={staged ? "gray" : "indigo"}
+                        disabled={staged}
+                        onClick={() => startAuthoring(row)}
+                        title={
+                          staged
+                            ? "Already staged in the batch"
+                            : "Stage a stub _meta.yml in the submission batch"
+                        }
+                      >
+                        {staged ? "Staged" : "Start authoring"}
+                      </Button>
+                    )}
+                  </Table.Cell>
+                </Table.Row>
+              );
+            })}
+          </Table.Body>
+        </Table.Root>
+      </details>
     </Box>
   );
 }

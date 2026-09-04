@@ -25,6 +25,10 @@ function b64(s: string): string {
 function fakeGh(opts: {
   dirs: Array<{ name: string; type: "dir" | "file" }>;
   files: Record<string, string>;
+  /** DS Kit entries with no `_meta.yml`, which the loader turns into ghost
+   *  rows. Defaults to none. Without one, a test about the difference between
+   *  the authored count and the registry count has no difference to see. */
+  registry?: Record<string, unknown>;
 }) {
   return {
     repos: {
@@ -34,7 +38,10 @@ function fakeGh(opts: {
           // A load that cannot read the registry now rejects; these screens
           // are not the subject of that rule, so the fake serves an empty one.
           return {
-            data: { content: b64(JSON.stringify({ components: {} })), encoding: "base64" },
+            data: {
+              content: b64(JSON.stringify({ components: opts.registry ?? {} })),
+              encoding: "base64",
+            },
           };
         }
         const content = opts.files[path];
@@ -166,7 +173,11 @@ test("CoverageDashboard: the per-domain counts are the matrix, stated once", asy
     content.getAttribute("aria-label") ?? "",
     /across 2 components: 2 Approved/,
   );
-  assert.equal(screen.queryByText(/2\/2 draft/), null, "the badge strip is back");
+  assert.equal(
+    screen.queryByText(/2\/2 draft/),
+    null,
+    "the badge strip is back",
+  );
 });
 
 test("CoverageDashboard: shows error callout when load fails", async () => {
@@ -180,4 +191,126 @@ test("CoverageDashboard: shows error callout when load fails", async () => {
   render(wrap(<CoverageDashboard octokit={errGh} onOpenFile={() => {}} />));
   await waitFor(() => screen.getByText(/Failed to load coverage/));
   assert.ok(screen.getByText(/boom/));
+});
+
+test("CoverageDashboard: the table sits inside the disclosure, closed at rest", async () => {
+  // The screen's whole shape rests on this. The figure states the finding and
+  // the table restates it cell for cell, 425 badges under a drawing of the
+  // same rows, so at rest the page is the figure. The badges are kept because
+  // a 9px matrix cell is below the 24px target floor and can never be the
+  // thing you click to open one component's guidance.
+  const { container } = render(
+    wrap(
+      <CoverageDashboard
+        octokit={fakeGh({ dirs: DIRS, files: FILES })}
+        onOpenFile={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Button"));
+
+  const details = container.querySelector(
+    "details[data-testid='coverage-table-disclosure']",
+  ) as HTMLDetailsElement | null;
+  assert.ok(details, "the disclosure is gone");
+  assert.equal(details!.open, false, "the table is open at rest again");
+
+  // The JOIN, not merely the presence of both: a details element beside a
+  // table would satisfy two separate existence checks and ship the defect.
+  const table = container.querySelector("table");
+  assert.ok(table, "the table is gone entirely");
+  assert.ok(
+    details!.contains(table!),
+    "the table is on the page but outside the disclosure",
+  );
+
+  // And the figure is NOT inside it, or the page at rest would be empty.
+  const matrix = container.querySelector("[data-testid='coverage-matrix']");
+  assert.ok(matrix, "the matrix is gone");
+  assert.equal(
+    details!.contains(matrix!),
+    false,
+    "the figure got shut inside the disclosure with the table",
+  );
+});
+
+test("CoverageDashboard: offers the verb for the finding it states", async () => {
+  // A page that says "Tokens is the backlog" and then offers only "Export as
+  // CSV" has named a job and handed the reader a spreadsheet.
+  const calls: string[] = [];
+  render(
+    wrap(
+      <CoverageDashboard
+        octokit={fakeGh({ dirs: DIRS, files: FILES })}
+        onOpenFile={(p) => calls.push(p)}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Button"));
+
+  // Both fixture rows have tokens not-started, so tokens is the gap at 2;
+  // usage and behavior sit at 1 each.
+  const sentence = screen.getByText(/is the backlog/);
+  assert.match(
+    sentence.textContent ?? "",
+    /Tokens is the backlog: 2 of the 2 have none\./,
+  );
+
+  const button = screen.getByRole("button", { name: /Start the Tokens pass/ });
+  fireEvent.click(button);
+  assert.equal(calls.length, 1);
+  // Whichever component is first, it must be one that actually lacks tokens.
+  assert.match(calls[0]!, /^components\/src\/(button|tabs)\/_meta\.yml$/);
+});
+
+test("CoverageDashboard: the sentence does not state two counts for one thing", async () => {
+  // The registry entry is the whole test. Written first against the default
+  // empty registry, it passed on the OLD sentence too, because with no ghost
+  // rows `rows.length` and the authored count are the same number: a guard
+  // that cannot tell the defect from the fix.
+  render(
+    wrap(
+      <CoverageDashboard
+        octokit={fakeGh({
+          dirs: DIRS,
+          files: FILES,
+          // `section: "Components"` is what makes an entry eligible
+          // (graphEligibility.COMPONENT_SECTION). Without it the loader
+          // discards the entry and no ghost row appears, which is how this
+          // test first passed against the defect.
+          registry: {
+            button: {
+              name: "Button",
+              category: "action",
+              section: "Components",
+            },
+            tabs: {
+              name: "Tabs",
+              category: "navigation",
+              section: "Components",
+            },
+            modal: {
+              name: "Modal",
+              category: "overlays",
+              section: "Components",
+            },
+          },
+        })}
+        onOpenFile={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Button"));
+  // The deployed page opened "85 components" while the sidebar two inches
+  // away said 54, because 85 counted registry components nobody had started.
+  const sentence = screen.getByText(/components authored/);
+  assert.match(
+    sentence.textContent ?? "",
+    /^2 components authored, 1 more in the registry with nothing yet\./,
+  );
+  assert.equal(
+    /\b3 components\b/.test(sentence.textContent ?? ""),
+    false,
+    `authored and registry counts merged again: ${sentence.textContent}`,
+  );
 });
