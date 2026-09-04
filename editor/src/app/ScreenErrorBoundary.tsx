@@ -60,10 +60,11 @@ export class ScreenErrorBoundary extends Component<Props, State> {
           <Heading as="h1" size="3" mb="2">
             This screen could not be drawn
           </Heading>
+          {/* The message only: `role="alert"` reads this the moment it
+              appears, and repeating the heading's sentence here buried the
+              message at the end of a second identical reading. */}
           <Callout.Root color="red" role="alert" mb="3">
-            <Callout.Text>
-              This screen could not be drawn: {this.state.error.message}
-            </Callout.Text>
+            <Callout.Text>{this.state.error.message}</Callout.Text>
           </Callout.Root>
           <Flex align="center" gap="3">
             <Text size="2" color="gray">

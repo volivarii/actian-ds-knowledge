@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import type { Octokit } from "@octokit/rest";
 import { Badge, Box, Flex, Switch, Text } from "@radix-ui/themes";
 import {
@@ -50,6 +50,20 @@ import { ReorderHandle } from "./ReorderHandle";
 import { EyebrowLabel } from "./EyebrowLabel";
 import { DeleteSectionDialog } from "./DeleteSectionDialog";
 import { findReferences, loadAnchorIndex } from "../lib/anchorIndex";
+
+/** Enter and Space activate a row that acts as a button. One definition
+ *  rather than a copy per row: the sidebar has three such rows and the
+ *  hand-written handler had been left off two of them, so Home and Drafts,
+ *  the two destinations the nav's own accessible name claims to span, were
+ *  reachable by mouse only. */
+function activateOnKey(activate: () => void) {
+  return (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      activate();
+    }
+  };
+}
 
 interface SidebarProps {
   octokit: Octokit;
@@ -791,12 +805,7 @@ export function Sidebar({
         aria-controls={listId}
         style={{ cursor: "pointer", userSelect: "none" }}
         onClick={() => toggleSection(key)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            toggleSection(key);
-          }
-        }}
+        onKeyDown={activateOnKey(() => toggleSection(key))}
       >
         <Flex align="center" gap="2">
           <span
@@ -972,7 +981,10 @@ export function Sidebar({
             cursor: "pointer",
             background: coverageActive ? "var(--accent-3)" : "transparent",
           }}
+          role="button"
+          tabIndex={0}
           onClick={() => onSelect(null)}
+          onKeyDown={activateOnKey(() => onSelect(null))}
           aria-current={coverageActive ? "page" : undefined}
         >
           <span aria-hidden="true">🏠</span>
@@ -991,7 +1003,10 @@ export function Sidebar({
             background: inboxActive ? "var(--accent-3)" : "transparent",
             borderBottom: "1px solid var(--gray-4)",
           }}
+          role="button"
+          tabIndex={0}
           onClick={() => onSelect("inbox")}
+          onKeyDown={activateOnKey(() => onSelect("inbox"))}
           aria-current={inboxActive ? "page" : undefined}
         >
           <Flex align="center" gap="2">

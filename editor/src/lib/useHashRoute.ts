@@ -96,15 +96,19 @@ export function useHashRoute({
       // A single segment the parser cannot resolve is an in-page fragment (a
       // skip link's "#main", a heading anchor's "#slug"); one it can (the
       // "#drafts" alias) is an address and navigates, so hashchange and a
-      // fresh load agree. The bar is put back on the screen's own address,
-      // because a fragment left there is a link that lands elsewhere when
-      // shared, and a Back press that changes nothing but the bar.
-      if (/^#[^/]+$/.test(hash) && stateFromHash(hash).activePath === null) {
-        window.history.replaceState(null, "", written.current ?? "#/");
-        return;
-      }
-      written.current = hash;
+      // fresh load agree.
+      //
+      // The fragment is left in the address bar, which is what a browser does
+      // with any in-page anchor. Replacing it with the screen's own address
+      // rewrites the entry rather than removing it, so the reader's next Back
+      // press lands on a byte-identical URL and does nothing at all; and a
+      // Back press ONTO a fragment entry was swallowed, destroying it. Every
+      // anchor this app renders already calls preventDefault, so nothing here
+      // pushes a fragment entry in the first place: this is the defensive
+      // path for a hand-typed hash.
       const next = stateFromHash(hash);
+      if (/^#[^/]+$/.test(hash) && next.activePath === null) return;
+      written.current = hash;
       onNavigate(next.activePath, next.exploreTab);
       // If that navigation is a no-op, because the address decodes to the
       // screen the app is already on, React bails out and the write effect

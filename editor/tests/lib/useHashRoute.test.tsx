@@ -248,7 +248,10 @@ test("a plain fragment is not a navigation", async () => {
   // heading anchor's "#slug" is an in-page fragment, and reading it as a route
   // sent the reader Home with the fragment erased.
   cleanup();
-  const address = hashFor("inbox", DEFAULT_EXPLORE_TAB);
+  // No tab argument: `hashFor` returns the SCREENS entry for "inbox" before
+  // the tab is consulted at all, so passing one implies a coupling that
+  // does not exist.
+  const address = hashFor("inbox");
   setHash(address);
   const seen: (string | null)[] = [];
   render(<Harness seen={seen} />);
@@ -258,7 +261,10 @@ test("a plain fragment is not a navigation", async () => {
     window.dispatchEvent(new window.HashChangeEvent("hashchange"));
   });
   assert.equal(seen.length, before, "a fragment was read as a route");
-  assert.equal(window.location.hash, address, "the bar was left on the fragment");
+  // Left where the browser put it. Replacing it with the screen's address
+  // rewrites the history entry instead of removing it, so the reader's next
+  // Back press lands on a byte-identical URL and does nothing at all.
+  assert.equal(window.location.hash, "#main", "the fragment entry was rewritten");
 });
 
 test("a slashless alias the parser resolves still navigates on hashchange", async () => {
@@ -273,6 +279,10 @@ test("a slashless alias the parser resolves still navigates on hashchange", asyn
   });
   assert.equal(seen.length, before + 1, "#drafts was dropped as a fragment");
   assert.equal(seen[seen.length - 1], stateFromHash("#drafts").activePath);
+  // And the bar ends on the canonical spelling, which is the half that makes
+  // the alias safe to copy back out: the write effect cannot correct it,
+  // because React bails out on the unchanged path.
+  assert.equal(window.location.hash, "#/drafts", "the alias was left uncanonical in the bar");
 });
 
 test("an address with a slash still navigates on hashchange, slashless spelling included", async () => {

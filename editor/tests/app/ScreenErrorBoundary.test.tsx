@@ -32,7 +32,17 @@ test("a throw in the screen renders the error and the path, not a blank page", (
     assert.match(text, /recipes directory answered 403/);
     assert.match(text, /app-context\/src\/patterns\/forms\.md/);
     assert.ok(container.querySelector('[role="alert"]'), "the failure is not an alert");
-    assert.equal(container.querySelectorAll("h1").length, 1, "the fallback leaves the page without an h1");
+    const h1s = [...container.querySelectorAll("h1")].map((h) => h.textContent);
+    assert.equal(h1s.length, 1, `the fallback must carry exactly one h1; found ${h1s.length}`);
+    // `role="alert"` reads the moment it appears. Repeating the heading's
+    // sentence there made a screen reader say it twice and buried the
+    // message at the end of the second reading.
+    const alert = container.querySelector('[role="alert"]')!.textContent ?? "";
+    assert.equal(
+      alert.includes(h1s[0] ?? ""),
+      false,
+      `the alert repeats the heading verbatim: ${alert}`,
+    );
   } finally {
     console.error = originalError;
   }

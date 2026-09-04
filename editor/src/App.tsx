@@ -81,13 +81,12 @@ export default function App() {
   // bumps this so the screen error boundary resets (see EditorShell). The
   // state setter alone bails out on an unchanged path and nothing re-renders.
   const [navigationSerial, setNavigationSerial] = useState(0);
-  const activePathRef = useRef(activePath);
-  activePathRef.current = activePath;
+  // Unconditional. Guarding this on "the path did not change" saved nothing:
+  // React batches both setters into one render, and a real path change
+  // re-renders regardless, so the only thing the guard added was a branch no
+  // test could fail and a ref written during render.
   const setActivePath = useCallback((path: string | null) => {
-    // Only a navigation to the screen already shown needs the serial: a real
-    // path change resets the boundary by itself, and bumping on every call
-    // re-rendered the whole tree where React would have bailed out.
-    if (path === activePathRef.current) setNavigationSerial((n) => n + 1);
+    setNavigationSerial((n) => n + 1);
     setActivePathState(path);
   }, []);
   // The home screen's data tab lives here rather than in EditorShell because

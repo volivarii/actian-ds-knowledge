@@ -4,6 +4,7 @@
 //   ● Unsaved changes    (warning amber, while a debounce timer pends)
 //   ● Saving…            (neutral spinner, very briefly during the write)
 //   ✓ Draft saved · …    (success green, with relative timestamp)
+//   ⚠ Draft not saved    (red, the write threw and the draft is only in memory)
 //
 // Wording note: "Draft saved" — NOT "Saved". Removes ambiguity between
 // local draft and remote commit. Authors who see "Saved" sometimes

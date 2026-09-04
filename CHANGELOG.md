@@ -25,14 +25,17 @@ Each entry links its pull request. Dates are the merge date (UTC).
   [#651](https://github.com/volivarii/actian-ds-knowledge/issues/651) and
   [#653](https://github.com/volivarii/actian-ds-knowledge/issues/653)). The top bar is a `<header>`
   whose first focusable element is a "Skip to content" link to the one `<main>`; the sidebar is the one
-  `<nav>`, and its seven section labels are labels rather than headings. Every Radix `Heading` in
+  `<nav>`, named "Repository sections" for the two dimensions it spans, and its seven section labels are
+  labels rather than headings. Home and Drafts, the nav's own first two destinations, are reachable by
+  keyboard: they were `div`s carrying an `onClick` and nothing else, so they sat outside the tab order
+  and exposed no role. Every Radix `Heading` in
   `editor/src` carries an explicit level, so each screen's chrome has exactly one h1 (the deployed Home
   page had nine, eight of them from the shell, because Radix defaults the level to h1). A document
   being edited may still carry its own `# Title` as an h1 inside the editing surface; naming the page
   after that title is 1110's job. A polite live region in
   the header speaks a draft save once it follows a change (not on opening a drafted file, and at most
-  once a minute while typing), a write that never completes, and every file added to or removed from
-  the batch as one sentence per change; every red callout declares what it is (`role="alert"` for a
+  once a minute while typing), a write that fails, once per file until a save succeeds, and every file
+  added to or removed from the batch as one sentence per change; every red callout declares what it is (`role="alert"` for a
   failure, `aria-live="off"` for a standing diagnostic). One error boundary around the screen keeps the
   header and sidebar usable when a screen throws, shows the message and the path, offers **Try again**,
   and resets on any selection; a 403 on one directory used to blank the whole app. Two tree-wide guards keep it so: a source test that

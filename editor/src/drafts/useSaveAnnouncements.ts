@@ -28,13 +28,20 @@ export function useSaveAnnouncements(store: DraftStore, quietMs = SAVE_QUIET_MS)
         if (failed.has(event.path)) return;
         failed.add(event.path);
         announce("Draft could not be saved");
+      } else if (event.kind === "cleared") {
+        // Discarded or submitted. The file keeps no history, and leaving it
+        // in `failed` would silence the next genuine failure on that path.
+        changed.delete(event.path);
+        failed.delete(event.path);
       } else if (event.kind === "saved") {
-        if (!changed.has(event.path)) return;
+        // A save that recovers from a spoken failure is always news: the
+        // reader's last information was that the draft is NOT saved. Lifted
+        // BEFORE the `changed` test, because a save that arrives without a
+        // preceding change still ends the failure it is recovering from.
+        const recovering = failed.delete(event.path);
+        if (!changed.has(event.path) && !recovering) return;
         changed.delete(event.path);
         const now = Date.now();
-        // A save that recovers from a spoken failure is always news: the
-        // reader's last information was that the draft is NOT saved.
-        const recovering = failed.delete(event.path);
         if (recovering || now - (spokenAt.get(event.path) ?? 0) >= quietMs) {
           spokenAt.set(event.path, now);
           announce("Draft saved");

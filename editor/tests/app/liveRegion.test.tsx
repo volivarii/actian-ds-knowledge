@@ -201,6 +201,102 @@ test("a failed write is spoken, and the save that recovers from it is spoken reg
   assert.match(getAnnouncement().text, /draft saved/i);
 });
 
+test("a failure is suppressed per file, and discarding the draft lifts the suppression", async () => {
+  const backing = new MemoryStorage();
+  let fail = true;
+  const storage: Storage = {
+    get length() {
+      return backing.length;
+    },
+    clear: () => backing.clear(),
+    getItem: (k) => backing.getItem(k),
+    key: (i) => backing.key(i),
+    removeItem: (k) => backing.removeItem(k),
+    setItem: (k, v) => {
+      if (fail) throw new Error("QuotaExceededError");
+      backing.setItem(k, v);
+    },
+  };
+  const store = new DraftStore(storage);
+  const draft = { text: "x", basedOnSha: "", ts: 1 };
+  render(<SaveHarness store={store} />);
+
+  await act(async () => {
+    store.markPending("a.md");
+    store.save("a.md", draft);
+  });
+  const seq1 = getAnnouncement().seq;
+  assert.match(getAnnouncement().text, /could not be saved/i);
+
+  // Per PATH, not globally: suppressing every other file's first failure
+  // would leave the author of b.md with a red badge and nothing spoken.
+  await act(async () => {
+    store.markPending("b.md");
+    store.save("b.md", draft);
+  });
+  assert.equal(getAnnouncement().seq, seq1 + 1, "another file's failure was silenced by a.md's");
+
+  await act(async () => {
+    store.markPending("a.md");
+    store.save("a.md", draft);
+  });
+  assert.equal(getAnnouncement().seq, seq1 + 1, "a repeated failure on the same file was read again");
+
+  // The author discards or submits a.md. Nothing about that path survives,
+  // so the next genuine failure on it must be spoken.
+  await act(async () => {
+    store.clear("a.md");
+  });
+  await act(async () => {
+    store.markPending("a.md");
+    store.save("a.md", draft);
+  });
+  assert.equal(
+    getAnnouncement().seq,
+    seq1 + 2,
+    "a failure after the draft was discarded was silenced for good",
+  );
+});
+
+test("a save with no preceding change still ends the failure it recovers from", async () => {
+  // `useDraft` flushes on unmount without a fresh `pending`, so a recovery
+  // can arrive with nothing in `changed`. Testing the failure first left
+  // that save behind an early return: the recovery went unspoken AND the
+  // path stayed suppressed, so every later failure on it was silent too.
+  const backing = new MemoryStorage();
+  let fail = true;
+  const storage: Storage = {
+    get length() {
+      return backing.length;
+    },
+    clear: () => backing.clear(),
+    getItem: (k) => backing.getItem(k),
+    key: (i) => backing.key(i),
+    removeItem: (k) => backing.removeItem(k),
+    setItem: (k, v) => {
+      if (fail) throw new Error("QuotaExceededError");
+      backing.setItem(k, v);
+    },
+  };
+  const store = new DraftStore(storage);
+  const draft = { text: "x", basedOnSha: "", ts: 1 };
+  render(<SaveHarness store={store} />);
+
+  // No markPending anywhere in this test: `changed` stays empty throughout.
+  await act(async () => {
+    store.save("c.md", draft);
+  });
+  const seq = getAnnouncement().seq;
+  assert.match(getAnnouncement().text, /could not be saved/i);
+
+  fail = false;
+  await act(async () => {
+    store.save("c.md", draft);
+  });
+  assert.equal(getAnnouncement().seq, seq + 1, "the recovery was silenced because no change preceded it");
+  assert.match(getAnnouncement().text, /draft saved/i);
+});
+
 test("the badge shows a failed write", () => {
   const { container } = render(
     <Theme>

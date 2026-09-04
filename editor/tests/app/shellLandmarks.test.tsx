@@ -42,18 +42,19 @@ function mountShell(activePath: string | null, navigationSerial = 0) {
   localStorage.clear();
   sessionStorage.clear(); // the sidebar's collapse state lives here
   const gh = fakeGh();
+  const selected: (string | null)[] = [];
   const ui = (serial: number) => (
     <Theme>
       <EditorShell
         octokit={gh}
         activePath={activePath}
-        setActivePath={() => {}}
+        setActivePath={(p) => selected.push(p)}
         navigationSerial={serial}
       />
     </Theme>
   );
   const r = render(ui(navigationSerial));
-  return { ...r, renavigate: (serial: number) => r.rerender(ui(serial)) };
+  return { ...r, selected, renavigate: (serial: number) => r.rerender(ui(serial)) };
 }
 
 test("the shell has one nav and one main, and the main can be skipped to", async () => {
@@ -63,9 +64,15 @@ test("the shell has one nav and one main, and the main can be skipped to", async
   await waitFor(() => assert.ok(container.querySelector("nav")));
   const navs = container.querySelectorAll("nav");
   assert.equal(navs.length, 1, `expected one nav, found ${navs.length}`);
+  // The invariant first: an unnamed landmark is the a11y defect. The exact
+  // copy second, so a rename is a deliberate edit here rather than a silent
+  // one; keeping only the copy assertion would leave "the nav has SOME name"
+  // guarded nowhere.
+  const navLabel = navs[0]!.getAttribute("aria-label");
+  assert.ok(navLabel, "the nav has no accessible name");
   // Named for what it spans (Home, Drafts, the design system AND the
   // application context), not for its first dimension.
-  assert.equal(navs[0]!.getAttribute("aria-label"), "Repository sections");
+  assert.equal(navLabel, "Repository sections");
   const mains = container.querySelectorAll("main");
   assert.equal(mains.length, 1, `expected one main, found ${mains.length}`);
   assert.equal(mains[0]!.id, "main", "the skip link target is #main");
@@ -82,6 +89,16 @@ test("Home in the shell has exactly one h1, and the sidebar labels are not headi
   await waitFor(() => assert.ok(container.querySelector("nav")));
   const h1s = [...container.querySelectorAll("h1")].map((h) => h.textContent);
   assert.deepEqual(h1s, ["Browse and edit the design system."], `h1s: ${h1s.join(" | ")}`);
+  // The SIDEBAR contributes none of them. Scope, stated because a mutation
+  // proved it: `AppHeader` is rendered by `App`, not by this shell, so
+  // nothing here can see the header regain an h1 (`AppHeader.test` asserts
+  // that, and goes red when the title becomes a Heading). Those two plus the
+  // per-screen "one h1" compose to "the page has one h1" for every screen
+  // state, the boundary's fallback included: no screen throws on demand
+  // inside the real shell, so that state is covered by
+  // `ScreenErrorBoundary.test`'s own single-h1 assertion.
+  const chromeH1s = [...container.querySelectorAll("h1")].filter((h) => !h.closest("main"));
+  assert.equal(chromeH1s.length, 0, `the sidebar carries ${chromeH1s.length} h1(s)`);
   const nav = container.querySelector("nav")!;
   assert.equal(
     nav.querySelectorAll("h1,h2,h3,h4,h5,h6").length,
@@ -103,6 +120,27 @@ test("Home in the shell has exactly one h1, and the sidebar labels are not headi
     assert.ok(label, `group label #${id} is missing`);
     assert.ok((label.textContent ?? "").trim().length > 0, `group label #${id} is empty`);
   }
+});
+
+test("the nav's own destinations are reachable by keyboard", async () => {
+  // The landmark is named "Repository sections" and Home and Drafts are the
+  // first two of them. Rendered as divs with an onClick and nothing else,
+  // they were in no tab order and exposed no role, so the name promised a
+  // scope a keyboard could not reach.
+  const { container, selected } = mountShell(null);
+  await waitFor(() => assert.ok(container.querySelector("nav")));
+  const nav = container.querySelector("nav")!;
+  const rowFor = (label: string) =>
+    [...nav.querySelectorAll<HTMLElement>('[role="button"]')].find((el) =>
+      (el.textContent ?? "").includes(label),
+    );
+  for (const label of ["Home", "Drafts"]) {
+    const row = rowFor(label);
+    assert.ok(row, `${label} is not exposed as a control`);
+    assert.equal(row!.tabIndex, 0, `${label} is not in the tab order`);
+  }
+  fireEvent.keyDown(rowFor("Drafts")!, { key: "Enter" });
+  assert.deepEqual(selected, ["inbox"], "Enter on Drafts selected nothing");
 });
 
 test("the draft inbox in the shell has exactly one h1", async () => {
