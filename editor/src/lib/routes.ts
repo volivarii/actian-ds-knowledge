@@ -17,7 +17,6 @@
  * up as a failing test rather than as a link that quietly opens something else.
  */
 
-import type { ExploreTab } from "../app/HomeScreen";
 import {
   isMetaYaml,
   isPlainMarkdown,
@@ -34,39 +33,36 @@ const FILE_SEGMENT = "file";
 
 export const PRODUCT_NAME = "Actian DS Knowledge Editor";
 
-/** The home screen's data tabs. `coverage` is the default and stays
- *  unqualified, so the plain home address does not carry a tab nobody chose.
- *
- *  Deliberately NOT annotated `readonly ExploreTab[]`: that annotation widens
- *  the literals back to `ExploreTab`, which makes the Exclude below resolve to
- *  `Exclude<ExploreTab, ExploreTab>` and hold no matter what this array
- *  contains. The two checks are a compile-time join in both directions, so
- *  adding a tab in HomeScreen without adding it here breaks the build rather
- *  than dropping it from the address silently. */
-const EXPLORE_TABS = [
-  "coverage",
-  "accessibility",
-  "relationships",
-  "patterns",
-] as const;
-export const DEFAULT_EXPLORE_TAB: ExploreTab = "coverage";
-/** Nothing here that HomeScreen does not offer. */
-type _TabsAreReal = (typeof EXPLORE_TABS)[number] extends ExploreTab
-  ? true
-  : never;
-/** Nothing HomeScreen offers that is missing here. */
-type _TabsCovered =
-  Exclude<ExploreTab, (typeof EXPLORE_TABS)[number]> extends never
-    ? true
-    : never;
-const _tabsAreReal: _TabsAreReal = true;
-const _tabsCovered: _TabsCovered = true;
-void _tabsAreReal;
-void _tabsCovered;
 
 /** `activePath` values that name a screen rather than a file. */
 const SCREENS: ReadonlyArray<readonly [string, string]> = [
   ["inbox", "#/drafts"],
+  // The overview on top of each scope's tree. These were four tabs beneath the
+  // home screen, which forced four unrelated things into one shape (statistics,
+  // chips restating the statistics, a table) and left the switcher below the
+  // fold, so changing lens scrolled the reader back to the top. They are
+  // screens now, and home is free to be a hub.
+  ["coverage", "#/coverage"],
+  ["accessibility", "#/accessibility"],
+  ["patterns", "#/patterns"],
+  // Orphans, edge counts and the graph are not scoped to anything: they are
+  // diagnostics over the whole substrate, so the name says so.
+  ["health", "#/health"],
+];
+
+/**
+ * Addresses this app used to mint, mapped to the screen that replaced them.
+ *
+ * `#/explore/<tab>` was the home screen with a tab selected. Those links are in
+ * people's history and in chat threads, and resolving them to home would land a
+ * reader on a page that no longer contains what they were sent to. Read-only:
+ * nothing mints these any more, and `hashFor` never returns one.
+ */
+const LEGACY_EXPLORE: ReadonlyArray<readonly [string, string]> = [
+  ["coverage", "coverage"],
+  ["accessibility", "accessibility"],
+  ["patterns", "patterns"],
+  ["relationships", "health"],
 ];
 
 /**
@@ -210,15 +206,8 @@ const DIR_MATCHERS: ReadonlyArray<readonly [string, RegExp]> = DIRS.map(
 
 /** The hash for an `activePath`. `null` is the home screen, where the chosen
  *  data tab is the only thing left to address. */
-export function hashFor(
-  activePath: string | null,
-  exploreTab: ExploreTab = DEFAULT_EXPLORE_TAB,
-): string {
-  if (activePath == null || activePath === "") {
-    return exploreTab === DEFAULT_EXPLORE_TAB
-      ? HOME_HASH
-      : `#/explore/${exploreTab}`;
-  }
+export function hashFor(activePath: string | null): string {
+  if (activePath == null || activePath === "") return HOME_HASH;
 
   for (const [value, hash] of SCREENS) {
     if (activePath === value) return hash;
@@ -278,6 +267,11 @@ export function pathFromHash(hash: string): string | null {
     if (`#/${head}` === screenHash && rest.length === 0) return value;
   }
 
+  if (head === "explore" && rest.length === 1) {
+    const legacy = LEGACY_EXPLORE.find(([tab]) => tab === rest[0]);
+    return legacy ? legacy[1] : null;
+  }
+
   if (head === "file") {
     const path = rest.join("/");
     return isSafeRepoPath(path) ? path : null;
@@ -303,16 +297,6 @@ export function pathFromHash(hash: string): string | null {
   return dir ? `${dir[1]}/${slug}.md` : null;
 }
 
-/** The home data tab a hash names, or `null` if it names none. */
-export function exploreTabFromHash(hash: string): ExploreTab | null {
-  const normalised = hash.replace(/[?#](?!\/).*$/, "").replace(/\/+$/, "");
-  const m = /^#\/explore\/([^/]+)$/.exec(normalised);
-  const tab = m?.[1];
-  return tab && (EXPLORE_TABS as readonly string[]).includes(tab)
-    ? (tab as ExploreTab)
-    : null;
-}
-
 function titleCase(slug: string): string {
   return slug
     .split("-")
@@ -335,11 +319,8 @@ function titleCase(slug: string): string {
  * the registry arrives asynchronously and a tab title that changes under the
  * reader is worse than one that says "Data Product" instead of "Data product".
  */
-export function titleFor(
-  activePath: string | null,
-  exploreTab: ExploreTab = DEFAULT_EXPLORE_TAB,
-): string {
-  const segments = hashFor(activePath, exploreTab)
+export function titleFor(activePath: string | null): string {
+  const segments = hashFor(activePath)
     .replace(/^#\/?/, "")
     .split("/")
     .filter(Boolean);
@@ -351,8 +332,6 @@ export function titleFor(
     name = titleCase((segments[segments.length - 1] ?? "").replace(/\.(md|yml)$/, ""));
   } else if (segments.length === 1) {
     name = titleCase(head ?? "");
-  } else if (head === "explore") {
-    name = titleCase(second ?? "");
   } else {
     name = titleCase(second ?? "") + (third ? ` ${third}` : "");
   }
@@ -370,21 +349,14 @@ export function titleFor(
  * StrictMode's double mount, which is a development-only symptom of a design
  * that was correcting itself instead of starting correct.
  *
- * `exploreTab` is `null` only when the address names a file and so says nothing
- * about the tab. A home address always names one, falling back to the default,
- * so that going Back to plain `#/` restores the default tab rather than leaving
- * the tab strip showing something the address does not say.
+ * Every overview is a screen of its own, so an address names a screen and
+ * nothing else. While the overviews were tabs on this screen, the address had
+ * to carry the tab too, and going Back to plain `#/` had to be taught to
+ * restore the default tab rather than leave the strip showing something the
+ * address did not say.
  */
 export function stateFromHash(hash: string): {
   activePath: string | null;
-  exploreTab: ExploreTab | null;
 } {
-  const activePath = pathFromHash(hash);
-  return {
-    activePath,
-    exploreTab:
-      activePath === null
-        ? (exploreTabFromHash(hash) ?? DEFAULT_EXPLORE_TAB)
-        : null,
-  };
+  return { activePath: pathFromHash(hash) };
 }

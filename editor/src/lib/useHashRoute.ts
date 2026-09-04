@@ -1,15 +1,13 @@
 import { useEffect, useRef } from "react";
-import type { ExploreTab } from "../app/HomeScreen";
 import { hashFor, stateFromHash, titleFor } from "./routes";
 
 interface UseHashRouteArgs {
   activePath: string | null;
-  exploreTab: ExploreTab;
   /** Called when the address, rather than the app, decides the screen: Back,
    *  Forward, or a link pasted into the same tab. NOT called on mount: `App`
    *  seeds its state from the address synchronously, so there is nothing to
    *  correct after the first render. */
-  onNavigate: (path: string | null, tab: ExploreTab | null) => void;
+  onNavigate: (path: string | null) => void;
 }
 
 /**
@@ -53,7 +51,6 @@ function sameAddress(a: string | null, b: string | null): boolean {
  */
 export function useHashRoute({
   activePath,
-  exploreTab,
   onNavigate,
 }: UseHashRouteArgs): void {
   /** The address this hook last wrote or read. A `hashchange` matching it is
@@ -62,8 +59,8 @@ export function useHashRoute({
 
   // Write the address when the app navigates.
   useEffect(() => {
-    const next = hashFor(activePath, exploreTab);
-    document.title = titleFor(activePath, exploreTab);
+    const next = hashFor(activePath);
+    document.title = titleFor(activePath);
     const current = window.location.hash;
     if (sameAddress(current, next)) {
       written.current = next;
@@ -73,16 +70,14 @@ export function useHashRoute({
     // this is a correction, not a navigation, and must not cost a history
     // entry. A bare URL with no fragment counts: it names the home screen.
     const decoded = stateFromHash(current);
-    const isCorrection =
-      decoded.activePath === activePath &&
-      (decoded.exploreTab === null || decoded.exploreTab === exploreTab);
+    const isCorrection = decoded.activePath === activePath;
     written.current = next;
     if (isCorrection) {
       window.history.replaceState(null, "", next);
     } else {
       window.location.hash = next;
     }
-  }, [activePath, exploreTab]);
+  }, [activePath]);
 
   // Back, Forward, and a link pasted into the same tab.
   useEffect(() => {
@@ -109,13 +104,13 @@ export function useHashRoute({
       const next = stateFromHash(hash);
       if (/^#[^/]+$/.test(hash) && next.activePath === null) return;
       written.current = hash;
-      onNavigate(next.activePath, next.exploreTab);
+      onNavigate(next.activePath);
       // If that navigation is a no-op, because the address decodes to the
       // screen the app is already on, React bails out and the write effect
       // never re-runs. Without this the address and the screen would disagree
       // for as long as the reader stayed, and the address they could copy back
       // out of the bar would be the broken one.
-      const canonical = hashFor(next.activePath, next.exploreTab ?? exploreTab);
+      const canonical = hashFor(next.activePath);
       if (!sameAddress(hash, canonical)) {
         written.current = canonical;
         window.history.replaceState(null, "", canonical);
@@ -123,5 +118,5 @@ export function useHashRoute({
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
-  }, [onNavigate, exploreTab]);
+  }, [onNavigate]);
 }

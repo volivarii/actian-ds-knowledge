@@ -1,30 +1,32 @@
-// The editor's front door — renders when EditorShell.activePath is null.
+// The editor's front door: a hub, not a dashboard.
 //
-// One page that answers, in order: what this is (hero), where to start
-// (three action cards), what most needs writing (needs-attention list),
-// and the full data (the former landing tabs, absorbed here as an
-// "Explore the data" section). Design rules it encodes:
-//   - every answer ends in a click that starts an edit
-//   - plain author language, no repo/graph jargon
-//   - honest status (real counts, gaps shown as a to-do list)
-//   - can't-break-anything messaging on the editing loop
+// It holds three things and nothing else: the shape of the backlog in one
+// derived sentence, the work worth doing next, and one way into each scope.
 //
-// Coverage (the hero's "N of M components have authored guidance" badge,
-// and the needs-attention list) resolves through the memoized loadCoverage,
-// so this screen and the Explore dashboards all share one fetch.
+// THE RULE THAT KEEPS IT A HUB: this screen links, it never analyses. If a
+// number needs a sentence to explain it, that sentence belongs on the scope's
+// own overview screen. Without that rule this page grew a hero, a coverage
+// badge, three action cards, a needs-attention list AND four tab panels, each
+// of which restated the statistics above it before showing the table they came
+// from.
+//
+// The four "Explore the data" tabs are gone. Coverage, accessibility, patterns
+// and substrate health are screens now (see SCREENS in lib/routes.ts), because
+// they were never four of the same thing: three are the overview on top of a
+// scope's tree, and the fourth is a diagnostic over the whole substrate.
+//
+// Coverage resolves through the memoized loadCoverage, so this screen and the
+// overviews it links to share one fetch.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Octokit } from "@octokit/rest";
 import {
-  Badge,
   Box,
   Button,
   Callout,
-  Card,
   Flex,
   Heading,
   Spinner,
-  Tabs,
   Text,
 } from "@radix-ui/themes";
 import {
@@ -33,22 +35,14 @@ import {
   type CoverageRow,
 } from "../lib/coverageLoader";
 import {
-  authoredUsageGapCount,
   gapCount,
+  largestGap,
   topGaps,
   type AttentionBand,
 } from "../lib/needsAttention";
-import { CoverageDashboard } from "./CoverageDashboard";
+import { DOMAIN_LABEL } from "../lib/workspaceState";
 import { CoverageCells } from "./CoverageCells";
-import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
-import { GraphHealthTab } from "./GraphHealthTab";
-import { PatternsDashboard } from "./PatternsDashboard";
-
-export type ExploreTab =
-  | "coverage"
-  | "accessibility"
-  | "relationships"
-  | "patterns";
+import { SCOPES, SUBSTRATE_HEALTH } from "./scopes";
 
 export interface HomeScreenProps {
   octokit: Octokit;
@@ -56,11 +50,6 @@ export interface HomeScreenProps {
   /** Focuses the header's GlobalSearch input (owned by App), wired through
    *  EditorShell's onFocusSearch. */
   onFindComponent?: () => void;
-  /** Optional controlled Explore-tab state (owned by EditorShell so the
-   *  chosen tab survives navigating into a file and back — the behavior
-   *  the old landing tabs had). Uncontrolled when omitted. */
-  exploreTab?: ExploreTab;
-  onExploreTabChange?: (tab: ExploreTab) => void;
 }
 
 const GAP_LIST_LIMIT = 8;
@@ -82,16 +71,8 @@ export function HomeScreen({
   octokit,
   onOpenFile,
   onFindComponent,
-  exploreTab: exploreTabProp,
-  onExploreTabChange,
 }: HomeScreenProps) {
   const [coverage, setCoverage] = useState<CoverageState>({ kind: "loading" });
-  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
-  const [internalExploreTab, setInternalExploreTab] =
-    useState<ExploreTab>("coverage");
-  const exploreTab = exploreTabProp ?? internalExploreTab;
-  const setExploreTab = onExploreTabChange ?? setInternalExploreTab;
-  const needsAttentionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,173 +97,26 @@ export function HomeScreen({
         ? {
             counts: summarize(rows),
             gaps: topGaps(rows, GAP_LIST_LIMIT),
-            usageGaps: authoredUsageGapCount(rows),
+            backlog: largestGap(rows),
             totalGaps: gapCount(rows),
           }
-        : { counts: null, gaps: [], usageGaps: null, totalGaps: 0 },
+        : { counts: null, gaps: [], backlog: null, totalGaps: 0 },
     [rows],
   );
-  const { counts, gaps, usageGaps, totalGaps } = derived;
-
-  const scrollToNeedsAttention = () => {
-    needsAttentionRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  };
+  const { counts, gaps, backlog, totalGaps } = derived;
 
   return (
-    <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
-      {/* ── Hero ───────────────────────────────────────────────────────── */}
-      <Box mb="5" style={{ maxWidth: 680 }}>
+    <Box p="5" style={{ maxWidth: 900, margin: "0 auto" }}>
+      {/* ── The shape of the backlog, in one derived sentence ──────────── */}
+      <Box mb="5" style={{ maxWidth: 620 }}>
         <Heading as="h1" size="7" mb="2">
-          Browse and edit the design system.
+          Author the design system.
         </Heading>
-        <Text size="3" color="gray" as="p" mb="3">
-          Its components, guidance, foundations, accessibility, and the products
-          that use them. Every edit opens a pull request that is reviewed before
-          it ships.
-        </Text>
-        {counts && (
-          <Flex gap="2" wrap="wrap">
-            <Badge variant="soft" color="gray" size="2">
-              {counts.authored} of {counts.total} components have authored
-              guidance
-            </Badge>
-          </Flex>
-        )}
-        {coverage.kind === "ready" && coverage.unreadable.length > 0 && (
-          // The count above and the gap list below both leave these out. Saying
-          // so here is what keeps "N components" from being a quietly smaller
-          // number than the repository holds.
-          <Text size="1" color="gray" as="p" mt="2">
-            {coverage.unreadable.length} component
-            {coverage.unreadable.length === 1 ? "" : "s"} could not be read and{" "}
-            {coverage.unreadable.length === 1 ? "is" : "are"} not counted:{" "}
-            {coverage.unreadable.join(", ")}.
-          </Text>
-        )}
-      </Box>
-
-      {/* ── Start here ─────────────────────────────────────────────────── */}
-      <Heading as="h2" size="4" mb="3">
-        Start here
-      </Heading>
-      <Flex gap="3" mb="5" wrap="wrap">
-        <Card style={{ flex: "1 1 260px" }}>
-          <Flex direction="column" gap="2" height="100%">
-            <Heading as="h3" size="3">
-              Write missing guidance
-            </Heading>
-            <Text size="2" color="gray" style={{ flexGrow: 1 }}>
-              {usageGaps == null
-                ? "Some components still need usage guidance. It is the most valuable thing to write."
-                : usageGaps === 0
-                  ? "Every started component's usage guidance is underway. See below for anything else that needs a hand."
-                  : `${usageGaps} started ${usageGaps === 1 ? "component still lacks" : "components still lack"} usage guidance. It is the most valuable thing to write.`}
-            </Text>
-            <Box>
-              <Button variant="solid" onClick={scrollToNeedsAttention}>
-                See what needs attention
-              </Button>
-            </Box>
-          </Flex>
-        </Card>
-        <Card style={{ flex: "1 1 260px" }}>
-          <Flex direction="column" gap="2" height="100%">
-            <Heading as="h3" size="3">
-              Improve a component
-            </Heading>
-            <Text size="2" color="gray" style={{ flexGrow: 1 }}>
-              Jump straight to any component and edit its guidance, words, or
-              metadata.
-            </Text>
-            <Box>
-              <Button
-                variant="soft"
-                onClick={() => onFindComponent?.()}
-                disabled={!onFindComponent}
-              >
-                Find a component
-              </Button>
-            </Box>
-          </Flex>
-        </Card>
-        <Card style={{ flex: "1 1 260px" }}>
-          <Flex direction="column" gap="2" height="100%">
-            <Heading as="h3" size="3">
-              How your edit ships
-            </Heading>
-            <Text size="2" color="gray" style={{ flexGrow: 1 }}>
-              See what happens between pressing Submit and your change going
-              live.
-            </Text>
-            <Box>
-              <Button
-                variant="soft"
-                onClick={() => setHowItWorksOpen((v) => !v)}
-                aria-expanded={howItWorksOpen}
-              >
-                {howItWorksOpen ? "Hide the steps" : "Show the steps"}
-              </Button>
-            </Box>
-          </Flex>
-        </Card>
-      </Flex>
-
-      {/* ── How it works (disclosure) ──────────────────────────────────── */}
-      {howItWorksOpen && (
-        <Card mb="5" variant="surface">
-          <Flex gap="4" wrap="wrap">
-            {[
-              {
-                n: "1",
-                title: "You edit a page",
-                body: "Forms, rich text, or raw markdown. Drafts save locally as you type; nothing leaves your browser until you submit.",
-              },
-              {
-                n: "2",
-                title: "A pull request opens",
-                body: "Your batched changes become one reviewable pull request on GitHub. Nothing ships until someone approves it.",
-              },
-              {
-                n: "3",
-                title: "The system does the rest",
-                body: "Automated checks validate the change, and once merged, everything derived from it (docs, data, the connection map) updates by itself.",
-              },
-            ].map((step) => (
-              <Flex key={step.n} gap="2" style={{ flex: "1 1 240px" }}>
-                <Badge variant="solid" radius="full" size="2">
-                  {step.n}
-                </Badge>
-                <Box>
-                  <Text size="2" weight="medium" as="div">
-                    {step.title}
-                  </Text>
-                  <Text size="2" color="gray" as="div">
-                    {step.body}
-                  </Text>
-                </Box>
-              </Flex>
-            ))}
-          </Flex>
-        </Card>
-      )}
-
-      {/* ── Needs attention ────────────────────────────────────────────── */}
-      <Box ref={needsAttentionRef} mb="5">
-        <Heading as="h2" size="4" mb="1">
-          Needs attention
-        </Heading>
-        <Text size="2" color="gray" as="p" mb="3">
-          The most valuable writing right now: components designers use that are
-          missing guidance.
-        </Text>
         {coverage.kind === "loading" && (
-          <Flex align="center" gap="2" py="3">
+          <Flex align="center" gap="2" py="2">
             <Spinner />
             <Text size="2" color="gray">
-              Checking what needs attention…
+              Reading the substrate…
             </Text>
           </Flex>
         )}
@@ -293,6 +127,31 @@ export function HomeScreen({
             </Callout.Text>
           </Callout.Root>
         )}
+        {counts && (
+          <Text size="3" color="gray" as="p">
+            {backlog
+              ? `${DOMAIN_LABEL[backlog.domain]} is the backlog: ${backlog.open} of ${backlog.total} components have none authored.`
+              : `Nothing is unwritten. All ${counts.total} components have every domain started.`}
+          </Text>
+        )}
+        {coverage.kind === "ready" && coverage.unreadable.length > 0 && (
+          // The counts above and the list below both leave these out. Saying so
+          // here is what keeps "N components" from being a quietly smaller
+          // number than the repository holds.
+          <Text size="1" color="gray" as="p" mt="2">
+            {coverage.unreadable.length} component
+            {coverage.unreadable.length === 1 ? "" : "s"} could not be read and{" "}
+            {coverage.unreadable.length === 1 ? "is" : "are"} not counted:{" "}
+            {coverage.unreadable.join(", ")}.
+          </Text>
+        )}
+      </Box>
+
+      {/* ── Worth doing next ───────────────────────────────────────────── */}
+      <Box mb="5">
+        <Heading as="h2" size="4" mb="3">
+          Worth doing next
+        </Heading>
         {coverage.kind === "ready" && gaps.length === 0 && (
           <Callout.Root color="green">
             <Callout.Text>
@@ -301,81 +160,143 @@ export function HomeScreen({
           </Callout.Root>
         )}
         {coverage.kind === "ready" && gaps.length > 0 && (
-          <Flex direction="column" gap="2">
+          <Box>
             {gaps.map((item) => (
-              <Card key={item.slug}>
-                <Flex align="center" justify="between" gap="3" wrap="wrap">
-                  <Box>
-                    <Text weight="medium" as="div">
-                      {item.component}
-                    </Text>
-                    {/* One readout, not one badge per absent domain. The
-                        badges said the same word five times and could not
-                        tell a draft from a category default; the cells can,
-                        and the accessible name still spells every status
-                        out. */}
-                    <Box mt="2">
-                      <CoverageCells
-                        statuses={item.statuses}
-                        subject={item.component}
-                      />
-                    </Box>
-                  </Box>
-                  <Button
-                    variant="soft"
-                    size="1"
-                    onClick={() => onOpenFile(item.target)}
+              <Flex
+                key={item.slug}
+                align="center"
+                justify="between"
+                gap="3"
+                wrap="wrap"
+                py="3"
+                style={{ borderTop: "1px solid var(--ed-well-edge)" }}
+              >
+                <Flex align="center" gap="3" wrap="wrap">
+                  <Text
+                    weight="medium"
+                    size="2"
+                    style={{ minWidth: 190, display: "inline-block" }}
                   >
-                    {BAND_ACTION_LABEL[item.band]}
-                  </Button>
+                    {item.component}
+                  </Text>
+                  {/* One readout, not one badge per absent domain. */}
+                  <CoverageCells
+                    statuses={item.statuses}
+                    subject={item.component}
+                  />
+                  <Text size="1" color="gray">
+                    {item.missing.map((d) => DOMAIN_LABEL[d]).join(", ")} not
+                    started
+                  </Text>
                 </Flex>
-              </Card>
+                <Button
+                  variant="soft"
+                  size="1"
+                  onClick={() => onOpenFile(item.target)}
+                >
+                  {BAND_ACTION_LABEL[item.band]}
+                </Button>
+              </Flex>
             ))}
             {totalGaps > gaps.length && (
-              <Text size="2" color="gray">
-                {totalGaps - gaps.length} more in the coverage table below.
+              <Text size="2" color="gray" as="p" mt="3">
+                {totalGaps - gaps.length} more.{" "}
+                <Button
+                  variant="ghost"
+                  size="1"
+                  onClick={() => onOpenFile("coverage")}
+                >
+                  See the whole matrix
+                </Button>
               </Text>
             )}
-          </Flex>
+          </Box>
         )}
       </Box>
 
-      {/* ── Explore the data (the absorbed landing tabs) ───────────────── */}
-      <Heading as="h2" size="4" mb="1">
-        Explore the data
-      </Heading>
-      <Text size="2" color="gray" as="p" mb="3">
-        The full picture behind the list above: every component&apos;s status,
-        the accessibility coverage, the health of the connections, and the UX
-        patterns each app is described by.
-      </Text>
-      <Tabs.Root
-        value={exploreTab}
-        onValueChange={(v) => setExploreTab(v as ExploreTab)}
-      >
-        <Tabs.List>
-          <Tabs.Trigger value="coverage">Coverage</Tabs.Trigger>
-          <Tabs.Trigger value="accessibility">Accessibility</Tabs.Trigger>
-          <Tabs.Trigger value="relationships">Relationships</Tabs.Trigger>
-          <Tabs.Trigger value="patterns">Patterns</Tabs.Trigger>
-        </Tabs.List>
-        <Tabs.Content value="coverage">
-          {/* Self-loads through the memoized loadCoverage — resolves from
-              the same cached promise as this screen's own fetch. */}
-          <CoverageDashboard octokit={octokit} onOpenFile={onOpenFile} />
-        </Tabs.Content>
-        <Tabs.Content value="accessibility">
-          <A11yCoverageDashboard octokit={octokit} onOpenFile={onOpenFile} />
-        </Tabs.Content>
-        <Tabs.Content value="relationships">
-          <GraphHealthTab onOpenFile={onOpenFile} />
-        </Tabs.Content>
-        <Tabs.Content value="patterns">
-          {/* App-first: an app's use cases name the patterns that serve them,
-              and the rest of what the app claims is listed beneath. */}
-          <PatternsDashboard octokit={octokit} onOpenFile={onOpenFile} />
-        </Tabs.Content>
-      </Tabs.Root>
+      {/* ── One way into each scope ────────────────────────────────────── */}
+      <Box>
+        <Heading as="h2" size="4" mb="1">
+          Scopes
+        </Heading>
+        <Text size="2" color="gray" as="p" mb="3">
+          Each holds one part of the substrate. Its overview sits on top of its
+          tree.
+        </Text>
+        {SCOPES.map((scope) => (
+          <Flex
+            key={scope.key}
+            align="center"
+            justify="between"
+            gap="3"
+            wrap="wrap"
+            py="3"
+            style={{ borderTop: "1px solid var(--ed-well-edge)" }}
+          >
+            <Box style={{ minWidth: 190 }}>
+              <Text weight="medium" size="2" as="div">
+                {scope.label}
+              </Text>
+              <Text size="1" color="gray" as="div">
+                {scope.holds}
+              </Text>
+            </Box>
+            {scope.overview ? (
+              <Button
+                variant="soft"
+                size="1"
+                onClick={() => onOpenFile(scope.overview as string)}
+              >
+                Open the overview
+              </Button>
+            ) : (
+              // Shown rather than hidden: a scope with no overview yet is a
+              // gap in the structure, and hiding it makes the structure look
+              // finished.
+              <Text size="1" color="gray">
+                No overview yet
+              </Text>
+            )}
+          </Flex>
+        ))}
+        <Flex
+          align="center"
+          justify="between"
+          gap="3"
+          wrap="wrap"
+          py="3"
+          style={{
+            borderTop: "1px solid var(--ed-well-edge)",
+            borderBottom: "1px solid var(--ed-well-edge)",
+          }}
+        >
+          <Box style={{ minWidth: 190 }}>
+            <Text weight="medium" size="2" as="div">
+              {SUBSTRATE_HEALTH.label}
+            </Text>
+            <Text size="1" color="gray" as="div">
+              {SUBSTRATE_HEALTH.holds}
+            </Text>
+          </Box>
+          <Button
+            variant="soft"
+            size="1"
+            onClick={() => onOpenFile(SUBSTRATE_HEALTH.overview)}
+          >
+            Open the overview
+          </Button>
+        </Flex>
+        <Flex mt="4" gap="3" wrap="wrap">
+          <Button
+            variant="outline"
+            size="1"
+            onClick={() => onFindComponent?.()}
+            disabled={!onFindComponent}
+          >
+            Find a component
+          </Button>
+        </Flex>
+      </Box>
     </Box>
   );
 }

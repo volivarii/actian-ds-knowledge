@@ -41,15 +41,6 @@ export interface AttentionItem {
   target: string;
 }
 
-/** Authored components (someone started them) whose usage guidance is not
- *  started — the band-0 set, so the front door's headline number matches
- *  the top of the needs-attention list it points at. */
-export function authoredUsageGapCount(rows: CoverageRow[]): number {
-  return rows.filter(
-    (r) => r.origin === "authored" && r.domains.usage.status === "not-started",
-  ).length;
-}
-
 /** Rows with at least one not-started domain — the needs-attention total,
  *  without paying topGaps' sort. */
 export function gapCount(rows: CoverageRow[]): number {
@@ -71,6 +62,31 @@ function band(row: CoverageRow, missing: Domain[]): AttentionBand {
   if (row.origin === "authored" && missing.includes("usage")) return 0;
   if (row.origin === "unstarted") return 1;
   return 2;
+}
+
+/**
+ * The domain with the most unwritten components, and how many.
+ *
+ * The front door used to show eight rows of badges and leave the reader to
+ * infer the shape of the backlog from them. It has a shape: one domain
+ * accounts for most of it, and a sentence saying which is worth more than a
+ * list you have to count. `null` when nothing is unwritten, so the caller
+ * says "nothing is open" rather than "0 open".
+ */
+export function largestGap(
+  rows: CoverageRow[],
+): { domain: Domain; open: number; total: number } | null {
+  if (rows.length === 0) return null;
+  let worst: { domain: Domain; open: number; total: number } | null = null;
+  for (const d of DOMAINS) {
+    const open = rows.filter(
+      (r) => r.domains[d].status === "not-started",
+    ).length;
+    if (open > 0 && (worst === null || open > worst.open)) {
+      worst = { domain: d, open, total: rows.length };
+    }
+  }
+  return worst;
 }
 
 export function topGaps(rows: CoverageRow[], limit: number): AttentionItem[] {

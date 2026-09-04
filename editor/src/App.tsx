@@ -12,10 +12,8 @@ import "./styles/base.css";
 import "./styles/instrument.css";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { EditorShell } from "./app/EditorShell";
-import type { ExploreTab } from "./app/HomeScreen";
 import { useHashRoute } from "./lib/useHashRoute";
 import {
-  DEFAULT_EXPLORE_TAB,
   stateFromHash,
   WORKSPACE_RE,
 } from "./lib/routes";
@@ -94,9 +92,6 @@ export default function App() {
   // the URL carries it, and one component owns everything the URL carries.
   // It still survives navigating into a file and back: App outlives the
   // HomeScreen that reads it.
-  const [exploreTab, setExploreTab] = useState<ExploreTab>(
-    () => stateFromHash(window.location.hash).exploreTab ?? DEFAULT_EXPLORE_TAB,
-  );
   const [stagingOpen, setStagingOpen] = useState(false);
   const [submissionsOpen, setSubmissionsOpen] = useState(false);
   const [submissionRows, setSubmissionRows] = useState<SubmissionRow[]>([]);
@@ -111,9 +106,8 @@ export default function App() {
 
   // The address and the navigation state stay in step, in both directions.
   const handleRoute = useCallback(
-    (path: string | null, tab: ExploreTab | null) => {
+    (path: string | null) => {
       setActivePath(path);
-      if (tab) setExploreTab(tab);
       // Back now repaints the screen, so a dialog left open would cover a
       // different file than the one it was opened over, and the press would
       // read as a no-op.
@@ -123,7 +117,7 @@ export default function App() {
     },
     [],
   );
-  useHashRoute({ activePath, exploreTab, onNavigate: handleRoute });
+  useHashRoute({ activePath, onNavigate: handleRoute });
 
   const saveState = useSaveState(activePath, draftStoreSingleton);
   const cartEntries = useCart(submissionCartSingleton);
@@ -328,8 +322,6 @@ export default function App() {
               setActivePath={setActivePath}
               onOpenStaging={() => setStagingOpen(true)}
               onFocusSearch={() => searchInputRef.current?.focus()}
-              exploreTab={exploreTab}
-              onExploreTabChange={setExploreTab}
             />
           )}
         </Box>

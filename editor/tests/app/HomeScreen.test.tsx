@@ -12,6 +12,7 @@ import {
 import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { HomeScreen } from "../../src/app/HomeScreen";
+import { SCOPES } from "../../src/app/scopes";
 
 afterEach(() => cleanup());
 
@@ -88,7 +89,7 @@ domains:
 `,
 };
 
-test("HomeScreen: hero, honest counts, and the needs-attention list ranked usage-first", async () => {
+test("HomeScreen: the backlog in a sentence, and the list ranked usage-first", async () => {
   const opened: string[] = [];
   render(
     wrap(
@@ -99,13 +100,19 @@ test("HomeScreen: hero, honest counts, and the needs-attention list ranked usage
     ),
   );
 
-  // Hero heading renders synchronously, before the coverage fetch resolves.
-  screen.getByText(/Browse and edit the design system/i);
+  // The heading renders synchronously, before the coverage fetch resolves.
+  screen.getByText(/Author the design system/i);
 
-  // Coverage-derived copy arrives after the fake fetch resolves.
-  await waitFor(() =>
-    screen.getByText(/1 started component still lacks usage guidance/i),
-  );
+  // The backlog sentence is DERIVED: the fixture leaves tokens not-started on
+  // every row, so tokens is the largest gap and the sentence has to name it.
+  // A hard-coded sentence would pass this with the wrong domain.
+  await waitFor(() => screen.getByText(/is the backlog: \d+ of \d+/i));
+  const sentence = screen.getByText(/is the backlog: \d+ of \d+/i);
+  assert.match(sentence.textContent ?? "", /^Tokens is the backlog/);
+
+  // Each row carries one readout, not one badge per absent domain.
+  const readouts = document.querySelectorAll('[data-testid="coverage-cells"]');
+  assert.ok(readouts.length > 0, "the needs-attention rows carry no readout");
 
   // Tabs (usage not-started) outranks Button (only behavior/tokens missing).
   const writeUsage = screen.getByRole("button", {
@@ -143,17 +150,17 @@ test("HomeScreen: a component that could not be read is named, not counted", asy
     screen.getByText(/could not be read and (is|are) not counted: /i),
   );
   assert.match(note.textContent ?? "", /\btabs\b/, "the unreadable slug is not named");
-  // The count is derived from the fixture, not pinned: every readable dir is
-  // an authored row (the fake registry is empty, so there are no ghosts).
+  // The denominator in the backlog sentence is derived from the rows that
+  // were READ, so it must not count the throttled one. Pinning the number
+  // here would let the sentence keep counting a row it could not measure.
   const readable = DIRS.filter(
     (d) =>
       d.type === "dir" &&
       d.name !== "tabs" &&
       !["categories", "guidelines"].includes(d.name),
   ).length;
-  screen.getByText(
-    new RegExp(`${readable} of ${readable} components have authored`, "i"),
-  );
+  const sentence = screen.getByText(/is the backlog: \d+ of \d+/i);
+  assert.match(sentence.textContent ?? "", new RegExp(`of ${readable} components`));
 });
 
 test("HomeScreen: zero gaps shows the all-covered state, not a zero count", async () => {
@@ -180,11 +187,11 @@ domains:
       />,
     ),
   );
-  await waitFor(() =>
-    screen.getByText(/Every started component's usage guidance is underway/i),
-  );
+  await waitFor(() => screen.getByText(/Nothing is unwritten/i));
   screen.getByText(/Nothing is missing/i);
-  assert.equal(screen.queryByText(/0 started components/i), null);
+  // "0 of 1" is a sentence about a backlog that does not exist. The hub says
+  // nothing is open rather than putting a zero on screen.
+  assert.equal(screen.queryByText(/is the backlog/i), null);
 });
 
 test("HomeScreen: Find a component opens the palette callback", async () => {
@@ -204,24 +211,7 @@ test("HomeScreen: Find a component opens the palette callback", async () => {
   assert.equal(paletteOpens, 1);
 });
 
-test("HomeScreen: how-it-works discloses the three-step loop", async () => {
-  render(
-    wrap(
-      <HomeScreen
-        octokit={fakeGh({ dirs: DIRS, files: FILES })}
-        onOpenFile={() => {}}
-      />,
-    ),
-  );
-  assert.equal(screen.queryByText(/A pull request opens/i), null);
-  fireEvent.click(screen.getByRole("button", { name: /Show the steps/i }));
-  screen.getByText(/A pull request opens/i);
-  screen.getByText(/The system does the rest/i);
-  fireEvent.click(screen.getByRole("button", { name: /Hide the steps/i }));
-  assert.equal(screen.queryByText(/A pull request opens/i), null);
-});
-
-test("HomeScreen: one h1, sections as h2 — a navigable heading outline", () => {
+test("HomeScreen: one h1, sections as h2, a navigable heading outline", () => {
   const { container } = render(
     wrap(
       <HomeScreen
@@ -234,10 +224,34 @@ test("HomeScreen: one h1, sections as h2 — a navigable heading outline", () =>
   const h2s = Array.from(container.querySelectorAll("h2")).map(
     (el) => el.textContent,
   );
-  assert.deepEqual(h2s, ["Start here", "Needs attention", "Explore the data"]);
+  assert.deepEqual(h2s, ["Worth doing next", "Scopes"]);
 });
 
-test("HomeScreen: explore section carries the three data tabs", async () => {
+test("HomeScreen: the hub links out to overviews and hosts no tabs", () => {
+  const opened: string[] = [];
+  render(
+    wrap(
+      <HomeScreen
+        octokit={fakeGh({ dirs: DIRS, files: FILES })}
+        onOpenFile={(p) => opened.push(p)}
+      />,
+    ),
+  );
+  // The four panels are gone. A tab left behind would mean the front door is
+  // still rendering a dashboard it also links to.
+  assert.equal(screen.queryAllByRole("tab").length, 0);
+
+  // Every scope that declares an overview offers a way in, and the target is
+  // the screen's own activePath, so the address bar names where you landed.
+  const withOverview = SCOPES.filter((sc) => sc.overview !== null);
+  assert.ok(withOverview.length > 0, "no scope declares an overview");
+  const buttons = screen.getAllByRole("button", { name: /Open the overview/i });
+  assert.equal(buttons.length, withOverview.length + 1, "substrate health is missing its way in");
+  fireEvent.click(buttons[0] as HTMLElement);
+  assert.deepEqual(opened, [withOverview[0]?.overview]);
+});
+
+test("HomeScreen: a scope with no overview yet says so rather than hiding", () => {
   render(
     wrap(
       <HomeScreen
@@ -246,10 +260,11 @@ test("HomeScreen: explore section carries the three data tabs", async () => {
       />,
     ),
   );
-  screen.getByRole("tab", { name: /Coverage/i });
-  screen.getByRole("tab", { name: /Accessibility/i });
-  const rel = screen.getByRole("tab", { name: /Relationships/i });
-  // Radix Tabs.Trigger activates on mousedown.
-  fireEvent.mouseDown(rel);
-  await waitFor(() => screen.getByText(/Substrate relationship health/i));
+  const pending = SCOPES.filter((sc) => sc.overview === null);
+  for (const sc of pending) screen.getByText(sc.label);
+  assert.equal(
+    screen.getAllByText(/No overview yet/i).length,
+    pending.length,
+    "a scope without an overview vanished, which makes the structure look finished",
+  );
 });

@@ -15,7 +15,11 @@ import {
 } from "../lib/wysiwygPaths";
 import { matchFrontmatterForm } from "../lib/frontmatterForms";
 import { RefusalBanner } from "./RefusalBanner";
-import { HomeScreen, type ExploreTab } from "./HomeScreen";
+import { HomeScreen } from "./HomeScreen";
+import { CoverageDashboard } from "./CoverageDashboard";
+import { A11yCoverageDashboard } from "./A11yCoverageDashboard";
+import { GraphHealthTab } from "./GraphHealthTab";
+import { PatternsDashboard } from "./PatternsDashboard";
 import { AuthoringWorkspace } from "./AuthoringWorkspace";
 import { DraftInbox } from "./DraftInbox";
 import { draftStoreSingleton } from "../drafts/store-instance";
@@ -53,21 +57,6 @@ interface EditorShellProps {
   navigationSerial?: number;
 }
 
-/**
- * Which Explore data view the home screen shows. Owned by App, because the URL
- * carries it and one component owns everything the URL carries. It still
- * survives navigating into a file and back, since App outlives the HomeScreen
- * that reads it.
- *
- * Controlled as a pair or not at all, because HomeScreen resolves the value and
- * the setter independently: supplying only the value gives a tab strip that
- * renders and then ignores every click.
- */
-type ExploreTabControl =
-  | { exploreTab: ExploreTab; onExploreTabChange: (tab: ExploreTab) => void }
-  | { exploreTab?: undefined; onExploreTabChange?: undefined };
-
-type EditorShellPropsWithTab = EditorShellProps & ExploreTabControl;
 
 // Re-exported from lib/wysiwygPaths so existing importers (and tests) keep
 // working; the canonical definitions live there to avoid a circular import.
@@ -101,13 +90,7 @@ export function EditorShell({
   onOpenStaging,
   onFocusSearch,
   navigationSerial = 0,
-  // Passed straight through, undefined included: HomeScreen falls back to its
-  // own state when nothing supplies these, so a shell rendered without them
-  // (tests, and any future embedding) still has a working tab strip. Defaulting
-  // `exploreTab` here would hand HomeScreen a value with no setter behind it.
-  exploreTab,
-  onExploreTabChange,
-}: EditorShellPropsWithTab) {
+}: EditorShellProps) {
   const setActivePathSafe = setActivePath ?? (() => {});
   const [ghError, setGhError] = useState<string | null>(null);
   const gh = useMemo<Octokit | null>(() => {
@@ -178,10 +161,16 @@ export function EditorShell({
         octokit={gh}
         onOpenFile={setActivePathSafe}
         onFindComponent={onFocusSearch}
-        exploreTab={exploreTab}
-        onExploreTabChange={onExploreTabChange}
       />
     );
+  } else if (activePath === "coverage") {
+    pane = <CoverageDashboard octokit={gh} onOpenFile={setActivePathSafe} />;
+  } else if (activePath === "accessibility") {
+    pane = <A11yCoverageDashboard octokit={gh} onOpenFile={setActivePathSafe} />;
+  } else if (activePath === "patterns") {
+    pane = <PatternsDashboard octokit={gh} onOpenFile={setActivePathSafe} />;
+  } else if (activePath === "health") {
+    pane = <GraphHealthTab onOpenFile={setActivePathSafe} />;
   } else if (activePath === "inbox") {
     pane = (
       <DraftInbox
@@ -279,7 +268,7 @@ export function EditorShell({
           {breadcrumb}
           <ScreenErrorBoundary
             path={activePath ?? "home"}
-            resetKey={`${exploreTab ?? "coverage"}:${navigationSerial}`}
+            resetKey={String(navigationSerial)}
           >
             {pane}
           </ScreenErrorBoundary>

@@ -88,7 +88,7 @@ test("Home in the shell has exactly one h1, and the sidebar labels are not headi
   const { container } = mountShell(null);
   await waitFor(() => assert.ok(container.querySelector("nav")));
   const h1s = [...container.querySelectorAll("h1")].map((h) => h.textContent);
-  assert.deepEqual(h1s, ["Browse and edit the design system."], `h1s: ${h1s.join(" | ")}`);
+  assert.deepEqual(h1s, ["Author the design system."], `h1s: ${h1s.join(" | ")}`);
   // The SIDEBAR contributes none of them. Scope, stated because a mutation
   // proved it: `AppHeader` is rendered by `App`, not by this shell, so
   // nothing here can see the header regain an h1 (`AppHeader.test` asserts

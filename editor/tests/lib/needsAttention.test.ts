@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  authoredUsageGapCount,
   gapCount,
   topGaps,
   type AttentionItem,
@@ -51,16 +50,6 @@ function row(
     origin,
   };
 }
-
-test("authoredUsageGapCount counts only authored rows missing usage (band-0 set)", () => {
-  const rows = [
-    row("button", "authored", { usage: "not-started" }),
-    row("tabs", "authored", { usage: "draft" }),
-    row("card", "authored", { usage: "inherited" }),
-    row("dialog", "unstarted"), // ghost: needs everything, but not band 0
-  ];
-  assert.equal(authoredUsageGapCount(rows), 1);
-});
 
 test("topGaps ranks authored usage gaps first, then unstarted, then other authored gaps", () => {
   const rows = [
