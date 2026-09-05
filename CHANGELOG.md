@@ -51,7 +51,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
   open one component's guidance. The per-domain tallies no longer wrap to two lines.
   Editor-only: no dist, no schema, no consumer.
 
-- **The hub's work list ranks authored components above registry ghosts** (PR pending). "Worth doing
+- **The hub's work list ranks authored components above registry ghosts**
+  ([#661](https://github.com/volivarii/actian-ds-knowledge/pull/661)). "Worth doing
   next" put every unstarted registry component above every authored component with a gap. It read
   well and measured badly: of the 74 components the registry publishes, 0 have a usage gap, 31 are
   ghosts with no `_meta.yml` at all and 43 are authored with some other gap, so a list of eight
