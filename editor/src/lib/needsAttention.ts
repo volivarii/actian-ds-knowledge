@@ -91,82 +91,23 @@ export function largestGap(
 }
 
 /**
- * The two facts the front door needs, told apart.
+ * The Coverage overview's one sentence, and the only place in the editor that
+ * states the shape of the backlog in words.
  *
- * A component nobody has started is not "missing tokens", it is missing
- * everything, and counting it in a per-domain gap makes every domain look
- * equally bad. Measured over the whole set the sentence read "Tokens is the
- * backlog: 73 of 85", while the list directly beneath it showed eight
- * components with nothing authored at all: the sentence promised one job and
- * the list offered another.
+ * The hub used to carry a sentence of its own. It has been removed: analysis
+ * belongs on the dashboard whose job it is, and the hub links rather than
+ * explains. So this is the single sentence, and it answers "where does the
+ * design system stand" by leading with what is DONE, which is the fact a
+ * reader from outside the team most needs.
  *
- * `unstarted` is the count of components with no `_meta.yml`. `backlog` is the
- * largest gap among the ones somebody HAS started, which is the number the
- * derived coverage docs also report.
- */
-export function backlogShape(rows: CoverageRow[]): {
-  unstarted: number;
-  started: number;
-  backlog: { domain: Domain; open: number; total: number } | null;
-} {
-  const started = rows.filter((r) => r.origin === "authored");
-  return {
-    unstarted: rows.length - started.length,
-    started: started.length,
-    backlog: largestGap(started),
-  };
-}
-
-/**
- * The front door's one sentence about the state of the substrate.
+ * It is also the fix for two numbers describing one thing a hand's width
+ * apart: the screen opened with "85 components" while the sidebar said 54,
+ * because the 85 counts registry components nobody has started.
  *
- * Pure, and separate from the screen, because assembling it inline produced a
- * sentence that contradicted itself: with nothing started, the clauses read
- * "2 components have no guidance at all. Nothing is unwritten." Two
- * independent ternaries, each correct on its own, and no test could see it
- * because the fixture always had started rows.
- */
-export function backlogSentence(shape: {
-  unstarted: number;
-  started: number;
-  backlog: { domain: Domain; open: number } | null;
-}): string {
-  const parts: string[] = [];
-  if (shape.unstarted > 0) {
-    parts.push(
-      `${shape.unstarted} component${shape.unstarted === 1 ? " has" : "s have"} no guidance at all.`,
-    );
-  }
-  if (shape.backlog) {
-    parts.push(
-      `Of the ${shape.started} started, ${DOMAIN_LABEL[shape.backlog.domain]} is the backlog: ${shape.backlog.open} have none authored.`,
-    );
-  } else if (shape.started > 0) {
-    parts.push(
-      shape.unstarted > 0
-        ? `The other ${shape.started} have every domain underway.`
-        : `All ${shape.started} components have every domain underway.`,
-    );
-  }
-  // Nothing started AND nothing unstarted is an empty substrate, which the
-  // caller does not render at all. Anything else has said its piece above.
-  return parts.join(" ");
-}
-
-/**
- * The Coverage page's one sentence, which is deliberately NOT the hub's.
- *
- * The hub asks "what should I do next", so `backlogSentence` leads with what
- * is unwritten. This page answers "where does the design system stand", so it
- * leads with what is DONE. That is the fact a reader from outside the team
- * most needs, and it is the one the screen was not saying: it opened with
- * "85 components" while the sidebar two inches away said 54, because the 85
- * counts registry components nobody has started. Two numbers for one thing,
- * a hand's width apart.
- *
- * Complete is measured over the AUTHORED set only, for the reason given on
- * `backlogShape`: a component with no `_meta.yml` is missing every domain, so
- * counting it makes every domain look like a backlog.
+ * Complete is measured over the AUTHORED set only. A component with no
+ * `_meta.yml` is missing every domain, so counting it makes every domain look
+ * like a backlog, which is exactly how the deleted hub sentence came to
+ * promise a job its own list did not offer.
  */
 export function coverageSentence(rows: CoverageRow[]): string {
   const authored = rows.filter((r) => r.origin === "authored");
