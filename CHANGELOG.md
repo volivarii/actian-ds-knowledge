@@ -26,6 +26,22 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **The app-context frontmatter schema promised a field it does not describe**
+  ([#665](https://github.com/volivarii/actian-ds-knowledge/pull/665)). Its root description
+  ended "and behavioural signals". `signals` is not frontmatter: it, `purpose` and `users` are
+  authored as body sections (`## Purpose`, `## Users`, `## Signals`) and lifted by
+  `scripts/app-context/derive-app-context.js`. The description is the whole contract a reader gets
+  for a field, and this one named a field the file does not carry and glossed it with the wrong word,
+  since signals are routing keywords rather than behaviour. The description now says what the file
+  describes, that the three are body-derived, and where they are declared. Nothing else moved: the
+  contract that describes the published shape, `schemas/app-context.json#/$defs/app`, already
+  declares all three with descriptions, examples and `required`, and already documents `signals`
+  correctly. A test asserted the boundary in place of the old sentinel: each schema declares the
+  fields of the shape it describes and neither borrows the other's, so declaring the three in the
+  frontmatter schema, which sets `additionalProperties: false`, fails as the contradiction it is.
+  One test elsewhere hardcoded this description, in a test named for the screen not hardcoding it;
+  it reads the schema now.
+
 - **Six changelog entries linked nothing, and the placeholder convention that produced them is gone**
   ([#664](https://github.com/volivarii/actian-ds-knowledge/pull/664)). This file's own header says every entry links its pull request. Six entries carried
   the unfilled placeholder instead, from four PRs across two months, each rendering as a broken link
