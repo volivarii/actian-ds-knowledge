@@ -16,9 +16,30 @@ Figma refreshes are summarized, not enumerated.
 
 Each entry links its pull request. Dates are the merge date (UTC).
 
+Add the link once the PR is open, in a commit of its own. Do **not** write a placeholder in its
+place: six of them survived merge, from four PRs across two months, each rendering as a broken link
+on the repository's front page, because "fill it at open" is a step with nothing holding it.
+`tests/changelog-links.test.js` asserts that every link in this file points somewhere real and that
+no entry defers its link to a placeholder.
+
 ## [Unreleased]
 
 ### Fixed
+
+- **Six changelog entries linked nothing, and the placeholder convention that produced them is gone**
+  ([#664](https://github.com/volivarii/actian-ds-knowledge/pull/664)). This file's own header says every entry links its pull request. Six entries carried
+  the unfilled placeholder instead, from four PRs across two months, each rendering as a broken link
+  on the repository's front page. Six occurrences from four authorships is the finding: filling it at
+  open is a step with nothing holding it. All six are backfilled, recovered from the commits that
+  introduced them (#545 twice, #529, #527, #514, #510). The convention is retired rather than
+  policed: an entry written before its PR exists now carries no link at all, and the link is added in
+  its own commit once the PR is open, so there is no half-written state left to forget.
+  `tests/changelog-links.test.js` asserts that every link in the file resolves to a URL, an anchor or
+  a path that exists, and that no entry defers its link to a placeholder in any of its three
+  spellings. It reads the whole file rather than a diff, because an entry promoted from Unreleased to
+  a version is not a change to its link. The link check also found a seventh: a sentence quoting
+  `[notification](toast)` as an example of a broken cross-link was itself rendering as one, and is now
+  marked as the syntax it is.
 
 - **The editor's status readout has rendered inverted in every build that ever shipped**
   ([#659](https://github.com/volivarii/actian-ds-knowledge/pull/659)). `instrument.css` overrode the readout palette under `[data-theme="dark"]`, and
@@ -836,7 +857,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   published docs deploy red on the 2026-08-31 vendor refresh, and all twenty-one are repointed here:
   `drawer-side-panel` to `drawer` (7), `date-input` to `calendar-date-input` (6), `calendar` to
   `calendar-data-selector` (4), `notification` to `toast` (4). Four labels are reworded with them,
-  because the rename made "the [notification](toast) keeps the durable record; the toast only
+  because the rename made "the `[notification](toast)` keeps the durable record; the toast only
   announces" describe one component twice.
 
   🔑 The namespace is the whole point, and the first version of this gate had it wrong twice: a
@@ -2449,7 +2470,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 - **A thirteenth optional slot was still carrying a literal fallback, and the test that was supposed
   to catch it could only check slots somebody had remembered to list.**
-  ([#PR](_PR link added at open_)) `chat-with-ai-steward`
+  ([#545](https://github.com/volivarii/actian-ds-knowledge/pull/545)) `chat-with-ai-steward`
   initialised its context-chip label to *"Dataset Customer Orders"* instead of guarding the element
   on the prop, so the chip rendered whether or not the caller scoped the session to anything. It
   survived the #544 sweep because it wears a different shape: a variable initialised to the literal
@@ -2462,7 +2483,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   and the bare string.
 
 - **The sparse render ratchet: a component must not invent content the caller did not ask for.**
-  ([#PR](_PR link added at open_)) (`tests/render/sparse-render-ratchet.test.js`) The omission test
+  ([#545](https://github.com/volivarii/actian-ds-knowledge/pull/545)) (`tests/render/sparse-render-ratchet.test.js`) The omission test
   added with #544 iterates `SPECIMEN_PROPS`, so a slot missing from that map is a slot nothing
   checks, which is exactly how the thirteenth shipped. This gate keeps no list of slots: its
   subjects come from the render contract and its answers are read off the rendered markup rather
@@ -2726,7 +2747,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 - **Every released tag carried an `llms.txt` index describing content other than its own, because the
   index regenerated after the tag had already been cut and never bumped the version.**
-  ([#PR](_PR link added at open_)) `llms.txt` and `llms-full.txt` both ship to consumers
+  ([#529](https://github.com/volivarii/actian-ds-knowledge/pull/529)) `llms.txt` and `llms-full.txt` both ship to consumers
   (`vendor-include.json`) and consumers resolve by tag, but `llms-txt.yml` ran on push to `main`: the
   content PR merged, `tag-on-merge` cut the release tag there with the index still stale, and the
   follow-up regen PR then merged carrying no bump, so no tag was cut for it either. Verified at
@@ -2758,7 +2779,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
 
 - **The renderer stamped a `ds-tag--with-icon` modifier that no stylesheet has ever carried a rule for,
   so it painted nothing and broke a consumer's exact match on the way past.**
-  ([#PR](_PR link added at open_)) The class landed on 13 of `tag-default`'s 14 `Type` cells and on
+  ([#527](https://github.com/volivarii/actian-ds-knowledge/pull/527)) The class landed on 13 of `tag-default`'s 14 `Type` cells and on
   `card-for-items`' category pill, and a search for it across every stylesheet the renderer emits or
   vendors returns nothing at all: `ds-base.css` has rules for `.ds-tag`, `.ds-tag__icon` and each
   `.ds-tag--<type>` hue, and none for this one. It only restated what the `.ds-tag__icon` span beside it
@@ -2811,7 +2832,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   and the next time it says "regressed" about something real, nobody believes it.
 
 - **The tracker fix from #510 could create its issue but not update it, so the first breaking night
-  after it went red and raised a false alarm.** ([#PR](_PR link added at open_)) #510 made the marker
+  after it went red and raised a false alarm.** ([#514](https://github.com/volivarii/actian-ds-knowledge/pull/514)) #510 made the marker
   dedupe work, which routed the second night down the `gh issue edit` path for the first time. That
   path failed with `GraphQL: Resource not accessible by integration (updateIssue)`: the step ran on the
   **App token**, and the `actian-ds-bot` App can create an issue but not modify one.
@@ -2835,7 +2856,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   failure with no verdict at all (checkout, dependency install) still reports as a sync failure, which
   is what it is; all four branches are exercised against a stubbed `gh`.
 - **An expired Figma token read as a content failure for 11 nights, and the breaking-sync tracker
-  duplicated itself for 5.** ([#PR](_PR link added at open_)) Two independent reporting defects, both
+  duplicated itself for 5.** ([#510](https://github.com/volivarii/actian-ds-knowledge/pull/510)) Two independent reporting defects, both
   of the same shape: a step that says what it did rather than what it achieved.
   - The Figma PAT expired on 2026-07-30. Every phase then failed at its first request with 401
     `Token has expired` / 403 `Token expired`, which `aggregateVerdict` reported as a bare `error` —
