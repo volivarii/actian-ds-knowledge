@@ -54,8 +54,16 @@ body {
   --zen-color-text-secondary: #3f3a32;
   --zen-color-text-tertiary: #4d4639;
   --zen-color-text-placeholder: #6b6253;
-  --zen-color-text-link-default: #0550dc;
-  --zen-color-text-link-visited: #0029a9;
+  /* --ed-*, not --zen-*. The eleven names above are DS tokens this surface
+     deliberately re-points to the paper scale, which is a scoped override of
+     something the design system publishes. These two are not: that link-token
+     family was RETIRED, so declaring them here was the editor inventing a name
+     in the design system's namespace and then reading it back, which asserts
+     the DS publishes a token it does not. The colours are the editor's own
+     choice for its own reading surface, so they live in the editor's own
+     vocabulary (see instrument.css). */
+  --ed-prose-link: #0550dc;
+  --ed-prose-link-visited: #0029a9;
   --zen-color-bg-default: #faf6ea;
   --zen-color-bg-subtle: #f7f1df;
   --zen-color-bg-muted: #ede5cf;
@@ -247,14 +255,14 @@ body {
 }
 
 .md-prose a {
-  color: var(--zen-color-text-link-default);
+  color: var(--ed-prose-link);
   text-decoration: none;
 }
 .md-prose a:hover {
   text-decoration: underline;
 }
 .md-prose a:visited {
-  color: var(--zen-color-text-link-visited);
+  color: var(--ed-prose-link-visited);
 }
 
 .md-prose hr {

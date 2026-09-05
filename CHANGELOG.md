@@ -26,6 +26,24 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **The editor declared two design-system token names the design system does not publish**
+  ([#668](https://github.com/volivarii/actian-ds-knowledge/pull/668)). The
+  `--zen-color-text-link-*` family was retired, and `base.css` re-declared two of its names locally
+  with hardcoded hex and then read them back, so the preview pane's links were pinned to values in
+  the editor's own stylesheet rather than resolved from the token set. `dark-theme.css` did the same,
+  plus a third that it declared and never read. The distinction that matters, and the reason the fix
+  is a rename rather than a re-point: `.md-prose` deliberately re-points eleven DS token names to a
+  warm paper scale and `dark-theme.css` re-points thirty-three to a dark one, and those are scoped
+  overrides of things the design system publishes. Declaring a name it does NOT publish is a
+  different act, because it says the system carries a token it does not. The colours are unchanged
+  and now live in the editor's own vocabulary, `--ed-*`. Two derived guards replace a hand-written
+  list of ten token names that had to be kept in `base.css`, one of which was the retired name
+  itself, so the list obliged the file to keep mentioning a token that no longer existed: nothing may
+  declare a `--zen-*` name the token set does not publish, and every `--zen-*` a stylesheet reads
+  must resolve to something. Both take their subject from `tokens/tokens.json` and the stylesheet
+  directory rather than from a list.
+  Editor-only: no dist, no schema, no consumer.
+
 - **The app-context forms showed authors machine text: schema prose, raw field keys, and a script
   name**
   ([#667](https://github.com/volivarii/actian-ds-knowledge/pull/667)). Under a field captioned "Part of", an author was reading "App slugs where this

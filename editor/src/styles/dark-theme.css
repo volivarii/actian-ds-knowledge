@@ -30,9 +30,16 @@
   --zen-color-text-placeholder-subtle: #656574;
   --zen-color-text-disabled: #656574;
   --zen-color-text-reverse: #12131f;
-  --zen-color-text-link-default: #6faffd;
-  --zen-color-text-link-visited: #9dcdff;
-  --zen-color-text-link-reverse: #12131f;
+  /* --ed-*, not --zen-*: the link-token family these used to be named after is
+     retired, so declaring them under a --zen- name asserted a token the design
+     system does not publish. Nothing reads them today either way, because the
+     only reader is `.md-prose a`, and `.md-prose` declares its own paper values
+     locally and wins inside itself. Kept rather than deleted so the intent
+     survives for whenever the prose surface does follow the theme; the third of
+     the three, a "reverse" variant, is gone, since it was declared here and
+     read nowhere at all. */
+  --ed-prose-link: #6faffd;
+  --ed-prose-link-visited: #9dcdff;
   --zen-color-text-error: #ffa38f;
   --zen-color-text-success: #75b86b;
   --zen-color-text-warning: #ffbe78;
