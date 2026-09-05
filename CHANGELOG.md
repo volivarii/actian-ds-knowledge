@@ -26,6 +26,18 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **Every app sidebar in every generated screen was spread down the full rail**. `.ds-sidenav`
+  carried `justify-content: space-between`, taken from the capture, which describes the two-child
+  Groups shape (primary groups on top, utilities pinned to the foot). The same rule also governs
+  Items mode, where the leaf emits every row as a direct child, so seven 32px rows were distributed
+  across an 896px rail at a 139px pitch. It read as a broken screen rather than a styling nit, and
+  it reached both this repo's canonical renders and the plugin's HTML deliverable. The rail now
+  stacks from the top with a 4px row gap, and the foot pin moves to
+  `.ds-sidenav__bottom { margin-top: auto }`, which is equivalent for two children and correct for
+  seven. `tests/render/sidenav-items-mode-stacks.test.js` joins the two halves that had drifted:
+  the shape the emitter produces and the rule the sheet applies to it. jsdom loads no stylesheet,
+  so a source join is the only guard that can see this.
+
 - **The fidelity gate printed an escape hatch that could not reach it**
   ([#673](https://github.com/volivarii/actian-ds-knowledge/pull/673)). On a blocking coverage loss
   it printed `npm run derive:render -- --accept-coverage-loss="<why>"`. `derive:render` is a chain of
