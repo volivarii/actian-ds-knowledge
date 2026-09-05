@@ -113,32 +113,28 @@ test(".ds-sidenav must not distribute free space between its children", function
   );
 });
 
-test(".ds-sidenav__bottom keeps the utilities group pinned to the rail foot", function () {
-  var body = ruleBody(BASE_CSS, ".ds-sidenav__bottom");
-  assert.notEqual(body, null, ".ds-sidenav__bottom rule not found in ds-base.css");
-  assert.match(
-    declarations(body),
-    /margin-top:\s*auto\s*;/,
-    "Dropping space-between from .ds-sidenav removed the only thing pushing " +
-      "the utilities group down. `margin-top: auto` on __bottom is what " +
-      "replaces it; without it, Groups mode regresses the other way.",
-  );
-});
-
-test("the emitter's Groups branch still produces the two children __bottom's pin assumes", function () {
-  // The pin above is only equivalent to the old space-between while __top
-  // grows and __bottom is the last child. Assert both, so a restructure of the
-  // Groups branch cannot silently unpin the utilities group.
-  assert.match(
-    DS_HTML_MAP,
-    /'<div class="ds-sidenav__bottom">' \+ bottomInner \+ "<\/div>"/,
-    "Groups mode is expected to emit a __bottom wrapper as the rail's last child.",
-  );
+test("Groups mode still anchors its utilities group, by the mechanism that does it", function () {
+  // The first cut of this file asserted `__bottom { margin-top: auto }` here,
+  // added alongside the space-between removal and described as "what replaces
+  // it". Measuring the real sheet against the real emitted markup in a 896px
+  // rail showed the declaration computes to 0px and neutralising it moves
+  // __bottom not at all: __top's `flex: 1 1 auto` predates the change, absorbs
+  // the free space, and is the whole mechanism. So the assertion protected an
+  // inert declaration and its message named the wrong cause. It now asserts
+  // the grow, and the two-child shape that grow assumes.
   var topRule = declarations(ruleBody(BASE_CSS, ".ds-sidenav__top"));
+  assert.notEqual(topRule, "", ".ds-sidenav__top rule not found in ds-base.css");
   assert.match(
     topRule,
     /flex:\s*1 1 auto\s*;/,
-    ".ds-sidenav__top must still grow, or __bottom's margin-top:auto has no " +
-      "free space to consume and the two groups sit together at the top.",
+    ".ds-sidenav__top must grow. With .ds-sidenav no longer distributing free " +
+      "space, this is the only thing holding the utilities group at the rail's " +
+      "foot; without it the two groups sit together at the top.",
+  );
+  assert.match(
+    DS_HTML_MAP,
+    /'<div class="ds-sidenav__bottom">' \+ bottomInner \+ "<\/div>"/,
+    "Groups mode is expected to emit a __bottom wrapper as the rail's last " +
+      "child. If it stops being last, __top growing no longer pushes it down.",
   );
 });
