@@ -26,7 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
-- **The app-context frontmatter schema promised a field it does not describe**. Its root description
+- **The app-context frontmatter schema promised a field it does not describe**
+  ([#665](https://github.com/volivarii/actian-ds-knowledge/pull/665)). Its root description
   ended "and behavioural signals". `signals` is not frontmatter: it, `purpose` and `users` are
   authored as body sections (`## Purpose`, `## Users`, `## Signals`) and lifted by
   `scripts/app-context/derive-app-context.js`. The description is the whole contract a reader gets
