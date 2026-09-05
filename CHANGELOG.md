@@ -26,6 +26,26 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **The app-context forms showed authors machine text: schema prose, raw field keys, and a script
+  name**
+  ([#667](https://github.com/volivarii/actian-ds-knowledge/pull/667)). Under a field captioned "Part of", an author was reading "App slugs where this
+  UX pattern appears", and under the components field "projected to the graph as
+  `ux_pattern -> component 'uses_component'` edges". The form falls back to the JSON Schema's own
+  `description` when the editor supplies none, and the schema is a machine contract, so contract
+  prose was rendering as human help one layer below where the nomenclature guard reaches. The schema
+  is not touched: presentation hints belong to the consumer (`editor/README.md`, P3), so the wording
+  is authored per field in `src/uiSchemas/`, which leaves every other field's free help text intact.
+  Looking at the rendered form then found what no wording change would have: five fields had no
+  title at all and were captioned with their own YAML key, `when`, `header`, `sidebar`, `useCases`
+  and, one level down, `header.type`, `sidebar.items.*` and `useCases.items.patterns`, whose help
+  text ended "enforced by `validate-app-context.js`". Two guards hold it now, and both read the
+  schema for their subject rather than a list: one mounts the real screen and asserts the author's
+  words render and no snake_case token reaches them, the other asserts every field an author can
+  edit carries a human title, walking into objects and array items. Its first version keyed
+  "author-facing" on group membership, which silently exempted two fields inside a collapsed but
+  editable group; it keys on read-only now, because collapsed is not hidden.
+  Editor-only: no dist, no schema, no consumer.
+
 - **The app-context frontmatter schema promised a field it does not describe**
   ([#665](https://github.com/volivarii/actian-ds-knowledge/pull/665)). Its root description
   ended "and behavioural signals". `signals` is not frontmatter: it, `purpose` and `users` are
