@@ -108,25 +108,49 @@ function dedupe(arr) {
 
 // Inherited domains carry no prose; resolve the category rationale (derive-guidelines
 // L17: "inherited -> consumers resolve from category-defaults"), keyed by category.
-function categoryBody(category) {
+//
+// Declaring NO category is a real state and yields nothing. Naming a category
+// whose file cannot be read is a broken input and THROWS (#569).
+//
+// It used to swallow every read failure and return "". The note then lost its
+// "## Category guidance" section, still passed hasBody, was rewritten, and
+// render-derive.yml bumped, auto-committed, tagged and vendored the degraded
+// note on a GREEN run. Measured on alert-banner with the category unresolvable:
+// 2209 characters down to 1861. Neither of #567's guards can see it, because
+// both watch DELETIONS and this is a REWRITE, so a half-written
+// components/dist/categories/ would have stripped the section from 58 of the 60
+// committed notes with nothing going red.
+//
+// Throwing was tried and reverted in #567 for a good reason that has since been
+// removed: build-bundle.js wrapped usageNote() in the catch written for its own
+// readFileSync/JSON.parse, so the same broken input would have shipped EVERY
+// affected card with an empty note and an empty <slug>.prompt.md. That catch is
+// now narrowed to the two calls it was written for, so this throw reaches the
+// run instead of being converted into a worse degradation.
+// `dir` exists so a test can hand this a categories directory it controls,
+// rather than writing a fixture into the repository's own dist to reach the
+// failure path. Reads only; the writer above still hardcodes its output.
+function categoryBody(category, dir) {
   if (!category) return "";
+  var file = path.join(dir || CATEGORIES_DIR, category + ".md");
+  var raw;
   try {
-    var raw = fs.readFileSync(
-      path.join(CATEGORIES_DIR, category + ".md"),
-      "utf8",
-    );
-    var parts = raw.split(/\n---\n/);
-    var body = parts.length > 1 ? parts.slice(1).join("\n---\n") : raw;
-    return clean(body);
+    raw = fs.readFileSync(file, "utf8");
   } catch (e) {
-    // Swallowed, as before. An unresolvable category silently costs a note its
-    // "## Category guidance" section, which is a real defect (58 of the 60 notes
-    // carry it) but it is a REWRITE, not a deletion, so it is out of this change
-    // and filed separately. Throwing here was tried and reverted: build-bundle.js
-    // catches around usageNote and would have shipped an ENTIRELY empty note on
-    // the same broken input, degrading worse than the bug being prevented.
-    return "";
+    throw new Error(
+      "[derive-usage-notes] category '" +
+        category +
+        "' does not resolve to " +
+        path.relative(REPO_ROOT, file) +
+        ", so every note inheriting a domain from it would ship without the " +
+        "rationale that IS its guidance. Refusing to rewrite them. (" +
+        e.message +
+        ")",
+    );
   }
+  var parts = raw.split(/\n---\n/);
+  var body = parts.length > 1 ? parts.slice(1).join("\n---\n") : raw;
+  return clean(body);
 }
 
 function usageNote(doc, opts) {
@@ -193,10 +217,34 @@ function usageNote(doc, opts) {
   });
   var inheritedNote = "";
   if (inheritedUsed.length) {
-    var cs = sections(categoryBody(category));
+    var cs = sections(categoryBody(category, opts.categoriesDir));
     inheritedNote = [firstPara(cs._intro), firstPara(cs["why these defaults"])]
       .filter(Boolean)
       .join(" ");
+    // The second way the section goes missing, and the one the throw in
+    // categoryBody cannot reach: the category file resolves and carries neither
+    // an intro nor a "why these defaults" section. The note would then still
+    // tell the reader the domain is INHERITED from the category, in the caveats
+    // below, and hand them nothing to read. Same silent rewrite, different
+    // cause.
+    //
+    // Scoped to a DECLARED category. "Inherits a domain and names no category"
+    // is a third state, one no doc in the guidelines dist occupies: it is
+    // covered by the derived join in tests/render/derive-usage-notes.test.js,
+    // which goes red for any emitted note that says INHERITED and carries no
+    // guidance, whatever the cause.
+    if (category && !inheritedNote) {
+      throw new Error(
+        "[derive-usage-notes] " +
+          (doc.slug || doc.component || "a component") +
+          " inherits " +
+          dedupe(inheritedUsed).join(", ") +
+          " from category '" +
+          (category || "(none declared)") +
+          "', but that category carries no intro and no 'why these defaults', " +
+          "so the note would claim an inheritance it cannot show.",
+      );
+    }
   }
 
   whenTo = dedupe(whenTo).slice(0, 7);

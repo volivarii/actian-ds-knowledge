@@ -214,3 +214,41 @@ test("buildBundle: component cards are reconstructed from the shared css + fragm
   );
   assert.ok(!/\ssrc=|\shref=|@import/.test(btn), "still self-contained");
 });
+
+test("buildBundle: a note builder that fails reaches the run, it is not swallowed", function () {
+  // #569. The catch around the guideline read used to cover usageNote() too, so
+  // an unresolvable components/dist/categories/ would have been converted from
+  // "one section missing" into every affected card shipping an empty note and an
+  // empty <slug>.prompt.md, on a green run that then bumped, tagged and vendored
+  // it. Strictly worse than the bug it hid.
+  //
+  // This is the guard on the CALL SITE's placement: widen that try again and the
+  // thrower below is swallowed, every card ships noteless, and this goes red.
+  var dir = freshDir();
+  assert.throws(
+    function () {
+      buildBundle(dir, {
+        usageNote: function () {
+          throw new Error("category 'feedback' does not resolve");
+        },
+      });
+    },
+    /does not resolve/,
+    "the bundle absorbed a note builder failure and shipped the cards anyway",
+  );
+});
+
+test("buildBundle: a missing guideline doc is still a legitimate state, not a failure", function () {
+  // The other half, and the reason the catch exists at all. Narrowing it must
+  // not turn "this rendered component has no guideline doc" into a red run:
+  // the foundations cards have none by construction, and buildBundle writes
+  // them every time.
+  var dir = freshDir();
+  var res = buildBundle(dir);
+  assert.ok(
+    res.written.some(function (r) {
+      return /Colors[/\\]palette\.html$/.test(r);
+    }),
+    "positive control: a card with no guideline doc still ships",
+  );
+});

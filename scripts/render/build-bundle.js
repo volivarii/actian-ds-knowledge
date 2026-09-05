@@ -289,6 +289,7 @@ function buildBundle(outDir, opts) {
   var tokensPath =
     opts.tokensPath || path.join(REPO_ROOT, "tokens", "tokens.json");
 
+  var buildNote = opts.usageNote || usageNote;
   var canonical = deriveCanonical();
   var dtcg = deriveFromFile(tokensPath);
   var written = [];
@@ -300,16 +301,26 @@ function buildBundle(outDir, opts) {
   var assets = [];
 
   canonical.manifest.renders.forEach(function (r) {
-    var note = "";
     var doc = null;
     try {
       doc = JSON.parse(
         fs.readFileSync(path.join(GUIDELINES_DIR, r.slug + ".json"), "utf8"),
       );
-      note = usageNote(doc);
     } catch (e) {
-      note = ""; // a rendered component with no guideline doc simply ships without a note
+      doc = null; // a rendered component with no guideline doc simply ships without a note
     }
+    // usageNote() is called OUTSIDE that catch, deliberately (#569). The catch
+    // was written for the read and the parse above it, where "no guideline doc"
+    // is a legitimate state. It also covered the note builder, so a broken
+    // components/dist/categories/ would have been converted from "one section
+    // missing" into "every affected card ships an empty note and an empty
+    // <slug>.prompt.md", silently, on a green run. A producer that cannot build
+    // the note it was asked for now fails the run instead.
+    //
+    // opts.usageNote exists so that placement can be PROVEN: a builder that
+    // throws must reach the caller. Re-widening the try above swallows it and
+    // the guard goes red.
+    var note = doc ? buildNote(doc) : "";
     var htmlRel = path.join(r.group, r.slug + ".html");
     var card = selfContainedCard(
       canonical.css,

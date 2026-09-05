@@ -26,6 +26,27 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **A usage note could lose its Category guidance section and ship, on a green run**
+  ([#670](https://github.com/volivarii/actian-ds-knowledge/pull/670)). An inherited
+  domain carries no prose of its own, so the note draws its rationale from
+  `components/dist/categories/<category>.md`, and 58 of the 60 committed notes carry that section.
+  `categoryBody()` caught every read failure and returned `""`: the note simply lost the section,
+  still passed `hasBody`, was rewritten, and `render-derive.yml` bumped, auto-committed, tagged and
+  vendored the degraded note with nothing going red. Measured on `alert-banner` with the category
+  unresolvable, 2209 characters down to 1861. A half-written categories dist would have stripped the
+  section from nearly the whole dist, because both of the guards added for the prune watch DELETIONS
+  and this is a REWRITE. Making it throw had been tried and reverted for a good reason:
+  `build-bundle.js` wrapped `usageNote()` in the catch written for its own `readFileSync` and
+  `JSON.parse`, so the same broken input would have shipped every affected card with an empty note
+  and an empty `<slug>.prompt.md`, which is worse than the bug. That catch is now narrowed to the two
+  calls it was written for, so the throw reaches the run, and a missing guideline doc stays the
+  legitimate state it always was. A second cause is closed with it: a category file that resolves and
+  carries neither an intro nor a "why these defaults" left the note claiming an inheritance it could
+  not show. The general guard is derived on both sides from the guidelines dist, so a legitimate
+  editorial change moves both halves together: every emitted note whose doc inherits a domain must
+  carry the section, whatever the cause. Version-neutral: no dist, no schema, no consumer, and the 60
+  committed notes are byte-identical.
+
 - **The quality roll-up could report a figure that moved as "unchanged", and take a second version
   bump for it** ([#669](https://github.com/volivarii/actian-ds-knowledge/pull/669)).
   `render-derive.yml` triggers on `paths-manifest.json` and its own auto-commit bumps

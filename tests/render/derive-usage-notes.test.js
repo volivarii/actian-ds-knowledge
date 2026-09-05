@@ -468,15 +468,113 @@ test("pruneNotes: a handful still prunes, so the ceiling is not a blanket refusa
   assert.deepEqual(fs.readdirSync(dir), ["kept.md"]);
 });
 
-test("categoryBody: an unresolvable category yields nothing, and that is filed not fixed", function () {
-  // Pinning current behaviour, not endorsing it. An unresolvable category silently
-  // costs a note its "## Category guidance" section (58 of the 60 carry it), which
-  // is a REWRITE rather than a deletion, so neither the empty-set guard nor
-  // PRUNE_CEILING can ever see it. Making it throw was tried and reverted:
-  // build-bundle.js catches around usageNote, so the same broken input would have
-  // shipped an ENTIRELY empty note, degrading worse than the bug being prevented.
+test("categoryBody: an unresolvable category is a broken input, and it names itself", function () {
+  // #569. It used to return "", so the note lost its "## Category guidance"
+  // section, still passed hasBody, and was rewritten, bumped, tagged and
+  // vendored on a green run. 58 of the 60 committed notes carry that section, so
+  // a half-written components/dist/categories/ would have stripped nearly the
+  // whole dist with nothing going red: both of #567's guards watch DELETIONS,
+  // and this is a REWRITE.
   var { categoryBody } = require("../../scripts/render/derive-usage-notes.js");
-  assert.equal(categoryBody("no-such-category-exists"), "");
+  assert.throws(
+    function () {
+      categoryBody("no-such-category-exists");
+    },
+    /does not resolve to/,
+    "an unresolvable category must fail the run, not quietly shrink 58 notes",
+  );
+  // The message has to carry the path and the consequence, because the person
+  // reading it is looking at a red derive and no diff.
+  try {
+    categoryBody("no-such-category-exists");
+  } catch (e) {
+    assert.match(e.message, /components\/dist\/categories\/no-such-category-exists\.md/);
+    assert.match(e.message, /rationale that IS its guidance/);
+  }
+});
+
+test("usageNote: a category that resolves but carries no rationale is refused too", function () {
+  // The second cause, which the throw above cannot reach: the file is readable
+  // and has neither an intro nor a "why these defaults". inheritedNote comes out
+  // empty, the section is dropped, and the caveats still tell the reader the
+  // domain is INHERITED from the category. The note would claim an inheritance
+  // it cannot show.
+  //
+  // Against a categories directory this test owns, never the repository's own
+  // dist: reaching this path by writing a fixture into components/dist would put
+  // a broken category in the tree every consumer reads.
+  var os = require("node:os");
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), "cat-hollow-"));
+  var real = path.resolve(__dirname, "../../components/dist/categories");
+  var doc = function (category) {
+    return {
+      slug: "hollow-user",
+      component: "Hollow user",
+      meta: { category: category },
+      domains: { usage: { status: "inherited" } },
+    };
+  };
+  try {
+    // Readable, and carrying only a heading the note builder does not read.
+    fs.writeFileSync(path.join(dir, "hollow.md"), "## Something else\n\nx\n");
+    assert.throws(
+      function () {
+        usageNote(doc("hollow"), { categoriesDir: dir });
+      },
+      /carries no intro and no 'why these defaults'/,
+      "a note may not claim an inheritance it has nothing to show for",
+    );
+    // Positive control through the SAME redirection, so the throw is about the
+    // input and not about pointing the reader somewhere else.
+    fs.copyFileSync(path.join(real, "feedback.md"), path.join(dir, "feedback.md"));
+    assert.match(
+      usageNote(doc("feedback"), { categoriesDir: dir }),
+      /^## Category guidance \(inherited: usage\)$/m,
+      "the real rationale still produces the section",
+    );
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("every note whose doc inherits a domain carries the category rationale", function () {
+  // The general guard #569 asks for: nothing in the repo watched a producer
+  // quietly emitting LESS. Derived on both sides, from the guidelines dist
+  // rather than from a list of slugs, and self-consistent, so a legitimate
+  // editorial change that stops a domain inheriting moves both halves together
+  // and cannot deadlock a derive that runs the suite before its auto-commit.
+  var notes = deriveAll();
+  var dir = path.resolve(__dirname, "../../components/dist/guidelines");
+  var checked = 0;
+  var missing = [];
+  fs.readdirSync(dir)
+    .filter(function (f) {
+      return f.endsWith(".json") && f !== "bundle.json";
+    })
+    .forEach(function (f) {
+      var slug = f.replace(/\.json$/, "");
+      var doc = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+      var D = doc.domains || {};
+      var inherits = ["content", "usage", "design", "behavior"].some(function (n) {
+        return (D[n] || {}).status === "inherited";
+      });
+      if (!inherits || !notes[slug]) return;
+      checked++;
+      if (!/^## Category guidance \(inherited: /m.test(notes[slug])) {
+        missing.push(slug);
+      }
+    });
+  assert.ok(
+    checked >= 50,
+    "the subject was not present: only " +
+      checked +
+      " emitted notes inherit a domain, and 58 did when this was written",
+  );
+  assert.deepEqual(
+    missing,
+    [],
+    "these notes say INHERITED from category and carry no category guidance",
+  );
 });
 
 test("categoryBody: declaring no category is a real state, not an error", function () {
