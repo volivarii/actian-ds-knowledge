@@ -26,8 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
-- **Six changelog entries linked nothing, and the placeholder convention that produced them is gone**.
-  This file's own header says every entry links its pull request. Six entries carried
+- **Six changelog entries linked nothing, and the placeholder convention that produced them is gone**
+  ([#664](https://github.com/volivarii/actian-ds-knowledge/pull/664)). This file's own header says every entry links its pull request. Six entries carried
   the unfilled placeholder instead, from four PRs across two months, each rendering as a broken link
   on the repository's front page. Six occurrences from four authorships is the finding: filling it at
   open is a step with nothing holding it. All six are backfilled, recovered from the commits that
