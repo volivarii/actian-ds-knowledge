@@ -26,7 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
-- **The editor declared two design-system token names the design system does not publish**. The
+- **The editor declared two design-system token names the design system does not publish**
+  ([#668](https://github.com/volivarii/actian-ds-knowledge/pull/668)). The
   `--zen-color-text-link-*` family was retired, and `base.css` re-declared two of its names locally
   with hardcoded hex and then read them back, so the preview pane's links were pinned to values in
   the editor's own stylesheet rather than resolved from the token set. `dark-theme.css` did the same,
