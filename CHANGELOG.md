@@ -52,7 +52,7 @@ Each entry links its pull request. Dates are the merge date (UTC).
   Editor-only: no dist, no schema, no consumer.
 
 - **Eleven nested item-type badges painted the wrong colour, chosen by a fallback nothing filled**
-  (PR pending). `metamodel`, `lineage` and three other components render a nested `digram-item-types`
+  ([#663](https://github.com/volivarii/actian-ds-knowledge/pull/663)). `metamodel`, `lineage` and three other components render a nested `digram-item-types`
   badge. Three of them read the badge's type from `v["Item type"]`, an axis none of them publishes,
   so every render fell through to that component's own documented `Category` fallback and painted
   `#ffdacf`, peach. On `metamodel` all five Types drew the same peach badge while the border two
