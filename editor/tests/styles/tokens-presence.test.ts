@@ -11,27 +11,17 @@ const baseCss = readFileSync(
   "utf-8",
 );
 
-const REQUIRED_TOKENS = [
-  "--zen-color-text-primary",
-  "--zen-color-neutral-50",
-  "--zen-color-neutral-200",
-  "--zen-color-neutral-300",
-  "--zen-color-neutral-500",
-  "--zen-color-bg-subtle",
-  "--zen-color-bg-muted",
-  "--zen-color-text-link-default",
-  "--zen-font-family-text",
-  "--zen-font-family-mono",
-];
+// The hand-written REQUIRED_TOKENS list that used to sit here is gone. It named
+// ten tokens base.css "depends on" and asserted each by substring, and one of
+// them was `--zen-color-text-link-default`, a RETIRED name: the list obliged
+// base.css to keep mentioning a token the design system had stopped publishing,
+// and went red when it finally stopped (#580).
+//
+// `tests/app/zenNamespace.test.ts` replaces it with the derived pair: no
+// stylesheet declares a --zen-* name the design system does not publish, and
+// every --zen-* one reads resolves to something. Those cover every reference
+// rather than ten chosen ones, and neither can require a name into existence.
 
-test("base.css references all Zen tokens the prose layer depends on", () => {
-  for (const token of REQUIRED_TOKENS) {
-    assert.ok(
-      baseCss.includes(token),
-      `base.css missing reference to ${token}`,
-    );
-  }
-});
 
 test("base.css defines the .md-prose selector", () => {
   assert.match(baseCss, /\.md-prose\b/);
