@@ -26,7 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
-- **A usage note could lose its Category guidance section and ship, on a green run**. An inherited
+- **A usage note could lose its Category guidance section and ship, on a green run**
+  ([#670](https://github.com/volivarii/actian-ds-knowledge/pull/670)). An inherited
   domain carries no prose of its own, so the note draws its rationale from
   `components/dist/categories/<category>.md`, and 58 of the 60 committed notes carry that section.
   `categoryBody()` caught every read failure and returned `""`: the note simply lost the section,
