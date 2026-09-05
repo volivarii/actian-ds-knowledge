@@ -1090,7 +1090,19 @@ function coverageFailureMessage(reg) {
     "it. It may not be silent, and it cannot be waved through from CI, which runs",
     "this gate with no arguments. To land one, do it locally and say why:",
     "",
-    '  npm run derive:render -- --accept-coverage-loss="<why>"',
+    // 🚨 The DIRECT invocation, not `npm run derive:render -- <flag>` (#607).
+    // `derive:render` is a chain of seven commands joined by &&, and
+    // `npm run <script> -- <args>` appends the arguments to the END of the
+    // script string, so the flag landed on derive-quality-trend.js and this
+    // parser received an empty argv. Probed: the direct form arrives as
+    // ["--accept-coverage-loss=<why>"], the npm form as []. Someone hitting a
+    // blocking loss ran the printed command, watched it exit 1 with the same
+    // message, and concluded the loss could not be accepted at all.
+    //
+    // The tree is already derived at this point, because this gate only prints
+    // this after the chain has rebuilt the fragments it just measured, so one
+    // command is the whole remedy.
+    '  node scripts/render/fidelity-check.js --accept-coverage-loss="<why>"',
     "  git add components/render/dist/fidelity-report.json",
     "",
     "That run records the NEW measurement as the baseline, so the check then",

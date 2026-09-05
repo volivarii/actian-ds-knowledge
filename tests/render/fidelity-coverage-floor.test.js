@@ -614,3 +614,124 @@ test("CLI: a fixture run says so, so a log can never be mistaken for a real one"
     "--report relocates the tracked artifact, which must be loud",
   );
 });
+
+// --- #607: the printed remedy has to be a command the flag can reach ---------
+//
+// The gate printed `npm run derive:render -- --accept-coverage-loss="<why>"`.
+// `derive:render` is a chain of seven commands joined by `&&`, and
+// `npm run <script> -- <args>` appends the arguments to the END of the script
+// string, so the flag landed on the last link and this parser received an empty
+// argv. Probed on 2026-09-05: the direct form arrives as
+// ["--accept-coverage-loss=<why>"], the npm form as [].
+//
+// Observed cost, 2026-08-31: someone carrying a breaking sync through ran the
+// printed command, watched it exit 1 with the same blocking message, and had to
+// work out that the loss could be accepted at all. A gate whose escape hatch
+// does not work reads as a gate with no escape hatch, and the next move after
+// that is regenerating the report by hand, which the gate's own last line warns
+// against.
+
+function remedyCommands(msg) {
+  // Indented lines inside the remedy block, which is how the message sets a
+  // command apart from prose.
+  return String(msg)
+    .split("\n")
+    .filter(function (l) {
+      return /^\s{2}\S/.test(l) && !/^\s*[A-Z]/.test(l.trim());
+    })
+    .map(function (l) {
+      return l.trim();
+    });
+}
+
+function bearerOf(msg) {
+  var cmds = remedyCommands(msg).filter(function (c) {
+    return c.indexOf("--accept-coverage-loss") !== -1;
+  });
+  assert.equal(
+    cmds.length,
+    1,
+    "expected exactly one command carrying the flag, got: " +
+      JSON.stringify(cmds),
+  );
+  return cmds[0];
+}
+
+var SAMPLE_REGRESSION = {
+  checkableFrom: 49,
+  checkableTo: 36,
+  coverageFrom: 0.1181,
+  coverageTo: 0.0914,
+  lost: [{ slug: "read-only-tag", from: 7, to: 0 }],
+  newlyBlind: ["read-only-tag"],
+};
+
+test("the printed remedy reaches the parser: a direct node call, or a single-command npm script", function () {
+  var cmd = bearerOf(F.coverageFailureMessage(SAMPLE_REGRESSION));
+  var pkg = JSON.parse(
+    fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
+  );
+
+  var npm = /^npm run ([\w:.-]+)\s+--\s/.exec(cmd);
+  if (npm) {
+    // An npm script is fine ONLY if it is a single command. npm appends the
+    // arguments to the end of the script string, so a `&&` chain hands them to
+    // the last link.
+    var script = pkg.scripts[npm[1]];
+    assert.ok(script, "the remedy runs `npm run " + npm[1] + "`, which package.json does not define");
+    assert.equal(
+      script.indexOf("&&"),
+      -1,
+      "the remedy runs `npm run " +
+        npm[1] +
+        '`, a chain of commands. `npm run <script> -- <args>` appends to the END ' +
+        "of the script string, so the flag reaches the LAST link and never this " +
+        "parser. Print the direct invocation, or give the flag its own " +
+        "single-command script. Chain: " +
+        script,
+    );
+    return;
+  }
+
+  var direct = /^node\s+(\S+)/.exec(cmd);
+  assert.ok(
+    direct,
+    "the remedy is neither `node <file>` nor `npm run <script> -- ...`, so " +
+      "nothing here can say whether the flag reaches the parser: " +
+      cmd,
+  );
+  var file = path.join(REPO_ROOT, direct[1]);
+  assert.ok(
+    fs.existsSync(file),
+    "the remedy runs " + direct[1] + ", which does not exist",
+  );
+  assert.match(
+    fs.readFileSync(file, "utf8"),
+    /accept-coverage-loss/,
+    "the remedy runs " +
+      direct[1] +
+      ", which does not mention accept-coverage-loss, so it is not the file " +
+      "that parses the flag",
+  );
+});
+
+test("positive control: the npm form this replaced is exactly what that check rejects", function () {
+  // Without this the check above passes on the correct message and proves
+  // nothing about the one that was wrong. `derive:render` must still be a
+  // chain, or the rule it encodes has quietly stopped applying.
+  var pkg = JSON.parse(
+    fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
+  );
+  assert.ok(
+    pkg.scripts["derive:render"].indexOf("&&") !== -1,
+    "derive:render is no longer a chain, so the failure #607 records could not " +
+      "happen and this control no longer controls anything",
+  );
+  var cmd = bearerOf(F.coverageFailureMessage(SAMPLE_REGRESSION));
+  assert.equal(
+    /^npm run derive:render\b/.test(cmd),
+    false,
+    "the remedy is back to the npm chain form, which never reaches the parser: " +
+      cmd,
+  );
+});

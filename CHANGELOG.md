@@ -26,6 +26,20 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **The fidelity gate printed an escape hatch that could not reach it**. On a blocking coverage loss
+  it printed `npm run derive:render -- --accept-coverage-loss="<why>"`. `derive:render` is a chain of
+  seven commands joined by `&&`, and `npm run <script> -- <args>` appends the arguments to the END of
+  the script string, so the flag landed on the last link and the gate's own parser received an empty
+  argv. Probed both ways: the direct invocation arrives as `["--accept-coverage-loss=<why>"]`, the npm
+  form as `[]`. The cost is not the inconvenience. A gate whose escape hatch does nothing reads as a
+  gate with no escape hatch, and the next move after that is regenerating the report by hand, which
+  the gate's own last line warns against; it was hit for real on 2026-08-31 while carrying a breaking
+  sync through. The remedy is now the direct call, and a test asserts the printed command is one the
+  flag can reach: a `node <file>` invocation of a file that parses the flag, or an `npm run` of a
+  script that is a single command rather than a chain. It carries its own positive control, because a
+  check that only ever sees the corrected message proves nothing about the one that was wrong.
+  Version-neutral: no dist, no schema, no consumer.
+
 - **Nine of the eleven render artifacts could ship stale in silence, and the check that would have
   caught it is advisory** ([#672](https://github.com/volivarii/actian-ds-knowledge/pull/672)).
   `render-derive.yml` regenerates `components/render/dist` and auto-commits
