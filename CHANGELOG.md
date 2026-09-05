@@ -26,6 +26,25 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **Nine of the eleven render artifacts could ship stale in silence, and the check that would have
+  caught it is advisory** ([#672](https://github.com/volivarii/actian-ds-knowledge/pull/672)).
+  `render-derive.yml` regenerates `components/render/dist` and auto-commits
+  it, but it is not a required check and none of its steps after the derive carries `if: always()`.
+  A producer that throws therefore skips detect-changes, auto-bump and commit alike: the job goes
+  red and the PR stays mergeable, so a stale render dist merges with no version bump, no tag, and no
+  consumer ever seeing the change. The suite covered two artifacts. Probed by mutating each
+  committed file and running the render tests: `render-contract.json` and `sparse-render.json` go
+  red, and `usage-notes/*.md`, `fidelity-report.json`, `quality-trend.json`, `quality-trend.md`,
+  `render-manifest.json`, `custom-elements.json`, `render.css`, `render-fonts.css` and
+  `fragments/*.html` all stay green. The required manifest check now regenerates the whole tree and
+  fails on drift, in the same shape as the six drift guards already there, which also makes a
+  throwing producer un-mergeable rather than merely noisy. It takes its subject from the DIRECTORY,
+  so a new artifact is covered the day it is written rather than the day someone remembers a list.
+  Placed after the suite deliberately: the two committed-vs-fresh assertions read the working tree,
+  so deriving first would turn both into a comparison of the fresh tree with itself. Costs three
+  seconds, and determinism is not assumed either, since the dist is derived on ubuntu in CI and
+  regenerates byte-identically on macOS. Version-neutral: no dist change, no schema, no consumer.
+
 - **A usage note could lose its Category guidance section and ship, on a green run**
   ([#670](https://github.com/volivarii/actian-ds-knowledge/pull/670)). An inherited
   domain carries no prose of its own, so the note draws its rationale from

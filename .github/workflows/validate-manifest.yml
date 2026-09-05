@@ -346,6 +346,57 @@ jobs:
       - name: Run test suite
         run: npm test
 
+      # The render dist is the LARGEST committed artifact set with no
+      # merge-blocking freshness check, and until this step it was the only
+      # derived tree whose staleness could ship.
+      #
+      # `render-derive.yml` regenerates it and auto-commits, but it is NOT a
+      # required check, and none of its steps after the derive carries
+      # `if: always()`. So a producer that throws skips detect-changes,
+      # auto-bump and commit alike, the job goes red, and the PR stays
+      # mergeable: a stale render dist merges with no bump, no tag, and no
+      # consumer ever seeing the change. #571.
+      #
+      # `npm test` above covers only two of the eleven artifacts. Probed by
+      # mutating each committed file and running the render suite: the
+      # contract and sparse-render go red, and usage-notes/*.md,
+      # fidelity-report.json, quality-trend.json, quality-trend.md,
+      # render-manifest.json, custom-elements.json, render.css,
+      # render-fonts.css and fragments/*.html all stay GREEN. Nine of eleven.
+      # This guard takes its subject from the directory instead, so a new
+      # artifact is covered the day it is written rather than the day someone
+      # remembers to add it to a list.
+      #
+      # Placed AFTER `npm test` deliberately. The suite's own committed-vs-fresh
+      # assertions read the working tree, so deriving first would hand them a
+      # freshly written dist and both would compare fresh against fresh.
+      #
+      # Cost is 3 seconds: the chain reads committed inputs and renders in
+      # process, with no network and no Figma token. Determinism is not assumed
+      # either: the committed dist is derived on ubuntu here and regenerates
+      # byte-identically on macOS, which is a wider gap than any two runners.
+      - name: Derive the canonical render dist
+        run: npm run derive:render
+
+      - name: Render dist drift guard (committed components/render/dist must match regeneration)
+        run: |
+          # 🚨 Capture and check git's own exit status BEFORE testing the value.
+          # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
+          # a stuck index.lock) prints nothing, the test is false, the guard body is
+          # SKIPPED and the step exits 0. That is a silent green on a required check.
+          DRIFT="$(git status --porcelain --untracked-files=all -- components/render/dist)" || {
+            echo "::error::git status failed while checking drift"
+            exit 1
+          }
+          if [ -n "$DRIFT" ]; then
+            echo "::error::components/render/dist is stale. render-derive.yml regenerates and commits it; a red run there leaves this behind. Run 'npm run derive:render' and commit."
+            # The captured list, because `git diff` prints NOTHING for the
+            # untracked leaf these guards were converted to catch.
+            printf '%s\n' "$DRIFT"
+            git --no-pager diff --stat -- components/render/dist
+            exit 1
+          fi
+
       - name: Token reference in sync with tokens.json
         run: |
           npm run render:tokens
