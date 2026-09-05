@@ -193,12 +193,14 @@ test("CoverageDashboard: shows error callout when load fails", async () => {
   assert.ok(screen.getByText(/boom/));
 });
 
-test("CoverageDashboard: the table sits inside the disclosure, closed at rest", async () => {
-  // The screen's whole shape rests on this. The figure states the finding and
-  // the table restates it cell for cell, 425 badges under a drawing of the
-  // same rows, so at rest the page is the figure. The badges are kept because
-  // a 9px matrix cell is below the 24px target floor and can never be the
-  // thing you click to open one component's guidance.
+test("CoverageDashboard: the table sits inside the disclosure, open at rest", async () => {
+  // The figure answers "where does this stand" and the table answers "open
+  // this one". A 9px matrix cell is below the 24px target floor, so the figure
+  // can never be the thing you click to open one component's guidance, which
+  // makes the table the only part of this screen you can act on. It is open at
+  // rest for that reason. The disclosure stays so the figure can be read
+  // alone, and the table stays INSIDE it either way, which is what the join
+  // below asserts.
   const { container } = render(
     wrap(
       <CoverageDashboard
@@ -213,7 +215,7 @@ test("CoverageDashboard: the table sits inside the disclosure, closed at rest", 
     "details[data-testid='coverage-table-disclosure']",
   ) as HTMLDetailsElement | null;
   assert.ok(details, "the disclosure is gone");
-  assert.equal(details!.open, false, "the table is open at rest again");
+  assert.equal(details!.open, true, "the table is shut at rest again");
 
   // The JOIN, not merely the presence of both: a details element beside a
   // table would satisfy two separate existence checks and ship the defect.

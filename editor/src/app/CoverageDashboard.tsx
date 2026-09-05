@@ -291,22 +291,24 @@ export function CoverageDashboard({
           )}
         </Box>
       )}
-      {/* The table is closed at rest, and that is the whole point of this
-          screen now.
+      {/* Open at rest, and collapsible rather than fixed.
 
-          It restates the figure above it cell for cell: five columns of
+          The table restates the figure above it cell for cell: five columns of
           coloured words for five rows of cells, 425 badges under a drawing of
-          the same 85 rows. The badges are not deleted, because they carry
+          the same 85 rows. It is kept, and now shown, because it carries
           affordances the figure cannot: a 9px matrix cell is below the 24px
           target floor (WCAG 2.5.8), so the figure can never be the thing you
-          click to open one component's Design guidance. Closed by default is
-          the honest resolution: the page at rest is the figure, and the
-          per-cell route is one keystroke away for whoever wants it.
+          click to open one component's Design guidance. The figure answers
+          "where does this stand", the table answers "open this one", and a
+          screen whose second question needs a click first has hidden the only
+          part of itself you can act on. The disclosure stays so the figure can
+          still be read alone.
 
           Native details/summary rather than a Radix disclosure: it is keyboard
-          operable and announced as expandable with no JavaScript and no state
-          of ours to get wrong. */}
-      <details data-testid="coverage-table-disclosure">
+          operable, announced as expandable, and remembers nothing, so there is
+          no state of ours to get wrong. `open` is an initial value, not a
+          binding: the reader's own collapse is not fought on re-render. */}
+      <details open data-testid="coverage-table-disclosure">
         <summary style={{ cursor: "pointer" }}>
           <Text size="2" color="gray">
             All {rows.length} components, one row each
