@@ -366,9 +366,13 @@ test("render-derive.yml watches every path this producer reads", function () {
   // components/dist/guidelines/ and components/dist/categories/, neither of which
   // was watched. It regenerated anyway, but only because guidelines-derive.yml
   // bumps knowledge_version in paths-manifest.json, which IS watched. Correct by
-  // coincidence, and there is no committed-vs-fresh drift guard on usage-notes to
-  // red a required check when the coincidence stops holding. Same assertion, and
-  // the same watchedBy semantics, as tests/render/derive-contract.test.js.
+  // coincidence. The coincidence is no longer load-bearing: validate-manifest.yml
+  // regenerates the whole render dist and fails on drift (#571,
+  // tests/render/render-dist-drift-guard.test.js), so a stale note reds the
+  // REQUIRED check whatever stopped regenerating it. This assertion stays for the
+  // diagnostic: it names the unwatched input, where the drift guard can only say
+  // the tree is stale. Same watchedBy semantics as
+  // tests/render/derive-contract.test.js.
   var D = require("../../scripts/render/derive-usage-notes.js");
   var yml = fs.readFileSync(
     path.resolve(__dirname, "../../.github/workflows/render-derive.yml"),
