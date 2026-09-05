@@ -22,7 +22,7 @@
       "previous": 56
     },
     "inlineHex": {
-      "value": 51,
+      "value": 57,
       "direction": "unknown",
       "previous": null
     },
@@ -43,7 +43,7 @@
       "card-for-perimeter": 2,
       "digram-item-types": 10,
       "digram-topic": 5,
-      "lineage": 6,
+      "lineage": 12,
       "lineage-grouped-node": 2,
       "metamodel": 10,
       "search-result-card": 4
