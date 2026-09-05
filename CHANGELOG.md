@@ -51,7 +51,8 @@ Each entry links its pull request. Dates are the merge date (UTC).
   open one component's guidance. The per-domain tallies no longer wrap to two lines.
   Editor-only: no dist, no schema, no consumer.
 
-- **The Coverage table is open at rest** (PR pending). It shipped behind a closed disclosure on the
+- **The Coverage table is open at rest**
+  ([#662](https://github.com/volivarii/actian-ds-knowledge/pull/662)). It shipped behind a closed disclosure on the
   reasoning that it restates the figure above it cell for cell. It does, and it is still the only
   part of the screen you can act on: a 9px matrix cell is below the 24px target floor (WCAG 2.5.8),
   so the figure can never be the thing you click to open one component's guidance. A screen whose
