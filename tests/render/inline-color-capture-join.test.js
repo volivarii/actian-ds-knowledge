@@ -160,3 +160,136 @@ test("metamodel renders every captured Type border colour as the capture states 
   });
   assert.ok(bound >= 1, "captured token-bound border colours: " + bound);
 });
+
+// ---------------------------------------------------------------------------
+// #649: the NESTED item-type badge, joined to the host's own capture.
+//
+// Three components painted their badge #ffdacf, digram-item-types' documented
+// Category fallback, because each read `v["Item type"]` on an axis it does not
+// publish, so the fallback fired on every render. Eleven badges: metamodel's
+// five, where the border two pixels away was correct per Type, and lineage's
+// six. Every declaration was well-formed: #ffdacf is a real captured value and
+// Category is a real fallback, so #551's bare-hex census counted them as
+// faithful and the variant-collapse census never aliased them, because the
+// initials differ per cell.
+//
+// The check that catches it is a join, and the iteration source is the CAPTURE:
+// every component whose anatomy nests a "Digram, Item types" node must render
+// that node's captured background. Two of the five subjects were already
+// correct before the fix (lineage-grouped-node's captured background IS
+// #ffdacf, and card-for-perimeter's is Dataset), which is what shows this
+// asserts the capture rather than the absence of peach.
+var BADGE_NODE = /^digram, item types$/i;
+
+// Every slug whose capture nests the badge, read from the anatomy dist.
+function nestedBadgeSubjects() {
+  return fs
+    .readdirSync(ANATOMY)
+    .filter(function (f) {
+      return f.endsWith(".json") && f !== "digram-item-types.json";
+    })
+    .map(function (f) {
+      var doc = JSON.parse(fs.readFileSync(path.join(ANATOMY, f), "utf8"));
+      var root = doc.root || doc;
+      var found = [];
+      (function walk(node) {
+        if (!node || typeof node !== "object") return;
+        if (BADGE_NODE.test(String(node.name || ""))) found.push(node);
+        (node.children || []).forEach(walk);
+      })(root);
+      return { slug: f.replace(/\.json$/, ""), root: root, nodes: found };
+    })
+    .filter(function (s) {
+      return s.nodes.length > 0;
+    });
+}
+
+// The style the renderer put on the badge span, for one variant.
+function renderedBadgeStyle(slug, variant) {
+  var html = DS.renderDSComponent({ dsSlug: slug, variant: variant, props: {} });
+  var m = html.match(/class="ds-item-type"[^>]*style="([^"]*)"/);
+  return m ? m[1] : null;
+}
+
+test("every component nesting an item-type badge renders the captured background", function () {
+  var subjects = nestedBadgeSubjects();
+  // A stale locator does not go red, it makes the loop body never run.
+  assert.ok(
+    subjects.length >= 5,
+    "components nesting the badge: " + subjects.length,
+  );
+  var checked = 0;
+  subjects.forEach(function (s) {
+    var a = s.nodes[0].appearance || {};
+    if (!a.background) return;
+    // The root node's name IS the default variant combination.
+    var style = renderedBadgeStyle(s.slug, String(s.root.name || ""));
+    assert.ok(style, s.slug + " renders no ds-item-type badge at all");
+    assert.ok(
+      style.indexOf("background:" + expected(a.background, a.backgroundToken)) >=
+        0,
+      s.slug +
+        " should render background:" +
+        expected(a.background, a.backgroundToken) +
+        " on its nested badge, got " +
+        style,
+    );
+    checked++;
+  });
+  assert.ok(checked >= 5, "subjects with a captured background: " + checked);
+});
+
+test("metamodel renders the captured item-type badge background for every Type", function () {
+  var subject = nestedBadgeSubjects().find(function (s) {
+    return s.slug === "metamodel";
+  });
+  assert.ok(subject, "metamodel no longer nests an item-type badge");
+  var a = subject.nodes[0].appearance || {};
+  // The default value, named by the root node ("Type=Dataset"), plus every
+  // per-Type override on the badge node itself.
+  var byValue = {};
+  var defaultType = String(subject.root.name || "").match(/Type=([^,]+)/);
+  assert.ok(defaultType, "metamodel's root does not name a default Type");
+  byValue[defaultType[1].trim()] = {
+    background: a.background,
+    backgroundToken: a.backgroundToken,
+  };
+  (a.variants || []).forEach(function (v) {
+    if (v.prop !== "Type" || !v.background) return;
+    (v.values || []).forEach(function (value) {
+      byValue[value] = {
+        background: v.background,
+        backgroundToken: v.backgroundToken,
+      };
+    });
+  });
+  var types = Object.keys(byValue);
+  assert.equal(
+    types.length,
+    5,
+    "captured Types on the badge: " + types.join(", "),
+  );
+  // The defect: one colour for all five. Distinctness is the half a
+  // per-Type fallback would still satisfy.
+  var painted = types.map(function (t) {
+    return renderedBadgeStyle("metamodel", "Type=" + t);
+  });
+  assert.equal(
+    new Set(painted).size,
+    5,
+    "five Types painted " + new Set(painted).size + " distinct badges",
+  );
+  types.forEach(function (t) {
+    var f = byValue[t];
+    assert.ok(
+      renderedBadgeStyle("metamodel", "Type=" + t).indexOf(
+        "background:" + expected(f.background, f.backgroundToken),
+      ) >= 0,
+      t +
+        " should render background:" +
+        expected(f.background, f.backgroundToken) +
+        ", got " +
+        renderedBadgeStyle("metamodel", "Type=" + t),
+    );
+  });
+});
