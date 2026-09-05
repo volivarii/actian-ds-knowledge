@@ -27,7 +27,8 @@ no entry defers its link to a placeholder.
 ### Fixed
 
 - **Nine of the eleven render artifacts could ship stale in silence, and the check that would have
-  caught it is advisory**. `render-derive.yml` regenerates `components/render/dist` and auto-commits
+  caught it is advisory** ([#672](https://github.com/volivarii/actian-ds-knowledge/pull/672)).
+  `render-derive.yml` regenerates `components/render/dist` and auto-commits
   it, but it is not a required check and none of its steps after the derive carries `if: always()`.
   A producer that throws therefore skips detect-changes, auto-bump and commit alike: the job goes
   red and the PR stays mergeable, so a stale render dist merges with no version bump, no tag, and no
