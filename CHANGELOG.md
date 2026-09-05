@@ -26,6 +26,22 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **The quality roll-up could report a figure that moved as "unchanged", and take a second version
+  bump for it** ([#669](https://github.com/volivarii/actian-ds-knowledge/pull/669)).
+  `render-derive.yml` triggers on `paths-manifest.json` and its own auto-commit bumps
+  that file, so the workflow re-fires with the bot's commit as HEAD. The three DS measures
+  (`unexplainedCollapses`, `oracleVerified`, `oracleExamined`) read "previous" as the last commit
+  that touched the artifact they are computed from, which on that second run is the run's own
+  output: a figure that improved 65 to 54 would have published `unchanged (was 54)`, the artifact
+  would differ again, and a second bump would ship for nothing. The two FM measures were given the
+  merge base when they were added and never had the exposure, which is how the split survived. Every
+  measure now takes its baseline from the merge base with `main`, through one function that
+  constructs both DS baselines, and `previousValues` refuses to run without them rather than
+  quietly falling back to the newest commit. The reported figures do not move: on a branch that has
+  pushed no artifact commit the merge base sees the newest revision, which is what "previous" has
+  always meant. Proved on a temporary repository whose history contains exactly the divergence, so
+  the guard fails if the baseline is ever read from HEAD again.
+
 - **The editor declared two design-system token names the design system does not publish**
   ([#668](https://github.com/volivarii/actian-ds-knowledge/pull/668)). The
   `--zen-color-text-link-*` family was retired, and `base.css` re-declared two of its names locally
