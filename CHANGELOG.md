@@ -27,7 +27,8 @@ no entry defers its link to a placeholder.
 ### Fixed
 
 - **The app-context forms showed authors machine text: schema prose, raw field keys, and a script
-  name**. Under a field captioned "Part of", an author was reading "App slugs where this
+  name**
+  ([#667](https://github.com/volivarii/actian-ds-knowledge/pull/667)). Under a field captioned "Part of", an author was reading "App slugs where this
   UX pattern appears", and under the components field "projected to the graph as
   `ux_pattern -> component 'uses_component'` edges". The form falls back to the JSON Schema's own
   `description` when the editor supplies none, and the schema is a machine contract, so contract
