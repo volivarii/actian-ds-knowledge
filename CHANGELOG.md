@@ -26,7 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
-- **The fidelity gate printed an escape hatch that could not reach it**. On a blocking coverage loss
+- **The fidelity gate printed an escape hatch that could not reach it**
+  ([#673](https://github.com/volivarii/actian-ds-knowledge/pull/673)). On a blocking coverage loss
   it printed `npm run derive:render -- --accept-coverage-loss="<why>"`. `derive:render` is a chain of
   seven commands joined by `&&`, and `npm run <script> -- <args>` appends the arguments to the END of
   the script string, so the flag landed on the last link and the gate's own parser received an empty
