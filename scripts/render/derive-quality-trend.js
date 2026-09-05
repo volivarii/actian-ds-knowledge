@@ -169,10 +169,13 @@ function direction(measure, current, previous) {
 // repeats the previous value teaches nothing.
 const FIDELITY_REL = "components/render/dist/fidelity-report.json";
 
-function git(args) {
+// `cwd` exists so the baseline read can be exercised against a repository whose
+// history a test controls. Nothing here writes, so it is a read confined to
+// another tree rather than a producer pointed at one.
+function git(args, cwd) {
   const { execFileSync } = require("node:child_process");
   return execFileSync("git", args, {
-    cwd: REPO_ROOT,
+    cwd: cwd || REPO_ROOT,
     encoding: "utf8",
     maxBuffer: 1 << 28,
     stdio: ["ignore", "pipe", "ignore"],
@@ -297,22 +300,75 @@ function collapseSeries(opts) {
 // 43 -> 65 -> 54 a fresh 54 against [1]=43 reported "worse" for a measure that
 // had improved 65 -> 54. Reporting a regression as progress is the one thing
 // this artifact must never do.
-// The FM figures' previous values come from this artifact as committed at the
-// MERGE BASE with main, never from the latest commit: render-derive's own bot
-// commit is the latest commit on the second run of a PR, so "last commit" would
-// hand this run its own output back and report every change as "unchanged".
-// The FM tier's three sources have no single historical file to recompute
-// from, and the roll-up is committed, so its history IS the series. "unknown"
-// on the first run is honest.
+// EVERY measure's baseline is this artifact's state at the MERGE BASE with
+// main, never at the latest commit. `render-derive.yml` triggers on
+// `paths-manifest.json` and its own auto-commit bumps that file, so the
+// workflow re-fires on the bot's commit and runs a second time with that commit
+// as HEAD. "The last commit that touched the artifact" is then THIS RUN'S OWN
+// OUTPUT, so a figure that moved reports `unchanged (was <the new value>)`, the
+// artifact differs again, and a second bump ships for nothing. Observed as a
+// re-fire on both PRs of 2026-09-02 (#634).
+//
+// The FM measures were given the merge base when they were added; the three DS
+// measures kept reading series[0] and are the reason this comment now covers
+// all of them.
 const TREND_REL = "components/render/dist/quality-trend.json";
-function fmBaselineRef() {
-  const base = git(["merge-base", "HEAD", "origin/main"]).trim();
+function baselineRef(cwd) {
+  let base;
+  try {
+    base = git(["merge-base", "HEAD", "origin/main"], cwd).trim();
+  } catch (e) {
+    // Never fall back to HEAD here. HEAD is precisely the value that reports a
+    // run its own output back, so a silent fallback would restore the defect
+    // this function exists to remove, on a green run, with no trace.
+    throw new Error(
+      "[quality-trend] cannot locate the merge base with origin/main, so no " +
+        "measure has an honest baseline. This needs the ref and the history: a " +
+        "shallow checkout, or one with no origin/main, cannot produce it.",
+    );
+  }
   return base || "HEAD";
 }
 function fmPreviousMeasure(name) {
-  const committed = showJson(fmBaselineRef(), TREND_REL);
+  const committed = showJson(baselineRef(), TREND_REL);
   const m = committed && committed.measures && committed.measures[name];
   return m && typeof m.value === "number" ? m.value : null;
+}
+
+// The revisions of `rel` the baseline can see, newest first, abbreviated to the
+// width the series points carry. Read from the baseline rather than from HEAD,
+// so a commit the bot pushed onto this branch is simply not in the set.
+function baselineShas(rel, limit, cwd) {
+  return git(
+    ["log", "--format=%H", "-" + (limit || 24), baselineRef(cwd), "--", rel],
+    cwd,
+  )
+    .split("\n")
+    .filter(Boolean)
+    .map(function (sha) {
+      return sha.slice(0, 8);
+    });
+}
+
+// The newest series point the baseline can see.
+//
+// 🔑 The first MATCH, not [1]. On main and on a PR's first run the baseline
+// sees series[0] and this returns it, which is what "previous" means: the
+// derive regenerates the dist and THEN this runs, so the current value is not
+// yet in the series and series[0] is the last committed measurement. Taking
+// [1] unconditionally skipped a revision, and against the real collapse
+// history 43 -> 65 -> 54 a fresh 54 compared to 43 read "worse" for a measure
+// that had improved. Reporting a regression as progress is the one thing this
+// artifact must never do.
+//
+// Returns null when the baseline can see none of them, which surfaces as "no
+// baseline yet" rather than as a fabricated comparison.
+function firstAtOrBefore(series, shas) {
+  const visible = new Set(shas || []);
+  for (const point of series || []) {
+    if (visible.has(point.sha)) return point;
+  }
+  return null;
 }
 // The FM tier is dated by its own sources, not by the oracle's or the
 // contract's commits: fm-base.css moved the figure 35 -> 34 on a day neither of
@@ -321,9 +377,30 @@ function fmSourcesDate() {
   return git(["log", "-1", "--format=%cs", "--"].concat(fmCollapse.SOURCES)).trim();
 }
 
-function previousValues(oracle, collapses) {
-  const prev = oracle.length > 0 ? oracle[0] : null;
-  const prevCollapse = collapses.length > 0 ? collapses[0] : null;
+// `baseline` names, per DS series, the revisions the merge base can see. It is
+// REQUIRED: an optional baseline would let a caller drop it and silently get
+// the newest commit back, which is the whole defect. Callers get a named
+// failure instead.
+// The ONE place the DS baselines are constructed. Both series in one function
+// named for what it returns, so a caller cannot assemble a plausible-looking
+// baseline out of HEAD's revisions by hand.
+function dsBaselines(cwd) {
+  return {
+    oracle: baselineShas(FIDELITY_REL, 24, cwd),
+    collapses: baselineShas(CONTRACT_REL, 24, cwd),
+  };
+}
+
+function previousValues(oracle, collapses, baseline) {
+  if (!baseline || !baseline.oracle || !baseline.collapses) {
+    throw new Error(
+      "[quality-trend] previousValues needs the baseline revisions of both DS " +
+        "series. Without them it would fall back to the newest commit, which on " +
+        "a PR's second derive run is this run's own output.",
+    );
+  }
+  const prev = firstAtOrBefore(oracle, baseline.oracle);
+  const prevCollapse = firstAtOrBefore(collapses, baseline.collapses);
   return {
     fmUnexplainedCollapses: fmPreviousMeasure("fmUnexplainedCollapses"),
     fmUnownedModifiers: fmPreviousMeasure("fmUnownedModifiers"),
@@ -347,7 +424,7 @@ function buildRollup() {
     .sort()
     .pop();
   const current = currentMeasures();
-  const prev = previousValues(series, collapses);
+  const prev = previousValues(series, collapses, dsBaselines());
 
   const values = {
     unexplainedCollapses: current.unexplainedCollapses.value,
@@ -532,7 +609,10 @@ module.exports = {
   assertSeries: assertSeries,
   readOracle: readOracle,
   previousValues: previousValues,
-  fmBaselineRef: fmBaselineRef,
+  baselineRef: baselineRef,
+  baselineShas: baselineShas,
+  dsBaselines: dsBaselines,
+  firstAtOrBefore: firstAtOrBefore,
   fmSourcesDate: fmSourcesDate,
   direction: direction,
   oracleSeries: oracleSeries,

@@ -371,20 +371,203 @@ test("the historical collapse figure uses the gate's classifier too", function (
   );
 });
 
-test("previous is the LAST COMMITTED value, because current is the fresh tree", function () {
+test("previous is the newest committed value the BASELINE can see, not series[1]", function () {
   // The derive regenerates the dist and THEN this runs, so `current` is not yet
-  // in the series: series[0] is the last committed measurement. Taking series[1]
-  // skips a revision and misreports the direction outright. With the real
-  // history 43 -> 65 -> 54, a fresh 54 against series[1]=43 reads "worse" when
-  // the measure improved 65 -> 54, which is the exact failure this artifact
-  // exists to prevent.
-  const oracle = [{ verified: 78, examined: 408 }, { verified: 77, examined: 408 }];
-  const collapses = [{ unexplained: 65 }, { unexplained: 43 }];
+  // in the series: the newest point the baseline can see is the last committed
+  // measurement. Taking series[1] skips a revision and misreports the direction
+  // outright. With the real history 43 -> 65 -> 54, a fresh 54 against
+  // series[1]=43 reads "worse" when the measure improved 65 -> 54, which is the
+  // exact failure this artifact exists to prevent.
+  const oracle = [
+    { sha: "cccccccc", verified: 78, examined: 408 },
+    { sha: "bbbbbbbb", verified: 77, examined: 408 },
+  ];
+  const collapses = [{ sha: "cccccccc", unexplained: 65 }, { sha: "bbbbbbbb", unexplained: 43 }];
 
-  const prev = trend.previousValues(oracle, collapses);
+  const prev = trend.previousValues(oracle, collapses, {
+    oracle: ["cccccccc", "bbbbbbbb"],
+    collapses: ["cccccccc", "bbbbbbbb"],
+  });
 
   assert.strictEqual(prev.oracleVerified, 78, "the last committed verified");
   assert.strictEqual(prev.unexplainedCollapses, 65, "the last committed collapses");
+});
+
+test("previous skips a revision the merge base cannot see, which is this run's own output", function () {
+  // #634. `render-derive.yml` triggers on paths-manifest.json and its own
+  // auto-commit bumps it, so the workflow re-fires with the BOT'S COMMIT as
+  // HEAD. Reading "the last commit that touched the artifact" then hands the
+  // run its own freshly written value back: a figure that moved 65 -> 54
+  // reports `unchanged (was 54)`, the artifact differs again, and a second
+  // version bump ships for nothing.
+  //
+  // `bot00000` is that commit: newest in the series, absent from the merge
+  // base. The honest previous is the value on main.
+  const oracle = [
+    { sha: "bot00000", verified: 54, examined: 408 },
+    { sha: "main0000", verified: 65, examined: 408 },
+  ];
+  const collapses = [
+    { sha: "bot00000", unexplained: 54 },
+    { sha: "main0000", unexplained: 65 },
+  ];
+  const baseline = { oracle: ["main0000"], collapses: ["main0000"] };
+
+  const prev = trend.previousValues(oracle, collapses, baseline);
+
+  assert.strictEqual(
+    prev.oracleVerified,
+    65,
+    "previous came from the bot's own commit, so the move reports as unchanged",
+  );
+  assert.strictEqual(
+    prev.unexplainedCollapses,
+    65,
+    "previous came from the bot's own commit, so the move reports as unchanged",
+  );
+  assert.strictEqual(
+    trend.direction("unexplainedCollapses", 54, prev.unexplainedCollapses),
+    "better",
+    "the direction a run that improved the figure must report",
+  );
+});
+
+test("previousValues refuses to run without a baseline, rather than defaulting to the newest commit", function () {
+  // The structural half. Selecting correctly is worthless if a caller can drop
+  // the argument and get series[0] back, so the dangerous call is made
+  // impossible instead of merely wrong: this is what goes red if buildRollup
+  // ever reverts to previousValues(series, collapses).
+  const oracle = [{ sha: "bot00000", verified: 54, examined: 408 }];
+  const collapses = [{ sha: "bot00000", unexplained: 54 }];
+
+  assert.throws(
+    function () {
+      trend.previousValues(oracle, collapses);
+    },
+    /needs the baseline revisions/,
+    "a missing baseline must name itself, not silently mean HEAD",
+  );
+  assert.throws(
+    function () {
+      trend.previousValues(oracle, collapses, { oracle: ["main0000"] });
+    },
+    /needs the baseline revisions/,
+    "half a baseline is not a baseline",
+  );
+});
+
+test("firstAtOrBefore returns null when the baseline sees none of the series", function () {
+  // A long-lived branch can push more revisions of one artifact than the series
+  // holds. "no baseline yet" is honest; a fabricated comparison is not.
+  assert.strictEqual(
+    trend.firstAtOrBefore([{ sha: "bot00000" }], ["main0000"]),
+    null,
+  );
+  assert.strictEqual(trend.firstAtOrBefore([], ["main0000"]), null);
+});
+
+test("baselineShas reads the merge base, so a commit pushed onto the branch is not in it", function () {
+  // The wiring half, proved rather than asserted. The join test below compares
+  // two reads that COINCIDE on any branch which has pushed no artifact commit,
+  // so on a clean tree it cannot fail. This one builds the tree where they
+  // differ: `main` holds one revision of the artifact, the branch holds a
+  // second, and that second is exactly what render-derive's own auto-commit
+  // adds before the workflow re-fires on it (#634).
+  const fs = require("node:fs");
+  const os = require("node:os");
+  const { execFileSync } = require("node:child_process");
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), "qt-baseline-"));
+  const g = function (...args) {
+    return execFileSync("git", args, {
+      cwd: repo,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  };
+  const REL = "artifact.json";
+  const write = function (value) {
+    fs.writeFileSync(path.join(repo, REL), JSON.stringify({ value: value }));
+  };
+
+  try {
+    g("init", "-q", "-b", "main");
+    g("config", "user.email", "t@example.invalid");
+    g("config", "user.name", "t");
+    write(65);
+    g("add", REL);
+    g("commit", "-q", "-m", "main: the value this run must compare against");
+    const onMain = g("rev-parse", "HEAD");
+    // `baselineRef` resolves origin/main; a bare temp repo has no remote, so
+    // point the ref at the commit rather than cloning.
+    g("update-ref", "refs/remotes/origin/main", onMain);
+
+    g("checkout", "-q", "-b", "feature");
+    write(54);
+    g("commit", "-q", "-am", "the bot's own regenerate commit, pushed onto the PR");
+    const onBranch = g("rev-parse", "HEAD");
+
+    assert.notStrictEqual(onBranch, onMain, "the branch must have moved");
+    assert.strictEqual(
+      trend.baselineRef(repo),
+      onMain,
+      "the baseline is the merge base with main, not the branch tip",
+    );
+
+    const shas = trend.baselineShas(REL, 24, repo);
+    assert.deepStrictEqual(
+      shas,
+      [onMain.slice(0, 8)],
+      "the baseline sees main's revision only",
+    );
+    assert.ok(
+      !shas.includes(onBranch.slice(0, 8)),
+      "the run's own output is in the baseline, so every change reports unchanged",
+    );
+
+    // And the selection on top of it: HEAD's newest point is the bot's 54, the
+    // honest previous is main's 65.
+    const series = [
+      { sha: onBranch.slice(0, 8), unexplained: 54 },
+      { sha: onMain.slice(0, 8), unexplained: 65 },
+    ];
+    assert.strictEqual(trend.firstAtOrBefore(series, shas).unexplained, 65);
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test("the roll-up's DS baselines are the ones the merge base can see", function () {
+  // The join. The two tests above pin the selection and the refusal on literal
+  // data; this one pins the WIRING, that buildRollup hands previousValues the
+  // merge base's revisions of the fidelity report and the contract rather than
+  // HEAD's.
+  const rollup = rollupOnce();
+  const base = trend.dsBaselines();
+  const expectedOracle = trend.firstAtOrBefore(rollup.oracleSeries, base.oracle);
+  const expectedCollapse = trend.firstAtOrBefore(
+    rollup.collapseSeries,
+    base.collapses,
+  );
+
+  assert.strictEqual(
+    rollup.measures.oracleVerified.previous,
+    expectedOracle ? expectedOracle.verified : null,
+  );
+  assert.strictEqual(
+    rollup.measures.oracleExamined.previous,
+    expectedOracle ? expectedOracle.examined : null,
+  );
+  assert.strictEqual(
+    rollup.measures.unexplainedCollapses.previous,
+    expectedCollapse ? expectedCollapse.unexplained : null,
+  );
+  // And the baseline is a real ref, not the empty string that would make
+  // `git log ""` mean HEAD.
+  const ref = trend.baselineRef();
+  assert.ok(
+    typeof ref === "string" && ref.length > 0,
+    "a baseline ref is named",
+  );
 });
 
 test("inline hex counts a single-quoted style attribute too", function () {
@@ -473,11 +656,24 @@ test("direction knows fewer FM collapses and fewer unowned modifiers are progres
   assert.strictEqual(trend.direction("fmUnownedModifiers", 60, 50), "worse");
 });
 
-test("previousValues carries the FM baselines from the merge base, not from this run's own write", function () {
-  const prev = trend.previousValues(trend.oracleSeries({ limit: 2 }), trend.collapseSeries({ limit: 2 }));
-  assert.ok("fmUnexplainedCollapses" in prev && "fmUnownedModifiers" in prev, "one definition of previous, inside previousValues");
-  const base = trend.fmBaselineRef();
-  assert.ok(typeof base === "string" && base.length > 0, "a baseline ref is named");
+test("previousValues carries every baseline from the merge base, not from this run's own write", function () {
+  const prev = trend.previousValues(
+    trend.oracleSeries({ limit: 2 }),
+    trend.collapseSeries({ limit: 2 }),
+    trend.dsBaselines(),
+  );
+  // One definition of previous, inside previousValues, and it now covers the
+  // three DS measures as well as the two FM ones: they were split, and the DS
+  // half kept reading the newest commit (#634).
+  for (const name of [
+    "fmUnexplainedCollapses",
+    "fmUnownedModifiers",
+    "oracleVerified",
+    "oracleExamined",
+    "unexplainedCollapses",
+  ]) {
+    assert.ok(name in prev, name + " has no previous value");
+  }
 });
 
 test("the roll-up is dated by every source it reads, the FM tier's included", function () {
