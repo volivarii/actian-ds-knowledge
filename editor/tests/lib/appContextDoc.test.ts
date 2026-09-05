@@ -58,28 +58,55 @@ test("an app carries the three fields AppRecord did not declare", () => {
   assert.equal(typeof a.purpose, "string");
 });
 
-test("the app schema's undeclared fields are reported, not enforced (#647)", (t) => {
-  // `schemas/app-context-app.json` omits purpose, users and signals while every
-  // app file carries all three — tracked as #647.
+test("purpose, users and signals are declared on the shape that carries them", () => {
+  // #647 read the frontmatter schema, saw that it omits purpose, users and
+  // signals, and concluded three published fields had no contract. Measured,
+  // the opposite is true, and acting on the issue would have made the schema
+  // wrong: those three are not frontmatter at all. They are BODY sections
+  // (## Purpose, ## Users, ## Signals) that derive-app-context.js lifts, and
+  // schemas/app-context.json#/$defs/app declares all three with descriptions,
+  // examples and required. `signals` is even documented there as what it is,
+  // routing keywords, not the "behavioural signals" the frontmatter schema's
+  // description used to promise.
   //
-  // This REPORTS rather than asserts, and that is the whole point. As an
-  // assertion it failed the day someone fixed the schema correctly; and since
-  // `schemas/**` is not in editor-ci.yml's paths filter, that failure would not
-  // even land on the PR that made the change — it would surface later on an
-  // unrelated editor PR whose author never touched a schema. A gate that fails
-  // the wrong person for someone else's correct change teaches people to
-  // weaken gates.
-  const schema = JSON.parse(
+  // So this asserts the boundary rather than reporting a gap: each of the two
+  // schemas declares the fields of the shape it describes, and neither borrows
+  // the other's. app-context-app.json sets additionalProperties:false, so
+  // declaring the three there would permit frontmatter keys the derive ignores
+  // and the author can never legally write.
+  const frontmatter = JSON.parse(
     readFileSync(join(REPO, "schemas", "app-context-app.json"), "utf8"),
-  ) as { properties?: Record<string, unknown> };
-  const declared = Object.keys(schema.properties ?? {});
-  assert.ok(declared.length > 0, "schema declares no properties — vacuous");
-  const missing = ["purpose", "users", "signals"].filter(
-    (f) => !declared.includes(f),
-  );
-  t.diagnostic(
-    missing.length
-      ? `#647 still open: schemas/app-context-app.json does not declare ${missing.join(", ")}`
-      : "#647 appears fixed — the schema now declares purpose, users and signals; this test can go",
+  ) as { properties?: Record<string, unknown>; description?: string };
+  const derived = JSON.parse(
+    readFileSync(join(REPO, "schemas", "app-context.json"), "utf8"),
+  ) as {
+    $defs?: { app?: { properties?: Record<string, unknown>; required?: string[] } };
+  };
+
+  const fmKeys = Object.keys(frontmatter.properties ?? {});
+  const appKeys = Object.keys(derived.$defs?.app?.properties ?? {});
+  assert.ok(fmKeys.length > 0, "the frontmatter schema declares no properties");
+  assert.ok(appKeys.length > 0, "the derived app schema declares no properties");
+
+  const BODY_DERIVED = ["purpose", "users", "signals"];
+  for (const field of BODY_DERIVED) {
+    assert.ok(
+      appKeys.includes(field),
+      `${field} is lifted from the body and published, but schemas/app-context.json#/$defs/app does not declare it`,
+    );
+    assert.equal(
+      fmKeys.includes(field),
+      false,
+      `${field} is a body section, so declaring it in schemas/app-context-app.json (additionalProperties:false) permits a frontmatter key that can never legally appear`,
+    );
+  }
+
+  // And the description must not promise what the file does not describe. It
+  // ended "and behavioural signals", which is wrong twice: signals are not in
+  // this frontmatter, and they are routing keywords rather than behaviour.
+  assert.equal(
+    /behavioural signals/i.test(frontmatter.description ?? ""),
+    false,
+    "the frontmatter schema still promises signals it does not declare",
   );
 });

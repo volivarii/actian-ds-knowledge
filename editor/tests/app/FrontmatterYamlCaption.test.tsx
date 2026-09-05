@@ -32,10 +32,26 @@ const ENTITY_SCHEMA_PATH = new URL(
   import.meta.url,
 ).pathname;
 
-const APP_DESCRIPTION =
-  "Frontmatter of app-context/src/apps/<slug>.md. Describes an Actian application's identity, header variant, navigation structure, and behavioural signals.";
-const ENTITY_DESCRIPTION =
-  "Frontmatter of app-context/src/entities/<slug>.md. The prose `description` lives in the markdown body, not here.";
+/** The description the SCHEMA carries, read from the same file the screen reads.
+ *
+ *  These were two hardcoded copies of the schema's own sentence, in a test
+ *  whose name is "shows the app schema's OWN root description, not a hardcoded
+ *  string". Correcting the app schema's description broke it, which is a copy
+ *  failing as a copy rather than the screen failing: the screen was right the
+ *  whole time. Read the value and the test asserts the join it claims to. */
+function rootDescription(schemaPath: string): string {
+  const d = (
+    JSON.parse(readFileSync(schemaPath, "utf8")) as { description?: string }
+  ).description;
+  assert.ok(
+    d && d.length > 20,
+    `${schemaPath} carries no root description for the caption to show`,
+  );
+  return d!;
+}
+
+const APP_DESCRIPTION = rootDescription(APP_SCHEMA_PATH);
+const ENTITY_DESCRIPTION = rootDescription(ENTITY_SCHEMA_PATH);
 
 const APP_RECORD = [
   "---",
