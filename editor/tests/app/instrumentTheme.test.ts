@@ -1,22 +1,33 @@
-// The instrument's dark palette has to key on the selector the app actually
-// produces.
+// The instrument's dark palette has to key on a selector the app actually
+// produces, and this file exists because I once got that wrong in both
+// directions on the same day.
 //
-// It did not, in every build that has ever shipped. `instrument.css` overrode
-// `--ed-lit` under `[data-theme="dark"]`, and nothing in this application sets
-// `data-theme`: Radix Themes applies `appearance` as a CLASS on the Theme
-// element (`class="radix-themes dark"`). So the block matched nothing,
-// `--ed-lit` stayed at its light value #101010, and an AUTHORED cell drew
-// near-black on a near-black ground while an ABSENT cell kept its light
-// `--ed-well-edge` border. The readout rendered inverted: what was written was
-// the invisible half, and what was missing was the prominent half.
+// What the app produces, read out of the running editor rather than recalled:
+// `<Theme appearance="dark">` renders `class="radix-themes dark"` on the Theme
+// element, and because that Theme is the ROOT theme, Radix ALSO stamps
+// `data-theme="dark"` on `<html>`. A rule keyed on `[data-theme="dark"]` alone
+// matches, and `--ed-lit` resolves to the dark #f2f0eb.
 //
-// No rendering test could catch it. jsdom applies no stylesheet, so the
-// cascade this depends on does not exist in the suite, and 1558 tests were
-// green over it. It was found by looking at the screen.
+// The correction. This file used to open by asserting that nothing in the
+// application sets `data-theme`, that the block therefore matched nothing in
+// every build ever shipped, and that the readout had been rendering INVERTED
+// throughout. That was measured on a throwaway dogfood page which mounts the
+// screen without the app's root Theme, so `<html>` carried no stamp there. The
+// measurement was real and the surface was not the app: the shipped editor
+// stamps the attribute, and the pre-#659 selector applied.
 //
-// So this is a SOURCE guard, and it asserts the JOIN rather than either half:
-// a stylesheet keyed on a class nobody emits is exactly as dead as one keyed
-// on an attribute nobody sets.
+// 🔑 A measurement taken on a stand-in surface describes the stand-in. The
+// stand-in exists precisely because it is cheaper than the app, and what it
+// leaves out is exactly what makes it cheaper.
+//
+// The selector is still `:is(.dark, [data-theme="dark"])`, and that is not a
+// leftover. The two halves FAIL APART: a Theme that stops being the root theme
+// keeps the class and loses the `<html>` stamp, and a theme switch written
+// outside Radix would set the attribute and no class. So this asserts the JOIN
+// on both halves, because a stylesheet keyed on a class nobody emits is exactly
+// as dead as one keyed on an attribute nobody sets, and the suite is
+// structurally blind to either: jsdom applies no stylesheet, so the cascade
+// this depends on does not exist here at all.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -45,21 +56,31 @@ function darkOverrideSelector(): string {
   return dark!.selector;
 }
 
-test("instrument.css: the dark palette keys on a selector the app emits", () => {
+test("instrument.css: the dark palette keys on both selectors the app emits", () => {
   const selector = darkOverrideSelector();
-  // Radix Themes puts `dark` (or `light`) as a class on the Theme element.
+  // The class, on the Theme element.
   assert.match(
     selector,
     /\.dark\b/,
-    `the dark override is keyed on ${selector}, which Radix Themes never produces. ` +
-      `appearance="dark" renders class="radix-themes dark"; it sets no data-theme.`,
+    `the dark override is keyed on ${selector}, which drops the class Radix ` +
+      `Themes puts on the Theme element: appearance="dark" renders ` +
+      `class="radix-themes dark". A nested Theme emits this and no <html> stamp.`,
+  );
+  // The attribute, on <html>, because this Theme is the root theme.
+  assert.match(
+    selector,
+    /\[data-theme="dark"\]/,
+    `the dark override is keyed on ${selector}, which drops the attribute Radix ` +
+      `stamps on <html> for a root theme. Keeping only the class is what breaks ` +
+      `if the readout is ever rendered under a plain root-level theme switch.`,
   );
 });
 
 test("instrument.css: the app still asks for the appearance that selector matches", () => {
   // The other half of the join. If the Theme stops passing appearance="dark",
-  // or starts reading a user preference, the class above stops being emitted
-  // and the palette silently reverts to the light values on a dark ground.
+  // or starts reading a user preference, NEITHER the class nor the <html> stamp
+  // is emitted, and the palette silently reverts to the light values on a dark
+  // ground. This is the half that was true all along.
   assert.match(
     APP,
     /<Theme[^>]*appearance="dark"/,
