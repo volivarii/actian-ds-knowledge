@@ -27,7 +27,8 @@ no entry defers its link to a placeholder.
 ### Fixed
 
 - **The quality roll-up could report a figure that moved as "unchanged", and take a second version
-  bump for it**. `render-derive.yml` triggers on `paths-manifest.json` and its own auto-commit bumps
+  bump for it** ([#669](https://github.com/volivarii/actian-ds-knowledge/pull/669)).
+  `render-derive.yml` triggers on `paths-manifest.json` and its own auto-commit bumps
   that file, so the workflow re-fires with the bot's commit as HEAD. The three DS measures
   (`unexplainedCollapses`, `oracleVerified`, `oracleExamined`) read "previous" as the last commit
   that touched the artifact they are computed from, which on that second run is the run's own
