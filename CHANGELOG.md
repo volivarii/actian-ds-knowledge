@@ -133,8 +133,9 @@ no entry defers its link to a placeholder.
   marked as the syntax it is.
 
 - **The instrument's dark palette keys on both selectors the app emits, and the guard now asserts
-  both** ([#659](https://github.com/volivarii/actian-ds-knowledge/pull/659)). `instrument.css`
-  overrode the readout palette under `[data-theme="dark"]` alone. `<Theme appearance="dark">` renders
+  both** ([#659](https://github.com/volivarii/actian-ds-knowledge/pull/659),
+  [#671](https://github.com/volivarii/actian-ds-knowledge/pull/671)). `instrument.css` overrode the
+  readout palette under `[data-theme="dark"]` alone. `<Theme appearance="dark">` renders
   `class="radix-themes dark"` on the Theme element, and because that Theme is the root theme Radix
   also stamps `data-theme="dark"` on `<html>`, so the two halves fail apart: a Theme that stops being
   the root theme keeps the class and loses the stamp, and a theme switch written outside Radix would
