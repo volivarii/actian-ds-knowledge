@@ -26,6 +26,25 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **The declaration #674 credited with pinning the sidebar's utilities group does nothing**
+  ([#675](https://github.com/volivarii/actian-ds-knowledge/pull/675)). #674
+  removed `justify-content: space-between` from `.ds-sidenav` and added
+  `.ds-sidenav__bottom { margin-top: auto }` in its place, on the reading that dropping the
+  distribution left Groups mode with nothing holding the bottom group down. Measuring the shipped
+  sheet against the emitter's own Groups markup in an 896px rail says otherwise: the declaration
+  computes to `0px`, and neutralising it leaves `__bottom` at exactly the same 711px offset.
+  `.ds-sidenav__top` has carried `flex: 1 1 auto` throughout, absorbs the rail's free space, and is
+  the entire mechanism. `space-between` had no free space to distribute in Groups mode and was
+  already inert there, which is why removing it cost that mode nothing.
+
+  So the added declaration is inert, the comment justifying it named the wrong cause, and the guard
+  asserted the inert half while its companion assertion stated the causality backwards. The
+  declaration is removed, the comments say what actually holds the group down, and the guard now
+  asserts `__top`'s grow plus the two-child shape that grow assumes. Both assertions were
+  mutation-proved by deleting `__top`'s own `flex` line and by renaming `__bottom`'s wrapper
+  element; the first attempt at the former deleted a different rule's identical declaration and
+  stayed green, which is the reason the mutation is pinned to a line number and not a pattern.
+
 - **Every app sidebar in every generated screen was spread down the full rail**
   ([#674](https://github.com/volivarii/actian-ds-knowledge/pull/674)). `.ds-sidenav`
   carried `justify-content: space-between`, taken from the capture, which describes the two-child
@@ -33,9 +52,9 @@ no entry defers its link to a placeholder.
   Items mode, where the leaf emits every row as a direct child, so seven 32px rows were distributed
   across an 896px rail at a 139px pitch. It read as a broken screen rather than a styling nit, and
   it reached both this repo's canonical renders and the plugin's HTML deliverable. The rail now
-  stacks from the top with a 4px row gap, and the foot pin moves to
-  `.ds-sidenav__bottom { margin-top: auto }`, which is equivalent for two children and correct for
-  seven. `tests/render/sidenav-items-mode-stacks.test.js` joins the two halves that had drifted:
+  stacks from the top with a 4px row gap. Groups mode keeps its foot pin, though not by the
+  mechanism this entry originally named: see the correction below.
+  `tests/render/sidenav-items-mode-stacks.test.js` joins the two halves that had drifted:
   the shape the emitter produces and the rule the sheet applies to it. jsdom loads no stylesheet,
   so a source join is the only guard that can see this.
 
