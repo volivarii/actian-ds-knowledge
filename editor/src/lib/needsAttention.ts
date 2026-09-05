@@ -2,12 +2,22 @@
 //
 // Turns the coverage rows into a short, prioritized list of "the most
 // valuable thing to write next". Priority bands:
-//   0 — authored components whose `usage` domain is not-started
-//       (real components someone began, missing the guidance designers
-//       ask for most — the coverage debt the whole system is starved of)
-//   1 — unstarted registry components (no _meta.yml at all)
-//   2 — authored components with any other not-started domain
+//   0: authored components whose `usage` domain is not-started (real
+//      components someone began, missing the guidance designers ask for most,
+//      the coverage debt the whole system is starved of)
+//   1: authored components with any other not-started domain
+//   2: unstarted registry components, with no _meta.yml at all
 // Alphabetical by slug within a band. Pure data transform, no I/O.
+//
+// WHY THE GHOSTS COME LAST. They used to sit in band 1, above every authored
+// component with a gap, which read well and measured badly: of the 74 in the
+// registry, 0 have a usage gap, 31 are ghosts and 43 are authored with some
+// other gap. A list of eight therefore showed eight ghosts, alphabetically,
+// each with five empty cells and the same button, and the 43 rows that
+// differ from one another never reached the screen. Finishing what somebody
+// started beats starting what nobody has, and it is also the only ordering
+// under which the readout beside each row carries information: identical
+// rows make an instrument that reads the same whatever it is pointed at.
 
 import { DOMAIN_LABEL } from "./workspaceState";
 import {
@@ -61,8 +71,8 @@ function missingDomains(row: CoverageRow): Domain[] {
 
 function band(row: CoverageRow, missing: Domain[]): AttentionBand {
   if (row.origin === "authored" && missing.includes("usage")) return 0;
-  if (row.origin === "unstarted") return 1;
-  return 2;
+  if (row.origin === "unstarted") return 2;
+  return 1;
 }
 
 /**

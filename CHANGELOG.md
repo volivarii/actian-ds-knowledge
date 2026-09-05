@@ -51,6 +51,19 @@ Each entry links its pull request. Dates are the merge date (UTC).
   open one component's guidance. The per-domain tallies no longer wrap to two lines.
   Editor-only: no dist, no schema, no consumer.
 
+- **The hub's work list ranks authored components above registry ghosts** (PR pending). "Worth doing
+  next" put every unstarted registry component above every authored component with a gap. It read
+  well and measured badly: of the 74 components the registry publishes, 0 have a usage gap, 31 are
+  ghosts with no `_meta.yml` at all and 43 are authored with some other gap, so a list of eight
+  showed the eight alphabetically first ghosts, five empty cells and the same button on each, and
+  none of the 43 rows that differ from one another ever reached the screen. Finishing what somebody
+  started now outranks starting what nobody has, and the ghosts sort last. That is also the only
+  ordering under which the readout beside each row carries anything: identical rows make an
+  instrument that reads the same whatever it is pointed at. The action labels are keyed by the same
+  band as the ordering, so the ghost is the row that says `Start authoring` and an authored row says
+  `Continue authoring`.
+  Editor-only: no dist, no schema, no consumer.
+
 - **The editor's front door states no statistics**
   ([#660](https://github.com/volivarii/actian-ds-knowledge/pull/660)). Home carried a derived sentence
   under its h1: "31 components have no guidance at all. Of the 54 started, Tokens is the backlog: 42
