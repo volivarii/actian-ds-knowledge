@@ -316,10 +316,17 @@
     "Glossary 1": "--zen-color-warning-800",
     "Glossary 2": "--zen-color-warning-800",
   };
-  function digramItemTypeStyle(itemType) {
+  // `bgTokenOverride` is for a HOST whose own capture binds this badge to a
+  // variable the badge's component does not bind for itself: search-result-card
+  // binds its Glossary badge to --zen-color-warning-25, while
+  // digram-item-types' capture leaves Glossary 1 unbound. Putting it in
+  // DIGRAM_ITEM_TYPE_TOKENS would claim a binding the component that table
+  // quotes does not have; post-processing the returned string would no-op
+  // silently the day this function's output shape changes.
+  function digramItemTypeStyle(itemType, bgTokenOverride) {
     var bg =
       DIGRAM_ITEM_TYPE_COLORS[itemType] || DIGRAM_ITEM_TYPE_COLORS.Category;
-    var token = DIGRAM_ITEM_TYPE_TOKENS[itemType];
+    var token = bgTokenOverride || DIGRAM_ITEM_TYPE_TOKENS[itemType];
     var style = token
       ? "background:var(" + token + ", " + bg + ")"
       : "background:" + bg;
@@ -360,6 +367,40 @@
     Field: { color: "#145f04", token: "--zen-color-success-800" },
     Visualisation: { color: "#7900cb", token: null },
   };
+  // Captured resolved-appearance backgrounds for the nested digram-item-types
+  // badge in metamodel's header, one per Type
+  // (components/dist/anatomy/metamodel.json, the "Digram, Item types" node:
+  // its own appearance.background for the Dataset default, appearance.variants
+  // for the other four).
+  //
+  // Quoted as colours rather than mapped through the Item type vocabulary,
+  // because that vocabulary has no "Business Term". Three of the five Types do
+  // name an item type (Dataset, Field, Visualisation as "Visualization") and
+  // two do not, so a name mapping would have to invent the missing two out of a
+  // colour coincidence: #fff9e5 is also Glossary 1 and Use case, #ffd6d8 is
+  // also Custom 2. Naming one would assert a taxonomy the capture never states.
+  //
+  // The defect this replaces: the case read `v["Item type"]`, an axis metamodel
+  // does not publish, so every render fell through to digram-item-types' own
+  // documented Category fallback and painted all five #ffdacf, peach, while the
+  // border 2px away was correct per Type.
+  var METAMODEL_BADGE_FILLS = {
+    Dataset: { color: "#cfeafd", token: null },
+    "Business Term": { color: "#fff9e5", token: null },
+    "Data Process": { color: "#ffd6d8", token: null },
+    Field: { color: "#d3efcd", token: "--zen-color-success-50" },
+    Visualisation: { color: "#eed7ff", token: null },
+  };
+  function metamodelBadgeStyle(type) {
+    // Same fall-through as metamodelBorderStyle: the Connector values carry no
+    // entry on this node at all (not an explicit null, as they do on the card),
+    // so they take the captured default rather than an invented absence.
+    var f = METAMODEL_BADGE_FILLS[type] || METAMODEL_BADGE_FILLS.Dataset;
+    return f.token
+      ? "background:var(" + f.token + ", " + f.color + ")"
+      : "background:" + f.color;
+  }
+
   // The Connector group is captured as `{background: null, radius: null,
   // border: null}`: connectors are lines between nodes, not boxes, so the
   // capture is stating an absence rather than failing to record one. Falling
@@ -1006,7 +1047,16 @@
           if (v.State === "Disabled") linCls += " ds-lineage-node--disabled";
           if (v.Fields === "Expanded") linCls += " ds-lineage-node--expanded";
 
-          var linItemType = v["Item type"] || "Category";
+          // The capture records ONE background for this badge and no
+          // per-variant override: #cfeafd, which is digram-item-types' own
+          // Dataset (components/dist/anatomy/lineage.json, "Card > Header >
+          // Digram, Item types"). Named rather than quoted as a hex, because
+          // here the captured colour and the item-type vocabulary agree, so the
+          // badge also picks up Dataset's captured text colour.
+          //
+          // It read `v["Item type"]`, an axis lineage does not publish, so all
+          // six cells fell through to the Category fallback and painted peach.
+          var linItemType = v["Item type"] || "Dataset";
           var linBadge =
             '<span class="ds-item-type" style="' +
             digramItemTypeStyle(linItemType) +
@@ -1054,6 +1104,18 @@
           var lgnCls = "ds-lineage-group";
           if (v.State === "Expanded") lgnCls += " ds-lineage-group--expanded";
 
+          // Category here is the CAPTURE, not the fallback firing: this
+          // badge is captured at #ffdacf with no per-variant override
+          // (components/dist/anatomy/lineage-grouped-node.json, "Card > Header
+          // > Digram, Item types"), and #ffdacf is Category. Written out so it
+          // stops being right by coincidence, and so the capture-join gate has
+          // a case that is correct BEFORE the fix as well as after: a gate whose
+          // every subject was broken cannot show it is asserting the capture
+          // rather than the absence of peach.
+          //
+          // The initials read DS, which is what suggested Dataset when this was
+          // filed. The initials are the record's own name, not the badge's type,
+          // and the capture is the only thing that states the type.
           var lgnItemType = v["Item type"] || "Category";
           var lgnBadge =
             '<span class="ds-item-type" style="' +
@@ -1106,10 +1168,9 @@
 
         case "metamodel": {
           var mwType = v.Type || "Dataset";
-          var mwItemType = v["Item type"] || "Category";
           var mwBadge =
             '<span class="ds-item-type" style="' +
-            digramItemTypeStyle(mwItemType) +
+            metamodelBadgeStyle(mwType) +
             '">' +
             // derived from the variant, not captured: the anatomy JSON has no
             // initials layer, and this component's Type axis IS the item-type
@@ -3314,7 +3375,17 @@
           // that is DIGRAM_ITEM_TYPE_COLORS["Glossary 1"] (also shared by
           // "Use case"), NOT "Category" (#ffdacf); "Glossary 1" is the
           // itemType that actually reproduces the captured color.
-          var srcGlossaryBadge = digramItemTypeStyle("Glossary 1");
+          //
+          // The token is bound HERE rather than in DIGRAM_ITEM_TYPE_TOKENS
+          // because it is this instance that carries it: search-result-card's
+          // capture binds the badge to --zen-color-warning-25, while
+          // digram-item-types' own capture leaves Glossary 1 unbound. Adding it
+          // to the shared table would claim a binding the component the table
+          // quotes does not have. Value-only, the badge could not re-theme.
+          var srcGlossaryBadge = digramItemTypeStyle(
+            "Glossary 1",
+            "--zen-color-warning-25",
+          );
 
           return (
             '<div class="' +

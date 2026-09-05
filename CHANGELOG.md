@@ -51,6 +51,29 @@ Each entry links its pull request. Dates are the merge date (UTC).
   open one component's guidance. The per-domain tallies no longer wrap to two lines.
   Editor-only: no dist, no schema, no consumer.
 
+- **Eleven nested item-type badges painted the wrong colour, chosen by a fallback nothing filled**
+  (PR pending). `metamodel`, `lineage` and three other components render a nested `digram-item-types`
+  badge. Three of them read the badge's type from `v["Item type"]`, an axis none of them publishes,
+  so every render fell through to that component's own documented `Category` fallback and painted
+  `#ffdacf`, peach. On `metamodel` all five Types drew the same peach badge while the border two
+  pixels away was correct per Type; on `lineage` all six cells did. Every declaration was
+  well-formed, which is why nothing caught it: `#ffdacf` is a real captured value and `Category` is a
+  real fallback, so the bare-hex census counted them as faithful, the fidelity oracle had nothing to
+  compare against, and the variant-collapse census never aliased them because the initials differ per
+  cell. Each badge now renders what the HOST's own capture states for it: `metamodel` per Type, from
+  `anatomy/metamodel.json`, quoted as colours rather than mapped through the item-type vocabulary
+  because that vocabulary has no "Business Term"; `lineage` as Dataset, which is the single
+  background its capture records. `search-result-card`'s badge value was already right but dropped
+  the `--zen-color-warning-25` binding its own capture carries, so it could not re-theme.
+  `lineage-grouped-node` is unchanged: its captured background IS `#ffdacf`, so the two badges the
+  issue counted as wrong were right, and the initials that suggested otherwise are the record's name
+  rather than the badge's type. A new gate joins the two sides and takes its iteration source from
+  the capture: every component whose anatomy nests a "Digram, Item types" node must render that
+  node's captured background, with the token where the capture binds one. Two of its five subjects
+  were already correct before the fix, which is what shows it asserts the capture rather than the
+  absence of peach.
+  Render tier: the shipped fragments change, no schema, no manifest.
+
 - **The Coverage table is open at rest**
   ([#662](https://github.com/volivarii/actian-ds-knowledge/pull/662)). It shipped behind a closed disclosure on the
   reasoning that it restates the figure above it cell for cell. It does, and it is still the only
