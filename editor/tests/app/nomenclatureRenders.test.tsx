@@ -146,3 +146,87 @@ test("a Product's name field says Product, not App", async () => {
     cleanup();
   }
 });
+
+test("no app-context form shows an author the schema's machine prose (#646)", async () => {
+  // Found by LOOKING at the deployed editor, not by a test: under the field
+  // captioned "Part of" an author was reading "App slugs where this UX pattern
+  // appears", and under the components field "projected to the graph as
+  // ux_pattern -> component 'uses_component' edges". RJSF falls back to the
+  // SCHEMA's description when the uiSchema gives none, and the schema is a
+  // machine contract. The nomenclature guard walks editor/src, and these
+  // strings live in schemas/, one layer below where it reaches.
+  //
+  // The schema prose is not touched: presentation hints belong to the consumer
+  // (editor/README.md, P3). This asserts the RENDER, because a uiSchema
+  // constant asserted in isolation proves the words changed in a module and
+  // never that a screen shows them.
+  cleanup();
+  try {
+    const { container } = await renderRecord(
+      "app-context/src/patterns/asset-detail-360.md",
+      "app-context-pattern.json",
+      "---\nslug: asset-detail-360\nlabel: 360-degree asset detail view\napps:\n  - studio\ncomponents:\n  - tabs\ntags:\n  - detail\n---\nBody.\n",
+    );
+    await waitFor(
+      () => assert.ok(container.textContent!.includes("Part of")),
+      { timeout: 5000 },
+    );
+    const txt = container.textContent!;
+
+    // The author's words are what renders.
+    assert.ok(
+      txt.includes("The products where this page shape appears."),
+      "the authored help for Part of does not render",
+    );
+    assert.ok(
+      txt.includes("The design system components this page shape is built from."),
+      "the authored help for the components field does not render",
+    );
+
+    // And the machine prose does not. Matched on SHAPE as well as on the two
+    // sentences, so a schema reworded tomorrow into different jargon still
+    // fails: a snake_case token is a graph edge type or a field name, and
+    // neither is something an author writing English should be shown.
+    for (const gone of [
+      "App slugs where this UX pattern appears",
+      "Registry-key slugs",
+      "uses_component",
+    ]) {
+      assert.ok(!txt.includes(gone), `machine prose still renders: ${gone}`);
+    }
+    const snake = txt.match(/\b[a-z]+_[a-z]+(?:_[a-z]+)*\b/);
+    assert.equal(
+      snake && snake[0] !== "_schema_version" ? snake[0] : null,
+      null,
+      `a snake_case token reached the author: ${snake?.[0]}`,
+    );
+  } finally {
+    cleanup();
+  }
+});
+
+test("an Entity's fields carry the same author-facing help (#646)", async () => {
+  cleanup();
+  try {
+    const { container } = await renderRecord(
+      "app-context/src/entities/data-product.md",
+      "app-context-entity.json",
+      "---\nslug: data-product\nlabel: Data Product\napps:\n  - studio\n---\nBody.\n",
+    );
+    await waitFor(
+      () => assert.ok(container.textContent!.includes("Part of")),
+      { timeout: 5000 },
+    );
+    const txt = container.textContent!;
+    assert.ok(
+      txt.includes("The products where this thing is surfaced."),
+      "the authored help for Part of does not render on an Entity",
+    );
+    assert.ok(
+      !txt.includes("App slugs where this entity is surfaced"),
+      "the schema's machine prose still renders on an Entity",
+    );
+  } finally {
+    cleanup();
+  }
+});
