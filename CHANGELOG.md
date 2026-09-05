@@ -132,18 +132,25 @@ no entry defers its link to a placeholder.
   `[notification](toast)` as an example of a broken cross-link was itself rendering as one, and is now
   marked as the syntax it is.
 
-- **The editor's status readout has rendered inverted in every build that ever shipped**
-  ([#659](https://github.com/volivarii/actian-ds-knowledge/pull/659)). `instrument.css` overrode the readout palette under `[data-theme="dark"]`, and
-  nothing in the editor sets `data-theme`: Radix Themes applies `appearance` as a class on the Theme
-  element (`class="radix-themes dark"`). So the block matched nothing, `--ed-lit` stayed at its light
-  value `#101010`, and an authored cell drew near-black on a near-black ground while an empty cell
-  kept its light `--ed-well-edge` border. What was written was the invisible half and what was
-  missing was the prominent half, which is the opposite of what the instrument exists to say. No
-  rendering test could see it, because jsdom applies no stylesheet and the cascade it depends on does
-  not exist in the suite; 1558 tests were green over it and it was found by looking at the screen.
-  The override now keys on `:is(.dark, [data-theme="dark"])`, and a source guard asserts the join
-  between the selector the stylesheet uses and the appearance `App.tsx` asks for, since a stylesheet
-  keyed on a class nobody emits is exactly as dead as one keyed on an attribute nobody sets.
+- **The instrument's dark palette keys on both selectors the app emits, and the guard now asserts
+  both** ([#659](https://github.com/volivarii/actian-ds-knowledge/pull/659)). `instrument.css`
+  overrode the readout palette under `[data-theme="dark"]` alone. `<Theme appearance="dark">` renders
+  `class="radix-themes dark"` on the Theme element, and because that Theme is the root theme Radix
+  also stamps `data-theme="dark"` on `<html>`, so the two halves fail apart: a Theme that stops being
+  the root theme keeps the class and loses the stamp, and a theme switch written outside Radix would
+  set the attribute and no class. The override keys on `:is(.dark, [data-theme="dark"])` and a source
+  guard asserts the join on each half against the appearance `App.tsx` asks for, because a stylesheet
+  keyed on a class nobody emits is exactly as dead as one keyed on an attribute nobody sets. The
+  suite is structurally blind to it either way: jsdom applies no stylesheet, so the cascade this
+  depends on does not exist there at all.
+
+  This entry replaces one that claimed the block had matched nothing and the readout had rendered
+  inverted in every build ever shipped. It had not. That was measured on a throwaway dogfood page,
+  which mounts the screen without the app's root Theme and therefore carries no `<html>` stamp: the
+  measurement was real and the surface was not the app. Read out of the running editor,
+  `document.documentElement` carries `data-theme="dark"`, a rule keyed on `[data-theme="dark"]` alone
+  matches it, and `--ed-lit` resolves to the dark `#f2f0eb`. The source comments that stated
+  otherwise are corrected in the same change.
   Editor-only: no dist, no schema, no consumer.
 
 ### Changed

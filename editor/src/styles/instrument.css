@@ -44,18 +44,22 @@
   --ed-cell-radius: 1px;
 }
 
-/* Radix Themes applies `appearance` as a CLASS on the Theme element
-   (`class="radix-themes dark"`), never as `data-theme`. Keyed on
-   `[data-theme="dark"]` alone this whole block matched nothing, in every build
-   that has ever shipped: `--ed-lit` stayed #101010, so an AUTHORED cell drew
-   near-black on a near-black ground while an ABSENT cell kept its light
-   `--ed-well-edge` border. The readout rendered inverted, and what is written
-   was the invisible half.
+/* Radix Themes emits BOTH halves of this selector, and the app relies on
+   whichever survives. `<Theme appearance="dark">` renders
+   `class="radix-themes dark"` on the Theme element, and because that Theme is
+   the ROOT theme it also stamps `data-theme="dark"` on `<html>`. Read out of the
+   running app: `document.documentElement` carries `lang=en data-theme=dark`, a
+   rule keyed on `[data-theme="dark"]` alone matches it, and `--ed-lit` resolves
+   to #f2f0eb.
 
-   No test could see it: jsdom applies no stylesheet, so the cascade this
-   depends on does not exist in the suite. It was found by looking at the
-   screen. `.dark` is what the app produces today; `[data-theme="dark"]` is
-   kept so a future root-level theme switch also lands. */
+   Both are listed because they fail apart. A Theme that stops being the root
+   theme keeps the class and loses the `<html>` stamp; a root-level theme switch
+   written outside Radix would set the attribute and no class.
+
+   The suite cannot check any of this: jsdom applies no stylesheet, so the
+   cascade lives outside it entirely. That is what the source guard in
+   tests/app/instrumentTheme.test.ts is for, and it is also why the claim this
+   comment used to make went unchallenged. See that file. */
 :is(.dark, [data-theme="dark"]) {
   --ed-signal: #ff5c1a;
   --ed-lit: #f2f0eb;
