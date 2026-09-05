@@ -51,22 +51,45 @@ function row(
   };
 }
 
-test("topGaps ranks authored usage gaps first, then unstarted, then other authored gaps", () => {
+test("topGaps ranks authored usage gaps first, then other authored gaps, then ghosts", () => {
   const rows = [
-    row("zeta", "authored", { tokens: "not-started" }), // other gap → last
-    row("alert", "unstarted"), // ghost → middle
-    row("button", "authored", { usage: "not-started" }), // usage gap → first
+    row("alert", "unstarted"), // registry ghost, last whatever its name
+    row("zeta", "authored", { tokens: "not-started" }), // other gap, middle
+    row("button", "authored", { usage: "not-started" }), // usage gap, first
   ];
   const gaps = topGaps(rows, 10);
   assert.deepEqual(
     gaps.map((g: AttentionItem) => g.slug),
-    ["button", "alert", "zeta"],
+    ["button", "zeta", "alert"],
   );
-  // The band rides on each item — it is the single source of truth for
-  // both the ordering above and the action label the UI shows.
+  // "alert" sorts before both of the others alphabetically, so a ghost losing
+  // to "zeta" is the band doing the work rather than the tiebreak.
   assert.deepEqual(
     gaps.map((g) => g.band),
     [0, 1, 2],
+  );
+});
+
+test("topGaps never lets a ghost outrank an authored component", () => {
+  // Measured on the real substrate, ghosts in the middle band emptied the
+  // list: of 74 registry components 0 had a usage gap, 31 were ghosts and 43
+  // were authored with some other gap, so a list of eight showed eight
+  // alphabetically-first ghosts, five empty cells each, and none of the 43
+  // rows that differ from one another. Enough ghosts to fill the limit, and
+  // every one of them alphabetically ahead of the authored row.
+  const rows = [
+    ...["aaa", "aab", "aac", "aad"].map((s) => row(s, "unstarted")),
+    row("zzz", "authored", { tokens: "not-started" }),
+  ];
+  const gaps = topGaps(rows, 4);
+  assert.equal(
+    gaps[0]!.slug,
+    "zzz",
+    `ghosts crowded out the authored row: ${gaps.map((g) => g.slug).join(", ")}`,
+  );
+  assert.deepEqual(
+    gaps.map((g) => g.band),
+    [1, 2, 2, 2],
   );
 });
 

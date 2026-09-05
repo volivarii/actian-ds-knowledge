@@ -66,11 +66,12 @@ type CoverageState =
   | { kind: "error"; message: string };
 
 // Labels keyed by the ranking band itself (see needsAttention.band) so the
-// button copy can't drift from why the row ranked where it did.
+// button copy can't drift from why the row ranked where it did. Band 2 is the
+// registry ghost, which is why it is the one that says Start.
 const BAND_ACTION_LABEL: Record<AttentionBand, string> = {
   0: "Write usage guidance",
-  1: "Start authoring",
-  2: "Continue authoring",
+  1: "Continue authoring",
+  2: "Start authoring",
 };
 
 export function HomeScreen({

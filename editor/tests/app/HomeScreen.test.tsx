@@ -41,16 +41,25 @@ function fakeGh(opts: {
   files: Record<string, string>;
   /** slugs whose _meta.yml answers 403 rather than 404 */
   throttle?: string[];
+  /** Registry entries. A slug here with no dir above is a GHOST: published in
+   *  Figma, with nothing authored. Only `section: "Components"` is eligible. */
+  registry?: Record<string, unknown>;
 }) {
   return {
     repos: {
       getContent: async ({ path }: { path: string }) => {
         if (path === "components/src") return { data: opts.dirs };
         if (path === "components/dist/registries/dskit.json") {
-          // A load that cannot read the registry now rejects; these screens
-          // are not the subject of that rule, so the fake serves an empty one.
+          // A load that cannot read the registry now rejects; most of these
+          // tests are not the subject of that rule, so the fake serves an
+          // empty one unless the test is about ghosts.
           return {
-            data: { content: b64(JSON.stringify({ components: {} })), encoding: "base64" },
+            data: {
+              content: b64(
+                JSON.stringify({ components: opts.registry ?? {} }),
+              ),
+              encoding: "base64",
+            },
           };
         }
         if (
@@ -315,4 +324,58 @@ test("HomeScreen: the hub links, it never analyses", async () => {
       `a proportion reached the hub: ${text.match(shape)?.[0]}`,
     );
   }
+});
+
+test("HomeScreen: a registry ghost ranks below authored work and says Start", () => {
+  // The ordering, at the surface. Ghosts used to sit in the middle band, above
+  // every authored component with a gap, and on the real substrate that
+  // emptied the list: 31 ghosts, 43 authored rows with gaps, a limit of 8, so
+  // the screen showed eight alphabetically-first ghosts with five empty cells
+  // each and none of the rows that differ. "Aaa ghost" here sorts ahead of
+  // both authored rows, so if it appears first the band is not doing its job.
+  //
+  // This also pins the label map, which is keyed by band: swapping the bands
+  // without swapping the labels would offer "Start authoring" on a component
+  // somebody has already started.
+  render(
+    wrap(
+      <HomeScreen
+        octokit={fakeGh({
+          dirs: DIRS,
+          files: FILES,
+          registry: {
+            "aaa-ghost": { name: "Aaa ghost", section: "Components" },
+          },
+        })}
+        onOpenFile={() => {}}
+      />,
+    ),
+  );
+  return waitFor(() => {
+    // `closest("div")` is the row itself. Written first as
+    // `closest("div").parentElement`, which is the BOX HOLDING EVERY ROW, so
+    // all three entries were the same full string and every assertion below
+    // passed on any ordering at all. The distinctness check is what keeps
+    // that from coming back.
+    const rows = [...document.querySelectorAll("button")]
+      .filter((el) => /authoring|usage guidance/i.test(el.textContent ?? ""))
+      .map((el) => el.closest("div")?.textContent ?? "");
+    assert.ok(rows.length >= 3, `only ${rows.length} work rows rendered`);
+    assert.equal(
+      new Set(rows).size,
+      rows.length,
+      `the row selector returned the same text ${rows.length} times, so the order below is unasserted: ${rows[0]}`,
+    );
+    assert.match(rows[0]!, /Tabs/, `first row is ${rows[0]}`);
+    assert.match(rows[1]!, /Button/, `second row is ${rows[1]}`);
+    assert.match(
+      rows[2]!,
+      /Aaa ghost/,
+      `the ghost did not sort last: ${rows.join(" | ")}`,
+    );
+    // Keyed by band, so the ghost is the one that says Start.
+    assert.match(rows[0]!, /Write usage guidance/);
+    assert.match(rows[1]!, /Continue authoring/);
+    assert.match(rows[2]!, /Start authoring/);
+  });
 });
