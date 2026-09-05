@@ -26,7 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
-- **The declaration #674 credited with pinning the sidebar's utilities group does nothing.** #674
+- **The declaration #674 credited with pinning the sidebar's utilities group does nothing**
+  ([#675](https://github.com/volivarii/actian-ds-knowledge/pull/675)). #674
   removed `justify-content: space-between` from `.ds-sidenav` and added
   `.ds-sidenav__bottom { margin-top: auto }` in its place, on the reading that dropping the
   distribution left Groups mode with nothing holding the bottom group down. Measuring the shipped
