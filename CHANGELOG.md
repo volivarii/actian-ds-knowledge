@@ -26,7 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
-- **Every app sidebar in every generated screen was spread down the full rail**. `.ds-sidenav`
+- **Every app sidebar in every generated screen was spread down the full rail**
+  ([#674](https://github.com/volivarii/actian-ds-knowledge/pull/674)). `.ds-sidenav`
   carried `justify-content: space-between`, taken from the capture, which describes the two-child
   Groups shape (primary groups on top, utilities pinned to the foot). The same rule also governs
   Items mode, where the leaf emits every row as a direct child, so seven 32px rows were distributed
