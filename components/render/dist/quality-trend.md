@@ -37,6 +37,7 @@ Oracle coverage is **87 of 447** declarations. It is stated as a pair on purpose
 
 | Date | Version | Unexplained |
 | --- | --- | --- |
+| 2026-09-07 | v0.34.194 | 41 |
 | 2026-09-07 | v0.34.189 | 42 |
 | 2026-09-03 | v0.34.180 | 42 |
 | 2026-09-03 | v0.34.178 | 44 |
@@ -48,7 +49,6 @@ Oracle coverage is **87 of 447** declarations. It is stated as a pair on purpose
 | 2026-08-15 | v0.34.133 | 50 |
 | 2026-08-15 | v0.34.132 | 50 |
 | 2026-08-14 | v0.34.132 | 50 |
-| 2026-08-14 | v0.34.128 | 50 |
 
 ## Where the inline hex is
 
