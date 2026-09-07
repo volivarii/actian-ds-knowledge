@@ -329,7 +329,11 @@ function baselineRef(cwd) {
   }
   return base || "HEAD";
 }
-function fmPreviousMeasure(name) {
+// Any measure's last COMMITTED value, read out of this artifact at the merge
+// base. Named for the FM measures it was written for, which hid that it is
+// generic and left `inlineHex` hard-coded to null for weeks while the read it
+// said it was waiting for sat one call away.
+function previousMeasure(name) {
   const committed = showJson(baselineRef(), TREND_REL);
   const m = committed && committed.measures && committed.measures[name];
   return m && typeof m.value === "number" ? m.value : null;
@@ -402,16 +406,26 @@ function previousValues(oracle, collapses, baseline) {
   const prev = firstAtOrBefore(oracle, baseline.oracle);
   const prevCollapse = firstAtOrBefore(collapses, baseline.collapses);
   return {
-    fmUnexplainedCollapses: fmPreviousMeasure("fmUnexplainedCollapses"),
-    fmUnownedModifiers: fmPreviousMeasure("fmUnownedModifiers"),
+    fmUnexplainedCollapses: previousMeasure("fmUnexplainedCollapses"),
+    fmUnownedModifiers: previousMeasure("fmUnownedModifiers"),
     oracleVerified: prev ? prev.verified : null,
     oracleExamined: prev ? prev.examined : null,
     unexplainedCollapses: prevCollapse ? prevCollapse.unexplained : null,
-    // Inline hex needs every fragment at a historical revision rather than one
-    // file, so it stays unknown until that read exists. "unknown" is honest and
-    // visible; a fabricated baseline would make the first report read as
-    // progress. Tracked rather than pretended.
-    inlineHex: null,
+    // Read from the committed artifact, the same way the two FM measures above
+    // are.
+    //
+    // This was hard-coded `null` on the reasoning that inline hex "needs every
+    // fragment at a historical revision rather than one file". True if the
+    // figure is recomputed from history, and unnecessary: the derive commits
+    // its own value into THIS file, so the previous measurement is one
+    // `previousMeasure` call away and always has been for the FM pair.
+    //
+    // What the placeholder cost: inline hex went 28 to 57 between v0.34.135 and
+    // 2026-09-07, the largest movement of any measure here, and the burndown
+    // reported `unknown` throughout. This artifact exists because every gate in
+    // the render tier is a ratchet that cannot report a direction, and the one
+    // measure it could not report on is the one that doubled.
+    inlineHex: previousMeasure("inlineHex"),
   };
 }
 
@@ -610,6 +624,9 @@ module.exports = {
   readOracle: readOracle,
   previousValues: previousValues,
   baselineRef: baselineRef,
+  // Read-only, exported so a test can compare previousValues against the
+  // committed artifact rather than against a list of measure names.
+  showJson: showJson,
   baselineShas: baselineShas,
   dsBaselines: dsBaselines,
   firstAtOrBefore: firstAtOrBefore,

@@ -665,15 +665,37 @@ test("previousValues carries every baseline from the merge base, not from this r
   // One definition of previous, inside previousValues, and it now covers the
   // three DS measures as well as the two FM ones: they were split, and the DS
   // half kept reading the newest commit (#634).
-  for (const name of [
-    "fmUnexplainedCollapses",
-    "fmUnownedModifiers",
-    "oracleVerified",
-    "oracleExamined",
-    "unexplainedCollapses",
-  ]) {
+  //
+  // The subject is READ, not listed. This loop used to enumerate five names
+  // written down from where baselines happened to exist, so it never mentioned
+  // `inlineHex` and could not see that it was hard-coded to null in
+  // previousValues. A measure the artifact publishes but the list forgets is
+  // exactly what a guard like this is for.
+  const published = Object.keys(rollupOnce().measures);
+  assert.ok(published.length >= 6, "expected the full measure set, got " + published.length);
+  for (const name of published) {
     assert.ok(name in prev, name + " has no previous value");
   }
+
+  // ...and `in` is satisfied by an explicit null, which is how the placeholder
+  // survived. Where the COMMITTED artifact carries a number for a measure,
+  // previousValues must return that number: a baseline that exists and is
+  // reported as "unknown" makes the burndown blind to the measure it is most
+  // needed for. Inline hex went 28 to 57 while reporting "unknown" throughout.
+  const committed = trend.showJson(trend.baselineRef(), "components/render/dist/quality-trend.json");
+  assert.ok(committed && committed.measures, "no committed baseline artifact to compare against");
+  let checked = 0;
+  for (const name of published) {
+    const base = committed.measures[name];
+    if (!base || typeof base.value !== "number") continue;
+    checked += 1;
+    assert.strictEqual(
+      prev[name],
+      base.value,
+      name + " has a committed baseline of " + base.value + " but previousValues returned " + prev[name],
+    );
+  }
+  assert.ok(checked >= 6, "expected to check every published measure, checked " + checked);
 });
 
 test("the roll-up is dated by every source it reads, the FM tier's included", function () {

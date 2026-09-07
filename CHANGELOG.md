@@ -297,6 +297,29 @@ no entry defers its link to a placeholder.
 
 ### Changed
 
+- **The burndown could not report a direction for the one measure that doubled**.
+  `inlineHex` was hard-coded to `null` in `previousValues`, on the reasoning that inline hex "needs
+  every fragment at a historical revision rather than one file". That is true if the figure is
+  recomputed from history and unnecessary either way: the derive commits its own value into
+  `quality-trend.json`, so the previous measurement is one `previousMeasure` call away, which is
+  exactly how the two FM measures have always read theirs. The placeholder was honest when written
+  (an invented baseline would have read as progress) and it outlived its premise.
+
+  What it cost: inline-style hex went from **28 across seven components** at v0.34.135 to **57 across
+  eight**, the largest movement of any measure in the artifact, and the burndown reported `unknown`
+  throughout. This artifact exists because every gate in the render tier is a ratchet that blocks a
+  regression without being able to state a direction, so the single measure it could not speak to was
+  the one that grew most. It reads `flat (was 57)` now, and the next movement is reportable.
+
+  The guard that should have caught it was iterating a hand-written list of five measure names,
+  compiled from where baselines happened to exist, so it never mentioned `inlineHex`. It reads the
+  published measure set out of the roll-up now, and separately asserts that where the committed
+  artifact carries a number for a measure, `previousValues` returns that number: `name in prev` was
+  satisfied by the explicit `null`, which is how the placeholder survived a gate written to find it.
+
+  No measure changed value. `fmPreviousMeasure` is renamed `previousMeasure`, since the `fm` prefix
+  was what hid that it was generic.
+
 - **The Patterns screen is a catalogue again; the metrics it opened with moved to Substrate health**
   ([#681](https://github.com/volivarii/actian-ds-knowledge/pull/681)).
   A page called Patterns led with four Meter groups measuring Patterns, Entities, Products and Terms,
