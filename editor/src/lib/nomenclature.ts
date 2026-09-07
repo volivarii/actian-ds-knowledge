@@ -117,6 +117,7 @@ export type LinkKey =
   | "composition"
   | "membership"
   | "compliance"
+  | "appearance"
   | "association";
 
 export interface LinkPair {
@@ -130,6 +131,13 @@ export const LINK_LABEL: Record<LinkKey, LinkPair> = {
   composition: { out: "Built from", in: "Used in" },
   membership: { out: "Part of", in: "Contains" },
   compliance: { out: "Must follow", in: "Required by" },
+  // A fifth family rather than a reuse, because each of the other four says
+  // something false about `entity --shown_in--> pattern`. A Dataset is not
+  // BUILT FROM a faceted browse, nor PART OF one, and `association` is
+  // symmetric so it would throw away the direction, which is the whole of the
+  // information. This is the same trap the note above records for composition
+  // and membership: one label covering two different questions.
+  appearance: { out: "Shown in", in: "Shows" },
   association: { out: "Related to", in: "Related to" },
 };
 
@@ -168,6 +176,11 @@ export const LINK_FAMILY: Record<string, LinkBinding> = {
   // Composition: the edge points at what this record is made of.
   composed_of: { family: "composition" },
   uses_component: { family: "composition" },
+  // `entity --shown_in--> pattern` points at the page shapes that show this
+  // record, which is what it APPEARS IN rather than what it is made of. It is
+  // not composition: a Dataset is not built out of a faceted browse. It is not
+  // membership either, which in this map means a taxonomy parent.
+  shown_in: { family: "appearance" },
   // Membership, child -> parent: the edge points at what this record belongs to.
   in_category: { family: "membership" },
   in_app: { family: "membership" },

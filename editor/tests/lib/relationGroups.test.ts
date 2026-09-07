@@ -2,7 +2,7 @@
 // so the relations rail speaks author vocabulary, never the internal edge keys
 // (composed_of, uses_component, in_category, a11y_ref).
 //
-// The vocabulary is four reciprocal pairs — eight words in total — so one
+// The vocabulary is five reciprocal pairs, ten words in total, so one
 // relationship reads correctly from either end. It replaced 24 one-off phrases
 // that gave each side of each edge its own wording, which is how the same
 // relationship read as "Built from these components" on one screen and
@@ -32,7 +32,7 @@ function neighbor(
   };
 }
 
-test("relationGroupLabel returns one of eight words, reciprocal by direction", () => {
+test("relationGroupLabel returns one of ten words, reciprocal by direction", () => {
   // composition: what a record is MADE OF. A Pattern is Built from Tabs;
   // Tabs is Used in that Pattern.
   assert.equal(relationGroupLabel("composed_of", "out"), "Built from");
@@ -62,6 +62,14 @@ test("relationGroupLabel returns one of eight words, reciprocal by direction", (
   assert.equal(relationGroupLabel("foundations_ref", "out"), "Must follow");
   assert.equal(relationGroupLabel("motion_ref", "in"), "Required by");
 
+  // shown_in runs entity -> pattern, so from the Dataset's side "out" is the
+  // page shapes it is Shown in, and from the pattern's side "in" is the things
+  // it Shows. This orientation needs its own assertion: the closed-vocabulary
+  // test below passes if shown_in loses its family entirely, because the
+  // fallback returns "Related to", which is a word the nomenclature declares.
+  assert.equal(relationGroupLabel("shown_in", "out"), "Shown in");
+  assert.equal(relationGroupLabel("shown_in", "in"), "Shows");
+
   assert.equal(relationGroupLabel("related", "out"), "Related to");
   assert.equal(relationGroupLabel("entity_related", "in"), "Related to");
   assert.equal(relationGroupLabel("term_about", "out"), "Related to");
@@ -75,13 +83,18 @@ test("an unmapped edge type reads as an association, never as snake_case", () =>
   assert.ok(!relationGroupLabel("mystery_edge", "out").includes("_"));
 });
 
-test("the whole surface uses only the eight nomenclature words", () => {
+test("the whole surface uses only the ten nomenclature words", () => {
   // What makes this a vocabulary rather than a smaller pile of strings:
   // nothing may return a word the nomenclature does not declare.
   const allowed = new Set(
     Object.values(LINK_LABEL).flatMap((p) => [p.out, p.in]),
   );
-  assert.equal(allowed.size, 7, "four pairs, with Related to shared, is 7 words");
+  // 7 -> 9 when the entity -> pattern edge added the Shown in / Shows pair. The
+  // invariant this test protects is the CLOSED vocabulary, that nothing returns
+  // a word the nomenclature does not declare; the number is the current size of
+  // it, not a cap. Growing it is a decision about the author-facing surface and
+  // should be made deliberately, which is why it is pinned at all.
+  assert.equal(allowed.size, 9, "five pairs, with Related to shared, is 9 words");
   const edgeTypes = [
     "composed_of",
     "uses_component",
@@ -94,6 +107,7 @@ test("the whole surface uses only the eight nomenclature words", () => {
     "related",
     "entity_related",
     "term_about",
+    "shown_in",
     "totally_unknown",
   ];
   for (const t of edgeTypes) {

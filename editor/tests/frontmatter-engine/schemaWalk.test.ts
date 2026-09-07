@@ -21,6 +21,7 @@ test("top-level keys come from the schema, minus what is already written", () =>
   assert.deepEqual(got.sort(), [
     "_schema_version",
     "apps",
+    "patterns",
     "properties",
     "relationships",
   ]);
