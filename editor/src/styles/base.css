@@ -605,8 +605,7 @@ form.fm-form.fm-collapsed > *:not(.fm-form-children) {
 
 /* Anything this app promotes to a button by putting `role="button"` on a span
    or a div: the capture chips and pattern names on the catalogue, the relation
-   rows, the graph nodes, the sidebar rows, the reorder handles. Nine sites in
-   five components.
+   rows, the sidebar rows, the reorder handles, the graph nodes.
 
    Radix's reset drops the UA focus ring and the only `:focus-visible` rule in
    the app is the skip link's below, so every one of them was reachable by
@@ -616,11 +615,35 @@ form.fm-form.fm-collapsed > *:not(.fm-form-children) {
 
    Keyed on the role rather than on a class, because the role is what made the
    element focusable in the first place, so a new one cannot be added without
-   picking this up. `tests/app/focusRing.test.tsx` asserts the join. */
+   picking this up. No count is written here: it was stated as nine, the sites
+   are ten, and `tests/app/focusRing.test.tsx` now derives the inventory instead
+   of restating it.
+
+   `outline-offset` is NEGATIVE so the ring is drawn INSIDE the element. The
+   sidebar rail is `overflow: auto` and its four rows stretch to its full 260px,
+   so a ring 2px outside their box fell outside the scroll container's padding
+   box; outline is ink overflow, not scrollable overflow, so it was clipped and
+   a keyboard user saw the top and bottom edges with the sides cut off.
+
+   And no `border-radius` here. Setting it beat `.rt-Badge`'s own radius on
+   specificity, so a capture chip changed from a pill to a rectangle for as long
+   as it held focus: a shape change on focus rather than a ring. Browsers
+   already draw an outline following the element's own radius. */
 [role="button"]:focus-visible {
   outline: 2px solid var(--zen-focus-ring-primary, #0f5fdc);
-  outline-offset: 2px;
-  border-radius: 3px;
+  outline-offset: -2px;
+}
+
+/* The graph node is the one site the rule above cannot serve. It is an SVG
+   `<g>`, where WebKit paints no outline at all and the ring would wrap the
+   bounding box (circle PLUS its text label) rather than the node. Stroking the
+   circle is drawn by every engine and lands on the node itself. */
+g[role="button"]:focus-visible {
+  outline: none;
+}
+g[role="button"]:focus-visible circle {
+  stroke: var(--zen-focus-ring-primary, #0f5fdc);
+  stroke-width: 3;
 }
 
 /* The skip link: first in tab order, invisible until it has focus, then a

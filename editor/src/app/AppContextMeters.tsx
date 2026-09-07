@@ -110,20 +110,10 @@ export function AppContextMeters({ octokit }: AppContextMetersProps) {
 
   const { index } = state;
 
-  // Per USE CASE, not per index: a use case naming a pattern that does not
-  // exist is a broken join like the three below, but the join lives on the app,
-  // so it has to be gathered rather than read off a field. The old patterns
-  // page rendered this inside each use case block; when the blocks went, this
-  // was the one signal with nowhere left to land.
-  const useCasesNamingMissing = index.apps.flatMap((app) =>
-    app.useCases
-      .filter((uc) => uc.missingPatterns.length > 0)
-      .map((uc) => ({
-        app: app.label,
-        job: uc.jobs[0] ?? "a use case",
-        missing: uc.missingPatterns,
-      })),
-  );
+  // Read, not re-derived. The old patterns page reshaped this join at render
+  // time while its three siblings below came off the index; `buildPatternIndex`
+  // owns all four now, so a second consumer cannot get a different answer.
+  const useCasesNamingMissing = index.useCasesNamingMissingPatterns;
 
   return (
     <Box mb="5">
@@ -181,7 +171,9 @@ export function AppContextMeters({ octokit }: AppContextMetersProps) {
             {useCasesNamingMissing.length === 1 ? "" : "s"} name a pattern that
             does not exist:{" "}
             {useCasesNamingMissing
-              .map((e) => `${e.app}, "${e.job}" names ${e.missing.join(", ")}`)
+              .map(
+                (e) => `${e.appLabel}, "${e.job}" names ${e.missing.join(", ")}`,
+              )
               .join("; ")}
           </Callout.Text>
         </Callout.Root>

@@ -74,11 +74,29 @@ function hasWhen(p: PatternRow): boolean {
   return hasWhenClause(p.when);
 }
 
-interface CatalogueRow extends PatternRow {
-  /** The jobs that some product's use case says this pattern serves. Claiming
-   *  a product is a different fact from being reached by one, which is why this
-   *  is its own column rather than folded into the product badges. */
+/** A use case that names this pattern, and the product it belongs to. */
+interface Reach {
+  app: string;
+  appLabel: string;
+  /** Every job of that use case, not only the first. The grouped layout showed
+   *  the first as the block title and the rest on an "Also:" line. */
   jobs: string[];
+  /** Who the use case is for. The grouped layout put these in badges beside the
+   *  block title; with the blocks gone they had no surface at all, so they ride
+   *  on the row's hover text where the job they belong to is. */
+  audience: string[];
+}
+
+interface CatalogueRow extends PatternRow {
+  /** The use cases that reach this pattern, each tagged with its product.
+   *
+   *  Tagged, and not a flat list of job strings, because the column is read
+   *  under a product filter: a pattern claiming Studio and Explorer but named
+   *  only by Explorer would otherwise show an Explorer job under the Studio
+   *  filter, which states the opposite of the truth. Claiming a product and
+   *  being reached by one are different facts and the old layout kept them
+   *  apart with a separate table per product. */
+  reach: Reach[];
 }
 
 export function PatternsDashboard({
@@ -102,15 +120,31 @@ export function PatternsDashboard({
   // is DOM state on <details> that would otherwise survive a switch.
   const [opened, setOpened] = useState<{
     recipe: PatternRecipe;
+    /** The pattern whose row carried the chip, so a filter that hides that row
+     *  also closes the panel describing it. */
+    slug: string;
     token: number;
     // The chip that opened the panel, so closing returns focus there instead of
     // stranding a keyboard reader on <body>.
     trigger: HTMLElement | null;
   } | null>(null);
-  const openRecipe = (recipe: PatternRecipe, trigger: HTMLElement | null) =>
-    setOpened((prev) => ({ recipe, trigger, token: (prev?.token ?? 0) + 1 }));
+  const openRecipe = (
+    recipe: PatternRecipe,
+    slug: string,
+    trigger: HTMLElement | null,
+  ) =>
+    setOpened((prev) => ({
+      recipe,
+      slug,
+      trigger,
+      token: (prev?.token ?? 0) + 1,
+    }));
   const closeRecipe = () => {
-    opened?.trigger?.focus();
+    // `isConnected` because a filter change can unmount the chip while its
+    // panel is open: focusing a detached node is a silent no-op that drops the
+    // keyboard reader onto <body>, which is the exact regression the trigger
+    // was recorded to prevent.
+    if (opened?.trigger?.isConnected) opened.trigger.focus();
     setOpened(null);
   };
 
@@ -139,41 +173,61 @@ export function PatternsDashboard({
     // word for a product this app already has a name for.
     const productName = new Map(apps.map((a) => [a.slug, a.label]));
 
-    // slug -> the jobs some use case says it serves. Built here rather than
-    // read off a field because the join lives on the APP: a use case names
-    // pattern slugs, and the pattern does not know which jobs reached it.
-    const jobsFor = new Map<string, string[]>();
+    // slug -> the use cases that reach it, each tagged with its product. Built
+    // here rather than read off a field because the join lives on the APP: a
+    // use case names pattern slugs, and the pattern does not know which jobs
+    // reached it.
+    const reachFor = new Map<string, Reach[]>();
     for (const app of apps) {
       for (const uc of app.useCases) {
-        const job = uc.jobs[0];
-        if (!job) continue;
+        if (uc.jobs.length === 0) continue;
         for (const p of uc.patterns) {
-          const list = jobsFor.get(p.slug) ?? [];
-          if (!list.includes(job)) list.push(job);
-          jobsFor.set(p.slug, list);
+          const list = reachFor.get(p.slug) ?? [];
+          list.push({
+            app: app.slug,
+            appLabel: app.label,
+            jobs: uc.jobs,
+            audience: uc.audience,
+          });
+          reachFor.set(p.slug, list);
         }
       }
     }
 
     const rows: CatalogueRow[] = patterns
-      .map((p) => ({ ...p, jobs: jobsFor.get(p.slug) ?? [] }))
+      .map((p) => ({ ...p, reach: reachFor.get(p.slug) ?? [] }))
       .sort((a, b) => a.label.localeCompare(b.label));
+
+    // `all` is not a product slug, and this checks it rather than trusting it:
+    // an app slug of `all` would give two SegmentedControl items the same
+    // value, which Radix keys selection by, so both would light up while the
+    // filter silently showed everything. A wrong answer with no symptom.
+    //
+    // REPORTED, not thrown. A throw here runs during render, and this codebase
+    // has already paid for that once: a helper that threw inside a useMemo took
+    // the whole app down on a 403. There is a ScreenErrorBoundary now, so a
+    // throw would be contained, but it would report the boundary's generic
+    // wording for a specific and nameable substrate defect.
+    const slugClash = apps.some((a) => a.slug === ALL);
 
     return {
       rows,
       productName,
-      // A pattern claiming two products is counted by both, so these do not sum
-      // to `rows.length`. That is a property of the substrate, and a filter
-      // shows it without the paragraph the grouped layout needed to explain it.
-      products: apps.map((a) => ({
-        slug: a.slug,
-        label: a.label,
-        count: rows.filter((r) => r.apps.includes(a.slug)).length,
-      })),
-      missingWhen: rows.filter((r) => !hasWhen(r)).length,
+      apps,
+      slugClash,
     };
   }, [state]);
 
+  /**
+   * The rows each filter would leave, computed by applying every OTHER filter
+   * first.
+   *
+   * Both counts used to be taken over the full list while the table applied
+   * both predicates, so with a product selected the checkbox promised 17 rows
+   * and the table drew the handful of them that were also in that product. A
+   * control that advertises a number it will not produce is worse than no
+   * control, which is the bar this page set for itself.
+   */
   const shown = useMemo(() => {
     if (!catalogue) return [];
     return catalogue.rows.filter(
@@ -182,6 +236,34 @@ export function PatternsDashboard({
         (!onlyMissingWhen || !hasWhen(r)),
     );
   }, [catalogue, product, onlyMissingWhen]);
+
+  const counts = useMemo(() => {
+    if (!catalogue) return null;
+    // Each product chip counts what selecting it would show, so it honours the
+    // when-clause checkbox if that is ticked.
+    const underWhen = catalogue.rows.filter(
+      (r) => !onlyMissingWhen || !hasWhen(r),
+    );
+    return {
+      products: catalogue.apps.map((a) => ({
+        slug: a.slug,
+        label: a.label,
+        count: underWhen.filter((r) => r.apps.includes(a.slug)).length,
+      })),
+      // ...and the checkbox counts what ticking it would show, so it honours
+      // the product selection.
+      missingWhen: catalogue.rows.filter(
+        (r) =>
+          (product === ALL || r.apps.includes(product)) && !hasWhen(r),
+      ).length,
+    };
+  }, [catalogue, product, onlyMissingWhen]);
+
+  // A panel outliving its row describes a capture for a pattern the reader can
+  // no longer see, and its Close button then has nothing to return focus to.
+  useEffect(() => {
+    if (opened && !shown.some((r) => r.slug === opened.slug)) setOpened(null);
+  }, [shown, opened]);
 
   // The page's name renders in every state: a reader arriving during the fetch
   // used to find a page with no h1 at all.
@@ -219,6 +301,21 @@ export function PatternsDashboard({
   const { index } = state;
   const c = catalogue!;
 
+  if (c.slugClash) {
+    return (
+      <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {heading}
+        <Callout.Root color="red" role="alert" mt="3">
+          <Callout.Text>
+            A product is slugged &quot;{ALL}&quot;, which collides with the
+            all-products filter on this screen. Rename it in
+            <code> app-context/src/apps/</code> and the catalogue will load.
+          </Callout.Text>
+        </Callout.Root>
+      </Box>
+    );
+  }
+
   return (
     <Box p="5" style={{ maxWidth: 1100, margin: "0 auto" }}>
       {heading}
@@ -238,7 +335,7 @@ export function PatternsDashboard({
           <SegmentedControl.Item value={ALL}>
             All products
           </SegmentedControl.Item>
-          {c.products.map((p) => (
+          {counts!.products.map((p) => (
             <SegmentedControl.Item key={p.slug} value={p.slug}>
               {p.label} ({p.count})
             </SegmentedControl.Item>
@@ -251,7 +348,7 @@ export function PatternsDashboard({
               checked={onlyMissingWhen}
               onCheckedChange={(v) => setOnlyMissingWhen(v === true)}
             />
-            Missing a when clause ({c.missingWhen})
+            Missing a when clause ({counts!.missingWhen})
           </Flex>
         </Text>
       </Flex>
@@ -339,14 +436,14 @@ export function PatternsDashboard({
                         role="button"
                         tabIndex={0}
                         onKeyDown={onActivateKey((e) =>
-                          openRecipe(r, e.currentTarget as HTMLElement),
+                          openRecipe(r, p.slug, e.currentTarget as HTMLElement),
                         )}
                         // Opens a READ-ONLY panel, and still hands no path to
                         // the router: a recipe is JSON, EditorShell routes only
                         // _meta.yml, the app-context frontmatter forms and
                         // plain markdown, so routing here would land on the
                         // refusal banner.
-                        onClick={(e) => openRecipe(r, e.currentTarget)}
+                        onClick={(e) => openRecipe(r, p.slug, e.currentTarget)}
                         title={`${r.surface ?? r.slug}${
                           r.capturedOn ? `, captured ${r.capturedOn}` : ""
                         }. ${recipeSrcPath(r.slug)}`}
@@ -376,16 +473,51 @@ export function PatternsDashboard({
                 </Flex>
               </Table.Cell>
               <Table.Cell>
-                {p.jobs.length > 0 ? (
-                  <Text size="1" title={p.jobs.join("; ")}>
-                    {truncate(p.jobs[0]!, 60)}
-                    {p.jobs.length > 1 && ` (+${p.jobs.length - 1})`}
-                  </Text>
-                ) : (
-                  <Text size="1" color="gray">
-                    No use case names it
-                  </Text>
-                )}
+                {(() => {
+                  // Scoped to the selection. Under the Studio filter, a pattern
+                  // claiming Studio and Explorer but named only by an Explorer
+                  // use case must not show an Explorer job: the truthful answer
+                  // is that no Studio use case reaches it, and that per-product
+                  // gap is what the grouped layout's "claimed by X, named by no
+                  // use case" table used to report.
+                  const reach =
+                    product === ALL
+                      ? p.reach
+                      : p.reach.filter((r) => r.app === product);
+                  if (reach.length === 0) {
+                    return (
+                      <Text size="1" color="gray">
+                        {product === ALL
+                          ? "No use case names it"
+                          : `No ${c.productName.get(product) ?? product} use case names it`}
+                      </Text>
+                    );
+                  }
+                  const jobs = reach.flatMap((r) => r.jobs);
+                  const extra = jobs.length - 1;
+                  return (
+                    <Text
+                      size="1"
+                      title={reach
+                        .map(
+                          (r) =>
+                            `${r.appLabel}${
+                              r.audience.length > 0
+                                ? ` (${r.audience.join(", ")})`
+                                : ""
+                            }: ${r.jobs.join("; ")}`,
+                        )
+                        .join(" | ")}
+                    >
+                      {truncate(jobs[0]!, 60)}
+                      {/* Counts the JOBS this row does not show, which is what
+                          the reader is being told is hidden. It counted use
+                          cases before, so a use case with three jobs reported
+                          nothing extra at all. */}
+                      {extra > 0 && ` (+${extra} more)`}
+                    </Text>
+                  );
+                })()}
               </Table.Cell>
               <Table.Cell>
                 <Text size="1" title={p.components.join(", ")}>

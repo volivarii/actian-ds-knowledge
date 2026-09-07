@@ -12,6 +12,12 @@ import {
 import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { PatternsDashboard } from "../../src/app/PatternsDashboard";
+
+// Absence is asserted as `query(...) === null, true`, never as
+// `assert.equal(query(...), null)`. The second form serialises the DOM node it
+// found into the failure diff, which SIGKILLs the runner: the gate does fail,
+// but it takes the whole file's results with it and its name never reaches the
+// summary, so a mutation run reads it as inert.
 import { matchFrontmatterForm } from "../../src/lib/frontmatterForms";
 import { isPlainMarkdown } from "../../src/app/EditorShell";
 
@@ -185,7 +191,7 @@ test("filtering by product narrows the list and says how far", async () => {
   assert.ok(screen.getByText("Showing 2 of 2 patterns"));
   fireEvent.click(screen.getByRole("radio", { name: /Explorer \(1\)/ }));
   await waitFor(() => screen.getByText("Showing 1 of 2 patterns"));
-  assert.equal(screen.queryByText("Asset detail 360"), null);
+  assert.equal(screen.queryByText("Asset detail 360") === null, true);
   assert.ok(screen.getByText("Right sliding drawer"));
 });
 
@@ -239,7 +245,7 @@ test("a pattern with no when clause is marked, and the filter finds it", async (
   fireEvent.click(screen.getByRole("checkbox"));
   await waitFor(() => screen.getByText("Showing 1 of 3 patterns"));
   assert.ok(screen.getByText("Bare pattern"));
-  assert.equal(screen.queryByText("Asset detail 360"), null);
+  assert.equal(screen.queryByText("Asset detail 360") === null, true);
 });
 
 test("a product is named by its label, not by its slug", async () => {
@@ -248,7 +254,7 @@ test("a product is named by its label, not by its slug", async () => {
   render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
   await waitFor(() => screen.getByText("Asset detail 360"));
   const table = screen.getAllByRole("table")[0]!;
-  assert.equal(within(table).queryByText("studio"), null);
+  assert.equal(within(table).queryByText("studio") === null, true);
   assert.ok(within(table).getAllByText("Studio").length > 0);
 });
 
@@ -400,6 +406,213 @@ test("a failed load reports the reason instead of rendering an empty index", asy
   assert.ok(screen.getByText(/network is down/));
 });
 
+
+// ------------------------------------------------- filters and the join
+// A pattern can claim a product that none of that product's use cases reaches.
+// The grouped layout reported it with a "Claimed by X, named by no use case"
+// table per product; the catalogue has to answer it in the row, under the
+// filter, or the fact is gone.
+
+const CROSS_APP = {
+  apps: {
+    studio: {
+      label: "Studio",
+      sidebar: [{ label: "Catalog", id: "catalog" }],
+      useCases: [
+        {
+          audience: ["Data steward"],
+          jobs: ["Govern the catalog", "Curate it", "Retire it"],
+          patterns: ["asset-detail-360"],
+        },
+      ],
+    },
+    explorer: {
+      label: "Explorer",
+      sidebar: [],
+      useCases: [
+        {
+          audience: ["Analyst"],
+          jobs: ["Browse the marketplace"],
+          patterns: ["access-request-workflow"],
+        },
+      ],
+    },
+  },
+  patterns: {
+    "asset-detail-360": {
+      label: "Asset detail 360",
+      apps: ["studio"],
+      when: "Use for a single asset.",
+      components: ["tabs"],
+    },
+    // Claims BOTH, reached only by Explorer. This is the real corpus shape:
+    // access-request-workflow and search-filtered-table both do it today.
+    "access-request-workflow": {
+      label: "Access request workflow",
+      apps: ["studio", "explorer"],
+      when: "Use for the requester's side.",
+      components: ["form"],
+    },
+  },
+  entities: {},
+  terminology: {},
+};
+
+function ghFor(doc: unknown) {
+  return {
+    repos: {
+      getContent: async ({ path }: { path: string }) => {
+        if (path === "app-context/dist/recipes") return { data: [] };
+        if (path === "app-context/dist/app-context.json")
+          return {
+            data: { content: b64(JSON.stringify(doc)), encoding: "base64" },
+          };
+        const err = new Error("not found") as Error & { status: number };
+        err.status = 404;
+        throw err;
+      },
+    },
+  } as never;
+}
+
+test("a job is only shown under the product whose use case names it", async () => {
+  // access-request-workflow claims Studio and Explorer and is named only by an
+  // Explorer use case. Under the Studio filter the truthful answer is that no
+  // Studio use case reaches it, NOT the Explorer job. Two patterns in the real
+  // corpus have this shape today.
+  render(wrap(<PatternsDashboard octokit={ghFor(CROSS_APP)} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Access request workflow"));
+
+  // Unfiltered, the Explorer job is the honest answer.
+  assert.ok(screen.getByText("Browse the marketplace"));
+
+  fireEvent.click(screen.getByRole("radio", { name: /Studio/ }));
+  await waitFor(() => screen.getByText("Showing 2 of 2 patterns"));
+  assert.ok(
+    screen.getByText("No Studio use case names it"),
+    "the row claims a Studio job it does not have",
+  );
+  assert.equal(
+    screen.queryByText("Browse the marketplace") === null,
+    true,
+    "an Explorer job is shown under the Studio filter",
+  );
+});
+
+test("the +N on a job counts the jobs it hides, not the use cases", async () => {
+  // Studio's use case carries three jobs. The old page put the first in the
+  // block title and the rest on an "Also:" line; this row shows the first and
+  // has to say two are hidden. Counting USE CASES reported nothing at all here,
+  // because one use case names it.
+  render(wrap(<PatternsDashboard octokit={ghFor(CROSS_APP)} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  assert.ok(screen.getByText(/Govern the catalog \(\+2 more\)/));
+  const cell = screen.getByText(/Govern the catalog/).closest("td");
+  assert.ok(cell);
+  assert.match(
+    cell.querySelector("[title]")?.getAttribute("title") ?? "",
+    /Studio \(Data steward\): Govern the catalog; Curate it; Retire it/,
+    "the hidden jobs are not recoverable from the row",
+  );
+});
+
+test("the use case's audience is still readable somewhere", async () => {
+  // The grouped layout showed audience in badges beside each use case title.
+  // The blocks are gone and no other screen renders these strings, so without
+  // this they would be authored in app-context and displayed nowhere. Four
+  // audience lists in the real corpus.
+  render(wrap(<PatternsDashboard octokit={ghFor(CROSS_APP)} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  const cell = screen.getByText(/Govern the catalog/).closest("td");
+  assert.ok(cell);
+  assert.match(
+    cell.querySelector("[title]")?.getAttribute("title") ?? "",
+    /Data steward/,
+    "the audience is authored in app-context and rendered nowhere",
+  );
+});
+
+test("each filter's count is what selecting it would actually show", async () => {
+  // Both counts used to be taken over the whole list while the table applied
+  // both predicates, so with one filter on the other advertised a number it
+  // would not produce.
+  const doc = {
+    ...CROSS_APP,
+    patterns: {
+      ...CROSS_APP.patterns,
+      // Explorer-only and missing a when clause: it lifts the global
+      // when-clause count above the Studio-scoped one.
+      "ask-ai": { label: "Ask AI", apps: ["explorer"], components: [] },
+    },
+  };
+  render(wrap(<PatternsDashboard octokit={ghFor(doc)} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Ask AI"));
+  assert.ok(screen.getByText("Missing a when clause (1)"));
+
+  // Scoped to Studio, nothing is missing a when clause, so the checkbox must
+  // say 0 rather than the global 1.
+  fireEvent.click(screen.getByRole("radio", { name: /Studio/ }));
+  await waitFor(() => screen.getByText("Missing a when clause (0)"));
+
+  // And with the checkbox ticked, each product chip counts only its rows that
+  // are also missing one.
+  fireEvent.click(screen.getByRole("radio", { name: /All products/ }));
+  fireEvent.click(screen.getByRole("checkbox"));
+  await waitFor(() => screen.getByText("Showing 1 of 3 patterns"));
+  assert.ok(screen.getByRole("radio", { name: /Studio \(0\)/ }));
+  assert.ok(screen.getByRole("radio", { name: /Explorer \(1\)/ }));
+});
+
+test("a filter that hides a row closes the panel opened from it", async () => {
+  // The panel would otherwise describe a capture for a pattern no longer in the
+  // table, and its Close button would focus a detached chip: a silent no-op
+  // that drops the keyboard reader onto <body>, which is the regression the
+  // trigger is recorded to prevent.
+  render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  fireEvent.click(screen.getAllByText("Studio > Catalog")[0]!);
+  await waitFor(() =>
+    screen.getByRole("region", { name: /Studio quick edit drawer/ }),
+  );
+  // The drawer claims Studio and Explorer; asset-detail-360 claims Studio only.
+  // Nothing in the fixture hides the drawer by product, so use the when filter
+  // after making the drawer the only row with a clause... simplest: tick the
+  // missing-when filter, which hides both fixture patterns.
+  fireEvent.click(screen.getByRole("checkbox"));
+  await waitFor(() =>
+    assert.equal(
+      screen.queryByRole("region", { name: /Studio quick edit drawer/ }) ===
+        null,
+      true,
+      "the panel outlived the row that opened it",
+    ),
+  );
+});
+
+test("a product slugged 'all' is refused rather than silently colliding", async () => {
+  // `all` is the sentinel for the all-products segment. An app slugged `all`
+  // would give two SegmentedControl items the same value, which Radix keys
+  // selection by: both light up while the filter shows everything. A wrong
+  // answer with no symptom, so the screen fails loudly instead.
+  const doc = {
+    apps: { all: { label: "All", sidebar: [], useCases: [] } },
+    patterns: {
+      p: { label: "P", apps: ["all"], when: "Use it.", components: [] },
+    },
+    entities: {},
+    terminology: {},
+  };
+  render(wrap(<PatternsDashboard octokit={ghFor(doc)} onOpenFile={() => {}} />));
+  // Reported on the screen, not thrown during render: a throw in a useMemo
+  // once took the whole app down on this codebase, and the ScreenErrorBoundary
+  // that would now catch it reports generic wording for a nameable defect.
+  await waitFor(() => screen.getByRole("alert"));
+  assert.match(
+    screen.getByRole("alert").textContent ?? "",
+    /collides with the all-products filter/,
+  );
+});
+
 // ---------------------------------------------------------------------------
 // The recipe panel. Read-only by decision: editing a recipe is the Class C JSON
 // widget the RefusalBanner still names as unbuilt, and painting the skeleton
@@ -497,7 +710,10 @@ test("closing the panel returns the reader to the table", async () => {
   await openTheCapture();
   fireEvent.click(screen.getByRole("button", { name: /close/i }));
   await waitFor(() =>
-    assert.equal(screen.queryByText(/Asset title over the technical path\./), null),
+    assert.equal(
+      screen.queryByText(/Asset title over the technical path\./) === null,
+      true,
+    ),
   );
   // Not `getByText("Studio")`: the product is a badge on every row it claims,
   // so that query matched two nodes and threw. The catalogue itself is the

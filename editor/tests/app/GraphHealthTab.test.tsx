@@ -8,10 +8,36 @@ import { Theme } from "@radix-ui/themes";
 import { GraphHealthTab } from "../../src/app/GraphHealthTab";
 import { SCREEN_TITLE } from "../../src/lib/routes";
 
+/**
+ * The screen reads the graph from module-stable data, and the application-context
+ * block reads the substrate through Octokit. These tests are about the graph
+ * half, so the client refuses every path: the meters block then renders its own
+ * error callout in place, which is the behaviour that keeps one failing section
+ * from taking the screen down.
+ *
+ * NOT `undefined`: `loadPatternIndex(undefined)` throws on a property of
+ * undefined, which is the same red callout for a different reason and would let
+ * a real wiring break hide behind a passing test.
+ */
+function offlineOctokit() {
+  return {
+    repos: {
+      getContent: async () => {
+        const e = new Error("offline in this test") as Error & { status: number };
+        e.status = 404;
+        throw e;
+      },
+      listCommits: async () => ({ data: [] }),
+    },
+    git: {},
+    pulls: {},
+  } as never;
+}
+
 function renderTab(onOpenFile: (p: string) => void = () => {}) {
   return render(
     <Theme>
-      <GraphHealthTab onOpenFile={onOpenFile} />
+      <GraphHealthTab octokit={offlineOctokit()} onOpenFile={onOpenFile} />
     </Theme>,
   );
 }
