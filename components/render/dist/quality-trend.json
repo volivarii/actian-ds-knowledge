@@ -22,9 +22,10 @@
       "previous": 56
     },
     "inlineHex": {
-      "value": 57,
-      "direction": "unchanged",
-      "previous": 57
+      "value": 47,
+      "direction": "unknown",
+      "previous": null,
+      "definitionEpoch": "2026-09-07"
     },
     "oracleVerified": {
       "value": 87,
@@ -41,12 +42,11 @@
     "inlineHexBySlug": {
       "breadcrumb": 12,
       "card-for-perimeter": 2,
-      "digram-item-types": 10,
+      "digram-item-types": 8,
       "digram-topic": 5,
       "lineage": 12,
       "lineage-grouped-node": 2,
-      "metamodel": 10,
-      "search-result-card": 4
+      "metamodel": 6
     },
     "fmUnownedModifiers": [
       {
