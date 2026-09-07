@@ -27,13 +27,13 @@
       "previous": null
     },
     "oracleVerified": {
-      "value": 85,
-      "direction": "unchanged",
+      "value": 87,
+      "direction": "better",
       "previous": 85
     },
     "oracleExamined": {
-      "value": 418,
-      "direction": "unchanged",
+      "value": 447,
+      "direction": "changed",
       "previous": 418
     }
   },

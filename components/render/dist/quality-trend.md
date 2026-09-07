@@ -10,10 +10,10 @@ Sources last changed **2026-09-03**. Values are derived from the tree this ran a
 | FM variant values that render alike (unexplained) | 55 | flat (was 55) |
 | FM modifier classes with no rule | 56 | flat (was 56) |
 | Inline-style hex (cannot re-theme) | 57 | no baseline yet |
-| Verified declarations (oracle numerator) | 85 | flat (was 85) |
-| Examined declarations (oracle denominator) | 418 | flat (was 418) |
+| Verified declarations (oracle numerator) | 87 | improving (was 85) |
+| Examined declarations (oracle denominator) | 447 | changed (was 418) |
 
-Oracle coverage is **85 of 418** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
+Oracle coverage is **87 of 447** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
 
 ## Oracle numerator over time
 
