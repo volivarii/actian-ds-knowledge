@@ -213,8 +213,13 @@ the DS tier's css-owner rule was found to have no FM twin (#554).
 
 ## Known gaps
 
-- **Oracle coverage is 78 of 408.** Most of what the renderer paints cannot be checked against Figma at all, and `element-no-node-mapping` is 229 of the 330.
-- **31 inline hex values cannot be re-themed.** They bypass tokens entirely.
-- **54 variant collapses are unexplained.** A component asked for by one variant can render as another, which is a correctness defect rather than a cosmetic one.
+The current figure for every gap below lives in `components/render/dist/quality-trend.md`,
+which the derive writes. Read it there rather than restating it here: a number copied
+into a second place is a consumer restating a fact the producer owns, and it goes stale
+without saying so. This page carries why each gap matters, which does not move.
+
+- **Oracle coverage is a small fraction of what is painted.** Most of what the renderer draws cannot be checked against Figma at all, and `element-no-node-mapping` is the bulk of the unverifiable.
+- **Inline hex values cannot be re-themed.** They bypass tokens entirely. A hex kept as the fallback in `var(--token, #hex)` is the remedy, not the defect: the token themes the surface and the captured value stays as the fidelity fallback, so the measure counts only bare ones.
+- **Some variant collapses are unexplained.** A component asked for by one variant can render as another, which is a correctness defect rather than a cosmetic one.
 - **The FM tier's axis values render alike by the dozen.** The fat-marker renderer emits a class for nearly every registry value and the stylesheet styles few of them, so Size, Shape and most State axes draw the same thing. The two buttons a reader could not see at all (#554) are fixed; the rest is the measure's burndown.
 - **Measurement is not looking.** Fixing a mismatch once made `segmented-control` white on white while every number improved. Render the thing and look at it.

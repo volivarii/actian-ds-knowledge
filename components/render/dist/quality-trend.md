@@ -9,7 +9,7 @@ Sources last changed **2026-09-07**. Values are derived from the tree this ran a
 | Unexplained variant collapses | 42 | flat (was 42) |
 | FM variant values that render alike (unexplained) | 55 | flat (was 55) |
 | FM modifier classes with no rule | 56 | flat (was 56) |
-| Inline-style hex (cannot re-theme) | 57 | no baseline yet |
+| Inline-style hex (cannot re-theme) | 47 | definition changed 2026-09-07, not comparable |
 | Verified declarations (oracle numerator) | 87 | flat (was 87) |
 | Examined declarations (oracle denominator) | 447 | flat (was 447) |
 
@@ -53,10 +53,9 @@ Oracle coverage is **87 of 447** declarations. It is stated as a pair on purpose
 
 - `breadcrumb` 12
 - `lineage` 12
-- `digram-item-types` 10
-- `metamodel` 10
+- `digram-item-types` 8
+- `metamodel` 6
 - `digram-topic` 5
-- `search-result-card` 4
 - `card-for-perimeter` 2
 - `lineage-grouped-node` 2
 

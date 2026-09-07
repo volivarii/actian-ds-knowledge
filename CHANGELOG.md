@@ -297,6 +297,56 @@ no entry defers its link to a placeholder.
 
 ### Changed
 
+- **The burndown could not report a direction for the one measure that doubled, and the measure it
+  finally reported was wrong**
+  ([#690](https://github.com/volivarii/actian-ds-knowledge/pull/690)).
+  `inlineHex` was hard-coded to `null` in `previousValues`, on the reasoning that inline hex "needs
+  every fragment at a historical revision rather than one file". That is true if the figure is
+  recomputed from history and unnecessary either way: the derive commits its own value into
+  `quality-trend.json`, so the previous measurement is one `previousMeasure` call away, which is
+  exactly how the two FM measures have always read theirs. The placeholder was honest when written
+  (an invented baseline would have read as progress) and it outlived its premise.
+
+  What it cost: inline-style hex went from **28 across seven components** at v0.34.135 to **57 across
+  eight**, the largest movement of any measure in the artifact, and the burndown reported `unknown`
+  throughout. This artifact exists because every gate in the render tier is a ratchet that blocks a
+  regression without being able to state a direction, so the single measure it could not speak to was
+  the one that grew most. The next movement is reportable now.
+
+  The guard that should have caught it was iterating a hand-written list of five measure names,
+  compiled from where baselines happened to exist, so it never mentioned `inlineHex`. It reads the
+  published measure set out of the roll-up now, and separately asserts that where the committed
+  artifact carries a number for a measure, `previousValues` returns that number: `name in prev` was
+  satisfied by the explicit `null`, which is how the placeholder survived a gate written to find it.
+
+  `fmPreviousMeasure` is renamed `previousMeasure`, since the `fm` prefix was what hid that it was
+  generic.
+
+  **Making the measure reportable exposed that it could not see its own fix, so the same change
+  repairs the definition: inline hex reads 47, not 57.** `countInlineHex` counted every hex inside a
+  `style=` attribute, the fallback in `var(--token, #hex)` included. That form is the remedy this
+  measure exists to drive, not the defect: the token themes the surface and the captured value stays
+  as the fidelity fallback, which is what the render tier's doctrine asks for. Converting
+  `background:#eb0909` to `background:var(--zen-color-danger-50, #eb0909)` therefore left the count
+  identical, so a complete and correct burndown of the issue would have reported `unchanged`. Ten of
+  the 57 were already in the doctrinal form, and `search-result-card` was listed as an offender with
+  four of four already fixed. Only the fallback is blanked, never the whole attribute: one
+  declaration list can carry a tokenised colour beside a bare one, and skipping the attribute would
+  hide the bare one and drop the number for the wrong reason.
+
+  **A redefinition must not read as progress**, which is the one output a burndown must never
+  produce, so measures now carry a `definitionEpoch`. A baseline stamped with a different epoch is
+  refused rather than compared, the row reads `definition changed 2026-09-07, not comparable` rather
+  than the misleading `no baseline yet` (there are baselines; they are not comparable), and the
+  refusal is self-expiring: the next run's baseline carries the current epoch and the ordinary
+  comparison resumes. `inlineHex` is the only measure with an epoch today.
+
+  Consumers: `quality-trend.json` measures gain an optional `definitionEpoch` string, present only
+  on a measure whose definition has moved. The Known gaps list in
+  `docs/technical-guide/05-render-and-fidelity.md` had three hand-copied figures, all three stale,
+  so it points at `components/render/dist/quality-trend.md` for the current number and keeps only
+  what does not move: why each gap matters.
+
 - **The Patterns screen is a catalogue again; the metrics it opened with moved to Substrate health**
   ([#681](https://github.com/volivarii/actian-ds-knowledge/pull/681)).
   A page called Patterns led with four Meter groups measuring Patterns, Entities, Products and Terms,
