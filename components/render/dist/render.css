@@ -434,6 +434,19 @@
 .ds-button--small {
   height: var(--zen-size-lg);
 } /* 24 */
+/* Emphasis=Icon-only carries one child and no label
+   (button.json#quality.structuralVariants: base [Leading icon, text:Button,
+   Trailing icon] -> variant [Icon]), so its box is square rather than a text
+   box with horizontal padding. Same round 32px chrome `.ds-collapse__toggle`
+   already mirrors from this component's capture. */
+.ds-button--icon-only {
+  width: var(--zen-size-xl); /* 32: square, matches the base height */
+  padding: 0;
+  gap: 0;
+}
+.ds-button--icon-only.ds-button--small {
+  width: var(--zen-size-lg); /* 24, tracking the small height */
+}
 .ds-button.is-disabled,
 .ds-button[disabled] {
   opacity: 0.4;

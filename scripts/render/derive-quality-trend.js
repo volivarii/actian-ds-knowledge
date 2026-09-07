@@ -163,6 +163,7 @@ function inlineHex(distDir) {
 // when the denominator shrinks.
 const GOOD_DIRECTION = {
   unexplainedCollapses: "down",
+  structuralCollapses: "down",
   fmUnexplainedCollapses: "down",
   fmUnownedModifiers: "down",
   inlineHex: "down",
@@ -278,11 +279,33 @@ function oracleSeries(opts) {
   return points;
 }
 
+// The half of the collapse census the capture can PROVE wrong, as opposed to
+// the half where fixing is guessing. `unexplainedCollapses` counts every value
+// that renders like a sibling with no by-design entry; this counts only those
+// the capture records as a different SHAPE, quoting both child lists. It is the
+// actionable subset, and it is the number to work down: a fall here is a
+// component that now draws what Figma says it is, where a fall in the parent
+// figure can also be a new by-design exemption.
+function structuralCollapses() {
+  const S = require("./lib/structural-evidence.js");
+  const hits = S.unrenderedStructural(deriveContract(), BY_DESIGN);
+  return {
+    value: hits.length,
+    // The KEYS, not just the count, because the ratchet compares SETS. A count
+    // is satisfied by fixing one value and breaking another, and a swap is the
+    // regression a burndown is least likely to notice by eye.
+    keys: hits.map(function (h) {
+      return h.key;
+    }),
+  };
+}
+
 function currentMeasures() {
   return {
     unexplainedCollapses: {
       value: unexplainedCollapses(),
     },
+    structuralCollapses: structuralCollapses(),
     fmUnexplainedCollapses: {
       value: fmUnexplainedCollapses(),
     },
@@ -466,6 +489,9 @@ function previousValues(oracle, collapses, baseline) {
     // figures are under the pre-epoch definition, which counted a var()
     // fallback; DEFINITION_EPOCH is why they are not compared against today's.
     inlineHex: previousMeasure("inlineHex"),
+    // Same read as the other committed measures. It has no historical series of
+    // its own and does not need one: the artifact carries its own last value.
+    structuralCollapses: previousMeasure("structuralCollapses"),
   };
 }
 
@@ -482,6 +508,7 @@ function buildRollup() {
 
   const values = {
     unexplainedCollapses: current.unexplainedCollapses.value,
+    structuralCollapses: current.structuralCollapses.value,
     fmUnexplainedCollapses: current.fmUnexplainedCollapses.value,
     fmUnownedModifiers: current.fmUnownedModifiers.value,
     inlineHex: current.inlineHex.value,
@@ -530,6 +557,7 @@ function buildRollup() {
     measures: measures,
     detail: {
       inlineHexBySlug: current.inlineHex.bySlug,
+      structuralCollapseKeys: current.structuralCollapses.keys,
       fmUnownedModifiers: fmCensus().unownedModifiers,
       fmOwnedNotEmitted: fmCensus().ownedNotEmitted,
       fmUnrendered: fmCensus().unrendered,
@@ -541,6 +569,8 @@ function buildRollup() {
 
 const LABELS = {
   unexplainedCollapses: "Unexplained variant collapses",
+  structuralCollapses:
+    "...of those, ones the capture proves are a different shape",
   fmUnexplainedCollapses: "FM variant values that render alike (unexplained)",
   fmUnownedModifiers: "FM modifier classes with no rule",
   inlineHex: "Inline-style hex (cannot re-theme)",
@@ -719,7 +749,9 @@ if (require.main === module) {
       rollup._meta.sourcesLastChangedAt +
       ": " +
       m.unexplainedCollapses.value +
-      " unexplained collapses, " +
+      " unexplained collapses (" +
+      m.structuralCollapses.value +
+      " structurally proven), " +
       m.fmUnexplainedCollapses.value +
       " FM collapsed groups, " +
       m.fmUnownedModifiers.value +

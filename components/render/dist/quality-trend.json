@@ -7,9 +7,14 @@
   },
   "measures": {
     "unexplainedCollapses": {
-      "value": 42,
-      "direction": "unchanged",
+      "value": 41,
+      "direction": "better",
       "previous": 42
+    },
+    "structuralCollapses": {
+      "value": 20,
+      "direction": "unknown",
+      "previous": null
     },
     "fmUnexplainedCollapses": {
       "value": 55,
@@ -23,8 +28,8 @@
     },
     "inlineHex": {
       "value": 47,
-      "direction": "unknown",
-      "previous": null,
+      "direction": "unchanged",
+      "previous": 47,
       "definitionEpoch": "2026-09-07"
     },
     "oracleVerified": {
@@ -48,6 +53,28 @@
       "lineage-grouped-node": 2,
       "metamodel": 6
     },
+    "structuralCollapseKeys": [
+      "calendar-data-selector Type=Months",
+      "calendar-data-selector Type=Years",
+      "dropdown-select-default Type=Compact/Custom",
+      "dropdown-select-default Type=Search/Multiple",
+      "empty-state Size=Medium",
+      "empty-state Size=Small",
+      "interactive-tag Type=Selectable",
+      "lineage Type=Group main item",
+      "lineage Type=Group sub item",
+      "modal Size & Type=450px confirm",
+      "modal Size & Type=450px warning",
+      "modal Size & Type=700px create",
+      "modal Size & Type=900px create",
+      "modal Size & Type=900px edit",
+      "page-header Type=Details page",
+      "page-header Type=Explorer detail",
+      "page-header Type=Explorer home",
+      "table Built type=By rows",
+      "toolbar Type=Combined",
+      "toolbar Type=Group"
+    ],
     "fmUnownedModifiers": [
       {
         "class": "fm-alert--success",
@@ -375,6 +402,12 @@
   "collapseSeries": [
     {
       "date": "2026-09-07",
+      "version": "0.34.194",
+      "sha": "6484488a",
+      "unexplained": 41
+    },
+    {
+      "date": "2026-09-07",
       "version": "0.34.189",
       "sha": "5afbb177",
       "unexplained": 42
@@ -437,12 +470,6 @@
       "date": "2026-08-14",
       "version": "0.34.132",
       "sha": "152cb159",
-      "unexplained": 50
-    },
-    {
-      "date": "2026-08-14",
-      "version": "0.34.128",
-      "sha": "e10c392b",
       "unexplained": 50
     }
   ]
