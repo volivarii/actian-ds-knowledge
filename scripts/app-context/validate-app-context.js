@@ -20,6 +20,26 @@ function validateAppContext(dist) {
     for (const app of e.apps || [])
       if (!appKeys.has(app))
         errors.push(`entity "${slug}".apps → "${app}" is not an app`);
+    // The domain-model-to-design-system join. Both halves matter, and the
+    // second is the one a reviewer cannot eyeball: a pattern that exists but
+    // runs in a different app than the entity is a plausible-looking edge that
+    // no screen can ever realise (an administration-only entity shown by a
+    // studio-only pattern). Same rule the app.useCases check below applies,
+    // and for the same reason.
+    for (const pat of e.patterns || []) {
+      const p = (dist.patterns || {})[pat];
+      if (!p) {
+        errors.push(`entity "${slug}".patterns → "${pat}" is not a pattern`);
+      } else if (
+        !(p.apps || []).some((app) => (e.apps || []).includes(app))
+      ) {
+        errors.push(
+          `entity "${slug}".patterns → "${pat}" shares no app with the entity` +
+            ` (entity: ${(e.apps || []).join("/") || "none"};` +
+            ` pattern: ${(p.apps || []).join("/") || "none"})`,
+        );
+      }
+    }
   }
   for (const [slug, p] of Object.entries(dist.patterns || {})) {
     for (const app of p.apps || [])

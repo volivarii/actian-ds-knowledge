@@ -26,6 +26,37 @@ no entry defers its link to a placeholder.
 
 ### Added
 
+- **The domain model now reaches the design system: a `patterns` field on every entity, and a
+  `shown_in` graph edge.** All 30 `app_entity` nodes previously touched only each other
+  (`entity_related`) and their apps (`in_app`), so nothing in the substrate said which part of the
+  design system draws a Dataset. 48 authored edges close that, across the 25 entities a pattern
+  actually shows. Five carry no join on purpose: `contact`, `data-contract`, `input-port`,
+  `metadata` and `output-port` are shown WITHIN another object's page rather than being the subject
+  of a page of their own, and `patterns` is optional for exactly that case.
+
+  **The edge stops at the pattern on purpose.** A UX pattern already carries its own
+  `components[]`, 110 `uses_component` edges of it, so authoring a component list on each entity
+  would restate a fact the pattern owns and the two copies would drift the first time a pattern
+  gained or lost a component. Entity to component is therefore a TRAVERSAL, `shown_in` then
+  `uses_component`, not a second authored list. Following it, `dataset` resolves through 5 patterns
+  to 25 components, and the 30 entities reach 33 distinct components in total.
+
+  Consumers: `app-context.json` entities gain an optional `patterns` array of pattern slugs (absent
+  when no pattern shows the entity), and `graph.json` gains the `shown_in` edge type, declared in
+  `graph/vocabulary.json` as `app_entity -> ux_pattern`.
+
+  Two gates guard the authored half. Referential integrity, that every named pattern exists, and an
+  app-scoping rule that an entity and its pattern must share at least one app: a pattern can exist
+  and still run in a different app than the entity, which is a plausible-looking edge no screen can
+  ever realise. The second is the one a reviewer cannot eyeball, and it is the same rule the
+  existing `app.useCases -> pattern` check already applies.
+
+  What neither gate can check is whether an edge is TRUE, and the review of this change is where
+  that showed. 36 of the 48 edges are backed by the pattern's own `when` clause; the other 12 name
+  patterns that carry no `when`, so their only evidence is the pattern's name and the entity's
+  description. Treat the join as authored editorial content, not as capture.
+
+
 - **Four form components render as real controls instead of empty grey boxes**
   ([#678](https://github.com/volivarii/actian-ds-knowledge/pull/678)):
   `field`, `text-area`, `checkbox-group` and `radio-group`. These four are what a

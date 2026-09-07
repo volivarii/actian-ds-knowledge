@@ -338,10 +338,19 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
     return inIsland(e.source) || inIsland(e.target);
   });
   assert.equal(islandNodes.length, 97, "app-context island nodes");
+  // 264 -> 312 on 2026-09-07: the entity -> pattern join landed, adding one
+  // shown_in edge per authored `patterns[]` entry (48, across the 25 entities a
+  // pattern actually shows). This is the count moving because the island stopped
+  // being one: before it, every app_entity node touched only other entities and
+  // its apps, so nothing in the graph said which components draw a Dataset.
+  // Nodes are unchanged. Five entities carry no join on purpose: contact,
+  // data-contract, input-port, metadata and output-port are shown WITHIN other
+  // objects' pages rather than being the subject of a page of their own.
+  //
   // 266 -> 264 on 2026-08-31: analytics-dashboard and data-profiling-sampling
   // each stopped naming bar-graph, which the sync retired from the Figma library
   // with no replacement. Two pattern_component edges, no other change.
-  assert.equal(islandEdges.length, 264, "app-context island edges");
+  assert.equal(islandEdges.length, 312, "app-context island edges");
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {
