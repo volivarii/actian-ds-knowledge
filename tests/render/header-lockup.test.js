@@ -142,6 +142,41 @@ test("the app name is not printed twice", function () {
   }
 });
 
+test("the header advertises no app-name prop it cannot honour", function () {
+  // `props.App` was in the render contract, which is where consumers read a
+  // component's affordances. It could not select a lockup (`props.Logo` does
+  // that), and once the lockup carries the name the text label it fed stops
+  // rendering for every app that has one: a caller passing App="Explorer" got
+  // neither the word nor the Explorer mark, silently.
+  //
+  // Derived here rather than read from components/render/dist, so this fails on
+  // the renderer that ships rather than on whether render-derive has caught up.
+  const contract = require(
+    path.join(ROOT, "scripts/render/derive-contract.js"),
+  ).deriveContract();
+  const names = (contract.slugs["global-header"].props || []).map(function (p) {
+    return p.name;
+  });
+  assert.ok(
+    names.indexOf("App") === -1,
+    "the contract still offers global-header.App, which the renderer ignores: " +
+      JSON.stringify(names),
+  );
+  // And behaviourally, so this cannot pass on a contract that merely stopped
+  // seeing a prop the renderer still half-reads.
+  setup();
+  const withProp = dsMap.renderDSComponent({
+    dsSlug: "global-header",
+    variant: "App type=Studio, Breakpoints=XL",
+    props: { App: "Explorer" },
+  });
+  assert.equal(
+    brandBlock(withProp),
+    brandBlock(header("Studio")),
+    "an App prop still changes the brand block, so it is read but undeclared",
+  );
+});
+
 test("an app with no captured lockup keeps a mark AND its name", function () {
   // The fallback has to stay: dropping the label for an unknown app would leave
   // the header unnamed, which is worse than the duplication removed above.

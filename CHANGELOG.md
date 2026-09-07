@@ -324,6 +324,12 @@ no entry defers its link to a placeholder.
   at the wrong aspect fails here. Naming the right slug would have passed the day someone swapped in
   another tall graphic, and a box its child cannot fill is invisible in markup.
 
+  **`global-header.App` is gone from the render contract**, as a consequence. It could not select a
+  lockup (`props.Logo` does that) and, once the lockup carries the name, the text label it fed stops
+  rendering for every app that has one: a caller passing `App="Explorer"` got neither the word nor
+  the Explorer mark. A dead prop in a shipped contract is an affordance consumers read and act on.
+  The app is named by the `App type` variant, the way the design file names it.
+
 - **Asking for an icon-only button returned a labelled pill, and the capture had said so all along**
   ([#691](https://github.com/volivarii/actian-ds-knowledge/pull/691)).
   `Emphasis=Icon-only` fell through to the same branch as `Filled` on the reasoning that "icon
