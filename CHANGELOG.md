@@ -26,8 +26,9 @@ no entry defers its link to a placeholder.
 
 ### Added
 
-- **The domain model now reaches the design system: a `patterns` field on every entity, and a
-  `shown_in` graph edge.** All 30 `app_entity` nodes previously touched only each other
+- **The domain model now reaches the design system: a `patterns` field on entities, and a
+  `shown_in` graph edge**
+  ([#680](https://github.com/volivarii/actian-ds-knowledge/pull/680)). All 30 `app_entity` nodes previously touched only each other
   (`entity_related`) and their apps (`in_app`), so nothing in the substrate said which part of the
   design system draws a Dataset. 48 authored edges close that, across the 25 entities a pattern
   actually shows. Five carry no join on purpose: `contact`, `data-contract`, `input-port`,
