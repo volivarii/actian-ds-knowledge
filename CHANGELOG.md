@@ -297,7 +297,8 @@ no entry defers its link to a placeholder.
 
 ### Changed
 
-- **The global header drew its logo 13.9px wide in a 121px box, and printed the app name twice**.
+- **The global header drew its logo 13.9px wide in a 121px box, and printed the app name twice**
+  ([#692](https://github.com/volivarii/actian-ds-knowledge/pull/692)).
   `.ds-header__logo` reserves 121x32 and sizes its child `height:100%; width:auto`, so the drawn
   width is decided entirely by the artwork's aspect. The renderer put `actian-pyramid` in it, a
   140x323 mark whose aspect is 0.43: at height 32 it drew **13.9px, leaving 107 of the 121px empty**
