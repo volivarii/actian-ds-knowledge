@@ -6,8 +6,8 @@ Sources last changed **2026-09-07**. Values are derived from the tree this ran a
 
 | Measure | Value | Since last change |
 | --- | --- | --- |
-| Unexplained variant collapses | 41 | improving (was 42) |
-| ...of those, ones the capture proves are a different shape | 20 | no baseline yet |
+| Unexplained variant collapses | 41 | flat (was 41) |
+| ...of those, ones the capture proves are a different shape | 20 | flat (was 20) |
 | FM variant values that render alike (unexplained) | 55 | flat (was 55) |
 | FM modifier classes with no rule | 56 | flat (was 56) |
 | Inline-style hex (cannot re-theme) | 47 | flat (was 47) |
@@ -37,7 +37,7 @@ Oracle coverage is **87 of 447** declarations. It is stated as a pair on purpose
 
 | Date | Version | Unexplained |
 | --- | --- | --- |
-| 2026-09-07 | v0.34.194 | 41 |
+| 2026-09-07 | v0.34.195 | 41 |
 | 2026-09-07 | v0.34.189 | 42 |
 | 2026-09-03 | v0.34.180 | 42 |
 | 2026-09-03 | v0.34.178 | 44 |

@@ -8,13 +8,13 @@
   "measures": {
     "unexplainedCollapses": {
       "value": 41,
-      "direction": "better",
-      "previous": 42
+      "direction": "unchanged",
+      "previous": 41
     },
     "structuralCollapses": {
       "value": 20,
-      "direction": "unknown",
-      "previous": null
+      "direction": "unchanged",
+      "previous": 20
     },
     "fmUnexplainedCollapses": {
       "value": 55,
@@ -402,8 +402,8 @@
   "collapseSeries": [
     {
       "date": "2026-09-07",
-      "version": "0.34.194",
-      "sha": "6484488a",
+      "version": "0.34.195",
+      "sha": "453116a0",
       "unexplained": 41
     },
     {

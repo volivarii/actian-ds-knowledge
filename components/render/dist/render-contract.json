@@ -787,9 +787,6 @@
           "default": "AU"
         },
         {
-          "name": "App"
-        },
-        {
           "name": "Context",
           "default": "Catalog"
         },
@@ -798,8 +795,7 @@
           "default": "Default"
         },
         {
-          "name": "Logo",
-          "default": "actian-pyramid"
+          "name": "Logo"
         },
         {
           "name": "Search"
