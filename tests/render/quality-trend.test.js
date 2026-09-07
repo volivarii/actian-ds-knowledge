@@ -303,9 +303,32 @@ test("the markdown summary states the date and every measure's direction", funct
     "the banner is visible when rendered, got: " + JSON.stringify(firstLines),
   );
   assert.match(md, /\d{4}-\d{2}-\d{2}/, "states the date it was measured");
-  assert.match(md, /unexplained variant collapses/i);
-  assert.match(md, /verified declarations/i);
-  assert.match(md, /inline-style hex/i);
+
+  // Derived from the rollup, not restated here. This used to name three
+  // measures by hand, so the table could grow by three more (the geometry trio)
+  // and the gate would still report on the same three. The test's own name
+  // claims EVERY measure, and now it checks that.
+  const rollup = rollupOnce();
+  const names = Object.keys(rollup.measures);
+  assert.ok(names.length >= 3, "the rollup published no measures to check");
+  for (const name of names) {
+    const label = trend.LABELS[name];
+    assert.ok(label, name + " is published with no label, so the table has a blank row");
+    assert.ok(
+      md.includes("| " + label + " |"),
+      "the markdown table has no row for " + name + " (" + label + ")",
+    );
+  }
+  // And a direction is stated for each, so a row cannot ship as a bare number.
+  const rows = md.split("\n").filter((l) => l.startsWith("| ") && l.includes(" | "));
+  for (const name of names) {
+    const row = rows.find((l) => l.startsWith("| " + trend.LABELS[name] + " |"));
+    const cells = row.split("|").map((c) => c.trim());
+    assert.ok(
+      cells[cells.length - 2].length > 0,
+      name + "'s row states no direction: " + row,
+    );
+  }
 });
 
 test("the markdown reports the oracle pair, never a bare percentage", function () {

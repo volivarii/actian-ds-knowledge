@@ -26,6 +26,43 @@ no entry defers its link to a placeholder.
 
 ### Added
 
+- **The fidelity oracle now reads SHAPE, not only colour**.
+  Every gate in the render tier checked colour: the oracle examines 447 declarations and all 447 are
+  colours, because `readAppearance()` walks the capture's `appearance` object and stops. The capture
+  measures more. Across the 609 nodes of the sixty components that render it holds **173 gap
+  measurements, 173 padding measurements and 69 fixed sizes, and 108 of those name the design token**
+  the value came from (`gapToken`, `paddingTokens`). Nothing had ever read any of it, which is why the
+  global header's logo, a 121px box drawing 13.9px with no colour out of place, took a browser and an
+  eye to find.
+
+  `scripts/render/derive-geometry-fidelity.js` derives
+  `components/render/dist/geometry-report.json` (manifest `components.render.geometryReport`):
+  **99 of 591 examined shape declarations agree with the capture, 91 disagree, 401 it cannot speak to,
+  11 slugs it is blind to.** The 91 include four that a by-eye assessment had already found
+  independently (`search`, `page-header`, `tabs`, `side-nav`); the check finds mechanically what took
+  looking. `quality-trend.md` carries the pair plus the disagreement count, never a ratio.
+
+  It **reports rather than blocks**, and `tests/render/geometry-ratchet.test.js` is what makes that
+  safe: the disagreement count is pinned to the merge base per slug and in total, so the backlog can
+  only be worked down. Per slug as well as in total, because a total alone passes a swap.
+
+  The classifier reuses the colour path's selector machinery (`ownedRules`, `classifySelector`,
+  `classCount`, `rootIsNonDefaultState`) rather than restating it. Each of those carries a correction
+  paid for once already, and a second copy would not inherit the next one.
+
+  Four decisions that shape what the number means. **Width is not read**: a captured width is where
+  the instance sat on the Figma canvas, not a property of the component (global-header captures at
+  1920px). **A height counts only where the capture fixed it**, except on a variant entry, which
+  records only what differs, so a size there is the statement. **A gap longhand is compared only on
+  the axis Figma measured**, since Figma stores one number per frame along its main axis. **A padding
+  shorthand contributes one row per side**, so the measure does not depend on whether the author wrote
+  `padding` or four longhands.
+
+  And the one that matters most for how the 91 are read: **a mismatch names a disagreement, not a
+  verdict**. It can mean the CSS has the shape wrong, that the renderer flattened a structure Figma
+  splits across nested frames (`modal`), or that the Figma component itself is off the spacing scale
+  (`toast` measures 14px and 9px). That is why it reports.
+
 - **The domain model now reaches the design system: a `patterns` field on entities, and a
   `shown_in` graph edge**
   ([#680](https://github.com/volivarii/actian-ds-knowledge/pull/680)). All 30 `app_entity` nodes previously touched only each other

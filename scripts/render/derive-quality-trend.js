@@ -789,6 +789,11 @@ module.exports = {
   renderMarkdown: renderMarkdown,
   GOOD_DIRECTION: GOOD_DIRECTION,
   DEFINITION_EPOCH: DEFINITION_EPOCH,
+  // Exported so the markdown gate can assert EVERY measure appears rather than
+  // restating three of them by hand. A hand-written list of measure names in a
+  // test is a second copy of this map that goes stale the moment a measure is
+  // added, and the gate then reports on a smaller table than the one shipped.
+  LABELS: LABELS,
 };
 
 // CLI: writes both halves. Runs LAST in the derive:render chain, after

@@ -32,14 +32,24 @@ var OUT_REL = "components/render/dist/geometry-report.json";
 var OUT_PATH = path.join(REPO_ROOT, OUT_REL);
 var SCHEMA_VERSION = "1.0.0";
 
-// Everything a run reads. render-derive.yml watches the renderer and the
-// anatomy dist already; this names them here so a reader of this file does not
-// have to reconstruct the dependency from the workflow.
+// Everything a run reads, named here rather than left for a reader to
+// reconstruct from the workflow. tests/render/derive-contract.test.js asserts
+// every entry is watched by a render-derive.yml trigger, and it earned its keep
+// on the first draft of this list: it caught
+// `components/render/dist/fragments/**`, which is not an input at all. The
+// fragments are OUTPUT of this same derive chain, and the way a fragment
+// changes is that the renderer changed, which is the path below.
 var INPUTS = [
+  // The stylesheet whose declarations are one side of every comparison.
   "components/render/renderer/ds-base.css",
-  "components/render/dist/fragments/**",
-  "components/dist/anatomy/**",
-  "tokens/tokens.css",
+  // The markup, which decides which of those declarations a slug actually
+  // emits (filterCssForFragment) and therefore which are examined at all.
+  "components/render/renderer/html-renderers/ds-html-map.js",
+  // The oracle. A Figma sync arrives here.
+  "components/dist/anatomy/",
+  // The token map: `var(--zen-spacing-xs)` is only comparable to 8px if
+  // something resolves it.
+  "tokens/tokens.json",
 ];
 
 function deriveGeometryReport(ctx) {

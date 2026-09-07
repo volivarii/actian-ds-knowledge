@@ -1,7 +1,7 @@
 {
   "_meta": {
     "auto_generated": true,
-    "source": "components/render/renderer/ds-base.css, components/render/dist/fragments/**, components/dist/anatomy/**, tokens/tokens.css",
+    "source": "components/render/renderer/ds-base.css, components/render/renderer/html-renderers/ds-html-map.js, components/dist/anatomy/, tokens/tokens.json",
     "do_not_edit": "Regenerate with `npm run derive:render`. Hand edits are overwritten."
   },
   "schemaVersion": "1.0.0",
