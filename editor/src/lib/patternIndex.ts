@@ -213,6 +213,22 @@ export interface PatternIndex {
   /** Patterns claiming an app the context does not define. */
   patternsClaimingUnknownApps: { pattern: string; apps: string[] }[];
   /**
+   * Use cases naming a pattern that does not exist, flattened across apps.
+   *
+   * The same fact as `AppSection.useCases[].missingPatterns`, gathered once so
+   * a consumer does not have to walk two levels to find it. It lives here
+   * beside the three joins above because it IS one of them: the patterns
+   * dashboard used to reshape it at render time, which left it as the only
+   * broken-join report this module did not own, and for a while the only one
+   * nothing read at all.
+   */
+  useCasesNamingMissingPatterns: {
+    app: string;
+    appLabel: string;
+    job: string;
+    missing: string[];
+  }[];
+  /**
    * The parsed source document, kept so a caller measuring Entities, Products
    * and Terms does not fetch and parse the same file a second time. The index
    * itself only needs apps and patterns; the other two collections are in the
@@ -327,6 +343,17 @@ export function buildPatternIndex(
     })
     .sort(byLabel);
 
+  const useCasesNamingMissingPatterns = apps.flatMap((app) =>
+    app.useCases
+      .filter((uc) => uc.missingPatterns.length > 0)
+      .map((uc) => ({
+        app: app.slug,
+        appLabel: app.label,
+        job: uc.jobs[0] ?? "a use case",
+        missing: uc.missingPatterns,
+      })),
+  );
+
   const recipesNamingMissingPatterns = recipes
     .map((recipe) => ({
       recipe,
@@ -353,6 +380,7 @@ export function buildPatternIndex(
     recipesNamingMissingPatterns,
     recipesNamingNoPattern,
     patternsClaimingUnknownApps,
+    useCasesNamingMissingPatterns,
     doc: ctx,
     recipesReadable,
   };

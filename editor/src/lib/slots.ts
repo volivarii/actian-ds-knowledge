@@ -47,6 +47,19 @@ export function wordCount(s: string | null | undefined): number {
 }
 
 /**
+ * Whether a pattern carries the sentence that says when to reach for it.
+ *
+ * Exported because TWO surfaces ask it: the `rule` Slot measured on `#/health`,
+ * and the catalogue filter on `#/patterns` offering "Missing a when clause
+ * (N)". While the catalogue kept its own `(when ?? "").trim()` check the two
+ * could disagree, and the page would offer a filter for a count its own rows
+ * did not produce.
+ */
+export function hasWhenClause(when: string | null | undefined): boolean {
+  return wordCount(when) > 0;
+}
+
+/**
  * Pattern bodies are bimodal with a real gap: 8-18 words, then nothing until
  * 40. The bar sits IN the gap the corpus already has rather than at a number
  * somebody liked.
@@ -121,7 +134,7 @@ export const PATTERN_SLOTS: Slot<PatternSlotRecord>[] = [
   {
     key: "rule",
     name: SLOT_LABEL.rule,
-    filled: (r) => wordCount(r.when) > 0,
+    filled: (r) => hasWhenClause(r.when),
     help: "When to reach for this pattern and what to use instead: the sentence that stops it being applied to the wrong problem. access-request-management names the pattern it must not be confused with.",
     action: "Write",
   },

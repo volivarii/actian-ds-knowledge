@@ -297,6 +297,61 @@ no entry defers its link to a placeholder.
 
 ### Changed
 
+- **The Patterns screen is a catalogue again; the metrics it opened with moved to Substrate health**
+  ([#681](https://github.com/volivarii/actian-ds-knowledge/pull/681)).
+  A page called Patterns led with four Meter groups measuring Patterns, Entities, Products and Terms,
+  so three of its four opening subjects were not patterns. Measured on the deployed page: 24 numbers
+  between the heading and the first pattern name, 446px of preamble, and 8 of the 17 Meters complete
+  and therefore carrying no information. Below that the catalogue itself was app-first, a block per
+  product with a table per use case plus a table for what the product claimed and no use case named:
+  31 patterns drawn as 47 rows across 7 tables under one repeated five-column header, because a
+  pattern claiming two products was drawn under both. It is one table of 31 now, product is a filter,
+  and the preamble is 183px with 9 numbers in it, all of them a control's own label. Eight headings
+  became one.
+
+  **The metrics were relocated, not dropped.** The four Meter groups and the integrity callouts
+  render on `#/health`, the screen already named and shaped for whole-substrate diagnostics.
+  `AppUseCase.missingPatterns`, a use case naming a pattern that does not exist, was rendered per use
+  case and had no index-level equivalent, so it went on being produced with nothing reading it; it is
+  a fourth join on `PatternIndex` now, beside the three sibling broken-join reports that always lived
+  there, so a consumer cannot get a different answer by re-deriving it.
+
+  **Claiming a product and being reached by one are different facts, and the filter has to keep them
+  apart.** A pattern claiming Studio and Explorer but named only by an Explorer use case must not
+  show an Explorer job under the Studio filter; it says no Studio use case names it, which is what
+  the old "Claimed by X, named by no use case" table reported. Two patterns in the corpus have that
+  shape today. Each filter's count is computed with every other filter already applied, so a control
+  never advertises a number it will not produce, and the row carries every job of the use case that
+  reaches it plus that use case's audience, both of which the grouped layout showed and no other
+  screen does.
+
+  **Retired on purpose, three numbers.** The count of distinct capture FILES: the Capture Meter
+  counts patterns that have one, which is the question a reader asks. The per-product aggregates
+  "N use cases, M patterns named, K claimed but unnamed", now answered per row rather than per block.
+  And the "N sidebar entries" count, whose presence is the Navigation Product Meter.
+
+  **A second derivation was closed rather than created.** The catalogue offers "Missing a when clause
+  (N)" and the Rule Meter on the other screen measures the same fact, so `hasWhenClause` is exported
+  once from `slots.ts` and both read it. A test drives the catalogue with a fixture whose figure
+  differs from the real corpus, so a recount or a literal produces the corpus number and fails.
+
+  **Keyboard focus was reachable and invisible across the whole app.** The pattern name was a Radix
+  `Text`, a span carrying only an `onClick`, so every name on the screen whose job is to be the way
+  into a pattern was mouse-only. Fixing that surfaced the larger one: the app promotes spans and divs
+  to buttons with `role="button"` in ten places across five components, Radix's reset drops the UA
+  focus ring, and the app's only `:focus-visible` rule was the skip link's. One rule in `base.css`
+  keyed on the role covers them, with the offset drawn INSIDE the element because the sidebar rail is
+  `overflow: auto` and its full-width rows had the sides of an outset ring clipped away, and with no
+  `border-radius`, which beat `.rt-Badge` on specificity and turned a capture chip from a pill into a
+  rectangle while focused. The graph node is an SVG `<g>`, where WebKit paints no outline and the box
+  is the whole label bbox, so it gets a stroke on its circle instead. The guard derives the site
+  inventory from the source rather than restating it: the count was written as nine in three places
+  at once and the sites are ten.
+
+  `editor/package.json` gains the `typecheck` script it never had, so `npm run typecheck` runs
+  `tsc --noEmit` instead of failing as an unknown script and reading as a pass.
+  Editor-only: no dist, no schema, no consumer.
+
 - **The Coverage screen states one number for one thing, and offers the verb for the finding it
   states** ([#659](https://github.com/volivarii/actian-ds-knowledge/pull/659)). It opened with "85 components" while the sidebar two inches away said 54,
   because the 85 counted registry components nobody has started. The sentence is now derived by a

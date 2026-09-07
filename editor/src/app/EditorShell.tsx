@@ -171,7 +171,7 @@ export function EditorShell({
   } else if (activePath === "patterns") {
     pane = <PatternsDashboard octokit={gh} onOpenFile={setActivePathSafe} />;
   } else if (activePath === "health") {
-    pane = <GraphHealthTab onOpenFile={setActivePathSafe} />;
+    pane = <GraphHealthTab octokit={gh} onOpenFile={setActivePathSafe} />;
   } else if (activePath === "inbox") {
     pane = (
       <DraftInbox

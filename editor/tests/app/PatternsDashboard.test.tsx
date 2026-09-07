@@ -12,6 +12,12 @@ import {
 import { Theme } from "@radix-ui/themes";
 import React from "react";
 import { PatternsDashboard } from "../../src/app/PatternsDashboard";
+
+// Absence is asserted as `query(...) === null, true`, never as
+// `assert.equal(query(...), null)`. The second form serialises the DOM node it
+// found into the failure diff, which SIGKILLs the runner: the gate does fail,
+// but it takes the whole file's results with it and its name never reaches the
+// summary, so a mutation run reads it as inert.
 import { matchFrontmatterForm } from "../../src/lib/frontmatterForms";
 import { isPlainMarkdown } from "../../src/app/EditorShell";
 
@@ -143,36 +149,113 @@ function fakeGh() {
   } as never;
 }
 
-test("renders a section per app, with its use case job and audience", async () => {
+// --------------------------------------------------------------- catalogue
+// One row per pattern. The app-first shape this page used to have (a block per
+// product, a table per use case, plus a table for what the product claimed and
+// no use case named) rendered 31 patterns as 47 rows across 7 tables. The facts
+// that shape carried are still here: product as a filter, the reaching job as a
+// column, and the app-level integrity callouts on `#/health`.
+
+test("a pattern claiming two products is listed once, not once per product", async () => {
   render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
-  assert.ok(screen.getByText("Explorer"));
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  // The drawer claims Studio AND Explorer. The grouped layout drew it twice,
+  // which is the duplication the filter exists to remove.
+  assert.equal(screen.getAllByText("Right sliding drawer").length, 1);
+  assert.equal(screen.getAllByRole("row").length, 3, "header plus two patterns");
+});
+
+test("a row names the job that reaches it, and says so when none does", async () => {
+  render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  // Claiming a product is not the same as being reached by one. Studio's use
+  // case names asset-detail-360; nothing names the drawer.
   assert.ok(screen.getByText("Govern the catalog"));
-  assert.ok(screen.getByText("Data steward"));
+  assert.ok(screen.getByText("No use case names it"));
 });
 
-test("lists what an app claims but no use case names, per app", async () => {
+test("both products are offered as filters, with the count each would show", async () => {
   render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
-  assert.ok(screen.getByText("Claimed by Studio, named by no use case"));
-  assert.ok(screen.getByText("Claimed by Explorer, named by no use case"));
-  // The drawer claims both apps, so it appears under both.
-  assert.equal(screen.getAllByText("Right sliding drawer").length, 2);
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  // Studio is claimed by both patterns, Explorer by one, and 2 + 1 does not
+  // equal the 2 rows on the page. The copy says so rather than leaving a
+  // reader to find it.
+  assert.ok(screen.getByRole("radio", { name: /Studio \(2\)/ }));
+  assert.ok(screen.getByRole("radio", { name: /Explorer \(1\)/ }));
+  assert.ok(screen.getByText(/product filters overlap/));
 });
 
-test("a use case naming a pattern that does not exist says so in the view", async () => {
+test("filtering by product narrows the list and says how far", async () => {
   render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
-  assert.ok(
-    screen.getByText(/Names 1 pattern that do(es)? not exist: ghost-pattern/),
-  );
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  assert.ok(screen.getByText("Showing 2 of 2 patterns"));
+  fireEvent.click(screen.getByRole("radio", { name: /Explorer \(1\)/ }));
+  await waitFor(() => screen.getByText("Showing 1 of 2 patterns"));
+  assert.equal(screen.queryByText("Asset detail 360") === null, true);
+  assert.ok(screen.getByText("Right sliding drawer"));
 });
 
-test("an app with no recorded sidebar is flagged rather than shown as zero", async () => {
+test("the count of shown rows is a status, so a filter change is announced", async () => {
+  // The number is the only thing on the page that reports what a filter did.
+  // Changing it silently leaves a screen reader user with no result at all.
   render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
-  assert.ok(screen.getByText("no sidebar recorded"));
-  assert.ok(screen.getByText("1 sidebar entries"));
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  const status = screen.getByRole("status");
+  assert.match(status.textContent ?? "", /Showing 2 of 2 patterns/);
+});
+
+test("the when-clause filter is offered with its count and holds to it", async () => {
+  // Both fixture patterns carry a when clause, so the filter offers zero and
+  // must then show zero: a filter that reports 0 and lists rows is worse than
+  // no filter.
+  render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  assert.ok(screen.getByText("Missing a when clause (0)"));
+  fireEvent.click(screen.getByRole("checkbox"));
+  await waitFor(() => screen.getByText("Showing 0 of 2 patterns"));
+  assert.ok(screen.getByText("No pattern matches these filters."));
+});
+
+test("a pattern with no when clause is marked, and the filter finds it", async () => {
+  const DOC = {
+    ...APP_CONTEXT,
+    patterns: {
+      ...APP_CONTEXT.patterns,
+      "bare-pattern": { label: "Bare pattern", apps: ["studio"], components: [] },
+    },
+  };
+  const gh = {
+    repos: {
+      getContent: async ({ path }: { path: string }) => {
+        if (path === "app-context/dist/recipes") return { data: [] };
+        if (path === "app-context/dist/app-context.json")
+          return {
+            data: { content: b64(JSON.stringify(DOC)), encoding: "base64" },
+          };
+        const err = new Error("not found") as Error & { status: number };
+        err.status = 404;
+        throw err;
+      },
+    },
+  } as never;
+  render(wrap(<PatternsDashboard octokit={gh} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Bare pattern"));
+  assert.ok(screen.getByText("Not written yet"));
+  assert.ok(screen.getByText("Missing a when clause (1)"));
+  fireEvent.click(screen.getByRole("checkbox"));
+  await waitFor(() => screen.getByText("Showing 1 of 3 patterns"));
+  assert.ok(screen.getByText("Bare pattern"));
+  assert.equal(screen.queryByText("Asset detail 360") === null, true);
+});
+
+test("a product is named by its label, not by its slug", async () => {
+  // The grouped table printed `studio` in a badge under a heading that said
+  // Studio: the repository's word for something this app already names.
+  render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  const table = screen.getAllByRole("table")[0]!;
+  assert.equal(within(table).queryByText("studio") === null, true);
+  assert.ok(within(table).getAllByText("Studio").length > 0);
 });
 
 test("clicking a pattern opens its source markdown", async () => {
@@ -190,10 +273,31 @@ test("clicking a pattern opens its source markdown", async () => {
   assert.deepEqual(opened, ["app-context/src/patterns/asset-detail-360.md"]);
 });
 
+test("a pattern name opens from the keyboard, not the mouse alone", async () => {
+  // A Radix Text is a span. With only an onClick, every pattern name on this
+  // page was reachable by mouse only, on a screen whose entire job is to be
+  // the way into a pattern. The capture chip below already carried the fix;
+  // the name never got it.
+  const opened: string[] = [];
+  render(
+    wrap(
+      <PatternsDashboard
+        octokit={fakeGh()}
+        onOpenFile={(p) => opened.push(p)}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  const name = screen.getByText("Asset detail 360");
+  assert.equal(name.getAttribute("tabindex"), "0", "the name is not focusable");
+  fireEvent.keyDown(name, { key: "Enter" });
+  assert.deepEqual(opened, ["app-context/src/patterns/asset-detail-360.md"]);
+});
+
 test("a capture chip opens the recipe panel without handing a path to the router", async () => {
   // EditorShell routes _meta.yml, the app-context frontmatter forms and plain
   // markdown. A recipe is JSON, so handing its path to onOpenFile would land on
-  // the refusal banner. The chip now opens a read-only panel instead, and the
+  // the refusal banner. The chip opens a read-only panel instead, and the
   // original guarantee still holds: it routes nowhere.
   const opened: string[] = [];
   render(
@@ -204,7 +308,7 @@ test("a capture chip opens the recipe panel without handing a path to the router
       />,
     ),
   );
-  await waitFor(() => screen.getByText("Studio"));
+  await waitFor(() => screen.getByText("Asset detail 360"));
   const chip = screen.getAllByText("Studio > Catalog")[0];
   assert.ok(chip);
   fireEvent.click(chip);
@@ -215,6 +319,7 @@ test("a capture chip opens the recipe panel without handing a path to the router
     ),
   );
 });
+
 test("every path the view opens is one the editor can actually route", async () => {
   const opened: string[] = [];
   render(
@@ -226,9 +331,13 @@ test("every path the view opens is one the editor can actually route", async () 
     ),
   );
   await waitFor(() => screen.getByText("Asset detail 360"));
-  // Both navigating affordances: a pattern row and an app's summary line.
-  fireEvent.click(screen.getByText("Asset detail 360"));
-  fireEvent.click(screen.getByText(/1 use case · 1 pattern named/));
+  // The pattern row is the only navigating affordance left: the per-app summary
+  // line went with the app blocks, and the capture chip routes nowhere by
+  // design. Every row is exercised, not just the first, so a row type that
+  // mints a different path cannot hide behind one that does not.
+  for (const label of ["Asset detail 360", "Right sliding drawer"]) {
+    fireEvent.click(screen.getByText(label));
+  }
   assert.equal(opened.length, 2);
   for (const path of opened) {
     assert.ok(
@@ -236,58 +345,6 @@ test("every path the view opens is one the editor can actually route", async () 
       `${path} is not routable by EditorShell`,
     );
   }
-});
-
-test("the per-app line pluralises its pattern count", async () => {
-  render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
-  // Studio's one use case names one real pattern (the other is a ghost), and
-  // Explorer names none, so both the singular and the plural are on the page.
-  assert.ok(screen.getByText(/1 use case · 1 pattern named/));
-  assert.ok(screen.getByText(/0 use cases · 0 patterns named/));
-});
-
-test("a capture naming a missing pattern is called out by name", async () => {
-  const RECIPES_BAD = {
-    "partly-wrong": {
-      slug: "partly-wrong",
-      apps: ["studio"],
-      patterns: ["right-sliding-drawer", "typo-browse"],
-      derivedFrom: { surface: "Studio > Catalog", capturedOn: "2026-08-21" },
-    },
-  };
-  const gh = {
-    repos: {
-      getContent: async ({ path }: { path: string }) => {
-        if (path === "app-context/dist/recipes")
-          return { data: [{ name: "partly-wrong.json", type: "file" }] };
-        if (path === "app-context/dist/app-context.json")
-          return {
-            data: {
-              content: b64(JSON.stringify(APP_CONTEXT)),
-              encoding: "base64",
-            },
-          };
-        return {
-          data: {
-            content: b64(JSON.stringify(RECIPES_BAD["partly-wrong"])),
-            encoding: "base64",
-          },
-        };
-      },
-    },
-  } as never;
-  render(wrap(<PatternsDashboard octokit={gh} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
-  assert.ok(screen.getByText(/partly-wrong names typo-browse/));
-});
-
-test("the summary counts patterns with no when clause", async () => {
-  render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
-  // Both fixture patterns carry a when clause, so the count is zero and the
-  // sentence still explains what the number means.
-  assert.ok(screen.getByText(/0 with no when clause/));
 });
 
 test("a long capture surface is truncated on the chip and kept in full on hover", async () => {
@@ -325,7 +382,7 @@ test("a long capture surface is truncated on the chip and kept in full on hover"
     },
   } as never;
   render(wrap(<PatternsDashboard octokit={gh} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
+  await waitFor(() => screen.getByText("Asset detail 360"));
   const chip = screen.getAllByTitle(new RegExp(longSurface))[0];
   assert.ok(chip, "the full surface stays available on the title");
   assert.ok(chip instanceof HTMLElement);
@@ -334,14 +391,6 @@ test("a long capture surface is truncated on the chip and kept in full on hover"
     "the chip label is shorter than the full path",
   );
   assert.ok((chip.textContent ?? "").endsWith("…"));
-});
-
-test("the summary states that per-product counts overlap rather than summing them", async () => {
-  render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
-  assert.ok(
-    screen.getByText(/per-product counts below overlap and do not sum to 2/),
-  );
 });
 
 test("a failed load reports the reason instead of rendering an empty index", async () => {
@@ -357,6 +406,213 @@ test("a failed load reports the reason instead of rendering an empty index", asy
   assert.ok(screen.getByText(/network is down/));
 });
 
+
+// ------------------------------------------------- filters and the join
+// A pattern can claim a product that none of that product's use cases reaches.
+// The grouped layout reported it with a "Claimed by X, named by no use case"
+// table per product; the catalogue has to answer it in the row, under the
+// filter, or the fact is gone.
+
+const CROSS_APP = {
+  apps: {
+    studio: {
+      label: "Studio",
+      sidebar: [{ label: "Catalog", id: "catalog" }],
+      useCases: [
+        {
+          audience: ["Data steward"],
+          jobs: ["Govern the catalog", "Curate it", "Retire it"],
+          patterns: ["asset-detail-360"],
+        },
+      ],
+    },
+    explorer: {
+      label: "Explorer",
+      sidebar: [],
+      useCases: [
+        {
+          audience: ["Analyst"],
+          jobs: ["Browse the marketplace"],
+          patterns: ["access-request-workflow"],
+        },
+      ],
+    },
+  },
+  patterns: {
+    "asset-detail-360": {
+      label: "Asset detail 360",
+      apps: ["studio"],
+      when: "Use for a single asset.",
+      components: ["tabs"],
+    },
+    // Claims BOTH, reached only by Explorer. This is the real corpus shape:
+    // access-request-workflow and search-filtered-table both do it today.
+    "access-request-workflow": {
+      label: "Access request workflow",
+      apps: ["studio", "explorer"],
+      when: "Use for the requester's side.",
+      components: ["form"],
+    },
+  },
+  entities: {},
+  terminology: {},
+};
+
+function ghFor(doc: unknown) {
+  return {
+    repos: {
+      getContent: async ({ path }: { path: string }) => {
+        if (path === "app-context/dist/recipes") return { data: [] };
+        if (path === "app-context/dist/app-context.json")
+          return {
+            data: { content: b64(JSON.stringify(doc)), encoding: "base64" },
+          };
+        const err = new Error("not found") as Error & { status: number };
+        err.status = 404;
+        throw err;
+      },
+    },
+  } as never;
+}
+
+test("a job is only shown under the product whose use case names it", async () => {
+  // access-request-workflow claims Studio and Explorer and is named only by an
+  // Explorer use case. Under the Studio filter the truthful answer is that no
+  // Studio use case reaches it, NOT the Explorer job. Two patterns in the real
+  // corpus have this shape today.
+  render(wrap(<PatternsDashboard octokit={ghFor(CROSS_APP)} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Access request workflow"));
+
+  // Unfiltered, the Explorer job is the honest answer.
+  assert.ok(screen.getByText("Browse the marketplace"));
+
+  fireEvent.click(screen.getByRole("radio", { name: /Studio/ }));
+  await waitFor(() => screen.getByText("Showing 2 of 2 patterns"));
+  assert.ok(
+    screen.getByText("No Studio use case names it"),
+    "the row claims a Studio job it does not have",
+  );
+  assert.equal(
+    screen.queryByText("Browse the marketplace") === null,
+    true,
+    "an Explorer job is shown under the Studio filter",
+  );
+});
+
+test("the +N on a job counts the jobs it hides, not the use cases", async () => {
+  // Studio's use case carries three jobs. The old page put the first in the
+  // block title and the rest on an "Also:" line; this row shows the first and
+  // has to say two are hidden. Counting USE CASES reported nothing at all here,
+  // because one use case names it.
+  render(wrap(<PatternsDashboard octokit={ghFor(CROSS_APP)} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  assert.ok(screen.getByText(/Govern the catalog \(\+2 more\)/));
+  const cell = screen.getByText(/Govern the catalog/).closest("td");
+  assert.ok(cell);
+  assert.match(
+    cell.querySelector("[title]")?.getAttribute("title") ?? "",
+    /Studio \(Data steward\): Govern the catalog; Curate it; Retire it/,
+    "the hidden jobs are not recoverable from the row",
+  );
+});
+
+test("the use case's audience is still readable somewhere", async () => {
+  // The grouped layout showed audience in badges beside each use case title.
+  // The blocks are gone and no other screen renders these strings, so without
+  // this they would be authored in app-context and displayed nowhere. Four
+  // audience lists in the real corpus.
+  render(wrap(<PatternsDashboard octokit={ghFor(CROSS_APP)} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  const cell = screen.getByText(/Govern the catalog/).closest("td");
+  assert.ok(cell);
+  assert.match(
+    cell.querySelector("[title]")?.getAttribute("title") ?? "",
+    /Data steward/,
+    "the audience is authored in app-context and rendered nowhere",
+  );
+});
+
+test("each filter's count is what selecting it would actually show", async () => {
+  // Both counts used to be taken over the whole list while the table applied
+  // both predicates, so with one filter on the other advertised a number it
+  // would not produce.
+  const doc = {
+    ...CROSS_APP,
+    patterns: {
+      ...CROSS_APP.patterns,
+      // Explorer-only and missing a when clause: it lifts the global
+      // when-clause count above the Studio-scoped one.
+      "ask-ai": { label: "Ask AI", apps: ["explorer"], components: [] },
+    },
+  };
+  render(wrap(<PatternsDashboard octokit={ghFor(doc)} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Ask AI"));
+  assert.ok(screen.getByText("Missing a when clause (1)"));
+
+  // Scoped to Studio, nothing is missing a when clause, so the checkbox must
+  // say 0 rather than the global 1.
+  fireEvent.click(screen.getByRole("radio", { name: /Studio/ }));
+  await waitFor(() => screen.getByText("Missing a when clause (0)"));
+
+  // And with the checkbox ticked, each product chip counts only its rows that
+  // are also missing one.
+  fireEvent.click(screen.getByRole("radio", { name: /All products/ }));
+  fireEvent.click(screen.getByRole("checkbox"));
+  await waitFor(() => screen.getByText("Showing 1 of 3 patterns"));
+  assert.ok(screen.getByRole("radio", { name: /Studio \(0\)/ }));
+  assert.ok(screen.getByRole("radio", { name: /Explorer \(1\)/ }));
+});
+
+test("a filter that hides a row closes the panel opened from it", async () => {
+  // The panel would otherwise describe a capture for a pattern no longer in the
+  // table, and its Close button would focus a detached chip: a silent no-op
+  // that drops the keyboard reader onto <body>, which is the regression the
+  // trigger is recorded to prevent.
+  render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
+  await waitFor(() => screen.getByText("Asset detail 360"));
+  fireEvent.click(screen.getAllByText("Studio > Catalog")[0]!);
+  await waitFor(() =>
+    screen.getByRole("region", { name: /Studio quick edit drawer/ }),
+  );
+  // The drawer claims Studio and Explorer; asset-detail-360 claims Studio only.
+  // Nothing in the fixture hides the drawer by product, so use the when filter
+  // after making the drawer the only row with a clause... simplest: tick the
+  // missing-when filter, which hides both fixture patterns.
+  fireEvent.click(screen.getByRole("checkbox"));
+  await waitFor(() =>
+    assert.equal(
+      screen.queryByRole("region", { name: /Studio quick edit drawer/ }) ===
+        null,
+      true,
+      "the panel outlived the row that opened it",
+    ),
+  );
+});
+
+test("a product slugged 'all' is refused rather than silently colliding", async () => {
+  // `all` is the sentinel for the all-products segment. An app slugged `all`
+  // would give two SegmentedControl items the same value, which Radix keys
+  // selection by: both light up while the filter shows everything. A wrong
+  // answer with no symptom, so the screen fails loudly instead.
+  const doc = {
+    apps: { all: { label: "All", sidebar: [], useCases: [] } },
+    patterns: {
+      p: { label: "P", apps: ["all"], when: "Use it.", components: [] },
+    },
+    entities: {},
+    terminology: {},
+  };
+  render(wrap(<PatternsDashboard octokit={ghFor(doc)} onOpenFile={() => {}} />));
+  // Reported on the screen, not thrown during render: a throw in a useMemo
+  // once took the whole app down on this codebase, and the ScreenErrorBoundary
+  // that would now catch it reports generic wording for a nameable defect.
+  await waitFor(() => screen.getByRole("alert"));
+  assert.match(
+    screen.getByRole("alert").textContent ?? "",
+    /collides with the all-products filter/,
+  );
+});
+
 // ---------------------------------------------------------------------------
 // The recipe panel. Read-only by decision: editing a recipe is the Class C JSON
 // widget the RefusalBanner still names as unbuilt, and painting the skeleton
@@ -370,7 +626,7 @@ test("a failed load reports the reason instead of rendering an empty index", asy
  */
 async function openTheCapture(): Promise<HTMLElement> {
   render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
+  await waitFor(() => screen.getByText("Asset detail 360"));
   const chip = screen.getAllByText("Studio > Catalog")[0];
   assert.ok(chip);
   fireEvent.click(chip);
@@ -454,14 +710,20 @@ test("closing the panel returns the reader to the table", async () => {
   await openTheCapture();
   fireEvent.click(screen.getByRole("button", { name: /close/i }));
   await waitFor(() =>
-    assert.equal(screen.queryByText(/Asset title over the technical path\./), null),
+    assert.equal(
+      screen.queryByText(/Asset title over the technical path\./) === null,
+      true,
+    ),
   );
-  assert.ok(screen.getByText("Studio"), "the table is still there");
+  // Not `getByText("Studio")`: the product is a badge on every row it claims,
+  // so that query matched two nodes and threw. The catalogue itself is the
+  // subject.
+  assert.ok(screen.getByText("Asset detail 360"), "the table is still there");
 });
 
 test("opening a capture brings the panel into view", async () => {
-  // The panel renders above the tables, and a chip can sit far down a page of
-  // three app blocks. Without this the reader clicks and sees nothing move,
+  // The panel renders above the table, and a chip can sit far down a list of
+  // 31 rows. Without this the reader clicks and sees nothing move,
   // which is exactly the "reads as broken" failure the chip used to avoid by
   // not being clickable at all.
   const proto = Element.prototype as unknown as {
@@ -503,7 +765,7 @@ test("a capture chip opens the panel from the keyboard", async () => {
   // keyboard user can never reach the panel, so the whole feature is mouse
   // only. RelationsPanel already owns this contract (role, tabIndex, Enter).
   render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
+  await waitFor(() => screen.getByText("Asset detail 360"));
   const chip = screen.getAllByText("Studio > Catalog")[0];
   assert.ok(chip);
   assert.equal(chip.getAttribute("role"), "button");
@@ -527,7 +789,7 @@ test("re-opening the capture already on screen scrolls to it again", async () =>
   };
   try {
     render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
-    await waitFor(() => screen.getByText("Studio"));
+    await waitFor(() => screen.getByText("Asset detail 360"));
     const chip = screen.getAllByText("Studio > Catalog")[0];
     assert.ok(chip);
     fireEvent.click(chip);
@@ -548,7 +810,7 @@ test("switching captures returns the outline to collapsed", async () => {
   // 142-node capture would land on it fully expanded, burying the prose the
   // panel exists to surface.
   render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
+  await waitFor(() => screen.getByText("Asset detail 360"));
   const studioChip = screen.getAllByText("Studio > Catalog")[0];
   assert.ok(studioChip);
   fireEvent.click(studioChip);
@@ -584,7 +846,7 @@ test("closing the panel returns focus to the chip that opened it", async () => {
   // land on <body> and have to tab from the top of the page to get back. Opening
   // by keyboard is only half the fix if closing strands the reader.
   render(wrap(<PatternsDashboard octokit={fakeGh()} onOpenFile={() => {}} />));
-  await waitFor(() => screen.getByText("Studio"));
+  await waitFor(() => screen.getByText("Asset detail 360"));
   const chip = screen.getAllByText("Studio > Catalog")[0];
   assert.ok(chip);
   fireEvent.click(chip);

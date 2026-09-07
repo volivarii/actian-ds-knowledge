@@ -15,6 +15,7 @@
     "pregen:safe-paths": "test -d ../node_modules/marked || npm --prefix .. install --no-audit --no-fund",
     "gen:safe-paths": "tsx scripts/gen-wysiwyg-safe-paths.ts",
     "gen:search-bodies": "tsx scripts/gen-search-bodies.ts",
+    "typecheck": "tsc --noEmit",
     "pretest": "test -d ../node_modules/yaml || npm --prefix .. install --no-audit --no-fund && npm run gen:search-bodies",
     "test": "node --test --test-timeout=60000 --import tsx tests/**/*.test.ts tests/**/*.test.tsx"
   },
