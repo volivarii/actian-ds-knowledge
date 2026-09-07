@@ -6,10 +6,11 @@ Sources last changed **2026-09-07**. Values are derived from the tree this ran a
 
 | Measure | Value | Since last change |
 | --- | --- | --- |
-| Unexplained variant collapses | 42 | flat (was 42) |
+| Unexplained variant collapses | 41 | improving (was 42) |
+| ...of those, ones the capture proves are a different shape | 20 | no baseline yet |
 | FM variant values that render alike (unexplained) | 55 | flat (was 55) |
 | FM modifier classes with no rule | 56 | flat (was 56) |
-| Inline-style hex (cannot re-theme) | 47 | definition changed 2026-09-07, not comparable |
+| Inline-style hex (cannot re-theme) | 47 | flat (was 47) |
 | Verified declarations (oracle numerator) | 87 | flat (was 87) |
 | Examined declarations (oracle denominator) | 447 | flat (was 447) |
 

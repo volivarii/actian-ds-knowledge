@@ -152,7 +152,8 @@
       "group": "Action",
       "props": [
         {
-          "name": "Label"
+          "name": "Label",
+          "default": "Button"
         },
         {
           "name": "Leading icon show"
@@ -176,9 +177,7 @@
             "Ghost",
             "Icon-only"
           ],
-          "rendersAs": {
-            "Icon-only": "Filled"
-          }
+          "rendersAs": {}
         },
         "Size": {
           "values": [
