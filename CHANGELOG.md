@@ -297,7 +297,9 @@ no entry defers its link to a placeholder.
 
 ### Changed
 
-- **The burndown could not report a direction for the one measure that doubled**.
+- **The burndown could not report a direction for the one measure that doubled, and the measure it
+  finally reported was wrong**
+  ([#690](https://github.com/volivarii/actian-ds-knowledge/pull/690)).
   `inlineHex` was hard-coded to `null` in `previousValues`, on the reasoning that inline hex "needs
   every fragment at a historical revision rather than one file". That is true if the figure is
   recomputed from history and unnecessary either way: the derive commits its own value into
