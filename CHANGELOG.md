@@ -26,7 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Added
 
-- **The fidelity oracle now reads SHAPE, not only colour**.
+- **The fidelity oracle now reads SHAPE, not only colour**
+  ([#693](https://github.com/volivarii/actian-ds-knowledge/pull/693)).
   Every gate in the render tier checked colour: the oracle examines 447 declarations and all 447 are
   colours, because `readAppearance()` walks the capture's `appearance` object and stops. The capture
   measures more. Across the 609 nodes of the sixty components that render it holds **173 gap
