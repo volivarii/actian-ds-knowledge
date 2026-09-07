@@ -42,6 +42,50 @@ test("vocabulary: every edge type used in the derived graph is declared", functi
   });
 });
 
+// The edge-type list is written TWICE by hand: once in graph/vocabulary.json and
+// once as an enum in schemas/graph.json. Nothing compared them, and on 2026-09-07
+// the shown_in edge was added to the vocabulary and not the schema. Every local
+// gate stayed green, because `npm test` does not schema-validate the graph; CI
+// does, and both required checks went red on 39 identical
+// "/edges/N/type must be equal to one of the allowed values" lines.
+//
+// This is the repo's most-repeated failure in miniature, one fact restated in two
+// places with nothing joining them. Deleting one copy is the better fix and is
+// not available here: the vocabulary carries endpoint constraints the JSON Schema
+// enum cannot express, and the enum is what validate-graph enforces. So the two
+// stay, and this asserts they agree.
+test("vocabulary edgeTypes and the graph schema's enum are the same set", function () {
+  var schema = JSON.parse(
+    fs.readFileSync(path.join(ROOT, "schemas", "graph.json"), "utf8"),
+  );
+  // Find the edge `type` enum wherever it sits, rather than pinning a path that
+  // a schema reshuffle would silently break into "found nothing, all clear".
+  var found = null;
+  (function walk(node) {
+    if (found || !node || typeof node !== "object") return;
+    if (Array.isArray(node.enum) && node.enum.indexOf("uses_component") !== -1) {
+      found = node.enum;
+      return;
+    }
+    Object.keys(node).forEach(function (k) {
+      walk(node[k]);
+    });
+  })(schema);
+  assert.ok(
+    found,
+    "no edge-type enum found in schemas/graph.json, so this comparison had no " +
+      "subject. The schema was reshaped; re-point this before trusting it.",
+  );
+
+  assert.deepEqual(
+    found.slice().sort(),
+    Object.keys(vocab.edgeTypes).sort(),
+    "graph/vocabulary.json and schemas/graph.json disagree about which edge " +
+      "types exist. Adding an edge type means adding it to BOTH; the schema is " +
+      "what validate:graph enforces and it is not run by `npm test`.",
+  );
+});
+
 test("vocabulary: every edge type references known node types", function () {
   Object.keys(vocab.edgeTypes).forEach(function (et) {
     var spec = vocab.edgeTypes[et];

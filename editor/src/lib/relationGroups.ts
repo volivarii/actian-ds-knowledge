@@ -2,11 +2,18 @@
 // so the relations rail speaks author vocabulary, never the internal edge keys
 // (composed_of, uses_component, in_category, a11y_ref).
 //
-// The vocabulary is four reciprocal pairs from `nomenclature.ts` — eight words
-// in total — so one relationship reads correctly from either end. It replaced
-// 24 one-off phrases, one per side of each edge, which is how the same
-// relationship read as "Built from these components" on one screen and
-// "Used in patterns" on another.
+// The vocabulary is five reciprocal pairs from `nomenclature.ts` so one
+// relationship reads correctly from either end. It replaced 24 one-off phrases,
+// one per side of each edge, which is how the same relationship read as
+// "Built from these components" on one screen and "Used in patterns" on another.
+//
+// The fifth pair, Shown in / Shows, arrived with the entity -> pattern edge. It
+// is an addition to a deliberately small vocabulary and was not made lightly:
+// each of the other four says something FALSE about it. A Dataset is not built
+// from a faceted browse, nor part of one, and association is symmetric so it
+// would discard the direction, which is the whole of what the edge says. The
+// rule this file actually enforces is that nothing returns a word the
+// nomenclature does not declare, and that is intact.
 import { LINK_LABEL, linkLabel } from "./nomenclature";
 import type { Neighbor } from "../substrate/graphIndex";
 
@@ -41,10 +48,15 @@ export interface RelationGroup {
 const GROUP_ORDER: readonly string[] = [
   LINK_LABEL.composition.out, // Built from
   LINK_LABEL.membership.out, // Part of
+  // A domain record's "Shown in" is close to what it is made of, in that both
+  // answer what an author opened it to change, so it ranks above compliance and
+  // association rather than after the incoming groups.
+  LINK_LABEL.appearance.out, // Shown in
   LINK_LABEL.compliance.out, // Must follow
   LINK_LABEL.association.out, // Related to
   LINK_LABEL.composition.in, // Used in
   LINK_LABEL.membership.in, // Contains
+  LINK_LABEL.appearance.in, // Shows
   LINK_LABEL.compliance.in, // Required by
 ];
 

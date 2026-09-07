@@ -34,6 +34,114 @@ test("the real derived dist has ZERO integrity errors (post-fix)", () => {
   );
 });
 
+// The entity -> pattern join, which is how the domain model reaches the design
+// system at all. Before it existed, all 30 app_entity nodes touched only each
+// other and their apps, so nothing in the substrate said which components draw
+// a Dataset. Both halves of the rule are asserted because the second one is the
+// half a reviewer cannot eyeball: a pattern can exist and still run in a
+// different app than the entity, which is an edge no screen can realise.
+test("entities.patterns must exist and share an app with the entity", () => {
+  const base = {
+    apps: { studio: {}, administration: {} },
+    entities: {},
+    patterns: {
+      "studio-only": { apps: ["studio"] },
+    },
+    terminology: {},
+  };
+
+  const dangling = JSON.parse(JSON.stringify(base));
+  dangling.entities.thing = {
+    relationships: {},
+    apps: ["studio"],
+    patterns: ["ghost-pattern"],
+  };
+  assert.ok(
+    validateAppContext(dangling).errors.some((e) =>
+      e.includes("ghost-pattern"),
+    ),
+    "a patterns[] entry naming no pattern must be reported",
+  );
+
+  const wrongApp = JSON.parse(JSON.stringify(base));
+  wrongApp.entities.thing = {
+    relationships: {},
+    apps: ["administration"],
+    patterns: ["studio-only"],
+  };
+  assert.ok(
+    validateAppContext(wrongApp).errors.some((e) =>
+      e.includes("shares no app"),
+    ),
+    "an administration entity joined to a studio-only pattern must be reported",
+  );
+
+  // The negative control. Without it both assertions above would still pass on
+  // a validator that reported every join, and the real data below would be the
+  // only thing standing between that and a green suite.
+  const ok = JSON.parse(JSON.stringify(base));
+  ok.entities.thing = {
+    relationships: {},
+    apps: ["studio", "administration"],
+    patterns: ["studio-only"],
+  };
+  assert.deepEqual(
+    validateAppContext(ok).errors,
+    [],
+    "an entity sharing one app with its pattern must NOT be reported",
+  );
+});
+
+// Non-vacuity for the join, and it is deliberately about REACH rather than a
+// count of edges: the point of the join is that a consumer can get from a domain
+// entity to the components that draw it, and that traversal runs
+// entities.patterns -> patterns.components. An edge count can stay healthy while
+// every entity points at patterns that carry no components.
+//
+// 🪤 The first version of this asserted that EVERY entity reaches a component,
+// and that was a gate which manufactured the defect it was meant to prevent. The
+// schema says patterns[] is optional and absent when no pattern shows the entity,
+// so "every entity" is unsatisfiable without inventing an edge for the entities
+// no pattern shows. It did exactly that: under it, seven entities that are not
+// catalog objects (contact, metadata, an input-port) were joined to
+// asset-detail-360, whose own `when` clause reads "Use for one catalog object".
+// A reviewer caught it; the gate had been green throughout. So the assertion is
+// now conditional on an entity HAVING a join, which is the thing actually worth
+// protecting, plus a floor so the file cannot pass while the join is empty.
+test("an entity that names patterns reaches a component through them", () => {
+  const dist = deriveToObject(
+    path.resolve(__dirname, "..", "app-context", "src"),
+  );
+  const entities = dist.entities || {};
+  const patterns = dist.patterns || {};
+  assert.ok(
+    Object.keys(entities).length > 0,
+    "no entities derived, so this proves nothing",
+  );
+
+  const joined = Object.keys(entities).filter(
+    (slug) => (entities[slug].patterns || []).length > 0,
+  );
+  assert.ok(
+    joined.length > 0,
+    "no entity names a single pattern, so the domain model reaches no part of " +
+      "the design system and the traversal below has no subject",
+  );
+
+  const stranded = joined.filter(
+    (slug) =>
+      !(entities[slug].patterns || []).some(
+        (p) => ((patterns[p] || {}).components || []).length > 0,
+      ),
+  );
+  assert.deepEqual(
+    stranded,
+    [],
+    "these entities name patterns but reach no component through any of them, " +
+      "so their join buys nothing: " + JSON.stringify(stranded),
+  );
+});
+
 test("useCases.patterns must exist and be scoped to the app", () => {
   // `explorer` is declared so the pre-existing pattern.apps integrity check
   // doesn't fire on p-explorer; this isolates the useCases checks under test.

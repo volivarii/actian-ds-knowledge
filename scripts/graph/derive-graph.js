@@ -503,6 +503,61 @@ function collectPatternComponents(g, ac) {
     );
   }
 }
+// Entity -> pattern bridge: authored `patterns` on a domain entity become
+// directed shown_in edges (app_entity -> ux_pattern).
+//
+// WHY THIS EDGE AND NOT entity -> component. Before this, the 30 app_entity
+// nodes touched only each other (entity_related) and their apps (in_app), so
+// the domain model was an island: nothing in the graph said which part of the
+// design system draws a Dataset. The obvious repair, authoring a components[]
+// on each entity, would have restated what ux_pattern.components already owns,
+// and the two copies would drift the moment a pattern gained or lost a
+// component. That is the failure this repo keeps paying for. So the authored
+// edge stops at the pattern, and entity -> component is a TRAVERSAL
+// (shown_in then uses_component) rather than a second authored list.
+//
+// Unresolved references fail the derive rather than warning, for the same
+// reason collectPatternComponents does: a dropped edge is silent, and the
+// entity simply appears in one fewer place than its file says.
+function collectEntityPatterns(g, ac) {
+  var entities = (ac && ac.entities) || {};
+  var unresolved = [];
+  Object.keys(entities).forEach(function (slug) {
+    var pats = (entities[slug] && entities[slug].patterns) || [];
+    if (!Array.isArray(pats) || pats.length === 0) return;
+    var sourceId = M.nodeId("app_entity", slug);
+    if (!g.hasNode(sourceId)) return;
+    pats.forEach(function (patternSlug) {
+      if (!patternSlug) return;
+      var targetId = M.nodeId("ux_pattern", patternSlug);
+      if (!g.hasNode(targetId)) {
+        unresolved.push(slug + " -> " + patternSlug);
+        return;
+      }
+      g.addEdge({
+        source: sourceId,
+        target: targetId,
+        type: "shown_in",
+        confidence: "asserted",
+        provenance: {
+          source_file: APP_CONTEXT_SOURCE,
+          deriver: "derive-graph.js",
+          method: "entities.patterns",
+        },
+      });
+    });
+  });
+  if (unresolved.length > 0) {
+    throw new Error(
+      "derive-graph: " +
+        unresolved.length +
+        " app-context entities[].patterns reference(s) do not match a UX pattern," +
+        " so their shown_in edges would be dropped silently:\n  " +
+        unresolved.join("\n  ") +
+        "\nCheck each slug against app-context/src/patterns/, or remove it.",
+    );
+  }
+}
 function readContentEntries() {
   var dir = path.join(ROOT, "content", "src");
   if (!fs.existsSync(dir)) return [];
@@ -628,6 +683,7 @@ function derive() {
     var acData = readJSON("app-context/dist/app-context.json");
     collectAppContext(g, acData);
     collectPatternComponents(g, acData);
+    collectEntityPatterns(g, acData);
   }
   var out = g.build();
   var outPath = path.join(ROOT, "graph", "dist", "graph.json");
