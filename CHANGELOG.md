@@ -26,6 +26,44 @@ no entry defers its link to a placeholder.
 
 ### Added
 
+- **`npm run fidelity`: the per-component fidelity view, and the repair it implies**.
+  The reports answer "how much of what we draw does the capture agree with", which is the right
+  question for a trend and the wrong one for a person about to fix something. That person needs one
+  component's facts in one place, and today gets them by opening Figma, opening a render, and
+  carrying five numbers into a 145,000-character stylesheet by hand.
+
+  `npm run fidelity` ranks the worklist by disagreements, carrying pattern reach as its **own column**
+  rather than folding the two into a score: a composite would bury the caveat that `global-header` and
+  `side-nav` are on every generated screen regardless of how many patterns name them.
+  `npm run fidelity -- <slug>` puts the capture, both reports, the nested-part join and the **proposed
+  replacement declaration** in one place. `-- <slug> --write` applies them.
+
+  It **prints the rule's own comment beside each proposal**, which is the part that keeps it honest:
+  `page-header` proposes `padding: 0`, and the comment two lines above the declaration explains that
+  the Figma component ships padding 0 while the render carries the inset deliberately. A tool that hid
+  that would make the wrong repair the easy one. `--write` is per slug and never corpus-wide for the
+  same reason: copying the capture repairs only one of the three things a disagreement can mean.
+
+  A repair binds the token the capture names when that token resolves to the captured number, and
+  states the number when Figma left it unbound (63 of the 91 findings). Every edit re-reads the value
+  at its recorded offsets and refuses the whole apply unless it is still the text the proposal was
+  computed from, then reads the file back and asserts its own edits are in it. A patch that lands on
+  shifted offsets writes plausible nonsense and reports success; a patch whose anchor has moved writes
+  nothing and reports the same.
+
+  It also reports when a repair leaves the comment beside it stating the old number. `ds-base.css`
+  annotates values inline (`gap: var(--zen-spacing-2xs); /* 4 */`), so rewriting the value alone
+  leaves a comment saying 4 next to a declaration that resolves to 8. A comment contradicting the code
+  it annotates is the exact defect this lane keeps finding, and a tool that created one silently would
+  be manufacturing the thing it exists to catch. Reported rather than rewritten: the number in a
+  comment is sometimes the number and sometimes part of a sentence.
+
+  Two bugs found while building it, both the same one: a comment ABOVE a rule hid the rule from an
+  exact-selector match, and a comment INSIDE a rule body containing a colon (`page-header`'s "0
+  bottom: top gap from the app header") swallowed the declaration after it, so the repair reported
+  "the rule states neither the side nor the shorthand" about a rule that states the shorthand plainly.
+  Both are fixed by masking comments to spaces of equal length, which keeps every byte offset valid.
+
 - **The fidelity oracle now reads SHAPE, not only colour**
   ([#693](https://github.com/volivarii/actian-ds-knowledge/pull/693)).
   Every gate in the render tier checked colour: the oracle examines 447 declarations and all 447 are

@@ -419,6 +419,12 @@ function classifySlugGeometry(opts) {
         token: c.length.token,
         painted: c.length.px,
         fact: fact,
+        // The token the CAPTURE names for this fact, when it names one. Carried
+        // so a repair can bind the token Figma bound rather than restating its
+        // number, which is what `feedback_tokens` asks for and what keeps the
+        // declaration re-themeable. Null on the 108-of-415 that Figma left
+        // unbound.
+        factToken: factToken || null,
         message:
           slug +
           " " +
