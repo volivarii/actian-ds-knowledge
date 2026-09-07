@@ -30,6 +30,14 @@ const SLICE1_ARTWORK = {
   "illustration-success": "10932:21076",
   "actian-pyramid": "7764:7688",
   "zeenea-logo": "12770:6651",
+  // The per-app header lockups. `zeenea-logo` above is the MARK on its own
+  // (aspect 0.92); these are the full lockups the global header's 121x32 brand
+  // box is built for (mark + wordmark + app name, aspect ~3). The header drew
+  // `actian-pyramid` into that box, which at aspect 0.43 rendered 13.9px wide
+  // and left 107 of the 121px empty.
+  "zeenea-logo-studio": "7805:6391",
+  "zeenea-logo-admin": "14057:5662",
+  "zeenea-logo-explorer": "14057:5124",
   "actian-data-observability": "7764:7671",
   "loader-logo-adi": "7764:7616",
   "loader-logo-studio": "7973:4948",

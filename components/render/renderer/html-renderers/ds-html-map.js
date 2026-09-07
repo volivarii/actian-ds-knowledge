@@ -1533,15 +1533,42 @@
             props.Search !== "false" &&
             props.Search !== 0;
 
-          // Left brand block: logo mark + app name label.
+          // Left brand block. Figma draws ONE thing here: a per-app lockup
+          // (mark + "zeenea" + the app name) filling a 121x32 box, and there is
+          // no separate app-name label beside it. This drew `actian-pyramid`,
+          // the tall Actian mark, whose 140x323 viewBox at height 32 is 13.9px
+          // wide: 107 of the 121px was empty, and the app name was then
+          // repeated as text ~115px to its right.
+          //
+          // The three lockups are captured artwork
+          // (components/src/graphics-svg.json, exported from the same nodes the
+          // header's own anatomy names), so the app name comes from the drawing
+          // rather than from a string this renderer composes.
+          var APP_LOGOS = {
+            Studio: "zeenea-logo-studio",
+            Admin: "zeenea-logo-admin",
+            Explorer: "zeenea-logo-explorer",
+          };
+          // An app the capture has no lockup for keeps the mark AND the text
+          // label: dropping the label there would leave the header unnamed,
+          // which is worse than the duplication this removes for the three
+          // apps that do have one.
+          //
+          // 🔑 That choice is made on whether the APP is known, never on whether
+          // renderGraphic returned anything. renderGraphic yields "" when the
+          // artwork map is absent, so keying the label on its output would make
+          // the header grow a text node in any checkout without the graphics
+          // dist. sparse-render-ratchet asserts precisely that no asset map can
+          // add or remove a text-bearing element, and it caught this.
+          var appType = v["App type"] || "Studio";
+          var logoSlug = props.Logo || APP_LOGOS[appType];
+          var hasLockup = Boolean(logoSlug);
           var brandBlock =
             '<div class="ds-header__brand">' +
             '<span class="ds-header__logo" aria-hidden="true">' +
-            renderGraphic(props.Logo || "actian-pyramid") +
+            renderGraphic(hasLockup ? logoSlug : "actian-pyramid") +
             "</span>" +
-            '<span class="ds-header__app">' +
-            headerApp +
-            "</span>" +
+            (hasLockup ? "" : '<span class="ds-header__app">' + headerApp + "</span>") +
             "</div>";
 
           // Context dropdown: micro label (Catalog) + value in --zen-color-primary-500.

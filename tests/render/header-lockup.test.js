@@ -1,0 +1,155 @@
+"use strict";
+
+// The global header's brand box, and the general defect it was an instance of.
+//
+// `.ds-header__logo` reserves a 121x32 box and sizes its child `height:100%;
+// width:auto`, so the drawn width is set entirely by the artwork's viewBox
+// aspect. The renderer put `actian-pyramid` in it: a 140x323 mark, aspect 0.43,
+// which at height 32 draws 13.9px. 107 of the 121px was empty, measured in a
+// browser, and the app name was then repeated as text ~115px to its right.
+// Figma draws one per-app lockup filling that box and no separate label.
+//
+// The aspect assertion is the point. "Is the right slug referenced" would pass
+// the day someone swaps in another tall graphic; a box whose child cannot fill
+// it is the defect, and it is invisible in markup.
+
+var test = require("node:test");
+var assert = require("node:assert/strict");
+var fs = require("node:fs");
+var path = require("node:path");
+
+var ROOT = path.resolve(__dirname, "..", "..");
+var dsMap = require(
+  path.join(ROOT, "components/render/renderer/html-renderers/ds-html-map.js"),
+);
+var GRAPHICS_JSON = JSON.parse(
+  fs.readFileSync(path.join(ROOT, "components/dist/graphics/graphics.json"), "utf8"),
+);
+var GRAPHICS = GRAPHICS_JSON.graphics || GRAPHICS_JSON;
+var BASE_CSS = fs.readFileSync(
+  path.join(ROOT, "components/render/renderer/ds-base.css"),
+  "utf8",
+);
+
+function setup() {
+  dsMap.setIcons(
+    require(path.join(ROOT, "components/dist/icons/icons.json")).icons || {},
+  );
+  dsMap.setGraphics(GRAPHICS);
+}
+
+function header(app) {
+  setup();
+  return dsMap.renderDSComponent({
+    dsSlug: "global-header",
+    variant: "App type=" + app + ", Breakpoints=XL",
+    props: {},
+  });
+}
+
+function brandBlock(html) {
+  var m = /<div class="ds-header__brand">[\s\S]*?<\/div>/.exec(html);
+  assert.ok(m, "no brand block in the rendered header");
+  return m[0];
+}
+
+function aspectOf(viewBox) {
+  var p = String(viewBox).trim().split(/\s+/).map(Number);
+  assert.equal(p.length, 4, "viewBox is not four numbers: " + viewBox);
+  assert.ok(p[3] > 0, "viewBox has no height: " + viewBox);
+  return p[2] / p[3];
+}
+
+/** The reserved box, read from the CSS rather than written down here. */
+function brandBoxAspect() {
+  var rule = /\.ds-header__logo\s*\{([^}]*)\}/.exec(BASE_CSS);
+  assert.ok(rule, "base.css has no .ds-header__logo rule");
+  var w = /width:\s*(\d+)px/.exec(rule[1]);
+  var h = /height:\s*(\d+)px/.exec(rule[1]);
+  assert.ok(w && h, "the brand box no longer states a px width and height");
+  return { w: +w[1], h: +h[1], aspect: +w[1] / +h[1] };
+}
+
+test("every app the capture has a lockup for renders that lockup", function () {
+  var expected = {
+    Studio: "0 0 98 32",
+    Admin: "0 0 90 32",
+    Explorer: "0 0 89 32",
+  };
+  for (const app of Object.keys(expected)) {
+    const b = brandBlock(header(app));
+    const vb = (/viewBox="([^"]+)"/.exec(b) || [])[1];
+    assert.equal(
+      vb,
+      expected[app],
+      app + " draws viewBox " + vb + ", not its own captured lockup",
+    );
+  }
+  // The three must differ from each other. One shared mark for three apps is
+  // the state this replaces, and identical output would satisfy the loop above
+  // if the map ever collapsed to a single slug.
+  const seen = Object.keys(expected).map(function (a) {
+    return brandBlock(header(a));
+  });
+  assert.equal(new Set(seen).size, 3, "two apps render the same brand block");
+});
+
+test("the drawn logo fills the box the CSS reserves, rather than a sliver of it", function () {
+  const box = brandBoxAspect();
+  for (const app of ["Studio", "Admin", "Explorer"]) {
+    const vb = (/viewBox="([^"]+)"/.exec(brandBlock(header(app))) || [])[1];
+    const drawn = box.h * aspectOf(vb); // height:100%, width:auto
+    assert.ok(
+      drawn >= box.w * 0.6,
+      app +
+        " draws " +
+        drawn.toFixed(1) +
+        "px into a " +
+        box.w +
+        "px box, so most of the brand area is empty",
+    );
+    assert.ok(
+      drawn <= box.w + 1,
+      app + " draws " + drawn.toFixed(1) + "px, overflowing the " + box.w + "px box",
+    );
+  }
+});
+
+test("the app name is not printed twice", function () {
+  // The lockup already contains the app name as artwork. A text label beside it
+  // said "Studio" a second time, ~115px from the mark, which is what made the
+  // sliver read as a gap rather than as a broken logo.
+  for (const app of ["Studio", "Admin", "Explorer"]) {
+    assert.ok(
+      !/ds-header__app/.test(brandBlock(header(app))),
+      app + " renders a text app label beside a lockup that already names it",
+    );
+  }
+});
+
+test("an app with no captured lockup keeps a mark AND its name", function () {
+  // The fallback has to stay: dropping the label for an unknown app would leave
+  // the header unnamed, which is worse than the duplication removed above.
+  const b = brandBlock(header("SomeFutureApp"));
+  assert.ok(/<svg/.test(b), "no mark at all for an app with no lockup");
+  assert.ok(
+    /ds-header__app/.test(b),
+    "an app with no lockup lost its name as well as its logo",
+  );
+});
+
+test("the lockups are real artwork, not an empty graphic entry", function () {
+  // renderGraphic returns "" for a slug with no viewBox or no body, and an
+  // empty brand box is exactly the shape of the original bug. Assert the
+  // source, so a graphics regression fails here and not silently on screen.
+  for (const slug of [
+    "zeenea-logo-studio",
+    "zeenea-logo-admin",
+    "zeenea-logo-explorer",
+  ]) {
+    const g = GRAPHICS[slug];
+    assert.ok(g, slug + " is missing from the graphics tier");
+    assert.ok(g.viewBox, slug + " has no viewBox");
+    assert.ok(g.body && g.body.length > 200, slug + " has an empty or stub body");
+  }
+});
