@@ -26,7 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Added
 
-- **`npm run fidelity`: the per-component fidelity view, and the repair it implies**.
+- **`npm run fidelity`: the per-component fidelity view, and the repair it implies**
+  ([#694](https://github.com/volivarii/actian-ds-knowledge/pull/694)).
   The reports answer "how much of what we draw does the capture agree with", which is the right
   question for a trend and the wrong one for a person about to fix something. That person needs one
   component's facts in one place, and today gets them by opening Figma, opening a render, and
