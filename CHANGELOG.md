@@ -297,6 +297,47 @@ no entry defers its link to a placeholder.
 
 ### Changed
 
+- **The Patterns screen is a catalogue again; the metrics it opened with moved to Substrate health**.
+  A page called Patterns led with four Meter groups measuring Patterns, Entities, Products and Terms,
+  so three of its four opening subjects were not patterns. Measured on the deployed page: 24 numbers
+  between the heading and the first pattern name, 446px of preamble, and 8 of the 17 Meters complete
+  and therefore carrying no information. Below that the catalogue itself was app-first, a block per
+  product with a table per use case plus a table for what the product claimed and no use case named:
+  31 patterns drawn as 47 rows across 7 tables under one repeated five-column header, because a
+  pattern claiming two products was drawn under both. It is one table of 31 now, product is a filter,
+  and the preamble is 183px with 9 numbers in it, all of them a control's own label. Eight headings
+  became one.
+
+  **Nothing measured was dropped, it was relocated.** The four Meter groups and the three integrity
+  callouts now render on `#/health`, the screen already named and shaped for whole-substrate
+  diagnostics. Two facts the app blocks carried needed finding a home rather than a move: a use case
+  naming a pattern that does not exist was rendered per use case and had no index-level equivalent,
+  so it is now gathered across apps into a fourth callout (`AppUseCase.missingPatterns` had gone on
+  being produced with nothing reading it); and the per-app "no sidebar recorded" badge is the
+  Navigation Product Meter, which already measured it. One number was genuinely retired: the count of
+  distinct capture FILES. The Capture Meter counts patterns with a capture, which is the question a
+  reader asks, and no surface states a file count now.
+
+  **A second derivation was closed rather than created.** The catalogue offers "Missing a when clause
+  (N)", and the Rule Meter on the other screen measures the same fact, so `hasWhenClause` is exported
+  once from `slots.ts` and both read it. A test drives the catalogue with a fixture whose figure
+  differs from the real corpus, so a recount or a literal produces the corpus number and fails.
+
+  **Two defects found by looking rather than by the suite.** The pattern name was a Radix `Text`, a
+  span, carrying only an `onClick`: every pattern name on the screen whose whole job is to be the way
+  into a pattern was reachable by mouse alone. It has the role, tab stop and key handler the capture
+  chip beside it already had. Fixing that surfaced the larger one: the app promotes spans and divs to
+  buttons with `role="button"` in nine places across five components, Radix's reset drops the UA
+  focus ring, and the only `:focus-visible` rule in the app was the skip link's, so all nine were
+  keyboard-reachable and invisible once reached. One rule in `base.css` keyed on the role covers
+  them, and a guard asserts the join in both directions: the rule must draw an outline rather than
+  remove one, and a site must still exist for it to reach.
+
+  Also on `#/health`: two of the six connectivity tiles printed the quality report's own identifiers,
+  `composition_edges` and `pattern_component_edges`, and the caption above them now says why the
+  268-orphan tile and the 29-row orphan table below it differ.
+  Editor-only: no dist, no schema, no consumer.
+
 - **The Coverage screen states one number for one thing, and offers the verb for the finding it
   states** ([#659](https://github.com/volivarii/actian-ds-knowledge/pull/659)). It opened with "85 components" while the sidebar two inches away said 54,
   because the 85 counted registry components nobody has started. The sentence is now derived by a

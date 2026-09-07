@@ -2,8 +2,10 @@
 //
 // A component test proves the component works, never that anything renders it.
 // So this file does both: it asserts MeterList's rendering contract, and then
-// mounts the real PatternsDashboard against the real corpus to prove a screen
-// actually calls it. Shipping into a surface that does not render happened
+// mounts the real GraphHealthTab against the real corpus to prove a screen
+// actually calls it. The meters moved there from the patterns dashboard, so
+// this file follows them: mounting the component they left behind would prove
+// the opposite of what the file is for. Shipping into a surface that does not render happened
 // twice in one day on this codebase.
 import "../setup-happy-dom";
 import test, { afterEach } from "node:test";
@@ -16,6 +18,7 @@ import { join, dirname } from "node:path";
 import { Theme } from "@radix-ui/themes";
 import { MeterList } from "../../src/app/MeterList";
 import { PatternsDashboard } from "../../src/app/PatternsDashboard";
+import { GraphHealthTab } from "../../src/app/GraphHealthTab";
 import type { Meter } from "../../src/lib/measure";
 import { b64 } from "../helpers/fakeOctokit";
 import { buildPatternIndex, type AppContextDoc, type RecipeDoc } from "../../src/lib/patternIndex";
@@ -227,11 +230,12 @@ function fakeGhServingRealAppContext() {
   } as any;
 }
 
-test("the patterns dashboard renders the meters from the real corpus", async () => {
-  // Not a MeterList test: this proves something RENDERS one. A passing
-  // component test says nothing about whether any screen calls it.
+test("the health screen renders the meters from the real corpus", async () => {
+  // Not a MeterList test, and not an AppContextMeters test either: this proves
+  // a SCREEN renders one. A passing component test says nothing about whether
+  // anything calls it, which is why this mounts the screen at `#/health`.
   const { container } = mount(
-    <PatternsDashboard
+    <GraphHealthTab
       octokit={fakeGhServingRealAppContext()}
       onOpenFile={() => {}}
     />,
@@ -290,23 +294,18 @@ test("the patterns dashboard renders the meters from the real corpus", async () 
     1,
     "the measurement date must appear exactly once for the row",
   );
-  // The prose figures, also derived rather than pinned.
-  const rule = expected.pattern.find((x) => x.key === "rule")!;
-  const job = expected.pattern.find((x) => x.key === "job")!;
-  const capture = expected.pattern.find((x) => x.key === "capture")!;
+  // Rule 1, scoped to the Meter rows. Not to the whole screen: `#/health` has
+  // carried a Coverage-by-kind badge strip in percent since before the meters
+  // arrived, so a screen-wide assertion would fail on a rule the meters do not
+  // own and cannot fix.
+  const meterText = [...container.querySelectorAll(".meter-row")]
+    .map((r) => r.textContent ?? "")
+    .join(" ");
+  assert.ok(meterText.length > 0, "no meter rows to check for percentages");
   assert.ok(
-    text.includes(`${rule.total - rule.filled} with no when clause`),
-    `prose noWhen wrong in: ${text.slice(0, 600)}`,
+    !/\d+\s*%/.test(meterText),
+    `a bare percentage reached a Meter row: ${meterText}`,
   );
-  assert.ok(
-    text.includes(`naming ${job.filled} of them`),
-    "prose namedByAUseCase wrong",
-  );
-  assert.ok(
-    text.includes(`on ${capture.filled} patterns`),
-    "prose withCapture wrong",
-  );
-  assert.ok(!/\d+\s*%/.test(text), `a bare percentage reached the dashboard: ${text}`);
 });
 
 test("an unreadable captures directory hides the Meter, it does not blank the app", async () => {
@@ -347,14 +346,14 @@ test("an unreadable captures directory hides the Meter, it does not blank the ap
   } as any;
 
   const { container } = mount(
-    <PatternsDashboard octokit={gh} onOpenFile={() => {}} />,
+    <GraphHealthTab octokit={gh} onOpenFile={() => {}} />,
   );
   await waitFor(() => {
     assert.ok(container.querySelector('[data-meter="pattern:rule"]'));
   });
   const text = container.textContent ?? "";
   // The app is still there...
-  assert.ok(text.length > 200, "the dashboard rendered empty");
+  assert.ok(text.length > 200, "the health screen rendered empty");
   assert.ok(container.querySelector('[data-meter="pattern:job"]'));
   // ...the Capture Meter is gone rather than reporting a zero...
   assert.equal(
@@ -363,36 +362,85 @@ test("an unreadable captures directory hides the Meter, it does not blank the ap
   );
   // ...the reader is told why...
   assert.ok(text.includes("not measured"), "nothing said about the missing Meter");
-  // The "?" cell carries its reason as TEXT a screen reader announces. It
-  // used to carry it as `aria-label` on a span, which ARIA prohibits and
-  // assistive technology drops; "Captures" plural is the cell, the note above
-  // the table says "Capture".
-  assert.ok(
-    text.includes("Captures not measured"),
-    "the ? cell has no accessible text",
+  // The rest of what this test used to assert lived on the patterns TABLE: a
+  // "?" cell naming its own reason, and the absence of a dash claiming "no
+  // capture". The catalogue has no Captures column any more, so those moved to
+  // the test below, which mounts the screen that would carry them.
+});
+
+test("an unreadable captures directory makes the CATALOGUE withhold too", async () => {
+  // The screen must not state in a table what it declined to state above it.
+  // The old Captures column drew a dash on all 31 rows when nothing had been
+  // read, which is an authored claim ("this pattern has no capture") standing
+  // in for a measurement that never happened. The column is gone, so the way
+  // that regression returns is a row rendering an empty capture affordance
+  // instead of the page saying, once, that the read failed.
+  const doc = realDoc();
+  const gh = {
+    repos: {
+      getContent: async ({ path }: { path: string }) => {
+        if (path === "app-context/dist/recipes") {
+          const e = new Error("forbidden") as Error & { status: number };
+          e.status = 403;
+          throw e;
+        }
+        if (path === "app-context/dist/app-context.json") {
+          return {
+            data: { encoding: "base64", content: b64(JSON.stringify(doc)), sha: "sha" },
+          };
+        }
+        const e = new Error("not found") as Error & { status: number };
+        e.status = 404;
+        throw e;
+      },
+      listCommits: async () => ({ data: [] }),
+    },
+    git: {},
+    pulls: {},
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+
+  const { container } = mount(
+    <PatternsDashboard octokit={gh} onOpenFile={() => {}} />,
   );
+  await waitFor(() => {
+    assert.ok(container.querySelector("table"));
+  });
+  const text = container.textContent ?? "";
+  // Said once, and said as the reason rather than as a symbol.
+  assert.ok(
+    text.includes("could not be read completely"),
+    `the catalogue did not say the captures were unreadable: ${text.slice(0, 400)}`,
+  );
+  // No cell stands in for the measurement that never happened. `0` is NOT in
+  // this list: the Components column reports a real zero for a pattern that
+  // composes nothing, and counting that as a stand-in made this assertion fail
+  // on a true measurement about a different subject.
+  const standIns = [...container.querySelectorAll("td, th")].filter((c) =>
+    ["\u2014", "-", "?"].includes((c.textContent ?? "").trim()),
+  );
+  assert.equal(
+    standIns.length,
+    0,
+    `${standIns.length} cells claim a capture answer while the captures could not be read`,
+  );
+  // And positively: no capture affordance at all. A chip is the only thing on
+  // a row that asserts a capture, so an empty list of them is the postcondition
+  // this test is actually about.
+  const chips = [...container.querySelectorAll('[role="button"]')].filter(
+    (el) => (el.getAttribute("title") ?? "").length > 0,
+  );
+  assert.equal(
+    chips.length,
+    0,
+    `${chips.length} capture chips rendered from a directory that would not list`,
+  );
+  // And a cell never names itself with `aria-label` on a span: ARIA 1.2
+  // prohibits naming a generic element, so assistive technology drops it.
   assert.equal(
     container.querySelector("td span[aria-label]") === null,
     true,
     "a table cell still names itself with aria-label on a span",
-  );
-  // ...and the prose does not claim zero captures either.
-  assert.ok(
-    !/\b0 captured page recipes\b/.test(text),
-    `prose reported a count for a measurement that never happened: ${text.slice(0, 400)}`,
-  );
-
-  // ...nor does the TABLE. An em-dash in the Captures column reads as an
-  // authored fact — "this pattern has no capture" — for every row, which is
-  // the same claim the Meter and the prose just declined to make. The screen
-  // must not state in a table what it withheld above it.
-  const dashes = [...container.querySelectorAll("td")].filter(
-    (c) => (c.textContent ?? "").trim() === "—",
-  );
-  assert.equal(
-    dashes.length,
-    0,
-    `${dashes.length} rows claim "no capture" while the captures could not be read`,
   );
 });
 
@@ -455,15 +503,16 @@ test("a PARTIAL capture read keeps the chips that loaded", async () => {
     <PatternsDashboard octokit={gh} onOpenFile={() => {}} />,
   );
   await waitFor(() => {
-    assert.ok(container.querySelector('[data-meter="pattern:rule"]'));
+    assert.ok(container.querySelector("table"));
   });
   const text = container.textContent ?? "";
-  // The read was incomplete, so the Meter is withheld and the note explains.
-  assert.equal(
-    container.querySelector('[data-meter="pattern:capture"]') === null,
-    true,
+  // The Meter this used to check moved to `#/health` with the rest of them, and
+  // the test above owns it there. What the CATALOGUE still owes a reader is the
+  // reason, said once above the table rather than in a cell on all 31 rows.
+  assert.ok(
+    text.includes("could not be read completely"),
+    `the catalogue did not say the captures were unreadable: ${text.slice(0, 300)}`,
   );
-  assert.ok(text.includes("not measured"));
   // ...but the capture that loaded is still REACHABLE. Asserting on the chip,
   // not on the slug: the pattern's slug appears in the Pattern column whether
   // or not its capture survived, so an earlier version of this assertion passed
@@ -477,58 +526,13 @@ test("a PARTIAL capture read keeps the chips that loaded", async () => {
   );
 });
 
-test("the prose counts DISTINCT captured recipes, not pattern-recipe pairs", async () => {
-  // Every recipe on disk names exactly one pattern, so the corpus cannot tell
-  // a count of recipes from a count of pattern-recipe pairs: both read 4. The
-  // derivation was changed from pairs to distinct recipes and no test could go
-  // red on it (proved by mutation), so this one serves a SYNTHETIC recipe
-  // naming two patterns. Distinct is 1; the pair count would say 2.
-  const doc = realDoc();
-  const named = Object.keys(doc.patterns ?? {}).slice(0, 2);
-  assert.equal(named.length, 2, "need two real patterns to name");
-  const recipe: RecipeDoc = { slug: "two-patterns", patterns: named, apps: [] };
-  const gh = {
-    repos: {
-      getContent: async ({ path }: { path: string }) => {
-        if (path === "app-context/dist/recipes") {
-          return { data: [{ name: "two-patterns.json", type: "file" }] };
-        }
-        if (path === "app-context/dist/recipes/two-patterns.json") {
-          return {
-            data: { encoding: "base64", content: b64(JSON.stringify(recipe)), sha: "sha" },
-          };
-        }
-        if (path === "app-context/dist/app-context.json") {
-          return {
-            data: { encoding: "base64", content: b64(JSON.stringify(doc)), sha: "sha" },
-          };
-        }
-        const e = new Error("not found") as Error & { status: number };
-        e.status = 404;
-        throw e;
-      },
-      listCommits: async () => ({ data: [] }),
-    },
-    git: {},
-    pulls: {},
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any;
-  const { container } = mount(
-    <PatternsDashboard octokit={gh} onOpenFile={() => {}} />,
-  );
-  await waitFor(() => {
-    assert.ok(container.querySelector('[data-meter="pattern:capture"]'));
-  });
-  const text = container.textContent ?? "";
-  assert.ok(
-    /\b1 captured page recipes? on 2 patterns\b/.test(text),
-    `prose should count one recipe on two patterns: ${text.slice(0, 500)}`,
-  );
-  assert.ok(
-    !/\b2 captured page recipes?\b/.test(text),
-    "the prose counted pattern-recipe pairs, not recipes",
-  );
-});
+// REMOVED: "the prose counts DISTINCT captured recipes, not pattern-recipe
+// pairs". Its subject was the patterns dashboard's summary sentence, which
+// counted distinct recipe FILES. That sentence is gone: the catalogue shows a
+// capture as a chip on the pattern it belongs to, and the Capture Meter on
+// `#/health` counts PATTERNS with a capture, which is the question a reader
+// asks. No surface states a recipe-file count any more, so there is no
+// derivation left for a test to protect.
 
 /** Mounts the real dashboard against an arbitrary in-memory app-context. */
 function PatternsDashboardHarness({ doc }: { doc: AppContextDoc }) {
@@ -558,16 +562,19 @@ function PatternsDashboardHarness({ doc }: { doc: AppContextDoc }) {
   return <PatternsDashboard octokit={gh} onOpenFile={() => {}} />;
 }
 
-test("the dashboard prose is DERIVED from the meters, not counted again", async () => {
+test("the catalogue's when-clause count is the Rule Meter, not a second count", async () => {
   // The dashboard used to count "no when clause", "named by a use case" and
   // "patterns with a capture" itself, beside the Slot tables counting the same
-  // three things.
+  // three things. Two of those three readings are gone with the prose. The one
+  // that survives is the catalogue's filter label, "Missing a when clause (N)",
+  // and it now sits on a DIFFERENT SCREEN from the Rule Meter that measures the
+  // same fact, which is exactly when two derivations drift unnoticed.
   //
   // An earlier version of this test asserted SOURCE SUBSTRINGS of
-  // PatternsDashboard.tsx, which broke on any reformat and never actually
-  // asserted the join. This drives the screen with a fixture whose numbers
-  // differ from the real corpus, so a figure counted a second time — or
-  // hard-coded — produces the real corpus's number and fails here.
+  // PatternsDashboard.tsx, which broke on any reformat and never asserted the
+  // join. This drives the screen with a fixture whose numbers differ from the
+  // real corpus, so a figure counted a second time, or hard-coded, produces the
+  // real corpus's number and fails here.
   const doc: AppContextDoc = {
     apps: {
       studio: {
@@ -607,49 +614,40 @@ test("the dashboard prose is DERIVED from the meters, not counted again", async 
   };
   const index = buildPatternIndex(doc, []);
   const meters = measure(patternSlotRecords(index), PATTERN_SLOTS, "2026-09-03");
-  const m = (key: string) => {
-    const found = meters.find((x) => x.key === key);
-    assert.ok(found, `no meter ${key}`);
-    return found;
-  };
-  // The fixture deliberately differs from the real corpus (17 / 10 / 3).
-  const rule = m("rule");
+  const rule = meters.find((x) => x.key === "rule");
+  assert.ok(rule, "no rule meter");
+  // The fixture deliberately differs from the real corpus.
   assert.equal(rule.total - rule.filled, 2);
-  assert.equal(m("job").filled, 1);
-  assert.equal(m("capture").filled, 0);
 
   const { container } = mount(<PatternsDashboardHarness doc={doc} />);
   await waitFor(() => {
-    assert.ok((container.textContent ?? "").includes("with no when clause"));
+    assert.ok((container.textContent ?? "").includes("Missing a when clause"));
   });
   const text = container.textContent ?? "";
-  assert.ok(text.includes("2 with no when clause"), `prose noWhen wrong in: ${text.slice(0, 500)}`);
-  assert.ok(text.includes("naming 1 of them"), "prose namedByAUseCase wrong");
-  assert.ok(text.includes("on 0 patterns"), "prose withCapture wrong");
-  // ...and the REAL corpus's figures must not appear, which is what a
-  // hard-coded or separately-counted figure would produce. Derived from the
-  // real corpus rather than written as literals, so this stays correct as the
-  // corpus moves.
+  assert.ok(
+    text.includes(`Missing a when clause (${rule.total - rule.filled})`),
+    `the filter label is not the Rule Meter's shortfall: ${text.slice(0, 500)}`,
+  );
+
+  // ...and the REAL corpus's figure must not appear, which is what a hard-coded
+  // or separately-counted figure would produce. Derived from the real corpus
+  // rather than written as a literal, so this stays correct as the corpus moves.
   const realIdx = buildPatternIndex(realDoc(), realRecipes());
   const realMeters = measure(
     patternSlotRecords(realIdx),
     PATTERN_SLOTS,
     "2026-01-01",
   );
-  const realRule = realMeters.find((x) => x.key === "rule")!;
-  const realJob = realMeters.find((x) => x.key === "job")!;
+  const realRule = realMeters.find((x) => x.key === "rule");
+  assert.ok(realRule, "no rule meter for the real corpus");
   assert.notEqual(
     realRule.total - realRule.filled,
     rule.total - rule.filled,
-    "fixture and real corpus agree on noWhen — this test can no longer tell derived from hard-coded",
+    "fixture and real corpus agree on noWhen, so this test can no longer tell derived from hard-coded",
   );
   assert.ok(
-    !text.includes(`${realRule.total - realRule.filled} with no when clause`),
-    "noWhen is not derived",
-  );
-  assert.ok(
-    !text.includes(`naming ${realJob.filled} of them`),
-    "namedByAUseCase is not derived",
+    !text.includes(`Missing a when clause (${realRule.total - realRule.filled})`),
+    "the when-clause count is not derived",
   );
 });
 

@@ -8,6 +8,7 @@
 // re-rooted by the "Explore" row action or search. Asset nodes (icons/logos/
 // illustrations) are excluded via the shared eligibility filter.
 import React, { useMemo, useState } from "react";
+import type { Octokit } from "@octokit/rest";
 import {
   Badge,
   Box,
@@ -36,12 +37,19 @@ import { relationTypeLabel } from "../lib/relationTypes";
 import { linkLabel } from "../lib/nomenclature";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
 import { SCREEN_TITLE } from "../lib/routes";
+import { AppContextMeters } from "./AppContextMeters";
 
 const CONNECTIVITY_LABEL: Record<string, string> = {
   orphan_nodes: "Orphan nodes",
   components_without_category: "Components without a category",
   categories_without_a11y: "Categories with no accessibility rule",
   criteria_unreferenced: "Criteria nothing must follow",
+  // Without these two the tiles printed `composition_edges` and
+  // `pattern_component_edges`: the report's own identifiers, on the one screen
+  // a reader comes to for a plain answer. They are also SIZE rather than
+  // trouble, and the four above are trouble, so the words say which.
+  composition_edges: "Component composition links",
+  pattern_component_edges: "Pattern to component links",
 };
 // Names each coverage metric by the RELATIONSHIP it measures, so this strip,
 // the edge legend and the node legend on the same tab agree. `a11y_ref` used to
@@ -60,10 +68,13 @@ const COVERAGE_LABEL: Record<string, string> = {
 const typeLabel = relationTypeLabel;
 
 export interface GraphHealthTabProps {
+  /** Read-only, for the application-context block: everything else on this
+   *  screen reads module-stable graph data and needs no client. */
+  octokit: Octokit;
   onOpenFile: (path: string) => void;
 }
 
-export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
+export function GraphHealthTab({ octokit, onOpenFile }: GraphHealthTabProps) {
   const subset = useMemo(() => eligibleSubset(), []);
   const index = useMemo(() => eligibleGraphIndex(), []);
   const hubs = useMemo(() => topHubs(subset, index, 10), [subset, index]);
@@ -115,8 +126,9 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
           the two populations from reading as a contradiction (e.g. the
           substrate-wide "Orphan nodes" count vs the eligible "Orphans" table). */}
       <Text size="1" color="gray" as="p" mb="2">
-        Substrate-wide metrics — include visual assets (icons, logos). The hub
-        and orphan tables below show the eligible, asset-excluded view.
+        Substrate-wide metrics, which include visual assets (icons, logos).
+        The hub and orphan tables below show the eligible, asset-excluded view,
+        which is why the orphan tile and the orphan table below it differ.
       </Text>
       <Grid columns={{ initial: "2", sm: "4" }} gap="3" mb="4">
         {connectivity.map((m) => (
@@ -143,6 +155,8 @@ export function GraphHealthTab({ onOpenFile }: GraphHealthTabProps) {
           </Badge>
         ))}
       </Flex>
+
+      <AppContextMeters octokit={octokit} />
 
       <Grid columns={{ initial: "1", md: "2" }} gap="5">
         {/* LEFT: tables (the accessible primary) */}
