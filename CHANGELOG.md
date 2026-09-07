@@ -57,6 +57,12 @@ no entry defers its link to a placeholder.
   patterns that carry no `when`, so their only evidence is the pattern's name and the entity's
   description. Treat the join as authored editorial content, not as capture.
 
+  In the editor, an entity's `patterns` is authored as **Shown in**, and a pattern's relations rail
+  gains the reciprocal **Shows**. That is a fifth family in a deliberately small link vocabulary,
+  added rather than reused because each of the other four says something false about the edge: a
+  Dataset is not built from a faceted browse, nor part of one, and `association` is symmetric so it
+  would discard the direction, which is the whole of what the edge says.
+
 
 - **Four form components render as real controls instead of empty grey boxes**
   ([#678](https://github.com/volivarii/actian-ds-knowledge/pull/678)):
