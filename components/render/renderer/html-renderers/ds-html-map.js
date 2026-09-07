@@ -674,8 +674,8 @@
             } else if (emphasis === "Ghost") {
               btnType = isCritical ? "critical-secondary" : "tertiary";
             } else {
-              // Filled or Icon-only (icon styling comes from props, as the
-              // legacy Icon type did → primary base class).
+              // Filled and Icon-only share the primary/critical base class. What
+              // separates them is STRUCTURE, handled below, not colour.
               btnType = isCritical ? "critical" : "primary";
             }
           } else {
@@ -692,6 +692,39 @@
           var btnCls = "ds-button ds-button--" + btnType;
           if (v.Size === "Small") btnCls += " ds-button--small";
           if (v.State === "Disabled") btnCls += " is-disabled";
+
+          // Emphasis=Icon-only is a STRUCTURAL variant, not a styling nuance,
+          // and the capture says so outright:
+          // components/dist/anatomy/button.json#quality.structuralVariants
+          // records the base as [instance:Leading icon, text:Button,
+          // instance:Trailing icon] and this value as [instance:Icon], one
+          // child. Rendering it through the label path returned markup
+          // byte-identical to Filled, so asking for an icon-only button handed
+          // back a labelled pill and nothing said so. `ds-base.css` already
+          // hard-codes the same 32px round chrome for this control on the
+          // collapse header, from the same capture.
+          //
+          // The glyph is `add`, which is the button's own captured default
+          // leading icon (registry `Leading icon` default instance, and the
+          // slug the label path already uses). Quoting the capture's default
+          // rather than choosing a glyph, because an icon-only button whose
+          // icon we invented would be a different kind of wrong.
+          if (v.Emphasis === "Icon-only") {
+            return (
+              '<button class="' +
+              btnCls +
+              ' ds-button--icon-only"' +
+              (v.State === "Disabled" ? " disabled" : "") +
+              ' aria-label="' +
+              esc(props.Label || "Button") +
+              '">' +
+              '<span class="ds-button__icon">' +
+              renderIcon("add") +
+              "</span>" +
+              "</button>"
+            );
+          }
+
           var lead = props["Leading icon show"]
             ? '<span class="ds-button__icon">' + renderIcon("add") + "</span>"
             : "";

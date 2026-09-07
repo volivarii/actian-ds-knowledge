@@ -378,6 +378,17 @@ var MATRIX_OVERRIDES = {
       props: { Label: "Critical secondary" },
     },
     {
+      // The fourth Emphasis value, and the only one that changes the button's
+      // STRUCTURE rather than its colour: button.json#quality.structuralVariants
+      // records it as one [instance:Icon] child against a base of [Leading icon,
+      // text:Button, Trailing icon]. It was absent from this gallery while the
+      // renderer drew it identically to Filled, so nothing on a human-visible
+      // surface could have shown the collapse.
+      label: "Icon-only",
+      variant: "Emphasis=Icon-only",
+      props: { Label: "Add" },
+    },
+    {
       label: "Disabled",
       variant: "Emphasis=Filled, State=Disabled",
       props: { Label: "Disabled" },

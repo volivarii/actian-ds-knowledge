@@ -297,6 +297,50 @@ no entry defers its link to a placeholder.
 
 ### Changed
 
+- **Asking for an icon-only button returned a labelled pill, and the capture had said so all along**.
+  `Emphasis=Icon-only` fell through to the same branch as `Filled` on the reasoning that "icon
+  styling comes from props". The anatomy capture contradicts that in the same repo:
+  `components/dist/anatomy/button.json#quality.structuralVariants` records the base as
+  `[instance:Leading icon, text:Button, instance:Trailing icon]` and this value as
+  `[instance:Icon]`, one child. The renderer emitted byte-identical markup for the two, so a caller
+  asking for an icon-only button was handed a labelled pill and nothing said so. `button` is named by
+  15 UX patterns, so that reached every generated screen carrying one.
+
+  It now renders one icon in a square box, with the label moved to `aria-label` rather than dropped,
+  and a `.ds-button--icon-only` rule that mirrors the same 32px round chrome `.ds-collapse__toggle`
+  already takes from this component's capture. The glyph is `add`, the button's own captured default
+  leading icon, quoted rather than chosen. It also joins the fragment gallery: the variant was absent
+  from `matrix.js`, so no human-visible surface could have shown the collapse in the first place.
+
+  Unexplained variant collapses fall **42 to 41**, the first movement this burndown has reported on
+  that measure.
+
+- **The capture's structural evidence reaches a gate for the first time**. `captured-variants-render-apart.test.js`
+  joins the collapse census against `appearance.variants`, per-variant colour and border facts. That
+  is one of the two places the capture states a difference and it is the weaker one: the other is
+  `quality.structuralVariants`, which records a different CHILD LIST and quotes both. Nothing read it,
+  and a child list cannot be a theming coincidence the way two colours can.
+
+  Splitting the 42 by what the capture can prove: **21 have structural evidence** (`button` was one),
+  4 have appearance evidence only, and **17 have no evidence of either kind**, where fixing would be
+  guessing rather than rendering. That last number is the useful one for planning: half the census is
+  not addressable from the substrate at all.
+
+  New `scripts/render/lib/structural-evidence.js` derives the join, normalised on both sides because
+  an exact-string match returns nothing for `Size & Type` and reports a clean zero. It is published as
+  a measure, `structuralCollapses` (20 today, after the button fix), with the keys in
+  `detail.structuralCollapseKeys` so the ratchet compares SETS: a count is satisfied by fixing one
+  value and breaking another, which is the regression a burndown would report as unchanged.
+
+  A ratchet rather than a flat assertion, because demanding all 20 at once would block every
+  unrelated change; the same call the FM figures made when their tier was sized in dozens. The
+  comparison is a pure function exercised on fixtures as well as against the merge base, since the
+  live check is necessarily vacuous on the commit that introduces the baseline, and a gate whose only
+  path is vacuous on the day it lands is a gate nobody has watched work.
+
+  Consumers: `quality-trend.json` gains a `structuralCollapses` measure and a
+  `detail.structuralCollapseKeys` array.
+
 - **The burndown could not report a direction for the one measure that doubled, and the measure it
   finally reported was wrong**
   ([#690](https://github.com/volivarii/actian-ds-knowledge/pull/690)).
