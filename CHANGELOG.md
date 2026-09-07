@@ -297,7 +297,8 @@ no entry defers its link to a placeholder.
 
 ### Changed
 
-- **The Patterns screen is a catalogue again; the metrics it opened with moved to Substrate health**.
+- **The Patterns screen is a catalogue again; the metrics it opened with moved to Substrate health**
+  ([#681](https://github.com/volivarii/actian-ds-knowledge/pull/681)).
   A page called Patterns led with four Meter groups measuring Patterns, Entities, Products and Terms,
   so three of its four opening subjects were not patterns. Measured on the deployed page: 24 numbers
   between the heading and the first pattern name, 446px of preamble, and 8 of the 17 Meters complete
