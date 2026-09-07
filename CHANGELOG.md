@@ -26,7 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Added
 
-- **Four form components render as real controls instead of empty grey boxes**:
+- **Four form components render as real controls instead of empty grey boxes**
+  ([#678](https://github.com/volivarii/actian-ds-knowledge/pull/678)):
   `field`, `text-area`, `checkbox-group` and `radio-group`. These four are what a
   request-access, a connection or any other form screen is made of, and none of them had a leaf in
   the canonical renderer, so each one fell through to the captured-geometry path and drew a blank
