@@ -23,8 +23,8 @@
     },
     "inlineHex": {
       "value": 57,
-      "direction": "unknown",
-      "previous": null
+      "direction": "unchanged",
+      "previous": 57
     },
     "oracleVerified": {
       "value": 87,

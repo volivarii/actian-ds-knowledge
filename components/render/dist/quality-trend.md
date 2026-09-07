@@ -9,7 +9,7 @@ Sources last changed **2026-09-07**. Values are derived from the tree this ran a
 | Unexplained variant collapses | 42 | flat (was 42) |
 | FM variant values that render alike (unexplained) | 55 | flat (was 55) |
 | FM modifier classes with no rule | 56 | flat (was 56) |
-| Inline-style hex (cannot re-theme) | 57 | no baseline yet |
+| Inline-style hex (cannot re-theme) | 57 | flat (was 57) |
 | Verified declarations (oracle numerator) | 87 | flat (was 87) |
 | Examined declarations (oracle denominator) | 447 | flat (was 447) |
 
