@@ -297,6 +297,40 @@ no entry defers its link to a placeholder.
 
 ### Changed
 
+- **The global header drew its logo 13.9px wide in a 121px box, and printed the app name twice**
+  ([#692](https://github.com/volivarii/actian-ds-knowledge/pull/692)).
+  `.ds-header__logo` reserves 121x32 and sizes its child `height:100%; width:auto`, so the drawn
+  width is decided entirely by the artwork's aspect. The renderer put `actian-pyramid` in it, a
+  140x323 mark whose aspect is 0.43: at height 32 it drew **13.9px, leaving 107 of the 121px empty**
+  (measured in a browser, not inferred). The app name was then repeated as text about 115px to its
+  right, which is what made the sliver read as a gap rather than as a broken logo. Every generated
+  screen carries this header.
+
+  Figma draws one per-app lockup filling that box and no separate label, and it has **three** of
+  them where the renderer had one generic mark: `Logo Studio Icon`, `Logo Zeenea Corporate Icon` and
+  `Logo Explorer Icon`. All three are now captured artwork in `components/src/graphics-svg.json`
+  (98x32, 90x32, 89x32), exported from the same nodes the header's own anatomy names, and added to
+  the exporter's `SLICE1_ARTWORK` so the nightly Figma export keeps them fresh rather than freezing
+  a hand-added copy. Studio now draws 98px into the 121px box, the same 23px of trailing space
+  Figma's own layout has.
+
+  **The fallback is keyed on the app, never on whether the artwork resolved.** `renderGraphic`
+  returns the empty string when the graphics map is absent, so keying the label on its output made
+  the header grow a text node in any checkout without the graphics dist.
+  `sparse-render-ratchet.test.js` asserts that no asset map can add or remove a text-bearing
+  element, and it caught exactly that in the first version of this fix.
+
+  The new gate gets the general defect rather than this instance: it reads the reserved box out of
+  `ds-base.css` and asserts the drawn width fills it, so any future artwork dropped into a fixed box
+  at the wrong aspect fails here. Naming the right slug would have passed the day someone swapped in
+  another tall graphic, and a box its child cannot fill is invisible in markup.
+
+  **`global-header.App` is gone from the render contract**, as a consequence. It could not select a
+  lockup (`props.Logo` does that) and, once the lockup carries the name, the text label it fed stops
+  rendering for every app that has one: a caller passing `App="Explorer"` got neither the word nor
+  the Explorer mark. A dead prop in a shipped contract is an affordance consumers read and act on.
+  The app is named by the `App type` variant, the way the design file names it.
+
 - **Asking for an icon-only button returned a labelled pill, and the capture had said so all along**
   ([#691](https://github.com/volivarii/actian-ds-knowledge/pull/691)).
   `Emphasis=Icon-only` fell through to the same branch as `Filled` on the reasoning that "icon
