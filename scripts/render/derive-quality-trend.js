@@ -86,6 +86,35 @@ function oracleCoverage() {
   );
 }
 
+// The SHAPE half, carried the same way and for the same reason. `mismatch` is
+// published beside the pair because unlike the colour report, whose mismatch
+// count is zero and blocks the build if it ever is not, this one starts with a
+// real backlog: the check is new, it reports rather than blocks, and the number
+// it reports is the work.
+// 🪤 Same readFileSync-not-require caution as readOracle: this script runs after
+// derive-geometry-fidelity.js has just rewritten the file.
+function geometryFidelity() {
+  const fs = require("node:fs");
+  const t =
+    JSON.parse(
+      fs.readFileSync(
+        path.join(
+          REPO_ROOT,
+          "components",
+          "render",
+          "dist",
+          "geometry-report.json",
+        ),
+        "utf8",
+      ),
+    ).totals || {};
+  return {
+    verified: (t.verified || 0) + (t.verifiedViaTokenName || 0),
+    examined: t.examined || 0,
+    mismatch: t.mismatch || 0,
+  };
+}
+
 // Bare hex in an inline `style` attribute: the parts of a fragment that cannot
 // re-theme, against a tier doctrine of `var(--token, value)`.
 //
@@ -169,6 +198,14 @@ const GOOD_DIRECTION = {
   inlineHex: "down",
   oracleVerified: "up",
   oracleExamined: null, // neither direction is progress; it is context for the numerator
+  // The shape half. Same reasoning as the colour pair: the numerator is what
+  // moves with work, the denominator is context, and a ratio built from them
+  // improves when declarations leave.
+  geometryVerified: "up",
+  geometryExamined: null,
+  // Unlike the colour report's mismatch, this one is not zero and does not
+  // block. It is the backlog, and down is the only direction that means work.
+  geometryMismatch: "down",
 };
 
 // "unchanged" is a first-class answer, not a flavour of "better". A measure that
@@ -313,6 +350,7 @@ function currentMeasures() {
       value: fmUnownedModifiers(),
     },
     oracleCoverage: oracleCoverage(),
+    geometryFidelity: geometryFidelity(),
     inlineHex: inlineHex(),
   };
 }
@@ -492,6 +530,14 @@ function previousValues(oracle, collapses, baseline) {
     // Same read as the other committed measures. It has no historical series of
     // its own and does not need one: the artifact carries its own last value.
     structuralCollapses: previousMeasure("structuralCollapses"),
+    // The geometry trio, read from this artifact's own last committed value the
+    // way inlineHex and structuralCollapses are. No git series of its own: the
+    // report it reads did not exist before this measure did, so a series
+    // reconstructed from history would be entirely empty and its absence would
+    // read as "no baseline yet" forever.
+    geometryVerified: previousMeasure("geometryVerified"),
+    geometryExamined: previousMeasure("geometryExamined"),
+    geometryMismatch: previousMeasure("geometryMismatch"),
   };
 }
 
@@ -514,6 +560,9 @@ function buildRollup() {
     inlineHex: current.inlineHex.value,
     oracleVerified: current.oracleCoverage.verified,
     oracleExamined: current.oracleCoverage.examined,
+    geometryVerified: current.geometryFidelity.verified,
+    geometryExamined: current.geometryFidelity.examined,
+    geometryMismatch: current.geometryFidelity.mismatch,
   };
 
   const measures = {};
@@ -574,8 +623,11 @@ const LABELS = {
   fmUnexplainedCollapses: "FM variant values that render alike (unexplained)",
   fmUnownedModifiers: "FM modifier classes with no rule",
   inlineHex: "Inline-style hex (cannot re-theme)",
-  oracleVerified: "Verified declarations (oracle numerator)",
-  oracleExamined: "Examined declarations (oracle denominator)",
+  oracleVerified: "Verified colour declarations (oracle numerator)",
+  oracleExamined: "Examined colour declarations (oracle denominator)",
+  geometryVerified: "Verified shape declarations (geometry numerator)",
+  geometryExamined: "Examined shape declarations (geometry denominator)",
+  geometryMismatch: "Shape declarations the capture contradicts",
 };
 
 const ARROW = {
@@ -639,6 +691,21 @@ function renderMarkdown(rollup) {
       m.oracleExamined.value +
       "** declarations. It is stated as a pair on purpose: the ratio improves " +
       "when declarations leave the denominator, which is not progress.",
+  );
+  lines.push("");
+  lines.push(
+    "Geometry coverage is **" +
+      m.geometryVerified.value +
+      " of " +
+      m.geometryExamined.value +
+      "** gap, padding and fixed-height declarations, with **" +
+      m.geometryMismatch.value +
+      "** the capture contradicts. That last number is a worklist, not a " +
+      "verdict: a disagreement can mean the CSS has the shape wrong, that the " +
+      "renderer flattened a structure Figma splits across nested frames, or " +
+      "that the Figma component itself is off the spacing scale. The check " +
+      "reports; `tests/render/geometry-ratchet.test.js` is what keeps the " +
+      "number falling.",
   );
   lines.push("");
   // The arc, not just the last step. A single-step delta told the reader

@@ -635,6 +635,13 @@
       "generator": "scripts/render/derive-canonical.js",
       "description": "The shared canonical-render stylesheet, inlined once and combined with each component fragment."
     },
+    "components.render.geometryReport": {
+      "path": "components/render/dist/geometry-report.json",
+      "type": "json",
+      "origin": "ci",
+      "generator": "scripts/render/derive-geometry-fidelity.js",
+      "description": "The SHAPE half of render fidelity, alongside fidelityReport's colour half. Every gap, padding and fixed-height declaration in each render's owned CSS, classified verified / verifiedViaTokenName / mismatch / unverifiable / overridden against the Figma capture's layout facts. The capture records gap, padding and size on every node and names the design token behind many of those values (gapToken, paddingTokens); before this artifact nothing read any of it, so a component could draw the wrong shape with every colour correct. Width is deliberately not read: a captured width is where the instance sat on the Figma canvas, not a property of the component. Reports rather than blocks; tests/render/geometry-ratchet.test.js is the gate, letting the mismatch count fall and never rise. A mismatch names a disagreement, not a verdict: it can mean the CSS has the shape wrong, that the renderer flattened a structure Figma splits across nested frames, or that the Figma component itself is off the spacing scale."
+    },
     "components.render.fidelityReport": {
       "path": "components/render/dist/fidelity-report.json",
       "type": "json",

@@ -41,6 +41,21 @@
       "value": 447,
       "direction": "unchanged",
       "previous": 447
+    },
+    "geometryVerified": {
+      "value": 99,
+      "direction": "unknown",
+      "previous": null
+    },
+    "geometryExamined": {
+      "value": 591,
+      "direction": "unknown",
+      "previous": null
+    },
+    "geometryMismatch": {
+      "value": 91,
+      "direction": "unknown",
+      "previous": null
     }
   },
   "detail": {
@@ -402,8 +417,8 @@
   "collapseSeries": [
     {
       "date": "2026-09-07",
-      "version": "0.34.197",
-      "sha": "4514c050",
+      "version": "0.34.198",
+      "sha": "c74e42c9",
       "unexplained": 41
     },
     {
