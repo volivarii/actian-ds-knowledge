@@ -297,7 +297,8 @@ no entry defers its link to a placeholder.
 
 ### Changed
 
-- **Asking for an icon-only button returned a labelled pill, and the capture had said so all along**.
+- **Asking for an icon-only button returned a labelled pill, and the capture had said so all along**
+  ([#691](https://github.com/volivarii/actian-ds-knowledge/pull/691)).
   `Emphasis=Icon-only` fell through to the same branch as `Filled` on the reasoning that "icon
   styling comes from props". The anatomy capture contradicts that in the same repo:
   `components/dist/anatomy/button.json#quality.structuralVariants` records the base as
@@ -315,7 +316,8 @@ no entry defers its link to a placeholder.
   Unexplained variant collapses fall **42 to 41**, the first movement this burndown has reported on
   that measure.
 
-- **The capture's structural evidence reaches a gate for the first time**. `captured-variants-render-apart.test.js`
+- **The capture's structural evidence reaches a gate for the first time**
+  ([#691](https://github.com/volivarii/actian-ds-knowledge/pull/691)). `captured-variants-render-apart.test.js`
   joins the collapse census against `appearance.variants`, per-variant colour and border facts. That
   is one of the two places the capture states a difference and it is the weaker one: the other is
   `quality.structuralVariants`, which records a different CHILD LIST and quotes both. Nothing read it,
