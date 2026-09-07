@@ -107,6 +107,69 @@ test("inline hex ignores a style attribute that is inside an svg", function () {
   );
 });
 
+test("converting a bare hex to the doctrinal form MOVES the number", function () {
+  // The gate this file most needed and did not have. #551's whole remedy is to
+  // replace `background:#eb0909` with
+  // `background:var(--zen-color-danger-50, #eb0909)`, which keeps the captured
+  // value as the fidelity fallback while letting a surface re-theme. The
+  // measure counted every hex inside a style attribute, so a complete and
+  // correct fix of the issue it exists to drive reported UNCHANGED. A measure
+  // that cannot see its own remedy cannot burn anything down.
+  const bare = '<div style="background:#eb0909">x</div>';
+  const fixed = '<div style="background:var(--zen-color-danger-50, #eb0909)">x</div>';
+
+  assert.strictEqual(trend.countInlineHex(bare), 1, "the defect must count");
+  assert.strictEqual(
+    trend.countInlineHex(fixed),
+    0,
+    "the tokenised form is the remedy, not a violation",
+  );
+  // Stated as the delta as well as the two values, because the two absolute
+  // numbers being right is not the property under test: the property is that
+  // the FIX MOVES IT.
+  assert.ok(
+    trend.countInlineHex(bare) > trend.countInlineHex(fixed),
+    "the measure does not fall when the defect is repaired",
+  );
+});
+
+test("a bare hex beside a tokenised one is still counted", function () {
+  // The cheap fix is to skip any style attribute containing `var(`, and it is
+  // wrong: one declaration list can carry a tokenised colour and a bare one, so
+  // skipping the attribute hides the bare one and the measure falls for the
+  // wrong reason. Only the fallback is blanked.
+  const mixed =
+    '<div style="background:var(--zen-color-warning-25, #fff9e5);color:#ffaf38">x</div>';
+
+  assert.strictEqual(trend.countInlineHex(mixed), 1, "the bare hex must survive");
+});
+
+test("the var() form is recognised however CSS spells it", function () {
+  // CSS function names are case-insensitive, so a case-sensitive match would
+  // report a correctly tokenised fragment as a violation the day the renderer
+  // or a hand-authored fragment spells it differently. Nothing emits this
+  // today, which is what makes it the kind of false positive nobody would
+  // chase back to the measure.
+  assert.strictEqual(
+    trend.countInlineHex('<div style="color:VAR(--zen-color-danger-50, #eb0909)">x</div>'),
+    0,
+  );
+  // And a nested fallback is blanked at the inner var(), not left counted.
+  assert.strictEqual(
+    trend.countInlineHex('<div style="color:var(--a, var(--b, #eb0909))">x</div>'),
+    0,
+  );
+});
+
+test("a var() with no fallback does not swallow a following hex", function () {
+  // The blanking regex must not run past its own closing paren. `[^()]*` keeps
+  // it inside one var(), so a token used without a fallback cannot eat the
+  // declaration after it.
+  const fragment = '<div style="color:var(--zen-color-text);background:#eb0909">x</div>';
+
+  assert.strictEqual(trend.countInlineHex(fragment), 1);
+});
+
 test("direction knows which way is better for each measure", function () {
   // A ratchet only ever asks "did it rise". A burndown has to know that fewer
   // unexplained collapses is progress while fewer VERIFIED declarations is not,
@@ -684,10 +747,26 @@ test("previousValues carries every baseline from the merge base, not from this r
   // needed for. Inline hex went 28 to 57 while reporting "unknown" throughout.
   const committed = trend.showJson(trend.baselineRef(), "components/render/dist/quality-trend.json");
   assert.ok(committed && committed.measures, "no committed baseline artifact to compare against");
+  //
+  // A measure whose DEFINITION has moved is the one legitimate reason for a
+  // null here, and it is accounted for by NAME rather than skipped: the count
+  // of refusals is asserted, so this cannot go back to passing on a measure
+  // that is null because somebody forgot it.
   let checked = 0;
+  const refused = [];
   for (const name of published) {
     const base = committed.measures[name];
     if (!base || typeof base.value !== "number") continue;
+    const epoch = trend.DEFINITION_EPOCH[name] || null;
+    if ((base.definitionEpoch || null) !== epoch) {
+      refused.push(name);
+      assert.strictEqual(
+        prev[name],
+        null,
+        name + " was compared across a definition change",
+      );
+      continue;
+    }
     checked += 1;
     assert.strictEqual(
       prev[name],
@@ -695,7 +774,27 @@ test("previousValues carries every baseline from the merge base, not from this r
       name + " has a committed baseline of " + base.value + " but previousValues returned " + prev[name],
     );
   }
-  assert.ok(checked >= 6, "expected to check every published measure, checked " + checked);
+  // Every refusal is a measure that DECLARES an epoch. A null with no declared
+  // epoch is the bug this test was written for and still fails above.
+  for (const name of refused) {
+    assert.ok(
+      trend.DEFINITION_EPOCH[name],
+      name + " returned null with no definition epoch to justify it",
+    );
+  }
+  assert.strictEqual(
+    checked + refused.length,
+    published.filter(function (n) {
+      const b = committed.measures[n];
+      return b && typeof b.value === "number";
+    }).length,
+    "a published measure with a committed baseline was neither compared nor refused",
+  );
+  assert.ok(
+    checked + refused.length >= 6,
+    "expected to account for every published measure, accounted for " +
+      (checked + refused.length),
+  );
 });
 
 test("the roll-up is dated by every source it reads, the FM tier's included", function () {
@@ -722,4 +821,103 @@ test("inline hex counts the fragments the manifest lists, never a stray file in 
   const hex = trend.inlineHex(dist);
   fs.rmSync(dist, { recursive: true, force: true });
   assert.deepEqual(hex, { value: 1, bySlug: { listed: 1 } }, "a fossil's hex must not count, or its prune reads as progress");
+});
+
+test("a baseline measured under a different definition is refused, not compared", function () {
+  // `inlineHex` counted the hex inside a var() fallback until 2026-09-07. Every
+  // point committed before that counts correct code as broken, so the drop from
+  // 57 to 47 is the DEFINITION moving, not work anybody did. Reporting a
+  // redefinition as progress is the one output this artifact must never
+  // produce, so a baseline whose stamp does not match is refused and the
+  // measure reads "unknown" for one run.
+  const epoch = trend.DEFINITION_EPOCH.inlineHex;
+  assert.ok(epoch, "inlineHex has no definition epoch to compare against");
+
+  const rollup = rollupOnce();
+  assert.strictEqual(
+    rollup.measures.inlineHex.definitionEpoch,
+    epoch,
+    "the artifact must carry the stamp, or the next run has nothing to compare",
+  );
+  // Only measures that have one. A null field on every other measure is noise
+  // a reader has to learn to ignore.
+  assert.ok(
+    !("definitionEpoch" in rollup.measures.oracleVerified),
+    "an unstamped measure must not carry an empty stamp",
+  );
+});
+
+test("the refusal is self-expiring: a matching stamp compares normally", function () {
+  // The epoch must not freeze the measure at "unknown" forever. Proves both
+  // arms with the same shape of input, so the guard cannot pass by always
+  // refusing.
+  const name = "inlineHex";
+  const epoch = trend.DEFINITION_EPOCH[name];
+
+  // The committed baseline predates the epoch, so today it is refused.
+  const committed = trend.showJson(
+    trend.baselineRef(),
+    "components/render/dist/quality-trend.json",
+  );
+  assert.ok(committed && committed.measures, "no committed baseline to read");
+  const base = committed.measures[name];
+  assert.ok(base && typeof base.value === "number", "no committed inlineHex value");
+
+  const prev = trend.previousValues(
+    trend.oracleSeries({ limit: 2 }),
+    trend.collapseSeries({ limit: 2 }),
+    trend.dsBaselines(),
+  );
+  if ((base.definitionEpoch || null) !== (epoch || null)) {
+    assert.strictEqual(
+      prev[name],
+      null,
+      "a baseline from the old definition was compared anyway",
+    );
+    assert.strictEqual(
+      trend.direction(name, 47, prev[name]),
+      "unknown",
+      "a refused baseline must read unknown, never better",
+    );
+  } else {
+    // Once a run has committed a stamped artifact, the normal comparison is
+    // back. This arm is what makes the refusal temporary rather than permanent.
+    assert.strictEqual(
+      prev[name],
+      base.value,
+      "a baseline under the SAME definition must be compared, not refused",
+    );
+  }
+});
+
+test("the markdown distinguishes a redefinition from a missing baseline", function () {
+  // "no baseline yet" on a measure that has twenty of them tells a reader the
+  // measure is new. It is not: the DEFINITION moved and the history is not
+  // comparable. Two different facts, and only one of them means "nothing to
+  // compare against". The row must say which.
+  const md = trend.renderMarkdown(rollupOnce());
+  const row = md
+    .split("\n")
+    .find(function (l) {
+      return l.indexOf("Inline-style hex") !== -1 && l.indexOf("|") === 0;
+    });
+  assert.ok(row, "no inline-hex row in the markdown table");
+
+  const measure = rollupOnce().measures.inlineHex;
+  if (measure.direction === "unknown" && measure.definitionEpoch) {
+    assert.match(
+      row,
+      /definition changed 2026-09-07, not comparable/,
+      "the row reads as a new measure rather than a redefinition",
+    );
+    assert.ok(
+      row.indexOf("no baseline yet") === -1,
+      "the row still claims there is no baseline",
+    );
+  } else {
+    // Once a stamped baseline is committed the row is an ordinary direction
+    // again. Asserting the other arm keeps this from passing by always
+    // matching the refusal string.
+    assert.match(row, /improving|regressing|flat/);
+  }
 });

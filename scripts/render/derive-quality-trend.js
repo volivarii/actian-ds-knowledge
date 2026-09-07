@@ -92,6 +92,25 @@ function oracleCoverage() {
 // 🔑 SVG blocks are stripped FIRST and entirely, children included. A hex inside
 // <svg> is a drawing instruction, not a theming decision, and conflating the two
 // gives a number nobody can act on (31 theming against 160 artwork today).
+// A hex sitting in a `var(--name, #hex)` fallback is the form the render tier's
+// doctrine REQUIRES: the token themes the surface, the captured value stays as
+// the fidelity fallback. Counting it made this measure unable to see its own
+// fix, because converting `background:#eb0909` to
+// `background:var(--zen-color-danger-50, #eb0909)` left the count identical.
+// A measure that does not fall when the defect it names is repaired cannot
+// drive the work it exists for, and #551 states the purpose as "cannot
+// re-theme", which a var() fallback can.
+// Case-insensitive because CSS function names are, and `[^()]*` keeps the match
+// inside one var(), so a token used with no fallback cannot swallow the
+// declaration after it and a nested fallback is blanked at the inner var().
+//
+// `[^()]*` rather than `[^)]*` is deliberate and the two agree on every fragment
+// the repo has (a var() fallback containing a nested function is the only input
+// that separates them, and there are none). Where they would differ, this form
+// COUNTS where the looser one blanks, so the error is a reported violation
+// rather than a hidden one. A burndown that errs should err toward showing work.
+const VAR_FALLBACK = /var\(\s*--[A-Za-z0-9_-]+\s*,([^()]*)\)/gi;
+
 function countInlineHex(html) {
   const withoutArtwork = String(html || "").replace(
     /<svg[\s\S]*?<\/svg>/gi,
@@ -102,7 +121,11 @@ function countInlineHex(html) {
   // would be a false-clean waiting on a renderer change, not a wrong number now.
   const styles = withoutArtwork.match(/style=("[^"]*"|'[^']*')/gi) || [];
   for (const attr of styles) {
-    n += (attr.match(/#[0-9a-fA-F]{3,8}\b/g) || []).length;
+    // Blank the fallbacks rather than skipping the attribute: a style can carry
+    // a tokenised colour and a bare one in the same declaration list, and
+    // dropping the whole attribute would hide the bare one.
+    const bareOnly = attr.replace(VAR_FALLBACK, "var(--t,)");
+    n += (bareOnly.match(/#[0-9a-fA-F]{3,8}\b/g) || []).length;
   }
   return n;
 }
@@ -150,6 +173,16 @@ const GOOD_DIRECTION = {
 // "unchanged" is a first-class answer, not a flavour of "better". A measure that
 // has not moved in three weeks is the finding, and collapsing it into "not worse"
 // is how a flat numerator passed for progress.
+// A measure whose DEFINITION changed cannot be compared against its own
+// history. `inlineHex` counted the hex inside a `var()` fallback until this
+// epoch, so every earlier point counts correct code as broken and the drop from
+// 57 to 47 is a redefinition, not work anybody did. Reporting that as "better"
+// is the one output this artifact must never produce, so the epoch is written
+// into the artifact and a baseline stamped with a different one is refused.
+// Self-expiring: the next run's baseline carries the current epoch and the
+// normal comparison resumes.
+const DEFINITION_EPOCH = { inlineHex: "2026-09-07" };
+
 function direction(measure, current, previous) {
   if (previous == null || current == null) return "unknown";
   if (current === previous) return "unchanged";
@@ -336,7 +369,12 @@ function baselineRef(cwd) {
 function previousMeasure(name) {
   const committed = showJson(baselineRef(), TREND_REL);
   const m = committed && committed.measures && committed.measures[name];
-  return m && typeof m.value === "number" ? m.value : null;
+  if (!m || typeof m.value !== "number") return null;
+  // Comparable only if the baseline was measured under the same definition.
+  if ((m.definitionEpoch || null) !== (DEFINITION_EPOCH[name] || null)) {
+    return null;
+  }
+  return m.value;
 }
 
 // The revisions of `rel` the baseline can see, newest first, abbreviated to the
@@ -424,7 +462,9 @@ function previousValues(oracle, collapses, baseline) {
     // 2026-09-07, the largest movement of any measure here, and the burndown
     // reported `unknown` throughout. This artifact exists because every gate in
     // the render tier is a ratchet that cannot report a direction, and the one
-    // measure it could not report on is the one that doubled.
+    // measure it could not report on is the one that doubled. Both of those
+    // figures are under the pre-epoch definition, which counted a var()
+    // fallback; DEFINITION_EPOCH is why they are not compared against today's.
     inlineHex: previousMeasure("inlineHex"),
   };
 }
@@ -455,6 +495,11 @@ function buildRollup() {
       value: values[name],
       direction: direction(name, values[name], prev[name]),
       previous: prev[name],
+      // Only on a measure that has one, so the artifact does not carry a null
+      // field for every measure whose definition has never moved.
+      ...(DEFINITION_EPOCH[name]
+        ? { definitionEpoch: DEFINITION_EPOCH[name] }
+        : {}),
     };
   }
 
@@ -538,8 +583,17 @@ function renderMarkdown(rollup) {
   lines.push("| --- | --- | --- |");
   for (const name of Object.keys(m)) {
     const prev = m[name].previous;
+    // "no baseline yet" would be a lie on a measure that has twenty of them and
+    // is refusing to compare across a definition change. A reader who cannot
+    // tell those two apart reads a redefinition as a fresh measure.
+    // `prev == null` is the refusal's actual signature, not `direction ===
+    // "unknown"`: direction is also unknown when the CURRENT value is missing,
+    // and blaming that on a definition change would state a cause this line
+    // never checked.
     const since =
-      ARROW[m[name].direction] + (prev == null ? "" : " (was " + prev + ")");
+      prev == null && m[name].definitionEpoch
+        ? "definition changed " + m[name].definitionEpoch + ", not comparable"
+        : ARROW[m[name].direction] + (prev == null ? "" : " (was " + prev + ")");
     lines.push(
       "| " + LABELS[name] + " | " + m[name].value + " | " + since + " |",
     );
@@ -637,6 +691,7 @@ module.exports = {
   buildRollup: buildRollup,
   renderMarkdown: renderMarkdown,
   GOOD_DIRECTION: GOOD_DIRECTION,
+  DEFINITION_EPOCH: DEFINITION_EPOCH,
 };
 
 // CLI: writes both halves. Runs LAST in the derive:render chain, after
