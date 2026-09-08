@@ -46,7 +46,17 @@ export function sectionAnchors(text: string): SectionAnchor[] {
     if (heading.level === 1) return { heading, anchor: null };
     const rawLine = lines[heading.line] ?? "";
     const titleRaw = rawLine.replace(LEADING_HASHES_RE, "").trim();
-    return { heading, anchor: extractAnchor(titleRaw) };
+    // `deriveSlug` returns "" for a title with nothing sluggable left:
+    // "## ---", "## ***", an emoji-only heading. NOT "## 3." — NUM_PREFIX_RE
+    // requires trailing whitespace, so it never fires there and the slug is
+    // "3", a perfectly good anchor.
+    // The declared type is `string | null` and every caller guards on null, so
+    // an "" slipped through as a truthy-looking anchor that is falsy in use:
+    // countsBySection latched it as firstH2Anchor and then dropped the file's
+    // outgoing count entirely, and RelationsPanel scoped to it while showing
+    // everything. Normalise here, where the type is promised.
+    const anchor = extractAnchor(titleRaw);
+    return { heading, anchor: anchor ? anchor : null };
   });
 }
 
@@ -109,14 +119,34 @@ export function countsBySection(
   const seenAnchors = new Set<string>();
   let firstH2Anchor: string | null = null;
   for (const { heading, anchor } of sectionAnchors(text)) {
-    if (anchor === null || seenAnchors.has(anchor)) continue;
-    seenAnchors.add(anchor);
+    if (anchor === null) continue;
+    // Latch BEFORE the dedup. An H3 deriving the same slug as the first H2
+    // ("### Tokens" above "## Tokens") used to consume it, so the H2 was
+    // skipped and file scope either walked to a later H2 — landing the
+    // outgoing count on a different section than `firstH2Anchor` reports — or,
+    // with no later H2, was never set at all and the file's outgoing
+    // references vanished from the outline. Both headings address the same
+    // single anchor, so latching here is the answer both modules give.
     if (heading.level === 2 && firstH2Anchor === null) firstH2Anchor = anchor;
+    if (seenAnchors.has(anchor)) continue;
+    seenAnchors.add(anchor);
     // Excludes only this file's own references to the anchor (e.g. a
     // self-link from within the same section), matching incomingForFile's
     // `fromPath === path` self-exclusion. A different file that also
     // defines the same globally-keyed slug (a co-definer) still counts as
     // a genuine incoming reference.
+    // Generated referrers ARE counted. The pill answers "how much depends on
+    // this section", and a `components/dist/guidelines/*.json` consuming an
+    // accessibility criterion is exactly that dependency — for nine of the
+    // sixteen anchors in `accessibility/src/components.md` it is the ONLY
+    // recorded one, because the index scans .md and dist JSON and never
+    // `_meta.yml`. Excluding them made those sections render with no badge,
+    // indistinguishable from a section nothing depends on, on the a11y
+    // author's main surface.
+    //
+    // The rail answers a different question — "where can I go from here" —
+    // and there a generated row is a dead end. The two numbers reconcile
+    // because the rail STATES what it withheld, not because they match.
     const incoming = findReferences(anchor).filter((p) => p !== path).length;
     if (incoming > 0) counts.set(anchor, incoming);
   }

@@ -561,3 +561,151 @@ test("renders a compact neighborhood map with data-ref nodes when a layout is pr
   const noMap = renderPanel();
   assert.equal(noMap.container.querySelector("svg"), null);
 });
+
+// ── #684: the rail counts files, and never lists a target that refuses to open ──
+//
+// Shape taken from the real corpus on the deployed page: foundations/src/tokens.md
+// reported "Referenced by (37)" for ten distinct files, three of them generated.
+
+const INCOMING_REAL_SHAPE: IncomingRef[] = [
+  { fromPath: "components/src/categories/overlays.md", slug: "usage", snippet: "first overlays site" },
+  { fromPath: "components/src/categories/overlays.md", slug: "usage", snippet: "second overlays site" },
+  { fromPath: "components/src/categories/overlays.md", slug: "usage", snippet: "third overlays site" },
+  { fromPath: "components/src/categories/form.md", slug: "usage", snippet: "form site" },
+  { fromPath: "foundations/dist/foundations.bundle.json", slug: "usage", snippet: "bundle site" },
+  { fromPath: "components/dist/guidelines/badge.json", slug: "usage", snippet: "badge dist site" },
+];
+
+test("the Referenced by count is distinct files, not reference sites", () => {
+  const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
+  // Two editable files behind six sites, three of which share one file. The
+  // header qualifies itself because this fixture also carries two generated
+  // referrers, which the rail lists nowhere.
+  assert.ok(
+    container.textContent!.includes("Referenced by (2 editable)"),
+    `expected a count of 2 distinct editable files, got: ${container.textContent!.slice(0, 400)}`,
+  );
+  assert.equal(
+    container.querySelectorAll("[data-testid='incoming-row']").length,
+    2,
+    "one row per distinct file",
+  );
+});
+
+test("a file referenced from several sites says so on its single row", () => {
+  const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
+  const rows = Array.from(
+    container.querySelectorAll("[data-testid='incoming-row']"),
+  );
+  const overlays = rows.find((r) =>
+    r.textContent!.includes("components/src/categories/overlays.md"),
+  )!;
+  assert.ok(overlays, "the overlays row is present");
+  assert.ok(
+    /3 references/.test(overlays.textContent!),
+    `expected the site count on the row, got: ${overlays.textContent}`,
+  );
+});
+
+test("generated targets are not listed as rows, because following one refuses to open", () => {
+  const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
+  assert.ok(
+    !container.textContent!.includes("foundations.bundle.json"),
+    "a dist bundle must not be offered as a destination",
+  );
+  assert.ok(
+    !container.textContent!.includes("guidelines/badge.json"),
+    "a dist guideline must not be offered as a destination",
+  );
+});
+
+test("the excluded generated files are stated, so the shorter list does not read as a loss", () => {
+  const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
+  assert.ok(
+    /2 generated files also reference this/.test(container.textContent!),
+    `expected the exclusion to be stated, got: ${container.textContent!.slice(0, 500)}`,
+  );
+});
+
+test("with nothing generated to exclude, the rail says nothing about exclusions", () => {
+  const { container } = renderPanel({ incoming: INCOMING });
+  assert.ok(
+    !/generated files? also reference/.test(container.textContent!),
+    "no exclusion line when nothing was excluded",
+  );
+});
+
+// ── Review finding: "nothing links here" beside "2 generated files reference
+// this" is a contradiction, and it is reachable today ──────────────────────
+//
+// The index scans .md sources and dist JSON, never `_meta.yml`. So for nine of
+// the sixteen anchors in accessibility/src/components.md, EVERY indexed
+// referrer is generated. Filtering them without changing the empty state turns
+// "10 rows you cannot click" into "there is nothing here", which is worse than
+// the dead end it replaced.
+
+const INCOMING_ALL_GENERATED: IncomingRef[] = [
+  { fromPath: "components/dist/guidelines/card.json", slug: "usage", snippet: "" },
+  { fromPath: "components/dist/guidelines/table.json", slug: "usage", snippet: "" },
+  { fromPath: "components/dist/guidelines/tag.json", slug: "usage", snippet: "" },
+];
+
+test("with every referrer generated, the rail does not claim nothing links here", () => {
+  const { container } = renderPanel({ incoming: INCOMING_ALL_GENERATED });
+  const txt = container.textContent!;
+  assert.equal(
+    /Nothing links here yet\.|Nothing links to this section yet\./.test(txt),
+    false,
+    `the rail must not say nothing links here while 3 files do: ${txt.slice(0, 500)}`,
+  );
+  assert.ok(
+    /3 generated files reference this/.test(txt),
+    `it must say what does link here, got: ${txt.slice(0, 500)}`,
+  );
+});
+
+test("with nothing at all, the rail still says nothing links here", () => {
+  const { container } = renderPanel({ incoming: [] });
+  assert.ok(
+    /Nothing links here yet\./.test(container.textContent!),
+    "a genuinely unreferenced file keeps its honest empty state",
+  );
+});
+
+test("a single generated referrer takes a singular verb, and the header does not disagree with the note", () => {
+  const { container } = renderPanel({
+    incoming: [
+      {
+        fromPath: "components/dist/guidelines/card.json",
+        slug: "usage",
+        snippet: "",
+      },
+    ],
+  });
+  const txt = container.textContent!;
+  // "1 generated file reference this" — the is/are half was inflected and the
+  // verb was not.
+  assert.equal(
+    /file reference this/.test(txt),
+    false,
+    `singular subject needs a singular verb: ${txt.slice(0, 400)}`,
+  );
+  assert.ok(/1 generated file references this/.test(txt), txt.slice(0, 400));
+});
+
+test("the Referenced by header does not report 0 above a note saying files reference this", () => {
+  const { container } = renderPanel({ incoming: INCOMING_ALL_GENERATED });
+  const txt = container.textContent!;
+  // A bare "(0)" directly above "3 generated files reference this" is the same
+  // contradiction as the empty state, carried by the number instead of a
+  // sentence.
+  assert.equal(
+    /Referenced by \(0\)/.test(txt),
+    false,
+    `the header must qualify what it counted: ${txt.slice(0, 400)}`,
+  );
+  assert.ok(
+    /Referenced by \(0 editable\)/.test(txt),
+    `expected a qualified header, got: ${txt.slice(0, 400)}`,
+  );
+});

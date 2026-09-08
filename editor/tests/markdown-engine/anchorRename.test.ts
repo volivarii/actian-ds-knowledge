@@ -111,3 +111,40 @@ test("crossFileReferrers: source referrers minus self and dist", async () => {
   assert.deepEqual(out, ["components/src/modal/usage.md"]);
   setCachedIndexForTesting(null);
 });
+
+// ── One definition of "generated", not two ──────────────────────────────────
+//
+// This filter listed three dist prefixes by hand — the exact pattern
+// `incomingFiles` was written to avoid, and which its own header comment
+// condemns. No live defect today, because those three are precisely the trees
+// `collectJsonPaths` scans, but it drifts the moment a fourth is added. These
+// two cases fail against a hardcoded three-prefix list and pass against the
+// path-tier classification.
+test("crossFileReferrers excludes every generated tree, not a hardcoded three", async () => {
+  setCachedIndexForTesting({
+    entries: new Map([
+      [
+        "slug",
+        {
+          slug: "slug",
+          definedIn: ["foundations/src/tokens.md"],
+          referencedBy: [
+            "foundations/src/design-guidelines.md",
+            "components/dist/guidelines/badge.json",
+            // Generated, and NOT one of the three hardcoded prefixes.
+            "tokens/token-reference.md",
+            "llms.txt",
+            "content/dist/global.md",
+          ],
+        },
+      ],
+    ]),
+    scannedAt: 0,
+    scannedPaths: [],
+    texts: new Map(),
+  });
+  const gh = { repos: { getContent: async () => ({ data: [] }) } } as never;
+  const out = await crossFileReferrers(gh, "slug", "foundations/src/tokens.md");
+  assert.deepEqual(out, ["foundations/src/design-guidelines.md"]);
+  setCachedIndexForTesting(null);
+});
