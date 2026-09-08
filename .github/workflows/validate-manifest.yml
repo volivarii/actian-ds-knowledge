@@ -378,24 +378,72 @@ jobs:
       - name: Derive the canonical render dist
         run: npm run derive:render
 
+      # quality-trend.* is the one artifact here that is NOT a function of the
+      # tree, so byte-drift is not a property it can have and this guard must
+      # not ask for it. Two independent reasons, both permanent under squash
+      # merge:
+      #
+      #   1. Every measure's `direction`/`previous` is read at
+      #      `merge-base HEAD origin/main` (derive-quality-trend.js
+      #      `baselineRef`). On the PR that wrote the file that base is the old
+      #      main; once merged it is the file's own commit, so regeneration
+      #      answers "unchanged (was <the new value>)".
+      #   2. Each series point records the SHA of the commit that produced it,
+      #      plus package.json AT that SHA. Squash merge deletes those commits.
+      #      The file committed as v0.34.202 names `e1fe7c34`, which is not an
+      #      ancestor of main at all.
+      #
+      # So the guard was red on exactly the PRs where `render-derive.yml` does
+      # NOT run. On a render PR the derive regenerates and auto-commits, and
+      # committed and regenerated then agree within that branch's own baseline,
+      # which is why this was never seen from inside the render lane. Every
+      # other PR compared main's file, written against main's parent, against a
+      # regeneration written against main. #699, editor-only, is what surfaced
+      # it.
+      #
+      # 🛑 Do NOT "fix" this by running the derive and committing the result.
+      # It does go green, and that is the trap: an editor-only or docs-only PR
+      # then ships a render dist change and a CI version bump for touching
+      # nothing, and rewrites the trend's summary to describe itself. Nothing is
+      # falsified by that (`direction` MEANS "versus the merge base", so
+      # `flat (was 97)` is a true statement about a PR that does not move the
+      # oracle, and the dated series tables keep the 87 -> 97 history either
+      # way). It is simply not that PR's statement to make.
+      #
+      # Everything else in the tree stays under the directory-wide subject this
+      # guard was built with (#571), so a NEW artifact is still covered the day
+      # it is written. Verified by running the whole chain on a clean main
+      # worktree: only these two files move.
+      #
+      # The numbers themselves are still guarded, one step below, by comparing
+      # the parts of the file that ARE tree-pure.
       - name: Render dist drift guard (committed components/render/dist must match regeneration)
         run: |
           # 🚨 Capture and check git's own exit status BEFORE testing the value.
           # `[ -n "$(git ...)" ]` sees only stdout: a git failure (dubious ownership,
           # a stuck index.lock) prints nothing, the test is false, the guard body is
           # SKIPPED and the step exits 0. That is a silent green on a required check.
-          DRIFT="$(git status --porcelain --untracked-files=all -- components/render/dist)" || {
+          DRIFT="$(git status --porcelain --untracked-files=all -- components/render/dist ':!components/render/dist/quality-trend.*')" || {
             echo "::error::git status failed while checking drift"
             exit 1
           }
           if [ -n "$DRIFT" ]; then
-            echo "::error::components/render/dist is stale. render-derive.yml regenerates and commits it; a red run there leaves this behind. Run 'npm run derive:render' and commit."
+            echo "::error::components/render/dist is stale. render-derive.yml regenerates and commits it; a red run there leaves this behind. Run 'npm run derive:render' and commit (quality-trend.* is exempt, see the comment above this step)."
             # The captured list, because `git diff` prints NOTHING for the
             # untracked leaf these guards were converted to catch.
             printf '%s\n' "$DRIFT"
-            git --no-pager diff --stat -- components/render/dist
+            git --no-pager diff --stat -- components/render/dist ':!components/render/dist/quality-trend.*'
             exit 1
           fi
+
+      # The half of quality-trend.json that IS a function of the tree: every
+      # measure's `value`, and the `detail` census the values are counted from.
+      # Those are what the artifact exists to report, and nothing else asserts
+      # them (the #571 probe found quality-trend.json stays GREEN under
+      # mutation of the whole render suite). Without this, exempting the file
+      # above would drop the numbers guard silently.
+      - name: Quality trend values match regeneration (the tree-pure half)
+        run: node scripts/render/check-quality-trend-values.js
 
       - name: Token reference in sync with tokens.json
         run: |

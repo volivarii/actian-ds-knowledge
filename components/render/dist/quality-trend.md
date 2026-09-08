@@ -11,10 +11,10 @@ Sources last changed **2026-09-08**. Values are derived from the tree this ran a
 | FM variant values that render alike (unexplained) | 55 | flat (was 55) |
 | FM modifier classes with no rule | 56 | flat (was 56) |
 | Inline-style hex (cannot re-theme) | 47 | flat (was 47) |
-| Verified colour declarations (oracle numerator) | 97 | improving (was 87) |
-| Examined colour declarations (oracle denominator) | 532 | changed (was 447) |
-| Verified shape declarations (geometry numerator) | 150 | improving (was 99) |
-| Examined shape declarations (geometry denominator) | 703 | changed (was 591) |
+| Verified colour declarations (oracle numerator) | 97 | flat (was 97) |
+| Examined colour declarations (oracle denominator) | 532 | flat (was 532) |
+| Verified shape declarations (geometry numerator) | 150 | flat (was 150) |
+| Examined shape declarations (geometry denominator) | 703 | flat (was 703) |
 | Shape declarations the capture contradicts | 91 | flat (was 91) |
 
 Oracle coverage is **97 of 532** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
@@ -25,7 +25,7 @@ Geometry coverage is **150 of 703** gap, padding and fixed-height declarations, 
 
 | Date | Version | Verified | Examined |
 | --- | --- | --- | --- |
-| 2026-09-08 | v0.34.201 | 97 | 532 |
+| 2026-09-08 | v0.34.202 | 97 | 532 |
 | 2026-09-07 | v0.34.189 | 87 | 447 |
 | 2026-09-03 | v0.34.180 | 85 | 418 |
 | 2026-09-03 | v0.34.178 | 85 | 418 |
@@ -42,7 +42,7 @@ Geometry coverage is **150 of 703** gap, padding and fixed-height declarations, 
 
 | Date | Version | Unexplained |
 | --- | --- | --- |
-| 2026-09-08 | v0.34.201 | 41 |
+| 2026-09-08 | v0.34.202 | 41 |
 | 2026-09-07 | v0.34.198 | 41 |
 | 2026-09-07 | v0.34.195 | 41 |
 | 2026-09-07 | v0.34.189 | 42 |
