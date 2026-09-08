@@ -75,6 +75,39 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **The relations rail counted reference sites where a reader counts files, and offered targets
+  that refuse to open**
+  ([#699](https://github.com/volivarii/actian-ds-knowledge/pull/699)).
+  `foundations/src/tokens.md` reported "Referenced by (37)" for ten distinct files, three of them
+  generated: following one navigates away from the author's work to a screen that refuses to open
+  the file. The rail counts distinct files, carries the site count on the row, and drops generated
+  targets, with "generated" read from `getPathTier` rather than restated as a prefix list.
+  `AnchorReferencesPopover` had the identical dead end and moved with it.
+
+  **Filtering is not the same as there being nothing.** The anchor index scans `.md` sources and
+  `dist/` JSON and never `_meta.yml`, so for nine of the sixteen anchors in
+  `accessibility/src/components.md` every indexed referrer is generated. Every surface states what
+  it withheld, and the outline pill still counts generated referrers: the pill answers "how much
+  depends on this", the rail answers "where can I go from here", and they reconcile because the
+  difference is stated rather than because the numbers match.
+
+  Also on `#/health`: sixteen of the twenty-nine orphan rows rendered an empty cell rather than an
+  action, because `navTargetForNodeId` has no `term:` case. They say "No editor surface". Mapping
+  them to `app-context/src/terminology.yml` would have manufactured the same dead end, since that
+  file matches no `frontmatterForms` entry. The 30-row cap states its shortfall.
+
+- **The pull request, the act the editor exists to produce, arrived without a voice**
+  ([#699](https://github.com/volivarii/actian-ds-knowledge/pull/699)).
+  `MarkdownEditScreen` rendered the outcome as body text inside the button row while escalating a
+  **load** failure to a Callout, and neither it nor `MetaEditScreen` announced it, though both
+  announce "Draft saved" for a purely local write. Both announce now, in `SubmissionStaging`'s
+  existing words, and `role="status"` came off both Callouts because that role is itself a polite
+  live region and was speaking the URL character by character beside the sentence.
+
+  A `Start the Tokens pass` button called `onOpenFile` on one file; its label says what the click
+  does.
+
+
 - **A rule was charged to every component that nests the one it belongs to**
   ([#696](https://github.com/volivarii/actian-ds-knowledge/pull/696)).
   `checkBaseCssRules` resolves a rule's owner from the classes each slug's fragment emits. A
