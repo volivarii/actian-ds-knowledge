@@ -2,7 +2,7 @@
 // own way. Written against the shared rule so a fifth caller inherits them.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fencedLineMask, blankFencedCode } from "../../src/lib/fencedCode";
+import { fencedLineMask } from "../../src/lib/fencedCode";
 
 function inside(text: string): string[] {
   const lines = text.split("\n");
@@ -69,8 +69,38 @@ test("fencedLineMask: a delimiter line with trailing content does not close", ()
   ]);
 });
 
-test("blankFencedCode: line numbers survive, so a heading below keeps its position", () => {
-  const out = blankFencedCode("a\n```\ncode\n```\n## Real\n");
-  assert.equal(out, "a\n\n\n\n## Real\n");
-  assert.equal(out.split("\n").length, "a\n```\ncode\n```\n## Real\n".split("\n").length);
+// ── The envelope is not the body ────────────────────────────────────────────
+//
+// Both scanners skip the YAML frontmatter envelope by advancing past its
+// closing `---`, but the mask was computed over the WHOLE document. A YAML
+// block scalar whose content line starts with three backticks opened a fence
+// the envelope's `---` cannot close, and every body line inherited it: the
+// file's headings vanished entirely, taking the outline, the relations rail
+// and the outgoing count with them. Introduced when the toggle (which lived
+// inside the loop, and so began after the envelope) became a whole-document
+// mask.
+test("fencedLineMask: masking can start below the frontmatter envelope", () => {
+  const text =
+    "---\ndescription: |\n  ```\n  code\n---\n\n## Real {#real}\n\nBody.\n";
+  const headingLine = text.split("\n").indexOf("## Real {#real}");
+
+  // Whole-document: the odd delimiter inside the envelope swallows the body.
+  assert.equal(fencedLineMask(text)[headingLine], true);
+
+  // From the body: the envelope cannot reach it.
+  assert.equal(fencedLineMask(text, 5)[headingLine], false);
+});
+
+test("fencedLineMask: a start index reports every earlier line as outside", () => {
+  const text = "```\ncode\n```\n## Real\n";
+  const mask = fencedLineMask(text, 3);
+  assert.deepEqual(mask.slice(0, 3), [false, false, false]);
+  assert.equal(mask[3], false);
+});
+
+test("fencedLineMask: a balanced fence inside frontmatter was always harmless", () => {
+  const text =
+    "---\ndescription: |\n  ```\n  code\n  ```\n---\n\n## Real {#real}\n";
+  const headingLine = text.split("\n").indexOf("## Real {#real}");
+  assert.equal(fencedLineMask(text)[headingLine], false);
 });

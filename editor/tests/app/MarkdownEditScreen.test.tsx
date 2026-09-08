@@ -325,6 +325,22 @@ test("countsBySection and firstH2Anchor agree on which heading owns file scope",
       "inline fence marker in prose above the first H2",
       "Write ``` to open one.\n\n## Tokens\n\nA.\n\nAnd ``` closes it.\n",
     ],
+    // Door six. The table had no frontmatter shape at all, so a mutation
+    // making one scanner mask from line 0 instead of the body left this
+    // property green — the same blind spot as the nested fence: a property
+    // only covers the shapes its table names.
+    [
+      "odd fence opener inside the frontmatter envelope",
+      "---\ndescription: |\n  ```\n  code\n---\n\n## Tokens\n\nA.\n",
+    ],
+    [
+      "balanced fence inside the frontmatter envelope",
+      "---\ndescription: |\n  ```\n  code\n  ```\n---\n\n## Tokens\n\nA.\n",
+    ],
+    [
+      "plain frontmatter, no fence",
+      "---\ntitle: Tokens\n---\n\n## Tokens\n\nA.\n",
+    ],
   ];
 
   for (const [label, text] of shapes) {

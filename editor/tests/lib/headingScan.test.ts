@@ -156,3 +156,18 @@ test("headingScan: a fenced block does not shift the line number of a heading be
   assert.equal(out.length, 1);
   assert.equal(out[0]!.line, 4, "the heading is on line 4 of the original text");
 });
+
+test("headingScan: a fence opener inside the frontmatter envelope does not blank the body", () => {
+  // A YAML block scalar can carry a line of three backticks. It is not a
+  // document fence, and the envelope's closing `---` cannot close it, so a
+  // whole-document mask made every heading in the file disappear — taking the
+  // outline, the relations rail and the file's outgoing count with them.
+  const out = scanHeadings(
+    "---\ndescription: |\n  ```\n  code\n---\n\n## Real {#real}\n\nBody.\n",
+  );
+  assert.deepEqual(
+    out.map((h) => h.text),
+    ["Real"],
+  );
+  assert.equal(out[0]!.line, 6, "and it keeps its real line number");
+});

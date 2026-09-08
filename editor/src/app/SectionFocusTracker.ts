@@ -47,11 +47,6 @@ interface HeadingEntry {
 function scanHeadings(text: string): HeadingEntry[] {
   const lines = text.split("\n");
   const out: HeadingEntry[] = [];
-  // Fenced code is read from the shared rule in `lib/fencedCode`, not decided
-  // here. A local toggle got nesting wrong (an inner ``` closed an outer ~~~) and
-  // each module spelled the rule differently; the mask is line-indexed, so the
-  // heading line numbers this scanner reports are unaffected.
-  const fenced = fencedLineMask(text);
   // Skip the YAML frontmatter envelope (line 0 `---` opens it). Mirrors
   // headingScan.ts so both outline + focus tracker agree on where the
   // authored content starts.
@@ -61,6 +56,15 @@ function scanHeadings(text: string): HeadingEntry[] {
     while (j < lines.length && !FRONTMATTER_FENCE_RE.test(lines[j]!)) j++;
     if (j < lines.length) i = j + 1;
   }
+  // Fenced code is read from the shared rule in `lib/fencedCode`, not decided
+  // here: a local toggle got nesting wrong (an inner ``` closed an outer ~~~)
+  // and each module spelled the rule differently. Masked FROM THE BODY, never
+  // from line 0 — a YAML block scalar in the envelope can carry a line of
+  // three backticks, and a whole-document mask read that as a fence the
+  // envelope's `---` could not close, so every heading in the file vanished.
+  // The mask is line-indexed, so the line numbers this scanner reports are
+  // unaffected.
+  const fenced = fencedLineMask(text, i);
   for (; i < lines.length; i++) {
     const line = lines[i] ?? "";
     if (fenced[i]) continue;

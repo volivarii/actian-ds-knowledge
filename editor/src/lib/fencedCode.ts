@@ -30,14 +30,21 @@ const FENCE_OPEN_RE = /^\s{0,3}(`{3,}|~{3,})/;
  *  its delimiter lines. Index-aligned with `text.split("\n")`.
  *
  *  Returned as a mask rather than a stripped string so callers that need line
- *  NUMBERS — the heading scanners report a heading's line — keep them. A
- *  caller that only wants the prose can `.filter()` on it. */
-export function fencedLineMask(text: string): boolean[] {
+ *  NUMBERS — the heading scanners report a heading's line — keep them.
+ *
+ *  `startLine` begins the scan below a region that is not markdown body, and
+ *  every earlier line reports false. The heading scanners pass the line after
+ *  the YAML frontmatter envelope: a block scalar there can carry a line of
+ *  three backticks, which is not a fence opener for the document but was read
+ *  as one when the mask spanned the whole file — and since the envelope's
+ *  `---` cannot close it, every body line inherited it and the file lost all
+ *  of its headings. */
+export function fencedLineMask(text: string, startLine = 0): boolean[] {
   const lines = text.split("\n");
   const mask = new Array<boolean>(lines.length).fill(false);
   let fence: { char: string; len: number } | null = null;
 
-  for (let i = 0; i < lines.length; i++) {
+  for (let i = Math.max(0, startLine); i < lines.length; i++) {
     const line = lines[i]!;
     if (fence) {
       mask[i] = true; // the closing delimiter line counts as inside
@@ -53,15 +60,4 @@ export function fencedLineMask(text: string): boolean[] {
     }
   }
   return mask;
-}
-
-/** The text with every fenced block replaced by blank lines.
- *
- *  Blank lines rather than removal, so line numbers survive: a caller that
- *  reports a heading's position must not have it shift because a code block
- *  above it vanished. */
-export function blankFencedCode(text: string): string {
-  const lines = text.split("\n");
-  const mask = fencedLineMask(text);
-  return lines.map((l, i) => (mask[i] ? "" : l)).join("\n");
 }
