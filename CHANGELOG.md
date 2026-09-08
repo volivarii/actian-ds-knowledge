@@ -75,6 +75,36 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **The required check went red on every pull request, whatever it touched**
+  ([#700](https://github.com/volivarii/actian-ds-knowledge/pull/700)).
+  `Validate manifest schema + coverage` regenerates `components/render/dist` and requires the result
+  to match byte for byte. Ten of the eleven artifacts there are a function of the tree and do match.
+  `quality-trend.*` is not one of them, and its drift is permanent rather than stale: each measure's
+  `direction`/`previous` is read at `merge-base HEAD origin/main`, which after the writing PR merges
+  is the file's own commit, and each series point records the SHA of the commit that produced it plus
+  `package.json` at that SHA, which squash merge deletes outright. The file released as v0.34.202
+  names `e1fe7c34`, a commit that is not an ancestor of `main`. So a clean checkout of `main` drifted
+  against itself, and every branch cut from it inherited the failure.
+
+  It was therefore red on exactly the pull requests where `render-derive.yml` does **not** run. On a
+  render PR that workflow regenerates and auto-commits, so committed and regenerated agree within
+  that branch's own baseline, which is why this was never visible from inside the render lane. Every
+  other PR compared `main`'s file, written against `main`'s parent, against a regeneration written
+  against `main`.
+
+  The guard now exempts those two files and says why at the step. Running the derive and committing
+  does go green, and that is the trap: an editor-only or docs-only PR then ships a render dist change
+  and a CI version bump for touching nothing, and rewrites the trend's summary line to describe
+  itself. Nothing is falsified by that, since `direction` means "versus the merge base" and the dated
+  series tables keep the history either way. It is simply not that PR's statement to make.
+
+  Exempting a file from a directory-wide guard would have dropped the numbers guard in silence, since
+  the #571 probe found `quality-trend.json` stays green under mutation of the whole render suite. A
+  second step now compares the half that *is* a function of the tree, every measure's `value` and the
+  `detail` census they are counted from, over the union of keys so a renamed or dropped measure is
+  reported rather than skipped. Everything else in the directory keeps the subject it was built with,
+  so a new artifact is still covered the day it is written.
+
 - **A rule was charged to every component that nests the one it belongs to**
   ([#696](https://github.com/volivarii/actian-ds-knowledge/pull/696)).
   `checkBaseCssRules` resolves a rule's owner from the classes each slug's fragment emits. A
