@@ -40,6 +40,11 @@ export function incomingFiles(refs: IncomingRef[]): IncomingFiles {
     const seen = byPath.get(r.fromPath);
     if (seen) {
       seen.sites += 1;
+      // A reference living in the referrer's FRONTMATTER has no body
+      // paragraph, so incomingForFile pushes it with an empty snippet. If that
+      // arrives first, keeping it would leave the row with no context line
+      // while a later site has real prose.
+      if (!seen.snippet && r.snippet) seen.snippet = r.snippet;
     } else {
       // Map preserves insertion order, which is what keeps the rail stable
       // between renders rather than resorting under the reader.

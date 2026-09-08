@@ -219,101 +219,45 @@ test("searchReferenceTargets: a section prefix match and a component substring m
   assert.equal(out[0]!.kind, "section");
 });
 
-// ── #684 consistency: the pill and the rail must count the same set ─────────
+// ── #684 consistency: the pill and the rail reconcile, they do not match ────
 //
-// The outline pill and the "Referenced by" rail sit a hand's width apart on the
-// same screen and both count distinct files. Once the rail stopped listing
-// generated targets, a pill that still counts them puts two numbers in the SAME
-// UNIT next to each other that disagree, which reads as a bug rather than as
-// two different measures. The pill counts what the rail will show.
-test("countsBySection: a generated referrer is not counted, because the rail will not list it", () => {
-  const path = "foundations/src/tokens.md";
-  const text = "## Tokens {#token-basics}\n\nBody.\n";
-  setCachedIndexForTesting({
-    entries: new Map([
-      [
-        "token-basics",
-        {
-          slug: "token-basics",
-          definedIn: [path],
-          referencedBy: [
-            "content/src/writing/voice-and-tone.md",
-            "foundations/dist/foundations.bundle.json",
-            "components/dist/guidelines/badge.json",
-            path,
-          ],
-        },
-      ],
-    ]),
-    scannedAt: 0,
-    scannedPaths: [path],
-    texts: new Map(),
-  });
-
-  const counts = countsBySection(path, text, 0);
-  // One editable referrer. The two dist files and the self-reference are out.
-  assert.equal(counts.get("token-basics"), 1);
-  setCachedIndexForTesting(null);
-});
-
-test("countsBySection: an anchor referenced only from generated files carries no pill at all", () => {
-  const path = "foundations/src/tokens.md";
-  const text = "## Tokens {#token-basics}\n\nBody.\n";
-  setCachedIndexForTesting({
-    entries: new Map([
-      [
-        "token-basics",
-        {
-          slug: "token-basics",
-          definedIn: [path],
-          referencedBy: ["foundations/dist/foundations.bundle.json"],
-        },
-      ],
-    ]),
-    scannedAt: 0,
-    scannedPaths: [path],
-    texts: new Map(),
-  });
-
-  // Not 0: a pill is set only when the count is above zero, so the absence of
-  // the key is the assertion. A "0" pill would claim a relationship the rail
-  // will show nothing for.
-  assert.equal(countsBySection(path, text, 0).has("token-basics"), false);
-  setCachedIndexForTesting(null);
-});
-
-// ── The join, asserted directly ─────────────────────────────────────────────
+// Written first as "the pill equals the rail's rows", which was wrong twice:
+// it made the pill drop to zero for the nine anchors in
+// `accessibility/src/components.md` whose only indexed referrers are generated
+// (the index scans .md and dist JSON, never `_meta.yml`), and it could not
+// fail on the first H2, where the pill deliberately carries the file's
+// outgoing count too.
 //
-// The pill and the scoped rail are computed in different modules from
-// different inputs, and they drifted the moment one of them changed. Testing
-// each side separately is what let that happen: both were individually
-// correct. This asserts the property that must hold BETWEEN them — for every
-// anchor, the pill's number is the number of rows the rail renders when you
-// click it — so a change to either side that breaks the pair fails here.
-test("the outline pill equals the rows the rail renders for that anchor", () => {
-  const path = "foundations/src/tokens.md";
-  const text =
-    "## Tokens {#token-basics}\n\nBody.\n\n## Motion {#motion-basics}\n\nMore.\n";
+// The true relation, and the one worth guarding:
+//
+//   pill(anchor) = rail rows + generated excluded + (outgoing, first H2 only)
+//
+// Each term is visible on screen: the rows, the "N generated files also
+// reference this" note, and the "References (N)" section. So a reader can
+// reconcile the two numbers even though they differ.
+
+const JOIN_PATH = "foundations/src/tokens.md";
+const JOIN_TEXT =
+  "## Tokens {#token-basics}\n\nBody.\n\n## Motion {#motion-basics}\n\nMore.\n";
+
+function seedJoinIndex() {
   setCachedIndexForTesting({
     entries: new Map([
       [
         "token-basics",
         {
           slug: "token-basics",
-          definedIn: [path],
+          definedIn: [JOIN_PATH],
           referencedBy: [
             // overlays.md mentions this anchor in TWO paragraphs below, and
             // incomingForFile pushes one row per snippet, so this file yields
-            // two rail rows for one anchor. That is what makes the grouping
-            // half of the join testable: without it, a fixture of distinct
-            // paths makes "group by file" and "do not group" agree, and the
-            // test cannot see the defect on the rail side.
+            // two rail rows for one anchor. Without that, a fixture of
+            // distinct paths makes "group by file" and "do not group" agree
+            // and the grouping half of the join cannot fail.
             "components/src/categories/overlays.md",
             "components/src/categories/form.md",
-            // Generated, so both sides must drop it.
             "foundations/dist/foundations.bundle.json",
-            // Self, which only the pill's own filter removes.
-            path,
+            JOIN_PATH,
           ],
         },
       ],
@@ -321,13 +265,13 @@ test("the outline pill equals the rows the rail renders for that anchor", () => 
         "motion-basics",
         {
           slug: "motion-basics",
-          definedIn: [path],
+          definedIn: [JOIN_PATH],
           referencedBy: ["components/src/categories/action.md"],
         },
       ],
     ]),
     scannedAt: 0,
-    scannedPaths: [path],
+    scannedPaths: [JOIN_PATH],
     texts: new Map([
       [
         "components/src/categories/overlays.md",
@@ -345,21 +289,62 @@ test("the outline pill equals the rows the rail renders for that anchor", () => 
       ["foundations/dist/foundations.bundle.json", "{}"],
     ]),
   });
+}
 
-  const counts = countsBySection(path, text, 0);
-  const all = incomingForFile(path, text);
+test("countsBySection: a generated referrer still counts, because something does depend on the section", () => {
+  seedJoinIndex();
+  const counts = countsBySection(JOIN_PATH, JOIN_TEXT, 0);
+  // overlays + form + the dist bundle. Self-reference excluded, as before.
+  assert.equal(counts.get("token-basics"), 3);
+  setCachedIndexForTesting(null);
+});
+
+test("the pill reconciles with the rail: rows + generated excluded, on a non-first anchor", () => {
+  seedJoinIndex();
+  const counts = countsBySection(JOIN_PATH, JOIN_TEXT, 0);
+  const all = incomingForFile(JOIN_PATH, JOIN_TEXT);
 
   for (const anchor of ["token-basics", "motion-basics"]) {
-    const railRows = incomingFiles(all.filter((r) => r.slug === anchor)).files
-      .length;
+    const { files, generatedExcluded } = incomingFiles(
+      all.filter((r) => r.slug === anchor),
+    );
     assert.equal(
       counts.get(anchor) ?? 0,
-      railRows,
-      `pill and rail disagree on #${anchor}: pill ${counts.get(anchor) ?? 0}, rail ${railRows}`,
+      files.length + generatedExcluded,
+      `#${anchor}: pill ${counts.get(anchor) ?? 0} != rows ${files.length} + excluded ${generatedExcluded}`,
     );
   }
-  // And the pill is a real number here, so the assertion above is not two
-  // zeroes agreeing with each other.
-  assert.equal(counts.get("token-basics"), 2);
+  // Not two zeroes agreeing: the token-basics side is 2 rows over 4 refs plus
+  // 1 excluded, so both the grouping and the exclusion term are load-bearing.
+  const scoped = incomingFiles(
+    all.filter((r) => r.slug === "token-basics"),
+  );
+  assert.equal(scoped.files.length, 2);
+  assert.equal(scoped.generatedExcluded, 1);
+  setCachedIndexForTesting(null);
+});
+
+test("the first H2's pill carries the outgoing count too, which the rail shows in its own section", () => {
+  // The case the previous version of this gate could not reach: it passed
+  // outgoingCount 0 for every anchor, so the one place the naive "pill equals
+  // rows" invariant is KNOWN to break was the one place it never looked.
+  seedJoinIndex();
+  const outgoing = 4;
+  const counts = countsBySection(JOIN_PATH, JOIN_TEXT, outgoing);
+  const all = incomingForFile(JOIN_PATH, JOIN_TEXT);
+
+  const first = incomingFiles(all.filter((r) => r.slug === "token-basics"));
+  assert.equal(
+    counts.get("token-basics"),
+    first.files.length + first.generatedExcluded + outgoing,
+    "the first H2 pill is incoming files + generated excluded + outgoing",
+  );
+
+  // And only the first H2 takes the outgoing term.
+  const second = incomingFiles(all.filter((r) => r.slug === "motion-basics"));
+  assert.equal(
+    counts.get("motion-basics"),
+    second.files.length + second.generatedExcluded,
+  );
   setCachedIndexForTesting(null);
 });

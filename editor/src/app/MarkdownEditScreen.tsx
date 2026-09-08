@@ -971,9 +971,14 @@ export function MarkdownEditScreen({
         })()}
       {/* The pull request and its failure are outcomes, not row furniture: they
           leave the button Flex and take the same Callout treatment this screen
-          already gives a load failure, matching MetaEditScreen (#682). */}
+          already gives a load failure, matching MetaEditScreen (#682).
+          No `role="status"` on the success Callout: that role IS a polite live
+          region, so with `announce()` below it the outcome was spoken twice,
+          once as the sentence and once as the URL read character by character.
+          One channel, the header region, in words. The failure keeps
+          `role="alert"` — nothing announces that. */}
       {prUrl && (
-        <Callout.Root color="grass" role="status" mt="2">
+        <Callout.Root color="grass" mt="2">
           <Callout.Text>
             PR opened:{" "}
             <Link href={prUrl} target="_blank" rel="noopener">

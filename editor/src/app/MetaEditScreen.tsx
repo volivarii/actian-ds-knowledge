@@ -402,7 +402,7 @@ export function MetaEditScreen({
           </Flex>
         </RJSFForm>
         {prUrl && (
-          <Callout.Root color="grass" role="status">
+          <Callout.Root color="grass">
             <Callout.Text>
               PR opened —{" "}
               <Link href={prUrl} target="_blank" rel="noreferrer">

@@ -169,27 +169,52 @@ async function submitOnlyThisFile() {
   return { calls };
 }
 
-test("MarkdownEditScreen: an opened pull request is raised to a status Callout, not inline body text", async () => {
+test("MarkdownEditScreen: an opened pull request is a Callout, not text in the button row", async () => {
   await submitOnlyThisFile();
-  // This screen renders more than one role="status" (the anchor-rename
-  // notice is another), so pin the assertion to the one carrying the PR url
-  // rather than to whichever comes first in the document.
+  // The Callout, identified by its own class rather than by a role: the role
+  // was removed because `role="status"` is itself a polite live region and
+  // duplicated the announcement below, reading the URL out character by
+  // character beside the sentence.
   await waitFor(
     () => {
-      const withUrl = Array.from(
-        document.querySelectorAll('[role="status"]'),
+      const callouts = Array.from(
+        document.querySelectorAll(".rt-CalloutRoot"),
       ).filter((el) =>
         /https:\/\/github\.com\/x\/y\/pull\/42/.test(el.textContent ?? ""),
       );
       assert.equal(
-        withUrl.length,
+        callouts.length,
         1,
-        `exactly one role=status must carry the PR url; found ${withUrl.length}. ` +
-          `All status regions: ${JSON.stringify(
-            Array.from(document.querySelectorAll('[role="status"]')).map(
-              (e) => e.textContent,
-            ),
-          )}`,
+        `exactly one Callout must carry the PR url; found ${callouts.length}`,
+      );
+    },
+    { timeout: 5000 },
+  );
+  // And it is not sitting inside the row of buttons any more.
+  const row = document.querySelector(".rt-Flex .rt-Button")?.closest(".rt-Flex");
+  assert.equal(
+    /https:\/\/github\.com\/x\/y\/pull\/42/.test(row?.textContent ?? ""),
+    false,
+    "the outcome must not render inside the button row",
+  );
+  submissionCartSingleton.clear();
+});
+
+test("MarkdownEditScreen: the outcome is announced once, not twice", async () => {
+  await submitOnlyThisFile();
+  // Two polite live regions saying the same thing is the defect this replaced:
+  // the header region carries the sentence, and no Callout claims a live role.
+  await waitFor(
+    () => {
+      const live = Array.from(
+        document.querySelectorAll('[role="status"], [aria-live="polite"]'),
+      ).filter((el) =>
+        /https:\/\/github\.com\/x\/y\/pull\/42/.test(el.textContent ?? ""),
+      );
+      assert.equal(
+        live.length,
+        0,
+        `no live region may read the PR url aloud; found ${live.length}`,
       );
     },
     { timeout: 5000 },

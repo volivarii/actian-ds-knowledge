@@ -132,3 +132,58 @@ test("AnchorReferencesPopover: the count matches the rows it actually lists", ()
     `count must not advertise a row it will not render, got: ${document.body.textContent}`,
   );
 });
+
+// ── Review finding: the popover states a flat falsehood for anchors whose
+// only indexed referrers are generated ─────────────────────────────────────
+//
+// `#truncation-overflow` in accessibility/src/components.md is consumed by ten
+// component guidelines. Every one of them reaches the index as
+// `components/dist/guidelines/*.json`, because the index scans .md and dist
+// JSON and never `_meta.yml`. Filtering for navigation without changing the
+// count made the popover say "No references in the substrate."
+
+test("AnchorReferencesPopover: an anchor referenced only from generated files is not called unreferenced", () => {
+  primeIndex("truncation-overflow", [
+    "components/dist/guidelines/card.json",
+    "components/dist/guidelines/table.json",
+    "components/dist/guidelines/tag.json",
+  ]);
+  render(
+    <Theme>
+      <AnchorReferencesPopover
+        slug="truncation-overflow"
+        open
+        onNavigate={() => {}}
+        onOpenChange={() => {}}
+      />
+    </Theme>,
+  );
+  const txt = document.body.textContent!;
+  assert.equal(
+    /No references in the substrate/.test(txt),
+    false,
+    `three files reference it; the popover must not say none: ${txt}`,
+  );
+  assert.ok(
+    /3 generated files reference this/.test(txt),
+    `it must say what does reference it, got: ${txt}`,
+  );
+});
+
+test("AnchorReferencesPopover: a genuinely unreferenced anchor still says so", () => {
+  primeIndex("orphan-anchor", []);
+  render(
+    <Theme>
+      <AnchorReferencesPopover
+        slug="orphan-anchor"
+        open
+        onNavigate={() => {}}
+        onOpenChange={() => {}}
+      />
+    </Theme>,
+  );
+  assert.ok(
+    /No references in the substrate/.test(document.body.textContent!),
+    "the honest empty state survives",
+  );
+});

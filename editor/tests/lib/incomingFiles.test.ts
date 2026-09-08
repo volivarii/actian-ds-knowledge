@@ -87,3 +87,27 @@ test("incomingFiles: nothing in, nothing out, and nothing claimed to be excluded
   assert.deepEqual(files, []);
   assert.equal(generatedExcluded, 0);
 });
+
+test("incomingFiles: the row takes the first NON-EMPTY snippet, not merely the first", () => {
+  // `incomingForFile` pushes `snippet: ""` for a reference with no matching
+  // body paragraph — one living in the referrer's frontmatter (a11y_refs and
+  // friends). It iterates slugs in Set order, so in the unscoped rail a file
+  // that references anchor A from frontmatter and anchor B from prose can
+  // arrive empty-first. Keeping the first would collapse it to a row with no
+  // context line at all, losing what the pre-grouping rail showed.
+  const { files } = incomingFiles([
+    ref("components/src/categories/overlays.md", ""),
+    ref("components/src/categories/overlays.md", "the prose one"),
+  ]);
+  assert.equal(files.length, 1);
+  assert.equal(files[0]!.snippet, "the prose one");
+});
+
+test("incomingFiles: a file with no snippet anywhere still renders, with none", () => {
+  const { files } = incomingFiles([
+    ref("components/src/categories/overlays.md", ""),
+    ref("components/src/categories/overlays.md", ""),
+  ]);
+  assert.equal(files.length, 1);
+  assert.equal(files[0]!.snippet, "");
+});

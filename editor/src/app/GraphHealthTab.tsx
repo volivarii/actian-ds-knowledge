@@ -266,11 +266,25 @@ export function GraphHealthTab({ octokit, onOpenFile }: GraphHealthTabProps) {
                           </Button>
                         ) : (
                           // An empty cell reads as "nothing to do here". These
-                          // rows have plenty to do; the editor has no surface
-                          // for their kind yet (terms live in the single
-                          // app-context/src/terminology.yml, which matches no
-                          // frontmatterForms entry). Say that, rather than
+                          // rows have plenty to do. Say that, rather than
                           // inventing a destination that would refuse (#697).
+                          //
+                          // Every orphan the screen renders today is a `term:`
+                          // (16 of the 29) and the wording is exact for it:
+                          // terms live in the single
+                          // app-context/src/terminology.yml, which matches no
+                          // frontmatterForms entry and is not plain markdown,
+                          // so it routes to the RefusalBanner.
+                          //
+                          // It is NOT exact for every null `navTargetForNodeId`
+                          // returns. `content:` resolves to null because the
+                          // group dir (patterns|product|writing) cannot be
+                          // recovered from the node id, not because the file
+                          // has no surface — those files are editable. No
+                          // content orphan reaches this table today, so the
+                          // wording is not wrong on screen; it would be the
+                          // moment one did, and the fix then is a reason per
+                          // kind, not a different sentence here.
                           <Text size="1" color="gray">
                             No editor surface
                           </Text>

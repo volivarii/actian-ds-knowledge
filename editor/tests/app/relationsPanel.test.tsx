@@ -632,3 +632,40 @@ test("with nothing generated to exclude, the rail says nothing about exclusions"
     "no exclusion line when nothing was excluded",
   );
 });
+
+// ── Review finding: "nothing links here" beside "2 generated files reference
+// this" is a contradiction, and it is reachable today ──────────────────────
+//
+// The index scans .md sources and dist JSON, never `_meta.yml`. So for nine of
+// the sixteen anchors in accessibility/src/components.md, EVERY indexed
+// referrer is generated. Filtering them without changing the empty state turns
+// "10 rows you cannot click" into "there is nothing here", which is worse than
+// the dead end it replaced.
+
+const INCOMING_ALL_GENERATED: IncomingRef[] = [
+  { fromPath: "components/dist/guidelines/card.json", slug: "usage", snippet: "" },
+  { fromPath: "components/dist/guidelines/table.json", slug: "usage", snippet: "" },
+  { fromPath: "components/dist/guidelines/tag.json", slug: "usage", snippet: "" },
+];
+
+test("with every referrer generated, the rail does not claim nothing links here", () => {
+  const { container } = renderPanel({ incoming: INCOMING_ALL_GENERATED });
+  const txt = container.textContent!;
+  assert.equal(
+    /Nothing links here yet\.|Nothing links to this section yet\./.test(txt),
+    false,
+    `the rail must not say nothing links here while 3 files do: ${txt.slice(0, 500)}`,
+  );
+  assert.ok(
+    /3 generated files reference this/.test(txt),
+    `it must say what does link here, got: ${txt.slice(0, 500)}`,
+  );
+});
+
+test("with nothing at all, the rail still says nothing links here", () => {
+  const { container } = renderPanel({ incoming: [] });
+  assert.ok(
+    /Nothing links here yet\./.test(container.textContent!),
+    "a genuinely unreferenced file keeps its honest empty state",
+  );
+});

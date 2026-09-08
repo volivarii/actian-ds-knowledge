@@ -6,7 +6,6 @@ import {
   findReferences,
   scanFileForAnchors,
 } from "./anchorIndex";
-import { isGeneratedTarget } from "./pathTiers";
 import { snippetsForSlug } from "./snippetExtract";
 import { bakedGraphIndex, type Neighbor } from "../substrate/graphIndex";
 import { nodeIdForFile } from "../substrate/nodeIdForFile";
@@ -118,13 +117,19 @@ export function countsBySection(
     // `fromPath === path` self-exclusion. A different file that also
     // defines the same globally-keyed slug (a co-definer) still counts as
     // a genuine incoming reference.
-    // Generated referrers are excluded for the same reason the rail does not
-    // list them (#684): the pill and the rail sit a hand's width apart, both
-    // count distinct files, and a pill counting a row the rail will not show
-    // is two numbers in one unit that disagree.
-    const incoming = findReferences(anchor).filter(
-      (p) => p !== path && !isGeneratedTarget(p),
-    ).length;
+    // Generated referrers ARE counted. The pill answers "how much depends on
+    // this section", and a `components/dist/guidelines/*.json` consuming an
+    // accessibility criterion is exactly that dependency — for nine of the
+    // sixteen anchors in `accessibility/src/components.md` it is the ONLY
+    // recorded one, because the index scans .md and dist JSON and never
+    // `_meta.yml`. Excluding them made those sections render with no badge,
+    // indistinguishable from a section nothing depends on, on the a11y
+    // author's main surface.
+    //
+    // The rail answers a different question — "where can I go from here" —
+    // and there a generated row is a dead end. The two numbers reconcile
+    // because the rail STATES what it withheld, not because they match.
+    const incoming = findReferences(anchor).filter((p) => p !== path).length;
     if (incoming > 0) counts.set(anchor, incoming);
   }
   if (firstH2Anchor && outgoingCount > 0) {
