@@ -187,3 +187,31 @@ test("AnchorReferencesPopover: a genuinely unreferenced anchor still says so", (
     "the honest empty state survives",
   );
 });
+
+test("AnchorReferencesPopover: the generated note follows the clickable list, not precedes it", () => {
+  // Above the list, a sentence about files you cannot open reads as a caption
+  // for the one you can. RelationsPanel places it after the rows; these two
+  // siblings should agree.
+  primeIndex("alpha", [
+    "content/src/patterns/forms.md",
+    "components/dist/guidelines/card.json",
+  ]);
+  render(
+    <Theme>
+      <AnchorReferencesPopover
+        slug="alpha"
+        open
+        onNavigate={() => {}}
+        onOpenChange={() => {}}
+      />
+    </Theme>,
+  );
+  const txt = document.body.textContent!;
+  const noteAt = txt.indexOf("1 generated file also references this");
+  const rowAt = txt.indexOf("content/src/patterns/forms.md");
+  assert.ok(noteAt >= 0 && rowAt >= 0, `both must render: ${txt}`);
+  assert.ok(
+    rowAt < noteAt,
+    `the clickable row must come before the note about what was withheld: ${txt}`,
+  );
+});

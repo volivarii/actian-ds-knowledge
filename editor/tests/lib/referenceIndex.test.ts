@@ -352,8 +352,8 @@ test("the first H2's pill carries the outgoing count too, which the rail shows i
 
 // ── An anchor that is "" is not an anchor ───────────────────────────────────
 //
-// `extractAnchor` -> `deriveSlug` yields "" for an H2 whose title has no
-// [a-z0-9] left after the numeric-prefix strip: "## 🎯", "## ---", "## 3.".
+// `extractAnchor` -> `deriveSlug` yields "" for an H2 whose title has nothing
+// sluggable left: "## 🎯", "## ---", "## ***". Not "## 3.", which gives "3".
 // The type says `string | null`, so callers guard on `=== null` and let ""
 // through. Two consequences, both silent:
 //

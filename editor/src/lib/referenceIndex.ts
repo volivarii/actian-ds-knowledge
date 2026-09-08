@@ -46,8 +46,10 @@ export function sectionAnchors(text: string): SectionAnchor[] {
     if (heading.level === 1) return { heading, anchor: null };
     const rawLine = lines[heading.line] ?? "";
     const titleRaw = rawLine.replace(LEADING_HASHES_RE, "").trim();
-    // `deriveSlug` returns "" for a title with nothing sluggable left after
-    // the numeric-prefix strip ("## 3.", "## ---", an emoji-only heading).
+    // `deriveSlug` returns "" for a title with nothing sluggable left:
+    // "## ---", "## ***", an emoji-only heading. NOT "## 3." — NUM_PREFIX_RE
+    // requires trailing whitespace, so it never fires there and the slug is
+    // "3", a perfectly good anchor.
     // The declared type is `string | null` and every caller guards on null, so
     // an "" slipped through as a truthy-looking anchor that is falsy in use:
     // countsBySection latched it as firstH2Anchor and then dropped the file's

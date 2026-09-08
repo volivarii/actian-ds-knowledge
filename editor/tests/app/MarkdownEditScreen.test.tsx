@@ -11,7 +11,10 @@ import {
 } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 import React from "react";
-import { MarkdownEditScreen } from "../../src/app/MarkdownEditScreen";
+import {
+  MarkdownEditScreen,
+  firstH2Anchor,
+} from "../../src/app/MarkdownEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
 import { setWysiwygFlag } from "../helpers/editorSurface";
 import {
@@ -194,12 +197,19 @@ test("MarkdownEditScreen: an opened pull request is a Callout, not text in the b
   // row by testid: the first version walked up from
   // `.rt-Flex .rt-Button`, which is a toolbar elsewhere in the document, so
   // re-injecting the URL into the real submit row left the gate green.
-  const row = document.querySelector('[data-testid="submit-row"]');
-  assert.ok(row, "the submit row must be present to assert about");
+  const rows = document.querySelectorAll('[data-testid="submit-row"]');
   assert.equal(
-    /https:\/\/github\.com\/x\/y\/pull\/42/.test(row!.textContent ?? ""),
+    rows.length,
+    1,
+    `exactly one submit row must carry the testid; found ${rows.length}. ` +
+      "With two, querySelector would silently check the wrong one and this " +
+      "gate would pass on the defect it names.",
+  );
+  const row = rows[0]!;
+  assert.equal(
+    /https:\/\/github\.com\/x\/y\/pull\/42/.test(row.textContent ?? ""),
     false,
-    `the outcome must not render inside the button row, got: ${row!.textContent}`,
+    `the outcome must not render inside the button row, got: ${row.textContent}`,
   );
   submissionCartSingleton.clear();
 });
@@ -240,4 +250,26 @@ test("MarkdownEditScreen: an opened pull request is announced in the live region
     { timeout: 5000 },
   );
   submissionCartSingleton.clear();
+});
+
+// ── Round-3 finding: two modules disagreed about the first H2 ──────────────
+//
+// `sectionAnchors` normalises an unslugabble heading to null, so
+// `countsBySection` moves the file's outgoing count onto the next H2 that has
+// an anchor. `firstH2Anchor` walks `computeFocusedSection`, which does not
+// normalise and returns "", so the two answered differently — and the file-
+// scope outgoing management was then hidden on the one section whose pill
+// carries the outgoing count. Migration stopped one module short.
+test("firstH2Anchor skips a heading with no derivable anchor, as countsBySection does", () => {
+  assert.equal(
+    firstH2Anchor("## 🎯\n\nBody.\n\n## Tokens {#token-basics}\n\nMore.\n"),
+    "token-basics",
+  );
+  // Unchanged where the first H2 does have one.
+  assert.equal(
+    firstH2Anchor("## Tokens {#token-basics}\n\nBody.\n\n## Motion\n\nMore.\n"),
+    "token-basics",
+  );
+  // No H2 with an anchor at all.
+  assert.equal(firstH2Anchor("## ---\n\nBody.\n"), null);
 });

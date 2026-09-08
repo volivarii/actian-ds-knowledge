@@ -1155,11 +1155,20 @@ export function MarkdownEditScreen({
 // Resolve the file's top H2 anchor. Used to decide whether the section
 // the author opened is the bucket that owns the file-level outgoing refs
 // (P8 Option A) — sub-sections render as read-only incoming views.
-function firstH2Anchor(source: string): string | null {
+/** The file's first H2 that actually has an anchor. Pure (exported for tests).
+ *
+ *  Skips an H2 whose title derives to no slug ("## ---", "## 🎯"), matching
+ *  `countsBySection`, which reads `sectionAnchors` and now sees `null` for
+ *  those. Without the skip the two modules disagreed about which heading is
+ *  first, and the file-scope outgoing management was hidden on exactly the
+ *  section whose pill carries the outgoing count. `computeFocusedSection`
+ *  returns "" rather than null here, so the emptiness is checked, not the
+ *  nullness. */
+export function firstH2Anchor(source: string): string | null {
   const lines = source.split("\n");
   for (let i = 0; i < lines.length; i++) {
     const s = computeFocusedSection(source, i);
-    if (s && s.level === 2) return s.anchor;
+    if (s && s.level === 2 && s.anchor) return s.anchor;
   }
   return null;
 }
