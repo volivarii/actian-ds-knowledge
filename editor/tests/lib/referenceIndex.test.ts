@@ -6,6 +6,7 @@ import {
   countsBySection,
   searchReferenceTargets,
 } from "../../src/lib/referenceIndex";
+import { incomingFiles } from "../../src/lib/incomingFiles";
 
 const THIS_PATH = "foundations/src/tokens.md";
 const THIS_TEXT = "## Tokens {#token-basics}\n\nBody.\n";
@@ -278,5 +279,87 @@ test("countsBySection: an anchor referenced only from generated files carries no
   // the key is the assertion. A "0" pill would claim a relationship the rail
   // will show nothing for.
   assert.equal(countsBySection(path, text, 0).has("token-basics"), false);
+  setCachedIndexForTesting(null);
+});
+
+// ── The join, asserted directly ─────────────────────────────────────────────
+//
+// The pill and the scoped rail are computed in different modules from
+// different inputs, and they drifted the moment one of them changed. Testing
+// each side separately is what let that happen: both were individually
+// correct. This asserts the property that must hold BETWEEN them — for every
+// anchor, the pill's number is the number of rows the rail renders when you
+// click it — so a change to either side that breaks the pair fails here.
+test("the outline pill equals the rows the rail renders for that anchor", () => {
+  const path = "foundations/src/tokens.md";
+  const text =
+    "## Tokens {#token-basics}\n\nBody.\n\n## Motion {#motion-basics}\n\nMore.\n";
+  setCachedIndexForTesting({
+    entries: new Map([
+      [
+        "token-basics",
+        {
+          slug: "token-basics",
+          definedIn: [path],
+          referencedBy: [
+            // overlays.md mentions this anchor in TWO paragraphs below, and
+            // incomingForFile pushes one row per snippet, so this file yields
+            // two rail rows for one anchor. That is what makes the grouping
+            // half of the join testable: without it, a fixture of distinct
+            // paths makes "group by file" and "do not group" agree, and the
+            // test cannot see the defect on the rail side.
+            "components/src/categories/overlays.md",
+            "components/src/categories/form.md",
+            // Generated, so both sides must drop it.
+            "foundations/dist/foundations.bundle.json",
+            // Self, which only the pill's own filter removes.
+            path,
+          ],
+        },
+      ],
+      [
+        "motion-basics",
+        {
+          slug: "motion-basics",
+          definedIn: [path],
+          referencedBy: ["components/src/categories/action.md"],
+        },
+      ],
+    ]),
+    scannedAt: 0,
+    scannedPaths: [path],
+    texts: new Map([
+      [
+        "components/src/categories/overlays.md",
+        "First para links [tokens](../foundations/tokens#token-basics) here.\n\n" +
+          "Second para links [tokens again](../foundations/tokens#token-basics) too.\n",
+      ],
+      [
+        "components/src/categories/form.md",
+        "Only para links [tokens](../foundations/tokens#token-basics) once.\n",
+      ],
+      [
+        "components/src/categories/action.md",
+        "A para links [motion](../foundations/tokens#motion-basics) once.\n",
+      ],
+      ["foundations/dist/foundations.bundle.json", "{}"],
+    ]),
+  });
+
+  const counts = countsBySection(path, text, 0);
+  const all = incomingForFile(path, text);
+
+  for (const anchor of ["token-basics", "motion-basics"]) {
+    const railRows = incomingFiles(all.filter((r) => r.slug === anchor)).files
+      .length;
+    assert.equal(
+      counts.get(anchor) ?? 0,
+      railRows,
+      `pill and rail disagree on #${anchor}: pill ${counts.get(anchor) ?? 0}, rail ${railRows}`,
+    );
+  }
+  // And the pill is a real number here, so the assertion above is not two
+  // zeroes agreeing with each other.
+  assert.equal(counts.get("token-basics"), 2);
   setCachedIndexForTesting(null);
 });
