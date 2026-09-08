@@ -676,11 +676,41 @@
       "group": "Overlays",
       "props": [
         {
+          "name": "Catalog"
+        },
+        {
+          "name": "Category"
+        },
+        {
+          "name": "Completion"
+        },
+        {
+          "name": "Connection"
+        },
+        {
+          "name": "Description"
+        },
+        {
+          "name": "Fields"
+        },
+        {
+          "name": "Glossary items"
+        },
+        {
+          "name": "Last updated"
+        },
+        {
           "name": "Name",
           "default": "Name"
         },
         {
           "name": "Show Back"
+        },
+        {
+          "name": "Source description"
+        },
+        {
+          "name": "Technical name"
         },
         {
           "name": "Type",
