@@ -673,12 +673,12 @@ var MATRIX_OVERRIDES = {
     {
       label: "Studio",
       variant: "App=Studio",
-      props: { Name: "Financial Summary EY2024", Type: "Dataset" },
+      props: { Name: "Financial Summary EY2024", Type: "Dataset", Completion: 50 },
     },
     {
       label: "Explorer",
       variant: "App=Explorer",
-      props: { Name: "Financial Summary EY2024", Type: "Dataset" },
+      props: { Name: "Financial Summary EY2024", Type: "Dataset", Completion: 50 },
     },
   ],
 
@@ -923,6 +923,26 @@ var SPECIMEN_PROPS = {
   // no text to extract, so there is no captured string
   modal: {
     Body: "Update the description so teammates know what this connection is for.",
+  },
+
+  // authored: the drawer's body, meta row and three sections. None of it is
+  // captured (the Studio anatomy tree carries no text), and all of it sat as
+  // literals in the leaf, so every generated drawer described able_agency
+  // under whatever Name the caller passed (plugin skill audit, 2026-09-08).
+  // Completion is on the matrix cell, not here: it feeds a progressbar's
+  // attributes and never its text, so the omission probe could not see it.
+  drawer: {
+    "Technical name": "able_agency",
+    Catalog: "Finance",
+    Category: "24/7",
+    Connection: "Powerbi",
+    "Last updated": "Dec 15, 2025",
+    Fields: "10 Fields",
+    "Glossary items": "Search or select glossary items",
+    Description:
+      "A short description of this dataset, including its purpose and key characteristics.",
+    "Source description":
+      "A short description carried over from the source system.",
   },
 
   // capture: anatomy/toast.json nested button label "Close"

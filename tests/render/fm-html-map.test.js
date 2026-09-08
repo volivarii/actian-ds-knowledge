@@ -76,3 +76,43 @@ test("normalizeProps: a Figma '#id'-suffixed key still resolves via its base nam
     "the suffixed prop key still resolves to Label",
   );
 });
+
+test("renderFMComponent: fmDialog reads Title and Body, and prints neither literal without them", function () {
+  var FM = require(FM_PATH);
+  var html = FM.renderFMComponent({
+    type: "INSTANCE",
+    ref: "fmDialog",
+    props: { Title: "Publish data product?", Body: "Consumers see it in the catalog." },
+  });
+  assert.match(html, /fm-dialog__title">Publish data product\?</, "Title reaches the title element");
+  assert.match(html, /fm-dialog__body">Consumers see it in the catalog\.</, "Body reaches the body element");
+  var bare = FM.renderFMComponent({ type: "INSTANCE", ref: "fmDialog", props: {} });
+  assert.doesNotMatch(bare, />Dialog</, "no literal title the caller did not write");
+  assert.doesNotMatch(bare, /fm-dialog__title|fm-dialog__body/, "no empty title or body element");
+  assert.match(bare, /class="fm-dialog"/, "the panel itself renders");
+});
+
+test("renderFMComponent: fmEmptyState reads Headline, Body and Cta, and prints no literal without them", function () {
+  var FM = require(FM_PATH);
+  var html = FM.renderFMComponent({
+    type: "INSTANCE",
+    ref: "fmEmptyState",
+    variant: "Property 1=Default",
+    props: {
+      Headline: "No data products yet",
+      Body: "Publish one to see it here.",
+      Cta: "Publish data product",
+    },
+  });
+  assert.match(html, /fm-empty-state__text">No data products yet</, "Headline reaches the text element");
+  assert.match(html, /fm-empty-state__body">Publish one to see it here\.</, "Body reaches its own element");
+  assert.match(
+    html,
+    /fm-button fm-button--primary fm-button--md">Publish data product</,
+    "Cta reuses the fm-button markup",
+  );
+  var bare = FM.renderFMComponent({ type: "INSTANCE", ref: "fmEmptyState", props: {} });
+  assert.doesNotMatch(bare, /No items/, "no literal headline the caller did not write");
+  assert.doesNotMatch(bare, /fm-empty-state__text|fm-empty-state__body|fm-button/, "no empty text elements");
+  assert.match(bare, /fm-empty-state__icon/, "the icon well stays");
+});
