@@ -4929,16 +4929,11 @@
   content: "";
   position: absolute;
   top: 50%;
+  right: 100%; /* both stubs reach LEFT: one out of the term, one out of the
+                  right branch, so the two are one rule */
   width: var(--zen-spacing-lg); /* the row gap, so the stub spans it */
   height: 1px;
   background: #a76605; /* authored */
-}
-.ds-glossary-hierarchy__branch--left + .ds-glossary-hierarchy__main::before {
-  right: 100%;
-}
-.ds-glossary-hierarchy__branch--right::after {
-  right: 100%;
-  top: 50%;
 }
 .ds-glossary-hierarchy__item,
 .ds-glossary-hierarchy__main {

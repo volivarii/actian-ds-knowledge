@@ -4561,12 +4561,26 @@
             lclCls += " ds-lineage-connecting-line--disabled";
           // The elbow's corner radius is the capture's own 100px, clamped by
           // the 40px box: an arc that large on a 120x40 path is a quarter turn.
+          //
+          // The head is built from the path's OWN end height, not from the
+          // middle of the box. It was fixed at y=20 while an elbow ends at 8 or
+          // 32, so on four of the five gallery cells the arrow floated a third
+          // of the box away from the line it terminates.
+          var lclEndY = lclDir === "up" ? 8 : lclDir === "down" ? 32 : 20;
           var lclPath =
             lclDir === "up"
               ? "M0,32 H44 A12,12 0 0 0 56,20 V20 A12,12 0 0 1 68,8 H108"
               : lclDir === "down"
                 ? "M0,8 H44 A12,12 0 0 1 56,20 V20 A12,12 0 0 0 68,32 H108"
                 : "M0,20 H108";
+          var lclHead =
+            "M108," +
+            (lclEndY - 6) +
+            " L120," +
+            lclEndY +
+            " L108," +
+            (lclEndY + 6) +
+            " Z";
           var lclIcon =
             props["Show icon"] !== false
               ? '<span class="ds-lineage-connecting-line__node"></span>'
@@ -4579,7 +4593,9 @@
             '<path class="ds-lineage-connecting-line__path" d="' +
             lclPath +
             '"/>' +
-            '<path class="ds-lineage-connecting-line__head" d="M108,14 L120,20 L108,26 Z"/>' +
+            '<path class="ds-lineage-connecting-line__head" d="' +
+            lclHead +
+            '"/>' +
             "</svg>" +
             lclIcon +
             "</span>"

@@ -2633,6 +2633,31 @@ test("lineage-connecting-line: direction picks a path, and Show icon drops the n
   // "up" and "Up" are one value spelled twice in the Figma axis, so both must
   // draw the same path rather than one of them falling back to straight.
   assert.equal(pathOf("Direction=up"), pathOf("Direction=Up"));
+  // The arrowhead has to sit at the END of the line it terminates. It was
+  // fixed at the middle of the box while an elbow ends a third of the way up or
+  // down, so on four of the five gallery cells the arrow floated free of the
+  // line. Asserted as the RELATIONSHIP rather than as three literal paths: the
+  // head's tip must be level with the y the path's final horizontal run sits
+  // on, whatever those two happen to be.
+  ["Direction=Straight", "Direction=Up", "Direction=Down"].forEach(
+    function (variant) {
+      var html = renderTen("lineage-connecting-line", variant);
+      var path = /__path" d="([^"]*)"/.exec(html)[1];
+      var head = /__head" d="([^"]*)"/.exec(html)[1];
+      // The LAST horizontal run, not the first: an elbow starts with one too,
+      // and matching that reported the height the line leaves rather than the
+      // height it arrives at.
+      var runs = path.match(/([\d.]+),([\d.]+)\s+H\d/g);
+      var endY = Number(/,([\d.]+)\s+H/.exec(runs[runs.length - 1])[1]);
+      var tipY = Number(/L\d+,([\d.]+)/.exec(head)[1]);
+      assert.equal(
+        tipY,
+        endY,
+        variant + ": the head tip is at " + tipY + " and the line ends at " + endY,
+      );
+    },
+  );
+
   assert.match(renderTen("lineage-connecting-line"), /__node/);
   assert.doesNotMatch(
     renderTen("lineage-connecting-line", "", { "Show icon": false }),
