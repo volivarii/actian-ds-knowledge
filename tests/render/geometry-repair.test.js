@@ -235,6 +235,36 @@ test("a repair that leaves the comment beside it stating the old number says so"
   assert.equal(R.apply(quiet, made2.proposals).staleNotes.length, 0);
 });
 
+test("the commands it prints are the commands that run", function () {
+  // The worklist told the reader to run `fidelity-explain <slug>`, which is not
+  // on anyone's PATH: the entry point is an npm script. A tool whose whole
+  // point is making a loop cheap must not send the reader to a command that
+  // does not exist, so the strings are asserted rather than trusted.
+  const geo = {
+    bySlug: { alpha: { mismatch: 1, verified: 0, verifiedViaTokenName: 0, unverifiable: 0 } },
+    mismatches: [
+      {
+        slug: "alpha",
+        selector: ".ds-alpha",
+        property: "gap",
+        painted: 4,
+        fact: 8,
+        factToken: null,
+      },
+    ],
+  };
+  const list = E.worklist(geo, { bySlug: {} }, {});
+  assert.match(list, /npm run fidelity -- <slug>/);
+  assert.doesNotMatch(list, /`fidelity-explain /, "names a binary that is not on PATH");
+
+  const one = E.explain("alpha", geo, { bySlug: {} }, {}, ".ds-alpha { gap: 4px; }", {});
+  assert.match(
+    one,
+    /npm run fidelity -- alpha --write/,
+    "the apply line has to be runnable as printed, slug included",
+  );
+});
+
 test("one refusal per distinct reason, not one per finding", function () {
   // A refusal is raised per FINDING, so four padding sides inside one unreadable
   // shorthand printed the same sentence four times and read as four separate

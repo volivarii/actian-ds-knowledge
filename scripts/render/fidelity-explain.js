@@ -190,7 +190,7 @@ function worklist(geo, colour, reach) {
       rows.reduce(function (n, r) {
         return n + r.shapeBad;
       }, 0) +
-      " declarations. `fidelity-explain <slug>` for one of them.",
+      " declarations. `npm run fidelity -- <slug>` for one of them.",
   );
   return lines.join("\n");
 }
@@ -340,7 +340,11 @@ function explain(slug, geo, colour, reach, css, tokenMap) {
       "one only.",
   );
   lines.push("");
-  lines.push("  Apply with:  " + "--write" + "   then `npm run derive:render`.");
+  lines.push(
+    "  Apply with:  npm run fidelity -- " +
+      slug +
+      " --write     then `npm run derive:render`.",
+  );
   return lines.join("\n");
 }
 
