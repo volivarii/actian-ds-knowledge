@@ -75,7 +75,8 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
-- **The required check went red on every pull request, whatever it touched.**
+- **The required check went red on every pull request, whatever it touched**
+  ([#700](https://github.com/volivarii/actian-ds-knowledge/pull/700)).
   `Validate manifest schema + coverage` regenerates `components/render/dist` and requires the result
   to match byte for byte. Ten of the eleven artifacts there are a function of the tree and do match.
   `quality-trend.*` is not one of them, and its drift is permanent rather than stale: each measure's
