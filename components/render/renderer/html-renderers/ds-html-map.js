@@ -624,7 +624,6 @@
     );
   }
 
-
   // ---- Chart helpers, shared by the two graph leaves ----
   //
   // Both captures describe the SAME axis: a column of rows 22px tall with a 12px
@@ -722,14 +721,6 @@
       .filter(function (n) {
         return isFinite(n);
       });
-  }
-
-  // The i-th number of a list prop, or null when the caller gave none for that
-  // category. Used by the bar chart, where three series are three separate
-  // props so a flow author can write them as three readable lists.
-  function numAt(raw, i) {
-    var nums = parseNums(raw);
-    return i < nums.length ? nums[i] : null;
   }
 
   // A percentage of the axis, clamped: a value above the scale must not draw a
@@ -4165,10 +4156,14 @@
           // pages"), so Page and Pages are renderer props defaulting to them.
           var pgPage = esc(props.Page || "1");
           var pgPages = esc(props.Pages || "2");
+          // Previous is the BASE box and takes no modifier: only Next has a
+          // delta of its own (it drops the border the two share). A `--prev`
+          // class was emitted first and matched no rule, which is the no-op
+          // namespace marker this file does not ship.
           function pgBox(cls, icon, rotate) {
             return (
-              '<span class="ds-pagination__step ' +
-              cls +
+              '<span class="ds-pagination__step' +
+              (cls ? " " + cls : "") +
               '">' +
               renderIcon(icon, rotate ? { rotate: rotate } : undefined) +
               "</span>"
@@ -4187,7 +4182,7 @@
             pgPages +
             " pages</span>" +
             "</div>" +
-            pgBox("ds-pagination__step--prev", "arrow-left") +
+            pgBox("", "arrow-left") +
             pgBox("ds-pagination__step--next", "arrow-left", 180) +
             "</div>"
           );
@@ -4303,8 +4298,9 @@
         // chart on a screen. So these four take their numbers as props, draw
         // them into chrome quoted from the capture, and render the chrome alone
         // when a caller supplies nothing. The gallery's numbers live in
-        // matrix.js SPECIMEN_PROPS, marked authored, because inferring them from
-        // the captured bar heights would be reading data out of pixels.
+        // matrix.js MATRIX_OVERRIDES (NOT SPECIMEN_PROPS -- the comment there
+        // says why), authored, because inferring them from the captured bar
+        // heights would be reading data out of pixels.
         //
         // The grid metric is quoted and the plot area follows from it. Every
         // axis row is 22px with a 12px gap between rows and its rule centred, so
@@ -4336,9 +4332,9 @@
           // publishes NOTHING: the contract would list the chart's labels and
           // not the three props a caller has to set to get a single bar.
           var DQ_SERIES = [
-            { name: "Error", values: props.Error },
-            { name: "Warning", values: props.Warning },
-            { name: "OK", values: props.OK },
+            { name: "Error", values: parseNums(props.Error) },
+            { name: "Warning", values: parseNums(props.Warning) },
+            { name: "OK", values: parseNums(props.OK) },
           ];
           var dqMax = dqTicks[0];
           // Series order is DOM order, and DOM order is stack order: the bar
@@ -4348,7 +4344,7 @@
           var dqBars = dqCats
             .map(function (cat, i) {
               var segments = DQ_SERIES.map(function (s) {
-                var v = numAt(s.values, i);
+                var v = s.values[i];
                 if (!(v > 0)) return "";
                 return (
                   '<span class="ds-quality-graph__seg ds-quality-graph__seg--' +
@@ -4513,7 +4509,13 @@
           );
           var ghLeft = ghItems.slice(0, Math.ceil(ghItems.length / 2));
           var ghRight = ghItems.slice(Math.ceil(ghItems.length / 2));
+          // An empty branch is NOT emitted. With one item the right side was an
+          // empty div, and the term still drew a 24px stub into it: a connector
+          // to nothing. The CSS hangs the left stub off `--left + __main` and
+          // the right stub off the right branch itself, so a side that is not
+          // emitted draws neither a spine nor a stub.
           function ghBranch(side, items) {
+            if (!items.length) return "";
             return (
               '<div class="ds-glossary-hierarchy__branch ds-glossary-hierarchy__branch--' +
               side +
@@ -4549,10 +4551,10 @@
           // #c7c7ce stroke plus an optional icon instance, so the PATH is
           // authored: straight is a level line, up and down are elbows.
           var lclDir = String(v.Direction || "Straight").toLowerCase();
+          // Direction gets NO modifier class: it is drawn entirely in the path
+          // below, so a `--up` / `--down` class would match no rule. State does
+          // get one, because State is a recolour and colour is in the sheet.
           var lclCls = "ds-lineage-connecting-line";
-          if (lclDir === "up") lclCls += " ds-lineage-connecting-line--up";
-          else if (lclDir === "down")
-            lclCls += " ds-lineage-connecting-line--down";
           if (v.State === "Selected")
             lclCls += " ds-lineage-connecting-line--selected";
           if (v.State === "Disabled")

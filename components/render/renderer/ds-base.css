@@ -4296,7 +4296,9 @@
   width: 16px; /* authored: the capture sizes no instance */
   height: 16px;
   flex: 0 0 auto;
-  color: var(--zen-color-icon-subtle);
+  color: var(
+    --zen-color-icon-subtle
+  ); /* authored: an instance node records a slug and no appearance */
 }
 .ds-label__desc {
   font-size: var(--zen-font-size-md); /* capture: 14px */
@@ -4331,14 +4333,12 @@
   width: 16px; /* authored: the capture sizes no instance */
   height: 16px;
   flex: 0 0 auto;
-  color: currentColor;
 }
 .ds-message__text {
   font-size: var(--zen-font-size-sm); /* capture: 12px */
   font-weight: var(--zen-font-weight-regular); /* capture: 400 */
   line-height: var(--zen-font-lineheight-sm); /* capture: 16px */
   letter-spacing: var(--zen-font-letterspacing-wide-3); /* capture: 0.3px */
-  color: currentColor;
 }
 /* warning-900 / error-700 / success-700 rather than the three semantic text
    tokens the capture binds: see the block header. */
@@ -4916,12 +4916,16 @@
   right: 100%;
 }
 /* The two stubs from the term to each spine, so the middle is joined to the
-   sides rather than floating between them. */
+   sides rather than floating between them.
+   Each stub is hung off the branch it reaches, NOT off the term: the left one on
+   `--left + __main` and the right one on the right branch itself, so a side the
+   renderer did not emit draws no connector to nothing. A one-item hierarchy used
+   to show a stub sticking out into empty space. */
 .ds-glossary-hierarchy__main {
   position: relative;
 }
-.ds-glossary-hierarchy__main::before,
-.ds-glossary-hierarchy__main::after {
+.ds-glossary-hierarchy__branch--left + .ds-glossary-hierarchy__main::before,
+.ds-glossary-hierarchy__branch--right::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -4929,11 +4933,12 @@
   height: 1px;
   background: #a76605; /* authored */
 }
-.ds-glossary-hierarchy__main::before {
+.ds-glossary-hierarchy__branch--left + .ds-glossary-hierarchy__main::before {
   right: 100%;
 }
-.ds-glossary-hierarchy__main::after {
-  left: 100%;
+.ds-glossary-hierarchy__branch--right::after {
+  right: 100%;
+  top: 50%;
 }
 .ds-glossary-hierarchy__item,
 .ds-glossary-hierarchy__main {

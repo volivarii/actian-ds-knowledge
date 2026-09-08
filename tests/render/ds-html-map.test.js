@@ -2617,20 +2617,22 @@ test("a caller's Max moves the top of the scale and keeps the captured divisions
 });
 
 test("lineage-connecting-line: direction picks a path, and Show icon drops the node", function () {
-  assert.match(
-    renderTen("lineage-connecting-line", "Direction=Down"),
-    /ds-lineage-connecting-line--down/,
-  );
+  // Asserted on the PATH, not on a class: direction is drawn entirely in the
+  // `d` attribute, and a `--up` / `--down` modifier would match no rule in
+  // ds-base.css. It was emitted first, and asserting the marker is how a test
+  // passes on a class that paints nothing.
+  function pathOf(variant) {
+    return /__path" d="([^"]*)"/.exec(
+      renderTen("lineage-connecting-line", variant),
+    )[1];
+  }
+  var straight = pathOf("Direction=Straight");
+  assert.notEqual(pathOf("Direction=Down"), straight);
+  assert.notEqual(pathOf("Direction=Up"), straight);
+  assert.notEqual(pathOf("Direction=Up"), pathOf("Direction=Down"));
   // "up" and "Up" are one value spelled twice in the Figma axis, so both must
-  // reach the same modifier rather than one of them matching no rule.
-  assert.match(
-    renderTen("lineage-connecting-line", "Direction=up"),
-    /ds-lineage-connecting-line--up/,
-  );
-  assert.match(
-    renderTen("lineage-connecting-line", "Direction=Up"),
-    /ds-lineage-connecting-line--up/,
-  );
+  // draw the same path rather than one of them falling back to straight.
+  assert.equal(pathOf("Direction=up"), pathOf("Direction=Up"));
   assert.match(renderTen("lineage-connecting-line"), /__node/);
   assert.doesNotMatch(
     renderTen("lineage-connecting-line", "", { "Show icon": false }),
@@ -2649,6 +2651,21 @@ test("glossary-item-hierarchy: the branches split evenly and the term is not one
   assert.equal(
     (html.match(/ds-glossary-hierarchy__branch--/g) || []).length,
     2,
-    "one branch each side, whatever the item count",
+    "one branch each side when there are items for both",
+  );
+});
+
+test("glossary-item-hierarchy: a side with no items is not emitted", function () {
+  // An empty branch drew a connector to nothing: the term's stub reached 24px
+  // into an empty div. Both the branch and its stub have to go, which is why
+  // the CSS hangs each stub off the branch it reaches rather than off the term.
+  var one = renderTen("glossary-item-hierarchy", "", { Items: "Only" });
+  assert.match(one, /branch--left/);
+  assert.doesNotMatch(one, /branch--right/);
+  // The control: with items on both sides both branches are still emitted, so
+  // the assertion above is about emptiness and not about branches in general.
+  assert.match(
+    renderTen("glossary-item-hierarchy", "", { Items: "A, B" }),
+    /branch--right/,
   );
 });
