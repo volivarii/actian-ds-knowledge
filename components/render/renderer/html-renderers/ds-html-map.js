@@ -552,6 +552,78 @@
     );
   }
 
+  // checkbox-card and radio-card are one shape: a bordered 316px surface
+  // holding the control, then a slot for whatever the card is about. Written
+  // once here and wired from both cases; see the cases for why they are not one
+  // fall-through branch.
+  //
+  // The control is a real component, rendered by recursing rather than by
+  // restating a checkbox here, so a card whose control drifts from the checkbox
+  // leaf is a defect this makes impossible (same idiom as inputGroup).
+  //
+  // The two Selection axes do NOT share a vocabulary and the translation is the
+  // reason this helper takes the card's Selection value and maps it, rather
+  // than passing the variant object through: the
+  // cards publish Selection = Unselected | Selected (| Indeterminate), the
+  // controls publish checkbox Selection = Unchecked | Checked | Indeterminate
+  // and radio Selection = Unselected | Selected. Forwarding "Selected" to a
+  // checkbox selects nothing, which is a card that looks unticked in every
+  // state a caller can ask for.
+  function selectionCard(o) {
+    var childSel = "";
+    var sel = o.selection;
+    if (sel === "Indeterminate") childSel = "Indeterminate";
+    else if (sel === "Selected")
+      childSel = o.child === "checkbox" ? "Checked" : "Selected";
+
+    // Only Disabled crosses into the control. Hover, Focus and Pressed are
+    // captured on the CARD's own background (rgba(0,0,0,.05) / .1), not on the
+    // control, so forwarding them would paint a state the capture puts
+    // somewhere else.
+    var childState = o.state === "Disabled" ? "Disabled" : "";
+    var parts = [];
+    if (childSel) parts.push("Selection=" + childSel);
+    if (childState) parts.push("State=" + childState);
+
+    // Only the three states the capture PAINTS get a modifier. Both cards
+    // publish State = Default | Hover | Focus | Pressed | Disabled, and both
+    // captures record appearance deltas for Hover, Pressed and Disabled only
+    // (radio-card's Focus entry is `background: null`, which is the absence of
+    // a fill, not a fill to paint). A `--focus` class would therefore match no
+    // rule, and this file does not emit modifier classes that paint nothing.
+    var CARD_PAINTED_STATES = { Hover: 1, Pressed: 1, Disabled: 1 };
+    var cardState = CARD_PAINTED_STATES[o.state]
+      ? " " + o.cls + "--" + o.state.toLowerCase()
+      : "";
+    // No Label prop, deliberately. Neither card PUBLISHES one -- checkbox-card
+    // publishes Dynamic content and four booleans, radio-card publishes Slot --
+    // and the label belongs to the control, which carries its own fallback. A
+    // Label here would have read as the card inventing content for a prop it
+    // does not have, and would have DISPLACED the checkbox's own "Label".
+    var control = renderDSComponent({
+      type: "INSTANCE",
+      library: "ds",
+      dsSlug: o.child,
+      variant: parts.join(","),
+      props: {},
+    });
+    // An unset Slot invents no body copy: the slot is a published SLOT prop, so
+    // its content belongs to the caller. The slot ELEMENT goes with it, for the
+    // reason card gives above. The gallery's string lives in matrix.js
+    // SPECIMEN_PROPS.
+    return (
+      '<div class="' +
+      o.cls +
+      cardState +
+      '">' +
+      control +
+      (o.slot
+        ? '<div class="' + o.cls + '__slot">' + esc(o.slot) + "</div>"
+        : "") +
+      "</div>"
+    );
+  }
+
   // Resolve the active item for a list prop: the trimmed Active value when it
   // matches an item (case-insensitive), else the first item. Falls back to
   // first on absent OR non-matching Active, so a stale/renamed Active never
@@ -3761,6 +3833,328 @@
           );
         }
 
+        // ── The last ten UI leaves the capture fully specifies ─────────
+        //
+        // 74 components carry the registry section "Components"; 60 had a leaf
+        // and 14 did not, so every one of those 14 fell to the default case and
+        // drew a grey box from geometry alone. Ten of them are built here. The
+        // remaining four (line-graph, data-quality-checks-graph,
+        // glossary-item-hierarchy, lineage-connecting-line) are drawings: their
+        // shape lives in `vector` nodes, and a vector in the capture carries a
+        // name, an id and a fill and NO path data at all, so nothing in this
+        // repo can derive what they draw. They are not built from the capture
+        // and are not faked from one.
+        //
+        // Every declaration in the ds-base.css block that pairs with these ten
+        // is quoted from components/dist/anatomy/<slug>.json. Where a captured
+        // colour disagrees with the token Figma bound to it, the PAINTED value
+        // wins and the disagreement is named at the rule: the fidelity oracle
+        // compares against the paint, and #678 already found one binding
+        // (--zen-border-error) whose token resolves to a colour the component
+        // does not use.
+
+        case "card": {
+          // Registry axes: Elevation = Flat with border | Raised with shadow,
+          // Size = Small | Large. Prop: Slot.
+          //
+          // The capture holds Elevation=Flat's border and records for
+          // Elevation=Raised only `border: null`. It records no shadow, because
+          // the anatomy capture has no shadow field at all (no anatomy file in
+          // the tree contains one), so Raised's shadow is AUTHORED and says so
+          // at its rule. Size drives padding only: 8px small, 16px large, both
+          // captured with their tokens.
+          var cardCls = "ds-card";
+          if (v.Elevation === "Raised with shadow")
+            cardCls += " ds-card--raised";
+          if (v.Size === "Large") cardCls += " ds-card--large";
+          // A Card is a surface for somebody else's content, so an unset Slot
+          // invents no body. The slot ELEMENT goes with it: the capture's Slot
+          // child is an empty auto-layout frame, and an empty flex container
+          // draws nothing, so emitting one would ship a part with no content in
+          // it (tests/render/empty-slots-gate.test.js). The gallery's string
+          // lives in matrix.js SPECIMEN_PROPS.
+          return (
+            '<div class="' +
+            cardCls +
+            '">' +
+            (props.Slot
+              ? '<div class="ds-card__slot">' + esc(props.Slot) + "</div>"
+              : "") +
+            "</div>"
+          );
+        }
+
+        // checkbox-card and radio-card are the same shape with two measured
+        // differences: the gap between the control and the slot (8px vs 4px)
+        // and the slot's left inset (32px vs 0). Both are captured. They are
+        // TWO cases rather than a fallthrough for the reason the form groups
+        // are: the contract deriver attributes a fallthrough group's props to
+        // one slug, so the second would be published as reading nothing.
+        case "checkbox-card": {
+          return selectionCard({
+            cls: "ds-checkbox-card",
+            child: "checkbox",
+            selection: v.Selection,
+            state: v.State,
+            slot: props.Slot,
+          });
+        }
+
+        case "radio-card": {
+          return selectionCard({
+            cls: "ds-radio-card",
+            child: "radio",
+            selection: v.Selection,
+            state: v.State,
+            slot: props.Slot,
+          });
+        }
+
+        case "label": {
+          // The field label ABOVE an input, not a tag. Registry axis State =
+          // Default | Disabled; four published booleans decide which parts
+          // render, and two published TEXT props carry the strings. Both text
+          // defaults below are the registry's own published defaults, which are
+          // also the strings in the capture.
+          var lblDisabled = v.State === "Disabled";
+          var lblCls = "ds-label" + (lblDisabled ? " is-disabled" : "");
+          var lblText = esc(props["Label text"] || "Label");
+          var lblDesc = esc(
+            props["Description text"] ||
+              "A description helps users to define and understand the purpose of the input.",
+          );
+          // Published booleans, all defaulting to true. `!== false` so an unset
+          // prop keeps the published default and an explicit false hides.
+          var lblShowLabel = props.Label !== false;
+          var lblShowStar = props["* (Asterisk)"] !== false;
+          var lblShowInfo = props["Info icon"] !== false;
+          var lblShowDesc = props.Description !== false;
+          return (
+            '<div class="' +
+            lblCls +
+            '">' +
+            (lblShowLabel
+              ? '<span class="ds-label__row">' +
+                '<span class="ds-label__text">' +
+                lblText +
+                "</span>" +
+                (lblShowStar
+                  ? '<span class="ds-label__required">*</span>'
+                  : "") +
+                (lblShowInfo
+                  ? '<span class="ds-label__info">' +
+                    renderIcon("info") +
+                    "</span>"
+                  : "") +
+                "</span>"
+              : "") +
+            (lblShowDesc
+              ? '<span class="ds-label__desc">' + lblDesc + "</span>"
+              : "") +
+            "</div>"
+          );
+        }
+
+        case "message": {
+          // The inline validation line under a field. Registry axis Type =
+          // Helper text | Error | Warning | Success | Info. The capture's
+          // default variant is Warning, and Helper text is recorded as a
+          // STRUCTURAL variant (quality.structuralVariants: base is
+          // [instance:warning-filled, text:Message], the variant is [text] with
+          // no icon), so Helper text renders the text alone.
+          var MSG_ICONS = {
+            Warning: "warning-filled",
+            Error: "error-filled",
+            Info: "info-filled",
+            Success: "success-filled",
+          };
+          // Only the five values the registry publishes are honoured, and the
+          // Type is normalised ONCE so the icon, the modifier and the fallback
+          // string cannot disagree. A value from outside the axis would
+          // otherwise emit a class matching no rule, which this file does not
+          // do; it falls back to Warning, the captured default variant.
+          var MSG_MODS = {
+            Warning: "warning",
+            Error: "error",
+            Info: "info",
+            Success: "success",
+            "Helper text": "helper-text",
+          };
+          var msgType = MSG_MODS[v.Type] ? v.Type : "Warning";
+          var msgIcon = MSG_ICONS[msgType] || "";
+          var msgMod = MSG_MODS[msgType];
+          // The registry publishes no TEXT prop for this component, so the
+          // string is a renderer prop. Its default generalises the capture's
+          // two strings: the Warning variant's text layer reads "Warning
+          // message goes here" and the Helper text variant's reads "Helper
+          // text".
+          var msgText = esc(
+            props.Message ||
+              (msgType === "Helper text"
+                ? "Helper text"
+                : msgType + " message goes here"),
+          );
+          return (
+            '<span class="ds-message ds-message--' +
+            msgMod +
+            '">' +
+            (msgIcon
+              ? '<span class="ds-message__icon">' +
+                renderIcon(msgIcon) +
+                "</span>"
+              : "") +
+            '<span class="ds-message__text">' +
+            msgText +
+            "</span></span>"
+          );
+        }
+
+        case "textfield-buttons": {
+          // The confirm/cancel pill that sits at the right end of an inline
+          // edit field. No registry axes and no props. The capture holds two
+          // icon-only small Buttons with radius 9999 and says nothing about
+          // which glyphs they carry; media/textfield-buttons/preview.webp draws
+          // them as a cross then a check, which is where these two come from.
+          return (
+            '<span class="ds-textfield-buttons">' +
+            '<span class="ds-textfield-buttons__btn">' +
+            renderIcon("close") +
+            "</span>" +
+            '<span class="ds-textfield-buttons__btn">' +
+            renderIcon("simple-check") +
+            "</span></span>"
+          );
+        }
+
+        case "pagination": {
+          // Table pager: the current page and its picker on the left, then a
+          // 40x40 Previous and a 40x40 Next box. No registry axes and no props;
+          // the two strings are the capture's own text layers ("1" and "of 2
+          // pages"), so Page and Pages are renderer props defaulting to them.
+          var pgPage = esc(props.Page || "1");
+          var pgPages = esc(props.Pages || "2");
+          function pgBox(cls, icon, rotate) {
+            return (
+              '<span class="ds-pagination__step ' +
+              cls +
+              '">' +
+              renderIcon(icon, rotate ? { rotate: rotate } : undefined) +
+              "</span>"
+            );
+          }
+          return (
+            '<div class="ds-pagination">' +
+            '<div class="ds-pagination__current">' +
+            '<span class="ds-pagination__page">' +
+            pgPage +
+            "</span>" +
+            '<span class="ds-pagination__picker">' +
+            renderIcon("arrow-down") +
+            "</span>" +
+            '<span class="ds-pagination__of">of ' +
+            pgPages +
+            " pages</span>" +
+            "</div>" +
+            pgBox("ds-pagination__step--prev", "arrow-left") +
+            pgBox("ds-pagination__step--next", "arrow-left", 180) +
+            "</div>"
+          );
+        }
+
+        case "identification-key": {
+          // The small "KEY" pill that marks a primary-key column. No registry
+          // axes, no registry props, and no renderer prop either: the capture's
+          // single text layer reads "KEY" and that string IS the component. A
+          // `Label` prop was written first and was wrong twice over -- the
+          // registry publishes none, and variantMatrix sets Label on every
+          // gallery cell to the cell's own name, so the pill rendered as
+          // "identification-key" until somebody looked at it.
+          //
+          // NOT an icon, despite the name. The `lineage` leaf already calls
+          // renderIcon("identification-key"), which resolves to nothing because
+          // icons.json holds no such glyph and the name belongs to a component.
+          // That call is left alone: lineage's own capture contains no
+          // identification-key node, so wiring one in would add a part the
+          // capture does not have.
+          return '<span class="ds-identification-key">KEY</span>';
+        }
+
+        case "data-viz-legend": {
+          // One entry in a chart legend: a colour dot and a series name.
+          // Registry axis is literally named "Property 1" (Default | Focused |
+          // Hovered | Pressed | Selected) and carries four captured
+          // backgrounds, so all five values render distinctly.
+          //
+          // The dot is a `vector` node, so the capture gives its FILL
+          // (--zen-color-primary-500) and no geometry whatever. It renders as a
+          // CSS circle whose diameter is authored; its colour is the captured
+          // token, and props.Color overrides it for a real legend of N series.
+          // Default is the base rule, so it takes no modifier; the other four
+          // are named rather than lower-cased so a value from outside the axis
+          // cannot emit a class that matches nothing.
+          var DV_MODS = {
+            Focused: "focused",
+            Hovered: "hovered",
+            Pressed: "pressed",
+            Selected: "selected",
+          };
+          var dvMod = DV_MODS[v["Property 1"]];
+          var dvCls =
+            "ds-data-viz-legend" +
+            (dvMod ? " ds-data-viz-legend--" + dvMod : "");
+          // props.Color is the ONE inline style in this leaf, and it is
+          // pattern-checked rather than escaped: esc() neutralises quotes and
+          // angle brackets but not `;`, so an unchecked value could append
+          // declarations of its own to the style attribute. A legend of N
+          // series needs a per-series colour and the design system publishes no
+          // categorical colour scale, which is why the prop exists at all.
+          var dvRaw = props.Color == null ? "" : String(props.Color).trim();
+          var dvOk = /^(#[0-9a-fA-F]{3,8}|var\(\s*--[a-z0-9-]+\s*\))$/.test(
+            dvRaw,
+          );
+          var dvColor = dvOk ? ' style="background:' + dvRaw + '"' : "";
+          // `Series`, not `Label`: variantMatrix sets Label on every identity
+          // cell to that cell's own variant value, so a Label prop here made
+          // the gallery draw five legend entries reading "Default", "Focused",
+          // "Hovered", "Pressed" and "Selected".
+          return (
+            '<span class="' +
+            dvCls +
+            '">' +
+            '<span class="ds-data-viz-legend__dot"' +
+            dvColor +
+            "></span>" +
+            '<span class="ds-data-viz-legend__label">' +
+            esc(props.Series || "All") +
+            "</span></span>"
+          );
+        }
+
+        case "menu-dropdown": {
+          // The floating menu panel. The capture's four children are instances
+          // of `.menu item`, a component whose name starts with a dot, so it is
+          // unpublished and has no capture of its own: the row is built here.
+          // What the capture DOES give is each row's published props (Show
+          // support text, Show leading icon, Type, State) and the selected
+          // row's paint, and that is what the row honours.
+          //
+          // Items default to the four the component's own
+          // media/menu-dropdown/preview.webp draws, the way `button` defaults
+          // its Label: a menu with no rows is a small empty box, which is the
+          // grey box this leaf exists to remove.
+          var mdItems = parseItems(props.Items, "All items, Demo, Finance, IT");
+          var mdSelected =
+            props.Selected != null ? String(props.Selected) : mdItems[0];
+          var mdRows = mdItems
+            .map(function (item) {
+              var cls = "ds-menu-dropdown__item";
+              if (item === mdSelected) cls += " is-selected";
+              return '<span class="' + cls + '">' + esc(item) + "</span>";
+            })
+            .join("");
+          return '<div class="ds-menu-dropdown">' + mdRows + "</div>";
+        }
+
         default: {
           // Phase 1B: PREFER rendering the component per-instance from its
           // captured appearance doc so the instance's own variant selects the
@@ -3874,6 +4268,20 @@
     "text-area",
     "checkbox-group",
     "radio-group",
+    // The last ten UI leaves the capture fully specifies. The four that remain
+    // unbuilt (line-graph, data-quality-checks-graph, glossary-item-hierarchy,
+    // lineage-connecting-line) are drawings whose shape lives in vector nodes,
+    // and a captured vector carries no path data.
+    "card",
+    "checkbox-card",
+    "radio-card",
+    "label",
+    "message",
+    "textfield-buttons",
+    "pagination",
+    "identification-key",
+    "data-viz-legend",
+    "menu-dropdown",
   ];
 
   exports.renderDSComponent = renderDSComponent;

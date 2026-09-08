@@ -2354,3 +2354,174 @@ test("alert-banner: a Type the registry does not publish still clamps to primary
   assert.match(html, /class="ds-alert ds-alert--primary"/);
   assert.doesNotMatch(html, /<script>alert\(1\)<\/script>/);
 });
+
+// ---- The last ten UI leaves ----
+//
+// The generic gates (empty slots, sparse-render ratchet, fidelity, geometry)
+// already cover these ten the way they covered the four form controls before
+// them. What is asserted here is what those cannot see: three translations
+// between vocabularies, each of which fails SILENTLY -- the component still
+// renders, it just renders the wrong thing.
+
+function renderTen(slug, variant, props) {
+  var DS = require(DS_PATH);
+  return DS.renderDSComponent({
+    type: "INSTANCE",
+    library: "ds",
+    dsSlug: slug,
+    variant: variant || "",
+    props: props || {},
+  });
+}
+
+test("checkbox-card: Selection=Selected ticks the checkbox", function () {
+  // The two axes do not share a vocabulary: the card publishes Selection =
+  // Unselected | Selected | Indeterminate, the checkbox publishes Unchecked |
+  // Checked | Indeterminate. Passing the card's value straight through selects
+  // nothing, and the card renders unticked in every state a caller can ask for
+  // -- with no error anywhere.
+  var html = renderTen("checkbox-card", "Selection=Selected");
+  assert.match(html, /class="ds-checkbox-card"/);
+  assert.match(
+    html,
+    /ds-checkbox--checked/,
+    "Selected must reach the checkbox as Checked",
+  );
+});
+
+test("radio-card: Selection=Selected selects the radio", function () {
+  // radio DOES share the card's word, so this is the control that proves the
+  // mapping is a translation and not a blanket rename to "Checked".
+  var html = renderTen("radio-card", "Selection=Selected");
+  assert.match(html, /ds-radio--checked/);
+});
+
+test("checkbox-card: Indeterminate crosses unchanged", function () {
+  assert.match(
+    renderTen("checkbox-card", "Selection=Indeterminate"),
+    /ds-checkbox--indeterminate/,
+  );
+});
+
+test("both cards emit a state modifier only for the states the capture paints", function () {
+  // State publishes five values and the captures record appearance deltas for
+  // three. A --focus class would match no rule in ds-base.css, and this file
+  // does not emit modifier classes that paint nothing.
+  assert.match(
+    renderTen("checkbox-card", "State=Hover"),
+    /ds-checkbox-card--hover/,
+  );
+  assert.match(
+    renderTen("radio-card", "State=Disabled"),
+    /ds-radio-card--disabled/,
+  );
+  assert.doesNotMatch(
+    renderTen("checkbox-card", "State=Focus"),
+    /ds-checkbox-card--focus/,
+    "the capture paints no Focus delta, so no class may claim one",
+  );
+  assert.doesNotMatch(
+    renderTen("radio-card", "State=Focus"),
+    /ds-radio-card--focus/,
+  );
+});
+
+test("checkbox-card: Disabled reaches the control, Hover does not", function () {
+  // Hover and Pressed are captured on the CARD's background, not on the
+  // control, so forwarding them would paint a state the capture puts elsewhere.
+  assert.match(renderTen("checkbox-card", "State=Disabled"), /is-disabled/);
+  assert.doesNotMatch(renderTen("checkbox-card", "State=Hover"), /is-disabled/);
+});
+
+test("message: a Type outside the axis falls back to Warning in all three places", function () {
+  // Icon, modifier and fallback string are read from one normalised Type, so
+  // they cannot disagree -- an earlier version lower-cased the raw value into
+  // the class and would have emitted `.ds-message--nonsense`.
+  var html = renderTen("message", "Type=nonsense");
+  assert.match(html, /class="ds-message ds-message--warning"/);
+  assert.match(html, /Warning message goes here/);
+  assert.doesNotMatch(html, /ds-message--nonsense/);
+});
+
+test("message: Helper text is the structural variant, so it renders without an icon", function () {
+  var html = renderTen("message", "Type=Helper text");
+  assert.match(html, /ds-message--helper-text/);
+  assert.doesNotMatch(
+    html,
+    /ds-message__icon/,
+    "the capture records Helper text as text with no icon child",
+  );
+  // The control: every other Type DOES carry the icon element, so the
+  // assertion above is about this variant and not about an icon map that
+  // happens to be empty in this process.
+  assert.match(renderTen("message", "Type=Error"), /ds-message__icon/);
+});
+
+test("data-viz-legend: Color takes a colour and nothing else", function () {
+  // The one inline style in these ten. esc() neutralises quotes and angle
+  // brackets but not `;`, so an unchecked value could append declarations of
+  // its own to the style attribute.
+  assert.match(
+    renderTen("data-viz-legend", "", { Color: "#ff8800" }),
+    /style="background:#ff8800"/,
+  );
+  assert.match(
+    renderTen("data-viz-legend", "", { Color: "var(--zen-color-error-700)" }),
+    /style="background:var\(--zen-color-error-700\)"/,
+  );
+  var hostile = renderTen("data-viz-legend", "", {
+    Color: "red;position:fixed;inset:0",
+  });
+  assert.doesNotMatch(hostile, /position:fixed/);
+  assert.doesNotMatch(hostile, /style=/, "a value that is not a colour is dropped whole");
+});
+
+test("data-viz-legend: the series name is not a Label", function () {
+  // variantMatrix sets Label on every identity cell to that cell's own variant
+  // value, so a Label prop here drew five legend entries reading "Default",
+  // "Focused", "Hovered", "Pressed" and "Selected".
+  assert.match(
+    renderTen("data-viz-legend", "Property 1=Selected", {
+      Label: "Selected",
+      Series: "S1 (High)",
+    }),
+    />S1 \(High\)</,
+  );
+});
+
+test("identification-key: the pill reads KEY whatever the gallery supplies", function () {
+  // Same collision, and this one shipped as far as a rendered fragment reading
+  // "identification-key" before anybody looked at it.
+  assert.match(
+    renderTen("identification-key", "", { Label: "identification-key" }),
+    /class="ds-identification-key">KEY</,
+  );
+});
+
+test("pagination: Page and Pages reach the two captured text layers", function () {
+  var html = renderTen("pagination", "", { Page: "3", Pages: "17" });
+  assert.match(html, /ds-pagination__page">3</);
+  assert.match(html, /of 17 pages/);
+});
+
+test("menu-dropdown: Selected picks a row, and an explicit empty selects none", function () {
+  var html = renderTen("menu-dropdown", "", {
+    Items: "Alpha, Beta, Gamma",
+    Selected: "Beta",
+  });
+  assert.match(html, /ds-menu-dropdown__item is-selected">Beta</);
+  assert.doesNotMatch(html, /is-selected">Alpha</);
+  assert.doesNotMatch(
+    renderTen("menu-dropdown", "", { Items: "Alpha, Beta", Selected: "" }),
+    /is-selected/,
+    "an explicit empty Selected must select nothing, not fall back to the first row",
+  );
+});
+
+test("card and both cards omit the slot element when the slot is empty", function () {
+  // An empty flex container draws nothing, so emitting one ships a part with no
+  // content in it (tests/render/empty-slots-gate.test.js).
+  assert.doesNotMatch(renderTen("card"), /ds-card__slot/);
+  assert.match(renderTen("card", "", { Slot: "Body" }), /ds-card__slot">Body</);
+  assert.doesNotMatch(renderTen("radio-card"), /ds-radio-card__slot/);
+});

@@ -243,6 +243,77 @@ test("checkBaseCssRules: a fabricated modifier cannot pass by borrowing a siblin
   );
 });
 
+test("checkBaseCssRules: the checkbox rule is charged to the slug that OWNS ds-checkbox, not to every slug that nests one", function () {
+  // A composing leaf renders a real checkbox rather than restating its markup,
+  // so its fragment carries `.ds-checkbox--indeterminate` and the producer
+  // relation lists it alongside `checkbox`. Its own capture holds that child as
+  // a bare `instance` node, and an instance node records a slug and props and NO
+  // appearance -- so charging it reports a contradiction on no evidence. It did:
+  // building checkbox-card turned the real ds-base.css rule into two identical
+  // violations naming a colour checkbox's capture confirms.
+  //
+  // ownerPrefix narrows the producers to the slugs that own the prefix
+  // (matrix.js CSS_OWNERS, or the ds-<slug> default). Stated by the fixture, not
+  // by slug names: `nests-a-checkbox` produces the class and owns
+  // `ds-nests-a-checkbox`, so it is a producer and not an owner.
+  var checkboxFacts = A.readAppearance("checkbox", ANATOMY);
+  var own = hexOnly(F.factColors(checkboxFacts))[0];
+  assert.ok(own, "checkbox's capture holds no hex fact, so this cannot discriminate");
+  // The composer's fact set deliberately EXCLUDES the owner's colour, which is
+  // what the real captures look like: checkbox-card's holds its own surface and
+  // border and nothing of the checkbox's.
+  var composerFacts = A.readAppearance("card", ANATOMY);
+  assert.ok(
+    !F.factColors(composerFacts).has(own),
+    "the stand-in composer capture already contains checkbox's colour, so it " +
+      "would pass either way and this test would prove nothing",
+  );
+  var facts = { checkbox: checkboxFacts, "nests-a-checkbox": composerFacts };
+  var index = {
+    byClass: {
+      "ds-checkbox--indeterminate": ["checkbox", "nests-a-checkbox"],
+      "ds-checkbox__box": ["checkbox", "nests-a-checkbox"],
+    },
+    failed: [],
+  };
+  var css =
+    ".ds-checkbox--indeterminate .ds-checkbox__box { background: " + own + "; }\n";
+  assert.deepEqual(
+    F.checkBaseCssRules(css, facts, {}, [], index),
+    [],
+    "a colour checkbox itself captured must pass, and the composer that merely " +
+      "nests a checkbox must not be asked to prove it",
+  );
+
+  // The other direction, so the narrowing is not just a way to stop reporting:
+  // a colour NEITHER slug captured must still red, charged to checkbox.
+  var bogus = "#ff00ff";
+  assert.ok(
+    !F.factColors(checkboxFacts).has(bogus),
+    "the sentinel is a real checkbox fact, so it cannot demonstrate a failure",
+  );
+  var bad = F.checkBaseCssRules(
+    ".ds-checkbox--indeterminate .ds-checkbox__box { background: " + bogus + "; }\n",
+    facts,
+    {},
+    [],
+    index,
+  );
+  assert.ok(
+    bad.some(function (m) {
+      return m.indexOf("(checkbox)") !== -1 && m.indexOf(bogus) !== -1;
+    }),
+    "a colour no capture holds must still be reported, and against checkbox, " +
+      "got: " + JSON.stringify(bad),
+  );
+  assert.ok(
+    !bad.some(function (m) {
+      return m.indexOf("nests-a-checkbox") !== -1;
+    }),
+    "the composer must not be named at all, got: " + JSON.stringify(bad),
+  );
+});
+
 test("checkBaseCssRules: a hyphenated modifier is checked against its own owner, not silently skipped", function () {
   // Regression coverage for the regex-width bug: the modifier char class used
   // to be [a-z0-9]+, which cannot cross a hyphen, so the grouped

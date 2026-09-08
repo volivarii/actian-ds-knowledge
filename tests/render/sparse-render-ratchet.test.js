@@ -104,6 +104,33 @@ const ACCEPTED_RISE = {
 const ACCEPTED_INVENTED = {
   // "some-slug.SomeProp": "why this prop has a designed fallback now",
 
+  // ---- The last ten UI leaves ----
+  //
+  // These eight are the kind of member this set's header says it will always
+  // have: a fallback the component's OWN capture supplies. Each string below is
+  // either a text layer in components/dist/anatomy/<slug>.json or a default the
+  // registry itself publishes, so the renderer is not inventing content for the
+  // prop, it is rendering the component. Dropping the fallback would produce
+  // exactly the empty box these ten leaves were built to remove: an unlabelled
+  // pager, a legend entry with no series, a KEY pill with no KEY.
+  //
+  // Two more pairs were NOT waived, and the difference is the test: checkbox-card
+  // and radio-card had a Label prop that displaced the nested checkbox's own
+  // "Label". Neither card publishes a Label, so the prop was removed rather
+  // than excused.
+  "label.Label text":
+    'the registry publishes this prop with default "Label", which is also the capture\'s text layer',
+  "label.Description text":
+    "the registry publishes this prop with the same default the capture's Description layer holds",
+  "message.Message":
+    'generalises the capture\'s two strings ("Warning message goes here" for Type=Warning, "Helper text" for the structural Helper text variant); the registry publishes no TEXT prop for this component',
+  "pagination.Page": 'the capture\'s "Current page" text layer reads "1"',
+  "pagination.Pages": 'the capture\'s trailing text layer reads "of 2 pages"',
+  "data-viz-legend.Series":
+    "the capture's LABEL text layer reads \"All\"; named Series rather than Label because variantMatrix sets Label on every identity cell to the cell's own variant value",
+  "menu-dropdown.Items":
+    "the four rows media/menu-dropdown/preview.webp draws; unlike checkbox-group.Items, which went to SPECIMEN_PROPS, a menu has nothing BUT its rows, so an empty default is the grey box this leaf removes",
+
   // Not new invention. These are sticky-footer.Primary/.Secondary under the
   // slug Figma renamed the component to in the 2026-08-24 breaking sync (#526).
   // The renderer's `props.Primary || "Save"` fallback is unchanged and predates

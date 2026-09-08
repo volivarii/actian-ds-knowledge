@@ -841,6 +841,20 @@ var SPECIMEN_PROPS = {
   // capture: anatomy/field.json layer "Input text" reads "Placeholder text"
   field: { Slot: "Placeholder text" },
 
+  // The three SLOT surfaces. All authored: none of the three captures holds a
+  // single text layer (card is two containers and no text at all), because the
+  // slot is where the CALLER's content goes. The renderer therefore invents
+  // nothing for them -- it does not even emit the slot element when the prop is
+  // unset -- and these strings exist so the gallery shows a card with something
+  // in it rather than an empty rectangle.
+  card: { Slot: "Rows read in the last 30 days" },
+  "checkbox-card": {
+    Slot: "Includes every dataset in the Finance catalog.",
+  },
+  "radio-card": {
+    Slot: "Anyone in your organization can find and request access.",
+  },
+
   // text-area's strings come from three places in its capture: the nested
   // `field` instance, whose own capture carries the placeholder; the `message`
   // instance, which carries no string; and the "Character count" text layer,

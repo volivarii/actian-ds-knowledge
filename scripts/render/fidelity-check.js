@@ -388,11 +388,36 @@ function checkBaseCssRules(cssText, facts, tokenMap, uncaptured, emitterIndex) {
     );
   });
   // Charges one rule to one producer, against that producer's own capture.
-  function chargeRule(selector, body, classTokens) {
+  //
+  // `ownerPrefix`, when given, names the CSS prefix this selector family
+  // BELONGS to, and narrows the producers to the slugs that own it (matrix.js
+  // CSS_OWNERS, or the ds-<slug> default). It exists because emitting a class
+  // and authoring it are not the same thing: checkbox-card renders a real
+  // `checkbox` rather than restating its markup, so its fragment carries
+  // `.ds-checkbox--indeterminate` -- but checkbox-card's capture holds that
+  // child as a bare `instance` node, and an instance node records a slug and
+  // props and NO appearance. So the composer's capture can never be evidence
+  // for or against the child's colour, and charging it reports a contradiction
+  // on no evidence, once for every component that ever nests a checkbox.
+  //
+  // The tag family passes NO prefix and keeps the full union, because there the
+  // second claimant is a real one: search-result-card writes
+  // `class="ds-tag ds-tag--catalog"` in its own markup and its capture holds
+  // that paint on a node of its own.
+  function chargeRule(selector, body, classTokens, ownerPrefix) {
     var owners = tagRuleOwners(classTokens, index);
     if (owners.orphan) {
       violations.push(orphanRuleViolation(selector, classTokens));
       return;
+    }
+    if (ownerPrefix) {
+      var authors = owners.producers.filter(function (slug) {
+        return MATRIX.ownedPrefixes(slug).indexOf(ownerPrefix) !== -1;
+      });
+      // Narrow only when it leaves somebody to charge. An empty result would
+      // mean the prefix is owned by no producer at all, and dropping the rule
+      // silently is the failure mode orphanRuleViolation exists to prevent.
+      if (authors.length) owners = { producers: authors, orphan: false };
     }
     // Every producer is charged separately (no dedup across slugs): a value that
     // is right for one claimant and wrong for another is a real contradiction,
@@ -448,7 +473,7 @@ function checkBaseCssRules(cssText, facts, tokenMap, uncaptured, emitterIndex) {
   var cre = /\.ds-checkbox--indeterminate[^{]*\{([^}]*)\}/g;
   while ((m = cre.exec(cssText)) !== null) {
     var cbSelector = m[0].slice(0, m[0].indexOf("{")).trim();
-    chargeRule(cbSelector, m[1], selectorClasses(cbSelector));
+    chargeRule(cbSelector, m[1], selectorClasses(cbSelector), "ds-checkbox");
   }
   return violations;
 }
