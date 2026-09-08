@@ -11,7 +11,8 @@
 const HEADING_RE = /^(#{2,3})\s+(.+?)\s*$/;
 const TRAILING_ANCHOR_RE = /\s*\{#([a-z][a-z0-9-]*)\}\s*$/;
 const NUM_PREFIX_RE = /^\s*\d+(?:\.\d+)*\.?\s+/;
-const FENCE_RE = /^```/;
+// ``` or ~~~, matching headingScan and `searchBodyText.stripFencedCode`.
+const FENCE_RE = /^(?:```|~~~)/;
 const FRONTMATTER_FENCE_RE = /^---\s*$/;
 
 export interface FocusedSection {

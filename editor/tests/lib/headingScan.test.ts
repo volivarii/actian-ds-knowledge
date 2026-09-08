@@ -86,3 +86,44 @@ test("scanHeadings: ignores '---' that is not at the very top (no frontmatter)",
     ["Intro", "After divider should still scan as heading"],
   );
 });
+
+// ── Three modules, one grammar ──────────────────────────────────────────────
+//
+// `anchorIndex.HEADING_ANCHOR_RE` and `SectionFocusTracker.TRAILING_ANCHOR_RE`
+// both require an explicit anchor to start with a letter. `headingScan`
+// allowed a digit, so `## {#2fa}` split them: headingScan stripped the anchor,
+// found empty text and DROPPED the heading; SectionFocusTracker kept it and
+// derived "2fa" — an anchor the index can never define, on a section with no
+// outline row, which then owned file scope invisibly.
+test("headingScan: an explicit anchor must start with a letter, as the index requires", () => {
+  // Not an anchor: the braces stay part of the title, which is what
+  // SectionFocusTracker already does.
+  const digitLed = scanHeadings("## Tokens {#2fa}\n\nBody.\n");
+  assert.equal(digitLed.length, 1);
+  assert.equal(digitLed[0]!.text, "Tokens {#2fa}");
+
+  // A letter-leading anchor is still stripped from the title.
+  const letterLed = scanHeadings("## Tokens {#tok2}\n\nBody.\n");
+  assert.equal(letterLed[0]!.text, "Tokens");
+});
+
+// ── One fence grammar, shared with the reference index ─────────────────────
+//
+// `searchBodyText.stripFencedCode` — which `anchorIndex` uses to decide what
+// text can define or reference an anchor — honours ``` and ~~~ alike. Both
+// heading scanners toggled on ``` only, so a heading inside a ~~~ block got an
+// outline row and a pill while the index ignored the whole block: the outline
+// claimed a section the index would never resolve a reference for.
+test("headingScan: a heading inside a ~~~ fence is not a section, as inside ```", () => {
+  const backtick = scanHeadings("```\n## Fenced\n```\n\n## Real\n\nBody.\n");
+  assert.deepEqual(
+    backtick.map((h) => h.text),
+    ["Real"],
+  );
+  const tilde = scanHeadings("~~~\n## Fenced\n~~~\n\n## Real\n\nBody.\n");
+  assert.deepEqual(
+    tilde.map((h) => h.text),
+    ["Real"],
+    "a ~~~ fence must hide its headings too",
+  );
+});

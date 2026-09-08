@@ -24,8 +24,18 @@ export interface Heading {
 }
 
 const HEADING_RE = /^(#{1,3})\s+(.+?)\s*$/;
-const TRAILING_ANCHOR_RE = /\s*\{#[a-z0-9][a-z0-9-]*\}\s*$/;
-const FENCE_RE = /^```/;
+// An explicit anchor must start with a LETTER, matching
+// `anchorIndex.HEADING_ANCHOR_RE` (which decides what can ever BE an anchor)
+// and `SectionFocusTracker.TRAILING_ANCHOR_RE`. This allowed a digit, so
+// "## {#2fa}" stripped to empty text and the heading was dropped here while
+// SectionFocusTracker kept it and derived "2fa" — a section that owned file
+// scope with no outline row to show for it.
+const TRAILING_ANCHOR_RE = /\s*\{#[a-z][a-z0-9-]*\}\s*$/;
+// ``` or ~~~, the same pair `searchBodyText.stripFencedCode` honours. Toggling
+// on backticks alone gave a heading inside a ~~~ block an outline row while the
+// reference index ignored the whole block, so the outline claimed a section no
+// reference to it could ever resolve against.
+const FENCE_RE = /^(?:```|~~~)/;
 const FRONTMATTER_FENCE_RE = /^---\s*$/;
 
 export function scanHeadings(text: string): Heading[] {

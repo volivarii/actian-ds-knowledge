@@ -306,6 +306,14 @@ test("countsBySection and firstH2Anchor agree on which heading owns file scope",
     ["every H2 derives empty", "## ---\n\nA.\n\n## ***\n\nB.\n"],
     ["explicit anchor on an unslugabble title", "## 🎯 {#real}\n\nA.\n\n## Tokens\n\nB.\n"],
     ["no H2 at all", "### Only\n\nA.\n"],
+    // Doors 3 and 4, from the round-5 review: the two scanners disagreed on
+    // what an explicit anchor is (digit-leading allowed in one, not the
+    // other) and on what a fence is (~~~ honoured by the reference index and
+    // by neither scanner).
+    ["whole title is a digit-leading anchor", "## {#2fa}\n\nA.\n\n## Tokens\n\nB.\n"],
+    ["digit-leading anchor after a title", "## Tokens {#2fa}\n\nA.\n\n## Motion\n\nB.\n"],
+    ["first H2 inside a ~~~ fence", "~~~\n## Fenced\n~~~\n\n## Tokens\n\nA.\n"],
+    ["first H2 inside a ``` fence", "```\n## Fenced\n```\n\n## Tokens\n\nA.\n"],
   ];
 
   for (const [label, text] of shapes) {
