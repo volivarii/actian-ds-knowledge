@@ -119,9 +119,17 @@ export function countsBySection(
   const seenAnchors = new Set<string>();
   let firstH2Anchor: string | null = null;
   for (const { heading, anchor } of sectionAnchors(text)) {
-    if (anchor === null || seenAnchors.has(anchor)) continue;
-    seenAnchors.add(anchor);
+    if (anchor === null) continue;
+    // Latch BEFORE the dedup. An H3 deriving the same slug as the first H2
+    // ("### Tokens" above "## Tokens") used to consume it, so the H2 was
+    // skipped and file scope either walked to a later H2 — landing the
+    // outgoing count on a different section than `firstH2Anchor` reports — or,
+    // with no later H2, was never set at all and the file's outgoing
+    // references vanished from the outline. Both headings address the same
+    // single anchor, so latching here is the answer both modules give.
     if (heading.level === 2 && firstH2Anchor === null) firstH2Anchor = anchor;
+    if (seenAnchors.has(anchor)) continue;
+    seenAnchors.add(anchor);
     // Excludes only this file's own references to the anchor (e.g. a
     // self-link from within the same section), matching incomingForFile's
     // `fromPath === path` self-exclusion. A different file that also

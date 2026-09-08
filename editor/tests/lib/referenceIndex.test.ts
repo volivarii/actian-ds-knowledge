@@ -405,3 +405,55 @@ test("countsBySection: an unanchored first H2 does not swallow the file's outgoi
   );
   setCachedIndexForTesting(null);
 });
+
+// ── An H3 that shadows the first H2's slug ──────────────────────────────────
+//
+// `countsBySection` deduped BEFORE latching `firstH2Anchor`, so an H3 deriving
+// the same slug as the first H2 consumed it and the H2 was skipped. Two
+// consequences, both silent, and the second is the worse one:
+//
+//   * with a later H2 present, the outgoing count lands on THAT one while
+//     `firstH2Anchor` still says the shadowed H2 owns file scope — the same
+//     two-modules-disagree defect as the empty anchor, through another door;
+//   * with no later H2, `firstH2Anchor` stays null, the `if (firstH2Anchor &&
+//     outgoingCount > 0)` never fires, and the file's outgoing references
+//     vanish from the outline altogether.
+//
+// Pre-existing, zero occurrences in the authored substrate, and one line of
+// reordering away: latch the level-2 anchor before the dedup consumes it.
+test("countsBySection: an H3 sharing the first H2's slug does not swallow the outgoing count", () => {
+  const path = "foundations/src/tokens.md";
+  setCachedIndexForTesting({
+    entries: new Map(),
+    scannedAt: 0,
+    scannedPaths: [path],
+    texts: new Map(),
+  });
+
+  // No later H2 to fall through to: the count used to disappear entirely.
+  const shadowedOnly = countsBySection(
+    path,
+    "### Tokens\n\nA.\n\n## Tokens\n\nB.\n",
+    5,
+  );
+  assert.equal(
+    shadowedOnly.get("tokens"),
+    5,
+    `the outgoing count must survive, got ${JSON.stringify([...shadowedOnly])}`,
+  );
+
+  // With a later H2, the count must not walk to it: file scope is still the
+  // first H2's slug, which is what firstH2Anchor reports.
+  const withLater = countsBySection(
+    path,
+    "### Tokens\n\nA.\n\n## Tokens\n\nB.\n\n## Motion\n\nC.\n",
+    5,
+  );
+  assert.equal(withLater.get("tokens"), 5);
+  assert.equal(
+    withLater.has("motion"),
+    false,
+    `the count must not land on a later H2, got ${JSON.stringify([...withLater])}`,
+  );
+  setCachedIndexForTesting(null);
+});

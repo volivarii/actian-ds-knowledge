@@ -16,6 +16,8 @@ import {
   firstH2Anchor,
 } from "../../src/app/MarkdownEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
+import { countsBySection } from "../../src/lib/referenceIndex";
+import { setCachedIndexForTesting } from "../../src/lib/anchorIndex";
 import { setWysiwygFlag } from "../helpers/editorSurface";
 import {
   getAnnouncement,
@@ -272,4 +274,59 @@ test("firstH2Anchor skips a heading with no derivable anchor, as countsBySection
   );
   // No H2 with an anchor at all.
   assert.equal(firstH2Anchor("## ---\n\nBody.\n"), null);
+});
+
+// ── The property, not the two instances ─────────────────────────────────────
+//
+// "Which heading owns file scope" is answered by two modules with two
+// different scanners, and they have disagreed twice now through different
+// doors: an anchor that derived to "" (round 3) and an H3 shadowing the first
+// H2's slug (round 4). Guarding each instance would leave the third door open,
+// so this asserts the agreement across every heading shape either scanner
+// treats specially.
+test("countsBySection and firstH2Anchor agree on which heading owns file scope", () => {
+  setCachedIndexForTesting({
+    entries: new Map(),
+    scannedAt: 0,
+    scannedPaths: ["foundations/src/tokens.md"],
+    texts: new Map(),
+  });
+  const OUTGOING = 5;
+  const shapes: Array<[string, string]> = [
+    ["plain", "## Tokens\n\nA.\n\n## Motion\n\nB.\n"],
+    ["H1 first", "# Title\n\n## Tokens\n\nA.\n"],
+    ["H3 before any H2, different slug", "### Intro\n\nA.\n\n## Tokens\n\nB.\n"],
+    ["H3 shadows the first H2", "### Tokens\n\nA.\n\n## Tokens\n\nB.\n"],
+    [
+      "H3 shadows the first H2, later H2 present",
+      "### Tokens\n\nA.\n\n## Tokens\n\nB.\n\n## Motion\n\nC.\n",
+    ],
+    ["duplicate H2 slugs", "## Tokens\n\nA.\n\n## Tokens\n\nB.\n"],
+    ["first H2 derives empty", "## 🎯\n\nA.\n\n## Tokens\n\nB.\n"],
+    ["every H2 derives empty", "## ---\n\nA.\n\n## ***\n\nB.\n"],
+    ["explicit anchor on an unslugabble title", "## 🎯 {#real}\n\nA.\n\n## Tokens\n\nB.\n"],
+    ["no H2 at all", "### Only\n\nA.\n"],
+  ];
+
+  for (const [label, text] of shapes) {
+    const counts = countsBySection("foundations/src/tokens.md", text, OUTGOING);
+    const carriers = [...counts.entries()]
+      .filter(([, v]) => v === OUTGOING)
+      .map(([k]) => k);
+    const scope = firstH2Anchor(text);
+    if (scope === null) {
+      assert.equal(
+        carriers.length,
+        0,
+        `${label}: no file scope, so nothing may carry the outgoing count; got ${JSON.stringify(carriers)}`,
+      );
+    } else {
+      assert.deepEqual(
+        carriers,
+        [scope],
+        `${label}: firstH2Anchor says ${JSON.stringify(scope)} owns file scope, but the outgoing count sits on ${JSON.stringify(carriers)}`,
+      );
+    }
+  }
+  setCachedIndexForTesting(null);
 });
