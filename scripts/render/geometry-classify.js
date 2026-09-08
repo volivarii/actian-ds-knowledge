@@ -183,7 +183,15 @@ function factTokenOf(g, kind) {
   return null;
 }
 
-/** The capture's root layout and its per-variant layout entries. */
+/**
+ * The capture's root layout and its per-variant layout entries.
+ *
+ * Throws with `code: "ENOENT"` when there is no capture and with anything else
+ * when there is one and it could not be read. The caller reports those as
+ * different reasons: "Figma has nothing to say about this" and "the file we
+ * read it from is broken" are not the same finding, and collapsing them is how
+ * a corrupt artifact reads as an honest gap.
+ */
 function readLayout(slug, anatomyDir) {
   var a = JSON.parse(
     fs.readFileSync(path.join(anatomyDir, slug + ".json"), "utf8"),
@@ -238,6 +246,13 @@ function classifySlugGeometry(opts) {
   C.ownedRules(opts.css, prefixes).forEach(function (rule) {
     var shared = (sharedPrefixes[rule.prefix] || []).length > 1;
     var cls = C.classifySelector(rule.selector, rule.prefix);
+    // The ROOT's axis, even for a modifier rule. A variant CAN flip it
+    // (alert-banner's `Orientation'=Vertical` is a column where the base is a
+    // row), and the subject a modifier rule is compared against is not resolved
+    // until pass 3. It matters only for the `row-gap`/`column-gap` longhands,
+    // of which this stylesheet currently has none; a future one on such a
+    // modifier would be judged against the base axis. Stated rather than left
+    // for someone to find.
     var axis = rootGeom ? rootGeom.axis : null;
 
     rule.body.split(";").forEach(function (decl) {
@@ -310,10 +325,21 @@ function classifySlugGeometry(opts) {
   // than the property name, because `padding` and `padding-left` are two
   // spellings of one subject and the shorthand really is overridden by the
   // longhand after it.
+  // Keyed on the FACT KIND rather than the property name, because `padding`
+  // and `padding-left` are two spellings of one subject and the shorthand
+  // really is overridden by the longhand after it.
+  //
+  // `height` is the exception. `min-height` asks the capture the same question,
+  // so it shares a kind, but the two do not override each other in the
+  // stylesheet: keying them together would count whichever came first as
+  // `overridden` and drop a declaration that genuinely paints out of the
+  // measurement. No rule in the corpus states both today, which is why this is
+  // written down rather than discovered later.
   function subjectKey(c) {
     var mod = c.cls.modifier || "";
     var prefixPart = mod ? "" : c.rule.prefix + "|";
-    return prefixPart + c.cls.bucket + "|" + mod + "|" + (c.kind || c.prop);
+    var subject = c.kind === "height" ? c.prop : c.kind || c.prop;
+    return prefixPart + c.cls.bucket + "|" + mod + "|" + subject;
   }
   var winners = {};
   candidates.forEach(function (c) {
@@ -333,7 +359,7 @@ function classifySlugGeometry(opts) {
       }
     }
 
-    if (!rootGeom) return unverifiable("no-capture");
+    if (!rootGeom) return unverifiable(opts.captureError || "no-capture");
     if (c.cls.bucket === "state") return unverifiable("state-unreachable");
     if (c.cls.bucket === "element")
       return unverifiable("element-no-node-mapping");
@@ -419,6 +445,12 @@ function classifySlugGeometry(opts) {
         token: c.length.token,
         painted: c.length.px,
         fact: fact,
+        // The token the CAPTURE names for this fact, when it names one. Carried
+        // so a repair can bind the token Figma bound rather than restating its
+        // number, which is what `feedback_tokens` asks for and what keeps the
+        // declaration re-themeable. Null on the 108-of-415 that Figma left
+        // unbound.
+        factToken: factToken || null,
         message:
           slug +
           " " +

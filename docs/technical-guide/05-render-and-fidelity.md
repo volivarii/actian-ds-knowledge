@@ -191,17 +191,101 @@ exact rise and a reason, or the pair in `ACCEPTED_INVENTED` with a reason. A wai
 applies only when it carries a reason **and** describes the rise in front of it, so
 a stale waiver stops applying rather than silently widening.
 
+## The geometry gate
+
+For most of this tier's life every gate above checked colour. The oracle examines
+several hundred declarations and all of them are colours, because `readAppearance()`
+walks the capture's `appearance` object and stops there.
+
+The capture measures more. It records `gap`, `padding` and `size` on every node, and
+on many of them it also records the design token Figma bound (`gapToken`,
+`paddingTokens`). Nothing read any of it, which is why the global header could draw
+its logo 13.9px wide inside a 121px box with no colour anywhere out of place, and why
+that took a browser and an eye to find rather than a check.
+
+`derive-geometry-fidelity.js` closes that half. It classifies every gap, padding and
+fixed-height declaration a slug owns into the same buckets the colour report uses, and
+writes `components/render/dist/geometry-report.json`. It reuses the colour path's
+selector machinery (`ownedRules`, `classifySelector`, `classCount`,
+`rootIsNonDefaultState`) rather than restating it: each of those carries a correction
+paid for once already, and a second copy would not inherit the next one.
+
+Four decisions shape what the number means:
+
+- **Width is not read.** A captured width is where the instance sat on the Figma
+  canvas, not a property of the component. `global-header` captures at 1920px, and
+  `button`'s `State=Loading` variant at 132px because that instance held a longer
+  label. Height on a fixed-height component is a component fact.
+- **A height counts only where the capture fixed it**, except on a variant entry,
+  which records only what differs, so a size stated there is the statement. Most
+  captured roots carry no `sizing` at all.
+- **A gap longhand is compared only on the axis Figma measured.** Figma stores one
+  spacing number per frame, along its main axis, so `row-gap` on a row asks about a
+  distance the capture never recorded.
+- **A padding shorthand contributes one row per side.** The capture holds four numbers
+  there, and counting the shorthand as one would make the measure depend on whether
+  the author wrote `padding` or four longhands.
+
+**It reports; it does not block.** The first run found a backlog, and a gate that reds
+the build on its first sight of one gets waved through rather than worked.
+`tests/render/geometry-ratchet.test.js` is what makes that safe: the disagreement
+count is pinned to the merge base per slug and in total, so it can only be worked
+down. Per slug as well as in total, because a total alone passes a swap, one component
+repaired and another broken by the same commit.
+
+**A mismatch names a disagreement, not a verdict.** It can mean three different
+things, and only the first is repaired by copying the capture:
+
+1. the CSS has the shape wrong;
+2. the render deliberately flattened a structure Figma splits across nested frames
+   (`modal`), or carries an inset the Figma component leaves to its page
+   (`page-header`);
+3. the Figma component itself is off the spacing scale (`toast` measures 14px and 9px).
+
+## Working a fidelity finding
+
+The reports answer "how much of what we draw does the capture agree with", which is
+the right question for a trend and the wrong one for a person about to fix something.
+`npm run fidelity` is the other view.
+
+```
+npm run fidelity                    the worklist, worst first
+npm run fidelity -- <slug>          one component, every fact in one place
+npm run fidelity -- <slug> --write  apply that component's shape repairs
+```
+
+The worklist ranks by disagreements and carries pattern reach as its own column rather
+than folding the two into a score: a composite would bury the caveat that
+`global-header` and `side-nav` are on every generated screen regardless of how many
+patterns name them.
+
+The per-component view puts the capture, both reports, the nested-part join and the
+proposed replacement declaration in one place, **and prints the rule's own comment
+beside each proposal**. That last part is not decoration. `page-header` proposes
+`padding: 0`, and the comment two lines above the declaration explains that the Figma
+component ships padding 0 while the render carries the inset deliberately. A tool that
+hid that would make the wrong repair the easy one.
+
+`--write` is per slug and never corpus-wide, for the same reason. It binds the token
+the capture names when that token resolves to the captured number, and states the
+number when Figma left the value unbound. Every edit re-reads the value at its recorded
+offsets and refuses the whole apply unless it is still the text the proposal was
+computed from, then reads the file back and asserts its own edits are in it: a patch
+that lands on shifted offsets writes plausible nonsense and reports success, and a
+patch whose anchor has moved writes nothing while reporting the same.
+
+After a write, re-run `npm run derive:render`, check the count fell, and **look at the
+render**. The measure is not the thing.
+
 ## The quality trend
 
 `derive-quality-trend.js` produces the one report in this repository that carries
 direction rather than a bare number, which is what a report usually wants.
 
-It states oracle coverage as a pair, dates every row, and marks a measure with no
-baseline as having none rather than implying stability. At the last source change
-it read: 54 unexplained variant collapses (flat), the FM tier's collapsed groups and
-unstyled modifier classes (no baseline yet; the current figures are in the report),
-31 inline-style hex values that cannot be re-themed (no baseline yet), 78 verified of
-408 examined (flat).
+It states both coverage pairs, colour and shape, dates every row, and marks a
+measure with no baseline as having none rather than implying stability. The current
+figures are in `components/render/dist/quality-trend.md` and are not restated here:
+this paragraph carried a hand-copied set for weeks and every one of them was stale.
 
 The FM figures come from `scripts/render/lib/fm-collapse.js`, which drives the FM
 renderer with the FM registry's own axes and values, reads which modifier classes
@@ -222,4 +306,7 @@ without saying so. This page carries why each gap matters, which does not move.
 - **Inline hex values cannot be re-themed.** They bypass tokens entirely. A hex kept as the fallback in `var(--token, #hex)` is the remedy, not the defect: the token themes the surface and the captured value stays as the fidelity fallback, so the measure counts only bare ones.
 - **Some variant collapses are unexplained.** A component asked for by one variant can render as another, which is a correctness defect rather than a cosmetic one.
 - **The FM tier's axis values render alike by the dozen.** The fat-marker renderer emits a class for nearly every registry value and the stylesheet styles few of them, so Size, Shape and most State axes draw the same thing. The two buttons a reader could not see at all (#554) are fixed; the rest is the measure's burndown.
+- **The shape disagrees with the capture in dozens of places.** The geometry report
+  names them per slug; `npm run fidelity` ranks them. Each one is a question about
+  which of the two sides is right, not a defect list.
 - **Measurement is not looking.** Fixing a mismatch once made `segmented-control` white on white while every number improved. Render the thing and look at it.

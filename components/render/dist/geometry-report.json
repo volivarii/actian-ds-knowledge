@@ -706,6 +706,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 16,
+      "factToken": "--zen-spacing-md",
       "message": "action-bar .ds-action-bar {padding-bottom}: states --zen-spacing-sm=12px but the capture measured 16px"
     },
     {
@@ -715,6 +716,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 16,
+      "factToken": "--zen-spacing-md",
       "message": "action-bar .ds-action-bar {padding-top}: states --zen-spacing-sm=12px but the capture measured 16px"
     },
     {
@@ -724,6 +726,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "alert-banner .ds-alert {gap}: states --zen-spacing-sm=12px but the capture measured 4px"
     },
     {
@@ -733,6 +736,7 @@
       "token": "--zen-spacing-md",
       "painted": 16,
       "fact": 8,
+      "factToken": "--zen-spacing-xs",
       "message": "alert-banner .ds-alert {padding-bottom}: states --zen-spacing-md=16px but the capture measured 8px"
     },
     {
@@ -742,6 +746,7 @@
       "token": "--zen-spacing-md",
       "painted": 16,
       "fact": 32,
+      "factToken": null,
       "message": "alert-banner .ds-alert {padding-left}: states --zen-spacing-md=16px but the capture measured 32px"
     },
     {
@@ -751,6 +756,7 @@
       "token": "--zen-spacing-md",
       "painted": 16,
       "fact": 32,
+      "factToken": null,
       "message": "alert-banner .ds-alert {padding-right}: states --zen-spacing-md=16px but the capture measured 32px"
     },
     {
@@ -760,6 +766,7 @@
       "token": "--zen-spacing-md",
       "painted": 16,
       "fact": 8,
+      "factToken": "--zen-spacing-xs",
       "message": "alert-banner .ds-alert {padding-top}: states --zen-spacing-md=16px but the capture measured 8px"
     },
     {
@@ -769,6 +776,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 0,
+      "factToken": null,
       "message": "app-switcher-dropdown .ds-app-switcher {padding-left}: states --zen-spacing-2xs=4px but the capture measured 0px"
     },
     {
@@ -778,6 +786,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 0,
+      "factToken": null,
       "message": "app-switcher-dropdown .ds-app-switcher {padding-right}: states --zen-spacing-2xs=4px but the capture measured 0px"
     },
     {
@@ -787,6 +796,7 @@
       "token": null,
       "painted": 8,
       "fact": 6,
+      "factToken": null,
       "message": "badge .ds-badge--dot {height}: states 8px but the capture measured 6px"
     },
     {
@@ -796,6 +806,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 8,
+      "factToken": "--zen-spacing-xs",
       "message": "breadcrumb .ds-breadcrumbs {gap}: states --zen-spacing-2xs=4px but the capture measured 8px"
     },
     {
@@ -805,6 +816,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "calendar .ds-calendar {gap}: states --zen-spacing-xs=8px but the capture measured 4px"
     },
     {
@@ -814,6 +826,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 8,
+      "factToken": null,
       "message": "calendar-data-selector .ds-calendar-data-selector {padding-bottom}: states --zen-spacing-sm=12px but the capture measured 8px"
     },
     {
@@ -823,6 +836,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 8,
+      "factToken": null,
       "message": "calendar-data-selector .ds-calendar-data-selector {padding-left}: states --zen-spacing-sm=12px but the capture measured 8px"
     },
     {
@@ -832,6 +846,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 8,
+      "factToken": null,
       "message": "calendar-data-selector .ds-calendar-data-selector {padding-right}: states --zen-spacing-sm=12px but the capture measured 8px"
     },
     {
@@ -841,6 +856,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 8,
+      "factToken": null,
       "message": "calendar-data-selector .ds-calendar-data-selector {padding-top}: states --zen-spacing-sm=12px but the capture measured 8px"
     },
     {
@@ -850,6 +866,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 16,
+      "factToken": "--zen-spacing-md",
       "message": "card-for-perimeter .ds-card-perimeter {padding-left}: states --zen-spacing-sm=12px but the capture measured 16px"
     },
     {
@@ -859,6 +876,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 16,
+      "factToken": "--zen-spacing-md",
       "message": "card-for-perimeter .ds-card-perimeter {padding-right}: states --zen-spacing-sm=12px but the capture measured 16px"
     },
     {
@@ -868,6 +886,7 @@
       "token": null,
       "painted": 48,
       "fact": 0,
+      "factToken": null,
       "message": "confirmation .ds-confirmation {padding-bottom}: states 48px but the capture measured 0px"
     },
     {
@@ -877,6 +896,7 @@
       "token": null,
       "painted": 32,
       "fact": 0,
+      "factToken": null,
       "message": "confirmation .ds-confirmation {padding-left}: states 32px but the capture measured 0px"
     },
     {
@@ -886,6 +906,7 @@
       "token": null,
       "painted": 32,
       "fact": 0,
+      "factToken": null,
       "message": "confirmation .ds-confirmation {padding-right}: states 32px but the capture measured 0px"
     },
     {
@@ -895,6 +916,7 @@
       "token": null,
       "painted": 48,
       "fact": 0,
+      "factToken": null,
       "message": "confirmation .ds-confirmation {padding-top}: states 48px but the capture measured 0px"
     },
     {
@@ -904,6 +926,7 @@
       "token": "--zen-size-md",
       "painted": 16,
       "fact": 20,
+      "factToken": null,
       "message": "digram-item-types .ds-item-type--xs {height}: states --zen-size-md=16px but the capture measured 20px"
     },
     {
@@ -913,6 +936,7 @@
       "token": null,
       "painted": 48,
       "fact": 0,
+      "factToken": null,
       "message": "empty-state .ds-empty-state {padding-bottom}: states 48px but the capture measured 0px"
     },
     {
@@ -922,6 +946,7 @@
       "token": null,
       "painted": 32,
       "fact": 0,
+      "factToken": null,
       "message": "empty-state .ds-empty-state {padding-left}: states 32px but the capture measured 0px"
     },
     {
@@ -931,6 +956,7 @@
       "token": null,
       "painted": 32,
       "fact": 0,
+      "factToken": null,
       "message": "empty-state .ds-empty-state {padding-right}: states 32px but the capture measured 0px"
     },
     {
@@ -940,6 +966,7 @@
       "token": null,
       "painted": 48,
       "fact": 0,
+      "factToken": null,
       "message": "empty-state .ds-empty-state {padding-top}: states 48px but the capture measured 0px"
     },
     {
@@ -949,6 +976,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 0,
+      "factToken": null,
       "message": "global-header-account-dropdown .ds-account-menu {padding-left}: states --zen-spacing-2xs=4px but the capture measured 0px"
     },
     {
@@ -958,6 +986,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 0,
+      "factToken": null,
       "message": "global-header-account-dropdown .ds-account-menu {padding-right}: states --zen-spacing-2xs=4px but the capture measured 0px"
     },
     {
@@ -967,6 +996,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 8,
+      "factToken": "--zen-spacing-xs",
       "message": "interactive-tag .ds-interactive-tag {padding-right}: states --zen-spacing-2xs=4px but the capture measured 8px"
     },
     {
@@ -976,6 +1006,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "item-type-tag .ds-item-type-tag {gap}: states --zen-spacing-xs=8px but the capture measured 4px"
     },
     {
@@ -985,6 +1016,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "item-type-tag .ds-item-type-tag {padding-left}: states --zen-spacing-xs=8px but the capture measured 4px"
     },
     {
@@ -994,6 +1026,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "item-type-tag .ds-item-type-tag {padding-right}: states --zen-spacing-xs=8px but the capture measured 4px"
     },
     {
@@ -1003,6 +1036,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 0,
+      "factToken": null,
       "message": "lineage .ds-lineage-node {gap}: states --zen-spacing-2xs=4px but the capture measured 0px"
     },
     {
@@ -1012,6 +1046,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 0,
+      "factToken": null,
       "message": "lineage .ds-lineage-node {padding-bottom}: states --zen-spacing-2xs=4px but the capture measured 0px"
     },
     {
@@ -1021,6 +1056,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 0,
+      "factToken": null,
       "message": "lineage .ds-lineage-node {padding-left}: states --zen-spacing-xs=8px but the capture measured 0px"
     },
     {
@@ -1030,6 +1066,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 0,
+      "factToken": null,
       "message": "lineage .ds-lineage-node {padding-right}: states --zen-spacing-xs=8px but the capture measured 0px"
     },
     {
@@ -1039,6 +1076,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 0,
+      "factToken": null,
       "message": "lineage .ds-lineage-node {padding-top}: states --zen-spacing-2xs=4px but the capture measured 0px"
     },
     {
@@ -1048,6 +1086,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 0,
+      "factToken": null,
       "message": "lineage-grouped-node .ds-lineage-group {gap}: states --zen-spacing-2xs=4px but the capture measured 0px"
     },
     {
@@ -1057,6 +1096,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 0,
+      "factToken": null,
       "message": "lineage-grouped-node .ds-lineage-group {padding-bottom}: states --zen-spacing-xs=8px but the capture measured 0px"
     },
     {
@@ -1066,6 +1106,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 0,
+      "factToken": null,
       "message": "lineage-grouped-node .ds-lineage-group {padding-left}: states --zen-spacing-xs=8px but the capture measured 0px"
     },
     {
@@ -1075,6 +1116,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 0,
+      "factToken": null,
       "message": "lineage-grouped-node .ds-lineage-group {padding-right}: states --zen-spacing-xs=8px but the capture measured 0px"
     },
     {
@@ -1084,6 +1126,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 0,
+      "factToken": null,
       "message": "lineage-grouped-node .ds-lineage-group {padding-top}: states --zen-spacing-xs=8px but the capture measured 0px"
     },
     {
@@ -1093,6 +1136,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 32,
+      "factToken": "--zen-spacing-xl",
       "message": "loader-with-logo .ds-loader-with-logo {gap}: states --zen-spacing-sm=12px but the capture measured 32px"
     },
     {
@@ -1102,6 +1146,7 @@
       "token": null,
       "painted": 48,
       "fact": 0,
+      "factToken": null,
       "message": "maintenance-state .ds-maintenance-state {padding-bottom}: states 48px but the capture measured 0px"
     },
     {
@@ -1111,6 +1156,7 @@
       "token": null,
       "painted": 32,
       "fact": 0,
+      "factToken": null,
       "message": "maintenance-state .ds-maintenance-state {padding-left}: states 32px but the capture measured 0px"
     },
     {
@@ -1120,6 +1166,7 @@
       "token": null,
       "painted": 32,
       "fact": 0,
+      "factToken": null,
       "message": "maintenance-state .ds-maintenance-state {padding-right}: states 32px but the capture measured 0px"
     },
     {
@@ -1129,6 +1176,7 @@
       "token": null,
       "painted": 48,
       "fact": 0,
+      "factToken": null,
       "message": "maintenance-state .ds-maintenance-state {padding-top}: states 48px but the capture measured 0px"
     },
     {
@@ -1138,6 +1186,7 @@
       "token": "--zen-spacing-md",
       "painted": 16,
       "fact": 0,
+      "factToken": null,
       "message": "modal .ds-modal {gap}: states --zen-spacing-md=16px but the capture measured 0px"
     },
     {
@@ -1147,6 +1196,7 @@
       "token": null,
       "painted": 24,
       "fact": 0,
+      "factToken": null,
       "message": "modal .ds-modal {padding-bottom}: states 24px but the capture measured 0px"
     },
     {
@@ -1156,6 +1206,7 @@
       "token": null,
       "painted": 24,
       "fact": 0,
+      "factToken": null,
       "message": "modal .ds-modal {padding-left}: states 24px but the capture measured 0px"
     },
     {
@@ -1165,6 +1216,7 @@
       "token": null,
       "painted": 24,
       "fact": 0,
+      "factToken": null,
       "message": "modal .ds-modal {padding-right}: states 24px but the capture measured 0px"
     },
     {
@@ -1174,6 +1226,7 @@
       "token": null,
       "painted": 24,
       "fact": 0,
+      "factToken": null,
       "message": "modal .ds-modal {padding-top}: states 24px but the capture measured 0px"
     },
     {
@@ -1183,6 +1236,7 @@
       "token": "--zen-spacing-md",
       "painted": 16,
       "fact": 8,
+      "factToken": "--zen-spacing-xs",
       "message": "page-header .ds-page-header {gap}: states --zen-spacing-md=16px but the capture measured 8px"
     },
     {
@@ -1192,6 +1246,7 @@
       "token": "--zen-spacing-xl",
       "painted": 32,
       "fact": 0,
+      "factToken": null,
       "message": "page-header .ds-page-header {padding-left}: states --zen-spacing-xl=32px but the capture measured 0px"
     },
     {
@@ -1201,6 +1256,7 @@
       "token": "--zen-spacing-xl",
       "painted": 32,
       "fact": 0,
+      "factToken": null,
       "message": "page-header .ds-page-header {padding-right}: states --zen-spacing-xl=32px but the capture measured 0px"
     },
     {
@@ -1210,6 +1266,7 @@
       "token": "--zen-spacing-lg",
       "painted": 24,
       "fact": 0,
+      "factToken": null,
       "message": "page-header .ds-page-header {padding-top}: states --zen-spacing-lg=24px but the capture measured 0px"
     },
     {
@@ -1219,6 +1276,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 16,
+      "factToken": "--zen-spacing-md",
       "message": "popover .ds-popover {gap}: states --zen-spacing-2xs=4px but the capture measured 16px"
     },
     {
@@ -1228,6 +1286,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 16,
+      "factToken": "--zen-spacing-md",
       "message": "popover .ds-popover {padding-bottom}: states --zen-spacing-sm=12px but the capture measured 16px"
     },
     {
@@ -1237,6 +1296,7 @@
       "token": "--zen-spacing-md",
       "painted": 16,
       "fact": 0,
+      "factToken": null,
       "message": "popover .ds-popover {padding-left}: states --zen-spacing-md=16px but the capture measured 0px"
     },
     {
@@ -1246,6 +1306,7 @@
       "token": "--zen-spacing-md",
       "painted": 16,
       "fact": 0,
+      "factToken": null,
       "message": "popover .ds-popover {padding-right}: states --zen-spacing-md=16px but the capture measured 0px"
     },
     {
@@ -1255,6 +1316,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 0,
+      "factToken": null,
       "message": "popover .ds-popover {padding-top}: states --zen-spacing-sm=12px but the capture measured 0px"
     },
     {
@@ -1264,6 +1326,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 4,
+      "factToken": null,
       "message": "progress-bar-small .ds-progress {gap}: states --zen-spacing-sm=12px but the capture measured 4px"
     },
     {
@@ -1273,6 +1336,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "radio .ds-radio {gap}: states --zen-spacing-xs=8px but the capture measured 4px"
     },
     {
@@ -1282,6 +1346,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "read-only-tag .ds-tag {padding-left}: states --zen-spacing-xs=8px but the capture measured 4px"
     },
     {
@@ -1291,6 +1356,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "read-only-tag .ds-tag {padding-right}: states --zen-spacing-xs=8px but the capture measured 4px"
     },
     {
@@ -1300,6 +1366,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 0,
+      "factToken": null,
       "message": "search .ds-search {gap}: states --zen-spacing-xs=8px but the capture measured 0px"
     },
     {
@@ -1309,6 +1376,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 0,
+      "factToken": null,
       "message": "search .ds-search {padding-left}: states --zen-spacing-sm=12px but the capture measured 0px"
     },
     {
@@ -1318,6 +1386,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 0,
+      "factToken": null,
       "message": "search .ds-search {padding-right}: states --zen-spacing-sm=12px but the capture measured 0px"
     },
     {
@@ -1327,6 +1396,7 @@
       "token": "--zen-spacing-3xs",
       "painted": 2,
       "fact": 0,
+      "factToken": null,
       "message": "segmented-control .ds-segmented {gap}: states --zen-spacing-3xs=2px but the capture measured 0px"
     },
     {
@@ -1336,6 +1406,7 @@
       "token": "--zen-spacing-3xs",
       "painted": 2,
       "fact": 0,
+      "factToken": null,
       "message": "segmented-control .ds-segmented {padding-bottom}: states --zen-spacing-3xs=2px but the capture measured 0px"
     },
     {
@@ -1345,6 +1416,7 @@
       "token": "--zen-spacing-3xs",
       "painted": 2,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "segmented-control .ds-segmented {padding-left}: states --zen-spacing-3xs=2px but the capture measured 4px"
     },
     {
@@ -1354,6 +1426,7 @@
       "token": "--zen-spacing-3xs",
       "painted": 2,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "segmented-control .ds-segmented {padding-right}: states --zen-spacing-3xs=2px but the capture measured 4px"
     },
     {
@@ -1363,6 +1436,7 @@
       "token": "--zen-spacing-3xs",
       "painted": 2,
       "fact": 0,
+      "factToken": null,
       "message": "segmented-control .ds-segmented {padding-top}: states --zen-spacing-3xs=2px but the capture measured 0px"
     },
     {
@@ -1372,6 +1446,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 8,
+      "factToken": null,
       "message": "side-nav .ds-sidenav {gap}: states --zen-spacing-2xs=4px but the capture measured 8px"
     },
     {
@@ -1381,6 +1456,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 0,
+      "factToken": null,
       "message": "tabs .ds-tabs {gap}: states --zen-spacing-xs=8px but the capture measured 0px"
     },
     {
@@ -1390,6 +1466,7 @@
       "token": "--zen-size-xl",
       "painted": 32,
       "fact": 40,
+      "factToken": null,
       "message": "tabs .ds-tabs {height}: states --zen-size-xl=32px but the capture measured 40px"
     },
     {
@@ -1399,6 +1476,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "text-input .ds-field {gap}: states --zen-spacing-xs=8px but the capture measured 4px"
     },
     {
@@ -1408,6 +1486,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 14,
+      "factToken": null,
       "message": "toast .ds-toast {gap}: states --zen-spacing-sm=12px but the capture measured 14px"
     },
     {
@@ -1417,6 +1496,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 9,
+      "factToken": null,
       "message": "toast .ds-toast {padding-bottom}: states --zen-spacing-sm=12px but the capture measured 9px"
     },
     {
@@ -1426,6 +1506,7 @@
       "token": "--zen-spacing-md",
       "painted": 16,
       "fact": 14,
+      "factToken": null,
       "message": "toast .ds-toast {padding-left}: states --zen-spacing-md=16px but the capture measured 14px"
     },
     {
@@ -1435,6 +1516,7 @@
       "token": "--zen-spacing-md",
       "painted": 16,
       "fact": 14,
+      "factToken": null,
       "message": "toast .ds-toast {padding-right}: states --zen-spacing-md=16px but the capture measured 14px"
     },
     {
@@ -1444,6 +1526,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 9,
+      "factToken": null,
       "message": "toast .ds-toast {padding-top}: states --zen-spacing-sm=12px but the capture measured 9px"
     },
     {
@@ -1453,6 +1536,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "toggle .ds-toggle {gap}: states --zen-spacing-xs=8px but the capture measured 4px"
     },
     {
@@ -1462,6 +1546,7 @@
       "token": "--zen-spacing-sm",
       "painted": 12,
       "fact": 0,
+      "factToken": null,
       "message": "toolbar .ds-toolbar {gap}: states --zen-spacing-sm=12px but the capture measured 0px"
     },
     {
@@ -1471,6 +1556,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "toolbar .ds-toolbar {padding-left}: states --zen-spacing-xs=8px but the capture measured 4px"
     },
     {
@@ -1480,6 +1566,7 @@
       "token": "--zen-spacing-xs",
       "painted": 8,
       "fact": 4,
+      "factToken": "--zen-spacing-2xs",
       "message": "toolbar .ds-toolbar {padding-right}: states --zen-spacing-xs=8px but the capture measured 4px"
     },
     {
@@ -1489,6 +1576,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 8,
+      "factToken": "--zen-spacing-xs",
       "message": "tooltip-default .ds-tooltip-default {padding-bottom}: states --zen-spacing-2xs=4px but the capture measured 8px"
     },
     {
@@ -1498,6 +1586,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 8,
+      "factToken": "--zen-spacing-xs",
       "message": "tooltip-default .ds-tooltip-default {padding-top}: states --zen-spacing-2xs=4px but the capture measured 8px"
     },
     {
@@ -1507,6 +1596,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 0,
+      "factToken": null,
       "message": "whats-new-dropdown .ds-whatsnew {padding-left}: states --zen-spacing-2xs=4px but the capture measured 0px"
     },
     {
@@ -1516,6 +1606,7 @@
       "token": "--zen-spacing-2xs",
       "painted": 4,
       "fact": 0,
+      "factToken": null,
       "message": "whats-new-dropdown .ds-whatsnew {padding-right}: states --zen-spacing-2xs=4px but the capture measured 0px"
     }
   ],

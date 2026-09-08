@@ -13,9 +13,9 @@ Sources last changed **2026-09-07**. Values are derived from the tree this ran a
 | Inline-style hex (cannot re-theme) | 47 | flat (was 47) |
 | Verified colour declarations (oracle numerator) | 87 | flat (was 87) |
 | Examined colour declarations (oracle denominator) | 447 | flat (was 447) |
-| Verified shape declarations (geometry numerator) | 99 | no baseline yet |
-| Examined shape declarations (geometry denominator) | 591 | no baseline yet |
-| Shape declarations the capture contradicts | 91 | no baseline yet |
+| Verified shape declarations (geometry numerator) | 99 | flat (was 99) |
+| Examined shape declarations (geometry denominator) | 591 | flat (was 591) |
+| Shape declarations the capture contradicts | 91 | flat (was 91) |
 
 Oracle coverage is **87 of 447** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
 

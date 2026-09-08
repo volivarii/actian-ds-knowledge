@@ -44,18 +44,18 @@
     },
     "geometryVerified": {
       "value": 99,
-      "direction": "unknown",
-      "previous": null
+      "direction": "unchanged",
+      "previous": 99
     },
     "geometryExamined": {
       "value": 591,
-      "direction": "unknown",
-      "previous": null
+      "direction": "unchanged",
+      "previous": 591
     },
     "geometryMismatch": {
       "value": 91,
-      "direction": "unknown",
-      "previous": null
+      "direction": "unchanged",
+      "previous": 91
     }
   },
   "detail": {
