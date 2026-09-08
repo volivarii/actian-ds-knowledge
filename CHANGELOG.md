@@ -86,11 +86,17 @@ no entry defers its link to a placeholder.
   names `e1fe7c34`, a commit that is not an ancestor of `main`. So a clean checkout of `main` drifted
   against itself, and every branch cut from it inherited the failure.
 
-  The guard now exempts those two files and says why at the step, because the fix its error message
-  named was the wrong one: running the derive and committing would have replaced four true
-  measurements with four false ones, turning `oracleVerified better (was 87)` into
-  `unchanged (was 97)` and `geometryVerified better (was 99)` into `unchanged (was 150)`. Reporting a
-  real improvement as flat is the one thing this artifact must never do.
+  It was therefore red on exactly the pull requests where `render-derive.yml` does **not** run. On a
+  render PR that workflow regenerates and auto-commits, so committed and regenerated agree within
+  that branch's own baseline, which is why this was never visible from inside the render lane. Every
+  other PR compared `main`'s file, written against `main`'s parent, against a regeneration written
+  against `main`.
+
+  The guard now exempts those two files and says why at the step. Running the derive and committing
+  does go green, and that is the trap: an editor-only or docs-only PR then ships a render dist change
+  and a CI version bump for touching nothing, and rewrites the trend's summary line to describe
+  itself. Nothing is falsified by that, since `direction` means "versus the merge base" and the dated
+  series tables keep the history either way. It is simply not that PR's statement to make.
 
   Exempting a file from a directory-wide guard would have dropped the numbers guard in silence, since
   the #571 probe found `quality-trend.json` stays green under mutation of the whole render suite. A

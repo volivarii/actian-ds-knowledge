@@ -393,13 +393,22 @@ jobs:
       #      The file committed as v0.34.202 names `e1fe7c34`, which is not an
       #      ancestor of main at all.
       #
+      # So the guard was red on exactly the PRs where `render-derive.yml` does
+      # NOT run. On a render PR the derive regenerates and auto-commits, and
+      # committed and regenerated then agree within that branch's own baseline,
+      # which is why this was never seen from inside the render lane. Every
+      # other PR compared main's file, written against main's parent, against a
+      # regeneration written against main. #699, editor-only, is what surfaced
+      # it.
+      #
       # 🛑 Do NOT "fix" this by running the derive and committing the result.
-      # That is what the error message below used to tell you to do, and on
-      # 2026-09-08 it would have replaced four true measurements with four
-      # false ones: `oracleVerified better (was 87)` -> `unchanged (was 97)`,
-      # `geometryVerified better (was 99)` -> `unchanged (was 150)`. The
-      # committed file is the honest one. Reporting a real improvement as flat
-      # is the one thing this artifact must never do.
+      # It does go green, and that is the trap: an editor-only or docs-only PR
+      # then ships a render dist change and a CI version bump for touching
+      # nothing, and rewrites the trend's summary to describe itself. Nothing is
+      # falsified by that (`direction` MEANS "versus the merge base", so
+      # `flat (was 97)` is a true statement about a PR that does not move the
+      # oracle, and the dated series tables keep the 87 -> 97 history either
+      # way). It is simply not that PR's statement to make.
       #
       # Everything else in the tree stays under the directory-wide subject this
       # guard was built with (#571), so a NEW artifact is still covered the day
