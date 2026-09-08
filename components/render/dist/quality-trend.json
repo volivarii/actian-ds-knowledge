@@ -33,23 +33,23 @@
       "definitionEpoch": "2026-09-07"
     },
     "oracleVerified": {
-      "value": 87,
-      "direction": "unchanged",
+      "value": 97,
+      "direction": "better",
       "previous": 87
     },
     "oracleExamined": {
-      "value": 447,
-      "direction": "unchanged",
+      "value": 532,
+      "direction": "changed",
       "previous": 447
     },
     "geometryVerified": {
-      "value": 99,
-      "direction": "unchanged",
+      "value": 150,
+      "direction": "better",
       "previous": 99
     },
     "geometryExamined": {
-      "value": 591,
-      "direction": "unchanged",
+      "value": 703,
+      "direction": "changed",
       "previous": 591
     },
     "geometryMismatch": {

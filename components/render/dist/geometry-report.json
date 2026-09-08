@@ -8,20 +8,20 @@
   "generatedBy": "scripts/render/derive-geometry-fidelity.js",
   "scope": "gap, padding and fixed height, on the capture root and on per-variant layout entries. Width is not read: a captured width is where the instance sat on the Figma canvas, not a property of the component.",
   "totals": {
-    "examined": 591,
-    "verified": 99,
+    "examined": 703,
+    "verified": 150,
     "verifiedViaTokenName": 0,
     "mismatch": 91,
-    "unverifiable": 401,
+    "unverifiable": 462,
     "overridden": 0
   },
   "reasons": {
-    "element-no-node-mapping": 327,
+    "element-no-node-mapping": 380,
     "selector-not-attributable": 35,
     "root-is-non-default-state": 7,
     "no-matching-variant": 20,
-    "no-fact-of-kind": 11,
-    "state-unreachable": 1
+    "no-fact-of-kind": 16,
+    "state-unreachable": 4
   },
   "bySlug": {
     "action-bar": {
@@ -123,6 +123,17 @@
       "overridden": 0,
       "blind": false
     },
+    "card": {
+      "prefixes": [
+        "ds-card"
+      ],
+      "verified": 9,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 1,
+      "overridden": 0,
+      "blind": false
+    },
     "card-for-grouped-content": {
       "prefixes": [
         "ds-card-grouped"
@@ -156,6 +167,17 @@
       "overridden": 0,
       "blind": false
     },
+    "checkbox-card": {
+      "prefixes": [
+        "ds-checkbox-card"
+      ],
+      "verified": 5,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 1,
+      "overridden": 0,
+      "blind": false
+    },
     "checkbox-group": {
       "prefixes": [
         "ds-checkbox-group"
@@ -186,6 +208,28 @@
       "verifiedViaTokenName": 0,
       "mismatch": 4,
       "unverifiable": 2,
+      "overridden": 0,
+      "blind": false
+    },
+    "data-quality-checks-graph": {
+      "prefixes": [
+        "ds-quality-graph"
+      ],
+      "verified": 5,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 16,
+      "overridden": 0,
+      "blind": false
+    },
+    "data-viz-legend": {
+      "prefixes": [
+        "ds-data-viz-legend"
+      ],
+      "verified": 5,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 1,
       "overridden": 0,
       "blind": false
     },
@@ -288,6 +332,28 @@
       "overridden": 0,
       "blind": false
     },
+    "glossary-item-hierarchy": {
+      "prefixes": [
+        "ds-glossary-hierarchy"
+      ],
+      "verified": 0,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 14,
+      "overridden": 0,
+      "blind": true
+    },
+    "identification-key": {
+      "prefixes": [
+        "ds-identification-key"
+      ],
+      "verified": 5,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 0,
+      "overridden": 0,
+      "blind": false
+    },
     "interactive-tag": {
       "prefixes": [
         "ds-interactive-tag"
@@ -310,6 +376,28 @@
       "overridden": 0,
       "blind": false
     },
+    "label": {
+      "prefixes": [
+        "ds-label"
+      ],
+      "verified": 1,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 2,
+      "overridden": 0,
+      "blind": false
+    },
+    "line-graph": {
+      "prefixes": [
+        "ds-line-graph"
+      ],
+      "verified": 5,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 8,
+      "overridden": 0,
+      "blind": false
+    },
     "lineage": {
       "prefixes": [
         "ds-lineage-node"
@@ -320,6 +408,17 @@
       "unverifiable": 7,
       "overridden": 0,
       "blind": false
+    },
+    "lineage-connecting-line": {
+      "prefixes": [
+        "ds-lineage-connecting-line"
+      ],
+      "verified": 0,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 2,
+      "overridden": 0,
+      "blind": true
     },
     "lineage-grouped-node": {
       "prefixes": [
@@ -387,6 +486,28 @@
       "overridden": 0,
       "blind": false
     },
+    "menu-dropdown": {
+      "prefixes": [
+        "ds-menu-dropdown"
+      ],
+      "verified": 4,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 6,
+      "overridden": 0,
+      "blind": false
+    },
+    "message": {
+      "prefixes": [
+        "ds-message"
+      ],
+      "verified": 1,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 1,
+      "overridden": 0,
+      "blind": false
+    },
     "metamodel": {
       "prefixes": [
         "ds-metamodel"
@@ -431,6 +552,17 @@
       "overridden": 0,
       "blind": false
     },
+    "pagination": {
+      "prefixes": [
+        "ds-pagination"
+      ],
+      "verified": 0,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 8,
+      "overridden": 0,
+      "blind": true
+    },
     "popover": {
       "prefixes": [
         "ds-popover"
@@ -461,6 +593,17 @@
       "verifiedViaTokenName": 0,
       "mismatch": 1,
       "unverifiable": 7,
+      "overridden": 0,
+      "blind": false
+    },
+    "radio-card": {
+      "prefixes": [
+        "ds-radio-card"
+      ],
+      "verified": 5,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 0,
       "overridden": 0,
       "blind": false
     },
@@ -629,6 +772,17 @@
       "overridden": 0,
       "blind": false
     },
+    "textfield-buttons": {
+      "prefixes": [
+        "ds-textfield-buttons"
+      ],
+      "verified": 6,
+      "verifiedViaTokenName": 0,
+      "mismatch": 0,
+      "unverifiable": 1,
+      "overridden": 0,
+      "blind": false
+    },
     "toast": {
       "prefixes": [
         "ds-toast"
@@ -690,8 +844,11 @@
     "card-for-grouped-content",
     "collapse",
     "drawer",
+    "glossary-item-hierarchy",
+    "lineage-connecting-line",
     "loader",
     "loading-skeleton",
+    "pagination",
     "rich-text-froala",
     "scroll-bar",
     "spinner",
